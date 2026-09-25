@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { sentence } from '../format';
 import { useDiscardSessionTree, useMergeSessionTree, useSessionDiff } from '../shell';
@@ -68,21 +68,32 @@ export function DiffPane({ session, hasTree = false, onSendBack }: {
     setSaid(null);
   }
 
+  // 🔴 Which session an answer is FOR. A refusal that landed after the person moved on armed the forced
+  // press against the session attended now — a tree nobody had looked at (REV3). The reset above
+  // runs at render; an answer arrives whenever git finishes.
+  const attended = useRef(session);
+  attended.current = session;
+
   const act = (
     run: Promise<{ done: boolean; message: string }>,
     onDone?: () => void,
     onRefused?: () => void,
   ) => {
+    const askedFor = session;
+    const current = () => attended.current === askedFor;
     setSaid(null);
     void run.then(
       (result) => {
+        if (!current()) return;
         setSaid(result.message);
         if (result.done) onDone?.();
         else onRefused?.();
       },
       // A thrown refusal is the driver not being up, or the record naming no tree — a different
       // class from "the tree layer declined", and it never arms a destructive confirm.
-      (error: unknown) => setSaid(sentence(error)),
+      (error: unknown) => {
+        if (current()) setSaid(sentence(error));
+      },
     );
   };
 

@@ -27,6 +27,7 @@ vi.mock('@shenora/react', () => ({
 
 import i18n from '../i18n';
 import { WorkFrame } from './WorkFrame';
+import { DiffPane } from './DiffPane';
 
 const DRIVER_STATE = { drivable: ['engine'], holds: [], trees: [], running: ['s1a2b3c4'] };
 
@@ -1035,6 +1036,33 @@ describe('acting on what a session landed', () => {
     await userEvent.click(again);
     expect(forced).toEqual({ id: 's1a2b3c4', force: true });
     expect(await screen.findByText(/removed the session tree/)).toBeTruthy();
+  });
+
+  /**
+   * 🔴 REV3: an answer belongs to the session it was asked about. A refusal that landed after the
+   * person moved to another session armed *discard it anyway* THERE — and the forced press discards
+   * whichever session is attended now, a tree nobody had looked at.
+   */
+  it('drops a discard answer that lands after the person moved to another session', async () => {
+    let answer: (value: unknown) => void = () => {};
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'SESSION_DIFF') return DIFF;
+      if (type === 'DISCARD_SESSION_TREE') return new Promise((resolve) => { answer = resolve; });
+      return DRIVER_STATE;
+    });
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const pane = (session: string) => (
+      <QueryClientProvider client={client}><DiffPane session={session} hasTree /></QueryClientProvider>
+    );
+
+    const { rerender } = render(pane('s1a2b3c4'));
+    await userEvent.click(await screen.findByRole('button', { name: 'discard the tree' }));
+    rerender(pane('s9f8e7d6'));
+    await screen.findByRole('button', { name: 'discard the tree' });
+    await act(async () => answer({ session: 's1a2b3c4', done: false, message: 'the tree holds commits `main` has not taken.' }));
+
+    expect(screen.queryByRole('button', { name: 'discard it anyway' })).toBeNull();
+    expect(screen.queryByText(/has not taken/)).toBeNull();
   });
 
   it('lets the person back out of a discard they have been warned about', async () => {

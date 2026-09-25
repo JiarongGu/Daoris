@@ -53,6 +53,18 @@ describe('the attended session\'s head', () => {
   });
   afterEach(() => vi.useRealTimers());
 
+  /** REV3: a half-written decline reason carried into the next parked session, ready to decline it. */
+  it('starts each parked session\'s decline empty — a reason written for one never carries to another', () => {
+    const parked: Partial<Session> = { state: 'awaiting-person', note: 'needs a person' };
+    const { rerender } = render(<SessionHead session={session(parked)} onResolve={vi.fn()} />);
+    fireEvent.click(screen.getByRole('button', { name: 'decline…' }));
+    fireEvent.change(screen.getByLabelText(/the reason/), { target: { value: 'the chunk API is being replaced' } });
+
+    rerender(<SessionHead session={session({ ...parked, id: 's9f8e7d6' })} onResolve={vi.fn()} />);
+    expect(screen.queryByLabelText(/the reason/)).toBeNull();
+    expect(screen.getByRole('button', { name: 'decline…' })).toBeInTheDocument();
+  });
+
   it('is the record: identity, state, and what the session ran on and as', () => {
     render(<SessionHead session={session()} quest={quest()} />);
 

@@ -5,6 +5,48 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## An answer that outlived the session it was for armed a destructive press on another (2026-09-25)
+
+**Symptom.** Found by REV3's reading, then reproduced in a test. The person presses *discard the tree*
+on session A, and while git runs, clicks session B. A's refusal then arrived and armed *discard it
+anyway* on B's review, above A's warning. Pressing it force-discarded B's tree, uncommitted work
+included, and nobody had looked at B's work. The code's own comment says this must not happen, and a
+reset at render made it look handled. The same class existed on the decline form: a reason
+half-written for one parked session was still typed in the next one's form, ready to decline it with
+somebody else's reason.
+
+**Root cause.** Both kept state per mounted component, and the component outlived the session. In
+`DiffPane` the reset ran at render, but the answer came back in a promise whenever git finished and
+wrote to whichever session was showing then. `AwaitingPerson` sat at the same place in the tree
+across sessions, so React kept its state.
+
+**Fix.** `DiffPane` records which session each act was asked about, and drops an answer for any other.
+`AwaitingPerson` is keyed by the session's id.
+
+**Verify.** Two tests, each watched failing first:
+- `drops a discard answer that lands after the person moved to another session` holds the discard's
+  answer, rerenders on another session, then resolves it. The failing run showed the button armed
+  exactly as described.
+- `starts each parked session's decline empty` types a reason, rerenders on another parked session,
+  and checks the form.
+
+## Tabbing through the strikes field told the driver never to park (2026-09-25)
+
+**Symptom.** Found by REV3's reading. Clicking or tabbing into Settings → Driver → *Park a quest after
+this many failed sessions* and leaving it without typing sent `SET_STRIKES { strikes: 0 }`. Zero means
+never park, and the toast "This machine never parks a quest" read like a confirmation. Clearing the
+box did the same. It is the one setting whose `why` records a quest spending an account eighteen times.
+
+**Root cause.** `onBlur` ran `Number(strikes)` on the held text. Before any typing that text is `null`,
+and after a clear it is `''`. Both convert to 0, which passes the integer check.
+
+**Fix.** Nothing typed, a cleared box, or the value already held writes nothing and puts the held
+value back.
+
+**Verify.** `writes the strikes only when the person changed them`: focus and blur, a cleared box, and
+retyping the same value send no `SET_STRIKES`, while a real change sends exactly one. It failed on the
+first blur before the fix.
+
 ## Three CLI boundaries with no guard: `import`'s folder, `upstream`'s write, and the exit code (2026-09-25)
 
 **Symptom.** Found by REV3's reading. (1) With `DAORIS_SERVICE_URL` pointing at a shared deployment,

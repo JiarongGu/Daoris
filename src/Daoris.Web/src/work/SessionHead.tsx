@@ -75,7 +75,9 @@ export function SessionHead({
         />
       )}
       {parked && !intake && onResolve && (
-        <AwaitingPerson note={session.note} pending={resolving} onResolve={onResolve} />
+        // Keyed: a half-written decline reason belongs to the session it was written for, and it
+        // carried into the next parked one, ready to decline it with somebody else's reason (REV3).
+        <AwaitingPerson key={session.id} note={session.note} pending={resolving} onResolve={onResolve} />
       )}
       {/* Nothing here can act — a browser, or a mirrored record from another machine — so the
           analysis is shown and the moves are not. Half a control is worse than none. */}
