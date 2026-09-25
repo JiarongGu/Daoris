@@ -172,7 +172,7 @@ test('the release commit stages every file release-prep writes', async () => {
   const workflow = readText(join(repoRoot, '.github', 'workflows', 'release.yml'));
   const staging = /git add -u -- ((?:[^\n]*\\\n)*[^\n]*)/.exec(workflow);
   assert.ok(staging, 'the release workflow no longer stages with `git add -u --` — this test must follow it');
-  const pathspecs = staging[1].replace(/\\\n/g, ' ').trim().split(/\s+/);
+  const pathspecs = staging[1]!.replace(/\\\n/g, ' ').trim().split(/\s+/);
 
   const files = written();
   assert.ok(files.some((file) => file.startsWith('examples/')), 'release-prep no longer finds the example manifests');
