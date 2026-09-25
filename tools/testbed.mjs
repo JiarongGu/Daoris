@@ -154,11 +154,10 @@ function born(repo) {
   const where = join(root, repo.name);
   if (existsSync(join(where, '.git'))) return where;
   mkdirSync(where, { recursive: true });
-  const git = (args) => execFileSync('git', args, { cwd: where, encoding: 'utf8' });
-  git(['init', '-q', '-b', 'main']);
+  git(where, ['init', '-q', '-b', 'main']);
   writeFileSync(join(where, 'README.md'), `# ${repo.name}\n\n${repo.summary}\n\n${repo.readme}\n`);
-  git(['add', '-A']);
-  git(['commit', '-qm', 'the starting point']);
+  git(where, ['add', '-A']);
+  git(where, ['commit', '-qm', 'the starting point']);
   return where;
 }
 
