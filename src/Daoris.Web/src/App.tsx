@@ -34,7 +34,7 @@ import { needsAPerson } from './work/attention';
 import { ActivityBar, AppStrip, type DriverPresence, StatusBar } from './work/frame';
 import { useWindowChrome } from './windowChrome';
 import { commands } from './commands';
-import { capped } from './signals';
+import { withNotice } from './signals';
 import { CommandPalette } from './work/CommandPalette';
 import { CommandCenter } from './work/CommandCenter';
 import { AppMenu, AppMenuBar } from './work/AppMenu';
@@ -201,7 +201,7 @@ export function App() {
     nextToast.current += 1;
     // Capped, so a burst cannot climb the window — the newest are what a corner can promise to
     // show. The number has a name and a test now rather than being a `-3` nobody could search for.
-    setToasts((current) => [...capped(current), { id, text, kind }]);
+    setToasts((current) => withNotice(current, { id, text, kind }));
   }, []);
 
   useErrorNotify(reading.error, notify);

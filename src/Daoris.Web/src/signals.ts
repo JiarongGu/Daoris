@@ -84,3 +84,11 @@ export const TOAST_LIMIT = 3;
 export function capped<T>(items: readonly T[], limit = TOAST_LIMIT): T[] {
   return limit <= 0 ? [] : items.slice(-limit);
 }
+
+/**
+ * The notices on screen with one more: added, THEN capped, so the one just added counts toward the
+ * limit. Both windows capped first and added after, and the corner held four (REV3).
+ */
+export function withNotice<T>(items: readonly T[], item: T, limit = TOAST_LIMIT): T[] {
+  return capped([...items, item], limit);
+}

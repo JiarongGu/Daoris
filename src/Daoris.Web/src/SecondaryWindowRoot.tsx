@@ -2,6 +2,7 @@ import { useCallback, useRef, useState } from 'react';
 import { useShenora } from '@shenora/react';
 import { App } from './App';
 import { ShellSignals } from './ShellSignals';
+import { withNotice } from './signals';
 import { Toasts, type ToastItem } from './ui';
 import { DetachedSession } from './work/DetachedSession';
 import { MonitorWindow } from './work/MonitorWindow';
@@ -37,7 +38,7 @@ export function SecondaryWindowRoot({ window: which }: { window: SecondaryWindow
   const notify = useCallback((text: string, kind: 'ok' | 'error' = 'ok') => {
     const id = nextToast.current;
     nextToast.current += 1;
-    setToasts((current) => [...current.slice(-3), { id, text, kind }]);
+    setToasts((current) => withNotice(current, { id, text, kind }));
   }, []);
 
   if (!isAvailable) return <App />;

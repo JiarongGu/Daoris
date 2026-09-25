@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { type Consideration, capped, newsFrom, sittingBecause } from './signals';
+import { type Consideration, TOAST_LIMIT, capped, newsFrom, sittingBecause, withNotice } from './signals';
 
 /**
  * The driver's tick lines, as notices. Written from four identical toasts stacked on the deployed
@@ -74,6 +74,19 @@ describe('sittingBecause', () => {
   it('answers nothing for a quest the driver has not spoken about', () => {
     expect(sittingBecause(considered, 'nobody')).toBeNull();
     expect(sittingBecause([], '7786da')).toBeNull();
+  });
+});
+
+/**
+ * REV3 web-rest F13: both windows capped the notices on screen and THEN added the new one, so the
+ * corner held four where the limit says three.
+ */
+describe('withNotice', () => {
+  it('adds the newest and keeps the limit, counting the one just added', () => {
+    const full = Array.from({ length: TOAST_LIMIT }, (_, n) => n);
+    expect(withNotice(full, 99)).toHaveLength(TOAST_LIMIT);
+    expect(withNotice(full, 99).at(-1)).toBe(99);
+    expect(withNotice([], 1)).toEqual([1]);
   });
 });
 
