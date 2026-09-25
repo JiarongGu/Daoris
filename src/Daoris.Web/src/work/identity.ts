@@ -18,18 +18,19 @@ import type { Quest, Session } from '../api';
  * With a quest id but no quest in hand — the list has not loaded, or the quest is closed and
  * filtered out — this answers with the reference rather than a name it would have to make up.
  *
- * The design also names "the conversation's first line" as a chat's identity. The record does not
- * carry one today (`note` is what the driver observed, not what the chat is about), so a chat wears
- * its kind. When the composer gives the record an opening line, this function is the only place
- * that changes — which is the point of it existing.
+ * The design also names "the conversation's first line" as a chat's identity, and since RAIL1 it is
+ * here: `opening`, the first thing the person said, read from this machine's own record. It never
+ * rides the session record, which travels (D47 §4), so where this machine holds no record — a
+ * teammate's session, a browser — a chat still wears its kind.
  *
  * An intake is opened as a chat, so every build reads it as a session nothing plans from (INT4b),
  * and it is not a conversation: it serves an ask, and says so by the ask's reference (INT4g).
  */
-export function sessionTitle(session: Session, quest?: Quest | null): string {
+export function sessionTitle(session: Session, quest?: Quest | null, opening?: string | null): string {
   if (quest?.title) return quest.title;
   if (session.quest) return `#${session.quest}`;
   if (session.ask) return i18n.t('work.intake.title', { ask: session.ask });
+  if (session.kind === 'chat' && opening) return opening;
   return i18n.t(session.kind === 'chat' ? 'work.identity.conversation' : 'work.identity.session');
 }
 

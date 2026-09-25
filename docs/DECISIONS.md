@@ -3278,3 +3278,16 @@ nothing reported reads as nothing measured.** Measured on both doors first
 - **Absent says which absence it is.** A structured door that has not reported yet, a door that
   carries only text, and a door the roster has not named each have their own sentence, and none of
   them draws 0%.
+
+**Amended 2026-09-26 (RAIL1): a conversation is named by its first line, and searched, on the machine
+that holds what it said.**
+- **The name is derived**: the first thing the person said, read from the event record over the
+  bridge, which is the identity working-surface design §3 always named. Rejected: a title on the
+  session record, which travels (D47 §4) and would carry what was said off the machine. Also
+  rejected: hand-naming, which the derived name makes unnecessary again.
+- **Content is searched on the machine's own record**, the person's words and the agent's, with a
+  message's chunks joined before matching. It is bounded, and it says so when it left hits out.
+  Rejected: indexing transcripts in the knowledge service, which holds knowledge and not what
+  sessions said.
+- **A row's menu holds only what has no other home**: its own window, its review, its id. Rejected:
+  finish and stop in the menu, since each verb has one owner (D56).

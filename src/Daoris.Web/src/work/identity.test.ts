@@ -39,6 +39,19 @@ describe('a session title', () => {
     expect(sessionTitle(session({ kind: 'chat' }))).toBe('conversation');
   });
 
+  /**
+   * RAIL1: a conversation's identity is its first line (design §3), from this machine's record — so
+   * eight rows reading "conversation" become eight things a person can tell apart. Where the machine
+   * holds no record, the kind still stands in; a quest's title still outranks it.
+   */
+  it('names a conversation by its first line, where this machine holds one', () => {
+    expect(sessionTitle(session({ kind: 'chat' }), null, 'Read README.md and tell me its first heading.'))
+      .toBe('Read README.md and tell me its first heading.');
+    expect(sessionTitle(session({ kind: 'chat' }), null, null)).toBe('conversation');
+    expect(sessionTitle(session({ kind: 'chat', quest: '7a82cc' }), quest(), 'anything said'))
+      .toBe('Expose a streaming budget on the chunk API');
+  });
+
   it('names a driven session with no quest by its kind too — nothing is fabricated', () => {
     expect(sessionTitle(session({ kind: 'driven' }))).toBe('session');
   });

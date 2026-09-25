@@ -7,7 +7,7 @@ import * as Tooltip from '@radix-ui/react-tooltip';
 import * as Checkbox from '@radix-ui/react-checkbox';
 import {
   ArrowDown, ArrowDownToLine, ArrowLeftRight, ArrowUp, Brain, Check, ChevronDown, ChevronRight, Cloud,
-  CloudOff, Copy, FileDiff, FilePen, FileText, Gauge, GitMerge, Globe, Inbox, Info, KeyRound, Languages,
+  CloudOff, Copy, Ellipsis, FileDiff, FilePen, FileText, Gauge, GitMerge, Globe, Inbox, Info, KeyRound, Languages,
   LayoutDashboard, LayoutGrid, Layers, Link, ListTodo, LogIn, Maximize2, Minimize2, Monitor, Network,
   PanelLeftClose, PanelLeftOpen, PanelRightClose, Paperclip, Plug, Plus,
   RotateCw, Search, Settings, Shield, SquareArrowOutUpRight, SquareTerminal, Trash2, TriangleAlert,
@@ -95,6 +95,8 @@ const ICONS = {
   dockClose: PanelRightClose,
   full: Maximize2,
   unfull: Minimize2,
+  // A row's own menu (RAIL1).
+  more: Ellipsis,
 } as const;
 
 export type IconName = keyof typeof ICONS;

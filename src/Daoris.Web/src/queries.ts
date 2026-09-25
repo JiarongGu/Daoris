@@ -45,6 +45,11 @@ export const keys = {
   diff: (session: string) => ['diff', session] as const,
   /** The files in one session's tree, for `@` (CONV4d) — shell-only for the same reason. */
   treeFiles: (session: string) => ['tree-files', session] as const,
+  /** What the person first said in each session, from this machine's record (RAIL1) — shell-only. */
+  allOpenings: ['openings'] as const,
+  openings: (ids: string[]) => ['openings', ...ids] as const,
+  /** What sessions said, searched on this machine's record (RAIL1) — shell-only. */
+  sessionSearch: (q: string) => ['session-search', q] as const,
   entry: (id: string) => ['entry', id] as const,
   convergence: (minimumSimilarity: number, workspace: string | null) =>
     ['convergence', minimumSimilarity, workspace ?? '*'] as const,

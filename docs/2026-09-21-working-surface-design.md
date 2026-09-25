@@ -149,6 +149,14 @@ and the group header is where the repository's own facts live — drivable, held
 **Naming a session by hand is deliberately not added** until two real sessions cannot be told apart;
 the derived title is free and true, and a rename is a store column plus a surface that has to earn it.
 
+> **Amended by RAIL1 (2026-09-26).** The trigger arrived on the window: eight rows in the rail read
+> *conversation*. The answer is still derived rather than invented. A conversation's first line is
+> now its title, read from the machine's own event record over the bridge (`SESSION_OPENINGS`). It
+> never rides the session record, which travels (D47 §4), so a teammate's session and a browser still
+> see the kind. Hand-naming stays unbuilt. The rail also searches, by name at once and by what was
+> said over the bridge (`SESSION_SEARCH`), and each row has a small menu holding only what has no
+> other home: its own window, its review, its id. The session's verbs keep one owner each (D56).
+
 **The attended session has three parts and a composer.**
 
 - **The head** — the record: state pill, repository, tree, the quest it serves, the tool and the

@@ -139,6 +139,27 @@ describe('the Work frame', () => {
       expect(screen.getAllByText('Expose a streaming budget')).toHaveLength(2));
   });
 
+  /**
+   * RAIL1: a conversation's name is what was first said in it — the rail's row and the head read the
+   * same one, from one implementation — and a row's menu reviews that session's work in the dock.
+   */
+  it('names a conversation by its first line in the rail and the head, and reviews it from its row', async () => {
+    SESSIONS = [DRIVEN, CHAT];
+    invoke.mockImplementation(async (_module: string, type: string) =>
+      (type === 'SESSION_OPENINGS' ? { openings: { c0ffee11: 'Cap the hydration per frame' } } : DRIVER_STATE));
+    const { onSelect } = show('c0ffee11');
+
+    await screen.findByRole('heading', { level: 2, name: 'Cap the hydration per frame' });
+    await vi.waitFor(() => expect(screen.getAllByText('Cap the hydration per frame')).toHaveLength(2));
+
+    const user = userEvent.setup();
+    screen.getByRole('button', { name: 'more for Cap the hydration per frame' }).focus();
+    await user.keyboard('{Enter}');
+    await user.click(screen.getByRole('menuitem', { name: 'Review its work' }));
+    expect(onSelect).toHaveBeenCalledWith('c0ffee11');
+    expect(screen.getByRole('tab', { name: 'Review' })).toHaveAttribute('aria-selected', 'true');
+  });
+
   it('lands on a designed nothing, not on a session it chose for the person', async () => {
     show(null);
     expect(await screen.findByText('Nothing attended')).toBeInTheDocument();
@@ -1336,6 +1357,17 @@ describe('the frame\'s geometry (FRAME6)', () => {
     expect(screen.getByRole('tabpanel')).toBe(surface);
     await userEvent.click(screen.getByRole('button', { name: 'back beside the session' }));
     expect(screen.getByRole('tabpanel')).toBe(surface);
+  });
+
+  /**
+   * The column used to carry the timeline on a window under 1024px, because the dock was hidden
+   * there. FRAME6 keeps the dock at every width, so the column's copy drew the timeline twice.
+   */
+  it('draws the timeline once on a narrow window, in the dock', async () => {
+    widen(900);
+    show('s1a2b3c4');
+    await screen.findByRole('tab', { name: 'Timeline' });
+    expect(await screen.findAllByText('reached working')).toHaveLength(1);
   });
 
   it('asks to be closed rather than squeezing the session, when it cannot fit beside it', async () => {

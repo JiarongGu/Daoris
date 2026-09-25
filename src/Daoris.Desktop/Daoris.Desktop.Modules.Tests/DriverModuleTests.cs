@@ -96,6 +96,33 @@ public sealed class DriverModuleTests : Bridge
     }
 
     /// <summary>
+    /// RAIL1: what a person first said in each session, and a search of what sessions said, answered from
+    /// this machine's own record — no service is asked, because none holds it (D47 §4), so both answer on
+    /// a cold start too.
+    /// </summary>
+    [Fact]
+    public async Task Openings_and_a_search_are_answered_from_the_machines_own_record()
+    {
+        var loop = Loop();
+        loop.Events.Append("chat1", new SessionEvent { Kind = SessionEventKind.User, Origin = "person", Text = "Cap the hydration per frame" });
+        loop.Events.Append("chat1", new SessionEvent { Kind = SessionEventKind.Message, Text = "Capped in the streamer." });
+        var module = new DriverModule(Bus, loop);
+
+        var openings = await AnswerAsync(module, "SESSION_OPENINGS", new { ids = new[] { "chat1", "none1" } });
+        Assert.Equal("Cap the hydration per frame", openings.GetProperty("openings").GetProperty("chat1").GetString());
+        Assert.False(openings.GetProperty("openings").TryGetProperty("none1", out _));
+
+        var search = await AnswerAsync(module, "SESSION_SEARCH", new { q = "streamer" });
+        var hit = Assert.Single(search.GetProperty("hits").EnumerateArray());
+        Assert.Equal("chat1", hit.GetProperty("session").GetString());
+        Assert.Equal("message", hit.GetProperty("kind").GetString());
+        Assert.Contains("streamer", hit.GetProperty("snippet").GetString());
+        Assert.False(search.GetProperty("cut").GetBoolean());
+
+        await Assert.ThrowsAnyAsync<Exception>(() => AnswerAsync(module, "SESSION_SEARCH", new { }));
+    }
+
+    /// <summary>
     /// The files a person may `@` (CONV4d) are found through the session's record, as its review is —
     /// so on a cold start the answer is the same sentence, never an empty list, which would read as a
     /// tree with nothing in it.

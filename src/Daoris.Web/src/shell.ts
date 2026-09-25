@@ -1021,6 +1021,61 @@ export const useSessionDiff = (session: string | null) => {
   });
 };
 
+/**
+ * What the person first said in each of these sessions (RAIL1): a conversation's identity, as
+ * `sessionTitle` takes it — read from this machine's own record, never from the session record, which
+ * travels (D47 §4).
+ *
+ * @remarks
+ * **Keyed by the whole set**, sorted, so every region that names sessions from the same list — the rail,
+ * the head — asks once between them. A conversation is named by its first message, so when one arrives
+ * for a session not yet named, the answer is asked for again.
+ */
+export const useSessionOpenings = (sessions: readonly { id: string }[] | undefined): Record<string, string> => {
+  const { isAvailable } = useShenora();
+  const client = useQueryClient();
+  const ids = [...new Set((sessions ?? []).map((session) => session.id))].sort();
+  const answer = useQuery({
+    queryKey: keys.openings(ids),
+    queryFn: () => call<{ openings?: Record<string, string> }>('SESSION_OPENINGS', { ids }),
+    enabled: isAvailable && ids.length > 0,
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
+  });
+  const openings = answer.data?.openings ?? {};
+
+  useShenoraEvent('DAORIS', 'SESSION_EVENTS', (payload) => {
+    const batch = payload as { session?: string; events?: SessionEvent[] } | undefined;
+    if (!batch?.session || openings[batch.session]) return;
+    if (batch.events?.some((event) => event.kind === 'user' && event.origin === 'person')) {
+      void client.invalidateQueries({ queryKey: keys.allOpenings });
+    }
+  });
+
+  return openings;
+};
+
+/** Where a search found its words: the session, the event it began at, whose words, and a window of them. */
+export type SessionHit = { session: string; seq: number; kind: string; snippet: string };
+
+/**
+ * What sessions said, searched (RAIL1): the person's words and the agent's, on this machine's own
+ * record, bounded by the host and saying so (`cut`). Asked from two letters on — one letter matches
+ * everything — and the caller debounces, so a word typed is one question, not one per key.
+ */
+export const useSessionSearch = (query: string) => {
+  const { isAvailable } = useShenora();
+  const q = query.trim();
+  return useQuery({
+    queryKey: keys.sessionSearch(q),
+    queryFn: () => call<{ query: string; hits: SessionHit[]; cut: boolean }>('SESSION_SEARCH', { q }),
+    enabled: isAvailable && q.length >= 2,
+    staleTime: 10_000,
+    refetchOnWindowFocus: false,
+    retry: false,
+  });
+};
+
 /** The files a person may `@` in a session's tree, and how many more the host's bound left out. */
 export type TreeFiles = { session: string; files: string[]; unlisted: number };
 

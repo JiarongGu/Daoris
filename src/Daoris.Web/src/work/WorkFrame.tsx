@@ -6,7 +6,7 @@ import { buildChain } from '../map/chain';
 import { useQuests, useRegistry, useSessions } from '../queries';
 import {
   stopNotice, type TurnStop, useCancelTurn, useEndChat, useHarnesses, useResolveSession, useSendMessage,
-  useSessionTurns, useStartChat, useStopSession, useTreeFiles,
+  useSessionOpenings, useSessionTurns, useStartChat, useStopSession, useTreeFiles,
 } from '../shell';
 import { Button, Drawer, failure, Icon, type Notify, SESSION_ACTIVE, Tip, useErrorNotify } from '../ui';
 import { AttendedSession, noteIsInTheHead } from './AttendedSession';
@@ -169,6 +169,9 @@ export function WorkFrame({ selected, onSelect, notify, onSendBack, onAnswerAsk,
   };
 
   const sessions = useSessions(null, true);
+  // A conversation's name (RAIL1): the same answer the rail asks for, from the same list, so the head
+  // and the row read one name and the bridge is asked once.
+  const openings = useSessionOpenings(sessions.data);
   const quests = useQuests(null, true);
   const registry = useRegistry();
   const harnesses = useHarnesses();
@@ -428,7 +431,18 @@ export function WorkFrame({ selected, onSelect, notify, onSendBack, onAnswerAsk,
           )}
 
         <div className="min-h-0 flex-1 overflow-y-auto">
-          <SessionRail selected={selected} onSelect={attend} notify={notify} compact={layout.rail.strip} />
+          <SessionRail
+            selected={selected}
+            onSelect={attend}
+            notify={notify}
+            compact={layout.rail.strip}
+            // A row's menu reviews that session: attended, with the dock open on its work.
+            onReview={(id) => {
+              attend(id);
+              setDocked((was) => ({ ...was, [id]: 'review' }));
+              closeDock(false);
+            }}
+          />
         </div>
 
         {!layout.rail.strip && (
@@ -468,6 +482,7 @@ export function WorkFrame({ selected, onSelect, notify, onSendBack, onAnswerAsk,
           <AttendedSession
             session={attended}
             quest={quest}
+            opening={attended ? openings[attended.id] : null}
             resolving={resolve.isPending}
             stopping={stop.isPending}
             onResolve={here ? onResolve : undefined}

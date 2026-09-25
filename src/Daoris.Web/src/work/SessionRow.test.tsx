@@ -166,6 +166,42 @@ describe('a session row', () => {
   });
 });
 
+/**
+ * RAIL1: a conversation is named by its first line, and a row carries a small menu of what has no other
+ * home — its own window, its review, its id. The session's verbs (finish, stop) stay where they are
+ * owned (D56), so they are never here.
+ */
+describe('a conversation\'s row', () => {
+  it('is named by the first thing the person said in it', () => {
+    render(<SessionRow session={session({ kind: 'chat' })} opening="Cap the hydration per frame" />);
+    expect(screen.getByText('Cap the hydration per frame')).toBeInTheDocument();
+  });
+
+  it('offers its own window, its review and its id — and each does what it says', async () => {
+    const detach = vi.fn();
+    const review = vi.fn();
+    const copy = vi.fn();
+    render(
+      <SessionRow session={session({ kind: 'chat' })} opening="Cap the hydration" onDetach={detach} onReview={review} onCopy={copy} />,
+    );
+
+    const user = userEvent.setup();
+    screen.getByRole('button', { name: 'more for Cap the hydration' }).focus();
+    await user.keyboard('{Enter}');
+    expect(screen.getAllByRole('menuitem').map((item) => item.textContent))
+      .toEqual(['Open in its own window', 'Review its work', 'Copy its id']);
+    expect(screen.queryByRole('menuitem', { name: /stop|finish/i })).toBeNull();
+
+    await user.keyboard('{Enter}');
+    expect(detach).toHaveBeenCalledWith('s1a2b3c4');
+  });
+
+  it('offers no menu where the rail gave it nothing to do', () => {
+    render(<SessionRow session={session()} />);
+    expect(screen.getAllByRole('button')).toHaveLength(1);
+  });
+});
+
 /** No pinned clock here: userEvent's own waits are real, and nothing below reads a duration. */
 describe('choosing a session', () => {
   it('hands the frame the id it was clicked with — selection is the frame\'s to hold', async () => {

@@ -304,6 +304,38 @@ public sealed class DriverModule : ModuleBase
             case "SESSION_DIFF":
                 return await DiffAsync(request, cancellationToken);
 
+            // What a person first said in each of these sessions (RAIL1): a conversation's identity, from
+            // this machine's own record — never the session record, which travels (D47 §4).
+            case "SESSION_OPENINGS":
+            {
+                var ids = new List<string>();
+                if (request.Payload is { } payload && payload.TryGetProperty("ids", out var named)
+                    && named.ValueKind == JsonValueKind.Array)
+                {
+                    ids.AddRange(named.EnumerateArray()
+                        .Where(id => id.ValueKind == JsonValueKind.String)
+                        .Select(id => id.GetString()!));
+                }
+
+                await Task.CompletedTask;
+                return new { Openings = _loop.Events.Openings(ids) };
+            }
+
+            // What sessions said, searched (RAIL1): the person's words and the agent's, from this machine's
+            // own record, bounded and saying so.
+            case "SESSION_SEARCH":
+            {
+                var query = PayloadHelper.GetRequiredValue<string>(request.Payload, "q");
+                await Task.CompletedTask;
+                var found = _loop.Events.Search(query);
+                return new
+                {
+                    Query = query,
+                    Hits = found.Hits.Select(hit => new { hit.Session, hit.Seq, hit.Kind, hit.Snippet }).ToArray(),
+                    found.Cut,
+                };
+            }
+
             // What a person may `@` in a conversation (CONV4d): the files in the tree the record names.
             // Desktop-only for the diff's reason — it is read off a checkout — and read-only.
             case "SESSION_FILES":

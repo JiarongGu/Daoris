@@ -54,7 +54,7 @@ describe('the attended session', () => {
   });
 
   it('is the record and the observed layer, in that order', () => {
-    render(<AttendedSession session={session()} />);
+    render(<AttendedSession session={session()} timeline="always" />);
 
     const head = screen.getByRole('heading', { level: 2 });
     expect(head).toHaveTextContent('conversation');
@@ -76,20 +76,21 @@ describe('the attended session', () => {
     );
   });
 
-  const timelineHolder = () => screen.getByRole('heading', { name: 'Timeline' }).closest('div');
-
   /**
-   * REV3 web-work F8: the column's timeline is hidden on a wide window because the main window's dock
-   * shows it there. A detached window has no dock, so on a wide screen it showed no timeline at all.
+   * REV3 web-work F8: a detached window has no dock, so it draws the timeline itself, at every width.
    */
-  it('keeps its timeline at every width where there is no dock to hold it', () => {
+  it('keeps its timeline where there is no dock to hold it', () => {
     render(<AttendedSession session={session()} timeline="always" />);
-    expect(timelineHolder()?.className ?? '').not.toContain('lg:hidden');
+    expect(screen.getByRole('heading', { name: 'Timeline' })).toBeInTheDocument();
   });
 
-  it('leaves its timeline to the dock on a wide window by default', () => {
+  /**
+   * FRAME6: the frame's dock is there at every width now — docked, cramped, full or closed to a strip
+   * of its tabs — so the column's narrow-window copy, which drew the timeline twice, is gone.
+   */
+  it('leaves its timeline to the dock by default, at every width', () => {
     render(<AttendedSession session={session()} />);
-    expect(timelineHolder()?.className ?? '').toContain('lg:hidden');
+    expect(screen.queryByRole('heading', { name: 'Timeline' })).toBeNull();
   });
 
   /**

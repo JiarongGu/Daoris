@@ -24,6 +24,77 @@ public sealed class SessionEventsTests : IDisposable
 
     private static SessionEvent Message(string text) => new() { Kind = SessionEventKind.Message, Text = text };
 
+    private static SessionEvent Asked(string text, string origin = "person") =>
+        new() { Kind = SessionEventKind.User, Origin = origin, Text = text };
+
+    /// <summary>
+    /// RAIL1: a conversation's identity is the first thing the person said in it (working-surface design
+    /// §3), read from this machine's record — it never rides the session record, which travels (D47 §4).
+    /// A driven session's composed target is not the person speaking, and a session with no record here
+    /// is simply absent.
+    /// </summary>
+    [Fact]
+    public void A_sessions_opening_is_the_first_thing_the_person_said_in_it()
+    {
+        var events = new SessionEvents(_directory);
+        events.Append("chat1", Asked("Read README.md and tell me its first heading.\nIn a few words."));
+        events.Append("chat1", Message("examples/game"));
+        events.Append("chat1", Asked("and the second?"));
+        events.Append("drive1", Asked("You are the engine repository's agent…", origin: "target"));
+        events.Append("long1", Asked(new string('x', 400)));
+
+        var openings = events.Openings(["chat1", "drive1", "long1", "none1", "../escape"]);
+
+        Assert.Equal("Read README.md and tell me its first heading.", openings["chat1"]);
+        Assert.False(openings.ContainsKey("drive1"));
+        Assert.False(openings.ContainsKey("none1"));
+        Assert.Equal(SessionEvents.OpeningLimit + 1, openings["long1"].Length);
+        Assert.EndsWith("…", openings["long1"]);
+    }
+
+    /// <summary>
+    /// RAIL1: search what sessions said — the person's words and the agent's — with a snippet around the
+    /// match. An agent's message is streamed in chunks, so a word split across two is still found; case
+    /// does not count; a tool's output is not what anyone said, and is not searched.
+    /// </summary>
+    [Fact]
+    public void Search_finds_what_was_said_across_the_chunks_it_was_streamed_in()
+    {
+        var events = new SessionEvents(_directory);
+        events.Append("chat1", Asked("Cap the hydration per frame"));
+        events.Append("chat1", Message("The cap belongs in the stre"));
+        events.Append("chat1", Message("amer, not the loader."));
+        events.Append("chat1", new SessionEvent { Kind = SessionEventKind.Tool, Id = "t1", Title = "Read streamer.rs", Output = "streamer internals" });
+        events.Append("chat2", Asked("把流式加载的上限做成可配置的"));
+
+        var streamer = events.Search("STREAMER");
+        var hit = Assert.Single(streamer.Hits);
+        Assert.Equal(("chat1", SessionEventKind.Message), (hit.Session, hit.Kind));
+        Assert.Contains("belongs in the streamer, not the loader.", hit.Snippet);
+
+        Assert.Equal("chat2", Assert.Single(events.Search("流式加载").Hits).Session);
+        Assert.Equal("chat1", Assert.Single(events.Search("hydration").Hits).Session);
+        Assert.Empty(events.Search("x").Hits);
+    }
+
+    /// <summary>The answer is bounded and says so: a few hits per session, the snippet a window, not the whole text.</summary>
+    [Fact]
+    public void Search_is_bounded_and_says_when_it_left_hits_out()
+    {
+        var events = new SessionEvents(_directory);
+        for (var i = 0; i < 5; i++) events.Append("chat1", Asked($"the budget, pass {i}"));
+        events.Append("chat2", Asked(new string('a', 500) + " budget " + new string('b', 500)));
+
+        var answer = events.Search("budget", limit: 4);
+
+        Assert.Equal(SessionEvents.HitsPerSession, answer.Hits.Count(h => h.Session == "chat1"));
+        Assert.True(answer.Cut);
+        var wide = events.Search("budget").Hits.Single(h => h.Session == "chat2");
+        Assert.True(wide.Snippet.Length < 200, wide.Snippet);
+        Assert.StartsWith("…", wide.Snippet);
+        Assert.EndsWith("…", wide.Snippet);
+    }
+
     /// <summary>
     /// 🔴 A page reading the record never costs the record an event (CONV3b, 2026-09-25). The reader
     /// opened the file denying writers, so an append that landed mid-read failed with a sharing

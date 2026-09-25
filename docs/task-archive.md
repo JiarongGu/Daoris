@@ -6185,5 +6185,47 @@ modules, service and family suites were not re-run, since FRAME6 changed none of
 
 Gates: CLI 478, driver 696 → 697, modules 129, family 279/279, deploy 39/39.
 
+## RAIL1 — the list (2026-09-26)
+
+- [x] ~~**RAIL1 — the list.** Search sessions by name and by content, and a row menu.~~
+✅ **done 2026-09-26**. D76 and working-surface design §3 carry the amendments.
+
+- **Why first lines:** the window showed eight rows in the rail all reading *conversation*. That
+  was the trigger working-surface design §3 set for naming, and the design had already named the
+  answer: a conversation's first line.
+- **The driver** (`SessionEvents`):
+  - `Openings` reads the first thing the person said in each session, only as far into the record as
+    it needs, cut to a title's length. A driven session's composed target is not the person
+    speaking.
+  - `Search` matches the person's words and the agent's, with a message's streamed chunks joined
+    first, so a word split across two chunks is found. It skips tool output. It returns three hits
+    per session and fifty in all from the newest two hundred records, with a snippet around each,
+    and says when it left something out.
+  - Both are bridge-only (`SESSION_OPENINGS`, `SESSION_SEARCH`), since what a session said never
+    leaves the machine.
+- **The page:**
+  - `sessionTitle` takes the first line. The rail, its strip, the head and the monitor's tiles all
+    read it from one shared query.
+  - The open rail has a search box: by name at once over every session the list holds, and by what
+    was said once the typing settles, with the words marked in a readable snippet. Escape brings the
+    rail back.
+  - Each row has a menu: its own window, its review (the dock opened on it), its id. Finish and stop
+    stay with their one owner (D56).
+- **Found while building it:** FRAME6 had left the column drawing a second timeline under 1024px,
+  because the column's fallback was for a dock that used to hide there. The Work frame's column no
+  longer carries one, and only the detached window does.
+- **Looked at** on the scratch window with the machine's real records:
+  - the rail named eight conversations by their first lines, in English and 中文;
+  - the head read the same name;
+  - a search for *heliotrope* found the conversation whose answer said it, and one for *saffron*
+    found a 中文 conversation, in dark;
+  - the row menu offered its three items.
+- **The window found two defects, both fixed test-first:**
+  - Snippets showed the agent's Markdown marks.
+  - A span's edge dropped the space before a match from the hit's accessible name.
+
+Gates: CLI 478, driver 697 → 700, modules 129 → 130, web unit 1054 → 1068, Playwright 21/21, family
+279/279, deploy 39/39, code-map green.
+
 Gates: CLI 478, driver 694 → 696, modules 129, web unit 1026, Playwright 21/21, family 279/279,
 deploy 39/39.

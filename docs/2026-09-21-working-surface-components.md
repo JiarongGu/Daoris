@@ -177,7 +177,7 @@ Everything the design (§3–§5) needs, with the states its story must carry. N
 
 | Molecule | What | Story states |
 |---|---|---|
-| `SessionRow` | one session in the rail: dot, identity, state, **where it runs**, **elapsed**, age (D55) | all nine states · driven vs chat · no quest · long + CJK title · selected · another machine · **its own tree** · running three hours |
+| `SessionRow` | one session in the rail: dot, identity, state, **where it runs**, **elapsed**, age (D55); a conversation named by its first line, and a menu of its own window, its review and its id (RAIL1) | all nine states · driven vs chat · no quest · long + CJK title · selected · another machine · **its own tree** · running three hours |
 | `RepositoryGroup` | the rail's group header | drivable, held, busy, not adopted, no root |
 | `SessionHead` | the attended session's record: state, repo, tree, quest, tool + account, age | driven, chat, parked-with-analysis, ended, `--real` tree vs session tree |
 | `TimelineEntry` | one observed event: state change, quest transition, commit landed | each kind · a long commit subject · an entry with no note |

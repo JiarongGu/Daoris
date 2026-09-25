@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import type { Quest, Session } from '../api';
 import { useQuests, useSessions } from '../queries';
-import { useDriver, useOpenWindow } from '../shell';
+import { useDriver, useOpenWindow, useSessionOpenings } from '../shell';
 import { EmptyState, type Notify, SESSION_ACTIVE, SkeletonRows, useErrorNotify } from '../ui';
 import { SessionConsole } from '../SessionConsole';
 import { SessionRail } from './SessionRail';
@@ -40,6 +40,8 @@ export function MonitorWindow({ notify }: { notify: Notify }) {
   const quests = useQuests(null, true);
   const driver = useDriver();
   const openWindow = useOpenWindow();
+  // A conversation's name (RAIL1), as the main window's rail reads it.
+  const openings = useSessionOpenings(sessions.data);
 
   useErrorNotify(sessions.error, notify);
 
@@ -119,6 +121,7 @@ export function MonitorWindow({ notify }: { notify: Notify }) {
                     key={session.id}
                     session={session}
                     quest={session.quest ? questFor.get(session.quest) : null}
+                    opening={openings[session.id]}
                     onDetach={(id) => openWindow.mutate(sessionWindowName(id))}
                   />
                 ))}
@@ -137,9 +140,10 @@ export function MonitorWindow({ notify }: { notify: Notify }) {
  * Separated so the console's hook is mounted per session by the tree rather than by a loop in the
  * parent — a hook cannot be called inside `map`, and a component can.
  */
-function Tile({ session, quest, onDetach }: {
+function Tile({ session, quest, opening, onDetach }: {
   session: Session;
   quest?: Quest | null;
+  opening?: string | null;
   onDetach: (id: string) => void;
 }) {
   const { t } = useTranslation();
@@ -149,7 +153,7 @@ function Tile({ session, quest, onDetach }: {
   return (
     // The id is what the rail scrolls to — a session is one thing with one anchor in this window.
     <div id={tileId(session.id)} className="flex min-h-0 scroll-mt-3 flex-col">
-      <StreamTile session={session} quest={quest} onDetach={here ? onDetach : undefined}>
+      <StreamTile session={session} quest={quest} opening={opening} onDetach={here ? onDetach : undefined}>
         {here && <SessionConsole id={session.id} fill quiet={t('work.monitor.silent')} />}
       </StreamTile>
     </div>

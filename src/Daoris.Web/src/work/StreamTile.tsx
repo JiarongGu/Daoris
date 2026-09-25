@@ -22,10 +22,12 @@ import { sessionOrigin, sessionTitle } from './identity';
  * keyed `origin/id` (D47 §6) and its console never left that machine (D47 §4). An empty well would
  * read as "this session is silent", which is the one thing a console must never imply.
  */
-export function StreamTile({ session, quest, onDetach, children }: {
+export function StreamTile({ session, quest, opening, onDetach, children }: {
   session: Session;
   /** The quest it serves, where the caller has it — absent is a state, not a gap. */
   quest?: Quest | null;
+  /** What the person first said in it, where this machine holds its record — a conversation's name (RAIL1). */
+  opening?: string | null;
   /**
    * Open this session in a window of its own. Absent where nothing can open one — a browser, or a
    * window that is already the detached one.
@@ -44,8 +46,8 @@ export function StreamTile({ session, quest, onDetach, children }: {
     <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-card border border-line bg-raised">
       <header className="flex shrink-0 items-baseline gap-2 border-b border-line px-3 py-1.5">
         <Dot tone={SESSION_DOT[session.state]} label={t(`sessionState.${session.state}`)} />
-        <span title={sessionTitle(session, quest)} className="truncate text-body">
-          {sessionTitle(session, quest)}
+        <span title={sessionTitle(session, quest, opening)} className="truncate text-body">
+          {sessionTitle(session, quest, opening)}
         </span>
         <span className="shrink-0 font-mono text-meta text-ink-faint">{session.repository}</span>
         <span

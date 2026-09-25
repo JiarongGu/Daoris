@@ -1,7 +1,8 @@
 import { useTranslation } from 'react-i18next';
+import * as Menu from '@radix-ui/react-dropdown-menu';
 import type { Quest, Session } from '../api';
 import { ago, elapsed } from '../format';
-import { Dot, DotMark, SESSION_ACTIVE, SESSION_DOT, Tip } from '../ui';
+import { Dot, DotMark, Icon, type IconName, SESSION_ACTIVE, SESSION_DOT, Tip } from '../ui';
 import { cn } from '../lib/cn';
 import { isIntake, ownTree, sessionOrigin, sessionTitle } from './identity';
 
@@ -26,14 +27,16 @@ import { isIntake, ownTree, sessionOrigin, sessionTitle } from './identity';
  * away. The title, the repository and the state are its name and its tip, since the strip has no room
  * for the words and a mark is never hue alone (D41 §6).
  */
-export function SessionStripRow({ session, quest, selected = false, onSelect }: {
+export function SessionStripRow({ session, quest, opening, selected = false, onSelect }: {
   session: Session;
   quest?: Quest | null;
+  /** What the person first said in it, where this machine holds its record (RAIL1). */
+  opening?: string | null;
   selected?: boolean;
   onSelect?: (id: string) => void;
 }) {
   const { t } = useTranslation();
-  const name = [sessionTitle(session, quest), session.repository, t(`sessionState.${session.state}`)].join(' · ');
+  const name = [sessionTitle(session, quest, opening), session.repository, t(`sessionState.${session.state}`)].join(' · ');
 
   return (
     <li>
@@ -58,10 +61,14 @@ export function SessionStripRow({ session, quest, selected = false, onSelect }: 
   );
 }
 
-export function SessionRow({ session, quest, root, selected = false, onSelect }: {
+export function SessionRow({
+  session, quest, opening, root, selected = false, onSelect, onDetach, onReview, onCopy,
+}: {
   session: Session;
   /** The quest it serves, where the caller has it — absent is a state, not a gap (D49 §3). */
   quest?: Quest | null;
+  /** What the person first said in it, where this machine holds its record — a conversation's name (RAIL1). */
+  opening?: string | null;
   /**
    * The repository's registered checkout, so the row can tell a session in a tree of its OWN from
    * one in the root. Absent where the path is not answered, and then nothing is claimed.
@@ -69,9 +76,16 @@ export function SessionRow({ session, quest, root, selected = false, onSelect }:
   root?: string | null;
   selected?: boolean;
   onSelect?: (id: string) => void;
+  /**
+   * The row's menu (RAIL1): what has no other home — its own window, its review, its id. Absent, no
+   * menu. The session's verbs are never here: finish and stop have one owner each (D56).
+   */
+  onDetach?: (id: string) => void;
+  onReview?: (id: string) => void;
+  onCopy?: (id: string) => void;
 }) {
   const { t } = useTranslation();
-  const title = sessionTitle(session, quest);
+  const title = sessionTitle(session, quest, opening);
   const origin = sessionOrigin(session);
   const tree = ownTree(session, root);
   const running = SESSION_ACTIVE.has(session.state);
@@ -94,8 +108,15 @@ export function SessionRow({ session, quest, root, selected = false, onSelect }:
     origin ? t('work.rail.onTip') : null,
   ].filter(Boolean).join(' ');
 
+  const actions = [
+    onDetach && { label: t('work.monitor.detach'), icon: 'external' as const, act: onDetach },
+    onReview && { label: t('work.rail.menu.review'), icon: 'diff' as const, act: onReview },
+    onCopy && { label: t('work.rail.menu.copy'), icon: 'copy' as const, act: onCopy },
+  ].filter((action) => Boolean(action)) as Array<{ label: string; icon: IconName; act: (id: string) => void }>;
+
   return (
-    <li>
+    // A group, so the menu's trigger shows on the row's hover and focus and stays out of the way else.
+    <li className="group relative">
       <button
         type="button"
         // `aria-current` rather than `aria-selected`: the row is a button, not a listbox option,
@@ -131,6 +152,45 @@ export function SessionRow({ session, quest, root, selected = false, onSelect }:
           {meta}
         </span>
       </button>
+
+      {/* Beside the row, never inside it: a button inside a button is not a thing a page may hold. */}
+      {actions.length > 0 && (
+        <Menu.Root modal={false}>
+          <Menu.Trigger asChild>
+            <button
+              type="button"
+              aria-label={t('work.rail.menu.label', { title })}
+              className={cn(
+                'absolute bottom-1 right-1.5 flex h-5 w-5 items-center justify-center rounded-control text-ink-faint',
+                'bg-raised opacity-0 transition-opacity duration-(--speed) hover:text-ink',
+                'focus-visible:opacity-100 group-hover:opacity-100 data-[state=open]:opacity-100',
+              )}
+            >
+              <Icon name="more" size={13} />
+            </button>
+          </Menu.Trigger>
+          <Menu.Portal>
+            <Menu.Content
+              side="bottom"
+              align="end"
+              sideOffset={4}
+              collisionPadding={8}
+              className="z-30 min-w-44 rounded-control border border-line bg-overlay p-1 text-small shadow-lg"
+            >
+              {actions.map(({ label, icon, act }) => (
+                <Menu.Item
+                  key={label}
+                  onSelect={() => act(session.id)}
+                  className="flex cursor-default items-center gap-2 rounded-control px-2 py-1.5 text-ink outline-none data-[highlighted]:bg-accent-soft"
+                >
+                  <Icon name={icon} size={12} className="shrink-0 text-ink-faint" />
+                  {label}
+                </Menu.Item>
+              ))}
+            </Menu.Content>
+          </Menu.Portal>
+        </Menu.Root>
+      )}
     </li>
   );
 }

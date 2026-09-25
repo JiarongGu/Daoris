@@ -64,6 +64,10 @@ function respond(url: string): Response {
   throw new Error(`unstubbed request: ${url}`);
 }
 
+/** The session rows in a region — its buttons less each row's menu trigger (RAIL1). */
+const rows = (region: HTMLElement) => within(region).getAllByRole('button')
+  .filter((button) => !button.getAttribute('aria-label')?.startsWith('more for'));
+
 function show(node: React.ReactElement) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(<QueryClientProvider client={client}>{node}</QueryClientProvider>);
@@ -123,6 +127,79 @@ describe('the session rail', () => {
     expect(select).toHaveBeenCalledWith('b2c3d4e5');
   });
 
+  /**
+   * RAIL1: a conversation is named by the first thing the person said, from this machine's record over
+   * the bridge; searching finds sessions by name at once and by what was said once a word is typed,
+   * with the words marked; and each row's menu does what it says.
+   */
+  describe('names, search and the row menu (RAIL1)', () => {
+    const answer = (extra: (type: string, payload: Record<string, unknown>) => unknown) =>
+      invoke.mockImplementation(async (_module: string, type: string, options?: { payload?: Record<string, unknown> }) =>
+        extra(type, options?.payload ?? {}) ?? DRIVER_STATE);
+    const rail = (props: Partial<Parameters<typeof SessionRail>[0]> = {}) => {
+      const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+      return render(
+        <QueryClientProvider client={client}>
+          <Tooltip.Provider><SessionRail notify={() => {}} {...props} /></Tooltip.Provider>
+        </QueryClientProvider>,
+      );
+    };
+
+    it('names a conversation by what was first said in it', async () => {
+      answer((type) => (type === 'SESSION_OPENINGS'
+        ? { openings: { b2c3d4e5: 'Cap the hydration per frame', c3d4e5f6: 'Read README.md and tell me its first heading' } }
+        : undefined));
+      rail();
+
+      expect(await screen.findByText('Cap the hydration per frame')).toBeInTheDocument();
+      expect(screen.getByText('Read README.md and tell me its first heading')).toBeInTheDocument();
+      expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_OPENINGS', {
+        payload: { ids: ['b2c3d4e5', 'c3d4e5f6', 'd4e5f6a7', 's1a2b3c4'] },
+      });
+    });
+
+    it('finds sessions by name at once, and by what was said with the words marked', async () => {
+      const select = vi.fn();
+      answer((type, payload) => {
+        if (type === 'SESSION_OPENINGS') return { openings: { b2c3d4e5: 'Cap the hydration per frame' } };
+        if (type === 'SESSION_SEARCH' && payload.q === 'streamer') {
+          return { query: 'streamer', cut: false, hits: [{ session: 'c3d4e5f6', seq: 4, kind: 'message', snippet: '…belongs in the streamer, not the loader.' }] };
+        }
+        return undefined;
+      });
+      rail({ onSelect: select });
+      await screen.findByText('Cap the hydration per frame');
+
+      await userEvent.type(screen.getByRole('searchbox', { name: 'search sessions' }), 'hydration');
+      const byName = await screen.findByRole('region', { name: 'by name' });
+      expect(within(byName).getByText('Cap the hydration per frame')).toBeInTheDocument();
+      expect(screen.queryByRole('heading', { name: 'engine' })).toBeNull();
+
+      await userEvent.clear(screen.getByRole('searchbox', { name: 'search sessions' }));
+      await userEvent.type(screen.getByRole('searchbox', { name: 'search sessions' }), 'streamer');
+      const said = await screen.findByRole('region', { name: 'in what was said' });
+      expect(within(said).getByText('streamer').tagName).toBe('MARK');
+      await userEvent.click(within(said).getByRole('button', { name: /…belongs in the streamer/ }));
+      expect(select).toHaveBeenCalledWith('c3d4e5f6');
+
+      await userEvent.type(screen.getByRole('searchbox', { name: 'search sessions' }), '{Escape}');
+      expect(await screen.findByRole('heading', { name: 'engine' })).toBeInTheDocument();
+    });
+
+    it('opens a session in its own window from its row\'s menu', async () => {
+      answer(() => undefined);
+      rail({ onReview: () => {} });
+      await screen.findByText('Expose a streaming budget on the chunk API');
+
+      const user = userEvent.setup();
+      screen.getByRole('button', { name: 'more for Expose a streaming budget on the chunk API' }).focus();
+      await user.keyboard('{Enter}');
+      await user.click(screen.getByRole('menuitem', { name: 'Open in its own window' }));
+
+      expect(invoke).toHaveBeenCalledWith('DAORIS.WINDOWS', 'OPEN', { payload: { name: 'session:s1a2b3c4' } });
+    });
+  });
+
   it('carries the machine\'s standing choices on the header, where the repository\'s facts live', async () => {
     show(<SessionRail notify={() => {}} />);
 
@@ -177,11 +254,11 @@ describe('the session rail', () => {
     await screen.findByText('engine');
     // engine: the one live session. tools: two. The completed one is not in either group…
     const engine = screen.getByText('engine').closest('section')!;
-    expect(within(engine).getAllByRole('button')).toHaveLength(1);
+    expect(rows(engine)).toHaveLength(1);
     // …it is in the ended section, reachable from a fresh window with nothing selected.
     const ended = screen.getByRole('region', { name: 'ended' });
     expect(within(ended).getByText('completed')).toBeInTheDocument();
-    expect(within(ended).getAllByRole('button')).toHaveLength(1);
+    expect(rows(ended)).toHaveLength(1);
   });
 
   it('opens an ended session when it is chosen, like any other', async () => {
@@ -189,7 +266,7 @@ describe('the session rail', () => {
     show(<SessionRail notify={() => {}} onSelect={onSelect} />);
 
     const ended = await screen.findByRole('region', { name: 'ended' });
-    await userEvent.click(within(ended).getByRole('button'));
+    await userEvent.click(rows(ended)[0]!);
     expect(onSelect).toHaveBeenCalledWith('d4e5f6a7');
   });
 
@@ -213,15 +290,14 @@ describe('the session rail', () => {
 
     expect(await screen.findByText('completed')).toBeInTheDocument();
     const engine = screen.getByText('engine').closest('section')!;
-    expect(within(engine).getAllByRole('button')).toHaveLength(2);
+    expect(rows(engine)).toHaveLength(2);
   });
 
   it('puts the session that needs a person at the top of its group', async () => {
     show(<SessionRail notify={() => {}} />);
 
     const tools = (await screen.findByText('tools')).closest('section')!;
-    const rows = within(tools).getAllByRole('button');
-    expect(within(rows[0]).getByText('awaiting person')).toBeInTheDocument();
+    expect(within(rows(tools)[0]!).getByText('awaiting person')).toBeInTheDocument();
   });
 
   it('marks the attended row and reports a choice, holding neither itself', async () => {

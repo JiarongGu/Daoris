@@ -20,8 +20,8 @@ lists.
 
 ## State
 
-**Counts, and this is their one home:** fifteen commands, **478 CLI tests, 502 service, 697 driver,
-129 desktop modules, 80 devkit, 1054 web unit, 21 Playwright**, 66/66 release rehearsal, **279/279
+**Counts, and this is their one home:** fifteen commands, **478 CLI tests, 502 service, 700 driver,
+130 desktop modules, 80 devkit, 1068 web unit, 21 Playwright**, 66/66 release rehearsal, **279/279
 family rehearsal** (it names its own phases when you run it), **39/39 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge
 documents, 5 skills, 7 packs. The always-loaded core is **22,492 of 26,000 bytes** — a span in
@@ -42,12 +42,12 @@ reference gap* below. Nothing is pushed or published, and a release is still blo
 - **Landed:** CONV1 (the record), CONV2 (the view), CONV3a (Claude Code's `stream-json`), CONV3b
   (chats on the protocol door), CONV4a (stopping a turn, one queue on both doors), CONV4b (the
   composer's turn, queue and drafts), CONV4c (attachments), CONV4d (`@` a file in the tree), CONV5
-  (the meters) and FRAME6 (the frame), with the fixes the looks found. All are in the archive, under
-  2026-09-25 and 2026-09-26.
+  (the meters), FRAME6 (the frame) and RAIL1 (the list), with the fixes the looks found. All are in
+  the archive, under 2026-09-25 and 2026-09-26.
 - **REV3, the owner's full review, is closed**, and so is **CLEAN1**, its cleanup lists (both in
   the archive). The ledger is `docs/2026-09-25-rev3-review.md`, and what they left is under *What
   REV3 left* below.
-- 🔴 **Next: RAIL1, the list.** Search sessions by name and by content, and a row menu.
+- 🔴 **Next: REVIEW2, review.** Highlighted diffs, split or unified.
 - **How each landing is checked:** TDD, the gates, then a look on the window with a real session.
   Real sessions on this machine's Claude Code account are authorised (2026-09-24).
 - **The scratch machine:** its `driver.json` points `claude-code-acp` at the ACP adapter the dsh
@@ -107,7 +107,7 @@ rather than designed.
 
 ## Backlog
 
-**Twenty-six rows are open**: D76's three and its held file tools; the ten REV3 left, with RETRY1;
+**Twenty-five rows are open**: D76's two and its held file tools; the ten REV3 left, with RETRY1;
 three leftovers (FLAKE1, DEPLOY5, TEST1); three on the owner (TRUST2, AGT2c, INT6); and six on a
 trigger (see *Handover*). Every closed one is in `docs/task-archive.md`, and this file holds no
 ticked rows, by the `task-lifecycle` rule it also ships. A heading below holds open rows only.
@@ -233,7 +233,6 @@ close that. **The owner chose the conversation model and every extra → D76** (
 *"you should check screen by screen and all ui ux logic"*. Take them in order; each is one landing,
 TDD, looked at on the window, and the ones that touch a real session use one (authorised
 2026-09-24). **CONV4 was split (2026-09-25)**, and all four parts are in the archive.
-- [ ] **RAIL1 — the list.** Search sessions by name and by content, and a row menu.
 - [ ] **REVIEW2 — review.** Highlighted diffs, split or unified.
 - [ ] **UX5 — screen by screen.** Every surface, every state (empty, loading, error, long, 中文,
   dark), every piece of interaction logic (keys, focus, what a click opens, what survives a reload),

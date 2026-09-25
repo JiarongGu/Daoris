@@ -36,12 +36,14 @@ export const noteIsInTheHead = (session: Session, answerableHere: boolean) =>
   session.state === 'awaiting-person' && answerableHere;
 
 export function AttendedSession({
-  session, quest, resolving, stopping, onResolve, onAnswerAsk, onStop, chain = [], onSession,
-  timeline = 'narrow',
+  session, quest, opening, resolving, stopping, onResolve, onAnswerAsk, onStop, chain = [], onSession,
+  timeline = 'dock',
 }: {
   /** The attended session, or null when the person has not chosen one. */
   session: Session | null;
   quest?: Quest | null;
+  /** What the person first said in it, where this machine holds its record — a conversation's name (RAIL1). */
+  opening?: string | null;
   resolving?: boolean;
   stopping?: boolean;
   /** Passed straight through to the head, where a parked session's three moves live (design §4). */
@@ -58,10 +60,10 @@ export function AttendedSession({
   /** Attend another session of the chain — the frame's own selection, so every region follows. */
   onSession?: (session: Session) => void;
   /**
-   * Where the timeline is: here only on a narrow window, because the main window's dock holds it
-   * when wide — or here always, in a window with no dock (a detached session, REV3).
+   * Where the timeline is: in the frame's dock, which since FRAME6 is there at every width — or here,
+   * in a window with no dock (a detached session, REV3).
    */
-  timeline?: 'narrow' | 'always';
+  timeline?: 'dock' | 'always';
 }) {
   const { t } = useTranslation();
 
@@ -80,6 +82,7 @@ export function AttendedSession({
       <SessionHead
         session={session}
         quest={quest}
+        opening={opening}
         resolving={resolving}
         stopping={stopping}
         onResolve={onResolve}
@@ -87,16 +90,16 @@ export function AttendedSession({
         onStop={onStop}
       />
       {chain.length > 1 && <ChainStrip chain={chain} level={3} onSession={onSession} />}
-      {/* The timeline lives in the right dock since SURF6 gave the dock its second occupant. It
-          stays here on a narrow window, where the dock is not rendered at all — the column is the
-          fallback, so nothing is unreachable on a laptop. */}
-      <div className={timeline === 'narrow' ? 'lg:hidden' : undefined}>
+      {/* The timeline lives in the right dock since SURF6 gave the dock its second occupant. It stayed
+          here on a narrow window while the dock was hidden there; FRAME6 keeps the dock at every width,
+          and the copy here drew it twice. Only a window with no dock carries it. */}
+      {timeline === 'always' && (
         <SessionTimeline
           session={session}
           quest={quest}
           hideCurrentNote={noteIsInTheHead(session, Boolean(onResolve))}
         />
-      </div>
+      )}
     </article>
   );
 }

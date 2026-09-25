@@ -147,6 +147,16 @@ public sealed record SessionEvent
     public string? Raw { get; init; }
 }
 
+/// <summary>
+/// Where a search found its words (RAIL1): the session, the event its passage began at, whose words
+/// they were (<see cref="SessionEventKind.User"/> or <see cref="SessionEventKind.Message"/>), and a
+/// window of the text around the match.
+/// </summary>
+public sealed record SessionHit(string Session, long Seq, string Kind, string Snippet);
+
+/// <summary>What a search found, and whether its bounds left anything out.</summary>
+public sealed record SessionSearch(IReadOnlyList<SessionHit> Hits, bool Cut);
+
 /// <summary>One page of a session's events, oldest first.</summary>
 /// <param name="Earlier">Whether events older than this page exist — what "load earlier" asks after.</param>
 /// <param name="Latest">The newest sequence the session has — what a live page merges after.</param>
@@ -283,6 +293,137 @@ public sealed class SessionEvents(string directory)
         return new EventPage([.. all.Where(e => e.Seq > after)], Earlier: false, all.Count == 0 ? 0 : all[^1].Seq);
     }
 
+    /// <summary>How long a session's opening may be before it is cut: a row's title, not a paragraph.</summary>
+    public const int OpeningLimit = 120;
+
+    /// <summary>A search's hits from one session, at most — the rest of that session is one press away.</summary>
+    public const int HitsPerSession = 3;
+
+    /// <summary>A search's hits in all, unless the caller asks for fewer.</summary>
+    public const int SearchLimit = 50;
+
+    /// <summary>How many records a search reads, newest first — a person typing is not waiting on a crawl.</summary>
+    public const int SearchScan = 200;
+
+    /// <summary>How much text a snippet keeps either side of the match.</summary>
+    private const int SnippetRadius = 60;
+
+    /// <summary>
+    /// What a person first said in each of these sessions (RAIL1) — a conversation's identity, as the
+    /// working-surface design (§3) names it: its first line, cut to a title's length.
+    /// </summary>
+    /// <remarks>
+    /// Machine-local, like the record it is read from (D47 §4): what a session said never rides the
+    /// session record, which travels. A driven session's composed target is not the person speaking, so
+    /// it has no opening; nor has a session with no record here, nor an id that is not one.
+    /// </remarks>
+    public IReadOnlyDictionary<string, string> Openings(IEnumerable<string> sessionIds)
+    {
+        var openings = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var id in sessionIds.Distinct(StringComparer.OrdinalIgnoreCase))
+        {
+            if (!IsId(id)) continue;
+            var path = Path.Combine(directory, $"{id}.events.jsonl");
+            // Only as far as the first thing the person said, which is usually the file's first line.
+            var asked = Lines(path).FirstOrDefault(e => e.Kind == SessionEventKind.User && e.Origin == "person");
+            if (asked?.Text is not { } text) continue;
+
+            var first = text.Split('\n', 2)[0].Trim();
+            if (first.Length == 0) continue;
+            openings[id] = first.Length <= OpeningLimit ? first : $"{first[..OpeningLimit]}…";
+        }
+
+        return openings;
+    }
+
+    /// <summary>
+    /// The sessions whose words hold <paramref name="query"/> (RAIL1): the person's and the agent's,
+    /// each with a snippet around the match, newest sessions first.
+    /// </summary>
+    /// <remarks>
+    /// <para><b>An agent's message is searched whole.</b> It is streamed in chunks and kept as them, so a
+    /// word can straddle two lines of this record; the chunks are joined, as the page joins them, before
+    /// anything is matched.</para>
+    ///
+    /// <para><b>What was said, not what a tool printed</b>: a tool's output is a file's contents or a
+    /// command's noise, and would bury the conversation that mentioned it.</para>
+    ///
+    /// <para><b>Bounded, and it says so</b> (<see cref="SessionSearch.Cut"/>): a few hits per session, a
+    /// limit in all, and the newest <see cref="SearchScan"/> records read. Machine-local, like the record.</para>
+    /// </remarks>
+    public SessionSearch Search(string query, int limit = SearchLimit)
+    {
+        var wanted = query.Trim();
+        if (wanted.Length < 2 || !Directory.Exists(directory)) return new([], false);
+
+        var records = new DirectoryInfo(directory).EnumerateFiles("*.events.jsonl")
+            .OrderByDescending(file => file.LastWriteTimeUtc)
+            .ToList();
+        var cut = records.Count > SearchScan;
+        var hits = new List<SessionHit>();
+
+        foreach (var record in records.Take(SearchScan))
+        {
+            var session = record.Name[..^".events.jsonl".Length];
+            var found = 0;
+            foreach (var (seq, kind, text) in Passages(record.FullName))
+            {
+                var at = text.IndexOf(wanted, StringComparison.OrdinalIgnoreCase);
+                if (at < 0) continue;
+                if (found == HitsPerSession || hits.Count == limit)
+                {
+                    cut = true;
+                    break;
+                }
+
+                hits.Add(new SessionHit(session, seq, kind, Snippet(text, at, wanted.Length)));
+                found++;
+            }
+
+            if (hits.Count == limit && cut) break;
+        }
+
+        return new SessionSearch(hits, cut);
+    }
+
+    /// <summary>
+    /// A record's words as a reader reads them: each thing the person said, and each run of the agent's
+    /// chunks joined into one message — broken, as the page breaks it, by anything but a usage reading.
+    /// </summary>
+    private static IEnumerable<(long Seq, string Kind, string Text)> Passages(string path)
+    {
+        (long Seq, System.Text.StringBuilder Text)? message = null;
+        foreach (var e in Lines(path))
+        {
+            if (e.Kind == SessionEventKind.Usage) continue;
+            if (e.Kind == SessionEventKind.Message)
+            {
+                message ??= (e.Seq, new System.Text.StringBuilder());
+                message.Value.Text.Append(e.Text);
+                continue;
+            }
+
+            if (message is { } run)
+            {
+                yield return (run.Seq, SessionEventKind.Message, run.Text.ToString());
+                message = null;
+            }
+
+            if (e.Kind == SessionEventKind.User && e.Text is { Length: > 0 } said) yield return (e.Seq, e.Kind, said);
+        }
+
+        if (message is { } last) yield return (last.Seq, SessionEventKind.Message, last.Text.ToString());
+    }
+
+    /// <summary>A window of one line around a match, with an ellipsis wherever the text goes on.</summary>
+    private static string Snippet(string text, int at, int length)
+    {
+        var start = Math.Max(0, at - SnippetRadius);
+        var end = Math.Min(text.Length, at + length + SnippetRadius);
+        var window = text[start..end].ReplaceLineEndings(" ").Trim();
+        return $"{(start > 0 ? "…" : "")}{window}{(end < text.Length ? "…" : "")}";
+    }
+
     /// <summary>Where a session's events are kept — refused for anything that is not an id.</summary>
     public string PathOf(string sessionId)
     {
@@ -308,11 +449,16 @@ public sealed class SessionEvents(string directory)
     }
 
     /// <summary>Every readable event in a file, in order; a line that is not one is skipped.</summary>
-    private static List<SessionEvent> Read(string path)
-    {
-        if (!File.Exists(path)) return [];
+    private static List<SessionEvent> Read(string path) => [.. Lines(path)];
 
-        var events = new List<SessionEvent>();
+    /// <summary>
+    /// A file's readable events, one at a time — so a question answered near the top (an opening) reads
+    /// no further than it has to.
+    /// </summary>
+    private static IEnumerable<SessionEvent> Lines(string path)
+    {
+        if (!File.Exists(path)) yield break;
+
         // Read beside a writer, never against it (see Append): a line still being written is torn, and a
         // torn line costs itself below.
         using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
@@ -320,17 +466,18 @@ public sealed class SessionEvents(string directory)
         while (reader.ReadLine() is { } line)
         {
             if (string.IsNullOrWhiteSpace(line)) continue;
+            SessionEvent? e = null;
             try
             {
-                if (JsonSerializer.Deserialize<SessionEvent>(line, Json) is { Kind.Length: > 0 } e) events.Add(e);
+                e = JsonSerializer.Deserialize<SessionEvent>(line, Json);
             }
             catch (JsonException)
             {
                 // A torn or foreign line costs itself, never the conversation around it.
             }
-        }
 
-        return events;
+            if (e is { Kind.Length: > 0 }) yield return e;
+        }
     }
 
     private static SessionEvent Bound(SessionEvent e) => e with

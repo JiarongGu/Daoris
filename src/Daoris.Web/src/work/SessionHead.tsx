@@ -33,11 +33,13 @@ import { RunningIntake } from './RunningIntake';
  * can be passed unconditionally.
  */
 export function SessionHead({
-  session, quest, resolving = false, stopping = false, onResolve, onAnswerAsk, onStop,
+  session, quest, opening, resolving = false, stopping = false, onResolve, onAnswerAsk, onStop,
 }: {
   session: Session;
   /** The quest it serves, where the caller has it — absent is a state, not a gap (D49 §3). */
   quest?: Quest | null;
+  /** What the person first said in it, where this machine holds its record — a conversation's name (RAIL1). */
+  opening?: string | null;
   resolving?: boolean;
   /** A running intake's stop is in flight. */
   stopping?: boolean;
@@ -88,7 +90,7 @@ export function SessionHead({
       )}
 
       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1.5">
-        <h2 className="m-0 text-title font-[650] leading-[1.35]">{sessionTitle(session, quest)}</h2>
+        <h2 className="m-0 text-title font-[650] leading-[1.35]">{sessionTitle(session, quest, opening)}</h2>
         <span className="flex shrink-0 items-baseline gap-2">
           <Pill tone={SESSION_TONE[session.state]}>{t(`sessionState.${session.state}`)}</Pill>
           <span className="font-mono text-meta text-ink-faint">{session.id}</span>
