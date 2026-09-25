@@ -242,13 +242,20 @@ const run = (command, args, options = {}) => {
 export const powershell = (script) =>
   spawnSync('powershell', ['-NoProfile', '-Command', script], { encoding: 'utf8' }).stdout ?? '';
 
+/**
+ * Text as a PowerShell single-quoted literal. Backslashes stay literal there (doubling them makes a
+ * path never match), and the one character that needs escaping is `'`, doubled (REV3): a checkout
+ * under a folder with an apostrophe ended the string early, and the query matched nothing.
+ */
+export const psQuote = (text) => `'${String(text).replaceAll("'", "''")}'`;
+
 /** The shells running from a given executable — pid and path, nothing guessed by name. */
 export const running = (exe) => {
   if (!exe) return [];
-  // Single-quoted PowerShell strings take backslashes literally; doubling them makes the comparison
-  // never match, and a kill that silently no-ops leaves the old window holding the port.
+  // Quoted by `psQuote`: a comparison that never matches is a kill that silently no-ops, leaving the
+  // old window holding the port.
   const out = powershell(
-    `Get-Process -ErrorAction SilentlyContinue | Where-Object { $_.Path -eq '${exe}' } | `
+    `Get-Process -ErrorAction SilentlyContinue | Where-Object { $_.Path -eq ${psQuote(exe)} } | `
     + 'ForEach-Object { $_.Id }');
   return out.split('\n').map((line) => Number(line.trim())).filter((pid) => Number.isInteger(pid) && pid > 0);
 };
@@ -277,7 +284,7 @@ export const running = (exe) => {
  * windows go first, the main window last, and the app exits on its own terms. Same trap as the one
  * `shot --window` exists for, in its third disguise. */
 export const stopAll = (exe) => powershell(`
-  Get-Process -ErrorAction SilentlyContinue | Where-Object { $_.Path -eq '${exe}' } | ForEach-Object {
+  Get-Process -ErrorAction SilentlyContinue | Where-Object { $_.Path -eq ${psQuote(exe)} } | ForEach-Object {
     $process = $_
     for ($attempt = 0; $attempt -lt 6 -and -not $process.HasExited; $attempt++) {
       $process.Refresh()

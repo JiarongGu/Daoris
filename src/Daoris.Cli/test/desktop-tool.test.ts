@@ -10,7 +10,7 @@ import { readText, listFiles } from '../src/fsx.ts';
 // be a second description of the tool to keep in step with it — and the thing this suite asserts is
 // the tool's BEHAVIOUR, which a stale declaration would not protect.
 import {
-  CLEARED, REDIRECTED, assemblyExe, installedExe, prune, scratchEnvironment,
+  CLEARED, REDIRECTED, assemblyExe, installedExe, prune, psQuote, scratchEnvironment,
   // @ts-expect-error — untyped workspace tooling; see above
 } from '../../../tools/desktop.mjs';
 
@@ -225,4 +225,16 @@ test('no install named is no install, rather than a path built from undefined', 
   assert.equal(installedExe(null), null);
   assert.equal(installedExe(undefined), null);
   assert.equal(installedExe(''), null);
+});
+
+/**
+ * Every process query the tools build compares a path inside a PowerShell single-quoted string, and a
+ * `'` in that path ended the string early (REV3): the query matched nothing, and a kill that matches
+ * nothing is a stale window still holding the port. Backslashes must stay single — doubled, the
+ * comparison never matches either.
+ */
+test('a path is quoted for PowerShell with its apostrophes doubled and its backslashes untouched', () => {
+  assert.equal(psQuote('C:\\Users\\o\'brien\\app.exe'), "'C:\\Users\\o''brien\\app.exe'");
+  assert.equal(psQuote('plain'), "'plain'");
+  assert.equal(psQuote("''"), "''''''");
 });

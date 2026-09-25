@@ -5,6 +5,27 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## The deployment gate counted other installs' hooks, and a quote broke its process queries (2026-09-25)
+
+**Symptom.** Found by REV3's reading of the tools. Two defects. First, phase 6 of the deployment
+rehearsal counts the example plugin's hook processes before and after the shell closes. It matched
+them by the script's name anywhere on the machine, so a hook from another rehearsal, or from the
+owner's own install, counted as this shell's hook. After closing, that hook was reported as an
+orphan. Second, `running`, `stopAll` and the rehearsal's window query compare a path inside a
+PowerShell single-quoted string. A checkout under a folder with an `'` in its name ended the string
+early, so the query matched nothing, and a stop that matches nothing leaves the old window holding
+its port.
+
+**Root cause.** Both queries trusted a string that the machine, not the gate, supplied.
+
+**Fix.** `hookLines` keeps only the rows whose command line lies under the gate's own scratch. It
+filters in JavaScript, because `-like` wildcards can appear in a path, and it compares case-blind.
+`psQuote` doubles a `'` and leaves backslashes single, and all three queries use it.
+
+**Verify.** `deployment-rehearsal.test.ts` checks that a hook of the same plugin outside the scratch
+is not counted, and `desktop-tool.test.ts` quotes a path with an apostrophe. Both were seen failing
+against the old matching and the old interpolation. `npm run rehearse:deploy` passes end to end.
+
 ## The doctrine gate could not start `daoris` on Windows (2026-09-25)
 
 **Symptom.** Found by REV3's reading of the devkit. The doctrine gate runs `daoris check`, and its

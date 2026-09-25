@@ -4,7 +4,7 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { readText } from '../src/fsx.ts';
 import {
-  HOST_EXE, HOST_HOME, SHELL_EXE, insideWorkspace, launchers, strays, transcriptHolds, utf8Of,
+  HOST_EXE, HOST_HOME, SHELL_EXE, hookLines, insideWorkspace, launchers, strays, transcriptHolds, utf8Of,
   // @ts-expect-error — untyped workspace tooling; the same seam desktop-tool.test.ts documents
 } from '../../../tools/deployment-rehearsal.mjs';
 
@@ -110,6 +110,25 @@ test('the host’s home in an install is a path the locator actually looks in', 
   assert.ok(
     locator.includes(`Path.Combine("${HOST_HOME[0]}", "${HOST_HOME[1]}")`),
     `the publish puts the host in ${HOST_HOME.join('/')} and ServiceHostLocator does not look there`);
+});
+
+/**
+ * Phase 6 counts the example plugin's hook processes before and after the shell closes. Matched on
+ * the script's name alone, it counted the same plugin running ANYWHERE on the machine (REV3) — another
+ * rehearsal's, or the owner's installed Daoris — and called those this shell's orphans.
+ */
+test('a hook process is this install’s only when it was started from under its scratch', () => {
+  const scratch = join('C:', 'work', 'daoris', '_fixtures', 'deployment-rehearsal');
+  const ours = join(scratch, 'home', 'plugins', 'hold-by-title', 'hooks.mjs');
+  const theirs = join('C:', 'Daoris', 'data', 'plugins', 'hold-by-title', 'hooks.mjs');
+  const rows = [
+    `101|"node.exe" "${ours}"`,
+    `202|"node.exe" "${theirs}"`,
+    `303|"node.exe" "${join(scratch, 'home', 'plugins', 'other', 'hooks.mjs')}"`,
+    `404|"node.exe" "${ours.toUpperCase()}"`,
+    '',
+  ].join('\r\n');
+  assert.deepEqual(hookLines(rows, scratch), [101, 404]);
 });
 
 test('the gate and the publish script agree on what the install is called', () => {

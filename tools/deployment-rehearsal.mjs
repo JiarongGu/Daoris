@@ -117,6 +117,20 @@ export function transcriptHolds(bytes, text) {
   return Buffer.from(bytes).includes(utf8Of(text));
 }
 
+/**
+ * The example plugin's hook processes among `pid|command line` rows — only those started from under
+ * `scratch`. Filtered here rather than by PowerShell's `-like`, whose wildcards a path can contain;
+ * compared case-blind because Windows reports a path in whichever case it was spawned with.
+ */
+export function hookLines(rows, scratch) {
+  const under = scratch.toLowerCase();
+  return rows.split('\n')
+    .map((line) => line.trim().toLowerCase())
+    .filter((line) => line.includes('hold-by-title') && line.includes('hooks.mjs') && line.includes(under))
+    .map((line) => Number(line.slice(0, line.indexOf('|'))))
+    .filter((pid) => Number.isInteger(pid) && pid > 0);
+}
+
 // ---------------------------------------------------------------------------------------------
 
 const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
@@ -153,7 +167,7 @@ const children = [];
 
 const run = (command, cwd, env = {}, timeout = 0) => capture(command, cwd, { env, timeout });
 
-const { CLEARED, REDIRECTED, powershell, running, stopAll } = await import('./desktop.mjs');
+const { CLEARED, REDIRECTED, powershell, psQuote, running, stopAll } = await import('./desktop.mjs');
 const { freePort } = await import('./cdp.mjs');
 
 /** One HTTP call against whichever host is being asked. Local trust — no key on this door (D21). */
@@ -214,11 +228,11 @@ function hookProcesses() {
   // 🔴 `node.exe` only: the PowerShell process running this very query carries the pattern in its
   // own command line and matched itself — one phantom hook process while the shell ran, and one
   // "orphan" after it closed. Found by the first run of this check.
-  return powershell(
+  // 🔴 And only THIS install's (REV3): matched by the pattern alone, the check counted a hook of the
+  // same example plugin running anywhere on the machine — another rehearsal's, or the owner's own.
+  return hookLines(powershell(
     "Get-CimInstance Win32_Process -Filter \"Name = 'node.exe'\" -ErrorAction SilentlyContinue | "
-    + "Where-Object { $_.CommandLine -like '*hold-by-title*hooks.mjs*' } | "
-    + 'ForEach-Object { "$($_.ProcessId)" }')
-    .split('\n').map((line) => Number(line.trim())).filter(Boolean);
+    + 'ForEach-Object { "$($_.ProcessId)|$($_.CommandLine)" }'), scratch);
 }
 
 function stopEverything() {
@@ -524,7 +538,7 @@ if (!done.ok) throw new Error(done.text);
   console.log(`        located: ${started.map((host) => host.path).join(', ') || '(none)'}`);
 
   const window = powershell(
-    `Get-Process -ErrorAction SilentlyContinue | Where-Object { $_.Path -eq '${shellExe}' } | `
+    `Get-Process -ErrorAction SilentlyContinue | Where-Object { $_.Path -eq ${psQuote(shellExe)} } | `
     + 'ForEach-Object { "$($_.MainWindowHandle)|$($_.MainWindowTitle)" }').trim();
   check('the window is up', Boolean(window) && !window.startsWith('0|'), window || '(no process)');
 
