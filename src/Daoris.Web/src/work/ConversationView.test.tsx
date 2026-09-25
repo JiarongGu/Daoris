@@ -74,6 +74,17 @@ describe('ConversationView', () => {
     expect(screen.getAllByText(/4 new, 51,061 read from its cache, 16,717 written to it/)[0]).toBeTruthy();
   });
 
+  /** REVIEW2: an edit's lines are the review's lines — highlighted in the file's own language, and signed. */
+  it('highlights an edit in the language of the file it changed', async () => {
+    view(FINISHED());
+    await userEvent.click(screen.getByRole('button', { name: /2 tool calls/ }));
+    await userEvent.click(screen.getByText('Edit src/chunk.rs'));
+
+    const keyword = document.querySelector('.hljs-keyword');
+    expect(keyword?.textContent).toBe('let');
+    expect(screen.getAllByText('+')).toHaveLength(2);
+  });
+
   it('keeps a running turn open, and says it is working', () => {
     view([
       ev({ kind: 'user', origin: 'person', text: 'and test it' }),

@@ -3,8 +3,10 @@ import { useTranslation } from 'react-i18next';
 import { cn } from '../lib/cn';
 import { Dot, Icon, type IconName } from '../ui';
 import type { Block, ToolContent } from './conversation';
+import { languageOf } from './codeLines';
 import { inTree } from './identity';
-import { type DiffLine, diffCounts, lineDiff } from './lineDiff';
+import { type DiffLine, diffCounts, lineDiff, patchLines } from './lineDiff';
+import { DiffLines } from './PatchView';
 
 /** A tool call's ACP kind, as the glyph it wears. Anything else is a generic tool. */
 const KIND_ICON: Record<string, IconName> = {
@@ -110,24 +112,15 @@ function Content({ item, lines, tree }: { item: ToolContent; lines?: DiffLine[] 
         {item.path && (
           <figcaption className="border-b border-line bg-page px-2.5 py-1 font-mono text-meta text-ink-soft">{inTree(item.path, tree)}</figcaption>
         )}
-        <pre className="m-0 max-h-96 overflow-auto py-1 font-mono text-small leading-relaxed">
-          {(lines ?? lineDiff(item.oldText, item.newText)).map((line, index) => (
-            <div
-              key={index}
-              className={cn(
-                'px-2.5 whitespace-pre',
-                line.kind === 'add' && 'bg-st-done/10 text-st-done',
-                line.kind === 'del' && 'bg-st-declined/10 text-st-declined',
-                line.kind === 'same' && 'text-ink-soft',
-              )}
-            >
-              <span aria-hidden className="mr-2 select-none text-ink-faint">
-                {line.kind === 'add' ? '+' : line.kind === 'del' ? '−' : ' '}
-              </span>
-              {line.text}
-            </div>
-          ))}
-        </pre>
+        {/* The review's own lines (REVIEW2), highlighted in the file's language — unnumbered, since an
+            edit's text is a piece of the file and its lines are not the file's. */}
+        <div className="max-h-96 overflow-auto py-1 font-mono text-small leading-relaxed">
+          <DiffLines
+            lines={patchLines(lines ?? lineDiff(item.oldText, item.newText))}
+            language={item.path ? languageOf(item.path) : null}
+            numbered={false}
+          />
+        </div>
       </figure>
     );
   }

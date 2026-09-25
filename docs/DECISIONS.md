@@ -3291,3 +3291,19 @@ that holds what it said.**
   sessions said.
 - **A row's menu holds only what has no other home**: its own window, its review, its id. Rejected:
   finish and stop in the menu, since each verb has one owner (D56).
+
+**Amended 2026-09-26 (REVIEW2): a review is git's patch, numbered, highlighted a side at a time,
+unified or side by side.**
+- **git's lines, read, never re-derived.** The patch is parsed into hunks with the numbers each
+  side had. Rejected: re-diffing the files on the page, which would put a second diff beside git's
+  with no way to tell which to believe.
+- **Highlighted a side at a time**: a hunk's old side and its new side are each highlighted as one
+  text, then split back into lines with the markup balanced, so a comment spanning lines is coloured
+  on each. The language comes from the file's extension, only where the highlighter ships it.
+  Rejected: highlighting each line alone, which loses every construct that spans lines. Also
+  rejected: guessing a language, as the conversation's code blocks already refuse to.
+- **Unified or side by side, the reader's choice**, remembered per viewer like the frame's widths.
+  Side by side, each half wraps, because a long line otherwise pushed the other side out of view
+  (seen on the window).
+- **An edit card in the conversation draws its lines with the same renderer**, unnumbered, since
+  its lines are a piece of the file and not the file's.

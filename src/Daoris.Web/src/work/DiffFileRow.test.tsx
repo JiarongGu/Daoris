@@ -43,7 +43,7 @@ describe('DiffFileRow', () => {
 
     // Told it is open, it renders the patch itself rather than navigating.
     show({ ...FILE, path: 'other.ts' }, { open: true });
-    expect(screen.getByText('+also arrived')).toBeTruthy();
+    expect(screen.getByText('also arrived')).toBeTruthy();
   });
 
   /**
@@ -82,7 +82,19 @@ describe('DiffFileRow', () => {
 
   /** An empty patch line must still occupy a line, or the diff silently loses its blank context. */
   it('keeps a blank context line as a line', () => {
-    show({ ...FILE, patch: 'a\n\nb' }, { open: true });
-    expect(screen.getByText('a').parentElement?.children).toHaveLength(3);
+    show({ ...FILE, patch: '@@ -1,3 +1,3 @@\n a\n \n b' }, { open: true });
+    expect(screen.getAllByRole('row')).toHaveLength(3);
+  });
+
+  /** REVIEW2: the layout the pane chose, side by side here — each removal across from what replaced it. */
+  it('draws its patch in the layout it is given', () => {
+    render(
+      <ul>
+        <DiffFileRow file={FILE} open viewed={false} layout="split" onToggle={() => {}} onViewed={() => {}} />
+      </ul>,
+    );
+    const row = screen.getAllByRole('row')[1]!;
+    expect(row.textContent).toContain('gone');
+    expect(row.textContent).toContain('arrived');
   });
 });

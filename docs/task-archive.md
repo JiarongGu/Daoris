@@ -6227,5 +6227,37 @@ Gates: CLI 478, driver 696 → 697, modules 129, family 279/279, deploy 39/39.
 Gates: CLI 478, driver 697 → 700, modules 129 → 130, web unit 1054 → 1068, Playwright 21/21, family
 279/279, deploy 39/39, code-map green.
 
+## REVIEW2 — review (2026-09-26)
+
+- [x] ~~**REVIEW2 — review.** Highlighted diffs, split or unified.~~
+✅ **done 2026-09-26**. D76 carries the amendment.
+
+- **`work/patch.ts`** reads git's unified patch into hunks with the line numbers each side had. It
+  keeps git's notes (`\ No newline at end of file`) as notes. A blank context line stays a line even
+  when its single space was stripped on the way, and only the patch's own final newline is dropped.
+  A rename with no hunks is its preamble. `pairRows` sets a run of removals across from the run of
+  additions after it.
+- **`work/codeLines.ts`** takes the language from the file's extension, only where the highlighter
+  ships it, and never guesses. It highlights a side's lines as one text and splits the markup back
+  into balanced lines, so a comment spanning lines is coloured on each.
+- **`PatchView`**, a new molecule: a hunk's header, then rows. Unified rows have two number gutters,
+  a sign and the code. Side-by-side rows put each half at half width with wrapping lines. A note runs
+  across both. Changed rows wear the status tints and always carry their sign.
+- **The review pane** has a *unified · side by side* choice in its header, remembered per viewer.
+  **The conversation's edit cards** draw their lines with the same renderer, highlighted by path and
+  unnumbered.
+- **Looked at** on the scratch window. A chat was opened on the `game` fixture, a two-file change was
+  committed there for it to review, and the fixture was reset afterwards.
+  - Unified: numbered and signed, with TypeScript highlighted and the four-line doc comment coloured
+    on each line.
+  - Side by side, in dark.
+  - The review of a session that had stopped also read, so GROUND1's fix held.
+- **The window found one defect, fixed test-first:** side by side, a long line on the old side
+  pushed the new side out of view. Each half is now held at half width and wraps, while a unified
+  line stays whole and scrolls.
+
+Gates: CLI 478, web unit 1068 → 1092, Playwright 21/21, deploy 39/39, code-map green. The driver,
+modules, service and family suites were not re-run, since REVIEW2 changed none of their code.
+
 Gates: CLI 478, driver 694 → 696, modules 129, web unit 1026, Playwright 21/21, family 279/279,
 deploy 39/39.

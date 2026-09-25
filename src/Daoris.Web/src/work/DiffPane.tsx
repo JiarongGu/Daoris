@@ -1,9 +1,14 @@
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { sentence } from '../format';
+import { store, stored } from '../lib/stored';
 import { useDiscardSessionTree, useMergeSessionTree, useSessionDiff } from '../shell';
-import { Button, EmptyState, SkeletonRows } from '../ui';
+import { Button, EmptyState, Segmented, SkeletonRows } from '../ui';
 import { DiffFileRow } from './DiffFileRow';
+import type { DiffLayout } from './PatchView';
+
+/** How a reader likes the changes laid out (REVIEW2) — a per-viewer convenience, like the frame's widths. */
+const LAYOUT = 'daoris.reviewLayout';
 
 /**
  * Review: what the session actually did, and what the person does about it (SURF6, design §5).
@@ -52,6 +57,12 @@ export function DiffPane({ session, hasTree = false, onSendBack }: {
   // they have ticked off. Keyed by path, reset by attending a different session.
   const [open, setOpen] = useState<Record<string, boolean>>({});
   const [viewed, setViewed] = useState<Record<string, boolean>>({});
+  // One column or the old side beside the new (REVIEW2): the reader's, for every review.
+  const [layout, setLayout] = useState<DiffLayout>(() => (stored(LAYOUT) === 'split' ? 'split' : 'unified'));
+  const chooseLayout = (next: DiffLayout) => {
+    setLayout(next);
+    store(LAYOUT, next);
+  };
   const [shown, setShown] = useState<string | null>(null);
   // Whatever the tree layer last said, done or refused. Its sentence is the contract.
   const [said, setSaid] = useState<string | null>(null);
@@ -210,6 +221,15 @@ export function DiffPane({ session, hasTree = false, onSendBack }: {
         <span className="ml-auto truncate font-mono text-meta text-ink-faint">
           {t('work.review.since', { base: diff.data!.base.slice(0, 8) })}
         </span>
+        <Segmented
+          label={t('work.review.layout')}
+          value={layout}
+          options={[
+            { value: 'unified', label: t('work.review.unified') },
+            { value: 'split', label: t('work.review.split') },
+          ]}
+          onChange={chooseLayout}
+        />
       </header>
 
       <ul className="m-0 min-h-0 flex-1 list-none overflow-y-auto p-0">
@@ -219,6 +239,7 @@ export function DiffPane({ session, hasTree = false, onSendBack }: {
             file={file}
             open={open[file.path] ?? false}
             viewed={viewed[file.path] ?? false}
+            layout={layout}
             onToggle={() => setOpen((was) => ({ ...was, [file.path]: !was[file.path] }))}
             onViewed={(next) => setViewed((was) => ({ ...was, [file.path]: next }))}
           />

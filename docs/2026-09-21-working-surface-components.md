@@ -191,6 +191,7 @@ Everything the design (§3–§5) needs, with the states its story must carry. N
 | `RunningIntake` | a running intake: why it takes no messages, a door to look at its ask, and the stop its composer used to carry (INT4h) | running · nothing can act |
 | `TrustAsk` | the agent's trust question for a folder the driver holds: the folder, what trusting means, what it holds, the one file written, and the grant on the press (D73) | asking · granting |
 | `DiffFileRow` | one file in the review pane | added, modified, deleted, renamed, binary, truncated |
+| `PatchView` | a file's patch: numbered, highlighted a side at a time, unified or side by side (REVIEW2) | unified · side by side · unknown language · rename only · long line |
 | `RightDock` | the per-session surfaces beside the session, with its geometry handed in (FRAME6) | docked · cramped · full · full in a narrow window · closed |
 | `SessionStripRow` | one running session in the rail's 56px strip (FRAME6) | working · attended · awaiting person · a 中文 repository |
 | `Splitter` | the edge a column is resized by, keyboard-operable (FRAME6) | held by `chrome.test.tsx` |

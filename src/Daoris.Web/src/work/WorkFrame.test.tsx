@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, render, screen, waitFor } from '@testing-library/react';
+import { act, cleanup, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Tooltip from '@radix-ui/react-tooltip';
@@ -993,6 +993,27 @@ describe('reviewing what a session landed', () => {
 
     expect(screen.getByRole('tab', { name: 'Timeline' }).getAttribute('aria-selected')).toBe('true');
     expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_DIFF', expect.anything());
+  });
+
+  /**
+   * REVIEW2: the changes laid out in one column or the old side beside the new — one choice for the
+   * whole review, remembered per viewer like the frame's widths.
+   */
+  it('lays the changes out unified or side by side, and remembers which', async () => {
+    show('s1a2b3c4');
+    await userEvent.click(await screen.findByRole('tab', { name: 'Review' }));
+    await userEvent.click(await screen.findByText('src/chunk.ts'));
+
+    const layout = screen.getByRole('radiogroup', { name: 'layout' });
+    expect(within(layout).getByRole('radio', { name: 'unified' })).toHaveAttribute('aria-checked', 'true');
+    expect(within(screen.getAllByRole('row')[0]!).getAllByRole('cell').map((cell) => cell.textContent))
+      .toEqual(['1', '', '−', 'old']);
+
+    await userEvent.click(within(layout).getByRole('radio', { name: 'side by side' }));
+    expect(within(screen.getAllByRole('row')[0]!).getAllByRole('cell').map((cell) => cell.textContent))
+      .toEqual(['1', 'old', '1', 'new']);
+    expect(window.localStorage.getItem('daoris.reviewLayout')).toBe('split');
+    window.localStorage.removeItem('daoris.reviewLayout');
   });
 
   it('reads the landed work off the checkout when the review tab is opened', async () => {
