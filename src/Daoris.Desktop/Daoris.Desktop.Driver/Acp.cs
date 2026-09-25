@@ -1,4 +1,5 @@
 using System.Collections.Concurrent;
+using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 
@@ -103,6 +104,10 @@ public sealed record AcpOutcome(
 /// Where the wire's STRUCTURE goes (D76 §1, CONV1): every update as a <see cref="SessionEvent"/>, beside
 /// the line the console gets. Null where nobody keeps the record.
 /// </param>
+/// <param name="quiet">
+/// How long the agent's words may go quiet before the console shows the line they left open
+/// (<see cref="AcpConsole"/>); <see cref="AcpConsole.Quiet"/> when not given.
+/// </param>
 public sealed class AcpSession(
     TextReader incoming,
     TextWriter outgoing,
@@ -110,7 +115,8 @@ public sealed class AcpSession(
     TimeSpan? closeTimeout = null,
     string? posture = null,
     object? meta = null,
-    Action<SessionEvent>? onEvent = null)
+    Action<SessionEvent>? onEvent = null,
+    TimeSpan? quiet = null)
 {
     /// <summary>The protocol version this client speaks. Stated, never negotiated downward silently.</summary>
     private const int ProtocolVersion = 1;
@@ -130,6 +136,9 @@ public sealed class AcpSession(
     /// <summary>The reader, which lives as long as the conversation does, and what ends it.</summary>
     private readonly CancellationTokenSource _pumpStop = new();
     private Task? _pump;
+
+    /// <summary>The console's lines, joined from the agent's streamed words (UX5 U3).</summary>
+    private readonly AcpConsole _console = new(onLine, quiet ?? AcpConsole.Quiet);
 
     /// <summary>
     /// The largest context reading this session has reported (TOOL3), or null when it reported none —
@@ -372,6 +381,7 @@ public sealed class AcpSession(
                     // Not a frame. A real agent writes diagnostics to stderr, but stdout purity is its
                     // promise and not this client's guarantee — so the line is shown rather than
                     // dropped, and the run continues.
+                    _console.End();
                     onLine(line);
                     Emit(new SessionEvent { Kind = SessionEventKind.Raw, Raw = line });
                     continue;
@@ -387,6 +397,7 @@ public sealed class AcpSession(
                     // throw here used to end the reader, and its `finally` then said the agent's
                     // stream had ended — a false sentence over a lost exception, which is how the
                     // first real run died at its first tool call (ACP2, 2026-09-24).
+                    _console.End();
                     onLine($"[unreadable frame: {error.Message}] {Compact(frame)}");
                     Emit(new SessionEvent
                     {
@@ -401,6 +412,9 @@ public sealed class AcpSession(
         }
         finally
         {
+            // An agent's last words before its stream ended are the ones a person reads the console for.
+            _console.Dispose();
+
             // Whatever was still awaited will never be answered. Faulting it here is what turns an
             // agent that died mid-handshake into a sentence rather than a hang.
             Fail(new DriverException(
@@ -413,6 +427,11 @@ public sealed class AcpSession(
     {
         var hasMethod = frame.TryGetProperty("method", out var method);
         var hasId = frame.TryGetProperty("id", out var id);
+        var name = hasMethod && method.ValueKind == JsonValueKind.String ? method.GetString() : null;
+
+        // Anything but an update ends the line the agent's words left open: a turn's answer, a
+        // refusal, a request. An update decides for itself (UX5 U3).
+        if (name != "session/update") _console.End();
 
         if (!hasMethod && hasId)
         {
@@ -422,7 +441,6 @@ public sealed class AcpSession(
 
         if (!hasMethod) return; // neither a call nor an answer; nothing to do with it
 
-        var name = method.ValueKind == JsonValueKind.String ? method.GetString() : null;
         if (hasId)
         {
             try
@@ -450,8 +468,9 @@ public sealed class AcpSession(
         {
             Interlocked.Increment(ref _updates);
             Measure(update);
-            if (Render(update) is { } rendered) onLine(rendered);
-            if (Map(update) is { } structured) Emit(structured);
+            var structured = Map(update);
+            _console.Update(update, structured);
+            if (structured is not null) Emit(structured);
         }
     }
 
@@ -577,14 +596,6 @@ public sealed class AcpSession(
     }
 
     /// <summary>
-    /// One update as a console line — the structured source rendered for a transcript a person reads.
-    /// </summary>
-    /// <remarks>
-    /// An update shape this build has never seen is rendered as ITSELF rather than dropped. The wire
-    /// belongs to somebody else and it grows; a console that silently omitted the one update type it
-    /// did not recognise would be a transcript with a hole in it that nothing reports.
-    /// </remarks>
-    /// <summary>
     /// The permission posture Daoris drives under, expressed as this wire's own mode (ACP2).
     /// </summary>
     /// <remarks>
@@ -666,15 +677,24 @@ public sealed class AcpSession(
             ? number
             : null;
 
+    /// <summary>
+    /// One update as a console line — the structured source rendered for a transcript a person reads.
+    /// </summary>
+    /// <remarks>
+    /// <para>An update shape this build has never seen is rendered as ITSELF rather than dropped. The
+    /// wire belongs to somebody else and it grows; a console that silently omitted the one update type
+    /// it did not recognise would be a transcript with a hole in it that nothing reports.</para>
+    ///
+    /// <para>The agent's words are not rendered here: they arrive in chunks, and
+    /// <see cref="AcpConsole"/> joins them into lines from the event <see cref="Map"/> made (UX5 U3).</para>
+    /// </remarks>
     internal static string? Render(JsonElement update)
     {
         var kind = Kind(update);
-        var text = Text(update);
 
         return kind switch
         {
-            "agent_message_chunk" => text,
-            "agent_thought_chunk" => text is null ? null : $"· {text}",
+            "agent_message_chunk" or "agent_thought_chunk" => null,
             "tool_call" => $"→ {Field(update, "title") ?? Field(update, "toolCallId") ?? "tool"}"
                            + (Field(update, "status") is { } s ? $" [{s}]" : ""),
             "tool_call_update" => $"  {Field(update, "toolCallId") ?? "tool"} → {Field(update, "status") ?? "?"}",
@@ -905,6 +925,125 @@ public sealed class AcpSession(
         foreach (var key in _pending.Keys)
         {
             if (_pending.TryRemove(key, out var waiting)) waiting.TrySetException(error);
+        }
+    }
+}
+
+/// <summary>
+/// The protocol door's console lines (UX5 U3): the agent's words as the lines it wrote, never as the
+/// chunks the wire carried them in.
+/// </summary>
+/// <remarks>
+/// <para>A message streams in pieces that break wherever the agent flushed, inside a word as often as
+/// not, and a line per piece was a raw view that broke words across lines. So a piece joins the line
+/// it continues, a newline in the words ends a line, and anything else the wire says (a tool call, a
+/// refusal, the turn's answer, the stream's end) ends the open line before it is shown. The native
+/// door writes its console from the whole message; this wire never sends one. And a line the words
+/// leave open is shown once they go quiet, because an agent that says something and then waits sends
+/// nothing that would end it.</para>
+///
+/// <para>The words are read from the event <see cref="AcpSession.Map"/> made, so the console and the
+/// record take them from one place. The reader drives it and the quiet timer ends a line, so one
+/// lock holds both, and every line leaves in the order it was said.</para>
+/// </remarks>
+internal sealed class AcpConsole : IDisposable
+{
+    /// <summary>How long the words may go quiet before the line they left open is shown anyway.</summary>
+    /// <remarks>
+    /// 🔴 <b>Measured, not chosen</b> (UX5 U3, 2026-09-26). Half a second broke real lines on the
+    /// window (<c>al</c> / <c>pha: …</c>), because a real stream pauses that long mid-word. Across 13
+    /// kept conversations, 2,968 gaps between one chunk and the next: median 48ms, p99 557ms, the
+    /// longest 1,161ms, none over two seconds. So two seconds breaks no line that sample holds, and a
+    /// held turn's words still show within two seconds.
+    /// </remarks>
+    public static readonly TimeSpan Quiet = TimeSpan.FromSeconds(2);
+
+    private readonly Action<string> _onLine;
+    private readonly TimeSpan _quiet;
+    private readonly Timer _idle;
+    private readonly object _gate = new();
+    private readonly StringBuilder _open = new();
+    private string? _openKind;
+    private bool _disposed;
+
+    /// <param name="quiet">
+    /// 🔴 How long before an open line is shown with nothing after it. Joining chunks alone held a
+    /// line until the next update, and an agent that says something and then waits sends none: the
+    /// words sat unseen for as long as it waited. A pause longer than this breaks the line there, which
+    /// is rare and still readable; infinite turns the flush off.
+    /// </param>
+    public AcpConsole(Action<string> onLine, TimeSpan quiet)
+    {
+        _onLine = onLine;
+        _quiet = quiet;
+        _idle = new Timer(_ => End());
+    }
+
+    /// <summary>One update: its words joined to the open line, or the open line ended and the update shown.</summary>
+    public void Update(JsonElement update, SessionEvent? mapped)
+    {
+        lock (_gate)
+        {
+            if (mapped is { Kind: SessionEventKind.Message or SessionEventKind.Thought, Text: { } words })
+            {
+                if (_openKind != mapped.Kind) End();
+                _openKind = mapped.Kind;
+                _open.Append(words);
+
+                var text = _open.ToString();
+                var cut = text.LastIndexOf('\n');
+                if (cut >= 0)
+                {
+                    foreach (var line in text[..cut].Split('\n')) Say(line);
+                    _open.Clear().Append(text[(cut + 1)..]);
+                }
+
+                if (_open.Length > 0) _idle.Change(_quiet, Timeout.InfiniteTimeSpan);
+                return;
+            }
+
+            End();
+            if (AcpSession.Render(update) is { } rendered) _onLine(rendered);
+        }
+    }
+
+    /// <summary>End the open line, if the agent's words left one.</summary>
+    public void End()
+    {
+        lock (_gate)
+        {
+            // 🔴 A quiet flush already queued when the reader ended runs after the timer is gone, on a
+            // pool thread, where a throw would take the process with it.
+            if (_disposed) return;
+            _idle.Change(Timeout.InfiniteTimeSpan, Timeout.InfiniteTimeSpan);
+            if (_open.Length > 0) Say(_open.ToString());
+            _open.Clear();
+            _openKind = null;
+        }
+    }
+
+    /// <summary>The last line said, and the timer stopped: the reader has ended.</summary>
+    public void Dispose()
+    {
+        lock (_gate)
+        {
+            End();
+            _disposed = true;
+            _idle.Dispose();
+        }
+    }
+
+    private void Say(string line)
+    {
+        line = line.TrimEnd('\r');
+        if (_openKind != SessionEventKind.Thought)
+        {
+            _onLine(line);
+        }
+        else if (line.Length > 0)
+        {
+            // A thought is marked on every line it runs to; a blank line in one marks nothing.
+            _onLine($"· {line}");
         }
     }
 }

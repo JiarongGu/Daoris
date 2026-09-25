@@ -1,5 +1,7 @@
+using System.Collections.Concurrent;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Threading.Channels;
 using Daoris.Driver;
 
@@ -363,6 +365,130 @@ public sealed class AcpTests
 
         // The console is unchanged: the lines are still there for the raw view.
         Assert.Contains(lines, line => line.Contains("Edit src/chunk.rs"));
+    }
+
+    /// <summary>One streamed piece of the agent's words, as the wire sends it.</summary>
+    private static string Chunk(string kind, string text) => new JsonObject
+    {
+        ["jsonrpc"] = "2.0",
+        ["method"] = "session/update",
+        ["params"] = new JsonObject
+        {
+            ["sessionId"] = "s-1",
+            ["update"] = new JsonObject
+            {
+                ["sessionUpdate"] = kind,
+                ["content"] = new JsonObject { ["type"] = "text", ["text"] = text },
+            },
+        },
+    }.ToJsonString();
+
+    /// <summary>
+    /// 🔴 UX5 U3: a message arrives in chunks, and the console wrote each chunk as a line of its own, so
+    /// the raw view broke words across lines, driven sessions included. A chunk joins the line it
+    /// continues, a newline in the words ends one, and anything else the wire says ends the open line
+    /// first. The record is untouched: it still keeps each chunk as the wire sent it.
+    /// </summary>
+    [Fact]
+    public async Task A_streamed_message_reaches_the_console_as_its_lines_not_its_chunks()
+    {
+        var lines = new List<string>();
+        var agent = new FakeAgent((frame, self) =>
+        {
+            switch (frame.GetProperty("method").GetString())
+            {
+                case "initialize": return Ok(frame, """{"protocolVersion":1}""");
+                case "session/new": return Ok(frame, """{"sessionId":"s-1"}""");
+                case "session/prompt":
+                    self.Push(Chunk("agent_thought_chunk", "the cap belongs "));
+                    self.Push(Chunk("agent_thought_chunk", "in the streamer"));
+                    self.Push(Chunk("agent_message_chunk", "Capped at "));
+                    self.Push(Chunk("agent_message_chunk", "4 per frame.\r\nThe te"));
+                    self.Push(Chunk("agent_message_chunk", "sts pass."));
+                    self.Push("""{"jsonrpc":"2.0","method":"session/update","params":{"sessionId":"s-1","update":{"sessionUpdate":"tool_call","toolCallId":"c1","title":"Run tests","status":"pending"}}}""");
+                    self.Push(Chunk("agent_message_chunk", "Do"));
+                    self.Push(Chunk("agent_message_chunk", "ne."));
+                    return Ok(frame, """{"stopReason":"end_turn"}""");
+                default: return frame.TryGetProperty("id", out _) ? Ok(frame, "{}") : null;
+            }
+        });
+
+        // No quiet flush here, so a loaded machine that pauses the reader between two chunks cannot
+        // split a line: going quiet is its own test, below.
+        await new AcpSession(agent.Incoming, agent.Outgoing, lines.Add, quiet: Timeout.InfiniteTimeSpan)
+            .RunAsync("D:/fam/Game", "cap the hydration", CancellationToken.None);
+
+        Assert.Equal(
+            ["· the cap belongs in the streamer", "Capped at 4 per frame.", "The tests pass.", "→ Run tests [pending]", "Done."],
+            lines);
+    }
+
+    /// <summary>
+    /// 🔴 A line the agent's words leave open is shown once they go quiet, while the turn is still
+    /// running. Joining chunks alone held `acp heard: hold this turn` until the next update, and an
+    /// agent that says something and then waits sends none: the family rehearsal's stop never came,
+    /// because the words it waited for never reached the console.
+    /// </summary>
+    [Fact]
+    public async Task Words_left_on_an_open_line_are_shown_once_the_agent_goes_quiet()
+    {
+        var lines = new ConcurrentQueue<string>();
+        using var cts = new CancellationTokenSource();
+        var agent = new FakeAgent((frame, self) =>
+        {
+            switch (frame.GetProperty("method").GetString())
+            {
+                case "initialize": return Ok(frame, """{"protocolVersion":1}""");
+                case "session/new": return Ok(frame, """{"sessionId":"s-1"}""");
+                case "session/prompt":
+                    self.Push(Chunk("agent_message_chunk", "acp heard: "));
+                    self.Push(Chunk("agent_message_chunk", "hold this turn"));
+                    return null; // held: the turn runs until it is stopped
+                default: return frame.TryGetProperty("id", out _) ? Ok(frame, "{}") : null;
+            }
+        });
+
+        var run = new AcpSession(agent.Incoming, agent.Outgoing, lines.Enqueue, quiet: TimeSpan.FromMilliseconds(50))
+            .RunAsync("D:/fam/Game", "hold this turn", cts.Token);
+
+        var deadline = DateTime.UtcNow.AddSeconds(10);
+        while (!lines.Contains("acp heard: hold this turn") && DateTime.UtcNow < deadline) await Task.Delay(20);
+        // Read BEFORE the stop: stopping ends the reader, whose last act shows the open line anyway.
+        var shownWhileHeld = lines.Contains("acp heard: hold this turn") && !run.IsCompleted;
+        cts.Cancel();
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(() => run);
+
+        Assert.Equal(["acp heard: hold this turn"], lines);
+        Assert.True(shownWhileHeld, "the words reached the console only after the turn ended");
+    }
+
+    /// <summary>
+    /// And a line still open when the agent's stream ends is shown, not lost with the process: an
+    /// agent's last words before it died are the ones a person reads the console for.
+    /// </summary>
+    [Fact]
+    public async Task The_words_an_agent_said_before_its_stream_ended_are_still_shown()
+    {
+        var lines = new List<string>();
+        var agent = new FakeAgent((frame, self) =>
+        {
+            switch (frame.GetProperty("method").GetString())
+            {
+                case "initialize": return Ok(frame, """{"protocolVersion":1}""");
+                case "session/new": return Ok(frame, """{"sessionId":"s-1"}""");
+                case "session/prompt":
+                    self.Push(Chunk("agent_message_chunk", "out of "));
+                    self.Push(Chunk("agent_message_chunk", "memory"));
+                    self.Close();
+                    return null;
+                default: return frame.TryGetProperty("id", out _) ? Ok(frame, "{}") : null;
+            }
+        });
+
+        await Assert.ThrowsAsync<DriverException>(() => new AcpSession(agent.Incoming, agent.Outgoing, lines.Add, quiet: Timeout.InfiniteTimeSpan)
+            .RunAsync("D:/fam/Game", "hello", CancellationToken.None));
+
+        Assert.Equal(["out of memory"], lines);
     }
 
     /// <summary>A refusal is part of what happened in the conversation, so it is in the record too.</summary>

@@ -5,6 +5,46 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## The protocol door's console broke the agent's words at every chunk, and the first fix hid them (2026-09-26)
+
+**Symptom.** UX5 U3, on the scratch window. The console of a protocol-door session, driven or a
+chat, wrote each streamed piece of a message as a line of its own, so the raw view read `Capped at `
+over `4 per frame.`, breaking inside words wherever the agent had flushed.
+
+**Root cause.** `AcpSession` rendered every `agent_message_chunk` straight to `onLine`, and a chunk
+is not a line: the wire cuts a message wherever the agent's output was flushed. The native door never
+had the defect, because it writes its console from the whole message, which that wire repeats at the
+end. ACP sends no whole message.
+
+**The first fix hid the words.** Joining the chunks, and ending the open line at a newline or at the
+next thing the wire said, passed every driver test and then failed the family rehearsal at 263/279.
+Its stub says `acp heard: hold this turn` with no newline and holds the turn until it is stopped, so
+the line stayed open, the words the gate waited for never reached the console, and the stop never
+came. The fifteen failures after it were that chat still holding the tree. A real agent that says
+something and then waits would hide its words the same way, for as long as it waits.
+
+**Fix.** `AcpConsole` joins the chunks into lines from the event `Map` made, so the console and the
+record read the words from one place. A newline ends a line, anything else the wire says ends the
+open one first, and **a line the words leave open is shown once they have been quiet for two
+seconds**. One lock covers the reader and the quiet timer, and a flush queued after the reader has
+ended does nothing rather than throw on a pool thread.
+
+**The quiet period was measured, after a guess failed on the window.** Half a second was the first
+choice, and a real Claude Code chat over the protocol door broke its lines with it (`al` over
+`pha: A tidally locked world … stor` over `m-fed oceans.`): a real stream pauses that long mid-word.
+The record keeps a time per event, so the scratch machine's 13 kept conversations gave 2,968 gaps
+between one chunk and the next: median 48ms, p99 557ms, the longest 1,161ms, none over two seconds.
+A line that stays open is what an in-place console line would fix outright. That is the driver, the
+shell's relay, the page's console and the terminal door changing together, and nothing measured asks
+for it yet.
+
+**Verification.** `AcpTests`: the chunks become their lines, a thought's included; the last words
+before a stream ends are shown; and words left open are on the console while the turn is still held.
+That last test passed against a disabled timer at first, because stopping the turn ends the reader
+and its final flush shows the line anyway. It now reads the console before the stop, and it went red
+against the disabled timer before going green against the real one. The family rehearsal holds the
+held-turn case end to end.
+
 ## A session that had ended could not be reviewed, merged or discarded from the screen (2026-09-26)
 
 **Symptom.** Found by FRAME6's look, on the scratch window. A completed chat's Review said *This
