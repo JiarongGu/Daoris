@@ -533,17 +533,24 @@ test('a browser learns nothing about this machine’s harnesses (D49 §4)', asyn
   // really is Settings, because an absence asserted on the wrong page is a check that cannot fail.
   await nav(page, 'Settings').click();
   await expect(page.getByRole('radiogroup', { name: 'Theme' })).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'This machine' })).toHaveCount(0);
-  await expect(page.getByText('Agent tools')).toHaveCount(0);
-  await expect(page.getByText(/harnesses\.json|remotes\.json/)).toHaveCount(0);
+  // 🔴 REV3: these used to look for a "This machine" heading and a "Harnesses" string that no longer
+  // exist anywhere, on the Appearance page where no machine setting would render anyway — so they
+  // passed whatever a browser was shown. The domain list is what a browser is OFFERED, so it is
+  // asserted whole: a machine domain appearing here fails this line.
+  const domains = page.getByRole('navigation', { name: 'Settings domains' }).getByRole('button');
+  await expect(domains).toHaveText([/Appearance/, /Daoris.s own AI/, /Workspace/]);
+
+  // Workspace is the one domain with a machine half (its wiring), so it is opened and that half's
+  // absence asserted where it would render, after its browser half is seen.
+  await domains.filter({ hasText: 'Workspace' }).click();
+  await expect(page.getByText('default').first()).toBeVisible();
+  await expect(page.getByText(/remotes\.json|harnesses\.json|driver\.json/)).toHaveCount(0);
 
   await nav(page, 'Projects').click();
   await expect(page.getByText('the engine runtime — simulation, rendering, assets')).toBeVisible();
-  // No roster, and nothing that would name a configuration home. The per-conversation account
-  // picker moved to the Work frame with the rest of starting a session (D55) — and that frame is
-  // itself absent here, which the test below is about.
-  await expect(page.getByText('Harnesses')).toHaveCount(0);
-  await expect(page.getByText(/\.daoris[\\/]harnesses/)).toHaveCount(0);
+  // Nothing that would name a configuration home: a registration's root is a machine path, and a
+  // browser on the host's own machine is still not told another's (D47 §4).
+  await expect(page.getByText(/[\\/]harnesses[\\/]/)).toHaveCount(0);
 });
 
 /**
