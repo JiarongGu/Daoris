@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api, type AskAction } from './api';
 import { useScope } from './scope';
+import { workspaceOf, workspacesOf } from './workspaces';
 
 // The console is a cache over a service; TanStack Query is that cache done correctly (D42):
 // deduplicated requests (the badge and the Quests view share one fetch), refetch on focus, and
@@ -110,7 +111,7 @@ export const useWorkspaces = () =>
   useQuery({
     queryKey: keys.registry(null),
     queryFn: ({ signal }) => api.registry(null, signal),
-    select: (rows) => [...new Set(rows.map((row) => row.workspace ?? 'default'))].sort(),
+    select: (rows) => workspacesOf(rows),
   });
 
 /**
@@ -124,7 +125,7 @@ export const useWorkspaceHoldings = () =>
     select: (rows) => {
       const members = new Map<string, string[]>();
       for (const row of rows) {
-        const name = row.workspace ?? 'default';
+        const name = workspaceOf(row);
         members.set(name, [...(members.get(name) ?? []), row.repository]);
       }
       return [...members].sort(([a], [b]) => a.localeCompare(b))

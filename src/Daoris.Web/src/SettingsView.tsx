@@ -21,6 +21,7 @@ import {
   Segmented, SelectField, SettingRow, Tip, useErrorNotify,
 } from './ui';
 import { useThemeChoice } from './theme';
+import { workspacesOf } from './workspaces';
 
 /**
  * Settings (D66): the application's own — how it looks, which language it speaks — and, on the
@@ -149,7 +150,7 @@ function MachineAi({ search, notify }: { search?: SearchTier; notify: Notify }) 
   const registry = useRegistry('machine');
   const setIntake = useSetIntake();
   // The circles *What a start runs on* names, spelled the same way — so both cards read one answer.
-  const workspaces = [...new Set((registry.data ?? []).map((r) => r.workspace ?? 'default'))].sort();
+  const workspaces = workspacesOf(registry.data ?? []);
   const answer = useStarts(workspaces);
 
   const harnesses = Array.isArray(roster.data?.harnesses) ? roster.data.harnesses : [];
@@ -557,7 +558,7 @@ function Rules({ notify }: { notify: Notify }) {
   if (!rules) return null;
 
   const rows = registry.data ?? [];
-  const circles = [...new Set(rows.map((row) => row.workspace ?? 'default'))].sort();
+  const circles = workspacesOf(rows);
   const repositories = rows.map((row) => row.repository).sort();
   const where = (scope: string, name: string | undefined) => scope === 'machine'
     ? t('settings.rules.scopeMachine')
@@ -646,7 +647,7 @@ function Starts({ notify }: { notify: Notify }) {
   const { t } = useTranslation();
   const registry = useRegistry('machine');
   const roster = useHarnesses();
-  const workspaces = [...new Set((registry.data ?? []).map((r) => r.workspace ?? 'default'))].sort();
+  const workspaces = workspacesOf(registry.data ?? []);
   const answer = useStarts(workspaces);
   useErrorNotify(answer.error, notify);
 
@@ -792,8 +793,8 @@ function HarnessRoster({ notify }: { notify: Notify }) {
   // The circles this machine has, so an account can be chosen for one (D49 §4) — the terminal
   // could already do it (`daoris agent profile default … --workspace`), and the screen could not.
   const registry = useRegistry('machine');
-  const workspaces = [...new Set((registry.data ?? []).map((r) => r.workspace).filter(Boolean))]
-    .sort() as string[];
+  // Every circle, the unnamed `default` included: the CLI sets that circle's account too.
+  const workspaces = workspacesOf(registry.data ?? []);
   useErrorNotify(roster.error, notify);
 
   // Which action is running, so its console can be shown under the harness that is doing it. One at

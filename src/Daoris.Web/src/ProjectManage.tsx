@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Registration } from './api';
+import { workspaceOf } from './workspaces';
 import { useRegisterRepository, useRetireRepository, useWireRepository } from './queries';
 import { type FolderInspection, usePickFolder, useWriteDeclaration } from './shell';
 import { Button, Chip, Drawer, failure, Inline, type Notify, SectionTitle, Tip } from './ui';
@@ -138,7 +139,7 @@ export function ManageProjectDrawer({ project, onClose, notify }: {
   const register = useRegisterRepository();
   const writeDeclaration = useWriteDeclaration();
 
-  const [workspace, setWorkspace] = useState(project.workspace ?? 'default');
+  const [workspace, setWorkspace] = useState(workspaceOf(project));
   const [summary, setSummary] = useState(project.summary ?? '');
   const [owns, setOwns] = useState(project.owns.join('\n'));
   const [accepts, setAccepts] = useState(project.accepts.join('\n'));

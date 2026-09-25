@@ -6,6 +6,7 @@ import { NO_CARRY } from '../compose/carry';
 import { sentence } from '../format';
 import { useAsk, useAsks, useCloseAsk, usePublishAsk, useQuests, useRegistry, useSessions } from '../queries';
 import { useScope } from '../scope';
+import { workspaceOf, workspacesOf } from '../workspaces';
 import { failure, type Notify, SectionTitle, useErrorNotify } from '../ui';
 import { AskCard } from './AskCard';
 import { AskComposer, type AskDraft } from './AskComposer';
@@ -82,10 +83,10 @@ export function AsksSection({
   if (!focus && focusSeen) setFocusSeen(null);
   useEffect(() => { if (focus && focusSeen === focus) onFocused?.(); }, [focus, focusSeen, onFocused]);
 
-  const circles = [...new Set((family.data ?? []).map((row) => row.workspace ?? 'default'))].sort();
+  const circles = workspacesOf(family.data ?? []);
   const fixed = scope.workspace ?? (circles.length === 1 ? circles[0] : null);
   const receiversIn = (circle: string) => (family.data ?? [])
-    .filter((row) => canBeAsked(row) && (row.workspace ?? 'default') === circle)
+    .filter((row) => canBeAsked(row) && workspaceOf(row) === circle)
     .map((row) => row.repository)
     .sort();
   const questTitles = Object.fromEntries((everything.data ?? []).map((quest) => [quest.id, quest.title]));
