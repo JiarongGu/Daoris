@@ -21,6 +21,7 @@ import { SessionTimeline } from './SessionTimeline';
 import { SessionRail } from './SessionRail';
 import { StartSession, type StartChoice } from './StartSession';
 import { OutputPanel, PANEL_MIN } from './frame';
+import { store, stored } from '../lib/stored';
 
 // Per-viewer conveniences, like the language and the workspace scope (D42): a remembered layout is
 // a preference, never machine wiring and never a tracked file.
@@ -28,21 +29,8 @@ const PANEL_HEIGHT = 'daoris.panelHeight';
 const PANEL_CLOSED = 'daoris.panelClosed';
 
 function remembered(key: string, fallback: number): number {
-  try {
-    const held = Number(window.localStorage.getItem(key));
-    return Number.isFinite(held) && held > 0 ? held : fallback;
-  } catch {
-    // Storage can be absent or refused; a layout that is not remembered still works.
-    return fallback;
-  }
-}
-
-function remember(key: string, value: string): void {
-  try {
-    window.localStorage.setItem(key, value);
-  } catch {
-    // Not remembering is a lesser failure than not working.
-  }
+  const held = Number(stored(key));
+  return Number.isFinite(held) && held > 0 ? held : fallback;
 }
 
 /**
@@ -104,13 +92,7 @@ export function WorkFrame({ selected, onSelect, notify, onSendBack, onAnswerAsk,
   // session, this one is answered by what the person is doing in the next ten seconds.
   const [dock, setDock] = useState<DockTab>('timeline');
   const [height, setHeight] = useState(() => remembered(PANEL_HEIGHT, 200));
-  const [collapsed, setCollapsed] = useState(() => {
-    try {
-      return window.localStorage.getItem(PANEL_CLOSED) === '1';
-    } catch {
-      return false;
-    }
-  });
+  const [collapsed, setCollapsed] = useState(() => stored(PANEL_CLOSED) === '1');
 
   const sessions = useSessions(null, true);
   const quests = useQuests(null, true);
@@ -173,11 +155,11 @@ export function WorkFrame({ selected, onSelect, notify, onSendBack, onAnswerAsk,
 
   const resize = (next: number) => {
     setHeight(next);
-    remember(PANEL_HEIGHT, String(next));
+    store(PANEL_HEIGHT, String(next));
   };
 
   const toggle = () => setCollapsed((was) => {
-    remember(PANEL_CLOSED, was ? '0' : '1');
+    store(PANEL_CLOSED, was ? '0' : '1');
     return !was;
   });
 

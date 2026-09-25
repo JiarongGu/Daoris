@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from 'react';
+import { store, stored } from './lib/stored';
 
 // The theme is the viewer's choice (D66): the system, or light, or dark. It is a per-window-profile
 // preference like the language and the scope — never machine wiring and never a tracked file — and
@@ -13,13 +14,8 @@ export const THEME_KEY = 'daoris.theme';
 
 /** The remembered choice, or the system when there is none or it is one this build does not know. */
 export function readThemeChoice(): ThemeChoice {
-  try {
-    const stored = window.localStorage.getItem(THEME_KEY);
-    return stored === 'light' || stored === 'dark' ? stored : 'system';
-  } catch {
-    // A private window, a blocked origin: the system is a lesser surprise than a broken page.
-    return 'system';
-  }
+  const held = stored(THEME_KEY);
+  return held === 'light' || held === 'dark' ? held : 'system';
 }
 
 let current: ThemeChoice = typeof window === 'undefined' ? 'system' : readThemeChoice();
@@ -40,12 +36,8 @@ export function applyTheme(choice: ThemeChoice = current): void {
 /** Choose, remember, apply, and tell whoever listens — the window's native chrome among them. */
 export function setThemeChoice(choice: ThemeChoice): void {
   current = choice;
-  try {
-    if (choice === 'system') window.localStorage.removeItem(THEME_KEY);
-    else window.localStorage.setItem(THEME_KEY, choice);
-  } catch {
-    // Not remembered; still applied for as long as this page lives.
-  }
+  // Not remembered where storage is refused; still applied for as long as this page lives.
+  store(THEME_KEY, choice === 'system' ? null : choice);
 
   applyTheme(choice);
   for (const listener of listeners) listener();

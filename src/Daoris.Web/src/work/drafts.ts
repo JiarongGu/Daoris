@@ -1,4 +1,5 @@
 import { useCallback, useState } from 'react';
+import { store, stored } from '../lib/stored';
 
 // What a person was typing to each session (CONV4b) — a per-viewer convenience, like the panel's
 // height and the language (D42): never machine wiring, never a tracked file, and never shared. A
@@ -24,7 +25,8 @@ export type Drafts = ReadonlyArray<readonly [string, string]>;
  */
 export function readDrafts(): Drafts {
   try {
-    const held: unknown = JSON.parse(window.localStorage.getItem(DRAFTS) ?? '[]');
+    // The parse is what this guards: a refused store is already `stored`'s null.
+    const held: unknown = JSON.parse(stored(DRAFTS) ?? '[]');
     const pairs: unknown[] = Array.isArray(held)
       ? held
       : held && typeof held === 'object' ? Object.entries(held) : [];
@@ -51,11 +53,8 @@ export function draftOf(all: Drafts, session: string): string {
 }
 
 function keep(all: Drafts): void {
-  try {
-    window.localStorage.setItem(DRAFTS, JSON.stringify(all));
-  } catch {
-    // Not keeping it across a reload is a lesser failure than not taking the keystroke.
-  }
+  // Not keeping it across a reload is a lesser failure than not taking the keystroke.
+  store(DRAFTS, JSON.stringify(all));
 }
 
 /**

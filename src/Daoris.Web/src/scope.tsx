@@ -1,4 +1,5 @@
 import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react';
+import { store, stored } from './lib/stored';
 
 // The workspace scope (WSP5; workspace design §4): every cross-repository answer is scoped to ONE
 // workspace per query, and the platform never silently mixes circles. The scope is global chrome
@@ -23,22 +24,11 @@ type Scope = {
 const ScopeContext = createContext<Scope>({ workspace: null, setWorkspace: () => {} });
 
 function remembered(): string | null {
-  try {
-    const value = window.localStorage.getItem(STORAGE_KEY);
-    return value && value.length > 0 ? value : null;
-  } catch {
-    // Storage can be absent or refused (a private window, a blocked origin); the console still works.
-    return null;
-  }
+  return stored(STORAGE_KEY) || null;
 }
 
 function remember(workspace: string | null): void {
-  try {
-    if (workspace) window.localStorage.setItem(STORAGE_KEY, workspace);
-    else window.localStorage.removeItem(STORAGE_KEY);
-  } catch {
-    // Not remembering is a lesser failure than not working.
-  }
+  store(STORAGE_KEY, workspace || null);
 }
 
 /**

@@ -38,6 +38,7 @@ import { withNotice } from './signals';
 import { CommandPalette } from './work/CommandPalette';
 import { CommandCenter } from './work/CommandCenter';
 import { AppMenu, AppMenuBar } from './work/AppMenu';
+import { store, stored } from './lib/stored';
 
 type Tab = 'overview' | 'sessions' | 'quests' | 'projects' | 'map' | 'convergence' | 'search' | 'settings';
 
@@ -63,27 +64,9 @@ const ATTENDING = 'daoris.attending';
  */
 const SETTINGS_SECTION = 'daoris.settings';
 
-function remembered(key: string): string | null {
-  try {
-    return window.localStorage.getItem(key);
-  } catch {
-    // A private window, a blocked origin: not remembering is a lesser failure than not working.
-    return null;
-  }
-}
-
-function remember(key: string, value: string | null): void {
-  try {
-    if (value === null) window.localStorage.removeItem(key);
-    else window.localStorage.setItem(key, value);
-  } catch {
-    // As above.
-  }
-}
-
 function rememberedView(): Tab {
   // Landing on Overview is the safe half of the choice.
-  return remembered(VIEW) === 'sessions' ? 'sessions' : 'overview';
+  return stored(VIEW) === 'sessions' ? 'sessions' : 'overview';
 }
 
 const NAV: { tab: Tab; icon: IconName; shellOnly?: boolean }[] = [
@@ -109,9 +92,9 @@ const NAV: { tab: Tab; icon: IconName; shellOnly?: boolean }[] = [
 export function App() {
   const { t, i18n } = useTranslation();
   const [tab, setTab] = useState<Tab>(rememberedView);
-  const [attending, setAttendingState] = useState<string | null>(() => remembered(ATTENDING));
+  const [attending, setAttendingState] = useState<string | null>(() => stored(ATTENDING));
   const [settingsSection, setSettingsSection] = useState<SettingsSection>(
-    () => (remembered(SETTINGS_SECTION) as SettingsSection | null) ?? 'appearance');
+    () => (stored(SETTINGS_SECTION) as SettingsSection | null) ?? 'appearance');
   const [readingId, setReadingId] = useState<string | null>(null);
   // A quest the review asked for (SURF6b): the repository whose work is being sent back, handed
   // to the composer as an opening draft. Held here because the door crosses two views.
@@ -258,7 +241,7 @@ export function App() {
 
   const setView = (next: Tab) => {
     setTab(next);
-    remember(VIEW, next === 'sessions' ? 'sessions' : null);
+    store(VIEW, next === 'sessions' ? 'sessions' : null);
   };
 
   /**
@@ -268,7 +251,7 @@ export function App() {
    */
   const chooseSettings = (section: SettingsSection) => {
     setSettingsSection(section);
-    remember(SETTINGS_SECTION, section);
+    store(SETTINGS_SECTION, section);
   };
   const openSettings = (section: SettingsSection) => {
     chooseSettings(section);
@@ -328,7 +311,7 @@ export function App() {
   // what the person was watching rather than an empty column.
   const setAttending = useCallback((next: string | null) => {
     setAttendingState(next);
-    remember(ATTENDING, next);
+    store(ATTENDING, next);
   }, []);
 
   // A door from a record into the session itself. The selection lives here rather than inside the
