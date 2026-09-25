@@ -15,7 +15,7 @@
 // console is a transcript, a log, and eventually an issue someone pastes into.
 
 import { createInterface } from 'node:readline';
-import { flagValue } from './args.ts';
+import { flagValue, operands } from './args.ts';
 import { DaorisError } from './errors.ts';
 import {
   KEY_VARIABLE, PATH_VARIABLE, URL_VARIABLE, WORKSPACE_VARIABLE,
@@ -38,13 +38,7 @@ const VALUED = new Set(['--url', '--key']);
  * whole command exists to avoid producing.
  */
 function named(argv: string[]): string | undefined {
-  for (let at = 1; at < argv.length; at += 1) {
-    const token = argv[at]!;
-    if (VALUED.has(token)) at += 1;
-    else if (!token.startsWith('--')) return token;
-  }
-
-  return undefined;
+  return operands(argv, VALUED)[1];
 }
 
 /**

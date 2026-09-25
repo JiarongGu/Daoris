@@ -39,7 +39,10 @@ import { homedir } from 'node:os';
 import { requireHomeFile } from './home.ts';
 import { join, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
-import { flagValue } from './args.ts';
+import { flagValue, operands } from './args.ts';
+
+/** The `agent` flags that take a value — so that value is never read as an operand. */
+const AGENT_VALUED: ReadonlySet<string> = new Set(['--profile', '--workspace']);
 import { DaorisError } from './errors.ts';
 import { readJsonObject, writeJsonAtomic } from './fsx.ts';
 import { normalizeWorkspace } from './remotemap.ts';
@@ -1003,13 +1006,13 @@ export function commandHarness(
       }
 
       // The pin, and whether it is actually in force (TOOL2/D57). A pin whose directory is not there
-      // is reported as MISSING rather than silently ignored: sessions would run whatever is on PATH,
-      // which is a different tool than the one the person asked for.
+      // is reported as MISSING, with what the driver does about it: it refuses to start a session,
+      // because running whatever is on PATH would be a different tool than the one asked for.
       const pinned = resolveVersion(settings, name, null, null);
       if (pinned) {
         const binary = managedBinary(home, name, pinned, toolchain.binary);
         write(`  ${''.padEnd(14)} pinned ${pinned} — `
-          + (binary ? `managed: ${binary}` : 'NOT INSTALLED, so sessions fall back to PATH'));
+          + (binary ? `managed: ${binary}` : 'NOT INSTALLED, so the driver refuses to start a session on it'));
         if (!binary) {
           write(`  ${''.padEnd(14)} \`daoris agent pin ${name} ${pinned}\` installs it`);
         }
@@ -1086,7 +1089,7 @@ export function commandHarness(
       }
 
       case 'add': {
-        const name = accountsOf(argv[2], 'profile add');
+        const name = accountsOf(operand(argv, 2), 'profile add');
         const profile = bare(argv, 3, 'profile add', '<agent> <profile>');
         const where = profileHome(home, name, profile);
         const existed = existsSync(where);
@@ -1100,7 +1103,7 @@ export function commandHarness(
       }
 
       case 'remove': {
-        const name = accountsOf(argv[2], 'profile remove');
+        const name = accountsOf(operand(argv, 2), 'profile remove');
         const profile = bare(argv, 3, 'profile remove', '<agent> <profile>');
         const where = profileHome(home, name, profile);
 
@@ -1128,7 +1131,7 @@ export function commandHarness(
       }
 
       case 'default': {
-        const name = accountsOf(argv[2], 'profile default');
+        const name = accountsOf(operand(argv, 2), 'profile default');
         const profile = bare(argv, 3, 'profile default', '<agent> <profile> [--workspace <name>]');
         const workspace = flagValue(argv, '--workspace');
         // Refused rather than created: naming a default that does not exist is a typo with a silent
@@ -1257,12 +1260,14 @@ export function commandHarness(
     return { name: value, toolchain };
   }
 
-  function bare(args: string[], from: number, verb: string, shape: string): string {
-    for (let at = from; at < args.length; at += 1) {
-      const token = args[at]!;
-      if (token === '--profile' || token === '--workspace') at += 1;
-      else if (!token.startsWith('--')) return token;
-    }
+  /** The operand at `index`, counting the verb as 0 — flags and their values are never one. */
+  function operand(args: string[], index: number): string | undefined {
+    return operands(args, AGENT_VALUED)[index];
+  }
+
+  function bare(args: string[], index: number, verb: string, shape: string): string {
+    const found = operand(args, index);
+    if (found !== undefined) return found;
 
     throw new DaorisError(`\`agent ${verb}\` needs ${shape} — e.g. \`daoris agent ${verb} claude-code\``);
   }

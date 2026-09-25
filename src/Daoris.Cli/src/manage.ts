@@ -8,6 +8,7 @@
 
 import { isAbsolute, resolve } from 'node:path';
 import { DaorisError } from './errors.ts';
+import { operands } from './args.ts';
 import { endpoint, isLocalService, refusal, request } from './service.ts';
 import type { CommandArgs } from './types.ts';
 import type { ExitCode } from './errors.ts';
@@ -19,7 +20,8 @@ function here(root: string): string {
 
 /** The first bare argument, if there is one. Flags are never a value. */
 function named(argv: string[]): string | undefined {
-  return argv.find((argument) => !argument.startsWith('--'));
+  // `retire` and `import` take no flag with a value, so every bare token is an operand.
+  return operands(argv, new Set())[0];
 }
 
 /**

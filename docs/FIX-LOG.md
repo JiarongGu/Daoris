@@ -5,6 +5,28 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## A flag before the operands became one, and `agent list` promised a fallback the driver refuses (2026-09-25)
+
+**Symptom.** Found by REV3's reading of the CLI.
+- **The operand.** `daoris agent pin --workspace aurora claude-code 2.1.87` answered *"`aurora` is not
+  a Claude Code version"*. The same order in `profile default --workspace …` read `--workspace` as
+  the agent.
+- **The sentence.** `agent list` said a pin nobody installed was *"NOT INSTALLED, so sessions fall back
+  to PATH"*. The driver refuses to start a session on it and says why, which is D57's rule.
+
+**Root cause.** Five commands scanned `argv` their own way. `agent` asked for "the token at index 2,
+or the first bare one after it", which is the flag's value when the flag comes first. `driver retry
+--at` had been fixed the same way on its own that morning (`d7ef48d`). The list's sentence was written
+before the driver's refusal and never revisited.
+
+**Fix.** One parser, `operands(argv, valued)` in `args.ts`, where each command names the flags that
+take a value. `agent`, `remote`, `driver`, `agent rules`, `retire` and `import` read their operands
+through it (REV3 CLI C2). The list says the driver refuses.
+
+**Verify.** `a flag before the operands is not an operand` failed with the `aurora` sentence above,
+and passes. `args.test.ts` holds the helper both ways round. The pin test in `list says which version
+is pinned` failed on the old sentence. CLI 468/468.
+
 ## A refused turn never ended, and an unknown block vanished from the record (2026-09-25)
 
 **Symptom.** Found by REV3's reading of both halves of the conversation.

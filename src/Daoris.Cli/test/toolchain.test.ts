@@ -567,8 +567,12 @@ test('list says which version is pinned, and whether it is actually installed', 
   writeHarnessSettings(at(fx), { ...settings, versions: { 'claude-code': '9.9.9' } });
 
   // Pinned but never installed: the list must say so rather than imply the pin is in force.
-  assert.match(run(['list'], at(fx)).out, /9\.9\.9/);
-  assert.match(run(['list'], at(fx)).out, /not installed|missing/i);
+  const out = run(['list'], at(fx)).out;
+  assert.match(out, /9\.9\.9/);
+  assert.match(out, /not installed|missing/i);
+  // And say what the driver does about it, which is refuse — never run whatever PATH has (REV3 CLI F13).
+  assert.equal(/fall back to PATH/i.test(out), false, out);
+  assert.match(out, /refuse/i, out);
   fx.cleanup();
 });
 
@@ -823,6 +827,16 @@ test('pin refuses a Claude Code from before signed manifests, before anything is
 
   assert.match(error.message, /2\.1\.89/);
   assert.equal(readHarnessSettings(at(fx)).versions['claude-code'], undefined);
+  fx.cleanup();
+});
+
+test("a flag before the operands is not an operand: `pin --workspace aurora claude-code 2.1.87`", () => {
+  // REV3 CLI F14: the version was read as "whatever sits at index 2", which was `aurora`.
+  const fx = makeFixture('harness-pin-flag-first');
+  const error = captureError(() => run(['pin', '--workspace', 'aurora', 'claude-code', '2.1.87'], at(fx)));
+
+  assert.match(error.message, /2\.1\.89/, error.message);
+  assert.equal(/aurora/.test(error.message), false, error.message);
   fx.cleanup();
 });
 

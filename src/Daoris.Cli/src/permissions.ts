@@ -17,7 +17,7 @@
 //
 // It is a MANAGEMENT verb and it opens no socket and spawns nothing: it reads and writes one file.
 
-import { flagValue } from './args.ts';
+import { flagValue, operands as positionals } from './args.ts';
 import { DaorisError } from './errors.ts';
 import type { ExitCode } from './errors.ts';
 import { readJsonObject, writeJsonAtomic } from './fsx.ts';
@@ -254,14 +254,7 @@ export function commandRules({ argv, write }: CommandArgs): ExitCode {
 
   /** The bare tokens after the verb — a flag and its value are not operands. At least one is needed. */
   function operands(what: string): string[] {
-    const bare: string[] = [];
-    for (let index = 1; index < argv.length; index += 1) {
-      if (argv[index]!.startsWith('--')) {
-        index += 1;
-        continue;
-      }
-      bare.push(argv[index]!);
-    }
+    const bare = positionals(argv, new Set(['--workspace', '--repository'])).slice(1);
     if (bare.length === 0) throw new DaorisError(`\`daoris agent rules ${verb}\` needs a ${what}.`);
     return bare;
   }

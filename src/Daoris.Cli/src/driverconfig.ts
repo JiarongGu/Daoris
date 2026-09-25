@@ -14,6 +14,7 @@
 
 import { requireHomeFile } from './home.ts';
 import { DaorisError } from './errors.ts';
+import { operands } from './args.ts';
 import { readJsonObject, writeJsonAtomic } from './fsx.ts';
 import { TOOLCHAINS } from './toolchain.ts';
 import type { CommandArgs } from './types.ts';
@@ -370,12 +371,9 @@ export function commandDriver({ argv, write }: CommandArgs): ExitCode {
   }
 
   function named(args: string[], verb: string): string {
-    for (let at = 1; at < args.length; at += 1) {
-      const token = args[at]!;
-      // A flag's value is never the name (REV3): `retry --at 2 42` read `2` as the quest.
-      if (token === '--at') at += 1;
-      else if (!token.startsWith('--')) return token;
-    }
+    // A flag's value is never the name (REV3): `retry --at 2 42` read `2` as the quest.
+    const name = operands(args, new Set(['--at']))[1];
+    if (name !== undefined) return name;
 
     throw new DaorisError(
       `\`driver ${verb}\` needs a name — e.g. \`daoris driver ${verb} aurora-engine\`.`);
