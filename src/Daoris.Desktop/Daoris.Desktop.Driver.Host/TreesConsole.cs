@@ -17,7 +17,7 @@ internal static class TreesConsole
     public static async Task<int> RunAsync(string[] args)
     {
         var configPath = DriverConfig.ResolvePath();
-        var home = Path.GetDirectoryName(Path.GetFullPath(configPath))!;
+        var home = DriverConfig.HomeOf(configPath);
         var trees = new SessionTrees(home);
 
         switch (args)

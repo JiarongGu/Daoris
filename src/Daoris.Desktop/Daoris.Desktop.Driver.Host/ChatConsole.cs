@@ -68,7 +68,7 @@ internal static class ChatConsole
         var configPath = DriverConfig.ResolvePath();
         var config = DriverConfig.Load(configPath);
         var adapter = Flag(args, "--adapter") ?? config.Adapter;
-        var home = Path.GetDirectoryName(Path.GetFullPath(configPath))!;
+        var home = DriverConfig.HomeOf(configPath);
 
         using var service = ServiceClient.FromEnvironment();
         // Marked under the home, so the desktop sharing it never takes this conversation for an orphan.

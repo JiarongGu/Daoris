@@ -984,7 +984,7 @@ public sealed class DriverModule : ModuleBase
 
         // The same home the loop derives for the chat runner and the watch: the directory holding
         // `driver.json`. Derived rather than stored twice, so one answer cannot drift from the other.
-        var trees = new SessionTrees(Path.GetDirectoryName(Path.GetFullPath(_loop.ConfigPath))!);
+        var trees = new SessionTrees(_loop.Home);
         if (merging)
         {
             var merged = await trees.MergeAsync(tree, cancellationToken);

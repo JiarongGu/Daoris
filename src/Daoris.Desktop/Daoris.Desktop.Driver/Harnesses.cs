@@ -252,8 +252,7 @@ public sealed record HarnessSettings(
         Environment.GetEnvironmentVariable(PathVariable) ?? DefaultPath;
 
     /// <summary>The directory the profile tree and the wiring file share — the Daoris home (D63).</summary>
-    public static string HomeOf(string settingsPath) =>
-        Path.GetDirectoryName(Path.GetFullPath(settingsPath))!;
+    public static string HomeOf(string settingsPath) => DriverConfig.HomeOf(settingsPath);
 
     /// <summary>
     /// A missing file is a machine that named no profiles — not an error. Neither is an unreadable

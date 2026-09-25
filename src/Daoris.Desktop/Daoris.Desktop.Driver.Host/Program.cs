@@ -97,7 +97,7 @@ try
 
     var configPath = DriverConfig.ResolvePath();
     var config = DriverConfig.Load(configPath);
-    var home = Path.GetDirectoryName(Path.GetFullPath(configPath))!;
+    var home = DriverConfig.HomeOf(configPath);
     // Marked under the home, so the desktop sharing it can tell this host's sessions from orphans.
     var processes = new SessionProcesses(Path.Combine(home, "sessions"));
 

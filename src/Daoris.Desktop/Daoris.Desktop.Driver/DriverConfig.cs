@@ -104,6 +104,12 @@ public sealed record DriverConfig(
     public static string ResolvePath() =>
         Environment.GetEnvironmentVariable(PathVariable) ?? DefaultPath;
 
+    /// <summary>
+    /// The Daoris home a config file lives in — the directory holding <c>driver.json</c>, which every
+    /// door derives the home from. Seven places wrote this expression out (REV3 CLEAN1).
+    /// </summary>
+    public static string HomeOf(string configPath) => Path.GetDirectoryName(Path.GetFullPath(configPath))!;
+
     /// <summary>A missing file is a machine that has opted nothing in — the empty config, not an error.</summary>
     public static DriverConfig Load(string path) =>
         File.Exists(path) ? Parse(File.ReadAllText(path)) : Empty;

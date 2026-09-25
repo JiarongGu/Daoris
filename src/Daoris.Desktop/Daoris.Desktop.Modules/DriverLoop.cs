@@ -80,7 +80,7 @@ public sealed class DriverLoop(
     public string ConfigPath { get; } = DriverConfig.ResolvePath();
 
     /// <summary>The Daoris home (D63): the directory every machine-local file lives in.</summary>
-    public string Home => Path.GetDirectoryName(Path.GetFullPath(ConfigPath))!;
+    public string Home => DriverConfig.HomeOf(ConfigPath);
 
     /// <summary>
     /// What establishing the home did on this start, when it is worth a person's attention — state
@@ -200,7 +200,7 @@ public sealed class DriverLoop(
                 .ConfigureAwait(false);
         }
 
-        var homeDirectory = Path.GetDirectoryName(Path.GetFullPath(ConfigPath))!;
+        var homeDirectory = Home;
         var key = Environment.GetEnvironmentVariable(ServiceClient.KeyVariable);
         using var service = new ServiceClient(serviceUrl, key);
 
