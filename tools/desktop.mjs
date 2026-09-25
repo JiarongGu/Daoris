@@ -40,6 +40,9 @@ import {
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { copyTree, isMain } from './fsx.mjs';
+// The install's layout, from the script that makes it (REV3 CLEAN1): one launcher at the root, the home in `data/`.
+import { HOME, LAUNCHER } from './desktop-publish.mjs';
+import { running, stopAll } from './processes.mjs';
 
 export const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 
@@ -173,9 +176,6 @@ export function assemblyExe(projectDir, { flavours = ['Debug', 'Release'] } = {}
   return found[0]?.exe ?? null;
 }
 
-/** What a published install calls its launcher. One file at the root — `desktop-publish.mjs`'s rule. */
-export const INSTALLED_LAUNCHER = 'daoris-desktop.exe';
-
 /**
  * The launcher inside a published install, or null when that folder is not one.
  *
@@ -195,7 +195,7 @@ export const INSTALLED_LAUNCHER = 'daoris-desktop.exe';
  */
 export function installedExe(directory) {
   if (!directory) return null;
-  const launcher = join(directory, INSTALLED_LAUNCHER);
+  const launcher = join(directory, LAUNCHER);
   return existsSync(launcher) ? launcher : null;
 }
 
@@ -238,61 +238,6 @@ const run = (command, args, options = {}) => {
   if (result.error) fail(`${command} did not start: ${result.error.message}`);
   if (result.status !== 0) fail(`${command} ${args[0] ?? ''} exited ${result.status}`, result.status ?? 2);
 };
-
-export const powershell = (script) =>
-  spawnSync('powershell', ['-NoProfile', '-Command', script], { encoding: 'utf8' }).stdout ?? '';
-
-/**
- * Text as a PowerShell single-quoted literal. Backslashes stay literal there (doubling them makes a
- * path never match), and the one character that needs escaping is `'`, doubled (REV3): a checkout
- * under a folder with an apostrophe ended the string early, and the query matched nothing.
- */
-export const psQuote = (text) => `'${String(text).replaceAll("'", "''")}'`;
-
-/** The shells running from a given executable — pid and path, nothing guessed by name. */
-export const running = (exe) => {
-  if (!exe) return [];
-  // Quoted by `psQuote`: a comparison that never matches is a kill that silently no-ops, leaving the
-  // old window holding the port.
-  const out = powershell(
-    `Get-Process -ErrorAction SilentlyContinue | Where-Object { $_.Path -eq ${psQuote(exe)} } | `
-    + 'ForEach-Object { $_.Id }');
-  return out.split('\n').map((line) => Number(line.trim())).filter((pid) => Number.isInteger(pid) && pid > 0);
-};
-
-/**
- * Stop the shells from this checkout — by ASKING first.
- *
- * ⚠ A forced kill skips the app's own teardown, and the teardown is what stops the service host the
- * shell spawned (`OnStopping`: the driver loop, then the host it owns). Orphaned, that host keeps the
- * port and holds a file lock on the very assemblies the next `build` has to overwrite — which is how
- * this was found: two hosts left over from earlier runs made `dotnet build` fail on a copy.
- *
- * Closing the main window runs the same path a person's × does. The force is the backstop, not the
- * method — and nothing here ever touches a host directly, because a host this tool did not start
- * belongs to whoever did (the shell's own supervisor makes exactly that distinction).
- */
-/* Stop the shell this checkout built — by CLOSING it, so its own shutdown path runs.
- *
- * 🔴 That path is what stops the HTTP host the shell spawned and owns, so a forced kill orphans a
- * `daoris-knowledge-http` that then holds the build's own DLLs. Measured: seven of them, after a
- * session of restarts, failing the next `build` with MSB3027.
- *
- * 🔴 `CloseMainWindow` closes whichever window WINDOWS calls main, and since SURF8 that may be the
- * monitor rather than the application — closing it leaves the app running, the wait expires, and the
- * force kill lands. So this closes REPEATEDLY, re-reading the handle each time: the secondary
- * windows go first, the main window last, and the app exits on its own terms. Same trap as the one
- * `shot --window` exists for, in its third disguise. */
-export const stopAll = (exe) => powershell(`
-  Get-Process -ErrorAction SilentlyContinue | Where-Object { $_.Path -eq ${psQuote(exe)} } | ForEach-Object {
-    $process = $_
-    for ($attempt = 0; $attempt -lt 6 -and -not $process.HasExited; $attempt++) {
-      $process.Refresh()
-      if ($process.MainWindowHandle -ne 0) { $process.CloseMainWindow() | Out-Null }
-      $process.WaitForExit(2500) | Out-Null
-    }
-    if (-not $process.HasExited) { $process | Stop-Process -Force }
-  }`);
 
 const readRun = () => (existsSync(RUN_FILE) ? JSON.parse(readFileSync(RUN_FILE, 'utf8')) : null);
 
@@ -432,7 +377,7 @@ async function start(command, args) {
   const install = takeInstall(args);
   const exe = install ? installedExe(install) : assemblyExe(DESKTOP_PROJECT);
   if (install && !exe) {
-    fail(`no \`${INSTALLED_LAUNCHER}\` at the root of \`${install}\` — that is not an install.\n`
+    fail(`no \`${LAUNCHER}\` at the root of \`${install}\` — that is not an install.\n`
       + '  Point --install at the folder you published to (the one holding the launcher, `app/`\n'
       + '  and `data/`), not at its parent.');
   }
@@ -457,7 +402,7 @@ async function start(command, args) {
 
   if (real) {
     console.log(install
-      ? `⚠ --install: the DEPLOYED application, on its own home (${join(install, 'data')}).`
+      ? `⚠ --install: the DEPLOYED application, on its own home (${join(install, HOME)}).`
       : `⚠ --real: your own Daoris home (${process.env.DAORIS_HOME ?? 'DAORIS_HOME is not set — '
         + 'the shell will refuse'}) — your registry, your quests, your drivable set.`);
     console.log('  The driver loop starts with the app, so a drivable repository with an open quest');
@@ -512,7 +457,7 @@ async function start(command, args) {
   console.log(`  platform   ${serviceUrl}`);
   console.log(`  debug port ${cdpPort}`);
   console.log(`  machine    ${real
-    ? `${install ? join(install, 'data') : process.env.DAORIS_HOME ?? '(no DAORIS_HOME)'} — YOUR OWN`
+    ? `${install ? join(install, HOME) : process.env.DAORIS_HOME ?? '(no DAORIS_HOME)'} — YOUR OWN`
     : join(scratchRoot, 'home')}`);
 }
 

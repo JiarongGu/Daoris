@@ -10,9 +10,11 @@ import { readText, listFiles } from '../src/fsx.ts';
 // be a second description of the tool to keep in step with it — and the thing this suite asserts is
 // the tool's BEHAVIOUR, which a stale declaration would not protect.
 import {
-  CLEARED, REDIRECTED, assemblyExe, installedExe, prune, psQuote, scratchEnvironment,
+  CLEARED, REDIRECTED, assemblyExe, installedExe, prune, scratchEnvironment,
   // @ts-expect-error — untyped workspace tooling; see above
 } from '../../../tools/desktop.mjs';
+// @ts-expect-error — untyped workspace tooling; see above
+import { psQuote, running } from '../../../tools/processes.mjs';
 
 /** What `prune` takes: one capture on disk. Declared here because the tool itself is untyped. */
 type Capture = { path: string; at: number; size: number };
@@ -237,4 +239,14 @@ test('a path is quoted for PowerShell with its apostrophes doubled and its backs
   assert.equal(psQuote('D:\\builds\\o\'brien\\app.exe'), "'D:\\builds\\o''brien\\app.exe'");
   assert.equal(psQuote('plain'), "'plain'");
   assert.equal(psQuote("''"), "''''''");
+});
+
+/**
+ * The one query the dev loop, the deployment gate and the publish share (REV3 CLEAN1), asked about a
+ * process that is certainly running from a known path: this test's own. One question only — each
+ * costs a PowerShell start, seconds on this platform — and the deployment gate asks the rest.
+ */
+test('the processes running from a path are found by that path', { skip: process.platform !== 'win32' }, () => {
+  assert.ok((running(process.execPath) as number[]).includes(process.pid));
+  assert.deepEqual(running(''), []);
 });

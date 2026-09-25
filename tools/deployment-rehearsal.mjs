@@ -49,27 +49,14 @@ import { fileURLToPath } from 'node:url';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { copyTree, isMain } from './fsx.mjs';
 import { capture, makeChecker, openTranscript } from './rehearsal-kit.mjs';
+// The install's layout, from the script that makes it (REV3 CLEAN1) — never a second spelling of it.
+import { HOME, HOST_EXE, HOST_HOME, LAUNCHER } from './desktop-publish.mjs';
 
 // ---------------------------------------------------------------------------------------------
 // Everything above the divider runs; everything below it is asserted by
 // `src/Daoris.Cli/test/deployment-rehearsal.test.ts`. The phases are their own evidence — they
 // publish a real folder and start a real window — but the PREDICATES are not: a transcript check
 // that compared decoded strings would pass on exactly the bytes this gate exists to catch.
-
-/** The one thing at an install's root a person is meant to run. */
-export const SHELL_EXE = 'daoris-desktop.exe';
-
-/** The service host's file name, both halves of the pair using the same spelling. */
-export const HOST_EXE = 'daoris-knowledge-http.exe';
-
-/**
- * Where `desktop-publish --service` puts the host inside an install, as path segments.
- *
- * 🔴 This is one half of the counterpart set defect 2a was: the installer's layout and the locator's
- * candidate list must be the same layout, and until a deployment there was nothing that read both.
- * The test beside this file reads `ServiceHostLocator.cs` for the other half.
- */
-export const HOST_HOME = ['app', 'daoris-knowledge-http'];
 
 /** Entries at an install's root that a person could double-click. The publish claims there is one. */
 export function launchers(entries) {
@@ -142,7 +129,7 @@ const home = join(scratch, 'home');
 const family = join(scratch, 'family');
 const newcomer = join(family, 'newcomer');
 
-const shellExe = join(install, SHELL_EXE);
+const shellExe = join(install, LAUNCHER);
 const installedHost = join(install, ...HOST_HOME, HOST_EXE);
 
 /** The line the stub says, and the line phase 5 looks for on disk. Both halves, one constant. */
@@ -167,7 +154,8 @@ const children = [];
 
 const run = (command, cwd, env = {}, timeout = 0) => capture(command, cwd, { env, timeout });
 
-const { CLEARED, REDIRECTED, powershell, psQuote, running, stopAll } = await import('./desktop.mjs');
+const { CLEARED, REDIRECTED } = await import('./desktop.mjs');
+const { powershell, processesAt, running, stopAll } = await import('./processes.mjs');
 const { freePort } = await import('./cdp.mjs');
 
 const API_TIMEOUT = 30_000;
@@ -299,7 +287,7 @@ async function main() {
     published.out.split('\n').slice(-12).join('\n'));
 
   const atRoot = existsSync(install) ? readdirSync(install) : [];
-  check('one executable at the root, and it is the shell', launchers(atRoot).join() === SHELL_EXE,
+  check('one executable at the root, and it is the shell', launchers(atRoot).join() === LAUNCHER,
     `root holds: ${atRoot.join(', ')}`);
   check('no symbols and no package doc files rode along', strays(atRoot).length === 0,
     strays(atRoot).join(', '));
@@ -557,15 +545,13 @@ if (!done.ok) throw new Error(done.text);
       : 'no new host process appeared');
   console.log(`        located: ${started.map((host) => host.path).join(', ') || '(none)'}`);
 
-  const window = powershell(
-    `Get-Process -ErrorAction SilentlyContinue | Where-Object { $_.Path -eq ${psQuote(shellExe)} } | `
-    + 'ForEach-Object { "$($_.MainWindowHandle)|$($_.MainWindowTitle)" }').trim();
+  const window = processesAt(shellExe, '"$($_.MainWindowHandle)|$($_.MainWindowTitle)"').trim();
   check('the window is up', Boolean(window) && !window.startsWith('0|'), window || '(no process)');
 
   // INSTALLED.md tells whoever opens the folder that `data/` is this install's own state. Nothing
   // read it back until now, and a deployed shell writing its WebView2 profile somewhere else is a
   // folder that cannot be deleted to uninstall.
-  check('the install keeps its own state in data/', existsSync(join(install, 'data')),
+  check(`the install keeps its own state in ${HOME}/`, existsSync(join(install, HOME)),
     readdirSync(install).join(', '));
 
   // The plugin's process, started by the DEPLOYED shell's own loop from the home it was told. The

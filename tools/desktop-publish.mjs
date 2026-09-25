@@ -29,6 +29,7 @@ import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync
 import { dirname, isAbsolute, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { isMain } from './fsx.mjs';
+import { running } from './processes.mjs';
 
 // ---------------------------------------------------------------------------------------------
 // Everything above the divider is the guard, exported so `src/Daoris.Cli/test/desktop-publish.test.ts`
@@ -39,10 +40,32 @@ export const MARKER = 'INSTALLED.md';
 export const MARKER_HEADER = '# Daoris — installed desktop';
 
 /**
+ * The install's layout, stated once (REV3 CLEAN1): one launcher at the root, supporting binaries
+ * under `app/`, the home in `data/` (D63). The deployment gate, the dev loop and the testbed read
+ * these rather than spelling the names again, which four of them did.
+ */
+export const LAUNCHER = 'daoris-desktop.exe';
+
+/**
+ * Where `--service` puts the HTTP host inside an install, as path segments.
+ *
+ * 🔴 One half of the counterpart set defect 2a was: this layout and `ServiceHostLocator`'s candidate
+ * list must be the same layout, and until a deployment nothing read both.
+ * `deployment-rehearsal.test.ts` reads the locator for the other half.
+ */
+export const HOST_HOME = Object.freeze(['app', 'daoris-knowledge-http']);
+
+/** The service host's file name inside {@link HOST_HOME}. */
+export const HOST_EXE = 'daoris-knowledge-http.exe';
+
+/** The shell's own home, which it creates on first start (D63). */
+export const HOME = 'data';
+
+/**
  * Every name a publish writes at the root of an install — and the shell's own `data/`, which it
  * creates on first start. Nothing else in that folder is ever this script's to touch.
  */
-export const OWN = Object.freeze(['daoris-desktop.exe', 'app', 'data', MARKER]);
+export const OWN = Object.freeze([LAUNCHER, HOST_HOME[0], HOME, MARKER]);
 
 /** Whether this script published here before: the marker, with its header — a file with that name proves nothing. */
 export function isInstall(folder) {
@@ -132,17 +155,11 @@ function main() {
    * lines of `Microsoft.NET.HostModel.Bundle` internals for "close the app". Checked before anything
    * is built, so the answer arrives in a second rather than after the whole web bundle.
    */
-  const installed = join(to, 'daoris-desktop.exe');
+  const installed = join(to, LAUNCHER);
   if (process.platform === 'win32' && existsSync(installed)) {
-    const held = execSync(
-      'powershell -NoProfile -Command "'
-      + `Get-Process -ErrorAction SilentlyContinue | Where-Object { $_.Path -eq '${installed.replace(/'/g, "''")}' }`
-      + ' | Select-Object -ExpandProperty Id"',
-      { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] },
-    ).trim();
-
-    if (held) {
-      console.error(`desktop-publish: the install at \`${to}\` is running (pid ${held.split(/\s+/).join(', ')}).`);
+    const held = running(installed);
+    if (held.length > 0) {
+      console.error(`desktop-publish: the install at \`${to}\` is running (pid ${held.join(', ')}).`);
       console.error('  Close it and re-run — a running application holds its own executable open, and');
       console.error('  publishing over it fails halfway through, leaving the folder part-written.');
       process.exit(2);
@@ -172,8 +189,8 @@ function main() {
   if (flag('--service')) {
     // Supporting binaries go under `app/`, which is the shape the neighbouring applications on this
     // machine use: one launcher at the root, everything it needs out of sight, runtime state in `data/`.
-    console.log('desktop-publish: publishing the HTTP host under app/…');
-    const host = join(to, 'app', 'daoris-knowledge-http');
+    console.log(`desktop-publish: publishing the HTTP host under ${HOST_HOME[0]}/…`);
+    const host = join(to, ...HOST_HOME);
 
     // 🔴 REPLACED, not published over. `dotnet publish` does not clear its output, so a re-publish
     // leaves every previous hashed bundle in `wwwroot/assets` — and `index.html` names only the
@@ -206,16 +223,16 @@ Published from a Daoris workspace by \`tools/desktop-publish.mjs\`.
 
 | | |
 |---|---|
-| \`daoris-desktop.exe\` | **the application** — the only thing to run. One file. |
-| \`app/\` | supporting binaries, when published with \`--service\`. Nothing to open. |
-| \`data/\` | **the Daoris home**: the registry, the quests, the drivable set, the harness profiles, the installed service binaries — and the WebView2 profile and the window's geometry. |
+| \`${LAUNCHER}\` | **the application** — the only thing to run. One file. |
+| \`${HOST_HOME[0]}/\` | supporting binaries, when published with \`--service\`. Nothing to open. |
+| \`${HOME}/\` | **the Daoris home**: the registry, the quests, the drivable set, the harness profiles, the installed service binaries — and the WebView2 profile and the window's geometry. |
 
 Anything else in this folder is not the application's — repositories it drives, typically — and a
 re-publish never touches it.
 
 ## Where everything lives
 
-In \`data/\`, and nowhere under your user profile. On first start the application sets
+In \`${HOME}/\`, and nowhere under your user profile. On first start the application sets
 \`DAORIS_HOME\` to that folder for itself and — once, if your account has none — for your account,
 which is how the \`daoris\` CLI on a terminal and the desktop are **two doors onto one machine**: what
 one sets the other sees. A \`.daoris\` folder under your profile from an earlier version moves in on
@@ -229,7 +246,7 @@ Re-publish over this folder to update it; nothing here is edited by hand.
 `);
 
   console.log(`\ndesktop-publish: installed to ${to}`);
-  console.log(`  Its home is ${join(to, 'data')} (D63) — starting it starts the driver loop.`);
+  console.log(`  Its home is ${join(to, HOME)} (D63) — starting it starts the driver loop.`);
 }
 
 // Guarded, because the guard above is imported by a unit test — and `node --test` importing this

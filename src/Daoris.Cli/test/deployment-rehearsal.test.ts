@@ -4,9 +4,12 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { readText } from '../src/fsx.ts';
 import {
-  HOST_EXE, HOST_HOME, SHELL_EXE, hookLines, insideWorkspace, launchers, strays, transcriptHolds, utf8Of,
+  hookLines, insideWorkspace, launchers, strays, transcriptHolds, utf8Of,
   // @ts-expect-error — untyped workspace tooling; the same seam desktop-tool.test.ts documents
 } from '../../../tools/deployment-rehearsal.mjs';
+// The install's layout, from the script that makes it: the gate reads the same constants.
+// @ts-expect-error — untyped workspace tooling; the same seam desktop-tool.test.ts documents
+import { HOST_EXE, HOST_HOME } from '../../../tools/desktop-publish.mjs';
 
 /**
  * The deployment gate (`tools/deployment-rehearsal.mjs`) is workspace tooling, tested from here for
@@ -129,11 +132,4 @@ test('a hook process is this install’s only when it was started from under its
     '',
   ].join('\r\n');
   assert.deepEqual(hookLines(rows, scratch), [101, 404]);
-});
-
-test('the gate and the publish script agree on what the install is called', () => {
-  const publish = readText(join(repoRoot, 'tools', 'desktop-publish.mjs'));
-  assert.ok(publish.includes(`'${SHELL_EXE}'`), `the publish no longer names ${SHELL_EXE}`);
-  assert.ok(publish.includes(`join(to, 'app', '${HOST_HOME[1]}')`),
-    `the publish no longer puts the host in ${HOST_HOME.join('/')}`);
 });
