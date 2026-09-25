@@ -5,6 +5,28 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## The pre-commit leak scan read the wrong copy, and skipped non-ASCII names (2026-09-25)
+
+**Symptom.** Found by REV3's reading of the devkit.
+- **The wrong copy.** `sensitive --staged` listed the staged paths, then read each file from the
+  working tree. A leak that was staged, then cleaned in the working copy without re-staging, was
+  committed by a scan that passed.
+- **Skipped names.** git prints a path outside ASCII quoted and escaped (`"\346\226\207.md"`). That
+  quoted name matched no file on disk, so its content was never read, by the sensitive gate or by
+  the links gate that reads the same list. Only the path was scanned.
+
+**Root cause.** The staged scope borrowed the tree scope's file read, and both listings read git's
+display format rather than its machine format.
+
+**Fix.** The staged scan reads the index's copy (`git show :path`), which is what the commit holds.
+Both listings use `-z`, whose NUL-separated paths git never quotes. The test fixture also clears
+git's read-only object files before deleting itself.
+
+**Verify.** Two new tests run against a real repository in the fixture folder:
+`A_staged_scan_reads_what_is_staged_not_the_working_copy` and `A_file_named_outside_ascii_is_read_not_skipped`.
+Both were re-run against the old gate with the fixture fix in place, and failed on their assertions,
+not on cleanup. Devkit 78/78; `verify`'s five gates pass over this repository.
+
 ## Settings offered only the scoped circle's choices (2026-09-25)
 
 **Symptom.** Found by REV3's reading of the page. Settings is the machine's, whatever the window is
