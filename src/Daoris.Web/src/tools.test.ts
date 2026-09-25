@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { byTool, doorOf, toolOf, type ToolDoor } from './tools';
+import { type Account, byTool, doorOf, toolOf, type ToolDoor } from './tools';
 
 /**
  * The roster's grouping, after the owner read four adapter rows as four tools (2026-09-22).
@@ -61,7 +61,7 @@ describe('byTool', () => {
    * twice it reads as two accounts, which is the same misreading one level down.
    */
   it('reports one account once, however many doors can see it', () => {
-    const profiles = [{ name: 'owner', home: '/profiles/owner', login: 'in' }];
+    const profiles: Account[] = [{ name: 'owner', home: '/profiles/owner', login: 'in' }];
     const tools = byTool([
       door({ harness: 'claude-code', profiles }),
       door({ harness: 'claude-code-acp', accountOf: 'claude-code', profiles }),

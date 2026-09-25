@@ -7,7 +7,7 @@ import { ago } from './format';
 import { useRegistry, useRepositories } from './queries';
 import { useScope } from './scope';
 import { useDriver, useHarnesses, useSetDrivable, useSetHold, useSetTrees } from './shell';
-import { doorOf, type ToolDoor } from './tools';
+import { doorOf } from './tools';
 import {
   Button, Card, Chip, EmptyState, failure, Icon, Inline, type Notify, PageHeader, Prose, SkeletonRows, Tip,
   useErrorNotify,
@@ -65,7 +65,7 @@ export function ProjectsView({ notify, addRequested = false, onAddOpened }: {
   // door only (D70), so on a direct one its row says a quest there will sit. Unknown says nothing.
   const door = doorOf(
     roster.data?.adapter,
-    Array.isArray(roster.data?.harnesses) ? (roster.data.harnesses as ToolDoor[]) : []);
+    Array.isArray(roster.data?.harnesses) ? roster.data.harnesses : []);
 
   /** This machine's driving row for one repository — the same row wherever it can be driven. */
   const driving = (repository: string, extra: { note?: string; action?: ReactNode; className?: string }) =>

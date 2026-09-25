@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { getBridge, useShenora, useShenoraEvent } from '@shenora/react';
 import { keys } from './queries';
 import type { Consideration, TrustHold } from './signals';
+import type { ToolDoor } from './tools';
 // The shape lives beside the components that render it, so a molecule can name it without
 // importing this module (SURF6).
 import type { SessionDiff } from './work/diff';
@@ -659,51 +660,15 @@ export const useStartChat = () => {
  * only ever the person pressing something. The one secret that crosses this bridge is an API key a
  * person types (`key-add`, D67 §1), once, inward — answered only by its last four characters.
  */
-export type HarnessProfile = {
-  name: string;
-  home: string;
-  login: 'in' | 'out' | 'unknown';
-  /** Who the tool says is signed in there (D66 §3) — the name a person knows it by; null when it does not say. */
-  account?: string | null;
-  /** An account that is an API key (AGT3): the key's last four characters, never the key. */
-  key?: string | null;
-};
-export type HarnessReport = {
-  harness: string;
-  present: boolean;
-  version: string | null;
-  problem: string | null;
-  machineDefault: string | null;
-  /** The version this machine pinned, or null for whatever is on `PATH` (TOOL2/D57). */
-  pinned: string | null;
-  /**
-   * The managed binary actually installed at that pin, or null.
-   *
-   * @remarks
-   * `pinned` without `managed` is a pin naming a version nobody installed — which **refuses every
-   * spawn** rather than quietly running `PATH`, so a surface must say so rather than imply the pin
-   * is in force.
-   */
-  managed: string | null;
-  /**
-   * Whether this harness can be pinned at all — false where it declares no package for Daoris to
-   * fetch. The control is **absent** there rather than present and refusing: half a control is
-   * worse than none, which is the same rule the palette and the parked session's moves follow.
-   */
-  pinnable: boolean;
-  /**
-   * Whether a session on this harness's door keeps a conversation's structure (D76 §1) — the protocol
-   * door, or a native door whose adapter reads the harness's own structured output. What an empty
-   * record is read by (CONV3b).
-   */
-  structured?: boolean;
-  profiles: HarnessProfile[];
-};
 export type HarnessRoster = {
   settingsPath: string;
   /** Which adapter this machine spawns sessions with — `driver.json`'s, shown beside the roster. */
   adapter: string;
-  harnesses: HarnessReport[];
+  /**
+   * One row per door, in `tools.ts`'s one type for it (REV3 CLEAN1: this payload had two types, and
+   * five readers cast one to the other).
+   */
+  harnesses: ToolDoor[];
 };
 
 /**

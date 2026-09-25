@@ -30,13 +30,30 @@ export interface ToolDoor {
   /** What a person calls the tool this door runs, and who makes it (AGT1). Absent from an older shell. */
   product?: string | null;
   maker?: string | null;
+  /**
+   * Whether this harness can be pinned at all — false where it declares no package for Daoris to
+   * fetch. The control is **absent** there rather than present and refusing: half a control is
+   * worse than none, which is the same rule the palette and the parked session's moves follow.
+   */
   pinnable?: boolean;
   /** Whether this door can run the tool's sign-in — false where it declares no login flow. Absent from an older shell. */
   signsIn?: boolean;
   /** Whether this agent takes an API key from Daoris (AGT3) — only where its key variable was measured. */
   takesKey?: boolean;
+  /** The version this machine pinned, or null for whatever is on `PATH` (TOOL2/D57). */
   pinned?: string | null;
+  /**
+   * The managed binary actually installed at that pin, or null. `pinned` without `managed` is a pin
+   * naming a version nobody installed — which **refuses every spawn** rather than quietly running
+   * `PATH`, so a surface must say so rather than imply the pin is in force.
+   */
   managed?: string | null;
+  /**
+   * Whether a session on this door keeps a conversation's structure (D76 §1) — the protocol door, or
+   * a native door whose adapter reads the harness's own structured output. What an empty record is
+   * read by (CONV3b).
+   */
+  structured?: boolean;
   machineDefault?: string | null;
   profiles?: Account[];
   /** What the tool says about logging in to its OWN configuration home — the account a person has before naming any. */
@@ -56,7 +73,8 @@ export interface ToolDoor {
 export interface Account {
   name: string;
   home: string;
-  login: string;
+  /** Asked of the tool, and one of three answers (SES3): only a definite `out` refuses. */
+  login: 'in' | 'out' | 'unknown';
   account?: string | null;
   /** An account that is an API key (AGT3): its handle, never the key. */
   key?: string | null;

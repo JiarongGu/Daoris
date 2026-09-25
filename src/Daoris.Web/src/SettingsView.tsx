@@ -156,7 +156,7 @@ function MachineAi({ search, notify }: { search?: SearchTier; notify: Notify }) 
   const harnesses = Array.isArray(roster.data?.harnesses) ? roster.data.harnesses : [];
   // An agent a person can name here is a way in this machine HAS: one not installed would hold every
   // intake, and a choice whose only outcome is a hold is worse than none.
-  const agents = (harnesses as ToolDoor[])
+  const agents = harnesses
     .filter((door) => door.present)
     .map((door) => ({
       value: door.harness,
@@ -180,7 +180,7 @@ function MachineAi({ search, notify }: { search?: SearchTier; notify: Notify }) 
           adapter: driver.data.intakeAdapter || null,
           agents,
           starts: starts.filter((start) => start.job === 'intake'),
-          nameOf: namer(t, harnesses as ToolDoor[]),
+          nameOf: namer(t, harnesses),
           busy: setIntake.isPending,
           onChange: (adapter) => setIntake.mutate({ adapter }, {
             onSuccess: () => notify(adapter
@@ -661,7 +661,7 @@ function Starts({ notify }: { notify: Notify }) {
     <Card className="mt-3.5">
       <SectionTitle>{t('wiring.title')}</SectionTitle>
       <Prose className="mb-3 mt-0 text-small text-ink-soft">{t('wiring.body')}</Prose>
-      <StartWiringList starts={starts} nameOf={namer(t, harnesses as ToolDoor[])} />
+      <StartWiringList starts={starts} nameOf={namer(t, harnesses)} />
     </Card>
   );
 }
@@ -960,7 +960,7 @@ function HarnessRoster({ notify }: { notify: Notify }) {
           has one Claude Code and one account for it; whether Daoris holds the session over a pipe or
           over the protocol is Daoris's business, not a second tool. `byTool` reads that off
           `accountOf` and `wire`, both of which have said it all along. */}
-      {byTool(harnesses as ToolDoor[]).map((tool) => (
+      {byTool(harnesses).map((tool) => (
         <div
           key={tool.name}
           className="mt-3 rounded-card border border-line bg-page/60 p-3 first:mt-3.5"
