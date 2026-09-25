@@ -94,6 +94,38 @@ public sealed class RegistryImportTests : IDisposable
         Assert.Null(proposed.Summary);
     }
 
+    /// <summary>
+    /// JSON of the wrong SHAPE is as broken as JSON that will not parse (REV3 service F15). A manifest
+    /// that is an array, or a lock whose entries are numbers, threw past the `JsonException` catch
+    /// and took down the whole import — and, from the lock, the whole refresh.
+    /// </summary>
+    [Theory]
+    [InlineData("[]")]
+    [InlineData("\"a string\"")]
+    [InlineData("""{ "target": 5, "domain": [] }""")]
+    public void A_manifest_of_the_wrong_shape_is_still_adopted(string manifest)
+    {
+        Repo("Odd", manifest);
+
+        var proposed = Assert.Single(RegistryImport.Propose(_root));
+
+        Assert.True(proposed.Adopted);
+    }
+
+    [Theory]
+    [InlineData("[]")]
+    [InlineData("""{ "entries": [1, "x", null] }""")]
+    [InlineData("""{ "entries": [{ "target": 5 }, { "target": "rules/a.md", "in": 7 }] }""")]
+    public void A_lock_of_the_wrong_shape_reads_as_everything_local(string lockText)
+    {
+        Repo("Odd", """{ "target": 5 }""");
+        File.WriteAllText(Path.Combine(_root, "Odd", "daoris.lock"), lockText);
+
+        var read = DaorisLock.Read(Path.Combine(_root, "Odd"));
+
+        Assert.Equal(Provenance.Local, read.ProvenanceOf(".claude/knowledge/anything.md"));
+    }
+
     [Fact]
     public void A_folder_that_does_not_exist_proposes_nothing()
     {

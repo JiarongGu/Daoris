@@ -100,7 +100,9 @@ public sealed class DaorisLock
                     pair => (IReadOnlyList<Span>)pair.Value,
                     StringComparer.OrdinalIgnoreCase));
         }
-        catch (JsonException)
+        // Wrong shape as well as wrong syntax (REV3): an element read on a number or an array throws
+        // InvalidOperationException, and a lock like that failed the whole refresh.
+        catch (Exception error) when (error is JsonException or InvalidOperationException)
         {
             return Empty;
         }
@@ -123,7 +125,9 @@ public sealed class DaorisLock
                 ? target
                 : ".claude";
         }
-        catch (JsonException)
+        // Wrong shape as well as wrong syntax (REV3): an element read on a number or an array throws
+        // InvalidOperationException, and a lock like that failed the whole refresh.
+        catch (Exception error) when (error is JsonException or InvalidOperationException)
         {
             return ".claude";
         }

@@ -69,7 +69,9 @@ public static class RegistryImport
                 // manifest; an import reads manifests the CLI never validated, so it narrows too.
                 SharesKnowledge: joined && remote is not null && Bool(remote.Value, "knowledge"));
         }
-        catch (JsonException)
+        // JSON of the wrong shape (an array, a string) throws InvalidOperationException from the element
+        // reads, and is as broken as JSON that will not parse (REV3).
+        catch (Exception error) when (error is JsonException or InvalidOperationException)
         {
             // A manifest that will not parse is the repository's own problem and its own tooling will
             // say so. Here it means only that we cannot read the declaration — which is not a reason to

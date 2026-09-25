@@ -5,6 +5,24 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## JSON of the wrong shape crashed an import, or a whole refresh (2026-09-25)
+
+**Symptom.** Found by REV3's reading of the service. A `daoris.json` that is valid JSON but not an
+object (`[]`, a string) threw out of `RegistryImport`, and took the whole import down with it. A
+`daoris.lock` whose entries are numbers, or whose `target` is not a string, threw out of
+`DaorisLock.Read`, which the index calls for every repository — so one odd lock failed the refresh
+for all of them. Both readers promise the opposite: a broken file is that repository's problem.
+
+**Root cause.** Both caught `JsonException` only. `JsonElement`'s reads throw
+`InvalidOperationException` when the value is the wrong kind, and that was never caught.
+
+**Fix.** Both catch the two exceptions together, so a file of the wrong shape is handled like a
+file that will not parse.
+
+**Verify.** `A_manifest_of_the_wrong_shape_is_still_adopted` and
+`A_lock_of_the_wrong_shape_reads_as_everything_local`: five of their six cases failed before the fix.
+Service 495/495.
+
 ## A mistyped kind widened a search, and a repository filter depended on case (2026-09-25)
 
 **Symptom.** Found by REV3's reading of the service.
