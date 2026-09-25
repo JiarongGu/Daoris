@@ -843,33 +843,6 @@ public sealed class DriverModule : ModuleBase
         }
     }
 
-    /// <summary>An optional string on a request — absent and blank are the same answer: unstated.</summary>
-    /// <summary>
-    /// The three moves a person may make on a parked session — `completed`, `declined`, `stopped`,
-    /// each carrying what they want the record to say (design §4).
-    /// </summary>
-    /// <remarks>
-    /// <para><b>Narrowed here, not re-judged.</b> The ledger allows a fourth from `awaiting-person`
-    /// — back to `working` — and that one is the DRIVER's observation, not a button: a person
-    /// resumes a conversation by answering it, which is the composer's job. Narrowing the person's
-    /// verbs is a surface rule and belongs on the surface; everything about whether the move is
-    /// legal at all stays the ledger's (D36), and its refusal reaches the person verbatim.</para>
-    ///
-    /// <para><b>The process goes first.</b> A record that says `completed` while this machine still
-    /// holds the process is exactly the lie the observed lifecycle exists to prevent — so the
-    /// process is let go, and the record moves after. `Stop` answering false is not an error: the
-    /// common case is a session parked with nothing of ours still running.</para>
-    ///
-    /// <para><b>Declining needs a reason</b>, the same rule the quest door already holds and for the
-    /// same reason: the note is the part whoever reads the record can act on.</para>
-    ///
-    /// <para><b>A move with no note still writes one.</b> The store keeps the previous note when a
-    /// move carries none (deliberately — a later move must not erase what an earlier one recorded),
-    /// so a session finished at a checkpoint would otherwise read <i>reached completed</i> beside
-    /// the analysis it was parked with, which says the opposite of what happened. The stamped
-    /// sentence also carries the one fact the state cannot: `completed` normally means the session
-    /// closed its own quest, and this one means a person decided it was done.</para>
-    /// </remarks>
     /// <summary>
     /// One session's landed work, as a diff (SURF6).
     /// </summary>
@@ -986,6 +959,32 @@ public sealed class DriverModule : ModuleBase
         return new { Session = id, Done = removal.Removed, removal.Message };
     }
 
+    /// <summary>
+    /// The three moves a person may make on a parked session — `completed`, `declined`, `stopped`,
+    /// each carrying what they want the record to say (design §4).
+    /// </summary>
+    /// <remarks>
+    /// <para><b>Narrowed here, not re-judged.</b> The ledger allows a fourth from `awaiting-person`
+    /// — back to `working` — and that one is the DRIVER's observation, not a button: a person
+    /// resumes a conversation by answering it, which is the composer's job. Narrowing the person's
+    /// verbs is a surface rule and belongs on the surface; everything about whether the move is
+    /// legal at all stays the ledger's (D36), and its refusal reaches the person verbatim.</para>
+    ///
+    /// <para><b>The process goes first.</b> A record that says `completed` while this machine still
+    /// holds the process is exactly the lie the observed lifecycle exists to prevent — so the
+    /// process is let go, and the record moves after. `Stop` answering false is not an error: the
+    /// common case is a session parked with nothing of ours still running.</para>
+    ///
+    /// <para><b>Declining needs a reason</b>, the same rule the quest door already holds and for the
+    /// same reason: the note is the part whoever reads the record can act on.</para>
+    ///
+    /// <para><b>A move with no note still writes one.</b> The store keeps the previous note when a
+    /// move carries none (deliberately — a later move must not erase what an earlier one recorded),
+    /// so a session finished at a checkpoint would otherwise read <i>reached completed</i> beside
+    /// the analysis it was parked with, which says the opposite of what happened. The stamped
+    /// sentence also carries the one fact the state cannot: `completed` normally means the session
+    /// closed its own quest, and this one means a person decided it was done.</para>
+    /// </remarks>
     private async Task<object?> ResolveAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
@@ -1314,6 +1313,10 @@ public sealed class DriverModule : ModuleBase
         return code;
     }
 
+    /// <summary>What every route that needs the loop's service says before it answers (REV3 CLEAN1: five wrote it).</summary>
+    private static Exception NotReady() => Refusals.Because(
+        Refusals.DriverNotReady, "the driver is still coming up — its service is not answering yet. A moment.");
+
     /// <summary>
     /// Make a credential profile under a name the caller chose: a directory, and nothing else (DEPLOY3).
     /// </summary>
@@ -1322,10 +1325,6 @@ public sealed class DriverModule : ModuleBase
     /// failure. The page makes accounts by signing in (<c>login-new</c>, D66 §3); this is the
     /// bridge's half of <c>daoris agent profile add</c>, for a name a person picks before signing in.
     /// </remarks>
-    /// <summary>What every route that needs the loop's service says before it answers (REV3 CLEAN1: five wrote it).</summary>
-    private static Exception NotReady() => Refusals.Because(
-        Refusals.DriverNotReady, "the driver is still coming up — its service is not answering yet. A moment.");
-
     private int ProfileAdd(string harness, IpcRequest request)
     {
         Directory.CreateDirectory(HarnessSettings.ProfileHome(_loop.Harnesses.Home, harness, Named(request)));
