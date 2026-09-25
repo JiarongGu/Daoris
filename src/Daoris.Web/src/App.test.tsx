@@ -221,6 +221,14 @@ describe('the shell in a browser, over two workspaces', () => {
     expect(within(domains).getByRole('button', { name: "Daoris's own AI" })).toHaveAttribute('aria-current', 'page');
   });
 
+  /** REV3 web-rest F14: a window is the shell's to open, so a browser's View menu offers none. */
+  it('the View menu offers a browser the palette and no window', async () => {
+    shell();
+    await openMenu('View');
+    await screen.findByRole('menuitem', { name: 'Commands' });
+    expect(screen.queryByRole('menuitem', { name: 'Monitor window' })).toBeNull();
+  });
+
   /**
    * SYNC6b: where the chosen circle stands comes from this machine's host, so a browser here reads it
    * — and a conflict in it opens that quest. What a browser does not get is *Sync now*: the pass is

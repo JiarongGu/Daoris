@@ -384,7 +384,9 @@ export function App() {
               active={false}
               items={[
                 { id: 'palette', label: t('palette.title'), icon: 'search' },
-                { id: 'monitor', label: t('work.menu.monitor'), icon: 'monitor', separated: true },
+                // A window is the shell's to open, so a browser is offered none — the item was there
+                // and did nothing (REV3), which the machine items above already knew not to do.
+                ...(attached ? [{ id: 'monitor', label: t('work.menu.monitor'), icon: 'monitor' as const, separated: true }] : []),
               ]}
               onChoose={(_, item) => {
                 if (item === 'palette') { setPalette(true); return; }
