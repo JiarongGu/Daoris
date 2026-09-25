@@ -228,12 +228,7 @@ public sealed class SessionStore
             ("base_commit", "base_commit TEXT NULL"),
         })
         {
-            if (!await HasColumnAsync(column, ct).ConfigureAwait(false))
-            {
-                await using var alter = _connection.CreateCommand();
-                alter.CommandText = $"ALTER TABLE sessions ADD COLUMN {definition}";
-                await alter.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
-            }
+            await SchemaColumns.EnsureAsync(_connection, "sessions", column, definition, ct).ConfigureAwait(false);
         }
 
         await RelaxQuestAsync(ct).ConfigureAwait(false);
@@ -242,7 +237,7 @@ public sealed class SessionStore
         // this store wrote them in. Both are DERIVED for rows that already exist — a mirrored row's id
         // already carries its origin, and the order rows were written in is the order they were
         // inserted — so a store from before the sync pushes and serves every record it holds.
-        if (!await HasColumnAsync("origin", ct).ConfigureAwait(false))
+        if (!await SchemaColumns.HasAsync(_connection, "sessions", "origin", ct).ConfigureAwait(false))
         {
             await using var alter = _connection.CreateCommand();
             alter.CommandText = """
@@ -252,7 +247,7 @@ public sealed class SessionStore
             await alter.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
         }
 
-        if (!await HasColumnAsync("revision", ct).ConfigureAwait(false))
+        if (!await SchemaColumns.HasAsync(_connection, "sessions", "revision", ct).ConfigureAwait(false))
         {
             await using var alter = _connection.CreateCommand();
             alter.CommandText = """
@@ -263,12 +258,7 @@ public sealed class SessionStore
         }
 
         // INT4b: the ask an intake answers. After the rebuild, like SYNC4's pair, so it cannot drop it.
-        if (!await HasColumnAsync("ask", ct).ConfigureAwait(false))
-        {
-            await using var alter = _connection.CreateCommand();
-            alter.CommandText = "ALTER TABLE sessions ADD COLUMN ask TEXT NULL";
-            await alter.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
-        }
+        await SchemaColumns.EnsureAsync(_connection, "sessions", "ask", "ask TEXT NULL", ct).ConfigureAwait(false);
 
         await using (var cursor = _connection.CreateCommand())
         {
@@ -282,14 +272,6 @@ public sealed class SessionStore
                 """;
             await cursor.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
         }
-    }
-
-    private async Task<bool> HasColumnAsync(string column, CancellationToken ct)
-    {
-        await using var probe = _connection.CreateCommand();
-        probe.CommandText = "SELECT COUNT(*) FROM pragma_table_info('sessions') WHERE name = $name";
-        probe.Parameters.AddWithValue("$name", column);
-        return Convert.ToInt32(await probe.ExecuteScalarAsync(ct).ConfigureAwait(false)) > 0;
     }
 
     /// <summary>

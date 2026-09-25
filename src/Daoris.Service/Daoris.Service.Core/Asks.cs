@@ -88,16 +88,7 @@ public sealed class AskStore
 
         // INT4b: which intake session served it. An ask made before the intake existed keeps every
         // word it had — it is the record of what a person asked, and nothing re-derives it.
-        await using (var probe = connection.CreateCommand())
-        {
-            probe.CommandText = "SELECT COUNT(*) FROM pragma_table_info('asks') WHERE name = 'intake'";
-            if (Convert.ToInt32(await probe.ExecuteScalarAsync(ct).ConfigureAwait(false)) == 0)
-            {
-                await using var alter = connection.CreateCommand();
-                alter.CommandText = "ALTER TABLE asks ADD COLUMN intake TEXT NULL";
-                await alter.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
-            }
-        }
+        await SchemaColumns.EnsureAsync(connection, "asks", "intake", "intake TEXT NULL", ct).ConfigureAwait(false);
 
         return store;
     }

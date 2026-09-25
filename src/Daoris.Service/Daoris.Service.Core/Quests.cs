@@ -289,18 +289,13 @@ public sealed class QuestStore
             ("quest_log", "remote", "remote INTEGER NULL"),
         })
         {
-            if (!await HasColumnAsync(table, column, ct).ConfigureAwait(false))
-            {
-                await using var alter = _connection.CreateCommand();
-                alter.CommandText = $"ALTER TABLE {table} ADD COLUMN {definition}";
-                await alter.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
-            }
+            await SchemaColumns.EnsureAsync(_connection, table, column, definition, ct).ConfigureAwait(false);
         }
 
         // The mirror is gone (design §8). Its rows were copies of a remote's quests, so they are
         // dropped rather than migrated: this machine's cursor starts at zero, and its first fetch
         // brings every one of them back as history. The column that marked them goes with them.
-        if (await HasColumnAsync("quests", "home", ct).ConfigureAwait(false))
+        if (await SchemaColumns.HasAsync(_connection, "quests", "home", ct).ConfigureAwait(false))
         {
             await using var drop = _connection.CreateCommand();
             drop.CommandText = """
@@ -309,14 +304,6 @@ public sealed class QuestStore
                 """;
             await drop.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
         }
-    }
-
-    private async Task<bool> HasColumnAsync(string table, string column, CancellationToken ct)
-    {
-        await using var probe = _connection.CreateCommand();
-        probe.CommandText = $"SELECT COUNT(*) FROM pragma_table_info('{table}') WHERE name = $name";
-        probe.Parameters.AddWithValue("$name", column);
-        return Convert.ToInt32(await probe.ExecuteScalarAsync(ct).ConfigureAwait(false)) > 0;
     }
 
     /// <summary>

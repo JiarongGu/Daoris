@@ -113,7 +113,7 @@ public sealed class RegistrationStore
 
         // What the held knowledge says, hashed (SYNC5a). NULL on every row from before it, which the
         // ordering reads as "compare nothing, take the same commit once".
-        await EnsureColumnAsync("feed_provenance", "digest", "digest TEXT NULL", ct).ConfigureAwait(false);
+        await SchemaColumns.EnsureAsync(_connection, "feed_provenance", "digest", "digest TEXT NULL", ct).ConfigureAwait(false);
 
         // A store created before the driver existed has no root column — and one created before the
         // remote existed has no declaration columns. Registrations must survive the upgrade: a schema
@@ -137,7 +137,7 @@ public sealed class RegistrationStore
             ("default_branch", "default_branch TEXT NULL"),
         })
         {
-            await EnsureColumnAsync("registrations", column, definition, ct).ConfigureAwait(false);
+            await SchemaColumns.EnsureAsync(_connection, "registrations", column, definition, ct).ConfigureAwait(false);
         }
 
         // After the columns, because the triggers name three of them an old store only has once
@@ -184,19 +184,6 @@ public sealed class RegistrationStore
         }
     }
 
-    private async Task EnsureColumnAsync(string table, string column, string definition, CancellationToken ct)
-    {
-        await using var probe = _connection.CreateCommand();
-        probe.CommandText = $"SELECT COUNT(*) FROM pragma_table_info('{table}') WHERE name = $name";
-        probe.Parameters.AddWithValue("$name", column);
-        var present = Convert.ToInt32(await probe.ExecuteScalarAsync(ct).ConfigureAwait(false));
-        if (present == 0)
-        {
-            await using var alter = _connection.CreateCommand();
-            alter.CommandText = $"ALTER TABLE {table} ADD COLUMN {definition}";
-            await alter.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
-        }
-    }
 
     /// <summary>
     /// Record what a repository declared. Re-registering replaces: the repository is the identity.
