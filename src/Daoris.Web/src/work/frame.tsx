@@ -10,6 +10,14 @@ import { Mark } from '../Mark';
 // are one arrangement rather than four features — what the workbench references all have and what
 // this platform had nowhere to put.
 
+/** The attribute the app strip's layout groups carry: their empty space is the strip's own. */
+export const STRIP_SPACE = 'data-strip-space';
+
+/** A press on the strip itself, or on space one of its groups leaves empty — never on a control. */
+function isStripSpace(target: EventTarget, strip: EventTarget) {
+  return target === strip || (target instanceof HTMLElement && target.hasAttribute(STRIP_SPACE));
+}
+
 /**
  * The **app strip** (D56): the application's one global row, across the top of the window.
  *
@@ -50,16 +58,18 @@ export function AppStrip({
       // The title bar's own gesture. `onPointerDown` rather than a click: the OS move loop has to
       // start while the button is still down, which is also why the host dispatches it inline.
       onPointerDown={(event) => {
-        // Only the strip itself drags. A press that began on a menu or the scope is that control's,
-        // and handing it to the OS would make every button a drag handle.
-        if (event.button !== 0 || event.target !== event.currentTarget) return;
+        // Only the strip's own space drags. A press that began on a menu or the scope is that
+        // control's, and handing it to the OS would make every button a drag handle.
+        if (event.button !== 0 || !isStripSpace(event.target, event.currentTarget)) return;
         onDragStart?.();
       }}
       onDoubleClick={(event) => {
-        if (event.target !== event.currentTarget) return;
+        if (!isStripSpace(event.target, event.currentTarget)) return;
         onToggleMaximize?.();
       }}
-      className="relative flex h-9 shrink-0 items-center gap-3 border-b border-line bg-raised pl-3"
+      // 🔴 One line, by rule: a Chinese label may break between any two characters, so without this
+      // 中文's menus wrapped onto two lines each (道 / 衍) once the sides shared the strip (UX5 U15).
+      className="relative flex h-9 shrink-0 items-center gap-3 whitespace-nowrap border-b border-line bg-raised"
     >
       {/* The frameless technique hands the top edge to the client, so the top resize border is
           re-added by a sliver that asks the OS for a size loop. Above the strip's own contents in
@@ -72,35 +82,47 @@ export function AppStrip({
         />
       )}
 
-      {/* 🔴 The MARK alone (owner, 2026-09-22). The name was 20px of serif in every window forever,
-          and a title bar is where an IDE puts what you can DO — the application's name belongs in its
-          About, which the menu beside this now carries. D41 §1 gave the serif one appearance; this is
-          it not being spent on saying the name of the thing you are already looking at. */}
-      <div className="pointer-events-none flex items-center pl-0.5">
-        <Mark size={18} className="text-accent" />
+      {/* 🔴 Three groups, and the middle one is the command center (UX5 U15). The two sides grow
+          alike from nothing, so the middle is centred on the STRIP while both fit beside it, rather
+          than on whatever the mark and the menus leave over. When they do not fit, the middle gives
+          way instead of covering them: it was laid over the strip at a fixed 28rem, and at 888px it
+          ran over the View menu. VS Code's title bar behaves the same way. 🔴 The mark's inset is
+          the mark's own: the sides share the free space by their CONTENT boxes, so padding on the
+          strip or on a group puts the middle that far off centre (12px, measured on the window). */}
+      <div {...{ [STRIP_SPACE]: 'start' }} className="flex h-full flex-1 basis-0 items-center gap-3">
+        {/* 🔴 The MARK alone (owner, 2026-09-22). The name was 20px of serif in every window
+            forever, and a title bar is where an IDE puts what you can DO — the application's name
+            belongs in its About, which the menu beside this now carries. D41 §1 gave the serif one
+            appearance; this is it not being spent on saying the name of the thing you are already
+            looking at. */}
+        <div className="pointer-events-none flex items-center pl-3.5">
+          <Mark size={18} className="text-accent" />
+        </div>
+
+        {/* The application's menus (VS Code's menu bar). There is no mode switch beside them any
+            more (D66): the activity bar is the one navigation, so a second one up here was a concept
+            and a click between every reading and every working. */}
+        {menus}
       </div>
 
-      {/* The application's menus (VS Code's menu bar). There is no mode switch beside them any more
-          (D66): the activity bar is the one navigation, so a second one up here was a concept and a
-          click between every reading and every working. */}
-      {menus}
+      {/* The middle, which used to be ~1,400px of nothing at any real window width. */}
+      <div {...{ [STRIP_SPACE]: 'center' }} className="flex h-full min-w-0 basis-md items-center justify-center">
+        {center}
+      </div>
 
-      {/* The middle, which used to be ~1,400px of nothing at any real window width. Absolutely
-          positioned so it centres on the STRIP rather than on whatever is left over after the mark
-          and the menus — a flex-centred child drifts as those change width. */}
-      {center}
+      <div {...{ [STRIP_SPACE]: 'end' }} className="flex h-full flex-1 basis-0 items-center justify-end gap-3">
+        <div className="flex items-center gap-2">{scope}</div>
 
-      <div className="ml-auto flex items-center gap-2">{scope}</div>
-
-      {/* Reserved, never drawn: the window owns these pixels. Three slots of 44px — the width the
-          strip has always held open, so nothing shifted when they became real. */}
-      {captionRoom && (
-        <div aria-hidden className="flex h-full shrink-0">
-          {CAPTION_SLOTS.map((kind) => (
-            <div key={kind} {...{ [CAPTION_ATTRIBUTE]: kind }} className="h-full w-11" />
-          ))}
-        </div>
-      )}
+        {/* Reserved, never drawn: the window owns these pixels. Three slots of 44px — the width the
+            strip has always held open, so nothing shifted when they became real. */}
+        {captionRoom && (
+          <div aria-hidden className="flex h-full shrink-0">
+            {CAPTION_SLOTS.map((kind) => (
+              <div key={kind} {...{ [CAPTION_ATTRIBUTE]: kind }} className="h-full w-11" />
+            ))}
+          </div>
+        )}
+      </div>
     </header>
   );
 }

@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
 
@@ -21,7 +21,7 @@ vi.mock('@shenora/react', async () => {
 
 import './i18n';
 import { CAPTION_ATTRIBUTE, CAPTION_SLOTS, captionRects } from './windowChrome';
-import { AppStrip } from './work/frame';
+import { AppStrip, STRIP_SPACE } from './work/frame';
 
 /** A strip with three laid-out slots, as the real one has once the browser has measured it. */
 function strip(sizes: Partial<Record<string, DOMRect>> = {}): HTMLElement {
@@ -111,6 +111,57 @@ describe('the app strip as a title bar', () => {
 
     await userEvent.pointer({ keys: '[MouseLeft>]', target: screen.getByRole('button', { name: 'app menu' }) });
     expect(onDragStart).toHaveBeenCalledTimes(1);
+  });
+
+  /**
+   * The strip's groups lay it out, and the space they leave empty is still the strip's: a press
+   * there drags, as a press on the strip itself does.
+   */
+  it('drags from the space its groups leave empty, as from the strip itself', async () => {
+    const { onDragStart } = show({ center: <button type="button">command center</button> });
+    const spaces = [...document.querySelectorAll<HTMLElement>(`[${STRIP_SPACE}]`)];
+    expect(spaces).toHaveLength(3);
+
+    for (const space of spaces) await userEvent.pointer({ keys: '[MouseLeft]', target: space });
+    expect(onDragStart).toHaveBeenCalledTimes(3);
+  });
+
+  /**
+   * 🔴 UX5 U15: the command center was laid OVER the strip, centred on its whole width at a fixed
+   * 28rem, and at a narrow window (888px) it ran over the View menu. It sits in the strip's flow now,
+   * between two groups that grow alike from nothing: centred on the strip while both fit beside it,
+   * and giving way to them when they do not, as VS Code's does. The geometry is the window's to show
+   * (`npm run desktop -- shot`); this holds the arrangement that produces it.
+   */
+  it('lays the command center between the menus and the scope, never over them', () => {
+    show({ center: <button type="button">command center</button>, scope: <span>every circle</span> });
+    const [start, center, end] = [...document.querySelectorAll<HTMLElement>(`[${STRIP_SPACE}]`)];
+
+    expect([start, center, end].map((group) => group.getAttribute(STRIP_SPACE))).toEqual(['start', 'center', 'end']);
+    expect(within(start).getByRole('button', { name: 'app menu' })).toBeInTheDocument();
+    expect(within(center).getByRole('button', { name: 'command center' })).toBeInTheDocument();
+    expect(within(end).getByText('every circle')).toBeInTheDocument();
+    expect(end.querySelectorAll(`[${CAPTION_ATTRIBUTE}]`)).toHaveLength(3);
+
+    // The two sides grow alike from nothing, which is what centres the middle on the strip; the
+    // middle never grows and may shrink below its pill, which is what makes it the one that yields.
+    for (const side of [start, end]) expect(side).toHaveClass('flex-1', 'basis-0');
+    // 🔴 And neither the strip nor a group carries padding: the sides share the free space by their
+    // content boxes, so 12px of padding put the middle 12px off centre on the window. The mark's
+    // inset is the mark's own.
+    for (const box of [screen.getByRole('banner'), start, center, end]) {
+      expect(box.className).not.toMatch(/(^|\s)p[lrx]?-/);
+    }
+    expect(center).toHaveClass('min-w-0', 'basis-md');
+    expect(center).not.toHaveClass('flex-1');
+
+    // 🔴 One line, by rule. A Chinese label may break between any two characters, so once the sides
+    // shared the strip, 中文's menus wrapped onto two lines each (道 / 衍) at 888px, on the window.
+    expect(screen.getByRole('banner')).toHaveClass('whitespace-nowrap');
+
+    // Nothing is laid over the strip but the resize sliver, which is 4px at its very top.
+    const over = [...screen.getByRole('banner').querySelectorAll('.absolute')];
+    expect(over).toEqual([document.querySelector('.cursor-ns-resize')]);
   });
 
   it('ignores a press that is not the primary button — a right-click is a menu, not a drag', async () => {

@@ -53,17 +53,33 @@ describe('CommandCenter', () => {
   });
 
   /**
-   * 🔴 The centring wrapper spans the whole strip, and the strip is the window's drag handle. A
-   * wrapper that took pointers would make the title bar undraggable everywhere except its ends —
-   * which is invisible in a browser, where there is no window to move, and immediately wrong in the
-   * shell. Asserted here because the shell is the one surface the unit loop cannot run in.
+   * 🔴 It is the pill and nothing around it. It used to bring a centring wrapper that spanned the
+   * whole strip, which had to refuse pointers or the title bar would lose its drag; the strip lays
+   * the pill out now (UX5 U15), so there is no wrapper to take a press.
    */
-  it('lets the title bar keep its drag everywhere except the pill itself', () => {
+  it('is the pill alone, so no wrapper of its own can take the title bar\'s drag', () => {
     const { container } = render(
       <CommandCenter scope="testbed" onOpen={() => {}} label="Search and run commands" />,
     );
 
-    expect(container.firstElementChild).toHaveClass('pointer-events-none');
-    expect(open()).toHaveClass('pointer-events-auto');
+    expect(container.firstElementChild).toBe(open());
+  });
+
+  /**
+   * 🔴 Narrowed to its least (a 500px window, UX5 U15), the pill clipped its own words: `defau`,
+   * cut mid-letter, with the shortcut pushed out of sight. The shortcut goes first below 12rem of
+   * pill, then the detail, then the scope ends in an ellipsis. jsdom has no container queries, so
+   * this holds the rules and the window shows them.
+   */
+  it('gives up the shortcut first when narrowed, and ends the scope in an ellipsis rather than a cut', () => {
+    render(
+      <CommandCenter scope="testbed" detail="a chat" shortcut="Ctrl K" onOpen={() => {}} label="Search and run commands" />,
+    );
+
+    expect(open()).toHaveClass('@container');
+    expect(screen.getByText('Ctrl K')).toHaveClass('@max-[12rem]:hidden');
+    expect(screen.getByText('testbed')).toHaveClass('truncate', 'min-w-0');
+    expect(screen.getByText('testbed')).not.toHaveClass('shrink-0');
+    expect(screen.getByText('a chat')).toHaveClass('truncate');
   });
 });

@@ -98,6 +98,15 @@ The mode switch leaves the sidebar, which is the move D55 §a already named and 
 piece of the answer. The workspace scope leaves the sidebar foot for the same reason: it decides what
 every number on every screen means, so it belongs to the application.
 
+**The strip is three groups on one line**: the mark and the menus, the command center, then the
+scope and the caption room. The two outer groups grow alike from nothing, so the command center is
+centred on the strip while both fit beside it, and gives way to them when they do not, as VS Code's
+does. It never covers a menu, and it narrows before anything else does: the shortcut goes first,
+then the scope ends in an ellipsis. No padding sits on the strip or a group, since the sides share
+the space by their content boxes and padding would put the middle off centre. The line never wraps,
+because a Chinese label may break between any two characters (UX5 U15). The space the groups leave
+empty drags the window as the strip does.
+
 **Since SURF7 this strip is the title bar** (§5): it drags the window, double-click maximizes it, a
 sliver above it resizes from the top, and the three reserved slots are the rectangles the **window**
 paints its caption buttons into. SURF10 built the strip as a region with the room already held open,

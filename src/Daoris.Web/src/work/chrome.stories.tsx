@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import { ActivityBar, AppStrip } from './frame';
+import { CommandCenter } from './CommandCenter';
 import { Button, Icon, LanguageSwitcher } from '../ui';
 
 // The application's own chrome (D56, D66): the strip across the top and the bar down the side. Both
@@ -47,6 +48,21 @@ export const WithScope: Story = {
         every circle
       </span>
     ),
+  },
+};
+
+/**
+ * 🔴 A narrow window (UX5 U15): the four menus, the command center, the scope and the caption room
+ * in 52rem. The pill used to be laid over the strip at a fixed 28rem, and here it ran over the View
+ * menu. It gives way to the menus now, and centres on the strip again once the window is wide
+ * enough for both sides to fit beside it.
+ */
+export const AtANarrowWindow: Story = {
+  args: {
+    menus: <span className="text-small text-ink-soft">Daoris · Workspace · Agents · View</span>,
+    center: <CommandCenter scope="every circle" shortcut="Ctrl K" onOpen={() => {}} label="Search and run commands" />,
+    scope: <span className="text-small text-ink-soft">game</span>,
+    captionRoom: true,
   },
 };
 
