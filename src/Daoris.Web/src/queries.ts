@@ -79,8 +79,14 @@ export const useRepositories = () => {
   });
 };
 
-export const useRegistry = () => {
-  const { workspace } = useScope();
+/**
+ * The registry — the window's scope by default, or the whole machine's for a choice that is the
+ * machine's whatever the window shows: Settings (REV3). Scoped, a window on one circle offered a rule,
+ * an account's default and a start only that circle's workspaces and repositories.
+ */
+export const useRegistry = (reach: 'window' | 'machine' = 'window') => {
+  const { workspace: scoped } = useScope();
+  const workspace = reach === 'machine' ? null : scoped;
   return useQuery({
     queryKey: keys.registry(workspace),
     queryFn: ({ signal }) => api.registry(workspace, signal),

@@ -5,6 +5,23 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## Settings offered only the scoped circle's choices (2026-09-25)
+
+**Symptom.** Found by REV3's reading of the page. Settings is the machine's, whatever the window is
+scoped to. But its choices read the registry through the window's scope: a rule's scope, an
+account's workspace default, what a start runs on per workspace, and the intake per workspace. A
+window scoped to one circle therefore offered only that circle's workspaces and repositories, and
+the rest of the machine could not be set from it.
+
+**Root cause.** One registry hook, always scoped, used by a view that is not.
+
+**Fix.** `useRegistry('machine')` reads the whole registry, and the four Settings uses take it. The
+default is still the window's scope.
+
+**Verify.** `reads the whole registry for a machine-wide choice, whatever the window is scoped to`
+asked `/api/registry?workspace=aurora` before the fix, and asks `/api/registry` now. Shell and App
+tests 109/109.
+
 ## A bridge timeout said something on this machine had refused (2026-09-25)
 
 **Symptom.** Found by REV3's reading of the page. The page turns a bridge failure's code into a

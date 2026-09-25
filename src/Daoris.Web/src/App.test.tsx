@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import { App } from './App';
-import { keys, useRefreshIndex } from './queries';
+import { keys, useRefreshIndex, useRegistry } from './queries';
 import { WorkspaceScopeProvider } from './scope';
 
 // The shell in BROWSER mode — no bridge, so nothing shell-only renders — over a stubbed service that
@@ -114,6 +114,25 @@ describe('the shell in a browser, over two workspaces', () => {
 
     expect(client.getQueryState(keys.considered)?.isInvalidated).toBe(false);
     expect(client.getQueryState(keys.repositories(null))?.isInvalidated).toBe(true);
+  });
+
+  /**
+   * REV3 web-rest F9: Settings is the machine's, whatever the window is scoped to. Its choices — a
+   * rule's scope, an account's workspace default, what a start runs on — came from the SCOPED registry,
+   * so a window scoped to one circle offered only that circle's workspaces and repositories.
+   */
+  it('reads the whole registry for a machine-wide choice, whatever the window is scoped to', async () => {
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const { result } = renderHook(() => useRegistry('machine'), {
+      wrapper: ({ children }) => (
+        <QueryClientProvider client={client}>
+          <WorkspaceScopeProvider initial="aurora">{children}</WorkspaceScopeProvider>
+        </QueryClientProvider>
+      ),
+    });
+
+    await waitFor(() => expect(result.current.data).toHaveLength(2));
+    expect(requested().filter((url) => url.startsWith('/api/registry'))).toEqual(['/api/registry']);
   });
 
   it('offers the scope in the app strip, stating that it spans every workspace', async () => {

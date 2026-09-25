@@ -146,7 +146,7 @@ function MachineAi({ search, notify }: { search?: SearchTier; notify: Notify }) 
   const { t } = useTranslation();
   const driver = useDriver();
   const roster = useHarnesses();
-  const registry = useRegistry();
+  const registry = useRegistry('machine');
   const setIntake = useSetIntake();
   // The circles *What a start runs on* names, spelled the same way — so both cards read one answer.
   const workspaces = [...new Set((registry.data ?? []).map((r) => r.workspace ?? 'default'))].sort();
@@ -549,7 +549,7 @@ function Rules({ notify }: { notify: Notify }) {
   const answer = useRules();
   const act = useRuleAction();
   const settle = useRuleProposal();
-  const registry = useRegistry();
+  const registry = useRegistry('machine');
   useErrorNotify(answer.error, notify);
 
   // An older shell has never heard of the question: the card is absent rather than the page blank.
@@ -644,7 +644,7 @@ function WorkspaceList() {
 
 function Starts({ notify }: { notify: Notify }) {
   const { t } = useTranslation();
-  const registry = useRegistry();
+  const registry = useRegistry('machine');
   const roster = useHarnesses();
   const workspaces = [...new Set((registry.data ?? []).map((r) => r.workspace ?? 'default'))].sort();
   const answer = useStarts(workspaces);
@@ -791,7 +791,7 @@ function HarnessRoster({ notify }: { notify: Notify }) {
   const usage = useUsage();
   // The circles this machine has, so an account can be chosen for one (D49 §4) — the terminal
   // could already do it (`daoris agent profile default … --workspace`), and the screen could not.
-  const registry = useRegistry();
+  const registry = useRegistry('machine');
   const workspaces = [...new Set((registry.data ?? []).map((r) => r.workspace).filter(Boolean))]
     .sort() as string[];
   useErrorNotify(roster.error, notify);
