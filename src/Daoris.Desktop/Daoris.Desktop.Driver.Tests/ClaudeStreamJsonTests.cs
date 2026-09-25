@@ -47,6 +47,26 @@ public sealed class ClaudeStreamJsonTests
         Assert.Single(lines, line => line.Contains("Capped at 4 per frame."));
     }
 
+    /// <summary>
+    /// REV3: "something the wire said that this build has no kind for — kept, never dropped" held for
+    /// frames and not for a message's BLOCKS: a redacted thought, a server tool or an image yielded no
+    /// line and no event. The protocol door keeps its unknowns raw; so does this one now.
+    /// </summary>
+    [Fact]
+    public void A_block_this_build_has_no_kind_for_is_kept_raw_under_its_own_name()
+    {
+        const string redacted = """
+            {"type":"assistant","message":{"id":"msg_9","content":[{"type":"redacted_thinking","data":"opaque"},{"type":"text","text":"Done."}]}}
+            """;
+
+        var (_, events, _) = Map(Init, redacted, Result);
+
+        var raw = Assert.Single(events, e => e.Kind == SessionEventKind.Raw);
+        Assert.Equal("redacted_thinking", raw.Title);
+        Assert.Contains("opaque", raw.Raw);
+        Assert.Equal("Done.", Assert.Single(events, e => e.Kind == SessionEventKind.Message).Text);
+    }
+
     /// <summary>With partial messages off, the whole message is the only copy — and it is kept.</summary>
     [Fact]
     public void A_whole_message_with_no_deltas_before_it_is_the_message()

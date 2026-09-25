@@ -85,6 +85,40 @@ public sealed class ProtocolChatTests : IDisposable
     }
 
     /// <summary>
+    /// 🔴 REV3: a turn the agent refused (a JSON-RPC error — auth expired, overloaded) recorded a note and
+    /// never a turn's end, so the page drew *working…* under the driver's own failure note until the
+    /// next message, while the composer beside it said nothing was running. A refused turn ENDS.
+    /// </summary>
+    [Fact]
+    public async Task A_turn_the_agent_refused_ends_in_the_record_and_the_next_one_is_taken()
+    {
+        await using var service = StandInService.Start(Path.Combine(_home, "engine"));
+        var config = DriverConfig.Empty with
+        {
+            Commands = new Dictionary<string, IReadOnlyList<string>> { ["acp-stub"] = ["node", Agent(), Heard] },
+        };
+        var adapters = AdapterSet.Built();
+        var events = new SessionEvents(Path.Combine(_home, "sessions"));
+        using var client = new ServiceClient(service.Url, null);
+        using var runner = new ChatRunner(
+            client, adapters, _home, new SessionProcesses(Path.Combine(_home, "sessions")), events: events,
+            harnesses: new HarnessRoster(adapters, Path.Combine(_home, "harnesses.json")));
+
+        var id = (await runner.StartAsync("engine", "acp-stub", config)).SessionId!;
+        string Seen() => $"record [{string.Join(" | ", events.Page(id).Events.Select(e => $"{e.Kind}:{e.StopReason}"))}]";
+        await Until(() => service.State(id) == "working", Seen);
+
+        Assert.True(runner.Say(id, "refuse"));
+        Assert.True(runner.Say(id, "after"));
+        await Until(() => events.Page(id).Events.Count(e => e.Kind == SessionEventKind.Turn) == 2, Seen);
+
+        var turns = events.Page(id).Events.Where(e => e.Kind == SessionEventKind.Turn).Select(e => e.StopReason).ToList();
+        Assert.Equal(["error", "end_turn"], turns);
+        Assert.Contains(events.Page(id).Events, e => e.Kind == SessionEventKind.Note && e.Text!.Contains("overloaded"));
+        Assert.True(runner.Finish(id));
+    }
+
+    /// <summary>
     /// A text-only door keeps the person's words where it keeps the agent's — the console — so its
     /// record holds no half a conversation: questions with no answers beside them would read as an
     /// agent that never replied.
@@ -147,6 +181,10 @@ public sealed class ProtocolChatTests : IDisposable
               } else if (frame.method === 'session/prompt') {
                 const said = frame.params.prompt[0].text;
                 note('prompt: ' + said);
+                if (said === 'refuse') {
+                  send({ jsonrpc: '2.0', id: frame.id, error: { code: -32603, message: 'overloaded' } });
+                  continue;
+                }
                 await new Promise((resolve) => setTimeout(resolve, 150));
                 send({ jsonrpc: '2.0', method: 'session/update', params: { sessionId: 'acp-chat',
                   update: { sessionUpdate: 'agent_message_chunk', content: { type: 'text', text: 'heard ' + said } } } });

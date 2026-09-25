@@ -646,6 +646,10 @@ public sealed class ChatRunner(
             {
                 _line($"— the turn could not be taken: {error.Message}");
                 _record(new SessionEvent { Kind = SessionEventKind.Note, Text = $"the turn could not be taken: {error.Message}" });
+                // 🔴 And the turn ENDS (REV3). Only a turn event closes a turn on the page, so a refused
+                // one drew *working…* under this very note until the next message — while the composer,
+                // told by the queue that nothing was taking, offered to send.
+                _record(new SessionEvent { Kind = SessionEventKind.Turn, StopReason = "error" });
             }
         }
 

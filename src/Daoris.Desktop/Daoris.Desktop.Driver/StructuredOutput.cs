@@ -136,6 +136,15 @@ public sealed class ClaudeStreamJson : IStreamMapper
                     events.Add(call);
                     if (Plan(block) is { } plan) events.Add(plan);
                     break;
+                // Kept, never dropped (SessionEvents' own rule; REV3): a block this build has no kind for
+                // — a redacted thought, a server tool, an image — is its raw record, under its own name.
+                case { } other when other is not ("text" or "thinking"):
+                    events.Add(new SessionEvent
+                    {
+                        Kind = SessionEventKind.Raw, Title = other,
+                        Raw = SessionEvents.Cut(block.GetRawText(), SessionEvents.RawLimit),
+                    });
+                    break;
             }
         }
 

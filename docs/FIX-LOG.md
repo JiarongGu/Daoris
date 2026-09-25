@@ -5,6 +5,31 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## A refused turn never ended, and an unknown block vanished from the record (2026-09-25)
+
+**Symptom.** Found by REV3's reading of both halves of the conversation.
+- **A refused turn.** On the protocol door, a `session/prompt` answered with a JSON-RPC error (auth
+  expired, overloaded) left the record with the person's message and a note, and no turn's end. The
+  page draws *working…* until a turn event closes the turn, so it showed working under the driver's
+  own failure note. The composer beside it, told by the queue that nothing was running, offered
+  *send*.
+- **An unknown block.** On Claude Code's native door, a message block of a type the mapper had no case
+  for (`redacted_thinking`, `server_tool_use`, `image`) became no line and no event. `SessionEvents`
+  promises "kept, never dropped", and the protocol door keeps its unknowns raw.
+
+**Root cause.** The refusal's catch recorded the note and forgot the turn. The block switch had no
+default.
+
+**Fix.** A refused turn records a turn event with stop reason `error`, which the page reads as "the
+turn ended: error". An unknown block is kept as a raw event under its own type.
+
+**Verify.** Both tests were watched failing before the fix.
+- `A_turn_the_agent_refused_ends_in_the_record_and_the_next_one_is_taken`. The failing run's record
+  read user, note, user, message, end, with the first turn never ended.
+- `A_block_this_build_has_no_kind_for_is_kept_raw_under_its_own_name`.
+
+Driver 665/665.
+
 ## A local host could bind every interface through Kestrel's own configuration (2026-09-25)
 
 **Symptom.** Found by REV3's reading, then shown on the real host. A local-mode host refuses to bind
