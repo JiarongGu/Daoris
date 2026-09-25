@@ -13,7 +13,7 @@
 // but 2 as a non-blocking error, so a guard that failed by exiting would let the write through. Inside
 // the tree it says NOTHING — never "allow", which would lift the harness's own asking.
 
-import { realpathSync } from 'node:fs';
+import { lstatSync, readlinkSync, realpathSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -42,14 +42,30 @@ export function judge({ tree, target, cwd = null, platform = process.platform, r
 /**
  * The real path of a file that may not exist yet: the deepest ancestor that does, resolved through its
  * links, with the rest put back. A write through a link inside the tree that leads out of it is outside.
+ *
+ * 🔴 A link whose target does not exist YET fails to resolve exactly as a missing file does — and a
+ * write through it lands wherever it points, creating the target. Climbing past it as though it were
+ * a plain name judged such a write inside the tree (REV3). So a component that will not resolve is
+ * asked whether it is a link, and a link is followed. Too many links is a refusal, never a guess.
  */
-export function resolveThroughLinks(target) {
+export function resolveThroughLinks(target, depth = 0) {
+  if (depth > 40) throw new Error(`too many links resolving \`${target}\``);
   const rest = [];
   let at = target;
   for (;;) {
     try {
       return path.join(realpathSync.native(at), ...rest.reverse());
     } catch {
+      let link = null;
+      try {
+        if (lstatSync(at).isSymbolicLink()) link = readlinkSync(at);
+      } catch {
+        // Not there at all: an ordinary name the write would create.
+      }
+      if (link !== null) {
+        return resolveThroughLinks(path.join(path.resolve(path.dirname(at), link), ...rest.reverse()), depth + 1);
+      }
+
       const parent = path.dirname(at);
       if (parent === at) return target;
       rest.push(path.basename(at));
@@ -105,7 +121,15 @@ async function main() {
 
   const cwd = typeof call.cwd === 'string' && call.cwd.length > 0 ? call.cwd : null;
   for (const target of paths) {
-    const { outside, resolved } = judge({ tree, target, cwd, realpath: resolveThroughLinks });
+    let judged;
+    try {
+      judged = judge({ tree, target, cwd, realpath: resolveThroughLinks });
+    } catch (error) {
+      // Fail closed: a path this guard cannot resolve is not one it lets through.
+      deny(`it could not resolve \`${target}\` (${error instanceof Error ? error.message : error}), so it refuses the write.`);
+      return;
+    }
+    const { outside, resolved } = judged;
     if (outside) {
       deny(`\`${resolved}\` is outside this session's tree \`${tree}\`. A session writes only inside `
         + 'its own tree; a change needed elsewhere is a quest to whoever owns it.');

@@ -5,6 +5,27 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## The tree guard let a write through a link to somewhere that did not exist yet (2026-09-25)
+
+**Symptom.** Found by REV3's reading, then shown by probe and a test. A junction or symlink inside a
+session's tree pointed outside it, at a path that did not exist yet. A `Write` through that link was
+judged inside the tree, and the write created its target outside. Any absent file a link pointed at
+was writable this way, a missing config file under the Daoris home included. The guard's own header
+promises "a write through a link inside the tree that leads out of it is outside".
+
+**Root cause.** `resolveThroughLinks` walks up to the deepest ancestor that resolves. A dangling link
+fails `realpath` exactly as a missing file does, so the walk treated it as a plain name, put it back
+onto the tree's path, and judged the result inside. The existing link test used a link whose target
+existed.
+
+**Fix.** A component that will not resolve is asked whether it is a link (`lstat`). If it is, it is
+followed through `readlink` and the walk continues from there. More than 40 links is an error, and
+the hook now fails closed on any resolution error: it denies rather than lets the write through.
+
+**Verify.** `A_write_through_a_link_to_somewhere_that_does_not_exist_yet_is_denied` makes a junction
+to an absent folder outside the tree and asserts both preconditions (the link exists, its target does
+not). It failed before the fix. All 11 tree-guard tests pass.
+
 ## The desktop's Install never started on Windows — the CLI's 2026-09-22 fix had a twin (2026-09-25)
 
 **Symptom.** Found by REV3's reading of the modules, then reproduced. On Windows, pressing *Install* on

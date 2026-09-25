@@ -207,6 +207,34 @@ public sealed class TreeGuardTests : IDisposable
         Assert.Contains("\"deny\"", output);
     }
 
+    /// <summary>
+    /// 🔴 REV3: a link whose target does not exist YET fails to resolve like a missing file, so the walk
+    /// treated it as a plain name and judged the write inside — and the write went through it, out of
+    /// the tree, creating the target. A dangling link is followed, not climbed past.
+    /// </summary>
+    [Fact]
+    public async Task A_write_through_a_link_to_somewhere_that_does_not_exist_yet_is_denied()
+    {
+        var (tree, outside) = Trees();
+        var link = Path.Combine(tree, "later");
+        var nowhere = Path.Combine(outside, "not-yet");
+        if (OperatingSystem.IsWindows())
+        {
+            Run("cmd", "/c", "mklink", "/J", link, nowhere);
+        }
+        else
+        {
+            Directory.CreateSymbolicLink(link, nowhere);
+        }
+
+        Assert.True(new DirectoryInfo(link).LinkTarget is not null, "the link was not made, so this proves nothing");
+        Assert.False(Directory.Exists(nowhere), "the link's target exists, so this is the other test");
+
+        var (_, output) = await Hook(tree, Call("Write", new JsonObject { ["file_path"] = Path.Combine(link, "new-file.txt") }, tree));
+
+        Assert.Contains("\"deny\"", output);
+    }
+
     // ——— Helpers.
 
     private (string Tree, string Outside) Trees()
