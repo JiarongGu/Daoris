@@ -5,6 +5,28 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## Two hosts could open two sessions on one tree, and move a finished one (2026-09-25)
+
+**Symptom.** Found by REV3's reading of the service. The one-session-per-tree lock (D46, D51) was a
+read ("is anything active here?") followed by a write (create the session). Every host on a machine
+opens the same file, so the driver's tick and a person's chat, or two connectors, could both read
+"free" and both write. That puts two agents in one working tree. Moving a session had the same shape:
+the driver's conclusion and a person's stop could both read it active, and the second write moved a
+session that had already finished.
+
+**Root cause.** Check-then-act with nothing holding the file between the check and the act.
+
+**Fix.** `SessionStore.ExclusiveAsync` runs a check and the write it decides inside one
+`BEGIN IMMEDIATE` transaction. That takes the file's write lock before the read, so a second host
+waits, then reads what the first wrote. The connection's gate does the same within a host, and the
+body gets an uncancellable token (see the entry below on transactions). The three opens, and
+`AdvanceAsync`, go through it.
+
+**Verify.** `An_open_waits_for_another_host_s_open_and_then_finds_the_tree_taken` uses two
+connections to one file: one holds the write lock with an uncommitted session on the tree while the
+other opens a chat there. Before the fix the open answered `None` and made a second session. Now it
+waits and answers `RepositoryBusy`. Service 497/497.
+
 ## Two publishes on one ask kept one quest (2026-09-25)
 
 **Symptom.** Found by REV3's reading of the service. An ask becomes quests from two processes: the

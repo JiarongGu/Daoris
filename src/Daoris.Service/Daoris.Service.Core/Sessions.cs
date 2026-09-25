@@ -352,6 +352,37 @@ public sealed class SessionStore
     /// Record a new attempt, queued. Random id: two attempts at one quest are two records — and a
     /// chat, which may name no quest at all, is the same record with a different way in (D49 §3).
     /// </summary>
+    /// <summary>
+    /// Run a check and the write it decides as one step, holding the database's write lock throughout.
+    /// </summary>
+    /// <remarks>
+    /// <para>Every host on a machine opens the same file: the desktop's host, and a connector for each
+    /// session. The one-session-per-tree lock was a read followed by a write, so two opens at once could
+    /// both read "free" and both write (REV3). <c>BEGIN IMMEDIATE</c> takes the file's write lock BEFORE
+    /// the read, so a second host waits until the first has written, then reads what it wrote. The
+    /// connection's gate does the same between requests inside one host.</para>
+    ///
+    /// <para>The work is handed an uncancellable token: once the transaction has begun, a throw would roll
+    /// back whatever other statements joined it (<see cref="QuestStore"/>, REV3). It must not take the
+    /// connection's gate itself, which is not reentrant.</para>
+    /// </remarks>
+    public async Task<T> ExclusiveAsync<T>(Func<CancellationToken, Task<T>> work, CancellationToken ct = default)
+    {
+        var gate = ConnectionGate.For(_connection);
+        await gate.WaitAsync(ct).ConfigureAwait(false);
+        try
+        {
+            await using var transaction = _connection.BeginTransaction(deferred: false);
+            var result = await work(CancellationToken.None).ConfigureAwait(false);
+            await transaction.CommitAsync(CancellationToken.None).ConfigureAwait(false);
+            return result;
+        }
+        finally
+        {
+            gate.Release();
+        }
+    }
+
     public async Task<Session> CreateAsync(
         string? quest, string repository, string adapter, DateTimeOffset now,
         string? workspace = null, SessionKind kind = SessionKind.Driven,

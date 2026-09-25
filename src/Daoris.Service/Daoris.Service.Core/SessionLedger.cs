@@ -129,30 +129,35 @@ public sealed class SessionLedger(
 
         var holding = Trees.Normalize(room)
             ?? throw new ArgumentException("an intake runs in a room — name it", nameof(room));
-        var running = await sessions.RunningInTreeAsync(holding, ct).ConfigureAwait(false);
-        if (running is not null)
+
+        // The check and the write as one step, across hosts (REV3): see SessionStore.ExclusiveAsync.
+        return await sessions.ExclusiveAsync(async inside =>
         {
-            return new(
-                SessionOpenRefusal.RepositoryBusy,
-                $"The intake room for `{ask.Workspace}` already has a running session — `{running.Id}` "
-                + $"({Spell(running.State)}{(running.Ask is { } other ? $", ask `#{other}`" : "")}). One intake runs "
-                + "per workspace at a time; the next ask is taken when it ends.",
-                Session: null);
-        }
+            var running = await sessions.RunningInTreeAsync(holding, inside).ConfigureAwait(false);
+            if (running is not null)
+            {
+                return new SessionOpenOutcome(
+                    SessionOpenRefusal.RepositoryBusy,
+                    $"The intake room for `{ask.Workspace}` already has a running session — `{running.Id}` "
+                    + $"({Spell(running.State)}{(running.Ask is { } other ? $", ask `#{other}`" : "")}). One intake runs "
+                    + "per workspace at a time; the next ask is taken when it ends.",
+                    Session: null);
+            }
 
-        // No base commit, deliberately: the room is no repository, and git asked about it would walk
-        // UP and answer for whatever checkout the home sits in.
-        var session = await sessions
-            .CreateAsync(
-                null, AskDesk.SenderOf(ask.Id), adapter, now, ask.Workspace, SessionKind.Chat,
-                harnessVersion, profile, holding, baseCommit: null, ct, ask: ask.Id)
-            .ConfigureAwait(false);
-        await asks!.RecordIntakeAsync(ask.Id, session.Id, now, ct).ConfigureAwait(false);
+            // No base commit, deliberately: the room is no repository, and git asked about it would walk
+            // UP and answer for whatever checkout the home sits in.
+            var session = await sessions
+                .CreateAsync(
+                    null, AskDesk.SenderOf(ask.Id), adapter, now, ask.Workspace, SessionKind.Chat,
+                    harnessVersion, profile, holding, baseCommit: null, inside, ask: ask.Id)
+                .ConfigureAwait(false);
+            await asks!.RecordIntakeAsync(ask.Id, session.Id, now, inside).ConfigureAwait(false);
 
-        return new(
-            SessionOpenRefusal.None,
-            $"Intake `{session.Id}` opened for ask `#{ask.Id}` in `{ask.Workspace}`, via {adapter}.",
-            session);
+            return new SessionOpenOutcome(
+                SessionOpenRefusal.None,
+                $"Intake `{session.Id}` opened for ask `#{ask.Id}` in `{ask.Workspace}`, via {adapter}.",
+                session);
+        }, ct).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -194,26 +199,29 @@ public sealed class SessionLedger(
         // same key instead of holding one tree twice.
         var holding = Trees.Normalize(tree) ?? Trees.Normalize(known.Root);
 
-        var active = await sessions.ActiveForAsync(known.Repository, holding, ct).ConfigureAwait(false);
-        if (active is not null)
+        return await sessions.ExclusiveAsync(async inside =>
         {
-            return new(
-                SessionOpenRefusal.RepositoryBusy,
-                Busy(known.Repository, active) + " That is true of a conversation exactly as it is of "
-                + "driven work.",
-                Session: null);
-        }
+            var active = await sessions.ActiveForAsync(known.Repository, holding, inside).ConfigureAwait(false);
+            if (active is not null)
+            {
+                return new SessionOpenOutcome(
+                    SessionOpenRefusal.RepositoryBusy,
+                    Busy(known.Repository, active) + " That is true of a conversation exactly as it is of "
+                    + "driven work.",
+                    Session: null);
+            }
 
-        var session = await sessions
-            .CreateAsync(
-                null, known.Repository, adapter, now, known.InWorkspace, SessionKind.Chat,
-                harnessVersion, profile, holding, baseCommit, ct)
-            .ConfigureAwait(false);
+            var session = await sessions
+                .CreateAsync(
+                    null, known.Repository, adapter, now, known.InWorkspace, SessionKind.Chat,
+                    harnessVersion, profile, holding, baseCommit, inside)
+                .ConfigureAwait(false);
 
-        return new(
-            SessionOpenRefusal.None,
-            $"Chat `{session.Id}` opened in `{known.Repository}`, via {adapter}.",
-            session);
+            return new SessionOpenOutcome(
+                SessionOpenRefusal.None,
+                $"Chat `{session.Id}` opened in `{known.Repository}`, via {adapter}.",
+                session);
+        }, ct).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -248,24 +256,27 @@ public sealed class SessionLedger(
         // onto one tree must agree about which tree that is.
         var holding = Trees.Normalize(tree) ?? Trees.Normalize(await RootOfAsync(quest.To, ct).ConfigureAwait(false));
 
-        var active = await sessions.ActiveForAsync(quest.To, holding, ct).ConfigureAwait(false);
-        if (active is not null)
+        return await sessions.ExclusiveAsync(async inside =>
         {
-            return new(SessionOpenRefusal.RepositoryBusy, Busy(quest.To, active), Session: null);
-        }
+            var active = await sessions.ActiveForAsync(quest.To, holding, inside).ConfigureAwait(false);
+            if (active is not null)
+            {
+                return new SessionOpenOutcome(SessionOpenRefusal.RepositoryBusy, Busy(quest.To, active), Session: null);
+            }
 
-        // The record's circle is the quest's circle — derived, never passed beside it, so a record can
-        // never be filed under a workspace its quest does not belong to (D48 §4).
-        var session = await sessions
-            .CreateAsync(
-                quest.Id, quest.To, adapter, now, quest.Workspace, SessionKind.Driven,
-                harnessVersion, profile, holding, baseCommit, ct)
-            .ConfigureAwait(false);
+            // The record's circle is the quest's circle — derived, never passed beside it, so a record can
+            // never be filed under a workspace its quest does not belong to (D48 §4).
+            var session = await sessions
+                .CreateAsync(
+                    quest.Id, quest.To, adapter, now, quest.Workspace, SessionKind.Driven,
+                    harnessVersion, profile, holding, baseCommit, inside)
+                .ConfigureAwait(false);
 
-        return new(
-            SessionOpenRefusal.None,
-            $"Session `{session.Id}` queued for quest `#{quest.Id}` in `{quest.To}`, via {adapter}.",
-            session);
+            return new SessionOpenOutcome(
+                SessionOpenRefusal.None,
+                $"Session `{session.Id}` queued for quest `#{quest.Id}` in `{quest.To}`, via {adapter}.",
+                session);
+        }, ct).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -287,36 +298,41 @@ public sealed class SessionLedger(
                 Session: null);
         }
 
-        var session = await sessions.FindAsync(id, ct).ConfigureAwait(false);
-        if (session is null)
+        // Read, judged and written as one step (REV3): the driver's conclusion and a person's stop,
+        // arriving from two hosts, could both read the session active, and the second moved a finished one.
+        return await sessions.ExclusiveAsync(async inside =>
         {
-            return new(SessionAdvanceRefusal.NotFound, $"No session `{id}`.", Session: null);
-        }
+            var session = await sessions.FindAsync(id, inside).ConfigureAwait(false);
+            if (session is null)
+            {
+                return new SessionAdvanceOutcome(SessionAdvanceRefusal.NotFound, $"No session `{id}`.", Session: null);
+            }
 
-        if (!session.Active)
-        {
-            return new(
-                SessionAdvanceRefusal.Terminal,
-                $"Session `{session.Id}` is {Spell(session.State)} — a finished session does not move.",
-                Session: null);
-        }
+            if (!session.Active)
+            {
+                return new SessionAdvanceOutcome(
+                    SessionAdvanceRefusal.Terminal,
+                    $"Session `{session.Id}` is {Spell(session.State)} — a finished session does not move.",
+                    Session: null);
+            }
 
-        if (!Allowed(session.State).Contains(target.Value))
-        {
-            return new(
-                SessionAdvanceRefusal.InvalidMove,
-                $"Session `{session.Id}` cannot move {Spell(session.State)} → {Spell(target.Value)}. "
-                + $"From {Spell(session.State)}: {string.Join(", ", Allowed(session.State).Select(Spell))}.",
-                Session: null);
-        }
+            if (!Allowed(session.State).Contains(target.Value))
+            {
+                return new SessionAdvanceOutcome(
+                    SessionAdvanceRefusal.InvalidMove,
+                    $"Session `{session.Id}` cannot move {Spell(session.State)} → {Spell(target.Value)}. "
+                    + $"From {Spell(session.State)}: {string.Join(", ", Allowed(session.State).Select(Spell))}.",
+                    Session: null);
+            }
 
-        var moved = await sessions.SetStateAsync(id, target.Value, note, evidence, transcript, now, ct)
-            .ConfigureAwait(false);
+            var moved = await sessions.SetStateAsync(id, target.Value, note, evidence, transcript, now, inside)
+                .ConfigureAwait(false);
 
-        return new(
-            SessionAdvanceRefusal.None,
-            $"Session `{moved!.Id}` is now {Spell(moved.State)}.",
-            moved);
+            return new SessionAdvanceOutcome(
+                SessionAdvanceRefusal.None,
+                $"Session `{moved!.Id}` is now {Spell(moved.State)}.",
+                moved);
+        }, ct).ConfigureAwait(false);
     }
 
     /// <summary>
