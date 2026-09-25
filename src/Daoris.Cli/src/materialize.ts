@@ -9,7 +9,7 @@ import { significantTokens, containment } from './twins.ts';
 import { isSwitchedOff, readCanon, resolveCanonRoot, resolveSelection } from './canon.ts';
 import { lockIndex, readLock, readManifest, writeLock } from './config.ts';
 import { readTier } from './indexgen.ts';
-import { renderRoster, renderRules, spanBody, tierRuleBody } from './tierrender.ts';
+import { renderTier, spanBody, tierRuleBody } from './tierrender.ts';
 import { ensureImport, findRegion, writeRegion } from './region.ts';
 import { resolveHarness } from './harness.ts';
 import { DaorisError } from './errors.ts';
@@ -490,7 +490,7 @@ function writeSpans(
     // file's own line ending — both of which a normalized read had already erased (REV3).
     const abs = join(root, file);
     const held = existsSync(abs) ? readFileSync(abs, 'utf8') : '';
-    const body = [renderRoster(input), ...renderRules(input)].join('\n');
+    const body = renderTier(input);
     writeTextAtomic(abs, writeRegion(held, tier.region.name, body));
 
     // 🔴 The migration's last piece. A repository that adopted before D59 has a generated
