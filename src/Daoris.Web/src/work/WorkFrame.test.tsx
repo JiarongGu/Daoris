@@ -116,6 +116,11 @@ function show(selected: string | null = null, notify: (text: string) => void = (
   return { ...view, onSelect, client };
 }
 
+// 🔴 Every test starts from a viewer with nothing remembered. The frame keeps its layout per viewer,
+// and a test that hid the console left it hidden for whichever console test ran next: four failed
+// in a shuffled order (UX5, 2026-09-26), and passed in file order only by luck of the order.
+afterEach(() => window.localStorage.clear());
+
 describe('the Work frame', () => {
   beforeEach(() => {
     SESSIONS = [DRIVEN];
@@ -128,6 +133,23 @@ describe('the Work frame', () => {
     eventHandlers.clear();
     // A draft outlives its test the way it outlives a reload (CONV4b).
     window.localStorage.removeItem('daoris.drafts');
+  });
+
+  /**
+   * UX5 U10: with the dock closed by default (U7) the centre is wide, and only the conversation held
+   * a measure. The composer ran under it a quarter wider, and the head's pill sat a thousand pixels
+   * from the title it names. The three are one column. jsdom lays nothing out, so this holds the
+   * shared measure and the window holds the look.
+   */
+  it('keeps the head, the conversation and the composer to one measure, however wide the centre', async () => {
+    SESSIONS = [DRIVEN, CHAT];
+    show('c0ffee11');
+
+    // The conversation's own measure is ConversationView's, held beside its other tests.
+    const head = (await screen.findByRole('heading', { level: 2 })).closest('article')!;
+    const composer = screen.getByRole('textbox', { name: 'message' }).closest('form')!;
+    expect(head.className).toContain('max-w-3xl');
+    expect(composer.className).toContain('[&>*]:max-w-3xl');
   });
 
   it('is the rail and the attended session, bound by one selection', async () => {
@@ -977,6 +999,8 @@ describe('reviewing what a session landed', () => {
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => respond(String(input))));
     invoke.mockImplementation(async (_module: string, type: string) =>
       (type === 'SESSION_DIFF' ? DIFF : DRIVER_STATE));
+    // A viewer who has opened the dock, where review lives: it opens on demand (UX5 U7).
+    window.localStorage.setItem('daoris.dockClosed', '0');
   });
   afterEach(() => {
     vi.unstubAllGlobals();
@@ -984,6 +1008,7 @@ describe('reviewing what a session landed', () => {
     eventHandlers.clear();
     // A draft outlives its test the way it outlives a reload (CONV4b).
     window.localStorage.removeItem('daoris.drafts');
+    window.localStorage.removeItem('daoris.dockClosed');
   });
 
   /** The dock opens on the timeline: a running session is watched far more often than reviewed. */
@@ -1095,6 +1120,8 @@ describe('acting on what a session landed', () => {
   beforeEach(() => {
     SESSIONS = [IN_A_TREE];
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => respond(String(input))));
+    // A viewer who has opened the dock, where review lives: it opens on demand (UX5 U7).
+    window.localStorage.setItem('daoris.dockClosed', '0');
   });
   afterEach(() => {
     vi.unstubAllGlobals();
@@ -1102,6 +1129,7 @@ describe('acting on what a session landed', () => {
     eventHandlers.clear();
     // A draft outlives its test the way it outlives a reload (CONV4b).
     window.localStorage.removeItem('daoris.drafts');
+    window.localStorage.removeItem('daoris.dockClosed');
   });
 
   const review = async () => {
@@ -1295,6 +1323,8 @@ describe('the frame\'s geometry (FRAME6)', () => {
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => respond(String(input))));
     invoke.mockImplementation(async () => DRIVER_STATE);
     widen(1600);
+    // A viewer who has opened the dock: it opens on demand (UX5 U7), and these are about it open.
+    window.localStorage.setItem('daoris.dockClosed', '0');
   });
   afterEach(() => {
     vi.unstubAllGlobals();
@@ -1340,6 +1370,22 @@ describe('the frame\'s geometry (FRAME6)', () => {
 
     widen(1600);
     expect(await screen.findByRole('separator', { name: 'rail width' })).toBeInTheDocument();
+  });
+
+  /**
+   * UX5 U7: the dock was open by default at 45%, where the reference's opens on demand, and on a
+   * 1400px window the conversation started at 442px, near its floor. A viewer who never chose sees
+   * the conversation with the dock closed to its strip; opening it is remembered like closing it.
+   */
+  it('opens the dock on demand: closed to its strip until the person opens it, and then remembered', async () => {
+    window.localStorage.removeItem('daoris.dockClosed');
+    show('s1a2b3c4');
+    await screen.findByRole('button', { name: 'open Review' });
+    expect(screen.queryByRole('tablist', { name: 'Session surfaces' })).toBeNull();
+
+    await userEvent.click(screen.getByRole('button', { name: 'open Timeline' }));
+    expect(await screen.findByRole('tab', { name: 'Timeline' })).toHaveAttribute('aria-selected', 'true');
+    expect(window.localStorage.getItem('daoris.dockClosed')).toBe('0');
   });
 
   it('closes the dock to a strip, and opens it again only on the person\'s press, on the tab they chose', async () => {

@@ -144,7 +144,10 @@ export function WorkFrame({ selected, onSelect, notify, onSendBack, onAnswerAsk,
   const [railWidth, setRailWidth] = useState(() => rememberedWidth(RAIL_WIDTH));
   const [railClosed, setRailClosed] = useState(() => stored(RAIL_CLOSED) === '1');
   const [dockWidth, setDockWidth] = useState(() => rememberedWidth(DOCK_WIDTH));
-  const [dockClosed, setDockClosed] = useState(() => stored(DOCK_CLOSED) === '1');
+  // 🔴 Closed until the person opens it (UX5 U7), as the reference's dock opens on demand: open by
+  // default at 45%, it left a 1400px window's conversation 442px. So an absent choice is closed, and
+  // opening is remembered as `0` beside closing's `1`.
+  const [dockClosed, setDockClosed] = useState(() => stored(DOCK_CLOSED) !== '0');
   const [dockFull, setDockFull] = useState(false);
   const layout = frameLayout(width.viewport, width.frame, {
     rail: railWidth, railClosed, dock: dockWidth, dockClosed, dockFull,
@@ -164,7 +167,7 @@ export function WorkFrame({ selected, onSelect, notify, onSendBack, onAnswerAsk,
   };
   const closeDock = (closed: boolean) => {
     setDockClosed(closed);
-    store(DOCK_CLOSED, closed ? '1' : null);
+    store(DOCK_CLOSED, closed ? '1' : '0');
     if (closed) setDockFull(false);
   };
 

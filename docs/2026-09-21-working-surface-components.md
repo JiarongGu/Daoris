@@ -101,9 +101,11 @@ reference did not make for us:
 - **Each session's dock tab is kept in memory, not across launches**, as the one dock tab was.
 - **Widths and closings are remembered** per viewer, like the panel's height; fullscreen is not.
 
-The dock opens beside the session at 45%, as adopted, and ours is open by default where the
+~~The dock opens beside the session at 45%, as adopted, and ours is open by default where the
 reference's opens on demand. On a 1400px window that leaves the conversation 442px. UX5 carries the
-question.
+question.~~ **Answered by UX5 (D76 as amended): the dock opens on demand**, as the reference's does.
+A viewer who never chose sees its strip, and it opens at 45% when a tab, a row's review or the
+palette asks, remembered either way.
 - **Trajectory beside conversation, never inside it.** Their `ui-trajectory`/`ui-chat` split is our
   timeline-beside-stream decision, independently arrived at — adopted with two of its rules: the view
   **follows the tail until the person scrolls up**, and an in-flight record **shows a start marker

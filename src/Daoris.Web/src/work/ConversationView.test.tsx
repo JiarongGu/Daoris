@@ -158,6 +158,11 @@ describe('ConversationView', () => {
    * a newline is a newline, so a line it ended stays ended. A blank line is still a paragraph, and a
    * fenced block keeps its own lines.
    */
+  it('holds the measure the head and the composer share (UX5 U10)', () => {
+    view(FINISHED());
+    expect(screen.getByRole('region', { name: 'conversation' }).className).toContain('max-w-3xl');
+  });
+
   it('keeps a line the agent ended, and still makes a paragraph of a blank line', () => {
     const { container } = view([ev({
       kind: 'message', text: 'one\ntwo\nthree\n\nafter\n\n```\na\nb\n```',

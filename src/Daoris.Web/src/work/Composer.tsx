@@ -197,7 +197,8 @@ export function Composer({
 
   return (
     <form
-      className="grid gap-2 border-t border-line px-4 py-3"
+      // The rule spans the centre; what is written under it keeps the conversation's measure (UX5 U10).
+      className="grid gap-2 border-t border-line px-4 py-3 [&>*]:max-w-3xl"
       onSubmit={(event) => { event.preventDefault(); say(); }}
       {...(live ? attach.handlers : {})}
     >

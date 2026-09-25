@@ -3307,3 +3307,19 @@ unified or side by side.**
   (seen on the window).
 - **An edit card in the conversation draws its lines with the same renderer**, unnumbered, since
   its lines are a piece of the file and not the file's.
+
+**Amended 2026-09-26 (UX5): what the screen-by-screen pass settled.** Its ledger is
+`docs/2026-09-26-ux5-screen-audit.md`; these are the findings that chose between alternatives.
+- **Waiting on the person is open's hue everywhere** (U1): the dot, the pill, the band and the map.
+  Rejected: declined's red, which the dot and pill wore, because red is an outcome's hue and a
+  waiting session read as a failed one. Also rejected: the notice tone the map used, a second hue
+  for the same fact.
+- **A line the agent ended stays ended** (U4): every newline left in prose is a break. Rejected:
+  CommonMark's soft break, which drew a one-item-per-line answer as one paragraph. The agent wrote
+  for a terminal. Also rejected: a plugin dependency for a dozen lines.
+- **The dock opens on demand** (U7), as the reference's does: closed to its strip for a viewer who
+  never chose, opened at 45% by a tab, a row's review or the palette, and remembered either way.
+  Rejected: open by default, which left a 1400px window's conversation 442px. Also rejected: opening
+  narrower until Review is asked for, which is two defaults and still crowds the conversation.
+- **The head, the conversation and the composer are one column** (U10), at the conversation's
+  measure. The rules and the console strip still span the centre.
