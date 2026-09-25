@@ -331,7 +331,7 @@ jobs:
           # build artefact can ride along — and none of what they wrote is left behind (REV3): the example
           # manifests release-prep pins were missing here, and `verify` went red on main after a release.
           git add -u -- src/Daoris.Cli/package.json canon daoris.json daoris.lock AGENTS.md CLAUDE.md .claude \
-            README.md CHANGELOG.md examples
+            README.md CHANGELOG.md examples src/Daoris.Devkit/Daoris.Devkit.Cli/Repository.cs
           git diff --cached --quiet || git commit -m "chore: release ${{ steps.version.outputs.tag }}"
           git push
 

@@ -40,6 +40,9 @@ const exampleManifests = () =>
         .filter((rel) => existsSync(join(repoRoot, rel)))
     : [];
 const CLI_PKG = 'src/Daoris.Cli/package.json'; // the only published package
+// The devkit binary's own version (REV3): its comment said the release stamped it, and nothing did.
+const DEVKIT = 'src/Daoris.Devkit/Daoris.Devkit.Cli/Repository.cs';
+const DEVKIT_VERSION = /public const string DevkitVersion = "([^"]+)";/;
 const fail = (message) => {
   console.error(`release-prep: ${message}`);
   process.exit(1);
@@ -80,6 +83,7 @@ function setVersion(version, today) {
   write('canon/canon.json', `{\n  "version": "${version}"\n}\n`);
   write('daoris.json', read('daoris.json').replace(/github:[^"#]+#v[\d.]+/, `${REPO_REF}${version}`));
   write('README.md', read('README.md').replace(/github:JiarongGu\/Daoris#v[\d.]+/g, `${REPO_REF}${version}`));
+  write(DEVKIT, read(DEVKIT).replace(DEVKIT_VERSION, `public const string DevkitVersion = "${version}";`));
   for (const rel of exampleManifests()) {
     write(rel, read(rel).replace(/github:[^"#]+#v[\d.]+/, `${REPO_REF}${version}`));
   }
@@ -89,7 +93,7 @@ function setVersion(version, today) {
   stampChangelog('CHANGELOG.md', `## ${version} — ${today}`);
   stampChangelog('canon/CHANGELOG.md', `## ${version}`);
 
-  console.log(`release-prep: set ${version} across package.json, canon.json, the manifest and the README`);
+  console.log(`release-prep: set ${version} across package.json, canon.json, the manifest, the README and the devkit`);
   console.log(`release-prep: stamped CHANGELOG.md and canon/CHANGELOG.md`);
 }
 
@@ -112,6 +116,8 @@ function checkAgreement() {
       problems.push(`${rel} does not pin ${version}`);
     }
   }
+  const devkit = DEVKIT_VERSION.exec(read(DEVKIT))?.[1];
+  if (devkit !== version) problems.push(`${DEVKIT} says ${devkit ?? 'no version'}, not ${version}`);
   if (problems.length) fail(`version drift:\n  ${problems.join('\n  ')}`);
   console.log(`release-prep: ${version} agrees across every shipped reference`);
 }

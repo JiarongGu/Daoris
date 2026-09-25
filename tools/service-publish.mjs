@@ -44,11 +44,19 @@ for (const host of HOSTS) {
   // IncludeNativeLibrariesForSelfExtract, because "single file" otherwise leaves e_sqlite3 BESIDE
   // the executable — and an installed copy that took only the exe dies on first store open with a
   // DllNotFound. Found by running the installed binary, not by reading the docs.
-  execSync(
-    `dotnet publish "${host.project}" -c Release -r ${rid} --self-contained `
-    + `-p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o "${join(out, host.binary)}"`,
-    { cwd: repoRoot, stdio: ['ignore', 'ignore', 'inherit'] },
-  );
+  // stdout is KEPT and shown when the publish fails (REV3): MSBuild writes its errors to stdout, and a
+  // publish that discarded it failed with nothing but an exit code to read.
+  try {
+    execSync(
+      `dotnet publish "${host.project}" -c Release -r ${rid} --self-contained `
+      + `-p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o "${join(out, host.binary)}"`,
+      { cwd: repoRoot, stdio: ['ignore', 'pipe', 'inherit'], maxBuffer: 64 * 1024 * 1024 },
+    );
+  } catch (error) {
+    process.stdout.write(error.stdout ?? '');
+    console.error(`service-publish: publishing ${host.binary} failed — MSBuild's own words are above`);
+    process.exit(1);
+  }
 }
 
 console.log(`service-publish: published under ${out}`);

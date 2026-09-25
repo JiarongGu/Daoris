@@ -61,7 +61,8 @@ public sealed class VersionGate : IGate
         }
 
         // The authorship half. Only meaningful once a changelog is declared, and deliberately silent
-        // about pre-release versions — 0.0.x is development, where the version is not yet a claim.
+        // about pre-release versions — every 0.x (SemVer's initial development) and anything with a
+        // suffix, where the version is not yet a claim (IsPreRelease below; REV3 corrected "0.0.x").
         var changelog = context.Declaration.Docs.Changelog;
         if (changelog is not null && !IsPreRelease(version))
         {

@@ -4,8 +4,9 @@ namespace Daoris.Devkit.Cli;
 internal static class Repository
 {
     /// <summary>
-    /// Development, like everything else here. Stamped by the release workflow, never by hand — the
-    /// version gate this binary runs exists because a sibling did exactly that.
+    /// Development, like everything else here. Stamped by the release workflow (`tools/release-prep.mjs`,
+    /// which `verify` also runs to check it agrees), never by hand — the version gate this binary runs
+    /// exists because a sibling did exactly that.
     /// </summary>
     public const string DevkitVersion = "0.0.1";
 
