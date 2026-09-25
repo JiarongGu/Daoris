@@ -134,6 +134,25 @@ public sealed class RuleProposalsTests : IDisposable
         Assert.Equal("C:/somewhere/engine", settled.GetProperty("by").GetProperty("folder").GetString());
     }
 
+    /// <summary>
+    /// 🔴 REV3 CLEAN1: over a rules file the driver could not read, even a narrowing would have been
+    /// written as the whole file, dropping every rule the person had. Nothing is settled, the file is
+    /// kept, and the proposal waits for the tick after the file is fixed.
+    /// </summary>
+    [Fact]
+    public void Nothing_is_settled_over_a_rules_file_that_could_not_be_read()
+    {
+        const string held = """{ "machine": { "deny": ["Bash(git push:*)"] }, torn""";
+        File.WriteAllText(PermissionRules.PathOf(_home), held);
+        var path = Proposal("p0000009", "add", list: "deny", rule: "Bash(rm:*)");
+
+        var said = RuleProposals.Settle(_home, At);
+
+        Assert.Contains("no proposal settled", Assert.Single(said));
+        Assert.Equal(held, File.ReadAllText(PermissionRules.PathOf(_home)));
+        Assert.Equal("proposed", Read(path).GetProperty("state").GetString());
+    }
+
     /// <summary>🔴 The owner's answer: a widening never applies without the person.</summary>
     [Fact]
     public void A_widening_waits_for_the_person_and_changes_nothing()

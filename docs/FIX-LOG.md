@@ -5,6 +5,35 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## The desktop wrote an edit over a home file it could not read, dropping what the file held (2026-09-25)
+
+**Symptom.** Found by CLEAN1, confirming the driver's *one unreadable-config convention* item. REV3
+fixed this for the CLI (F3, F4): an edit over a home file the tool could not read is refused. The
+desktop's side of the same files still did it.
+
+- **`permissions.json`:** a rule added from Settings, or a narrowing proposal the tick applied, wrote
+  the empty read back, and every deny the person had written was gone.
+- **`harnesses.json`:** a version pinned or unpinned, or a profile's default set or cleared, rewrote
+  the file with every default, workspace choice and pin removed.
+- **`plugins.json`:** enabling or disabling a plugin switched back on every plugin the person had
+  switched off.
+
+**Root cause.** Each reader returns the empty default for an unreadable file, which is right for
+driving: a hand-mangled file must never stop the driver coming up. The editors then read through
+the same loader and saved what it returned, so the empty default became the new file.
+
+**Fix.** The unreadable read carries its problem: `PermissionFile.Problem` already existed and
+nothing checked it, while `HarnessSettings.Problem` and `PluginState.Problem` are new. `Save`, or
+the edit on the plugin state, refuses while a problem is set, and says to fix or remove the file.
+Settling rule proposals over an unreadable file settles nothing and says so once. The proposals wait
+for the first tick after the file is fixed. Driving still reads all three as empty.
+
+**Verify.** One test per file, in `PermissionRulesTests`, `HarnessSettingsTests` and
+`PluginCatalogTests`: an edit over a torn file is refused, and the file is byte for byte what it was.
+`RuleProposalsTests` checks that a narrowing proposal over a torn rules file settles nothing and
+stays `proposed`. All four were seen failing against the previous code. Driver 685/685, modules
+129/129.
+
 ## A remote's malformed quest JSON threw at the door instead of being refused (2026-09-25)
 
 **Symptom.** Found by CLEAN1, while deduplicating the service's JSON helpers. `QuestWire.ReadPush`

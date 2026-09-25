@@ -173,6 +173,26 @@ public sealed class PluginCatalogTests : IDisposable
     }
 
     /// <summary>
+    /// 🔴 REV3 CLEAN1: a state file that could not be read disables nothing, which keeps every plugin
+    /// running — right for a read. An edit over it rewrote the file whole, switching back on every
+    /// plugin the person had switched off. It is refused, and the file is kept (the CLI twin agrees).
+    /// </summary>
+    [Fact]
+    public void An_edit_over_a_state_file_that_could_not_be_read_is_refused_and_the_file_is_kept()
+    {
+        Directory.CreateDirectory(_home);
+        var file = Path.Combine(_home, PluginState.FileName);
+        const string held = """{ "disabled": ["acme.noisy"], torn""";
+        File.WriteAllText(file, held);
+
+        Assert.Empty(PluginState.Load(_home).Disabled);
+        var refused = Assert.Throws<DriverException>(() => PluginState.Disable(_home, "acme.agent"));
+
+        Assert.Contains("could not be read", refused.Message);
+        Assert.Equal(held, File.ReadAllText(file));
+    }
+
+    /// <summary>
     /// The host knows what a plugin claims before anything of it loads: a name this build already
     /// carries is refused naming both sides, and the plugin contributes nothing.
     /// </summary>

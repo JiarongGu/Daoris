@@ -300,6 +300,25 @@ public sealed class HarnessSettingsTests : IDisposable
 
         Assert.Empty(HarnessSettings.Load(Path_).Defaults);
     }
+
+    /// <summary>
+    /// 🔴 REV3 CLEAN1 — the driver's half of CLI F4. Read as empty is right for DRIVING; an EDIT made
+    /// over that empty read wrote it back, and every default, workspace choice and pin the person had
+    /// in the file was gone. The CLI refuses the same edit, and so does this.
+    /// </summary>
+    [Fact]
+    public void An_edit_over_wiring_that_could_not_be_read_is_refused_and_the_file_is_kept()
+    {
+        Directory.CreateDirectory(_home);
+        const string held = "{ \"defaults\": { \"claude-code\": \"work\" }, torn";
+        File.WriteAllText(Path_, held);
+
+        var edited = HarnessSettings.Load(Path_).WithDefault("codex", "home");
+        var refused = Assert.Throws<DriverException>(() => edited.Save(Path_));
+
+        Assert.Contains("could not be read", refused.Message);
+        Assert.Equal(held, File.ReadAllText(Path_));
+    }
 }
 
 /// <summary>

@@ -168,6 +168,15 @@ public static class RuleProposals
             // and saved after each narrowing wrote back whatever the person had changed meanwhile —
             // a deny they had just added could be undone by the driver applying something else.
             var rules = PermissionRules.Load(home);
+            if (rules.Problem is not null)
+            {
+                // Nothing is settled over a file the driver could not read: a narrowing written now
+                // would replace every rule in it (REV3). The proposals stay as they are, to be settled
+                // on the first tick after the file is fixed.
+                said.Add($"rules  no proposal settled: {rules.Problem}");
+                break;
+            }
+
             try
             {
                 effect = Effect(rules, proposal.Change);

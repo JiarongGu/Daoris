@@ -216,8 +216,19 @@ public static class PermissionRules
     }
 
     /// <summary>Written beside and renamed over, BOM-less and LF, keeping what a newer build wrote.</summary>
+    /// <exception cref="DriverException">
+    /// The file could not be read when <paramref name="file"/> was loaded (REV3). What it holds is the
+    /// empty read, and writing it would drop every rule the file had. The CLI refuses the same edit.
+    /// </exception>
     public static void Save(string home, PermissionFile file)
     {
+        if (file.Problem is not null)
+        {
+            throw new DriverException(
+                $"{FileName} could not be read, so this edit was not written — it would have replaced every "
+                + "rule in the file with this one change. Fix the file or remove it, then make the change again.");
+        }
+
         Directory.CreateDirectory(home);
         var root = new JsonObject();
         foreach (var (key, value) in file.Rest) root[key] = value?.DeepClone();

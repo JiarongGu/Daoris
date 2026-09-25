@@ -233,6 +233,12 @@ public sealed record HarnessSettings(
     public IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>> WorkspaceVersions { get; init; } =
         WorkspaceVersions ?? new Dictionary<string, IReadOnlyDictionary<string, string>>(StringComparer.OrdinalIgnoreCase);
 
+    /// <summary>
+    /// Why the file could not be read — null when it could, or when there was none. Carried through
+    /// every <c>With…</c> so an edit made over the empty read is refused at <see cref="Save"/> (REV3).
+    /// </summary>
+    public string? Problem { get; init; }
+
     public const string PathVariable = "DAORIS_HARNESS_CONFIG";
 
     /// <summary>
@@ -285,15 +291,26 @@ public sealed record HarnessSettings(
         catch (Exception error)
             when (error is JsonException or IOException or UnauthorizedAccessException)
         {
-            return new HarnessSettings();
+            return new HarnessSettings { Problem = $"{Path.GetFileName(path)} could not be read ({error.Message})" };
         }
     }
 
     /// <summary>
     /// Write the wiring back — atomically, beside-then-rename, like every write in this family.
     /// </summary>
+    /// <exception cref="DriverException">
+    /// The file could not be read when these settings were loaded: what they hold is the empty default,
+    /// and writing it would replace every choice the file had. The CLI refuses the same edit.
+    /// </exception>
     public void Save(string path)
     {
+        if (Problem is not null)
+        {
+            throw new DriverException(
+                $"{Problem}, so this edit was not written — it would have replaced every choice in it. "
+                + "Fix the file or remove it, then make the change again.");
+        }
+
         Directory.CreateDirectory(Path.GetDirectoryName(Path.GetFullPath(path))!);
 
         using var stream = new MemoryStream();

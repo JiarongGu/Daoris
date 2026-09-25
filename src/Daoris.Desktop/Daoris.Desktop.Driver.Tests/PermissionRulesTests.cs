@@ -320,6 +320,24 @@ public sealed class PermissionRulesTests : IDisposable
         Assert.Contains("Bash(git push:*)", PermissionRules.Compose(file, "default", "engine").Deny);
     }
 
+    /// <summary>
+    /// 🔴 REV3 CLEAN1 — REV3's CLI F3, still live on the desktop's side. Empty is right for a SPAWN;
+    /// an edit made over it (a rule added from Settings, a proposal accepted) wrote the empty read
+    /// back, and every deny the person had written was gone. The CLI refuses that edit, and so does this.
+    /// </summary>
+    [Fact]
+    public void An_edit_over_a_file_that_could_not_be_read_is_refused_and_the_file_is_kept()
+    {
+        const string held = """{ "machine": { "deny": ["Bash(rm:*)"] }, torn""";
+        File.WriteAllText(PermissionRules.PathOf(_home), held);
+
+        var edited = PermissionRules.Add(PermissionRules.Load(_home), RuleScope.Machine, null, RuleList.Allow, "Read");
+        var refused = Assert.Throws<DriverException>(() => PermissionRules.Save(_home, edited));
+
+        Assert.Contains("could not be read", refused.Message);
+        Assert.Equal(held, File.ReadAllText(PermissionRules.PathOf(_home)));
+    }
+
     // ——— What the harness is handed.
 
     /// <summary>
