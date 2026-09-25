@@ -6102,8 +6102,32 @@ green, Playwright 21/21, family 279/279, deploy 39/39.
   - The ring's "not reported yet" sentence promised a report once a turn was under way. The native
     door reports only when a turn ends, and a stopped turn may report none, so the sentence now
     says that.
-- **Found on the way:** conversations are missing from what each account has carried, and the
-  Settings copy says only the protocol door reports. That is USAGE1, open in the backlog.
+- **Found on the way:** conversations were missing from what each account has carried, and the
+  Settings copy said only the protocol door reports. That was USAGE1, closed below.
 
 Gates: CLI 478, driver 689 → 694, modules 129, service 502, web unit 1006 → 1026, code-map green,
 Playwright 21/21, family 279/279, deploy 39/39.
+
+## USAGE1 — a conversation counts toward its account (2026-09-26)
+
+- [x] ~~**USAGE1 — a conversation counts toward its account** (found by CONV5). What each account has
+  carried (Settings, TOOL3) is recorded by driven sessions and intakes only. `ChatRunner` records
+  nothing, so every conversation is missing from it. Its copy, and `Usage.cs`'s remarks, still say
+  only the protocol door reports, which has been untrue since CONV3a gave the native door a reader.
+  Record a chat's high-water mark at its end, through the loop's one `SessionUsage`, and correct
+  both.~~
+✅ **done 2026-09-26**. The FIX-LOG has the root cause.
+
+- A conversation records its high-water context at its end, before its record moves: the protocol
+  door's from `AcpSession.Usage` (new), and the native door's from its reader. A text door records
+  nothing, and the screen says *not measured* for it.
+- `DriverLoop` hands the runner its one `SessionUsage`, which now takes one writer at a time. The
+  headless chat door writes the home's own file, as its event record does.
+- The Settings copy, `Usage.cs`'s remarks and the toolchain design's §4 now say what is measured.
+- Tests on both doors, over stand-in harnesses that now report context: the protocol stub per
+  `usage_update`, the native stub per message with the window on its `result`.
+- **Looked at** on the scratch window: a one-word chat on Claude Code's door ended, and Settings
+  counted it under its account, at 46,698 (a fixture's 9,000 and this chat's 37,698).
+
+Gates: CLI 478, driver 694 → 696, modules 129, web unit 1026, Playwright 21/21, family 279/279,
+deploy 39/39.

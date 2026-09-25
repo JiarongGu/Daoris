@@ -132,6 +132,15 @@ public sealed class AcpSession(
     private Task? _pump;
 
     /// <summary>
+    /// The largest context reading this session has reported (TOOL3), or null when it reported none —
+    /// what a conversation, which never runs <see cref="RunAsync"/>, counts toward its account (USAGE1).
+    /// </summary>
+    public AcpUsage? Usage
+    {
+        get { lock (_measured) return _usage; }
+    }
+
+    /// <summary>
     /// Run one turn end to end: handshake, a session on the tree, the target as a prompt, and every
     /// update rendered as it arrives — a driven session's whole life on this wire.
     /// </summary>

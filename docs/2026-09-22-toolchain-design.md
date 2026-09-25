@@ -228,7 +228,10 @@ it wrote, and whether a trusted parent covers a child. Both are measurable in on
 - **The source is ACP's `usage_update`**, parsed structurally instead of rendered to a line. It is
   the only structured usage any door currently delivers, which makes this an argument *for* the ACP
   door rather than a reason to parse the pipe door's text. A pipe-door session records no usage, and
-  says so rather than showing a zero.
+  says so rather than showing a zero. *(Amended by D76: since CONV3a the native door reads Claude
+  Code's own `stream-json`, which reports context when a turn ends, so only a door that carries text
+  alone records none. Since USAGE1, conversations count toward their account as well as driven
+  sessions and intakes.)*
 - 🔴 **Usage is machine-local material.** A profile name is already served only over loopback
   (`ToSession`: `Profile: loopback ? s.Profile : null`), and per-account usage names a profile — so
   the record inherits that boundary rather than inventing one. It lives under `~/.daoris/usage/`,

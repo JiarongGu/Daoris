@@ -85,6 +85,46 @@ public sealed class ProtocolChatTests : IDisposable
     }
 
     /// <summary>
+    /// USAGE1: a conversation counts toward the account it ran as, at its high-water mark — what each
+    /// account has carried was driven sessions and intakes only, so every conversation was missing.
+    /// </summary>
+    [Fact]
+    public async Task A_conversation_counts_toward_its_account_at_its_high_water_mark()
+    {
+        await using var service = StandInService.Start(Path.Combine(_home, "engine"));
+        var config = DriverConfig.Empty with
+        {
+            Commands = new Dictionary<string, IReadOnlyList<string>> { ["acp-stub"] = ["node", Agent(), Heard] },
+        };
+        var adapters = AdapterSet.Built();
+        var events = new SessionEvents(Path.Combine(_home, "sessions"));
+        var usage = new SessionUsage(_home);
+        using var client = new ServiceClient(service.Url, null);
+        using var runner = new ChatRunner(
+            client, adapters, _home, new SessionProcesses(Path.Combine(_home, "sessions")), events: events,
+            harnesses: new HarnessRoster(adapters, Path.Combine(_home, "harnesses.json")), usage: usage);
+
+        var id = (await runner.StartAsync("engine", "acp-stub", config)).SessionId!;
+        string Seen() => $"state {service.State(id)}, measured [{string.Join(" | ", usage.Sessions.Select(e => $"{e.Session}:{e.Used}"))}]";
+        await Until(() => service.State(id) == "working", Seen);
+
+        Assert.True(runner.Say(id, "a longer message"));
+        Assert.True(runner.Say(id, "short"));
+        await Until(() => events.Page(id).Events.Count(e => e.Kind == SessionEventKind.Turn) == 2, Seen);
+        Assert.Empty(usage.Sessions);
+
+        Assert.True(runner.Finish(id));
+        await Until(() => service.State(id) == "completed" && usage.Sessions.Count == 1, Seen);
+
+        var measured = Assert.Single(usage.Sessions);
+        Assert.Equal(id, measured.Session);
+        Assert.Equal("engine", measured.Repository);
+        Assert.Equal("acp-stub", measured.Harness);
+        Assert.Equal("a longer message".Length * 1000, measured.Used);
+        Assert.Equal(200_000, measured.Size);
+    }
+
+    /// <summary>
     /// 🔴 REV3: a turn the agent refused (a JSON-RPC error — auth expired, overloaded) recorded a note and
     /// never a turn's end, so the page drew *working…* under the driver's own failure note until the
     /// next message, while the composer beside it said nothing was running. A refused turn ENDS.
@@ -253,6 +293,9 @@ public sealed class ProtocolChatTests : IDisposable
                 await new Promise((resolve) => setTimeout(resolve, 150));
                 send({ jsonrpc: '2.0', method: 'session/update', params: { sessionId: 'acp-chat',
                   update: { sessionUpdate: 'agent_message_chunk', content: { type: 'text', text: 'heard ' + said } } } });
+                // Context as the prompt's length in thousands, so a test knows each turn's reading.
+                send({ jsonrpc: '2.0', method: 'session/update', params: { sessionId: 'acp-chat',
+                  update: { sessionUpdate: 'usage_update', used: said.length * 1000, size: 200000 } } });
                 send({ jsonrpc: '2.0', id: frame.id, result: { stopReason: 'end_turn' } });
               } else if (frame.method === 'session/close') {
                 note('session/close');

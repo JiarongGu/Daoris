@@ -22,10 +22,11 @@ public sealed record AccountUsage(string Harness, string? Profile, int Sessions,
 /// What sessions on this machine consumed (TOOL3/D57 §4) — <b>measured before it is managed</b>.
 /// </summary>
 /// <remarks>
-/// <para><b>The source is the protocol door.</b> ACP reports context pressure per turn; the pipe door
-/// gives text and an exit code. So a pipe-door session is recorded not at all and every surface says
-/// <i>not measured</i> rather than showing a zero — which is also the honest argument for the ACP
-/// door rather than for parsing somebody else's stdout.</para>
+/// <para><b>The source is whatever structured wire the door reads.</b> ACP reports context as a turn
+/// runs; Claude Code's own <c>stream-json</c>, which its adapter reads (CONV3a), reports it when a turn
+/// ends. A door that gives only text and an exit code is recorded not at all, and every surface says
+/// <i>not measured</i> rather than showing a zero. Driven sessions, intakes and, since USAGE1,
+/// conversations all record here, each at its end.</para>
 ///
 /// <para>🔴 <b>Machine-local, by an inherited rule.</b> Per-account usage names a credential profile,
 /// and <c>ToSession</c> already serves a profile name only over loopback — so this lives beside the
@@ -77,6 +78,15 @@ public sealed class SessionUsage(string home)
     /// and then finished small must not read as having used very little.
     /// </remarks>
     public void Record(UsageEntry entry)
+    {
+        // One writer at a time (USAGE1): a conversation's end and a driven session's both record here,
+        // and two read-modify-writes at once would each save a list missing the other's entry.
+        lock (_writing) Keep(entry);
+    }
+
+    private readonly object _writing = new();
+
+    private void Keep(UsageEntry entry)
     {
         var held = Load().ToList();
         var at = held.FindIndex(

@@ -248,7 +248,7 @@
   "harness.body": "Which account each tool runs as",
   "harness.absent": "not installed",
   "usage.title": "What each account has carried",
-  "usage.body": "Context reported by sessions this machine ran, per account — only over the protocol door, so a session run the older way is an absence here, not a zero. No price is attached.",
+  "usage.body": "Context reported by the sessions and conversations this machine ran, per account, each at its highest. A door that carries only text reports none, so a session run on one is an absence here, not a zero. No price is attached.",
   "usage.context": "{{used}} context",
   "usage.ownHome": "its own home",
   "usage.sessions": "{{count}} session(s)",

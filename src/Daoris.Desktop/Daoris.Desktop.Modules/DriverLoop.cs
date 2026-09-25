@@ -238,7 +238,8 @@ public sealed class DriverLoop(
         // conversation and writes its record through this client, and the language's reverse order is
         // what guarantees the client is still there. Stopped after the client, a chat open at close was
         // recorded nowhere and read `working` forever (2026-09-25).
-        using var chat = new ChatRunner(service, Harnesses.Adapters, homeDirectory, Processes, Output, Harnesses, Events);
+        // …and the same usage record, so a conversation's end and a driven session's are one writer (USAGE1).
+        using var chat = new ChatRunner(service, Harnesses.Adapters, homeDirectory, Processes, Output, Harnesses, Events, Usage);
         // Where a conversation's turns stand, as it moves (CONV4a): whether one is in flight, and what is
         // waiting, which is in no record until it is sent. Each change is the whole state, so a missed one
         // costs nothing.

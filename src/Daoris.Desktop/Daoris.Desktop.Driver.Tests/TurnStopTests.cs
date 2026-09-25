@@ -182,6 +182,31 @@ public sealed class TurnStopTests : IDisposable
     }
 
     /// <summary>
+    /// USAGE1 on the native door: a conversation counts toward its account at its high-water mark, from
+    /// the context its reader measured — and a text door, which measures none, counts nothing.
+    /// </summary>
+    [Fact]
+    public async Task A_conversation_on_the_native_door_counts_toward_its_account()
+    {
+        await using var session = await Chat("claude-code");
+
+        Assert.True(session.Runner.Say(session.Id, "a longer one"));
+        Assert.True(session.Runner.Say(session.Id, "first"));
+        Assert.True(session.Runner.Finish(session.Id));
+        await Until(() => session.Service.State(session.Id) == "completed" && session.Usage.Sessions.Count == 1, () => session.Seen());
+
+        var measured = Assert.Single(session.Usage.Sessions);
+        Assert.Equal(("claude-code", "heard a longer one".Length * 1000L, 200_000L), (measured.Harness, measured.Used, measured.Size));
+
+        // A text door measures nothing, so it adds nothing: still the one entry, still Claude Code's. (The
+        // stand-in services number their sessions alike, so the ids themselves cannot tell them apart.)
+        await using var text = await Chat("stub");
+        Assert.True(text.Runner.Finish(text.Id));
+        await Until(() => text.Service.State(text.Id) == "completed", () => text.Seen());
+        Assert.Equal("claude-code", Assert.Single(text.Usage.Sessions).Harness);
+    }
+
+    /// <summary>
     /// A door that carries only text has no turn to stop — the driver cannot tell where one ends — and
     /// says so rather than pretending.
     /// </summary>
@@ -286,7 +311,7 @@ public sealed class TurnStopTests : IDisposable
 
     private sealed record Session(
         string Id, ChatRunner Runner, StandInService Service, SessionEvents Events, ServiceClient Client,
-        List<ChatQueue> Queues, Func<string> Seen) : IAsyncDisposable
+        List<ChatQueue> Queues, Func<string> Seen, SessionUsage Usage) : IAsyncDisposable
     {
         public async ValueTask DisposeAsync()
         {
@@ -311,10 +336,11 @@ public sealed class TurnStopTests : IDisposable
         };
         var adapters = AdapterSet.Built();
         var events = new SessionEvents(Path.Combine(_home, "sessions"));
+        var usage = new SessionUsage(_home);
         var client = new ServiceClient(service.Url, null);
         var runner = new ChatRunner(
             client, adapters, _home, new SessionProcesses(Path.Combine(_home, "sessions")), events: events,
-            harnesses: new HarnessRoster(adapters, Path.Combine(_home, "harnesses.json")));
+            harnesses: new HarnessRoster(adapters, Path.Combine(_home, "harnesses.json")), usage: usage);
         var queues = new List<ChatQueue>();
         runner.QueueChanged += (_, queue) => { lock (queues) queues.Add(queue); };
 
@@ -324,7 +350,7 @@ public sealed class TurnStopTests : IDisposable
                          + $"record [{string.Join(" | ", Said(events, id))}]";
         await Until(() => service.State(id) == "working", Seen);
 
-        return new Session(id, runner, service, events, client, queues, Seen);
+        return new Session(id, runner, service, events, client, queues, Seen, usage);
     }
 
     private static string[] Said(Session session) => Said(session.Events, session.Id);
@@ -368,7 +394,8 @@ public sealed class TurnStopTests : IDisposable
               const id = 'msg_' + (++n);
               send({ type: 'stream_event', event: { type: 'message_start', message: { id } } });
               send({ type: 'stream_event', event: { type: 'content_block_delta', delta: { type: 'text_delta', text } } });
-              send({ type: 'assistant', message: { id, content: [{ type: 'text', text }] } });
+              // Context as the reply's length in thousands, so a test knows each turn's reading (USAGE1).
+              send({ type: 'assistant', message: { id, content: [{ type: 'text', text }], usage: { input_tokens: text.length * 1000 } } });
             };
             const lines = createInterface({ input: process.stdin });
             lines.on('line', (line) => {
@@ -390,7 +417,8 @@ public sealed class TurnStopTests : IDisposable
               setTimeout(() => {
                 words('heard ' + said);
                 note('result: ' + said);
-                send({ type: 'result', subtype: 'success', is_error: false, result: 'heard ' + said, terminal_reason: 'completed' });
+                send({ type: 'result', subtype: 'success', is_error: false, result: 'heard ' + said, terminal_reason: 'completed',
+                  modelUsage: { m: { contextWindow: 200000 } } });
               }, 200);
             });
             lines.on('close', () => { note('stdin ended'); setTimeout(() => process.exit(0), 250); });

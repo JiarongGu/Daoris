@@ -20,7 +20,7 @@ lists.
 
 ## State
 
-**Counts, and this is their one home:** fifteen commands, **478 CLI tests, 502 service, 694 driver,
+**Counts, and this is their one home:** fifteen commands, **478 CLI tests, 502 service, 696 driver,
 129 desktop modules, 80 devkit, 1026 web unit, 21 Playwright**, 66/66 release rehearsal, **279/279
 family rehearsal** (it names its own phases when you run it), **39/39 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge
@@ -47,7 +47,8 @@ reference gap* below. Nothing is pushed or published, and a release is still blo
 - **REV3, the owner's full review, is closed**, and so is **CLEAN1**, its cleanup lists (both in
   the archive). The ledger is `docs/2026-09-25-rev3-review.md`, and what they left is under *What
   REV3 left* below.
-- 🔴 **Next: USAGE1** (found by CONV5, under *The reference gap*), **then FRAME6, the frame.**
+- 🔴 **Next: FRAME6, the frame.** A resizable, collapsible rail and a resizable dock with tabs per
+  session, at the geometry components §3a adopted.
 - **How each landing is checked:** TDD, the gates, then a look on the window with a real session.
   Real sessions on this machine's Claude Code account are authorised (2026-09-24).
 - **The scratch machine:** its `driver.json` points `claude-code-acp` at the ACP adapter the dsh
@@ -107,7 +108,7 @@ rather than designed.
 
 ## Backlog
 
-**Twenty-eight rows are open**: D76's four, USAGE1 beside them, and the held file tools; the ten REV3 left, with RETRY1;
+**Twenty-seven rows are open**: D76's four and its held file tools; the ten REV3 left, with RETRY1;
 three leftovers (FLAKE1, DEPLOY5, TEST1); three on the owner (TRUST2, AGT2c, INT6); and six on a
 trigger (see *Handover*). Every closed one is in `docs/task-archive.md`, and this file holds no
 ticked rows, by the `task-lifecycle` rule it also ships. A heading below holds open rows only.
@@ -233,12 +234,6 @@ close that. **The owner chose the conversation model and every extra → D76** (
 *"you should check screen by screen and all ui ux logic"*. Take them in order; each is one landing,
 TDD, looked at on the window, and the ones that touch a real session use one (authorised
 2026-09-24). **CONV4 was split (2026-09-25)**, and all four parts are in the archive.
-- [ ] **USAGE1 — a conversation counts toward its account** (found by CONV5). What each account has
-  carried (Settings, TOOL3) is recorded by driven sessions and intakes only. `ChatRunner` records
-  nothing, so every conversation is missing from it. Its copy, and `Usage.cs`'s remarks, still say
-  only the protocol door reports, which has been untrue since CONV3a gave the native door a reader.
-  Record a chat's high-water mark at its end, through the loop's one `SessionUsage`, and correct
-  both.
 - [ ] **FRAME6 — the frame.** A resizable, collapsible rail (264–420px, 56px strip) and a resizable
   dock (45% default, 70% cap) with tabs per session, deterministic close (components §3a).
 - [ ] **RAIL1 — the list.** Search sessions by name and by content, and a row menu.

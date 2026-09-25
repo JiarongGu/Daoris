@@ -34,8 +34,13 @@ public sealed class ChatRunner(
     HarnessRoster? harnesses = null,
     // Where a conversation's structure is kept (D76): the shell's shared record, so its page hears each
     // message live; the home's own where nobody passes one, which is the headless chat door's case.
-    SessionEvents? events = null) : IDisposable
+    SessionEvents? events = null,
+    // What each account has carried (TOOL3): the loop's one record where a shell has one, so a chat's end
+    // and a driven session's never write it at once; the home's own for the headless chat door (USAGE1).
+    SessionUsage? usage = null) : IDisposable
 {
+    private readonly SessionUsage _usage = usage ?? new SessionUsage(home);
+
     // Shared with the driver where a shell has both, so a probe is paid for once; its own where it
     // does not, which is the headless chat door's case.
     private readonly HarnessRoster _harnesses = harnesses ?? new HarnessRoster(adapters);
@@ -260,7 +265,12 @@ public sealed class ChatRunner(
             _turned[sessionId] = native;
         }
 
-        var watch = WatchAsync(sessionId, process, transcript, onEnded, rules, mapper, chat, native, servers);
+        // What the conversation consumed counts toward the account it ran as (USAGE1), as a driven
+        // session's does: at its end, at its high-water mark, where the door reported one.
+        void Measured(AcpUsage used) => _usage.Record(new UsageEntry(
+            sessionId, known.Repository, resolved.Name, selection.Profile, used.Used, used.Size, DateTimeOffset.UtcNow));
+
+        var watch = WatchAsync(sessionId, process, transcript, onEnded, Measured, rules, mapper, chat, native, servers);
         _watching[sessionId] = watch;
         _ = watch.ContinueWith(
             _ => _watching.TryRemove(new KeyValuePair<string, Task>(sessionId, watch)), TaskScheduler.Default);
@@ -389,6 +399,7 @@ public sealed class ChatRunner(
     /// <summary>One event into a conversation's record. Sent is what the person asked for; the record's failure is its own.</summary>
     private void Record(string sessionId, SessionEvent e) => _events.Keep(sessionId, e, say: null);
 
+    /// <param name="measured">Told the conversation's high-water context at its end, where its door reported one (USAGE1).</param>
     /// <param name="rules">The conversation's rules file (PERM1), which goes when the conversation does.</param>
     /// <param name="mapper">The harness's structured-output reader (CONV3), or null where its door is text.</param>
     /// <param name="chat">The conversation's session on the protocol door (CONV3b), or null on the pipe.</param>
@@ -396,6 +407,7 @@ public sealed class ChatRunner(
     /// <param name="servers">The plugins' servers file handed on the pipe door, which goes when the conversation does.</param>
     private async Task WatchAsync(
         string sessionId, Process process, string transcript, Func<string, string, Task>? onEnded,
+        Action<AcpUsage>? measured = null,
         string? rules = null, IStreamMapper? mapper = null, ProtocolChat? chat = null, NativeChat? native = null,
         string? servers = null)
     {
@@ -415,9 +427,9 @@ public sealed class ChatRunner(
         {
             // The conversation's messages are recorded as the person sends them (`Say`), so the
             // capture opens with no composed prompt of its own.
-            var capture = chat is not null
-                ? CaptureProtocolAsync(sessionId, process, transcript, chat)
-                : mapper is not null
+            var protocol = chat is not null ? CaptureProtocolAsync(sessionId, process, transcript, chat) : null;
+            Task capture = protocol
+                ?? (mapper is not null
                     ? Driver.CaptureStructuredAsync(
                         process.StandardOutput, process.StandardError, transcript, sessionId, output, _events, mapper,
                         prompt: null, CancellationToken.None,
@@ -426,11 +438,18 @@ public sealed class ChatRunner(
                         {
                             if (e.Kind == SessionEventKind.Turn) native?.TurnEnded();
                         })
-                    : Driver.CaptureAsync(process, transcript, sessionId, output, CancellationToken.None);
+                    : Driver.CaptureAsync(process, transcript, sessionId, output, CancellationToken.None));
             await service.AdvanceAsync(sessionId, "working", transcript: transcript).ConfigureAwait(false);
 
             await process.WaitForExitAsync().ConfigureAwait(false);
             await capture.ConfigureAwait(false);
+
+            // What it consumed, where its door reported it — measured before the record moves, so a page
+            // told of the ending finds the account's usage already counting it.
+            if ((protocol is not null ? await protocol.ConfigureAwait(false) : mapper?.Usage) is { } used)
+            {
+                measured?.Invoke(used);
+            }
 
             // The person's stop outranks the observation, exactly as for a driven session: a killed
             // process leaves the same signals as one that ended on its own, and only this flag knows
@@ -491,7 +510,8 @@ public sealed class ChatRunner(
     /// A session that cannot be opened is one nothing can be said to: its process is ended, and the
     /// failure is what the record concludes with — the driver saw it, and it is not the person's.
     /// </remarks>
-    private async Task CaptureProtocolAsync(string sessionId, Process process, string transcript, ProtocolChat chat)
+    /// <returns>The session's high-water context, or null when it reported none.</returns>
+    private async Task<AcpUsage?> CaptureProtocolAsync(string sessionId, Process process, string transcript, ProtocolChat chat)
     {
         await using var file = new StreamWriter(transcript, append: false);
         var closed = false;
@@ -545,6 +565,7 @@ public sealed class ChatRunner(
         session.Release();
 
         if (failed is not null) throw new DriverException($"the ACP session could not open: {failed.Message}");
+        return session.Usage;
     }
 
     /// <summary>A conversation whose turns are visible — what every door's question about a turn asks.</summary>

@@ -5,6 +5,27 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## Conversations were missing from what each account carried, and the screen said why wrongly (2026-09-26)
+
+**Symptom.** Found by CONV5 while reading the usage copy. Settings' *What each account has carried*
+counted driven sessions and intakes only. Every conversation, the main way a person now uses an
+account, was missing from it. The copy explained the absence as "only over the protocol door", which
+had been untrue since CONV3a gave the native door a reader that reports context.
+
+**Root cause.** TOOL3 recorded usage where a session concluded, in the driver's tick. Conversations
+conclude in `ChatRunner`, which was written before TOOL3 and never recorded anything. The copy and
+`Usage.cs`'s remarks were written when ACP was the only structured wire, and CONV3a did not revisit
+them.
+
+**Fix.** A conversation records its high-water context at its end: the protocol door's from the
+session (`AcpSession.Usage`), the native door's from its reader. It records through the loop's one
+`SessionUsage`, which now takes one writer at a time, since a chat's end and a driven session's can
+land together. The copy, the remarks and the toolchain design's §4 say what is measured now.
+
+**Verification.** A test on each door, over stand-in harnesses that report context: the conversation
+counts at its high-water mark, and a text door adds nothing. Red before the fix, since the runner
+took no usage record at all.
+
 ## The code map was corrected by hand, so its gate was red on main and nothing said so (2026-09-26)
 
 **Symptom.** Found by CONV4d running every declared gate: `map --check` said module `daoris-web`
