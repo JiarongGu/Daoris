@@ -179,8 +179,9 @@ A **fixed left sidebar** and a content column — the shape of a console, not a 
   replaces it, and a failure the tick repeats is said once until a tick runs again, since a tick
   report is a log and a toast an interruption (D62).
 - **Dates, counts and Daoris's own sentences are in the reader's language.** A date is written the
-  way the reader's language writes it (`format.ts`, and nothing else formats: *23/09/2026, 1:58:49
-  pm* sat in a 中文 drawer). A sentence the driver writes is chrome, so 中文 translates it, by its
+  way the reader's language writes it, with the machine's habits when the machine speaks that
+  language (`format.ts`, and nothing else formats: *23/09/2026, 1:58:49 pm* sat in a 中文 drawer, and
+  a bare `en` then wrote a British machine's dates the US's way). A sentence the driver writes is chrome, so 中文 translates it, by its
   typed half (a verdict, a code) and never by matching the English; where the words need what the
   page is not told, the driver's words stand (UX5 U27, U28).
 - **Empty states** are designed, not blank: a quiet glyph, one headline line, one body line, and the
@@ -475,11 +476,15 @@ A **fixed left sidebar** and a content column — the shape of a console, not a 
   §4) lists parked sessions, then asks waiting on a person (INT4d), then quests nobody can take, and
   it is absent when nothing waits.
 - **Quests** — the primary page action is *Ask* (INT4c): its composer and each ask's record are
-  drawers, and the asks sit above the quests as a group of their own, a card per ask. *New quest*
+  drawers, and the asks sit above the quests as a group of their own, a card per ask, what has
+  waited longest first and a closed ask last (UX5 U32). The ask composer promises only what this
+  machine will do: an intake agent publishes on its own, so *nothing is published until you name a
+  receiver* is said only where none is set (U34). *New quest*
   opens the **compose drawer**; the list stays scannable (pill, title, route,
   age, first line of the ask) grouped Open / In progress / Closed; **clicking a card opens the detail
   drawer**: the whole ask, the meta, the note, and the actions — take, done, decline-with-reason —
-  where there is room to act deliberately. Quick actions leave the cards; a card is for reading.
+  where there is room to act deliberately, and the loud one is the quest's next step: *take* while
+  it is open, *done* once it is taken (U31). Quick actions leave the cards; a card is for reading.
   What a quest carries (D65 §2) is **counted on the card** (a link glyph and a paperclip, each with
   its number, before the other marks) and **listed in the drawer**: links as links, and files by
   name and size, with a picture shown as one. The composer takes links one per line, and files by
