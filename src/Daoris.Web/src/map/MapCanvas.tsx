@@ -9,6 +9,15 @@ export type MapSelection =
   | { kind: 'quests'; from: string; to: string }
   | { kind: 'knowledge'; a: string; b: string };
 
+/** Whether two choices are the same part of the map. */
+export function sameSelection(a: MapSelection | null, b: MapSelection | null): boolean {
+  if (a === null || b === null) return a === b;
+  if (a.kind === 'node' && b.kind === 'node') return a.id === b.id;
+  if (a.kind === 'quests' && b.kind === 'quests') return a.from === b.from && a.to === b.to;
+  if (a.kind === 'knowledge' && b.kind === 'knowledge') return a.a === b.a && a.b === b.b;
+  return false;
+}
+
 const SIZE = 600;
 const RADIUS = 30;
 
@@ -43,23 +52,37 @@ export function placeLabel(x: number, y: number): {
  * label — *working now*, or *waiting on you* for one parked on the person, in the waiting hue the
  * band and the rail give that fact (UX5 U1). Every node and edge is a button a keyboard can reach, and
  * its name says what it holds.
+ *
+ * **A choice is a toggle**, as its `aria-pressed` says: a second press releases it, and so does
+ * Escape. What stands forward is what is in focus (a node under the pointer or the keyboard lights
+ * its own lines, and a chosen line stands forward alone), and the rest steps back (UX5 U47).
  */
 export function MapCanvas({ topology, selected, onSelect }: {
   topology: Topology;
   selected: MapSelection | null;
-  onSelect: (selection: MapSelection) => void;
+  /** A part chosen, or `null` when the choice is released. */
+  onSelect: (selection: MapSelection | null) => void;
 }) {
   const { t } = useTranslation();
-  // What the pointer is over, so its lines stand out and the rest step back.
+  // The node the pointer or the keyboard is on, so its lines stand out and the rest step back.
   const [hovered, setHovered] = useState<string | null>(null);
   const at = layoutRing(topology.nodes.map((n) => n.id), SIZE);
-  const focus = hovered ?? (selected?.kind === 'node' ? selected.id : null);
-  const touches = (...ends: string[]) => focus === null || ends.includes(focus);
+  const lit: MapSelection | null = hovered !== null ? { kind: 'node', id: hovered } : selected;
+  /** A line stands forward when nothing is in focus, when a node in focus is one of its ends, or when it IS the chosen line. */
+  const forward = (line: MapSelection, ...ends: string[]) =>
+    lit === null || (lit.kind === 'node' ? ends.includes(lit.id) : sameSelection(lit, line));
 
+  const choose = (selection: MapSelection) => onSelect(sameSelection(selection, selected) ? null : selection);
   const press = (selection: MapSelection) => (event: KeyboardEvent) => {
     if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault();
-      onSelect(selection);
+      choose(selection);
+    }
+  };
+  const release = (event: KeyboardEvent) => {
+    if (event.key === 'Escape' && selected !== null) {
+      event.preventDefault();
+      onSelect(null);
     }
   };
 
@@ -90,6 +113,7 @@ export function MapCanvas({ topology, selected, onSelect }: {
       viewBox={`0 0 ${SIZE} ${SIZE}`}
       role="group"
       aria-label={t('map.canvas')}
+      onKeyDown={release}
       className="block h-auto w-full max-w-[40rem]"
     >
       <defs>
@@ -106,18 +130,20 @@ export function MapCanvas({ topology, selected, onSelect }: {
       {topology.knowledge.map((edge) => {
         const a = at[edge.a]!;
         const b = at[edge.b]!;
-        const chosen = selected?.kind === 'knowledge' && selected.a === edge.a && selected.b === edge.b;
+        const line: MapSelection = { kind: 'knowledge', a: edge.a, b: edge.b };
+        const chosen = sameSelection(selected, line);
         return (
           <g
             key={`k-${edge.a}-${edge.b}`}
             role="button"
             tabIndex={0}
             aria-label={t('map.knowledgeLabel', { a: edge.a, b: edge.b, count: edge.groups })}
-            onClick={() => onSelect({ kind: 'knowledge', a: edge.a, b: edge.b })}
-            onKeyDown={press({ kind: 'knowledge', a: edge.a, b: edge.b })}
+            aria-pressed={chosen}
+            onClick={() => choose(line)}
+            onKeyDown={press(line)}
             className={cn(
               'cursor-pointer outline-none transition-opacity duration-(--speed) [&:focus-visible>line.shown]:stroke-accent',
-              !touches(edge.a, edge.b) && 'opacity-20',
+              !forward(line, edge.a, edge.b) && 'opacity-20',
             )}
           >
             {/* The same wide, invisible target the quest lines carry. */}
@@ -133,7 +159,8 @@ export function MapCanvas({ topology, selected, onSelect }: {
 
       {topology.quests.map((edge) => {
         const { d, middle } = curve(edge.from, edge.to);
-        const chosen = selected?.kind === 'quests' && selected.from === edge.from && selected.to === edge.to;
+        const line: MapSelection = { kind: 'quests', from: edge.from, to: edge.to };
+        const chosen = sameSelection(selected, line);
         const open = edge.open > 0;
         return (
           <g
@@ -141,11 +168,12 @@ export function MapCanvas({ topology, selected, onSelect }: {
             role="button"
             tabIndex={0}
             aria-label={t('map.questsLabel', { from: edge.from, to: edge.to, count: edge.quests.length })}
-            onClick={() => onSelect({ kind: 'quests', from: edge.from, to: edge.to })}
-            onKeyDown={press({ kind: 'quests', from: edge.from, to: edge.to })}
+            aria-pressed={chosen}
+            onClick={() => choose(line)}
+            onKeyDown={press(line)}
             className={cn(
               'cursor-pointer outline-none transition-opacity duration-(--speed) [&:focus-visible>path]:stroke-ink',
-              !touches(edge.from, edge.to) && 'opacity-20',
+              !forward(line, edge.from, edge.to) && 'opacity-20',
             )}
           >
             {/* 🔴 The target a pointer actually has: a wide, invisible stroke along the line. A
@@ -175,7 +203,8 @@ export function MapCanvas({ topology, selected, onSelect }: {
 
       {topology.nodes.map((node) => {
         const { x, y } = at[node.id]!;
-        const chosen = selected?.kind === 'node' && selected.id === node.id;
+        const self: MapSelection = { kind: 'node', id: node.id };
+        const chosen = sameSelection(selected, self);
         const label = placeLabel(x, y);
         // Parked leads: it is the one a person acts on, and a repository may hold one of each.
         const there = node.parked ? 'parked' : node.working ? 'working' : null;
@@ -188,10 +217,12 @@ export function MapCanvas({ topology, selected, onSelect }: {
               there === 'parked' ? 'map.nodeLabelParked' : there === 'working' ? 'map.nodeLabelWorking' : 'map.nodeLabel',
               { repository: node.id, count: node.open })}
             aria-pressed={chosen}
-            onClick={() => onSelect({ kind: 'node', id: node.id })}
-            onKeyDown={press({ kind: 'node', id: node.id })}
+            onClick={() => choose(self)}
+            onKeyDown={press(self)}
             onPointerEnter={() => setHovered(node.id)}
             onPointerLeave={() => setHovered(null)}
+            onFocus={() => setHovered(node.id)}
+            onBlur={() => setHovered(null)}
             className="cursor-pointer outline-none [&:focus-visible>circle.body]:stroke-ink"
           >
             {there && (

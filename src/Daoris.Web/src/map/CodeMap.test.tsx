@@ -40,6 +40,33 @@ describe('the code map drawing', () => {
 
     expect(screen.getByRole('button', { name: 'service, depends on 0' })).toHaveAttribute('aria-pressed', 'true');
   });
+
+  /** UX5 U47, as on the workspace map: a second press releases the choice, and so does Escape. */
+  it('releases the chosen module on a second press, and on Escape', () => {
+    const onSelect = vi.fn();
+    render(<CodeMapCanvas repository="engine" modules={MODULES} dependencies={DEPENDENCIES} selected="service" onSelect={onSelect} />);
+    const service = screen.getByRole('button', { name: 'service, depends on 0' });
+
+    fireEvent.click(service);
+    expect(onSelect).toHaveBeenLastCalledWith(null);
+    fireEvent.keyDown(service, { key: 'Escape' });
+    expect(onSelect).toHaveBeenCalledTimes(2);
+    expect(onSelect).toHaveBeenLastCalledWith(null);
+  });
+
+  /** U47: a module the keyboard is on lights its arrows, as the pointer over it does. */
+  it('lights the arrows of a focused module', () => {
+    const { container } = render(
+      <CodeMapCanvas repository="engine" modules={MODULES} dependencies={DEPENDENCIES} selected={null} onSelect={() => {}} />);
+    const back = () => [...container.querySelectorAll('svg > path')]
+      .filter((path) => path.getAttribute('class')!.includes('opacity-20'));
+    expect(back()).toHaveLength(0);
+
+    fireEvent.focus(screen.getByRole('button', { name: 'web, depends on 1' }));
+
+    // web → service stands forward; the long module's arrow steps back.
+    expect(back()).toHaveLength(1);
+  });
 });
 
 describe('an arrow', () => {

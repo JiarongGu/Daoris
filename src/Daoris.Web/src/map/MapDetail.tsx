@@ -62,14 +62,15 @@ export function MapDetail({ topology, selected, onOpenConvergence, onOpenCode, o
   onOpenCode?: (repository: string) => void;
 }) {
   const { t } = useTranslation();
+  // A choice the map no longer holds (the scope moved, or the data did) is no choice: it left an
+  // empty card (UX5 U47).
+  const hint = <p className="m-0 text-body text-ink-soft">{t('map.detail.hint')}</p>;
 
-  if (!selected) {
-    return <p className="m-0 text-body text-ink-soft">{t('map.detail.hint')}</p>;
-  }
+  if (!selected) return hint;
 
   if (selected.kind === 'node') {
     const node = topology.nodes.find((n) => n.id === selected.id);
-    if (!node) return null;
+    if (!node) return hint;
     const into = topology.quests.filter((e) => e.to === node.id).flatMap((e) => e.quests);
     const out = topology.quests.filter((e) => e.from === node.id).flatMap((e) => e.quests);
     return (
@@ -111,7 +112,7 @@ export function MapDetail({ topology, selected, onOpenConvergence, onOpenCode, o
 
   if (selected.kind === 'quests') {
     const edge = topology.quests.find((e) => e.from === selected.from && e.to === selected.to);
-    if (!edge) return null;
+    if (!edge) return hint;
     return (
       <div className="grid gap-2">
         <p className="m-0 text-body font-semibold text-ink">{t('map.detail.edge', { from: edge.from, to: edge.to })}</p>
@@ -121,7 +122,7 @@ export function MapDetail({ topology, selected, onOpenConvergence, onOpenCode, o
   }
 
   const pair = topology.knowledge.find((e) => e.a === selected.a && e.b === selected.b);
-  if (!pair) return null;
+  if (!pair) return hint;
   return (
     <div className="grid gap-2">
       <p className="m-0 text-body font-semibold text-ink">{t('map.detail.knowledge', { a: pair.a, b: pair.b })}</p>

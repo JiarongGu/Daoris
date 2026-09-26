@@ -1,9 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen, within } from '@testing-library/react';
+import { act, cleanup, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import { MapView } from './MapView';
+import { MapDetail } from './map/MapDetail';
+import { buildTopology } from './map/topology';
 import { WorkspaceScopeProvider } from './scope';
 
 // MAP2 (D67 §3): the workspace map, over a stubbed service — a view of its own, the owner's choice.
@@ -171,6 +173,56 @@ describe('the workspace map', () => {
     expect(node.getAttribute('aria-pressed')).toBe('true');
   });
 
+  /**
+   * UX5 U47: a choice is a toggle, as its `aria-pressed` says — a second press releases it, and so
+   * does Escape — and the detail goes back to saying what a choice would show.
+   */
+  it('releases a choice on a second press, and on Escape', async () => {
+    show();
+    const node = await screen.findByRole('button', { name: 'game, 1 open' });
+
+    await userEvent.click(node);
+    expect(node.getAttribute('aria-pressed')).toBe('true');
+    await userEvent.click(node);
+    expect(node.getAttribute('aria-pressed')).toBe('false');
+    expect(screen.getByText('Choose a repository or a line to see what it carries.')).toBeTruthy();
+
+    await userEvent.click(screen.getByRole('button', { name: '2 quests from game to engine' }));
+    expect(screen.getByText('game → engine')).toBeTruthy();
+    await userEvent.keyboard('{Escape}');
+    expect(screen.queryByText('game → engine')).toBeNull();
+    expect(screen.getByText('Choose a repository or a line to see what it carries.')).toBeTruthy();
+  });
+
+  /** U47: a keyboard moving through the nodes lights their lines as a pointer over them does. */
+  it('lights the lines of a focused repository, as hover does', async () => {
+    REGISTRY = [...REGISTRY, { repository: 'tools', adopted: true, registered: true, owns: [], accepts: [], packs: [], entries: 0 }];
+    show();
+    const tools = await screen.findByRole('button', { name: 'tools, 0 open' });
+    const line = screen.getByRole('button', { name: '2 quests from game to engine' });
+    expect(line.getAttribute('class')).not.toContain('opacity-20');
+
+    act(() => tools.focus());
+    expect(line.getAttribute('class')).toContain('opacity-20');
+    act(() => tools.blur());
+    expect(line.getAttribute('class')).not.toContain('opacity-20');
+  });
+
+  /**
+   * U47: a chosen line stands forward and the others step back. It was told apart only by two more
+   * units on a stroke already four and a half wide.
+   */
+  it('steps back every other line while one is chosen', async () => {
+    show();
+    const quests = await screen.findByRole('button', { name: '2 quests from game to engine' });
+    const knowledge = screen.getByRole('button', { name: 'engine and game learned the same thing once' });
+
+    await userEvent.click(quests);
+
+    expect(quests.getAttribute('class')).not.toContain('opacity-20');
+    expect(knowledge.getAttribute('class')).toContain('opacity-20');
+  });
+
   it('says so when the workspace holds no repository', async () => {
     REGISTRY = [];
     show(() => {}, 'aurora');
@@ -184,6 +236,16 @@ describe('the workspace map', () => {
     show();
 
     expect(await screen.findByText('No repository in any workspace yet')).toBeTruthy();
+  });
+
+  /** U47: a choice the data no longer holds (the scope moved, a quest closed away) is no choice. */
+  it('says what a choice would show when the chosen part has left the map', () => {
+    const topology = buildTopology([], [], [], []);
+    render(<MapDetail topology={topology} selected={{ kind: 'node', id: 'gone' }} />);
+    expect(screen.getByText('Choose a repository or a line to see what it carries.')).toBeTruthy();
+    cleanup();
+    render(<MapDetail topology={topology} selected={{ kind: 'quests', from: 'a', to: 'b' }} />);
+    expect(screen.getByText('Choose a repository or a line to see what it carries.')).toBeTruthy();
   });
 
   // ——— One level in: a repository's own code map (MAP3a).

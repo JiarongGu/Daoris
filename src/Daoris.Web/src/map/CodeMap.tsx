@@ -58,9 +58,11 @@ export function CodeMapCanvas({ repository, modules, dependencies, selected, onS
   modules: CodeModule[];
   dependencies: CodeDependency[];
   selected: string | null;
-  onSelect: (id: string) => void;
+  /** A module chosen, or `null` when the choice is released (a second press, or Escape: UX5 U47). */
+  onSelect: (id: string | null) => void;
 }) {
   const { t } = useTranslation();
+  // The module the pointer or the keyboard is on.
   const [hovered, setHovered] = useState<string | null>(null);
   const layers = layerModules(modules.map((m) => m.id), dependencies);
   const widest = Math.max(1, ...layers.map((row) => row.length));
@@ -75,10 +77,17 @@ export function CodeMapCanvas({ repository, modules, dependencies, selected, onS
 
   const focus = hovered ?? selected;
   const lit = (from: string, to: string) => focus === null || focus === from || focus === to;
+  const choose = (id: string) => onSelect(id === selected ? null : id);
   const press = (id: string) => (event: KeyboardEvent) => {
     if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault();
-      onSelect(id);
+      choose(id);
+    }
+  };
+  const release = (event: KeyboardEvent) => {
+    if (event.key === 'Escape' && selected !== null) {
+      event.preventDefault();
+      onSelect(null);
     }
   };
 
@@ -87,6 +96,7 @@ export function CodeMapCanvas({ repository, modules, dependencies, selected, onS
       viewBox={`0 0 ${width} ${height}`}
       role="group"
       aria-label={t('code.canvas', { repository })}
+      onKeyDown={release}
       className="block h-auto w-full"
     >
       <defs>
@@ -133,10 +143,12 @@ export function CodeMapCanvas({ repository, modules, dependencies, selected, onS
             tabIndex={0}
             aria-label={t('code.moduleLabel', { id: module.id, count })}
             aria-pressed={chosen}
-            onClick={() => onSelect(module.id)}
+            onClick={() => choose(module.id)}
             onKeyDown={press(module.id)}
             onPointerEnter={() => setHovered(module.id)}
             onPointerLeave={() => setHovered(null)}
+            onFocus={() => setHovered(module.id)}
+            onBlur={() => setHovered(null)}
             className="cursor-pointer outline-none [&:focus-visible>rect]:stroke-ink"
           >
             <rect
