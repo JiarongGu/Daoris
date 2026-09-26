@@ -32,6 +32,13 @@ plugin keeps its browser's profile in `${data}/profile`, so a sign-in made there
 for every session after it: open that profile, sign in, and close it before a session starts (a
 profile has one browser at a time). The sign-in is the person's to make, never a session's.
 
+`--output-dir ${data}/output` is not optional. Without it the server writes its page snapshots into
+`.playwright-mcp/` in the session's working directory, which for a driven session is the
+repository's tree. Measured 2026-09-27 on 0.0.82: with the flag, the tree stays empty.
+
+On Windows the command needs no `cmd /c` wrapper for Claude Code. Measured the same day with
+`claude mcp list` on 2.1.283: a bare `npx` server and a `cmd /c npx` one both connected.
+
 The server launches Chrome by default. On a machine without it, add `"--browser", "msedge"` (or
 `firefox`) to the command in the installed copy's manifest. Two other shapes exist and are not the
 default: `--cdp-endpoint <url>` attaches to a browser the person started with a debugging port, and

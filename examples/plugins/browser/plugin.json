@@ -5,6 +5,6 @@
   "version": "1.1.0",
   "description": "Hands every session a browser: the Playwright MCP server, on a profile the plugin keeps, so a session can read a signed-in page, open the app, click through a change and read what it shows.",
   "servers": [
-    { "name": "browser", "command": ["npx", "-y", "@playwright/mcp@latest", "--user-data-dir", "${data}/profile"] }
+    { "name": "browser", "command": ["npx", "-y", "@playwright/mcp@latest", "--user-data-dir", "${data}/profile", "--output-dir", "${data}/output"] }
   ]
 }

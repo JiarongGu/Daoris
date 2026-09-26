@@ -129,7 +129,9 @@ here.
 1. Republish the install (`publish:desktop -- --to <install> --service`) with the shell closed.
 2. `daoris import <folder> --workspace <name>`.
 3. A browser plugin for this machine: the example with `"--browser", "msedge"` added, installed by
-   `daoris plugin add <folder>`.
+   `daoris plugin add <folder>`. The example carries `--output-dir ${data}/output`. Without it, the
+   server writes page snapshots into `.playwright-mcp/` in the session's working directory, which
+   is the repository's tree.
 4. The person signs in to the ticket system once, in that plugin's profile, with the browser opened
    on `plugins/.data/<id>/profile`, and closes it.
 5. `daoris agent rules allow mcp__browser --workspace <name>`.
@@ -143,7 +145,22 @@ here.
 
 - A real harness reading a real signed-in ticket through the plugin's browser. That is the owner's
   run.
-- Playwright MCP keeping a sign-in in `--user-data-dir` under `--browser msedge` on this machine.
-  That comes from its documentation and was not measured.
-- What the real workspace's READMEs yield. The fixtures prove the rules, and the room the first run
-  renders shows the result.
+- A sign-in kept across sessions in the plugin's profile. Measured on 2026-09-27 with Playwright
+  MCP 0.0.82: the server starts Edge on `--user-data-dir` under the plugin's data folder, speaks
+  MCP (25 tools), navigates, and writes nothing into its working directory once `--output-dir` is
+  given. Measured with `claude mcp list` on Claude Code 2.1.283: a bare `npx` server connects on
+  Windows as the `cmd /c npx` form does. Not measured: a sign-in surviving from one launch to the
+  next. That comes from the browser's own profile, and the first run will show it.
+- What the real workspace's READMEs yield. **Seen on 2026-09-27** in a scratch render of the room
+  from the install's registry: all 29 repositories were described, and five were read wrongly by
+  the first cut. Each became a test and was fixed.
+
+## 7. Where the first run stands (2026-09-27)
+
+Steps 1–3 and 5–6 are done on the owner's install. It was republished, the folder was imported as
+its own workspace (29 repositories, plus the documents folder, which was retired because it is not
+a repository), and the index was rebuilt (361 entries from 6 repositories). The Edge browser plugin
+is installed and smoke-tested. The browser is allowed for the workspace, the intake and the
+driven sessions ride the protocol door, and all 29 repositories are drivable, each on its own
+worktree. No quest or ask is open, so nothing starts on its own. **What is left is the owner's:**
+the one sign-in (step 4) and the first ask with a real ticket (step 7).

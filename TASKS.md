@@ -226,13 +226,20 @@ is behind a sign-in. FG1–FG3 are in the archive. **INT6 is reshaped as FG5.**
   terminal's `import --workspace` has no screen twin: the Workspace menu's import still states
   none, so a folder set up from the window lands in `default`. After the folder is chosen, ask which
   circle, offering the scope's and the folder's name, and keep "each row's own" as the unnamed
-  choice. Look at it on the window.
+  choice. Look at it on the window. **Seen with it (2026-09-27):** the page did not hear an import
+  made from the terminal. Overview said *no workspace yet* until the page was reloaded, because
+  nothing tells the page the registry moved. The tick already forwards asks and sessions when their
+  signature changes (INT4d, U13), and the registry could ride the same way.
 - [ ] **FG5 — the first run on the named workspace** (the owner present; INT6 as it now stands).
   The study's §5, in order: republish, import as a workspace, a browser plugin for this machine,
   the person's one sign-in, the browser allowed for the workspace, the loop (intake, the protocol
   door's adapter, drivable, own trees), then an ask with a real ticket. What it produces is the
   report: the room it rendered, whether the intake read the ticket and chose, and what the session
   did. Every part up to the ask can be run by an agent. The sign-in and the ticket are the owner's.
+  **2026-09-27: everything up to them is done** (study §7): the install republished, the workspace
+  imported (29 repositories), the index rebuilt, an Edge browser plugin installed and smoke-tested,
+  the browser allowed for the workspace, the protocol door for intake and sessions, and all 29
+  repositories drivable on their own worktrees. Waiting on the owner's sign-in and first ticket.
 - [ ] **SEM1 — the semantic half after a restart** (study §3, read and not run). The vectors are
   held in memory (`InMemoryVectorStore`), and with an index already on disk,
   `KnowledgeService.EnsureIndexedAsync` skips the refresh. So after a restart the hybrid search
