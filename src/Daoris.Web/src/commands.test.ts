@@ -10,7 +10,6 @@ const world = (over: Partial<Parameters<typeof commands>[0]> = {}): Parameters<t
   group: (id: string) => id,
   attached: true,
   current: 'overview',
-  waiting: 0,
   go: vi.fn(),
   refresh: vi.fn(),
   toggleLanguage: vi.fn(),

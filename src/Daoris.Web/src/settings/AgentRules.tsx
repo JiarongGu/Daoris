@@ -149,7 +149,7 @@ export function AgentRules({ rules, circles, repositories, busy = false, onSwitc
       )}
 
       {proposals.length > 0 && (
-        <div className="mb-3">
+        <div id="settings-proposals" className="mb-3 scroll-mt-3">
           <SectionTitle>{t('settings.rules.proposals.title')}</SectionTitle>
           <Prose className="text-small"><Inline text={t('settings.rules.proposals.hint')} /></Prose>
           {open.length > 0 && (

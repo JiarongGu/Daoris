@@ -1,5 +1,5 @@
 import i18n from '../i18n';
-import type { SettingsSection } from '../SettingsView';
+import type { SettingsAnchor, SettingsSection } from '../SettingsView';
 import type { MenuItem } from './AppMenu';
 
 /** A workspace as the Workspace menu lists it: its name and how many repositories it holds. */
@@ -7,7 +7,11 @@ export type MenuWorkspace = { name: string; repositories: number };
 
 /** What choosing a menu item does, read from its id (`menuAction`). */
 export type MenuAction =
-  | { kind: 'settings'; section: SettingsSection }
+  /**
+   * A domain of Settings, and the part of it an item is named for, which the page brings into view
+   * (UX5 U72: *Usage* opened its domain at the top, a screen above the usage).
+   */
+  | { kind: 'settings'; section: SettingsSection; anchor?: SettingsAnchor }
   | { kind: 'scope'; workspace: string | null }
   | { kind: 'add' }
   | { kind: 'import' }
@@ -100,9 +104,9 @@ export function menuAction(id: string): MenuAction {
   }
   switch (id) {
     // Proposals are answered beside the rules they would change; usage sits under the accounts.
-    case 'proposals': return { kind: 'settings', section: 'permissions' };
-    case 'usage': return { kind: 'settings', section: 'agents' };
-    case 'wire': return { kind: 'settings', section: 'workspace' };
+    case 'proposals': return { kind: 'settings', section: 'permissions', anchor: 'proposals' };
+    case 'usage': return { kind: 'settings', section: 'agents', anchor: 'usage' };
+    case 'wire': return { kind: 'settings', section: 'workspace', anchor: 'wiring' };
     case 'add': return { kind: 'add' };
     case 'import': return { kind: 'import' };
     case 'refresh': return { kind: 'refresh' };

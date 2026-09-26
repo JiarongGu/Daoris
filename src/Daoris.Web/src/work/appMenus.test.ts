@@ -53,9 +53,11 @@ describe('the menus by domain', () => {
 
   it('reads an item as the act it names', () => {
     expect(menuAction('settings:permissions')).toEqual({ kind: 'settings', section: 'permissions' });
-    expect(menuAction('proposals')).toEqual({ kind: 'settings', section: 'permissions' });
-    expect(menuAction('usage')).toEqual({ kind: 'settings', section: 'agents' });
-    expect(menuAction('wire')).toEqual({ kind: 'settings', section: 'workspace' });
+    // An item named for a part of a domain opens at that part (UX5 U72): *Usage* opened Agents &
+    // accounts at its top, a screen above what it named.
+    expect(menuAction('proposals')).toEqual({ kind: 'settings', section: 'permissions', anchor: 'proposals' });
+    expect(menuAction('usage')).toEqual({ kind: 'settings', section: 'agents', anchor: 'usage' });
+    expect(menuAction('wire')).toEqual({ kind: 'settings', section: 'workspace', anchor: 'wiring' });
     expect(menuAction('scope:*')).toEqual({ kind: 'scope', workspace: null });
     expect(menuAction('scope:aurora')).toEqual({ kind: 'scope', workspace: 'aurora' });
     expect(menuAction('import')).toEqual({ kind: 'import' });

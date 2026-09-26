@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { figure, sentence } from './format';
 import { cn } from './lib/cn';
@@ -37,6 +37,9 @@ import { workspacesOf } from './workspaces';
 /** Settings' domains, in the order its list shows them (D75 §2). */
 export type SettingsSection = 'appearance' | 'ai' | 'workspace' | 'driver' | 'agents' | 'permissions' | 'plugins';
 
+/** A part of a domain a menu item is named for (UX5 U72), found by the id `settings-<anchor>`. */
+export type SettingsAnchor = 'usage' | 'proposals' | 'wiring';
+
 /** Which domains need this machine: a browser is never offered one (D47 §4). */
 const SECTIONS: readonly { id: SettingsSection; machine: boolean }[] = [
   { id: 'appearance', machine: false },
@@ -61,12 +64,38 @@ const SECTIONS: readonly { id: SettingsSection; machine: boolean }[] = [
  * Every domain is cards the page already held. The two doors are unchanged (D50): each row is still
  * the file a terminal edits.
  */
-export function SettingsView({ notify, section = 'appearance', onSection }: {
+export function SettingsView({ notify, section = 'appearance', onSection, anchor = null, onAnchored }: {
   notify: Notify;
   section?: SettingsSection;
   onSection?: (section: SettingsSection) => void;
+  /**
+   * The part of the domain a menu item named, brought into view once it is drawn (UX5 U72): the
+   * Agents menu's *Usage* opened its domain at the top, a screen above the usage.
+   */
+  anchor?: SettingsAnchor | null;
+  /** Told once the part is in view, so a later visit opens at the domain's top again. */
+  onAnchored?: () => void;
 }) {
   const { t } = useTranslation();
+  // Watched for until it exists: a part is drawn by the card holding it when that card's query
+  // answers, which re-renders the card and not this page, so a check after this page's renders
+  // missed it.
+  const anchored = useRef(onAnchored);
+  anchored.current = onAnchored;
+  useEffect(() => {
+    if (!anchor) return undefined;
+    const bring = () => {
+      const part = document.getElementById(`settings-${anchor}`);
+      if (!part) return false;
+      part.scrollIntoView({ block: 'start' });
+      anchored.current?.();
+      return true;
+    };
+    if (bring()) return undefined;
+    const watch = new MutationObserver(() => { if (bring()) watch.disconnect(); });
+    watch.observe(document.body, { childList: true, subtree: true });
+    return () => watch.disconnect();
+  }, [anchor]);
   // The same "is a shell here" answer every control uses — one detection path, not two that drift.
   const attached = useDriver().data !== undefined;
   const offered = SECTIONS.filter((domain) => attached || !domain.machine);
@@ -424,7 +453,7 @@ function WiringSettings({ notify }: { notify: Notify }) {
     });
 
   return (
-      <Card className="mt-3.5">
+      <Card id="settings-wiring" className="mt-3.5 scroll-mt-3">
         <SectionTitle>{t('settings.wiring.title')}</SectionTitle>
         <SettingRow
           label={t('settings.wiring.label')}
@@ -1373,7 +1402,7 @@ function HarnessRoster({ notify }: { notify: Notify }) {
           management" actually asks. Derived from the sessions, so the two can never disagree, and
           absent entirely on a machine that has measured nothing rather than a row of zeroes. */}
       {accounts.length > 0 && (
-        <div className="mt-4 border-t border-line pt-3.5">
+        <div id="settings-usage" className="mt-4 scroll-mt-3 border-t border-line pt-3.5">
           <SectionTitle>{t('usage.title')}</SectionTitle>
           <Prose className="mt-1.5 text-small">{t('usage.body')}</Prose>
           <ul className="m-0 mt-2 list-none p-0">

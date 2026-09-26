@@ -30,7 +30,6 @@ const world = (over: Partial<Parameters<typeof commands>[0]> = {}) => commands({
   group: (id) => GROUPS[id],
   attached: true,
   current: 'overview',
-  waiting: 0,
   go: () => {},
   refresh: () => {},
   toggleLanguage: () => {},

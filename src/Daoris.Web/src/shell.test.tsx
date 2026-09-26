@@ -1439,6 +1439,32 @@ describe('the harness roster', () => {
     expect(screen.queryByText('What each account has carried')).toBeNull();
   });
 
+  /**
+   * UX5 U72, seen on the window: the Agents menu's *Usage* opened this domain at its top, and the
+   * usage sat a screen below it. Opened for a part, the page brings that part into view once it is
+   * drawn, and says it has, so a later visit opens at the top again.
+   */
+  it('opens at the part a menu item names, once that part is drawn', async () => {
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'HARNESSES') return ROSTER;
+      if (type === 'USAGE') return { sessions: [], accounts: [{ harness: 'claude-code', profile: null, sessions: 1, used: 9000 }] };
+      return WIRING;
+    });
+    const scrolled = vi.fn();
+    const original = Element.prototype.scrollIntoView;
+    Element.prototype.scrollIntoView = function scroll(this: Element) { scrolled(this.id); };
+    const anchored = vi.fn();
+    try {
+      show(<SettingsView notify={() => {}} section="agents" anchor="usage" onAnchored={anchored} />);
+
+      await screen.findByText('What each account has carried');
+      await waitFor(() => expect(scrolled).toHaveBeenCalledWith('settings-usage'));
+      expect(anchored).toHaveBeenCalled();
+    } finally {
+      Element.prototype.scrollIntoView = original;
+    }
+  });
+
   it('totals what each account carried, and names the one with no profile', async () => {
     invoke.mockImplementation(async (_module: string, type: string) => {
       if (type === 'HARNESSES') return ROSTER;

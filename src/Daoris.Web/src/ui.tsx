@@ -415,11 +415,13 @@ export function PathText({ path, className }: { path: string; className?: string
 
 /* ---------------------------------------------------------------- cards, tiles, headers */
 
-export function Card({ warn, accent, className, children }: {
+export function Card({ id, warn, accent, className, children }: {
+  /** What a link or a menu item brings into view (UX5 U72). */
+  id?: string;
   warn?: boolean; accent?: boolean; className?: string; children: ReactNode;
 }) {
   return (
-    <article className={cn(
+    <article id={id} className={cn(
       'rounded-card border border-line border-l-[3px] bg-raised px-[1.15rem] py-4',
       accent && 'border-l-accent',
       warn && 'border-l-st-open',

@@ -16,7 +16,7 @@ import { MapView } from './MapView';
 import { SearchView } from './SearchView';
 import { QuestsView } from './QuestsView';
 import { ProjectsView } from './ProjectsView';
-import { type SettingsSection, SettingsView } from './SettingsView';
+import { type SettingsAnchor, type SettingsSection, SettingsView } from './SettingsView';
 import { Reader } from './Reader';
 import { ShellSignals } from './ShellSignals';
 import {
@@ -84,6 +84,8 @@ export function App() {
   const [attending, setAttendingState] = useState<string | null>(() => stored(ATTENDING));
   const [settingsSection, setSettingsSection] = useState<SettingsSection>(
     () => (stored(SETTINGS_SECTION) as SettingsSection | null) ?? 'appearance');
+  // The part of a Settings domain a menu item named, brought into view once it is drawn (UX5 U72).
+  const [settingsAnchor, setSettingsAnchor] = useState<SettingsAnchor | null>(null);
   const [readingId, setReadingId] = useState<string | null>(null);
   // A quest the review asked for (SURF6b): the repository whose work is being sent back, handed
   // to the composer as an opening draft. Held here because the door crosses two views.
@@ -229,9 +231,12 @@ export function App() {
   const chooseSettings = (section: SettingsSection) => {
     setSettingsSection(section);
     store(SETTINGS_SECTION, section);
+    // A domain chosen from the list opens at its top: an anchor its part never answered is dropped.
+    setSettingsAnchor(null);
   };
-  const openSettings = (section: SettingsSection) => {
+  const openSettings = (section: SettingsSection, anchor?: SettingsAnchor) => {
     chooseSettings(section);
+    setSettingsAnchor(anchor ?? null);
     setView('settings');
   };
 
@@ -249,7 +254,7 @@ export function App() {
   const onMenu = (_menu: string, item: string) => {
     const action = menuAction(item);
     switch (action.kind) {
-      case 'settings': openSettings(action.section); return;
+      case 'settings': openSettings(action.section, action.anchor); return;
       case 'scope': scope.setWorkspace(action.workspace); return;
       case 'add': setAddRequested(true); setView('projects'); return;
       // `daoris import <folder>`'s screen door: choose the folder, and the service's sentence says
@@ -488,7 +493,13 @@ export function App() {
                   />
                 )}
                 {view === 'settings' && (
-                  <SettingsView notify={notify} section={settingsSection} onSection={chooseSettings} />
+                  <SettingsView
+                    notify={notify}
+                    section={settingsSection}
+                    onSection={chooseSettings}
+                    anchor={settingsAnchor}
+                    onAnchored={() => setSettingsAnchor(null)}
+                  />
                 )}
               </div>
             </main>
@@ -598,7 +609,6 @@ export function App() {
           group: (id) => t(`palette.group.${id}`),
           attached,
           current: view,
-          waiting,
           go: setView,
           refresh: onRefresh,
           toggleLanguage: () => void i18n.changeLanguage(

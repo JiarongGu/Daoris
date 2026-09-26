@@ -63,8 +63,6 @@ export function commands(world: {
   attached: boolean;
   /** The view in front of the person — the palette does not offer to go where they already are. */
   current: View;
-  /** How many things are waiting on a person — shown on the command that goes to them. */
-  waiting: number;
   go: (view: View) => void;
   refresh: () => void;
   toggleLanguage: () => void;
