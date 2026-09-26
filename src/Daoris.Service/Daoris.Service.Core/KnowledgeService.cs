@@ -274,18 +274,25 @@ public sealed class KnowledgeService(
     /// Register everything a folder's subdirectories propose (D48 §3) — the bootstrap, run deliberately.
     /// </summary>
     /// <remarks>
-    /// An import proposes no workspace, so re-importing a folder never re-points a repository someone
+    /// The scan proposes no workspace, so re-importing a folder never re-points a repository someone
     /// wired: unstated is preserved by the upsert. Existing rows are updated from their manifests,
     /// which is what makes `import` the right answer to "I edited several declarations at once".
     /// </remarks>
+    /// <param name="workspace">
+    /// The person's word for which circle every row lands in (D77) — "set this folder up as a
+    /// workspace" as one statement. A statement re-points, as `connect --workspace` does; null is
+    /// silence, and silence moves nobody.
+    /// </param>
     /// <returns>The registrations as they now stand, in name order.</returns>
     public async Task<IReadOnlyList<Registration>> ImportAsync(
-        string folder, DateTimeOffset now, CancellationToken ct = default)
+        string folder, DateTimeOffset now, string? workspace = null, CancellationToken ct = default)
     {
+        var stated = string.IsNullOrWhiteSpace(workspace) ? null : Workspaces.Normalize(workspace);
         var imported = new List<Registration>();
         foreach (var proposal in RegistryImport.Propose(folder))
         {
-            imported.Add(await RegisterAsync(proposal, now, ct).ConfigureAwait(false));
+            imported.Add(await RegisterAsync(
+                stated is null ? proposal : proposal with { Workspace = stated }, now, ct).ConfigureAwait(false));
         }
 
         return imported;

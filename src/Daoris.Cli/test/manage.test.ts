@@ -117,6 +117,36 @@ test('import posts the folder, resolved against the working directory', async ()
   fx.cleanup();
 });
 
+/**
+ * Setting a folder up AS a workspace (D77): one statement, where it was an import and a re-wiring per
+ * repository. The name travels; silence still sends none, so an unnamed import still moves nobody.
+ */
+test('import --workspace names the circle every row lands in', async () => {
+  const fx = makeFixture('import-workspace');
+  process.env.DAORIS_SERVICE_URL = 'http://localhost:5177';
+  stubService(200, { folder: 'x', imported: 2, repositories: ['a', 'b'], message: 'Registered 2 into workspace `work`' });
+
+  const { out, result } = run(commandImport, fx.root, ['--workspace', 'work', './family']);
+  assert.equal(await result, 0);
+
+  const body = calls[0]!.body as { folder: string; workspace?: string };
+  assert.equal(body.workspace, 'work');
+  // The flag's value is never read as the folder (REV3's operand rule).
+  assert.ok(body.folder.endsWith('family'), body.folder);
+  assert.ok(out.some((line) => line.includes('into workspace `work`')));
+  fx.cleanup();
+});
+
+test('import --workspace with no name is refused before anything is sent', async () => {
+  const fx = makeFixture('import-workspace-empty');
+  process.env.DAORIS_SERVICE_URL = 'http://localhost:5177';
+  stubService(200, {});
+
+  await assert.rejects(async () => run(commandImport, fx.root, ['./family', '--workspace']).result, DaorisError);
+  assert.equal(calls.length, 0);
+  fx.cleanup();
+});
+
 /** With no folder named, the service imports the root it was configured with — so we send none. */
 test('import with no folder lets the service use its own root', async () => {
   const fx = makeFixture('import-default');

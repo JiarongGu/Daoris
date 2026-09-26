@@ -19,6 +19,21 @@ repository's own, with a deny winning (D72). To let sessions drive a browser, al
 `daoris agent rules allow mcp__browser`, for the machine, or with `--workspace`/`--repository`.
 
 A server needs a `name` (what the agent calls it — tools arrive as `mcp__<name>__<tool>`), a
-`command`, and may carry `env`. `${plugin}` in either is the plugin's install folder. The knowledge
-host's name is refused, and two plugins claiming one server name leave the second contributing
-nothing, named in `daoris plugin list`.
+`command`, and may carry `env`. `${plugin}` in either is the plugin's install folder, and `${data}`
+its data folder (`plugins/.data/<id>/`), which an update never touches (D77). Give a placeholder its
+own argument — `"--user-data-dir", "${data}/profile"` — because an argument holding one is resolved
+as a path. The knowledge host's name is refused, and two plugins claiming one server name leave the
+second contributing nothing, named in `daoris plugin list`.
+
+## A page behind a sign-in
+
+A ticket system is usually behind a sign-in, and a session's plain fetch cannot pass one. This
+plugin keeps its browser's profile in `${data}/profile`, so a sign-in made there once is still there
+for every session after it: open that profile, sign in, and close it before a session starts (a
+profile has one browser at a time). The sign-in is the person's to make, never a session's.
+
+The server launches Chrome by default. On a machine without it, add `"--browser", "msedge"` (or
+`firefox`) to the command in the installed copy's manifest. Two other shapes exist and are not the
+default: `--cdp-endpoint <url>` attaches to a browser the person started with a debugging port, and
+keeps its tabs and sign-ins; `--isolated` gives every session an empty profile, which is right for
+testing an app and wrong for reading a ticket.

@@ -102,6 +102,13 @@ public sealed class PluginCatalog
     /// </summary>
     public const string Placeholder = "${plugin}";
 
+    /// <summary>
+    /// The host telling a plugin where it KEEPS things (D77): its data folder, which an update never
+    /// touches — a browser's signed-in profile, say, which otherwise lands under the user's profile,
+    /// where nothing of Daoris's lives (D63). Twin: `plugins.ts`.
+    /// </summary>
+    public const string DataPlaceholder = "${data}";
+
     private static readonly Regex IdShape = new("^[a-z0-9][a-z0-9.-]*$", RegexOptions.CultureInvariant);
 
     /// <summary>Every plugin found, sound or not, in folder order by id.</summary>
@@ -408,10 +415,22 @@ public sealed class PluginCatalog
         return items;
     }
 
-    private static string Expand(string text, string folder) =>
-        text.Contains(Placeholder, StringComparison.Ordinal)
-            ? Path.GetFullPath(text.Replace(Placeholder, folder, StringComparison.Ordinal))
-            : text;
+    /// <remarks>
+    /// The data folder is the install folder's sibling under <see cref="DataFolder"/>, by the same name:
+    /// a plugin's folder IS its id, so the two are one derivation and never disagree.
+    /// </remarks>
+    private static string Expand(string text, string folder)
+    {
+        var plugin = text.Contains(Placeholder, StringComparison.Ordinal);
+        var data = text.Contains(DataPlaceholder, StringComparison.Ordinal);
+        if (!plugin && !data) return text;
+
+        var install = Path.TrimEndingDirectorySeparator(Path.GetFullPath(folder));
+        var kept = Path.Combine(Path.GetDirectoryName(install)!, DataFolder, Path.GetFileName(install));
+        return Path.GetFullPath(text
+            .Replace(Placeholder, install, StringComparison.Ordinal)
+            .Replace(DataPlaceholder, kept, StringComparison.Ordinal));
+    }
 }
 
 /// <summary>

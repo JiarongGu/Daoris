@@ -41,7 +41,8 @@ const USAGE = `daoris <command> [options]
   retire [name]        take a repository off this machine's registry. Ends the
                        registration ONLY — no file, history or doctrine is touched
   import [folder]      register a folder's subdirectories in one go; safe to
-                       re-run, and it never re-points anyone's workspace
+                       re-run, and it never re-points anyone's workspace —
+                       unless --workspace W names the circle they land in
   remote [verb]        this machine's remotes, one per workspace:
                          list                      what is wired (keys redacted)
                          add <workspace> --url U   wire a workspace's deployment
@@ -118,7 +119,7 @@ Options:
   --all                promote every drifted file (upstream only)
   --machine            report this machine's wiring too (status only)
   --workspace <name>   which workspace this repo shares with, on THIS machine
-                       (connect only). Wiring, like a git remote: it is kept in
+                       (connect, import). Wiring, like a git remote: it is kept in
                        the machine's registry and written into no tracked file.
                        Omit to leave the existing wiring alone
   --url <url>          the deployment a workspace syncs with (remote add)

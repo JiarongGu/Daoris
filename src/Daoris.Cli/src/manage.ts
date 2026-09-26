@@ -8,7 +8,7 @@
 
 import { isAbsolute, resolve } from 'node:path';
 import { DaorisError } from './errors.ts';
-import { operands } from './args.ts';
+import { flagValue, operands } from './args.ts';
 import { endpoint, isLocalService, refusal, request } from './service.ts';
 import { repositoryName } from './connect.ts';
 import type { CommandArgs } from './types.ts';
@@ -16,7 +16,7 @@ import type { ExitCode } from './errors.ts';
 
 /** The first bare argument, if there is one. Flags are never a value. */
 function named(argv: string[]): string | undefined {
-  // `retire` and `import` take no flag with a value, so every bare token is an operand.
+  // `retire` takes no flag with a value, so every bare token is an operand. `import` reads its own.
   return operands(argv, new Set())[0];
 }
 
@@ -51,10 +51,14 @@ export async function commandRetire({ root, argv, write }: CommandArgs): Promise
  * @remarks
  * The scan used to BE the registry, which failed the way scans fail: what it did not say governed as
  * much as what it said. As a verb it is simply a fast way to add many repositories at once, and it is
- * safe to re-run — an import states no workspace, and unstated wiring is preserved.
+ * safe to re-run — an unnamed import states no workspace, and unstated wiring is preserved. Naming
+ * one with `--workspace` is a statement, and a statement re-points, as `connect --workspace` does.
  */
 export async function commandImport({ root, argv, write }: CommandArgs): Promise<ExitCode> {
-  const argument = named(argv);
+  // A named workspace sets the folder up AS one (D77): every row it registers lands there. Read
+  // before the folder, so the flag's value is never taken for it.
+  const workspace = flagValue(argv, '--workspace');
+  const argument = operands(argv, new Set(['--workspace']))[0];
   // Absolute, always: the service is a different process and may sit in a different directory, so a
   // relative path would resolve against whatever the host happens to be running in.
   const folder = argument === undefined
@@ -62,7 +66,8 @@ export async function commandImport({ root, argv, write }: CommandArgs): Promise
     : isAbsolute(argument) ? argument : resolve(root, argument);
 
   if (argv.includes('--dry-run')) {
-    write(`daoris: would import ${folder ?? "the service's own knowledge root"}`);
+    write(`daoris: would import ${folder ?? "the service's own knowledge root"}`
+      + (workspace ? ` into workspace \`${workspace}\`` : ''));
     return 0;
   }
 
@@ -74,7 +79,10 @@ export async function commandImport({ root, argv, write }: CommandArgs): Promise
       + 'folder into this machine\'s own service; a deployment is fed by the machines that join it.');
   }
 
-  const { status, json } = await request('POST', '/api/registry/import', folder ? { folder } : {});
+  const { status, json } = await request('POST', '/api/registry/import', {
+    ...(folder ? { folder } : {}),
+    ...(workspace ? { workspace } : {}),
+  });
   if (status < 200 || status >= 300) throw new DaorisError(refusal(status, json), 1);
 
   write(`daoris: ${json?.message ?? 'imported.'}`);

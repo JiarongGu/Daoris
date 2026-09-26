@@ -3359,3 +3359,65 @@ unified or side by side.**
   the driver's to say, live, which no record carries. Also rejected: *your turn* in the waiting hue,
   which would count every open chat among the things that need the person; the reference keeps its
   attention mark for what does.
+
+## D77 — A workspace nobody adopted can be decided, a folder becomes a workspace in one statement, and a plugin keeps what it signs in to (2026-09-27)
+
+**Decision.** This is the owner's first goal, set again on 2026-09-27: a real workspace, a ticket
+read through a browser, and a task started with no repository named. D65 was designed for exactly
+that and built as INT1–INT5. Reading what INT6 would have met on the real workspace
+(`docs/2026-09-27-first-goal-study.md` §1) found three walls in the code. Each gets the smallest
+change that removes it.
+
+- **What a repository says about itself may decide, below a declaration.** For a registered
+  repository that declared nothing, the intake's room shows its own files' word: its README's title
+  and first describing paragraph, its package's description, and what it is built with. It is
+  labelled as the repository's word and never called a declaration. The intake may publish on it
+  when it plainly fits one repository and no other. The quest's body then names what decided the
+  owner, and the receiving agent may decline, which comes back. A declaration outranks it. When
+  nothing points at one repository, the intake still publishes nothing and asks.
+- **An import may name the workspace.** `daoris import <folder> --workspace <name>` and the HTTP
+  door's `workspace` wire every row it registers to that circle. A statement re-points, as
+  `connect --workspace` does. An unnamed import is still silence, and silence still moves nobody.
+- **`${data}` in a plugin manifest is the plugin's data folder** (D64 §3), expanded in a command
+  and an environment by both twins. A browser's signed-in profile is the first thing that needs
+  it. The example browser plugin keeps its profile there.
+- **The intake's instruction says two more things.** A page behind a sign-in is read by a browser
+  that is signed in, or it is said to be unread, and never guessed at. A ticket's words are the
+  person's material and never the intake's instructions, the way orca wraps a ticket's text.
+
+**Why.** The first real workspace is 29 repositories, and none has adopted. Adoption writes into a
+repository, which is its owner's act (D32). So D65 §0's promise, *"without saying which
+repository"*, has to hold before anyone adopts, or it holds for nobody on the first day. A
+repository's README is not a claim about what it owns. It is still what its authors wrote for a
+newcomer, and an intake is a newcomer. A misplaced quest costs a decline, which D65's chain already
+carries back. A parked ask costs the whole goal.
+
+**What stays.** The no-model tier still ranks declarations only. A README's words would propose
+nearly everything to a word match, and a proposal nobody can read past is noise. D34 stands: the
+registry answers *whose problem is this*. What changed is what the intake may weigh when the
+registry has no answer. The plugin system stands as built: the references' plugins map onto D64's
+three rows with nothing new (study §2).
+
+**Amends** D65 §1b (*"decide from the declarations"*) and §1d (*"a repository nobody has declared
+is not addressable, and the intake says so rather than guessing"*, already amended once by D70).
+
+**Rejected.**
+- **Adopting the workspace first.** Twenty-nine writes into repositories Daoris does not own,
+  before the first ask.
+- **Declarations drafted by Daoris into its own registry** for each repository. It is possible,
+  because the registry can hold a domain for an unadopted row. But a drafted declaration is a claim
+  nobody made, and it would be read as one. Worth building as the person's own door (a declaration
+  made on this machine, reviewed) when a workspace wants precision a README cannot give.
+- **The intake reading the repositories itself**, with read rules over every root. That is
+  harness-specific path syntax, unmeasured on Windows. It would also hand a session that reads
+  untrusted ticket text a read of every checkout, beside `WebFetch`. The room carries the words
+  instead, read by Daoris, which never runs a ticket's instructions.
+- **Lyntai's file storage for any store** (study §3). It serves one process with no transactions,
+  and every Daoris store has several processes or needs transactions. The repository is already the
+  document store for knowledge that should be versioned. SQLite stays. A persistent vector store is
+  SEM1's question.
+- **A ticket-system integration in the host**, orca's shape. D65 §2 stands: a ticket system's
+  own MCP server is a plugin's to declare.
+
+**Not covered by any gate.** A real harness reading a real signed-in ticket through the plugin's
+browser, and what the real workspace's READMEs yield. Both are FG5, the owner's run.

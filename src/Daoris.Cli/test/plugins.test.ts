@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import {
   API_VERSION, KNOWLEDGE_SERVER, MANIFEST, STATE_FILE, commandPlugin, dataFolder, disablePlugin,
   enablePlugin, pluginsRoot, readPluginState, readPlugins, reservedHarnesses, resolvable,
@@ -177,6 +177,26 @@ test('servers are read with the placeholder expanded in the command and the envi
   assert.equal(server!.name, 'browser');
   assert.deepEqual(server!.command, ['node', join(folder, 'serve.mjs'), '--headless']);
   assert.equal(server!.env.BROWSER_DATA, join(folder, 'data'));
+  fx.cleanup();
+});
+
+/**
+ * `${data}` is the plugin's own data folder (D77) — what survives an update (D64 §3), such as a
+ * browser's signed-in profile, which otherwise landed under the user's profile (D63). Twin:
+ * `PluginCatalogTests.cs`.
+ */
+test('the data placeholder is the plugin\'s own data folder, in a command and an environment', () => {
+  const fx = makeFixture('plugins-data');
+  plugin(fx.root, 'browser', JSON.stringify({
+    id: 'browser',
+    servers: [{ name: 'browser', command: ['npx', '@playwright/mcp', '--user-data-dir', '${data}/profile'], env: { BROWSER_STATE: '${data}' } }],
+  }));
+
+  const [entry] = readPlugins(fx.root).plugins;
+  const [server] = entry!.manifest.servers;
+  const data = dataFolder(fx.root, 'browser');
+  assert.deepEqual(server!.command, ['npx', '@playwright/mcp', '--user-data-dir', join(data, 'profile')]);
+  assert.equal(server!.env.BROWSER_STATE, resolve(data));
   fx.cleanup();
 });
 

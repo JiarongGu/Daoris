@@ -96,6 +96,19 @@ keep an API key; the wiring is a **map**. The asks are in `docs/archive/2026-09-
 | **MENU · The menus** (D75, `docs/2026-09-24-menus-design.md`) | The menus are the setup domains, Settings one page of them, the workspace always named | **Built** |
 | **CONV · The conversation** (D76) | A session's structured updates kept as typed events on the machine; the page renders a conversation from them, the console its raw view | **Built**, CONV1–CONV4c; CONV4d and CONV5 are open in `TASKS.md` |
 
+## Now: the first goal, run for real (D77, set 2026-09-27)
+
+The owner's words: a real workspace set up, a ticket read through a browser, and a task started
+with no repository named. D65 built every stage of it, and INT6, running it on the named workspace,
+had never run. Reading what that run would meet (`docs/2026-09-27-first-goal-study.md`) found three
+walls in the code: nothing unadopted could be chosen, an import stated no workspace, and a ticket
+sits behind a sign-in. **FG1–FG3 removed them**: a repository that declared nothing is weighed by
+what its own files say, an import names its workspace, and a plugin keeps a signed-in profile in its
+own data folder. **FG5 is the run itself**, and FG4 is its screen door. The references were read
+for it. Neither routes a ticket to a repository, so locating stays Daoris's own. Their plugins map
+onto D64 with nothing new. Lyntai's document storage fits no store here, so SQLite stays, and a
+persistent vector store is SEM1's question.
+
 **What else is open is decisions and triggers**, not work: the owner's calls and the held rows are in
 `TASKS.md`, each saying what it waits on. Surface work comes from looking at the deployed application
 after every change.

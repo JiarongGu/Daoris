@@ -28,9 +28,9 @@ what was measured, and it stays a record of that moment. A *record* is append-on
 | `2026-09-22-instruction-file-design.md` | contract | the always-loaded tier in `AGENTS.md` (D59) | Current |
 | `2026-09-22-toolchain-design.md` | contract | binaries, pins, accounts, usage (D57) | Current, with D63 and D67 noted. The home of the resolution rule |
 | `2026-09-23-api-key-accounts.md` | contract | an account that is an API key (D67 §1) | Current |
-| `2026-09-23-intake-design.md` | contract | an ask becomes quests (D65) | Current, with D70 and D72 noted |
+| `2026-09-23-intake-design.md` | contract | an ask becomes quests (D65) | Current, with D70, D72 and D77 noted |
 | `2026-09-23-map-design.md` | contract | the maps (D67 §3, MAP) | Current |
-| `2026-09-23-plugin-design.md` | contract | plugins (D64) | Current, with D71 noted |
+| `2026-09-23-plugin-design.md` | contract | plugins (D64) | Current, with D71 and D77's `${data}` noted |
 | `2026-09-23-sync-design.md` | contract | the remote as a git remote (D68) | Current, with D69 noted |
 | `2026-09-24-menus-design.md` | contract | the menus as setup domains (D75) | Current |
 | `2026-09-24-permission-scopes-design.md` | contract | what an agent may do (D72, D74) | Current |
@@ -50,6 +50,7 @@ what was measured, and it stays a record of that moment. A *record* is append-on
 | `2026-09-24-reference-gap-study.md` | study | D76, the live direction |
 | `2026-09-25-stream-json-evidence.md` | evidence | D76, CONV3a, CONV5 |
 | `2026-09-25-message-content-evidence.md` | evidence | D76, CONV4c, CONV4d |
+| `2026-09-27-first-goal-study.md` | study | D77, the first goal: what INT6 would have met, the references, Lyntai's storage |
 
 ## Records
 

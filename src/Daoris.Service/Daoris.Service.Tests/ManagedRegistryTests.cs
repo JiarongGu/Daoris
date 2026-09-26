@@ -147,6 +147,78 @@ public sealed class RegistryImportTests : IDisposable
 }
 
 /// <summary>
+/// Setting a folder up as a workspace (D77): the import, with the person's word for which circle.
+/// </summary>
+public sealed class WorkspaceImportTests : IAsyncLifetime
+{
+    private readonly string _root = Path.Combine(
+        Path.GetTempPath(), "daoris-import-ws-" + Guid.NewGuid().ToString("N")[..8]);
+
+    private static readonly DateTimeOffset Now = DateTimeOffset.Parse("2026-09-27T10:00:00Z");
+    private SqliteConnection _connection = null!;
+    private KnowledgeService _service = null!;
+
+    public async Task InitializeAsync()
+    {
+        Directory.CreateDirectory(_root);
+        _connection = new SqliteConnection("Data Source=:memory:");
+        await _connection.OpenAsync();
+        var store = new InMemoryKnowledgeStore();
+        // The store is what preserves unstated wiring on upsert, so the test holds one.
+        _service = new KnowledgeService(
+            store, new LexicalKnowledgeSearch(store), new EmptyKnowledgeSource(), DisclosurePolicy.LocalOnly,
+            registry: new Registry(), registrations: await RegistrationStore.OpenAsync(_connection));
+    }
+
+    public async Task DisposeAsync()
+    {
+        await _connection.DisposeAsync();
+        if (Directory.Exists(_root)) Directory.Delete(_root, recursive: true);
+    }
+
+    private void Repo(string name, string? manifest)
+    {
+        var dir = Path.Combine(_root, name);
+        Directory.CreateDirectory(dir);
+        if (manifest is not null) File.WriteAllText(Path.Combine(dir, "daoris.json"), manifest);
+    }
+
+    /// <summary>
+    /// A PERSON may name the circle (D77): "set this folder up as a workspace" is one statement, where
+    /// it was an import and then a re-wiring per repository — twenty-nine of them for the first real
+    /// workspace. The scan still proposes none; the person's word is what wires.
+    /// </summary>
+    [Fact]
+    public async Task An_import_that_names_a_workspace_wires_every_row_it_registers_to_it()
+    {
+        Repo("console-ui", null);
+        Repo("Cognition", """{ "source": "s" }""");
+
+        var imported = await _service.ImportAsync(_root, Now, workspace: "work");
+
+        Assert.All(imported, row => Assert.Equal("work", row.InWorkspace));
+        Assert.Equal(["Cognition", "console-ui"], (await _service.RegistryAsync("work")).Select(r => r.Repository));
+    }
+
+    /// <summary>
+    /// Naming one is a statement, and a statement wins — as `connect --workspace` re-points. Naming none
+    /// is still silence, and silence still moves nobody.
+    /// </summary>
+    [Fact]
+    public async Task A_named_import_re_points_and_an_unnamed_one_still_moves_nobody()
+    {
+        Repo("engine", """{ "source": "s" }""");
+        await _service.ImportAsync(_root, Now, workspace: "aurora");
+
+        await _service.ImportAsync(_root, Now);
+        Assert.Equal("aurora", Assert.Single(await _service.RegistryAsync()).InWorkspace);
+
+        await _service.ImportAsync(_root, Now, workspace: "tools");
+        Assert.Equal("tools", Assert.Single(await _service.RegistryAsync()).InWorkspace);
+    }
+}
+
+/// <summary>
 /// The registry itself: an explicit list, not a view over a folder. Adding is registering, updating is
 /// an upsert, and removing is retiring — which touches no file anywhere.
 /// </summary>

@@ -203,7 +203,7 @@ public static class ServiceFactory
         // broken one. Once, because a second run would resurrect everything the person retired.
         if (readsLocalCheckouts && !await registrations.WasImportedAsync(ct).ConfigureAwait(false))
         {
-            var imported = await service.ImportAsync(options.RepositoryRoot, DateTimeOffset.UtcNow, ct)
+            var imported = await service.ImportAsync(options.RepositoryRoot, DateTimeOffset.UtcNow, ct: ct)
                 .ConfigureAwait(false);
             await registrations.MarkImportedAsync(options.RepositoryRoot, ct).ConfigureAwait(false);
             if (imported.Count > 0)

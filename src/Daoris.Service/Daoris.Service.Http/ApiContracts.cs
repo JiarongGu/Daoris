@@ -101,8 +101,13 @@ public sealed record RetiredResponse(string Repository, bool Retired, string Mes
 // The repositories this machine's checkouts took out of a circle, not yet told to its deployment (SYNC5b).
 public sealed record RetiredPendingResponse(string Workspace, IReadOnlyList<string> Repositories);
 public sealed record WireRequest(string? Workspace);
-public sealed record ImportRequest(string? Folder);
-public sealed record ImportedResponse(string Folder, int Imported, IReadOnlyList<string> Repositories, string Message);
+// `Workspace` names the circle every imported row lands in (D77); silence moves nobody.
+public sealed record ImportRequest(string? Folder, string? Workspace = null);
+public sealed record ImportedResponse(string Folder, int Imported, IReadOnlyList<string> Repositories, string Message)
+{
+    /// <summary>The circle they were wired to, when the import named one.</summary>
+    public string? Workspace { get; init; }
+}
 // `Addressable` is the exchange's own judgement (D70), answered so no page re-derives it from
 // `Adopted`: a repository registered here with a root can be asked without having adopted, and a
 // browser that is never told the root must still offer it as a receiver.

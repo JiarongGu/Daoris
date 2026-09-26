@@ -367,6 +367,29 @@ public sealed class PluginCatalogTests : IDisposable
         Assert.Equal(2, PluginCatalog.Load(_home).Servers.Count);
     }
 
+    /// <summary>
+    /// `${data}` is the plugin's own data folder (D77) — what survives an update (D64 §3). A browser's
+    /// signed-in profile is exactly that, and without a name for it a plugin put it under the user's
+    /// profile, where nothing of Daoris's lives (D63). Twin: `plugins.test.ts`.
+    /// </summary>
+    [Fact]
+    public void The_data_placeholder_is_the_plugins_own_data_folder_in_a_command_and_an_environment()
+    {
+        Plugin("browser", """
+            { "id": "browser",
+              "servers": [ { "name": "browser", "command": ["npx", "@playwright/mcp", "--user-data-dir", "${data}/profile"],
+                             "env": { "BROWSER_STATE": "${data}" } } ] }
+            """);
+
+        var catalog = PluginCatalog.Load(_home);
+        var entry = Assert.Single(catalog.Plugins);
+        var server = Assert.Single(catalog.Servers);
+
+        Assert.Equal(Path.Combine(_home, PluginCatalog.Folder, PluginCatalog.DataFolder, "browser"), entry.Data);
+        Assert.Equal(["@playwright/mcp", "--user-data-dir", Path.Combine(entry.Data, "profile")], server.Arguments);
+        Assert.Equal(Path.GetFullPath(entry.Data), server.Environment["BROWSER_STATE"]);
+    }
+
     [Fact]
     public void A_server_named_for_the_knowledge_host_is_refused_naming_it_and_the_plugin_contributes_nothing()
     {

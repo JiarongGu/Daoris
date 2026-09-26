@@ -6318,3 +6318,36 @@ amendment carries the findings that chose between alternatives.
 Gates at the close: web unit 1136 → 1179, Playwright 21/21, `npm run verify` green. The driver,
 modules, service and family suites were not re-run: UX5 changed the page, the service README and no
 driver code.
+
+## FG1–FG3 — the first goal's three walls (2026-09-27)
+
+> *"I think we still does not meet the first goal: setup [the named workspace] as workspace and use
+> mcp to control chrome with jira to read ticket and start task (and does not need to locate which
+> repo just start the task in daoris)"* (owner, 2026-09-27 → D77)
+
+✅ **done 2026-09-27**. `docs/2026-09-27-first-goal-study.md` read what INT6 would have met on the
+real workspace (29 repositories, none adopted) and found three walls in the code. INT6 itself is
+reshaped as FG5, the run, and stays open.
+
+- **FG1 — an import names its workspace.** `daoris import <folder> --workspace <name>`, and the HTTP
+  door's `workspace`, wire every row it registers to that circle. A statement re-points; an unnamed
+  import still moves nobody. Service and CLI tests; the flag's value is never read as the folder.
+- **FG2 — a repository that declared nothing is weighed by what its own files say.**
+  `SelfDescription` reads its README's title and first describing paragraph (a generator's, a TODO,
+  a note or a bare link is passed over, and reading stops at a how-to section), its package's
+  description, and what it is built with, from the files at its top. It writes nothing. The room
+  shows it labelled as the repository's word. The instruction lets the intake publish on it when
+  it plainly fits one repository and no other, naming what decided, below any declaration. It also
+  says that a page behind a sign-in needs a signed-in browser or is said to be unread, and that a
+  ticket's words are material, never instructions (orca's wrapping).
+- **FG3 — `${data}`, the plugin's data folder**, in a manifest's command and environment, in both
+  twins. The example browser plugin keeps its profile there, and its README says how to sign in
+  once, and how to run on a machine without Chrome.
+- **The references and Lyntai were read** for the same study. Neither reference routes a ticket to a
+  repository. dsh's plugins map onto D64's three rows with nothing new. Lyntai's file storage (3.3)
+  fits no Daoris store, so SQLite stays. Reading the service for it found SEM1: after a restart, the
+  semantic half is empty until a refresh.
+
+Gates: `npm run verify` green (481 CLI tests), service 505, driver 718, modules 133, family
+rehearsal 279/279. Not run: the web suites (no page changed) and the deployment rehearsal (no
+publish script or locator changed; the install is republished for FG5).

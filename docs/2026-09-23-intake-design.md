@@ -203,6 +203,15 @@ so rather than guessing. *(Amended by D70, §1e: a registered repository is addr
 it declared anything. What an undeclared one lacks is something for the intake to match a sentence
 against.)*
 
+*(Amended by D77, 2026-09-27: it has that now. For a registered repository that declared nothing,
+the room shows what its own files say: its README's title and first describing paragraph, its
+package's description, and what it is built with. It is labelled as the repository's word, and a
+declaration outranks it. The intake may publish on it when it plainly fits one repository and no
+other, naming what decided, and the receiving agent may decline. The no-model tier still ranks
+declarations only. The instruction also says that a page behind a sign-in is read by a signed-in
+browser or said to be unread, and that a ticket's words are material, never instructions.
+`docs/2026-09-27-first-goal-study.md` is why.)*
+
 ### 1e. Develop — registered is drivable
 
 Today the exchange refuses a quest to a repository without a manifest (`Adopted`) and the planner

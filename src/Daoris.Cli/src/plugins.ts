@@ -20,7 +20,7 @@
 // under the home. No code from a plugin is ever loaded here or anywhere (D64).
 
 import { copyFileSync, existsSync, mkdirSync, readdirSync, renameSync, rmSync, statSync } from 'node:fs';
-import { isAbsolute, join, resolve } from 'node:path';
+import { basename, dirname, isAbsolute, join, resolve } from 'node:path';
 import { DaorisError } from './errors.ts';
 import { onPath, readJsonObject, readText, writeJsonAtomic } from './fsx.ts';
 import type { ExitCode } from './errors.ts';
@@ -37,6 +37,12 @@ export const DATA_DIR = '.data';
 export const STATE_FILE = 'plugins.json';
 /** The host telling a plugin where it is — a plugin cannot work out its own folder. */
 export const PLACEHOLDER = '${plugin}';
+/**
+ * The host telling a plugin where it KEEPS things (D77): its data folder, which an update never
+ * touches — a browser's signed-in profile, which otherwise lands under the user's profile (D63).
+ * Twin: `Plugins.cs`.
+ */
+export const DATA_PLACEHOLDER = '${data}';
 
 const ID_SHAPE = /^[a-z0-9][a-z0-9.-]*$/;
 
@@ -164,8 +170,12 @@ function text(row: unknown, name: string): string | null {
   return typeof value === 'string' ? value : null;
 }
 
+/** The data folder is the install folder's sibling under `.data`, by the same name: a plugin's folder IS its id. */
 function expand(value: string, folder: string): string {
-  return value.includes(PLACEHOLDER) ? resolve(value.split(PLACEHOLDER).join(folder)) : value;
+  if (!value.includes(PLACEHOLDER) && !value.includes(DATA_PLACEHOLDER)) return value;
+  const install = resolve(folder);
+  const kept = join(dirname(install), DATA_DIR, basename(install));
+  return resolve(value.split(PLACEHOLDER).join(install).split(DATA_PLACEHOLDER).join(kept));
 }
 
 /** A string array, with the plugin placeholder expanded to the install folder in every entry; null when absent or not one. */

@@ -34,6 +34,10 @@ the asker is simply warned it may not be that repository's problem. Repositories
 are **listed and marked** with who can answer them, because "who cannot be asked yet" is the same
 question as "who can", and a silent omission reads as the repository not existing.
 
+**A folder becomes a workspace in one statement** (D77). `POST /api/registry/import` with a
+`workspace` wires every row it registers to that circle (`daoris import <folder> --workspace <name>`).
+A statement re-points, and an import that names none moves nobody.
+
 | Tool | What it answers |
 |---|---|
 | `registry` | Who is in the family, what each owns, what each accepts, who is not addressable |

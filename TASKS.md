@@ -21,7 +21,7 @@ lists.
 
 ## State
 
-**Counts, and this is their one home:** fifteen commands, **478 CLI tests, 503 service, 705 driver,
+**Counts, and this is their one home:** fifteen commands, **481 CLI tests, 505 service, 718 driver,
 133 desktop modules, 80 devkit, 1179 web unit, 21 Playwright**, 66/66 release rehearsal, **279/279
 family rehearsal** (it names its own phases when you run it), **39/39 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge
@@ -38,9 +38,11 @@ mechanics drafted at `docs/adoption/shenora-repo-mechanics.md`, budget 40,000, `
 
 ## Handover — where a fresh session picks up
 
-🔴 **D76's round is done** (the conversation, owner, 2026-09-25): every item under *The reference gap*
-is in the archive, UX5 last, and what is left is held (the dock's file tools, a terminal) or a
-leftover row (RAIL2, SURF11). Nothing is pushed or published, and a release is still blocked on REH1.
+🔴 **The owner set the direction again on 2026-09-27: the first goal (D77).** A real workspace, a
+ticket read through a browser, and a task started with no repository named. FG1–FG3 landed the
+three code changes the study found. **FG5, the first run, is next**, and so is FG4, its screen door.
+D76's round is done, and its leftovers (RAIL2, SURF11) stand behind these. Nothing is pushed or
+published, and a release is still blocked on REH1.
 - **Landed:** CONV1 (the record), CONV2 (the view), CONV3a (Claude Code's `stream-json`), CONV3b
   (chats on the protocol door), CONV4a (stopping a turn, one queue on both doors), CONV4b (the
   composer's turn, queue and drafts), CONV4c (attachments), CONV4d (`@` a file in the tree), CONV5
@@ -61,7 +63,7 @@ leftover row (RAIL2, SURF11). Nothing is pushed or published, and a release is s
 - **Open beside it:** FLAKE1 (an intake test, about 1 run in 20), DEPLOY5 (the artefact gate
   holding a chat at close) and TEST1 (the Playwright worker's `0xC0000409`, seen a second time).
 - **The owner's to spend or attend:** TRUST2's first grant, AGT2c (two downloads, not authorized)
-  and INT6. **Six wait on a trigger:** TOOL4 on TOOL3's transcripts; TOOL5, CANON9 and HARNESS1 on a
+  and FG5's sign-in and ticket. **Six wait on a trigger:** TOOL4 on TOOL3's transcripts; TOOL5, CANON9 and HARNESS1 on a
   repository naming what it wants; REH1 on a captured recurrence; PLUG7 on a plugin asking for a
   service-side point. **A new direction from the owner outranks all of them.**
 
@@ -112,9 +114,9 @@ rather than designed.
 
 ## Backlog
 
-**Twenty-five rows are open**: D76's held file tools; the ten REV3 left, with RETRY1;
-five leftovers (RAIL2, SURF11, FLAKE1, DEPLOY5, TEST1); three on the owner (TRUST2, AGT2c, INT6); and six on a
-trigger (see *Handover*). Every closed one is in `docs/task-archive.md`, and this file holds no
+**Twenty-seven rows are open**: the first goal's three (FG4, FG5, SEM1); D76's held file tools; the
+ten REV3 left, with RETRY1; five leftovers (RAIL2, SURF11, FLAKE1, DEPLOY5, TEST1); two on the owner
+(TRUST2, AGT2c); and six on a trigger (see *Handover*). Every closed one is in `docs/task-archive.md`, and this file holds no
 ticked rows, by the `task-lifecycle` rule it also ships. A heading below holds open rows only.
 
 ### What REV3 left (2026-09-25)
@@ -169,7 +171,7 @@ Measured: rules and hooks Daoris hands over at spawn reach an untrusted session 
 repository's own allow-list does not (`docs/2026-09-24-deploy1-acp-trust-evidence.md`).
 - [ ] **TRUST2 — what D73 leaves unmeasured.** Whether Claude Code honours a trust key Daoris wrote
   as its own; whether a trusted parent covers a child, since the hold matches the exact folder; and
-  whether the screen should offer a grant before any hold exists (INT6's onboarding). The first
+  whether the screen should offer a grant before any hold exists (FG5's onboarding). The first
   needs one grant, and a grant is the owner's.
 
 ### The toolchain and its accounts (owner, 2026-09-22 → D57)
@@ -210,12 +212,34 @@ was checked. Every AGT and MAP item is archived but this one.
   under `DISABLE_UPDATES`, and that a pinned Codex outside its own layout takes no update action (the
   evidence says so; nothing measured it). Spends two real downloads — the owner's call.
 
-### The regular task — an ask becomes quests (owner, 2026-09-23 → D65)
+### The first goal — a real workspace, a ticket, a task started (owner, 2026-09-27 → D77)
 
-`docs/2026-09-23-intake-design.md` is the contract, and every INT item but this one is archived.
+> *"I think we still does not meet the first goal: setup [the named workspace] as workspace and use
+> mcp to control chrome with jira to read ticket and start task (and does not need to locate which
+> repo just start the task in daoris)"*
 
-- [ ] **INT6 — onboarding the named workspace.** `import`, a declaration per repository, the first
-  real ask — owner present, adoption playbook.
+`docs/2026-09-27-first-goal-study.md` is the study. It found three walls in the code between D65 and
+the real workspace: nothing unadopted could be chosen, an import stated no workspace, and a ticket
+is behind a sign-in. FG1–FG3 are in the archive. **INT6 is reshaped as FG5.**
+
+- [ ] **FG4 — the screen's door for naming the workspace on *Import a folder…*** (D50). The
+  terminal's `import --workspace` has no screen twin: the Workspace menu's import still states
+  none, so a folder set up from the window lands in `default`. After the folder is chosen, ask which
+  circle, offering the scope's and the folder's name, and keep "each row's own" as the unnamed
+  choice. Look at it on the window.
+- [ ] **FG5 — the first run on the named workspace** (the owner present; INT6 as it now stands).
+  The study's §5, in order: republish, import as a workspace, a browser plugin for this machine,
+  the person's one sign-in, the browser allowed for the workspace, the loop (intake, the protocol
+  door's adapter, drivable, own trees), then an ask with a real ticket. What it produces is the
+  report: the room it rendered, whether the intake read the ticket and chose, and what the session
+  did. Every part up to the ask can be run by an agent. The sign-in and the ticket are the owner's.
+- [ ] **SEM1 — the semantic half after a restart** (study §3, read and not run). The vectors are
+  held in memory (`InMemoryVectorStore`), and with an index already on disk,
+  `KnowledgeService.EnsureIndexedAsync` skips the refresh. So after a restart the hybrid search
+  answers lexically until someone refreshes, while the tools still say `lexical + semantic` (TIER1's
+  half of the same lie). Measure it first. Then either re-embed on the first search, or keep vectors
+  in Lyntai.Storage.Sqlite's store in `knowledge.db`, which needs Lyntai 3.5 and its version
+  floors (Microsoft.Data.Sqlite 10.0.12, SQLitePCLRaw 3.0.5).
 
 ### Plugins — a folder that declares, and may speak (owner, 2026-09-23 → D64)
 

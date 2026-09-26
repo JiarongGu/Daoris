@@ -808,15 +808,22 @@ app.MapPost("/api/registry/import", async (ComposedService s, ImportRequest body
         return Results.BadRequest(new ErrorResponse($"no such folder: '{folder}'"));
     }
 
-    var imported = await s.Service.ImportAsync(folder, DateTimeOffset.UtcNow, ct);
+    // A named workspace is the person setting the folder up AS one (D77): every row lands there.
+    var stated = string.IsNullOrWhiteSpace(body.Workspace) ? null : body.Workspace.Trim();
+    var imported = await s.Service.ImportAsync(folder, DateTimeOffset.UtcNow, stated, ct);
     var names = imported.Select(r => r.Repository).ToList();
 
     return Results.Ok(new ImportedResponse(
         folder, names.Count, names,
         names.Count == 0
             ? $"Nothing under '{folder}' — an import registers a folder's immediate subdirectories."
-            : $"Registered {names.Count} from '{folder}': {string.Join(", ", names)}. Existing rows kept "
-              + "their workspace: an import states none, and unstated wiring is preserved."));
+            : stated is null
+                ? $"Registered {names.Count} from '{folder}': {string.Join(", ", names)}. Existing rows kept "
+                  + "their workspace: an import states none, and unstated wiring is preserved."
+                : $"Registered {names.Count} from '{folder}' into workspace `{stated}`: {string.Join(", ", names)}.")
+    {
+        Workspace = stated,
+    });
 });
 
 app.MapGet("/api/registry", async (
