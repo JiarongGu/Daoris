@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { sentence } from './format';
+import { figure, sentence } from './format';
 import { cn } from './lib/cn';
 import { useRegistry, useStatus, useWorkspaceHoldings } from './queries';
 import { useScope } from './scope';
@@ -1392,7 +1392,7 @@ function HarnessRoster({ notify }: { notify: Notify }) {
                     make. A bare figure in a column is unreadable without it (measured by looking). */}
                 <Tip content={t('usage.contextTip')}>
                   <span className="ml-auto font-mono text-small text-ink-faint">
-                    {t('usage.context', { used: account.used.toLocaleString() })}
+                    {t('usage.context', { used: figure(account.used) })}
                   </span>
                 </Tip>
               </li>

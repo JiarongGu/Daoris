@@ -10,6 +10,22 @@ export function compact(value: number): string {
   return value.toLocaleString(i18n.language);
 }
 
+/**
+ * A count, grouped as the reader's language groups it. Never `toLocaleString()` with no locale,
+ * which takes the machine's rather than the page's (UX5 U28; `tokens.test.ts` holds it).
+ */
+export function figure(value: number): string {
+  return value.toLocaleString(i18n.language);
+}
+
+/**
+ * A moment as a date and a clock, written the way the reader's language writes them: `2026/9/23
+ * 13:58:49` in 中文. The drawer read `23/09/2026, 1:58:49 pm` there, the machine's locale (UX5 U28).
+ */
+export function stamp(iso: string): string {
+  return new Date(iso).toLocaleString(i18n.language);
+}
+
 /** A file's size, in the unit a person reads it in: 812 B · 2.4 KB · 3.1 MB. */
 export function size(bytes: number): string {
   if (bytes < 1024) return `${bytes.toLocaleString(i18n.language)} B`;

@@ -1,5 +1,6 @@
-import { describe, expect, it } from 'vitest';
-import { type Consideration, TOAST_LIMIT, capped, newsFrom, sittingBecause, withNotice } from './signals';
+import { afterEach, describe, expect, it } from 'vitest';
+import i18n from './i18n';
+import { type Consideration, TOAST_LIMIT, capped, newsFrom, sittingBecause, sittingSentence, withNotice } from './signals';
 
 /**
  * The driver's tick lines, as notices. Written from four identical toasts stacked on the deployed
@@ -88,6 +89,21 @@ describe('withNotice', () => {
     expect(withNotice(full, 99).at(-1)).toBe(99);
     expect(withNotice([], 1)).toEqual([1]);
   });
+
+  /**
+   * 🔴 UX5 U30: with the service stopped, the page's own request and the driver's tick said the same
+   * thing in the same moment, and the corner held it twice. A sentence already on screen is said
+   * once: its newest copy replaces it, so it moves to the newest place and its timer starts again.
+   */
+  it('says a sentence already on screen once, its newest copy replacing it', () => {
+    const same = (a: { text: string }, b: { text: string }) => a.text === b.text;
+    const shown = [{ id: 1, text: 'the service is not answering' }, { id: 2, text: 'saved' }];
+
+    expect(withNotice(shown, { id: 3, text: 'the service is not answering' }, TOAST_LIMIT, same))
+      .toEqual([{ id: 2, text: 'saved' }, { id: 3, text: 'the service is not answering' }]);
+    // Without the rule, the list is only capped, as before.
+    expect(withNotice(shown, { id: 3, text: 'the service is not answering' })).toHaveLength(3);
+  });
 });
 
 describe('capped', () => {
@@ -103,5 +119,38 @@ describe('capped', () => {
   it('survives a cap of nothing', () => {
     expect(capped([1, 2, 3], 0)).toEqual([]);
     expect(capped([1, 2, 3], -1)).toEqual([]);
+  });
+});
+
+/**
+ * 🔴 UX5 U27: in 中文 every outstanding row said *搁置 —* over the driver's English. The driver's
+ * sentence is Daoris's own voice, so it is chrome, and chrome translates. It translates by VERDICT,
+ * never by matching the English, and only where the words need nothing the page lacks. Every other
+ * verdict keeps the driver's words, since its sentence names what the page is not told (a session,
+ * a cap), and a verdict the page has not heard of keeps them too.
+ */
+describe('sittingSentence', () => {
+  const sits = (verdict: string, reason: string): Consideration =>
+    ({ quest: '9a9492', repository: 'engine', verdict, reason });
+
+  afterEach(async () => { await i18n.changeLanguage('en'); });
+
+  it("passes the driver's own words through in English, whatever the verdict", async () => {
+    await i18n.changeLanguage('en');
+    const notDrivable = sits('NotDrivable', '`engine` has not been opted into driving on this machine.');
+    expect(sittingSentence(notDrivable)).toBe(notDrivable.reason);
+  });
+
+  it('translates the verdicts that need nothing the page lacks, and keeps the rest verbatim', async () => {
+    await i18n.changeLanguage('zh');
+    for (const verdict of ['NotDrivable', 'Held', 'NoRoot']) {
+      const said = sittingSentence(sits(verdict, 'the driver said so.'));
+      expect(said).not.toBe('the driver said so.');
+      expect(said).toMatch(/[一-鿿]/);
+    }
+    const busy = sits('RepositoryBusy', 'session `c4a7c4a7` is active in `engine` — one session per repository.');
+    expect(sittingSentence(busy)).toBe(busy.reason);
+    const unheardOf = sits('SomethingNew', 'a reason this page has never seen.');
+    expect(sittingSentence(unheardOf)).toBe(unheardOf.reason);
   });
 });

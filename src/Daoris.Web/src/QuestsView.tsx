@@ -6,11 +6,11 @@ import {
 } from './queries';
 import { stopNotice, useConsidered, useDriver, useNudge, useStopSession, useTrustFolder, useUntrusted } from './shell';
 import { TrustAsk } from './work/TrustAsk';
-import { ago, sentence, sessionTool, sittingDays, size } from './format';
+import { ago, sentence, sessionTool, sittingDays, size, stamp } from './format';
 import { isImage, linksOf, toUpload } from './attachments';
 import { CarriedCount, CarryFields, useCarry } from './compose/carry';
 import { AsksSection } from './asks/AsksSection';
-import { sittingBecause } from './signals';
+import { sittingBecause, sittingSentence } from './signals';
 import { buildChain } from './map/chain';
 import { ChainStrip } from './map/ChainStrip';
 import {
@@ -414,11 +414,11 @@ export function QuestsView({
             <dt className="text-ink-faint">{t('quests.detail.from')}</dt><dd className="m-0">{detail.from}</dd>
             <dt className="text-ink-faint">{t('quests.detail.to')}</dt><dd className="m-0">{detail.to}</dd>
             <dt className="text-ink-faint">{t('quests.detail.filed')}</dt>
-            <dd className="m-0">{new Date(detail.filed).toLocaleString()} · {ago(detail.filed)}</dd>
+            <dd className="m-0">{stamp(detail.filed)} · {ago(detail.filed)}</dd>
             {detail.updated !== detail.filed && (
               <>
                 <dt className="text-ink-faint">{t('quests.detail.moved')}</dt>
-                <dd className="m-0">{new Date(detail.updated).toLocaleString()} · {ago(detail.updated)}</dd>
+                <dd className="m-0">{stamp(detail.updated)} · {ago(detail.updated)}</dd>
               </>
             )}
             <dt className="text-ink-faint">{t('quests.detail.state')}</dt>
@@ -434,7 +434,7 @@ export function QuestsView({
                 <>
                   <dt className="text-ink-faint">{t('quests.detail.sitting')}</dt>
                   <dd className="m-0">
-                    <Inline text={sitting?.reason ?? t('work.attention.trustWhy')} />
+                    <Inline text={sitting ? sittingSentence(sitting) : t('work.attention.trustWhy')} />
                     {/* The one hold only the person can lift, offered where it is read (D73). */}
                     {held && trustingFor !== detail.id && (
                       <span className="mt-1.5 block">

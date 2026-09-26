@@ -434,6 +434,26 @@ describe('the attention band', () => {
   });
 
   /**
+   * 🔴 UX5 U26: an outstanding row went to Quests and opened nothing, so the person pressed a quest
+   * and had to find it again in the list. Platform language §5: *outstanding rows open the quest
+   * drawer*, as the band's quest rows already did.
+   */
+  it('opens an outstanding quest in its own drawer, not only its view', async () => {
+    QUESTS = [{
+      id: '5e7a11', from: 'game', to: 'engine', title: 'Read the media field names from config',
+      body: 'the names are hard-coded.', status: 'Open',
+      filed: '2026-09-01T00:00:00Z', updated: '2026-09-01T00:00:00Z',
+    }];
+    shell();
+
+    // Its receiver is registered, so the band does not list it: this button is the outstanding row.
+    await userEvent.click(await screen.findByRole('button', { name: /Read the media field names from config/ }));
+
+    const drawer = await screen.findByRole('dialog', { name: 'Read the media field names from config' });
+    expect(within(drawer).getByText('#5e7a11')).toBeInTheDocument();
+  });
+
+  /**
    * A door opens something, or it is not a door (platform language §4). A browser has no Sessions, so
    * a parked row is text there; a quest nobody can take opens its own drawer, which a browser has.
    */

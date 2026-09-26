@@ -43,8 +43,9 @@ const family = (catalogue, key) => {
 };
 
 // Keys whose English IS the driver's own sentence, passed through as the only copy, which the other
-// language says in its own words (the defaults' reasons, D72). Named here, so adding one is noticed.
-const PASSED_THROUGH = [/^settings\.rules\.defaultWhy\./];
+// language says in its own words (the defaults' reasons, D72; why a quest is sitting, UX5 U27).
+// Named here, so adding one is noticed.
+const PASSED_THROUGH = [/^settings\.rules\.defaultWhy\./, /^work\.sitting\./];
 
 const mismatched = [];
 for (const key of en) {

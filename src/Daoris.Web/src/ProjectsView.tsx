@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { canBeAsked, type Registration } from './api';
 import { AddProjectDrawer, ManageProjectDrawer } from './ProjectManage';
 import { DriverChoices } from './projects/DriverChoices';
-import { ago } from './format';
+import { ago, figure } from './format';
 import { useRegistry, useRepositories } from './queries';
 import { useScope } from './scope';
 import { useDriver, useHarnesses, useSetDrivable, useSetHold, useSetTrees } from './shell';
@@ -137,9 +137,9 @@ export function ProjectsView({ notify, addRequested = false, onAddOpened }: {
                     ? t('projects.entries', {
                         // `count` picks the plural form; the formatted string is what is shown.
                         count: counts.total,
-                        total: counts.total.toLocaleString(),
-                        local: counts.local.toLocaleString(),
-                        canonical: counts.canonical.toLocaleString(),
+                        total: figure(counts.total),
+                        local: figure(counts.local),
+                        canonical: figure(counts.canonical),
                       })
                     : t('projects.nothingIndexed')}
                 </span>
@@ -237,7 +237,7 @@ export function ProjectsView({ notify, addRequested = false, onAddOpened }: {
                     <span className="font-mono text-meta text-ink-faint">
                       {counts && counts.total > 0
                         ? t('projects.outside.readable', {
-                            count: counts.total, total: counts.total.toLocaleString(),
+                            count: counts.total, total: figure(counts.total),
                           })
                         : t('projects.nothingIndexed')}
                     </span>

@@ -264,11 +264,14 @@ public sealed class DriverLoop(
         string? lastConsidered = null;
         string? lastAsked = null;
         string? lastActive = null;
+        var failures = new TickErrors();
 
         _watch = new DriverWatch(service, ConfigPath, homeDirectory, Processes, sync, Output, Harnesses, Usage, _hooks, Events);
         await _watch.RunAsync(
             async (report, ticked) =>
             {
+                failures.Ran();
+
                 // Observed either way, so turning notifications back on does not then announce
                 // everything that happened while they were off — the switch is about being TOLD.
                 var attend = attention.Observe(report);
@@ -348,8 +351,11 @@ public sealed class DriverLoop(
                     }).ConfigureAwait(false);
                 }
             },
-            // An unattended loop outlives its service's restarts — say so, wait, look again.
-            onError: error => eventBus.EmitAsync("DAORIS", "DRIVER_ERROR", new { error.Message }),
+            // An unattended loop outlives its service's restarts — say so, wait, look again. Said once
+            // until a tick runs again, and a failure it can name is named (UX5 U30).
+            onError: error => failures.Failed(error) is { } said
+                ? eventBus.EmitAsync("DAORIS", "DRIVER_ERROR", new { said.Code, said.Message })
+                : Task.CompletedTask,
             ct).ConfigureAwait(false);
     }
 
@@ -417,4 +423,41 @@ public sealed class DriverLoop(
         Stop();
         _stopping.Dispose();
     }
+}
+
+/// <param name="Code">A failure the page words from its catalogue, or null when the words are the driver's.</param>
+/// <param name="Message">The driver's own sentence, which a page that does not know the code shows.</param>
+public sealed record TickError(string? Code, string Message);
+
+/// <summary>
+/// What a failed tick tells the page (UX5 U30): said once until a tick runs again, and a failure the
+/// driver can name is named.
+/// </summary>
+/// <remarks>
+/// <para>🔴 With the machine's service stopped, the shell toasted the .NET socket's own words on every
+/// poll, <i>No connection could be made because the target machine actively refused it.
+/// (127.0.0.1:5188)</i>, beside the page's own sentence for the same fact. A refused connection is
+/// <c>SERVICE_UNREACHABLE</c>, the code the page's own requests use, so both doors say one sentence
+/// in the reader's language. A tick report is a log and a toast is an interruption (D62), so the same
+/// failure again is not news.</para>
+///
+/// <para>Called by the watch loop alone, one tick at a time, so it holds no lock.</para>
+/// </remarks>
+public sealed class TickErrors
+{
+    private string? _last;
+
+    /// <summary>The failure to tell the page, or null when it is the one already told.</summary>
+    public TickError? Failed(Exception error)
+    {
+        var said = error is HttpRequestException { StatusCode: null }
+            ? new TickError("SERVICE_UNREACHABLE", "the service is not answering — the driver looks again on its next tick.")
+            : new TickError(null, error.Message);
+        if (said.Message == _last) return null;
+        _last = said.Message;
+        return said;
+    }
+
+    /// <summary>A tick ran, so the next failure is news again.</summary>
+    public void Ran() => _last = null;
 }

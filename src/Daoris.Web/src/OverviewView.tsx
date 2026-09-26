@@ -1,9 +1,9 @@
 import { useTranslation } from 'react-i18next';
 import { useQuests, useRegistry, useRepositories } from './queries';
-import { ago, compact, sittingDays } from './format';
+import { ago, compact, figure, sittingDays } from './format';
 import { ranked, widest } from './overview';
 import { useConsidered } from './shell';
-import { sittingBecause } from './signals';
+import { sittingBecause, sittingSentence } from './signals';
 import {
   Card, CardHeader, Button, EmptyState, Icon, Inline, type Notify, PageHeader, Pill, QUEST_TONE,
   SkeletonRows, Tile, Tip, useErrorNotify,
@@ -19,8 +19,13 @@ import { AttentionBand, type AttentionDoors } from './work/AttentionBand';
  * The repository bars are ONE series in one hue: entries per repository is magnitude, not identity.
  * Values sit beside the marks in ink, never in the mark's color.
  */
-export function OverviewView({ onNavigate, doors, notify }: {
+export function OverviewView({ onNavigate, onOpenQuest, doors, notify }: {
   onNavigate: (tab: 'quests' | 'projects') => void;
+  /**
+   * Where an outstanding row goes: that quest's drawer (§5). The row went to Quests and opened
+   * nothing, so the person pressed a quest and had to find it again (UX5 U26).
+   */
+  onOpenQuest: (id: string) => void;
   /**
    * The *what needs you* band's doors (design §4), one per kind of row. A kind with nowhere to go —
    * a parked session in a browser, which has no Sessions — has none, and the band still SHOWS what
@@ -114,7 +119,7 @@ export function OverviewView({ onNavigate, doors, notify }: {
               return (
                 <li key={quest.id} className="border-t border-line first:border-t-0">
                   <button
-                    onClick={() => onNavigate('quests')}
+                    onClick={() => onOpenQuest(quest.id)}
                     className="flex w-full flex-wrap items-baseline gap-2.5 rounded-none px-1 py-2 text-left text-body hover:bg-accent-soft"
                   >
                     <Pill tone={QUEST_TONE[quest.status]}>
@@ -132,7 +137,7 @@ export function OverviewView({ onNavigate, doors, notify }: {
                     {sitting && (
                       <Tip content={t('overview.outstanding.sittingTip')}>
                         <span className="basis-full truncate text-small text-ink-faint">
-                          <Inline text={t('overview.outstanding.sitting', { reason: sitting.reason })} />
+                          <Inline text={t('overview.outstanding.sitting', { reason: sittingSentence(sitting) })} />
                         </span>
                       </Tip>
                     )}
@@ -190,7 +195,7 @@ export function OverviewView({ onNavigate, doors, notify }: {
                     />
                   </span>
                   <span className="whitespace-nowrap text-right text-small tabular-nums">
-                    {repository.total.toLocaleString()}
+                    {figure(repository.total)}
                     <span className="text-ink-faint"> · {t('overview.repositories.local', { count: repository.local })}</span>
                   </span>
                 </li>

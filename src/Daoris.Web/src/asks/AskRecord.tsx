@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Ask, Session } from '../api';
-import { ago, sessionTool, size } from '../format';
+import { ago, sessionTool, size, stamp } from '../format';
 import { Button, Drawer, Icon, Pill, SectionTitle, SelectField, SESSION_TONE } from '../ui';
 import { ASK_TONE, firstLine, tierWords } from './AskCard';
 
@@ -93,7 +93,7 @@ export function AskRecord({
       <dl className="m-0 mb-4 grid grid-cols-[max-content_1fr] gap-x-4 gap-y-1.5 text-body">
         <dt className="text-ink-faint">{t('asks.record.circle')}</dt><dd className="m-0">{ask.workspace}</dd>
         <dt className="text-ink-faint">{t('asks.record.asked')}</dt>
-        <dd className="m-0">{new Date(ask.asked).toLocaleString()} · {ago(ask.asked)}</dd>
+        <dd className="m-0">{stamp(ask.asked)} · {ago(ask.asked)}</dd>
         {ask.asker && (
           <><dt className="text-ink-faint">{t('asks.record.asker')}</dt><dd className="m-0">{ask.asker}</dd></>
         )}

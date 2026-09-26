@@ -228,6 +228,38 @@ export function nativeChoices(files: [path: string, source: string][]): string[]
       (source.match(NATIVE_CHOICE) ?? []).map((hit) => `${path} builds a native control: ${hit}`));
 }
 
+/**
+ * 🔴 **A date and a count are in the reader's language** (UX5 U28). A quest's drawer read *发起
+ * 23/09/2026, 1:58:49 pm* in 中文: `toLocaleString()` with no locale takes the machine's, not the
+ * page's. `format.ts` holds the helpers that name `i18n.language`, and only it formats.
+ */
+const LANGUAGE_BLIND = /\.toLocale(?:String|DateString|TimeString)\(\s*\)/g;
+
+export function languageBlind(files: [path: string, source: string][]): string[] {
+  return files
+    .filter(([path]) => path !== './format.ts')
+    .flatMap(([path, source]) =>
+      (source.match(LANGUAGE_BLIND) ?? []).map((hit) => `${path} leaves the locale to the machine: ${hit}`));
+}
+
+const modules = Object.entries(import.meta.glob('./**/*.ts', {
+  eager: true, query: '?raw', import: 'default',
+}) as Record<string, string>).filter(([path]) => !/\.test\.ts$/.test(path));
+
+describe('dates and counts', () => {
+  it("catches a locale left to the machine, and leaves format.ts its own", () => {
+    expect(languageBlind([['./QuestsView.tsx', '{new Date(detail.filed).toLocaleString()}']])).toHaveLength(1);
+    expect(languageBlind([['./App.tsx', 'entries: indexed.toLocaleString( ),']])).toHaveLength(1);
+    expect(languageBlind([['./x.tsx', 'd.toLocaleDateString()']])).toHaveLength(1);
+    expect(languageBlind([['./x.tsx', 'n.toLocaleString(i18n.language)']])).toEqual([]);
+    expect(languageBlind([['./format.ts', 'value.toLocaleString()']])).toEqual([]);
+  });
+
+  it("holds: every date and count on the page is in the reader's language", () => {
+    expect(languageBlind([...components, ...modules])).toEqual([]);
+  });
+});
+
 describe('the form controls', () => {
   it('catches a native select, checkbox or radio, and leaves ui.tsx its own', () => {
     expect(nativeChoices([['./work/Start.tsx', '<select value={x}>']])).toHaveLength(1);

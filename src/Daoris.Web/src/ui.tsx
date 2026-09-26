@@ -16,7 +16,7 @@ import {
 import { useTranslation } from 'react-i18next';
 import type { Quest, SessionState } from './api';
 import { cn } from './lib/cn';
-import { withNotice } from './signals';
+import { TOAST_LIMIT, withNotice } from './signals';
 
 // The platform's component language (D41), rebuilt on headless primitives (D42): Radix supplies the
 // behaviour — focus traps, dismissal, ARIA, typeahead — and every pixel stays ours, which is how the
@@ -914,7 +914,8 @@ export function useToasts(): { toasts: ToastItem[]; notify: Notify; dismiss: (id
   const notify = useCallback<Notify>((text, kind = 'ok') => {
     const id = next.current;
     next.current += 1;
-    setToasts((current) => withNotice(current, { id, text, kind }));
+    setToasts((current) => withNotice(
+      current, { id, text, kind }, TOAST_LIMIT, (shown, added) => shown.text === added.text && shown.kind === added.kind));
   }, []);
 
   return { toasts, notify, dismiss };

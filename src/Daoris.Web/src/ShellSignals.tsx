@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { useShenora, useShenoraEvent } from '@shenora/react';
+import { sentence } from './format';
 import { keys } from './queries';
 import { type Consideration, type TrustHold, newsFrom } from './signals';
 import type { Notify } from './ui';
@@ -78,8 +79,10 @@ export function ShellSignals({ notify, onAttend }: {
     void client.invalidateQueries({ queryKey: keys.allRepositories });
   });
 
-  useShenoraEvent<{ message?: string }>('DAORIS', 'DRIVER_ERROR', (error) => {
-    notify(error?.message ?? 'driver error', 'error');
+  // A failure the driver names is worded from the catalogue, in the reader's language (UX5 U30): a
+  // refused connection toasted the .NET socket's own words. Anything else keeps the driver's.
+  useShenoraEvent<{ message?: string; code?: string }>('DAORIS', 'DRIVER_ERROR', (error) => {
+    notify(error?.code ? sentence({ code: error.code }) : error?.message ?? 'driver error', 'error');
   });
 
   /**

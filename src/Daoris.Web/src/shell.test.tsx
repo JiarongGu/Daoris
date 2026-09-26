@@ -1561,6 +1561,23 @@ describe('the shell push channel (ShellSignals)', () => {
   });
 
   /**
+   * 🔴 UX5 U30: a tick that could not reach the service toasted the .NET socket's own words, *No
+   * connection could be made because the target machine actively refused it. (127.0.0.1:5188)*. The
+   * loop now says which failure it was, and the page words a known one from its catalogue, in the
+   * reader's language; an unknown one keeps the driver's words.
+   */
+  it("words a failed tick from the catalogue when the driver names the failure", () => {
+    const notify = vi.fn();
+    show(<ShellSignals notify={notify} />);
+
+    eventHandlers.get('DAORIS.DRIVER_ERROR')!({ code: 'SERVICE_UNREACHABLE', message: 'the service is not answering.' });
+    expect(notify).toHaveBeenLastCalledWith(expect.stringMatching(/not answering\. What is on screen/), 'error');
+
+    eventHandlers.get('DAORIS.DRIVER_ERROR')!({ message: 'the config could not be read.' });
+    expect(notify).toHaveBeenLastCalledWith('the config could not be read.', 'error');
+  });
+
+  /**
    * A publish is looked at now, not at the next poll: the route existed and nothing called it (REV3
    * CLEAN1). A refused nudge is swallowed — the poll looks anyway, and it is not the person's news.
    */
@@ -1604,7 +1621,7 @@ describe('the shell push channel (ShellSignals)', () => {
     show(
       <>
         <ShellSignals notify={() => {}} />
-        <OverviewView onNavigate={() => {}} notify={() => {}} />
+        <OverviewView onNavigate={() => {}} onOpenQuest={() => {}} notify={() => {}} />
       </>,
       client,
     );
@@ -1862,7 +1879,7 @@ describe('trusting a folder the driver is holding (D73)', () => {
 
   it('a held folder waits in *What needs you*, and its row opens the grant', async () => {
     const trust = vi.fn();
-    show(<OverviewView onNavigate={() => {}} notify={() => {}} doors={{ trust }} />, holding());
+    show(<OverviewView onNavigate={() => {}} onOpenQuest={() => {}} notify={() => {}} doors={{ trust }} />, holding());
 
     const band = await screen.findByRole('region', { name: 'What needs you' });
     await userEvent.click(await within(band).findByRole('button', { name: /C:\/somewhere\/engine/ }));
@@ -1884,7 +1901,7 @@ describe('trusting a folder the driver is holding (D73)', () => {
       }
       : DRIVER_STATE));
     const rule = vi.fn();
-    show(<OverviewView onNavigate={() => {}} notify={() => {}} doors={{ rule }} />);
+    show(<OverviewView onNavigate={() => {}} onOpenQuest={() => {}} notify={() => {}} doors={{ rule }} />);
 
     const band = await screen.findByRole('region', { name: 'What needs you' });
     await userEvent.click(await within(band).findByRole('button', { name: /allow WebFetch for every session on this machine/ }));

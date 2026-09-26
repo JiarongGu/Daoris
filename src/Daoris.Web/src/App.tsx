@@ -37,6 +37,7 @@ import { CommandPalette } from './work/CommandPalette';
 import { CommandCenter } from './work/CommandCenter';
 import { AppMenu, AppMenuBar } from './work/AppMenu';
 import { store, stored } from './lib/stored';
+import { figure } from './format';
 
 /** The views are `commands.ts`'s one list (D66); the activity bar and the palette read the same. */
 type Tab = View;
@@ -439,6 +440,7 @@ export function App() {
                 {view === 'overview' && (
                   <OverviewView
                     onNavigate={setView}
+                    onOpenQuest={(id) => { setQuestFocus(id); setView('quests'); }}
                     doors={attentionDoors}
                     notify={notify}
                   />
@@ -541,7 +543,7 @@ export function App() {
           : undefined}
         indexed={indexed > 0
           ? t('sidebar.count', {
-            entries: indexed.toLocaleString(),
+            entries: figure(indexed),
             repositories: repositories.data?.length ?? 0,
           })
           : undefined}

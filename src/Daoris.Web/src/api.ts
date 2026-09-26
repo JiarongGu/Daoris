@@ -210,8 +210,26 @@ function qs(params: Record<string, string | number | boolean | null | undefined>
   return pairs.length ? `?${pairs.join('&')}` : '';
 }
 
+/**
+ * A request, and a refusal of Daoris's own when it reaches nobody (UX5 U29).
+ *
+ * @remarks
+ * With the machine's service stopped, `fetch` rejects with the browser's words, and the toast said
+ * *Failed to fetch*: nothing a person can act on. `SERVICE_UNREACHABLE` says the service is not
+ * answering and that the screen shows the last it said, which is what the query layer keeps showing.
+ * A cancellation stays a cancellation: the query layer cancels on purpose, and nobody is told.
+ */
+async function reach(path: string, init?: RequestInit): Promise<Response> {
+  try {
+    return await fetch(path, init);
+  } catch (error) {
+    if ((error as { name?: unknown } | null)?.name === 'AbortError') throw error;
+    throw Object.assign(new Error('the service is not answering'), { code: 'SERVICE_UNREACHABLE' });
+  }
+}
+
 async function get<T>(path: string, signal?: AbortSignal): Promise<T> {
-  const response = await fetch(path, { signal });
+  const response = await reach(path, { signal });
   if (!response.ok) {
     // The service reports its own errors as { error }; anything else means the host itself failed,
     // and the status line is the only thing that will say anything useful.
@@ -222,7 +240,7 @@ async function get<T>(path: string, signal?: AbortSignal): Promise<T> {
 }
 
 async function post<T>(path: string, body: unknown, method: 'POST' | 'DELETE' = 'POST'): Promise<T> {
-  const response = await fetch(path, {
+  const response = await reach(path, {
     method,
     ...(body === undefined
       ? {}

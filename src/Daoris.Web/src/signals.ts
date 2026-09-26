@@ -1,3 +1,5 @@
+import i18n from './i18n';
+
 /**
  * Which of a driver tick's lines are NEWS, and which the person has already been told.
  *
@@ -72,6 +74,22 @@ export function sittingBecause(considered: readonly Consideration[], quest: stri
 }
 
 /**
+ * Why a quest is sitting, in the reader's language (UX5 U27).
+ *
+ * @remarks
+ * The driver's sentence is Daoris's own voice, so it is chrome, and chrome translates. In 中文 every
+ * outstanding row said *搁置 —* over the driver's English. **It translates by the VERDICT**, the
+ * driver's typed half, and never by matching the English, which would turn a rewording into a silent
+ * change (D48 §6). Only the verdicts whose words need nothing the page lacks have a translation
+ * (`NotDrivable`, `Held`, `NoRoot`). The rest keep the driver's words, since their sentences name a
+ * session or a cap the tick does not carry, and so does a verdict the page has not heard of. English
+ * passes the driver's sentence through as its only copy, as the rules' defaults do (POLISH2).
+ */
+export function sittingSentence(sitting: Consideration): string {
+  return i18n.t(`work.sitting.${sitting.verdict}`, { why: sitting.reason, defaultValue: sitting.reason });
+}
+
+/**
  * How many notices may be on screen at once.
  *
  * 🔴 A viewport that grows without limit is its own defect: the four stacked toasts had reached the
@@ -89,6 +107,11 @@ export function capped<T>(items: readonly T[], limit = TOAST_LIMIT): T[] {
  * The notices on screen with one more: added, THEN capped, so the one just added counts toward the
  * limit. Both windows capped first and added after, and the corner held four (REV3).
  */
-export function withNotice<T>(items: readonly T[], item: T, limit = TOAST_LIMIT): T[] {
-  return capped([...items, item], limit);
+export function withNotice<T>(
+  items: readonly T[], item: T, limit = TOAST_LIMIT, same?: (shown: T, added: T) => boolean,
+): T[] {
+  // A sentence already on screen is said once (UX5 U30): with the service stopped, the page's own
+  // request and the driver's tick said the same thing in the same moment, and it showed twice.
+  const kept = same ? items.filter((shown) => !same(shown, item)) : items;
+  return capped([...kept, item], limit);
 }
