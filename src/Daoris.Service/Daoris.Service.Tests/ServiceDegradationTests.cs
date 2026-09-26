@@ -52,6 +52,35 @@ public class ServiceDegradationTests
             embedder is null ? null : new InMemoryVectorStore());
     }
 
+    /// <summary>
+    /// SEM1: a restart over an index already on disk. The rows persist and the vectors do not, and the
+    /// start skipped the refresh because the rows were there — so the semantic half found nothing
+    /// until somebody pressed *rebuild*, while every door still said the tier was semantic.
+    /// </summary>
+    [Fact]
+    public async Task After_a_restart_over_an_index_on_disk_the_semantic_half_still_answers()
+    {
+        var entry = new KnowledgeEntry(
+            "alpha", EntryKind.Decision, Provenance.Local, "D1", "drift is measured against the lock",
+            "docs/DECISIONS.md", "D1");
+        var store = new InMemoryKnowledgeStore();
+        await store.ReplaceRepositoryAsync("alpha", [entry]); // what the last run left on disk
+        var embedder = new DimensionEmbedder(["drift", "divergence"]);
+        var vectors = new InMemoryVectorStore(); // what a new process starts with: nothing
+        var service = new KnowledgeService(
+            store,
+            new HybridKnowledgeSearch(new LexicalKnowledgeSearch(store), new SemanticKnowledgeSearch(store, embedder, vectors)),
+            new EmptyKnowledgeSource(),
+            DisclosurePolicy.LocalOnly,
+            embedder,
+            vectors);
+
+        // "divergence" shares no word with the entry; only its vector can find it.
+        var found = await service.SearchAsync(new KnowledgeQuery("divergence"));
+
+        Assert.Contains(found, hit => hit.Entry.Id == entry.Id);
+    }
+
     [Fact]
     public async Task A_failing_embedder_does_not_fail_the_refresh()
     {

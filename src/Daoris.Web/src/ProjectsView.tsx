@@ -1,7 +1,7 @@
 import { type ReactNode, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { canBeAsked, type Registration } from './api';
-import { AddProjectDrawer, ManageProjectDrawer } from './ProjectManage';
+import { AddProjectDrawer, ImportFolderDrawer, ManageProjectDrawer } from './ProjectManage';
 import { DriverChoices } from './projects/DriverChoices';
 import { ago, figure } from './format';
 import { useRegistry, useRepositories } from './queries';
@@ -19,7 +19,9 @@ import {
  * repository's own act (D32): Daoris never writes into a sibling, so nothing joins by being seen; the
  * join steps are proposed as text, never a button (D31's shape).
  */
-export function ProjectsView({ notify, addRequested = false, onAddOpened }: {
+export function ProjectsView({
+  notify, addRequested = false, onAddOpened, importRequested = false, onImportOpened,
+}: {
   notify: Notify;
   /**
    * The Workspace menu's *Add repository…* (D75), an EVENT like Quests' opening draft: consumed once,
@@ -27,6 +29,9 @@ export function ProjectsView({ notify, addRequested = false, onAddOpened }: {
    */
   addRequested?: boolean;
   onAddOpened?: () => void;
+  /** And its *Import a folder…* (D77): the same kind of event, for the import drawer. */
+  importRequested?: boolean;
+  onImportOpened?: () => void;
 }) {
   const { t } = useTranslation();
   const registry = useRegistry();
@@ -49,6 +54,12 @@ export function ProjectsView({ notify, addRequested = false, onAddOpened }: {
     setAdding(true);
     onAddOpened?.();
   }, [addRequested, attached, onAddOpened]);
+  const [importing, setImporting] = useState(false);
+  useEffect(() => {
+    if (!importRequested || !attached) return;
+    setImporting(true);
+    onImportOpened?.();
+  }, [importRequested, attached, onImportOpened]);
   const [managing, setManaging] = useState<Registration | null>(null);
 
   // Starting and holding a CONVERSATION moved to the Work frame (design §3, D55): one home for the
@@ -92,6 +103,7 @@ export function ProjectsView({ notify, addRequested = false, onAddOpened }: {
       />
 
       {adding && <AddProjectDrawer onClose={() => setAdding(false)} notify={notify} />}
+      {importing && <ImportFolderDrawer onClose={() => setImporting(false)} notify={notify} />}
       {managing && (
         <ManageProjectDrawer project={managing} onClose={() => setManaging(null)} notify={notify} />
       )}

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Registration } from './api';
 import { workspaceOf } from './workspaces';
-import { useRegisterRepository, useRetireRepository, useWireRepository } from './queries';
+import { useImportFolder, useRegisterRepository, useRetireRepository, useWireRepository } from './queries';
 import { type FolderInspection, usePickFolder, useWriteDeclaration } from './shell';
 import { Button, Chip, Drawer, failure, Inline, type Notify, PathText, SectionTitle, Tip } from './ui';
 
@@ -126,6 +126,80 @@ export function AddProjectDrawer({ onClose, notify }: { onClose: () => void; not
             className="mt-1 w-full rounded-control border border-line-strong bg-raised px-2.5 py-1.5 text-body"
           />
           <p className="mt-1.5 text-small text-ink-faint">{t('projects.manage.workspaceNote')}</p>
+        </div>
+      )}
+    </Drawer>
+  );
+}
+
+/**
+ * Setting a folder up as a workspace (D77): every folder inside it registered at once, wired to the
+ * workspace named here — `daoris import <folder> --workspace <name>`'s screen twin. The folder's own
+ * name is offered, because that is what setting a folder up as a workspace means. Emptied, the import
+ * names none, and an import that names none moves nobody (D48 §2).
+ */
+export function ImportFolderDrawer({ onClose, notify }: { onClose: () => void; notify: Notify }) {
+  const { t } = useTranslation();
+  const pick = usePickFolder();
+  const importFolder = useImportFolder();
+  const [folder, setFolder] = useState<FolderInspection | null>(null);
+  const [workspace, setWorkspace] = useState('');
+
+  const choose = () => pick.mutate(undefined, {
+    onSuccess: (inspection) => {
+      if (!inspection) return;
+      setFolder(inspection);
+      setWorkspace(inspection.name);
+    },
+    onError: failure(notify),
+  });
+
+  const run = () => {
+    if (!folder) return;
+    importFolder.mutate({ folder: folder.path, workspace: workspace.trim() || undefined }, {
+      // The service's sentence, as said: it names what registered and where it landed.
+      onSuccess: (result) => {
+        notify(result.message);
+        onClose();
+      },
+      onError: failure(notify),
+    });
+  };
+
+  return (
+    <Drawer
+      title={t('projects.manage.importTitle')}
+      onClose={onClose}
+      footer={
+        <div className="flex items-center gap-2">
+          <Button variant="primary" disabled={!folder?.exists || importFolder.isPending} onClick={run}>
+            {t('projects.manage.importRun')}
+          </Button>
+          <Button variant="ghost" onClick={onClose}>{t('common.cancel')}</Button>
+        </div>
+      }
+    >
+      <p className="text-body text-ink-soft">{t('projects.manage.importBody')}</p>
+
+      <Button className="mt-3" onClick={choose} disabled={pick.isPending}>
+        {t('projects.manage.choose')}
+      </Button>
+
+      {folder && (
+        <div className="mt-4 border-t border-line pt-3.5">
+          <p className="text-small text-ink-soft"><PathText path={folder.path} /></p>
+
+          <label className="mt-4 block text-small text-ink-faint" htmlFor="import-workspace">
+            {t('projects.workspace')}
+          </label>
+          <input
+            id="import-workspace"
+            value={workspace}
+            onChange={(event) => setWorkspace(event.target.value)}
+            placeholder={t('projects.manage.importWorkspacePlaceholder')}
+            className="mt-1 w-full rounded-control border border-line-strong bg-raised px-2.5 py-1.5 text-body"
+          />
+          <p className="mt-1.5 text-small text-ink-faint">{t('projects.manage.importWorkspaceNote')}</p>
         </div>
       )}
     </Drawer>

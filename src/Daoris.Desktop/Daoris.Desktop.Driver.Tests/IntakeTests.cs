@@ -73,6 +73,36 @@ public sealed class ActiveSessionSignatureTests
 }
 
 /// <summary>
+/// And when the REGISTRY changed (FG4): a folder imported from a terminal moves nothing a tick
+/// reports, so the page kept saying *no workspace yet* until it was reloaded. Seen on the deployed
+/// application, with 29 repositories just registered.
+/// </summary>
+public sealed class RepositorySignatureTests
+{
+    [Fact]
+    public void The_same_registry_signs_the_same_whatever_its_order()
+    {
+        var a = new[] { new RepoView("engine", true, "/work/engine", "aurora"), new RepoView("game", false, "/work/game") };
+
+        Assert.Equal(Repositories.Signature(a), Repositories.Signature([a[1], a[0]]));
+    }
+
+    [Fact]
+    public void A_repository_added_retired_re_wired_moved_or_adopted_signs_differently()
+    {
+        var before = new[] { new RepoView("engine", false, "/work/engine", "aurora") };
+
+        Assert.NotEqual(Repositories.Signature(before),
+            Repositories.Signature([.. before, new RepoView("game", false, "/work/game", "aurora")]));
+        Assert.NotEqual(Repositories.Signature(before), Repositories.Signature([]));
+        Assert.NotEqual(Repositories.Signature(before), Repositories.Signature([new RepoView("engine", false, "/work/engine", "tools")]));
+        Assert.NotEqual(Repositories.Signature(before), Repositories.Signature([new RepoView("engine", false, "/elsewhere/engine", "aurora")]));
+        Assert.NotEqual(Repositories.Signature(before), Repositories.Signature([new RepoView("engine", true, "/work/engine", "aurora")]));
+        Assert.Equal(string.Empty, Repositories.Signature([]));
+    }
+}
+
+/// <summary>
 /// The intake session (D65 §1b, INT4b): an ask the declarations did not settle is answered by a
 /// SESSION the driver opens in a room it owns — which reads the circle's declarations, publishes the
 /// quests onto the ask itself, and asks the person where the declarations do not settle it.

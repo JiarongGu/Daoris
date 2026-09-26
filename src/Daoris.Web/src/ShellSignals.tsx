@@ -77,6 +77,10 @@ export function ShellSignals({ notify, onAttend }: {
     // nothing since had told it to look again. A rebuild is observable, so the tick that says "the
     // world may have changed" has to include the world's size.
     void client.invalidateQueries({ queryKey: keys.allRepositories });
+    // 🔴 And the registry (FG4). Seen on the deployed application: 29 repositories imported from a
+    // terminal, and Overview still said *no workspace yet* until a reload. The shell now forwards a
+    // tick when the registry moved, and this is the half that makes the page look again.
+    void client.invalidateQueries({ queryKey: keys.allRegistry });
   });
 
   // A failure the driver names is worded from the catalogue, in the reader's language (UX5 U30): a

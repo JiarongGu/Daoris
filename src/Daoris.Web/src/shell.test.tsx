@@ -196,6 +196,12 @@ describe('the shell-attached registry management', () => {
       if (url === '/api/registry' && init?.method === 'POST') {
         return Response.json({ repository: 'borealis', workspace: 'aurora' });
       }
+      if (url === '/api/registry/import' && init?.method === 'POST') {
+        return Response.json({
+          folder: 'D:/repos/borealis', imported: 2, repositories: ['aurora', 'dusk'], workspace: 'borealis',
+          message: 'Registered 2 from D:/repos/borealis into workspace `borealis`: aurora, dusk.',
+        });
+      }
       if (url.includes('/workspace')) return Response.json({ repository: 'engine', workspace: 'tools' });
       return respond(url);
     }));
@@ -251,6 +257,47 @@ describe('the shell-attached registry management', () => {
     const body = JSON.parse(String(posted![1]!.body));
     expect(body).toMatchObject({ repository: 'borealis', root: 'D:/repos/borealis', adopted: false });
     expect(body.domain).toBeUndefined();
+  });
+
+  /**
+   * Setting a folder up as a workspace (D77, FG4): `daoris import <folder> --workspace <name>`'s
+   * screen twin. The Workspace menu's import used to state no workspace at all, so a folder set up from
+   * the window landed in `default`. The folder's name is offered, since that is what setting a folder up
+   * as a workspace means; the service's sentence comes back verbatim.
+   */
+  it("importing a folder names the workspace its repositories land in, offering the folder's name", async () => {
+    const notify = vi.fn();
+    show(<ProjectsView notify={notify} importRequested onImportOpened={() => {}} />);
+
+    const drawer = await screen.findByRole('dialog');
+    await userEvent.click(within(drawer).getByRole('button', { name: 'choose a folder…' }));
+    expect(await within(drawer).findByText('D:/repos/borealis')).toBeInTheDocument();
+    expect(within(drawer).getByLabelText('workspace')).toHaveValue('borealis');
+
+    // The move leads and *never mind* follows, as in every drawer (UX5 U38).
+    const importIt = within(drawer).getByRole('button', { name: 'import them' });
+    expect(importIt.compareDocumentPosition(within(drawer).getByRole('button', { name: 'never mind' })))
+      .toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    await userEvent.click(importIt);
+
+    const posted = vi.mocked(fetch).mock.calls
+      .find(([url, init]) => String(url) === '/api/registry/import' && init?.method === 'POST');
+    expect(JSON.parse(String(posted![1]!.body))).toEqual({ folder: 'D:/repos/borealis', workspace: 'borealis' });
+    expect(notify).toHaveBeenCalledWith('Registered 2 from D:/repos/borealis into workspace `borealis`: aurora, dusk.');
+  });
+
+  /** Emptied, the import names none — and an import that names none still moves nobody (D48 §2). */
+  it('an import with its workspace emptied names none', async () => {
+    show(<ProjectsView notify={() => {}} importRequested onImportOpened={() => {}} />);
+
+    const drawer = await screen.findByRole('dialog');
+    await userEvent.click(within(drawer).getByRole('button', { name: 'choose a folder…' }));
+    await userEvent.clear(await within(drawer).findByLabelText('workspace'));
+    await userEvent.click(within(drawer).getByRole('button', { name: 'import them' }));
+
+    const posted = vi.mocked(fetch).mock.calls
+      .find(([url, init]) => String(url) === '/api/registry/import' && init?.method === 'POST');
+    expect(JSON.parse(String(posted![1]!.body))).toEqual({ folder: 'D:/repos/borealis' });
   });
 
   /**
@@ -1635,7 +1682,9 @@ describe('the shell push channel (ShellSignals)', () => {
     // tick takes them (INT4b) and the band reads them (INT4d) — seen on the window, an ask made by the
     // other door was missing from *What needs you*, and its parked intake read as a bare session.
     // And the rules: a tick settles what agents proposed about them (PERM2), and the band reads that.
-    for (const key of [keys.allSessions, keys.allQuests, keys.allAsks, keys.driver, keys.allRepositories, keys.allSync, keys.rules]) {
+    // And the registry (FG4): a folder imported from a terminal left Overview saying *no workspace
+    // yet* until a reload, because nothing told the page the registry had moved.
+    for (const key of [keys.allSessions, keys.allQuests, keys.allAsks, keys.driver, keys.allRepositories, keys.allSync, keys.rules, keys.allRegistry]) {
       expect(invalidate).toHaveBeenCalledWith({ queryKey: key });
     }
   });

@@ -60,6 +60,10 @@ public sealed class ServiceClient : IDisposable
         return new Snapshot(quests, repositories, active, strikes);
     }
 
+    /// <summary>Every repository this host holds, in every circle — what the page's scope is read from (FG4).</summary>
+    public async Task<IReadOnlyList<RepoView>> RegistryAsync(CancellationToken ct = default) =>
+        ReadRegistry(await GetAsync("/api/registry", ct).ConfigureAwait(false));
+
     /// <summary>This machine's active sessions — the one read an orphan sweep needs, without a whole snapshot.</summary>
     public async Task<IReadOnlyList<SessionView>> ActiveSessionsAsync(CancellationToken ct = default) =>
         ReadSessions(await GetAsync("/api/sessions", ct).ConfigureAwait(false));

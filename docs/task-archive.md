@@ -6358,3 +6358,49 @@ reshaped as FG5, the run, and stays open.
 Gates: `npm run verify` green (481 CLI tests), service 505, driver 718 then 723, modules 133, family
 rehearsal 279/279. Not run: the web suites (no page changed) and the deployment rehearsal (no
 publish script or locator changed; the install is republished for FG5).
+
+## FG4 — the screen's door for naming the workspace on *Import a folder…* (2026-09-27)
+
+- [x] **FG4 — the screen's door for naming the workspace on *Import a folder…*** (D50). The
+  terminal's `import --workspace` has no screen twin: the Workspace menu's import still states
+  none, so a folder set up from the window lands in `default`. After the folder is chosen, ask which
+  circle, offering the scope's and the folder's name, and keep "each row's own" as the unnamed
+  choice. Look at it on the window. **Seen with it (2026-09-27):** the page did not hear an import
+  made from the terminal. Overview said *no workspace yet* until the page was reloaded, because
+  nothing tells the page the registry moved. The tick already forwards asks and sessions when their
+  signature changes (INT4d, U13), and the registry could ride the same way.
+
+✅ **done 2026-09-27**.
+
+- **The drawer.** *Import a folder…* now opens a drawer in Projects rather than a folder dialog
+  straight away, mirroring *Add repository…*. Choose the folder, and the workspace field offers the
+  folder's own name, because that is what setting a folder up as a workspace means. Emptied, the
+  import names none, so each repository keeps its own. The service's sentence comes back verbatim.
+  The scope's name was not offered: a person setting up a new folder is not in its workspace yet.
+- **The page hears the registry move.** The shell's loop signs the registry each tick
+  (`Repositories.Signature`: each row's name, adoption, workspace and root) and forwards a tick
+  when it changes, as it does for the asks and the sessions. The page invalidates the registry on
+  every forwarded tick. An import, a retire or a re-wire from a terminal now reaches an open window.
+- **Looked at** on the scratch machine, in English light and 中文 dark. That caught the body saying
+  *"the workspace named below"* before anything was below it, which was reworded in both catalogues.
+  The chosen state sits behind a native folder dialog the instruments cannot drive. Its markup is
+  the add drawer's, and the vitest loop covers its behaviour.
+
+## SEM1 — the semantic half after a restart (2026-09-27)
+
+- [x] **SEM1 — the semantic half after a restart** (study §3, read and not run). The vectors are
+  held in memory (`InMemoryVectorStore`), and with an index already on disk,
+  `KnowledgeService.EnsureIndexedAsync` skips the refresh. So after a restart the hybrid search
+  answers lexically until someone refreshes, while the tools still say `lexical + semantic` (TIER1's
+  half of the same lie). Measure it first. Then either re-embed on the first search, or keep vectors
+  in Lyntai.Storage.Sqlite's store in `knowledge.db`, which needs Lyntai 3.5 and its version
+  floors (Microsoft.Data.Sqlite 10.0.12, SQLitePCLRaw 3.0.5).
+
+✅ **done 2026-09-27**. **Measured first**: a service over a store that already holds an entry, with
+a deterministic embedder and an empty vector store (a new process), found nothing for a word only
+the entry's vector shares. The test failed as the reading predicted. **Fixed by re-embedding on first
+use**: when the index is already on disk, the first search embeds what is there, once, under the
+refresh's own lock, without re-reading the disk. A failing embedder leaves the lexical half whole, as
+a refresh does. **Not the persistent store**: that is SEM2, held until the per-process cost is
+measured on a machine that runs an embedder. TIER1 is untouched: a search still reports the
+configured tier, not the one that answered.

@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-  useAsks, useEntry, useImportFolder, useQuests, useRefreshIndex, useRegistry, useRepositories, useSessions,
+  useAsks, useEntry, useQuests, useRefreshIndex, useRegistry, useRepositories, useSessions,
   useStatus, useSyncStanding, useWorkspaceHoldings, useWorkspaces,
 } from './queries';
 import { useScope } from './scope';
@@ -20,7 +20,7 @@ import { type SettingsAnchor, type SettingsSection, SettingsView } from './Setti
 import { Reader } from './Reader';
 import { ShellSignals } from './ShellSignals';
 import {
-  useDriver, useOpenWindow, usePickFolder, useRemotes, useRules, useSyncNow, useTrustFolder, useUntrusted,
+  useDriver, useOpenWindow, useRemotes, useRules, useSyncNow, useTrustFolder, useUntrusted,
 } from './shell';
 import { appMenus, menuAction } from './work/appMenus';
 import type { TrustHold } from './signals';
@@ -92,6 +92,8 @@ export function App() {
   const [opening, setOpening] = useState<{ from?: string; to?: string } | null>(null);
   // The Workspace menu's *Add repository…* (D75), an event Projects consumes, like the draft above.
   const [addRequested, setAddRequested] = useState(false);
+  // And its *Import a folder…* (D77): the import drawer, which names the workspace it lands in.
+  const [importRequested, setImportRequested] = useState(false);
   // A quest a door asked Quests to open in its drawer — the sync item's conflict list (SYNC6b). An
   // event like the opening draft: Quests consumes it and says so.
   const [questFocus, setQuestFocus] = useState<string | null>(null);
@@ -249,25 +251,15 @@ export function App() {
     waiting: (Array.isArray(rules.data?.proposals) ? rules.data.proposals : [])
       .filter((proposal) => proposal.state === 'waiting').length,
   });
-  const pickFolder = usePickFolder();
-  const importFolder = useImportFolder();
   const onMenu = (_menu: string, item: string) => {
     const action = menuAction(item);
     switch (action.kind) {
       case 'settings': openSettings(action.section, action.anchor); return;
       case 'scope': scope.setWorkspace(action.workspace); return;
       case 'add': setAddRequested(true); setView('projects'); return;
-      // `daoris import <folder>`'s screen door: choose the folder, and the service's sentence says
-      // what it registered.
-      case 'import':
-        pickFolder.mutate(undefined, {
-          onSuccess: (folder) => folder && importFolder.mutate(folder.path, {
-            onSuccess: (result) => notify(result.message),
-            onError: failure(notify),
-          }),
-          onError: failure(notify),
-        });
-        return;
+      // `daoris import <folder> --workspace <name>`'s screen door (D77): the drawer chooses the folder
+      // and names the workspace, and the service's sentence says what it registered.
+      case 'import': setImportRequested(true); setView('projects'); return;
       case 'refresh': onRefresh(); return;
       case 'language': void i18n.changeLanguage(i18n.language.startsWith('zh') ? 'en' : 'zh'); return;
       case 'about': setAbout(true); return;
@@ -472,6 +464,8 @@ export function App() {
                     notify={notify}
                     addRequested={addRequested}
                     onAddOpened={() => setAddRequested(false)}
+                    importRequested={importRequested}
+                    onImportOpened={() => setImportRequested(false)}
                   />
                 )}
                 {view === 'map' && (

@@ -21,8 +21,8 @@ lists.
 
 ## State
 
-**Counts, and this is their one home:** fifteen commands, **481 CLI tests, 505 service, 723 driver,
-133 desktop modules, 80 devkit, 1179 web unit, 21 Playwright**, 66/66 release rehearsal, **279/279
+**Counts, and this is their one home:** fifteen commands, **481 CLI tests, 506 service, 725 driver,
+133 desktop modules, 80 devkit, 1181 web unit, 21 Playwright**, 66/66 release rehearsal, **279/279
 family rehearsal** (it names its own phases when you run it), **39/39 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge
 documents, 5 skills, 7 packs. The always-loaded core is **22,492 of 26,000 bytes** — a span in
@@ -39,8 +39,8 @@ mechanics drafted at `docs/adoption/shenora-repo-mechanics.md`, budget 40,000, `
 ## Handover — where a fresh session picks up
 
 🔴 **The owner set the direction again on 2026-09-27: the first goal (D77).** A real workspace, a
-ticket read through a browser, and a task started with no repository named. FG1–FG3 landed the
-three code changes the study found. **FG5, the first run, is next**, and so is FG4, its screen door.
+ticket read through a browser, and a task started with no repository named. FG1–FG4 landed the
+code changes the study and the setup found. **FG5, the first run, is next**, and waits on the owner.
 D76's round is done, and its leftovers (RAIL2, SURF11) stand behind these. Nothing is pushed or
 published, and a release is still blocked on REH1.
 - **Landed:** CONV1 (the record), CONV2 (the view), CONV3a (Claude Code's `stream-json`), CONV3b
@@ -114,7 +114,7 @@ rather than designed.
 
 ## Backlog
 
-**Twenty-seven rows are open**: the first goal's three (FG4, FG5, SEM1); D76's held file tools; the
+**Twenty-six rows are open**: the first goal's two (FG5, and SEM2 on a trigger); D76's held file tools; the
 ten REV3 left, with RETRY1; five leftovers (RAIL2, SURF11, FLAKE1, DEPLOY5, TEST1); two on the owner
 (TRUST2, AGT2c); and six on a trigger (see *Handover*). Every closed one is in `docs/task-archive.md`, and this file holds no
 ticked rows, by the `task-lifecycle` rule it also ships. A heading below holds open rows only.
@@ -220,16 +220,8 @@ was checked. Every AGT and MAP item is archived but this one.
 
 `docs/2026-09-27-first-goal-study.md` is the study. It found three walls in the code between D65 and
 the real workspace: nothing unadopted could be chosen, an import stated no workspace, and a ticket
-is behind a sign-in. FG1–FG3 are in the archive. **INT6 is reshaped as FG5.**
+is behind a sign-in. FG1–FG4 are in the archive. **INT6 is reshaped as FG5.**
 
-- [ ] **FG4 — the screen's door for naming the workspace on *Import a folder…*** (D50). The
-  terminal's `import --workspace` has no screen twin: the Workspace menu's import still states
-  none, so a folder set up from the window lands in `default`. After the folder is chosen, ask which
-  circle, offering the scope's and the folder's name, and keep "each row's own" as the unnamed
-  choice. Look at it on the window. **Seen with it (2026-09-27):** the page did not hear an import
-  made from the terminal. Overview said *no workspace yet* until the page was reloaded, because
-  nothing tells the page the registry moved. The tick already forwards asks and sessions when their
-  signature changes (INT4d, U13), and the registry could ride the same way.
 - [ ] **FG5 — the first run on the named workspace** (the owner present; INT6 as it now stands).
   The study's §5, in order: republish, import as a workspace, a browser plugin for this machine,
   the person's one sign-in, the browser allowed for the workspace, the loop (intake, the protocol
@@ -240,13 +232,13 @@ is behind a sign-in. FG1–FG3 are in the archive. **INT6 is reshaped as FG5.**
   imported (29 repositories), the index rebuilt, an Edge browser plugin installed and smoke-tested,
   the browser allowed for the workspace, the protocol door for intake and sessions, and all 29
   repositories drivable on their own worktrees. Waiting on the owner's sign-in and first ticket.
-- [ ] **SEM1 — the semantic half after a restart** (study §3, read and not run). The vectors are
-  held in memory (`InMemoryVectorStore`), and with an index already on disk,
-  `KnowledgeService.EnsureIndexedAsync` skips the refresh. So after a restart the hybrid search
-  answers lexically until someone refreshes, while the tools still say `lexical + semantic` (TIER1's
-  half of the same lie). Measure it first. Then either re-embed on the first search, or keep vectors
-  in Lyntai.Storage.Sqlite's store in `knowledge.db`, which needs Lyntai 3.5 and its version
-  floors (Microsoft.Data.Sqlite 10.0.12, SQLitePCLRaw 3.0.5).
+- [ ] ⏸ **SEM2 — vectors that persist** (after SEM1, held). SEM1 embeds what is on disk once per
+  process, on first use. The MCP host is one process per session, so with an embedder configured,
+  each session's first search embeds the whole corpus. Lyntai.Storage.Sqlite's vector store would
+  keep them in `knowledge.db`. It needs Lyntai 3.5, its version floors (Microsoft.Data.Sqlite
+  10.0.12, SQLitePCLRaw 3.0.5), Dapper and FluentMigrator, and a re-embed when the model changes.
+  **The trigger is a measurement**: a machine running with an embedder, and a first search whose
+  cost somebody notices. No machine here runs with one yet (the install says `lexical only`).
 
 ### Plugins — a folder that declares, and may speak (owner, 2026-09-23 → D64)
 

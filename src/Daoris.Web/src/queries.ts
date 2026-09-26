@@ -284,11 +284,14 @@ function useInvalidateRegistry() {
   };
 }
 
-/** Import a folder's repositories (D75's *Import a folder…*), then re-read what the registry holds. */
+/**
+ * Import a folder's repositories (D75's *Import a folder…*), into a named workspace when one is given
+ * (D77), then re-read what the registry holds.
+ */
 export const useImportFolder = () => {
   const invalidate = useInvalidateRegistry();
   return useMutation({
-    mutationFn: (folder: string) => api.importFolder(folder),
+    mutationFn: ({ folder, workspace }: { folder: string; workspace?: string }) => api.importFolder(folder, workspace),
     onSuccess: invalidate,
   });
 };

@@ -884,10 +884,54 @@ public sealed class KnowledgeService(
         var existing = await store.CountByRepositoryAsync(ct).ConfigureAwait(false);
         if (existing.Count > 0)
         {
-            _everRefreshed = true;
+            await EmbedWhatPersistedAsync(ct).ConfigureAwait(false);
             return;
         }
 
         await RefreshAsync(ct).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// 🔴 SEM1: the rows persist and the vectors do not. A start over an index already on disk skipped
+    /// the refresh, so the semantic half answered nothing until somebody rebuilt the index — while
+    /// every door said the tier was semantic. What is on disk is embedded once, on first use, under
+    /// the refresh's own lock; the disk is not re-read.
+    /// </summary>
+    /// <remarks>
+    /// Paid once per process, and the MCP host is one per session, so each session's first search
+    /// embeds the corpus. A persistent vector store is what removes that cost; this is what makes the
+    /// tier true in the meantime. A failure here leaves the lexical half whole, as a refresh's does,
+    /// and the next refresh reports the reason.
+    /// </remarks>
+    private async Task EmbedWhatPersistedAsync(CancellationToken ct)
+    {
+        await _refreshLock.WaitAsync(ct).ConfigureAwait(false);
+        try
+        {
+            if (_everRefreshed) return;
+
+            if (embedder is not null && vectors is not null)
+            {
+                try
+                {
+                    var entries = await store.AllAsync(ct).ConfigureAwait(false);
+                    await SemanticKnowledgeSearch.IndexAsync(entries, embedder, vectors, ct: ct).ConfigureAwait(false);
+                }
+                catch (OperationCanceledException)
+                {
+                    throw;
+                }
+                catch (Exception)
+                {
+                    // The lexical half is whole; the embedder's reason is a refresh's to report.
+                }
+            }
+
+            _everRefreshed = true;
+        }
+        finally
+        {
+            _refreshLock.Release();
+        }
     }
 }

@@ -264,6 +264,7 @@ public sealed class DriverLoop(
         string? lastConsidered = null;
         string? lastAsked = null;
         string? lastActive = null;
+        string? lastRegistered = null;
         var failures = new TickErrors();
 
         _watch = new DriverWatch(service, ConfigPath, homeDirectory, Processes, sync, Output, Harnesses, Usage, _hooks, Events);
@@ -327,6 +328,16 @@ public sealed class DriverLoop(
                     lastActive = active;
                 }
 
+                // 🔴 And the registry (FG4): a folder imported from a terminal, a retire, a re-wire —
+                // none moves anything above, and the page said *no workspace yet* over 29 repositories
+                // just registered, until it was reloaded.
+                var registered = await RegisteredAsync(service, ct).ConfigureAwait(false);
+                if (registered is not null && registered != lastRegistered)
+                {
+                    changed = true;
+                    lastRegistered = registered;
+                }
+
                 if (report.PlannedAnything || report.Events.Count > 0 || changed)
                 {
                     await eventBus.EmitAsync("DAORIS", "DRIVER_TICK", new
@@ -365,6 +376,19 @@ public sealed class DriverLoop(
         try
         {
             return Asks.Signature(await service.AsksAsync(ct).ConfigureAwait(false));
+        }
+        catch (Exception error) when (error is DriverException or HttpRequestException or System.Text.Json.JsonException)
+        {
+            return null;
+        }
+    }
+
+    /// <summary>What the registry holds, or null when the host could not answer — never a change.</summary>
+    private static async Task<string?> RegisteredAsync(ServiceClient service, CancellationToken ct)
+    {
+        try
+        {
+            return Repositories.Signature(await service.RegistryAsync(ct).ConfigureAwait(false));
         }
         catch (Exception error) when (error is DriverException or HttpRequestException or System.Text.Json.JsonException)
         {

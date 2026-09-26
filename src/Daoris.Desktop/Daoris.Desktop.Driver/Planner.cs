@@ -40,6 +40,20 @@ public sealed record QuestFileView(string Name, string Sha256, long Bytes, strin
 public sealed record RepoView(
     string Repository, bool Adopted, string? Root, string Workspace = RemoteTarget.DefaultWorkspace);
 
+public static class Repositories
+{
+    /// <summary>
+    /// What the registry holds, as one string — equal when the same repositories stand in the same
+    /// circles at the same roots, whatever the order. The shell forwards a tick to the page when this
+    /// changes (FG4), as it does for <see cref="Asks.Signature"/>: a folder imported from a terminal
+    /// moves nothing else a tick reports, and the page said *no workspace yet* until a reload.
+    /// </summary>
+    public static string Signature(IEnumerable<RepoView> registry) =>
+        string.Join("\n", registry
+            .Select(repo => $"{repo.Repository}\t{repo.Adopted}\t{repo.Workspace}\t{repo.Root}")
+            .OrderBy(line => line, StringComparer.Ordinal));
+}
+
 /// <summary>An ACTIVE session as the service answered it — closed ones never reach the planner.</summary>
 /// <param name="State">
 /// Where the record stands. The planner has never needed it — "is this repository busy" is the only
