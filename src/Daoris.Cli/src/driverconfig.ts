@@ -9,8 +9,8 @@
 // home and talks to nothing. It does not even spawn, unlike its sibling `toolchain.ts`.
 //
 // EVERY EDIT PRESERVES WHAT IT DID NOT TOUCH. The driver writes fields this build has no verb for
-// (`timeoutMinutes`, `pollSeconds`, the per-adapter `commands` map), and an editor that rewrote the
-// file from its own idea of the shape would silently delete the command that makes the stub run.
+// (`pollSeconds`, the per-adapter `commands` map), and an editor that rewrote the file from its own
+// idea of the shape would silently delete the command that makes the stub run.
 
 import { requireHomeFile } from './home.ts';
 import { DaorisError } from './errors.ts';
@@ -43,13 +43,18 @@ export interface DriverChoices {
   forgiven: Record<string, number>;
   /** The harness an ask's intake session runs on (INT4b, D65 §1b) — null, and no intake runs. */
   intakeAdapter: string | null;
+  /** How long a session may run before the driver kills it — null is the driver's own default. */
+  timeoutMinutes: number | null;
   rest: Record<string, unknown>;
 }
+
+/** The driver's own default for `timeoutMinutes` (`DriverConfig.Empty`) — the twin says 30 too. */
+export const DEFAULT_TIMEOUT_MINUTES = 30;
 
 /** Drives nothing, holds nothing — the safe shape silence takes, matching the driver's own default. */
 const EMPTY: DriverChoices = {
   drivable: [], holds: [], trees: [], cap: 2, adapter: 'claude-code', notify: true,
-  strikes: 3, forgiven: {}, intakeAdapter: null, rest: {},
+  strikes: 3, forgiven: {}, intakeAdapter: null, timeoutMinutes: null, rest: {},
 };
 
 /**
@@ -70,7 +75,7 @@ export function readDriverChoices(path = driverConfigPath()): DriverChoices {
   }
   if (parsed === null) return { ...EMPTY, rest: {} };
 
-  const { drivable, holds, trees, cap, adapter, notify, strikes, forgiven, intakeAdapter, ...rest } = parsed;
+  const { drivable, holds, trees, cap, adapter, notify, strikes, forgiven, intakeAdapter, timeoutMinutes, ...rest } = parsed;
   return {
     drivable: names(drivable),
     holds: names(holds),
@@ -90,6 +95,10 @@ export function readDriverChoices(path = driverConfigPath()): DriverChoices {
     // spends a real login on every ask, so it runs only where a person named the harness for it.
     intakeAdapter: typeof intakeAdapter === 'string' && intakeAdapter.trim().length > 0
       ? intakeAdapter.trim() : null,
+    // Read as the driver reads it (`DriverConfig`: a whole number, lifted to at least one), so the
+    // listing never names a number the driver would not use.
+    timeoutMinutes: typeof timeoutMinutes === 'number' && Number.isInteger(timeoutMinutes)
+      ? Math.max(1, timeoutMinutes) : null,
     rest,
   };
 }
@@ -108,6 +117,9 @@ export function writeDriverChoices(path: string, choices: DriverChoices): void {
     forgiven: choices.forgiven,
     // Written only when named — absent IS off, and the driver writes it the same way.
     ...(choices.intakeAdapter ? { intakeAdapter: choices.intakeAdapter } : {}),
+    // Written only when set: absent is the driver's own default, and an edit elsewhere must not
+    // pin today's default into a file that never chose it.
+    ...(choices.timeoutMinutes !== null ? { timeoutMinutes: choices.timeoutMinutes } : {}),
   });
 }
 
@@ -248,6 +260,25 @@ export function commandDriver({ argv, write }: CommandArgs): ExitCode {
       return 0;
     }
 
+    // How long one session may run before the driver kills it. A real development turn — the work,
+    // then the repository's install, build and tests — outlasted the default on the first real run,
+    // and the killed session left its quest to be carried on (D80). Minutes, because that is the
+    // unit a person thinks about a turn in.
+    case 'timeout': {
+      const value = Number(named(argv, 'timeout'));
+      if (!Number.isInteger(value) || value < 1) {
+        throw new DaorisError(
+          '`driver timeout` needs a whole number of minutes, at least 1 — e.g. `daoris driver timeout 120`.');
+      }
+
+      writeDriverChoices(path, { ...choices, timeoutMinutes: value });
+      write(`daoris: a session on this machine may run ${value} minutes before the driver ends it.`);
+      write('  One that runs out is recorded as failed, and its quest is carried on in the same tree at a');
+      write('  later tick, until the strikes park it.');
+      write(`  Written to ${path} — the driver re-reads it every tick; a session already running keeps its own.`);
+      return 0;
+    }
+
     case 'adapter': {
       const adapter = named(argv, 'adapter');
       // Not refused against a list: the driver's adapter set is the driver's, and the CLI naming a
@@ -294,7 +325,7 @@ export function commandDriver({ argv, write }: CommandArgs): ExitCode {
     default:
       throw new DaorisError(
         `unknown driver verb '${verb}' — one of: list, drive, undrive, hold, resume, trees, notify, `
-        + 'strikes, retry, cap, adapter, intake');
+        + 'strikes, retry, timeout, cap, adapter, intake');
   }
 
   function list(): ExitCode {
@@ -307,6 +338,10 @@ export function commandDriver({ argv, write }: CommandArgs): ExitCode {
     for (const [quest, mark] of Object.entries(choices.forgiven)) {
       write(`  retried    #${quest}  (counting from ${mark} failure(s))`);
     }
+
+    write(choices.timeoutMinutes === null
+      ? `  timeout    ${DEFAULT_TIMEOUT_MINUTES} minutes a session may run  (the default — \`daoris driver timeout <minutes>\` changes it)`
+      : `  timeout    ${choices.timeoutMinutes} minutes a session may run`);
 
     write(`  notify     ${choices.notify ? 'on' : 'off'}`
       + `  (a session parking, or ending without you asking${choices.notify ? '' : ' — not said'})`);

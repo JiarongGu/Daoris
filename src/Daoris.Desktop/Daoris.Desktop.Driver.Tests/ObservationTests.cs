@@ -135,6 +135,22 @@ public sealed class ObservationTests
     }
 
     /// <summary>
+    /// A session carrying on after a cut-off (D80) that ends with the quest still taken did not finish
+    /// it. 🔴 Failed, not stood down — the take is this machine's own, so "someone else has it" is false,
+    /// and only a failure counts against the strikes that bound carrying on.
+    /// </summary>
+    [Fact]
+    public void A_session_that_carried_on_and_left_the_quest_taken_failed()
+    {
+        var conclusion = Observation.Conclude(0, "Taken", resumed: true);
+
+        Assert.Equal("failed", conclusion.State);
+        Assert.DoesNotContain("someone else", conclusion.Note);
+        Assert.Equal("completed", Observation.Conclude(0, "Done", resumed: true).State);
+        Assert.Equal("completed", Observation.Conclude(0, "Taken", awaitsAfter: "q9", resumed: true).State);
+    }
+
+    /// <summary>
     /// A resumed session that stops with the quest still waiting on the OLD question did not carry on.
     /// 🔴 Failed, not stood down: nothing about the quest changed, so a stand-down would be resumed
     /// again every tick, and only a failure is counted against the strikes.

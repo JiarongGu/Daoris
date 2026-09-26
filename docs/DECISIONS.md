@@ -3489,3 +3489,30 @@ behind a codebase does not travel, and a request does.
   would close as done while nothing was done, and a declined question would stop the chain with the
   work never resumed.
 - **Waiting inside the session.** A session is one turn on both doors, and its tree survives it.
+
+## D80 — A session cut off after its take is carried on in its tree, like a failed start is retried (2026-09-27)
+
+**Decision.** A taken quest, waiting on nothing, whose last session on this machine concluded
+`failed` (timed out, refused by its agent, crashed) is this machine's to carry on. The ledger opens a
+session on it. A stand-down or a teammate's record never counts, since either means the take is
+somebody else's. The driver plans it like a start, behind the person's hold, busy, the cap and the
+strikes, in the tree the cut-off session worked in. Its instruction says the quest is already its
+own, what cut the last session off, and which changes it left uncommitted, as the driver read them.
+A carried-on session that ends with the quest still taken concludes `failed`, so the third cut-off
+parks the quest behind `daoris driver retry`. The session timeout is now set from a terminal,
+`daoris driver timeout <minutes>`, and `driver list` shows it.
+
+**Why.** FG5's second run. The development session took its quest, changed 45 files, and was running
+its repository's gates when the thirty-minute timeout killed it. A failed *start* leaves a quest open,
+and the strikes retry it (DRV6). A session cut off *after* its take left the quest taken for good,
+with the work in a tree nothing would ever open again. D79 had just built the resume, a taken quest
+carried on in its own tree, and a cut-off is the same move for a different reason. The first run had
+ended the same way, on an account limit (ACPEND1).
+
+**Rejected.**
+- **Releasing the quest to *Open* on a cut-off.** That is D79's rejected draft again: anyone could
+  take it fresh, without the tree.
+- **A longer timeout alone.** It makes a cut-off rarer and does nothing for the one that still
+  happens: an account limit, a crash, a machine that sleeps.
+- **Carrying on a clean exit with the quest still taken** (a stand-down). That shape includes
+  somebody else having the quest, and the driver cannot tell the two apart.

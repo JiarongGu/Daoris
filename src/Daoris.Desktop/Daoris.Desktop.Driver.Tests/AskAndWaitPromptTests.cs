@@ -71,6 +71,25 @@ public sealed class AskAndWaitPromptTests
         Assert.Contains("> Not ours — the gateway owns notes.", prompt);
     }
 
+    /// <summary>
+    /// D80: a session carrying a quest on after a cut-off is told what cut the last one off, that the
+    /// quest is already its own, and where the earlier work is — uncommitted as well as committed,
+    /// because a timeout lands mid-change.
+    /// </summary>
+    [Fact]
+    public void A_carried_on_target_says_the_quest_is_its_own_and_what_cut_the_last_session_off()
+    {
+        var prompt = TargetPrompt.Compose(Target() with { CutOff = "timed out after 30 minutes and was killed." });
+
+        Assert.Contains("carrying on quest `#abc123`", prompt);
+        Assert.Contains("do not take it again", prompt);
+        Assert.Contains("timed out after 30 minutes and was killed.", prompt);
+        Assert.Contains("uncommitted", prompt);
+        Assert.DoesNotContain("First take the quest", prompt);
+        Assert.Contains("with `wait`", prompt);
+        Assert.Contains("Never write outside", prompt);
+    }
+
     /// <summary>A close with no note says so and where the answer is, rather than quoting nothing.</summary>
     [Fact]
     public void A_question_closed_without_a_note_points_at_the_quest_and_what_landed()

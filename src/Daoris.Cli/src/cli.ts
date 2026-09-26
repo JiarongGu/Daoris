@@ -97,6 +97,7 @@ const USAGE = `daoris <command> [options]
                          strikes <n>               park a quest after n failed
                                                    sessions; 0 never parks
                          retry <quest> [--at <n>]  start a parked quest again
+                         timeout <minutes>         how long one session may run
                          cap <n> · adapter <name>
   plugin [verb]        this machine's plugins ($DAORIS_HOME/plugins/<id>/plugin.json):
                          list                      each one, what it declares and

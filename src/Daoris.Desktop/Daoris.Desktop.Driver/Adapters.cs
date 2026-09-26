@@ -63,6 +63,15 @@ public sealed record SessionTarget(
     public QuestView? Answered { get; init; }
 
     /// <summary>
+    /// For a session CARRYING ON a quest a cut-off left taken (D80): what the cut-off session's record
+    /// said about its end. Null for every other session.
+    /// </summary>
+    public string? CutOff { get; init; }
+
+    /// <summary>What the tree holds uncommitted when a session carries on — git's short lines (D80).</summary>
+    public IReadOnlyList<string> InFlight { get; init; } = [];
+
+    /// <summary>
     /// The target a quest's session is handed: the quest as the service answered it, run in
     /// <paramref name="workTree"/> — the repository's own tree where it opted in (D51), its root
     /// otherwise — naming the code map that tree keeps.
@@ -101,7 +110,10 @@ public static class TargetPrompt
     /// delivers the same words without knowing which kind of session it is.
     /// </summary>
     public static string Compose(SessionTarget target) =>
-        target.Prompt ?? (target.Answered is { } answered ? Resuming(target, answered) : Claiming(target));
+        target.Prompt
+        ?? (target.Answered is { } answered ? Resuming(target, answered)
+            : target.CutOff is { } cutOff ? CarryingOn(target, cutOff)
+            : Claiming(target));
 
     private static string Claiming(SessionTarget target) =>
         $"""
@@ -155,6 +167,42 @@ public static class TargetPrompt
 
         {Boundary}
         """;
+
+    /// <summary>
+    /// A session carrying on a quest its own earlier session took and was cut off from (D80): the
+    /// quest again, what cut the last one off, and what it left in the tree — so it finishes the work
+    /// rather than starting it again, and does not take or stand down from a quest that is its own.
+    /// </summary>
+    private static string CarryingOn(SessionTarget target, string cutOff) =>
+        $"""
+        You are the agent for `{target.Repository}`, working inside its own repository and nowhere else.
+
+        You are carrying on quest `#{target.QuestId}`, asked by `{target.Asker}`. It is already taken, and
+        it is yours: do not take it again, and do not stand down.
+
+        # {target.Title}
+
+        {target.Body}
+        {Carried(target)}
+        An earlier session on this quest was cut off before it closed it: {cutOff} What it did is in this
+        tree — any commits it made are on this branch, and {InFlight(target)}
+
+        Finish from there rather than starting again, inside this repository under its own doctrine and
+        gates, then close `#{target.QuestId}`: `done` when it has landed, or `decline` with the reason —
+        the reason is the part the asker can act on. Commit as you go, so a second cut-off loses less.
+        {Mapped(target)}
+        {Asking(target)}
+
+        {Proposing}
+
+        {Boundary}
+        """;
+
+    /// <summary>The tree's uncommitted changes as the driver read them, or that there were none.</summary>
+    private static string InFlight(SessionTarget target) => target.InFlight.Count == 0
+        ? "it left nothing uncommitted."
+        : "these are the changes it had not committed yet:\n\n"
+          + string.Join("\n", target.InFlight.Select(line => $"    {line}"));
 
     /// <summary>What came back, in the answerer's own words where it gave any.</summary>
     private static string Answer(QuestView answered)

@@ -435,4 +435,47 @@ public sealed class PlannerTests
     {
         Assert.Empty(Planner.Plan(Ran([WaitingOn("q2")]), Config()));
     }
+
+    // ── carrying on after a cut-off (D80) ─────────────────────────────────────────────────────────
+    //
+    // Found on FG5's second run: the session took its quest, worked half an hour, and the timeout
+    // killed it. A failed START leaves a quest open and is retried; a session cut off AFTER its take
+    // left the quest taken for good, with the work in its tree. It is carried on, like a retry.
+
+    [Fact]
+    public void A_taken_quest_whose_last_session_here_was_cut_off_is_carried_on_from_that_session()
+    {
+        var prior = new PriorSession("s1", "D:/trees/s1", "failed", "timed out after 30 minutes and was killed.");
+
+        var only = Assert.Single(Planner.Plan(Ran([Quest(status: "Taken")], ("q1", prior)), Config()));
+
+        Assert.Equal(StartVerdict.Start, only.Verdict);
+        Assert.Equal(prior, only.Resumes);
+        Assert.Contains("s1", only.Reason);
+        Assert.Contains("timed out", only.Reason);
+    }
+
+    /// <summary>
+    /// The strikes bound it, exactly as they bound a retry: a cut-off IS a failed session, so the third
+    /// one parks the quest, with the retry door that clears it.
+    /// </summary>
+    [Fact]
+    public void Carrying_on_is_bounded_by_the_strikes()
+    {
+        var snapshot = Ran([Quest(status: "Taken")], ("q1", new PriorSession("s3", null, "failed", "timed out.")))
+            with { Strikes = new Dictionary<string, int> { ["q1"] = 3 } };
+
+        Assert.Equal(StartVerdict.Exhausted, Assert.Single(Planner.Plan(snapshot, Config() with { Strikes = 3 })).Verdict);
+    }
+
+    /// <summary>
+    /// Only a FAILED last run is a cut-off. A completed one ended well (its close or its wait), and a
+    /// taken quest that just sits after one is a person's or another machine's to move.
+    /// </summary>
+    [Fact]
+    public void A_taken_quest_whose_last_session_here_ended_well_is_not_carried_on()
+    {
+        Assert.Empty(Planner.Plan(
+            Ran([Quest(status: "Taken")], ("q1", new PriorSession("s1", null, "completed", "reached done."))), Config()));
+    }
 }

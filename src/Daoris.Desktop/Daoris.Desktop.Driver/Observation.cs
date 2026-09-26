@@ -19,9 +19,14 @@ public static class Observation
     /// self-report about the work: the call failed, in the agent's words, and on that door the exit
     /// after stdin closes is 0 whatever happened, so without this a refused turn reads as a clean one.
     /// </param>
+    /// <param name="resumed">
+    /// Whether this session carried the quest on after its own earlier session — a resume once a
+    /// question closed (D79), or a carry-on after a cut-off (D80). Its quest was this machine's take
+    /// before it began, so ending with it still taken is not somebody else having it.
+    /// </param>
     public static SessionConclusion Conclude(
         int exitCode, string questStatus, string? awaitsBefore = null, string? awaitsAfter = null,
-        string? turnFailed = null) => questStatus switch
+        string? turnFailed = null, bool resumed = false) => questStatus switch
     {
         // Ask and wait (D79): the session published a question to another repository and waits on it.
         // Its quest stays taken for the same tree to resume in, and that is a good ending.
@@ -44,6 +49,12 @@ public static class Observation
         "Taken" when awaitsBefore is { Length: > 0 }
             => new("failed",
                 $"resumed with `#{awaitsBefore}` answered, and ended with the quest still taken"
+                + (exitCode == 0 ? "." : $" (exit {exitCode}).")),
+
+        // The same for a carry-on after a cut-off (D80): the take was this machine's already.
+        "Taken" when resumed
+            => new("failed",
+                "carried the quest on after a cut-off, and ended with it still taken"
                 + (exitCode == 0 ? "." : $" (exit {exitCode}).")),
 
         // The quest reaching its close outranks a messy exit: the work is what matters, and the exit

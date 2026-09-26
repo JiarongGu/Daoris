@@ -436,10 +436,13 @@ public sealed partial class Driver(
         // open and records nothing. The branch grows from the canonical line as WSP4 resolves it.
         // A RESUME (D79) carries on in the tree its earlier session asked from — that tree holds the work
         // done before the question — where it still stands. One a person has since discarded is gone
-        // with its work, and the resume grows a fresh tree like a first start.
+        // with its work, and the resume grows a fresh tree like a first start. A CARRY-ON after a
+        // cut-off (D80) is the same move for a different reason: the quest waits on nothing, and the
+        // earlier session failed before closing it.
         var resumedIn = start.Resumes is { Tree: { Length: > 0 } priorTree } && isolated && Directory.Exists(priorTree)
             ? priorTree
             : null;
+        var carryingOn = start.Resumes is not null && quest.Awaits is null or "";
 
         // What the question came back with, which is the whole point of resuming: the session is handed
         // it. Read before the record opens, like every hold above — a question the service no longer
@@ -533,7 +536,14 @@ public sealed partial class Driver(
         try
         {
             var adapter = _adapters.Resolve(config.Adapter);
-            var target = SessionTarget.ForQuest(quest, workTree, service.BaseUrl) with { Answered = answered };
+            var target = SessionTarget.ForQuest(quest, workTree, service.BaseUrl) with
+            {
+                Answered = answered,
+                // What cut the last session off, and what it left uncommitted (D80) — read by the
+                // driver, because the session may not run `git status` itself.
+                CutOff = carryingOn ? start.Resumes!.Note ?? "it ended before closing the quest." : null,
+                InFlight = carryingOn ? await WorkingTree.UncommittedAsync(workTree, ct: ct).ConfigureAwait(false) : [],
+            };
             var (info, harnessNotice) = Prepare(adapter, target, selection);
 
             await service.AdvanceAsync(
@@ -542,9 +552,13 @@ public sealed partial class Driver(
                 // grew from and what a fresh tree does not hold. The conclusion's note replaces it —
                 // by then the record's Tree field and the evidence say the rest.
                 note: opened?.Sentence
-                    ?? (answered is null ? null
-                        : $"resumes `#{quest.Id}` now that `#{answered.Id}` is answered"
-                          + (resumedIn is null ? "." : $", in the tree session `{start.Resumes!.Session}` asked from.")),
+                    ?? (answered is not null
+                        ? $"resumes `#{quest.Id}` now that `#{answered.Id}` is answered"
+                          + (resumedIn is null ? "." : $", in the tree session `{start.Resumes!.Session}` asked from.")
+                        : carryingOn
+                            ? $"carries `#{quest.Id}` on after session `{start.Resumes!.Session}` was cut off"
+                              + (resumedIn is null ? "." : ", in the tree it worked in.")
+                            : null),
                 ct: ct).ConfigureAwait(false);
 
             var transcript = Path.Combine(home, "sessions", $"{sessionId}.log");
@@ -597,7 +611,7 @@ public sealed partial class Driver(
                         : exitCode is int code
                             // What it waited on before and after (D79): a NEW question is this session
                             // asking and waiting, which is a good ending, not a stand-down.
-                            ? Observation.Conclude(code, status, quest.Awaits, after?.Awaits, turnFailed)
+                            ? Observation.Conclude(code, status, quest.Awaits, after?.Awaits, turnFailed, resumed: start.Resumes is not null)
                             : new SessionConclusion("failed", $"timed out after {config.TimeoutMinutes} minutes and was killed.");
 
                     conclusion = AccountRefused(conclusion, adapter, selection, transcript);

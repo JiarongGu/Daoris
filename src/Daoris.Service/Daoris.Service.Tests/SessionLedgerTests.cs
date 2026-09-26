@@ -121,6 +121,43 @@ public sealed class SessionLedgerTests : IAsyncLifetime
         Assert.Equal(SessionOpenRefusal.None, resumed.Refusal);
     }
 
+    /// <summary>
+    /// D80, found on FG5's second run: the session took its quest, worked half an hour, and the timeout
+    /// killed it. The quest stayed taken with its work in the tree and nothing would ever start on it.
+    /// A taken quest whose last session HERE failed is this machine's to carry on.
+    /// </summary>
+    [Fact]
+    public async Task A_taken_quest_whose_last_session_here_failed_may_be_carried_on()
+    {
+        var quest = await Publish();
+        var first = (await _ledger.OpenAsync(quest.Id, "stub", Now)).Session!;
+        await _ledger.AdvanceAsync(first.Id, "working", null, null, null, Now);
+        await _quests.MoveAsync(quest.Id, QuestStatus.Taken, null, Now.AddMinutes(1));
+        await _ledger.AdvanceAsync(first.Id, "failed", "timed out after 30 minutes and was killed.", null, null, Now.AddMinutes(30));
+
+        var carried = await _ledger.OpenAsync(quest.Id, "stub", Now.AddMinutes(31));
+
+        Assert.Equal(SessionOpenRefusal.None, carried.Refusal);
+    }
+
+    /// <summary>
+    /// 🔴 A stand-down means somebody else has the quest, so the take is not this machine's — and a
+    /// taken quest nobody here ran is somebody else's too. Neither is carried on.
+    /// </summary>
+    [Fact]
+    public async Task A_taken_quest_whose_last_session_stood_down_or_that_nobody_here_ran_is_refused()
+    {
+        var quest = await Publish();
+        var first = (await _ledger.OpenAsync(quest.Id, "stub", Now)).Session!;
+        await _quests.MoveAsync(quest.Id, QuestStatus.Taken, null, Now.AddMinutes(1));
+        await _ledger.AdvanceAsync(first.Id, "stood-down", "someone else has it.", null, null, Now.AddMinutes(2));
+        var untouched = await Publish(title: "Taken by a person");
+        await _quests.MoveAsync(untouched.Id, QuestStatus.Taken, null, Now);
+
+        Assert.Equal(SessionOpenRefusal.QuestNotOpen, (await _ledger.OpenAsync(quest.Id, "stub", Now.AddMinutes(3))).Refusal);
+        Assert.Equal(SessionOpenRefusal.QuestNotOpen, (await _ledger.OpenAsync(untouched.Id, "stub", Now.AddMinutes(3))).Refusal);
+    }
+
     [Fact]
     public async Task A_closed_quest_is_refused()
     {

@@ -21,7 +21,7 @@ lists.
 
 ## State
 
-**Counts, and this is their one home:** fifteen commands, **482 CLI tests, 523 service, 758 driver,
+**Counts, and this is their one home:** fifteen commands, **483 CLI tests, 525 service, 765 driver,
 151 desktop modules, 80 devkit, 1189 web unit, 21 Playwright**, 66/66 release rehearsal, **285/285
 family rehearsal** (it names its own phases when you run it), **39/39 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge
@@ -303,7 +303,11 @@ is behind a sign-in. FG1–FG4 are in the archive. **INT6 is reshaped as FG5.**
   sixteen empty branches were deleted, with the owner's say-so. The stranded tree's branch is kept
   for its uncommitted edits. The quest was declined, its ask closed, and the ticket asked again.
   **Found:** the same words were the same ask for good, closed or not, so asking again needed new
-  words (ASKAGAIN1, fixed, in the archive).
+  words (ASKAGAIN1, fixed, in the archive). The intake routed the ticket again, to the right
+  repository. The development session took it, tried a read into the backend (refused), did not
+  ask, and changed 45 files. It was running the gates when the thirty-minute timeout killed it.
+  That left the quest taken for good, fixed as D80 (CARRY1, in the archive): a cut-off is carried
+  on in its tree.
 - [ ] ⏸ **SEM2 — vectors that persist** (after SEM1, held). SEM1 embeds what is on disk once per
   process, on first use. The MCP host is one process per session, so with an embedder configured,
   each session's first search embeds the whole corpus. Lyntai.Storage.Sqlite's vector store would

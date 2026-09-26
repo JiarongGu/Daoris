@@ -228,7 +228,7 @@ test('an unknown verb names the ones that exist', () => {
 
   assert.match(error.message, /unknown driver verb 'frobnicate'/);
   assert.match(
-    error.message, /list, drive, undrive, hold, resume, trees, notify, strikes, retry, cap, adapter, intake/);
+    error.message, /list, drive, undrive, hold, resume, trees, notify, strikes, retry, timeout, cap, adapter, intake/);
   fx.cleanup();
 });
 
@@ -350,6 +350,32 @@ test('the strike limit is set from a terminal, and zero is the old behaviour', (
   run(['strikes', '0'], at(fx));
   assert.equal(readDriverChoices(at(fx)).strikes, 0);
   assert.match(run(['list'], at(fx)).out, /never parks|keeps trying/i);
+
+  fx.cleanup();
+});
+
+/**
+ * How long a session may run before the driver kills it (D80's companion). Found on the first real
+ * development run: the default thirty minutes killed a session that had done the work and was running
+ * its repository's gates. The field existed only in the file; now both doors reach it (D50).
+ */
+test('the session timeout is set from a terminal, listed, and left alone until it is', () => {
+  const fx = makeFixture('driver-timeout');
+  writeFileSync(at(fx), `${JSON.stringify({ drivable: ['engine'], cap: 1 }, null, 2)}\n`, 'utf8');
+
+  // Absent is the driver's own default, said as such, and an unrelated edit does not write it.
+  assert.match(run(['list'], at(fx)).out, /timeout\s+30 minutes.*default/);
+  run(['hold', 'engine'], at(fx));
+  assert.equal(JSON.parse(readFileSync(at(fx), 'utf8')).timeoutMinutes, undefined);
+
+  const set = run(['timeout', '120'], at(fx));
+  assert.equal(JSON.parse(readFileSync(at(fx), 'utf8')).timeoutMinutes, 120);
+  assert.match(set.out, /120 minutes/);
+  assert.match(run(['list'], at(fx)).out, /timeout\s+120 minutes/);
+
+  for (const bad of ['0', '-5', '1.5', 'soon']) {
+    assert.match(captureError(() => run(['timeout', bad], at(fx))).message, /whole number of minutes/);
+  }
 
   fx.cleanup();
 });

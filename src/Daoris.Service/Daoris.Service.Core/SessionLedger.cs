@@ -249,7 +249,14 @@ public sealed class SessionLedger(
             : null;
         var resumes = question is { Status: QuestStatus.Done or QuestStatus.Declined };
 
-        if (quest.Status != QuestStatus.Open && !resumes)
+        // A carry-on (D80): a taken quest that is not waiting, whose last session on THIS machine
+        // failed — timed out, refused, crashed — before closing it. The take is this machine's and its
+        // tree holds the work. The driver's strikes bound how often; a stand-down or a teammate's
+        // record never counts, because either means the take is somebody else's.
+        var carriesOn = quest is { Status: QuestStatus.Taken } && question is null
+            && await sessions.LastOwnForQuestAsync(quest.Id, ct).ConfigureAwait(false) is { State: SessionState.Failed };
+
+        if (quest.Status != QuestStatus.Open && !resumes && !carriesOn)
         {
             // Taken means someone — a session, a person, another machine — already has it, and Done or
             // Declined means the work is over. Either way there is nothing here for a new session to do.

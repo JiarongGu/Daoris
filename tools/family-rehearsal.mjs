@@ -353,6 +353,27 @@ check('…and once game answers, a session opens on the taken quest — the resu
 await api('POST', `/api/sessions/${resumption.json?.session?.id}/state`, { body: { state: 'stopped' } });
 await api('POST', `/api/quests/${needingId}/respond`, { body: { action: 'done', reason: 'Costed per size.' } });
 
+// Carrying on after a cut-off (D80): a session that took its quest and FAILED before closing it —
+// timed out, refused, crashed — leaves the take with this machine, so a session opens on the taken
+// quest to carry it on. A stand-down is somebody else's take, and nothing opens on it.
+const cutQuest = await api('POST', '/api/quests', {
+  body: { from: 'game', to: 'engine', title: 'Profile the hydration path', body: 'Where does the frame go?' },
+});
+const cutQuestId = cutQuest.json?.quest?.id ?? '';
+const cutSession = await api('POST', '/api/sessions', { body: { quest: cutQuestId, adapter: 'stub' } });
+const cutSessionId = cutSession.json?.session?.id ?? '';
+await api('POST', `/api/sessions/${cutSessionId}/state`, { body: { state: 'working' } });
+await api('POST', `/api/quests/${cutQuestId}/respond`, { body: { action: 'take', reason: null } });
+await api('POST', `/api/sessions/${cutSessionId}/state`, {
+  body: { state: 'failed', note: 'timed out after 30 minutes and was killed.' },
+});
+const carriedOn = await api('POST', '/api/sessions', { body: { quest: cutQuestId, adapter: 'stub' } });
+check('a quest whose session was cut off after its take is carried on — a session opens on it', carriedOn.status === 200, carriedOn.text);
+await api('POST', `/api/sessions/${carriedOn.json?.session?.id}/state`, { body: { state: 'stood-down', note: 'rehearsal' } });
+const afterStandDown = await api('POST', '/api/sessions', { body: { quest: cutQuestId, adapter: 'stub' } });
+check('…and once its last session stood down, the take is somebody else’s and nothing opens', afterStandDown.status === 409, afterStandDown.text);
+await api('POST', `/api/quests/${cutQuestId}/respond`, { body: { action: 'done', reason: 'Profiled.' } });
+
 // -------------------------------------------------- 5. knowledge crosses
 
 section('5. Knowledge crosses the family');

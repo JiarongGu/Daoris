@@ -489,6 +489,22 @@ public sealed class SessionStore
     }
 
     /// <summary>
+    /// The newest of THIS machine's records for a quest, or null — whether a session here left it
+    /// unfinished is what lets one carry it on (D80). A teammate's record is their machine's run.
+    /// </summary>
+    public async Task<Session?> LastOwnForQuestAsync(string quest, CancellationToken ct = default)
+    {
+        await using var command = _connection.CreateCommand();
+        command.CommandText = """
+            SELECT * FROM sessions WHERE quest = $quest AND origin IS NULL
+            ORDER BY created DESC, rowid DESC LIMIT 1
+            """;
+        command.Parameters.AddWithValue("$quest", quest);
+        await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
+        return await reader.ReadAsync(ct).ConfigureAwait(false) ? Read(reader) : null;
+    }
+
+    /// <summary>
     /// The session holding a working tree, if any — the one-session-per-TREE question (D51).
     /// </summary>
     /// <param name="tree">

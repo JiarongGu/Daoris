@@ -25,10 +25,12 @@ public sealed record QuestView(string Id, string From, string To, string Title, 
     public string? Note { get; init; }
 }
 
-/// <summary>The session this machine last ran on a quest, and the tree it ran in (D79).</summary>
+/// <summary>The session this machine last ran on a quest, and the tree it ran in (D79, D80).</summary>
 /// <param name="Session">Its record's id.</param>
 /// <param name="Tree">Where it ran — its own tree where the repository opted in, the root otherwise; null when unsaid.</param>
-public sealed record PriorSession(string Session, string? Tree);
+/// <param name="State">How its record ended — `failed` is a cut-off, which a later session carries on (D80).</param>
+/// <param name="Note">What its record said about that ending — the words a session carrying on is told.</param>
+public sealed record PriorSession(string Session, string? Tree, string State = "", string? Note = null);
 
 /// <summary>One step of a chain, as the service answered it.</summary>
 public sealed record QuestStepView(string To, string Title, string Body);
@@ -265,9 +267,31 @@ public static class Planner
             {
                 considerations.Add(Resume(quest, awaits, prior));
             }
+            else if (quest is { Status: "Taken", Awaits: null or "" }
+                     && snapshot.LastRun.TryGetValue(quest.Id, out var cutOff)
+                     && string.Equals(cutOff.State, "failed", StringComparison.OrdinalIgnoreCase))
+            {
+                considerations.Add(CarryOn(quest, cutOff));
+            }
         }
 
         return considerations;
+
+        // A cut-off (D80): this machine's session took the quest and failed before closing it — timed
+        // out, refused, crashed — so the take is still here and the work is in its tree. Carried on like
+        // a failed start is retried: the strikes count every cut-off, and the third parks it.
+        Consideration CarryOn(QuestView quest, PriorSession cutOff)
+        {
+            var considered = Consider(quest);
+            return considered.Verdict == StartVerdict.Start
+                ? considered with
+                {
+                    Reason = $"carrying on in `{quest.To}` — session `{cutOff.Session}` was cut off: "
+                        + (cutOff.Note is { Length: > 0 } note ? note : "it ended before closing the quest."),
+                    Resumes = cutOff,
+                }
+                : considered;
+        }
 
         // A waiting quest (D79): the open list holds open and taken quests only, so a question still in
         // it is unanswered, and one absent from it has closed. A resume is a start in every other way —

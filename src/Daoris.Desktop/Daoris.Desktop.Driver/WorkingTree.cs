@@ -162,6 +162,27 @@ public static class WorkingTree
     }
 
     /// <summary>
+    /// What a tree holds uncommitted, as git's own short lines (<c>M path</c>, <c>?? path</c>), at most
+    /// <paramref name="limit"/> of them with a last line counting the rest. Empty when the tree is clean
+    /// or git cannot say. What a session carrying on after a cut-off is handed (D80): it may not run
+    /// <c>git status</c> itself, and a timeout lands mid-change.
+    /// </summary>
+    public static async Task<IReadOnlyList<string>> UncommittedAsync(
+        string root, int limit = 60, CancellationToken ct = default)
+    {
+        var (code, stdout, _) = await GitAsync(root, ["status", "--porcelain"], ct).ConfigureAwait(false);
+        if (code != 0) return [];
+
+        var lines = stdout.Split('\n', StringSplitOptions.RemoveEmptyEntries)
+            .Select(line => line.TrimEnd('\r'))
+            .Where(line => line.Trim().Length > 0)
+            .ToList();
+        return lines.Count <= limit
+            ? lines
+            : [.. lines.Take(limit), $"… and {lines.Count - limit} more"];
+    }
+
+    /// <summary>
     /// Whether one file is exactly as HEAD has it — tracked, and nothing staged, changed or untracked
     /// about it. What a registration asks of the manifest before it names the commit (SYNC5b).
     /// </summary>

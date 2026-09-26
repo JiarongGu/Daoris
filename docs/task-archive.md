@@ -6608,3 +6608,22 @@ closed ("already asked … closed: …"). The only way through was rewording. No
 same words on to a fresh id, and the closed record stays as it was. While an ask is open, the same
 words are still that ask, which is what makes a retry or a repeat safe. The first id keeps its old
 form, so no existing ask moves. Service 523.
+
+## CARRY1 — a session cut off after its take is carried on in its tree (2026-09-27 → D80)
+
+Found on FG5's second run. The development session took its quest, changed 45 files, and was running
+its repository's gates when the thirty-minute timeout killed it. The quest stayed taken with its work
+in a tree nothing would open again.
+- **The ledger** opens a session on a taken quest, waiting on nothing, whose last record on this
+  machine failed. A stand-down, a teammate's record or no record refuses as before.
+- **The driver** reads each quest's last run with its state and note. It plans a cut-off like a
+  start, behind the hold, the strikes, busy and the cap, in the cut-off session's tree.
+- **The instruction** says the quest is already its own and what cut the last session off. It lists
+  the changes left uncommitted, read by the driver, since a session here may not run `git status`.
+- **The ending:** a carried-on session that ends with the quest still taken concludes `failed`, so the
+  third cut-off parks it behind `driver retry`.
+- **The timeout from a terminal:** `daoris driver timeout <minutes>`, shown in `driver list`, written
+  only when set, and read as the driver reads it.
+
+Service 525, driver 765 (a real tick on the protocol door: refused after the take, then carried on in
+the same tree to done), CLI 483, and two family-rehearsal checks over HTTP.

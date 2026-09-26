@@ -43,6 +43,10 @@
    it. Reading into a sibling is not what a rule change is for.
 5. **The person sees it.** A waiting quest says what it waits on, in the list and the drawer, with a
    door to the awaited quest.
+6. **A cut-off is carried on the same way (D80, added after the second run).** A taken quest whose
+   last session here *failed* (timed out, refused, crashed) is resumed in its tree, like a waiting
+   one. The session is told what cut the last one off and which changes it left uncommitted. The
+   strikes bound it, as they bound a retry.
 
 ## 2. What is deliberately not in it
 

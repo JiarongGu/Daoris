@@ -83,8 +83,20 @@ public sealed class StrikeTests
              { "id": "c1", "repository": "Game", "state": "stopped", "created": "2026-09-27T11:00:00Z" }]
             """);
 
-        Assert.Equal(new PriorSession("s2", "D:/trees/s2"), last["q1"]);
+        Assert.Equal(new PriorSession("s2", "D:/trees/s2", "completed"), last["q1"]);
         Assert.Single(last);
+    }
+
+    /// <summary>A cut-off carries its own words (D80), which the session that carries on is told.</summary>
+    [Fact]
+    public void The_last_run_carries_how_it_ended_and_what_it_said()
+    {
+        var last = ServiceClient.ReadLastRun("""
+            [{ "id": "s1", "quest": "q1", "state": "failed", "note": "timed out after 30 minutes and was killed.",
+               "tree": "D:/trees/s1", "created": "2026-09-27T10:00:00Z" }]
+            """);
+
+        Assert.Equal(new PriorSession("s1", "D:/trees/s1", "failed", "timed out after 30 minutes and was killed."), last["q1"]);
     }
 
     /// <summary>

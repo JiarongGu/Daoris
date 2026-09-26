@@ -503,7 +503,8 @@ public sealed class ServiceClient : IDisposable
 
             var at = DateTimeOffset.TryParse(Text(session, "created"), out var created) ? created : DateTimeOffset.MinValue;
             if (last.TryGetValue(quest, out var seen) && seen.At > at) continue;
-            last[quest] = (new PriorSession(Text(session, "id") ?? "", Text(session, "tree")), at);
+            last[quest] = (new PriorSession(
+                Text(session, "id") ?? "", Text(session, "tree"), Text(session, "state") ?? "", Text(session, "note")), at);
         }
 
         return last.ToDictionary(pair => pair.Key, pair => pair.Value.Session, StringComparer.OrdinalIgnoreCase);
