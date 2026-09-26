@@ -18,16 +18,16 @@ const FITS = 17;
 /** Where a box sits: its centre across, its top edge down. */
 type Place = { x: number; y: number };
 
-/** The width the drawing is laid out at where its card has room: wider only spreads the boxes apart. */
-const ROOMY = 640;
+/** The width the drawing is laid out at where nothing measures its card. */
+const UNMEASURED = 640;
 
 /**
- * How wide the drawing is, in units that are pixels: `ROOMY`, or the card where the card is
- * narrower, and never narrower than its widest row of boxes needs (UX5 U44). Where nothing measures
- * the card, `ROOMY`. Past the widest row's need, the drawing shrinks as the last resort.
+ * How wide the drawing is, in units that are pixels: its card's width, narrow or wide, so the
+ * columns spread with the window (UX5 U59, the owner) and a name stays the type scale's (U44). Never
+ * narrower than its widest row of boxes needs; past that, the drawing shrinks as the last resort.
  */
 export function codeWidth(widest: number, room: number | undefined): number {
-  return Math.max(widest * (BOX_W + GAP) + MARGIN * 2, Math.min(ROOMY, room ?? ROOMY));
+  return Math.max(widest * (BOX_W + GAP) + MARGIN * 2, room ?? UNMEASURED);
 }
 
 /**

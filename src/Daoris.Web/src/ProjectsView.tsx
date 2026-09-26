@@ -260,7 +260,7 @@ export function ProjectsView({ notify, addRequested = false, onAddOpened }: {
             })}
           </ul>
           {/* A sentence with its commands as code — it was all monospace, prose included (POLISH4). */}
-          <p className="mt-3 rounded-control bg-accent-soft px-3 py-2.5 text-small">
+          <p className="mt-3 max-w-prose rounded-control bg-accent-soft px-3 py-2.5 text-small">
             <Inline text={t('projects.outside.join')} />
           </p>
         </Card>

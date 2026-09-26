@@ -333,6 +333,23 @@ describe('the views, in a browser', () => {
     expect(screen.getByRole('main')).toHaveClass('relative');
   });
 
+  /**
+   * UX5 U59, the owner (2026-09-26): *"inner content size does not relative to the window size"*.
+   * The column was capped at 72rem, so a maximized window left every view but Sessions a third
+   * empty. Content follows the window; prose keeps its own measure (`Prose`), a form its own size.
+   */
+  it('lets every view follow the window, capping no content column', async () => {
+    shell();
+    await screen.findByRole('navigation', { name: 'Views' });
+
+    const main = screen.getByRole('main');
+    for (const element of [main, ...main.querySelectorAll(':scope > *')]) {
+      expect(element.getAttribute('class') ?? '').not.toMatch(/\bmax-w-/);
+    }
+    // And prose keeps its measure: uncapped, the repositories' key ran 121 characters a line.
+    expect(await screen.findByText(/adopted — it carries its own declaration/)).toHaveClass('max-w-prose');
+  });
+
   it('falls back to Overview when the browser remembers a view this deployment does not have', async () => {
     window.localStorage.setItem('daoris.view', 'sessions');
     shell();

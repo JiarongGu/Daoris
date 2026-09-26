@@ -24,3 +24,28 @@ export function useWidth(element: RefObject<HTMLElement | null>): number | undef
 
   return width;
 }
+
+/**
+ * How tall a drawing may be: the window's height below the element's top, less `reserve` for what
+ * follows it in the view (a legend, the page's foot). Followed as the window resizes, so a map grows
+ * and gives way with it (UX5 U59). `undefined` where nothing measures it, as `useWidth` is.
+ */
+export function useTall(element: RefObject<HTMLElement | null>, reserve: number): number | undefined {
+  const [tall, setTall] = useState<number | undefined>(undefined);
+
+  useEffect(() => {
+    const target = element.current;
+    if (!target || typeof window === 'undefined') return undefined;
+    const measure = () => {
+      const top = target.getBoundingClientRect().top;
+      const room = window.innerHeight - top - reserve;
+      // jsdom lays nothing out and has a zero-height window: that is no measure at all.
+      setTall(window.innerHeight > 0 && room > 0 ? room : undefined);
+    };
+    measure();
+    window.addEventListener('resize', measure);
+    return () => window.removeEventListener('resize', measure);
+  }, [element, reserve]);
+
+  return tall;
+}

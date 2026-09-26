@@ -1417,7 +1417,7 @@ function HarnessRoster({ notify }: { notify: Notify }) {
               );
             })}
           </ul>
-          <p className="mt-2 text-meta text-ink-faint">{t('usage.note')}</p>
+          <p className="mt-2 max-w-prose text-meta text-ink-faint">{t('usage.note')}</p>
         </div>
       )}
 

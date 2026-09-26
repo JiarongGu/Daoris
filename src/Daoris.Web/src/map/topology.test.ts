@@ -172,6 +172,22 @@ describe('the drawing\'s frame (UX5 U44)', () => {
     expect(frame.width).toBeLessThanOrEqual(400);
   });
 
+  /**
+   * UX5 U59, the owner: content follows the window. A wide, tall card draws a larger ring, up to
+   * what the window's height leaves it, with names still at their size. It stayed at the old
+   * square's ring, 531px in a card three times as wide.
+   */
+  it('grows the ring with a wide card, as far as the height the window leaves it', () => {
+    const radius = fitRadius(three, 1500, words, 870);
+    const frame = frameMap(three, layoutRing(three.nodes.map((n) => n.id), 600, radius), words);
+
+    expect(radius).toBeGreaterThan(300);
+    expect(frame.height).toBeLessThanOrEqual(870);
+    expect(frame.width).toBeLessThanOrEqual(1500);
+    // Where nothing measures the height, the ring grows no further than it always was.
+    expect(fitRadius(three, 1500, words)).toBeCloseTo(204);
+  });
+
   it('never packs nodes closer than they can be told apart, and a large family keeps its spacing', () => {
     expect(fitRadius(three, 100, words)).toBe(110);
     const many = buildTopology(Array.from({ length: 16 }, (_, i) => repo(`r${i}`)), [], [], []);

@@ -2,7 +2,7 @@ import { type KeyboardEvent, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '../lib/cn';
 import { type Topology, layoutRing } from './topology';
-import { useWidth } from './useWidth';
+import { useTall, useWidth } from './useWidth';
 
 /** What a person has chosen on the map: a repository, the quests one way, or a shared finding. */
 export type MapSelection =
@@ -123,23 +123,34 @@ export function frameMap(
   return { x, y, width: Math.ceil(right + pad) - x, height: Math.ceil(bottom + pad) - y };
 }
 
+/** How far a ring may grow when the card and the window's height leave it room. */
+const MOST = 1200;
 /**
- * The ring's radius for a card this wide: the full ring where it fits, and a smaller one where it
- * does not, so a narrow card draws the names at their size and the ring gives way (UX5 U44: at 500
- * the whole square shrank, and every name to about 8px). Never below what keeps neighbours apart, so
- * a large family keeps its spacing and the drawing shrinks as the last resort. Where nothing measures
- * the card, the full ring.
+ * What follows the drawing down to the window's foot: the legend's two lines and the off-map count,
+ * the card's padding, the page's foot and the status bar. The ring grows into the rest.
+ */
+const BELOW = 140;
+
+/**
+ * The ring's radius for a card this wide and a window this tall. A narrow card gets a smaller ring,
+ * so the names stay at their size (UX5 U44: at 500 the whole square shrank, and every name to about
+ * 8px); a wide one gets a larger ring, as far as the height the window leaves it, so the map
+ * follows the window (U59, the owner: it stayed 531px in a card three times as wide). Never below
+ * what keeps neighbours apart, so a large family keeps its spacing and the drawing shrinks as the
+ * last resort. Where nothing measures the card, the full ring; where nothing measures the height,
+ * no larger than that.
  */
 export function fitRadius(
-  topology: Topology, room: number | undefined, words: { parked: string; working: string },
+  topology: Topology, room: number | undefined, words: { parked: string; working: string }, tall?: number,
 ): number {
   const count = topology.nodes.length;
   const floor = Math.max(LEAST, count > 1 ? SPACING / (2 * Math.sin(Math.PI / count)) : 0);
-  const most = Math.max(FULL, floor);
-  if (room === undefined) return most;
+  if (room === undefined) return Math.max(FULL, floor);
+  const most = Math.max(tall === undefined ? FULL : MOST, floor);
   const ids = topology.nodes.map((node) => node.id);
   for (let radius = most; radius > floor; radius -= 4) {
-    if (frameMap(topology, layoutRing(ids, SIZE, radius), words).width <= room) return radius;
+    const frame = frameMap(topology, layoutRing(ids, SIZE, radius), words);
+    if (frame.width <= room && (tall === undefined || frame.height <= tall)) return radius;
   }
   return floor;
 }
@@ -169,11 +180,13 @@ export function MapCanvas({ topology, selected, onSelect }: {
   // The node the pointer or the keyboard is on, so its lines stand out and the rest step back.
   const [hovered, setHovered] = useState<string | null>(null);
   // Drawn one unit a pixel, so a name is the type scale's at every width (UX5 U44): the ring gives
-  // way to a narrow card, and the frame holds what is drawn and no more.
+  // way to a narrow card and grows with a wide one, as far as the window's height leaves it (U59),
+  // and the frame holds what is drawn and no more.
   const box = useRef<HTMLDivElement>(null);
   const room = useWidth(box);
+  const tall = useTall(box, BELOW);
   const words = { parked: t('map.parked'), working: t('map.working') };
-  const at = layoutRing(topology.nodes.map((n) => n.id), SIZE, fitRadius(topology, room, words));
+  const at = layoutRing(topology.nodes.map((n) => n.id), SIZE, fitRadius(topology, room, words, tall));
   const frame = frameMap(topology, at, words);
   const lit: MapSelection | null = hovered !== null ? { kind: 'node', id: hovered } : selected;
   /** A line stands forward when nothing is in focus, when a node in focus is one of its ends, or when it IS the chosen line. */

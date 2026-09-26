@@ -436,7 +436,10 @@ export function App() {
             // `sr-only` label far down a long page took the viewport as its block and stretched the
             // document, which grew a second scrollbar beside this one (seen on the window, PERM1).
             <main className="relative min-w-0 flex-1 overflow-y-auto px-6 pb-12 pt-5 max-md:px-3 max-md:pb-8 max-md:pt-4">
-              <div className="max-w-6xl">
+              {/* No cap: content follows the window (UX5 U59, the owner), as the session's centre does
+                  since U16. It was 72rem, and a maximized window left every view a third empty.
+                  Prose keeps its own measure (`Prose`), and a form its own size. */}
+              <div>
                 {view === 'overview' && (
                   <OverviewView
                     onNavigate={setView}

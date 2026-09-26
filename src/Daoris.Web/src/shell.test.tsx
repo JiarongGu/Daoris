@@ -387,6 +387,9 @@ describe('the shell-attached registry management', () => {
     const init = await screen.findByText('daoris init');
     expect(init.tagName).toBe('CODE');
     expect(init.parentElement).not.toHaveClass('font-mono');
+    // Prose keeps its measure once the column follows the window (UX5 U59): uncapped, the sentence
+    // ran about two hundred characters on one line.
+    expect(init.parentElement).toHaveClass('max-w-prose');
   });
 
   /** Re-wiring is a row on this machine; it must not touch the repository's tracked file. */
@@ -1463,6 +1466,8 @@ describe('the harness roster', () => {
     const usage = screen.getByText('What each account has carried').parentElement!;
     expect(within(usage).getByText("this machine's own")).toBeTruthy();
     expect(within(usage).getByText('work').getAttribute('class')).not.toContain('accent');
+    // Its note keeps a reading measure once the column follows the window (UX5 U59: 142 a line).
+    expect(within(usage).getByText(/Measured, not billed/)).toHaveClass('max-w-prose');
     // 🔴 No price is claimed anywhere — Daoris does not know what a token costs (D24).
     expect(screen.queryByText(/[$£€]/)).toBeNull();
   });

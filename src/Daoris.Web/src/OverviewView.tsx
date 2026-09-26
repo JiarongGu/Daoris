@@ -210,7 +210,7 @@ export function OverviewView({ onNavigate, onOpenQuest, doors, notify }: {
             </p>
           )}
           {shown.length > 0 && (
-            <p className="mt-2 text-small italic text-ink-faint">{t('overview.repositories.hint')}</p>
+            <p className="mt-2 max-w-prose text-small italic text-ink-faint">{t('overview.repositories.hint')}</p>
           )}
         </Card>
       </div>
