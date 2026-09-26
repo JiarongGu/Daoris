@@ -46,7 +46,10 @@ owns and every harness can drive: **BRW1–BRW2 landed, and BRW3, the owner's si
 🔴 **The first run showed a session guessing what another repository knew, so D79 landed: ask and
 wait** (ASK1–ASK3, in the archive). A session publishes its question, parks its taken quest on it,
 and is resumed in the same tree with the answer. **ACPEND1 landed with it**: the same run's account
-limit had been recorded as a stand-down. **Next: republish, and FG5 goes again.**
+limit had been recorded as a stand-down. **The second run then met the first goal**: a ticket read,
+routed, developed, gated and closed done with no repository named. That needed ASKAGAIN1 and D80 (a
+cut-off carried on), both in the archive. **Next: ORPHAN1, STANDDOWN2 and CHAIN2**, which the chain's
+verify step found.
 D76's round is done, and its leftovers (RAIL2, SURF11) stand behind these. Nothing is pushed or
 published, and a release is still blocked on REH1.
 - **Landed:** CONV1 (the record), CONV2 (the view), CONV3a (Claude Code's `stream-json`), CONV3b
@@ -120,8 +123,8 @@ rather than designed.
 
 ## Backlog
 
-**Thirty-one rows are open**: the in-app browser's seven (BRW3, then BRW4–BRW9, the browser as a browser); the first goal's two (FG5,
-and SEM2 on a trigger); D76's held file tools;
+**Thirty-four rows are open**: the in-app browser's seven (BRW3, then BRW4–BRW9, the browser as a browser); the first goal's five (FG5,
+ORPHAN1, STANDDOWN2, CHAIN2, and SEM2 on a trigger); D76's held file tools;
 the eight REV3 left, WINDOW2 among them; five leftovers (RAIL2, SURF11, FLAKE1, DEPLOY5, TEST1); two on the owner
 (TRUST2, AGT2c); and six on a trigger (see *Handover*). Every closed one is in `docs/task-archive.md`, and this file holds no
 ticked rows, by the `task-lifecycle` rule it also ships. A heading below holds open rows only.
@@ -308,6 +311,33 @@ is behind a sign-in. FG1–FG4 are in the archive. **INT6 is reshaped as FG5.**
   ask, and changed 45 files. It was running the gates when the thirty-minute timeout killed it.
   That left the quest taken for good, fixed as D80 (CARRY1, in the archive): a cut-off is carried
   on in its tree.
+  **The third leg: the first goal met.** Republished at `b946cc0` with `driver timeout 90`. On start
+  the driver carried the quest on in its tree, unasked. That session finished the ticket: two commits
+  on its branch, the build at its warning baseline, 1220 tests passing, and the quest **done**. Its
+  note said why no backend question was needed. The chain then published its browser-verify step,
+  which surfaced three new rows (ORPHAN1, STANDDOWN2, CHAIN2). The branch is the owner's to review
+  and merge (D51). Waiting on the owner as well: four rule proposals and the dev nav config apply,
+  a live write the session rightly left alone.
+- [ ] **ORPHAN1 — a session's background processes outlive it** (FG5, 2026-09-27). The verify session
+  started its repository's dev servers from a background shell. When its turn ended the agent exited
+  and they kept running, holding ports 4200 and 4288 and a tree whose session was over. Their parent
+  chain ran back to the ended agent. They were stopped by hand. The driver ends the agent it tracks
+  and nothing below it. On Windows a job object that kills on close holds a whole process tree, and
+  a process group does it elsewhere.
+- [ ] **STANDDOWN2 — a session that took its quest and ended asking the person reads as a stand-down**
+  (FG5, 2026-09-27). The verify session took its quest, then ended its turn holding it open with
+  three questions for the person (a merge, a sign-in, a live config apply). The record said
+  `stood-down: someone else has it`, which is false, and nothing carries a stand-down on. The driver
+  cannot tell its own session's take from another taker's, because a take records no session. The
+  connector knows its session (PERM2), so the take could carry it. Then this ending is
+  `awaiting-person`, with the session's last words, and the person answering needs a way to carry
+  the quest on.
+- [ ] **CHAIN2 — a chain's next step cannot see the step before it** (FG5, 2026-09-27). The develop
+  step's work landed on its session branch, which nothing merges (D51). The verify step `then`
+  published at once, to the same repository, and its session grew a fresh tree from the canonical
+  line, without that work. The intake's verify step also needed a sign-in and a live config apply,
+  both the person's. Decide whether a same-repository step starts on the parent's branch, waits for
+  the person's merge, or is left for the person when it needs a live environment.
 - [ ] ⏸ **SEM2 — vectors that persist** (after SEM1, held). SEM1 embeds what is on disk once per
   process, on first use. The MCP host is one process per session, so with an embedder configured,
   each session's first search embeds the whole corpus. Lyntai.Storage.Sqlite's vector store would
