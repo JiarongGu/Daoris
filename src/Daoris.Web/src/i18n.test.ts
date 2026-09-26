@@ -35,6 +35,16 @@ describe('the catalogs', () => {
     expect(aboutQuests.filter((key) => (zh as Record<string, string>)[key]!.includes('任务'))).toEqual([]);
   });
 
+  /**
+   * A view is named by the name it has (UX5 U19). D66 made the Work frame the Sessions view, and two
+   * sentences still sent a person to Work: the status bar's sessions tip and a quest's *open in Work*.
+   * Nothing on the window is called that any more.
+   */
+  it('name only views that exist: Work has been Sessions since D66', () => {
+    expect(Object.entries(en).filter(([, value]) => /\bWork\b/.test(value)).map(([key]) => key)).toEqual([]);
+    expect(Object.entries(zh).filter(([, value]) => /工作台|「工作」/.test(value)).map(([key]) => key)).toEqual([]);
+  });
+
   it('serve flat dotted keys in both languages, placeholders intact', async () => {
     await i18n.changeLanguage('en');
     expect(i18n.t('nav.quests')).toBe('Quests');

@@ -4,7 +4,10 @@ import { fireEvent, render as rtlRender, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import i18n from '../i18n';
+import en from '../locales/en.json';
+import zh from '../locales/zh.json';
 import { SessionConsole } from '../SessionConsole';
+import { SESSION_ACTIVE } from '../ui';
 import { ActivityBar, AppStrip, OutputPanel, Splitter, StatusBar } from './frame';
 
 /** The provider the application mounts once (`main.tsx`); a tooltip outside one throws. */
@@ -135,6 +138,32 @@ describe('ActivityBar', () => {
     expect(screen.queryByRole('button', { name: 'Sessions' })).toBeNull();
   });
 
+  /**
+   * 🔴 UX5 U22: at the window's least height (300px at 200%), the bar crushed its places. Every icon
+   * shrank until they touched, the counts sat over their neighbours, and Settings went under the
+   * status bar. A place keeps its size, and a bar too short for them scrolls instead. jsdom has no
+   * layout, so this holds the rules and the window shows them.
+   */
+  it('keeps every place its full size, and scrolls when the window is too short to hold them', () => {
+    render(
+      <ActivityBar
+        label="Views"
+        items={VIEWS}
+        end={SETTINGS}
+        active="overview"
+        onSelect={() => {}}
+        footer={<button type="button">refresh</button>}
+      />,
+    );
+
+    const bar = screen.getByRole('navigation', { name: 'Views' });
+    expect(bar).toHaveClass('min-h-0', 'overflow-y-auto');
+    for (const { label } of [...VIEWS, ...SETTINGS]) {
+      expect(screen.getByRole('button', { name: label })).toHaveClass('shrink-0');
+    }
+    expect(screen.getByRole('button', { name: 'refresh' }).parentElement).toHaveClass('shrink-0');
+  });
+
   /** Actions, then the places at the foot — Settings last, where every workbench keeps its gear. */
   it('holds its footer actions and then its foot places, below the list', () => {
     render(
@@ -163,6 +192,20 @@ describe('ActivityBar', () => {
  * and every one of them says what it will do before you press it.
  */
 describe('StatusBar', () => {
+  /**
+   * 🔴 UX5 U21: the sessions item was *running sessions*, and it counts `SESSION_ACTIVE`, which holds
+   * a session parked on its person. On the scratch window it said 2 while both were parked and
+   * neither had a process. A claim in a catalogue has no test pointing at the code it describes, so
+   * this one points at the set it counts.
+   */
+  it('names the sessions it counts: a parked one is active and never running', () => {
+    expect(SESSION_ACTIVE.has('awaiting-person')).toBe(true);
+    for (const catalogue of [en, zh] as Record<string, string>[]) {
+      expect(catalogue['work.status.sessionsLabel']).not.toMatch(/running|运行中/);
+      expect(catalogue['work.status.sessionsTip']).toMatch(/waiting on you|等你/);
+    }
+  });
+
   it('states the four ambient facts', () => {
     render(<StatusBar driver="running" sessions={2} workspace="default" remote />);
 

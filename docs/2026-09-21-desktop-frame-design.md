@@ -107,6 +107,13 @@ the space by their content boxes and padding would put the middle off centre. Th
 because a Chinese label may break between any two characters (UX5 U15). The space the groups leave
 empty drags the window as the strip does.
 
+**The command center says where you are and prints its own shortcut.** The strip's middle held about
+1,400px of nothing at any real width, and the palette SURF10 named as repaying the icon rail's lost
+discoverability was a 14px glyph against the caption buttons. It is a bounded, obviously pressable
+pill instead, taken from VS Code for VS Code's reason: a title bar that carries no information pays
+rent for a wordmark. **The menus carry no chevrons**, because a menu bar is a convention strong enough
+not to need marking, and a chevron per menu is furniture per menu.
+
 **Since SURF7 this strip is the title bar** (§5): it drags the window, double-click maximizes it, a
 sliver above it resizes from the top, and the three reserved slots are the rectangles the **window**
 paints its caption buttons into. SURF10 built the strip as a region with the room already held open,
@@ -126,6 +133,20 @@ actions and sit at the bar's foot as icons.
 
 The cost is discoverability, paid by tooltips, the view's own page header, and SURF9's palette —
 which the study already argued is cheaper before the domain count grows.
+
+**How the bar is laid out.** The views sit at the top and the foot holds the actions (refresh,
+language), then Settings, where every workbench keeps its gear. The two groups are separated by
+POSITION, with no rule between them, as VS Code separates its own. A view that does not exist on this
+surface is **absent, never disabled**: a browser is given no Sessions, because a greyed row implies
+the thing exists somewhere the person could get to. A place keeps its full 36px, and **a bar too short
+to hold them all scrolls** rather than crushing them, with no scrollbar drawn in 48px (UX5 U22: at
+the window's least height the places touched, the counts sat over their neighbours and Settings went
+under the status bar).
+
+**A count is a circle**, `CountBadge`: one fixed height and the same minimum width, since a count
+drawn as a pill of its own line height measured 14 × 17px on the window. Zero wears nothing. The one
+count that is a status, what waits on the person, wears open's hue, and a quantity (outstanding
+quests) wears the accent.
 
 ### c. The rail — a header, and `＋` behind one control
 
@@ -158,6 +179,27 @@ was going anyway.
 Unchanged in behaviour — both landed in SURF4d and both are right. They re-measure at the new density
 (the status bar's 40px becomes 26px), and the status bar gains the tier pill and the index count from
 the sidebar foot.
+
+**The status bar states facts, and it is icon-and-number.** Left, what the machine is doing: the
+driver, the sessions active here (running, or parked waiting on the person, which is what the count
+holds; UX5 U21), the workspace, and the remote. Right, what the index answers with: its count and the
+recall tier, whose sentence is the service's own, verbatim, in the tip (D24). Each value keeps its
+noun, dimmed, in front of it, because `● ready` alone says nothing; the tip leads with the noun too.
+The remote and the index count give way first on a narrow window (below 640px and 768px), and the
+driver, the sessions, the workspace and the tier stay.
+
+**An item is a control only where it leads somewhere, and it leads to where its fact is set**: the
+driver and the remote to their settings, the sessions to Sessions, the index count to Projects, the
+tier to *Daoris's own AI*. Anything else is text that cannot be tabbed to, because a bar where half
+of what looks alike responds teaches people to press the half that does not. Every item fills the
+bar's height, so a hover is a box rather than a word that lit up.
+
+**A wired workspace's remote item is the sync control** (SYNC6b), still icon-and-number: a cloud,
+then ↑ for work waiting to go up, ↓ for quests left behind and ⚠ for quests in conflict, or the one
+word *synced*. A wall needs a word on the bar: *unreachable*, in the warn tone, since the cloud-off
+glyph alone said nothing. Pressing it opens a menu above the bar that says when the workspace last
+synced, the quests in conflict, and *Sync now*; its lead-in says only *when*, because the host's
+wall already says what went wrong.
 
 ## 4. Density — an amendment to D41 §3, not a drift
 

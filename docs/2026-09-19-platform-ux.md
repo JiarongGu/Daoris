@@ -135,10 +135,6 @@ A **fixed left sidebar** and a content column — the shape of a console, not a 
 >   is open, a stray drop is absorbed at the window, and the WHOLE composer is the drop target,
 >   because aiming a file at a box inside a drawer is a chore. A pasted screenshot is a file, not
 >   text: it is attached and kept out of the field it was pasted into.
-> - **One navigation, and a count is a circle** (2026-09-23, owner → D66). The frame switch was a
->   second navigation stacked on the activity bar, so Sessions became a view on the bar and Settings
->   took the gear at its foot. The bar's counts are `CountBadge`: one fixed height, the same minimum
->   width, no line-height of their own. Measured 14 × 17.2px before and 16 × 16 after, on the window.
 > - **The theme is the viewer's to choose** (D66): *System · Light · Dark* on Settings, applied as
 >   `data-theme` before the first paint, pushed to the window's native chrome, and held by two
 >   forced blocks in `tokens.css` that a test keeps equal to their system twins.
@@ -154,24 +150,9 @@ A **fixed left sidebar** and a content column — the shape of a console, not a 
 >   this machine does not hold says *kept on the machine that published it*, rather than looking
 >   like a broken link.
 
-> **Amended again 2026-09-22, the app strip** (owner: *"the application topbar you can take more
-> example from application like vscode"*, and *"the backdrop should not cover the topbar? because we
-> do have the hole for the 3 buttons"*). Both found by photographing the real window:
->
-> - **The strip's middle is the command center.** It held ~1,400px of nothing at any real width —
->   wordmark and mode switch left, a lone 14px search glyph right against the caption buttons — while
->   the palette SURF10 named as repaying the icon rail's lost discoverability was that glyph. It is
->   now a centred, bounded, obviously-pressable pill that **says where you are** and prints its own
->   shortcut. Taken from the shape VS Code settled on, for the reason VS Code settled on it: a title
->   bar that carries no information is paying rent for a wordmark.
-> - 🔴 **A scrim starts BELOW the strip, never over it.** The strip reserves three 44px slots the
->   **window** paints natively (SURF7), and a page-level backdrop cannot dim what the page does not
->   draw — so a full-bleed scrim greyed the whole title bar and left the caption buttons as a bright
->   block punched through it. Held by `tokens.test.ts` as a rule about every overlay, because the
->   next overlay would have inherited `inset-0` without anyone thinking about it. It is also what VS
->   Code does: the title bar stays live while quick-open is up. **And so does a panel** (2026-09-23):
->   the drawer stayed full-height after the scrim learned this, and its close button sat under the
->   window's — the same rule, now held for panels too.
+> **The frame's own rules** (the app strip, the activity bar, the status bar) are stated in the body
+> of `docs/2026-09-21-desktop-frame-design.md` §3, where the frame is specified. UX5 moved them there
+> from the dated amendments this section used to carry (U6).
 
 - **Buttons**: `primary` (solid accent, paper text — the one loud control per view), default (raised +
   line), `ghost` (borderless, for in-card affordances), `danger` reserved for decline confirmation.
@@ -183,6 +164,13 @@ A **fixed left sidebar** and a content column — the shape of a console, not a 
 - **Drawer** (right, 32rem, overlay surface, scrim, ESC/scrim/× to close) is the single detail-and-form
   surface: reading a knowledge entry, composing a quest, and a quest's detail with its actions. One
   pattern instead of three; the list stays a list.
+- 🔴 **An overlay sits between the strip and the status bar**, every one of them: a scrim, a drawer, a
+  panel. It starts below the strip, because the strip holds the caption buttons the window paints
+  and a page backdrop cannot dim what the page does not draw (a full-bleed scrim greyed the title bar
+  and left the buttons as a bright block punched through it, and a full-height drawer put its close
+  button under the window's). It ends above the status bar, which otherwise ran bright for 48px and
+  grey after. The title bar stays live while an overlay is up, as VS Code's does during quick-open.
+  `tokens.test.ts` holds the rule for every overlay, so the next one cannot inherit `inset-0`.
 - **Toast** (bottom-right, overlay surface, auto-dismiss with close) carries every action outcome and
   error — the service's sentence verbatim, because the refusal text is the contract. Nothing shifts the
   layout to speak.
@@ -190,37 +178,6 @@ A **fixed left sidebar** and a content column — the shape of a console, not a 
   action that changes the fact ("Nothing is sitting" → "Ask for something").
 - **Loading**: first load shows static skeleton rows; a refetch holds the previous render at reduced
   opacity — content never jumps.
-
-> **Amended 2026-09-22 again, from a real VS Code window** (owner: *"there is a vscode opening in my
-> app you can check its top/left/bottom bar design"*). Captured with the same instrument the polish
-> passes use and read for structure only. Three differences from what had been built, and one gap:
->
-> - **A menu bar carries no chevrons.** Its menus are plain words at small gaps — File, Edit,
->   Selection, View … — with no disclosure arrows at all. A menu bar is a convention strong enough
->   not to need marking, and a chevron per menu is one piece of furniture per menu. Dropped.
-> - **Groups in the activity bar are separated by POSITION, not by rules**: a top group and a bottom
->   group pinned to the foot, no lines between. Daoris keeps one rule under the frames, because a
->   frame and a view inside one are different *kinds* of thing rather than two groups of the same
->   kind — but the rule is now the lighter of the two weights.
-> - **The status bar is icon-and-number, not prose**: a remote glyph, then `⊗ 0  ⚠ 0`, then a bell.
->   Daoris's is wordier (`driver ● ready · 1 session(s) · workspace · every circle`), which is
->   defensible for a console whose facts need naming — but it is the bar most in need of a measured
->   pass, and this one did not do it.
-> - 🔴 **The gap: layout toggles.** The right of its title bar holds four icons that show and hide the
->   panel, the sidebar and the secondary bar, immediately left of the window controls. Work has an
->   output panel and a right dock and neither can be reached from the strip — the state lives inside
->   `WorkFrame`, so this needs hoisting before it needs designing. Filed as **SURF11**.
-
-> **Amended 2026-09-24, the sync item (SYNC6b)**, looked at on the real window against a throwaway
-> remote, in both themes. The remote item became a **control** when the circle is wired, and it is
-> **icon-and-number**: a cloud, then ↑ for work waiting to go up, ↓ for quests left behind, and ⚠
-> for quests in conflict. A level circle shows the one word `synced`. Pressing it opens a menu above
-> the bar (`AppMenu`'s rows, `modal={false}`) that says when the circle last synced, then the quests
-> in conflict, then *Sync now*. Two things only the window showed:
-> - A wall needs a **word on the bar**. The cloud-off glyph alone said nothing, so the bar now reads
->   `unreachable` in the warn tone.
-> - A lead-in must not repeat the sentence it introduces. The host's wall already says what went
->   wrong, so the detail's lead-in says only *when*.
 
 > **Amended 2026-09-24, the asks (INT4c).** Held by vitest and a Playwright check, and **not yet
 > looked at on the real window** — the pass the other amendments here came from is still owed.
@@ -274,9 +231,6 @@ A **fixed left sidebar** and a content column — the shape of a console, not a 
 > - **A choice offers what can happen.** The intake's select lists the ways in this machine has
 >   installed, because a named agent that is not installed only produces holds. What is in effect
 >   is always shown, even when the list would not offer it.
-> - **A status item that can be explained is a door.** The tier on the bar was text while nothing
->   explained it. It now leads to this card, by the bar's own rule that an item goes where its fact
->   is set.
 > - **Two jobs in one list are named.** *What a start runs on* marks each row's job only once a
 >   circle has two. Two rows called "a start in aurora" naming different agents would read as one
 >   fact stated twice, and wrongly.
@@ -409,9 +363,6 @@ A **fixed left sidebar** and a content column — the shape of a console, not a 
 >
 > **And what it left, closed as POLISH3 the same day:**
 >
-> - **The frame is three bars, and an overlay sits between them.** The scrim left the strip and the
->   activity bar alone and ran over the status bar, so behind a drawer the bar was bright for 48px
->   and grey after. Every scrim and panel now ends at `bottom-6`, held by `tokens.test.ts`.
 > - **A name that repeats says which it is.** Two accounts signed in as one person read as one fact
 >   stated twice, so the tool's own home says *this machine's own* beside the name, only then.
 > - **中文 sets a number apart from Chinese**, in an age as in a span: `1 天前` beside `9 分钟`. A

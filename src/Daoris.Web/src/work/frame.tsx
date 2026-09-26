@@ -181,7 +181,7 @@ export function ActivityBar<T extends string>({
         aria-current={active === tab ? 'page' : undefined}
         onClick={() => onSelect(tab)}
         className={cn(
-          'relative flex h-9 w-9 items-center justify-center rounded-control transition-colors duration-(--speed)',
+          'relative flex h-9 w-9 shrink-0 items-center justify-center rounded-control transition-colors duration-(--speed)',
           active === tab
             ? 'bg-accent-soft text-accent'
             : 'text-ink-faint hover:bg-raised hover:text-ink',
@@ -200,12 +200,16 @@ export function ActivityBar<T extends string>({
   return (
     <nav
       aria-label={label}
-      className="flex w-12 shrink-0 flex-col items-center gap-0.5 border-r border-line py-1.5"
+      // 🔴 A place keeps its size, and a bar too short to hold them scrolls (UX5 U22). At the
+      // window's least height the places shrank until they touched, the counts sat over their
+      // neighbours and Settings went under the status bar. No scrollbar is drawn in a 48px bar;
+      // the wheel and the keyboard still reach every place.
+      className="flex min-h-0 w-12 shrink-0 flex-col items-center gap-0.5 overflow-x-hidden overflow-y-auto border-r border-line py-1.5 [scrollbar-width:none]"
     >
       {items.map(place)}
 
       {(footer || end.length > 0) && (
-        <div className="mt-auto flex flex-col items-center gap-0.5">
+        <div className="mt-auto flex shrink-0 flex-col items-center gap-0.5">
           {footer}
           {end.map(place)}
         </div>
