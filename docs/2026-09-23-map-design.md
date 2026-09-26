@@ -30,6 +30,17 @@ still count toward the receiver's open number.
 **Layout.** Two pure functions in `src/Daoris.Web/src/map/`: `buildTopology` (the data above into
 nodes and edges) and `layoutRing` (positions, deterministic and ordered by name, so the picture does
 not move between two looks at the same data). A ring from the top, one node alone at the centre.
+Scoped to every workspace of several, the nodes are ordered by circle first, so each circle's
+repositories sit together and its quests stay within its arc, and a node's detail names its circle
+(UX5 U49).
+
+**The drawing is drawn at its own size** (UX5 U44): one unit a pixel, so a name is the type
+scale's, and centred in its card. It is framed on what it draws (`frameMap`: every node and ring,
+every name with its width estimated per character, every line's count), never a fixed square, which
+left a three-node ring's lower third blank and cut a side node's long name at its edge. A card too
+narrow for the full ring gets a smaller one (`fitRadius`) rather than smaller names, never closer
+than two rings and a gap; past that, the drawing shrinks as the last resort. The code map keeps the
+same rule by its width (`codeWidth`).
 Layers by quest flow are for a circle too big for a ring to read, and wait until one exists. Drawn
 as SVG on the design tokens (D41): status never by colour alone, and both themes. **No graph
 library**: a family is a handful to a few dozen repositories, and a layout engine would cost more in
@@ -45,12 +56,14 @@ bundle and in look than it buys. MAP3 may need one; that is MAP3's decision.
 - **Arrowheads are sized in the map's units**, not the line's. A head that grew with the line's
   width made the chosen line's arrow twice the size of the others.
 
-**What a person does with it.** Hovering a node lights its edges and dims the rest. Choosing a node
-(pointer or keyboard; every node and edge is a button) opens its detail: summary, declaration, and
-the quests into and out of it with their states in words. Choosing a quest edge lists that
-direction's quests. Choosing a knowledge edge says how many findings the pair shares and opens
-Convergence. The map adds no actions of its own: every act stays where it already lives (the quest
-drawer, the session view).
+**What a person does with it.** Hovering a node, or reaching it by keyboard, lights its edges and
+dims the rest. Choosing a node (pointer or keyboard; every node and edge is a button) opens its
+detail: summary, declaration, and the quests into and out of it with their states in words.
+Choosing a quest edge lists that direction's quests, and stands it forward while the other lines
+step back. Choosing a knowledge edge says how many findings the pair shares and opens Convergence. A
+choice is a toggle: a second press releases it, and so does Escape (UX5 U47). The map adds no
+actions of its own: every act stays where it already lives, so a quest in a detail opens its drawer
+(UX5 U46), and a session there wears the status hue the rail gives it (U45).
 
 **What it may show where.** Everything above is service-visible and carries no machine path, so the
 map works in a browser and against a shared deployment (D47 §4). A session's account and tree are

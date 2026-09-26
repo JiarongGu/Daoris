@@ -511,11 +511,15 @@ A **fixed left sidebar** and a content column — the shape of a console, not a 
   entry as it is written**, unrendered, in a drawer wide enough for a line of the source (U43).
 - **Map** (MAP2) — the circle's repositories on a ring, the quests between them as directed arrows
   with a count on each, and a shared finding as a dashed line; a detail panel beside the map says what
-  the chosen node or line holds, and a legend says every mark in words. It adds no actions. What the
-  window taught it (names outward, wide hit strokes, arrowheads in the map's units) is in
-  `docs/2026-09-23-map-design.md` §1. A node's detail opens **its code map** (MAP3a), the same
-  page one level in: modules as boxes in layers, what uses a module above it, an arrow that skips a
-  layer bowed out past the column, and *Back to the workspace* where the page action goes.
+  the chosen node or line holds, and a legend says every mark in words. It adds no actions: a quest
+  in a detail opens its drawer (UX5 U46). What the window taught it (names outward, wide hit strokes,
+  arrowheads in the map's units, a choice that toggles) is in `docs/2026-09-23-map-design.md` §1.
+  **A drawing is drawn at its own size**, one unit a pixel and framed on what it draws, so its text
+  is the type scale's at every width; a narrow card gets a smaller ring, never smaller names (U44).
+  **A mark that is content wears an ink**, never a container's line (U48). A node's detail opens
+  **its code map** (MAP3a), the same page one level in: modules as boxes in layers, what uses a
+  module above it, an arrow that skips a layer bowed out past the column, and *Back to the
+  workspace* where the page action goes.
 - **Settings** (D66, as amended by **D75**) — one page with its **domains in a list at its left**,
   one shown at a time and reachable by name: *Appearance*, *Daoris's own AI*, *Workspace*,
   *Driver*, *Agents & accounts*, *Permissions*, *Plugins*. Every way in opens the domain its fact is
