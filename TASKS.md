@@ -222,6 +222,10 @@ attached over CDP drives a WebView2.
 
 - [ ] **BRW3 — the owner's machine** (with FG5). The plugin, the one sign-in in the in-app browser,
   `mcp__browser` allowed, and the first ask whose ticket the intake reads through it.
+  **2026-09-27: set up to the owner's step.** The install is republished at `b287580`. The
+  `in-app-browser` plugin replaces the Edge one, `mcp__browser` stays allowed for the workspace, and
+  the browser window was opened on the install for the sign-in. Waiting on the sign-in and the first
+  ticket.
 
 ### The first goal — a real workspace, a ticket, a task started (owner, 2026-09-27 → D77)
 
