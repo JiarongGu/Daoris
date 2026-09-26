@@ -6508,3 +6508,32 @@ tab. It also navigated the app's own page away, which is why the browser is its 
   winding down chose the next debug port and failed with `0x8007139F`, the same folder under
   different options. That is the dev loop, not the browser. A restart once the old process had gone
   was clean.
+
+## BRW2 — `${browser}` at hand-over (2026-09-27)
+
+- [x] **BRW2 — `${browser}` at hand-over.** A plugin server's `${browser}` is expanded when a session
+  is handed its servers, from the shell's answer. The driver brings the browser up first, and
+  withholds the server where no shell answers, saying so on the transcript. The example plugin moves
+  to it. Driver tests with a stand-in host, and twin tests that the placeholder survives the read.
+
+✅ **done 2026-09-27**.
+
+- **`InAppBrowserServers`** (driver library, 6 tests) resolves a session's plugin servers. A server
+  naming `${browser}` in its command, arguments or environment gets the endpoint the shell answers.
+  Where none answers, or the browser would not come up, that server is withheld by name, the rest
+  are handed, and the sentence says why. The shell is asked only when a server needs it, so a machine
+  with no such plugin never has a window opened for it.
+- **Every hand-over resolves once and hands both doors the same list**: a driven session, an intake
+  (the one that reads a ticket), and a conversation. The pipe door's server file and the protocol
+  door's `session/new` offer both carry the resolved list. The notice is the ACP door's harness
+  notice and the pipe door's preamble, and a note on a conversation. The shell passes its
+  `BrowserHost` through the loop, the watch and the chat runner. The headless host passes none.
+- **The placeholder survives the read** in both twins, so only the hand-over fills it.
+- **The example did not move; a second one joined it.** The family rehearsal installs `browser` and
+  asserts its stub was offered that server, and a headless gate has no in-app browser. So
+  `examples/plugins/in-app-browser` attaches with `--cdp-endpoint ${browser}` (Playwright MCP pinned
+  at 0.0.82, the measured version), and `browser` stays for machines without the shell. Both name
+  their server `browser`, so one allow rule covers either.
+- **Not looked at end to end on the window**: a real session brought up by the driver opening the
+  browser window. The conversation test runs a real stub process and reads the file it was handed.
+  The real harness through the real window is BRW3.

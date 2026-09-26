@@ -27,7 +27,10 @@ public sealed class DriverWatch(
     HookSet? hooks = null,
     // Where a session's structure is kept (D76 §2), shared so the shell hears each event live. Null
     // in the headless host: each tick's driver keeps the record under the home with nobody watching.
-    SessionEvents? events = null)
+    SessionEvents? events = null,
+    // Daoris's own browser (D78), where a shell carries one. Null in the headless host, where a server
+    // that drives it is not handed.
+    IInAppBrowser? browser = null)
 {
     private CancellationTokenSource _pause = new();
 
@@ -84,7 +87,7 @@ public sealed class DriverWatch(
                 }
 
                 var report = await new Driver(
-                    service, config, AdapterSet.Built(), home, processes, sync, output, _harnesses, usage, hooks, events)
+                    service, config, AdapterSet.Built(), home, processes, sync, output, _harnesses, usage, hooks, events, browser)
                     .TickAsync(ct).ConfigureAwait(false);
                 if (sweep.Count > 0)
                 {

@@ -21,7 +21,7 @@ lists.
 
 ## State
 
-**Counts, and this is their one home:** fifteen commands, **481 CLI tests, 512 service, 725 driver,
+**Counts, and this is their one home:** fifteen commands, **482 CLI tests, 512 service, 734 driver,
 151 desktop modules, 80 devkit, 1187 web unit, 21 Playwright**, 66/66 release rehearsal, **280/280
 family rehearsal** (it names its own phases when you run it), **39/39 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge
@@ -42,7 +42,7 @@ mechanics drafted at `docs/adoption/shenora-repo-mechanics.md`, budget 40,000, `
 ticket read through a browser, and a task started with no repository named. FG1–FG4 landed the
 code changes the study and the setup found. **FG5, the first run, is next**, and waits on the owner.
 🔴 **Then the owner asked for Daoris's own browser (D78)**, so the sign-in happens in a window Daoris
-owns and every harness can drive: **BRW1 landed, and BRW2–BRW3 come first**, and FG5's ticket is read through them.
+owns and every harness can drive: **BRW1–BRW2 landed, and BRW3, the owner's sign-in and first ticket through it, comes first**, and FG5's ticket is read through them.
 D76's round is done, and its leftovers (RAIL2, SURF11) stand behind these. Nothing is pushed or
 published, and a release is still blocked on REH1.
 - **Landed:** CONV1 (the record), CONV2 (the view), CONV3a (Claude Code's `stream-json`), CONV3b
@@ -116,7 +116,7 @@ rather than designed.
 
 ## Backlog
 
-**Twenty-six rows are open**: the in-app browser's two (BRW2, BRW3); the first goal's two (FG5, and
+**Twenty-five rows are open**: the in-app browser's last (BRW3); the first goal's two (FG5, and
 SEM2 on a trigger); D76's held file tools;
 the eight REV3 left, WINDOW2 among them; five leftovers (RAIL2, SURF11, FLAKE1, DEPLOY5, TEST1); two on the owner
 (TRUST2, AGT2c); and six on a trigger (see *Handover*). Every closed one is in `docs/task-archive.md`, and this file holds no
@@ -220,10 +220,6 @@ was checked. Every AGT and MAP item is archived but this one.
 `docs/2026-09-27-in-app-browser-design.md` is the contract. It was measured first: Playwright MCP
 attached over CDP drives a WebView2.
 
-- [ ] **BRW2 — `${browser}` at hand-over.** A plugin server's `${browser}` is expanded when a session
-  is handed its servers, from the shell's answer. The driver brings the browser up first, and
-  withholds the server where no shell answers, saying so on the transcript. The example plugin moves
-  to it. Driver tests with a stand-in host, and twin tests that the placeholder survives the read.
 - [ ] **BRW3 — the owner's machine** (with FG5). The plugin, the one sign-in in the in-app browser,
   `mcp__browser` allowed, and the first ask whose ticket the intake reads through it.
 

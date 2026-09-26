@@ -307,6 +307,69 @@ public sealed class TurnStopTests : IDisposable
         await Until(() => service.State(id) is "completed" or "stopped");
     }
 
+    /// <summary>
+    /// BRW2 (D78): a plugin server that attaches to Daoris's own browser is handed its endpoint in the
+    /// file the harness reads — the shell's answer, at hand-over — and a runner with no browser to ask
+    /// hands the rest and leaves that one out.
+    /// </summary>
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task A_conversation_is_handed_the_in_app_browsers_endpoint_or_not_that_server_at_all(bool shell)
+    {
+        var plugin = Path.Combine(_home, "plugins", "in-app-browser");
+        Directory.CreateDirectory(plugin);
+        File.WriteAllText(Path.Combine(plugin, "plugin.json"), """
+            { "id": "in-app-browser", "servers": [
+                { "name": "browser", "command": ["npx", "-y", "@playwright/mcp@0.0.82", "--cdp-endpoint", "${browser}"] },
+                { "name": "notes", "command": ["notes-mcp"] } ] }
+            """);
+        var argvFile = Path.Combine(_home, "argv.json");
+        var script = Path.Combine(_home, "argv-claude.mjs");
+        File.WriteAllText(script, """
+            import { writeFileSync } from 'node:fs';
+            const argv = process.argv.slice(2);
+            if (argv.includes('--version')) { console.log('2.1.281 (Claude Code)'); process.exit(0); }
+            if (argv.includes('auth')) { console.log('{"loggedIn": true}'); process.exit(0); }
+            writeFileSync(argv[0], JSON.stringify(argv));
+            process.stdin.resume();
+            process.stdin.on('end', () => process.exit(0));
+            """);
+
+        await using var service = StandInService.Start(Path.Combine(_home, "engine"));
+        var adapters = AdapterSet.Built();
+        using var client = new ServiceClient(service.Url, null);
+        using var runner = new ChatRunner(
+            client, adapters, _home, new SessionProcesses(Path.Combine(_home, "sessions")),
+            harnesses: new HarnessRoster(adapters, Path.Combine(_home, "harnesses.json")),
+            browser: shell ? new AnsweringBrowser("http://127.0.0.1:4810") : null);
+        var config = DriverConfig.Empty with
+        {
+            Commands = new Dictionary<string, IReadOnlyList<string>> { ["claude-code"] = ["node", script, argvFile] },
+        };
+
+        var start = await runner.StartAsync("engine", "claude-code", config);
+        var id = start.SessionId ?? throw new InvalidOperationException(start.Message);
+        await Until(() => File.Exists(argvFile), () => $"state {service.State(id)}");
+
+        var argv = System.Text.Json.JsonSerializer.Deserialize<string[]>(File.ReadAllText(argvFile))!;
+        var servers = File.ReadAllText(argv[Array.IndexOf(argv, "--mcp-config") + 1]);
+        Assert.Contains("notes-mcp", servers);
+        Assert.DoesNotContain("${browser}", servers);
+        if (shell) Assert.Contains("http://127.0.0.1:4810", servers);
+        else Assert.DoesNotContain("@playwright/mcp", servers);
+
+        runner.Finish(id);
+        await Until(() => service.State(id) is "completed" or "stopped");
+    }
+
+    private sealed class AnsweringBrowser(string endpoint) : IInAppBrowser
+    {
+        public Task<string?> EnsureAsync(CancellationToken ct = default) => Task.FromResult<string?>(endpoint);
+
+        public void Show() { }
+    }
+
     // ------------------------------------------------------------------ the harness behind each door
 
     private sealed record Session(

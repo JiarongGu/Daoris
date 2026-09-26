@@ -84,7 +84,10 @@ public sealed partial class Driver(
     // Where a session's structure is kept (D76 §2), shared so the shell hears each event as it is
     // written. Null means this driver keeps the record itself, under the home, with nobody watching —
     // the headless host's case: the record still exists for a surface opened later.
-    SessionEvents? events = null)
+    SessionEvents? events = null,
+    // Daoris's own browser (D78), asked for by a plugin server that drives it. Null where no shell
+    // carries one — the headless host, every gate — and such a server is then not handed.
+    IInAppBrowser? browser = null)
 {
     /// <summary>What a session whose take lost is told, in its record (D68 §5).</summary>
     public const string LostClaim =
@@ -99,6 +102,15 @@ public sealed partial class Driver(
         $"the session driven for quest #{quest.Id} takes no messages: it was handed its whole quest at once "
         + "and works it in one turn. What it does lands on the quest — its take, its close and its "
         + "commits — and stopping it is the one move that reaches it.";
+
+    /// <summary>Two lines a transcript opens with, either of which may be absent.</summary>
+    private static string? JoinNotices(string? first, string? second) =>
+        (first, second) switch
+        {
+            ({ Length: > 0 }, { Length: > 0 }) => $"{first}\n{second}",
+            ({ Length: > 0 }, _) => first,
+            _ => second,
+        };
 
     // How often the sync runs BESIDE sessions still working (D68 §6): the watch loop's own cadence, so
     // a session no longer holds the sync back for its whole run, and one choice sets both.
@@ -516,7 +528,10 @@ public sealed partial class Driver(
             // The servers the plugins hand this session (D65 §1f). The protocol door carries them on
             // the wire below; a pipe-door harness that takes a file at spawn is handed one under
             // Daoris's home, and the file goes when the session does.
-            var handed = SpawnServers.Hand(adapter, info, home, sessionId, _servers);
+            // With Daoris's own browser brought up for a server that drives it (D78), or that server left
+            // out and the transcript told why.
+            var (servers, browserNotice) = await InAppBrowserServers.HandAsync(_servers, browser, ct).ConfigureAwait(false);
+            var handed = SpawnServers.Hand(adapter, info, home, sessionId, servers);
 
             // What this session may do (PERM1, D72): the rules composed for its circle and repository,
             // handed over as the harness's own settings tier.
@@ -526,12 +541,14 @@ public sealed partial class Driver(
             using var live = new Disposer(() => _live.TryRemove(quest.Id, out var _));
 
             return await HoldAsync(
-                adapter, info, target, sessionId, transcript, workTree, harnessNotice, rules, handed,
+                adapter, info, target, sessionId, transcript, workTree, JoinNotices(harnessNotice, browserNotice), rules, handed,
                 // 🔴 A driven session takes no person's line, on either door (INT4i) — INT4h's rule for
                 // an intake, for the same reason: it was handed its whole quest at once, the pipe door
                 // gives it no stdin, and the protocol door's stdin carries the driver's own frames.
                 refusesInput: TakesNoMessages(quest),
                 ct: ct,
+                preamble: browserNotice,
+                handedServers: servers,
                 conclude: async (exitCode, used) =>
                 {
                     if (used is not null)
@@ -773,7 +790,8 @@ public sealed partial class Driver(
         ISessionAdapter adapter, ProcessStartInfo info, SessionTarget target, string sessionId, string transcript,
         string cwd, string? harnessNotice, (string? File, object? Meta) rules, string? handed, string? refusesInput,
         Func<int?, AcpUsage?, Task<T>> conclude, CancellationToken ct,
-        IReadOnlyDictionary<string, string>? scope = null, string? preamble = null)
+        IReadOnlyDictionary<string, string>? scope = null, string? preamble = null,
+        IReadOnlyList<AcpMcpServer>? handedServers = null)
     {
         using var process = Process.Start(info)
             ?? throw new DriverException($"the {adapter.Name} adapter's process did not start");
@@ -790,7 +808,7 @@ public sealed partial class Driver(
         var acp = adapter.Wire == SessionWire.Acp
             // The posture rides with it, because it is the ADAPTER's (ACP3): three harnesses name the
             // same D37 boundary three different ways, and one of them does not name it on the wire.
-            ? CaptureAcpAsync(process, transcript, sessionId, cwd, prompt, adapter.AcpPosture, harnessNotice, ct, scope, rules.Meta)
+            ? CaptureAcpAsync(process, transcript, sessionId, cwd, prompt, adapter.AcpPosture, harnessNotice, ct, scope, rules.Meta, handedServers ?? _servers)
             : null;
         var structured = acp is null ? Structured(adapter, process, transcript, sessionId, prompt, ct, preamble) : null;
         Task capture = acp ?? structured ?? CaptureAsync(process, transcript, sessionId, ct, preamble);
@@ -882,7 +900,8 @@ public sealed partial class Driver(
     private async Task<AcpOutcome?> CaptureAcpAsync(
         Process process, string transcript, string sessionId, string cwd, string prompt,
         string? posture, string? harnessNotice, CancellationToken ct,
-        IReadOnlyDictionary<string, string>? scope = null, object? meta = null)
+        IReadOnlyDictionary<string, string>? scope = null, object? meta = null,
+        IReadOnlyList<AcpMcpServer>? servers = null)
     {
         await using var file = new StreamWriter(transcript, append: false);
 
@@ -932,7 +951,7 @@ public sealed partial class Driver(
             // posture like every other tool it has.
             var offered = new List<AcpMcpServer>();
             if (connector is not null) offered.Add(connector);
-            offered.AddRange(_servers);
+            offered.AddRange(servers ?? _servers);
 
             var outcome = await new AcpSession(
                     process.StandardOutput, process.StandardInput, Line, closeTimeout: null, posture, meta, Event)

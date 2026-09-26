@@ -30,10 +30,11 @@ what was measured, and it stays a record of that moment. A *record* is append-on
 | `2026-09-23-api-key-accounts.md` | contract | an account that is an API key (D67 §1) | Current |
 | `2026-09-23-intake-design.md` | contract | an ask becomes quests (D65) | Current, with D70, D72 and D77 noted |
 | `2026-09-23-map-design.md` | contract | the maps (D67 §3, MAP) | Current |
-| `2026-09-23-plugin-design.md` | contract | plugins (D64) | Current, with D71 and D77's `${data}` noted |
+| `2026-09-23-plugin-design.md` | contract | plugins (D64) | Current, with D71, D77's `${data}` and D78's `${browser}` noted |
 | `2026-09-23-sync-design.md` | contract | the remote as a git remote (D68) | Current, with D69 noted |
 | `2026-09-24-menus-design.md` | contract | the menus as setup domains (D75) | Current |
 | `2026-09-24-permission-scopes-design.md` | contract | what an agent may do (D72, D74) | Current |
+| `2026-09-27-in-app-browser-design.md` | contract | Daoris's own browser, driven over MCP (D78) | Current. BRW1 and BRW2 built; BRW3 is the owner's run |
 
 ## Studies and evidence
 

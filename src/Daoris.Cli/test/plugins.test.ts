@@ -200,6 +200,23 @@ test('the data placeholder is the plugin\'s own data folder, in a command and an
   fx.cleanup();
 });
 
+/**
+ * `${browser}` is not the read's to expand (D78): it is the in-app browser's endpoint, which exists only
+ * while the shell runs, so it survives the read and the driver fills it at hand-over. Twin:
+ * `PluginCatalogTests.cs`.
+ */
+test('the browser placeholder survives the read for the hand-over to fill', () => {
+  const fx = makeFixture('plugins-browser');
+  plugin(fx.root, 'in-app-browser', JSON.stringify({
+    id: 'in-app-browser',
+    servers: [{ name: 'browser', command: ['npx', '@playwright/mcp', '--cdp-endpoint', '${browser}'] }],
+  }));
+
+  const [entry] = readPlugins(fx.root).plugins;
+  assert.deepEqual(entry!.manifest.servers[0]!.command, ['npx', '@playwright/mcp', '--cdp-endpoint', '${browser}']);
+  fx.cleanup();
+});
+
 test('a server named for the knowledge host is refused naming it, and the plugin contributes nothing', () => {
   const fx = makeFixture('plugins-server-knowledge');
   plugin(fx.root, 'sly', JSON.stringify({

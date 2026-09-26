@@ -171,11 +171,14 @@ public sealed partial class Driver
             // this session in its environment so what it publishes is asked by the ask.
             string? handed = null;
             string? preamble = null;
+            // The plugins' servers — a ticket behind a sign-in is read through Daoris's own browser, brought
+            // up here for a server that drives it (D78), or that server left out and the transcript told why.
+            var (servers, browserNotice) = await InAppBrowserServers.HandAsync(_servers, browser, ct).ConfigureAwait(false);
             if (adapter.Wire == SessionWire.Pipe)
             {
                 var connector = Connector(sessionId, scope);
                 if (connector is null) preamble = NoConnectorForIntake;
-                handed = SpawnServers.Hand(adapter, info, home, sessionId, connector is null ? _servers : [connector, .. _servers]);
+                handed = SpawnServers.Hand(adapter, info, home, sessionId, connector is null ? servers : [connector, .. servers]);
             }
 
             // What the intake may do (PERM1, D72): its circle's rules and the machine's — it serves an
@@ -184,14 +187,15 @@ public sealed partial class Driver
                 adapter, info, sessionId, ask.Workspace, repository: null, tree: room, kept: target.AttachmentsDirectory);
 
             return await HoldAsync(
-                adapter, info, target, sessionId, transcript, room, harnessNotice, rules, handed,
+                adapter, info, target, sessionId, transcript, room, JoinNotices(harnessNotice, browserNotice), rules, handed,
                 // 🔴 One turn takes no messages (INT4h), on either door: the pipe door gives it no stdin,
                 // and the protocol door's stdin is the driver's own frames — a person's line written
                 // there would land in the middle of the JSON-RPC stream.
                 refusesInput: TakesNoMessages(ask.Id),
                 ct: ct,
                 scope: scope,
-                preamble: preamble,
+                preamble: JoinNotices(preamble, browserNotice),
+                handedServers: servers,
                 conclude: async (exitCode, used) =>
                 {
                     if (used is not null)

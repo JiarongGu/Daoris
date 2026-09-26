@@ -390,6 +390,25 @@ public sealed class PluginCatalogTests : IDisposable
         Assert.Equal(Path.GetFullPath(entry.Data), server.Environment["BROWSER_STATE"]);
     }
 
+    /// <summary>
+    /// `${browser}` is NOT the catalogue's to expand (D78): it is the in-app browser's endpoint, which
+    /// exists only while the shell runs, so it survives the read and is filled at hand-over. Twin:
+    /// `plugins.test.ts`.
+    /// </summary>
+    [Fact]
+    public void The_browser_placeholder_survives_the_read_for_the_hand_over_to_fill()
+    {
+        Plugin("in-app-browser", """
+            { "id": "in-app-browser",
+              "servers": [ { "name": "browser", "command": ["npx", "@playwright/mcp", "--cdp-endpoint", "${browser}"] } ] }
+            """);
+
+        var server = Assert.Single(PluginCatalog.Load(_home).Servers);
+
+        Assert.Equal(["@playwright/mcp", "--cdp-endpoint", InAppBrowserServers.Placeholder], server.Arguments);
+        Assert.True(InAppBrowserServers.Needs(server));
+    }
+
     [Fact]
     public void A_server_named_for_the_knowledge_host_is_refused_naming_it_and_the_plugin_contributes_nothing()
     {

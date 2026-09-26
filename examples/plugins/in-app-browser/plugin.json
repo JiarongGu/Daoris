@@ -1,0 +1,10 @@
+{
+  "id": "in-app-browser",
+  "apiVersion": 1,
+  "name": "In-app browser",
+  "version": "1.0.0",
+  "description": "Hands every session Daoris's own browser: the Playwright MCP server, attached over CDP to the window the person signs in to and watches.",
+  "servers": [
+    { "name": "browser", "command": ["npx", "-y", "@playwright/mcp@0.0.82", "--cdp-endpoint", "${browser}", "--output-dir", "${data}/output"] }
+  ]
+}

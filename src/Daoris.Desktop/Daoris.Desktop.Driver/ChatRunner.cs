@@ -37,7 +37,10 @@ public sealed class ChatRunner(
     SessionEvents? events = null,
     // What each account has carried (TOOL3): the loop's one record where a shell has one, so a chat's end
     // and a driven session's never write it at once; the home's own for the headless chat door (USAGE1).
-    SessionUsage? usage = null) : IDisposable
+    SessionUsage? usage = null,
+    // Daoris's own browser (D78), asked for by a plugin server that drives it. Null where no shell
+    // carries one, which is the headless chat door's case: such a server is then not handed.
+    IInAppBrowser? browser = null) : IDisposable
 {
     private readonly SessionUsage _usage = usage ?? new SessionUsage(home);
 
@@ -173,6 +176,8 @@ public sealed class ChatRunner(
         string? rules = null;
         string? servers = null;
         object? meta = null;
+        IReadOnlyList<AcpMcpServer> pluginServers = [];
+        string? browserNotice;
         try
         {
             await service.AdvanceAsync(sessionId, "starting", ct: ct).ConfigureAwait(false);
@@ -208,13 +213,18 @@ public sealed class ChatRunner(
                 else if (rules is not null) meta = resolved.AcpSessionMeta(rules);
             }
 
+            // The plugins' servers, resolved once for both doors — with Daoris's own browser brought up
+            // for one that drives it (D78), or that one left out and the conversation told why.
+            (pluginServers, browserNotice) = await InAppBrowserServers.HandAsync(
+                PluginCatalog.Load(home, _harnesses.Adapters.Names).Servers, browser, ct).ConfigureAwait(false);
+            if (browserNotice is not null) Record(sessionId, new SessionEvent { Kind = SessionEventKind.Note, Text = browserNotice });
+
             // 🔴 The servers the plugins hand every session (D64, D65 §1f), on this door too (REV3). The
             // protocol door carries them on `session/new` (`Servers`); a driven or intake session on the
             // pipe is handed a file — and a conversation on the pipe was handed nothing at all.
             if (resolved.Wire == SessionWire.Pipe)
             {
-                servers = SpawnServers.Hand(
-                    resolved, info, home, sessionId, PluginCatalog.Load(home, _harnesses.Adapters.Names).Servers);
+                servers = SpawnServers.Hand(resolved, info, home, sessionId, pluginServers);
             }
 
             process = Process.Start(info)
@@ -253,7 +263,7 @@ public sealed class ChatRunner(
         if (resolved.Wire == SessionWire.Acp)
         {
             chat = new ProtocolChat(
-                resolved.AcpPosture, meta, workTree, Servers(sessionId), Changed,
+                resolved.AcpPosture, meta, workTree, Servers(sessionId, pluginServers), Changed,
                 stopped: () => processes.WasStopRequested(sessionId));
             _turned[sessionId] = chat;
         }
@@ -487,7 +497,7 @@ public sealed class ChatRunner(
     /// is, and every server the plugins declare. Located per conversation, because a machine can gain
     /// either between two.
     /// </summary>
-    private IReadOnlyList<AcpMcpServer> Servers(string sessionId)
+    private IReadOnlyList<AcpMcpServer> Servers(string sessionId, IReadOnlyList<AcpMcpServer> plugins)
     {
         var offered = new List<AcpMcpServer>();
         if (KnowledgeConnector.Offer(
@@ -497,7 +507,7 @@ public sealed class ChatRunner(
             offered.Add(connector);
         }
 
-        offered.AddRange(PluginCatalog.Load(home, _harnesses.Adapters.Names).Servers);
+        offered.AddRange(plugins);
         return offered;
     }
 

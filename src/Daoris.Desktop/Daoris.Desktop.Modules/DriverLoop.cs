@@ -15,7 +15,9 @@ namespace Daoris.Desktop;
 /// worth saying — state moved in, or the variable set for the person's account. Null otherwise.
 /// </param>
 public sealed class DriverLoop(
-    IEventBus eventBus, HostSupervisor supervisor, string serviceUrl, HomeEstablished? home = null) : IDisposable
+    IEventBus eventBus, HostSupervisor supervisor, string serviceUrl, HomeEstablished? home = null,
+    // Daoris's own browser (D78): the shell's window, asked for by a plugin server that drives it.
+    IInAppBrowser? browser = null) : IDisposable
 {
     private readonly CancellationTokenSource _stopping = new();
     private readonly TaskCompletionSource<bool> _hostReady = new();
@@ -239,7 +241,7 @@ public sealed class DriverLoop(
         // what guarantees the client is still there. Stopped after the client, a chat open at close was
         // recorded nowhere and read `working` forever (2026-09-25).
         // …and the same usage record, so a conversation's end and a driven session's are one writer (USAGE1).
-        using var chat = new ChatRunner(service, Harnesses.Adapters, homeDirectory, Processes, Output, Harnesses, Events, Usage);
+        using var chat = new ChatRunner(service, Harnesses.Adapters, homeDirectory, Processes, Output, Harnesses, Events, Usage, browser);
         // Where a conversation's turns stand, as it moves (CONV4a): whether one is in flight, and what is
         // waiting, which is in no record until it is sent. Each change is the whole state, so a missed one
         // costs nothing.
@@ -267,7 +269,7 @@ public sealed class DriverLoop(
         string? lastRegistered = null;
         var failures = new TickErrors();
 
-        _watch = new DriverWatch(service, ConfigPath, homeDirectory, Processes, sync, Output, Harnesses, Usage, _hooks, Events);
+        _watch = new DriverWatch(service, ConfigPath, homeDirectory, Processes, sync, Output, Harnesses, Usage, _hooks, Events, browser);
         await _watch.RunAsync(
             async (report, ticked) =>
             {

@@ -92,7 +92,9 @@ repository names one, and a scratch run redirects it with everything else.
   (D65 §1f): `name` is what the agent calls it, `command` runs it, `env` rides with it, and
   `${plugin}` is expanded in both. *(D77: so is `${data}`, the plugin's data folder, which is where
   a browser's signed-in profile lives. A placeholder takes an argument of its own, because an
-  argument holding one is resolved as a path.)* Over the protocol door they ride `session/new`; over the pipe door
+  argument holding one is resolved as a path. D78: `${browser}` is Daoris's own browser's CDP
+  endpoint. It is not expanded at the read. The driver fills it when it hands a session its servers,
+  and withholds that server where no shell answers.)* Over the protocol door they ride `session/new`; over the pipe door
   a harness that takes a file at spawn is handed one written under the home for that session — never
   the repository's own `.mcp.json`. The knowledge host's name is refused, and a name two plugins
   claim keeps the first by id. A server handed is a tool *available*, not a tool *approved*: what a

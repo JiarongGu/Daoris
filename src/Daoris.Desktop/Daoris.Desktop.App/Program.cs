@@ -76,7 +76,9 @@ internal static class Program
             sp.GetRequiredService<Shenora.Core.Events.IEventBus>(),
             sp.GetRequiredService<HostSupervisor>(),
             serviceUrl,
-            home));
+            home,
+            // Daoris's own browser (D78), for a plugin server that drives it.
+            sp.GetRequiredService<BrowserHost>()));
         builder.Services.AddSingleton<MainForm>();
         // The session-control surface's host half: the page's driver controls land here (D46 §6).
         builder.Services.AddIpcModule<DriverModule>();

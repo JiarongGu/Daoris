@@ -77,7 +77,10 @@ transcript in `_fixtures/rehearsal-logs/`:
 `plugins/` is not a project in the family — it holds the **example plugin**, a folder with a
 `plugin.json` that the driver reads from the home's `plugins/` once it is added
 (`docs/2026-09-23-plugin-design.md`). A plugin declares harnesses on the ACP door and may speak from
-a process of its own; no code from one ever loads into Daoris.
+a process of its own; no code from one ever loads into Daoris. Two hand sessions a browser:
+[`plugins/browser`](plugins/browser/README.md) launches one of its own, and
+[`plugins/in-app-browser`](plugins/in-app-browser/README.md) attaches to Daoris's own window (D78),
+where the person signs in once.
 
 The examples are tracked in full — manifests, locks, synced doctrine — so they are readable as
 examples, not only runnable as fixtures (D39). The cost is stated in the same decision: a canon change
