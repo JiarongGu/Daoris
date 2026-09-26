@@ -16,6 +16,20 @@ languages and both themes. A finding lands as its own commit, TDD, and the surfa
 which states were looked at. **Dispositions.** *fixed `<sha>`*: landed. *row*: a backlog row, because
 it is not session-sized or is the owner's call. *drop*: not worth the change, and why.
 
+**What the instruments need, learned on the pass** (so the next session does not re-derive it):
+- **A width is not an instrument yet.** The pass sized the window with a machine-local script that
+  calls `SetWindowPos` in physical pixels (at 200%, 1776 wide is 888 CSS px, and 1000 × 600 is the
+  window's least). It lives in the gitignored `_fixtures/ux5/`; a `size` verb for `desktop.mjs` was
+  offered and not asked for.
+- **Hover is a synthetic `pointermove`** with `pointerType: 'mouse'` on the trigger; Radix opens the
+  tip after its delay, and `[role=tooltip]` then reads it.
+- **`click` is a script click**, so a drawer it opens shows its close button's focus ring. That is the
+  instrument's, not a defect.
+- **Drive `eval` and `click` from bash, not PowerShell**, which strips the quotes inside a selector.
+- **The window remembers its language** across restarts: read `document.documentElement.lang` first.
+- **An error state is reached by stopping the scratch host**, the process listening on the platform's
+  port; the next `run` brings it back.
+
 ## Findings
 
 Numbered in the order found. U1–U8 were found before UX5 opened (the backlog row carried them).
