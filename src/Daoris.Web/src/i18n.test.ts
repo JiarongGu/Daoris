@@ -45,6 +45,14 @@ describe('the catalogs', () => {
     expect(Object.entries(zh).filter(([, value]) => /工作台|「工作」/.test(value)).map(([key]) => key)).toEqual([]);
   });
 
+  /**
+   * A count is said in its number (UX5 U54): *1 session(s)* on the usage rows, where every other
+   * count in the catalogue has its `_other` form. English pluralises; the catalogue can say both.
+   */
+  it('say a count in its number, never with (s)', () => {
+    expect(Object.entries(en).filter(([, value]) => /\w\(s\)/.test(value)).map(([key]) => key)).toEqual([]);
+  });
+
   it('serve flat dotted keys in both languages, placeholders intact', async () => {
     await i18n.changeLanguage('en');
     expect(i18n.t('nav.quests')).toBe('Quests');

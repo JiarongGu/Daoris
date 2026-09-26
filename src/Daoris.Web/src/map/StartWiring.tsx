@@ -16,8 +16,11 @@ import type { ChoiceFrom, StartWiring } from './wiring';
  */
 export function StartWiringList({ starts, nameOf }: {
   starts: StartWiring[];
-  /** What a person calls this account of this tool — who is signed in, a key's handle, or its name. */
-  nameOf: (owner: string, profile: string) => string;
+  /**
+   * What a person calls this account of this tool — who is signed in, a key's handle, or its name.
+   * No profile is the tool's own home, which the roster names as its row does (UX5 U53).
+   */
+  nameOf: (owner: string, profile?: string | null) => string;
 }) {
   const { t } = useTranslation();
   // One job is no job to tell apart. Once the intake is one (AGT6), every row says which it is:
@@ -50,7 +53,7 @@ export function StartWiringList({ starts, nameOf }: {
             <dt className="text-ink-faint">{t('wiring.account')}</dt>
             <dd className="m-0 min-w-0">
               <span className="text-ink wrap-anywhere">
-                {start.profile ? nameOf(start.owner, start.profile) : t('wiring.ownSignIn')}
+                {nameOf(start.owner, start.profile)}
               </span>
               <span className="ml-2 text-meta text-ink-faint">{accountFrom(t, start.profileFrom)}</span>
             </dd>

@@ -820,7 +820,10 @@ export function SettingRow({ label, hint, why, control, children }: {
   label: ReactNode; hint?: ReactNode; why?: string; control?: ReactNode; children?: ReactNode;
 }) {
   return (
-    <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-x-6 gap-y-1.5 border-t border-line py-2.5 first:border-t-0 first:pt-0 last:pb-0">
+    // 🔴 The label's column has a floor, 16rem or half the row, and the control's gives way to it.
+    // With `minmax(0,1fr)` a path as the control took its whole width first, and at 888 the label
+    // beside it was 24px wide, one character a line (UX5 U58). A path breaks at its separators.
+    <div className="grid grid-cols-[minmax(min(16rem,50%),1fr)_auto] items-center gap-x-6 gap-y-1.5 border-t border-line py-2.5 first:border-t-0 first:pt-0 last:pb-0">
       <div className="min-w-0">
         <div className="flex items-center gap-1.5 text-body font-medium text-ink">
           <span>{label}</span>

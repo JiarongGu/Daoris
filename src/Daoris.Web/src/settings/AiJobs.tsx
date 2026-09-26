@@ -13,8 +13,11 @@ export type IntakeJob = {
   agents: { value: string; label: string }[];
   /** What an intake in each circle would run on — the driver's own answer, its intake rows. */
   starts: StartWiring[];
-  /** What a person calls this account of this tool — the roster's to know, so it arrives as a function. */
-  nameOf: (owner: string, profile: string) => string;
+  /**
+   * What a person calls this account of this tool — the roster's to know, so it arrives as a
+   * function. No profile is the tool's own home, which the roster names too (UX5 U53).
+   */
+  nameOf: (owner: string, profile?: string | null) => string;
   /** Name an agent, or null to answer by declarations only. */
   onChange: (adapter: string | null) => void;
   busy?: boolean;
@@ -117,7 +120,7 @@ function Intake({ intake }: { intake: IntakeJob }) {
                   <>
                     <span className="text-ink-faint">{t('settings.ai.intake.runsAs')}</span>
                     <span className="text-ink wrap-anywhere">
-                      {start.profile ? intake.nameOf(start.owner, start.profile) : t('wiring.ownSignIn')}
+                      {intake.nameOf(start.owner, start.profile)}
                     </span>
                     <span className="text-meta text-ink-faint">{t(`wiring.accountFrom.${start.profileFrom}`)}</span>
                   </>

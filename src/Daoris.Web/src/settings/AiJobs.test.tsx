@@ -27,7 +27,7 @@ const intake = (extra: Partial<IntakeJob> = {}): IntakeJob => ({
     { value: 'claude-code-acp', label: 'Claude Code — claude-code-acp' },
   ],
   starts: [],
-  nameOf: (owner, profile) => `${profile} of ${owner}`,
+  nameOf: (owner, profile) => (profile ? `${profile} of ${owner}` : `the own account of ${owner}`),
   onChange: () => {},
   ...extra,
 });
@@ -44,7 +44,9 @@ describe("Daoris's own AI", () => {
     expect(screen.getByText(LEXICAL.note!)).toBeInTheDocument();
     // How to change it: the service's environment, read when it starts — never a control that
     // pretends to set it.
-    expect(screen.getByText(/DAORIS_EMBED_MODEL.*DAORIS_EMBED_URL/)).toBeInTheDocument();
+    // Each variable is code, as every other row's terminal door is (UX5 U55: they were body text).
+    expect(screen.getByText('DAORIS_EMBED_MODEL').tagName).toBe('CODE');
+    expect(screen.getByText('DAORIS_EMBED_URL').tagName).toBe('CODE');
     expect(screen.getByText(/restart/)).toBeInTheDocument();
   });
 
@@ -111,10 +113,11 @@ describe("Daoris's own AI", () => {
     expect(within(circle).getByText("this machine's default")).toBeInTheDocument();
   });
 
-  it("says the agent's own sign-in when no account is set anywhere", () => {
+  /** UX5 U53: the tool's own account by the roster's name for it, as every card on the page says it. */
+  it('names the tool\'s own account as the roster does when no account is set anywhere', () => {
     show({ intake: intake({ adapter: 'claude-code-acp', starts: [intakeStart({ profile: null, profileFrom: 'unset' })] }) });
 
-    expect(screen.getByText("the agent's own sign-in")).toBeInTheDocument();
+    expect(screen.getByText('the own account of claude-code')).toBeInTheDocument();
   });
 
   /** D46 §3: a held intake says why in the driver's sentence, whole — it names what to run. */

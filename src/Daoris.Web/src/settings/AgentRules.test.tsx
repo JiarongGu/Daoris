@@ -69,9 +69,13 @@ describe('What agents may do', () => {
 
   // Three defects the installed window showed on this card, 2026-09-24, none of which a story could.
 
-  it('says its title once: the heading, not a first row that repeats it', () => {
+  /**
+   * No title of its own (UX5 U57): the card is alone in its domain, and the settings list already
+   * names it, as every card alone in its domain leaves it. Its first row is the file.
+   */
+  it('carries no title of its own, and opens on the file', () => {
     show();
-    expect(screen.getAllByText('What agents may do')).toHaveLength(1);
+    expect(screen.queryByText('What agents may do')).toBeNull();
     expect(screen.getByText('The rules file')).toBeTruthy();
   });
 

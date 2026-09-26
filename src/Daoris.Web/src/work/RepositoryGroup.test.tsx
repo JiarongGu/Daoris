@@ -14,7 +14,7 @@ describe('a repository group', () => {
     render(<RepositoryGroup repository="engine" count={3}>{row}</RepositoryGroup>);
 
     expect(screen.getByText('engine')).toBeInTheDocument();
-    expect(screen.getByText('3')).toHaveAttribute('title', '3 session(s)');
+    expect(screen.getByText('3')).toHaveAttribute('title', '3 sessions');
     expect(screen.getByText('a session')).toBeInTheDocument();
   });
 

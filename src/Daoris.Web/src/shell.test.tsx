@@ -772,7 +772,7 @@ describe('the rules card', () => {
 
     // The machine's domains appear once the shell has answered, and Permissions is the one open.
     await waitFor(() => expect(screen.getByRole('button', { name: 'Permissions' })).toHaveAttribute('aria-current', 'page'));
-    expect(screen.queryByText('What agents may do')).toBeNull();
+    expect(screen.queryByText('The rules file')).toBeNull();
   });
 });
 
@@ -840,7 +840,8 @@ describe("Daoris's own AI on Settings", () => {
 
     expect(await screen.findByText('lexical only')).toBeTruthy();
     expect(screen.getByText(STATUS.note)).toBeTruthy();
-    expect(screen.getByText(/DAORIS_EMBED_MODEL \(a model's name\)/)).toBeTruthy();
+    // The variable is code, as every row's terminal door is (UX5 U55).
+    expect(screen.getByText('DAORIS_EMBED_MODEL').tagName).toBe('CODE');
   });
 
   /**
@@ -1456,8 +1457,12 @@ describe('the harness roster', () => {
     // The unit is named beside the figure: a bare number in a column says nothing, and "context"
     // is the honest word — calling them tokens would be a claim Daoris cannot make.
     expect(screen.getByText('60,000 context')).toBeTruthy();
-    // A session on the harness's own configuration home is still somebody's usage.
-    expect(screen.getByText('its own home')).toBeTruthy();
+    // A session on the harness's own configuration home is still somebody's usage, and each
+    // account is named as the list above names it (UX5 U53): it said "its own home", and a named
+    // account by its directory in the accent.
+    const usage = screen.getByText('What each account has carried').parentElement!;
+    expect(within(usage).getByText("this machine's own")).toBeTruthy();
+    expect(within(usage).getByText('work').getAttribute('class')).not.toContain('accent');
     // 🔴 No price is claimed anywhere — Daoris does not know what a token costs (D24).
     expect(screen.queryByText(/[$£€]/)).toBeNull();
   });
@@ -1473,6 +1478,21 @@ describe('the harness roster', () => {
     // Said on the door itself, where the pin control is — the roster's body no longer restates it.
     expect(await screen.findAllByText(/from PATH/)).not.toHaveLength(0);
     expect(screen.queryByText(/Daoris runs/)).toBeNull();
+  });
+
+  /**
+   * UX5 U56: a way in that is not there does not run from PATH yet. It read *runs from PATH* under
+   * *codex-acp is not on this machine's PATH*.
+   */
+  it('says a missing way in will run from PATH once it is there', async () => {
+    invoke.mockImplementation(async (_module: string, type: string) => (type === 'HARNESSES'
+      ? { ...ROSTER, harnesses: ROSTER.harnesses.map((door) => (door.harness === 'codex' ? { ...door, pinnable: true } : door)) }
+      : WIRING));
+    show(<SettingsView notify={() => {}} section="agents" />);
+
+    expect(await screen.findByText('runs from PATH once it is there')).toBeTruthy();
+    // The installed way in still runs from PATH, and says so plainly.
+    expect(screen.getByText('runs from PATH')).toBeTruthy();
   });
 
   it('pinning installs that version and pins to it, in one action', async () => {

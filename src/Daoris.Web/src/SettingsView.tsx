@@ -201,8 +201,16 @@ function MachineAi({ search, notify }: { search?: SearchTier; notify: Notify }) 
  */
 function namer(t: ReturnType<typeof useTranslation>['t'], harnesses: ToolDoor[]) {
   const tools = byTool(harnesses);
-  return (owner: string, profile: string) => {
-    const row = tools.find((tool) => tool.name === owner)?.accounts.find((account) => account.name === profile);
+  // By the tool, or by a door onto it: usage is counted per door, and a door's accounts are its
+  // owner's (AGT7).
+  const toolFor = (owner: string) =>
+    tools.find((tool) => tool.name === owner) ?? tools.find((tool) => tool.doors.some((door) => door.harness === owner));
+  return (owner: string, profile?: string | null) => {
+    const tool = toolFor(owner);
+    // The tool's own home is named as its row names it: who signed in, else this machine's own. It
+    // was "the agent's own sign-in" in one card and "its own home" in another (UX5 U53).
+    if (!profile) return tool?.ownAccount ?? t('harness.own');
+    const row = tool?.accounts.find((account) => account.name === profile);
     return row?.account ?? (row?.key ? t('harness.profile.keyName', { handle: row.key }) : profile);
   };
 }
@@ -939,6 +947,7 @@ function HarnessRoster({ notify }: { notify: Notify }) {
   // Same defensiveness, and the same reason: an older shell has never heard of this question.
   const accounts = Array.isArray(usage.data?.accounts) ? usage.data.accounts : [];
   if (!answered || !harnesses) return null;
+  const nameOf = namer(t, harnesses);
 
   return (
     <Card className="mt-3.5">
@@ -1310,7 +1319,9 @@ function HarnessRoster({ notify }: { notify: Notify }) {
               </>
             ) : (
               <>
-                <span className="text-ink-faint">{t('harness.pin.fromPath')}</span>
+                {/* A way in that is not there does not run from PATH yet: it read "runs from PATH"
+                    under "not on this machine's PATH" (UX5 U56). */}
+                <span className="text-ink-faint">{t(harness.present ? 'harness.pin.fromPath' : 'harness.pin.fromPathAbsent')}</span>
                 {/* 🔴 Behind a press, not always open. An always-open `1.2.3` box on every harness
                     is five inputs offering an action almost nobody takes, and they were the widest
                     thing on the surface. */}
@@ -1375,28 +1386,36 @@ function HarnessRoster({ notify }: { notify: Notify }) {
           <SectionTitle>{t('usage.title')}</SectionTitle>
           <Prose className="mt-1.5 text-small">{t('usage.body')}</Prose>
           <ul className="m-0 mt-2 list-none p-0">
-            {accounts.map((account) => (
-              <li
-                key={`${account.harness}:${account.profile ?? ''}`}
-                className="flex flex-wrap items-baseline gap-3 border-t border-line py-1.5 first:border-t-0"
-              >
-                <span className="font-mono text-small">{account.harness}</span>
-                <Chip accent={Boolean(account.profile)}>
-                  {account.profile ?? t('usage.ownHome')}
-                </Chip>
-                <span className="text-small text-ink-soft">
-                  {t('usage.sessions', { count: account.sessions })}
-                </span>
-                {/* The unit is named, and it is "context" rather than "tokens": the number is in
-                    the harness's own units, and calling them tokens would be a claim Daoris cannot
-                    make. A bare figure in a column is unreadable without it (measured by looking). */}
-                <Tip content={t('usage.contextTip')}>
-                  <span className="ml-auto font-mono text-small text-ink-faint">
-                    {t('usage.context', { used: figure(account.used) })}
+            {accounts.map((account) => {
+              // Named as the list above names it: who signed in, a key's handle, else the directory,
+              // and the tool's own home as its row says it (UX5 U53: "its own home", and a named
+              // account by its directory in the accent). An own home whose name another account on
+              // this door also carries says which it is, as the list does.
+              const called = nameOf(account.harness, account.profile);
+              const repeated = !account.profile && accounts.some((other) =>
+                other.harness === account.harness && other.profile && nameOf(other.harness, other.profile) === called);
+              return (
+                <li
+                  key={`${account.harness}:${account.profile ?? ''}`}
+                  className="flex flex-wrap items-baseline gap-3 border-t border-line py-1.5 first:border-t-0"
+                >
+                  <span className="font-mono text-small">{account.harness}</span>
+                  <Chip>{called}</Chip>
+                  {repeated && <span className="text-meta text-ink-faint">{t('harness.own')}</span>}
+                  <span className="text-small text-ink-soft">
+                    {t('usage.sessions', { count: account.sessions })}
                   </span>
-                </Tip>
-              </li>
-            ))}
+                  {/* The unit is named, and it is "context" rather than "tokens": the number is in
+                      the harness's own units, and calling them tokens would be a claim Daoris cannot
+                      make. A bare figure in a column is unreadable without it (measured by looking). */}
+                  <Tip content={t('usage.contextTip')}>
+                    <span className="ml-auto font-mono text-small text-ink-faint">
+                      {t('usage.context', { used: figure(account.used) })}
+                    </span>
+                  </Tip>
+                </li>
+              );
+            })}
           </ul>
           <p className="mt-2 text-meta text-ink-faint">{t('usage.note')}</p>
         </div>

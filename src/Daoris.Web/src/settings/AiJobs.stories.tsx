@@ -26,7 +26,7 @@ const intake = (extra: Partial<IntakeJob>): IntakeJob => ({
     { value: 'codex-acp', label: 'Codex — codex-acp' },
   ],
   starts: [],
-  nameOf: (_owner, profile) => NAMES[profile] ?? profile,
+  nameOf: (_owner, profile) => (profile ? NAMES[profile] ?? profile : "this machine's own"),
   onChange: () => {},
   ...extra,
 });

@@ -21,7 +21,7 @@ export type StartWiring = {
   /** Whose accounts it runs as (AGT7): the adapter itself, or the tool a door opens onto. */
   owner: string;
   product?: string | null;
-  /** The account by its directory name; null is the agent's own sign-in. */
+  /** The account by its directory name; null is the tool's own home, the account it signs in to itself. */
   profile?: string | null;
   profileFrom: ChoiceFrom;
   /** The probed version, else the pin asked for; null when neither is known — never a guess. */

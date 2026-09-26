@@ -129,10 +129,11 @@ export function AgentRules({ rules, circles, repositories, busy = false, onSwitc
   };
 
   return (
+    // No title of its own: the card is alone in *Permissions*, and the settings list names it (UX5
+    // U57), as every card alone in its domain leaves it.
     <Card className="mt-3.5">
-      <SectionTitle>{t('settings.rules.title')}</SectionTitle>
-      {/* The row is the FILE, as Wiring's is the remotes map: the card's heading already says what
-          the card is, and saying it twice read as a heading and its echo on the window. */}
+      {/* The row is the FILE, as Wiring's is the remotes map: what the card is, the list already
+          says, and saying it again read as a heading and its echo on the window. */}
       <SettingRow
         label={t('settings.rules.file')}
         hint={t('settings.rules.hint')}
@@ -149,7 +150,7 @@ export function AgentRules({ rules, circles, repositories, busy = false, onSwitc
 
       {proposals.length > 0 && (
         <div className="mb-3">
-          <SectionTitle level={3}>{t('settings.rules.proposals.title')}</SectionTitle>
+          <SectionTitle>{t('settings.rules.proposals.title')}</SectionTitle>
           <Prose className="text-small"><Inline text={t('settings.rules.proposals.hint')} /></Prose>
           {open.length > 0 && (
             <ul className="m-0 mt-2 list-none p-0">
@@ -216,7 +217,7 @@ export function AgentRules({ rules, circles, repositories, busy = false, onSwitc
         </div>
       )}
 
-      <SectionTitle level={3}>{t('settings.rules.defaults')}</SectionTitle>
+      <SectionTitle>{t('settings.rules.defaults')}</SectionTitle>
       <ul className="m-0 list-none p-0">
         {rules.defaults.map((shipped) => (
           // 🔴 The rule and the padding are the ITEM's. A row alone in its item is both `first:` and
@@ -259,7 +260,7 @@ export function AgentRules({ rules, circles, repositories, busy = false, onSwitc
 
       {held.map((row) => (
         <div key={`${row.scope}:${row.name ?? ''}`} className="mt-3">
-          <SectionTitle level={3}>{scopeTitle(row)}</SectionTitle>
+          <SectionTitle>{scopeTitle(row)}</SectionTitle>
           <ul aria-label={scopeTitle(row)} className="m-0 list-none p-0">
             {LISTS.flatMap((name) => row[name].map((one) => (
               <li key={`${name}:${one}`} className="flex items-center gap-2 border-t border-line py-1.5 first:border-t-0">
@@ -286,7 +287,7 @@ export function AgentRules({ rules, circles, repositories, busy = false, onSwitc
         </Button>
       ) : (
         <div className="mt-3 border-t border-line pt-3">
-          <SectionTitle level={3}>{t('settings.rules.addTitle')}</SectionTitle>
+          <SectionTitle>{t('settings.rules.addTitle')}</SectionTitle>
           {/* Sized to what each field holds: a list is one word, a rule is a line, a scope a name. */}
           <div className="mt-2 grid max-w-[48rem] gap-2 md:grid-cols-[7rem_minmax(0,1fr)_14rem]">
             <SelectField

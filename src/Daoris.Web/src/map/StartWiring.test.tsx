@@ -12,7 +12,7 @@ const start = (extra: Partial<StartWiring> = {}): StartWiring => ({
   commanded: false, refusal: null, ...extra,
 });
 
-const nameOf = (owner: string, profile: string) => `${profile} of ${owner}`;
+const nameOf = (owner: string, profile?: string | null) => (profile ? `${profile} of ${owner}` : `the own account of ${owner}`);
 
 describe('what a start runs on', () => {
   it('names the agent, the account and the version, and which setting chose each', () => {
@@ -27,14 +27,17 @@ describe('what a start runs on', () => {
     expect(within(row).getByText('pinned on this machine')).toBeInTheDocument();
   });
 
-  /** Nothing set is a real answer: the agent's own sign-in, and whatever PATH has. */
-  it('says the agent\'s own sign-in and PATH when nothing is set', () => {
+  /**
+   * Nothing set is a real answer: the tool's own account, named as the roster names it on the same
+   * page (UX5 U53, where it read "the agent's own sign-in"), and whatever PATH has.
+   */
+  it('names the tool\'s own account as the roster does, and PATH, when nothing is set', () => {
     render(<StartWiringList
       starts={[start({ profile: null, profileFrom: 'unset', versionFrom: 'unset', version: null })]}
       nameOf={nameOf}
     />);
 
-    expect(screen.getByText("the agent's own sign-in")).toBeInTheDocument();
+    expect(screen.getByText('the own account of claude-code')).toBeInTheDocument();
     expect(screen.getByText('from PATH')).toBeInTheDocument();
     // Absent is never zero: a version nobody could ask is "not known", not blank.
     expect(screen.getByText('not known')).toBeInTheDocument();

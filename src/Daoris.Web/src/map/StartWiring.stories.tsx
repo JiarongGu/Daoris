@@ -16,7 +16,7 @@ const meta: Meta<typeof StartWiringList> = {
   title: 'Map/StartWiringList',
   component: StartWiringList,
   args: {
-    nameOf: (_owner, profile) => NAMES[profile] ?? profile,
+    nameOf: (_owner, profile) => (profile ? NAMES[profile] ?? profile : "this machine's own"),
     starts: [
       start({ workspace: 'aurora', profile: 'account-2', profileFrom: 'workspace', versionFrom: 'machine' }),
       start({}),
@@ -31,7 +31,7 @@ type Story = StoryObj<typeof StartWiringList>;
 /** Two circles, one with its own account and a pinned version. */
 export const TwoWorkspaces: Story = {};
 
-/** Nothing set anywhere: the agent's own sign-in, and whatever PATH has. */
+/** Nothing set anywhere: the tool's own account, as the roster names it, and whatever PATH has. */
 export const NothingSet: Story = {
   args: { starts: [start({ profile: null, profileFrom: 'unset' })] },
 };

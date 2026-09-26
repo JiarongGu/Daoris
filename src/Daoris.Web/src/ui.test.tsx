@@ -83,6 +83,18 @@ describe('a setting row', () => {
     expect(screen.getByRole('note', { name: /eighteen times/ })).toBeTruthy();
     expect(screen.queryByText(/eighteen times/)).toBeNull();
   });
+
+  /**
+   * UX5 U58, seen on the window: at 888 a path as the control took its whole width first, and the
+   * label beside it was 24px wide, one character a line. The label's column has a floor, 16rem or
+   * half the row, and the control gives way to it: a path breaks at its separators.
+   */
+  it('keeps a floor under the label, so a long control gives way to it', () => {
+    const { container } = render(
+      <SettingRow label="Which account each tool runs as" control={<span>a-long-path</span>} />);
+
+    expect(container.firstElementChild!.getAttribute('class')).toContain('grid-cols-[minmax(min(16rem,50%),1fr)_auto]');
+  });
 });
 
 describe('the liveness dot', () => {
