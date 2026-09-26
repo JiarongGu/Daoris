@@ -184,7 +184,8 @@ public sealed partial class Driver
             // What the intake may do (PERM1, D72): its circle's rules and the machine's — it serves an
             // ask, and belongs to no repository. Its tree is its room, which the guard holds it to.
             var rules = HandRules(
-                adapter, info, sessionId, ask.Workspace, repository: null, tree: room, kept: target.AttachmentsDirectory);
+                adapter, info, sessionId, ask.Workspace, repository: null, tree: room, kept: target.AttachmentsDirectory,
+                job: IntakeRoom.Allowed);
 
             return await HoldAsync(
                 adapter, info, target, sessionId, transcript, room, JoinNotices(harnessNotice, browserNotice), rules, handed,

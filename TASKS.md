@@ -21,7 +21,7 @@ lists.
 
 ## State
 
-**Counts, and this is their one home:** fifteen commands, **482 CLI tests, 512 service, 737 driver,
+**Counts, and this is their one home:** fifteen commands, **482 CLI tests, 512 service, 738 driver,
 151 desktop modules, 80 devkit, 1187 web unit, 21 Playwright**, 66/66 release rehearsal, **280/280
 family rehearsal** (it names its own phases when you run it), **39/39 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge
@@ -224,8 +224,14 @@ attached over CDP drives a WebView2.
   `mcp__browser` allowed, and the first ask whose ticket the intake reads through it.
   **2026-09-27: set up to the owner's step.** The install is republished at `b287580`. The
   `in-app-browser` plugin replaces the Edge one, `mcp__browser` stays allowed for the workspace, and
-  the browser window was opened on the install for the sign-in. Waiting on the sign-in and the first
-  ticket.
+  the browser window was opened on the install for the sign-in. **Then the owner signed in and
+  asked** (2026-09-27, 19:51 UTC), and the loop ran for real. The intake's `WebFetch` was refused
+  (the protocol door refuses every request, and the room's allow-list is not the handed rules). It
+  found `mcp__browser` itself, read the signed-in ticket in the in-app window, and published one
+  quest to the right repository, with a browser-verify `then` step, tier `intake`. The development
+  session's tree then failed on Windows' path limit and left a branch per tick (FIX-LOG,
+  2026-09-27). Fixed, republished, and the session opened its tree and took the quest. Its outcome
+  is FG5's report.
 
 #### The browser as a browser (owner, 2026-09-27) — after BRW3 and FG5
 

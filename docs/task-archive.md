@@ -6537,3 +6537,14 @@ tab. It also navigated the app's own page away, which is why the browser is its 
 - **Not looked at end to end on the window**: a real session brought up by the driver opening the
   browser window. The conversation test runs a real stub process and reads the file it was handed.
   The real harness through the real window is BRW3.
+
+## INT7 — an intake is handed its room's allow-list (2026-09-27)
+
+Found on the first real ask (FG5), and fixed in the same sitting rather than filed. The intake's
+`WebFetch` was refused. The room's own settings file allows it, but over the protocol door a
+permission request is refused by construction, and only the rules handed at spawn count. Those were
+the machine's and the circle's, not the room's. `HandRules` now takes the session's job, and an
+intake passes `IntakeRoom.Allowed`, so the room's list rides with the person's rules. A deny the
+person wrote still wins. The intake found the browser on its own anyway and read the ticket through
+it, so nothing was lost on that run. A public page would have been lost. Driver 738 (a test mirrors
+INT4j's, over the recorded settings).

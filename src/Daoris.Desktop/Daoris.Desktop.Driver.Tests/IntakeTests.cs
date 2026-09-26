@@ -647,6 +647,35 @@ public sealed class IntakeTests : IDisposable
         Assert.Equal(["Read(//c/somewhere/data/asks/a1b2c3/**)"], reads);
     }
 
+    /// <summary>
+    /// 🔴 The first real intake was refused `WebFetch` (2026-09-27, FG5). The room's own allow-list
+    /// names it, but over the protocol door only the rules handed at spawn count, and those were the
+    /// machine's and the circle's. So the room's list rides with them now: the intake's job, handed
+    /// the harness's way. A deny the person wrote still wins, since the harness applies it over any allow.
+    /// </summary>
+    [Fact]
+    public async Task An_intake_is_handed_its_rooms_allow_list_with_the_rules()
+    {
+        await using var service = StandInService.Start(Circle, Ask());
+        var recording = new RecordingIntakeAdapter();
+        var config = (Config() with
+        {
+            Commands = new Dictionary<string, IReadOnlyList<string>> { [recording.Name] = ["node", Agent()] },
+        }).WithIntake(recording.Name);
+        var adapters = new AdapterSet(new Dictionary<string, ISessionAdapter> { [recording.Name] = recording });
+        var driver = new Daoris.Driver.Driver(
+            new ServiceClient(service.Url, null), config, adapters, _home,
+            harnesses: new HarnessRoster(adapters, Path.Combine(_home, "harnesses.json")));
+
+        await driver.TickAsync();
+
+        using var handed = JsonDocument.Parse(recording.HandedText!);
+        var allowed = handed.RootElement.GetProperty("permissions").GetProperty("allow").EnumerateArray()
+            .Select(e => e.GetString()!).ToList();
+        Assert.Contains("WebFetch", allowed);
+        Assert.Contains("mcp__daoris-knowledge__quest_publish", allowed);
+    }
+
     /// <summary>A pipe-door harness that takes a settings file, remembering what the intake was handed.</summary>
     private sealed class RecordingIntakeAdapter : ISessionAdapter
     {

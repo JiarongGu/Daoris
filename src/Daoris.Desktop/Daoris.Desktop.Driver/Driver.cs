@@ -719,7 +719,7 @@ public sealed partial class Driver(
     /// <returns>The file, which goes when the session does, and what the protocol door carries.</returns>
     private (string? File, object? Meta) HandRules(
         ISessionAdapter adapter, ProcessStartInfo info, string sessionId, string? workspace, string? repository,
-        string tree, string? kept)
+        string tree, string? kept, IReadOnlyList<string>? job = null)
     {
         // A harness a Claude Code rule means nothing to is handed nothing, and no file is written.
         if (!adapter.TakesSettings) return (null, null);
@@ -729,6 +729,14 @@ public sealed partial class Driver(
         if (kept is { Length: > 0 })
         {
             composed = composed with { Allow = [.. composed.Allow, PermissionRules.ReadRule(kept)] };
+        }
+
+        // 🔴 What the session's job needs, beside the person's rules (FG5): an intake's room names its tools
+        // in its own settings file, and over the protocol door only what is handed at spawn counts. The
+        // first real intake was refused `WebFetch` that way. A deny the person wrote still wins.
+        if (job is { Count: > 0 })
+        {
+            composed = composed with { Allow = [.. composed.Allow, .. job.Where(rule => !composed.Allow.Contains(rule))] };
         }
 
         var file = SpawnSettings.Write(
