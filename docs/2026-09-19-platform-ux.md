@@ -173,7 +173,16 @@ A **fixed left sidebar** and a content column — the shape of a console, not a 
   `tokens.test.ts` holds the rule for every overlay, so the next one cannot inherit `inset-0`.
 - **Toast** (bottom-right, overlay surface, auto-dismiss with close) carries every action outcome and
   error — the service's sentence verbatim, because the refusal text is the contract. Nothing shifts the
-  layout to speak.
+  layout to speak. **A request that reaches nobody is said in Daoris's words**, never the browser's
+  *Failed to fetch* nor a socket's, and the page's own requests and the driver's tick say the same
+  sentence for it (UX5 U29, U30). **A sentence already on screen is said once**: its newest copy
+  replaces it, and a failure the tick repeats is said once until a tick runs again, since a tick
+  report is a log and a toast an interruption (D62).
+- **Dates, counts and Daoris's own sentences are in the reader's language.** A date is written the
+  way the reader's language writes it (`format.ts`, and nothing else formats: *23/09/2026, 1:58:49
+  pm* sat in a 中文 drawer). A sentence the driver writes is chrome, so 中文 translates it, by its
+  typed half (a verdict, a code) and never by matching the English; where the words need what the
+  page is not told, the driver's words stand (UX5 U27, U28).
 - **Empty states** are designed, not blank: a quiet glyph, one headline line, one body line, and the
   action that changes the fact ("Nothing is sitting" → "Ask for something").
 - **Loading**: first load shows static skeleton rows; a refetch holds the previous render at reduced

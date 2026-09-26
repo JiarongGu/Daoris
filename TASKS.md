@@ -21,7 +21,7 @@ lists.
 ## State
 
 **Counts, and this is their one home:** fifteen commands, **478 CLI tests, 502 service, 705 driver,
-130 desktop modules, 80 devkit, 1114 web unit, 21 Playwright**, 66/66 release rehearsal, **279/279
+133 desktop modules, 80 devkit, 1123 web unit, 21 Playwright**, 66/66 release rehearsal, **279/279
 family rehearsal** (it names its own phases when you run it), **39/39 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge
 documents, 5 skills, 7 packs. The always-loaded core is **22,492 of 26,000 bytes** — a span in
@@ -244,12 +244,15 @@ TDD, looked at on the window, and the ones that touch a real session use one (au
   (no box where nothing listens), U11 (the frame's tests isolated), U15 (the command center gives
   way to the menus), U16 (the owner's: the session follows the window's width, reversing U10), U19
   (no view named Work), U20 (the owner's choice: a badge counts what its place holds), U21 (the
-  status bar counts active sessions, and says so) and U22 (the activity bar scrolls rather than
-  crushing its places). **Open in the ledger:** U6 (fold §4's dated amendments into the body,
-  surface by surface; the frame's are done), U17 and U18 (a live chat between turns reads
-  *working*; the composer's stop wears red), both to judge at the Sessions surface, and U25 (the
-  palette's unread `waiting`). **Then the pass itself**: the ledger's surface table. The frame's row
-  is done; Overview is next.
+  status bar counts active sessions, and says so), U22 (the activity bar scrolls rather than
+  crushing its places), U26 (an outstanding row opens its quest), U27 and U28 (the driver's reasons
+  and every date in the reader's language) and U29 and U30 (a stopped service said once, in
+  Daoris's words, by the page and the tick alike). **Open in the ledger:** U6 (fold §4's dated
+  amendments into the body, surface by surface; the frame's are done), U17 and U18 (a live chat
+  between turns reads *working*; the composer's stop wears red) for the Sessions row, U25 (the
+  palette's unread `waiting`) and U31 (an Open quest's drawer makes *done* primary) for theirs.
+  **Then the pass itself**: the ledger's surface table. The frame's and Overview's rows are done;
+  Quests is next.
 - [ ] ⏸ **Held, after the conversation:** a file tree and document preview in the dock (when a tool
   card wants to open a file); a terminal (design §6's trigger).
 
