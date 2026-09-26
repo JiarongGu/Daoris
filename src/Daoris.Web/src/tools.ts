@@ -125,6 +125,20 @@ export function toolOf(door: ToolDoor): string {
 }
 
 /**
+ * What a person calls a way in: the tool, the door, and the id a terminal types — *Claude Code —
+ * protocol (claude-code-acp)*. One wording for every place that offers a choice of them (UX5 U67:
+ * the start form listed bare ids where Settings named them so). A door with no product is its id.
+ */
+export function doorLabel(t: (key: string, options?: Record<string, unknown>) => string, door: ToolDoor): string {
+  if (!door.product) return door.harness;
+  return t('settings.ai.intake.choice', {
+    product: door.product,
+    door: t(door.wire === 'acp' ? 'harness.wire.acp' : 'harness.wire.pipe'),
+    agent: door.harness,
+  });
+}
+
+/**
  * Group the roster into the tools a person actually has.
  *
  * @remarks

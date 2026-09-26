@@ -81,12 +81,83 @@ describe('starting a session', () => {
     expect(document.querySelector('select:not([aria-hidden="true"]), input[type="checkbox"]:not([aria-hidden="true"])')).toBeNull();
 
     await choose('agent tool', 'codex');
-    await choose('agent tool', 'this machine\'s default');
+    await choose('agent tool', 'this machine\'s default: claude-code');
     await userEvent.click(screen.getByRole('checkbox', { name: /working tree of its own/ }));
     await userEvent.click(screen.getByRole('button', { name: /start/i }));
 
     expect(onStart).toHaveBeenCalledWith({
       repository: 'engine', adapter: undefined, profile: undefined, ownTree: true,
     });
+  });
+
+  /**
+   * UX5 U67, seen on the window: the choice listed `claude-code` and `claude-code-acp`, where Settings
+   * names the same ways in by the tool and the door, and *this machine's default* said nothing of
+   * what it is. The names are the page's to give; the value is still the id the driver takes.
+   */
+  it('names each way in as Settings does, and says what this machine’s default is', async () => {
+    const onStart = vi.fn();
+    render(
+      <Tooltip.Provider>
+        <StartSession
+          repositories={['engine']}
+          harnesses={['claude-code', 'claude-code-acp']}
+          defaultHarness="claude-code"
+          labels={{
+            'claude-code': 'Claude Code — direct (claude-code)',
+            'claude-code-acp': 'Claude Code — protocol (claude-code-acp)',
+          }}
+          accounts={{}}
+          onStart={onStart}
+        />
+      </Tooltip.Provider>,
+    );
+
+    expect((await open('agent tool')).map((option) => option.textContent)).toEqual([
+      "this machine's default: Claude Code — direct (claude-code)",
+      'Claude Code — direct (claude-code)',
+      'Claude Code — protocol (claude-code-acp)',
+    ]);
+    await userEvent.click(screen.getByRole('option', { name: 'Claude Code — protocol (claude-code-acp)' }));
+    await userEvent.click(screen.getByRole('button', { name: /start/i }));
+    expect(onStart).toHaveBeenCalledWith(expect.objectContaining({ adapter: 'claude-code-acp' }));
+  });
+
+  /**
+   * UX5 U68, seen on the window: the form opened on a repository a parked conversation held, said
+   * nothing of it, and the start was refused. It opens on one nothing works in, marks a busy one,
+   * and says what lets a busy one start after all: a working tree of its own.
+   */
+  it('opens where nothing is working, marks a busy repository, and says a tree of its own starts beside it', async () => {
+    render(
+      <Tooltip.Provider>
+        <StartSession repositories={['engine', 'game']} busy={['engine']} harnesses={['claude-code']} accounts={{}} onStart={vi.fn()} />
+      </Tooltip.Provider>,
+    );
+
+    expect(screen.getByRole('combobox', { name: 'repository' })).toHaveTextContent('game');
+    expect(screen.queryByText(/has an active session/)).toBeNull();
+
+    await choose('repository', 'engine · busy');
+    expect(screen.getByText(/engine has an active session in its checkout/)).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('checkbox', { name: /working tree of its own/ }));
+    expect(screen.queryByText(/has an active session/)).toBeNull();
+  });
+
+  /** U68: a refused start is said in the form it answers, whole. It was a corner toast, cut mid-sentence. */
+  it('says a refused start in the form, whole', () => {
+    const refusal = '`engine` already has an active session — `669b2930` (awaiting-person, a chat). '
+      + 'One session per working tree: two agents in one tree corrupt each other’s git state.';
+    render(
+      <Tooltip.Provider>
+        <StartSession repositories={['engine']} harnesses={['claude-code']} accounts={{}} refusal={refusal} onStart={vi.fn()} />
+      </Tooltip.Provider>,
+    );
+
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      'engine already has an active session — 669b2930 (awaiting-person, a chat). One session per working tree');
+    // Its code marks drawn as code, as the toast drew them, never as backticks.
+    expect(screen.getByText('669b2930').tagName).toBe('CODE');
   });
 });

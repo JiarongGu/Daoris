@@ -13,6 +13,7 @@ import { AttendedSession, noteIsInTheHead } from './AttendedSession';
 import { SessionConversation } from './SessionConversation';
 import type { Usage } from './conversation';
 import { isIntake, ownTree, sessionOrigin } from './identity';
+import { doorLabel } from '../tools';
 import type { Resolution } from './AwaitingPerson';
 import { Composer } from './Composer';
 import { DiffPane } from './DiffPane';
@@ -129,6 +130,8 @@ export function WorkFrame({ selected, onSelect, notify, onSendBack, onAnswerAsk,
   // A refusal belongs to the session that gave it: attending another by any door (a notification, the
   // palette, a quest's record) must not show one session's "went nowhere" on another's composer (REV3).
   const [refusal, setRefusal] = useState<{ session: string; text: string } | null>(null);
+  // Why the last start was refused, said in the start form until it closes or starts again (UX5 U68).
+  const [startRefusal, setStartRefusal] = useState<string | null>(null);
   const [starting, setStarting] = useState(false);
   // The centre scrolls the head and the conversation together; the conversation follows its tail.
   const centre = useRef<HTMLDivElement>(null);
@@ -258,12 +261,14 @@ export function WorkFrame({ selected, onSelect, notify, onSendBack, onAnswerAsk,
 
   const onStart = (choice: StartChoice) => {
     setRefusal(null);
+    setStartRefusal(null);
     startChat.mutate(choice, {
       onSuccess: (result) => {
         // The ledger's own sentence: the tree is busy, the repository has no checkout here, the
         // harness is missing, the chosen account is logged out. Each names the action that fixes
-        // it, which is why it is shown rather than summarised.
-        if (!result.sessionId) notify(result.message, 'error');
+        // it, which is why it is shown rather than summarised — in the form, whole, where start was
+        // pressed; it was a corner toast cut mid-sentence (UX5 U68).
+        if (!result.sessionId) setStartRefusal(result.message);
         else { setStarting(false); attend(result.sessionId); }
       },
       onError: failure(notify),
@@ -470,7 +475,7 @@ export function WorkFrame({ selected, onSelect, notify, onSendBack, onAnswerAsk,
 
       {/* D41's single detail-and-form surface (§4), rather than a popover built for one form. */}
       {starting && (
-        <Drawer title={t('work.start.title')} onClose={() => setStarting(false)}>
+        <Drawer title={t('work.start.title')} onClose={() => { setStarting(false); setStartRefusal(null); }}>
           <StartSession
             // A checkout on this machine is the whole question: there is nowhere else to talk, and
             // a teammate's mirrored registration has no tree here (D48 §3/§7).
@@ -478,10 +483,17 @@ export function WorkFrame({ selected, onSelect, notify, onSendBack, onAnswerAsk,
               .filter((row) => Boolean(row.root))
               .map((row) => row.repository)
               .sort()}
+            // A checkout an active session on this machine holds refuses a second one (UX5 U68).
+            busy={(sessions.data ?? [])
+              .filter((session) => SESSION_ACTIVE.has(session.state) && sessionOrigin(session) === null
+                && !ownTree(session, (registry.data ?? []).find((row) => row.repository === session.repository)?.root))
+              .map((session) => session.repository)}
             harnesses={roster.filter((row) => row.present).map((row) => row.harness)}
+            labels={Object.fromEntries(roster.map((row) => [row.harness, doorLabel(t, row)]))}
             defaultHarness={spawning?.harness}
             accounts={Object.fromEntries(roster.map((row) => [row.harness, Array.isArray(row.profiles) ? row.profiles : []]))}
             pending={startChat.isPending}
+            refusal={startRefusal}
             onStart={onStart}
           />
         </Drawer>

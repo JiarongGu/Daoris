@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button, CheckField, SelectField, Tip } from '../ui';
+import { Button, CheckField, Inline, SelectField, Tip } from '../ui';
 
 /**
  * "Leave it to the driver", as a select's value: the platform's select reserves the empty value for
@@ -35,11 +35,23 @@ export type StartChoice = {
  * A molecule: the rosters arrive as props, which is what makes "no repository has a checkout here",
  * "one harness, no accounts" and "a logged-out profile" reachable without a machine in that state.
  */
-export function StartSession({ repositories, harnesses, defaultHarness = '', accounts, pending = false, onStart }: {
+export function StartSession({
+  repositories, busy = [], harnesses, labels = {}, defaultHarness = '', accounts, pending = false, refusal, onStart,
+}: {
   /** Repositories with a checkout on this machine — there is nowhere else to talk (D48 §7). */
   repositories: string[];
+  /**
+   * Repositories whose checkout an active session holds (UX5 U68): the form opens on one that is
+   * free, marks a busy one, and says a working tree of its own starts beside it.
+   */
+  busy?: string[];
   /** The harnesses this machine has; empty offers no choice. */
   harnesses: string[];
+  /**
+   * What a person calls each way in — the tool and the door, as Settings names them (UX5 U67). The
+   * value stays the id the driver takes; absent, the id is the name.
+   */
+  labels?: Record<string, string>;
   /** The driver's own harness — whose accounts are offered while no other is chosen. */
   defaultHarness?: string;
   /**
@@ -48,6 +60,11 @@ export function StartSession({ repositories, harnesses, defaultHarness = '', acc
    */
   accounts: Record<string, { name: string; login: 'in' | 'out' | 'unknown'; account?: string | null }[]>;
   pending?: boolean;
+  /**
+   * Why the last start was refused, in the driver's own words (UX5 U68): said here, whole, under the
+   * form it answers. It was a corner toast, cut mid-sentence, beside a form that said nothing.
+   */
+  refusal?: string | null;
   onStart: (choice: StartChoice) => void;
 }) {
   const { t } = useTranslation();
@@ -61,7 +78,10 @@ export function StartSession({ repositories, harnesses, defaultHarness = '', acc
     return <p className="m-0 px-3 py-2 text-small text-ink-faint">{t('work.start.none')}</p>;
   }
 
-  const chosen = repository || repositories[0]!;
+  // Where nothing is working, unless the person chose: a busy checkout refuses a second session.
+  const chosen = repository || repositories.find((name) => !busy.includes(name)) || repositories[0]!;
+  const held = busy.includes(chosen) && !ownTree;
+  const named = (id: string) => labels[id] ?? id;
 
   return (
     <form
@@ -84,9 +104,14 @@ export function StartSession({ repositories, harnesses, defaultHarness = '', acc
           value={chosen}
           onChange={setRepository}
           ariaLabel={t('work.start.repository')}
-          options={repositories.map((name) => ({ value: name, label: name }))}
+          options={repositories.map((name) => ({
+            value: name,
+            label: busy.includes(name) ? t('work.start.busyOption', { repository: name }) : name,
+          }))}
         />
       </label>
+      {/* What lets a busy one start after all, said where it is chosen (UX5 U68). */}
+      {held && <p className="m-0 max-w-prose text-small text-ink-soft">{t('work.start.busy', { repository: chosen })}</p>}
 
       {harnesses.length > 1 && (
         <label className="grid gap-1 text-meta text-ink-faint">
@@ -100,8 +125,15 @@ export function StartSession({ repositories, harnesses, defaultHarness = '', acc
             }}
             ariaLabel={t('work.start.harness')}
             options={[
-              { value: DEFAULT, label: t('work.start.harnessDefault') },
-              ...harnesses.map((name) => ({ value: name, label: name })),
+              // Which it is, where the machine has one (UX5 U67): "this machine's default" said
+              // nothing of what a start would run on.
+              {
+                value: DEFAULT,
+                label: defaultHarness
+                  ? t('work.start.harnessDefaultNamed', { name: named(defaultHarness) })
+                  : t('work.start.harnessDefault'),
+              },
+              ...harnesses.map((name) => ({ value: name, label: named(name) })),
             ]}
           />
         </label>
@@ -139,6 +171,15 @@ export function StartSession({ repositories, harnesses, defaultHarness = '', acc
 
       {/* Sized to its word (platform language §4): in the form's grid it ran the drawer's width. */}
       <Button variant="primary" type="submit" disabled={pending} className="justify-self-start">{t('work.start.go')}</Button>
+
+      {/* The driver's own sentence, whole, where the start was pressed (UX5 U68): it names what to do,
+          and a paraphrase of an instruction is a different instruction (D46 §3). */}
+      {refusal && (
+        <p role="alert" className="m-0 max-w-prose whitespace-pre-wrap border-l-[3px] border-warn pl-2.5 text-small text-ink-soft">
+          {/* Its code marks as code, as the toast drew them: `engine` is a name, not punctuation. */}
+          <Inline text={refusal} />
+        </p>
+      )}
     </form>
   );
 }

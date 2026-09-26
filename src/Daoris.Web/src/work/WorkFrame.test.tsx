@@ -443,7 +443,7 @@ describe('starting and holding a conversation', () => {
    * conversation that was refused has no session to show. The fixture holds a live DRIVEN session
    * in `engine`, which is the case worth pinning.
    */
-  it('surfaces a refusal and attends nothing', async () => {
+  it('says a refusal in the form it answers, whole, and attends nothing', async () => {
     invoke.mockImplementation(async (_module: string, type: string) => (type === 'START_CHAT'
       ? { sessionId: null, message: '`engine` already has an active session — `s1a2b3c4` (working, quest `#abc123`).' }
       : DRIVER_STATE));
@@ -461,7 +461,10 @@ describe('starting and holding a conversation', () => {
     await openStart();
     await userEvent.click(await screen.findByRole('button', { name: 'start' }));
 
-    expect(notify).toHaveBeenCalledWith(expect.stringContaining('already has an active session'), 'error');
+    // UX5 U68: in the drawer, where start was pressed, not a corner toast cut mid-sentence.
+    expect(await within(screen.getByRole('dialog')).findByRole('alert'))
+      .toHaveTextContent('engine already has an active session — s1a2b3c4 (working, quest #abc123).');
+    expect(notify).not.toHaveBeenCalledWith(expect.stringContaining('already has an active session'), 'error');
     expect(onSelect).not.toHaveBeenCalled();
   });
 

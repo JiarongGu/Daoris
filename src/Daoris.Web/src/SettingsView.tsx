@@ -15,7 +15,7 @@ import { StartWiringList } from './map/StartWiring';
 import { SessionConsole } from './SessionConsole';
 import { AiJobs, type SearchTier } from './settings/AiJobs';
 import { SignIn } from './SignIn';
-import { byTool, type ToolDoor } from './tools';
+import { byTool, doorLabel, type ToolDoor } from './tools';
 import {
   Button, Card, CheckField, Chip, failure, Icon, Inline, type Notify, PageHeader, PathText, Pill, Prose,
   SectionTitle, Segmented, SelectField, SettingRow, Tip, useErrorNotify,
@@ -158,16 +158,7 @@ function MachineAi({ search, notify }: { search?: SearchTier; notify: Notify }) 
   // intake, and a choice whose only outcome is a hold is worse than none.
   const agents = harnesses
     .filter((door) => door.present)
-    .map((door) => ({
-      value: door.harness,
-      label: door.product
-        ? t('settings.ai.intake.choice', {
-          product: door.product,
-          door: t(door.wire === 'acp' ? 'harness.wire.acp' : 'harness.wire.pipe'),
-          agent: door.harness,
-        })
-        : door.harness,
-    }));
+    .map((door) => ({ value: door.harness, label: doorLabel(t, door) }));
   const starts = Array.isArray(answer.data?.starts) ? answer.data.starts : [];
 
   return (
