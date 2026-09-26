@@ -3352,3 +3352,10 @@ unified or side by side.**
   their drawing with the card instead (the ring as far as the window's height leaves it). Rejected:
   a wider cap, which is the same defect on a wider screen. Also rejected: scaling a drawing to its
   card, which grew its names past the type scale (U44).
+- **A live chat between turns is idle** (U17, decided by the reference console at the owner's
+  word). The page reads a chat whose record says `working` as idle when the driver says no turn is
+  in flight: a quiet mark and a neutral word, where the reference draws no mark and says *Idle*.
+  Rejected: a new record state, because the record says what the process is (D46 §4) and a turn is
+  the driver's to say, live, which no record carries. Also rejected: *your turn* in the waiting hue,
+  which would count every open chat among the things that need the person; the reference keeps its
+  attention mark for what does.

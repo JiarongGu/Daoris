@@ -75,6 +75,13 @@ A **fixed left sidebar** and a content column — the shape of a console, not a 
   dot, *What needs you*'s card and rows, the map's ring and word. It had three hues, one of them
   declined's red, and a session waiting on its person read as one that had failed. **Red is only ever
   an outcome**: declined, failed, a failed tool call. A liveness mark never borrows an outcome's hue.
+- **A live mark means a turn is running** (UX5 U17, U60). A live chat between turns is **idle**, a
+  quiet mark and a neutral word, as the reference console draws it; the driver says whether a turn
+  is in flight, and before it answers the record's word stands. A fact about a tree (*busy*) is
+  words, never the live mark.
+- **A tree is reviewed as one only when it is the session's own** (U66): a session in the
+  repository's checkout is offered no merge and no discard, since both could only refuse; sending
+  the work back is about the work and stays.
 - **A path breaks at its separators** (UX5): `PathText`, never `break-all`, which broke a tree
   inside a name (`family\g` / `ame`). Anything else that may be wider than its line (an account
   name, a tool's raw output) wraps `anywhere`, which breaks inside a word only when that one word
