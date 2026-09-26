@@ -848,6 +848,7 @@
   "sessionState.stood-down": "stood down",
   "sessionState.failed": "failed",
   "sessionState.stopped": "stopped",
+  "sessionState.idle": "idle",
   "projects.title": "Projects",
   "projects.empty.headline": "No repository is registered yet",
   "projects.empty.headlineIn": "No repository in {{workspace}} yet",

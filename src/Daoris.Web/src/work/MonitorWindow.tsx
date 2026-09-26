@@ -2,7 +2,7 @@ import { useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Quest, Session } from '../api';
 import { useQuests, useSessions } from '../queries';
-import { useDriver, useHarnesses, useOpenWindow, useSessionOpenings } from '../shell';
+import { useChatTurns, useDriver, useHarnesses, useOpenWindow, useSessionOpenings } from '../shell';
 import { EmptyState, type Notify, SESSION_ACTIVE, SkeletonRows, useErrorNotify } from '../ui';
 import { SessionConsole } from '../SessionConsole';
 import { SessionConversation } from './SessionConversation';
@@ -54,6 +54,10 @@ export function MonitorWindow({ notify }: { notify: Notify }) {
   // What is still running, and nothing else: a monitor is for the present tense. A finished session
   // is read in the main window, where its diff and its record are.
   const live = (sessions.data ?? []).filter((session) => SESSION_ACTIVE.has(session.state));
+  // Whether each live conversation has a turn in flight, as the driver says: between turns a chat
+  // reads idle, on its tile and in the rail, as in the main window (UX5 U17).
+  const chatTurns = useChatTurns(live.filter((session) => session.kind === 'chat').map((session) => session.id));
+  const taking = Object.fromEntries(Object.entries(chatTurns).map(([id, held]) => [id, held.taking]));
 
   // What needs a person first — the rail's rule (components plan §3a), which matters more here
   // because this window is read from across a desk — then the longest-running.
@@ -87,6 +91,7 @@ export function MonitorWindow({ notify }: { notify: Notify }) {
           <div className="min-h-0 flex-1 overflow-y-auto">
             <SessionRail
               notify={notify}
+              taking={taking}
               onSelect={(id) => document.getElementById(tileId(id))
                 ?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
             />
@@ -126,6 +131,7 @@ export function MonitorWindow({ notify }: { notify: Notify }) {
                     session={session}
                     quest={session.quest ? questFor.get(session.quest) : null}
                     opening={openings[session.id]}
+                    taking={taking[session.id]}
                     onDetach={(id) => openWindow.mutate(sessionWindowName(id))}
                   />
                 ))}
@@ -144,10 +150,11 @@ export function MonitorWindow({ notify }: { notify: Notify }) {
  * Separated so the console's hook is mounted per session by the tree rather than by a loop in the
  * parent — a hook cannot be called inside `map`, and a component can.
  */
-function Tile({ session, quest, opening, onDetach }: {
+function Tile({ session, quest, opening, taking, onDetach }: {
   session: Session;
   quest?: Quest | null;
   opening?: string | null;
+  taking?: boolean;
   onDetach: (id: string) => void;
 }) {
   const { t } = useTranslation();
@@ -163,7 +170,7 @@ function Tile({ session, quest, opening, onDetach }: {
   return (
     // The id is what the rail scrolls to — a session is one thing with one anchor in this window.
     <div id={tileId(session.id)} className="flex min-h-0 scroll-mt-3 flex-col">
-      <StreamTile session={session} quest={quest} opening={opening} onDetach={here ? onDetach : undefined}>
+      <StreamTile session={session} quest={quest} opening={opening} taking={taking} onDetach={here ? onDetach : undefined}>
         {here && (structured
           ? (
             <div ref={body} className="min-h-0 flex-1 overflow-y-auto">

@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next';
 import * as Menu from '@radix-ui/react-dropdown-menu';
 import type { Quest, Session } from '../api';
 import { ago, elapsed } from '../format';
-import { Dot, DotMark, Icon, type IconName, SESSION_ACTIVE, SESSION_DOT, Tip } from '../ui';
+import { Dot, DotMark, Icon, type IconName, SESSION_ACTIVE, SESSION_DOT, shownState, Tip } from '../ui';
 import { cn } from '../lib/cn';
 import { isIntake, ownTree, sessionOrigin, sessionTitle } from './identity';
 
@@ -27,8 +27,10 @@ import { isIntake, ownTree, sessionOrigin, sessionTitle } from './identity';
  * away. The title, the repository and the state are its name and its tip, since the strip has no room
  * for the words and a mark is never hue alone (D41 §6).
  */
-export function SessionStripRow({ session, quest, opening, selected = false, onSelect }: {
+export function SessionStripRow({ session, quest, opening, taking, selected = false, onSelect }: {
   session: Session;
+  /** Whether a turn is in flight, as the driver says: a live chat between turns reads idle (UX5 U17). */
+  taking?: boolean;
   quest?: Quest | null;
   /** What the person first said in it, where this machine holds its record (RAIL1). */
   opening?: string | null;
@@ -36,7 +38,8 @@ export function SessionStripRow({ session, quest, opening, selected = false, onS
   onSelect?: (id: string) => void;
 }) {
   const { t } = useTranslation();
-  const name = [sessionTitle(session, quest, opening), session.repository, t(`sessionState.${session.state}`)].join(' · ');
+  const shown = shownState(session, taking);
+  const name = [sessionTitle(session, quest, opening), session.repository, t(`sessionState.${shown}`)].join(' · ');
 
   return (
     <li>
@@ -54,7 +57,7 @@ export function SessionStripRow({ session, quest, opening, selected = false, onS
           {/* The same 2px accent rail the activity bar gives its current place. */}
           {selected && <span aria-hidden className="absolute inset-y-1 left-0 w-0.5 rounded-full bg-accent" />}
           <span aria-hidden className="text-small font-semibold uppercase">{Array.from(session.repository)[0] ?? '?'}</span>
-          <DotMark tone={SESSION_DOT[session.state]} className="absolute right-1 top-1" />
+          <DotMark tone={SESSION_DOT[shown]} className="absolute right-1 top-1" />
         </button>
       </Tip>
     </li>
@@ -62,9 +65,14 @@ export function SessionStripRow({ session, quest, opening, selected = false, onS
 }
 
 export function SessionRow({
-  session, quest, opening, root, selected = false, onSelect, onDetach, onReview, onCopy,
+  session, quest, opening, root, taking, selected = false, onSelect, onDetach, onReview, onCopy,
 }: {
   session: Session;
+  /**
+   * Whether a turn is in flight, as the driver says. A live chat between turns reads idle, a quiet
+   * mark and the word (UX5 U17); absent, the record's word stands.
+   */
+  taking?: boolean;
   /** The quest it serves, where the caller has it — absent is a state, not a gap (D49 §3). */
   quest?: Quest | null;
   /** What the person first said in it, where this machine holds its record — a conversation's name (RAIL1). */
@@ -89,6 +97,7 @@ export function SessionRow({
   const origin = sessionOrigin(session);
   const tree = ownTree(session, root);
   const running = SESSION_ACTIVE.has(session.state);
+  const shown = shownState(session, taking);
 
   // One line of secondary facts, each absent when it has nothing to say — `MetaLine`'s rule, and
   // what keeps a rail of a dozen rows readable at 18rem. What the two absences MEAN is on the
@@ -130,7 +139,7 @@ export function SessionRow({
         )}
       >
         <span className="flex items-baseline justify-between gap-2">
-          <Dot tone={SESSION_DOT[session.state]} label={t(`sessionState.${session.state}`)} />
+          <Dot tone={SESSION_DOT[shown]} label={t(`sessionState.${shown}`)} />
           {/* A span, so a finished session reads as a lifetime and a live one as an age. */}
           <span
             title={t('work.rail.elapsedTip')}

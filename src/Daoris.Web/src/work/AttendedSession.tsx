@@ -36,7 +36,7 @@ export const noteIsInTheHead = (session: Session, answerableHere: boolean) =>
   session.state === 'awaiting-person' && answerableHere;
 
 export function AttendedSession({
-  session, quest, opening, resolving, stopping, onResolve, onAnswerAsk, onStop, chain = [], onSession,
+  session, quest, opening, taking, resolving, stopping, onResolve, onAnswerAsk, onStop, chain = [], onSession,
   timeline = 'dock',
 }: {
   /** The attended session, or null when the person has not chosen one. */
@@ -44,6 +44,8 @@ export function AttendedSession({
   quest?: Quest | null;
   /** What the person first said in it, where this machine holds its record — a conversation's name (RAIL1). */
   opening?: string | null;
+  /** Whether a turn is in flight, as the driver says — the head reads a chat between turns as idle (UX5 U17). */
+  taking?: boolean;
   resolving?: boolean;
   stopping?: boolean;
   /** Passed straight through to the head, where a parked session's three moves live (design §4). */
@@ -85,6 +87,7 @@ export function AttendedSession({
         session={session}
         quest={quest}
         opening={opening}
+        taking={taking}
         resolving={resolving}
         stopping={stopping}
         onResolve={onResolve}

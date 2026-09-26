@@ -67,6 +67,29 @@ describe('a session row', () => {
     }
   });
 
+  /**
+   * UX5 U17, decided by the reference console: a live chat whose turn has ended is idle, a quiet
+   * mark and the word, and working only while a turn is in flight. It read *working* between turns.
+   * Nothing known is the record's own word, never a guess.
+   */
+  it('says a live chat between turns is idle, and working only while a turn runs', () => {
+    const chat = session({ kind: 'chat' });
+
+    const { rerender } = render(<SessionRow session={chat} taking={false} />);
+    expect(screen.getByText('idle')).toBeInTheDocument();
+    expect(screen.queryByText('working')).toBeNull();
+
+    rerender(<SessionRow session={chat} taking />);
+    expect(screen.getByText('working')).toBeInTheDocument();
+
+    rerender(<SessionRow session={chat} />);
+    expect(screen.getByText('working')).toBeInTheDocument();
+
+    // Driven work is one long turn: it is working whatever a queue says.
+    rerender(<SessionRow session={session()} taking={false} />);
+    expect(screen.getByText('working')).toBeInTheDocument();
+  });
+
   it('says which way in a session was entered — driven work and a conversation read alike otherwise', () => {
     const { unmount } = render(<SessionRow session={session({ kind: 'driven' })} />);
     expect(screen.getByText(/driven/)).toBeInTheDocument();

@@ -848,6 +848,7 @@
   "sessionState.stood-down": "已让位",
   "sessionState.failed": "失败",
   "sessionState.stopped": "已停止",
+  "sessionState.idle": "空闲",
   "projects.title": "项目",
   "projects.empty.headline": "还没有登记任何仓库",
   "projects.empty.headlineIn": "{{workspace}} 里还没有仓库",

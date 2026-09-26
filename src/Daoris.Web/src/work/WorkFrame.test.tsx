@@ -737,6 +737,32 @@ describe('starting and holding a conversation', () => {
     await waitFor(() => expect(screen.queryByRole('button', { name: 'stop turn' })).not.toBeInTheDocument());
   });
 
+  /**
+   * UX5 U17, decided by the reference console: a live chat between turns is idle, in the rail and
+   * the head, and working again the moment the driver says a turn is in flight. It read *working*
+   * the whole time, as a turn does.
+   */
+  it('says a live chat is idle between turns, in the rail and the head, as the driver says', async () => {
+    SESSIONS = [CHAT];
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'HARNESSES') return STRUCTURED_ROSTER;
+      if (type === 'SESSION_QUEUE') return { session: 'c0ffee11', queued: [], taking: false };
+      return DRIVER_STATE;
+    });
+
+    show('c0ffee11');
+    const rail = await screen.findByRole('navigation', { name: 'sessions' });
+    await waitFor(() => expect(within(rail).getByText('idle')).toBeInTheDocument());
+    const head = screen.getByRole('heading', { level: 2 }).parentElement!;
+    expect(within(head).getByText('idle')).toBeInTheDocument();
+
+    act(() => eventHandlers.get('DAORIS.SESSION_QUEUED')!({ session: 'c0ffee11', queued: [], taking: true }));
+    await waitFor(() => expect(within(rail).getByText('working')).toBeInTheDocument());
+    expect(within(head).getByText('working')).toBeInTheDocument();
+    // The composer follows the same answer: a turn in flight offers its stop.
+    expect(screen.getByRole('button', { name: 'stop turn' })).toBeInTheDocument();
+  });
+
   /** CONV4b: each conversation keeps its own draft as the person moves between them. */
   it('keeps each conversation its own draft', async () => {
     const OTHER = { ...CHAT, id: 'decaf222', repository: 'game' };

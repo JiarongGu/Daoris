@@ -172,7 +172,7 @@ export const QUEST_TONE: Record<Quest['status'], keyof typeof PILL_TONE> = {
  * can clear, so it should not sit quietly among the running ones, and it is not an outcome, so it
  * does not wear declined's red (UX5 U1). It shares its hue with `queued`; the word tells them apart.
  */
-export const SESSION_TONE: Record<SessionState, keyof typeof PILL_TONE> = {
+export const SESSION_TONE: Record<ShownState, keyof typeof PILL_TONE> = {
   'queued': 'open',
   'starting': 'taken',
   'working': 'taken',
@@ -182,7 +182,27 @@ export const SESSION_TONE: Record<SessionState, keyof typeof PILL_TONE> = {
   'stood-down': 'neutral',
   'failed': 'declined',
   'stopped': 'neutral',
+  'idle': 'neutral',
 };
+
+/**
+ * What the page shows a session as: the nine states the record carries, and **idle** — a live chat
+ * whose turn has ended, waiting for the person's next message (UX5 U17). The record says `working`
+ * for a chat's whole life, since its process is; whether a turn is in flight is the driver's to say.
+ */
+export type ShownState = SessionState | 'idle';
+
+/**
+ * A session as the page shows it (UX5 U17, decided by the reference console, which draws a running
+ * turn as live and a session between turns with no live mark at all). A live chat is idle when the
+ * driver says no turn is in flight, and working while one is; a turn the driver has not answered for
+ * is the record's own word, never a guess. Driven work is one long turn, so it is never idle.
+ */
+export function shownState(
+  session: { kind?: 'driven' | 'chat'; state: SessionState }, taking: boolean | undefined,
+): ShownState {
+  return session.kind === 'chat' && session.state === 'working' && taking === false ? 'idle' : session.state;
+}
 
 /**
  * Which states still hold their repository — the wire half of `Session.Active`, exhaustive here for
@@ -202,9 +222,10 @@ export const SESSION_ACTIVE: ReadonlySet<SessionState> =
  * is busy — and Daoris needs no rule, because `awaiting-person` IS a state and nothing is layered
  * over it. There is deliberately no "is a process alive" input here: the driver's running list is
  * this machine's, and a mirrored session working on another machine is working (D47 §6). The record
- * is what the mark reads.
+ * is what the mark reads — with one exception the driver answers for: a live chat between turns is
+ * `idle`, quiet rather than live (`shownState`, UX5 U17).
  */
-export const SESSION_DOT: Record<SessionState, keyof typeof DOT_TONE> = {
+export const SESSION_DOT: Record<ShownState, keyof typeof DOT_TONE> = {
   'queued': 'idle',
   'starting': 'live',
   'working': 'live',
@@ -214,6 +235,7 @@ export const SESSION_DOT: Record<SessionState, keyof typeof DOT_TONE> = {
   'stood-down': 'ended',
   'failed': 'ended',
   'stopped': 'ended',
+  'idle': 'idle',
 };
 
 /** Quest state on its soft field. The label is always present — status never rides on hue alone. */

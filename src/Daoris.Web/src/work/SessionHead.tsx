@@ -1,7 +1,7 @@
 import { useTranslation } from 'react-i18next';
 import type { Quest, Session } from '../api';
 import { ago, elapsed, sessionTool } from '../format';
-import { MetaLine, Pill, SESSION_ACTIVE, SESSION_TONE, WaitingCard } from '../ui';
+import { MetaLine, Pill, SESSION_ACTIVE, SESSION_TONE, shownState, WaitingCard } from '../ui';
 import { AwaitingIntake } from './AwaitingIntake';
 import { AwaitingPerson, type Resolution } from './AwaitingPerson';
 import { isIntake, sessionOrigin, sessionTitle } from './identity';
@@ -33,9 +33,11 @@ import { RunningIntake } from './RunningIntake';
  * can be passed unconditionally.
  */
 export function SessionHead({
-  session, quest, opening, resolving = false, stopping = false, onResolve, onAnswerAsk, onStop,
+  session, quest, opening, taking, resolving = false, stopping = false, onResolve, onAnswerAsk, onStop,
 }: {
   session: Session;
+  /** Whether a turn is in flight, as the driver says: a live chat between turns reads idle (UX5 U17). */
+  taking?: boolean;
   /** The quest it serves, where the caller has it — absent is a state, not a gap (D49 §3). */
   quest?: Quest | null;
   /** What the person first said in it, where this machine holds its record — a conversation's name (RAIL1). */
@@ -60,6 +62,7 @@ export function SessionHead({
   const running = SESSION_ACTIVE.has(session.state);
   const parked = session.state === 'awaiting-person';
   const intake = isIntake(session);
+  const shown = shownState(session, taking);
 
   return (
     <header className="grid gap-2.5">
@@ -94,7 +97,7 @@ export function SessionHead({
       <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1.5">
         <h2 className="m-0 text-title font-[650] leading-[1.35]">{sessionTitle(session, quest, opening)}</h2>
         <span className="flex shrink-0 items-baseline gap-2">
-          <Pill tone={SESSION_TONE[session.state]}>{t(`sessionState.${session.state}`)}</Pill>
+          <Pill tone={SESSION_TONE[shown]}>{t(`sessionState.${shown}`)}</Pill>
           <span className="font-mono text-meta text-ink-faint">{session.id}</span>
         </span>
       </div>

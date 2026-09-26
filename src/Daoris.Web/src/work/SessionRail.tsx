@@ -29,7 +29,7 @@ import { sessionWindowName } from './window';
  * A session that finished while its person was reading it must not vanish out from under them, and
  * reviewing finished work is a surface of its own (SURF6), not a growing list here.
  */
-export function SessionRail({ selected = null, onSelect, notify, compact = false, onReview }: {
+export function SessionRail({ selected = null, onSelect, notify, compact = false, onReview, taking = {} }: {
   /** The attended session's id, held by the frame. */
   selected?: string | null;
   onSelect?: (id: string) => void;
@@ -41,6 +41,12 @@ export function SessionRail({ selected = null, onSelect, notify, compact = false
   compact?: boolean;
   /** Review a session's work — the frame's, since the dock is (RAIL1's row menu). */
   onReview?: (id: string) => void;
+  /**
+   * Whether each live conversation has a turn in flight, as the driver says — the frame's, which
+   * follows them for its composer too (UX5 U17). A chat between turns reads idle; one absent here
+   * keeps its record's word.
+   */
+  taking?: Record<string, boolean>;
 }) {
   const { t } = useTranslation();
   // Closed records included, then filtered here: the rail needs the attended one whatever state it
@@ -71,6 +77,7 @@ export function SessionRail({ selected = null, onSelect, notify, compact = false
       session={session}
       quest={session.quest ? questFor.get(session.quest) : null}
       opening={openings[session.id]}
+      taking={taking[session.id]}
       root={registered.get(session.repository)?.root}
       selected={session.id === selected}
       onSelect={onSelect}
@@ -112,6 +119,7 @@ export function SessionRail({ selected = null, onSelect, notify, compact = false
               session={session}
               quest={session.quest ? questFor.get(session.quest) : null}
               opening={openings[session.id]}
+              taking={taking[session.id]}
               selected={session.id === selected}
               onSelect={onSelect}
             />

@@ -19,7 +19,7 @@ vi.mock('@shenora/react', () => ({
   },
 }));
 
-import { useSessionEvents, useSessionTurns } from '../shell';
+import { useChatTurns, useSessionEvents } from '../shell';
 import { mergeEvents, type SessionEvent, toTurns } from './conversation';
 
 const said = (seq: number, text = `m${seq}`): SessionEvent => ({ seq, at: '2026-09-25T00:00:00Z', kind: 'message', text });
@@ -278,36 +278,54 @@ describe('useSessionEvents', () => {
 /**
  * CONV4b: where a conversation's turns stand — whether one is in flight, and what the person sent that
  * has not reached the harness — asked once and then followed live. The driver is the authority: the
- * record lags it, and a message that is only waiting is in no record at all.
+ * record lags it, and a message that is only waiting is in no record at all. UX5 U17 made it every
+ * live conversation's, one listener for them all, since the rail reads a chat between turns as idle.
  */
-describe('useSessionTurns', () => {
+describe('useChatTurns', () => {
   const queued = (session: string, state: { queued: { text: string; files: string[] }[]; taking: boolean }) =>
     act(() => { eventHandlers.get('DAORIS.SESSION_QUEUED')!({ session, ...state }); });
 
-  it('asks once on open, then follows the driver live, for its own session only', async () => {
-    invoke.mockResolvedValue({ session: 's1', queued: [{ text: 'second', files: ['plan.md'] }], taking: true });
-    const { result } = renderHook(() => useSessionTurns('s1'));
+  it('asks once per conversation, then follows the driver live, for the ones it watches only', async () => {
+    invoke.mockImplementation(async (_module: string, _type: string, request: { payload: { id: string } }) =>
+      (request.payload.id === 's1'
+        ? { session: 's1', queued: [{ text: 'second', files: ['plan.md'] }], taking: true }
+        : { session: 's2', queued: [], taking: false }));
+    const { result } = renderHook(() => useChatTurns(['s1', 's2']));
 
-    await waitFor(() => expect(result.current).toEqual({ queued: [{ text: 'second', files: ['plan.md'] }], taking: true }));
+    await waitFor(() => expect(result.current).toEqual({
+      s1: { queued: [{ text: 'second', files: ['plan.md'] }], taking: true },
+      s2: { queued: [], taking: false },
+    }));
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_QUEUE', { payload: { id: 's1' } });
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_QUEUE', { payload: { id: 's2' } });
 
-    queued('s2', { queued: [{ text: 'not mine', files: [] }], taking: true });
+    queued('s3', { queued: [{ text: 'not watched', files: [] }], taking: true });
     queued('s1', { queued: [], taking: false });
-    expect(result.current).toEqual({ queued: [], taking: false });
+    expect(result.current).toEqual({ s1: { queued: [], taking: false }, s2: { queued: [], taking: false } });
   });
 
-  it('reads an answer that is not a queue as nothing waiting and nothing running', async () => {
+  /** Nothing known is no claim: an answer that says nothing of a turn leaves the conversation absent. */
+  it('records nothing for an answer that is not a queue', async () => {
     invoke.mockResolvedValue({ drivable: [] });
-    const { result } = renderHook(() => useSessionTurns('s1'));
+    const { result } = renderHook(() => useChatTurns(['s1']));
 
     await waitFor(() => expect(invoke).toHaveBeenCalled());
-    expect(result.current).toEqual({ queued: [], taking: false });
+    expect(result.current).toEqual({});
   });
 
-  it('holds nothing with no session attended', () => {
-    const { result } = renderHook(() => useSessionTurns(null));
+  it('forgets a conversation it no longer watches', async () => {
+    invoke.mockResolvedValue({ session: 's1', queued: [], taking: true });
+    const { result, rerender } = renderHook(({ ids }) => useChatTurns(ids), { initialProps: { ids: ['s1'] } });
+    await waitFor(() => expect(result.current.s1?.taking).toBe(true));
 
-    expect(result.current).toEqual({ queued: [], taking: false });
+    rerender({ ids: [] });
+    await waitFor(() => expect(result.current).toEqual({}));
+  });
+
+  it('holds nothing with no conversation live', () => {
+    const { result } = renderHook(() => useChatTurns([]));
+
+    expect(result.current).toEqual({});
     expect(invoke).not.toHaveBeenCalled();
   });
 });

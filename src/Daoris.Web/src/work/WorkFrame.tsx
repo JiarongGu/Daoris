@@ -6,7 +6,7 @@ import { buildChain } from '../map/chain';
 import { useQuests, useRegistry, useSessions } from '../queries';
 import {
   stopNotice, type TurnStop, useCancelTurn, useEndChat, useHarnesses, useResolveSession, useSendMessage,
-  useSessionOpenings, useSessionTurns, useStartChat, useStopSession, useTreeFiles,
+  NO_TURNS, useChatTurns, useSessionOpenings, useStartChat, useStopSession, useTreeFiles,
 } from '../shell';
 import { Button, Drawer, failure, Icon, type Notify, SESSION_ACTIVE, Tip, useErrorNotify } from '../ui';
 import { AttendedSession, noteIsInTheHead } from './AttendedSession';
@@ -211,9 +211,15 @@ export function WorkFrame({ selected, onSelect, notify, onSendBack, onAnswerAsk,
 
   // What the person was typing to this conversation, kept per session and across a reload (CONV4b).
   const [draft, setDraft] = useDraft(talking ? attended!.id : null);
-  // Where its turns stand, as the driver holds them: the stop and the queue follow this, not the
-  // record, which learns a turn began only when its first event lands (CONV4a).
-  const turns = useSessionTurns(talking ? attended!.id : null);
+  // Where each live conversation's turns stand, as the driver holds them: the attended one's stop and
+  // queue follow it, not the record, which learns a turn began only when its first event lands
+  // (CONV4a); and the rail and the head read a chat between turns as idle (UX5 U17).
+  const liveChats = (sessions.data ?? [])
+    .filter((session) => session.kind === 'chat' && SESSION_ACTIVE.has(session.state))
+    .map((session) => session.id);
+  const chatTurns = useChatTurns(talking ? [...liveChats, attended!.id] : liveChats);
+  const turns = (talking && chatTurns[attended!.id]) || NO_TURNS;
+  const taking = Object.fromEntries(Object.entries(chatTurns).map(([id, held]) => [id, held.taking]));
   // The tree's files for `@` (CONV4d), asked for only while the person is writing a mention.
   const [mentioning, setMentioning] = useState(false);
   const treeFiles = useTreeFiles(talking ? attended!.id : null, mentioning);
@@ -439,6 +445,7 @@ export function WorkFrame({ selected, onSelect, notify, onSendBack, onAnswerAsk,
             onSelect={attend}
             notify={notify}
             compact={layout.rail.strip}
+            taking={taking}
             // A row's menu reviews that session: attended, with the dock open on its work.
             onReview={(id) => {
               attend(id);
@@ -486,6 +493,7 @@ export function WorkFrame({ selected, onSelect, notify, onSendBack, onAnswerAsk,
             session={attended}
             quest={quest}
             opening={attended ? openings[attended.id] : null}
+            taking={attended ? taking[attended.id] : undefined}
             resolving={resolve.isPending}
             stopping={stop.isPending}
             onResolve={here ? onResolve : undefined}

@@ -81,6 +81,15 @@ describe('the attended session\'s head', () => {
    * status leads). The head follows the centre's width now (UX5 U16), and pushed to the far edge the
    * pill sat a thousand pixels from its title on a wide window, which is what U10 had capped around.
    */
+  /** UX5 U17: the head says a live chat between turns is idle, as the rail does. */
+  it('says a live chat between turns is idle', () => {
+    const { rerender } = render(<SessionHead session={session({ kind: 'chat' })} taking={false} />);
+    expect(screen.getByText('idle')).toBeInTheDocument();
+
+    rerender(<SessionHead session={session({ kind: 'chat' })} taking />);
+    expect(screen.getByText('working')).toBeInTheDocument();
+  });
+
   it('keeps the state beside the title rather than at the far edge', () => {
     render(<SessionHead session={session()} quest={quest()} />);
 

@@ -555,7 +555,8 @@ export type SessionTurns = {
   taking: boolean;
 };
 
-const NO_TURNS: SessionTurns = { queued: [], taking: false };
+/** Nothing known: nothing waiting and nothing to stop — what the composer offers until the driver answers. */
+export const NO_TURNS: SessionTurns = { queued: [], taking: false };
 
 /** Messages as the driver told them, read defensively: anything that is not one is left out. */
 const messagesOf = (list: unknown): ChatMessage[] =>
@@ -574,40 +575,60 @@ const turnsOf = (answer: unknown): SessionTurns => {
   return { queued: messagesOf(held?.queued), taking: held?.taking === true };
 };
 
+/** Whether the driver's answer says anything about a turn: one that does not is no answer at all. */
+const answersTurn = (answer: unknown): boolean =>
+  typeof (answer as { taking?: unknown } | null | undefined)?.taking === 'boolean';
+
 /**
- * Where the attended conversation's turns stand (CONV4b): whether one is in flight, and what is
- * waiting behind it — asked for once on open, then followed as `SESSION_QUEUED`.
+ * Where each live conversation's turns stand (CONV4b, UX5 U17): whether one is in flight, and what
+ * is waiting behind it — asked for once per conversation, then followed as `SESSION_QUEUED`.
  *
  * @remarks
  * **The driver is the authority**, not the record: the record learns a turn began when its first
- * event lands, and a waiting message is in no record at all. So the composer's stop and its queue
- * follow this, and the conversation's *working…* follows the record, each saying what it knows.
+ * event lands, a waiting message is in no record at all, and a chat's record says `working` for as
+ * long as its process lives, between turns too. So the composer's stop and its queue follow this,
+ * and so do the rail and the head, which read a chat between turns as idle (`shownState`).
+ *
+ * **One listener for every conversation**, where the composer's own hook listened for the attended
+ * one: the rail needs them all, and two listeners for one event are two subscriptions to keep in
+ * step. A conversation the driver has not answered for is absent from the answer, never "not
+ * taking": nothing known is not a claim that nothing runs.
  *
  * Each live answer is the whole state, so a missed one costs nothing. Desktop-only: a conversation
  * is a process on this machine.
  */
-export function useSessionTurns(sessionId: string | null): SessionTurns {
+export function useChatTurns(ids: readonly string[]): Record<string, SessionTurns> {
   const { isAvailable } = useShenora();
-  const [turns, setTurns] = useState<SessionTurns>(NO_TURNS);
-  const attended = useRef<string | null>(null);
+  const [turns, setTurns] = useState<Record<string, SessionTurns>>({});
+  const key = [...new Set(ids)].sort().join('\n');
+  const watched = useRef<ReadonlySet<string>>(new Set());
 
   useEffect(() => {
-    attended.current = sessionId;
-    setTurns(NO_TURNS);
-    if (!isAvailable || !sessionId) return;
+    const wanted = key ? key.split('\n') : [];
+    watched.current = new Set(wanted);
+    // What is no longer watched is forgotten, so a conversation opened again is asked again.
+    setTurns((held) => Object.fromEntries(Object.entries(held).filter(([id]) => watched.current.has(id))));
+    if (!isAvailable) return;
 
     let current = true;
-    void getBridge().invoke<unknown>('DAORIS.DRIVER', 'SESSION_QUEUE', { payload: { id: sessionId } })
-      .then((answer) => { if (current) setTurns(turnsOf(answer)); })
-      // Nothing known is nothing to stop: the composer offers what it can prove.
-      .catch(() => {});
+    for (const id of wanted) {
+      void getBridge().invoke<unknown>('DAORIS.DRIVER', 'SESSION_QUEUE', { payload: { id } })
+        .then((answer) => {
+          if (current && watched.current.has(id) && answersTurn(answer)) {
+            setTurns((held) => ({ ...held, [id]: turnsOf(answer) }));
+          }
+        })
+        // Nothing known is nothing claimed: the composer offers what it can prove.
+        .catch(() => {});
+    }
     return () => { current = false; };
-  }, [isAvailable, sessionId]);
+  }, [isAvailable, key]);
 
   useShenoraEvent('DAORIS', 'SESSION_QUEUED', (payload) => {
     const state = payload as { session?: string } | undefined;
-    if (!attended.current || state?.session !== attended.current) return;
-    setTurns(turnsOf(state));
+    const session = state?.session;
+    if (!session || !watched.current.has(session) || !answersTurn(state)) return;
+    setTurns((held) => ({ ...held, [session]: turnsOf(state) }));
   });
 
   return turns;

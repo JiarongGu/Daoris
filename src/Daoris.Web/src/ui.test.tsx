@@ -6,7 +6,7 @@ import './i18n';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import {
   Button, CountBadge, Dot, Drawer, EmptyState, Inline, MetaLine, MonoWell, PathText, Pill, Segmented, SESSION_ACTIVE,
-  SESSION_DOT, SESSION_TONE, SettingRow, Tile, Tip, WaitingCard,
+  SESSION_DOT, SESSION_TONE, SettingRow, shownState, Tile, Tip, WaitingCard,
 } from './ui';
 import { CommandPalette } from './work/CommandPalette';
 
@@ -235,16 +235,36 @@ describe('the session tone map', () => {
     'completed', 'declined', 'stood-down', 'failed', 'stopped',
   ];
 
+  // The nine the wire carries, and the one the page shows a live chat between turns (UX5 U17).
+  const SHOWN = [...STATES, 'idle'];
+
   it('tones every session state, and awaiting-person wears waiting, never an outcome', () => {
-    for (const state of STATES) expect(SESSION_TONE[state]).toBeTruthy();
-    expect(Object.keys(SESSION_TONE).sort()).toEqual([...STATES].sort());
+    for (const state of SHOWN) expect(SESSION_TONE[state as keyof typeof SESSION_TONE]).toBeTruthy();
+    expect(Object.keys(SESSION_TONE).sort()).toEqual([...SHOWN].sort());
     // Declined's red beside the word "awaiting you" read as a session that had failed (UX5 U1).
     expect(SESSION_TONE['awaiting-person']).toBe('open');
+    // Idle is quiet: no status hue, and no live mark (U17, the reference console's own reading).
+    expect(SESSION_TONE.idle).toBe('neutral');
+    expect(SESSION_DOT.idle).toBe('idle');
   });
 
   it('marks every session state as a dot too — the pill says which, the dot says whether', () => {
-    for (const state of STATES) expect(SESSION_DOT[state]).toBeTruthy();
-    expect(Object.keys(SESSION_DOT).sort()).toEqual([...STATES].sort());
+    for (const state of SHOWN) expect(SESSION_DOT[state as keyof typeof SESSION_DOT]).toBeTruthy();
+    expect(Object.keys(SESSION_DOT).sort()).toEqual([...SHOWN].sort());
+  });
+
+  /**
+   * UX5 U17: a live chat is idle between turns and working while one runs, as the driver says; a
+   * turn it has not answered for is the record's word. Driven work is one long turn.
+   */
+  it('shows a live chat between turns as idle, and nothing else', () => {
+    const chat = { kind: 'chat' as const, state: 'working' as const };
+    expect(shownState(chat, false)).toBe('idle');
+    expect(shownState(chat, true)).toBe('working');
+    expect(shownState(chat, undefined)).toBe('working');
+    expect(shownState({ kind: 'driven', state: 'working' }, false)).toBe('working');
+    expect(shownState({ kind: 'chat', state: 'awaiting-person' }, false)).toBe('awaiting-person');
+    expect(shownState({ kind: 'chat', state: 'starting' }, false)).toBe('starting');
   });
 
   /**

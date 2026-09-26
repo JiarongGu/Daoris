@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Quest, Session } from '../api';
 import { elapsed } from '../format';
-import { Button, Dot, Icon, SESSION_ACTIVE, SESSION_DOT } from '../ui';
+import { Button, Dot, Icon, SESSION_ACTIVE, SESSION_DOT, shownState } from '../ui';
 import { sessionOrigin, sessionTitle } from './identity';
 
 /**
@@ -22,8 +22,10 @@ import { sessionOrigin, sessionTitle } from './identity';
  * keyed `origin/id` (D47 §6) and its console never left that machine (D47 §4). An empty well would
  * read as "this session is silent", which is the one thing a console must never imply.
  */
-export function StreamTile({ session, quest, opening, onDetach, children }: {
+export function StreamTile({ session, quest, opening, taking, onDetach, children }: {
   session: Session;
+  /** Whether a turn is in flight, as the driver says: a live chat between turns reads idle (UX5 U17). */
+  taking?: boolean;
   /** The quest it serves, where the caller has it — absent is a state, not a gap. */
   quest?: Quest | null;
   /** What the person first said in it, where this machine holds its record — a conversation's name (RAIL1). */
@@ -45,7 +47,7 @@ export function StreamTile({ session, quest, opening, onDetach, children }: {
     // Without it the section sizes to its content and a console region reads as a text field.
     <section className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-card border border-line bg-raised">
       <header className="flex shrink-0 items-baseline gap-2 border-b border-line px-3 py-1.5">
-        <Dot tone={SESSION_DOT[session.state]} label={t(`sessionState.${session.state}`)} />
+        <Dot tone={SESSION_DOT[shownState(session, taking)]} label={t(`sessionState.${shownState(session, taking)}`)} />
         <span title={sessionTitle(session, quest, opening)} className="truncate text-body">
           {sessionTitle(session, quest, opening)}
         </span>

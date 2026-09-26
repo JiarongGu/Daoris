@@ -62,6 +62,13 @@ describe('a stream tile', () => {
     expect(screen.getByText('awaiting person')).toBeInTheDocument();
   });
 
+  /** UX5 U17: the monitor reads a live chat between turns as idle, as the main window does. */
+  it('says a live chat between turns is idle', () => {
+    render(<StreamTile session={session({ kind: 'chat' })} taking={false} />);
+
+    expect(screen.getByText('idle')).toBeInTheDocument();
+  });
+
   /**
    * A record fed from another machine is keyed `origin/id` (D47 §6) and its console never left that
    * machine. Saying so beats an empty well, which would read as "this session is silent".
