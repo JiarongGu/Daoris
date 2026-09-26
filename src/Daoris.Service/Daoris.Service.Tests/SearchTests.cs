@@ -104,14 +104,40 @@ public class SearchTests
             + "# Streaming the world\n\nHydrate a chunk before its neighbours are visible."));
 
         var byProse = await search.SearchAsync(new KnowledgeQuery("streaming"));
-        Assert.StartsWith("# Streaming the world", byProse[0].Excerpt);
+        Assert.StartsWith("Streaming the world", byProse[0].Excerpt);
 
         // Matched only in the frontmatter: still found, and the excerpt is the prose's opening.
         var byField = await search.SearchAsync(new KnowledgeQuery("unloading"));
         Assert.Single(byField);
         Assert.DoesNotContain("applies_when", byField[0].Excerpt);
         Assert.DoesNotContain("---", byField[0].Excerpt);
-        Assert.StartsWith("# Streaming the world", byField[0].Excerpt);
+        Assert.StartsWith("Streaming the world", byField[0].Excerpt);
+    }
+
+    /// <summary>
+    /// 🔴 UX5 U39: the frontmatter went (POLISH4) and the Markdown's own markers stayed, so an excerpt
+    /// read "# World streaming — chunk hydration order … **chunk hydration** runs neighbours-first".
+    /// The page shows an excerpt as plain text, so a heading's hashes, emphasis's asterisks and code's
+    /// backticks are machinery too. The words stay; an identifier's underscore stays.
+    /// </summary>
+    [Fact]
+    public async Task An_excerpt_shows_the_words_and_not_the_markdown_that_marks_them()
+    {
+        var search = await SearchOver(Entry(
+            "game", "world-streaming",
+            "# World streaming — chunk hydration order\n\n"
+            + "The example game's own knowledge: **chunk hydration** runs neighbours-first, set by `hydrate_first` "
+            + "and __never__ skipped.\n\n## Why\n\nA seam is visible."));
+
+        var excerpt = (await search.SearchAsync(new KnowledgeQuery("hydration")))[0].Excerpt!;
+
+        Assert.StartsWith("World streaming — chunk hydration order", excerpt);
+        Assert.Contains("chunk hydration runs neighbours-first, set by hydrate_first and never skipped.", excerpt);
+        // The second heading's hashes too, wherever the window reaches.
+        Assert.DoesNotContain("#", Text.Excerpt("## Why\n\nA seam is visible.", ["seam"]));
+        Assert.DoesNotContain("#", excerpt);
+        Assert.DoesNotContain("**", excerpt);
+        Assert.DoesNotContain("`", excerpt);
     }
 
     [Fact]

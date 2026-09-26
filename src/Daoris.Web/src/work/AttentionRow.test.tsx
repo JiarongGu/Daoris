@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import i18n from '../i18n';
 import { type Attention, AttentionRow } from './AttentionRow';
 
 const PARKED: Attention = {
@@ -35,8 +36,20 @@ describe('a row in what needs you', () => {
     expect(screen.getByText('Expose a streaming budget on the chunk API')).toBeInTheDocument();
     expect(screen.getByText('engine')).toBeInTheDocument();
     expect(screen.getByText('parked at a checkpoint')).toBeInTheDocument();
-    expect(screen.getByText('waiting 3h ago')).toBeInTheDocument();
+    // 🔴 UX5 U40: how long, as a span. It said *waiting 3h ago*, a point pasted into a duration,
+    // which 中文 made plainly wrong: *已等待 3 小时前*, "has waited three hours ago".
+    expect(screen.getByText('waiting 3h 0m')).toBeInTheDocument();
     expect(screen.getByText(/I recommend the second/)).toBeInTheDocument();
+  });
+
+  it('says how long in 中文 as a span, never as a point', async () => {
+    await i18n.changeLanguage('zh');
+    try {
+      render(<AttentionRow item={PARKED} />);
+      expect(screen.getByText('已等待 3 小时 0 分')).toBeInTheDocument();
+    } finally {
+      await i18n.changeLanguage('en');
+    }
   });
 
   it('names the other kind by what is actually wrong with it', () => {

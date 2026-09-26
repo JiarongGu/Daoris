@@ -3,16 +3,20 @@ import { useTranslation } from 'react-i18next';
 import { useSearch } from './queries';
 import { page } from './results';
 import { mark } from './highlight';
-import { Button, CheckField, Icon, type Notify, PageHeader, useErrorNotify } from './ui';
+import { Button, CheckField, EmptyState, Icon, type Notify, PageHeader, useErrorNotify } from './ui';
 import { useDebounced } from './lib/useDebounced';
 
 /**
  * The supporting view. Useful once you know what you are looking for — which is exactly the case
  * convergence cannot help with, and vice versa.
  */
-export function SearchView({ onOpen, notify }: {
+export function SearchView({ onOpen, notify, semantic, onConverge }: {
   onOpen: (id: string) => void;
   notify: Notify;
+  /** Whether this deployment's recall matches meaning too (D24): the empty answer says which. */
+  semantic: boolean;
+  /** Where an empty answer points: the view that finds a conclusion reached in other words. */
+  onConverge: () => void;
 }) {
   const { t } = useTranslation();
   const [query, setQuery] = useState('');
@@ -58,8 +62,16 @@ export function SearchView({ onOpen, notify }: {
       </div>
 
       {hits.isFetching && <p className="text-body text-ink-soft">{t('search.searching')}</p>}
+      {/* 🔴 An empty answer is an empty state (§4; UX5 U41), in the tier's own words, and its action
+          goes where the sentence points. It was a bare paragraph that named the convergence view and
+          offered no way there, and said *lexical* on a deployment whose recall is semantic too. */}
       {!hits.isFetching && hits.data?.length === 0 && (
-        <p className="max-w-xl text-body text-ink-soft">{t('search.empty')}</p>
+        <EmptyState
+          icon="search"
+          headline={t('search.emptyHeadline')}
+          body={semantic ? t('search.emptySemantic') : t('search.emptyLexical')}
+          action={<Button onClick={onConverge}>{t('search.toConvergence')}</Button>}
+        />
       )}
 
       {/* 🔴 How many, and whether that is all of them. A broad query on a real index comes back

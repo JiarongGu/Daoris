@@ -13,6 +13,7 @@ export function Reader({ entry, onClose }: { entry: Entry; onClose: () => void }
     <Drawer
       title={entry.title}
       onClose={onClose}
+      wide
       meta={
         <>
           <Pill>{t(`kind.${entry.kind}`)}</Pill>

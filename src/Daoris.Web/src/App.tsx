@@ -470,7 +470,14 @@ export function App() {
                 {view === 'convergence' && (
                   <ConvergenceView semantic={status.data?.semantic ?? false} onOpen={setReadingId} notify={notify} />
                 )}
-                {view === 'search' && <SearchView onOpen={setReadingId} notify={notify} />}
+                {view === 'search' && (
+                  <SearchView
+                    onOpen={setReadingId}
+                    notify={notify}
+                    semantic={status.data?.semantic ?? false}
+                    onConverge={() => setView('convergence')}
+                  />
+                )}
                 {view === 'settings' && (
                   <SettingsView notify={notify} section={settingsSection} onSection={chooseSettings} />
                 )}

@@ -70,7 +70,8 @@ export function ConvergenceView({ semantic, onOpen, notify }: {
         <EmptyState
           icon="convergence"
           headline={t('convergence.empty', { value: debounced.toFixed(2) })}
-          body={t('convergence.emptyBody')}
+          // At the floor there is nothing lower to offer, so the body says so rather than invite it (UX5 U42).
+          body={debounced > MIN + 0.001 ? t('convergence.emptyBody') : t('convergence.emptyFloor', { value: MIN.toFixed(2) })}
           action={debounced > MIN + 0.001 && (
             <Button onClick={() => setThreshold(lower(debounced))}>
               {t('convergence.lower', { value: lower(debounced).toFixed(2) })}

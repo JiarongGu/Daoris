@@ -105,9 +105,11 @@ describe('the type scale', () => {
     const used = new Set(
       components.flatMap(([, source]) => [...source.matchAll(/\btext-([a-z]+)\b/g)].map((m) => m[1])),
     );
-    // Colour utilities share the `text-` prefix; the scale is what is left after those.
+    // Colour utilities share the `text-` prefix, and so do alignment and wrapping (`text-pretty`,
+    // UX5 U41); the scale is what is left after those.
     const colours = ['ink', 'accent', 'st', 'warn', 'center', 'left', 'right', 'transparent'];
-    const sizes = [...used].filter((name) => !colours.includes(name));
+    const wrapping = ['pretty', 'balance', 'wrap', 'nowrap'];
+    const sizes = [...used].filter((name) => !colours.includes(name) && !wrapping.includes(name));
     expect(sizes.sort()).toEqual([...STEPS].sort());
   });
 });

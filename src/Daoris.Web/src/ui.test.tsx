@@ -34,6 +34,8 @@ describe('the primitives', () => {
       />,
     );
     expect(screen.getByRole('button', { name: 'ask for something' })).toBeInTheDocument();
+    // Its lines are set to leave no word alone on the last one (seen on Search's, UX5 U41).
+    expect(screen.getByText('The family owes itself nothing right now.').closest('p')).toHaveClass('text-pretty');
   });
 
   /**

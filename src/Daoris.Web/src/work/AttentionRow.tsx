@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { ago } from '../format';
+import { elapsed } from '../format';
 import { cn } from '../lib/cn';
 import type { TrustHold } from '../signals';
 import { Dot, Inline } from '../ui';
@@ -65,7 +65,7 @@ export function AttentionRow({ item, onOpen }: {
       <span className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-0.5">
         <span className="min-w-0 truncate text-body font-semibold text-ink">{item.title}</span>
         <span className="shrink-0 font-mono text-meta text-ink-faint">
-          {t('work.attention.since', { ago: ago(item.since) })}
+          {t('work.attention.since', { span: elapsed(item.since) })}
         </span>
       </span>
       <span className="mt-0.5 flex flex-wrap items-baseline gap-x-2 text-small">

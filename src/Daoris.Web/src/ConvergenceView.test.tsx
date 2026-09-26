@@ -71,4 +71,21 @@ describe('ConvergenceView, looked at on the window (POLISH4)', () => {
     await userEvent.click(screen.getByRole('button', { name: 'lower it to 0.65' }));
     expect(await screen.findByText('Nothing converges at 0.65 or above')).toBeInTheDocument();
   });
+
+  /**
+   * 🔴 UX5 U42: at the floor the empty state still said *a lower similarity finds weaker likenesses*
+   * and offered nothing to lower, because nothing lower is offered. At the floor it says so.
+   */
+  it('says the floor is the floor, rather than inviting a lower similarity it cannot give', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => Response.json([])));
+    view();
+
+    for (const step of ['0.65', '0.55', '0.50']) {
+      await userEvent.click(await screen.findByRole('button', { name: `lower it to ${step}` }));
+    }
+    expect(await screen.findByText('Nothing converges at 0.50 or above')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /lower it/ })).toBeNull();
+    expect(screen.queryByText(/A lower similarity finds/)).toBeNull();
+    expect(screen.getByText(/lowest it goes/)).toBeInTheDocument();
+  });
 });

@@ -9,7 +9,7 @@ namespace Daoris.Knowledge;
 /// re-derived in three places, already diverging in the details (one returned null on no match,
 /// another the whole body, a third a truncation with no ellipsis).
 /// </remarks>
-public static class Text
+public static partial class Text
 {
     /// <summary>
     /// A word character is a letter or a digit, in any script; everything else separates. Hyphen and
@@ -146,7 +146,7 @@ public static class Text
     /// </remarks>
     public static string Excerpt(string body, IEnumerable<string>? terms = null, int window = 180)
     {
-        body = WithoutFrontmatter(body ?? string.Empty);
+        body = WithoutMarkup(WithoutFrontmatter(body ?? string.Empty));
 
         var index = -1;
         foreach (var term in terms ?? [])
@@ -183,6 +183,22 @@ public static class Text
         var after = body.IndexOf('\n', close + 4);
         return after < 0 ? string.Empty : body[(after + 1)..].TrimStart();
     }
+
+    /// <summary>
+    /// A body without the Markdown that marks its words (UX5 U39): a heading's hashes, emphasis's
+    /// <c>**</c> and <c>__</c>, and code's backticks. The frontmatter went (POLISH4) and these stayed, so
+    /// an excerpt read "# World streaming … **chunk hydration** runs". The page shows an excerpt as
+    /// plain text, so they are machinery too.
+    /// </summary>
+    /// <remarks>
+    /// A single <c>_</c> or <c>*</c> stays: <c>applies_when</c> and <c>a * b</c> are words, and a pattern
+    /// that took them for emphasis would eat an identifier.
+    /// </remarks>
+    private static string WithoutMarkup(string body) =>
+        Headings().Replace(body, string.Empty).Replace("**", string.Empty).Replace("__", string.Empty).Replace("`", string.Empty);
+
+    [System.Text.RegularExpressions.GeneratedRegex(@"^#{1,6}[ \t]+", System.Text.RegularExpressions.RegexOptions.Multiline)]
+    private static partial System.Text.RegularExpressions.Regex Headings();
 
     /// <summary>One line: an excerpt is shown inline, and embedded newlines break every caller's layout.</summary>
     private static string Flatten(string text) => text.Replace('\n', ' ').Replace('\r', ' ').Trim();

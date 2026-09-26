@@ -12,12 +12,12 @@ const HITS = [{
   title: 'An encoding trap', excerpt: 'set the encoding first', score: 1,
 }];
 
-function view() {
+function view({ semantic = false, onConverge = () => {} }: { semantic?: boolean; onConverge?: () => void } = {}) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
     <QueryClientProvider client={client}>
       <Tooltip.Provider>
-        <SearchView onOpen={() => {}} notify={() => {}} />
+        <SearchView onOpen={() => {}} notify={() => {}} semantic={semantic} onConverge={onConverge} />
       </Tooltip.Provider>
     </QueryClientProvider>,
   );
@@ -58,5 +58,30 @@ describe('SearchView', () => {
 
     expect(await screen.findByText('An encoding trap')).toBeInTheDocument();
     expect(screen.getByText('encoding', { selector: 'mark' })).toBeInTheDocument();
+  });
+
+  /**
+   * 🔴 UX5 U41: no match was a bare paragraph, which named the convergence view and offered no way
+   * there, and it said *Lexical search matches words* on a deployment whose recall is semantic too.
+   * An empty answer is an empty state (§4, POLISH4 for Convergence), in the tier's own words, and
+   * its action goes where the sentence points.
+   */
+  it("answers nothing as an empty state, in its tier's words, with the way to convergence", async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => Response.json([])));
+    const onConverge = vi.fn();
+    const { unmount } = view({ onConverge });
+
+    await userEvent.type(screen.getByRole('searchbox'), 'zebra quartz');
+    expect(await screen.findByText('No matches')).toBeInTheDocument();
+    expect(screen.getByText(/matches words, so a repository that reached the same conclusion/)).toBeInTheDocument();
+    await userEvent.click(screen.getByRole('button', { name: 'look for convergence' }));
+    expect(onConverge).toHaveBeenCalledOnce();
+    unmount();
+
+    view({ semantic: true });
+    await userEvent.type(screen.getByRole('searchbox'), 'zebra quartz');
+    expect(await screen.findByText('No matches')).toBeInTheDocument();
+    expect(screen.queryByText(/Lexical search matches words/)).toBeNull();
+    expect(screen.getByText(/meaning as well as words/)).toBeInTheDocument();
   });
 });
