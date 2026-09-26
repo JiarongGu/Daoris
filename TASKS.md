@@ -21,7 +21,7 @@ lists.
 ## State
 
 **Counts, and this is their one home:** fifteen commands, **478 CLI tests, 503 service, 705 driver,
-133 desktop modules, 80 devkit, 1158 web unit, 21 Playwright**, 66/66 release rehearsal, **279/279
+133 desktop modules, 80 devkit, 1161 web unit, 21 Playwright**, 66/66 release rehearsal, **279/279
 family rehearsal** (it names its own phases when you run it), **39/39 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge
 documents, 5 skills, 7 packs. The always-loaded core is **22,492 of 26,000 bytes** — a span in
@@ -254,11 +254,13 @@ TDD, looked at on the window, and the ones that touch a real session use one (au
   U43 (excerpts as prose, a wait as a span, empty answers that lead somewhere, a reader wide enough
   for its source); and the Map row's U44 to U50 (both maps drawn at their own size and framed on
   what they draw, a session in its status hue, a quest a door to its drawer, a choice that toggles,
-  arrows in an ink, every workspace said, 被依赖). **Open in the ledger:** U6 (fold §4's dated
-  amendments into the body, surface by surface), U17 (a live chat between turns reads *working*)
-  for the Sessions row, and U25 (the palette's unread `waiting`) for its. **Then the pass itself**:
-  the ledger's surface table. Six rows are done (the frame, Overview, Quests, Projects, Search with
-  Convergence, and the Map); Settings is next.
+  arrows in an ink, every workspace said, 被依赖); and Settings' U53 to U58 (a label that keeps its
+  room beside a path, one name per account, counts in their number, variables as code, *once it is
+  there*, no title over a card alone). **Open in the ledger:** U6 (fold §4's dated amendments into
+  the body, surface by surface), U17 (a live chat between turns reads *working*) for the Sessions
+  row, and U25 (the palette's unread `waiting`) for its. **Then the pass itself**: the ledger's
+  surface table. Seven rows are done (the frame, Overview, Quests, Projects, Search with
+  Convergence, the Map, and Settings); the Sessions rows are next.
 - [ ] ⏸ **Held, after the conversation:** a file tree and document preview in the dock (when a tool
   card wants to open a file); a terminal (design §6's trigger).
 

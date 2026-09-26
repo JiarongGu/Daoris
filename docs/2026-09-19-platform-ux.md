@@ -535,7 +535,12 @@ A **fixed left sidebar** and a content column — the shape of a console, not a 
   start's sentence at a reading measure), and
   Plugins (a row per folder: what it declares and speaks on, running or off, the driver's own
   sentence under a refused one, the switch and Remove). Every setting is a `SettingRow`; its
-  terminal twin is the hint and its reason is the glyph.
+  terminal twin is the hint, written as code (U55), and its reason is the glyph. **A row's label
+  keeps its room**: its column has a floor, 16rem or half the row, and the control gives way to it,
+  a path breaking at its separators; a path once crushed its label to one character a line (UX5
+  U58). **An account has one name on every card**: who signed in, a key's handle, the directory,
+  and the tool's own home as *this machine's own* when nobody is known, from the roster's one namer
+  (U53).
 
 ## 6. Accessibility
 
