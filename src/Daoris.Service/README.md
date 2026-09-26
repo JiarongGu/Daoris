@@ -290,8 +290,13 @@ without touching the ones that are not.
 | `IDisclosurePolicy` | `LocalOnly` — nothing leaves | `Sharing(repositories)` — opt-in per repository |
 | `IVectorProvider` (the sibling's) | Any OpenAI-compatible or Ollama endpoint | Chosen by deployment, never by the feature (D24) |
 
-Two choices worth knowing about:
+Choices worth knowing about:
 
+- **A hit carries an excerpt, and the excerpt is the entry's prose.** It is a window of the body
+  around the first matching term (or its opening, for a semantic hit that shares none), taken after
+  the frontmatter and with a heading's hashes, `**`, `__` and backticks dropped, so it reads as a
+  sentence and never as the file's machinery. A lone `_` or `*` stays, since it may be part of an
+  identifier. The frontmatter is still searched; only the window skips it.
 - **Search returns scored hits, not a list.** Scores are what let two searches be merged, so hybrid
   is a composition rather than a third implementation.
 - **Hybrid fuses on rank, not on score.** BM25 returns an unbounded figure and cosine similarity a
