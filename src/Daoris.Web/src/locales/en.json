@@ -861,6 +861,7 @@
   "projects.workspace": "workspace",
   "projects.workspaceTip": "Which workspace this repository shares with on THIS machine — knowledge, quests and records cross within a workspace and never across one. It is wiring, like a git remote: it lives in this machine's registry and is written into no tracked file, so another machine may wire the same repository differently.",
   "projects.outside.title": "Registered, not adopted",
+  "projects.outside.lead": "Registered here without a manifest: the index reads them, and one with a root here can be asked a quest. Adopting is theirs to do.",
   "projects.outside.body": "Adoption is a repository's own act — Daoris never writes into a sibling, so nothing adopts by being registered. These are registered on this machine without a manifest; the index reads their tracked knowledge from here, which is why they carry entry counts. One with a root here can be asked a quest, and only a session on a protocol agent answers it: the driver hands that session its connector and none of the canon. A person working there by hand has no connector to see the quest. Adopting gives it its own voice, its declaration and its doctrine.",
   "projects.outside.directDoor": "This machine drives on a direct agent, so a quest here sits, saying why, until it drives on a protocol one.",
   "projects.outside.readable": "{{total}} entry indexed read-only",

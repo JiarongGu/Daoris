@@ -70,8 +70,9 @@ export function AddProjectDrawer({ onClose, notify }: { onClose: () => void; not
       title={t('projects.manage.addTitle')}
       onClose={onClose}
       footer={
-        <div className="flex items-center justify-between gap-3">
-          <Button variant="ghost" onClick={onClose}>{t('common.cancel')}</Button>
+        // The move, then *never mind*, as every other drawer puts them (UX5 U38): this one was reversed,
+        // its action pushed to the far edge.
+        <div className="flex items-center gap-2">
           <Button
             variant="primary"
             disabled={!found?.exists || register.isPending}
@@ -79,6 +80,7 @@ export function AddProjectDrawer({ onClose, notify }: { onClose: () => void; not
           >
             {t('projects.manage.register')}
           </Button>
+          <Button variant="ghost" onClick={onClose}>{t('common.cancel')}</Button>
         </div>
       }
     >
@@ -223,7 +225,7 @@ export function ManageProjectDrawer({ project, onClose, notify }: {
               value={owns}
               rows={3}
               onChange={(event) => setOwns(event.target.value)}
-              className="mt-1 w-full rounded-control border border-line-strong bg-raised px-2.5 py-1.5 font-mono text-small"
+              className="mt-1 w-full rounded-control border border-line-strong bg-raised px-2.5 py-1.5 text-body"
             />
             <label className="mt-2.5 block text-small text-ink-faint" htmlFor="declaration-accepts">
               {t('projects.accepts')}
@@ -233,7 +235,7 @@ export function ManageProjectDrawer({ project, onClose, notify }: {
               value={accepts}
               rows={3}
               onChange={(event) => setAccepts(event.target.value)}
-              className="mt-1 w-full rounded-control border border-line-strong bg-raised px-2.5 py-1.5 font-mono text-small"
+              className="mt-1 w-full rounded-control border border-line-strong bg-raised px-2.5 py-1.5 text-body"
             />
             <p className="mt-1.5 text-small text-ink-faint">{t('projects.manage.linesNote')}</p>
             <Button
@@ -259,7 +261,6 @@ export function ManageProjectDrawer({ project, onClose, notify }: {
         </p>
         {confirming ? (
           <div className="mt-2.5 flex items-center gap-2">
-            <Button variant="ghost" onClick={() => setConfirming(false)}>{t('common.cancel')}</Button>
             <Button
               variant="danger"
               disabled={retire.isPending}
@@ -271,6 +272,7 @@ export function ManageProjectDrawer({ project, onClose, notify }: {
             >
               {t('projects.manage.retireConfirm')}
             </Button>
+            <Button variant="ghost" onClick={() => setConfirming(false)}>{t('common.cancel')}</Button>
           </div>
         ) : (
           <Button className="mt-2.5" variant="danger" onClick={() => setConfirming(true)}>

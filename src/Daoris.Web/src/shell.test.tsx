@@ -217,7 +217,11 @@ describe('the shell-attached registry management', () => {
     expect(invoke).toHaveBeenCalledWith('DAORIS.REGISTRY', 'PICK_FOLDER', {});
     expect(await screen.findByText('D:/repos/borealis')).toBeInTheDocument();
 
-    await userEvent.click(screen.getByRole('button', { name: 'register it' }));
+    // UX5 U38: the move leads and *never mind* follows, as in every other drawer; this one was reversed.
+    const register = screen.getByRole('button', { name: 'register it' });
+    expect(register.compareDocumentPosition(screen.getByRole('button', { name: 'never mind' })))
+      .toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    await userEvent.click(register);
 
     const posted = vi.mocked(fetch).mock.calls
       .find(([url, init]) => String(url) === '/api/registry' && init?.method === 'POST');
@@ -263,10 +267,35 @@ describe('the shell-attached registry management', () => {
 
     // Two clicks, deliberately: the first is not the destructive one.
     await userEvent.click(within(drawer).getByRole('button', { name: 'retire' }));
-    await userEvent.click(within(drawer).getByRole('button', { name: 'yes, retire it' }));
+    // UX5 U38: the move, then *never mind*, as every other drawer puts them; this pair was reversed.
+    const confirm = within(drawer).getByRole('button', { name: 'yes, retire it' });
+    expect(confirm.compareDocumentPosition(within(drawer).getByRole('button', { name: 'never mind' })))
+      .toBe(Node.DOCUMENT_POSITION_FOLLOWING);
+    await userEvent.click(confirm);
 
     expect(vi.mocked(fetch)).toHaveBeenCalledWith('/api/registry/engine', { method: 'DELETE' });
     expect(notify).toHaveBeenCalledWith(expect.stringContaining('Nothing was deleted'));
+  });
+
+  /**
+   * UX5 U37: *owns* and *accepts* were edited in monospace, beside a summary in the body face, and
+   * they become chips in the body face. They are phrases, not code, so they are written as phrases.
+   */
+  it('edits a declaration in the face it is read in', async () => {
+    // The declaration is edited only where its repository has a root on this machine.
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.startsWith('/api/registry')) return Response.json([{ ...REGISTRY[0], root: 'C:/somewhere/engine' }]);
+      return respond(url);
+    }));
+    show(<ProjectsView notify={() => {}} />);
+
+    await userEvent.click(await screen.findByRole('button', { name: 'manage' }));
+    const drawer = await screen.findByRole('dialog');
+
+    for (const field of ['summary', 'owns', 'accepts']) {
+      expect(within(drawer).getByLabelText(field)).not.toHaveClass('font-mono');
+    }
   });
 
   // The CONSOLE's tests moved to `work/WorkFrame.test.tsx` with the console itself (D55): one home
@@ -1790,6 +1819,21 @@ describe('an unadopted repository on this machine (INT3c)', () => {
     const row = await screen.findByRole('listitem', { name: 'newbie' });
     expect(await within(row).findByText(DIRECT_NOTE)).toBeInTheDocument();
     expect(within(row).getByLabelText('drive on this machine')).toBeInTheDocument();
+  });
+
+  /**
+   * 🔴 UX5 U36: the group opened with an eight-line paragraph above its one row, read once and
+   * scrolled past every visit after, the essay a settings page was before its rows (§4, `SettingRow`).
+   * It leads with one line now, and the reasoning is on the info glyph, where a row keeps its why.
+   */
+  it('leads with one line, and keeps its reasoning on the info glyph', async () => {
+    machine('claude-code-acp');
+    show(<ProjectsView notify={() => {}} />);
+    await screen.findByRole('listitem', { name: 'newbie' });
+
+    expect(screen.getByText(/Registered here without a manifest/)).toBeInTheDocument();
+    expect(screen.queryByText(/^Adoption is a repository's own act/)).toBeNull();
+    expect(screen.getByRole('note', { name: /Adoption is a repository's own act/ })).toBeInTheDocument();
   });
 
   it('offers nothing to drive for one with no root here — there is nowhere to start it', async () => {

@@ -784,6 +784,26 @@ export function CountBadge({ count, tone = 'accent' }: {
  * `children` is the row's own extra — a warning the value earned, a notice about it — spanning both
  * columns beneath.
  */
+/**
+ * The info glyph a reason sits on: the paragraph that motivated a thing, one press or hover away
+ * rather than read before it every visit (§4, *a setting is a row*). A note, so a screen reader
+ * reads the reason as the glyph's name. Shared by `SettingRow` and any heading that has a why.
+ */
+export function WhyGlyph({ why }: { why: string }) {
+  return (
+    <Tip content={why}>
+      <span
+        tabIndex={0}
+        role="note"
+        aria-label={why}
+        className="inline-flex cursor-help text-ink-faint hover:text-ink"
+      >
+        <Icon name="info" size={13} />
+      </span>
+    </Tip>
+  );
+}
+
 export function SettingRow({ label, hint, why, control, children }: {
   label: ReactNode; hint?: ReactNode; why?: string; control?: ReactNode; children?: ReactNode;
 }) {
@@ -792,18 +812,7 @@ export function SettingRow({ label, hint, why, control, children }: {
       <div className="min-w-0">
         <div className="flex items-center gap-1.5 text-body font-medium text-ink">
           <span>{label}</span>
-          {why && (
-            <Tip content={why}>
-              <span
-                tabIndex={0}
-                role="note"
-                aria-label={why}
-                className="inline-flex cursor-help text-ink-faint hover:text-ink"
-              >
-                <Icon name="info" size={13} />
-              </span>
-            </Tip>
-          )}
+          {why && <WhyGlyph why={why} />}
         </div>
         {hint && (
           <div className="mt-0.5 max-w-prose text-small text-ink-faint">

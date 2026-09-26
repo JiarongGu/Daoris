@@ -10,7 +10,7 @@ import { useDriver, useHarnesses, useSetDrivable, useSetHold, useSetTrees } from
 import { doorOf } from './tools';
 import {
   Button, Card, Chip, EmptyState, failure, Icon, Inline, type Notify, PageHeader, Prose, SkeletonRows, Tip,
-  useErrorNotify,
+  useErrorNotify, WhyGlyph,
 } from './ui';
 
 /**
@@ -219,10 +219,15 @@ export function ProjectsView({ notify, addRequested = false, onAddOpened }: {
       {outside.length > 0 && (
         <Card className="mt-3.5">
           <header className="flex items-baseline justify-between gap-4">
-            <span className="text-body font-semibold">{t('projects.outside.title')}</span>
+            <span className="flex items-center gap-1.5 text-body font-semibold">
+              {t('projects.outside.title')}
+              {/* The reasoning is one press away, not eight lines read before one row on every visit
+                  (UX5 U36; the rule §4 settled for a settings page). */}
+              <WhyGlyph why={t('projects.outside.body')} />
+            </span>
             <span className="font-mono text-small tabular-nums text-ink-faint">{outside.length}</span>
           </header>
-          <Prose className="mt-1.5">{t('projects.outside.body')}</Prose>
+          <Prose className="mt-1.5">{t('projects.outside.lead')}</Prose>
           <ul className="m-0 mt-2 list-none p-0">
             {outside.map((project) => {
               const counts = indexed(project.repository);
