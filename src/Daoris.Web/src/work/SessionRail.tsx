@@ -29,7 +29,7 @@ import { sessionWindowName } from './window';
  * A session that finished while its person was reading it must not vanish out from under them, and
  * reviewing finished work is a surface of its own (SURF6), not a growing list here.
  */
-export function SessionRail({ selected = null, onSelect, notify, compact = false, onReview, taking = {} }: {
+export function SessionRail({ selected = null, onSelect, notify, compact = false, onReview, taking = {}, live = false }: {
   /** The attended session's id, held by the frame. */
   selected?: string | null;
   onSelect?: (id: string) => void;
@@ -47,6 +47,12 @@ export function SessionRail({ selected = null, onSelect, notify, compact = false
    * keeps its record's word.
    */
   taking?: Record<string, boolean>;
+  /**
+   * The present tense only: no ended section, and a search that finds only what is running. The
+   * monitor's, whose tiles are the running sessions a press scrolls to; an ended row there scrolled
+   * to a tile that is not there (UX5 U70).
+   */
+  live?: boolean;
 }) {
   const { t } = useTranslation();
   // Closed records included, then filtered here: the rail needs the attended one whatever state it
@@ -93,6 +99,8 @@ export function SessionRail({ selected = null, onSelect, notify, compact = false
   // restart, which §7 of the working-surface design promises and which this rail did not keep until
   // the deployed application showed four empty-state sentences over four real records (`rail.ts`).
   const { active: shown, ended, hiddenEnded } = partition(sessions.data ?? [], selected);
+  // What a search may find: everything the list holds, or only what is running where the rail is live.
+  const pool = live ? (sessions.data ?? []).filter((session) => SESSION_ACTIVE.has(session.state)) : (sessions.data ?? []);
 
   const groups = new Map<string, Session[]>();
   for (const session of shown) {
@@ -170,11 +178,11 @@ export function SessionRail({ selected = null, onSelect, notify, compact = false
           query={query}
           settled={settled}
           // Every session the list holds, ended ones past the rail's cap included, newest first.
-          named={byName([...(sessions.data ?? [])].sort((a, b) => b.updated.localeCompare(a.updated)), query, titleOf)}
-          hits={said.data?.hits}
+          named={byName([...pool].sort((a, b) => b.updated.localeCompare(a.updated)), query, titleOf)}
+          hits={said.data?.hits?.filter((hit) => pool.some((session) => session.id === hit.session))}
           cut={said.data?.cut ?? false}
           asking={said.isFetching}
-          sessionOf={(id) => (sessions.data ?? []).find((session) => session.id === id)}
+          sessionOf={(id) => pool.find((session) => session.id === id)}
           titleOf={titleOf}
           row={row}
           selected={selected}
@@ -216,7 +224,7 @@ export function SessionRail({ selected = null, onSelect, notify, compact = false
           headers here: those carry live facts (drivable, held, which tree is busy) and an ended
           session has none to state; the row's own derived title already names its repository.
           Newest first, capped, and the remainder COUNTED rather than silently cut. */}
-      {!searching && ended.length > 0 && (
+      {!live && !searching && ended.length > 0 && (
         <section aria-label={t('work.rail.ended')} className="mt-2 border-t border-line pt-2">
           <h3 className="px-3 py-1 text-meta font-semibold uppercase tracking-wide text-ink-faint">
             {t('work.rail.ended')}

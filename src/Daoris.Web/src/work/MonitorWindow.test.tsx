@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
@@ -93,6 +93,20 @@ describe('the monitor window', () => {
     // Two live sessions plus one on another machine; the completed one is not a tile.
     expect(screen.getAllByText('engine').length).toBeGreaterThan(0);
     expect(screen.queryByText(/4h 60m/)).not.toBeInTheDocument();
+  });
+
+  /**
+   * UX5 U70, seen on the window: the monitor's rail listed what had ended, beneath the running, and
+   * a press on one scrolled to a tile that is not there. The monitor is the present tense, rail and
+   * tiles alike. U69: and its rail is the main rail's width, where the search's words were cut.
+   */
+  it('lists only what is running in its rail too, at the main rail’s width', async () => {
+    show();
+    const rail = await screen.findByRole('navigation', { name: 'sessions' });
+
+    await waitFor(() => expect(within(rail).getAllByRole('listitem').length).toBeGreaterThan(0));
+    expect(within(rail).queryByRole('region', { name: 'ended' })).toBeNull();
+    expect(rail.closest('aside')!.className).toContain('w-[17.5rem]');
   });
 
   /** What needs a person comes first — the rail's rule, which matters more across a desk. */

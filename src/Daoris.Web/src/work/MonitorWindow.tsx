@@ -82,7 +82,8 @@ export function MonitorWindow({ notify }: { notify: Notify }) {
             groups by repository and says which are drivable or held, and none of that had to be
             written twice. Selecting scrolls to that session's stream — navigation within this
             window, which is not a move on a session and so does not break read-only. */}
-        <aside className="flex w-56 shrink-0 flex-col border-r border-line max-lg:hidden">
+        {/* The main rail's width: at 14rem the search's words were cut mid-word (UX5 U69). */}
+        <aside className="flex w-[17.5rem] shrink-0 flex-col border-r border-line max-lg:hidden">
           <header className="flex h-7 shrink-0 items-center border-b border-line px-3">
             <span className="text-meta uppercase tracking-[0.06em] text-ink-faint">
               {t('work.rail.label')}
@@ -92,6 +93,7 @@ export function MonitorWindow({ notify }: { notify: Notify }) {
             <SessionRail
               notify={notify}
               taking={taking}
+              live
               onSelect={(id) => document.getElementById(tileId(id))
                 ?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
             />
