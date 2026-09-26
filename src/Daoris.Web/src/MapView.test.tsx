@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen, within } from '@testing-library/react';
+import { cleanup, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Tooltip from '@radix-ui/react-tooltip';
@@ -33,13 +33,13 @@ function respond(url: string): Response {
   throw new Error(`unstubbed request: ${url}`);
 }
 
-function show(onOpenConvergence = () => {}, scope: string | null = null) {
+function show(onOpenConvergence = () => {}, scope: string | null = null, onOpenQuest = (_id: string) => {}) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
     <QueryClientProvider client={client}>
       <Tooltip.Provider>
         <WorkspaceScopeProvider initial={scope}>
-          <MapView notify={() => {}} onOpenConvergence={onOpenConvergence} />
+          <MapView notify={() => {}} onOpenConvergence={onOpenConvergence} onOpenQuest={onOpenQuest} />
         </WorkspaceScopeProvider>
       </Tooltip.Provider>
     </QueryClientProvider>,
@@ -98,6 +98,47 @@ describe('the workspace map', () => {
     expect(within(detail).getByText('Expose a streaming budget')).toBeTruthy();
     expect(within(detail).getByText('Fix the loader')).toBeTruthy();
     expect(within(detail).getByText('working now')).toBeTruthy();
+  });
+
+  /**
+   * UX5 U45: the detail's marks are the canvas's, in the status hues the rail gives the same facts —
+   * never the accent, which is not a status (§3). They were accent chips beside the canvas's amber.
+   */
+  it('says a session there in the hue the canvas and the rail give it', async () => {
+    show();
+    await userEvent.click(await screen.findByRole('button', { name: /^engine, 1 open/ }));
+    const detail = screen.getByText('quests to it').closest('div')!.parentElement!;
+    expect(within(detail).getByText('working now').getAttribute('class')).toContain('text-st-taken');
+
+    SESSIONS[0] = { ...SESSIONS[0]!, state: 'awaiting-person' };
+    try {
+      cleanup();
+      show();
+      await userEvent.click(await screen.findByRole('button', { name: /^engine, 1 open/ }));
+      const parked = screen.getByText('quests to it').closest('div')!.parentElement!;
+      const word = within(parked).getByText('waiting on you');
+      expect(word.getAttribute('class')).toContain('text-st-open');
+      expect(word.getAttribute('class')).not.toContain('accent');
+    } finally {
+      SESSIONS[0] = { ...SESSIONS[0]!, state: 'working' };
+    }
+  });
+
+  /**
+   * UX5 U46: a quest named in the detail is a door to its drawer, where acting on it lives (design
+   * §1). It was text, so a person read a quest here and had to find it again on Quests (U26's rule).
+   */
+  it('opens a quest named in the detail in its drawer', async () => {
+    const open = vi.fn();
+    show(() => {}, null, open);
+
+    await userEvent.click(await screen.findByRole('button', { name: /^engine, 1 open/ }));
+    await userEvent.click(screen.getByRole('button', { name: /Fix the loader/ }));
+    expect(open).toHaveBeenCalledWith('q2');
+
+    await userEvent.click(screen.getByRole('button', { name: '2 quests from game to engine' }));
+    await userEvent.click(screen.getByRole('button', { name: /Expose a streaming budget/ }));
+    expect(open).toHaveBeenLastCalledWith('q1');
   });
 
   it('a quest line lists the quests that went that way, each with its state in words', async () => {

@@ -22,9 +22,11 @@ const SHARED = 0.75;
  * convergence findings, the live sessions — so it adds no request shape the service does not serve,
  * and nothing machine-local: the same map in a browser and on the desktop (D47 §4).
  */
-export function MapView({ notify, onOpenConvergence }: {
+export function MapView({ notify, onOpenConvergence, onOpenQuest }: {
   notify: Notify;
   onOpenConvergence?: () => void;
+  /** A quest named in a detail opens in its drawer, on Quests (UX5 U46). */
+  onOpenQuest?: (id: string) => void;
 }) {
   const { t } = useTranslation();
   const registry = useRegistry();
@@ -154,6 +156,7 @@ export function MapView({ notify, onOpenConvergence }: {
             selected={selected}
             onOpenConvergence={onOpenConvergence}
             onOpenCode={setCode}
+            onOpenQuest={onOpenQuest}
           />
         </Card>
       </div>

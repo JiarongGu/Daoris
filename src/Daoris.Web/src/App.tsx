@@ -466,7 +466,13 @@ export function App() {
                     onAddOpened={() => setAddRequested(false)}
                   />
                 )}
-                {view === 'map' && <MapView notify={notify} onOpenConvergence={() => setView('convergence')} />}
+                {view === 'map' && (
+                  <MapView
+                    notify={notify}
+                    onOpenConvergence={() => setView('convergence')}
+                    onOpenQuest={(id) => { setQuestFocus(id); setView('quests'); }}
+                  />
+                )}
                 {view === 'convergence' && (
                   <ConvergenceView semantic={status.data?.semantic ?? false} onOpen={setReadingId} notify={notify} />
                 )}
