@@ -96,6 +96,9 @@ public enum QuestRespondRefusal
 
     /// <summary>Done and Declined are terminal: one title is one quest forever (D46 §3).</summary>
     Closed,
+
+    /// <summary>A wait that waits on nothing (D79): no question named, an unknown or answered one, itself, or a quest nobody has taken.</summary>
+    CannotWait,
 }
 
 /// <param name="Refusal"><see cref="QuestRespondRefusal.None"/> when the status moved.</param>
@@ -557,8 +560,15 @@ public sealed class QuestExchange(
     /// gives the asker nothing to act on.
     /// </summary>
     public async Task<QuestRespondOutcome> RespondAsync(
-        string id, string action, string? reason, DateTimeOffset now, CancellationToken ct = default)
+        string id, string action, string? reason, DateTimeOffset now, CancellationToken ct = default,
+        // The question a `wait` waits on (D79): a quest the waiting session asked another repository.
+        string? on = null)
     {
+        if (string.Equals(action, "wait", StringComparison.OrdinalIgnoreCase))
+        {
+            return await WaitAsync(id.TrimStart('#'), on?.TrimStart('#'), now, ct).ConfigureAwait(false);
+        }
+
         var status = action.ToLowerInvariant() switch
         {
             "take" => QuestStatus.Taken,
@@ -571,7 +581,7 @@ public sealed class QuestExchange(
         {
             return new(
                 QuestRespondRefusal.UnknownAction,
-                $"Unknown action '{action}' — one of: take, done, decline.",
+                $"Unknown action '{action}' — one of: take, done, decline, wait.",
                 Quest: null);
         }
 
@@ -622,5 +632,53 @@ public sealed class QuestExchange(
                 QuestRespondRefusal.Closed,
                 $"Quest `#{move.Quest.Id}` is {move.Quest.Status} — a closed quest does not move; a new ask is a new title.",
                 Quest: null);
+    }
+
+    /// <summary>
+    /// Wait on a question asked of another repository (D79): the quest stays taken, marked, and the
+    /// driver resumes it once the question is answered — done or declined — with the answer in hand.
+    /// </summary>
+    private async Task<QuestRespondOutcome> WaitAsync(string id, string? on, DateTimeOffset now, CancellationToken ct)
+    {
+        QuestRespondOutcome Refused(string why) => new(QuestRespondRefusal.CannotWait, why, Quest: null);
+
+        if (string.IsNullOrWhiteSpace(on))
+        {
+            return Refused("A wait names the quest it waits on (`on`): publish the question to the repository "
+                + "that knows, then wait on the quest that publish answered.");
+        }
+
+        if (string.Equals(on, id, StringComparison.OrdinalIgnoreCase))
+        {
+            return Refused($"Quest `#{id}` cannot wait on itself — wait on the question you asked another repository.");
+        }
+
+        if (await quests.FindAsync(on, ct).ConfigureAwait(false) is not { } question)
+        {
+            return Refused($"No quest `#{on}` to wait on. Ids come from `quest_publish` and `quest_list`.");
+        }
+
+        if (question.Status is QuestStatus.Done or QuestStatus.Declined)
+        {
+            return Refused($"Quest `#{on}` is already {question.Status}: its answer is there to read now "
+                + "(`quest_list` with `includeClosed`), so there is nothing to wait for.");
+        }
+
+        var move = await quests.WaitAsync(id, on, now, ct).ConfigureAwait(false);
+        if (move.Quest is null)
+        {
+            return new(QuestRespondRefusal.NotFound, $"No quest `#{id}`. Ids come from `quest_list`.", Quest: null);
+        }
+
+        if (!move.Moved)
+        {
+            return Refused($"Quest `#{id}` is {move.Quest.Status} — only a quest its taker is working can wait, "
+                + "because the work in progress is what waits.");
+        }
+
+        return new(QuestRespondRefusal.None,
+            $"Quest `#{id}` waits on `#{on}` (`{question.To}`). It stays taken by `{move.Quest.To}`; end your turn "
+            + "now. The driver starts it again in the same tree once `#" + on + "` is answered, with the answer "
+            + "in the instruction.", move.Quest);
     }
 }

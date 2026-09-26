@@ -12,8 +12,26 @@ public sealed record SessionConclusion(string State, string Note);
 /// </summary>
 public static class Observation
 {
-    public static SessionConclusion Conclude(int exitCode, string questStatus) => questStatus switch
+    /// <param name="awaitsBefore">What the quest waited on when the session started (D79), or null.</param>
+    /// <param name="awaitsAfter">What it waits on now. A NEW question is this session asking and waiting.</param>
+    public static SessionConclusion Conclude(
+        int exitCode, string questStatus, string? awaitsBefore = null, string? awaitsAfter = null) => questStatus switch
     {
+        // Ask and wait (D79): the session published a question to another repository and waits on it.
+        // Its quest stays taken for the same tree to resume in, and that is a good ending.
+        "Taken" when awaitsAfter is { Length: > 0 } && !string.Equals(awaitsAfter, awaitsBefore, StringComparison.Ordinal)
+            => new("completed",
+                $"asked `#{awaitsAfter}` of another repository and waits for its answer — the quest resumes, "
+                + "in the same tree, once that is answered" + (exitCode == 0 ? "." : $" (exit {exitCode}).")),
+
+        // A RESUMED session that ends with the old wait still standing did not carry on: it was handed
+        // the answer and stopped short. Failed, so the strikes bound it — as a stand-down it would be
+        // resumed again every tick, since nothing about the quest would have changed.
+        "Taken" when awaitsBefore is { Length: > 0 }
+            => new("failed",
+                $"resumed with `#{awaitsBefore}` answered, and ended with the quest still taken"
+                + (exitCode == 0 ? "." : $" (exit {exitCode}).")),
+
         // The quest reaching its close outranks a messy exit: the work is what matters, and the exit
         // is noted for the reader rather than allowed to overrule the record.
         "Done" => new("completed",

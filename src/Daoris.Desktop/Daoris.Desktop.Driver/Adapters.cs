@@ -57,6 +57,12 @@ public sealed record SessionTarget(
     public string? CodeMap { get; init; }
 
     /// <summary>
+    /// For a session that RESUMES a waiting quest (D79): the question an earlier session asked another
+    /// repository, now closed, with its answer. Null composes the first start's claiming instruction.
+    /// </summary>
+    public QuestView? Answered { get; init; }
+
+    /// <summary>
     /// The target a quest's session is handed: the quest as the service answered it, run in
     /// <paramref name="workTree"/> — the repository's own tree where it opted in (D51), its root
     /// otherwise — naming the code map that tree keeps.
@@ -94,7 +100,8 @@ public static class TargetPrompt
     /// door that delivers a target (the pipe's argument, the protocol's prompt, <c>DAORIS_TARGET</c>)
     /// delivers the same words without knowing which kind of session it is.
     /// </summary>
-    public static string Compose(SessionTarget target) => target.Prompt ?? Claiming(target);
+    public static string Compose(SessionTarget target) =>
+        target.Prompt ?? (target.Answered is { } answered ? Resuming(target, answered) : Claiming(target));
 
     private static string Claiming(SessionTarget target) =>
         $"""
@@ -111,11 +118,79 @@ public static class TargetPrompt
         `decline` with the reason — the reason is the part the asker can act on. If the quest is already
         taken or closed, stand down and finish without changing anything.
         {Mapped(target)}
+        {Asking(target)}
+
+        {Proposing}
+
+        {Boundary}
+        """;
+
+    /// <summary>
+    /// A session resuming a quest its own earlier session took and waited on (D79): the quest again,
+    /// what was asked and what came back, and — the part a claiming instruction would get wrong — that
+    /// the quest is already this session's, so taking it again is refused and standing down is wrong.
+    /// </summary>
+    private static string Resuming(SessionTarget target, QuestView answered) =>
+        $"""
+        You are the agent for `{target.Repository}`, working inside its own repository and nowhere else.
+
+        You are resuming quest `#{target.QuestId}`, asked by `{target.Asker}`. It is already taken, and it
+        is yours: do not take it again, and do not stand down.
+
+        # {target.Title}
+
+        {target.Body}
+        {Carried(target)}
+        An earlier session on this quest needed something only `{answered.To}` could answer, asked it, and
+        waited. What it did is in this tree — read its commits before you go on. The question was quest
+        `#{answered.Id}`, "{answered.Title}", and {Answer(answered)}
+
+        Carry on from there, inside this repository under its own doctrine and gates, then close
+        `#{target.QuestId}`: `done` when it has landed, or `decline` with the reason — the reason is the part
+        the asker can act on.
+        {Mapped(target)}
+        {Asking(target)}
+
+        {Proposing}
+
+        {Boundary}
+        """;
+
+    /// <summary>What came back, in the answerer's own words where it gave any.</summary>
+    private static string Answer(QuestView answered)
+    {
+        var closed = string.Equals(answered.Status, "Declined", StringComparison.OrdinalIgnoreCase)
+            ? $"`{answered.To}` declined it"
+            : $"`{answered.To}` closed it done";
+        return answered.Note is { Length: > 0 } note
+            ? $"{closed}, saying:\n\n> {note.ReplaceLineEndings("\n> ")}"
+            : $"{closed} without a note — read that quest, and what `{answered.To}` landed, for the answer.";
+    }
+
+    /// <summary>
+    /// Ask and wait (D79): what another repository knows is asked of it, never read out of it or
+    /// guessed. The session publishes, parks its quest on the question, and ends — the quest stays its
+    /// own, and the driver resumes it here once the question closes.
+    /// </summary>
+    private static string Asking(SessionTarget target) =>
+        $"""
+        If the work needs something only another repository knows or can change — its contract, its data,
+        a change in its code — do not read into it and do not guess: ask it. Publish a quest to it saying
+        what you need and why, commit what you have so far, then respond to `#{target.QuestId}` with `wait`
+        on that new quest's id, and end your turn. The quest stays yours, and you are started again here,
+        in this tree, with its answer.
+        """;
+
+    private const string Proposing =
+        """
         If a command the work genuinely needs is refused, and your connector offers `permission_propose`,
         propose the narrowest rule that would allow it, with the reason. A rule that lets agents do more
         waits for the person, so do not wait on it: finish what you can, or decline and say what was
         refused.
+        """;
 
+    private const string Boundary =
+        """
         Never write outside this repository. Work another repository needs is a quest published to it,
         never an edit — that is the rule the whole arrangement rests on. Anything that cannot be taken
         back or that leaves the repository — a push, a publish, a release — is not yours to do; surface

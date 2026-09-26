@@ -71,6 +71,36 @@ public sealed class StrikeTests
     }
 
     /// <summary>
+    /// Which session this machine last ran on a quest (D79) — the newest of its own, wherever the
+    /// records list it, with the tree it ran in: where a waiting quest resumes.
+    /// </summary>
+    [Fact]
+    public void The_last_run_on_a_quest_is_this_machines_newest_session_and_its_tree()
+    {
+        var last = ServiceClient.ReadLastRun("""
+            [{ "id": "s2", "quest": "q1", "state": "completed", "tree": "D:/trees/s2", "created": "2026-09-27T10:00:00Z" },
+             { "id": "s1", "quest": "q1", "state": "failed", "tree": "D:/trees/s1", "created": "2026-09-27T09:00:00Z" },
+             { "id": "c1", "repository": "Game", "state": "stopped", "created": "2026-09-27T11:00:00Z" }]
+            """);
+
+        Assert.Equal(new PriorSession("s2", "D:/trees/s2"), last["q1"]);
+        Assert.Single(last);
+    }
+
+    /// <summary>
+    /// 🔴 A stand-down means somebody else had the quest, and a teammate's record is another machine's
+    /// run: neither makes a waiting quest this machine's to resume.
+    /// </summary>
+    [Fact]
+    public void A_stand_down_or_a_teammates_session_is_not_a_run_here()
+    {
+        Assert.Empty(ServiceClient.ReadLastRun("""
+            [{ "id": "s1", "quest": "q1", "state": "stood-down", "created": "2026-09-27T10:00:00Z" },
+             { "id": "b@two/s2", "quest": "q2", "state": "completed", "created": "2026-09-27T10:00:00Z" }]
+            """));
+    }
+
+    /// <summary>
     /// The mark round-trips through the file both doors edit, beside the limit — and beside every
     /// field this build has no verb for, which is the counterpart-set worry that has bitten this
     /// family twice (the harness pin, and profiles before it).

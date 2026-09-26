@@ -99,6 +99,28 @@ public sealed class SessionLedgerTests : IAsyncLifetime
         Assert.Contains("Taken", outcome.Message);
     }
 
+    /// <summary>
+    /// A resume (D79): a taken quest whose taker waited on a question may take a session again once the
+    /// question is answered — and not while it is still asked, when the quest is waiting, not stuck.
+    /// </summary>
+    [Fact]
+    public async Task A_taken_quest_that_waited_resumes_once_its_question_is_answered()
+    {
+        var quest = await Publish();
+        await _quests.MoveAsync(quest.Id, QuestStatus.Taken, null, Now);
+        var question = await Publish(to: "Asker", title: "Is the header a free string?");
+        await _quests.WaitAsync(quest.Id, question.Id, Now);
+
+        var early = await _ledger.OpenAsync(quest.Id, "stub", Now);
+        Assert.Equal(SessionOpenRefusal.QuestNotOpen, early.Refusal);
+        Assert.Contains($"#{question.Id}", early.Message);
+
+        await _quests.MoveAsync(question.Id, QuestStatus.Done, "A free string.", Now.AddMinutes(5));
+        var resumed = await _ledger.OpenAsync(quest.Id, "stub", Now.AddMinutes(6));
+
+        Assert.Equal(SessionOpenRefusal.None, resumed.Refusal);
+    }
+
     [Fact]
     public async Task A_closed_quest_is_refused()
     {

@@ -71,6 +71,13 @@ public sealed record Quest(
 
     /// <summary>The quest whose close published this one, when it is a step of a chain.</summary>
     public string? Parent { get; init; }
+
+    /// <summary>
+    /// The question its taker asked another repository and waits on (D79) — null when it waits on
+    /// nothing. It stays set once the question is answered: the driver reads the answer from the
+    /// question itself when it resumes the quest.
+    /// </summary>
+    public string? Awaits { get; init; }
 }
 
 /// <summary>One step of a chain: whom to ask next, and what (D65 §4).</summary>
@@ -286,7 +293,8 @@ public sealed class QuestStore
                   attachments TEXT NOT NULL DEFAULT '[]',
                   then_steps  TEXT NOT NULL DEFAULT '[]',
                   parent      TEXT NULL,
-                  conflicts   TEXT NOT NULL DEFAULT '[]'
+                  conflicts   TEXT NOT NULL DEFAULT '[]',
+                  awaits      TEXT NULL
                 );
                 CREATE INDEX IF NOT EXISTS quests_receiver ON quests (receiver, status);
                 """;
@@ -306,6 +314,8 @@ public sealed class QuestStore
             ("quests", "then_steps", "then_steps TEXT NOT NULL DEFAULT '[]'"),
             ("quests", "parent", "parent TEXT NULL"),
             ("quests", "conflicts", "conflicts TEXT NOT NULL DEFAULT '[]'"),
+            // Ask and wait (D79): the question a taken quest waits on.
+            ("quests", "awaits", "awaits TEXT NULL"),
             ("quest_log", "remote", "remote INTEGER NULL"),
         })
         {
@@ -582,19 +592,21 @@ public sealed class QuestStore
         await using var command = _connection.CreateCommand();
         command.Transaction = transaction;
         command.CommandText = """
-            INSERT INTO quests (id, sender, receiver, title, body, status, note, filed, updated, workspace, links, attachments, then_steps, parent, conflicts)
-            VALUES ($id, $sender, $receiver, $title, $body, $status, $note, $filed, $updated, $workspace, $links, $attachments, $then, $parent, $conflicts)
+            INSERT INTO quests (id, sender, receiver, title, body, status, note, filed, updated, workspace, links, attachments, then_steps, parent, conflicts, awaits)
+            VALUES ($id, $sender, $receiver, $title, $body, $status, $note, $filed, $updated, $workspace, $links, $attachments, $then, $parent, $conflicts, $awaits)
             ON CONFLICT (id) DO UPDATE SET
               sender = excluded.sender, receiver = excluded.receiver, title = excluded.title, body = excluded.body,
               status = excluded.status, note = excluded.note, filed = excluded.filed, updated = excluded.updated,
               workspace = excluded.workspace, links = excluded.links, attachments = excluded.attachments,
-              then_steps = excluded.then_steps, parent = excluded.parent, conflicts = excluded.conflicts
+              then_steps = excluded.then_steps, parent = excluded.parent, conflicts = excluded.conflicts,
+              awaits = excluded.awaits
             """;
         command.Parameters.AddWithValue("$conflicts", ConflictsJson(quest.Conflicts));
         command.Parameters.AddWithValue("$links", LinksJson(quest.Links));
         command.Parameters.AddWithValue("$attachments", AttachmentsJson(quest.Attachments));
         command.Parameters.AddWithValue("$then", StepsJson(quest.Then));
         command.Parameters.AddWithValue("$parent", (object?)quest.Parent ?? DBNull.Value);
+        command.Parameters.AddWithValue("$awaits", (object?)quest.Awaits ?? DBNull.Value);
         command.Parameters.AddWithValue("$workspace", quest.Workspace);
         command.Parameters.AddWithValue("$id", quest.Id);
         command.Parameters.AddWithValue("$sender", quest.From);
@@ -705,6 +717,35 @@ public sealed class QuestStore
             }
 
             return new QuestMove(moved, Moved: true, followUp);
+        }, ct);
+
+    /// <summary>
+    /// Its taker waits on a question it asked another repository (D79): a <see cref="QuestOperationKind.Waited"/>
+    /// operation naming the question, judged against the replayed history inside the write, as every
+    /// move is. It moves no status.
+    /// </summary>
+    /// <returns>The quest as it now stands and whether this call marked it; a null quest means no such id.</returns>
+    public Task<QuestMove> WaitAsync(string id, string on, DateTimeOffset now, CancellationToken ct = default) =>
+        InTransactionAsync(async (transaction, inside) =>
+        {
+            var history = await HistoryAsync(id, transaction, inside).ConfigureAwait(false);
+            if (QuestLog.Replay(history) is not { } quest)
+            {
+                return new QuestMove(await FindAsync(id, transaction, inside).ConfigureAwait(false), Moved: false);
+            }
+
+            // Judged before anything is written: only a taken quest waits (QuestLog.Applies), and a wait
+            // the log held but the quest did not show would be a move nobody could see.
+            if (quest.Status != QuestStatus.Taken || string.IsNullOrWhiteSpace(on))
+            {
+                return new QuestMove(quest, Moved: false);
+            }
+
+            var operation = await AppendAsync(
+                id, QuestOperationKind.Waited, now, on, null, transaction, inside).ConfigureAwait(false);
+            var waiting = QuestLog.Step(quest, operation);
+            await WriteCacheAsync(waiting, transaction, inside).ConfigureAwait(false);
+            return new QuestMove(waiting, Moved: true);
         }, ct);
 
     /// <summary>
@@ -1299,6 +1340,7 @@ public sealed class QuestStore
         Then = ReadSteps(reader.GetString(reader.GetOrdinal("then_steps"))),
         Parent = reader.IsDBNull(reader.GetOrdinal("parent")) ? null : reader.GetString(reader.GetOrdinal("parent")),
         Conflicts = ReadConflicts(reader.GetString(reader.GetOrdinal("conflicts"))),
+        Awaits = reader.IsDBNull(reader.GetOrdinal("awaits")) ? null : reader.GetString(reader.GetOrdinal("awaits")),
     };
 
     /// <summary>An operation as its log row holds it (<see cref="OperationColumns"/>) — a publish's payload is the quest as asked.</summary>

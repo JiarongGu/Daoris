@@ -21,8 +21,8 @@ lists.
 
 ## State
 
-**Counts, and this is their one home:** fifteen commands, **482 CLI tests, 512 service, 738 driver,
-151 desktop modules, 80 devkit, 1187 web unit, 21 Playwright**, 66/66 release rehearsal, **280/280
+**Counts, and this is their one home:** fifteen commands, **482 CLI tests, 522 service, 753 driver,
+151 desktop modules, 80 devkit, 1189 web unit, 21 Playwright**, 66/66 release rehearsal, **285/285
 family rehearsal** (it names its own phases when you run it), **39/39 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge
 documents, 5 skills, 7 packs. The always-loaded core is **22,492 of 26,000 bytes** — a span in
@@ -43,6 +43,10 @@ ticket read through a browser, and a task started with no repository named. FG1�
 code changes the study and the setup found. **FG5, the first run, is next**, and waits on the owner.
 🔴 **Then the owner asked for Daoris's own browser (D78)**, so the sign-in happens in a window Daoris
 owns and every harness can drive: **BRW1–BRW2 landed, and BRW3, the owner's sign-in and first ticket through it, comes first**, and FG5's ticket is read through them.
+🔴 **The first run showed a session guessing what another repository knew, so D79 landed: ask and
+wait** (ASK1–ASK3, in the archive). A session publishes its question, parks its taken quest on it,
+and is resumed in the same tree with the answer. **ACPEND1 is next**: the same run's account limit
+was recorded as a stand-down. Then republish, and FG5 goes again.
 D76's round is done, and its leftovers (RAIL2, SURF11) stand behind these. Nothing is pushed or
 published, and a release is still blocked on REH1.
 - **Landed:** CONV1 (the record), CONV2 (the view), CONV3a (Claude Code's `stream-json`), CONV3b
@@ -116,8 +120,8 @@ rather than designed.
 
 ## Backlog
 
-**Thirty-one rows are open**: the in-app browser's seven (BRW3, then BRW4–BRW9, the browser as a browser); the first goal's two (FG5, and
-SEM2 on a trigger); D76's held file tools;
+**Thirty-two rows are open**: the in-app browser's seven (BRW3, then BRW4–BRW9, the browser as a browser); the first goal's three (FG5,
+ACPEND1, and SEM2 on a trigger); D76's held file tools;
 the eight REV3 left, WINDOW2 among them; five leftovers (RAIL2, SURF11, FLAKE1, DEPLOY5, TEST1); two on the owner
 (TRUST2, AGT2c); and six on a trigger (see *Handover*). Every closed one is in `docs/task-archive.md`, and this file holds no
 ticked rows, by the `task-lifecycle` rule it also ships. A heading below holds open rows only.
@@ -187,6 +191,11 @@ the ACP door, not a registry**.
   — Daoris cannot ask a provider what is left without a credential, and D49 §4 stands. Do not start
   this before there are real transcripts to write the signal against; a string match on somebody
   else's error text is the fragile part and guessing it is how it gets written wrong.
+  **The first real one (2026-09-27, FG5's run):** Claude Code over its ACP adapter answered
+  `session/prompt` with a JSON-RPC internal error, 370k tokens into a twenty-minute turn. Its message
+  was *"You've hit your individual spend limit · run /usage-credits to ask your admin for a higher
+  limit · your session limit resets 7am (<zone>)"*, and the adapter then exited 0. One observation
+  answers part of the first question and none of the other two.
 
 - [ ] **TOOL5 — more native adapters** (design §5). D23 applied more times: a native adapter per tool
   worth matching properly (its own flags, configuration home, login flow, version question), with the
@@ -279,6 +288,23 @@ is behind a sign-in. FG1–FG4 are in the archive. **INT6 is reshaped as FG5.**
   imported (29 repositories), the index rebuilt, an Edge browser plugin installed and smoke-tested,
   the browser allowed for the workspace, the protocol door for intake and sessions, and all 29
   repositories drivable on their own worktrees. Waiting on the owner's sign-in and first ticket.
+  **2026-09-27, the first run's outcome.** The intake read the signed-in ticket and published one
+  quest to the right repository (BRW3). The development session took it and worked in its own tree
+  for twenty minutes. It needed the backend's note contract, tried to read the backend's code, was
+  refused, proposed a rule to allow the read, and wrote the front end on assumptions. The proposal
+  is the owner's, and D79 (ask and wait, in the archive) is the fix. Then the account's spend limit
+  refused its turn mid-edit, and the record said `stood-down` (ACPEND1).
+  The quest is still taken with nothing working on it, and its tree holds the uncommitted edits.
+  **Next:** republish with both, and the owner decides the stranded quest: decline it with the
+  reason and ask again, or carry it on by hand in its tree.
+- [ ] **ACPEND1 — a turn the agent refused is not a clean exit** (found on FG5's run, 2026-09-27).
+  The account's spend limit refused the development session's turn. The ACP door wrote *"the ACP
+  session failed: the ACP agent refused the call: Internal error: You've hit your individual spend
+  limit …"*. Then the driver closed stdin, the adapter exited 0, and the quest was still taken, so
+  the record concluded `stood-down: someone else has it`. That is false, and it hides the one fact
+  the person needs. On the protocol door the exit after stdin closes says little, so the conclusion
+  has to hear that the prompt call itself failed. A session that got as far as the wait or the close
+  keeps that ending.
 - [ ] ⏸ **SEM2 — vectors that persist** (after SEM1, held). SEM1 embeds what is on disk once per
   process, on first use. The MCP host is one process per session, so with an embedder configured,
   each session's first search embeds the whole corpus. Lyntai.Storage.Sqlite's vector store would
@@ -335,7 +361,11 @@ TDD, looked at on the window, and the ones that touch a real session use one (au
   run). It passed 10 runs in a row after. Its assertion now carries the session's transcript and the
   tick's events, so the next failure says why: a `fetch` to the stand-in that failed, an exit, or
   something else. A gate that fails one run in twenty is a gate people learn to re-run, which is how
-  a real failure gets waved through.
+  a real failure gets waved through. **A second of the same shape** (2026-09-27, with two more
+  real-tick classes in the suite): `DrivenSessionInputTests`' `acp-stub` case failed once in a full
+  run, and passed alone and on the next full run. Its wait for the session to start is 15 seconds,
+  under a suite that spawns node in several classes at once. The assertion does not say which step
+  was slow, so it needs the same treatment.
 
 - [ ] **DEPLOY5 — the artefact gate holds a chat open at close.** The fix for a chat left `working`
   when the shell closes (FIX-LOG, 2026-09-25) is held by driver tests at the runner. But the defect

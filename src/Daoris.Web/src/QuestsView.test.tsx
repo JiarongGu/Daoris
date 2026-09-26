@@ -383,6 +383,46 @@ describe('QuestsView', () => {
     expect(await screen.findByText(/follows #f0f0f0/)).toBeInTheDocument();
   });
 
+  // ——— Ask and wait (D79): a taken quest waiting on another repository's answer says so — it is
+  // not stuck, and there is nothing for the person to do.
+
+  const WAITING = [
+    { ...QUESTS[0], status: 'Taken', awaits: 'q2q2q2' },
+    {
+      id: 'q2q2q2', from: 'engine', to: 'backend', title: 'What does the notes endpoint take?',
+      body: 'We need the contract.', status: 'Open', filed: '2026-09-02T00:00:00Z', updated: '2026-09-02T00:00:00Z',
+    },
+  ];
+  const serving = (quests: unknown[]) =>
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) =>
+      String(input).startsWith('/api/quests') ? Response.json(quests) : respond(String(input))));
+
+  it('a taken quest waiting on a question says which, and the drawer opens that question', async () => {
+    serving(WAITING);
+    view();
+    expect(await screen.findByText('waits on #q2q2q2')).toBeInTheDocument();
+
+    await userEvent.click(screen.getByText('Expose a streaming budget'));
+    const dialog = await screen.findByRole('dialog');
+    expect(within(dialog).getByText('waits on')).toBeInTheDocument();
+    expect(within(dialog).getByText(/resumes, in the same tree/)).toBeInTheDocument();
+
+    await userEvent.click(within(dialog).getByRole('button', { name: /What does the notes endpoint take/ }));
+    expect(await screen.findByRole('heading', { name: 'What does the notes endpoint take?' })).toBeInTheDocument();
+  });
+
+  it('once its question is answered the card stops saying it waits, and the drawer says it was answered', async () => {
+    serving([WAITING[0], { ...WAITING[1], status: 'Done' }]);
+    view();
+    await screen.findByText('Expose a streaming budget');
+    expect(screen.queryByText('waits on #q2q2q2')).not.toBeInTheDocument();
+
+    await userEvent.click(screen.getByText('Expose a streaming budget'));
+    const dialog = await screen.findByRole('dialog');
+    expect(within(dialog).getByText('asked')).toBeInTheDocument();
+    expect(within(dialog).getByText(/^Answered/)).toBeInTheDocument();
+  });
+
   it('a next step composed travels with the publish as its chain', async () => {
     view({ from: 'game', to: 'engine' });
     const dialog = await screen.findByRole('dialog');

@@ -312,6 +312,47 @@ const done = await api('POST', `/api/quests/${questId}/respond`, {
 });
 check('engine finishes it', done.status === 200 && done.json?.quest?.status === 'Done', done.text);
 
+// Ask and wait (D79): a taker whose work needs another repository asks it, and parks its own quest on
+// the question. The quest stays TAKEN — the take is still the one lock — and the ledger opens a session
+// on it only once the question is answered: the resume.
+const needing = await api('POST', '/api/quests', {
+  body: {
+    from: 'game', to: 'engine', title: 'Report the streaming cost per chunk size',
+    body: 'The budget screen wants a cost for each chunk size it shows.',
+  },
+});
+const needingId = needing.json?.quest?.id ?? '';
+await api('POST', `/api/quests/${needingId}/respond`, { body: { action: 'take', reason: null } });
+const question = await api('POST', '/api/quests', {
+  body: {
+    from: 'engine', to: 'game', title: 'Which chunk sizes does the budget screen show?',
+    body: 'The cost is per size, and which sizes the screen groups by is the game’s to say.',
+  },
+});
+const questionId = question.json?.quest?.id ?? '';
+const waited = await api('POST', `/api/quests/${needingId}/respond`, {
+  body: { action: 'wait', reason: null, on: questionId },
+});
+check(
+  'engine asks game and waits — its quest stays taken, marked with the question',
+  waited.status === 200 && waited.json?.quest?.status === 'Taken' && waited.json?.quest?.awaits === questionId,
+  waited.text,
+);
+const waitOnNothing = await api('POST', `/api/quests/${needingId}/respond`, { body: { action: 'wait', reason: null } });
+check('…a wait that names no question is refused', waitOnNothing.status !== 200, waitOnNothing.text);
+const tooEarly = await api('POST', '/api/sessions', { body: { quest: needingId, adapter: 'stub' } });
+check(
+  '…no session opens on it while the question is open, and the refusal names the question',
+  tooEarly.status === 409 && tooEarly.text.includes(questionId),
+  tooEarly.text,
+);
+await api('POST', `/api/quests/${questionId}/respond`, { body: { action: 'done', reason: 'It shows 16, 32 and 64.' } });
+const resumption = await api('POST', '/api/sessions', { body: { quest: needingId, adapter: 'stub' } });
+check('…and once game answers, a session opens on the taken quest — the resume', resumption.status === 200, resumption.text);
+// A record with no process behind it would hold engine for every phase after this one.
+await api('POST', `/api/sessions/${resumption.json?.session?.id}/state`, { body: { state: 'stopped' } });
+await api('POST', `/api/quests/${needingId}/respond`, { body: { action: 'done', reason: 'Costed per size.' } });
+
 // -------------------------------------------------- 5. knowledge crosses
 
 section('5. Knowledge crosses the family');
@@ -923,6 +964,12 @@ const after = await api('GET', '/api/quests?repository=engine&includeClosed=true
 check(
   'the finished quest is still there',
   (after.json ?? []).some((q) => q.id === questId && q.status === 'Done'),
+  after.text,
+);
+// The wait is a logged move like any other (D79), so the store replayed from the log still knows it.
+check(
+  '…and so is what a quest waited on',
+  (after.json ?? []).some((q) => q.id === needingId && q.awaits === questionId),
   after.text,
 );
 const registryAfter = await api('GET', '/api/registry');

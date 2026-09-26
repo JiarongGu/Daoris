@@ -410,7 +410,7 @@ app.MapPost("/api/quests/{id}/respond", async (
     ComposedService s, HttpContext http, string id, RespondQuestRequest body, CancellationToken ct) =>
 {
     var outcome = await s.Exchange.RespondAsync(
-        id, body.Action ?? "", body.Reason, DateTimeOffset.UtcNow, ct);
+        id, body.Action ?? "", body.Reason, DateTimeOffset.UtcNow, ct, on: body.On);
 
     return outcome.Refusal switch
     {
@@ -1145,7 +1145,8 @@ static QuestResponse ToQuest(Quest q, QuestFiles? files, bool machineLocal) => n
         Path: machineLocal && files is not null && files.Has(q.Id, a) ? files.PathOf(q.Id, a) : null)).ToList(),
     q.Then.Select(s => new QuestStepWire(s.To, s.Title, s.Body)).ToList(),
     q.Parent,
-    q.Conflicts.Select(c => new QuestConflictResponse(c.Machine, c.Attempted.ToString(), c.Note, c.At, c.Sequence)).ToList());
+    q.Conflicts.Select(c => new QuestConflictResponse(c.Machine, c.Attempted.ToString(), c.Note, c.At, c.Sequence)).ToList(),
+    q.Awaits);
 
 // An ask's answer. A refusal is the desk's sentence, whole — including a named receiver the exchange
 // refused, whose message already says the ask was kept and where it was proposed instead.

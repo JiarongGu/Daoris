@@ -74,4 +74,40 @@ public sealed class ObservationTests
         Assert.Equal("failed", Observation.Conclude(0, "Open").State);
         Assert.Equal("failed", Observation.Conclude(3, "Open").State);
     }
+
+    // ——— Ask and wait (D79).
+
+    /// <summary>
+    /// A session that asked another repository and waited ended well: its quest stays taken, marked with
+    /// the question, and the driver resumes it. Not a failure, and no strike.
+    /// </summary>
+    [Fact]
+    public void A_session_that_asked_and_waited_completed()
+    {
+        var conclusion = Observation.Conclude(0, "Taken", awaitsBefore: null, awaitsAfter: "q1");
+
+        Assert.Equal("completed", conclusion.State);
+        Assert.Contains("#q1", conclusion.Note);
+    }
+
+    /// <summary>A resumed session that asks again waits again — a new question, the same good ending.</summary>
+    [Fact]
+    public void A_resumed_session_that_waits_on_a_new_question_completed_too()
+    {
+        Assert.Equal("completed", Observation.Conclude(0, "Taken", awaitsBefore: "q1", awaitsAfter: "q2").State);
+    }
+
+    /// <summary>
+    /// A resumed session that stops with the quest still waiting on the OLD question did not carry on.
+    /// 🔴 Failed, not stood down: nothing about the quest changed, so a stand-down would be resumed
+    /// again every tick, and only a failure is counted against the strikes.
+    /// </summary>
+    [Fact]
+    public void A_resumed_session_that_leaves_the_old_wait_standing_failed()
+    {
+        var conclusion = Observation.Conclude(0, "Taken", awaitsBefore: "q1", awaitsAfter: "q1");
+
+        Assert.Equal("failed", conclusion.State);
+        Assert.Contains("#q1", conclusion.Note);
+    }
 }

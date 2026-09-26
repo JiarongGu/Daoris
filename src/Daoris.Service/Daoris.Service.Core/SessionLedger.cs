@@ -242,13 +242,22 @@ public sealed class SessionLedger(
                 Session: null);
         }
 
-        if (quest.Status != QuestStatus.Open)
+        // A resume (D79): a taken quest whose taker waited on a question, now answered, is its taker's
+        // to carry on — the one taken quest a session may start on.
+        var question = quest is { Status: QuestStatus.Taken, Awaits: { } awaits }
+            ? await quests.FindAsync(awaits, ct).ConfigureAwait(false)
+            : null;
+        var resumes = question is { Status: QuestStatus.Done or QuestStatus.Declined };
+
+        if (quest.Status != QuestStatus.Open && !resumes)
         {
             // Taken means someone — a session, a person, another machine — already has it, and Done or
             // Declined means the work is over. Either way there is nothing here for a new session to do.
             return new(
                 SessionOpenRefusal.QuestNotOpen,
-                $"Quest `#{quest.Id}` is {quest.Status} — a session starts only on an open quest.",
+                question is not null
+                    ? $"Quest `#{quest.Id}` waits on `#{question.Id}`, which is still {question.Status} — it resumes once that is answered."
+                    : $"Quest `#{quest.Id}` is {quest.Status} — a session starts only on an open quest.",
                 Session: null);
         }
 

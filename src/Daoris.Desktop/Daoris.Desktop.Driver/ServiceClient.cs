@@ -56,8 +56,8 @@ public sealed class ServiceClient : IDisposable
         // A second read rather than deriving both from one (DRV6): `/api/sessions` means ACTIVE, the
         // planner's "is this repository busy" rests on that, and re-deriving active-ness here would
         // put a second opinion about it on this side of the wire.
-        var strikes = ReadStrikes(await GetAsync("/api/sessions?includeClosed=true", ct).ConfigureAwait(false));
-        return new Snapshot(quests, repositories, active, strikes);
+        var records = await GetAsync("/api/sessions?includeClosed=true", ct).ConfigureAwait(false);
+        return new Snapshot(quests, repositories, active, ReadStrikes(records)) { LastRun = ReadLastRun(records) };
     }
 
     /// <summary>Every repository this host holds, in every circle — what the page's scope is read from (FG4).</summary>
@@ -68,21 +68,13 @@ public sealed class ServiceClient : IDisposable
     public async Task<IReadOnlyList<SessionView>> ActiveSessionsAsync(CancellationToken ct = default) =>
         ReadSessions(await GetAsync("/api/sessions", ct).ConfigureAwait(false));
 
-    /// <summary>One quest's current status, closed ones included — how a session's end is observed.</summary>
-    public async Task<string?> QuestStatusAsync(string id, CancellationToken ct = default)
-    {
-        using var document = JsonDocument.Parse(
-            await GetAsync("/api/quests?includeClosed=true", ct).ConfigureAwait(false));
-        foreach (var quest in document.RootElement.EnumerateArray())
-        {
-            if (string.Equals(Text(quest, "id"), id, StringComparison.OrdinalIgnoreCase))
-            {
-                return Text(quest, "status");
-            }
-        }
-
-        return null;
-    }
+    /// <summary>
+    /// One quest as it stands, closed ones included — how a session's end is observed, and what a
+    /// resumed session is told its question came back with (D79). Null when the service has none.
+    /// </summary>
+    public async Task<QuestView?> FindQuestAsync(string id, CancellationToken ct = default) =>
+        ReadQuests(await GetAsync("/api/quests?includeClosed=true", ct).ConfigureAwait(false))
+            .FirstOrDefault(quest => string.Equals(quest.Id, id.TrimStart('#'), StringComparison.OrdinalIgnoreCase));
 
     /// <summary>
     /// Dismiss every conflict a quest carries (SYNC6c) — the terminal's form of the drawer's button. The
@@ -378,6 +370,9 @@ public sealed class ServiceClient : IDisposable
                         Text(step, "to") ?? "", Text(step, "title") ?? "", Text(step, "body") ?? "")).ToList()
                     : [],
                 Parent = Text(quest, "parent"),
+                // Absent is not waiting: a host from before D79 answers without it.
+                Awaits = Text(quest, "awaits"),
+                Note = Text(quest, "note"),
             });
         }
 
@@ -486,6 +481,32 @@ public sealed class ServiceClient : IDisposable
         }
 
         return strikes;
+    }
+
+    /// <summary>
+    /// The session this machine last ran on each quest, and where (D79) — from the records, as the
+    /// strikes are.
+    /// </summary>
+    /// <remarks>
+    /// 🔴 <b>A stand-down is not a run.</b> It means somebody else had the quest, so a later wait on it is
+    /// theirs — resuming it here from a stand-down would double another taker's work.
+    /// </remarks>
+    internal static IReadOnlyDictionary<string, PriorSession> ReadLastRun(string json)
+    {
+        using var document = JsonDocument.Parse(json);
+        var last = new Dictionary<string, (PriorSession Session, DateTimeOffset At)>(StringComparer.OrdinalIgnoreCase);
+        foreach (var session in document.RootElement.EnumerateArray())
+        {
+            if (IsTeams(session)) continue;
+            if (Text(session, "quest") is not { Length: > 0 } quest) continue;
+            if (string.Equals(Text(session, "state"), "stood-down", StringComparison.OrdinalIgnoreCase)) continue;
+
+            var at = DateTimeOffset.TryParse(Text(session, "created"), out var created) ? created : DateTimeOffset.MinValue;
+            if (last.TryGetValue(quest, out var seen) && seen.At > at) continue;
+            last[quest] = (new PriorSession(Text(session, "id") ?? "", Text(session, "tree")), at);
+        }
+
+        return last.ToDictionary(pair => pair.Key, pair => pair.Value.Session, StringComparer.OrdinalIgnoreCase);
     }
 
     /// <summary>A record that came down from the team — keyed `origin/id`, the id this machine's own never has.</summary>

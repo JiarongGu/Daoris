@@ -191,6 +191,72 @@ public sealed class QuestExchangeTests : IAsyncLifetime
         Assert.Equal(QuestStatus.Done, done.Quest!.Status);
     }
 
+    // ——— Ask and wait (D79): a session that needs another repository asks it, and its quest waits.
+
+    /// <summary>
+    /// A taken quest waits on a question its session asked — and stays TAKEN, because its work in
+    /// progress is in that machine's tree, and nothing moves back to open (D46 §3).
+    /// </summary>
+    [Fact]
+    public async Task A_taken_quest_waits_on_a_question_and_stays_taken()
+    {
+        var work = (await Publish("Declared")).Quest!;
+        await _exchange.RespondAsync(work.Id, "take", null, Now);
+        var question = (await _exchange.PublishAsync(
+            "Declared", "Quiet", "Is the note header a free string?", "The front end needs it.", Now)).Quest!;
+
+        var waited = await _exchange.RespondAsync(work.Id, "wait", null, Now.AddMinutes(1), on: question.Id);
+
+        Assert.Equal(QuestRespondRefusal.None, waited.Refusal);
+        Assert.Equal(QuestStatus.Taken, waited.Quest!.Status);
+        Assert.Equal(question.Id, waited.Quest.Awaits);
+        Assert.Contains($"#{question.Id}", waited.Message);
+        // It is the log's, so it replays — and syncs — like every other move (D68).
+        Assert.Equal(question.Id, (await _quests.FindAsync(work.Id))!.Awaits);
+    }
+
+    [Theory]
+    [InlineData(null, "names the quest")]
+    [InlineData("nosuch", "No quest")]
+    public async Task A_wait_names_a_quest_that_exists(string? on, string said)
+    {
+        var work = (await Publish("Declared")).Quest!;
+        await _exchange.RespondAsync(work.Id, "take", null, Now);
+
+        var waited = await _exchange.RespondAsync(work.Id, "wait", null, Now, on: on);
+
+        Assert.NotEqual(QuestRespondRefusal.None, waited.Refusal);
+        Assert.Contains(said, waited.Message);
+    }
+
+    /// <summary>Waiting on your own quest, or on one already answered, is waiting on nothing.</summary>
+    [Fact]
+    public async Task A_quest_waits_neither_on_itself_nor_on_an_answered_one()
+    {
+        var work = (await Publish("Declared")).Quest!;
+        await _exchange.RespondAsync(work.Id, "take", null, Now);
+        var answered = (await _exchange.PublishAsync("Declared", "Quiet", "Already?", "Why.", Now)).Quest!;
+        await _exchange.RespondAsync(answered.Id, "done", "Yes.", Now);
+
+        Assert.NotEqual(QuestRespondRefusal.None, (await _exchange.RespondAsync(work.Id, "wait", null, Now, on: work.Id)).Refusal);
+        var late = await _exchange.RespondAsync(work.Id, "wait", null, Now, on: answered.Id);
+        Assert.NotEqual(QuestRespondRefusal.None, late.Refusal);
+        Assert.Contains("already", late.Message);
+    }
+
+    /// <summary>Only a quest somebody has taken can wait: an open one has nobody's work in it.</summary>
+    [Fact]
+    public async Task An_open_quest_cannot_wait()
+    {
+        var work = (await Publish("Declared")).Quest!;
+        var question = (await _exchange.PublishAsync("Declared", "Quiet", "Q?", "Why.", Now)).Quest!;
+
+        var waited = await _exchange.RespondAsync(work.Id, "wait", null, Now, on: question.Id);
+
+        Assert.NotEqual(QuestRespondRefusal.None, waited.Refusal);
+        Assert.Null((await _quests.FindAsync(work.Id))!.Awaits);
+    }
+
     /// <summary>
     /// The cross-machine race, at the layer where it resolves (D47 §5): the second take is refused
     /// naming the state, and the message tells the losing session what to do — stand down.

@@ -434,8 +434,29 @@ public sealed partial class Driver(
         // The session's own tree, where the repository opted in (D51) — grown BEFORE the record for
         // the same reason every refusal above is asked before it: a failure here holds the quest
         // open and records nothing. The branch grows from the canonical line as WSP4 resolves it.
+        // A RESUME (D79) carries on in the tree its earlier session asked from — that tree holds the work
+        // done before the question — where it still stands. One a person has since discarded is gone
+        // with its work, and the resume grows a fresh tree like a first start.
+        var resumedIn = start.Resumes is { Tree: { Length: > 0 } priorTree } && isolated && Directory.Exists(priorTree)
+            ? priorTree
+            : null;
+
+        // What the question came back with, which is the whole point of resuming: the session is handed
+        // it. Read before the record opens, like every hold above — a question the service no longer
+        // knows leaves nothing to resume with.
+        QuestView? answered = null;
+        if (start.Resumes is not null && quest.Awaits is { Length: > 0 } question)
+        {
+            answered = await service.FindQuestAsync(question, ct).ConfigureAwait(false);
+            if (answered is null)
+            {
+                return Hold($"`#{quest.Id}` waited on `#{question}`, which this service does not hold — "
+                    + "there is no answer to resume with.");
+            }
+        }
+
         TreeOpened? opened = null;
-        if (isolated)
+        if (isolated && resumedIn is null)
         {
             try
             {
@@ -448,7 +469,7 @@ public sealed partial class Driver(
             }
         }
 
-        var workTree = opened?.Path ?? root;
+        var workTree = opened?.Path ?? resumedIn ?? root;
 
         // 🔴 Can this harness use what the repository allows it? (DEPLOY1.) Claude Code ignores a
         // repository's `permissions.allow` until a person has accepted that path, so a session in an
@@ -512,7 +533,7 @@ public sealed partial class Driver(
         try
         {
             var adapter = _adapters.Resolve(config.Adapter);
-            var target = SessionTarget.ForQuest(quest, workTree, service.BaseUrl);
+            var target = SessionTarget.ForQuest(quest, workTree, service.BaseUrl) with { Answered = answered };
             var (info, harnessNotice) = Prepare(adapter, target, selection);
 
             await service.AdvanceAsync(
@@ -520,7 +541,11 @@ public sealed partial class Driver(
                 // The creating sentence, on the record while the session runs (D51 rule 4): where it
                 // grew from and what a fresh tree does not hold. The conclusion's note replaces it —
                 // by then the record's Tree field and the evidence say the rest.
-                note: opened?.Sentence, ct: ct).ConfigureAwait(false);
+                note: opened?.Sentence
+                    ?? (answered is null ? null
+                        : $"resumes `#{quest.Id}` now that `#{answered.Id}` is answered"
+                          + (resumedIn is null ? "." : $", in the tree session `{start.Resumes!.Session}` asked from.")),
+                ct: ct).ConfigureAwait(false);
 
             var transcript = Path.Combine(home, "sessions", $"{sessionId}.log");
             Directory.CreateDirectory(Path.GetDirectoryName(transcript)!);
@@ -560,7 +585,8 @@ public sealed partial class Driver(
 
                     // The person's stop outranks the observation: a killed session leaves the same
                     // signals as a crashed one, and only this flag knows whose decision the end was.
-                    var status = await service.QuestStatusAsync(quest.Id, ct).ConfigureAwait(false) ?? "Open";
+                    var after = await service.FindQuestAsync(quest.Id, ct).ConfigureAwait(false);
+                    var status = after?.Status ?? "Open";
                     var stoppedFor = _processes.StopReason(sessionId);
                     var conclusion = stoppedFor is not null
                         // The driver's own stop, for a take that lost (D68 §5): the quest was someone
@@ -569,7 +595,9 @@ public sealed partial class Driver(
                         : _processes.WasStopRequested(sessionId)
                         ? new SessionConclusion("stopped", "the person stopped it.")
                         : exitCode is int code
-                            ? Observation.Conclude(code, status)
+                            // What it waited on before and after (D79): a NEW question is this session
+                            // asking and waiting, which is a good ending, not a stand-down.
+                            ? Observation.Conclude(code, status, quest.Awaits, after?.Awaits)
                             : new SessionConclusion("failed", $"timed out after {config.TimeoutMinutes} minutes and was killed.");
 
                     conclusion = AccountRefused(conclusion, adapter, selection, transcript);
@@ -581,7 +609,9 @@ public sealed partial class Driver(
                     // The tree stays, whole — nothing merges itself and nothing deletes itself (D51
                     // rules 6–7): the person merges from the root and discards from a surface that
                     // refuses to destroy work. The line names it so a terminal watcher knows where.
-                    var where = opened is null ? "" : $" [own tree: {opened.Path}]";
+                    var where = opened is not null ? $" [own tree: {opened.Path}]"
+                        : resumedIn is not null ? $" [own tree, resumed: {resumedIn}]"
+                        : "";
                     return (
                         $"{conclusion.State}  session {sessionId} (#{quest.Id} → {quest.To}){where}: {conclusion.Note}",
                         true,

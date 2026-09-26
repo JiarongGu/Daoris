@@ -326,7 +326,9 @@ public sealed class KnowledgeTools(
         "Ask ANOTHER repository in this family to do something. Repositories here are not developed "
         + "across: you never edit a sibling, you publish a quest and its own agent takes it. Say what "
         + "is needed and why, with the evidence — not the change you would make. Use before touching "
-        + "any repository that is not the one you are working in.")]
+        + "any repository that is not the one you are working in, and before reading into one: what it "
+        + "owns and why its code is shaped that way is its agent's to say. If your work depends on the "
+        + "answer, wait on this quest with quest_respond (action wait) and end your turn.")]
     public async Task<string> PublishQuestAsync(
         [Description("The repository asking — the one you are working in. An intake publishes as its ask, whatever this says.")]
         string from,
@@ -431,6 +433,8 @@ public sealed class KnowledgeTools(
 
                 // The chain around it (D65 §4): what this one follows, and what its close publishes.
                 if (quest.Parent is { } parent) text.AppendLine($"  follows `#{parent}`");
+                // Ask and wait (D79): what its taker waits on.
+                if (quest.Awaits is { } awaits) text.AppendLine($"  waits on `#{awaits}`");
                 foreach (var step in quest.Then) text.AppendLine($"  then → `{step.To}`: {step.Title}");
 
                 if (quest.Note is { Length: > 0 }) text.AppendLine($"  _{quest.Note}_");
@@ -446,14 +450,18 @@ public sealed class KnowledgeTools(
     [Description(
         "Answer a quest addressed to the repository you are working in: take it, finish it, or decline "
         + "it. Declining is a real answer and often the right one — it needs a reason, because a bare "
-        + "refusal gives the asker nothing to act on.")]
+        + "refusal gives the asker nothing to act on. When your work needs something another repository "
+        + "owns — a change there, or a fact about its code — publish the question to it with "
+        + "quest_publish, then WAIT on that question here (action wait, on the question's id) and end "
+        + "your turn: your quest stays yours, and the driver resumes you in the same tree with the answer.")]
     public async Task<string> RespondToQuestAsync(
         [Description("The quest id, from quest_list.")] string id,
-        [Description("take, done, or decline.")] string action,
+        [Description("take, done, decline, or wait.")] string action,
         [Description("Required to decline; worth giving when finishing.")] string? reason = null,
+        [Description("For wait: the id of the question you published to another repository.")] string? on = null,
         CancellationToken ct = default)
     {
-        var outcome = await exchange.RespondAsync(id, action, reason, DateTimeOffset.UtcNow, ct)
+        var outcome = await exchange.RespondAsync(id, action, reason, DateTimeOffset.UtcNow, ct, on: on)
             .ConfigureAwait(false);
         return outcome.Message;
     }
@@ -464,7 +472,9 @@ public sealed class KnowledgeTools(
         + "in Claude Code's own shape. Use it when you were refused something you needed, or when a rule "
         + "lets agents do more than they should. A change that NARROWS (a new deny or ask, an allow "
         + "removed, an allowing default switched off) is applied at the driver's next tick; one that "
-        + "WIDENS waits for the person's yes. Either way it records which session proposed it, and why.")]
+        + "WIDENS waits for the person's yes. Either way it records which session proposed it, and why. "
+        + "Not for reaching into another repository — to read its code or change it, ask it with "
+        + "quest_publish and wait on the answer.")]
     public string ProposePermission(
         [Description("add (a rule to a list), remove (a rule from a scope), or default (switch one of Daoris's defaults).")]
         string action,

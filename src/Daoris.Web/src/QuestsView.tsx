@@ -243,10 +243,20 @@ export function QuestsView({
     ...(includeClosed ? [{ title: t('quests.groups.closed', { count: closed.length }), items: closed }] : []),
   ];
 
+  // The question a taken quest's taker asked another repository and waits on (D79), found among every
+  // quest, closed ones too: once it closes the quest resumes, and the wait is no longer the news.
+  const questionOf = (quest: Quest) =>
+    quest.status === 'Taken' && quest.awaits
+      ? { id: quest.awaits, quest: everything.data?.find((candidate) => candidate.id === quest.awaits) }
+      : null;
+  const answered = (question: Quest | undefined) =>
+    question?.status === 'Done' || question?.status === 'Declined';
+
   const card = (quest: Quest) => {
     const sat = sittingDays(quest.filed);
     const tone = QUEST_TONE[quest.status];
     const session = sessionFor.get(quest.id);
+    const question = questionOf(quest);
     return (
       <RecordCard
         key={quest.id}
@@ -265,6 +275,11 @@ export function QuestsView({
             {/* A week of silence is the signal this view exists to surface. */}
             {quest.status === 'Open' && sat >= 7 && (
               <Pill tone="declined">{t('quests.card.sat', { days: sat })}</Pill>
+            )}
+            {/* Taken and waiting on another repository's answer (D79) — not stuck, and nothing for
+                the person to do. The waiting tone, as `awaiting-person` wears it. */}
+            {question && !answered(question.quest) && (
+              <Pill tone="open" title={t('quests.card.waitsHint')}>{t('quests.card.waits', { id: question.id })}</Pill>
             )}
             {/* A live driven session marks its quest; finished ones live in the drawer's record. */}
             {session && SESSION_ACTIVE.has(session.state) && (
@@ -433,9 +448,47 @@ export function QuestsView({
             <dt className="text-ink-faint">{t('quests.detail.state')}</dt>
             <dd className="m-0">{t(`statusHint.${detail.status}`)}</dd>
             {(() => {
+              // What its taker asked and waits on (D79), opened in place — the answer is read there.
+              const question = questionOf(detail);
+              if (!question) return null;
+              const closed = answered(question.quest);
+              return (
+                <>
+                  <dt className="text-ink-faint">{t(closed ? 'quests.detail.asked' : 'quests.detail.waitsOn')}</dt>
+                  <dd className="m-0">
+                    <span className="inline-flex flex-wrap items-baseline gap-1.5">
+                      {question.quest ? (
+                        <button
+                          type="button"
+                          className="cursor-pointer border-0 bg-transparent p-0 text-left text-body text-accent underline-offset-2 hover:underline"
+                          onClick={() => openDetail(question.quest!)}
+                        >
+                          <span className="font-mono text-meta">#{question.id}</span> {question.quest.title}
+                        </button>
+                      ) : (
+                        <span className="font-mono text-meta">#{question.id}</span>
+                      )}
+                      {question.quest && (
+                        <>
+                          <span className="text-meta text-ink-faint">→ {question.quest.to}</span>
+                          <Pill tone={QUEST_TONE[question.quest.status]}>{t(`status.${question.quest.status}`)}</Pill>
+                        </>
+                      )}
+                    </span>
+                    <span className="mt-0.5 block text-small text-ink-soft">
+                      {t(closed ? 'quests.detail.answered' : 'quests.detail.waitsWhy')}
+                    </span>
+                  </dd>
+                </>
+              );
+            })()}
+            {(() => {
               // Why this machine's driver is not starting it, in its own words (D46 §3) — the
               // whole sentence here, where there is room; the Overview row carries it truncated.
-              const sitting = sittingBecause(considered, detail.id);
+              const because = sittingBecause(considered, detail.id);
+              // A wait (D79) is said by the row above, with the question itself; the driver's
+              // sentence under it would only say it again.
+              const sitting = because?.verdict === 'Waiting' ? null : because;
               const held = untrusted.find((hold) => hold.quest === detail.id);
               // The trust hold stands on its own: it arrives in the same tick as the sentence, and the
               // grant must not wait on a second list having arrived too.

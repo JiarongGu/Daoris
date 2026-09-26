@@ -26,6 +26,13 @@ public enum QuestOperationKind
     /// dismissal travels like any other operation. It names the conflict and moves no status.
     /// </summary>
     Dismissed,
+
+    /// <summary>
+    /// Its taker asked another repository and waits on the answer (D79). Its note names the quest it
+    /// waits on. It moves no status: the quest stays taken, because its work in progress is in the
+    /// taker's tree, and nothing moves back to open.
+    /// </summary>
+    Waited,
 }
 
 /// <summary>
@@ -174,6 +181,8 @@ public static class QuestLog
     {
         QuestOperationKind.Published => quest is null,
         QuestOperationKind.Conflict or QuestOperationKind.Dismissed => quest is not null,
+        // Only a taken quest waits: an open one has nobody's work in it, and a closed one has none left.
+        QuestOperationKind.Waited => quest is { Status: QuestStatus.Taken } && !string.IsNullOrEmpty(operation.Note),
         _ => quest is not null && QuestTransitions.Target(operation.Kind) is { } target
              && QuestTransitions.Allows(quest.Status, target),
     };
@@ -201,6 +210,7 @@ public static class QuestLog
                     || conflict.Machine != named.Machine || conflict.Sequence != named.Sequence)
                 .ToList(),
         },
+        QuestOperationKind.Waited => quest! with { Awaits = operation.Note, Updated = operation.At },
         _ => quest! with { Status = QuestTransitions.Target(operation.Kind)!.Value, Note = operation.Note, Updated = operation.At },
     };
 }

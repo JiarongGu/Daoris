@@ -367,4 +367,72 @@ public sealed class PlannerTests
 
         Assert.Equal(StartVerdict.Held, Assert.Single(plan).Verdict);
     }
+
+    // ── ask and wait (D79) ────────────────────────────────────────────────────────────────────────
+    //
+    // A session that needs another repository's knowledge asks it and waits: its quest stays TAKEN,
+    // marked with the question, and this machine resumes it in the same tree once the question closes.
+
+    private static QuestView WaitingOn(string question, string id = "q1") =>
+        Quest(id, status: "Taken") with { Awaits = question };
+
+    private static Snapshot Ran(QuestView[] quests, params (string Quest, PriorSession Session)[] ran) =>
+        new(quests, [Repo()], [])
+        {
+            LastRun = ran.ToDictionary(r => r.Quest, r => r.Session, StringComparer.OrdinalIgnoreCase),
+        };
+
+    [Fact]
+    public void A_quest_waiting_on_an_open_question_sits_naming_the_question()
+    {
+        var plan = Planner.Plan(
+            Ran([WaitingOn("q2"), Quest("q2", to: "Backend")], ("q1", new PriorSession("s1", "D:/trees/s1"))),
+            Config());
+
+        var waiting = Assert.Single(plan, c => c.Quest.Id == "q1");
+        Assert.Equal(StartVerdict.Waiting, waiting.Verdict);
+        Assert.Contains("#q2", waiting.Reason);
+        Assert.Contains("Backend", waiting.Reason);
+        Assert.Null(waiting.Resumes);
+    }
+
+    /// <summary>
+    /// The open list holds open and taken quests only, so a question absent from it has closed — and
+    /// the quest resumes where its earlier session left off, carrying which session that was.
+    /// </summary>
+    [Fact]
+    public void Once_its_question_closes_the_waiting_quest_resumes_from_the_session_that_asked()
+    {
+        var prior = new PriorSession("s1", "D:/trees/s1");
+
+        var only = Assert.Single(Planner.Plan(Ran([WaitingOn("q2")], ("q1", prior)), Config()));
+
+        Assert.Equal(StartVerdict.Start, only.Verdict);
+        Assert.Equal(prior, only.Resumes);
+        Assert.Contains("#q2", only.Reason);
+    }
+
+    /// <summary>
+    /// A resume is still a start: the person's hold and the strikes outrank it, exactly as they do an
+    /// open quest's — a question answered is no reason to spend an account the person paused.
+    /// </summary>
+    [Fact]
+    public void A_resume_waits_for_the_persons_hold_like_any_start()
+    {
+        var plan = Planner.Plan(
+            Ran([WaitingOn("q2")], ("q1", new PriorSession("s1", null))),
+            Config(holds: ["Game"]));
+
+        Assert.Equal(StartVerdict.Held, Assert.Single(plan).Verdict);
+    }
+
+    /// <summary>
+    /// A waiting quest no session of THIS machine ran is somebody else's take — another machine's, or
+    /// a person's — and resuming it here would double their work.
+    /// </summary>
+    [Fact]
+    public void A_waiting_quest_this_machine_never_ran_is_not_its_to_resume()
+    {
+        Assert.Empty(Planner.Plan(Ran([WaitingOn("q2")]), Config()));
+    }
 }

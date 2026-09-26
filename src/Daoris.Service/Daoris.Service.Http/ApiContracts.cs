@@ -43,7 +43,9 @@ public sealed record QuestResponse(
     string Id, string From, string To, string Title, string Body,
     string Status, string? Note, DateTimeOffset Filed, DateTimeOffset Updated, string Workspace,
     IReadOnlyList<string> Links, IReadOnlyList<QuestAttachmentResponse> Attachments,
-    IReadOnlyList<QuestStepWire> Then, string? Parent, IReadOnlyList<QuestConflictResponse> Conflicts);
+    IReadOnlyList<QuestStepWire> Then, string? Parent, IReadOnlyList<QuestConflictResponse> Conflicts,
+    // The question its taker waits on (D79), or null.
+    string? Awaits = null);
 // An attachment arrives with its CONTENT at a local host — base64 on the wire, which is what a byte
 // array is in JSON — and by NAME at a shared one, which keeps names and never bytes (D65 §2). The door
 // decides which shape its mode takes and refuses the other; the exchange never sees the wrong one.
@@ -52,7 +54,8 @@ public sealed record PublishQuestRequest(
     string From, string To, string Title, string Body,
     IReadOnlyList<string>? Links = null, IReadOnlyList<QuestAttachmentRequest>? Attachments = null,
     IReadOnlyList<QuestStepWire>? Then = null);
-public sealed record RespondQuestRequest(string? Action, string? Reason);
+// `On` is the question a `wait` waits on (D79).
+public sealed record RespondQuestRequest(string? Action, string? Reason, string? On = null);
 // A person dismissing a conflict (SYNC6c): the one named, or — naming none — every one the quest carries.
 public sealed record DismissConflictRequest(string? Machine, long? Sequence);
 // An ask (D65 §1a): a sentence at a workspace. Files arrive whole — the ask door is a local host's —

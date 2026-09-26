@@ -3458,3 +3458,34 @@ still no extension, and the session still drives the browser through MCP, as D65
   a third would be a second implementation of somebody else's protocol to keep in step.
 - **Expanding `${browser}` when the manifest is read.** The endpoint exists only while the shell
   runs, and a manifest is read by processes that have no shell.
+
+## D79 — A session that needs another repository asks it, waits, and is resumed with the answer (2026-09-27)
+
+**Decision.** `quest_respond wait on:<quest>` parks a taken quest on a question its session published
+to another repository. The quest **stays Taken**, marked as awaiting the question, and the move is
+logged as `Waited` and syncs like any other. The driver holds a waiting quest, saying what it waits
+on. Once the awaited quest closes, done or declined, the machine whose session asked **resumes** it:
+in the same tree, with an instruction that says the quest is already its own and carries the awaited
+quest's outcome and closing words. The ledger opens a session on a taken quest only in that case.
+The session that waited concludes `completed`, at no strike; a resumed one that ends with the old
+wait still standing concludes `failed`, so the strikes bound it. The driven instruction and the tool
+descriptions tell agents that a change or a fact belonging to another repository is asked of it.
+`docs/2026-09-27-ask-and-wait-design.md` is the contract.
+
+**Why.** The first real development session needed three facts about the backend. It tried to read
+the backend's code, was refused, and wrote the front end on assumptions. Its own proposal named the
+right move and declined it because blocking was all the workflow offered. The owner: *"so the issue
+here is it should request to [the backend]"*. D32's reason applies to knowledge as to code: the why
+behind a codebase does not travel, and a request does.
+
+**Rejected.**
+- **Reading a sibling allowed by default** (proposed, and declined by the owner). It gets the code
+  and not the why, and it would have made the wrong reach the easy one.
+- **A new quest status.** *Taken* with an `awaits` field needs no new transition in the lock.
+- **Back to *Open* while it waits** (the first draft). An open quest is anyone's to take, so another
+  session or machine could start it fresh, without the work in the tree that asked. Kept *Taken*, the
+  take stays the one lock (D68) and the resume goes to whoever holds it.
+- **A chain step back to the asker** (`then`). That works with today's tools, but the asking quest
+  would close as done while nothing was done, and a declined question would stop the chain with the
+  work never resumed.
+- **Waiting inside the session.** A session is one turn on both doors, and its tree survives it.

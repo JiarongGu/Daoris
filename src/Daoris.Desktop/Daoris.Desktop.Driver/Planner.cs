@@ -14,7 +14,21 @@ public sealed record QuestView(string Id, string From, string To, string Title, 
 
     /// <summary>The quest whose close published this one, when it is a step of a chain.</summary>
     public string? Parent { get; init; }
+
+    /// <summary>
+    /// The question its taker waits on (D79) — another quest, asked of the repository that knows — or
+    /// null. A taken quest carrying one is its taker's to resume once the question closes.
+    /// </summary>
+    public string? Awaits { get; init; }
+
+    /// <summary>What its close said — a done's note or a decline's reason. The answer a waiting session resumes with.</summary>
+    public string? Note { get; init; }
 }
+
+/// <summary>The session this machine last ran on a quest, and the tree it ran in (D79).</summary>
+/// <param name="Session">Its record's id.</param>
+/// <param name="Tree">Where it ran — its own tree where the repository opted in, the root otherwise; null when unsaid.</param>
+public sealed record PriorSession(string Session, string? Tree);
 
 /// <summary>One step of a chain, as the service answered it.</summary>
 public sealed record QuestStepView(string To, string Title, string Body);
@@ -100,6 +114,14 @@ public sealed record Snapshot(
 {
     public IReadOnlyDictionary<string, int> Strikes { get; init; } =
         Strikes ?? new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// The session THIS machine last ran on each quest, by quest id — derived from the same records as
+    /// the strikes, never kept (D79). It is how a waiting quest is known to be this machine's to resume,
+    /// and where: a taken quest no session here ran is somebody else's take.
+    /// </summary>
+    public IReadOnlyDictionary<string, PriorSession> LastRun { get; init; } =
+        new Dictionary<string, PriorSession>(StringComparer.OrdinalIgnoreCase);
 }
 
 public enum StartVerdict
@@ -142,6 +164,12 @@ public enum StartVerdict
     /// reports when what happened differs from what was decided, so "sitting" still says why.
     /// </summary>
     Blocked,
+
+    /// <summary>
+    /// Taken, and waiting on a question asked of another repository (D79). It resumes, in the same
+    /// tree, once that quest is answered — nothing for the person to do.
+    /// </summary>
+    Waiting,
 }
 
 /// <param name="Quest">The quest considered.</param>
@@ -150,7 +178,14 @@ public enum StartVerdict
 /// <param name="Root">Where a start would spawn — carried so the executor never re-derives it.</param>
 /// <param name="Workspace">The receiver's circle, carried for the same reason — and read by the toolchain.</param>
 public sealed record Consideration(
-    QuestView Quest, StartVerdict Verdict, string Reason, string? Root = null, string? Workspace = null);
+    QuestView Quest, StartVerdict Verdict, string Reason, string? Root = null, string? Workspace = null)
+{
+    /// <summary>
+    /// For a start that RESUMES a waiting quest (D79): the session that asked and waited, whose tree
+    /// the resume carries on in. Null for every first start.
+    /// </summary>
+    public PriorSession? Resumes { get; init; }
+}
 
 public static class Considerations
 {
@@ -219,12 +254,40 @@ public static class Planner
 
         // The service already orders open-oldest-first; keeping its order is what makes "oldest starts
         // first" one implementation rather than two that drift.
-        foreach (var quest in snapshot.Quests.Where(q => q.Status == "Open"))
+        foreach (var quest in snapshot.Quests)
         {
-            considerations.Add(Consider(quest));
+            if (quest.Status == "Open")
+            {
+                considerations.Add(Consider(quest));
+            }
+            else if (quest is { Status: "Taken", Awaits: { Length: > 0 } awaits }
+                     && snapshot.LastRun.TryGetValue(quest.Id, out var prior))
+            {
+                considerations.Add(Resume(quest, awaits, prior));
+            }
         }
 
         return considerations;
+
+        // A waiting quest (D79): the open list holds open and taken quests only, so a question still in
+        // it is unanswered, and one absent from it has closed. A resume is a start in every other way —
+        // the person's hold, the strikes, busy and the cap all still stand between it and a spawn.
+        Consideration Resume(QuestView quest, string awaits, PriorSession prior)
+        {
+            var question = snapshot.Quests.FirstOrDefault(q =>
+                string.Equals(q.Id, awaits, StringComparison.OrdinalIgnoreCase));
+            if (question is not null)
+            {
+                return new(quest, StartVerdict.Waiting,
+                    $"waits on `#{question.Id}`, asked of `{question.To}` — it resumes, in the same tree, "
+                    + "once that is answered.");
+            }
+
+            var considered = Consider(quest);
+            return considered.Verdict == StartVerdict.Start
+                ? considered with { Reason = $"resuming in `{quest.To}` — `#{awaits}` is answered.", Resumes = prior }
+                : considered;
+        }
 
         Consideration Consider(QuestView quest)
         {

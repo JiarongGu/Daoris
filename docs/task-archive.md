@@ -6548,3 +6548,41 @@ intake passes `IntakeRoom.Allowed`, so the room's list rides with the person's r
 person wrote still wins. The intake found the browser on its own anyway and read the ticket through
 it, so nothing was lost on that run. A public page would have been lost. Driver 738 (a test mirrors
 INT4j's, over the recorded settings).
+
+## ASK1–ASK3 — ask and wait (owner, 2026-09-27 → D79)
+
+> *"so the issue here is it should request to [the backend]"*
+
+Found on FG5's development session, which needed the backend's note contract, tried to read the
+backend's code, was refused, and guessed. `docs/2026-09-27-ask-and-wait-design.md` is the contract.
+All three landed together on 2026-09-27.
+
+- **ASK1 — `wait` in the exchange.** `quest_respond wait on:<quest>` appends a `Waited` operation,
+  so the move is logged, replays and syncs (D68). The quest stays **Taken** with `awaits` set: a
+  column on the store, a field on both doors' reads, and "waits on" in `quest_list`. It refuses a wait
+  with no question, on itself, on an unknown or closed quest, or on a quest that is not taken. The
+  ledger opens a session on a taken quest only when the quest it awaits has closed. Service 522,
+  including a test that no tool description names a decision number; `(D79)` had slipped into
+  `permission_propose`'s description.
+- **ASK2 — the driver.** The planner considers a taken quest that waits, but only where this
+  machine's records hold a session on it other than a stand-down (`Snapshot.LastRun`). While its
+  question is open it sits, as `Waiting`, naming the question. Once the question closes it is a start
+  like any other, with the hold, strikes, busy and cap all in front of it, and it carries the session
+  that asked. The resume runs in that session's tree when it still stands, and its instruction says
+  the quest is already the session's own and quotes the answer. The asking session concludes
+  `completed`. A resumed one that ends with the old wait still standing concludes `failed`, so the
+  strikes bound it instead of the quest resuming every tick. Driver 753, including two real-tick
+  runs over a stand-in service: ask, sit, resume in the same tree with the answer, done; and the
+  resume that stops short.
+- **ASK3 — the words and the page.** The driven instruction tells the session to ask what another
+  repository knows, commit, wait, and end its turn. `quest_publish`, `quest_respond` and
+  `permission_propose` say the same. The card says *waits on #q* while the question is open, and
+  the drawer names the question with a door to it, says *answered* once it closes, and drops the
+  driver's sitting sentence, which only repeated it. en and zh. Web 1189. The family rehearsal gained
+  the HTTP half: wait, the refusals, the resume opening once answered, and the wait surviving a
+  restart.
+- **Built differently from the first draft.** The design first sent a waiting quest back to *Open*.
+  That made it anyone's to take fresh, without the tree that asked, so it stays *Taken* (D79 as
+  written, and the design's §1).
+- **Not looked at on the window with a real session.** The install still runs the build before D79,
+  so FG5's quest cannot use it yet. That run is FG5's.

@@ -68,6 +68,11 @@ export type Quest = {
    * person, never merged. Absent from a host older than the sync, which is the same as none.
    */
   conflicts?: QuestConflict[];
+  /**
+   * The question its taker asked another repository and waits on (D79) — a quest id — or absent. A
+   * taken quest carrying one is waiting, not stuck: the driver resumes it once that quest closes.
+   */
+  awaits?: string | null;
 };
 /**
  * A move that lost the race to the remote. `attempted` is the status it tried to reach; `note` is its
