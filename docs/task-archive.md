@@ -6261,3 +6261,60 @@ modules, service and family suites were not re-run, since REVIEW2 changed none o
 
 Gates: CLI 478, driver 694 → 696, modules 129, web unit 1026, Playwright 21/21, family 279/279,
 deploy 39/39.
+
+## UX5 — screen by screen (2026-09-26)
+
+- [x] ~~**UX5 — screen by screen.**~~ Every surface, every state (empty, loading, error, long, 中文,
+  dark), every piece of interaction logic (keys, focus, what a click opens, what survives a reload),
+  against the reference and D41. Written down as it is found, and fixed. **The ledger is
+  `docs/2026-09-26-ux5-screen-audit.md`** (opened 2026-09-26). Landed so far: U1 (one hue for
+  waiting), U2 and U13 (the monitor), U3 (the protocol door's console in lines, not chunks), U4
+  (line breaks), U5 and U12 (the platform's own controls), U7 (the dock on demand), U8 (paths), U9
+  (no box where nothing listens), U11 (the frame's tests isolated), U15 (the command center gives
+  way to the menus), U16 (the owner's: the session follows the window's width, reversing U10), U19
+  (no view named Work), U20 (the owner's choice: a badge counts what its place holds), U21 (the
+  status bar counts active sessions, and says so), U22 (the activity bar scrolls rather than
+  crushing its places), U26 (an outstanding row opens its quest), U27 and U28 (the driver's reasons
+  and every date in the reader's language) and U29 and U30 (a stopped service said once, in
+  Daoris's words, by the page and the tick alike), and Quests' U31 to U35 (the next step leads the
+  drawer, asks oldest first, the composer promises only what the machine does), and Projects' U36
+  to U38 (a reason on its glyph, phrases in the body face, the move before *never mind*); U18 was
+  dropped there, since every `danger` is a move that ends something; and the knowledge row's U39 to
+  U43 (excerpts as prose, a wait as a span, empty answers that lead somewhere, a reader wide enough
+  for its source); and the Map row's U44 to U50 (both maps drawn at their own size and framed on
+  what they draw, a session in its status hue, a quest a door to its drawer, a choice that toggles,
+  arrows in an ink, every workspace said, 被依赖); and Settings' U53 to U58 (a label that keeps its
+  room beside a path, one name per account, counts in their number, variables as code, *once it is
+  there*, no title over a card alone); U59, the owner's (every view follows the window, and the maps
+  grow with it); and the Sessions rows' U17 (a live chat between turns is idle, decided by the
+  reference console), U60, U61 and U63 to U66 (a root session is not reviewed as a tree of its own,
+  *busy* in words, a read without its fence, the `@` list sized to its rows). U62 is RAIL2.
+  Then the last rows: Start session's U67 and U68 (ways in named as Settings names them, a busy
+  repository marked, a refused start said in the form), the monitor's U69 and U70 (its rail the
+  present tense, at the main rail's width), and U25 and U72 (the palette's unread count gone, a menu
+  item opening at the part it names). **Every surface row is done.** **Open in the ledger:** U6
+  alone, folding `platform-ux.md` §4's dated amendments into the body, which closes UX5.
+✅ **done 2026-09-26**. The ledger is `docs/2026-09-26-ux5-screen-audit.md`, closed with every surface
+row ticked by what was looked at on the window and every finding given its disposition; D76's UX5
+amendment carries the findings that chose between alternatives.
+
+- **Seventy-two findings** over every surface: the frame, Overview, Quests, Projects, Search with
+  Convergence, the Map, Settings, the three Sessions rows, Start session, the monitor and detached
+  windows, and the palette, menus, toasts and tooltips, each in both languages and both themes and at
+  500 to 1920 wide. Most were fixed test-first and looked at again; a few were dropped with the reason
+  written down (U14, U18, U24, U51, U52, U71), and two became backlog rows (SURF11 from U23, RAIL2
+  from U62).
+- **Three were the owner's**: the session follows the window's width (U16, reversing U10), a badge
+  counts what its place holds (U20), and every view follows the window (U59, amending D41 §2's 72rem
+  column).
+- **One was decided by the reference console** at the owner's word: a live chat between turns is idle
+  (U17), read from the reference's source.
+- **The design language's body is current** (U6): its fourteen dated amendments are folded into the
+  sections they amended, 8,050 words to 5,100.
+- **What the instruments need** is at the head of the ledger: sizing and maximizing the window, a
+  synthetic hover, an SVG part's click, a second circle for every-workspace looks, and a secondary
+  window's capture.
+
+Gates at the close: web unit 1136 → 1179, Playwright 21/21, `npm run verify` green. The driver,
+modules, service and family suites were not re-run: UX5 changed the page, the service README and no
+driver code.

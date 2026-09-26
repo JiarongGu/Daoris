@@ -142,9 +142,11 @@ workflow (`tools/release-prep.mjs`). A hand-bump leaves every file consistent an
 - **A plugin is a folder that declares, and may speak** (**D64**, `docs/2026-09-23-plugin-design.md`):
   a manifest under `plugins/`: harnesses on the ACP door, servers every session is handed,
   behaviour spoken over a wire — **never code loaded into a host**, no registry.
-- 🔴 **The current direction is the conversation** (owner, 2026-09-25 → **D76**,
+- **The conversation is built** (owner, 2026-09-25 → **D76**,
   `docs/2026-09-24-reference-gap-study.md`): a session's structured updates are kept as typed events
   on the machine, and the page renders a conversation from them; the console becomes its raw view.
+  **UX5 then checked every screen** against the reference; its ledger
+  (`docs/2026-09-26-ux5-screen-audit.md`) opens with what the instruments need to look at the window.
   The regular task (D65: an ask becomes quests through an **intake session**) is built.
 - `ROADMAP.md` — the forward sequence. `TASKS.md` — the **active** backlog (open items only).
 - `docs/task-archive.md` — completed work, with outcomes. `docs/archive/` — superseded documents.

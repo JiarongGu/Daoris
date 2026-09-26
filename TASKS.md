@@ -10,11 +10,12 @@ the family, kept from drifting, and improved from wherever the improvement was f
 **Daoris as the driver**: the workflow manager that triggers and coordinates the agent sessions doing
 the family's work.
 
-**Every arc before D76 is closed and in the archive**: the driver (D45), the remote (D47),
+**Every arc is closed and in the archive**: the driver (D45), the remote (D47),
 workspaces, the interactive surface and management parity (D48–D50), the working surface (D51–D56),
 the protocol door (D53), the toolchain (D57, bar TOOL4 and TOOL5), the instruction file (D59), the
 first deployment (D60–D63), plugins (D64), the remote as a git remote (D68), permission scopes
-(D72–D74) and the menus (D75). [`docs/README.md`](docs/README.md) names each arc's contract. Two
+(D72–D74), the menus (D75), and the conversation (D76, bar its held file tools), closed by UX5's
+screen-by-screen pass. [`docs/README.md`](docs/README.md) names each arc's contract. Two
 reviews read the code rather than re-running it, REV2 and REV3, and CLEAN1 settled REV3's cleanup
 lists.
 
@@ -37,8 +38,9 @@ mechanics drafted at `docs/adoption/shenora-repo-mechanics.md`, budget 40,000, `
 
 ## Handover — where a fresh session picks up
 
-🔴 **The live arc is D76, the conversation** (owner, 2026-09-25), taken in the order under *The
-reference gap* below. Nothing is pushed or published, and a release is still blocked on REH1.
+🔴 **D76's round is done** (the conversation, owner, 2026-09-25): every item under *The reference gap*
+is in the archive, UX5 last, and what is left is held (the dock's file tools, a terminal) or a
+leftover row (RAIL2, SURF11). Nothing is pushed or published, and a release is still blocked on REH1.
 - **Landed:** CONV1 (the record), CONV2 (the view), CONV3a (Claude Code's `stream-json`), CONV3b
   (chats on the protocol door), CONV4a (stopping a turn, one queue on both doors), CONV4b (the
   composer's turn, queue and drafts), CONV4c (attachments), CONV4d (`@` a file in the tree), CONV5
@@ -47,9 +49,10 @@ reference gap* below. Nothing is pushed or published, and a release is still blo
 - **REV3, the owner's full review, is closed**, and so is **CLEAN1**, its cleanup lists (both in
   the archive). The ledger is `docs/2026-09-25-rev3-review.md`, and what they left is under *What
   REV3 left* below.
-- 🔴 **In progress: UX5, screen by screen** — the last of D76's round, and a long one. Its ledger is
-  `docs/2026-09-26-ux5-screen-audit.md`: every finding with its disposition, and a surface table
-  ticked only by what was looked at on the window. Pick up from the ledger, not from this file.
+- **UX5, screen by screen, is closed** (2026-09-26, in the archive). Its ledger,
+  `docs/2026-09-26-ux5-screen-audit.md`, holds every finding with its disposition and, at its head,
+  what the instruments need to look at the window; the rules it settled are in the body of
+  `docs/2026-09-19-platform-ux.md`. **The next direction is the owner's to set.**
 - **How each landing is checked:** TDD, the gates, then a look on the window with a real session.
   Real sessions on this machine's Claude Code account are authorised (2026-09-24).
 - **The scratch machine:** its `driver.json` points `claude-code-acp` at the ACP adapter the dsh
@@ -109,7 +112,7 @@ rather than designed.
 
 ## Backlog
 
-**Twenty-six rows are open**: D76's last, UX5, and its held file tools; the ten REV3 left, with RETRY1;
+**Twenty-five rows are open**: D76's held file tools; the ten REV3 left, with RETRY1;
 five leftovers (RAIL2, SURF11, FLAKE1, DEPLOY5, TEST1); three on the owner (TRUST2, AGT2c, INT6); and six on a
 trigger (see *Handover*). Every closed one is in `docs/task-archive.md`, and this file holds no
 ticked rows, by the `task-lifecycle` rule it also ships. A heading below holds open rows only.
@@ -235,36 +238,6 @@ close that. **The owner chose the conversation model and every extra → D76** (
 *"you should check screen by screen and all ui ux logic"*. Take them in order; each is one landing,
 TDD, looked at on the window, and the ones that touch a real session use one (authorised
 2026-09-24). **CONV4 was split (2026-09-25)**, and all four parts are in the archive.
-- [ ] **UX5 — screen by screen.** Every surface, every state (empty, loading, error, long, 中文,
-  dark), every piece of interaction logic (keys, focus, what a click opens, what survives a reload),
-  against the reference and D41. Written down as it is found, and fixed. **The ledger is
-  `docs/2026-09-26-ux5-screen-audit.md`** (opened 2026-09-26). Landed so far: U1 (one hue for
-  waiting), U2 and U13 (the monitor), U3 (the protocol door's console in lines, not chunks), U4
-  (line breaks), U5 and U12 (the platform's own controls), U7 (the dock on demand), U8 (paths), U9
-  (no box where nothing listens), U11 (the frame's tests isolated), U15 (the command center gives
-  way to the menus), U16 (the owner's: the session follows the window's width, reversing U10), U19
-  (no view named Work), U20 (the owner's choice: a badge counts what its place holds), U21 (the
-  status bar counts active sessions, and says so), U22 (the activity bar scrolls rather than
-  crushing its places), U26 (an outstanding row opens its quest), U27 and U28 (the driver's reasons
-  and every date in the reader's language) and U29 and U30 (a stopped service said once, in
-  Daoris's words, by the page and the tick alike), and Quests' U31 to U35 (the next step leads the
-  drawer, asks oldest first, the composer promises only what the machine does), and Projects' U36
-  to U38 (a reason on its glyph, phrases in the body face, the move before *never mind*); U18 was
-  dropped there, since every `danger` is a move that ends something; and the knowledge row's U39 to
-  U43 (excerpts as prose, a wait as a span, empty answers that lead somewhere, a reader wide enough
-  for its source); and the Map row's U44 to U50 (both maps drawn at their own size and framed on
-  what they draw, a session in its status hue, a quest a door to its drawer, a choice that toggles,
-  arrows in an ink, every workspace said, 被依赖); and Settings' U53 to U58 (a label that keeps its
-  room beside a path, one name per account, counts in their number, variables as code, *once it is
-  there*, no title over a card alone); U59, the owner's (every view follows the window, and the maps
-  grow with it); and the Sessions rows' U17 (a live chat between turns is idle, decided by the
-  reference console), U60, U61 and U63 to U66 (a root session is not reviewed as a tree of its own,
-  *busy* in words, a read without its fence, the `@` list sized to its rows). U62 is RAIL2.
-  Then the last rows: Start session's U67 and U68 (ways in named as Settings names them, a busy
-  repository marked, a refused start said in the form), the monitor's U69 and U70 (its rail the
-  present tense, at the main rail's width), and U25 and U72 (the palette's unread count gone, a menu
-  item opening at the part it names). **Every surface row is done.** **Open in the ledger:** U6
-  alone, folding `platform-ux.md` §4's dated amendments into the body, which closes UX5.
 - [ ] ⏸ **Held, after the conversation:** a file tree and document preview in the dock (when a tool
   card wants to open a file); a terminal (design §6's trigger).
 
