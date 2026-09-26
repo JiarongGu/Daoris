@@ -228,6 +228,54 @@ public sealed class SessionTreesTests : IDisposable
         }
     }
 
+    /// <summary>
+    /// 🔴 Windows' 260-character path limit, found on the first real workspace (2026-09-27): a
+    /// repository's deepest tracked file fitted under its own root and not under a session tree, whose
+    /// prefix is longer. `worktree add` failed on every tick, and the quest sat.
+    /// </summary>
+    [Fact]
+    public async Task A_tracked_path_that_fits_the_root_but_not_a_trees_longer_prefix_still_opens()
+    {
+        var root = await MakeRepositoryAsync("engine");
+        var deep = string.Join("/", Enumerable.Repeat("component", 17)) + "/x.ts";
+        Directory.CreateDirectory(Path.GetDirectoryName(Path.Combine(root, deep))!);
+        await File.WriteAllTextAsync(Path.Combine(root, deep), "x\n");
+        await GitAsync(root, "add", ".");
+        await GitAsync(root, "commit", "-m", "a deep file");
+
+        var opened = await new SessionTrees(_home).OpenAsync(root, "engine", "aurora");
+
+        Assert.True(Path.Combine(opened.Path, deep).Length > 260, "the fixture must cross the limit to test it");
+        Assert.True(File.Exists(Path.Combine(opened.Path, deep)));
+    }
+
+    /// <summary>
+    /// A tree that cannot be opened leaves the repository as it found it. `worktree add -b` makes the
+    /// branch before it checks anything out, so every failed tick left one: sixteen on the first real
+    /// workspace. And the refusal quotes git's error, where it quoted git's progress line
+    /// (*"Preparing worktree (new branch …)"*), which said nothing about why.
+    /// </summary>
+    [Fact]
+    public async Task A_tree_that_fails_to_check_out_leaves_no_branch_and_quotes_gits_error()
+    {
+        var root = await MakeRepositoryAsync("engine");
+        // A checkout that fails after the branch exists, on every platform: a required filter that fails.
+        await File.WriteAllTextAsync(Path.Combine(root, ".gitattributes"), "*.txt filter=boom\n");
+        await File.WriteAllTextAsync(Path.Combine(root, "a.txt"), "x\n");
+        await GitAsync(root, "config", "filter.boom.clean", "cat");
+        await GitAsync(root, "config", "filter.boom.smudge", "false");
+        await GitAsync(root, "config", "filter.boom.required", "true");
+        await GitAsync(root, "add", ".");
+        await GitAsync(root, "commit", "-m", "a file only a working filter can check out");
+
+        var error = await Assert.ThrowsAsync<DriverException>(
+            () => new SessionTrees(_home).OpenAsync(root, "engine", "aurora"));
+
+        Assert.DoesNotContain("Preparing worktree", error.Message);
+        Assert.Contains("boom", error.Message);
+        Assert.Equal("", (await GitAsync(root, "branch", "--list", "daoris/*")).Trim());
+    }
+
     // ---------------------------------------------------------------------------------- fixtures
 
     private async Task<string> MakeRepositoryAsync(string name)

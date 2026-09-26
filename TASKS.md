@@ -21,7 +21,7 @@ lists.
 
 ## State
 
-**Counts, and this is their one home:** fifteen commands, **482 CLI tests, 512 service, 734 driver,
+**Counts, and this is their one home:** fifteen commands, **482 CLI tests, 512 service, 737 driver,
 151 desktop modules, 80 devkit, 1187 web unit, 21 Playwright**, 66/66 release rehearsal, **280/280
 family rehearsal** (it names its own phases when you run it), **39/39 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge
@@ -116,7 +116,7 @@ rather than designed.
 
 ## Backlog
 
-**Twenty-five rows are open**: the in-app browser's last (BRW3); the first goal's two (FG5, and
+**Thirty-one rows are open**: the in-app browser's seven (BRW3, then BRW4–BRW9, the browser as a browser); the first goal's two (FG5, and
 SEM2 on a trigger); D76's held file tools;
 the eight REV3 left, WINDOW2 among them; five leftovers (RAIL2, SURF11, FLAKE1, DEPLOY5, TEST1); two on the owner
 (TRUST2, AGT2c); and six on a trigger (see *Handover*). Every closed one is in `docs/task-archive.md`, and this file holds no
@@ -226,6 +226,32 @@ attached over CDP drives a WebView2.
   `in-app-browser` plugin replaces the Edge one, `mcp__browser` stays allowed for the workspace, and
   the browser window was opened on the install for the sign-in. Waiting on the sign-in and the first
   ticket.
+
+#### The browser as a browser (owner, 2026-09-27) — after BRW3 and FG5
+
+> *"the browser itself should have similar features as regular browser (for example edge, favriate,
+> and etc, which can help to managed the use) and also should be able to start from the daoris app
+> … start them after you complate current task (which is more important as the core workflow)"*
+
+Each is its own landing, TDD, looked at on the window. The design's §4 lists these as deliberately
+not in v1. Amend it as each lands.
+- [ ] **BRW4 — tabs.** Several pages, a strip to switch, `Ctrl+T` and `Ctrl+W`, and a link that
+  asks for a new window opens a tab. Decide which tab an agent drives. CDP exposes each as a
+  target, and the default should be the one in front, said in the strip.
+- [ ] **BRW5 — favorites.** A star in the address bar, a favorites bar, and a menu. They are kept in
+  `<home>/browser/favorites.json` (D63), with a terminal twin (`daoris browser favorite
+  add|list|remove`, D50). They are the person's, never a session's.
+- [ ] **BRW6 — history and completion.** The address bar completes from history and favorites.
+  History stays in the profile, and there is a clear.
+- [ ] **BRW7 — start it from the app, and route links to it.** A door as visible as the monitor's:
+  the activity bar or the strip, not only View → *Browser*. A start page with the favorites. A
+  setting for whether links on the page (a ticket in a quest, a URL in the conversation) open here
+  or in the system browser, orca's link routing.
+- [ ] **BRW8 — who is driving.** The window says when a session is driving it, names the session,
+  and links to it, so the person knows whose hands are on the page before they type into it.
+- [ ] **BRW9 — the rest of a browser's basics.** Find in page (`Ctrl+F`), zoom, devtools (`F12`),
+  downloads to `<home>/browser/downloads` with a shelf, and the theme once WINDOW2 gives the window
+  a channel.
 
 ### The first goal — a real workspace, a ticket, a task started (owner, 2026-09-27 → D77)
 

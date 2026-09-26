@@ -299,6 +299,21 @@ public sealed class IntakeTests : IDisposable
         Assert.Contains("sign-in", prompt);
     }
 
+    /// <summary>
+    /// The first real ask was a ticket's URL typed as the sentence, with no link given apart from it.
+    /// The browser guidance was offered only with links, so the intake found the browser on its own,
+    /// after `WebFetch` was refused. A URL in the words is a link as much as one in the field.
+    /// </summary>
+    [Fact]
+    public void A_url_in_the_sentence_is_read_like_a_link_and_the_sign_in_guidance_follows_it()
+    {
+        var prompt = IntakePrompt.Compose(new AskView(
+            "9f4583", "work", "https://tickets.example/browse/T-1", "Proposed", "declarations"));
+
+        Assert.Contains("- https://tickets.example/browse/T-1", prompt);
+        Assert.Contains("sign-in", prompt);
+    }
+
     // ——— The spawn.
 
     [Fact]

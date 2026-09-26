@@ -5,6 +5,42 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## A session tree could not open past Windows' path limit, left a branch on every tick, and quoted git's progress line (2026-09-27)
+
+**Symptom.** The first real ticket on the first real workspace (FG5). The intake read the ticket
+through the in-app browser and published a quest to a repository with own trees on. The quest then
+sat, and its reason was *"could not open a session tree for `…` — git said: Preparing worktree (new
+branch 'daoris/s-…')"*. That sentence says nothing about why. Meanwhile the repository had gained a
+`daoris/s-*` branch on every tick: sixteen, each at the root's HEAD with no commits, before the
+repository was held.
+
+**Root cause.** Three things, one line each in `SessionTrees.OpenAsync` since SURF3 (`476a8a0`):
+- **The limit.** A tree lives at `<home>/trees/<workspace>/<repository>/s-xxxxxxxx`, which is longer
+  than the repository's own root. Its deepest tracked file (207 characters) fitted under the root
+  and crossed 260 under the tree. Without `core.longpaths`, Git for Windows fails the checkout:
+  *"fatal: cannot create directory at '…': Filename too long"*, exit 128. The fixture repositories
+  were shallow, so no test crossed it.
+- **The branch.** `worktree add -b` creates the branch before it checks anything out. A failed
+  checkout removes the half-made tree and keeps the branch. The failure comes before any session
+  record exists, so it costs no strike, and the next tick tried again with a new name.
+- **The message.** The refusal quoted the first line of stderr, and git's first line is its
+  progress, not its reason.
+
+**Fix.** `git -c core.longpaths=true worktree add …`, for that one command, so nothing in the
+repository's configuration changes. On failure, `git branch -D` the branch that same call made a
+moment ago under a fresh name, which leaves the repository as it was found. The refusal quotes the
+last `fatal:` line, then the last `error:` line, then the last line.
+
+**Verify.** Reproduced first in a scratch repository: a 196-character path under a deep tree prefix
+failed with exactly that message, and kept the branch. The same add with `-c core.longpaths=true`
+checked it out. `SessionTreesTests` holds all three halves. A tracked path that fits the root but not
+the tree's prefix opens, asserted over 260 characters. A checkout that fails after the branch exists
+(a required smudge filter that fails, portable to every platform) leaves no `daoris/*` branch, and
+the refusal names the filter rather than *Preparing worktree*. Driver 736, family rehearsal.
+
+**Not repaired here:** the sixteen branches already made in the owner's repository. They are the
+owner's to delete, since the repository is not Daoris's to write into (`reaching-in`).
+
 ## The protocol door's console broke the agent's words at every chunk, and the first fix hid them (2026-09-26)
 
 **Symptom.** UX5 U3, on the scratch window. The console of a protocol-door session, driven or a

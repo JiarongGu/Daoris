@@ -90,12 +90,22 @@ public sealed class SessionTrees(string home)
         var path = Path.Combine(TreesRoot, workspace, repository, name);
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
 
+        // 🔴 Long paths, for this one command (2026-09-27): a tree's prefix is longer than the root's, so
+        // a repository whose deepest file fits under its root can cross Windows' 260 characters here.
+        // The first real workspace did, and every tick's `worktree add` failed. Said on the command
+        // line, so nothing in the repository's own configuration changes.
         var (code, _, stderr) = await WorkingTree.GitAsync(
-            root, ["worktree", "add", "-b", branch, path, canonical ?? "HEAD"], ct).ConfigureAwait(false);
+            root, ["-c", "core.longpaths=true", "worktree", "add", "-b", branch, path, canonical ?? "HEAD"], ct)
+            .ConfigureAwait(false);
         if (code != 0)
         {
+            // 🔴 `worktree add -b` makes the branch before it checks anything out, so a failure used to
+            // leave one behind on every tick: sixteen on the first real workspace. It is this call's own,
+            // made a moment ago under a name nothing else uses, so it goes, and the repository is left
+            // as it was found.
+            await WorkingTree.GitAsync(root, ["branch", "-D", branch], ct).ConfigureAwait(false);
             throw new DriverException(
-                $"could not open a session tree for `{repository}` — git said: {FirstLine(stderr)}");
+                $"could not open a session tree for `{repository}` — git said: {Failure(stderr)}");
         }
 
         return new(
@@ -332,6 +342,20 @@ public sealed class SessionTrees(string home)
         var trimmed = text.Trim();
         var newline = trimmed.IndexOf('\n');
         return newline < 0 ? trimmed : trimmed[..newline].Trim();
+    }
+
+    /// <summary>
+    /// git's reason, not its progress. `worktree add` says *"Preparing worktree (new branch …)"*
+    /// before anything can fail, and a refusal that quoted the first line quoted that. The last
+    /// `fatal:` or `error:` line is why; failing those, the last line said.
+    /// </summary>
+    private static string Failure(string stderr)
+    {
+        var lines = stderr.Split('\n').Select(line => line.Trim()).Where(line => line.Length > 0).ToList();
+        return lines.LastOrDefault(line => line.StartsWith("fatal:", StringComparison.Ordinal))
+               ?? lines.LastOrDefault(line => line.StartsWith("error:", StringComparison.Ordinal))
+               ?? lines.LastOrDefault()
+               ?? "nothing";
     }
 
     /// <summary>
