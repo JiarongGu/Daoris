@@ -155,7 +155,11 @@ A **fixed left sidebar** and a content column — the shape of a console, not a 
 > from the dated amendments this section used to carry (U6).
 
 - **Buttons**: `primary` (solid accent, paper text — the one loud control per view), default (raised +
-  line), `ghost` (borderless, for in-card affordances), `danger` reserved for decline confirmation.
+  line), `ghost` (borderless, for in-card affordances), and `danger` for a move that ends or removes
+  something: decline, close an ask, retire, remove an account, stop, discard. It wears the hue of the
+  outcome it causes, and never marks a state (UX5 U18, which found *reserved for decline
+  confirmation* stale). **The move comes first, then *never mind*,** in every drawer's footer and
+  every confirming pair (U38).
 - **Pills** carry quest state: status text on its soft field with its hue — label always present.
 - **Chips** carry declarations (owns/accepts/packs): quiet line-bordered tokens; `accent` variant for
   what a project *accepts*, because that is the actionable half.
@@ -495,8 +499,10 @@ A **fixed left sidebar** and a content column — the shape of a console, not a 
   whole chain as one strip (MAP1a): the ask, the quests before and after, the steps still to come as
   the asker wrote them (`{parent}` included), and every session under its quest. The quest being
   read is marked and named, and the others are underlined doors.
-- **Projects** — adopted as cards (two columns wide) with chips and the local/canonical split;
-  non-adopters as the marked list with the join steps proposed as text.
+- **Projects** — adopted as cards (two columns from 1024px, one below) with chips and the local/canonical split;
+  non-adopters as one group, *Registered, not adopted*, led by one line with its reasoning on the
+  info glyph (UX5 U36), each with the driving row where it has a root here, and the join steps
+  proposed as text. *Manage* edits the declaration in the face it is read in (U37).
 - **Convergence / Search** — unchanged in behaviour; they gain the page header and open entries in the
   drawer instead of a centered modal.
 - **Map** (MAP2) — the circle's repositories on a ring, the quests between them as directed arrows
