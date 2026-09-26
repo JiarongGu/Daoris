@@ -355,6 +355,15 @@ export const useOpenWindow = () => useMutation({
 });
 
 /**
+ * Daoris's own browser (D78): the window the person signs in to and watches an agent use. Not a route
+ * into this bundle like the others — it shows pages that are not Daoris's, with no bridge.
+ */
+export const useOpenBrowser = () => useMutation({
+  mutationFn: () =>
+    getBridge().invoke<{ opened: boolean; windows: string[] }>('DAORIS.WINDOWS', 'OPEN_BROWSER', {}),
+});
+
+/**
  * A session's console, live (D49 §2).
  *
  * @remarks

@@ -290,13 +290,15 @@ function takeWindow(args) {
   if (at === -1) return null;
 
   const name = args[at + 1];
-  if (!name) fail('usage: --window <monitor|session:ID>');
+  if (!name) fail('usage: --window <monitor|browser|session:ID>');
   args.splice(at, 2);
   return name;
 }
 
 /** What the shell captions that window — how the OS-level capture finds it. */
 function windowCaption(window) {
+  // Daoris's own browser (D78) is captioned `Daoris — Browser`, then its page's title.
+  if (window === 'browser') return 'Browser';
   return window === 'monitor' ? 'Monitor' : window;
 }
 

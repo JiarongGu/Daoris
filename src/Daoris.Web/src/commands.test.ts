@@ -16,6 +16,7 @@ const world = (over: Partial<Parameters<typeof commands>[0]> = {}): Parameters<t
   startSession: vi.fn(),
   review: vi.fn(),
   monitor: vi.fn(),
+  browser: vi.fn(),
   ask: vi.fn(),
   ...over,
 });
@@ -73,6 +74,8 @@ describe('the command registry', () => {
     expect(list).toContain('work.review');
     // The second screen (SURF8) — a window is the shell's to open, so it follows the same rule.
     expect(list).toContain('work.monitor');
+    // Daoris's own browser (D78) — a window of the shell, by the same rule.
+    expect(list).toContain('work.browser');
   });
 
   /**

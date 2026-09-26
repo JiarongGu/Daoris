@@ -36,6 +36,7 @@ const world = (over: Partial<Parameters<typeof commands>[0]> = {}) => commands({
   startSession: () => {},
   review: () => {},
   monitor: () => {},
+  browser: () => {},
   detach: () => {},
   ask: () => {},
   ...over,

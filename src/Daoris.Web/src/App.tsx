@@ -20,7 +20,7 @@ import { type SettingsAnchor, type SettingsSection, SettingsView } from './Setti
 import { Reader } from './Reader';
 import { ShellSignals } from './ShellSignals';
 import {
-  useDriver, useOpenWindow, useRemotes, useRules, useSyncNow, useTrustFolder, useUntrusted,
+  useDriver, useOpenBrowser, useOpenWindow, useRemotes, useRules, useSyncNow, useTrustFolder, useUntrusted,
 } from './shell';
 import { appMenus, menuAction } from './work/appMenus';
 import type { TrustHold } from './signals';
@@ -138,6 +138,7 @@ export function App() {
   // Opening a window is the shell's act, not the page's (SURF8). In a browser it simply rejects,
   // which is why the commands that use it are gated on a shell being here.
   const openWindow = useOpenWindow();
+  const openBrowser = useOpenBrowser();
 
   // Sessions does not exist in a browser (D55): no stream, no tree path, nothing honest to show. A
   // remembered `sessions` where no shell answers falls back rather than rendering an empty view.
@@ -342,11 +343,16 @@ export function App() {
                 { id: 'palette', label: t('palette.title'), icon: 'search' },
                 // A window is the shell's to open, so a browser is offered none — the item was there
                 // and did nothing (REV3), which the machine items above already knew not to do.
-                ...(attached ? [{ id: 'monitor', label: t('work.menu.monitor'), icon: 'monitor' as const, separated: true }] : []),
+                ...(attached ? [
+                  { id: 'monitor', label: t('work.menu.monitor'), icon: 'monitor' as const, separated: true },
+                  // Daoris's own browser (D78): where the person signs in, and watches a session use it.
+                  { id: 'browser', label: t('work.menu.browser'), icon: 'browser' as const },
+                ] : []),
               ]}
               onChoose={(_, item) => {
                 if (item === 'palette') { setPalette(true); return; }
                 if (item === 'monitor' && attached) openWindow.mutate(MONITOR_WINDOW);
+                if (item === 'browser' && attached) openBrowser.mutate();
               }}
             />
           </AppMenuBar>
@@ -612,6 +618,7 @@ export function App() {
           // The second screen (SURF8). Opening a window is the shell's act, so both of these are
           // absent in a browser by the same omission every other shell-only command uses.
           monitor: () => openWindow.mutate(MONITOR_WINDOW),
+          browser: () => openBrowser.mutate(),
           detach: attending
             ? () => openWindow.mutate(sessionWindowName(attending))
             : undefined,

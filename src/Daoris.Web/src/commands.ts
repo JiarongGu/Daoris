@@ -72,6 +72,8 @@ export function commands(world: {
   review: () => void;
   /** Open the monitor window on a second screen (SURF8). Shell-only: a page cannot open a window. */
   monitor: () => void;
+  /** Open Daoris's own browser (D78), where the person signs in and watches. Shell-only, like the monitor. */
+  browser: () => void;
   /**
    * Open the ask composer (INT4c) — anywhere, a browser included: an ask is a local host's HTTP door,
    * so it needs no shell, only this machine.
@@ -123,6 +125,14 @@ export function commands(world: {
         title: world.label('work.monitor'),
         keywords: 'second screen window watch live monitor',
         run: world.monitor,
+      },
+      {
+        id: 'work.browser',
+        icon: 'browser',
+        group: world.group('work'),
+        title: world.label('work.browser'),
+        keywords: 'browser web page sign in login ticket chrome jira',
+        run: world.browser,
       },
     );
 

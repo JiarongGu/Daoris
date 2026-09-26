@@ -6467,3 +6467,44 @@ so the next failures park it again. The confirmation names the quest and how man
 again, from both catalogues, since the driver answers only its state. A quest sitting for any other
 reason offers no retry. Not looked at on the window: no machine here holds a parked quest, and the
 vitest loop drives the drawer over the mocked bridge.
+
+## BRW1 — the browser window (2026-09-27)
+
+> *"so instead rely on things like claude extension we can have our own built-in browser system
+> (or use plugin to support this)"* (owner, 2026-09-27 → D78)
+
+- [x] **BRW1 — the browser window.** Its own WebView2 environment and profile under the home, no
+  bridge, a loopback CDP port picked free, an address bar with back, forward and reload, and View →
+  *Browser* with the palette's door. Module tests for the pure parts, and a look on the window with
+  Playwright MCP attached from outside.
+
+✅ **done 2026-09-27**. **Measured first**: Playwright MCP 0.0.82, attached with `--cdp-endpoint` to
+the scratch shell's WebView2 debug port, listed the tab, navigated, snapshotted, and opened a second
+tab. It also navigated the app's own page away, which is why the browser is its own environment.
+
+- **The window** (`BrowserForm`, `BrowserHost` in the shell) is one framed window among the shell's
+  windows, on its own pump like the monitor. Its WebView2 environment has its own user-data folder,
+  `<home>/browser/profile`, and builds no bridge. It listens for CDP on a loopback port picked free
+  once per process, so a reopened window joins the same browser with the same options. An agent
+  bringing it up gets it without focus, and the person's press brings it forward. A link asking
+  for a new window opens in the same one.
+- **The judgements** (`InAppBrowser` in the modules, 18 tests): the profile folder, the debug
+  arguments, the endpoint, a free port, and the address bar's rules. A host without a scheme is
+  HTTPS unless it is this machine. A file, a script, data, or a credential in the address goes
+  nowhere.
+- **The doors:** View → *Browser*, and the palette's *Open Daoris's browser*, shell-only like the
+  monitor, through `DAORIS.WINDOWS` `OPEN_BROWSER`. Its icon is a compass, because the globe
+  already means a fetch.
+- **Looked at on the scratch machine.** Two browser processes, each on loopback only: the app's
+  page on the dev loop's port in its own folder, and the in-app browser on its own port in
+  `home/browser/profile`. The dev loop's `WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS` reaches every
+  environment, so for this one creation it names the browser's port and is put back at once.
+  Playwright MCP attached from outside drove the in-app browser, and the window showed what it
+  did, its caption following the page's title. Three things the look caught were fixed: glyph
+  buttons sized in pixels were slivers at 200%, and are now sized from their font; an empty
+  address bar now says what it is for; and `about:blank` and `data:` pages report no address,
+  where an http page does.
+- **Also found:** a scratch run started while the previous shell's WebView2 process was still
+  winding down chose the next debug port and failed with `0x8007139F`, the same folder under
+  different options. That is the dev loop, not the browser. A restart once the old process had gone
+  was clean.

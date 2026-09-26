@@ -96,6 +96,13 @@ internal static class Program
         builder.Services.AddSingleton<SecondaryWindowHost>();
         builder.Services.AddSingleton<ISecondaryWindows>(
             sp => sp.GetRequiredService<SecondaryWindowHost>());
+        // Daoris's own browser (D78): one more of those windows, in an environment of its own, with its
+        // profile under the home — the directory `driver.json` sits in, as every machine file's is.
+        builder.Services.AddSingleton(sp => new BrowserHost(
+            sp.GetRequiredService<SecondaryWindows>(),
+            sp.GetRequiredService<ShenoraPaths>(),
+            Path.GetDirectoryName(Path.GetFullPath(Daoris.Driver.DriverConfig.ResolvePath()))!));
+        builder.Services.AddSingleton<Daoris.Driver.IInAppBrowser>(sp => sp.GetRequiredService<BrowserHost>());
         builder.Services.AddSingleton(new PlatformAddress(serviceUrl));
         builder.Services.AddIpcModule<WindowsModule>();
 

@@ -28,7 +28,10 @@ namespace Daoris.Desktop;
 /// onto it would be a route that exists to be symmetrical.</para>
 /// </remarks>
 public sealed class WindowsModule(
-    IEventBus events, ISecondaryWindows windows, PlatformAddress platform)
+    IEventBus events, ISecondaryWindows windows, PlatformAddress platform,
+    // Daoris's own browser (D78): a window the person opens to sign in and to watch. Null where the
+    // host carries none, which is only a test that does not care.
+    Daoris.Driver.IInAppBrowser? browser = null)
     : ModuleBase(events: events)
 {
     public override string ModuleName => "DAORIS.WINDOWS";
@@ -38,6 +41,15 @@ public sealed class WindowsModule(
     {
         switch (request.Type)
         {
+            // Not a route into the bundle like the others: the browser shows pages that are not
+            // Daoris's, in an environment that holds no bridge (D78 §3.1). Opening it again brings it
+            // forward, as every window here does.
+            case "OPEN_BROWSER":
+            {
+                browser?.Show();
+                return Task.FromResult<object?>(State(opened: browser is not null));
+            }
+
             case "OPEN":
             {
                 var name = PayloadHelper.GetRequiredValue<string>(request.Payload, "name");

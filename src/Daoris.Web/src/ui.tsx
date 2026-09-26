@@ -7,7 +7,7 @@ import * as Tooltip from '@radix-ui/react-tooltip';
 import * as Checkbox from '@radix-ui/react-checkbox';
 import {
   ArrowDown, ArrowDownToLine, ArrowLeftRight, ArrowUp, Brain, Check, ChevronDown, ChevronRight, Cloud,
-  CloudOff, Copy, Ellipsis, FileDiff, FilePen, FileText, Gauge, GitMerge, Globe, Inbox, Info, KeyRound, Languages,
+  CloudOff, Compass, Copy, Ellipsis, FileDiff, FilePen, FileText, Gauge, GitMerge, Globe, Inbox, Info, KeyRound, Languages,
   LayoutDashboard, LayoutGrid, Layers, Link, ListTodo, LogIn, Maximize2, Minimize2, Monitor, Network,
   PanelLeftClose, PanelLeftOpen, PanelRightClose, Paperclip, Plug, Plus,
   RotateCw, Search, Settings, Shield, SquareArrowOutUpRight, SquareTerminal, Trash2, TriangleAlert,
@@ -47,6 +47,8 @@ const ICONS = {
   // The second screen (SURF8): the monitor window, and popping one session out into its own.
   monitor: Monitor,
   external: SquareArrowOutUpRight,
+  // Daoris's own browser (D78). Not the globe: that is a fetch, in the conversation's tool cards.
+  browser: Compass,
   // 🔴 The two FRAMES, and they need glyphs of their own. Manage first wore `overview` — the same
   // grid as the Overview domain three rows below it — so the rail showed one icon twice meaning two
   // different things, which is worse than an unlabelled icon: it is a wrong label.
