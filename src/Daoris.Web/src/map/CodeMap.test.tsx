@@ -70,6 +70,22 @@ describe('the code map drawing', () => {
 });
 
 describe('an arrow', () => {
+  /**
+   * UX5 U48: the arrows are the code map's content, so they wear an ink, not a container's line.
+   * `--line-strong` is 1.6:1 on the card in both themes, and a stepped-back arrow was a fifth of
+   * that: in dark the unlit ones vanished.
+   */
+  it('is drawn in ink, its head too', () => {
+    const { container } = render(
+      <CodeMapCanvas repository="engine" modules={MODULES} dependencies={DEPENDENCIES} selected={null} onSelect={() => {}} />);
+
+    for (const path of container.querySelectorAll('svg > path')) {
+      expect(path.getAttribute('class')).toContain('stroke-ink-faint');
+      expect(path.getAttribute('class')).not.toContain('line-strong');
+    }
+    expect(container.querySelector('#code-arrow path')!.getAttribute('class')).toBe('fill-ink-faint');
+  });
+
   /** 🔴 Seen on the window: `runtime → chunks` ran straight down behind `renderer` and vanished. */
   it('that skips a layer bows out past the column instead of running behind the box between', () => {
     const numbers = (path: string) => path.match(/-?\d+(\.\d+)?/g)!.map(Number);

@@ -101,9 +101,11 @@ export function CodeMapCanvas({ repository, modules, dependencies, selected, onS
     >
       <defs>
         {/* In the drawing's own units, so a chosen arrow's head is the size of every other (MAP2) —
-            and one per hue, so a lit arrow does not end in a grey head (seen on the window). */}
+            and one per hue, so a lit arrow does not end in a grey head (seen on the window). The
+            arrows are this drawing's content, so they wear an ink, never a container's line: that
+            was 1.6:1 on the card, and stepped back, gone in dark (UX5 U48). */}
         <marker id="code-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto">
-          <path d="M 0 0 L 10 5 L 0 10 z" className="fill-line-strong" />
+          <path d="M 0 0 L 10 5 L 0 10 z" className="fill-ink-faint" />
         </marker>
         <marker id="code-arrow-lit" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto">
           <path d="M 0 0 L 10 5 L 0 10 z" className="fill-accent" />
@@ -122,7 +124,7 @@ export function CodeMapCanvas({ repository, modules, dependencies, selected, onS
             fill="none"
             markerEnd={accent ? 'url(#code-arrow-lit)' : 'url(#code-arrow)'}
             className={cn(
-              'stroke-line-strong transition-opacity duration-(--speed)',
+              'stroke-ink-faint transition-opacity duration-(--speed)',
               lit(edge.from, edge.to) ? 'stroke-[1.5]' : 'opacity-20',
               accent && 'stroke-accent stroke-2',
             )}
