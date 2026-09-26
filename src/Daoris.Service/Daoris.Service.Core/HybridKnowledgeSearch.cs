@@ -15,10 +15,12 @@ namespace Daoris.Knowledge;
 ///
 /// <para>If either search is unavailable or fails, the other still answers. A knowledge index that
 /// returns nothing because an embedding endpoint is down is worse than one that returns the lexical
-/// half, and the caller usually cannot tell the difference anyway.</para>
+/// half. 🔴 But the caller must be able to tell (TIER1, D24): <see cref="AnswerAsync"/> says which
+/// halves answered and why one did not, where swallowing the failure let every door report the
+/// configured tier over an answer only one half had made.</para>
 /// </remarks>
 public sealed class HybridKnowledgeSearch(IKnowledgeSearch lexical, IKnowledgeSearch? semantic = null)
-    : IKnowledgeSearch
+    : IAnsweringSearch
 {
     /// <summary>
     /// The RRF damping constant. 60 is the value the original paper settled on, and it is what keeps
@@ -28,30 +30,40 @@ public sealed class HybridKnowledgeSearch(IKnowledgeSearch lexical, IKnowledgeSe
     /// </summary>
     private const double K = 60;
 
-    public async Task<IReadOnlyList<KnowledgeHit>> SearchAsync(KnowledgeQuery query, CancellationToken ct = default)
+    public async Task<IReadOnlyList<KnowledgeHit>> SearchAsync(KnowledgeQuery query, CancellationToken ct = default) =>
+        (await AnswerAsync(query, ct).ConfigureAwait(false)).Hits;
+
+    public async Task<SearchAnswer> AnswerAsync(KnowledgeQuery query, CancellationToken ct = default)
     {
         // Over-fetch from each side: a result ranked 15th lexically and 3rd semantically should be
         // able to surface, and it cannot if each list was truncated to the final limit first.
         var wide = query with { Limit = Math.Max(query.Limit * 3, 30) };
 
-        var lexicalHits = await SafeAsync(lexical, wide, ct).ConfigureAwait(false);
-        var semanticHits = semantic is null
-            ? []
+        var (lexicalHits, lexicalFailure) = await SafeAsync(lexical, wide, ct).ConfigureAwait(false);
+        var (semanticHits, semanticFailure) = semantic is null
+            ? ([], null)
             : await SafeAsync(semantic, wide, ct).ConfigureAwait(false);
 
-        if (semanticHits.Count == 0) return Truncate(lexicalHits, query.Limit);
-        if (lexicalHits.Count == 0) return Truncate(semanticHits, query.Limit);
+        var failures = new List<string>();
+        if (lexicalFailure is not null) failures.Add($"the search by words did not answer: {lexicalFailure}");
+        if (semanticFailure is not null) failures.Add($"the search by meaning did not answer: {semanticFailure}");
+        SearchAnswer Answered(IReadOnlyList<KnowledgeHit> hits) => new(
+            hits, lexicalFailure is null, semantic is not null && semanticFailure is null,
+            failures.Count == 0 ? null : string.Join("; ", failures));
+
+        if (semanticHits.Count == 0) return Answered(Truncate(lexicalHits, query.Limit));
+        if (lexicalHits.Count == 0) return Answered(Truncate(semanticHits, query.Limit));
 
         var fused = new Dictionary<string, (KnowledgeEntry Entry, double Score, string? Excerpt)>(StringComparer.Ordinal);
         Accumulate(fused, lexicalHits);
         Accumulate(fused, semanticHits);
 
-        return fused.Values
+        return Answered(fused.Values
             .OrderByDescending(v => v.Score)
             .ThenBy(v => v.Entry.Id, StringComparer.Ordinal)
             .Take(query.Limit)
             .Select(v => new KnowledgeHit(v.Entry, v.Score, v.Excerpt))
-            .ToList();
+            .ToList());
     }
 
     private static void Accumulate(
@@ -75,21 +87,23 @@ public sealed class HybridKnowledgeSearch(IKnowledgeSearch lexical, IKnowledgeSe
         }
     }
 
-    private static async Task<IReadOnlyList<KnowledgeHit>> SafeAsync(
+    /// <returns>The half's hits, or none and why it did not answer.</returns>
+    private static async Task<(IReadOnlyList<KnowledgeHit> Hits, string? Failure)> SafeAsync(
         IKnowledgeSearch search, KnowledgeQuery query, CancellationToken ct)
     {
         try
         {
-            return await search.SearchAsync(query, ct).ConfigureAwait(false);
+            return (await search.SearchAsync(query, ct).ConfigureAwait(false), null);
         }
         catch (OperationCanceledException)
         {
             throw; // cancellation is the caller's, not a failure to absorb
         }
-        catch
+        catch (Exception error)
         {
-            // One half being unavailable degrades the answer; it must not remove it.
-            return [];
+            // One half being unavailable degrades the answer; it must not remove it — and it must
+            // not go unsaid either (TIER1).
+            return ([], error.Message);
         }
     }
 

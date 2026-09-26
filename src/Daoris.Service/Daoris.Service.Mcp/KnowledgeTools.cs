@@ -98,7 +98,7 @@ public sealed class KnowledgeTools(
     {
         if (UnknownKinds(kinds) is { } refused) return refused;
         var scope = await ScopeAsync(workspace, ct).ConfigureAwait(false);
-        var hits = await service.SearchAsync(
+        var answer = await service.AnswerAsync(
             new KnowledgeQuery(query)
             {
                 Kinds = KnowledgeQuery.ParseKinds(kinds),
@@ -107,13 +107,25 @@ public sealed class KnowledgeTools(
                 Limit = Math.Clamp(limit, 1, 50),
                 Workspace = scope,
             }, ct).ConfigureAwait(false);
+        var hits = answer.Hits;
+
+        // 🔴 Nothing answering is not nothing matching (TIER1): an agent told "no matches" by an index
+        // nobody could read concludes the family never learned it.
+        if (answer.Tier == "none")
+        {
+            return $"No search answered for \"{query}\"{Scoped(scope)} — {answer.Failure}. This is not an "
+                 + "empty result: nothing could read the index. Try again, or call `knowledge_refresh`.";
+        }
 
         if (hits.Count == 0)
         {
-            return $"No matches for \"{query}\"{Scoped(scope)}.\n\n"
-                 + "Note this searches by WORD OVERLAP, so a repository that reached the same "
-                 + "conclusion in different vocabulary will not match. Try the vocabulary that "
-                 + "repository would have used.";
+            return answer.Semantic
+                ? $"No matches for \"{query}\"{Scoped(scope)}, by words or by meaning. "
+                  + "`knowledge_convergence` finds where two repositories reached one conclusion."
+                : $"No matches for \"{query}\"{Scoped(scope)}.\n\n"
+                  + "Note this searches by WORD OVERLAP, so a repository that reached the same "
+                  + "conclusion in different vocabulary will not match. Try the vocabulary that "
+                  + "repository would have used." + DidNotAnswer(answer);
         }
 
         var text = new StringBuilder();
@@ -128,17 +140,22 @@ public sealed class KnowledgeTools(
         }
 
         text.AppendLine("Call `knowledge_get` with an id for the full text.");
-        // Which tier answered, on EVERY result and not only on an empty one (D24). A caller who gets
-        // results has no way to know the semantic half was absent, and will read "these are the
-        // matches" as complete rather than as complete-for-word-overlap.
-        if (!service.SemanticEnabled)
+        // Which tier ANSWERED, on EVERY result and not only on an empty one (D24) — the answer's, not
+        // the configuration's (TIER1). A caller who gets results has no way to know the semantic half
+        // was absent, and will read "these are the matches" as complete rather than as
+        // complete-for-word-overlap.
+        if (!answer.Semantic)
         {
             text.AppendLine("_Matched on words only. A repository that reached the same conclusion in "
-                          + "different vocabulary will not appear — try its vocabulary._");
+                          + "different vocabulary will not appear — try its vocabulary._" + DidNotAnswer(answer));
         }
 
         return text.ToString();
     }
+
+    /// <summary>Why a configured half did not answer, when one did not — said, never folded away (TIER1).</summary>
+    private string DidNotAnswer(SearchAnswer answer) =>
+        service.SemanticEnabled && answer.Failure is { Length: > 0 } failure ? $" ({failure}.)" : "";
 
     [McpServerTool(Name = "knowledge_get")]
     [Description("Read one knowledge entry in full, by the id returned from knowledge_search.")]

@@ -179,3 +179,71 @@ public sealed class McpToolsTests : IAsyncLifetime
         Assert.False(string.IsNullOrWhiteSpace(body.ToString()));
     }
 }
+
+/// <summary>
+/// TIER1 at the agent's door: `knowledge_search` says the tier that ANSWERED (D24). With the embedder
+/// down it said nothing at all, because the configured tier was semantic — an agent read a
+/// words-only answer as complete.
+/// </summary>
+public sealed class SearchToolTierTests : IAsyncLifetime
+{
+    private SqliteConnection _connection = null!;
+    private QuestStore _quests = null!;
+
+    private sealed class DownSearch : IKnowledgeSearch
+    {
+        public Task<IReadOnlyList<KnowledgeHit>> SearchAsync(KnowledgeQuery query, CancellationToken ct = default) =>
+            throw new HttpRequestException("the embedding endpoint is unreachable");
+    }
+
+    public async Task InitializeAsync()
+    {
+        _connection = new SqliteConnection("Data Source=:memory:");
+        await _connection.OpenAsync();
+        _quests = await QuestStore.OpenAsync(_connection);
+    }
+
+    public async Task DisposeAsync() => await _connection.DisposeAsync();
+
+    /// <summary>
+    /// The tools over one stored entry, with a meaning half that is configured and down. The lexical
+    /// half is made from the store, so a test can hand in one that works or one that is down too.
+    /// </summary>
+    private async Task<KnowledgeTools> ToolsAsync(Func<IKnowledgeStore, IKnowledgeSearch> lexicalHalf)
+    {
+        var store = new InMemoryKnowledgeStore();
+        await store.ReplaceRepositoryAsync("alpha", [
+            new KnowledgeEntry("alpha", EntryKind.Decision, Provenance.Local, "D1", "drift is measured against the lock",
+                "docs/DECISIONS.md", "D1"),
+        ]);
+        var service = new KnowledgeService(
+            store, new HybridKnowledgeSearch(lexicalHalf(store), new DownSearch()), new EmptyKnowledgeSource(),
+            DisclosurePolicy.LocalOnly, new DimensionEmbedder(["drift"]), new Lyntai.Memory.InMemoryVectorStore(),
+            registry: new Registry());
+        return new KnowledgeTools(
+            service, _quests, new QuestExchange(service, _quests), new AmbientWorkspace(Path.GetTempPath()));
+    }
+
+    [Fact]
+    public async Task A_configured_meaning_half_that_did_not_answer_is_said_beside_the_results()
+    {
+        var tools = await ToolsAsync(store => new LexicalKnowledgeSearch(store));
+
+        var said = await tools.SearchAsync("drift", workspace: "all");
+
+        Assert.Contains("1 result(s)", said);
+        Assert.Contains("Matched on words only", said);
+        Assert.Contains("the search by meaning did not answer: the embedding endpoint is unreachable", said);
+    }
+
+    [Fact]
+    public async Task Nothing_answering_is_not_reported_as_no_matches()
+    {
+        var tools = await ToolsAsync(_ => new DownSearch());
+
+        var said = await tools.SearchAsync("drift", workspace: "all");
+
+        Assert.StartsWith("No search answered", said);
+        Assert.DoesNotContain("No matches", said);
+    }
+}

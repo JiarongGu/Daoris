@@ -86,4 +86,36 @@ describe('SearchView', () => {
     expect(screen.queryByText(/Lexical search matches words/)).toBeNull();
     expect(screen.getByText(/meaning as well as words/)).toBeInTheDocument();
   });
+
+  /**
+   * TIER1: the tier is the one that ANSWERED, per answer (D24), from the service's `x-daoris-tier`.
+   * A deployment configured for meaning whose embedder was down said *matches meaning as well as
+   * words* over an answer only words had made.
+   */
+  it('words an answer by the tier that answered it, not the one configured', async () => {
+    const answered = (tier: string, body: unknown) =>
+      vi.fn(async () => Response.json(body, { headers: { 'x-daoris-tier': tier } }));
+
+    vi.stubGlobal('fetch', answered('lexical', []));
+    const { unmount } = view({ semantic: true });
+    await userEvent.type(screen.getByRole('searchbox'), 'zebra quartz');
+    expect(await screen.findByText(/matches words, so a repository that reached the same conclusion/)).toBeInTheDocument();
+    expect(screen.queryByText(/meaning as well as words/)).toBeNull();
+    unmount();
+
+    // Found things, but only by words, on a deployment that matches meaning too: said beside them.
+    vi.stubGlobal('fetch', answered('lexical', HITS));
+    const second = view({ semantic: true });
+    await userEvent.type(screen.getByRole('searchbox'), 'encoding');
+    expect(await screen.findByText('An encoding trap')).toBeInTheDocument();
+    expect(screen.getByText(/matched on words only: the search by meaning did not answer/i)).toBeInTheDocument();
+    second.unmount();
+
+    // Nothing answering is not nothing matching.
+    vi.stubGlobal('fetch', answered('none', []));
+    view({ semantic: true });
+    await userEvent.type(screen.getByRole('searchbox'), 'zebra quartz');
+    expect(await screen.findByText('Nothing answered')).toBeInTheDocument();
+    expect(screen.queryByText('No matches')).toBeNull();
+  });
 });

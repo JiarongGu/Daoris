@@ -168,6 +168,22 @@ public sealed class KnowledgeService(
         return await search.SearchAsync(query, ct).ConfigureAwait(false);
     }
 
+    /// <summary>
+    /// Search, and say which tier ANSWERED (TIER1, D24): a door reports this, never
+    /// <see cref="SemanticEnabled"/>, which is only what was configured.
+    /// </summary>
+    /// <remarks>
+    /// A composition that is not the hybrid is the lexical search alone — the factory builds nothing
+    /// else — so it answers by words, and a failure there propagates as it always has.
+    /// </remarks>
+    public async Task<SearchAnswer> AnswerAsync(KnowledgeQuery query, CancellationToken ct = default)
+    {
+        await EnsureIndexedAsync(ct).ConfigureAwait(false);
+        return search is IAnsweringSearch answering
+            ? await answering.AnswerAsync(query, ct).ConfigureAwait(false)
+            : new SearchAnswer(await search.SearchAsync(query, ct).ConfigureAwait(false), Lexical: true, Semantic: false);
+    }
+
     public async Task<KnowledgeEntry?> FindAsync(string id, CancellationToken ct = default)
     {
         await EnsureIndexedAsync(ct).ConfigureAwait(false);

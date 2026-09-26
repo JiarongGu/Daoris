@@ -60,6 +60,15 @@ public interface IKnowledgeSearch
 }
 
 /// <summary>
+/// A search that can say which of its halves answered (TIER1). The hybrid is the one composition with
+/// two halves, and so the one that can lose one without the caller knowing.
+/// </summary>
+public interface IAnsweringSearch : IKnowledgeSearch
+{
+    Task<SearchAnswer> AnswerAsync(KnowledgeQuery query, CancellationToken ct = default);
+}
+
+/// <summary>
 /// Whether an entry may leave this machine.
 /// </summary>
 /// <remarks>

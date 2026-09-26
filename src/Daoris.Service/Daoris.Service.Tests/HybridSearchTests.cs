@@ -138,6 +138,67 @@ public class HybridSearchTests
         Assert.Equal("Survivor", fused[0].Entry.Title);
     }
 
+    // ——— TIER1: which tier ANSWERED, per answer (D24) — never the configured one.
+
+    [Fact]
+    public async Task An_answer_names_both_halves_when_both_answered()
+    {
+        var store = await StoreOf(Entry("alpha", "Cache invalidation", "The manifest version drives the cache key."));
+        var embedder = new DimensionEmbedder(["manifest", "version"]);
+        var vectors = new InMemoryVectorStore();
+        await SemanticKnowledgeSearch.IndexAsync(await store.AllAsync(), embedder, vectors);
+
+        var answer = await new HybridKnowledgeSearch(
+                new LexicalKnowledgeSearch(store), new SemanticKnowledgeSearch(store, embedder, vectors))
+            .AnswerAsync(new KnowledgeQuery("manifest"));
+
+        Assert.Equal("lexical+semantic", answer.Tier);
+        Assert.Null(answer.Failure);
+        Assert.NotEmpty(answer.Hits);
+    }
+
+    /// <summary>
+    /// With the embedder down, a search said `lexical + semantic` over an answer only words had made:
+    /// the half that failed is named, and the tier is the one that answered.
+    /// </summary>
+    [Fact]
+    public async Task A_half_that_failed_is_named_and_the_tier_is_the_one_that_answered()
+    {
+        var store = await StoreOf(Entry("alpha", "Survivor", "still findable by words"));
+
+        var answer = await new HybridKnowledgeSearch(new LexicalKnowledgeSearch(store), new ThrowingSearch())
+            .AnswerAsync(new KnowledgeQuery("findable"));
+
+        Assert.Equal("lexical", answer.Tier);
+        Assert.Single(answer.Hits);
+        Assert.Contains("the embedding endpoint is unreachable", answer.Failure);
+    }
+
+    /// <summary>Nothing answering is not nothing matching — the two were indistinguishable.</summary>
+    [Fact]
+    public async Task When_neither_half_answers_the_answer_says_none()
+    {
+        var answer = await new HybridKnowledgeSearch(new ThrowingSearch(), new ThrowingSearch())
+            .AnswerAsync(new KnowledgeQuery("anything"));
+
+        Assert.Equal("none", answer.Tier);
+        Assert.Empty(answer.Hits);
+        Assert.NotNull(answer.Failure);
+    }
+
+    /// <summary>A composition with no semantic half answers by words, and says only that.</summary>
+    [Fact]
+    public async Task A_service_with_no_semantic_half_answers_lexical()
+    {
+        var store = await StoreOf(Entry("alpha", "Only", "the lexical result"));
+        var service = new KnowledgeService(store, new LexicalKnowledgeSearch(store), new EmptyKnowledgeSource());
+
+        var answer = await service.AnswerAsync(new KnowledgeQuery("lexical"));
+
+        Assert.Equal("lexical", answer.Tier);
+        Assert.Single(answer.Hits);
+    }
+
     [Fact]
     public async Task Cancellation_is_not_swallowed_as_a_failed_search()
     {

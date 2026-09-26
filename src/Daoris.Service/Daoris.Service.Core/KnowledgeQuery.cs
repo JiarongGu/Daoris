@@ -87,3 +87,21 @@ public sealed record KnowledgeQuery(string Text = "")
 /// that cannot show its reasoning gets treated as an oracle, which is exactly what it is not.
 /// </param>
 public sealed record KnowledgeHit(KnowledgeEntry Entry, double Score, string? Excerpt = null);
+
+/// <summary>
+/// A search's hits, and which halves ANSWERED it (TIER1, D24) — never which were configured. A half
+/// that threw did not answer, and nothing answering is not nothing matching.
+/// </summary>
+/// <param name="Failure">Why a half did not answer, in its own words; null when every half did.</param>
+public sealed record SearchAnswer(
+    IReadOnlyList<KnowledgeHit> Hits, bool Lexical, bool Semantic, string? Failure = null)
+{
+    /// <summary>The tier as a token for a wire: `lexical+semantic`, `lexical`, `semantic`, or `none`.</summary>
+    public string Tier => (Lexical, Semantic) switch
+    {
+        (true, true) => "lexical+semantic",
+        (true, false) => "lexical",
+        (false, true) => "semantic",
+        _ => "none",
+    };
+}

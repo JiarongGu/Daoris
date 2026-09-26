@@ -26,7 +26,13 @@ export function SearchView({ onOpen, notify, semantic, onConverge }: {
   const hits = useSearch(debounced, localOnly);
   useErrorNotify(hits.error, notify);
   // The service caps; the client asks for one more than it shows, so "there are more" is a fact.
-  const { shown, more } = page(hits.data ?? []);
+  const { shown, more } = page(hits.data?.hits ?? []);
+  // 🔴 The tier that ANSWERED this search (TIER1, D24), not the one configured: with the embedder
+  // down, a deployment that matches meaning answered by words and said it had matched meaning. A host
+  // older than the header answers none, and the configured tier is all there is to say.
+  const tier = hits.data?.tier ?? null;
+  const byMeaning = tier === null ? semantic : tier.includes('semantic');
+  const nothingAnswered = tier === 'none';
 
   return (
     <section>
@@ -65,13 +71,24 @@ export function SearchView({ onOpen, notify, semantic, onConverge }: {
       {/* 🔴 An empty answer is an empty state (§4; UX5 U41), in the tier's own words, and its action
           goes where the sentence points. It was a bare paragraph that named the convergence view and
           offered no way there, and said *lexical* on a deployment whose recall is semantic too. */}
-      {!hits.isFetching && hits.data?.length === 0 && (
-        <EmptyState
-          icon="search"
-          headline={t('search.emptyHeadline')}
-          body={semantic ? t('search.emptySemantic') : t('search.emptyLexical')}
-          action={<Button onClick={onConverge}>{t('search.toConvergence')}</Button>}
-        />
+      {!hits.isFetching && hits.data?.hits.length === 0 && (nothingAnswered
+        // Nothing answering is not nothing matching: an index that could not be read says so.
+        ? <EmptyState icon="search" headline={t('search.noneHeadline')} body={t('search.noneBody')} />
+        : (
+          <EmptyState
+            icon="search"
+            headline={t('search.emptyHeadline')}
+            body={byMeaning ? t('search.emptySemantic') : t('search.emptyLexical')}
+            action={<Button onClick={onConverge}>{t('search.toConvergence')}</Button>}
+          />
+        ))}
+
+      {/* Found, but by words alone on a deployment that matches meaning too: said beside the list, or
+          it reads as complete when a conclusion reached in other words may be missing. */}
+      {!hits.isFetching && shown.length > 0 && semantic && !byMeaning && (
+        <p className="mb-2 border-l-[3px] border-warn bg-raised px-3.5 py-2 text-body text-ink-soft">
+          {t('search.meaningDown')}
+        </p>
       )}
 
       {/* 🔴 How many, and whether that is all of them. A broad query on a real index comes back

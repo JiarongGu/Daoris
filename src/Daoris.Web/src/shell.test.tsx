@@ -2013,6 +2013,41 @@ describe('trusting a folder the driver is holding (D73)', () => {
     await waitFor(() => expect(notify).toHaveBeenCalledWith(GRANTED.message, 'ok'));
   });
 
+  /**
+   * RETRY1 (D50): a quest parked by its strikes was retried only from a terminal (`daoris driver
+   * retry`). The page had the other half ready, and nothing rendered it. The retry is offered where
+   * the parked quest's sentence is read, and nowhere a quest is not parked.
+   */
+  it('a quest parked by its strikes offers the retry in its drawer, and retries on the press', async () => {
+    const notify = vi.fn();
+    const client = holding([]);
+    client.setQueryData(keys.considered, [{
+      quest: 'abc123', repository: 'engine', verdict: 'Exhausted',
+      reason: '3 sessions failed on this quest, so it is parked. `daoris driver retry abc123` starts it again.',
+    }]);
+    show(<QuestsView notify={notify} />, client);
+
+    await userEvent.click(await screen.findByText('Expose a streaming budget'));
+    const dialog = await screen.findByRole('dialog');
+    expect(within(dialog).getByText(/3 sessions failed on this quest/)).toBeInTheDocument();
+    await userEvent.click(within(dialog).getByRole('button', { name: 'try it again' }));
+
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'RETRY_QUEST', { payload: { quest: 'abc123' } });
+    await waitFor(() => expect(notify).toHaveBeenCalledWith(expect.stringContaining('#abc123')));
+  });
+
+  it('a quest sitting for any other reason offers no retry', async () => {
+    const client = holding([]);
+    client.setQueryData(keys.considered, [{
+      quest: 'abc123', repository: 'engine', verdict: 'NotDrivable', reason: 'engine is not driven on this machine.',
+    }]);
+    show(<QuestsView notify={() => {}} />, client);
+
+    await userEvent.click(await screen.findByText('Expose a streaming budget'));
+    const dialog = await screen.findByRole('dialog');
+    expect(within(dialog).queryByRole('button', { name: 'try it again' })).toBeNull();
+  });
+
   it('a quest nothing holds for trust offers no grant', async () => {
     show(<QuestsView notify={() => {}} />, holding([]));
 

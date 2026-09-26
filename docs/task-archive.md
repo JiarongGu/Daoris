@@ -6404,3 +6404,66 @@ refresh's own lock, without re-reading the disk. A failing embedder leaves the l
 a refresh does. **Not the persistent store**: that is SEM2, held until the per-process cost is
 measured on a machine that runs an embedder. TIER1 is untouched: a search still reports the
 configured tier, not the one that answered.
+
+## TIER1 — which tier answered, per answer (2026-09-27)
+
+- [x] **TIER1 — which tier answered, per answer** (service F13, D24). `HybridKnowledgeSearch`
+  swallows either half's failure, and the tools report the configured tier (`SemanticEnabled`)
+  rather than the one that answered. With the embedder down, a search still says `lexical +
+  semantic`, and if both halves fail, nothing matching and nothing answering look the same. The
+  search result has to carry its tier.
+
+✅ **done 2026-09-27**, after SEM1, in the same code.
+
+- **The answer carries its tier.** `SearchAnswer` holds the hits, whether each half answered, and
+  why one did not, in its own words. Its token is `lexical+semantic`, `lexical`, `semantic` or
+  `none`. The hybrid answers through `IAnsweringSearch`. A half that threw did not answer, and
+  degrading still keeps the other half's hits. `KnowledgeService.AnswerAsync` is the door every
+  door reads. A composition that is not the hybrid is the lexical search alone, so it answers
+  `lexical`.
+- **The agent's door** (`knowledge_search`): its footnote follows the tier that answered. A
+  configured meaning half that did not answer is named beside the results. *Nothing answered* is
+  its own sentence, never *no matches*. An empty answer by meaning no longer claims to have
+  searched by word overlap.
+- **The HTTP door** keeps its array body and says the tier in `x-daoris-tier`, ASCII only, since the
+  failure's own words cannot ride a header. The family rehearsal holds it, because the HTTP host has
+  no suite of its own (HTTP1).
+- **The page** reads the header. Its empty state is worded by the tier that answered. *Nothing
+  answered* is its own state. A words-only answer on a deployment that matches meaning too says so
+  beside the list. A host older than the header falls back to the configured tier.
+- **Not changed:** convergence still words its footnote from the configured tier. It embeds through
+  its own detector and is not a search answer.
+- **Looked at** on the scratch machine, started with an embedder pointed at a closed port. The
+  status door said `lexical + semantic` (the configuration), the search's header said `lexical` (what
+  answered), and the words-only note stood above the one result. The status bar still shows the
+  configured tier, which is what it claims to show.
+
+## WINDOW1 — a secondary window follows scope and theme (2026-09-27)
+
+- [x] **WINDOW1 — a secondary window follows scope and theme** (web-rest F8). Both are read from
+  `localStorage` once, and nothing listens for a `storage` event, so a detached session keeps the
+  workspace and theme it opened with.
+
+✅ **done 2026-09-27**. The browser tells every other same-origin document of a storage write, and
+both halves now hear it. The scope provider re-reads the remembered workspace, unless it is pinned
+by a test or a story. The theme module applies another window's choice and tells its listeners,
+without writing it back. Every secondary window shares the main one's WebView2 user-data folder,
+and so its storage (`SecondaryForm`). **Looked at**: with the monitor open, the main window's store
+was set to dark, and the monitor's page turned dark. **Its native caption did not**: a secondary
+window follows the OS theme directly, because it has no channel to be told. That was so before this
+change too, whenever a window opened on a chosen theme. It is WINDOW2.
+
+## RETRY1 — the screen's door for retrying a parked quest (2026-09-27)
+
+- [x] **RETRY1 — the screen's door for retrying a parked quest** (CLEAN1, D50). A quest parked by its
+  strikes is retried from a terminal (`daoris driver retry`), and the page has the other half ready
+  (`useRetryQuest`, and the session's `forgiven`) with nothing rendering it. Put the retry where the
+  parked quest is shown, with its test.
+
+✅ **done 2026-09-27**. A quest the driver considers `Exhausted` offers *try it again* in its Quests
+drawer, beside the sentence that says why it sits, as the trust grant sits beside its hold. The press
+is `RETRY_QUEST`, the same mark `daoris driver retry` writes: counted from where the quest stands,
+so the next failures park it again. The confirmation names the quest and how many failures park it
+again, from both catalogues, since the driver answers only its state. A quest sitting for any other
+reason offers no retry. Not looked at on the window: no machine here holds a parked quest, and the
+vitest loop drives the drawer over the mocked bridge.

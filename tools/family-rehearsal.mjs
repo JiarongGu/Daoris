@@ -140,7 +140,7 @@ async function api(method, path, { body, key, base = BASE } = {}) {
   } catch {
     // not JSON — the text is still worth printing on a failure
   }
-  return { status: response.status, json, text };
+  return { status: response.status, json, text, headers: response.headers };
 }
 
 let host = null;
@@ -320,6 +320,14 @@ check(
   "game's own knowledge answers a search made from outside it",
   found.status === 200 && (found.json ?? []).some((hit) => hit.repository === 'game'),
   found.text.slice(0, 300),
+);
+// TIER1 (D24): a search says which tier ANSWERED it, not which was configured — here no embedder is
+// configured, so words answered, and the header says exactly that. The HTTP host has no suite of its
+// own (HTTP1), so this door's half of the rule is held here.
+check(
+  'a search says which tier answered it — words, where no embedder is configured',
+  found.headers?.get('x-daoris-tier') === 'lexical',
+  `x-daoris-tier: ${found.headers?.get('x-daoris-tier')}`,
 );
 
 // 🔴 The gate that would have caught CANON8e. When the always-loaded tier moved out of

@@ -255,13 +255,13 @@ app.MapGet("/api/repositories", async (ComposedService s, string? workspace, Can
                     r.Fed.Commit, r.Fed.ShortCommit, r.Fed.CommittedAt, r.Fed.Branch, r.Fed.Origin))));
 
 app.MapGet("/api/search", async (
-    ComposedService s, string q, string? kinds, string? repositories, bool? localOnly, int? limit,
+    ComposedService s, HttpContext http, string q, string? kinds, string? repositories, bool? localOnly, int? limit,
     string? workspace, CancellationToken ct) =>
 {
     if (string.IsNullOrWhiteSpace(q)) return Results.BadRequest(new ErrorResponse("q is required"));
     if (KindsOrRefusal(kinds) is { Refusal: { } refused }) return Results.BadRequest(new ErrorResponse(refused));
 
-    var hits = await s.Service.SearchAsync(new KnowledgeQuery(q)
+    var answer = await s.Service.AnswerAsync(new KnowledgeQuery(q)
     {
         Kinds = KnowledgeQuery.ParseKinds(kinds),
         Repositories = KnowledgeQuery.ParseSet(repositories),
@@ -269,6 +269,12 @@ app.MapGet("/api/search", async (
         Limit = Math.Clamp(limit ?? 20, 1, 100),
         Workspace = workspace,
     }, ct);
+    var hits = answer.Hits;
+
+    // Which tier ANSWERED (TIER1, D24), as a token in a header, so the body stays the array every
+    // client already reads. The failure's own words are not sent here: a header is ASCII, and the
+    // sentence is the status door's and the refresh's to say.
+    http.Response.Headers["x-daoris-tier"] = answer.Tier;
 
     return Results.Ok(hits.Select(h => new HitResponse(
         h.Entry.Id, h.Entry.Repository, h.Entry.Kind.ToString(), h.Entry.Title,

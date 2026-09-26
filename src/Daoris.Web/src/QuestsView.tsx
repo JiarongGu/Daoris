@@ -4,7 +4,7 @@ import { api, canBeAsked, type Quest, type QuestStep, type Session } from './api
 import {
   useDismissConflict, usePublishQuest, useQuests, useRegistry, useRespondQuest, useSessions,
 } from './queries';
-import { stopNotice, useConsidered, useDriver, useNudge, useStopSession, useTrustFolder, useUntrusted } from './shell';
+import { stopNotice, useConsidered, useDriver, useNudge, useRetryQuest, useStopSession, useTrustFolder, useUntrusted } from './shell';
 import { TrustAsk } from './work/TrustAsk';
 import { ago, sentence, sessionTool, sittingDays, size, stamp } from './format';
 import { isImage, linksOf, toUpload } from './attachments';
@@ -149,6 +149,8 @@ export function QuestsView({
   const untrusted = useUntrusted().data ?? [];
   const trust = useTrustFolder();
   const [trustingFor, setTrustingFor] = useState<string | null>(null);
+  // A quest parked by its strikes (DRV6), started again — `daoris driver retry`'s screen twin (RETRY1).
+  const retry = useRetryQuest();
   const publish = usePublishQuest();
   const respond = useRespondQuest();
   const dismiss = useDismissConflict();
@@ -446,6 +448,23 @@ export function QuestsView({
                     {held && trustingFor !== detail.id && (
                       <span className="mt-1.5 block">
                         <Button onClick={() => setTrustingFor(detail.id)}>{t('trust.open')}</Button>
+                      </span>
+                    )}
+                    {/* And the other: a quest parked by its strikes, started again on the press
+                        (RETRY1). Counted from where it stands, so the next failures park it again. */}
+                    {sitting?.verdict === 'Exhausted' && (
+                      <span className="mt-1.5 block">
+                        <Button
+                          disabled={retry.isPending}
+                          onClick={() => retry.mutate({ quest: detail.id }, {
+                            onSuccess: (state) => notify(t('quests.detail.retried', {
+                              id: detail.id, count: state.strikes,
+                            })),
+                            onError: failure(notify),
+                          })}
+                        >
+                          {t('quests.detail.retry')}
+                        </Button>
                       </span>
                     )}
                   </dd>

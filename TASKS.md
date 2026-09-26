@@ -21,8 +21,8 @@ lists.
 
 ## State
 
-**Counts, and this is their one home:** fifteen commands, **481 CLI tests, 506 service, 725 driver,
-133 desktop modules, 80 devkit, 1181 web unit, 21 Playwright**, 66/66 release rehearsal, **279/279
+**Counts, and this is their one home:** fifteen commands, **481 CLI tests, 512 service, 725 driver,
+133 desktop modules, 80 devkit, 1187 web unit, 21 Playwright**, 66/66 release rehearsal, **280/280
 family rehearsal** (it names its own phases when you run it), **39/39 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge
 documents, 5 skills, 7 packs. The always-loaded core is **22,492 of 26,000 bytes** — a span in
@@ -114,8 +114,8 @@ rather than designed.
 
 ## Backlog
 
-**Twenty-six rows are open**: the first goal's two (FG5, and SEM2 on a trigger); D76's held file tools; the
-ten REV3 left, with RETRY1; five leftovers (RAIL2, SURF11, FLAKE1, DEPLOY5, TEST1); two on the owner
+**Twenty-four rows are open**: the first goal's two (FG5, and SEM2 on a trigger); D76's held file tools;
+the eight REV3 left, WINDOW2 among them; five leftovers (RAIL2, SURF11, FLAKE1, DEPLOY5, TEST1); two on the owner
 (TRUST2, AGT2c); and six on a trigger (see *Handover*). Every closed one is in `docs/task-archive.md`, and this file holds no
 ticked rows, by the `task-lifecycle` rule it also ships. A heading below holds open rows only.
 
@@ -146,24 +146,21 @@ found that is not session-sized, or is the owner's call. Each one was confirmed 
 - [ ] **REFUSE1 — the refusal rule, enforced** (modules F10). `Refusals.All` is kept by hand, so a
   code left out of it escapes the catalogue test, and nothing checks that a throw site uses a
   declared code. Enumerate the constants by reflection and scan the throw sites.
-- [ ] **TIER1 — which tier answered, per answer** (service F13, D24). `HybridKnowledgeSearch`
-  swallows either half's failure, and the tools report the configured tier (`SemanticEnabled`)
-  rather than the one that answered. With the embedder down, a search still says `lexical +
-  semantic`, and if both halves fail, nothing matching and nothing answering look the same. The
-  search result has to carry its tier.
 - [ ] **HTTP1 — the HTTP host under test** (service F19). The service suite references Core and the
   MCP host only, so the shared gate, the key check and path stripping are exercised by one
   rehearsal route each. The fix is a `WebApplicationFactory` suite over shared mode's doors.
 - [ ] **SIGNIN1 — a sign-in outlives leaving the Agents domain** (web-rest F4). The running action
   is the domain component's state, and `HARNESS_ENDED` is heard only while it is mounted. Leaving
   mid-login loses the code panel and the end notice. Lift the running action above the domain.
-- [ ] **WINDOW1 — a secondary window follows scope and theme** (web-rest F8). Both are read from
-  `localStorage` once, and nothing listens for a `storage` event, so a detached session keeps the
-  workspace and theme it opened with.
-- [ ] **RETRY1 — the screen's door for retrying a parked quest** (CLEAN1, D50). A quest parked by its
-  strikes is retried from a terminal (`daoris driver retry`), and the page has the other half ready
-  (`useRetryQuest`, and the session's `forgiven`) with nothing rendering it. Put the retry where the
-  parked quest is shown, with its test.
+- [ ] **WINDOW2 — a secondary window's caption follows the chosen theme** (found closing WINDOW1,
+  2026-09-27). Since WINDOW1 the page inside a monitor or a detached session follows the viewer's
+  choice live, and its native title bar stays on the OS theme, so a dark choice on a light OS shows a
+  dark page under a light caption. That was seen on the window. `SecondaryForm` follows the OS
+  directly, because `WindowCommandModule`, the main window's `SET_THEME` channel, targets one form,
+  and its module name is reserved and singular (D55 §b). The same caption showed before WINDOW1,
+  when a window opened on a chosen theme. The fix needs a channel for the secondary window's own
+  frame: the page's `setTheme` there, and a handler bound to that form. That is the shell's code,
+  and Shenora's command module may need to grow.
 
 ### What an agent may do — permission scopes (owner, 2026-09-24 → D72, D73)
 

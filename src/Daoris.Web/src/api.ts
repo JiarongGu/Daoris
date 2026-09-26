@@ -26,6 +26,12 @@ export type Hit = {
   id: string; repository: string; kind: string; title: string;
   path: string; excerpt?: string; score: number; workspace?: string;
 };
+/**
+ * A search's hits, and which tier answered them (TIER1): `lexical`, `semantic`, `lexical+semantic`,
+ * or `none` when no half answered — which is not the same as nothing matching. Null from a host older
+ * than the header.
+ */
+export type SearchAnswer = { hits: Hit[]; tier: string | null };
 export type Entry = {
   id: string; repository: string; kind: string; provenance: string;
   title: string; path: string; body: string; workspace?: string;
@@ -263,10 +269,18 @@ export const api = {
     get<Repository[]>(`/api/repositories${qs({ workspace })}`, signal),
   entry: (id: string, signal?: AbortSignal) =>
     get<Entry>(`/api/entry?id=${encodeURIComponent(id)}`, signal),
-  search: (q: string, localOnly: boolean, workspace: string | null, signal?: AbortSignal) =>
+  search: async (q: string, localOnly: boolean, workspace: string | null, signal?: AbortSignal): Promise<SearchAnswer> => {
     // One MORE than the view shows, so the view can say whether there are more without guessing
     // (`results.ts`). The extra row is never rendered.
-    get<Hit[]>(`/api/search${qs({ q, localOnly, limit: PAGE_SHOWN + 1, workspace })}`, signal),
+    const response = await reach(`/api/search${qs({ q, localOnly, limit: PAGE_SHOWN + 1, workspace })}`, { signal });
+    if (!response.ok) {
+      const body = await response.json().catch(() => null);
+      throw new Error(body?.error ?? `${response.status} ${response.statusText}`);
+    }
+    // Which tier ANSWERED this search (TIER1, D24) rides a header, so the body stays the array every
+    // other client reads. A host older than it sends none, and the view falls back to the configured.
+    return { hits: await response.json() as Hit[], tier: response.headers.get('x-daoris-tier') };
+  },
   convergence: (minimumSimilarity: number, workspace: string | null, signal?: AbortSignal) =>
     // One more than the view shows, for the same reason search asks for one more (`results.ts`).
     get<Convergence[]>(`/api/convergence${qs({ minimumSimilarity, limit: PAGE_SHOWN + 1, workspace })}`, signal),
