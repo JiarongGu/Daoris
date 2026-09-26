@@ -94,10 +94,15 @@ public sealed class AskStore
     }
 
     /// <summary>The ask's handle: the same words in the same circle are the same ask.</summary>
-    internal static string MakeId(string workspace, string sentence) =>
+    /// <param name="again">
+    /// How many times these words were asked and CLOSED before (ASKAGAIN1). Zero is the id every ask
+    /// has always had, so no existing ask moves.
+    /// </param>
+    internal static string MakeId(string workspace, string sentence, int again = 0) =>
         Convert.ToHexString(
             System.Security.Cryptography.SHA256.HashData(
-                System.Text.Encoding.UTF8.GetBytes($"{Workspaces.Normalize(workspace)}:{sentence.Trim()}")))[..6]
+                System.Text.Encoding.UTF8.GetBytes(
+                    $"{Workspaces.Normalize(workspace)}:{sentence.Trim()}" + (again == 0 ? "" : $"#again{again}"))))[..6]
             .ToLowerInvariant();
 
     /// <summary>Write the ask whole — insert, or replace the row this id already names.</summary>
@@ -386,12 +391,19 @@ public sealed class AskDesk(KnowledgeService service, AskStore asks, QuestExchan
         var (unfit, why, links) = exchange.JudgeCarry(request.Links, request.Uploads);
         if (unfit is not null) return new(AskRefusal.BadCarry, why, Ask: null);
 
+        // The same words in the same circle are the same ask — a retry, or a person repeating
+        // themselves, is answered with what became of the first, never a second copy. 🔴 Unless the
+        // person CLOSED it (ASKAGAIN1): they ended that one, so the same words afterwards ask anew,
+        // and the closed record stays as it was. Found asking a ticket again after its run failed.
         var id = AskStore.MakeId(workspace, sentence);
-        if (await asks.FindAsync(id, ct).ConfigureAwait(false) is { } existing)
+        for (var again = 1; await asks.FindAsync(id, ct).ConfigureAwait(false) is { } existing; again++)
         {
-            // The same words in the same circle are the same ask — a retry, or a person repeating
-            // themselves, is answered with what became of the first, never a second copy.
-            return new(AskRefusal.None, $"Ask `#{id}` was already asked in `{workspace}` — {Describe(existing)}", existing);
+            if (existing.State != AskState.Closed)
+            {
+                return new(AskRefusal.None, $"Ask `#{id}` was already asked in `{workspace}` — {Describe(existing)}", existing);
+            }
+
+            id = AskStore.MakeId(workspace, sentence, again);
         }
 
         var attachments = new List<QuestAttachment>();

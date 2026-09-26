@@ -161,6 +161,30 @@ public sealed class AskDeskTests : IAsyncLifetime
         Assert.Single(await _desk.ListAsync("work"));
     }
 
+    /// <summary>
+    /// ASKAGAIN1, found asking a ticket again after its first run failed: a person who CLOSED an ask
+    /// ended it, so the same words afterwards are a fresh intent, not a repeat. The door used to hand
+    /// the closed record back for good, and the only way through was rewording. The closed one stays,
+    /// as it was.
+    /// </summary>
+    [Fact]
+    public async Task The_same_sentence_after_the_person_closed_the_ask_asks_anew()
+    {
+        var first = await _desk.AskAsync(new AskRequest("work", Sentence), Now);
+        await _desk.CloseAsync(first.Ask!.Id, "Its run was cut off; asking again.", Now.AddMinutes(1));
+
+        var again = await _desk.AskAsync(new AskRequest("work", Sentence), Now.AddMinutes(2));
+
+        Assert.NotEqual(first.Ask.Id, again.Ask!.Id);
+        Assert.NotEqual(AskState.Closed, again.Ask.State);
+        Assert.DoesNotContain("already asked", again.Message);
+        Assert.Equal(AskState.Closed, (await _desk.FindAsync(first.Ask.Id))!.State);
+
+        // …and while the new one is open, the same words are that one — a third ask repeats the second.
+        var repeat = await _desk.AskAsync(new AskRequest("work", Sentence), Now.AddMinutes(3));
+        Assert.Equal(again.Ask.Id, repeat.Ask!.Id);
+    }
+
     [Fact]
     public async Task An_ask_in_a_circle_this_machine_does_not_hold_is_refused_naming_the_ones_it_does()
     {

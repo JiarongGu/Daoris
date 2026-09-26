@@ -21,7 +21,7 @@ lists.
 
 ## State
 
-**Counts, and this is their one home:** fifteen commands, **482 CLI tests, 522 service, 758 driver,
+**Counts, and this is their one home:** fifteen commands, **482 CLI tests, 523 service, 758 driver,
 151 desktop modules, 80 devkit, 1189 web unit, 21 Playwright**, 66/66 release rehearsal, **285/285
 family rehearsal** (it names its own phases when you run it), **39/39 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge
@@ -295,8 +295,15 @@ is behind a sign-in. FG1–FG4 are in the archive. **INT6 is reshaped as FG5.**
   is the owner's, and D79 (ask and wait, in the archive) is the fix. Then the account's spend limit
   refused its turn mid-edit, and the record said `stood-down` (ACPEND1, fixed, in the archive).
   The quest is still taken with nothing working on it, and its tree holds the uncommitted edits.
-  **Next:** republish with both, and the owner decides the stranded quest: decline it with the
-  reason and ask again, or carry it on by hand in its tree.
+  **The second run (2026-09-27, the owner: "you can do it").** Republished at `1b0da6c`. The
+  proposal to read into the backend was declined, with the way to ask it. The session's other
+  proposal, `npm ci`, was accepted, with that repository's build and test beside it (the owner's
+  choice). Until then sessions there could edit and could not run anything: the repository's own
+  allow-list does not reach the protocol door (D73), and each session tree is a new folder. The
+  sixteen empty branches were deleted, with the owner's say-so. The stranded tree's branch is kept
+  for its uncommitted edits. The quest was declined, its ask closed, and the ticket asked again.
+  **Found:** the same words were the same ask for good, closed or not, so asking again needed new
+  words (ASKAGAIN1, fixed, in the archive).
 - [ ] ⏸ **SEM2 — vectors that persist** (after SEM1, held). SEM1 embeds what is on disk once per
   process, on first use. The MCP host is one process per session, so with an embedder configured,
   each session's first search embeds the whole corpus. Lyntai.Storage.Sqlite's vector store would

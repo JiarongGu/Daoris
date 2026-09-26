@@ -6599,3 +6599,12 @@ in the agent's words. So does an intake that published nothing, which would othe
 cause (ACP1's rule that the exit code concludes, on a door where the driver causes the exit). Driver
 758, including a real tick over the protocol door with the measured error. The run is also TOOL4's
 first real observation of exhaustion, recorded on its row.
+
+## ASKAGAIN1 — the same words after a close ask anew (2026-09-27)
+
+Found asking FG5's ticket again after its first run was cut off. An ask's id is made from its circle
+and its words, so the same words answered with the first ask for good, including one the person had
+closed ("already asked … closed: …"). The only way through was rewording. Now a closed ask moves the
+same words on to a fresh id, and the closed record stays as it was. While an ask is open, the same
+words are still that ask, which is what makes a retry or a repeat safe. The first id keeps its old
+form, so no existing ask moves. Service 523.
