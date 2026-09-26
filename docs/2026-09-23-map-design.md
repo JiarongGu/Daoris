@@ -39,8 +39,10 @@ scale's, and centred in its card. It is framed on what it draws (`frameMap`: eve
 every name with its width estimated per character, every line's count), never a fixed square, which
 left a three-node ring's lower third blank and cut a side node's long name at its edge. A card too
 narrow for the full ring gets a smaller one (`fitRadius`) rather than smaller names, never closer
-than two rings and a gap; past that, the drawing shrinks as the last resort. The code map keeps the
-same rule by its width (`codeWidth`).
+than two rings and a gap; past that, the drawing shrinks as the last resort. A wide card gets a
+larger ring, as far as the height the window leaves below the drawing (`useTall`), so the map
+follows the window (UX5 U59). The code map keeps the same rule by its width (`codeWidth`), spreading
+its columns to its card.
 Layers by quest flow are for a circle too big for a ring to read, and wait until one exists. Drawn
 as SVG on the design tokens (D41): status never by colour alone, and both themes. **No graph
 library**: a family is a handful to a few dozen repositories, and a layout engine would cost more in

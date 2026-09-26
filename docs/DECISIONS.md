@@ -3345,3 +3345,10 @@ unified or side by side.**
   sidebar carries two counts". Rejected: the whole count on Sessions, where SURF5 put it on the Work
   icon and D66 carried it over, because the press it invited showed one of the six it counted. Also
   rejected: the whole count on Overview alone, which leaves a parked session unmarked on Sessions.
+- **Every view follows the window** (U59, the owner, 2026-09-26: *"inner content size does not
+  relative to the window size (a few screen still having this issue)"*), amending D41 §2's 72rem
+  content column, as U16 amended the session's centre. What has a measure keeps it inside the
+  column: prose at 65ch, a form at what it holds, a drawing at one unit a pixel, and the maps grow
+  their drawing with the card instead (the ring as far as the window's height leaves it). Rejected:
+  a wider cap, which is the same defect on a wider screen. Also rejected: scaling a drawing to its
+  card, which grew its names past the type scale (U44).

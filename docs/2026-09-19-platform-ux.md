@@ -31,7 +31,10 @@ A **fixed left sidebar** and a content column — the shape of a console, not a 
   accent-soft field. The foot of the sidebar holds the global state: the recall-tier pill (D24 — stated
   on every screen), the index count line, and the refresh action. Global state lives in exactly one
   place; views never restate it.
-- **Content column**: max 72rem, generous padding. Every view opens with a **page header** — title,
+- **Content column**: ~~max 72rem~~ **the window's whole width** (UX5 U59, the owner, 2026-09-26:
+  *"inner content size does not relative to the window size"*; a maximized window left every view a
+  third empty), generous padding. What has a measure keeps it inside: prose at 65ch, a form at
+  what it holds, a drawing at one unit a pixel. Every view opens with a **page header** — title,
   one-line description, and the view's primary action on the right (Quests: "New quest"). The header is
   the only h-level element per view; sections inside use small muted section titles.
 - **Narrow (< 56rem)**: the sidebar becomes a top bar — wordmark left, icon navigation in a row, the
