@@ -105,6 +105,29 @@ describe('ConversationView', () => {
     expect(screen.getByRole('button', { name: 'fold' })).toBeTruthy();
   });
 
+  /**
+   * UX5 U63, seen on the window: the protocol door's Claude Code adapter wraps a read's text in a
+   * Markdown fence, and the card showed the fence as the output's first and last lines. A text that
+   * is one fenced block shows what is inside it; anything else is shown as it came.
+   */
+  it('shows a read’s text without the fence the adapter wrapped it in', async () => {
+    view([ev({
+      kind: 'tool', id: 'c6', title: 'Read README.md', toolKind: 'read', status: 'completed',
+      content: [{ type: 'content', text: '```\n1\t# examples/game\n2\tThe content half\n```' }],
+    })]);
+    await userEvent.click(screen.getByRole('button', { name: /Read README\.md/ }));
+
+    const shown = screen.getByText(/# examples\/game/);
+    expect(shown.textContent).toBe('1\t# examples/game\n2\tThe content half');
+
+    view([ev({
+      kind: 'tool', id: 'c7', title: 'Run it', toolKind: 'execute', status: 'completed',
+      content: [{ type: 'content', text: 'before\n```\ninside\n```\nafter' }],
+    })]);
+    await userEvent.click(screen.getByRole('button', { name: /Run it/ }));
+    expect(screen.getByText(/before/).textContent).toBe('before\n```\ninside\n```\nafter');
+  });
+
   it('opens a failed tool call by itself, since that is the line a reader came for', () => {
     view([ev({ kind: 'tool', id: 'c4', title: 'git push', toolKind: 'execute', status: 'failed', output: 'rejected' })]);
 

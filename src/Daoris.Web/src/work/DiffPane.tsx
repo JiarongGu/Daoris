@@ -39,10 +39,11 @@ const LAYOUT = 'daoris.reviewLayout';
 export function DiffPane({ session, hasTree = false, onSendBack }: {
   session: string | null;
   /**
-   * Whether this session holds a working tree ON THIS MACHINE (D51) — which is what the acts act on.
-   * The record carries it and only a loopback caller is told, so the page can ask this without the
-   * driver: a mirrored record from another machine has no tree here, and offering to merge or
-   * discard one would be offering something that can only ever refuse.
+   * Whether this session holds a working tree OF ITS OWN on this machine (D51) — which is what the
+   * acts act on. The record carries it and only a loopback caller is told, so the page can ask this
+   * without the driver: a mirrored record from another machine has no tree here, and a session in
+   * the repository's own checkout has no tree of its own. Offering to merge or discard either would
+   * be offering something that can only ever refuse (UX5 U66, seen on the window).
    */
   hasTree?: boolean;
   /** The door into the quest composer. Absent where there is nowhere to send it. */
@@ -124,23 +125,26 @@ export function DiffPane({ session, hasTree = false, onSendBack }: {
   const done = files.filter((file) => viewed[file.path]).length;
 
   // Gated on the TREE, not on the diff: a session whose range git cannot read may still hold a tree
-  // worth discarding, and one whose record travelled here holds none at all.
-  const acts = !hasTree ? null : (
+  // worth discarding, and one whose record travelled here holds none at all. Sending the work back
+  // is about the work, not the tree, so it stands wherever there is a door for it (UX5 U66).
+  const acts = !hasTree && !onSendBack ? null : (
     <footer className="grid shrink-0 gap-2 border-t border-line px-3 py-2">
       {said && <p className="m-0 text-small text-ink-soft">{said}</p>}
 
       <div className="flex flex-wrap items-center gap-2">
-        <Button
-          variant="primary"
-          disabled={merge.isPending}
-          onClick={() => act(merge.mutateAsync(session))}
-        >
-          {merge.isPending ? t('work.review.accepting') : t('work.review.accept')}
-        </Button>
+        {hasTree && (
+          <Button
+            variant="primary"
+            disabled={merge.isPending}
+            onClick={() => act(merge.mutateAsync(session))}
+          >
+            {merge.isPending ? t('work.review.accepting') : t('work.review.accept')}
+          </Button>
+        )}
 
         {onSendBack && <Button onClick={onSendBack}>{t('work.review.sendBack')}</Button>}
 
-        {confirmingDiscard
+        {!hasTree ? null : confirmingDiscard
           ? (
             <>
               <Button

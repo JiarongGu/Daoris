@@ -179,6 +179,8 @@ describe('the session rail', () => {
       await userEvent.type(screen.getByRole('searchbox', { name: 'search sessions' }), 'streamer');
       const said = await screen.findByRole('region', { name: 'in what was said' });
       expect(within(said).getByText('streamer').tagName).toBe('MARK');
+      // Its tint adds no space beside the word (UX5 U61).
+      expect(within(said).getByText('streamer')).toHaveClass('-mx-0.5');
       await userEvent.click(within(said).getByRole('button', { name: /…belongs in the streamer/ }));
       expect(select).toHaveBeenCalledWith('c3d4e5f6');
 

@@ -58,6 +58,8 @@ describe('SearchView', () => {
 
     expect(await screen.findByText('An encoding trap')).toBeInTheDocument();
     expect(screen.getByText('encoding', { selector: 'mark' })).toBeInTheDocument();
+    // Its tint adds no space beside the word (UX5 U61): *syllables .* read as a gap before the stop.
+    expect(screen.getByText('encoding', { selector: 'mark' })).toHaveClass('-mx-0.5');
   });
 
   /**

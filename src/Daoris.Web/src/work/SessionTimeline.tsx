@@ -79,7 +79,7 @@ export function TimelineEntry({ event }: { event: TimelineEvent }) {
  * layer, not the table — so this takes props, stays inside the presentational boundary, and every
  * shape of timeline is reachable in a story. The plan is corrected rather than quietly satisfied.
  */
-export function SessionTimeline({ session, quest, hideCurrentNote = false }: {
+export function SessionTimeline({ session, quest, hideCurrentNote = false, titled = true }: {
   session: Session;
   quest?: Quest | null;
   /**
@@ -88,6 +88,11 @@ export function SessionTimeline({ session, quest, hideCurrentNote = false }: {
    * The event keeps its note; only this rendering drops it, so the derivation stays complete.
    */
   hideCurrentNote?: boolean;
+  /**
+   * Whether it carries its own heading. The dock's tab names it, and the pane said *Timeline* again
+   * under the *Timeline* tab (UX5 U65); in the column, with no tab above it, the heading stays.
+   */
+  titled?: boolean;
 }) {
   const { t } = useTranslation();
   const events = sessionTimeline(session, quest).map((event) =>
@@ -96,9 +101,11 @@ export function SessionTimeline({ session, quest, hideCurrentNote = false }: {
   return (
     <section>
       {/* Level 3: the attended session's head is the region's h2, and this sits under it. */}
-      <SectionTitle level={3}>
-        <span title={t('work.timeline.hint')}>{t('work.timeline.title')}</span>
-      </SectionTitle>
+      {titled && (
+        <SectionTitle level={3}>
+          <span title={t('work.timeline.hint')}>{t('work.timeline.title')}</span>
+        </SectionTitle>
+      )}
       <ol className="m-0 list-none p-0">
         {events.map((event, index) => (
           <TimelineEntry key={`${event.kind}-${index}`} event={event} />

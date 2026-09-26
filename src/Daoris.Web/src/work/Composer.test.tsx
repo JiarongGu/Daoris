@@ -266,6 +266,20 @@ describe('a mention', () => {
   const tree = { files: ['README.md', 'docs/design.md', 'docs/deep file.md', 'src/main.ts'], unlisted: 0, refusal: null };
   const files = () => screen.getByRole('listbox', { name: "files in this session's tree" });
 
+  /**
+   * UX5 U64, seen on the window: the list ran the composer's whole width, about 1,900px on a
+   * maximized window, for rows about 450px wide. It is sized to its rows, within bounds.
+   */
+  it('sizes its list to its rows, not to the box it completes', async () => {
+    show({ mentions: tree });
+    await userEvent.type(box(), 'read @de');
+
+    const panel = files().parentElement!;
+    expect(panel.className).not.toContain('inset-x-0');
+    expect(panel.className).toContain('w-max');
+    expect(panel.className).toMatch(/max-w-/);
+  });
+
   it('offers the tree\'s files after @, and Enter writes the one chosen instead of sending', async () => {
     const send = vi.fn();
     show({ onSend: send, mentions: tree });

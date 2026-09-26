@@ -99,6 +99,18 @@ describe('the timeline', () => {
   });
   afterEach(() => vi.useRealTimers());
 
+  /**
+   * UX5 U65: in the dock its tab names it, and the pane said *Timeline* again under the *Timeline*
+   * tab. Untitled there; titled where it stands in the column with no tab above it.
+   */
+  it('carries its heading only where no tab names it', () => {
+    const { rerender } = render(<SessionTimeline session={session()} />);
+    expect(screen.getByRole('heading', { name: 'Timeline' })).toBeInTheDocument();
+
+    rerender(<SessionTimeline session={session()} titled={false} />);
+    expect(screen.queryByRole('heading', { name: 'Timeline' })).toBeNull();
+  });
+
   it('is one entry for a session nothing has happened to yet, and says so honestly', () => {
     render(<SessionTimeline session={session({ state: 'queued', updated: '2026-09-21T09:00:00Z' })} />);
 

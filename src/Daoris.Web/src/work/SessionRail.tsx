@@ -298,7 +298,7 @@ function SearchResults({ query, settled, named, hits, cut, asking, sessionOf, ti
                       {/* Plain text around each mark, not spans: a span's edge dropped the space before a
                           match from the button's accessible name ("in thestreamer"). */}
                       {marked(readable(hit.snippet), settled).map((part, index) => (part.match
-                        ? <mark key={index} className="rounded-sm bg-accent-soft px-0.5 text-ink">{part.text}</mark>
+                        ? <mark key={index} className="-mx-0.5 rounded-sm bg-accent-soft px-0.5 text-ink">{part.text}</mark>
                         : <Fragment key={index}>{part.text}</Fragment>))}
                     </span>
                   ))}

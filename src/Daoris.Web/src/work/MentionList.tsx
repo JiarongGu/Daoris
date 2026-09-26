@@ -47,7 +47,9 @@ export function MentionList({ id, options, active, query, listing, refusal, empt
           : null);
 
   return (
-    <div className="absolute inset-x-0 bottom-full z-10 mb-1 overflow-hidden rounded-overlay border border-line bg-overlay shadow-[0_8px_32px_rgb(15_12_8/0.18)]">
+    // Sized to its rows, within bounds: across the box it ran 1,900px on a maximized window for rows
+    // about 450px wide (UX5 U64). It opens from the box's left edge, where the writing starts.
+    <div className="absolute bottom-full left-0 z-10 mb-1 w-max min-w-[min(20rem,100%)] max-w-[min(36rem,100%)] overflow-hidden rounded-overlay border border-line bg-overlay shadow-[0_8px_32px_rgb(15_12_8/0.18)]">
       {options.length > 0 && (
         <ul
           id={id}

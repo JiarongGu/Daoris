@@ -47,6 +47,17 @@ describe('a repository group', () => {
   });
 
   /**
+   * UX5 U60: busy is a fact about the TREE (it is held), not a liveness mark. It wore the live dot a
+   * working session wears, so a group whose one chat was idle, or parked on its person, read live.
+   */
+  it('says busy in words, without the live mark a working session wears', () => {
+    const { container } = render(<RepositoryGroup repository="engine" count={1} busy>{row}</RepositoryGroup>);
+    const busy = screen.getByText('busy');
+    expect(busy.closest('p')!.querySelector('[aria-hidden="true"]')).toBeNull();
+    expect(container.innerHTML).not.toContain('animate');
+  });
+
+  /**
    * A session can run in a repository that never adopted doctrine, and the header says so rather
    * than leaving the person to wonder why nothing can be asked of it (D48 §4).
    */

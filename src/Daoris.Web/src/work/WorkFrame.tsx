@@ -12,7 +12,7 @@ import { Button, Drawer, failure, Icon, type Notify, SESSION_ACTIVE, Tip, useErr
 import { AttendedSession, noteIsInTheHead } from './AttendedSession';
 import { SessionConversation } from './SessionConversation';
 import type { Usage } from './conversation';
-import { isIntake, sessionOrigin } from './identity';
+import { isIntake, ownTree, sessionOrigin } from './identity';
 import type { Resolution } from './AwaitingPerson';
 import { Composer } from './Composer';
 import { DiffPane } from './DiffPane';
@@ -590,7 +590,8 @@ export function WorkFrame({ selected, onSelect, notify, onSendBack, onAnswerAsk,
           ? (
             <DiffPane
               session={attended?.id ?? null}
-              hasTree={Boolean(attended?.tree)}
+              // A tree of its OWN: the repository's checkout is never merged or discarded (UX5 U66).
+              hasTree={Boolean(attended && ownTree(attended, (registry.data ?? []).find((row) => row.repository === attended.repository)?.root))}
               onSendBack={onSendBack && attended
                 ? () => onSendBack(attended.repository)
                 : undefined}
@@ -603,6 +604,7 @@ export function WorkFrame({ selected, onSelect, notify, onSendBack, onAnswerAsk,
                   session={attended}
                   quest={quest}
                   hideCurrentNote={noteIsInTheHead(attended, here)}
+                  titled={false}
                 />
               </div>
             )

@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Dot, Pill } from '../ui';
+import { Pill } from '../ui';
 
 /**
  * The rail's group header — one repository, and the sessions running in it.
@@ -40,13 +40,13 @@ export function RepositoryGroup({
 
   const marks = [
     held ? <Pill key="held" tone="declined">{t('work.group.held')}</Pill> : null,
+    // A fact about the TREE — it is held — so it is words, as *drives here* is. It wore the live
+    // mark a working session wears, and a group whose one chat was idle or parked read live (UX5 U60).
     busy
       ? (
-        <Dot
-          key="busy"
-          tone="live"
-          label={busy === true ? t('work.group.busy') : t('work.group.busyTree', { tree: busy })}
-        />
+        <span key="busy" className="text-meta text-ink-soft">
+          {busy === true ? t('work.group.busy') : t('work.group.busyTree', { tree: busy })}
+        </span>
       )
       : null,
     drivable && !held

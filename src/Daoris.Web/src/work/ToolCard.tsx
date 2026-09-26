@@ -131,9 +131,23 @@ function Content({ item, lines, tree }: { item: ToolContent; lines?: DiffLine[] 
 
   return (
     <pre className="m-0 max-h-80 overflow-auto whitespace-pre-wrap rounded-control bg-page px-2.5 py-2 font-mono text-small text-ink-soft">
-      {item.text}
+      {unfenced(item.text ?? '')}
     </pre>
   );
+}
+
+/**
+ * A tool's text, without the Markdown fence an adapter wrapped it in (UX5 U63). The protocol door's
+ * Claude Code adapter sends a read's text as one fenced block, and the card showed the fence as the
+ * output's first and last lines, where the native door's same read has none. Only a text that is
+ * exactly one fenced block is unwrapped — the fence is the adapter's wrapping, not the file — and
+ * anything else, a fence inside shell output included, is shown as it came.
+ */
+export function unfenced(text: string): string {
+  const match = /^```[^\n`]*\n([\s\S]*?)\n```[ \t]*\n?$/.exec(text);
+  if (!match) return text;
+  const inside = match[1]!;
+  return /^```/m.test(inside) ? text : inside;
 }
 
 function Raw({ label, text }: { label: string; text: string }) {

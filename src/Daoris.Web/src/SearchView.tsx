@@ -103,7 +103,7 @@ export function SearchView({ onOpen, notify, semantic, onConverge }: {
             {hit.excerpt && (
               <p className="mt-1 text-body text-ink-soft">
                 {mark(hit.excerpt, debounced).map((run, index) => (run.hit
-                  ? <mark key={index} className="rounded-[2px] bg-accent-soft px-0.5 text-ink">{run.text}</mark>
+                  ? <mark key={index} className="-mx-0.5 rounded-[2px] bg-accent-soft px-0.5 text-ink">{run.text}</mark>
                   : <span key={index}>{run.text}</span>))}
               </p>
             )}

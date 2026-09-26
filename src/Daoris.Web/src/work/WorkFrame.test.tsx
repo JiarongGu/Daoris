@@ -1332,6 +1332,33 @@ describe('acting on what a session landed', () => {
     // The diff itself is still readable — seeing the work never depended on holding the tree.
     expect(screen.getByText('src/chunk.ts')).toBeTruthy();
   });
+
+  /**
+   * UX5 U66, seen on the window: a chat in the repository's OWN checkout names that checkout as its
+   * tree, and Review offered to merge it and to discard it. The tree layer refuses both — a
+   * checkout is never a side effect's to delete — so they were moves that could only refuse. The
+   * work can still be sent back as a quest: that is about the work, not the tree.
+   */
+  it('offers no tree acts on a session in the repository\u2019s own checkout, and still sends it back', async () => {
+    SESSIONS = [{ ...DRIVEN, tree: 'C:/somewhere/engine' }];
+    invoke.mockImplementation(async (_module: string, type: string) =>
+      (type === 'SESSION_DIFF' ? DIFF : DRIVER_STATE));
+    const onSendBack = vi.fn();
+    render(
+      <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+        <Tooltip.Provider>
+          <WorkFrame selected="s1a2b3c4" onSelect={vi.fn()} notify={() => {}} onSendBack={onSendBack} />
+        </Tooltip.Provider>
+      </QueryClientProvider>,
+    );
+    await userEvent.click(await screen.findByRole('tab', { name: 'Review' }));
+    await screen.findByText('src/chunk.ts');
+
+    expect(screen.queryByRole('button', { name: 'accept' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'discard the tree' })).toBeNull();
+    await userEvent.click(screen.getByRole('button', { name: 'send it back…' }));
+    expect(onSendBack).toHaveBeenCalledWith('engine');
+  });
 });
 
 /**
