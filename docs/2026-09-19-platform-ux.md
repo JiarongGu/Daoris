@@ -504,7 +504,11 @@ A **fixed left sidebar** and a content column — the shape of a console, not a 
   info glyph (UX5 U36), each with the driving row where it has a root here, and the join steps
   proposed as text. *Manage* edits the declaration in the face it is read in (U37).
 - **Convergence / Search** — unchanged in behaviour; they gain the page header and open entries in the
-  drawer instead of a centered modal.
+  drawer instead of a centered modal. An excerpt is the entry's prose, without its frontmatter or
+  its Markdown's markers (POLISH4, UX5 U39). Each empty answer is an empty state in its tier's own
+  words with the action that changes it: Search's leads to Convergence, and Convergence's lowers the
+  similarity until its floor, where it says it is the floor (U41, U42). **The reader shows the
+  entry as it is written**, unrendered, in a drawer wide enough for a line of the source (U43).
 - **Map** (MAP2) — the circle's repositories on a ring, the quests between them as directed arrows
   with a count on each, and a shared finding as a dashed line; a detail panel beside the map says what
   the chosen node or line holds, and a legend says every mark in words. It adds no actions. What the
