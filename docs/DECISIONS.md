@@ -3332,3 +3332,16 @@ unified or side by side.**
   active sessions and forwards when they changed, as it already did for the asks (INT4d). Rejected:
   a second event for chat lifecycle, which would be one more channel for a fact the tick already
   carries, and would miss a session moved by another door.
+- **The protocol door's console is the agent's lines** (U3): streamed chunks are joined, and a line
+  left open is shown after two seconds of quiet, measured over 2,968 gaps between chunks (none over
+  two seconds). Rejected: a line per chunk, which broke words. Also rejected: joining with no quiet
+  flush, which hid a held turn's words and failed the family rehearsal; and half a second, which
+  broke real lines on the window. Not taken yet: a console line that can keep growing, which is the
+  driver, the shell's relay, the page's console and the terminal door changing together, with
+  nothing measured asking for it.
+- **A badge counts what its place holds** (U20, the owner's choice, 2026-09-26). Overview carries the
+  whole of *What needs you*, beside the band that lists it, and Sessions carries its own sessions
+  waiting on the person; both in open's hue. This amends the working-surface design §4's "the
+  sidebar carries two counts". Rejected: the whole count on Sessions, where SURF5 put it on the Work
+  icon and D66 carried it over, because the press it invited showed one of the six it counted. Also
+  rejected: the whole count on Overview alone, which leaves a parked session unmarked on Sessions.

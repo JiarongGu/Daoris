@@ -144,9 +144,10 @@ the window's least height the places touched, the counts sat over their neighbou
 under the status bar).
 
 **A count is a circle**, `CountBadge`: one fixed height and the same minimum width, since a count
-drawn as a pill of its own line height measured 14 × 17px on the window. Zero wears nothing. The one
-count that is a status, what waits on the person, wears open's hue, and a quantity (outstanding
-quests) wears the accent.
+drawn as a pill of its own line height measured 14 × 17px on the window. Zero wears nothing. **A
+badge counts what its place holds** (UX5 U20, the owner's choice): Overview counts all of *What needs
+you*, beside the band that lists it, and Sessions counts its own sessions waiting on the person. Both
+are that status and wear open's hue; outstanding quests are a quantity and wear the accent.
 
 ### c. The rail — a header, and `＋` behind one control
 

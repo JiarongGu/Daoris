@@ -29,7 +29,7 @@ import { SyncStatus } from './work/SyncStatus';
 import { MONITOR_WINDOW, sessionWindowName } from './work/window';
 import { WorkFrame } from './work/WorkFrame';
 import type { AttentionDoors } from './work/AttentionBand';
-import { needsAPerson } from './work/attention';
+import { needsAPerson, waitingInSessions } from './work/attention';
 import { ActivityBar, AppStrip, type DriverPresence, StatusBar } from './work/frame';
 import { useWindowChrome } from './windowChrome';
 import { commands, type View, VIEWS } from './commands';
@@ -181,10 +181,11 @@ export function App() {
 
   const presence: DriverPresence = driver.data ? 'running' : driver.isError ? 'stopped' : 'absent';
   const liveSessions = (running.data ?? []).filter((s) => SESSION_ACTIVE.has(s.state)).length;
-  // The second of design §4's two counts, from the one derivation the band uses — two answers to
-  // "how many need me" would disagree the first time either was edited.
+  // Overview's badge, from the one derivation the band uses — two answers to "how many need me" would
+  // disagree the first time either was edited. Sessions' badge is its own sessions only (U20).
   const waiting = needsAPerson(
     running.data ?? [], outstanding.data ?? [], registry.data ?? [], asks.data ?? [], untrusted.data ?? []).length;
+  const sessionsWaiting = waitingInSessions(running.data ?? []);
   // Where this circle stands with its remote (SYNC6b), from this machine's own host — so a browser on
   // the machine reads it too, and it says for itself whether the circle is wired. Before it answers,
   // the shell's map says; a browser with neither is not asked.
@@ -379,10 +380,13 @@ export function App() {
             tab: target,
             label: t(`nav.${target}`),
             icon,
-            // Two counts, and only one is a status: what is waiting on a person wears the status
-            // hue; how many quests are outstanding is a quantity and wears the accent.
-            badge: target === 'quests' ? outstandingCount : target === 'sessions' ? waiting : undefined,
-            tone: target === 'sessions' ? 'open' as const : undefined,
+            // 🔴 A badge counts what its place holds (UX5 U20, the owner's choice): Overview the whole
+            // of What needs you, beside its band, and Sessions its own sessions waiting on the person.
+            // Both are that status and wear its hue; outstanding quests are a quantity, in the accent.
+            badge: target === 'quests' ? outstandingCount
+              : target === 'overview' ? waiting
+                : target === 'sessions' ? sessionsWaiting : undefined,
+            tone: target === 'overview' || target === 'sessions' ? 'open' as const : undefined,
           }))}
           // Settings is everywhere now (D66) — a browser has appearance to set, if nothing of a machine.
           end={[{ tab: 'settings', label: t('nav.settings'), icon: 'settings' }]}

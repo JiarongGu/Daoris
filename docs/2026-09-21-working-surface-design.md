@@ -237,7 +237,11 @@ not the mechanism.
   *Amended 2026-09-24 (INT4g):* a parked **intake** is the exception to the three. Its answer is on
   its ask, so it offers a door to the ask's record and a stop (intake design §1h).
 - **The sidebar carries two counts**: sessions live, and how many need a person. The second one is the
-  only badge that wears a status hue, because it is the only one that is a status.
+  only badge that wears a status hue, because it is the only one that is a status. *Amended
+  2026-09-26 (UX5 U20, the owner's choice → D76):* **a badge counts what its place holds.** The count
+  of sessions live is the status bar's (D56). Overview's icon carries how many need a person, beside
+  the band that lists them, and Sessions' icon carries its own sessions waiting on the person. Both
+  wear the waiting hue. The whole count on Sessions invited a press that showed a sixth of it.
 - **An OS notification on park and on end** — and never for an ending the person caused, because a
   toast telling you what you just pressed is how people learn to dismiss toasts unread. Per machine,
   off in one click, and off by default for nothing. This **closes driver design open question 5**: the

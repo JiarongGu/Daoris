@@ -11,6 +11,20 @@ import type { Attention } from './AttentionRow';
 const INTAKE_BUSY: ReadonlySet<Session['state']> = new Set(['queued', 'starting', 'working']);
 
 /**
+ * How many of Sessions' own sessions wait on the person: the Sessions icon's badge (UX5 U20).
+ *
+ * @remarks
+ * **A badge counts what its place holds** (D76 as amended, the owner's choice). The icon carried the
+ * whole of {@link needsAPerson}, six on the scratch window, while Sessions held one of them: the asks
+ * are on Quests and in Overview's band, so the press the badge invited showed a sixth of what it
+ * counted. Overview carries the whole now. A parked intake counts here, because it is in the rail,
+ * even though the band lets its ask stand for it.
+ */
+export function waitingInSessions(sessions: readonly Session[]): number {
+  return sessions.filter((session) => session.state === 'awaiting-person').length;
+}
+
+/**
  * What is waiting on a person, oldest first within each kind (design §4).
  *
  * @remarks

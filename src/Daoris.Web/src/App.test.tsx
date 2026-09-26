@@ -410,6 +410,30 @@ describe('the attention band', () => {
   });
 
   /**
+   * 🔴 A badge counts what its place holds (UX5 U20, the owner's choice). The band's count is
+   * Overview's, beside the band that lists it; it rode the Sessions icon, which held a sixth of it.
+   */
+  it("puts the band's count on Overview's icon, in the waiting hue", async () => {
+    SESSIONS = [{
+      id: 'p4rk3d00', quest: null, repository: 'engine', adapter: 'stub', kind: 'chat',
+      state: 'awaiting-person', note: 'two ways forward.',
+      created: '2026-09-21T09:00:00Z', updated: '2026-09-21T10:00:00Z',
+    }];
+    QUESTS = [{
+      id: '7a82cc', from: 'engine', to: 'retired', title: 'Expose a streaming budget',
+      body: 'a per-frame cap.', status: 'Open',
+      filed: '2026-09-01T00:00:00Z', updated: '2026-09-01T00:00:00Z',
+    }];
+    shell();
+
+    await screen.findByText('What needs you');
+    const bar = screen.getByRole('navigation', { name: 'Views' });
+    const overview = within(bar).getByRole('button', { name: 'Overview' });
+    await waitFor(() => expect(within(overview).getByText('2')).toBeInTheDocument());
+    expect(within(overview).getByText('2').className).toContain('text-st-open');
+  });
+
+  /**
    * A door opens something, or it is not a door (platform language §4). A browser has no Sessions, so
    * a parked row is text there; a quest nobody can take opens its own drawer, which a browser has.
    */

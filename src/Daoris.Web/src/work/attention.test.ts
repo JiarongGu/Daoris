@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import i18n from '../i18n';
 import type { Ask, Quest, Registration, Session } from '../api';
 import type { RuleProposal } from '../settings/AgentRules';
-import { needsAPerson } from './attention';
+import { needsAPerson, waitingInSessions } from './attention';
 
 const session = (over: Partial<Session> = {}): Session => ({
   id: 's1a2b3c4',
@@ -329,5 +329,29 @@ describe('a proposal to widen the rules', () => {
       [], [quest({ to: 'nobody' })], [registration('engine')], [ask()], [], [proposal()]);
 
     expect(waiting.map((item) => item.kind)).toEqual(['proposal', 'rule', 'unanswerable']);
+  });
+});
+
+/**
+ * 🔴 A badge counts what its place holds (UX5 U20, the owner's choice). The Sessions icon carried
+ * the whole of *What needs you*, six on the scratch window, and Sessions held one of them: the asks
+ * are on Quests and in Overview's band. Overview carries the whole now, beside the band that lists
+ * it, and Sessions counts only its own sessions waiting on the person.
+ */
+describe('what the Sessions badge counts', () => {
+  it('counts the sessions waiting on the person, a parked intake among them, and nothing else the band holds', () => {
+    const sessions = [
+      session({ id: 'c4a7c4a7', kind: 'chat', state: 'awaiting-person' }),
+      session({ id: '1n7a4e00', ask: '7c1e9a04b2d5', state: 'awaiting-person' }),
+      session({ id: 'b05y0000', state: 'working' }),
+      session({ id: 'd0ne0000', state: 'completed' }),
+    ];
+
+    expect(waitingInSessions(sessions)).toBe(2);
+    // The band counts more than Sessions holds: the ask a parked intake stands for, and a quest
+    // nobody can take, are both the person's and neither is a session.
+    const band = needsAPerson(
+      sessions, [quest({ to: 'nobody' })], [registration('engine')], [ask({ intake: '1n7a4e00' })]);
+    expect(band.length).toBeGreaterThan(waitingInSessions(sessions));
   });
 });
