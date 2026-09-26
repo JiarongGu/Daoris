@@ -43,6 +43,24 @@ export function setThemeChoice(choice: ThemeChoice): void {
   for (const listener of listeners) listener();
 }
 
+/**
+ * 🔴 A choice another window made (WINDOW1). A detached session is a second document on the same
+ * origin, and it read the choice once, at open, so the main window's change never reached it. The
+ * browser tells every OTHER document of a storage write, and this is the half that hears it: applied
+ * and told as if chosen here, but not written back, because it is already stored. A null key is the
+ * store being cleared.
+ */
+export function followStoredTheme(event: StorageEvent): void {
+  if (event.key !== THEME_KEY && event.key !== null) return;
+  const next = readThemeChoice();
+  if (next === current) return;
+  current = next;
+  applyTheme(next);
+  for (const listener of listeners) listener();
+}
+
+if (typeof window !== 'undefined') window.addEventListener('storage', followStoredTheme);
+
 /** Hear every change of choice. Returns the way to stop hearing. */
 export function subscribeTheme(listener: () => void): () => void {
   listeners.add(listener);

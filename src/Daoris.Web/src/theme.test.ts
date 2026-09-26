@@ -58,4 +58,31 @@ describe('the theme choice', () => {
 
     expect(heard).toHaveBeenCalledTimes(1);
   });
+
+  /**
+   * WINDOW1: a detached session is another document on the same origin, and it read the choice once,
+   * at open — so the main window's change never reached it. The browser tells every OTHER document of
+   * a storage write, and this is the half that hears it.
+   */
+  it("follows a choice another window made, and tells whoever listens", () => {
+    const heard = vi.fn();
+    const stop = subscribeTheme(heard);
+
+    // What the browser does when the main window chooses dark: the store holds it, and this
+    // document is told — its own setter never ran.
+    window.localStorage.setItem(THEME_KEY, 'dark');
+    window.dispatchEvent(new StorageEvent('storage', { key: THEME_KEY, newValue: 'dark' }));
+    stop();
+
+    expect(themeChoice()).toBe('dark');
+    expect(document.documentElement.dataset.theme).toBe('dark');
+    expect(heard).toHaveBeenCalledTimes(1);
+  });
+
+  it('is not moved by another window writing a key that is not the theme', () => {
+    setThemeChoice('light');
+    window.dispatchEvent(new StorageEvent('storage', { key: 'daoris.workspace', newValue: 'aurora' }));
+
+    expect(themeChoice()).toBe('light');
+  });
 });

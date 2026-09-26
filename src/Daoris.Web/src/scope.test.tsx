@@ -68,6 +68,28 @@ describe('the workspace scope', () => {
     for (const url of requested()) expect(url).not.toContain('workspace=');
   });
 
+  /**
+   * WINDOW1: a detached session read the scope once, at open, so the main window choosing another
+   * workspace never reached it — its queries kept asking for the circle it opened in. The browser
+   * tells every OTHER document of a storage write; the provider hears it and asks again.
+   */
+  it('follows a workspace another window chose', async () => {
+    window.localStorage.removeItem('daoris.workspace');
+    view(
+      <WorkspaceScopeProvider>
+        <QuestsView notify={() => {}} />
+      </WorkspaceScopeProvider>,
+    );
+    await asked();
+    fetchMock.mockClear();
+
+    window.localStorage.setItem('daoris.workspace', 'aurora');
+    window.dispatchEvent(new StorageEvent('storage', { key: 'daoris.workspace', newValue: 'aurora' }));
+
+    await waitFor(() => expect(requested().find((url) => url.startsWith('/api/quests'))).toContain('workspace=aurora'));
+    window.localStorage.removeItem('daoris.workspace');
+  });
+
   it('a workspace name travels encoded, so a circle called 工作区 reaches the door intact', async () => {
     view(
       <WorkspaceScopeProvider initial="工作区">

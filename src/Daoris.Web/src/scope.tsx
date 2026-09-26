@@ -1,4 +1,4 @@
-import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
 import { store, stored } from './lib/stored';
 
 // The workspace scope (WSP5; workspace design §4): every cross-repository answer is scoped to ONE
@@ -41,6 +41,18 @@ export function WorkspaceScopeProvider({ initial, children }: { initial?: string
     set(next);
     remember(next);
   }, []);
+
+  // 🔴 A workspace another window chose (WINDOW1). A detached session read the scope once, at open,
+  // so its queries kept asking for the circle it opened in after the main window moved. The browser
+  // tells every OTHER document of a storage write; a pinned scope (a test, a story) follows nothing.
+  useEffect(() => {
+    if (initial !== undefined) return undefined;
+    const follow = (event: StorageEvent) => {
+      if (event.key === STORAGE_KEY || event.key === null) set(remembered());
+    };
+    window.addEventListener('storage', follow);
+    return () => window.removeEventListener('storage', follow);
+  }, [initial]);
   const value = useMemo(() => ({ workspace, setWorkspace }), [workspace, setWorkspace]);
   return <ScopeContext.Provider value={value}>{children}</ScopeContext.Provider>;
 }
