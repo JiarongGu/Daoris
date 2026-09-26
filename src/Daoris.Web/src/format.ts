@@ -3,11 +3,22 @@ import i18n from './i18n';
 // Formatting for the management surface. Small on purpose: a helper here is one the views share,
 // not a utility belt.
 
+/**
+ * The locale every formatter here writes in (UX5 U28): the page's language, with the machine's habits
+ * when the machine speaks it. A British machine reading English writes 24/09/2026, which the page's
+ * bare `en` would have written 9/24/2026; the same machine reading 中文 writes the date as 中文 does.
+ */
+function locale(): string {
+  const machine = typeof navigator === 'undefined' ? undefined : navigator.language;
+  const page = i18n.language;
+  return machine && machine.split('-')[0] === page.split('-')[0] ? machine : page;
+}
+
 /** Compact counts for stat tiles: 854 · 12.9K · 4.2M. Proportional figures — never tabular-nums. */
 export function compact(value: number): string {
   if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1).replace(/\.0$/, '')}M`;
   if (value >= 10_000) return `${(value / 1_000).toFixed(1).replace(/\.0$/, '')}K`;
-  return value.toLocaleString(i18n.language);
+  return value.toLocaleString(locale());
 }
 
 /**
@@ -15,7 +26,7 @@ export function compact(value: number): string {
  * which takes the machine's rather than the page's (UX5 U28; `tokens.test.ts` holds it).
  */
 export function figure(value: number): string {
-  return value.toLocaleString(i18n.language);
+  return value.toLocaleString(locale());
 }
 
 /**
@@ -23,15 +34,15 @@ export function figure(value: number): string {
  * 13:58:49` in 中文. The drawer read `23/09/2026, 1:58:49 pm` there, the machine's locale (UX5 U28).
  */
 export function stamp(iso: string): string {
-  return new Date(iso).toLocaleString(i18n.language);
+  return new Date(iso).toLocaleString(locale());
 }
 
 /** A file's size, in the unit a person reads it in: 812 B · 2.4 KB · 3.1 MB. */
 export function size(bytes: number): string {
-  if (bytes < 1024) return `${bytes.toLocaleString(i18n.language)} B`;
+  if (bytes < 1024) return `${bytes.toLocaleString(locale())} B`;
   const kb = bytes / 1024;
-  if (kb < 1024) return `${kb.toLocaleString(i18n.language, { maximumFractionDigits: 1 })} KB`;
-  return `${(kb / 1024).toLocaleString(i18n.language, { maximumFractionDigits: 1 })} MB`;
+  if (kb < 1024) return `${kb.toLocaleString(locale(), { maximumFractionDigits: 1 })} KB`;
+  return `${(kb / 1024).toLocaleString(locale(), { maximumFractionDigits: 1 })} MB`;
 }
 
 /**
@@ -84,7 +95,7 @@ export function span(ms: number): string {
   const seconds = Math.max(0, ms) / 1000;
   if (seconds < 10) {
     return i18n.t('duration.seconds', {
-      seconds: (Math.round(seconds * 10) / 10).toLocaleString(i18n.language, { maximumFractionDigits: 1 }),
+      seconds: (Math.round(seconds * 10) / 10).toLocaleString(locale(), { maximumFractionDigits: 1 }),
     });
   }
   if (seconds < 60) return i18n.t('duration.seconds', { seconds: Math.round(seconds) });

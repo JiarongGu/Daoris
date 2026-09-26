@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import i18n from './i18n';
-import { ago, compact, elapsed, sentence, sittingDays, span } from './format';
+import { ago, compact, elapsed, figure, sentence, sittingDays, span, stamp } from './format';
 
 /** CONV5: a turn's span, which is seconds where a session's is minutes. */
 describe('span', () => {
@@ -184,5 +184,36 @@ describe('sentence', () => {
     await i18n.changeLanguage('zh');
     expect(sentence(refusal)).toContain('驱动');
     await i18n.changeLanguage('en');
+  });
+});
+
+/**
+ * 🔴 UX5 U28: a date took the machine's locale whatever the page's language, so a 中文 drawer read
+ * *23/09/2026, 1:58:49 pm*. Naming the page's bare language then wrote *9/24/2026, 8:17:19 AM* for an
+ * English reader on a British machine, the US's habits. The language is the page's; the habits are
+ * the machine's when the machine speaks that language.
+ */
+describe('stamp and figure', () => {
+  const moment = '2026-09-24T08:17:19Z';
+
+  afterEach(async () => {
+    vi.unstubAllGlobals();
+    await i18n.changeLanguage('en');
+  });
+
+  it("writes a date in the page's language, with the machine's habits when it speaks it", async () => {
+    vi.stubGlobal('navigator', { ...navigator, language: 'en-GB' });
+    await i18n.changeLanguage('en');
+    expect(stamp(moment)).toBe(new Date(moment).toLocaleString('en-GB'));
+
+    await i18n.changeLanguage('zh');
+    expect(stamp(moment)).toBe(new Date(moment).toLocaleString('zh'));
+  });
+
+  it("takes the page's language alone on a machine that speaks another", async () => {
+    vi.stubGlobal('navigator', { ...navigator, language: 'zh-CN' });
+    await i18n.changeLanguage('en');
+    expect(stamp(moment)).toBe(new Date(moment).toLocaleString('en'));
+    expect(figure(1234567)).toBe((1234567).toLocaleString('en'));
   });
 });

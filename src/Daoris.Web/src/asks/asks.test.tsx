@@ -8,6 +8,7 @@ import { NO_CARRY } from '../compose/carry';
 import { AskCard } from './AskCard';
 import { AskComposer, type AskDraft } from './AskComposer';
 import { AskRecord } from './AskRecord';
+import { asksInOrder } from './AsksSection';
 import {
   BY_INTAKE, CLOSED, INTAKE_ASKED, INTAKE_PARKED, INTAKE_SESSION, NAMED, PROPOSED, PUBLISHED, REFUSED, UNKNOWN_TIER,
   UNMATCHED,
@@ -240,24 +241,49 @@ describe('AskRecord', () => {
 });
 
 describe('AskComposer', () => {
-  function Holder({ fixed, circles, onSubmit = () => {} }: {
-    fixed: string | null; circles: string[]; onSubmit?: (draft: AskDraft) => void;
+  function Holder({ fixed, circles, onSubmit = () => {}, intake }: {
+    fixed: string | null; circles: string[]; onSubmit?: (draft: AskDraft) => void; intake?: boolean | null;
   }) {
     const [draft, setDraft] = useState<AskDraft>({ circle: '', sentence: '', to: '', ...NO_CARRY });
     return (
       <AskComposer
         draft={draft} onChange={setDraft} fixed={fixed} circles={circles} receivers={['engine', 'game']}
-        onSubmit={() => onSubmit(draft)} onCancel={() => {}}
+        onSubmit={() => onSubmit(draft)} onCancel={() => {}} intake={intake}
       />
     );
   }
+
+  /**
+   * 🔴 UX5 U34: the composer said *nothing is published until you name a receiver or accept a
+   * proposal*, and on a machine with an intake agent the intake publishes on its own, asking the
+   * person only when it cannot tell (intake design §1). What the composer promises follows the
+   * machine: an intake set, none set, or a door that cannot know, which a browser is.
+   */
+  it('says what will become of an ask on this machine, and never promises what an intake would break', () => {
+    const hint = () => screen.getByRole('dialog').textContent ?? '';
+
+    const { unmount } = render(<Holder fixed="aurora" circles={['aurora']} intake />);
+    expect(hint()).toMatch(/intake agent reads it and publishes/);
+    expect(hint()).not.toMatch(/nothing is published/);
+    unmount();
+
+    const off = render(<Holder fixed="aurora" circles={['aurora']} intake={false} />);
+    expect(hint()).toMatch(/nothing is published until you name a receiver/);
+    off.unmount();
+
+    render(<Holder fixed="aurora" circles={['aurora']} />);
+    expect(hint()).not.toMatch(/nothing is published/);
+    expect(hint()).toMatch(/Naming a receiver publishes it at once/);
+    // The line under the title says only what is true in every case, and never the title again.
+    expect(hint()).toMatch(/kept by the service until it becomes quests/);
+  });
 
   it('is made in the circle the page is scoped to, and asks for its words before it will send', async () => {
     const onSubmit = vi.fn();
     render(<Holder fixed="aurora" circles={['aurora']} onSubmit={onSubmit} />);
     const drawer = screen.getByRole('dialog');
 
-    expect(within(drawer).getByText('Asked in aurora')).toBeInTheDocument();
+    expect(within(drawer).getByText('Asked in workspace aurora')).toBeInTheDocument();
     expect(within(drawer).queryByRole('combobox', { name: 'workspace' })).toBeNull();
     const send = within(drawer).getByRole('button', { name: 'ask' });
     expect(send).toBeDisabled();
@@ -303,5 +329,20 @@ describe('AskComposer', () => {
     await userEvent.upload(within(drawer).getByLabelText('choose files…'), new File(['x'], 'trace.log'));
     expect(within(drawer).getByText('trace.log')).toBeInTheDocument();
     expect(within(drawer).getByText(/links — a ticket/)).toBeInTheDocument();
+  });
+});
+
+/**
+ * 🔴 UX5 U32: the asks group ran newest first, the service's order, while the quests beneath it and
+ * *What needs you* run oldest first, so one screen held two orders for one idea. What waits longest
+ * leads, and a closed ask comes after every live one, as a closed quest does.
+ */
+describe('the asks, in the order they are read', () => {
+  it('puts the ask that has waited longest first, and a closed one after every live one', () => {
+    const older = { ...PROPOSED, id: 'a1', asked: '2026-09-20T09:00:00Z' };
+    const newer = { ...PUBLISHED, id: 'b2', asked: '2026-09-24T09:00:00Z' };
+    const closedEarliest = { ...CLOSED, id: 'c3', asked: '2026-09-01T09:00:00Z' };
+
+    expect(asksInOrder([newer, closedEarliest, older]).map((ask) => ask.id)).toEqual(['a1', 'b2', 'c3']);
   });
 });

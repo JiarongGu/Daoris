@@ -24,13 +24,16 @@ const NOBODY = '*';
  * offered. Scoped to none of several, the person says which: "every circle" has no single circle, and
  * assuming `default` would ask somewhere nobody chose.
  *
- * **Naming a receiver is optional.** Left unnamed, the declarations tier proposes and publishes
- * nothing (INT4a); named, the ask is published to it at once, as `--to` does.
+ * **Naming a receiver is optional.** Named, the ask is published to it at once, as `--to` does.
+ * Left unnamed, the declarations tier proposes and publishes nothing (INT4a), unless the machine sets
+ * an intake agent, which reads the ask and publishes on its own (INT4b). 🔴 So what the composer
+ * promises follows `intake` (UX5 U34): it said *nothing is published until you name a receiver*,
+ * which an intake breaks, and a door that cannot know, a browser, promises neither.
  *
  * It carries what the quest composer carries, through the same fields and the same drop, paste and
  * chooser (`compose/carry`), so the two cannot drift. Props only (components §2).
  */
-export function AskComposer({ draft, onChange, fixed, circles, receivers, busy = false, onSubmit, onCancel }: {
+export function AskComposer({ draft, onChange, fixed, circles, receivers, busy = false, onSubmit, onCancel, intake }: {
   draft: AskDraft;
   onChange: (draft: AskDraft) => void;
   /** The circle the ask is made in when the page decides it; null asks the person. */
@@ -39,6 +42,8 @@ export function AskComposer({ draft, onChange, fixed, circles, receivers, busy =
   circles: string[];
   /** Who can be named: the repositories the host says can be asked, in the ask's circle (D70). */
   receivers: string[];
+  /** Whether this machine sets an intake agent: true, false, or absent where the door cannot know. */
+  intake?: boolean | null;
   busy?: boolean;
   onSubmit: () => void;
   onCancel: () => void;
@@ -81,7 +86,9 @@ export function AskComposer({ draft, onChange, fixed, circles, receivers, busy =
         onSubmit={(e) => { e.preventDefault(); if (ready) onSubmit(); }}
         {...carry.handlers}
       >
-        <p className="m-0 text-body text-ink-soft">{t('asks.compose.hint')}</p>
+        <p className="m-0 text-body text-ink-soft">
+          {t(intake === true ? 'asks.compose.hintIntake' : intake === false ? 'asks.compose.hint' : 'asks.compose.hintUnknown')}
+        </p>
         {fixed ? (
           <p className="m-0 text-small text-ink-soft">{t('asks.compose.askedIn', { circle: fixed })}</p>
         ) : (

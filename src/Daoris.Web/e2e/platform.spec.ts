@@ -243,7 +243,7 @@ test('an ask is proposed by declarations, published by a person, and closed with
   const composer = page.getByRole('dialog', { name: 'Ask the workspace' });
   await expect(composer).toBeVisible();
   // One workspace held, so it is the workspace — said, and not asked.
-  await expect(composer.getByText('Asked in default')).toBeVisible();
+  await expect(composer.getByText('Asked in workspace default')).toBeVisible();
   await expect(composer.getByRole('combobox', { name: 'workspace' })).toHaveCount(0);
   await composer.getByLabel('what is wanted, and why').fill(sentence);
   await composer.getByLabel(/^links/).fill('https://tickets.example/T-8');

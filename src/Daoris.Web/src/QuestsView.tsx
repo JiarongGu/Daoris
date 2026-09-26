@@ -375,12 +375,19 @@ export function QuestsView({
           footer={
             (detail.status === 'Open' || detail.status === 'Taken') && (
               <div className="flex w-full flex-wrap items-center gap-2">
+                {/* The one loud control is the quest's next step (UX5 U31): taking it while it is
+                    open, closing it once it is taken. Done led an open quest too, with taking it
+                    offered as the quiet choice. */}
                 {detail.status === 'Open' && (
-                  <Button disabled={busy} onClick={() => onRespond(detail, 'take')}>
-                    <Icon name="check" size={14} />{t('quests.detail.take')}
+                  <Button variant="primary" disabled={busy} onClick={() => onRespond(detail, 'take')}>
+                    {t('quests.detail.take')}
                   </Button>
                 )}
-                <Button variant="primary" disabled={busy} onClick={() => onRespond(detail, 'done')}>
+                <Button
+                  variant={detail.status === 'Taken' ? 'primary' : 'default'}
+                  disabled={busy}
+                  onClick={() => onRespond(detail, 'done')}
+                >
                   {t('quests.detail.done')}
                 </Button>
                 {declining ? (

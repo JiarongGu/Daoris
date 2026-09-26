@@ -6,7 +6,7 @@ import { NO_CARRY } from '../compose/carry';
 import { sentence } from '../format';
 import { useAsk, useAsks, useCloseAsk, usePublishAsk, useQuests, useRegistry, useSessions } from '../queries';
 import { useScope } from '../scope';
-import { useNudge } from '../shell';
+import { useDriver, useNudge } from '../shell';
 import { workspaceOf, workspacesOf } from '../workspaces';
 import { failure, type Notify, SectionTitle, useErrorNotify } from '../ui';
 import { AskCard } from './AskCard';
@@ -14,6 +14,16 @@ import { AskComposer, type AskDraft } from './AskComposer';
 import { AskRecord } from './AskRecord';
 
 const EMPTY_DRAFT: AskDraft = { circle: '', sentence: '', to: '', ...NO_CARRY };
+
+/**
+ * The asks as the group reads them (UX5 U32): what has waited longest first, and a closed ask after
+ * every live one, as a closed quest comes after the open ones. The service lists newest first, which
+ * is its terminal door's order; the group ran in it, under quests that run oldest first.
+ */
+export function asksInOrder(asks: readonly Ask[]): Ask[] {
+  const closed = (ask: Ask) => (ask.state === 'Closed' ? 1 : 0);
+  return [...asks].sort((a, b) => closed(a) - closed(b) || a.asked.localeCompare(b.asked));
+}
 
 /**
  * Asks, at the head of the Quests view (INT4c): the screen twin of `daoris-driver ask` (D50) — the
@@ -48,6 +58,10 @@ export function AsksSection({
   const { t } = useTranslation();
   const scope = useScope();
   const asks = useAsks(includeClosed);
+  // Whether this machine sets an intake agent (UX5 U34): "" is off, and a door with no driver, or a
+  // shell older than the intake, cannot say, so the composer promises neither.
+  const intakeAdapter = useDriver().data?.intakeAdapter;
+  const intakeSet = intakeAdapter === undefined ? null : intakeAdapter !== '';
   // Scoped like every cross-repository read: scoped, its rows are that circle's and the circle is fixed;
   // unscoped, they are every circle's, which is exactly the list the composer asks the person to pick from.
   const family = useRegistry();
@@ -143,7 +157,7 @@ export function AsksSection({
       {(asks.data?.length ?? 0) > 0 && (
         <div>
           <SectionTitle>{t('asks.group', { count: asks.data!.length })}</SectionTitle>
-          {asks.data!.map((item) => (
+          {asksInOrder(asks.data!).map((item) => (
             <AskCard
               key={item.id}
               ask={item}
@@ -164,6 +178,7 @@ export function AsksSection({
           busy={busy}
           onSubmit={() => void onAsk()}
           onCancel={() => onComposingChange(false)}
+          intake={intakeSet}
         />
       )}
 

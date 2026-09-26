@@ -225,7 +225,7 @@ describe('QuestsView', () => {
 
       await userEvent.click(await screen.findByRole('button', { name: 'ask' }));
       const composer = await screen.findByRole('dialog', { name: 'Ask the workspace' });
-      expect(within(composer).getByText('Asked in default')).toBeInTheDocument();
+      expect(within(composer).getByText('Asked in workspace default')).toBeInTheDocument();
       await userEvent.type(within(composer).getByLabelText('what is wanted, and why'), 'Cap the hydration per frame.');
       fireEvent.change(within(composer).getByLabelText(/links — a ticket/), { target: { value: 'https://tickets.example/T-42' } });
       await userEvent.upload(within(composer).getByLabelText('choose files…'), new File(['pixels'], 'trace.log'));
@@ -537,6 +537,35 @@ describe('QuestsView', () => {
     const dialog = await screen.findByRole('dialog');
     expect(within(dialog).getByText('World streaming needs a per-frame cap.')).toBeInTheDocument();
     expect(within(dialog).getByRole('button', { name: 'take' })).toBeInTheDocument();
+  });
+
+  /**
+   * 🔴 UX5 U31: the drawer made *done* its one loud control whatever the quest's state, so an Open
+   * quest led with closing it and offered taking it as the quiet choice. The loud control is the
+   * quest's next step: take while it is open, done once it is taken.
+   */
+  it("makes taking an open quest the drawer's one loud control", async () => {
+    view();
+    await userEvent.click(await screen.findByText('Expose a streaming budget'));
+    const dialog = await screen.findByRole('dialog');
+
+    expect(within(dialog).getByRole('button', { name: 'take' }).className).toContain('bg-accent');
+    expect(within(dialog).getByRole('button', { name: 'done' }).className).not.toContain('bg-accent');
+    // U35: taking wore a check mark, the sign of done, beside a done that wore none.
+    expect(within(dialog).getByRole('button', { name: 'take' }).querySelector('svg')).toBeNull();
+  });
+
+  it("makes closing a taken quest the drawer's one loud control", async () => {
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      return url.startsWith('/api/quests') ? Response.json([{ ...QUESTS[0], status: 'Taken' }]) : respond(url);
+    }));
+    view();
+    await userEvent.click(await screen.findByText('Expose a streaming budget'));
+    const dialog = await screen.findByRole('dialog');
+
+    expect(within(dialog).queryByRole('button', { name: 'take' })).toBeNull();
+    expect(within(dialog).getByRole('button', { name: 'done' }).className).toContain('bg-accent');
   });
 
   it('publish stays disabled until the ask is complete — the form does not offer the mistake', async () => {
