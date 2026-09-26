@@ -401,6 +401,24 @@ public sealed class IntakeTests : IDisposable
         Assert.Equal("failed", IntakeObservation.Conclude(0, before: 0, after: null).State);
     }
 
+    /// <summary>
+    /// 🔴 ACPEND1: the protocol door's exit is 0 after a refused turn too. Read as a clean exit, an intake
+    /// the account's limit cut off would park "asking you", pointing at a question its transcript does
+    /// not end with. What it published before the refusal still stands.
+    /// </summary>
+    [Fact]
+    public void An_intake_whose_turn_the_agent_refused_failed_in_its_words_rather_than_asking()
+    {
+        const string limit = "the ACP agent refused the call: Internal error: You've hit your individual spend limit";
+
+        var refused = IntakeObservation.Conclude(0, before: 0, Ask(), turnFailed: limit);
+        Assert.Equal("failed", refused.State);
+        Assert.Contains("spend limit", refused.Note);
+
+        var published = Ask() with { State = "Published", Tier = "intake", Quests = ["q1"] };
+        Assert.Equal("completed", IntakeObservation.Conclude(0, before: 0, published, turnFailed: limit).State);
+    }
+
     /// <summary>Somebody else answered the ask while it ran — the person — so it stands down, like a lost take.</summary>
     [Fact]
     public void An_intake_whose_ask_was_answered_by_someone_else_stood_down()

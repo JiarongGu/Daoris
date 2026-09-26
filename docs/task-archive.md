@@ -6585,4 +6585,17 @@ All three landed together on 2026-09-27.
   That made it anyone's to take fresh, without the tree that asked, so it stays *Taken* (D79 as
   written, and the design's §1).
 - **Not looked at on the window with a real session.** The install still runs the build before D79,
-  so FG5's quest cannot use it yet. That run is FG5's.
+  so FG5's quest cannot use it yet. That run is FG5's. The page was looked at on the scratch shell,
+  light and dark, with a quest parked on a question and then with the question answered.
+
+## ACPEND1 — a turn the agent refused is not a clean exit (2026-09-27)
+
+Found on FG5's run. The account's spend limit refused the development session's turn mid-edit, and
+the adapter exited 0 once the driver closed stdin. With the quest still taken, the record concluded
+`stood-down: someone else has it`, which was false and hid the account limit. The protocol door's
+failure now reaches both conclusions. A refused turn with the quest taken or open concludes `failed`
+in the agent's words. So does an intake that published nothing, which would otherwise have parked as
+"asking you". A close, a wait or a publish that landed first keeps its ending. FIX-LOG has the root
+cause (ACP1's rule that the exit code concludes, on a door where the driver causes the exit). Driver
+758, including a real tick over the protocol door with the measured error. The run is also TOOL4's
+first real observation of exhaustion, recorded on its row.

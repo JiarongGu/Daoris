@@ -197,7 +197,7 @@ public sealed partial class Driver
                 scope: scope,
                 preamble: JoinNotices(preamble, browserNotice),
                 handedServers: servers,
-                conclude: async (exitCode, used) =>
+                conclude: async (exitCode, used, turnFailed) =>
                 {
                     if (used is not null)
                     {
@@ -211,7 +211,7 @@ public sealed partial class Driver
                     var conclusion = byPerson
                         ? new SessionConclusion("stopped", "the person stopped it.")
                         : exitCode is int code
-                            ? IntakeObservation.Conclude(code, ask.Quests.Count, after)
+                            ? IntakeObservation.Conclude(code, ask.Quests.Count, after, turnFailed)
                             : new SessionConclusion("failed", $"timed out after {config.TimeoutMinutes} minutes and was killed.");
                     conclusion = AccountRefused(conclusion, adapter, selection, transcript);
 

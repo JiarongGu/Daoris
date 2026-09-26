@@ -364,7 +364,11 @@ public static class IntakeObservation
 {
     /// <param name="before">How many quests the ask had when the intake opened.</param>
     /// <param name="after">The ask as it stands now — null when the service no longer has it.</param>
-    public static SessionConclusion Conclude(int exitCode, int before, AskView? after)
+    /// <param name="turnFailed">
+    /// What the protocol door said when the agent refused the turn itself (ACPEND1), or null — the
+    /// exit after stdin closes is 0 either way, so this is what tells a cut-off intake from an asking one.
+    /// </param>
+    public static SessionConclusion Conclude(int exitCode, int before, AskView? after, string? turnFailed = null)
     {
         var exit = exitCode == 0 ? "" : $" (exit {exitCode})";
         if (after is null)
@@ -391,6 +395,13 @@ public static class IntakeObservation
         if (gained.Count > 0)
         {
             return new("stood-down", $"ask `#{after.Id}` was answered while it ran — it became {Quests(gained)}.");
+        }
+
+        // 🔴 A refused turn is not a clean exit (ACPEND1): parked as "asking", it would send the person
+        // to a question the transcript does not end with.
+        if (turnFailed is { Length: > 0 })
+        {
+            return new("failed", $"the agent's turn failed before publishing anything onto ask `#{after.Id}`: {turnFailed}");
         }
 
         // A clean exit that published nothing is the intake ASKING: the declarations did not settle it

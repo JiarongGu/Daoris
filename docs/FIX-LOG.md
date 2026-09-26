@@ -5,6 +5,38 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## An account's limit cut a session off mid-edit, and the record said somebody else had the quest (2026-09-27)
+
+**Symptom.** FG5's development session worked twenty minutes on its quest in its own tree. Its last
+lines were the agent's *"You've hit your individual spend limit · … · your session limit resets
+7am"* and the driver's own *"— the ACP session failed: the ACP agent refused the call: Internal
+error: …"*. The record concluded `stood-down: exited cleanly with the quest taken — someone else has
+it`. Nobody else had it. The quest was stranded as taken, its tree held uncommitted edits, and the
+one fact the person needed, the account limit, appeared nowhere but the transcript's last line.
+
+**Root cause.** ACP1 (`37cd92e`) wrote down a failed protocol call and kept it out of the conclusion,
+on the ground that *"the process still has an exit code"*. On the protocol door that exit code says
+little. The driver closes stdin when the turn ends, for whatever reason it ended, and the agent then
+winds up and exits 0. So a turn the agent refused concluded as a clean exit, and a clean exit with
+the quest taken is the stand-down shape. The intake had the same hole with a worse sentence: a
+refused intake that had published nothing would park as *"asking you"*.
+
+**Fix.** The door's failure travels to the conclusion beside the exit code and the quest's state.
+`CaptureAcpAsync` returns it, `HoldAsync` hands it to both conclusions, and `Observation.Conclude` and
+`IntakeObservation.Conclude` read it: a refused turn with the quest still taken or open, or an intake
+that published nothing, concludes `failed` in the agent's words. A close, a wait or a publish that
+landed before the refusal keeps its ending. It is not the self-report D46 §4 keeps out: the session
+is not describing its work, the door is saying the work was cut off.
+
+**Verify.** `AcpTurnFailureTickTests` runs a real tick over the protocol door with a stand-in agent
+that takes its quest and then answers `session/prompt` with the measured error. The record is
+`failed`, naming the spend limit. `ObservationTests` and `IntakeTests` hold the endings that stand.
+Driver 758, family rehearsal.
+
+**Not repaired here:** the stranded quest on the owner's install. Whether to decline and re-ask or
+carry it on by hand in its tree is the owner's call (TASKS, FG5). **The general rule:** on a door
+whose exit is the driver's own doing, the exit is not evidence of how the work went.
+
 ## A session tree could not open past Windows' path limit, left a branch on every tick, and quoted git's progress line (2026-09-27)
 
 **Symptom.** The first real ticket on the first real workspace (FG5). The intake read the ticket

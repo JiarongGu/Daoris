@@ -97,6 +97,43 @@ public sealed class ObservationTests
         Assert.Equal("completed", Observation.Conclude(0, "Taken", awaitsBefore: "q1", awaitsAfter: "q2").State);
     }
 
+    // ——— A turn the agent refused (ACPEND1).
+    //
+    // 🔴 Measured on the first real run: the account's spend limit refused the turn mid-edit, the
+    // protocol door wrote so, and then the adapter exited 0 once stdin closed. With the quest still
+    // taken, the record said "stood-down — someone else has it", which was false and hid the reason.
+
+    private const string SpendLimit =
+        "the ACP agent refused the call: Internal error: You've hit your individual spend limit";
+
+    [Fact]
+    public void A_turn_the_agent_refused_with_the_quest_still_taken_failed_in_its_words()
+    {
+        var conclusion = Observation.Conclude(0, "Taken", turnFailed: SpendLimit);
+
+        Assert.Equal("failed", conclusion.State);
+        Assert.Contains("spend limit", conclusion.Note);
+        Assert.DoesNotContain("someone else", conclusion.Note);
+    }
+
+    [Fact]
+    public void A_turn_the_agent_refused_before_the_take_failed_in_its_words_too()
+    {
+        var conclusion = Observation.Conclude(0, "Open", turnFailed: SpendLimit);
+
+        Assert.Equal("failed", conclusion.State);
+        Assert.Contains("spend limit", conclusion.Note);
+    }
+
+    /// <summary>Where the work reached its close, or its wait, before the failure, that ending stands.</summary>
+    [Fact]
+    public void A_turn_that_failed_after_the_close_or_the_wait_keeps_that_ending()
+    {
+        Assert.Equal("completed", Observation.Conclude(0, "Done", turnFailed: SpendLimit).State);
+        Assert.Equal("declined", Observation.Conclude(0, "Declined", turnFailed: SpendLimit).State);
+        Assert.Equal("completed", Observation.Conclude(0, "Taken", awaitsAfter: "q1", turnFailed: SpendLimit).State);
+    }
+
     /// <summary>
     /// A resumed session that stops with the quest still waiting on the OLD question did not carry on.
     /// 🔴 Failed, not stood down: nothing about the quest changed, so a stand-down would be resumed

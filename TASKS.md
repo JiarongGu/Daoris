@@ -21,7 +21,7 @@ lists.
 
 ## State
 
-**Counts, and this is their one home:** fifteen commands, **482 CLI tests, 522 service, 753 driver,
+**Counts, and this is their one home:** fifteen commands, **482 CLI tests, 522 service, 758 driver,
 151 desktop modules, 80 devkit, 1189 web unit, 21 Playwright**, 66/66 release rehearsal, **285/285
 family rehearsal** (it names its own phases when you run it), **39/39 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge
@@ -45,8 +45,8 @@ code changes the study and the setup found. **FG5, the first run, is next**, and
 owns and every harness can drive: **BRW1–BRW2 landed, and BRW3, the owner's sign-in and first ticket through it, comes first**, and FG5's ticket is read through them.
 🔴 **The first run showed a session guessing what another repository knew, so D79 landed: ask and
 wait** (ASK1–ASK3, in the archive). A session publishes its question, parks its taken quest on it,
-and is resumed in the same tree with the answer. **ACPEND1 is next**: the same run's account limit
-was recorded as a stand-down. Then republish, and FG5 goes again.
+and is resumed in the same tree with the answer. **ACPEND1 landed with it**: the same run's account
+limit had been recorded as a stand-down. **Next: republish, and FG5 goes again.**
 D76's round is done, and its leftovers (RAIL2, SURF11) stand behind these. Nothing is pushed or
 published, and a release is still blocked on REH1.
 - **Landed:** CONV1 (the record), CONV2 (the view), CONV3a (Claude Code's `stream-json`), CONV3b
@@ -120,8 +120,8 @@ rather than designed.
 
 ## Backlog
 
-**Thirty-two rows are open**: the in-app browser's seven (BRW3, then BRW4–BRW9, the browser as a browser); the first goal's three (FG5,
-ACPEND1, and SEM2 on a trigger); D76's held file tools;
+**Thirty-one rows are open**: the in-app browser's seven (BRW3, then BRW4–BRW9, the browser as a browser); the first goal's two (FG5,
+and SEM2 on a trigger); D76's held file tools;
 the eight REV3 left, WINDOW2 among them; five leftovers (RAIL2, SURF11, FLAKE1, DEPLOY5, TEST1); two on the owner
 (TRUST2, AGT2c); and six on a trigger (see *Handover*). Every closed one is in `docs/task-archive.md`, and this file holds no
 ticked rows, by the `task-lifecycle` rule it also ships. A heading below holds open rows only.
@@ -293,18 +293,10 @@ is behind a sign-in. FG1–FG4 are in the archive. **INT6 is reshaped as FG5.**
   for twenty minutes. It needed the backend's note contract, tried to read the backend's code, was
   refused, proposed a rule to allow the read, and wrote the front end on assumptions. The proposal
   is the owner's, and D79 (ask and wait, in the archive) is the fix. Then the account's spend limit
-  refused its turn mid-edit, and the record said `stood-down` (ACPEND1).
+  refused its turn mid-edit, and the record said `stood-down` (ACPEND1, fixed, in the archive).
   The quest is still taken with nothing working on it, and its tree holds the uncommitted edits.
   **Next:** republish with both, and the owner decides the stranded quest: decline it with the
   reason and ask again, or carry it on by hand in its tree.
-- [ ] **ACPEND1 — a turn the agent refused is not a clean exit** (found on FG5's run, 2026-09-27).
-  The account's spend limit refused the development session's turn. The ACP door wrote *"the ACP
-  session failed: the ACP agent refused the call: Internal error: You've hit your individual spend
-  limit …"*. Then the driver closed stdin, the adapter exited 0, and the quest was still taken, so
-  the record concluded `stood-down: someone else has it`. That is false, and it hides the one fact
-  the person needs. On the protocol door the exit after stdin closes says little, so the conclusion
-  has to hear that the prompt call itself failed. A session that got as far as the wait or the close
-  keeps that ending.
 - [ ] ⏸ **SEM2 — vectors that persist** (after SEM1, held). SEM1 embeds what is on disk once per
   process, on first use. The MCP host is one process per session, so with an embedder configured,
   each session's first search embeds the whole corpus. Lyntai.Storage.Sqlite's vector store would

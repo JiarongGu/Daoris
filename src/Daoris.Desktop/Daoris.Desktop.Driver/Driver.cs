@@ -574,7 +574,7 @@ public sealed partial class Driver(
                 ct: ct,
                 preamble: browserNotice,
                 handedServers: servers,
-                conclude: async (exitCode, used) =>
+                conclude: async (exitCode, used, turnFailed) =>
                 {
                     if (used is not null)
                     {
@@ -597,7 +597,7 @@ public sealed partial class Driver(
                         : exitCode is int code
                             // What it waited on before and after (D79): a NEW question is this session
                             // asking and waiting, which is a good ending, not a stand-down.
-                            ? Observation.Conclude(code, status, quest.Awaits, after?.Awaits)
+                            ? Observation.Conclude(code, status, quest.Awaits, after?.Awaits, turnFailed)
                             : new SessionConclusion("failed", $"timed out after {config.TimeoutMinutes} minutes and was killed.");
 
                     conclusion = AccountRefused(conclusion, adapter, selection, transcript);
@@ -827,7 +827,7 @@ public sealed partial class Driver(
     private async Task<T> HoldAsync<T>(
         ISessionAdapter adapter, ProcessStartInfo info, SessionTarget target, string sessionId, string transcript,
         string cwd, string? harnessNotice, (string? File, object? Meta) rules, string? handed, string? refusesInput,
-        Func<int?, AcpUsage?, Task<T>> conclude, CancellationToken ct,
+        Func<int?, AcpUsage?, string?, Task<T>> conclude, CancellationToken ct,
         IReadOnlyDictionary<string, string>? scope = null, string? preamble = null,
         IReadOnlyList<AcpMcpServer>? handedServers = null)
     {
@@ -858,10 +858,11 @@ public sealed partial class Driver(
 
         // What it consumed, where the door reported it (TOOL3/D57 §4). A pipe with only text reports
         // nothing, and a surface then says "not measured" rather than zero.
-        var used = acp is not null ? (await acp.ConfigureAwait(false))?.Usage
+        var (outcome, turnFailed) = acp is not null ? await acp.ConfigureAwait(false) : (null, null);
+        var used = acp is not null ? outcome?.Usage
             : structured is not null ? await structured.ConfigureAwait(false)
             : null;
-        return await conclude(exitCode, used).ConfigureAwait(false);
+        return await conclude(exitCode, used, turnFailed).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -935,7 +936,7 @@ public sealed partial class Driver(
     /// Null for a quest's session.
     /// </param>
     /// <param name="meta">What <c>session/new</c> carries for the rules composed for this session (PERM1).</param>
-    private async Task<AcpOutcome?> CaptureAcpAsync(
+    private async Task<(AcpOutcome? Outcome, string? Failure)> CaptureAcpAsync(
         Process process, string transcript, string sessionId, string cwd, string prompt,
         string? posture, string? harnessNotice, CancellationToken ct,
         IReadOnlyDictionary<string, string>? scope = null, object? meta = null,
@@ -998,15 +999,18 @@ public sealed partial class Driver(
             Line($"— the turn ended: {outcome.StopReason}, after {outcome.Updates} update(s). The "
                  + "session record is concluded from the exit code and the quest's own state, not "
                  + "from this line (D46 §4).");
-            return outcome;
+            return (outcome, null);
         }
         catch (DriverException error)
         {
-            // A protocol failure is a fact about this run and belongs in its transcript. It does not
-            // conclude the record either: the process still has an exit code, and the quest still
-            // has a state, and those two are what the conclusion is made of.
+            // A protocol failure is a fact about this run and belongs in its transcript — and it goes to
+            // the conclusion too (ACPEND1), beside the exit code and the quest's state. 🔴 The exit alone
+            // cannot carry it here: the driver closes stdin below and the agent winds up and exits 0,
+            // so an account limit that refused the turn mid-edit read as a clean exit, and a taken
+            // quest as a stand-down. A failed call is not the session describing its work, which is
+            // the self-report D46 §4 keeps out; it is the door saying the work was cut off.
             Said($"— the ACP session failed: {error.Message}");
-            return null;
+            return (null, error.Message);
         }
         finally
         {

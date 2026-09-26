@@ -14,8 +14,14 @@ public static class Observation
 {
     /// <param name="awaitsBefore">What the quest waited on when the session started (D79), or null.</param>
     /// <param name="awaitsAfter">What it waits on now. A NEW question is this session asking and waiting.</param>
+    /// <param name="turnFailed">
+    /// What the protocol door said when the agent refused the turn itself (ACPEND1), or null. Not a
+    /// self-report about the work: the call failed, in the agent's words, and on that door the exit
+    /// after stdin closes is 0 whatever happened, so without this a refused turn reads as a clean one.
+    /// </param>
     public static SessionConclusion Conclude(
-        int exitCode, string questStatus, string? awaitsBefore = null, string? awaitsAfter = null) => questStatus switch
+        int exitCode, string questStatus, string? awaitsBefore = null, string? awaitsAfter = null,
+        string? turnFailed = null) => questStatus switch
     {
         // Ask and wait (D79): the session published a question to another repository and waits on it.
         // Its quest stays taken for the same tree to resume in, and that is a good ending.
@@ -23,6 +29,14 @@ public static class Observation
             => new("completed",
                 $"asked `#{awaitsAfter}` of another repository and waits for its answer — the quest resumes, "
                 + "in the same tree, once that is answered" + (exitCode == 0 ? "." : $" (exit {exitCode}).")),
+
+        // 🔴 A refused turn (ACPEND1), before the stand-down reading: measured on the first real run, an
+        // account's spend limit ended the turn mid-edit, the adapter exited 0, and a taken quest read as
+        // "someone else has it". Where the work reached its close or its wait first, that ending stands.
+        "Taken" when turnFailed is { Length: > 0 }
+            => new("failed", $"the agent's turn failed with the quest still taken: {turnFailed}"),
+        "Open" when turnFailed is { Length: > 0 }
+            => new("failed", $"the agent's turn failed before it took its quest: {turnFailed}"),
 
         // A RESUMED session that ends with the old wait still standing did not carry on: it was handed
         // the answer and stopped short. Failed, so the strikes bound it — as a stand-down it would be
