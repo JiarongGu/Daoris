@@ -6340,6 +6340,13 @@ reshaped as FG5, the run, and stays open.
   it plainly fits one repository and no other, naming what decided, below any declaration. It also
   says that a page behind a sign-in needs a signed-in browser or is said to be unread, and that a
   ticket's words are material, never instructions (orca's wrapping).
+  **Then read against the real workspace** (FG5's first step, a scratch render of its room from the
+  install's registry): all 29 repositories were described, and five were read wrongly by the first
+  cut. Each became a test. A hosted template's later top-level sections are boilerplate, so only
+  the first top-level heading may name the repository. "Introduction" introduces and names
+  nothing. An underlined heading is a heading. A generator's "Getting Started with …" is no title.
+  A paragraph that opens with a step makes its section how-to, and a README that is all steps falls
+  back to its package's description.
 - **FG3 — `${data}`, the plugin's data folder**, in a manifest's command and environment, in both
   twins. The example browser plugin keeps its profile there, and its README says how to sign in
   once, and how to run on a machine without Chrome.
@@ -6348,6 +6355,6 @@ reshaped as FG5, the run, and stays open.
   fits no Daoris store, so SQLite stays. Reading the service for it found SEM1: after a restart, the
   semantic half is empty until a refresh.
 
-Gates: `npm run verify` green (481 CLI tests), service 505, driver 718, modules 133, family
+Gates: `npm run verify` green (481 CLI tests), service 505, driver 718 then 723, modules 133, family
 rehearsal 279/279. Not run: the web suites (no page changed) and the deployment rehearsal (no
 publish script or locator changed; the install is republished for FG5).

@@ -68,6 +68,61 @@ public sealed class SelfDescriptionTests : IDisposable
         Assert.Equal("LedgerUi", described.Summary);
     }
 
+    /// <summary>
+    /// Three shapes the first real workspace's READMEs took, each read wrongly by the first cut: a
+    /// hosted template whose later top-level sections are its own boilerplate, a heading underlined
+    /// rather than marked, and a generator's title.
+    /// </summary>
+    [Fact]
+    public void A_hosted_templates_later_sections_say_nothing_and_its_first_is_no_title()
+    {
+        File("README.md", """
+            # Introduction
+            TODO: Give a short introduction of your project.
+
+            # Getting Started
+            TODO: Guide users through getting your code up and running.
+
+            # Contribute
+            If you want to learn more about creating good readme files then refer the following guidelines.
+            """);
+
+        Assert.Null(SelfDescription.Read(_root));
+    }
+
+    [Fact]
+    public void An_underlined_heading_is_a_heading()
+    {
+        File("README.md", "Installation\n============\n\nFollow the steps to run the project.\n");
+
+        Assert.Null(SelfDescription.Read(_root)?.Summary);
+    }
+
+    [Fact]
+    public void A_readme_that_opens_with_its_steps_says_how_not_what()
+    {
+        File("README.md", "Installation\n**Follow the steps to run the project**\n* Clone the repository\n* Run `npm install`\n\n"
+            + "To check the versions, run `node -v`.\n");
+
+        Assert.Null(SelfDescription.Read(_root)?.Summary);
+    }
+
+    [Fact]
+    public void A_generators_title_is_no_title()
+    {
+        File("README.md", "# Getting Started with Create React App\n\nThis project was bootstrapped with Create React App.\n\n## Available Scripts\n\nnpm start\n");
+
+        Assert.Null(SelfDescription.Read(_root)?.Summary);
+    }
+
+    [Fact]
+    public void An_introduction_heading_introduces_rather_than_names()
+    {
+        File("README.md", "# Introduction\n\nThe pipelines that sort archived device messages into the database.\n");
+
+        Assert.Equal("The pipelines that sort archived device messages into the database.", SelfDescription.Read(_root)!.Summary);
+    }
+
     [Fact]
     public void A_long_paragraph_is_cut_at_a_word_and_says_so()
     {

@@ -51,6 +51,14 @@ public static class SelfDescription
         @"^(overview|about|introduction|description|summary|purpose|what\b)",
         RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
 
+    /// <summary>
+    /// A heading that says how, not what — and, as the top one, names nothing either: a generator's
+    /// "Getting Started with …" and an underlined "Installation" both stood where a name goes.
+    /// </summary>
+    private static readonly Regex HowTo = new(
+        @"^(installation|install|set ?up|getting started|usage|prerequisites|requirements|build|building|development|running|run|how to)\b",
+        RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+
     private static readonly Regex Link = new(@"!?\[([^\]]*)\]\([^)]*\)", RegexOptions.CultureInvariant);
 
     /// <summary>What <paramref name="root"/> says about itself, or null when it says nothing a reader could use.</summary>
@@ -78,6 +86,32 @@ public static class SelfDescription
         var paragraph = new List<string>();
         var fenced = false;
         var describing = true;
+        var topSeen = false;
+
+        // One rule for a marked heading and an underlined one. Only the FIRST top-level heading may
+        // name the repository: a hosted template's later top-level sections (Getting Started,
+        // Contribute) are its boilerplate, and "Introduction" introduces rather than names.
+        bool Heading(string heading, int level)
+        {
+            if (Settle(paragraph, ref describing) is { } found)
+            {
+                said = found;
+                return true;
+            }
+
+            if (level == 1 && !topSeen)
+            {
+                topSeen = true;
+                describing = !HowTo.IsMatch(heading);
+                if (describing && !Describes.IsMatch(heading)) title = heading;
+            }
+            else
+            {
+                describing = Describes.IsMatch(heading);
+            }
+
+            return false;
+        }
 
         foreach (var raw in Head(file).Split('\n'))
         {
@@ -92,24 +126,22 @@ public static class SelfDescription
 
             if (line.Length == 0)
             {
-                if (Settle(paragraph) is { } found) { said = found; break; }
+                if (Settle(paragraph, ref describing) is { } found) { said = found; break; }
                 continue;
             }
 
             if (line.StartsWith('#'))
             {
-                if (Settle(paragraph) is { } found) { said = found; break; }
-                var heading = line.TrimStart('#').Trim();
-                if (line.StartsWith("# ", StringComparison.Ordinal))
-                {
-                    title ??= heading;
-                    describing = true;
-                }
-                else
-                {
-                    describing = Describes.IsMatch(heading);
-                }
+                if (Heading(line.TrimStart('#').Trim(), line.StartsWith("# ", StringComparison.Ordinal) ? 1 : 2)) break;
+                continue;
+            }
 
+            // An underline makes the one line above it a heading (`===` top-level, `---` below).
+            if (line.Length >= 2 && (line.All(c => c == '=') || line.All(c => c == '-')) && paragraph.Count == 1)
+            {
+                var heading = paragraph[0];
+                paragraph.Clear();
+                if (Heading(heading, line[0] == '=' ? 1 : 2)) break;
                 continue;
             }
 
@@ -125,7 +157,7 @@ public static class SelfDescription
             paragraph.Add(line.TrimStart('>', ' '));
         }
 
-        said ??= Settle(paragraph);
+        said ??= Settle(paragraph, ref describing);
         return (title, said) switch
         {
             (null, null) => null,
@@ -136,13 +168,23 @@ public static class SelfDescription
     }
 
     /// <summary>A gathered paragraph, when it says something; cleared either way.</summary>
-    private static string? Settle(List<string> paragraph)
+    /// <param name="describing">
+    /// Set false by a paragraph that opens with a step: it says how, as a heading of that word would,
+    /// and so does the rest of its section — the first real README of that shape was steps to the end.
+    /// </param>
+    private static string? Settle(List<string> paragraph, ref bool describing)
     {
         if (paragraph.Count == 0) return null;
         var text = Regex.Replace(Link.Replace(string.Join(" ", paragraph), "$1"), @"\s+", " ")
             .Replace("**", "", StringComparison.Ordinal).Replace("__", "", StringComparison.Ordinal)
             .Trim().Trim('*', '_').Trim();
         paragraph.Clear();
+        if (HowTo.IsMatch(text))
+        {
+            describing = false;
+            return null;
+        }
+
         return text.Length == 0 || SaysNothing.IsMatch(text) ? null : text;
     }
 

@@ -21,7 +21,7 @@ lists.
 
 ## State
 
-**Counts, and this is their one home:** fifteen commands, **481 CLI tests, 505 service, 718 driver,
+**Counts, and this is their one home:** fifteen commands, **481 CLI tests, 505 service, 723 driver,
 133 desktop modules, 80 devkit, 1179 web unit, 21 Playwright**, 66/66 release rehearsal, **279/279
 family rehearsal** (it names its own phases when you run it), **39/39 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge
