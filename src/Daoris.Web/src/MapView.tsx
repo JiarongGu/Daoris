@@ -102,16 +102,21 @@ export function MapView({ notify, onOpenConvergence, onOpenQuest }: {
     );
   }
 
-  const header = <PageHeader title={t('map.title')} description={t('map.description')} />;
-
-  if (registry.isPending || quests.isPending) {
-    return <section>{header}<SkeletonRows rows={4} /></section>;
-  }
-
   const topology = buildTopology(
     registry.data ?? [], quests.data ?? [],
     // Convergence may fail on its own — a lexical-only machine still has repositories and quests.
     shared.data ?? [], sessions.data ?? []);
+  // Scoped to every workspace of several, it says so, as its empty state does (UX5 U49).
+  const header = (
+    <PageHeader
+      title={t('map.title')}
+      description={t(topology.circles > 1 ? 'map.descriptionAll' : 'map.description')}
+    />
+  );
+
+  if (registry.isPending || quests.isPending) {
+    return <section>{header}<SkeletonRows rows={4} /></section>;
+  }
 
   if (topology.nodes.length === 0) {
     return (

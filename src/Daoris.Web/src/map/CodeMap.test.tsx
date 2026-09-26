@@ -1,7 +1,7 @@
 import { fireEvent, render, screen, within } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
 import type { CodeDependency, CodeModule } from '../api';
-import { CodeMapCanvas, CodeMapDetail, codeEdge } from './CodeMap';
+import { CodeMapCanvas, CodeMapDetail, codeEdge, codeWidth } from './CodeMap';
 
 // MAP3a: a repository's own code map, drawn — modules as buttons, arrows to what each depends on.
 
@@ -39,6 +39,28 @@ describe('the code map drawing', () => {
     render(<CodeMapCanvas repository="engine" modules={MODULES} dependencies={DEPENDENCIES} selected="service" onSelect={() => {}} />);
 
     expect(screen.getByRole('button', { name: 'service, depends on 0' })).toHaveAttribute('aria-pressed', 'true');
+  });
+
+  /**
+   * UX5 U44: drawn at its own size, one unit a pixel, so a module's name is the type scale's. It was
+   * stretched to its card: 640 units drawn 775px wide at 1400, a name 13.3px beside a 13px body.
+   */
+  it('is drawn at its own size, shrinking only where its card is narrower', () => {
+    const { container } = render(
+      <CodeMapCanvas repository="engine" modules={MODULES} dependencies={DEPENDENCIES} selected={null} onSelect={() => {}} />);
+    const svg = container.querySelector('svg')!;
+    const [, , width] = svg.getAttribute('viewBox')!.split(' ').map(Number);
+
+    expect(svg.getAttribute('width')).toBe(String(width));
+    expect(svg.getAttribute('class')).toContain('max-w-full');
+  });
+
+  it('meets a narrow card with its width, not with smaller names', () => {
+    expect(codeWidth(1, undefined)).toBe(640);
+    expect(codeWidth(1, 2000)).toBe(640);
+    expect(codeWidth(1, 400)).toBe(400);
+    // A row too wide for the card keeps its boxes whole, and the drawing shrinks as the last resort.
+    expect(codeWidth(6, 400)).toBe(6 * (136 + 20) + 48);
   });
 
   /** UX5 U47, as on the workspace map: a second press releases the choice, and so does Escape. */

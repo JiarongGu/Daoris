@@ -223,6 +223,44 @@ describe('the workspace map', () => {
     expect(knowledge.getAttribute('class')).toContain('opacity-20');
   });
 
+  /**
+   * UX5 U44: the drawing is framed on what it draws and drawn one unit a pixel, centred. It was a
+   * fixed 600-unit square: a blank lower third, the card's left edge, and names scaled with it.
+   */
+  it('is drawn at its own size, framed on what it draws', async () => {
+    show();
+    const map = await screen.findByRole('group', { name: 'the workspace map' });
+    const [, , width, height] = map.getAttribute('viewBox')!.split(' ').map(Number);
+
+    expect(map.getAttribute('width')).toBe(String(width));
+    expect(height).toBeLessThan(600);
+    expect(map.getAttribute('class')).toContain('mx-auto');
+  });
+
+  /**
+   * UX5 U49: scoped to every workspace, the map says so, as its empty state already did, and a
+   * repository's detail names its circle. It said "this workspace" over every circle's repositories.
+   */
+  it('says it spans every workspace, and names a repository’s own', async () => {
+    REGISTRY = [
+      { repository: 'engine', adopted: true, registered: true, owns: [], accepts: [], packs: [], entries: 1, workspace: 'default' },
+      { repository: 'studio-tools', adopted: true, registered: true, owns: [], accepts: [], packs: [], entries: 0, workspace: 'studio' },
+    ];
+    show();
+
+    expect(await screen.findByText(/^The repositories in every workspace/)).toBeTruthy();
+    await userEvent.click(await screen.findByRole('button', { name: /^studio-tools, 0 open/ }));
+    expect(screen.getByText('in workspace studio')).toBeTruthy();
+  });
+
+  it('speaks of this workspace, and names none, when it holds one', async () => {
+    show(() => {}, 'default');
+
+    expect(await screen.findByText(/^The repositories in this workspace/)).toBeTruthy();
+    await userEvent.click(await screen.findByRole('button', { name: /^game, 1 open/ }));
+    expect(screen.queryByText(/^in workspace/)).toBeNull();
+  });
+
   it('says so when the workspace holds no repository', async () => {
     REGISTRY = [];
     show(() => {}, 'aurora');

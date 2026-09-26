@@ -16,6 +16,8 @@ import type { Convergence, Quest, Registration, Session } from '../api';
 
 export type MapNode = {
   id: string;
+  /** The circle it belongs to, as the registry says; said in its detail when the map spans several. */
+  workspace?: string;
   summary?: string;
   owns: string[];
   accepts: string[];
@@ -42,6 +44,11 @@ export type Topology = {
   knowledge: KnowledgeEdge[];
   /** Quests with an end that is not a repository on this map: an ask, or another circle. */
   outside: number;
+  /**
+   * How many circles the nodes belong to: more than one only when the page is scoped to every
+   * workspace and the deployment holds several (UX5 U49).
+   */
+  circles: number;
 };
 
 const isOpen = (quest: Quest) => quest.status === 'Open' || quest.status === 'Taken';
@@ -54,10 +61,15 @@ export function buildTopology(
   sessions: readonly Session[],
 ): Topology {
   const ids = new Set(registry.map((row) => row.repository));
+  const circles = new Set(registry.map((row) => row.workspace ?? '')).size;
+  // By name, and by circle first when there are several, so a circle's repositories sit together on
+  // the ring and its quests stay within its arc: by name alone the circles interleaved (UX5 U49).
+  const circleOf = (row: Registration) => (circles > 1 ? row.workspace ?? '' : '');
   const nodes = [...registry]
-    .sort((a, b) => a.repository.localeCompare(b.repository))
+    .sort((a, b) => circleOf(a).localeCompare(circleOf(b)) || a.repository.localeCompare(b.repository))
     .map<MapNode>((row) => ({
       id: row.repository,
+      ...(row.workspace ? { workspace: row.workspace } : {}),
       ...(row.summary ? { summary: row.summary } : {}),
       owns: row.owns,
       accepts: row.accepts,
@@ -101,20 +113,25 @@ export function buildTopology(
     quests: [...edges.values()].sort((x, y) => byEnds(x.from, y.from) || byEnds(x.to, y.to)),
     knowledge: [...pairs.values()].sort((x, y) => byEnds(x.a, y.a) || byEnds(x.b, y.b)),
     outside,
+    circles,
   };
 }
 
 /**
- * Positions on a ring inside a `size` square, in the order given, starting at the top. Deterministic,
- * so two looks at the same data draw the same picture. A family is small, which is why a ring is
- * enough and no layout engine is carried (design §1).
+ * Positions on a ring about the centre of a `size` square, in the order given, starting at the top.
+ * Deterministic, so two looks at the same data draw the same picture. A family is small, which is
+ * why a ring is enough and no layout engine is carried (design §1).
+ *
+ * @param radius - the ring's radius; the square's 0.68 by default. The canvas passes a smaller one
+ *   when its card is narrow, so the ring gives way rather than the names (UX5 U44).
  */
-export function layoutRing(ids: readonly string[], size: number): Record<string, { x: number; y: number }> {
+export function layoutRing(
+  ids: readonly string[], size: number, radius = (size / 2) * 0.68,
+): Record<string, { x: number; y: number }> {
   const centre = size / 2;
   if (ids.length === 0) return {};
   if (ids.length === 1) return { [ids[0]!]: { x: centre, y: centre } };
 
-  const radius = centre * 0.68;
   return Object.fromEntries(ids.map((id, index) => {
     const angle = -Math.PI / 2 + (2 * Math.PI * index) / ids.length;
     return [id, { x: centre + radius * Math.cos(angle), y: centre + radius * Math.sin(angle) }];

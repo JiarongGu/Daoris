@@ -1,10 +1,11 @@
-import { type KeyboardEvent, useState } from 'react';
+import { type KeyboardEvent, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { CodeDependency, CodeModule, Provenance } from '../api';
 import { ago } from '../format';
 import { cn } from '../lib/cn';
 import { PathText } from '../ui';
 import { layerModules } from './codeLayout';
+import { useWidth } from './useWidth';
 
 const BOX_W = 136;
 const BOX_H = 36;
@@ -16,6 +17,18 @@ const FITS = 17;
 
 /** Where a box sits: its centre across, its top edge down. */
 type Place = { x: number; y: number };
+
+/** The width the drawing is laid out at where its card has room: wider only spreads the boxes apart. */
+const ROOMY = 640;
+
+/**
+ * How wide the drawing is, in units that are pixels: `ROOMY`, or the card where the card is
+ * narrower, and never narrower than its widest row of boxes needs (UX5 U44). Where nothing measures
+ * the card, `ROOMY`. Past the widest row's need, the drawing shrinks as the last resort.
+ */
+export function codeWidth(widest: number, room: number | undefined): number {
+  return Math.max(widest * (BOX_W + GAP) + MARGIN * 2, Math.min(ROOMY, room ?? ROOMY));
+}
 
 /**
  * The path of one dependency arrow, from the module that depends to the module it depends on.
@@ -64,9 +77,13 @@ export function CodeMapCanvas({ repository, modules, dependencies, selected, onS
   const { t } = useTranslation();
   // The module the pointer or the keyboard is on.
   const [hovered, setHovered] = useState<string | null>(null);
+  // Drawn one unit a pixel, so a module's name is the type scale's (UX5 U44): it was stretched to its
+  // card, 640 units drawn 775px wide at 1400.
+  const box = useRef<HTMLDivElement>(null);
+  const room = useWidth(box);
   const layers = layerModules(modules.map((m) => m.id), dependencies);
   const widest = Math.max(1, ...layers.map((row) => row.length));
-  const width = Math.max(640, widest * (BOX_W + GAP) + MARGIN * 2);
+  const width = codeWidth(widest, room);
   const height = layers.length * ROW - (ROW - BOX_H) + MARGIN * 2;
 
   const at = new Map<string, { x: number; y: number }>();
@@ -92,81 +109,84 @@ export function CodeMapCanvas({ repository, modules, dependencies, selected, onS
   };
 
   return (
-    <svg
-      viewBox={`0 0 ${width} ${height}`}
-      role="group"
-      aria-label={t('code.canvas', { repository })}
-      onKeyDown={release}
-      className="block h-auto w-full"
-    >
-      <defs>
-        {/* In the drawing's own units, so a chosen arrow's head is the size of every other (MAP2) —
-            and one per hue, so a lit arrow does not end in a grey head (seen on the window). The
-            arrows are this drawing's content, so they wear an ink, never a container's line: that
-            was 1.6:1 on the card, and stepped back, gone in dark (UX5 U48). */}
-        <marker id="code-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto">
-          <path d="M 0 0 L 10 5 L 0 10 z" className="fill-ink-faint" />
-        </marker>
-        <marker id="code-arrow-lit" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto">
-          <path d="M 0 0 L 10 5 L 0 10 z" className="fill-accent" />
-        </marker>
-      </defs>
+    <div ref={box}>
+      <svg
+        viewBox={`0 0 ${width} ${height}`}
+        width={width}
+        role="group"
+        aria-label={t('code.canvas', { repository })}
+        onKeyDown={release}
+        className="mx-auto block h-auto max-w-full"
+      >
+        <defs>
+          {/* In the drawing's own units, so a chosen arrow's head is the size of every other (MAP2) —
+              and one per hue, so a lit arrow does not end in a grey head (seen on the window). The
+              arrows are this drawing's content, so they wear an ink, never a container's line: that
+              was 1.6:1 on the card, and stepped back, gone in dark (UX5 U48). */}
+          <marker id="code-arrow" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto">
+            <path d="M 0 0 L 10 5 L 0 10 z" className="fill-ink-faint" />
+          </marker>
+          <marker id="code-arrow-lit" viewBox="0 0 10 10" refX="9" refY="5" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" orient="auto">
+            <path d="M 0 0 L 10 5 L 0 10 z" className="fill-accent" />
+          </marker>
+        </defs>
 
-      {dependencies.map((edge) => {
-        const a = at.get(edge.from);
-        const b = at.get(edge.to);
-        if (!a || !b) return null;
-        const accent = focus !== null && lit(edge.from, edge.to);
-        return (
-          <path
-            key={`${edge.from}-${edge.to}`}
-            d={codeEdge(a, b)}
-            fill="none"
-            markerEnd={accent ? 'url(#code-arrow-lit)' : 'url(#code-arrow)'}
-            className={cn(
-              'stroke-ink-faint transition-opacity duration-(--speed)',
-              lit(edge.from, edge.to) ? 'stroke-[1.5]' : 'opacity-20',
-              accent && 'stroke-accent stroke-2',
-            )}
-          />
-        );
-      })}
-
-      {modules.map((module) => {
-        const place = at.get(module.id);
-        if (!place) return null;
-        const chosen = selected === module.id;
-        const count = dependencies.filter((d) => d.from === module.id).length;
-        const shown = module.id.length > FITS ? `${module.id.slice(0, FITS - 1)}…` : module.id;
-        return (
-          <g
-            key={module.id}
-            role="button"
-            tabIndex={0}
-            aria-label={t('code.moduleLabel', { id: module.id, count })}
-            aria-pressed={chosen}
-            onClick={() => choose(module.id)}
-            onKeyDown={press(module.id)}
-            onPointerEnter={() => setHovered(module.id)}
-            onPointerLeave={() => setHovered(null)}
-            onFocus={() => setHovered(module.id)}
-            onBlur={() => setHovered(null)}
-            className="cursor-pointer outline-none [&:focus-visible>rect]:stroke-ink"
-          >
-            <rect
-              x={place.x - BOX_W / 2} y={place.y} width={BOX_W} height={BOX_H} rx={6}
-              className={cn('fill-raised', chosen ? 'stroke-accent stroke-[2.5]' : 'stroke-line-strong stroke-[1.5]')}
+        {dependencies.map((edge) => {
+          const a = at.get(edge.from);
+          const b = at.get(edge.to);
+          if (!a || !b) return null;
+          const accent = focus !== null && lit(edge.from, edge.to);
+          return (
+            <path
+              key={`${edge.from}-${edge.to}`}
+              d={codeEdge(a, b)}
+              fill="none"
+              markerEnd={accent ? 'url(#code-arrow-lit)' : 'url(#code-arrow)'}
+              className={cn(
+                'stroke-ink-faint transition-opacity duration-(--speed)',
+                lit(edge.from, edge.to) ? 'stroke-[1.5]' : 'opacity-20',
+                accent && 'stroke-accent stroke-2',
+              )}
             />
-            <text
-              x={place.x} y={place.y + BOX_H / 2} textAnchor="middle" dominantBaseline="central"
-              className="fill-ink font-mono text-meta"
+          );
+        })}
+
+        {modules.map((module) => {
+          const place = at.get(module.id);
+          if (!place) return null;
+          const chosen = selected === module.id;
+          const count = dependencies.filter((d) => d.from === module.id).length;
+          const shown = module.id.length > FITS ? `${module.id.slice(0, FITS - 1)}…` : module.id;
+          return (
+            <g
+              key={module.id}
+              role="button"
+              tabIndex={0}
+              aria-label={t('code.moduleLabel', { id: module.id, count })}
+              aria-pressed={chosen}
+              onClick={() => choose(module.id)}
+              onKeyDown={press(module.id)}
+              onPointerEnter={() => setHovered(module.id)}
+              onPointerLeave={() => setHovered(null)}
+              onFocus={() => setHovered(module.id)}
+              onBlur={() => setHovered(null)}
+              className="cursor-pointer outline-none [&:focus-visible>rect]:stroke-ink"
             >
-              {shown}
-            </text>
-          </g>
-        );
-      })}
-    </svg>
+              <rect
+                x={place.x - BOX_W / 2} y={place.y} width={BOX_W} height={BOX_H} rx={6}
+                className={cn('fill-raised', chosen ? 'stroke-accent stroke-[2.5]' : 'stroke-line-strong stroke-[1.5]')}
+              />
+              <text
+                x={place.x} y={place.y + BOX_H / 2} textAnchor="middle" dominantBaseline="central"
+                className="fill-ink font-mono text-meta"
+              >
+                {shown}
+              </text>
+            </g>
+          );
+        })}
+      </svg>
+    </div>
   );
 }
 

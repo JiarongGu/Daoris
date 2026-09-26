@@ -80,6 +80,10 @@ export function MapDetail({ topology, selected, onOpenConvergence, onOpenCode, o
           {node.parked && <SessionMark parked />}
           {node.working && <SessionMark parked={false} />}
         </header>
+        {/* Which circle, only when the map spans several: in one, it is the circle on screen (U49). */}
+        {topology.circles > 1 && node.workspace && (
+          <p className="m-0 -mt-2 text-meta text-ink-faint">{t('map.detail.circle', { workspace: node.workspace })}</p>
+        )}
         {node.summary && <p className="m-0 text-small text-ink-soft">{node.summary}</p>}
         {onOpenCode && (
           <div>
