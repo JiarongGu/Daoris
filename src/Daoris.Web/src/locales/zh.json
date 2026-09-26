@@ -62,7 +62,7 @@
   "code.detail.hint": "选择一个模块，查看它依赖什么、被谁使用。",
   "code.detail.none": "无",
   "code.detail.dependsOn": "依赖",
-  "code.detail.usedBy": "被使用于",
+  "code.detail.usedBy": "被依赖",
   "wiring.title": "启动时用什么",
   "wiring.body": "每个工作区：驱动会话启动时会用的智能体、账户与版本——为受理指定了智能体后，受理也一样——以及各由哪项设置决定。驱动读取的正是同一个答案。",
   "wiring.row": "{{workspace}} 中的启动",
