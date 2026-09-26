@@ -21,7 +21,7 @@ lists.
 ## State
 
 **Counts, and this is their one home:** fifteen commands, **478 CLI tests, 502 service, 705 driver,
-130 desktop modules, 80 devkit, 1109 web unit, 21 Playwright**, 66/66 release rehearsal, **279/279
+130 desktop modules, 80 devkit, 1112 web unit, 21 Playwright**, 66/66 release rehearsal, **279/279
 family rehearsal** (it names its own phases when you run it), **39/39 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge
 documents, 5 skills, 7 packs. The always-loaded core is **22,492 of 26,000 bytes** — a span in
@@ -109,8 +109,8 @@ rather than designed.
 
 ## Backlog
 
-**Twenty-four rows are open**: D76's last, UX5, and its held file tools; the ten REV3 left, with RETRY1;
-three leftovers (FLAKE1, DEPLOY5, TEST1); three on the owner (TRUST2, AGT2c, INT6); and six on a
+**Twenty-five rows are open**: D76's last, UX5, and its held file tools; the ten REV3 left, with RETRY1;
+four leftovers (SURF11, FLAKE1, DEPLOY5, TEST1); three on the owner (TRUST2, AGT2c, INT6); and six on a
 trigger (see *Handover*). Every closed one is in `docs/task-archive.md`, and this file holds no
 ticked rows, by the `task-lifecycle` rule it also ships. A heading below holds open rows only.
 
@@ -242,15 +242,26 @@ TDD, looked at on the window, and the ones that touch a real session use one (au
   waiting), U2 and U13 (the monitor), U3 (the protocol door's console in lines, not chunks), U4
   (line breaks), U5 and U12 (the platform's own controls), U7 (the dock on demand), U8 (paths), U9
   (no box where nothing listens), U11 (the frame's tests isolated), U15 (the command center gives
-  way to the menus) and U16 (the owner's: the session follows the window's width, reversing U10).
-  **Open in the ledger:** U6 (fold §4's dated amendments into the body, surface by surface), and
-  U17 and U18 (a live chat between turns reads *working*; the composer's stop wears red), both to
-  judge at the Sessions surface. **Then the pass itself**: the ledger's surface table, every row
-  still unticked. The strip's row is half done: the activity bar and status bar are next.
+  way to the menus), U16 (the owner's: the session follows the window's width, reversing U10), U19
+  (no view named Work), U21 (the status bar counts active sessions, and says so) and U22 (the
+  activity bar scrolls rather than crushing its places). **Open in the ledger:** U6 (fold §4's dated
+  amendments into the body, surface by surface; the frame's are done), U17 and U18 (a live chat
+  between turns reads *working*; the composer's stop wears red), both to judge at the Sessions
+  surface, and **U20, the owner's call**: the Sessions badge counts all of *What needs you*, most of
+  which is not in Sessions. **Then the pass itself**: the ledger's surface table. The frame's row is
+  done; Overview is next.
 - [ ] ⏸ **Held, after the conversation:** a file tree and document preview in the dock (when a tool
   card wants to open a file); a terminal (design §6's trigger).
 
 ### Open — the arc's leftovers, in the order they are worth doing
+
+- [ ] **SURF11 — the layout toggles, reachable from the strip.** Filed on 2026-09-22 in a sentence
+  of `platform-ux.md` §4 and never made a row, which UX5 found (U23). VS Code's title bar holds the
+  toggles that show and hide the panel, the sidebar and the secondary bar, left of the window
+  controls. Daoris has the three regions in Sessions (the rail, the output panel, the dock), and each
+  is toggled only inside it. Since D66, Sessions is one view among seven, so the question is where the
+  toggles belong before how they look: the strip, which is every view's, or the View menu, which
+  VS Code also carries them in. The state lives in `WorkFrame` and needs hoisting either way.
 
 - [ ] **FLAKE1 — an intake test failed once in about 20 full driver runs.**
   `IntakeTests.An_ask_with_an_intake_harness_is_answered_by_a_session_that_publishes_onto_it`: the
