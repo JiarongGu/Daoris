@@ -54,11 +54,11 @@ public static class Observation
         // it". Parked, it quotes what it said; the person's answer carries the quest on in the same tree.
         // A park is never resumed by itself, so nothing here loops.
         "Taken" when exitCode == 0 && (took || resumed || awaitsBefore is { Length: > 0 })
+            // The words lead: wherever this note is shown, it already says the session is waiting.
             => new("awaiting-person",
-                "holds its quest and ended its turn without closing it, so it is waiting on you — "
-                + (lastWords is { Length: > 0 } said
-                    ? $"its last words: {said}"
-                    : "what it needs is in the last words of its transcript.")),
+                lastWords is { Length: > 0 } said
+                    ? $"It stopped with its quest still taken, to ask you:\n\n{said}"
+                    : "It stopped with its quest still taken, to ask you — what it needs is in the last words of its transcript."),
 
         // Holding its quest with a messy exit is a failure, and the strikes bound carrying it on (D80).
         "Taken" when awaitsBefore is { Length: > 0 }

@@ -271,7 +271,7 @@ public sealed class SessionLedger(
         // The note keeps what it asked beside what it was told: the session that carries the quest on is
         // handed this record, and an answer without its question is half a conversation.
         var moved = await AdvanceAsync(
-            id, "completed", $"asked the person ({session.Note ?? "its question is in its transcript"}), and was answered: {said}",
+            id, "completed", $"{session.Note ?? "It stopped to ask the person; its question is in its transcript."}\n\nAnswered: {said}",
             evidence: null, transcript: null, now, ct).ConfigureAwait(false);
         return moved.Refusal == SessionAdvanceRefusal.None
             ? moved with { Message = $"Answered session `{id}`: `#{session.Quest}` is carried on in its tree at the driver's next tick." }
