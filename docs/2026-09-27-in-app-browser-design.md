@@ -10,6 +10,10 @@
 > stands is the seam, §3.4–§3.6: a CDP endpoint on loopback, `${browser}` in a plugin's server, and
 > the driver asking for the browser before the spawn. `docs/2026-09-28-managed-edge-evidence.md` is
 > why.
+>
+> **Amended by D85 (2026-09-28).** The Chromium is embedded, under Daoris's own windows, and hosts
+> the app's page too (`docs/2026-09-28-chromium-host-design.md`). So the window's own chrome (§3.2's
+> tabs, §3a, §3b) is carried onto the new engine rather than handed to another program (CHR3).
 
 ## 0. Why the first answer is not enough
 

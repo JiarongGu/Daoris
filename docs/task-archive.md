@@ -6834,3 +6834,21 @@ The row as filed: Find in page (`Ctrl+F`), zoom, devtools (`F12`), downloads to
 and a real browser has find, zoom, devtools, downloads and its own theme already. Measured on Edge 154
 (`docs/2026-09-28-managed-edge-evidence.md`). Rebuilding them on the WebView2 window, which D84
 retires once the engine lands, would be work thrown away.
+
+**Amended by D85 (2026-09-28).** The engine is embedded, under Daoris's own chrome, so a browser's
+basics are Daoris's to draw again. They come back after CHR3, on the new engine, not on WebView2.
+
+## BRW11 — the engine: a Chromium Daoris ships and keeps (2026-09-28, superseded by D85)
+
+The row as filed: *(D84). A probe of the builds first (Chrome for Testing, a snapshot, another:
+banner, codecs, licence, size). Then it is managed like a harness (D57): a pin, fetched from its
+maker's channel, verified, and updated deliberately. Daoris starts it on a profile under the home with
+a debug port and **no account and no sync**. The endpoint is `${browser}`, as today. Sign-ins are kept
+over CDP (the evidence's §4, BRW10's rule), and favorites and history come from the engine's own. The
+terminal twin is `daoris browser`.*
+
+**Not built: superseded.** D85 answered D84's open form: the engine is embedded, and it hosts
+Daoris's own page as well as the browser. The row assumed a separate browser program started and kept
+like a harness. CHR1–CHR4 replace it (`docs/2026-09-28-chromium-host-design.md`), and CHR3 carries
+what stands of it: the profile under the home, no account and no sync, `${browser}`, and a sign-in
+kept across a restart.

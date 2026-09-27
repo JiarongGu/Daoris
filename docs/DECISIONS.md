@@ -3625,3 +3625,53 @@ maker's channel and verified, and updated deliberately.
 - **Carrying on the WebView2 window.** Tabs, favorites and history were built (BRW4–BRW6), and each
   further basic (find, zoom, devtools, downloads) is a browser's feature rebuilt. An agent's own tab
   there stays invisible. The window stays until the engine lands, then goes.
+
+**Amended by D85 (2026-09-28).** *Which form* is answered: embedded. *Daoris's own UI stays on
+WebView2* is withdrawn, because the page moves to the same engine. *Managed like a harness* does not
+hold for an embedded engine, which is pinned by the build. The Edge option and the CDP seam stand.
+
+## D85 — Daoris's page and its browser run on one embedded Chromium it ships, under Shenora's frame (2026-09-28)
+
+**Decision (the owner's direction).** Every Daoris window renders in a Chromium that Daoris ships and
+embeds: the main window, the secondary windows and the in-app browser. The system's WebView2 runtime
+goes. The owner: *"to shift to chromeiun, because we mostly build the ui itself in react and the only
+missing part is the shenora currently dont support this, but the framework itself is still okay to
+use since there is no big difference, just webview2 to chromium, we can start the work here and also
+file the new task to shenora for this"*. Everything above the web view stays: `Daoris.Web` as the one
+UI, and Shenora's modules, dispatcher, event bus, frameless form, window state, paths and secondary
+windows. **It is built here first, on Shenora's public engine-neutral surface**
+(`IpcHostBridge` with a `NotificationPump` on the host, `ShenoraBridge`'s `transport` on the page).
+Shenora takes it in once it has proved itself, which is Shenora's own growth rule (its D15). The
+request is filed in Shenora's backlog, at the owner's explicit say-so (*"you can file the TASKS.md"*),
+as one uncommitted entry. `docs/2026-09-28-chromium-host-design.md` is the contract.
+
+**Why.**
+- **The limits met were WebView2's API, not Chromium's**: a tab an agent opens over CDP has no window,
+  and a session cookie ends with the process (BRW4, BRW10). An embedding with deeper hooks may answer
+  both, which CHR1 measures rather than assumes.
+- **One engine in the install.** D84 already ships a Chromium for the browser, and keeping WebView2
+  for the page would ship one engine and depend on another.
+- **A machine prerequisite goes.** The shell refuses to start without the Evergreen runtime, and an
+  engine in the install is one the artefact gate (D60) can start.
+
+**The cost accepted.**
+- The engine's security updates reach the page only through a Daoris release, since an embedded
+  engine is pinned by the build.
+- The host code Shenora gave for WebView2 is Daoris's to write until the harvest.
+- A browser's basics come back to Daoris, because an embedded browser's chrome is Daoris's to draw.
+  BRW9 was retired under D84 because a separate browser has its own, and it is refiled after CHR3.
+
+🔴 **The rule it must keep** (D78 §3.1): the page that holds the bridge is never in CDP's reach. An
+embedded engine's debug port may be one setting per process. If so, the browser runs in a process of
+its own, and that is CHR1's first question.
+
+**Open.** The embedding library (CefSharp is the candidate; CHR1 measures it), and with it the
+Chromium build and its media codecs.
+
+**Rejected.**
+- **A standalone Chromium Daoris starts** (D84's recommendation). It gives a browser for free, but the
+  page cannot live in another program's window, so two engines would ship.
+- **Waiting for Shenora to build it.** Shenora grows by harvest, so an adopter building it first is
+  its model, and the owner said to start here.
+- **Editing Shenora from here** (D32). The one entry in its backlog is the request, written at the
+  owner's say-so, and Shenora's own session or owner commits or declines it.

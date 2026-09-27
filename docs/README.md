@@ -34,8 +34,9 @@ what was measured, and it stays a record of that moment. A *record* is append-on
 | `2026-09-23-sync-design.md` | contract | the remote as a git remote (D68) | Current, with D69 noted |
 | `2026-09-24-menus-design.md` | contract | the menus as setup domains (D75) | Current |
 | `2026-09-24-permission-scopes-design.md` | contract | what an agent may do (D72, D74) | Current |
-| `2026-09-27-in-app-browser-design.md` | contract | Daoris's own browser, driven over MCP (D78) | Current for the WebView2 window (BRW1–BRW6, BRW10), which **D84** retires once a shipped Chromium lands; its CDP seam (`${browser}`) stands |
+| `2026-09-27-in-app-browser-design.md` | contract | Daoris's own browser, driven over MCP (D78) | Current for the WebView2 window (BRW1–BRW6, BRW10). **D84** ships a Chromium, and **D85** embeds it, so the window's chrome and its CDP seam (`${browser}`) carry over (CHR3) |
 | `2026-09-27-ask-and-wait-design.md` | contract | A session asks another repository, waits, and is resumed with the answer (D79) | Current. ASK1–ASK3 built; §1 amended while building (the quest stays taken); §1.6 is D80, the carry-on after a cut-off |
+| `2026-09-28-chromium-host-design.md` | contract | Daoris's page and its browser on an embedded Chromium it ships, under Shenora's frame (D85) | Current. CHR1, the probe, is next; the request to Shenora is filed in its backlog |
 
 ## Studies and evidence
 

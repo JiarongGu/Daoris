@@ -56,7 +56,9 @@ console tab for everything running (CONSOLE2)**. CHAIN2 landed as D82, PAR1 with
 D83, and CONSOLE2 and BRW10 (a sign-in that survives a restart) on 2026-09-28, all in the archive.
 **Then the browser as a browser** (BRW4–BRW6 in the archive), until **D84 changed its course**
 (2026-09-28): Daoris ships a Chromium for its browser, and the person's Edge is always an option.
-**Next: the owner's two calls on D84** (the engine's form and build), then BRW11. 🔴 **The owner also
+**Then D85 widened it** (2026-09-28): Daoris's own page moves to that Chromium too, embedded under
+Shenora's frame, built here first and asked of Shenora for the harvest (its backlog carries the
+request). **Next: CHR1, the probe** (`docs/2026-09-28-chromium-host-design.md`). 🔴 **The owner also
 filed six rows from the first real workspace** (2026-09-28, *After the first real workspace*, "lets
 start them later"): workspace rules for how work lands, the default branch, cleaning up session
 branches, the session view, the map, and asking Daoris for help. Ask which comes first.
@@ -142,8 +144,8 @@ rather than designed.
 
 ## Backlog
 
-**Thirty-eight rows are open**: the six the first real workspace showed (WSR1–WSR3, SESS1, MAP4,
-HELP1); the in-app browser's five (BRW3, BRW7, BRW8, and D84's BRW11 and BRW12); the first goal's three (FG5,
+**Forty-one rows are open**: the six the first real workspace showed (WSR1–WSR3, SESS1, MAP4,
+HELP1); D85's four (CHR1–CHR4); the in-app browser's four (BRW3, BRW7, BRW8, and D84's BRW12); the first goal's three (FG5,
 READACROSS1 the owner's, and SEM2 on a trigger); D76's held file tools;
 the eight REV3 left, WINDOW2 among them; seven leftovers (LAYOUT1, RAIL2, SURF11, CONSOLE3, FLAKE1, DEPLOY5, TEST1); two on the owner
 (TRUST2, AGT2c); and six on a trigger (see *Handover*). Every closed one is in `docs/task-archive.md`, and this file holds no
@@ -309,14 +311,9 @@ attached over CDP drives a WebView2.
 🔴 **D84 changes the course (2026-09-28): Daoris ships a Chromium for its browser, and the person's
 Edge is always an option.** `docs/2026-09-28-managed-edge-evidence.md` is what was measured: a real
 browser has these basics of its own, and an agent's tab there is one the person sees. The WebView2
-window (BRW1–BRW6, BRW10) stays until the engine lands. **The owner's calls first:** the engine's
-form (a standalone Chromium Daoris starts, recommended, or CEF in Daoris's windows) and its build.
-- [ ] **BRW11 — the engine: a Chromium Daoris ships and keeps** (D84). A probe of the builds first
-  (Chrome for Testing, a snapshot, another: banner, codecs, licence, size). Then it is managed like a
-  harness (D57): a pin, fetched from its maker's channel, verified, and updated deliberately. Daoris
-  starts it on a profile under the home with a debug port and **no account and no sync**. The endpoint
-  is `${browser}`, as today. Sign-ins are kept over CDP (the evidence's §4, BRW10's rule), and
-  favorites and history come from the engine's own. The terminal twin is `daoris browser`.
+window (BRW1–BRW6, BRW10) stays until the engine lands. **D85 answered the engine's form**
+(2026-09-28): embedded, under Daoris's own windows, and the page's engine too. The engine is CHR3 now
+(below), and BRW11 is in the archive as superseded.
 - [ ] **BRW12 — the person's Edge, as an option** (D84). A machine setting, with its terminal twin:
   Daoris's engine, or Edge on a profile under the home. The Edge option says what it brings: the
   person's Microsoft account, signed in on its own (the evidence's §5), and with sync on if they want
@@ -325,14 +322,28 @@ form (a standalone Chromium Daoris starts, recommended, or CEF in Daoris's windo
 - [ ] **BRW7 — start it from the app, and route links to it.** A door as visible as the monitor's:
   the activity bar or the strip, not only View → *Browser*. A setting for whether links on the page
   (a ticket in a quest, a URL in the conversation) open in Daoris's browser or the system browser,
-  orca's link routing. Under D84 it opens whichever browser the machine uses (BRW11, BRW12). The
-  start page is the engine's own.
+  orca's link routing. It opens whichever browser the machine uses (CHR3, BRW12). Under D85 the
+  embedded browser's start page is Daoris's to draw, and Edge's is its own.
 - [ ] **BRW8 — who is driving.** Say when a session is driving the browser, name the session, and
   link to it, so the person knows whose hands are on the page before they type into it. **Measured
   with BRW4 (2026-09-28):** an agent's current tab is the first page it found, not the one in front.
-  In a real browser its own tabs are visible (D84's evidence). Under D84 the browser window is not
-  Daoris's to draw in, so this is said in Daoris (the session, the strip), or by an extension the
-  engine loads. That choice is BRW8's.
+  In a real browser its own tabs are visible (D84's evidence). Under D85 the embedded browser's chrome
+  is Daoris's again, so it can be said there. With the Edge option (BRW12), that window is not Daoris's
+  to draw in, so it is said in Daoris (the session, the strip) or by an extension Edge loads.
+
+### Chromium under the windows (owner, 2026-09-28 → D85)
+
+> *"to shift to chromeiun, because we mostly build the ui itself in react and the only missing part
+> is the shenora currently dont support this … we can start the work here and also file the new task
+> to shenora for this"*
+
+`docs/2026-09-28-chromium-host-design.md` is the contract, and its §5 carries each row's detail.
+Shenora's backlog carries the request (filed 2026-09-28 at the owner's say-so, uncommitted there).
+- [ ] **CHR1 — measure an embedding first.** 🔴 Does the debug port reach every page in the process?
+  The answer also goes to the owner for Shenora's entry.
+- [ ] **CHR2 — the host**, on Shenora's `IpcHostBridge`. The main and secondary windows move to it.
+- [ ] **CHR3 — the browser on the same engine** (supersedes BRW11), then BRW9's basics refiled.
+- [ ] **CHR4 — the install carries it**, and the WebView2 path goes.
 
 ### The first goal — a real workspace, a ticket, a task started (owner, 2026-09-27 → D77)
 
