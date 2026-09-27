@@ -22,7 +22,7 @@ lists.
 ## State
 
 **Counts, and this is their one home:** fifteen commands, **483 CLI tests, 528 service, 799 driver,
-152 desktop modules, 80 devkit, 1201 web unit, 21 Playwright**, 66/66 release rehearsal, **289/289
+158 desktop modules, 80 devkit, 1201 web unit, 21 Playwright**, 66/66 release rehearsal, **289/289
 family rehearsal** (it names its own phases when you run it), **39/39 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge
 documents, 5 skills, 7 packs. The always-loaded core is **22,492 of 26,000 bytes** — a span in
@@ -53,12 +53,13 @@ cut-off carried on), both in the archive. The chain's verify step found three mo
 branch. The owner then set two more directions, **D81**: a session works in its harness's own `auto`
 mode, "as much as it can just like regular claude code". And **parallel sessions (PAR1)** and **a
 console tab for everything running (CONSOLE2)**. CHAIN2 landed as D82, PAR1 with it, STANDDOWN2 as
-D83, and CONSOLE2 on 2026-09-28, all in the archive. **Next: the browser as a browser** (BRW4–BRW10,
-which the owner put after the core workflow), BRW10 first, since a republish signs the browser out.
+D83, and CONSOLE2 and BRW10 (a sign-in that survives a restart) on 2026-09-28, all in the archive.
+**Next: the browser as a browser** (BRW4–BRW9), which the owner put after the core workflow.
 🔴 **Where the 2026-09-27 session stopped (the owner: "lets continue in next session").** The first
-goal's loop is met (FG5's sixth leg). The install runs `c3e6516`. The workspace's `4805151` (one-line
-tool names, whole last words on a parked card) is not on it yet: republishing restarts the app, and
-that signs the in-app browser out (BRW10), so ask before doing it. **The owner has five open calls:**
+goal's loop is met (FG5's sixth leg). The install runs `c3e6516`, and nothing since is on it.
+🔴 **Republishing still signs the browser out ONCE**, because the running install keeps no cookies
+yet. After that republish, a restart keeps the sign-in (BRW10). So ask before republishing, and the
+owner signs in once more after it. **The owner has five open calls:**
 the verify step's camera-GUID defect, sent to the front end as a quest before any camera note is
 saved; whether the daily view gains a note chip; the single-select answer said back on the ticket;
 merging four docs commits left on session branches, in both repositories; and READACROSS1. The
@@ -136,7 +137,7 @@ rather than designed.
 
 ## Backlog
 
-**Thirty-four rows are open**: the in-app browser's eight (BRW3, then BRW4–BRW10, the browser as a browser); the first goal's three (FG5,
+**Thirty-three rows are open**: the in-app browser's seven (BRW3, then BRW4–BRW9, the browser as a browser); the first goal's three (FG5,
 READACROSS1 the owner's, and SEM2 on a trigger); D76's held file tools;
 the eight REV3 left, WINDOW2 among them; six leftovers (RAIL2, SURF11, CONSOLE3, FLAKE1, DEPLOY5, TEST1); two on the owner
 (TRUST2, AGT2c); and six on a trigger (see *Handover*). Every closed one is in `docs/task-archive.md`, and this file holds no
@@ -280,12 +281,6 @@ not in v1. Amend it as each lands.
   or in the system browser, orca's link routing.
 - [ ] **BRW8 — who is driving.** The window says when a session is driving it, names the session,
   and links to it, so the person knows whose hands are on the page before they type into it.
-- [ ] **BRW10 — a sign-in survives the application restarting** (FG5, 2026-09-27). The owner signed in
-  to a dev identity in the in-app browser, then the application restarted twice (republishing), and the
-  next session found an empty cookie jar. An identity server's session cookie ends with the browser
-  process, and WebView2 does not restore session cookies. Keep them across a restart, encrypted to the
-  account (DPAPI) under `<home>/browser/`, restored before the first page loads. Until then, restarting
-  the application signs the browser out.
 - [ ] **BRW9 — the rest of a browser's basics.** Find in page (`Ctrl+F`), zoom, devtools (`F12`),
   downloads to `<home>/browser/downloads` with a shelf, and the theme once WINDOW2 gives the window
   a channel.

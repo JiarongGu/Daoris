@@ -34,7 +34,7 @@ what was measured, and it stays a record of that moment. A *record* is append-on
 | `2026-09-23-sync-design.md` | contract | the remote as a git remote (D68) | Current, with D69 noted |
 | `2026-09-24-menus-design.md` | contract | the menus as setup domains (D75) | Current |
 | `2026-09-24-permission-scopes-design.md` | contract | what an agent may do (D72, D74) | Current |
-| `2026-09-27-in-app-browser-design.md` | contract | Daoris's own browser, driven over MCP (D78) | Current. BRW1 and BRW2 built; BRW3 is the owner's run |
+| `2026-09-27-in-app-browser-design.md` | contract | Daoris's own browser, driven over MCP (D78) | Current. BRW1, BRW2 and BRW10 built; BRW3 is the owner's run |
 | `2026-09-27-ask-and-wait-design.md` | contract | A session asks another repository, waits, and is resumed with the answer (D79) | Current. ASK1–ASK3 built; §1 amended while building (the quest stays taken); §1.6 is D80, the carry-on after a cut-off |
 
 ## Studies and evidence

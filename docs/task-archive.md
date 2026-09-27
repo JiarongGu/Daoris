@@ -6722,3 +6722,26 @@ Driver 797, modules 152, web 1198, Playwright 21, family 289, deployment 39. Wha
 The look found two conversation defects, both fixed the same day and in the fix log: two messages in
 a row read as one (*DONESubagent finished*), and a *working…* mark stayed under words the agent said
 after its turn.
+
+## BRW10 — a sign-in survives the application restarting (2026-09-28)
+
+The row as filed: *(FG5, 2026-09-27).* The owner signed in to a dev identity in the in-app browser,
+then the application restarted twice (republishing), and the next session found an empty cookie jar.
+An identity server's session cookie ends with the browser process, and WebView2 does not restore
+session cookies. Keep them across a restart, encrypted to the account (DPAPI) under `<home>/browser/`,
+restored before the first page loads. Until then, restarting the application signs the browser out.
+
+Built as filed. `BrowserSessionCookies` (modules) keeps only session cookies, since the profile keeps
+the rest, in a versioned file under the home sealed by an `ICookieSeal`. It writes nothing when the set
+is unchanged. It puts back only what the browser does not already hold, so a reopened window never
+overwrites a value the site rotated. A file this account cannot open, or one that is not what was
+written, restores nothing and says why. The shell's seal is DPAPI to the current user, named for its
+purpose. The window restores before its first page and keeps after every page and every 30 seconds.
+The why shows as a strip under the bar, not the bar's placeholder, since a focused box shows none
+(seen on the window).
+
+Proven on the window against a stand-in site that sets a cookie with no expiry. Signed in, the shell
+restarted, and the same session came back on a new browser process. The control, the same restart
+with the kept file deleted, came back signed out. The file holds no cookie value in plain text, and a
+file of garbage showed the strip. Modules 158, deployment 39. The install still runs without it, so
+its next republish signs out once more.

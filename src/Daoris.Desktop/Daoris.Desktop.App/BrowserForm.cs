@@ -33,10 +33,25 @@ public sealed class BrowserForm : OptimizedForm
     private readonly bool _activate;
     private readonly TaskCompletionSource _ready = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
+    /// <summary>The sign-in kept across a restart (BRW10): put back before the first page, kept after each.</summary>
+    private readonly BrowserSessionCookies _cookies;
+
+    /// <summary>Keeps the sign-in while the window is open, for what changes without a page loading.</summary>
+    private readonly System.Windows.Forms.Timer _keeping = new() { Interval = 30_000 };
+
+    private bool _keepingNow;
+
+    /// <summary>
+    /// Why a kept sign-in was not put back, under the bar until the person loads a page. Not the bar's
+    /// placeholder: a bar the person just opened has the focus, and a focused box shows none.
+    /// </summary>
+    private readonly Label _notice;
+    private readonly Panel _noticeStrip;
+
     /// <summary>Completes once the browser listens on its port — what a server's attach waits on.</summary>
     public Task Ready => _ready.Task;
 
-    public BrowserForm(string profile, int port, bool activate)
+    public BrowserForm(string profile, int port, bool activate, BrowserSessionCookies cookies)
         : base(new OptimizedFormOptions
         {
             FramelessChrome = false,
@@ -48,6 +63,7 @@ public sealed class BrowserForm : OptimizedForm
         _profile = profile;
         _port = port;
         _activate = activate;
+        _cookies = cookies;
         var palette = ChromePalette.For(MainForm.OperatingSystemPrefersDark());
 
         Text = "Daoris — Browser";
@@ -94,7 +110,29 @@ public sealed class BrowserForm : OptimizedForm
         };
         bar.Controls.Add(_address, 3, 0);
 
+        _notice = new Label
+        {
+            AutoSize = true,
+            BackColor = palette.Surface,
+            ForeColor = palette.Ink,
+            Font = new Font("Segoe UI", 9.5f),
+        };
+        // In a strip of its own, the bar's colour across the window: a docked label that sizes to its
+        // text paints only as far as the text goes (seen on the window).
+        _noticeStrip = new Panel
+        {
+            Dock = DockStyle.Top,
+            AutoSize = true,
+            AutoSizeMode = AutoSizeMode.GrowAndShrink,
+            Visible = false,
+            BackColor = palette.Surface,
+            Padding = new Padding(10, 0, 10, 6),
+        };
+        _noticeStrip.Controls.Add(_notice);
+
+        // Docked from the last added: the bar at the top, the notice under it, the page in the rest.
         Controls.Add(_webView);
+        Controls.Add(_noticeStrip);
         Controls.Add(bar);
 
         Load += async (_, _) => await BringUpAsync();
@@ -167,6 +205,17 @@ public sealed class BrowserForm : OptimizedForm
             core.DocumentTitleChanged += (_, _) =>
                 Text = string.IsNullOrWhiteSpace(core.DocumentTitle) ? "Daoris — Browser" : $"Daoris — Browser · {core.DocumentTitle}";
 
+            // The sign-in back before the first page loads (BRW10), and kept after every page, which
+            // is where a sign-in ends, and on a timer for what a page changes without loading.
+            await RestoreAsync(core);
+            core.NavigationCompleted += (_, _) =>
+            {
+                if (core.Source.StartsWith("http", StringComparison.OrdinalIgnoreCase)) _noticeStrip.Visible = false;
+                Keep();
+            };
+            _keeping.Tick += (_, _) => Keep();
+            _keeping.Start();
+
             core.Navigate("about:blank");
             _ready.TrySetResult();
             if (_activate) _address.Focus();
@@ -186,8 +235,71 @@ public sealed class BrowserForm : OptimizedForm
         }
     }
 
+    /// <summary>
+    /// Put the kept session cookies back, each one the browser does not hold already. One the browser
+    /// refuses is skipped, and a file that could not be opened says so under the bar.
+    /// </summary>
+    private async Task RestoreAsync(CoreWebView2 core)
+    {
+        var kept = _cookies.Load();
+        if (_cookies.Problem is { } problem)
+        {
+            _notice.Text = $"Signed out: {problem.TrimEnd('.')}. Sign in again, and it is kept from then on.";
+            _noticeStrip.Visible = true;
+        }
+        if (kept.Count == 0) return;
+
+        var present = (await core.CookieManager.GetCookiesAsync(string.Empty)).Select(Cookie);
+        foreach (var cookie in BrowserSessionCookies.ToRestore(kept, present))
+        {
+            try
+            {
+                var restored = core.CookieManager.CreateCookie(cookie.Name, cookie.Value, cookie.Domain, cookie.Path);
+                restored.IsSecure = cookie.Secure;
+                restored.IsHttpOnly = cookie.HttpOnly;
+                restored.SameSite = Enum.TryParse<CoreWebView2CookieSameSiteKind>(cookie.SameSite, out var kind)
+                    ? kind
+                    : CoreWebView2CookieSameSiteKind.Lax;
+                core.CookieManager.AddOrUpdateCookie(restored);
+            }
+            catch (ArgumentException)
+            {
+                // A cookie the browser will not take back: the site asks for a sign-in, as before BRW10.
+            }
+        }
+    }
+
+    /// <summary>
+    /// Keep the browser's session cookies now. A save that fails costs the next restart its sign-in,
+    /// never the window: the person is in the middle of using it.
+    /// </summary>
+    private async void Keep()
+    {
+        if (_keepingNow || _webView.CoreWebView2 is not { } core) return;
+        _keepingNow = true;
+        try
+        {
+            var cookies = await core.CookieManager.GetCookiesAsync(string.Empty);
+            _cookies.Save(cookies.Select(Cookie));
+        }
+        catch (Exception)
+        {
+            // Closed mid-read, the file held, the seal refused: the next page or tick tries again.
+        }
+        finally
+        {
+            _keepingNow = false;
+        }
+    }
+
+    private static BrowserCookie Cookie(CoreWebView2Cookie cookie) => new(
+        cookie.Name, cookie.Value, cookie.Domain, cookie.Path, cookie.IsSecure, cookie.IsHttpOnly,
+        cookie.SameSite.ToString(), cookie.IsSession);
+
     protected override void OnFormClosed(FormClosedEventArgs e)
     {
+        _keeping.Stop();
+        _keeping.Dispose();
         // A window closed before it came up must not leave a waiter hanging.
         _ready.TrySetException(new InvalidOperationException("the in-app browser was closed."));
         base.OnFormClosed(e);

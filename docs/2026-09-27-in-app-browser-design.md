@@ -48,7 +48,12 @@ machine. That sets the first rule below.
    cannot). One page per window in v1. A link that asks for a new window opens in the same one.
 3. **Its profile is Daoris's**, under the home (D63), and it persists. The person signs in there
    once, and every session after uses that sign-in. The sign-in is the person's to make, never a
-   session's.
+   session's. **Amended by BRW10 (2026-09-28): the sign-in survives a restart.** An identity server's
+   session cookie has no expiry, so it ends with the browser process, and WebView2 restores none.
+   The browser keeps its session cookies at `<home>/browser/session-cookies.bin`, sealed to the
+   Windows account (DPAPI), after every page and every 30 seconds. It puts back the ones it does not
+   already hold before its first page loads. A file this account cannot open restores nothing and
+   says so under the bar. Cookies with an expiry stay the profile's own.
 4. **It listens for CDP on loopback**, on a port the shell picks free when the browser first starts
    and keeps for the process's life. Any process on this machine can drive it while it runs, which
    is the same exposure as a browser started with a debugging port. The design says so rather than

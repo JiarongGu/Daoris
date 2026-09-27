@@ -22,6 +22,10 @@ public sealed class BrowserHost(SecondaryWindows windows, ShenoraPaths paths, st
     private static readonly TimeSpan BringUpLimit = TimeSpan.FromSeconds(45);
 
     private readonly int _port = InAppBrowser.FreePort();
+
+    /// <summary>The kept sign-in (BRW10), one for the process, so a reopened window writes only what changed.</summary>
+    private readonly BrowserSessionCookies _cookies = new(home, new DpapiSeal());
+
     private readonly object _gate = new();
     private TaskCompletionSource<BrowserForm>? _opened;
 
@@ -47,7 +51,7 @@ public sealed class BrowserHost(SecondaryWindows windows, ShenoraPaths paths, st
                 // Runs ON the window's own STA thread; the pump shows it once its geometry is applied.
                 CreateForm = () =>
                 {
-                    var form = new BrowserForm(InAppBrowser.ProfileFolder(home), _port, activate);
+                    var form = new BrowserForm(InAppBrowser.ProfileFolder(home), _port, activate, _cookies);
                     opened.TrySetResult(form);
                     return form;
                 },
