@@ -55,7 +55,10 @@ mode, "as much as it can just like regular claude code". And **parallel sessions
 console tab for everything running (CONSOLE2)**. CHAIN2 landed as D82, PAR1 with it, STANDDOWN2 as
 D83, and CONSOLE2 and BRW10 (a sign-in that survives a restart) on 2026-09-28, all in the archive.
 **Next: the browser as a browser** (BRW6–BRW9, BRW4 and BRW5 in the archive), which the owner put
-after the core workflow.
+after the core workflow. 🔴 **Then the owner filed six rows from the first real workspace** (2026-09-28,
+*After the first real workspace*, "lets start them later"): workspace rules for how work lands, the
+default branch, cleaning up session branches, the session view, the map, and asking Daoris for help.
+Ask the owner whether they come before the browser's remaining basics.
 🔴 **Where the 2026-09-27 session stopped (the owner: "lets continue in next session").** The first
 goal's loop is met (FG5's sixth leg). The install runs `c3e6516`, and nothing since is on it.
 🔴 **Republishing still signs the browser out ONCE**, because the running install keeps no cookies
@@ -138,11 +141,47 @@ rather than designed.
 
 ## Backlog
 
-**Thirty-one rows are open**: the in-app browser's five (BRW3, then BRW6–BRW9, the browser as a browser); the first goal's three (FG5,
+**Thirty-seven rows are open**: the six the first real workspace showed (WSR1–WSR3, SESS1, MAP4,
+HELP1); the in-app browser's five (BRW3, then BRW6–BRW9, the browser as a browser); the first goal's three (FG5,
 READACROSS1 the owner's, and SEM2 on a trigger); D76's held file tools;
 the eight REV3 left, WINDOW2 among them; six leftovers (RAIL2, SURF11, CONSOLE3, FLAKE1, DEPLOY5, TEST1); two on the owner
 (TRUST2, AGT2c); and six on a trigger (see *Handover*). Every closed one is in `docs/task-archive.md`, and this file holds no
 ticked rows, by the `task-lifecycle` rule it also ships. A heading below holds open rows only.
+
+### After the first real workspace (owner, 2026-09-28) — to start later
+
+> *"I also found issues after the [first workspace] work, which points out things that daoris leak
+> of … you can analyze and put those into TASKS.md and lets start them later"*
+
+`docs/2026-09-28-after-the-first-workspace.md` is the study: what each part has today, the gap, the
+requirements, and the owner's calls. Its recommended order is the order below.
+- [ ] **WSR2 — the default branch is the repository's, and a person can set it** (study §3). Today it
+  is `origin/HEAD`, else `main`, else `master`, and cannot be set. A per-repository setting with a
+  workspace default wins over the guess. Everything that reads the line reads it from one place.
+- [ ] **WSR1 — workspace rules: how work lands** (study §1). An integration rule per workspace, with a
+  repository override: merge into a named line, carry the work onto a feature branch named by a
+  pattern for the person to push, or push and open a pull request. Set in Settings and from a
+  terminal, and carried to the review screen, chains and the session's instruction. **The owner's
+  call first:** whether Daoris may ever push and open a pull request (D37 keeps both human).
+- [ ] **WSR3 — session branches cleaned up after they land** (study §2). After work lands, its tree
+  and branch go, under the workspace's rule, only when git proves the work is on its target. A bulk
+  clean of every landed or empty `daoris/s-*` branch, listed before it is pressed, with a terminal
+  twin. A branch whose commits never landed is shown as such.
+- [ ] **SESS1 — the session view: its log and its working relationships** (study §5). One reading
+  order with the console one press away. Long runs folded, with jumps to the first failure and the last
+  words, and search within a session. What it waits on, at the top. Where it came from and what it
+  caused, drawn as a thread from the ask to the last step. Looked at on the real workspace's
+  sessions.
+- [ ] **MAP4 — the map, finished** (study §6). A layered layout, pan, zoom and search for a big
+  circle (the real one has twenty-nine repositories). Asks, chains and what depends on what, each its
+  own kind of line, from a declared source and never guessed. Open-only or a time window. Sessions
+  live on their nodes. Looked at with twenty-nine nodes in both themes.
+- [ ] **HELP1 — ask Daoris** (study §4; a design note first). A chat about Daoris itself, from a button
+  on the strip, the palette and `F1`, in the right dock. It knows the view and the selection. It
+  helps by proposing Daoris's own terminal commands (D50), each confirmed by the person, and turns
+  *start something* into an ask. Starter prompts come from what the machine lacks. It is a harness
+  session in a room of its own, allowed only `daoris` and `daoris-driver`. **The owner's calls:**
+  its harness and account, and whether a confirmation may be remembered.
 
 ### What REV3 left (2026-09-25)
 
@@ -299,67 +338,9 @@ is behind a sign-in. FG1–FG4 are in the archive. **INT6 is reshaped as FG5.**
   door's adapter, drivable, own trees), then an ask with a real ticket. What it produces is the
   report: the room it rendered, whether the intake read the ticket and chose, and what the session
   did. Every part up to the ask can be run by an agent. The sign-in and the ticket are the owner's.
-  **2026-09-27: everything up to them is done** (study §7): the install republished, the workspace
-  imported (29 repositories), the index rebuilt, an Edge browser plugin installed and smoke-tested,
-  the browser allowed for the workspace, the protocol door for intake and sessions, and all 29
-  repositories drivable on their own worktrees. Waiting on the owner's sign-in and first ticket.
-  **2026-09-27, the first run's outcome.** The intake read the signed-in ticket and published one
-  quest to the right repository (BRW3). The development session took it and worked in its own tree
-  for twenty minutes. It needed the backend's note contract, tried to read the backend's code, was
-  refused, proposed a rule to allow the read, and wrote the front end on assumptions. The proposal
-  is the owner's, and D79 (ask and wait, in the archive) is the fix. Then the account's spend limit
-  refused its turn mid-edit, and the record said `stood-down` (ACPEND1, fixed, in the archive).
-  The quest is still taken with nothing working on it, and its tree holds the uncommitted edits.
-  **The second run (2026-09-27, the owner: "you can do it").** Republished at `1b0da6c`. The
-  proposal to read into the backend was declined, with the way to ask it. The session's other
-  proposal, `npm ci`, was accepted, with that repository's build and test beside it (the owner's
-  choice). Until then sessions there could edit and could not run anything: the repository's own
-  allow-list does not reach the protocol door (D73), and each session tree is a new folder. The
-  sixteen empty branches were deleted, with the owner's say-so. The stranded tree's branch is kept
-  for its uncommitted edits. The quest was declined, its ask closed, and the ticket asked again.
-  **Found:** the same words were the same ask for good, closed or not, so asking again needed new
-  words (ASKAGAIN1, fixed, in the archive). The intake routed the ticket again, to the right
-  repository. The development session took it, tried a read into the backend (refused), did not
-  ask, and changed 45 files. It was running the gates when the thirty-minute timeout killed it.
-  That left the quest taken for good, fixed as D80 (CARRY1, in the archive): a cut-off is carried
-  on in its tree.
-  **The third leg: the first goal met.** Republished at `b946cc0` with `driver timeout 90`. On start
-  the driver carried the quest on in its tree, unasked. That session finished the ticket: two commits
-  on its branch, the build at its warning baseline, 1220 tests passing, and the quest **done**. Its
-  note said why no backend question was needed. The chain then published its browser-verify step,
-  which surfaced three new rows (ORPHAN1, STANDDOWN2, CHAIN2). The branch is the owner's to review
-  and merge (D51). Waiting on the owner as well: four rule proposals and the dev nav config apply,
-  a live write the session rightly left alone.
-  **The fourth leg (the owner: "you can merge this in and restart the same request").** The develop
-  branch is merged into the front end's line, locally, and not pushed. The tree's unstaged placeholder
-  was dropped first, since the merge door refuses uncommitted work. The pre-D82 verify quest was
-  declined and its ask closed. The ticket was asked again in its original words, which ASKAGAIN1 now
-  lets through, so the whole chain runs on D80–D83.
-  **What it showed.** The intake routed it. The develop step found the merged work, verified it
-  against the ticket instead of rebuilding it, landed the knowledge rule the first session had been
-  refused, and closed done. It ran in `auto` with no refusal, and its console had no `?`. It asked the
-  backend whether a note may carry several issue types (D79). The backend's own agent answered from
-  its code, which the front end cannot see: single-valued, one note per issue. It pinned that in its
-  own docs. That session and the verify step ran side by side (PAR1), and the verify step's tree grew
-  from the develop step's branch (D82). The verify step **declined** for want of a dev sign-in. The
-  owner had signed in, and two republishing restarts dropped it (BRW10). It declined rather than parked
-  because its instruction offered only done or decline. It now also says what only the person can give
-  is asked for by stopping, which parks it (D83).
-  **The fifth leg: park and answer, live.** The verify was asked again. The intake put the dev config
-  apply first, which **parked** asking for a dev sign-in. The owner signed in, the answer went on the
-  card, and a session carried the quest on in the same tree. That one parked again with an exact
-  diagnosis: the account holds `FactoryUser` in another org, and the change needs `SiteAdmin` on the
-  Sustainable Beef org. The apply now waits on such an account. The card had quoted only the end of
-  its 2,500-character message, and a heredoc'd command's title had printed as its words. Both are
-  fixed: last words keep 4,000 characters, and a tool is named on one line.
-  **The sixth leg: the chain ran end to end.** The owner signed in as a site admin and the session was
-  answered. The dev apply ran through the generator, dev only: roles and a read-only GET checked first,
-  dev brought in line with the committed generator, and the re-read byte-equal. The chain's verify step
-  followed on its own, from that step's branch (D82). It verified item by item on a local run against
-  the dev backend, since dev's deployed bundle predates the merge, and **found a real defect**. The
-  config's camera ids are slugs, and the API takes GUIDs, so a note naming a camera cannot be saved. It
-  proved that by the same payload with GUIDs, and did not fix it. It also noted that the dashboard view
-  carries no note chip, which is a config decision. Both are the owner's. The first goal's loop is met.
+  **The loop is met** (2026-09-27): six legs, from the first ask to a chain that ran end to end, are
+  the study's §8. **Still the owner's:** the verify step's camera-GUID defect and the daily view's note
+  chip, both in that repository, and the branches its sessions left (WSR3).
 - [ ] **READACROSS1 — may a session READ another repository?** (the owner's call; FG5, 2026-09-27).
   Under D81's `auto` mode the apply session read the backend's controller, its roles and its
   service wiring to diagnose a 403, cited them by file and line, and wrote nothing there. D79 says

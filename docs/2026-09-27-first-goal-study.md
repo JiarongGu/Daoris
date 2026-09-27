@@ -164,3 +164,52 @@ is installed and smoke-tested. The browser is allowed for the workspace, the int
 driven sessions ride the protocol door, and all 29 repositories are drivable, each on its own
 worktree. No quest or ask is open, so nothing starts on its own. **What is left is the owner's:**
 the one sign-in (step 4) and the first ask with a real ticket (step 7).
+
+## 8. The runs (FG5's report, moved from the backlog 2026-09-28)
+
+**The first run.** The intake read the signed-in ticket and published one quest to the right
+repository (BRW3). The development session took it and worked in its own tree for twenty minutes. It
+needed the backend's note contract, tried to read the backend's code, was refused, proposed a rule to
+allow the read, and wrote the front end on assumptions. D79 (ask and wait) is the fix. Then the
+account's spend limit refused its turn mid-edit, and the record said `stood-down` (ACPEND1, fixed).
+
+**The second run** (the owner: *"you can do it"*). Republished at `1b0da6c`. The proposal to read into
+the backend was declined, with the way to ask it. The session's other proposal, `npm ci`, was
+accepted, with that repository's build and test beside it. Until then sessions there could edit and
+could not run anything: the repository's own allow-list does not reach the protocol door (D73), and
+each session tree is a new folder. Sixteen empty branches were deleted with the owner's say-so. The
+same words were the same ask for good, closed or not (ASKAGAIN1, fixed). The development session
+changed 45 files without asking the backend, and the thirty-minute timeout killed it mid-gates, which
+left the quest taken for good (D80, CARRY1: a cut-off is carried on in its tree).
+
+**The third leg: the first goal met.** Republished at `b946cc0` with `driver timeout 90`. The driver
+carried the quest on in its tree, unasked. That session finished the ticket: two commits on its
+branch, the build at its warning baseline, 1220 tests passing, and the quest done. The chain then
+published its browser-verify step, which surfaced ORPHAN1, STANDDOWN2 and CHAIN2.
+
+**The fourth leg** (the owner: *"you can merge this in and restart the same request"*). The develop
+branch was merged into the front end's line, locally, and not pushed, after its tree's unstaged
+placeholder was dropped. The ticket was asked again in its original words, so the whole chain ran on
+D80–D83. The develop step found the merged work, verified it against the ticket instead of rebuilding
+it, landed the knowledge rule the first session had been refused, and closed done, in `auto` with no
+refusal. It asked the backend whether a note may carry several issue types (D79). The backend's own
+agent answered from its code: single-valued, one note per issue. That session and the verify step ran
+side by side (PAR1), and the verify step's tree grew from the develop step's branch (D82). The verify
+step declined for want of a dev sign-in, which two republishing restarts had dropped (BRW10), and its
+instruction then offered only done or decline. It now asks by stopping, which parks it (D83).
+
+**The fifth leg: park and answer, live.** The intake put the dev config apply first, which parked
+asking for a dev sign-in. The owner signed in, the answer went on the card, and a session carried the
+quest on in the same tree. That one parked again with an exact diagnosis: the account held a role in
+another organisation, and the change needed an administrator of the right one. The card had quoted
+only the end of its 2,500-character message, and a heredoc'd command's title had printed as its
+words. Both are fixed.
+
+**The sixth leg: the chain ran end to end.** Signed in as an administrator, the session was answered.
+The dev apply ran through the repository's generator, dev only, with the roles and a read-only request
+checked first and the re-read byte-equal. The chain's verify step followed on its own, from that
+step's branch (D82). It verified item by item on a local run against the dev backend, and **found a
+real defect**: the config's camera ids are slugs where the API takes GUIDs, so a note naming a camera
+cannot be saved. It proved that with the same payload carrying GUIDs, and did not fix it. It also
+noted that the daily view carries no note chip, which is a config decision. Both are the owner's. The
+first goal's loop is met.
