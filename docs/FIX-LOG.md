@@ -33,7 +33,7 @@ keeps pixels on purpose: it is a list, bounded to 264–420px.
   holds a width it should not. Each cap left is a reading measure, a form sized to its fields, an
   overlay, or the monitor's sidebar.
 
-**Commit:** pending.
+**Commit:** `49ece30`.
 
 ## A conversation said "working…" under words its agent said after the turn (2026-09-28)
 
