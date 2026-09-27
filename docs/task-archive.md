@@ -6719,3 +6719,6 @@ Landed in three parts.
   both ended `completed`.
 
 Driver 797, modules 152, web 1198, Playwright 21, family 289, deployment 39. What it left is CONSOLE3.
+The look found two conversation defects, both fixed the same day and in the fix log: two messages in
+a row read as one (*DONESubagent finished*), and a *working…* mark stayed under words the agent said
+after its turn.
