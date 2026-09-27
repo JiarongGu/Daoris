@@ -23,8 +23,9 @@ server (D78 §3.4–§3.6). The person's Edge stays an option (BRW12).
 
 1. **The limits met were WebView2's API, not Chromium's** (measured, 2026-09-28). A tab an agent opens
    over CDP has no window (BRW4), and a session cookie ends with the process (BRW10, and on Edge too:
-   `docs/2026-09-28-managed-edge-evidence.md` §3). An embedding with deeper hooks may answer both. That
-   is to be measured (§5, CHR1), not assumed.
+   `docs/2026-09-28-managed-edge-evidence.md` §3). **CHR1 measured both on CEF:** the engine's own
+   setting keeps a sign-in, and an agent's tab is visible, in an engine window the app is not told of
+   (`docs/2026-09-28-chromium-embedding-evidence.md` §2, §5).
 2. **One engine, one runtime in the install.** D84 already accepted shipping a Chromium, at 150–250 MB.
    Keeping WebView2 for the page alongside it would ship one engine and depend on another.
 3. **A machine prerequisite goes.** Today the shell refuses to start without the Evergreen WebView2
@@ -36,9 +37,9 @@ browser. Windows updated WebView2, and nothing updates an engine Daoris ships ex
 Daoris. An embedded engine is pinned by the build, so D84's *"managed like a harness, fetched from its
 maker's channel"* does not apply to it: it updates when Daoris releases. And the host code WebView2
 gave through Shenora (initialization, navigation, the bridge on `chrome.webview`) is Daoris's to write
-until Shenora takes it in (§3). **A browser's basics come back as well.** D84 retired BRW9 (find,
-zoom, devtools, downloads) because a separate browser has its own. An embedded one's chrome is
-Daoris's, so they are Daoris's to build again, after CHR3.
+until Shenora takes it in (§3). **A browser's basics may come back as well.** D84 retired BRW9 (find,
+zoom, devtools, downloads) because a separate browser has its own. If CHR3 draws Daoris's own chrome
+around the control, they are Daoris's to build again. The engine's own window has them (§4).
 
 ## 2. The shape
 
@@ -51,10 +52,11 @@ Daoris's, so they are Daoris's to build again, after CHR3.
    splash until the page loads, and says what failed when it does not. The window commands get a
    `CoordinateSpace` for the new control, per monitor. A secondary window keeps its own environment
    (the 2026-09-22 trap).
-3. 🔴 **The page that holds the bridge is never in CDP's reach** (D78 §3.1 stands). An embedded engine's
-   debug port may be one setting per process rather than per environment. If it is, the browser runs in
-   a process of its own, and the page's process has no port in a published build. **This is CHR1's
-   first question**, because its answer decides the process layout.
+3. 🔴 **The page that holds the bridge is never in CDP's reach** (D78 §3.1 stands). **Measured by
+   CHR1** (`docs/2026-09-28-chromium-embedding-evidence.md` §1): the debug port is one setting per
+   process, and it reached the app's page and its bridge. So **the browser runs in a process of its
+   own**, in that process's global request context (so an agent's tab shares the sign-in, §4 there),
+   and the page's process has no port in a published build.
 4. **Profiles under the home** (D63): the page's and the browser's, apart, as `webview2/` and
    `browser/profile` are today.
 5. **The WebView2 path stays until the Chromium one is proven on the install**, then it goes. No
@@ -72,24 +74,30 @@ there as one new entry, uncommitted, with nothing else in that repository touche
 - the window commands' `CoordinateSpace` for a control that is not a `WebView2`.
 
 It leaves two questions to Shenora: where the engine's bytes come from (its D51, on shipped binaries
-and their licences), and making the unsafe debug-port composition impossible. When CHR1 answers the
-port question, the answer goes to the owner for Shenora's entry, not into Shenora from here.
+and their licences), and making the unsafe debug-port composition impossible. CHR1 answered the port
+question (per process, so the page is in reach), and the answer went to the owner for Shenora's
+entry, not into Shenora from here.
 
 ## 4. Open
 
-- **The embedding library.** The candidate is CefSharp: a WinForms control over CEF, BSD-licensed, with
-  pinned runtime packages. The alternatives are CEF directly or another binding. CHR1 measures the
-  candidate.
-- **The build.** An embedding pins its own Chromium, so D84's *which build* folds into the library's.
-  🔴 **Media codecs:** published CEF builds are commonly without the proprietary ones (H.264, AAC). A
-  page with such a video would not play it. To be confirmed by the probe.
-- **The process layout**, from §2.3.
+- **The browser's form (CHR3, the owner's call).** CHR1 found the engine offers two:
+  - Daoris's own chrome around the control (BRW4–BRW6 carried, BRW9 back);
+  - the engine's own Chromium window, where an agent's tabs already land, with its own history,
+    bookmarks, find, devtools and downloads, but Chromium's UI rather than Daoris's.
+
+  Either way, an agent's CDP tab escapes into an engine window, and Playwright MCP 0.0.82 cannot open a
+  tab (the evidence's §2–§3).
+- **The library.** CefSharp 152 was measured and did everything asked. It runs about two Chromium
+  versions behind Chrome.
+- **Size.** 352 MB on disk with two locales, 166 MB compressed. That is over the owner's 150–250 MB on
+  disk, and within it as a download.
+- **Codecs.** Confirmed without the proprietary ones: no H.264, AAC or HEVC.
 
 ## 5. Build order
 
 | Item | What lands | Proven by |
 |---|---|---|
-| **CHR1** | A scratch probe: an embedded Chromium in a WinForms window. It answers whether the debug port reaches every page in the process; whether a tab a CDP client opens reaches the app to be given a window; whether a session cookie survives a restart with the engine's own setting; Playwright MCP attached and driving; a message round trip between page and host; and what the runtime adds to an install (size, banner, codecs, licence) | an evidence document, as D84's was |
-| **CHR2** | The host: the control, the bridge over `IpcHostBridge`, the page transport, the coordinate space. The main and secondary windows move to it | module tests for the pure parts, the web suite on the page transport, and a look at the window |
-| **CHR3** | The browser on the same engine: its tabs, favorites and history carried over, CDP on the browser's process only, sign-ins kept by the engine's own setting if CHR1 shows it holds, else BRW10's carry. Supersedes BRW11 | a stub session handed `${browser}`, and Playwright MCP's tab seen in the window |
+| **CHR1** ✓ | A scratch probe: an embedded Chromium in a WinForms window. It answered whether the debug port reaches every page in the process (it does); whether a tab a CDP client opens reaches the app (no: it gets an engine window); whether a session cookie survives a restart with the engine's own setting (yes); Playwright MCP attached and driving (yes, except opening a tab); the page-host round trip (0.2–0.3 ms median); and size, banner, codecs and licence | `docs/2026-09-28-chromium-embedding-evidence.md`, 2026-09-28 |
+| **CHR2** | The host: the control, the bridge over `IpcHostBridge`, the page transport, the coordinate space. The main and secondary windows move to it. The reply goes through the control, never the message's frame (the evidence's §6) | module tests for the pure parts, the web suite on the page transport, and a look at the window |
+| **CHR3** | The browser on the same engine, in a process of its own with its global request context and `PersistSessionCookies`, in the form the owner picks (§4). CDP on that process only. Supersedes BRW11 | a stub session handed `${browser}`, and an agent's tab seen by the person |
 | **CHR4** | The install carries it: `publish:desktop` places the runtime, and the deployment rehearsal starts the published shell on it and asserts which engine answered. The WebView2 path and its refusal go | `npm run rehearse:deploy` |

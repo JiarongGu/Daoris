@@ -6852,3 +6852,28 @@ Daoris's own page as well as the browser. The row assumed a separate browser pro
 like a harness. CHR1–CHR4 replace it (`docs/2026-09-28-chromium-host-design.md`), and CHR3 carries
 what stands of it: the profile under the home, no account and no sync, `${browser}`, and a sign-in
 kept across a restart.
+
+## CHR1 — measure an embedding first (2026-09-28)
+
+The row as filed: *🔴 Does the debug port reach every page in the process? The answer also goes to the
+owner for Shenora's entry.* The contract's §5 carried the rest: a tab a CDP client opens, a session
+cookie across a restart, Playwright MCP driving, a page-to-host round trip, and the runtime's size,
+banner, codecs and licence.
+
+**Outcome.** `tools/chromium-probe.mjs` with its host `tools/chromium-probe/` (CefSharp 152, Chromium
+152), recorded in `docs/2026-09-28-chromium-embedding-evidence.md`:
+- **The port reaches every page in the process**, and the app page's bridge was callable over it. So
+  the browser runs in a process of its own, which the contract's §2.3 now says.
+- An agent's CDP tab escapes into an engine window the person sees and the app is not told of.
+  Playwright MCP 0.0.82's `browser_tabs new` fails against the engine.
+- `PersistSessionCookies` keeps a sign-in across a restart.
+- A tab shares the sign-in only in the global request context.
+- The round trip is 0.2–0.3 ms median.
+- Size: 352 MB on disk with two locales, and 166 MB compressed.
+- No H.264, AAC or HEVC.
+- The credits page names FFmpeg and LGPL text.
+
+It left CHR3's form to the owner: Daoris's chrome around the control, or the engine's own window.
+**Found on the way:** a reply through the message's own frame never arrived and said nothing (the
+evidence's §6). The driver's first runs read a restarted host's old log and a stale report, and each
+was put right before its number was kept.

@@ -58,7 +58,8 @@ D83, and CONSOLE2 and BRW10 (a sign-in that survives a restart) on 2026-09-28, a
 (2026-09-28): Daoris ships a Chromium for its browser, and the person's Edge is always an option.
 **Then D85 widened it** (2026-09-28): Daoris's own page moves to that Chromium too, embedded under
 Shenora's frame, built here first and asked of Shenora for the harvest (its backlog carries the
-request). **Next: CHR1, the probe** (`docs/2026-09-28-chromium-host-design.md`). 🔴 **The owner also
+request). CHR1, the probe, landed. **Next: CHR2, the host, and the owner's call on CHR3's form**
+(`docs/2026-09-28-chromium-host-design.md` §4). 🔴 **The owner also
 filed six rows from the first real workspace** (2026-09-28, *After the first real workspace*, "lets
 start them later"): workspace rules for how work lands, the default branch, cleaning up session
 branches, the session view, the map, and asking Daoris for help. Ask which comes first.
@@ -144,8 +145,8 @@ rather than designed.
 
 ## Backlog
 
-**Forty-one rows are open**: the six the first real workspace showed (WSR1–WSR3, SESS1, MAP4,
-HELP1); D85's four (CHR1–CHR4); the in-app browser's four (BRW3, BRW7, BRW8, and D84's BRW12); the first goal's three (FG5,
+**Forty rows are open**: the six the first real workspace showed (WSR1–WSR3, SESS1, MAP4,
+HELP1); D85's three (CHR2–CHR4); the in-app browser's four (BRW3, BRW7, BRW8, and D84's BRW12); the first goal's three (FG5,
 READACROSS1 the owner's, and SEM2 on a trigger); D76's held file tools;
 the eight REV3 left, WINDOW2 among them; seven leftovers (LAYOUT1, RAIL2, SURF11, CONSOLE3, FLAKE1, DEPLOY5, TEST1); two on the owner
 (TRUST2, AGT2c); and six on a trigger (see *Handover*). Every closed one is in `docs/task-archive.md`, and this file holds no
@@ -339,10 +340,10 @@ window (BRW1–BRW6, BRW10) stays until the engine lands. **D85 answered the eng
 
 `docs/2026-09-28-chromium-host-design.md` is the contract, and its §5 carries each row's detail.
 Shenora's backlog carries the request (filed 2026-09-28 at the owner's say-so, uncommitted there).
-- [ ] **CHR1 — measure an embedding first.** 🔴 Does the debug port reach every page in the process?
-  The answer also goes to the owner for Shenora's entry.
+CHR1 is in the archive: **the browser runs in a process of its own** (`docs/2026-09-28-chromium-embedding-evidence.md`).
 - [ ] **CHR2 — the host**, on Shenora's `IpcHostBridge`. The main and secondary windows move to it.
-- [ ] **CHR3 — the browser on the same engine** (supersedes BRW11), then BRW9's basics refiled.
+- [ ] **CHR3 — the browser on the same engine** (supersedes BRW11). **The owner's call first:** Daoris's
+  own chrome around the control (BRW9 back), or the engine's own Chromium window (the contract's §4).
 - [ ] **CHR4 — the install carries it**, and the WebView2 path goes.
 
 ### The first goal — a real workspace, a ticket, a task started (owner, 2026-09-27 → D77)
