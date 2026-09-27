@@ -226,8 +226,11 @@ public sealed class DrivenSessionInputTests : IDisposable
         process.WaitForExit();
     }
 
+    // Sixty seconds, not fifteen: the suite now runs several classes that spawn node at once, and this
+    // wait failed twice in one day under that load while passing alone (TASKS, FLAKE1). It only waits for
+    // a START, so a longer bound hides no defect in what the test asserts.
     private static Task Until(Func<bool> condition) =>
-        Poll.Until(condition, () => "the driven session never started", TimeSpan.FromSeconds(15));
+        Poll.Until(condition, () => "the driven session never started", TimeSpan.FromSeconds(60));
 
     /// <summary>
     /// A stand-in for the service's doors one driven quest crosses — a real loopback listener, because

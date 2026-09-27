@@ -374,6 +374,30 @@ const afterStandDown = await api('POST', '/api/sessions', { body: { quest: cutQu
 check('…and once its last session stood down, the take is somebody else’s and nothing opens', afterStandDown.status === 409, afterStandDown.text);
 await api('POST', `/api/quests/${cutQuestId}/respond`, { body: { action: 'done', reason: 'Profiled.' } });
 
+// Answering a session that parked to ask the person (STANDDOWN2): the record ends with their words,
+// and the quest it held is then carried on — a session opens on the taken quest, as after a cut-off.
+const askingQuest = await api('POST', '/api/quests', {
+  body: { from: 'game', to: 'engine', title: 'Check the budget on the device', body: 'It needs a sign-in first.' },
+});
+const askingQuestId = askingQuest.json?.quest?.id ?? '';
+const asking = await api('POST', '/api/sessions', { body: { quest: askingQuestId, adapter: 'stub' } });
+const askingId = asking.json?.session?.id ?? '';
+for (const state of ['starting', 'working']) {
+  await api('POST', `/api/sessions/${askingId}/state`, { body: { state } });
+}
+await api('POST', `/api/quests/${askingQuestId}/respond`, { body: { action: 'take', reason: null } });
+await api('POST', `/api/sessions/${askingId}/state`, { body: { state: 'awaiting-person', note: 'it needs a sign-in.' } });
+const answered = await api('POST', `/api/sessions/${askingId}/answer`, { body: { answer: 'Signed in.' } });
+check(
+  'a session parked to ask the person is answered, and its record keeps the words',
+  answered.status === 200 && answered.json?.session?.state === 'completed' && answered.json?.session?.answer === 'Signed in.',
+  answered.text,
+);
+const afterAnswer = await api('POST', '/api/sessions', { body: { quest: askingQuestId, adapter: 'stub' } });
+check('…and its taken quest is carried on — a session opens on it', afterAnswer.status === 200, afterAnswer.text);
+await api('POST', `/api/sessions/${afterAnswer.json?.session?.id}/state`, { body: { state: 'stopped' } });
+await api('POST', `/api/quests/${askingQuestId}/respond`, { body: { action: 'done', reason: 'Checked.' } });
+
 // -------------------------------------------------- 5. knowledge crosses
 
 section('5. Knowledge crosses the family');

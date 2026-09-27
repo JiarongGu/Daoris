@@ -31,8 +31,10 @@ public sealed record QuestView(string Id, string From, string To, string Title, 
 /// <param name="State">How its record ended — `failed` is a cut-off, which a later session carries on (D80).</param>
 /// <param name="Note">What its record said about that ending — the words a session carrying on is told.</param>
 /// <param name="Repository">Where it ran — whether a chain's next step can build on its tree (CHAIN2).</param>
+/// <param name="Answer">The person's answer when it parked to ask them (STANDDOWN2) — what a carry-on is handed.</param>
 public sealed record PriorSession(
-    string Session, string? Tree, string State = "", string? Note = null, string? Repository = null);
+    string Session, string? Tree, string State = "", string? Note = null, string? Repository = null,
+    string? Answer = null);
 
 /// <summary>One step of a chain, as the service answered it.</summary>
 public sealed record QuestStepView(string To, string Title, string Body);
@@ -290,7 +292,9 @@ public static class Planner
             }
             else if (quest is { Status: "Taken", Awaits: null or "" }
                      && snapshot.LastRun.TryGetValue(quest.Id, out var cutOff)
-                     && string.Equals(cutOff.State, "failed", StringComparison.OrdinalIgnoreCase))
+                     && (string.Equals(cutOff.State, "failed", StringComparison.OrdinalIgnoreCase)
+                         // The person answered a session that parked to ask them (STANDDOWN2).
+                         || cutOff is { State: "completed", Answer: not null }))
             {
                 considerations.Add(CarryOn(quest, cutOff));
             }
@@ -307,8 +311,10 @@ public static class Planner
             return considered.Verdict == StartVerdict.Start
                 ? considered with
                 {
-                    Reason = $"carrying on in `{quest.To}` — session `{cutOff.Session}` was cut off: "
-                        + (cutOff.Note is { Length: > 0 } note ? note : "it ended before closing the quest."),
+                    Reason = cutOff.Answer is { } answer
+                        ? $"carrying on in `{quest.To}` — you answered session `{cutOff.Session}`: {answer}"
+                        : $"carrying on in `{quest.To}` — session `{cutOff.Session}` was cut off: "
+                          + (cutOff.Note is { Length: > 0 } note ? note : "it ended before closing the quest."),
                     Resumes = cutOff,
                 }
                 : considered;

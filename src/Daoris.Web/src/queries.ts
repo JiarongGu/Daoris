@@ -240,6 +240,22 @@ export const useRespondQuest = () => {
   });
 };
 
+/**
+ * Answer a driven session that parked to ask the person (STANDDOWN2): its record ends with their
+ * words and the quest it holds is carried on in the same tree at the driver's next tick.
+ */
+export const useAnswerSession = () => {
+  const invalidate = useInvalidateQuestWork();
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, answer }: { id: string; answer: string | null }) => api.answerSession(id, answer),
+    onSuccess: () => {
+      invalidate();
+      void client.invalidateQueries({ queryKey: keys.allSessions });
+    },
+  });
+};
+
 /** Dismiss one conflict (SYNC6c) — and where each circle stands moves with it. */
 export const useDismissConflict = () => {
   const invalidate = useInvalidateQuestWork();

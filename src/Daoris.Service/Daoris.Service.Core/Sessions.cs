@@ -130,6 +130,19 @@ public sealed record Session(
     /// </remarks>
     public string? Ask { get; init; }
 
+    /// <summary>
+    /// Whether this session took its own quest, through its own connector (STANDDOWN2). A session
+    /// ending with its quest still taken is then waiting on the person, not standing down for
+    /// somebody else — which the quest's state alone cannot tell.
+    /// </summary>
+    public bool Took { get; init; }
+
+    /// <summary>
+    /// What the person answered a session that parked to ask them (STANDDOWN2), or null. The session
+    /// that carries its quest on is handed it.
+    /// </summary>
+    public string? Answer { get; init; }
+
     /// <summary>Whether this session still holds its repository. Parked counts: the person is the flow control.</summary>
     public bool Active => State is SessionState.Queued or SessionState.Starting
         or SessionState.Working or SessionState.AwaitingPerson;
@@ -259,6 +272,12 @@ public sealed class SessionStore
 
         // INT4b: the ask an intake answers. After the rebuild, like SYNC4's pair, so it cannot drop it.
         await SchemaColumns.EnsureAsync(_connection, "sessions", "ask", "ask TEXT NULL", ct).ConfigureAwait(false);
+
+        // STANDDOWN2: whether this session took its own quest, through its own connector. A record from
+        // before it says nothing, and nothing is the old reading. And the person's answer to one that
+        // parked to ask them, which the session that carries the quest on is handed.
+        await SchemaColumns.EnsureAsync(_connection, "sessions", "took", "took INTEGER NULL", ct).ConfigureAwait(false);
+        await SchemaColumns.EnsureAsync(_connection, "sessions", "answer", "answer TEXT NULL", ct).ConfigureAwait(false);
 
         await using (var cursor = _connection.CreateCommand())
         {
@@ -706,7 +725,31 @@ public sealed class SessionStore
     {
         Origin = reader.IsDBNull(reader.GetOrdinal("origin")) ? null : reader.GetString(reader.GetOrdinal("origin")),
         Ask = reader.IsDBNull(reader.GetOrdinal("ask")) ? null : reader.GetString(reader.GetOrdinal("ask")),
+        Took = !reader.IsDBNull(reader.GetOrdinal("took")) && reader.GetInt64(reader.GetOrdinal("took")) != 0,
+        Answer = reader.IsDBNull(reader.GetOrdinal("answer")) ? null : reader.GetString(reader.GetOrdinal("answer")),
     };
+
+    /// <summary>Keep the person's answer on a parked session's record (STANDDOWN2).</summary>
+    public async Task SetAnswerAsync(string id, string answer, CancellationToken ct = default)
+    {
+        await using var command = _connection.CreateCommand();
+        command.CommandText = "UPDATE sessions SET answer = $answer WHERE id = $id AND origin IS NULL";
+        command.Parameters.AddWithValue("$id", id);
+        command.Parameters.AddWithValue("$answer", answer);
+        await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Mark that this session took its quest itself (STANDDOWN2) — said by the session's own connector
+    /// at the moment of the take. False when there is no such record of this machine's.
+    /// </summary>
+    public async Task<bool> MarkTookAsync(string id, CancellationToken ct = default)
+    {
+        await using var command = _connection.CreateCommand();
+        command.CommandText = "UPDATE sessions SET took = 1 WHERE id = $id AND origin IS NULL";
+        command.Parameters.AddWithValue("$id", id);
+        return await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false) > 0;
+    }
 
     /// <summary>Whitespace is nothing said, not a value: an empty version reads as a version of "".</summary>
     private static string? Blank(string? value) =>

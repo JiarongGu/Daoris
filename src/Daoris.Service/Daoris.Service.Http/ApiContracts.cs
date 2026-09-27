@@ -133,7 +133,13 @@ public sealed record SessionResponse(
     // do anything with it — so it rides the same loopback gate as the tree beside it.
     string? BaseCommit = null,
     // D65 §1b: the ask an intake answers — null for every other session.
-    string? Ask = null);
+    string? Ask = null,
+    // STANDDOWN2: whether it took its own quest, through its own connector; and the person's answer to
+    // one that parked to ask them.
+    bool Took = false,
+    string? Answer = null);
+// STANDDOWN2: the person's words to a session that parked to ask them. Blank is "carry on".
+public sealed record AnswerSessionRequest(string? Answer);
 // The tree comes IN from the driver, which is the half that knows: the service has no checkout to
 // look at, exactly as it has no binaries to probe (D46 §7). Unstated resolves to the registered root.
 public sealed record OpenSessionRequest(

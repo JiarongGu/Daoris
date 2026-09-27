@@ -131,9 +131,11 @@ public sealed class SessionLedgerTests : IAsyncLifetime
     {
         var quest = await Publish();
         var first = (await _ledger.OpenAsync(quest.Id, "stub", Now)).Session!;
+        await _ledger.AdvanceAsync(first.Id, "starting", null, null, null, Now);
         await _ledger.AdvanceAsync(first.Id, "working", null, null, null, Now);
         await _quests.MoveAsync(quest.Id, QuestStatus.Taken, null, Now.AddMinutes(1));
-        await _ledger.AdvanceAsync(first.Id, "failed", "timed out after 30 minutes and was killed.", null, null, Now.AddMinutes(30));
+        Assert.Equal(SessionAdvanceRefusal.None, (await _ledger.AdvanceAsync(
+            first.Id, "failed", "timed out after 30 minutes and was killed.", null, null, Now.AddMinutes(30))).Refusal);
 
         var carried = await _ledger.OpenAsync(quest.Id, "stub", Now.AddMinutes(31));
 
@@ -156,6 +158,58 @@ public sealed class SessionLedgerTests : IAsyncLifetime
 
         Assert.Equal(SessionOpenRefusal.QuestNotOpen, (await _ledger.OpenAsync(quest.Id, "stub", Now.AddMinutes(3))).Refusal);
         Assert.Equal(SessionOpenRefusal.QuestNotOpen, (await _ledger.OpenAsync(untouched.Id, "stub", Now.AddMinutes(3))).Refusal);
+    }
+
+    /// <summary>
+    /// STANDDOWN2: only a running session's own quest is marked as its take — a different quest, or a
+    /// session that has already ended, changes nothing.
+    /// </summary>
+    [Fact]
+    public async Task A_take_is_marked_only_on_a_running_sessions_own_quest()
+    {
+        var quest = await Publish();
+        var other = await Publish(title: "Another ask");
+        var session = (await _ledger.OpenAsync(quest.Id, "stub", Now)).Session!;
+
+        Assert.False(await _ledger.MarkTookAsync(session.Id, other.Id));
+        Assert.True(await _ledger.MarkTookAsync(session.Id, $"#{quest.Id}"));
+        Assert.True((await _sessions.FindAsync(session.Id))!.Took);
+
+        foreach (var state in new[] { "starting", "working", "completed" })
+        {
+            Assert.Equal(SessionAdvanceRefusal.None, (await _ledger.AdvanceAsync(session.Id, state, null, null, null, Now.AddMinutes(1))).Refusal);
+        }
+
+        Assert.False(await _ledger.MarkTookAsync(session.Id, quest.Id));
+    }
+
+    /// <summary>
+    /// STANDDOWN2: a driven session that parked to ask the person is answered, its record ends with
+    /// their words, and its taken quest may then be carried on — the answer is what the next session
+    /// is handed. Only a parked record answers; anything else is told why not.
+    /// </summary>
+    [Fact]
+    public async Task Answering_a_parked_session_ends_it_with_the_words_and_lets_its_quest_carry_on()
+    {
+        var quest = await Publish();
+        var parked = (await _ledger.OpenAsync(quest.Id, "stub", Now)).Session!;
+        await _quests.MoveAsync(quest.Id, QuestStatus.Taken, null, Now);
+        foreach (var state in new[] { "starting", "working" })
+        {
+            await _ledger.AdvanceAsync(parked.Id, state, null, null, null, Now);
+        }
+
+        Assert.Equal(SessionAdvanceRefusal.InvalidMove, (await _ledger.AnswerAsync(parked.Id, "merged", Now)).Refusal);
+        await _ledger.AdvanceAsync(parked.Id, "awaiting-person", "needs a merge, a sign-in and a go-ahead.", null, null, Now);
+        Assert.Equal(SessionOpenRefusal.QuestNotOpen, (await _ledger.OpenAsync(quest.Id, "stub", Now)).Refusal);
+
+        var answered = await _ledger.AnswerAsync(parked.Id, "Signed in; apply to dev.", Now.AddMinutes(5));
+
+        Assert.Equal(SessionAdvanceRefusal.None, answered.Refusal);
+        var record = (await _sessions.FindAsync(parked.Id))!;
+        Assert.Equal(SessionState.Completed, record.State);
+        Assert.Equal("Signed in; apply to dev.", record.Answer);
+        Assert.Equal(SessionOpenRefusal.None, (await _ledger.OpenAsync(quest.Id, "stub", Now.AddMinutes(6))).Refusal);
     }
 
     [Fact]

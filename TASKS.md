@@ -21,8 +21,8 @@ lists.
 
 ## State
 
-**Counts, and this is their one home:** fifteen commands, **483 CLI tests, 525 service, 776 driver,
-151 desktop modules, 80 devkit, 1189 web unit, 21 Playwright**, 66/66 release rehearsal, **285/285
+**Counts, and this is their one home:** fifteen commands, **483 CLI tests, 528 service, 780 driver,
+151 desktop modules, 80 devkit, 1191 web unit, 21 Playwright**, 66/66 release rehearsal, **285/285
 family rehearsal** (it names its own phases when you run it), **39/39 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge
 documents, 5 skills, 7 packs. The always-loaded core is **22,492 of 26,000 bytes** — a span in
@@ -52,8 +52,8 @@ cut-off carried on), both in the archive. The chain's verify step found three mo
 (in the archive). **CHAIN2 has the owner's answer**: a same-repository step starts on the parent's
 branch. The owner then set two more directions, **D81**: a session works in its harness's own `auto`
 mode, "as much as it can just like regular claude code". And **parallel sessions (PAR1)** and **a
-console tab for everything running (CONSOLE2)**. CHAIN2 landed as D82, and PAR1 with it, both in the
-archive. Next: STANDDOWN2, then CONSOLE2.
+console tab for everything running (CONSOLE2)**. CHAIN2 landed as D82, PAR1 with it, and STANDDOWN2 as
+D83, all in the archive. **Next: CONSOLE2.**
 D76's round is done, and its leftovers (RAIL2, SURF11) stand behind these. Nothing is pushed or
 published, and a release is still blocked on REH1.
 - **Landed:** CONV1 (the record), CONV2 (the view), CONV3a (Claude Code's `stream-json`), CONV3b
@@ -127,8 +127,8 @@ rather than designed.
 
 ## Backlog
 
-**Thirty-three rows are open**: the in-app browser's seven (BRW3, then BRW4–BRW9, the browser as a browser); the first goal's four (FG5,
-STANDDOWN2, CONSOLE2, and SEM2 on a trigger); D76's held file tools;
+**Thirty-two rows are open**: the in-app browser's seven (BRW3, then BRW4–BRW9, the browser as a browser); the first goal's three (FG5,
+CONSOLE2, and SEM2 on a trigger); D76's held file tools;
 the eight REV3 left, WINDOW2 among them; five leftovers (RAIL2, SURF11, FLAKE1, DEPLOY5, TEST1); two on the owner
 (TRUST2, AGT2c); and six on a trigger (see *Handover*). Every closed one is in `docs/task-archive.md`, and this file holds no
 ticked rows, by the `task-lifecycle` rule it also ships. A heading below holds open rows only.
@@ -322,14 +322,6 @@ is behind a sign-in. FG1–FG4 are in the archive. **INT6 is reshaped as FG5.**
   which surfaced three new rows (ORPHAN1, STANDDOWN2, CHAIN2). The branch is the owner's to review
   and merge (D51). Waiting on the owner as well: four rule proposals and the dev nav config apply,
   a live write the session rightly left alone.
-- [ ] **STANDDOWN2 — a session that took its quest and ended asking the person reads as a stand-down**
-  (FG5, 2026-09-27). The verify session took its quest, then ended its turn holding it open with
-  three questions for the person (a merge, a sign-in, a live config apply). The record said
-  `stood-down: someone else has it`, which is false, and nothing carries a stand-down on. The driver
-  cannot tell its own session's take from another taker's, because a take records no session. The
-  connector knows its session (PERM2), so the take could carry it. Then this ending is
-  `awaiting-person`, with the session's last words, and the person answering needs a way to carry
-  the quest on.
 - [ ] **CONSOLE2 — the console has a tab for each thing that is running** (the owner, 2026-09-27:
   *"the console display should be able to have multiple tabs so we dont miss any console (like
   different subsessions and console that runs by the session)"*). Today it is one stream per session.
@@ -337,6 +329,15 @@ is behind a sign-in. FG1–FG4 are in the archive. **INT6 is reshaped as FG5.**
   and each process it starts (the dev servers FG5's verify session left running were visible nowhere
   but their ports). Needs the adapters to say which frames belong to which sub-session, and the
   driver to capture a started process's output.
+  **Found in the Claude Code ACP adapter (2026-09-27): the wire already carries all three, if the
+  client declares them.** Subagents stream as their own sessions when `clientCapabilities.subagents`
+  is an object (`acp-subagents.js`). Background work, which is how a dev server runs, is published as
+  a task lifecycle under an AIR async-tasks capability (`async-tasks.js`). A command's output streams
+  on its tool call as `_meta.terminal_info`, then `terminal_output`, then `terminal_exit`, when
+  `_meta.terminal_output` is true. Daoris declares none of them today. The order: **2a** declare
+  them in a probe and record the real frames (an evidence doc, as ACP3's); **2b** the driver keeps
+  one stream per session, sub-session and task, and ends a task's with the session (ORPHAN1's twin);
+  **2c** the page's console gets a tab per stream.
 - [ ] ⏸ **SEM2 — vectors that persist** (after SEM1, held). SEM1 embeds what is on disk once per
   process, on first use. The MCP host is one process per session, so with an embedder configured,
   each session's first search embeds the whole corpus. Lyntai.Storage.Sqlite's vector store would

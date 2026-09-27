@@ -24,9 +24,14 @@ public static class Observation
     /// question closed (D79), or a carry-on after a cut-off (D80). Its quest was this machine's take
     /// before it began, so ending with it still taken is not somebody else having it.
     /// </param>
+    /// <param name="took">
+    /// Whether this session took its quest itself, through its own connector (STANDDOWN2) — what tells
+    /// a session holding the quest it took from one that found it taken.
+    /// </param>
+    /// <param name="lastWords">The agent's own last words, which a park quotes for the person.</param>
     public static SessionConclusion Conclude(
         int exitCode, string questStatus, string? awaitsBefore = null, string? awaitsAfter = null,
-        string? turnFailed = null, bool resumed = false) => questStatus switch
+        string? turnFailed = null, bool resumed = false, bool took = false, string? lastWords = null) => questStatus switch
     {
         // Ask and wait (D79): the session published a question to another repository and waits on it.
         // Its quest stays taken for the same tree to resume in, and that is a good ending.
@@ -43,19 +48,23 @@ public static class Observation
         "Open" when turnFailed is { Length: > 0 }
             => new("failed", $"the agent's turn failed before it took its quest: {turnFailed}"),
 
-        // A RESUMED session that ends with the old wait still standing did not carry on: it was handed
-        // the answer and stopped short. Failed, so the strikes bound it — as a stand-down it would be
-        // resumed again every tick, since nothing about the quest would have changed.
-        "Taken" when awaitsBefore is { Length: > 0 }
-            => new("failed",
-                $"resumed with `#{awaitsBefore}` answered, and ended with the quest still taken"
-                + (exitCode == 0 ? "." : $" (exit {exitCode}).")),
+        // 🔴 A session that holds its own quest and ended its turn cleanly is WAITING ON THE PERSON
+        // (STANDDOWN2): it took the quest itself, or resumed or carried on one this machine already
+        // held. FG5's verify session did exactly this with three questions, and read "someone else has
+        // it". Parked, it quotes what it said; the person's answer carries the quest on in the same tree.
+        // A park is never resumed by itself, so nothing here loops.
+        "Taken" when exitCode == 0 && (took || resumed || awaitsBefore is { Length: > 0 })
+            => new("awaiting-person",
+                "holds its quest and ended its turn without closing it, so it is waiting on you — "
+                + (lastWords is { Length: > 0 } said
+                    ? $"its last words: {said}"
+                    : "what it needs is in the last words of its transcript.")),
 
-        // The same for a carry-on after a cut-off (D80): the take was this machine's already.
+        // Holding its quest with a messy exit is a failure, and the strikes bound carrying it on (D80).
+        "Taken" when awaitsBefore is { Length: > 0 }
+            => new("failed", $"resumed with `#{awaitsBefore}` answered, and ended with the quest still taken (exit {exitCode})."),
         "Taken" when resumed
-            => new("failed",
-                "carried the quest on after a cut-off, and ended with it still taken"
-                + (exitCode == 0 ? "." : $" (exit {exitCode}).")),
+            => new("failed", $"carried the quest on, and ended with it still taken (exit {exitCode})."),
 
         // The quest reaching its close outranks a messy exit: the work is what matters, and the exit
         // is noted for the reader rather than allowed to overrule the record.
@@ -65,10 +74,8 @@ public static class Observation
             exitCode == 0 ? "the session declined, with its reason on the quest."
                           : $"the session declined (exit {exitCode}); the reason is on the quest."),
 
-        // A clean exit with the quest taken is the stand-down shape: the session found someone else's
-        // claim and finished without touching anything. A session that took the quest itself, finished
-        // its work, and forgot to close it lands here too — the evidence carries the commits, so the
-        // person can see which it was.
+        // A clean exit with the quest taken, by a session that did not take it, is the stand-down shape:
+        // it found someone else's claim and finished without touching anything.
         "Taken" when exitCode == 0 => new("stood-down",
             "exited cleanly with the quest taken — someone else has it."),
         "Taken" => new("failed", $"exit {exitCode} with the quest still taken."),

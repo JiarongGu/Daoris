@@ -679,6 +679,21 @@ app.MapPost("/api/sessions/{id}/state", async (
     };
 });
 
+// The person answers a driven session that parked to ask them (STANDDOWN2): the record ends with their
+// words, and the quest it holds is carried on in the same tree at the driver's next tick.
+app.MapPost("/api/sessions/{id}/answer", async (
+    ComposedService s, HttpContext http, string id, AnswerSessionRequest body, CancellationToken ct) =>
+{
+    var outcome = await s.Ledger.AnswerAsync(id, body.Answer, DateTimeOffset.UtcNow, ct);
+    return outcome.Refusal switch
+    {
+        SessionAdvanceRefusal.None => Results.Ok(
+            new SessionActionResponse(ToSession(outcome.Session!, MachineLocal(http)), outcome.Message)),
+        SessionAdvanceRefusal.NotFound => Results.NotFound(new ErrorResponse(outcome.Message)),
+        _ => Results.Conflict(new ErrorResponse(outcome.Message)),
+    };
+});
+
 // Where `daoris connect` lands. It accepts a repository's description of ITSELF — the only thing a
 // repository is authoritative about — and persists it, because for a remote service the pushed
 // registrations ARE the family: one that forgot them on restart would drop every connected
@@ -1194,7 +1209,10 @@ static SessionResponse ToSession(Session s, bool loopback) => new(
     Profile: loopback ? s.Profile : null,
     Tree: loopback ? s.Tree : null,
     BaseCommit: loopback ? s.BaseCommit : null,
-    Ask: s.Ask);
+    Ask: s.Ask,
+    Took: s.Took,
+    // The person's own words, which may name anything on this machine: answered to it only, like a transcript.
+    Answer: loopback ? s.Answer : null);
 
 // A caller on this machine — which is what "the root never leaves the machine" means in practice. A
 // null remote address is the in-process test server, which is this process and therefore local.

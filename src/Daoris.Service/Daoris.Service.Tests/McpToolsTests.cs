@@ -129,6 +129,30 @@ public sealed class McpToolsTests : IAsyncLifetime
         Assert.Equal("Asker", (await _quests.ListAsync(receiver: "Owner")).Single().From);
     }
 
+    /// <summary>
+    /// STANDDOWN2: a session the driver started takes its quest through its own connector, and the take
+    /// is written on its record. FG5's verify session took its quest and stopped to ask the person, and
+    /// its end read "someone else has it", because nothing said whose take it was.
+    /// </summary>
+    [Fact]
+    public async Task A_take_through_a_sessions_own_connector_is_written_on_its_record()
+    {
+        var sessions = await SessionStore.OpenAsync(_connection);
+        var asks = await AskStore.OpenAsync(_connection);
+        var ledger = new SessionLedger(_quests, sessions, _service, asks);
+        var exchange = new QuestExchange(_service, _quests, files: _files);
+        await _tools.PublishQuestAsync("Asker", "Owner", "Verify it", "Open it and look.");
+        var quest = (await _quests.ListAsync(receiver: "Owner")).Single();
+        var session = (await ledger.OpenAsync(quest.Id, "stub", DateTimeOffset.UtcNow)).Session!;
+        var tools = new KnowledgeTools(
+            _service, _quests, exchange, new AmbientWorkspace(Path.Combine(_root, "family", "Owner")),
+            new AskDesk(_service, asks, exchange, _files), new IntakeScope(null, session.Id), ledger: ledger);
+
+        await tools.RespondToQuestAsync(quest.Id, "take");
+
+        Assert.True((await sessions.FindAsync(session.Id))!.Took);
+    }
+
     [Fact]
     public async Task A_path_that_is_not_a_file_is_refused_and_nothing_is_published()
     {

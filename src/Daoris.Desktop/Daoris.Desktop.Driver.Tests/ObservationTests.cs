@@ -134,33 +134,50 @@ public sealed class ObservationTests
         Assert.Equal("completed", Observation.Conclude(0, "Taken", awaitsAfter: "q1", turnFailed: SpendLimit).State);
     }
 
+    // ——— A session that holds its own quest and stops (STANDDOWN2).
+    //
+    // 🔴 FG5's verify session took its quest, did what it could, and ended its turn holding it open
+    // with three questions for the person. The record said "stood-down — someone else has it". It was
+    // waiting on the person, and nothing told them. Its own take is written on its record now.
+
+    private const string Asked = "Three things from you and I can run the whole checklist.";
+
+    [Fact]
+    public void A_session_that_took_its_quest_and_ended_holding_it_is_waiting_on_the_person()
+    {
+        var conclusion = Observation.Conclude(0, "Taken", took: true, lastWords: Asked);
+
+        Assert.Equal("awaiting-person", conclusion.State);
+        Assert.Contains(Asked, conclusion.Note);
+        Assert.DoesNotContain("someone else", conclusion.Note);
+    }
+
+    /// <summary>Only a session that took the quest itself: one that found it taken still stood down.</summary>
+    [Fact]
+    public void A_session_that_found_its_quest_taken_still_stood_down()
+    {
+        Assert.Equal("stood-down", Observation.Conclude(0, "Taken", took: false, lastWords: Asked).State);
+    }
+
     /// <summary>
-    /// A session carrying on after a cut-off (D80) that ends with the quest still taken did not finish
-    /// it. 🔴 Failed, not stood down — the take is this machine's own, so "someone else has it" is false,
-    /// and only a failure counts against the strikes that bound carrying on.
+    /// A resume (D79) or a carry-on (D80) that ends holding the quest is waiting on the person too —
+    /// its take was this machine's before it began. A park is never resumed by itself, so nothing
+    /// loops; a messy exit is still a failure, which the strikes bound.
     /// </summary>
     [Fact]
-    public void A_session_that_carried_on_and_left_the_quest_taken_failed()
+    public void A_resumed_or_carried_on_session_that_ends_holding_its_quest_waits_on_the_person()
     {
-        var conclusion = Observation.Conclude(0, "Taken", resumed: true);
-
-        Assert.Equal("failed", conclusion.State);
-        Assert.DoesNotContain("someone else", conclusion.Note);
+        Assert.Equal("awaiting-person", Observation.Conclude(0, "Taken", resumed: true, lastWords: Asked).State);
+        Assert.Equal("awaiting-person", Observation.Conclude(0, "Taken", awaitsBefore: "q1", awaitsAfter: "q1").State);
+        Assert.Equal("failed", Observation.Conclude(1, "Taken", resumed: true).State);
         Assert.Equal("completed", Observation.Conclude(0, "Done", resumed: true).State);
         Assert.Equal("completed", Observation.Conclude(0, "Taken", awaitsAfter: "q9", resumed: true).State);
     }
 
-    /// <summary>
-    /// A resumed session that stops with the quest still waiting on the OLD question did not carry on.
-    /// 🔴 Failed, not stood down: nothing about the quest changed, so a stand-down would be resumed
-    /// again every tick, and only a failure is counted against the strikes.
-    /// </summary>
+    /// <summary>With no last words to quote, the park still says where they would be.</summary>
     [Fact]
-    public void A_resumed_session_that_leaves_the_old_wait_standing_failed()
+    public void A_park_with_no_last_words_points_at_the_transcript()
     {
-        var conclusion = Observation.Conclude(0, "Taken", awaitsBefore: "q1", awaitsAfter: "q1");
-
-        Assert.Equal("failed", conclusion.State);
-        Assert.Contains("#q1", conclusion.Note);
+        Assert.Contains("transcript", Observation.Conclude(0, "Taken", took: true).Note);
     }
 }

@@ -25,7 +25,8 @@ namespace Daoris.Knowledge.Mcp;
 [McpServerToolType]
 public sealed class KnowledgeTools(
     KnowledgeService service, QuestStore quests, QuestExchange exchange, AmbientWorkspace ambient,
-    AskDesk? asks = null, IntakeScope? intake = null, RuleProposalBox? proposals = null)
+    AskDesk? asks = null, IntakeScope? intake = null, RuleProposalBox? proposals = null,
+    SessionLedger? ledger = null)
 {
     /// <summary>
     /// Which circle this call answers from: what the caller named, or the workspace of the repository
@@ -463,6 +464,16 @@ public sealed class KnowledgeTools(
     {
         var outcome = await exchange.RespondAsync(id, action, reason, DateTimeOffset.UtcNow, ct, on: on)
             .ConfigureAwait(false);
+
+        // A take by a session the driver started is written on its record (STANDDOWN2): how its end is
+        // told apart from a stand-down, which the quest's state alone cannot say.
+        if (outcome.Refusal == QuestRespondRefusal.None
+            && string.Equals(action, "take", StringComparison.OrdinalIgnoreCase)
+            && intake?.Session is { } session && ledger is not null)
+        {
+            await ledger.MarkTookAsync(session, id, ct).ConfigureAwait(false);
+        }
+
         return outcome.Message;
     }
 

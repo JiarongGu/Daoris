@@ -3562,3 +3562,26 @@ start, the owner chose *"On the parent's branch"*.
   acts, which is the friction the chain exists to remove.
 - **A merge rule for sessions.** It is a write to a line the person owns, reached through a rule
   whose prefix allows more than it says.
+
+## D83 — A session that holds its quest and stops is waiting on the person, who answers it to carry on (2026-09-27)
+
+**Decision.** A take through a session's own connector is written on its record (`took`). A session
+that ends its turn cleanly still holding its quest parks as `awaiting-person`, quoting its last words.
+That covers one that took the quest itself, and a resume or a carry-on of a quest this machine
+already held. Only a session that did not take the quest reads as a stand-down. The person answers a
+parked driven session: `POST /api/sessions/{id}/answer`, the page's *answer and carry on*, or
+`daoris-driver answer <session> "…"`. The record ends `completed` with the words kept. The quest is
+then carried on in the same tree at the next tick, as after a cut-off (D80), and the session is
+handed the answer. A park is never resumed by itself, so D79's and D80's clean exits that used to
+conclude `failed` to bound a loop now park instead. A messy exit is still a failure.
+
+**Why.** FG5's verify session took its quest, did everything it could, and ended its turn holding it
+with three questions for the person. The record said *"stood-down: someone else has it"*, and nothing
+would ever carry the quest on. The quest's state alone cannot tell a session's own take from another
+taker's, and the connector already knows which session it speaks for (PERM2).
+
+**Rejected.**
+- **Reading the take off the wire** (the ACP tool call and its result). The record moves on facts the
+  service holds (D46 §4), and the service saw the take arrive.
+- **Answering in the composer.** A driven session takes no person's line (INT4i), and its process is
+  gone by the time it parks.

@@ -34,6 +34,7 @@ import { RunningIntake } from './RunningIntake';
  */
 export function SessionHead({
   session, quest, opening, taking, resolving = false, stopping = false, onResolve, onAnswerAsk, onStop,
+  onAnswerSession,
 }: {
   session: Session;
   /** Whether a turn is in flight, as the driver says: a live chat between turns reads idle (UX5 U17). */
@@ -57,6 +58,11 @@ export function SessionHead({
    * messages. Absent where nothing can reach the process's machine.
    */
   onStop?: () => void;
+  /**
+   * Answer a driven session that parked to ask the person (STANDDOWN2): its quest is carried on in the
+   * same tree, handed the words. Absent where nothing can reach this machine's host.
+   */
+  onAnswerSession?: (answer: string | null) => void;
 }) {
   const { t } = useTranslation();
   const running = SESSION_ACTIVE.has(session.state);
@@ -79,14 +85,21 @@ export function SessionHead({
           onStop={onResolve ? () => onResolve('stopped', null) : undefined}
         />
       )}
-      {parked && !intake && onResolve && (
+      {parked && !intake && (onResolve || onAnswerSession) && (
         // Keyed: a half-written decline reason belongs to the session it was written for, and it
         // carried into the next parked one, ready to decline it with somebody else's reason (REV3).
-        <AwaitingPerson key={session.id} note={session.note} pending={resolving} onResolve={onResolve} />
+        <AwaitingPerson
+          key={session.id}
+          note={session.note}
+          pending={resolving}
+          onResolve={onResolve}
+          // A driven session parked to ask the person has no process left to message (STANDDOWN2).
+          onAnswer={session.quest ? onAnswerSession : undefined}
+        />
       )}
       {/* Nothing here can act — a browser, or a mirrored record from another machine — so the
           analysis is shown and the moves are not. Half a control is worse than none. */}
-      {parked && !onResolve && !(intake && onAnswerAsk) && session.note && (
+      {parked && !onResolve && !onAnswerSession && !(intake && onAnswerAsk) && session.note && (
         <WaitingCard title={t('work.head.waiting')}>
           <p className="m-0 mt-1.5 whitespace-pre-wrap text-body leading-relaxed">{session.note}</p>
         </WaitingCard>

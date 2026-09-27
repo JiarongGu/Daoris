@@ -33,6 +33,11 @@ using Daoris.Driver;
 //                 declarations left open with an INTAKE session (D65 §1b) in <home>/intake/<workspace>/:
 //                 it publishes onto the ask, or parks asking you — and ends when you answer the ask.
 //
+//   answer <session> ["…"]
+//                 answer a driven session that parked to ask you (STANDDOWN2): its record ends with your
+//                 words, and its quest is carried on in the same tree at the next tick, handed them.
+//                 Nothing after the id is "carry on". The page's box on the parked quest is the other door.
+//
 //   trees [list | remove <path> [--force]]
 //                 the session worktrees this machine has grown (D51): list them, or remove one —
 //                 refusing while it holds uncommitted changes or unmerged commits, unless forced.
@@ -67,6 +72,16 @@ try
     if (args is ["ask", .. var askArgs])
     {
         return await Daoris.Driver.Host.AskConsole.RunAsync(askArgs);
+    }
+
+    // Answering a session that parked to ask the person (STANDDOWN2, D50): the page's box is the other door.
+    if (args is ["answer", var answered, .. var words])
+    {
+        using var client = ServiceClient.FromEnvironment();
+        var (ok, message) = await client.AnswerSessionAsync(answered, words.Length == 0 ? null : string.Join(" ", words));
+        Console.WriteLine($"daoris-driver: {message}");
+        // A refusal — nothing parked by that id — is an answer, not a tool error.
+        return ok ? 0 : 1;
     }
 
     // The tree lifecycle from a terminal (D51, D50): the verbs live on the binary that already owns git —

@@ -36,8 +36,8 @@ export const noteIsInTheHead = (session: Session, answerableHere: boolean) =>
   session.state === 'awaiting-person' && answerableHere;
 
 export function AttendedSession({
-  session, quest, opening, taking, resolving, stopping, onResolve, onAnswerAsk, onStop, chain = [], onSession,
-  timeline = 'dock',
+  session, quest, opening, taking, resolving, stopping, onResolve, onAnswerAsk, onStop, onAnswerSession,
+  chain = [], onSession, timeline = 'dock',
 }: {
   /** The attended session, or null when the person has not chosen one. */
   session: Session | null;
@@ -54,6 +54,8 @@ export function AttendedSession({
   onAnswerAsk?: (ask: string) => void;
   /** And a running intake's stop, which has no composer to live on (INT4h). */
   onStop?: () => void;
+  /** And the answer to a driven session that parked to ask the person (STANDDOWN2). */
+  onAnswerSession?: (answer: string | null) => void;
   /**
    * The chain its quest belongs to (MAP1), the same strip a quest's drawer shows. Rendered only
    * when there is one, like there: a lone quest has nothing before or after it to show.
@@ -93,6 +95,7 @@ export function AttendedSession({
         onResolve={onResolve}
         onAnswerAsk={onAnswerAsk}
         onStop={onStop}
+        onAnswerSession={onAnswerSession}
       />
       {chain.length > 1 && <ChainStrip chain={chain} level={3} onSession={onSession} />}
       {/* The timeline lives in the right dock since SURF6 gave the dock its second occupant. It stayed

@@ -72,6 +72,12 @@ public sealed record SessionTarget(
     public IReadOnlyList<string> InFlight { get; init; } = [];
 
     /// <summary>
+    /// What the person answered, when the session before parked to ask them (STANDDOWN2) — the carry-on
+    /// is handed it in their words. Null for a carry-on after a cut-off.
+    /// </summary>
+    public string? PersonSaid { get; init; }
+
+    /// <summary>
     /// The branch this session's tree grew from when it is a chain's next step in its parent's
     /// repository (CHAIN2) — the parent's unmerged work is in the tree. Null for the canonical line.
     /// </summary>
@@ -190,8 +196,8 @@ public static class TargetPrompt
 
         {target.Body}
         {Carried(target)}
-        An earlier session on this quest was cut off before it closed it: {cutOff} What it did is in this
-        tree — any commits it made are on this branch, and {InFlight(target)}
+        {Before(target, cutOff)} What it did is in this tree — any commits it made are on this branch,
+        and {InFlight(target)}
 
         Finish from there rather than starting again, inside this repository under its own doctrine and
         gates, then close `#{target.QuestId}`: `done` when it has landed, or `decline` with the reason —
@@ -203,6 +209,15 @@ public static class TargetPrompt
 
         {Boundary}
         """;
+
+    /// <summary>
+    /// Why the session before did not finish: cut off (D80), or stopped to ask the person, who has
+    /// answered (STANDDOWN2) — in their words, which are the reason this session exists.
+    /// </summary>
+    private static string Before(SessionTarget target, string record) => target.PersonSaid is { } said
+        ? $"An earlier session on this quest stopped to ask the person, and they answered:\n\n> "
+          + said.ReplaceLineEndings("\n> ") + $"\n\nIts record reads: {record}"
+        : $"An earlier session on this quest was cut off before it closed it: {record}";
 
     /// <summary>The tree's uncommitted changes as the driver read them, or that there were none.</summary>
     private static string InFlight(SessionTarget target) => target.InFlight.Count == 0

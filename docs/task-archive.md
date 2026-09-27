@@ -6673,3 +6673,20 @@ with trees on, an active session no longer holds it, and several of its quests s
 oldest first, up to the cap. A resume or a carry-on still waits while a live session holds the tree
 it goes back into. A repository without trees keeps one session at a time in its root, and the reason
 now says trees are how to run them side by side. Driver 776.
+
+## STANDDOWN2 — a session that holds its quest and stops waits on the person (2026-09-27 → D83)
+
+Found on FG5's verify step. The session took its quest, did what it could, and ended its turn with
+three questions for the person, and the record read `stood-down: someone else has it`.
+- **The take is written.** A take through a session's own connector is on its record (`took`), and
+  the ledger allows it only for that session's own quest while it runs.
+- **The ending.** A session holding its quest that ends cleanly parks `awaiting-person`, quoting its
+  last words from the transcript. That covers one that took it, and a resume or a carry-on. A park
+  is not an ending, and nothing resumes it by itself.
+- **The answer.** A door on the service, the page's *answer and carry on* on the parked card, and
+  `daoris-driver answer <session> "…"`. The record ends `completed` with the words.
+- **The carry-on.** The planner then carries the quest on in its tree, and the prompt hands the
+  session the person's words and what was asked.
+
+Service 528, driver 780, web 1191, and two family-rehearsal checks over HTTP. Also: the
+`DrivenSessionInputTests` start wait is 60 seconds, after the load flake recurred (FLAKE1).

@@ -29,6 +29,34 @@ describe('a session parked at a checkpoint', () => {
     expect(resolve).toHaveBeenCalledWith('completed', null);
   });
 
+  /**
+   * STANDDOWN2: a driven session that took its quest and stopped to ask has no process left to take a
+   * message, so the answer is a move here — written on the record, and the quest carried on in the same
+   * tree, handed the words. FG5's verify session asked for a merge, a sign-in and a go-ahead.
+   */
+  it('answers a session that has no process left, and carries its quest on with the words', async () => {
+    const answer = vi.fn();
+    show({ onAnswer: answer });
+
+    await userEvent.click(screen.getByRole('button', { name: 'answer and carry on…' }));
+    await userEvent.type(screen.getByLabelText(/your answer/), 'Signed in; apply it to dev.');
+    await userEvent.click(screen.getByRole('button', { name: 'carry on with this answer' }));
+
+    expect(answer).toHaveBeenCalledWith('Signed in; apply it to dev.');
+    // Its process is gone, so "answer it in the box below" would send the person nowhere.
+    expect(screen.queryByText(/in the box below/)).toBeNull();
+  });
+
+  it('carries on with no words when the person has nothing to add', async () => {
+    const answer = vi.fn();
+    show({ onAnswer: answer });
+
+    await userEvent.click(screen.getByRole('button', { name: 'answer and carry on…' }));
+    await userEvent.click(screen.getByRole('button', { name: 'carry on with this answer' }));
+
+    expect(answer).toHaveBeenCalledWith(null);
+  });
+
   it('stops it as the person, with nothing they have to write', async () => {
     const resolve = vi.fn();
     show({ onResolve: resolve });

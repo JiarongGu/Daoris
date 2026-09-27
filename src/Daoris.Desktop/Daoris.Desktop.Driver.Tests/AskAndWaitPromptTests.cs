@@ -91,6 +91,25 @@ public sealed class AskAndWaitPromptTests
     }
 
     /// <summary>
+    /// STANDDOWN2: a carry-on after the person answered a parked session is told what they said, in
+    /// their words, and that the session before asked rather than was cut off.
+    /// </summary>
+    [Fact]
+    public void A_carry_on_after_the_persons_answer_is_handed_the_answer_in_their_words()
+    {
+        var prompt = TargetPrompt.Compose(Target() with
+        {
+            CutOff = "asked the person (merge, sign-in, apply), and was answered: Signed in; apply to dev.",
+            PersonSaid = "Signed in; apply to dev.",
+        });
+
+        Assert.Contains("carrying on quest `#abc123`", prompt);
+        Assert.Contains("stopped to ask the person, and they answered", prompt);
+        Assert.Contains("> Signed in; apply to dev.", prompt);
+        Assert.DoesNotContain("was cut off", prompt);
+    }
+
+    /// <summary>
     /// CHAIN2: a next step whose tree grew from its parent's branch is told the work is here, so it
     /// neither asks for a merge nor tries to make one — FG5's verify step asked for exactly that.
     /// </summary>

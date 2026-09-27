@@ -540,6 +540,23 @@ public sealed class PlannerTests
         Assert.Null(only.BuildsOn);
     }
 
+    /// <summary>
+    /// STANDDOWN2: the person answered a session that parked to ask them, and its quest is carried on
+    /// in the same tree, the reason naming what they said.
+    /// </summary>
+    [Fact]
+    public void A_parked_session_the_person_answered_is_carried_on_from_it()
+    {
+        var answered = new PriorSession("s1", "D:/trees/s-1", "completed", "asked the person", Answer: "Signed in; go ahead.");
+
+        var only = Assert.Single(Planner.Plan(Ran([Quest(status: "Taken")], ("q1", answered)), Config()));
+
+        Assert.Equal(StartVerdict.Start, only.Verdict);
+        Assert.Equal(answered, only.Resumes);
+        Assert.Contains("you answered", only.Reason);
+        Assert.Contains("Signed in; go ahead.", only.Reason);
+    }
+
     [Fact]
     public void A_taken_quest_whose_last_session_here_ended_well_is_not_carried_on()
     {

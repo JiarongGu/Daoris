@@ -94,6 +94,35 @@ public sealed class ServiceClient : IDisposable
         RemoteSyncPayloads.Standing(await GetAsync($"/api/sync?workspace={Uri.EscapeDataString(workspace)}", ct).ConfigureAwait(false));
 
     /// <summary>
+    /// Whether this session took its own quest through its own connector (STANDDOWN2) — read at its end,
+    /// so a session holding the quest it took is told from one that found it taken.
+    /// </summary>
+    public async Task<bool> TookAsync(string id, CancellationToken ct = default)
+    {
+        using var document = JsonDocument.Parse(await GetAsync("/api/sessions?includeClosed=true", ct).ConfigureAwait(false));
+        return document.RootElement.EnumerateArray().Any(session =>
+            Text(session, "id") == id && session.TryGetProperty("took", out var took) && took.ValueKind == JsonValueKind.True);
+    }
+
+    /// <summary>
+    /// Answer a driven session that parked to ask the person (STANDDOWN2) — the terminal's form of the
+    /// page's box. The service's sentence comes back verbatim, and a refusal is an answer too.
+    /// </summary>
+    public async Task<(bool Ok, string Message)> AnswerSessionAsync(string id, string? answer, CancellationToken ct = default)
+    {
+        var body = WriteJson(writer =>
+        {
+            writer.WriteStartObject();
+            if (answer is not null) writer.WriteString("answer", answer);
+            writer.WriteEndObject();
+        });
+        var (ok, status, payload, root) = await PostJsonAsync($"/api/sessions/{Uri.EscapeDataString(id)}/answer", body, ct)
+            .ConfigureAwait(false);
+        if (root is not { } answered) return (false, $"the service at {_base} has no answer door ({status}) — is it older than this driver?");
+        return ok ? (true, Text(answered, "message") ?? "") : (false, Text(answered, "error") ?? payload);
+    }
+
+    /// <summary>
     /// Where this machine's claim on a quest stands (D68 §4): none, held, unconfirmed or lost — how the
     /// driver learns that a session it is running took a quest another machine took first.
     /// </summary>
@@ -507,7 +536,7 @@ public sealed class ServiceClient : IDisposable
             if (last.TryGetValue(quest, out var seen) && seen.At > at) continue;
             last[quest] = (new PriorSession(
                 Text(session, "id") ?? "", Text(session, "tree"), Text(session, "state") ?? "", Text(session, "note"),
-                Text(session, "repository")), at);
+                Text(session, "repository"), Text(session, "answer")), at);
         }
 
         return last.ToDictionary(pair => pair.Key, pair => pair.Value.Session, StringComparer.OrdinalIgnoreCase);

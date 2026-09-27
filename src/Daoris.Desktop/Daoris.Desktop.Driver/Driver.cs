@@ -549,6 +549,8 @@ public sealed partial class Driver(
                 CutOff = carryingOn ? start.Resumes!.Note ?? "it ended before closing the quest." : null,
                 InFlight = carryingOn ? await WorkingTree.UncommittedAsync(workTree, ct: ct).ConfigureAwait(false) : [],
                 GrewFrom = opened?.GrewFrom,
+                // The person's answer, when the session before parked to ask them (STANDDOWN2).
+                PersonSaid = carryingOn ? start.Resumes!.Answer : null,
             };
             var (info, harnessNotice) = Prepare(adapter, target, selection);
 
@@ -617,7 +619,12 @@ public sealed partial class Driver(
                         : exitCode is int code
                             // What it waited on before and after (D79): a NEW question is this session
                             // asking and waiting, which is a good ending, not a stand-down.
-                            ? Observation.Conclude(code, status, quest.Awaits, after?.Awaits, turnFailed, resumed: start.Resumes is not null)
+                            ? Observation.Conclude(
+                                code, status, quest.Awaits, after?.Awaits, turnFailed, resumed: start.Resumes is not null,
+                                // Whose take it was, and what it last said (STANDDOWN2): a session
+                                // holding the quest it took and stopping is waiting on the person.
+                                took: status == "Taken" && await service.TookAsync(sessionId, ct).ConfigureAwait(false),
+                                lastWords: LastWords(transcript))
                             : new SessionConclusion("failed", $"timed out after {config.TimeoutMinutes} minutes and was killed.");
 
                     conclusion = AccountRefused(conclusion, adapter, selection, transcript);
@@ -636,11 +643,15 @@ public sealed partial class Driver(
                         $"{conclusion.State}  session {sessionId} (#{quest.Id} → {quest.To}){where}: {conclusion.Note}",
                         true,
                         // 🔴 The stop flag IS the "whose decision was this" answer (SURF5b) — the same
-                        // one that outranks the observation above. Read once, used for both.
-                        (SessionEnded?)new SessionEnded(
-                            sessionId, quest.To, conclusion.State,
-                            ByPerson: stoppedFor is null && _processes.WasStopRequested(sessionId), conclusion.Note,
-                            Quest: quest.Id, Adapter: adapter.Name, Account: selection.Profile),
+                        // one that outranks the observation above. Read once, used for both. A park is
+                        // not an ending (STANDDOWN2): the record waits on the person, and the attention
+                        // watch says so from the active list, as it does for a parked intake.
+                        SessionStates.IsParked(conclusion.State)
+                            ? null
+                            : (SessionEnded?)new SessionEnded(
+                                sessionId, quest.To, conclusion.State,
+                                ByPerson: stoppedFor is null && _processes.WasStopRequested(sessionId), conclusion.Note,
+                                Quest: quest.Id, Adapter: adapter.Name, Account: selection.Profile),
                         (string?)null);
                 }).ConfigureAwait(false);
         }
@@ -1074,6 +1085,47 @@ public sealed partial class Driver(
         };
         foreach (var (name, value) in scope ?? new Dictionary<string, string>()) carried[name] = value;
         return carried;
+    }
+
+    /// <summary>
+    /// The agent's own last words in a finished transcript (STANDDOWN2): its final block of plain lines,
+    /// after its last tool and before the driver's closing line — what a session that parks to ask the
+    /// person said to them. Kept to its END, where a question list sits, and null when there is none.
+    /// </summary>
+    internal static string? LastWords(string transcript, int limit = 700)
+    {
+        IReadOnlyList<string> lines;
+        try
+        {
+            lines = [.. File.ReadLines(transcript).TakeLast(200)];
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            return null;
+        }
+
+        static bool Plain(string line) =>
+            line.Length == 0 || !(line.StartsWith('→') || line.StartsWith(' ') || line.StartsWith('—')
+                                  || line.StartsWith('[') || line.StartsWith('·'));
+
+        var block = new List<string>();
+        for (var at = lines.Count - 1; at >= 0; at--)
+        {
+            var line = lines[at];
+            if (Plain(line))
+            {
+                block.Add(line);
+            }
+            else if (block.Any(said => said.Trim().Length > 0))
+            {
+                break;
+            }
+        }
+
+        block.Reverse();
+        var words = string.Join("\n", block).Trim();
+        if (words.Length == 0) return null;
+        return words.Length <= limit ? words : "…" + words[^limit..].TrimStart();
     }
 
     /// <summary>A finished transcript's last lines — where a tool says why it gave up. Unreadable is none.</summary>

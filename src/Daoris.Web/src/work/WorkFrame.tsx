@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { SessionConsole } from '../SessionConsole';
 import { sentence } from '../format';
 import { buildChain } from '../map/chain';
-import { useQuests, useRegistry, useSessions } from '../queries';
+import { useAnswerSession, useQuests, useRegistry, useSessions } from '../queries';
 import {
   stopNotice, type TurnStop, useCancelTurn, useEndChat, useHarnesses, useResolveSession, useSendMessage,
   NO_TURNS, useChatTurns, useSessionOpenings, useStartChat, useStopSession, useTreeFiles,
@@ -184,6 +184,7 @@ export function WorkFrame({ selected, onSelect, notify, onSendBack, onAnswerAsk,
 
   const startChat = useStartChat();
   const resolve = useResolveSession();
+  const answer = useAnswerSession();
   const send = useSendMessage();
   const end = useEndChat();
   const stop = useStopSession();
@@ -355,6 +356,16 @@ export function WorkFrame({ selected, onSelect, notify, onSendBack, onAnswerAsk,
     });
   };
 
+  // The answer to a driven session that parked to ask the person (STANDDOWN2): the record ends with
+  // their words, and its quest is carried on in the same tree at the driver's next tick.
+  const onAnswerSession = (words: string | null) => {
+    if (!attended) return;
+    answer.mutate({ id: attended.id, answer: words }, {
+      onSuccess: () => notify(t('work.awaiting.answered')),
+      onError: failure(notify),
+    });
+  };
+
   // 🔴 Consumed by IDENTITY, the way the quest composer's opening draft is (FIX-LOG 2026-09-23):
   // "if (intent) set…" during render made React re-run this frame with the same prop on every pass,
   // so the palette's ask never landed. The parent is told from an effect, not during this render.
@@ -506,9 +517,10 @@ export function WorkFrame({ selected, onSelect, notify, onSendBack, onAnswerAsk,
             quest={quest}
             opening={attended ? openings[attended.id] : null}
             taking={attended ? taking[attended.id] : undefined}
-            resolving={resolve.isPending}
+            resolving={resolve.isPending || answer.isPending}
             stopping={stop.isPending}
             onResolve={here ? onResolve : undefined}
+            onAnswerSession={here ? onAnswerSession : undefined}
             onAnswerAsk={here ? onAnswerAsk : undefined}
             onStop={here && intake ? onStop : undefined}
             chain={quest ? buildChain(quest.id, quests.data ?? [], sessions.data ?? []) : []}

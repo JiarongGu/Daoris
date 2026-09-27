@@ -225,6 +225,60 @@ public sealed class SessionLedger(
     }
 
     /// <summary>
+    /// The session's own connector took its quest (STANDDOWN2): recorded on the session, so its end
+    /// can tell "it holds the quest and stopped" from "somebody else had it". Only the session's own
+    /// quest, only while it runs, and only this machine's record — anything else changes nothing.
+    /// </summary>
+    public async Task<bool> MarkTookAsync(string sessionId, string questId, CancellationToken ct = default)
+    {
+        var session = await sessions.FindAsync(sessionId, ct).ConfigureAwait(false);
+        if (session is not { Active: true, Origin: null, Quest: { } quest }
+            || !string.Equals(quest, questId.TrimStart('#'), StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        return await sessions.MarkTookAsync(sessionId, ct).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// The person answers a driven session that parked to ask them (STANDDOWN2): its record ends
+    /// `completed` with their words kept, and the quest it holds is carried on in the same tree at
+    /// the driver's next tick, handed what they said. An intake is answered through its ask instead.
+    /// </summary>
+    /// <returns>The session as it now stands, or a refusal in words a person can act on.</returns>
+    public async Task<SessionAdvanceOutcome> AnswerAsync(
+        string id, string? answer, DateTimeOffset now, CancellationToken ct = default)
+    {
+        var session = await sessions.FindAsync(id, ct).ConfigureAwait(false);
+        if (session is null || session.Origin is not null)
+        {
+            return new(SessionAdvanceRefusal.NotFound, $"No session `{id}` of this machine's.", Session: null);
+        }
+
+        if (session.State != SessionState.AwaitingPerson || session.Quest is null)
+        {
+            return new(
+                SessionAdvanceRefusal.InvalidMove,
+                session.Ask is not null
+                    ? $"Session `{id}` is an intake — answer its ask `#{session.Ask}` instead: publish it or close it."
+                    : $"Session `{id}` is {Session.Spell(session.State)}, not waiting on you — there is nothing to answer.",
+                Session: null);
+        }
+
+        var said = string.IsNullOrWhiteSpace(answer) ? "carry on." : answer.Trim();
+        await sessions.SetAnswerAsync(id, said, ct).ConfigureAwait(false);
+        // The note keeps what it asked beside what it was told: the session that carries the quest on is
+        // handed this record, and an answer without its question is half a conversation.
+        var moved = await AdvanceAsync(
+            id, "completed", $"asked the person ({session.Note ?? "its question is in its transcript"}), and was answered: {said}",
+            evidence: null, transcript: null, now, ct).ConfigureAwait(false);
+        return moved.Refusal == SessionAdvanceRefusal.None
+            ? moved with { Message = $"Answered session `{id}`: `#{session.Quest}` is carried on in its tree at the driver's next tick." }
+            : moved;
+    }
+
+    /// <summary>
     /// Queue a session for an open quest. Refuses an unknown or non-open quest, and a repository that
     /// already has an active session.
     /// </summary>
@@ -253,8 +307,11 @@ public sealed class SessionLedger(
         // failed — timed out, refused, crashed — before closing it. The take is this machine's and its
         // tree holds the work. The driver's strikes bound how often; a stand-down or a teammate's
         // record never counts, because either means the take is somebody else's.
+        // And the person's answer to one that parked to ask them (STANDDOWN2): its record ended
+        // `completed` with their words kept, and the quest it held is carried on the same way.
         var carriesOn = quest is { Status: QuestStatus.Taken } && question is null
-            && await sessions.LastOwnForQuestAsync(quest.Id, ct).ConfigureAwait(false) is { State: SessionState.Failed };
+            && await sessions.LastOwnForQuestAsync(quest.Id, ct).ConfigureAwait(false)
+                is { State: SessionState.Failed } or { State: SessionState.Completed, Answer: not null };
 
         if (quest.Status != QuestStatus.Open && !resumes && !carriesOn)
         {

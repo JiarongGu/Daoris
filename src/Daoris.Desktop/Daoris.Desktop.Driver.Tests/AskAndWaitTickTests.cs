@@ -79,10 +79,11 @@ public sealed class AskAndWaitTickTests : IDisposable
 
     /// <summary>
     /// 🔴 A resumed session that stops short — the answer in hand, the quest still taken and still
-    /// waiting on the old question — FAILED. As a stand-down it would be resumed again every tick.
+    /// waiting on the old question — is waiting on the person (STANDDOWN2), never "someone else has
+    /// it", and a park is not resumed again by itself, so nothing loops.
     /// </summary>
     [Fact]
-    public async Task A_resumed_session_that_stops_short_fails_and_counts_as_a_strike()
+    public async Task A_resumed_session_that_stops_short_waits_on_the_person_and_is_not_resumed_again()
     {
         await using var service = StandIn.Start(_repository);
         var driver = Driver(service, Path.Combine(_home, "agent.log"), resumedDoesNothing: true);
@@ -92,8 +93,11 @@ public sealed class AskAndWaitTickTests : IDisposable
         await driver.TickAsync().WaitAsync(TimeSpan.FromSeconds(60));
 
         var resumed = service.Session("s2");
-        Assert.Equal("failed", resumed["state"]!.GetValue<string>());
-        Assert.Contains("#q2", resumed["note"]!.GetValue<string>());
+        Assert.Equal("awaiting-person", resumed["state"]!.GetValue<string>());
+        Assert.DoesNotContain("someone else", resumed["note"]!.GetValue<string>());
+
+        await driver.TickAsync().WaitAsync(TimeSpan.FromSeconds(60));
+        Assert.Equal(2, service.SessionCount);
     }
 
     private Daoris.Driver.Driver Driver(StandIn service, string log, bool resumedDoesNothing = false)
