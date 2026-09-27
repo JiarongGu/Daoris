@@ -23,7 +23,7 @@ import { ToolCard } from './ToolCard';
  * A molecule: turns in, a press out. The organism above it holds the record.
  */
 export function ConversationView({
-  turns, tree, structured, chat = false, live = false, loaded = true, earlier = false, onLoadEarlier,
+  turns, tree, structured, chat = false, live = false, turnRunning, loaded = true, earlier = false, onLoadEarlier,
 }: {
   turns: Turn[];
   /**
@@ -37,6 +37,13 @@ export function ConversationView({
   tree?: string | null;
   /** Whether the session is still working — a running turn shows it is. */
   live?: boolean;
+  /**
+   * Whether a turn is in flight, where the driver says so (a conversation it holds), or undefined
+   * where nothing says, and then a live session's last open turn is taken as running. 🔴 The agent
+   * speaks after its turn has ended when its background work finishes (CONSOLE2a), and those words
+   * are no turn running: read from `live` alone, they said *working…* for good, with nothing running.
+   */
+  turnRunning?: boolean;
   /** Whether the record has answered; before it has, nothing is claimed about it. */
   loaded?: boolean;
   /** Whether earlier turns exist beyond what is held. */
@@ -71,7 +78,7 @@ export function ConversationView({
         </Button>
       )}
       {turns.map((turn, index) => (
-        <TurnView key={turn.key} turn={turn} tree={tree} running={live && index === turns.length - 1 && !turn.ended} />
+        <TurnView key={turn.key} turn={turn} tree={tree} running={(turnRunning ?? live) && index === turns.length - 1 && !turn.ended} />
       ))}
     </section>
   );

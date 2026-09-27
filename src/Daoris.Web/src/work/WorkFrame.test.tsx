@@ -700,6 +700,35 @@ describe('starting and holding a conversation', () => {
     expect(await screen.findByText('85%')).toBeInTheDocument();
   });
 
+  /**
+   * The agent's words after its turn ended (its background work finished) carry no *working…* while
+   * the driver says no turn is in flight, which looking at CONSOLE2 found under them for good.
+   */
+  it('says nothing is working under words the agent said after its turn, when no turn is in flight', async () => {
+    SESSIONS = [CHAT];
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'HARNESSES') return STRUCTURED_ROSTER;
+      if (type === 'SESSION_QUEUE') return { session: 'c0ffee11', queued: [], taking: false };
+      if (type === 'SESSION_HISTORY') {
+        return {
+          session: 'c0ffee11', earlier: false, latest: 4,
+          events: [
+            { seq: 1, at: '2026-09-28T10:00:00Z', kind: 'user', origin: 'person', text: 'start the ticker' },
+            { seq: 2, at: '2026-09-28T10:00:02Z', kind: 'message', id: 'msg_1', text: 'DONE' },
+            { seq: 3, at: '2026-09-28T10:00:03Z', kind: 'turn', stopReason: 'end_turn' },
+            { seq: 4, at: '2026-09-28T10:00:30Z', kind: 'message', id: 'msg_2', text: 'The background ticker finished.' },
+          ],
+        };
+      }
+      return DRIVER_STATE;
+    });
+
+    show('c0ffee11');
+    expect(await screen.findByText('The background ticker finished.')).toBeInTheDocument();
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_QUEUE', expect.anything()));
+    await waitFor(() => expect(screen.queryByText('working…')).toBeNull());
+  });
+
   /** A structured door that has not reported yet says so, never 0%. */
   it('says a conversation has not reported its context yet, rather than showing it empty', async () => {
     SESSIONS = [CHAT];

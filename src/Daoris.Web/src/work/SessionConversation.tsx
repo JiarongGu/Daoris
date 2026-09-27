@@ -17,7 +17,7 @@ import { useFollowTail } from './followTail';
  *
  * Desktop-only for the console's reason (D47 §4): the record arrives over the bridge.
  */
-export function SessionConversation({ session, adapter, chat = false, tree, live, scroller, onUsage }: {
+export function SessionConversation({ session, adapter, chat = false, tree, live, turnRunning, scroller, onUsage }: {
   session: string;
   /** The harness it runs on — whose declaration says whether its door keeps a conversation (D76 §1). */
   adapter?: string;
@@ -26,6 +26,8 @@ export function SessionConversation({ session, adapter, chat = false, tree, live
   /** The session's tree, so a tool's path inside it reads relative to it. */
   tree?: string | null;
   live: boolean;
+  /** Whether a turn is in flight, where the driver says so — `ConversationView`'s. */
+  turnRunning?: boolean;
   /** The region the conversation scrolls in. */
   scroller: RefObject<HTMLElement | null>;
   /**
@@ -60,6 +62,7 @@ export function SessionConversation({ session, adapter, chat = false, tree, live
         structured={structured}
         chat={chat}
         live={live}
+        turnRunning={turnRunning}
         loaded={loaded}
         earlier={earlier}
         onLoadEarlier={() => void loadEarlier()}

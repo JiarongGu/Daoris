@@ -96,6 +96,28 @@ describe('ConversationView', () => {
     expect(screen.getByText('working…')).toBeTruthy();
   });
 
+  /**
+   * The agent speaks after its turn has ended when its background work finishes (CONSOLE2a). Those
+   * words are no turn running: with the driver saying none is in flight, they carry no *working…*,
+   * which looking at CONSOLE2 found under them for good, with nothing running.
+   */
+  it('says working only while a turn is in flight, not under words the agent said after its turn', () => {
+    const events = [
+      ev({ kind: 'user', origin: 'person', text: 'start the ticker' }),
+      ev({ kind: 'message', text: 'DONE' }),
+      ev({ kind: 'turn', stopReason: 'end_turn' }),
+      ev({ kind: 'message', text: 'The background ticker finished.' }),
+    ];
+
+    const { unmount } = view(events, { live: true, turnRunning: false });
+    expect(screen.getByText('The background ticker finished.')).toBeTruthy();
+    expect(screen.queryByText('working…')).toBeNull();
+    unmount();
+
+    view(events, { live: true, turnRunning: true });
+    expect(screen.getByText('working…')).toBeTruthy();
+  });
+
   /** The composed target is long and machine-written: two lines, and the rest on a press. */
   it('folds the target the driver composed, and names it as that', async () => {
     view([ev({ kind: 'user', origin: 'target', text: 'take quest #q1\n\nthe whole target…' })]);

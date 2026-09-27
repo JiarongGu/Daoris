@@ -5,6 +5,27 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## A conversation said "working…" under words its agent said after the turn (2026-09-28)
+
+**Symptom.** Looking at CONSOLE2 on a real chat, the turn ended, and then the agent spoke again when
+its background ticker finished. The conversation drew those words under a *working…* mark, and the
+mark stayed there, with no turn running and the head reading *idle*.
+
+**Root cause.** The agent speaking after its prompt's response is the protocol door's ordinary
+behaviour for Claude Code: its background work's completion wakes it (CONSOLE2a). In the record those
+words come after the turn's end, so they open a turn of their own that no ask started and no turn
+end closes. The view marked the newest open turn as running whenever the session was live, and a
+chat is live for as long as its process is.
+
+**Fix.** The view takes whether a turn is in flight where something says so. For a conversation the
+driver holds, that is the driver's own answer (`taking`), which the composer's stop already follows.
+Anywhere nothing says, a live session's last open turn still reads as running, as before.
+
+**Verification.** Red first: `ConversationView`'s *says working only while a turn is in flight* and
+`WorkFrame`'s wiring test, which fails without the frame's change. Then green, with web 1201 and
+Playwright 21. On the window: a fresh chat whose ticker finished after its turn shows those words
+with no mark.
+
 ## Two messages in a row read as one: "DONESubagent finished" (2026-09-28)
 
 **Symptom.** Looking at CONSOLE2's tabs on a real chat over the protocol door, the conversation read

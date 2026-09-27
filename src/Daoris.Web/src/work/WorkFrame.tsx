@@ -548,6 +548,9 @@ export function WorkFrame({ selected, onSelect, notify, onSendBack, onAnswerAsk,
                 chat={attended.kind === 'chat'}
                 tree={attended.tree}
                 live={live}
+                // A conversation the driver answers for is working while a turn is in flight, and not
+                // under words its agent said after the turn ended (found looking at CONSOLE2).
+                turnRunning={talking && chatTurns[attended.id] ? turns.taking : undefined}
                 scroller={centre}
                 onUsage={onUsage}
               />
