@@ -3585,3 +3585,43 @@ taker's, and the connector already knows which session it speaks for (PERM2).
   service holds (D46 §4), and the service saw the take arrive.
 - **Answering in the composer.** A driven session takes no person's line (INT4i), and its process is
   gone by the time it parks.
+
+## D84 — Daoris's browser is a Chromium Daoris ships, and the person's Edge is always an option (2026-09-28)
+
+**Decision (the owner's direction, with its open parts named).** The in-app browser stops being
+rebuilt by hand on WebView2. Daoris ships a browser engine for its browser, isolated from the
+person's accounts, and **using Edge with a profile is always an option beside it** (the owner:
+*"150-250mb per install is okay, there is no big reason why not, and also use profile edge is always
+need to be an option too"*). Both are reached the way D78 already reaches a browser: a CDP endpoint
+that a plugin's server attaches to (`${browser}`), so the plugins do not change. Whatever the engine,
+Daoris keeps a sign-in across a restart itself, over CDP, because no browser measured does (BRW10;
+`docs/2026-09-28-managed-edge-evidence.md` §3–4).
+
+**Why.** Measured on Edge 154, started by Daoris on a profile of its own: a real browser has tabs,
+history, favorites, devtools and downloads of its own, and **an agent's tab is a tab the person sees**,
+where in the WebView2 window it had no window at all. But a fresh Edge profile **signs in to the
+person's Microsoft account on its own** and syncs until told not to (§5), so Edge cannot be the browser
+that is Daoris's own. It is the right answer for a person who wants their own sign-ins, which is the
+option the owner asked to keep.
+
+**The cost accepted.** Some 150–250 MB per install, and **the engine's security updates become
+Daoris's**: Chromium ships fixes every few weeks, and a browser that agents drive on signed-in sites
+must follow them. The engine is managed like a harness (D57): a pinned version, fetched from its
+maker's channel and verified, and updated deliberately.
+
+**Open, and the owner's:**
+- **Which form**: a standalone Chromium that Daoris starts as its own process (what the Edge probe
+  measured, less the account; its own tabs and history for free), or CEF embedded in Daoris's windows
+  (Daoris's own chrome, as BRW4–BRW6 built on WebView2, with deeper hooks). The recommendation is the
+  standalone one: everything measured holds for it, and it asks the least code of Daoris.
+- **Which build**: Chrome for Testing (Google's pinned builds), a Chromium snapshot, or another; each
+  differs in its banner, its media codecs and its licence. It needs a probe of its own.
+- **Daoris's own UI** stays on WebView2 for now. It is hosted by the desktop runtime sibling, which is
+  another repository, so moving it is a request to that repository's owner, never an edit from here.
+
+**Rejected.**
+- **Edge as Daoris's own browser.** The account's automatic sign-in reaches every fresh profile, and
+  only a machine policy the person owns stops it.
+- **Carrying on the WebView2 window.** Tabs, favorites and history were built (BRW4–BRW6), and each
+  further basic (find, zoom, devtools, downloads) is a browser's feature rebuilt. An agent's own tab
+  there stays invisible. The window stays until the engine lands, then goes.

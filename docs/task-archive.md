@@ -6824,3 +6824,13 @@ profile, and there is a clear.
   window read its history twice on activation. It was put right with the edit tool.
 
 CLI 500, modules 203, deployment 39.
+
+## BRW9 — the rest of a browser's basics (2026-09-28, superseded by D84)
+
+The row as filed: Find in page (`Ctrl+F`), zoom, devtools (`F12`), downloads to
+`<home>/browser/downloads` with a shelf, and the theme once WINDOW2 gives the window a channel.
+
+**Not built: superseded.** D84 makes Daoris's browser a Chromium Daoris ships (or the person's Edge),
+and a real browser has find, zoom, devtools, downloads and its own theme already. Measured on Edge 154
+(`docs/2026-09-28-managed-edge-evidence.md`). Rebuilding them on the WebView2 window, which D84
+retires once the engine lands, would be work thrown away.

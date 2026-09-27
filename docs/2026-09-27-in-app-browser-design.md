@@ -4,6 +4,12 @@
 > (deekseek harness has plugin for in app browser)"*, then *"so instead rely on things like claude
 > extension we can have our own built-in browser system (or use plugin to support this)"*. It
 > amends D65 §2, which declined *"a browser of Daoris's own"*. The decision is **D78**.
+>
+> **Amended by D84 (2026-09-28).** The window this describes, Daoris's WebView2 browser, is retired
+> once a Chromium Daoris ships lands (BRW11), with the person's Edge always an option (BRW12). What
+> stands is the seam, §3.4–§3.6: a CDP endpoint on loopback, `${browser}` in a plugin's server, and
+> the driver asking for the browser before the spawn. `docs/2026-09-28-managed-edge-evidence.md` is
+> why.
 
 ## 0. Why the first answer is not enough
 

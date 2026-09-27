@@ -54,11 +54,12 @@ branch. The owner then set two more directions, **D81**: a session works in its 
 mode, "as much as it can just like regular claude code". And **parallel sessions (PAR1)** and **a
 console tab for everything running (CONSOLE2)**. CHAIN2 landed as D82, PAR1 with it, STANDDOWN2 as
 D83, and CONSOLE2 and BRW10 (a sign-in that survives a restart) on 2026-09-28, all in the archive.
-**Next: the browser as a browser** (BRW7–BRW9, BRW4–BRW6 in the archive), which the owner put
-after the core workflow. 🔴 **Then the owner filed six rows from the first real workspace** (2026-09-28,
-*After the first real workspace*, "lets start them later"): workspace rules for how work lands, the
-default branch, cleaning up session branches, the session view, the map, and asking Daoris for help.
-Ask the owner whether they come before the browser's remaining basics.
+**Then the browser as a browser** (BRW4–BRW6 in the archive), until **D84 changed its course**
+(2026-09-28): Daoris ships a Chromium for its browser, and the person's Edge is always an option.
+**Next: the owner's two calls on D84** (the engine's form and build), then BRW11. 🔴 **The owner also
+filed six rows from the first real workspace** (2026-09-28, *After the first real workspace*, "lets
+start them later"): workspace rules for how work lands, the default branch, cleaning up session
+branches, the session view, the map, and asking Daoris for help. Ask which comes first.
 🔴 **Where the 2026-09-27 session stopped (the owner: "lets continue in next session").** The first
 goal's loop is met (FG5's sixth leg). The install runs `c3e6516`, and nothing since is on it.
 🔴 **Republishing still signs the browser out ONCE**, because the running install keeps no cookies
@@ -141,8 +142,8 @@ rather than designed.
 
 ## Backlog
 
-**Thirty-seven rows are open**: the six the first real workspace showed (WSR1–WSR3, SESS1, MAP4,
-HELP1); the in-app browser's four (BRW3, then BRW7–BRW9, the browser as a browser); the first goal's three (FG5,
+**Thirty-eight rows are open**: the six the first real workspace showed (WSR1–WSR3, SESS1, MAP4,
+HELP1); the in-app browser's five (BRW3, BRW7, BRW8, and D84's BRW11 and BRW12); the first goal's three (FG5,
 READACROSS1 the owner's, and SEM2 on a trigger); D76's held file tools;
 the eight REV3 left, WINDOW2 among them; seven leftovers (LAYOUT1, RAIL2, SURF11, CONSOLE3, FLAKE1, DEPLOY5, TEST1); two on the owner
 (TRUST2, AGT2c); and six on a trigger (see *Handover*). Every closed one is in `docs/task-archive.md`, and this file holds no
@@ -305,20 +306,33 @@ attached over CDP drives a WebView2.
 > and etc, which can help to managed the use) and also should be able to start from the daoris app
 > … start them after you complate current task (which is more important as the core workflow)"*
 
-Each is its own landing, TDD, looked at on the window. The design's §4 lists these as deliberately
-not in v1. Amend it as each lands.
+🔴 **D84 changes the course (2026-09-28): Daoris ships a Chromium for its browser, and the person's
+Edge is always an option.** `docs/2026-09-28-managed-edge-evidence.md` is what was measured: a real
+browser has these basics of its own, and an agent's tab there is one the person sees. The WebView2
+window (BRW1–BRW6, BRW10) stays until the engine lands. **The owner's calls first:** the engine's
+form (a standalone Chromium Daoris starts, recommended, or CEF in Daoris's windows) and its build.
+- [ ] **BRW11 — the engine: a Chromium Daoris ships and keeps** (D84). A probe of the builds first
+  (Chrome for Testing, a snapshot, another: banner, codecs, licence, size). Then it is managed like a
+  harness (D57): a pin, fetched from its maker's channel, verified, and updated deliberately. Daoris
+  starts it on a profile under the home with a debug port and **no account and no sync**. The endpoint
+  is `${browser}`, as today. Sign-ins are kept over CDP (the evidence's §4, BRW10's rule), and
+  favorites and history come from the engine's own. The terminal twin is `daoris browser`.
+- [ ] **BRW12 — the person's Edge, as an option** (D84). A machine setting, with its terminal twin:
+  Daoris's engine, or Edge on a profile under the home. The Edge option says what it brings: the
+  person's Microsoft account, signed in on its own (the evidence's §5), and with sync on if they want
+  their own sign-ins and extensions. Driving the person's *default* profile is not possible, since
+  Chromium refuses a debug port there, and the screen says so.
 - [ ] **BRW7 — start it from the app, and route links to it.** A door as visible as the monitor's:
-  the activity bar or the strip, not only View → *Browser*. A start page with the favorites. A
-  setting for whether links on the page (a ticket in a quest, a URL in the conversation) open here
-  or in the system browser, orca's link routing.
-- [ ] **BRW8 — who is driving.** The window says when a session is driving it, names the session,
-  and links to it, so the person knows whose hands are on the page before they type into it.
-  **Measured with BRW4 (2026-09-28):** an agent's current tab is the first page it found, not the one
-  in front, and **a tab it opens over CDP (`browser_tabs new`) has no window at all**: the person
-  cannot see what it does there. Say which tab a session is on, and keep its work where it can be seen.
-- [ ] **BRW9 — the rest of a browser's basics.** Find in page (`Ctrl+F`), zoom, devtools (`F12`),
-  downloads to `<home>/browser/downloads` with a shelf, and the theme once WINDOW2 gives the window
-  a channel.
+  the activity bar or the strip, not only View → *Browser*. A setting for whether links on the page
+  (a ticket in a quest, a URL in the conversation) open in Daoris's browser or the system browser,
+  orca's link routing. Under D84 it opens whichever browser the machine uses (BRW11, BRW12). The
+  start page is the engine's own.
+- [ ] **BRW8 — who is driving.** Say when a session is driving the browser, name the session, and
+  link to it, so the person knows whose hands are on the page before they type into it. **Measured
+  with BRW4 (2026-09-28):** an agent's current tab is the first page it found, not the one in front.
+  In a real browser its own tabs are visible (D84's evidence). Under D84 the browser window is not
+  Daoris's to draw in, so this is said in Daoris (the session, the strip), or by an extension the
+  engine loads. That choice is BRW8's.
 
 ### The first goal — a real workspace, a ticket, a task started (owner, 2026-09-27 → D77)
 

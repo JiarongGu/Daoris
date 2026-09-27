@@ -15,7 +15,10 @@ param(
     # detached session — and `MainWindowHandle` answers for exactly one of them, chosen by Windows
     # rather than by the caller. Without this the polish loop simply cannot see the monitor: the
     # capture silently photographs whichever window the OS calls main. Empty = the main window.
-    [string]$WindowTitle = ''
+    [string]$WindowTitle = '',
+    # WHICH process, by id, when two share an executable and a path cannot tell them apart: a browser
+    # a probe started beside the person's own, from the same msedge.exe (2026-09-28).
+    [int]$ProcessId = 0
 )
 
 Add-Type @'
@@ -63,6 +66,7 @@ Add-Type -AssemblyName System.Drawing
 
 $candidates = @(Get-Process $ProcessName -ErrorAction SilentlyContinue | Where-Object MainWindowHandle -ne 0)
 if ($ExePath) { $candidates = @($candidates | Where-Object { $_.Path -eq $ExePath }) }
+if ($ProcessId -gt 0) { $candidates = @(Get-Process -Id $ProcessId -ErrorAction SilentlyContinue) }
 $window = $candidates | Select-Object -First 1
 if (-not $window) {
     $hint = if ($ExePath) { " from $ExePath" } else { '' }
