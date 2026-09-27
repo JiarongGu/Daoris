@@ -103,7 +103,7 @@ public sealed class ClaudeStreamJson : IStreamMapper
                 };
                 if (kind is null || string.IsNullOrEmpty(text)) return StreamMapped.Nothing;
                 if (_message is not null) _streamed.Add(_message);
-                return new([], [new SessionEvent { Kind = kind, Text = text }]);
+                return new([], [new SessionEvent { Kind = kind, Id = _message, Text = text }]);
             default:
                 return StreamMapped.Nothing;
         }
@@ -127,11 +127,11 @@ public sealed class ClaudeStreamJson : IStreamMapper
             {
                 case "text" when Str(block, "text") is { Length: > 0 } text:
                     lines.AddRange(text.Split('\n'));
-                    if (!streamed) events.Add(new SessionEvent { Kind = SessionEventKind.Message, Text = text });
+                    if (!streamed) events.Add(new SessionEvent { Kind = SessionEventKind.Message, Id = Str(message, "id"), Text = text });
                     break;
                 case "thinking" when Str(block, "thinking") is { Length: > 0 } thought:
                     lines.Add($"· {FirstLine(thought)}");
-                    if (!streamed) events.Add(new SessionEvent { Kind = SessionEventKind.Thought, Text = thought });
+                    if (!streamed) events.Add(new SessionEvent { Kind = SessionEventKind.Thought, Id = Str(message, "id"), Text = thought });
                     break;
                 case "tool_use":
                     var call = ToolCall(block);

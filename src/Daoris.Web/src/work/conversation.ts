@@ -141,7 +141,8 @@ export type Usage = { used: number; size: number; most: number };
  * - **An ask opens a turn**, and the wire's turn end closes it. Anything before the first ask sits in
  *   a turn of its own rather than being dropped.
  * - **Chunks join**: consecutive message chunks are one message, consecutive thought chunks one
- *   thought — the wire streams words, a reader reads sentences.
+ *   thought — the wire streams words, a reader reads sentences. Two messages in a row are two, by
+ *   the ids the wire gives them.
  * - **A tool call is one card**, where it first appeared, carrying the latest of every field its
  *   updates set; an update's content replaces what came before, as the protocol says it does.
  * - **A plan is its latest entries**, in the place it first appeared in the turn.
@@ -193,8 +194,15 @@ export function toTurns(events: readonly SessionEvent[]): { turns: Turn[]; usage
       case 'thought': {
         const turn = here(key);
         const last = turn.items[turn.items.length - 1];
-        if (last && last.kind === event.kind) last.text = `${last.text ?? ''}${event.text ?? ''}`;
-        else turn.items.push({ key, kind: event.kind, at: event.at, text: event.text ?? '' });
+        // Chunks of one message join; a chunk of another message, by the ids the wire gives them,
+        // begins anew (found looking at CONSOLE2: "DONESubagent finished"). No id joins, as before.
+        const same = last && last.kind === event.kind && (!last.id || !event.id || last.id === event.id);
+        if (same) {
+          last.text = `${last.text ?? ''}${event.text ?? ''}`;
+          last.id ??= event.id;
+        } else {
+          turn.items.push({ key, kind: event.kind, at: event.at, text: event.text ?? '', ...(event.id ? { id: event.id } : {}) });
+        }
         break;
       }
       case 'tool': {

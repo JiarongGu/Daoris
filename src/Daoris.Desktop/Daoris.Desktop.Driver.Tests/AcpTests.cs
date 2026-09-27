@@ -1469,6 +1469,32 @@ public sealed class AcpTests
         Assert.Equal(SessionStream.SessionEnded, events.Last(e => e.Kind == SessionEventKind.Tool).Status);
     }
 
+    /// <summary>
+    /// Two messages the agent sent one after another are two, by the id the wire gives each message
+    /// (found looking at CONSOLE2): joined, the window read <c>DONESubagent finished</c>. Chunks of one
+    /// message still join, and the id rides the record so the page can tell them apart too.
+    /// </summary>
+    [Fact]
+    public async Task Two_messages_in_a_row_are_two_by_the_ids_the_wire_gives_them()
+    {
+        var lines = new List<string>();
+        var events = new List<SessionEvent>();
+        var agent = Turn(self =>
+        {
+            self.Push(Update("s-1", """{"sessionUpdate":"agent_message_chunk","content":{"type":"text","text":"DO"},"messageId":"msg_1"}"""));
+            self.Push(Update("s-1", """{"sessionUpdate":"agent_message_chunk","content":{"type":"text","text":"NE"},"messageId":"msg_1"}"""));
+            self.Push(Update("s-1", """{"sessionUpdate":"agent_message_chunk","content":{"type":"text","text":"Subagent finished."},"messageId":"msg_2"}"""));
+        });
+
+        await new AcpSession(agent.Incoming, agent.Outgoing, lines.Add, onEvent: events.Add)
+            .RunAsync("D:/fam/Game", "do the work", CancellationToken.None);
+
+        Assert.Contains("DONE", lines);
+        Assert.Contains("Subagent finished.", lines);
+        Assert.Equal(["msg_1", "msg_1", "msg_2"],
+            events.Where(e => e.Kind == SessionEventKind.Message).Select(e => e.Id));
+    }
+
     /// <summary>With nowhere to keep them, a child's updates are the session's, exactly as before CONSOLE2.</summary>
     [Fact]
     public async Task Without_streams_a_childs_update_is_the_sessions_as_before()

@@ -5,6 +5,28 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## Two messages in a row read as one: "DONESubagent finished" (2026-09-28)
+
+**Symptom.** Looking at CONSOLE2's tabs on a real chat over the protocol door, the conversation read
+*DONESubagent finished — README.md's first line is …* and, after the turn, *…still running on its own
+as instructed.The background ticker finished*. Each pair was two messages the agent sent, glued with
+no space.
+
+**Root cause.** The record joins consecutive message chunks into one message, because the wire streams
+words. Two messages in a row, with only an update to an existing card between them (a subagent's
+ending) or nothing the record keeps (a usage reading), are consecutive chunks too. The wire says
+which message each chunk belongs to: every `agent_message_chunk` carries a `messageId`, and Claude
+Code's `stream-json` names the message in `message_start` and on the whole `assistant` message. Both
+doors dropped it. The console joined them the same way whenever nothing else came between.
+
+**Fix.** Both doors keep the message's id on each message and thought event. The conversation joins
+chunks only within one message, and a record written before ids were kept joins as it always did.
+The protocol door's console ends its open line when a new message begins.
+
+**Verification.** Red first: `AcpTests.Two_messages_in_a_row_are_two_by_the_ids_the_wire_gives_them`,
+`ClaudeStreamJsonTests.A_messages_words_carry_its_id_streamed_or_whole`, and the conversation's
+`keeps two messages in a row apart by their ids`. Then green, with driver 799 and web 1199.
+
 ## A session's dev servers outlived it, holding two ports and a finished tree (2026-09-27)
 
 **Symptom.** FG5's verify session started its repository's dev servers (`npm run start`: Angular on

@@ -809,11 +809,13 @@ public sealed class AcpSession(
         var kind = Kind(update);
         return kind switch
         {
+            // The message a chunk belongs to rides with it: two messages in a row are two, which the
+            // chunks alone cannot say (found looking at CONSOLE2: "DONESubagent finished").
             "agent_message_chunk" => Text(update) is { } message
-                ? new SessionEvent { Kind = SessionEventKind.Message, Text = message }
+                ? new SessionEvent { Kind = SessionEventKind.Message, Id = StringField(update, "messageId"), Text = message }
                 : null,
             "agent_thought_chunk" => Text(update) is { } thought
-                ? new SessionEvent { Kind = SessionEventKind.Thought, Text = thought }
+                ? new SessionEvent { Kind = SessionEventKind.Thought, Id = StringField(update, "messageId"), Text = thought }
                 : null,
             "user_message_chunk" => Text(update) is { } said
                 ? new SessionEvent { Kind = SessionEventKind.User, Origin = "person", Text = said }
@@ -1047,6 +1049,9 @@ internal sealed class AcpConsole : IDisposable
     private readonly object _gate = new();
     private readonly StringBuilder _open = new();
     private string? _openKind;
+
+    /// <summary>The message the open line belongs to, where the wire named one.</summary>
+    private string? _openId;
     private bool _disposed;
 
     /// <summary>Each tool call's title by its id, so its ending is said by name rather than by id.</summary>
@@ -1076,8 +1081,10 @@ internal sealed class AcpConsole : IDisposable
 
             if (mapped is { Kind: SessionEventKind.Message or SessionEventKind.Thought, Text: { } words })
             {
-                if (_openKind != mapped.Kind) End();
+                // A new message ends the one before it, by the ids the wire gives them.
+                if (_openKind != mapped.Kind || (_openId is not null && mapped.Id is not null && _openId != mapped.Id)) End();
                 _openKind = mapped.Kind;
+                _openId = mapped.Id;
                 _open.Append(words);
 
                 var text = _open.ToString();
@@ -1120,6 +1127,7 @@ internal sealed class AcpConsole : IDisposable
             if (_open.Length > 0) Say(_open.ToString());
             _open.Clear();
             _openKind = null;
+            _openId = null;
         }
     }
 

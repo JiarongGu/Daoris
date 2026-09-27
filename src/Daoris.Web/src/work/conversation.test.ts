@@ -56,6 +56,24 @@ describe('toTurns', () => {
     expect(turns[0]!.ended).toBe('end_turn');
   });
 
+  /**
+   * Two messages in a row are two, by the ids the wire gives them: joined, the window read
+   * `DONESubagent finished` (found looking at CONSOLE2). A record from before ids were kept joins as it
+   * always did.
+   */
+  it('keeps two messages in a row apart by their ids, and joins chunks with no id as before', () => {
+    const { turns } = toTurns([
+      e(1, { kind: 'user', origin: 'person', text: 'do it' }),
+      e(2, { kind: 'message', id: 'msg_1', text: 'DO' }),
+      e(3, { kind: 'message', id: 'msg_1', text: 'NE' }),
+      e(4, { kind: 'message', id: 'msg_2', text: 'Subagent finished.' }),
+      e(5, { kind: 'message', text: ' More' }),
+      e(6, { kind: 'message', text: ' words.' }),
+    ]);
+
+    expect(turns[0]!.items.map((b) => b.text)).toEqual(['DONE', 'Subagent finished. More words.']);
+  });
+
   /** CONV4c: what the person attached travels with what they asked — names only, as the record keeps them. */
   it('keeps the names of what the person attached with what they asked', () => {
     const { turns } = toTurns([

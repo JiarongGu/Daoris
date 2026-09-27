@@ -48,6 +48,21 @@ public sealed class ClaudeStreamJsonTests
     }
 
     /// <summary>
+    /// Each message's words carry the message's id, streamed or whole, so two messages in a row are two
+    /// on the page as well (found looking at CONSOLE2 on the protocol door, which had the same gap).
+    /// </summary>
+    [Fact]
+    public void A_messages_words_carry_its_id_streamed_or_whole()
+    {
+        const string other = """{"type":"assistant","message":{"id":"msg_2","content":[{"type":"text","text":"And then."}]}}""";
+
+        var (_, events, _) = Map(Init, Start, Delta1, Delta2, Whole, other, Result);
+
+        Assert.Equal(["msg_1", "msg_1", "msg_2"],
+            events.Where(e => e.Kind == SessionEventKind.Message).Select(e => e.Id));
+    }
+
+    /// <summary>
     /// REV3: "something the wire said that this build has no kind for — kept, never dropped" held for
     /// frames and not for a message's BLOCKS: a redacted thought, a server tool or an image yielded no
     /// line and no event. The protocol door keeps its unknowns raw; so does this one now.
