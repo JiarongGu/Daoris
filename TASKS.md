@@ -350,6 +350,14 @@ is behind a sign-in. FG1–FG4 are in the archive. **INT6 is reshaped as FG5.**
   Sustainable Beef org. The apply now waits on such an account. The card had quoted only the end of
   its 2,500-character message, and a heredoc'd command's title had printed as its words. Both are
   fixed: last words keep 4,000 characters, and a tool is named on one line.
+  **The sixth leg: the chain ran end to end.** The owner signed in as a site admin and the session was
+  answered. The dev apply ran through the generator, dev only: roles and a read-only GET checked first,
+  dev brought in line with the committed generator, and the re-read byte-equal. The chain's verify step
+  followed on its own, from that step's branch (D82). It verified item by item on a local run against
+  the dev backend, since dev's deployed bundle predates the merge, and **found a real defect**. The
+  config's camera ids are slugs, and the API takes GUIDs, so a note naming a camera cannot be saved. It
+  proved that by the same payload with GUIDs, and did not fix it. It also noted that the dashboard view
+  carries no note chip, which is a config decision. Both are the owner's. The first goal's loop is met.
 - [ ] **READACROSS1 — may a session READ another repository?** (the owner's call; FG5, 2026-09-27).
   Under D81's `auto` mode the apply session read the backend's controller, its roles and its
   service wiring to diagnose a 403, cited them by file and line, and wrote nothing there. D79 says
