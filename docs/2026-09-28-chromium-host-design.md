@@ -35,19 +35,17 @@ server (D78 §3.4–§3.6). The person's Edge stays an option (BRW12).
 **The cost accepted.** The engine's security updates become Daoris's for the page as well as the
 browser. Windows updated WebView2, and nothing updates an engine Daoris ships except a release of
 Daoris. An embedded engine is pinned by the build, so D84's *"managed like a harness, fetched from its
-maker's channel"* does not apply to it: it updates when Daoris releases. And the host code WebView2
-gave through Shenora (initialization, navigation, the bridge on `chrome.webview`) is Daoris's to write
-until Shenora takes it in (§3). **A browser's basics may come back as well.** D84 retired BRW9 (find,
+maker's channel"* does not apply to it: it updates when Daoris releases. The host code WebView2 gave
+through Shenora is Shenora's to give again (§3), so Daoris's move waits on Shenora's release. **A browser's basics may come back as well.** D84 retired BRW9 (find,
 zoom, devtools, downloads) because a separate browser has its own. If CHR3 draws Daoris's own chrome
 around the control, they are Daoris's to build again. The engine's own window has them (§4).
 
 ## 2. The shape
 
-1. **Built here, on Shenora's public, engine-neutral surface.** The host bridge is
-   `IpcHostBridge.HandleIncomingAsync` with a `NotificationPump`. Both of Shenora's shells (WebView2 and
-   mobile) already wrap them. On the page, `ShenoraBridge` takes a `transport`. So a Chromium host is a
-   control, a bridge over `IpcHostBridge`, and a page transport. No Shenora type is forked or
-   patched, and nothing in Shenora is edited from here (D32).
+1. **Shenora builds the host, and Daoris takes it** (amended the same day, §3). The seams it builds on
+   are the ones this section first named for Daoris: `IpcHostBridge.HandleIncomingAsync` with a
+   `NotificationPump` on the host, which both of Shenora's shells already wrap, and `ShenoraBridge`'s
+   `transport` on the page. Nothing in Shenora is edited from here (D32).
 2. **The same contract a window has today.** It initializes, navigates to the host's URL, shows the
    splash until the page loads, and says what failed when it does not. The window commands get a
    `CoordinateSpace` for the new control, per monitor. A secondary window keeps its own environment
@@ -64,8 +62,8 @@ around the control, they are Daoris's to build again. The engine's own window ha
 
 ## 3. The request to Shenora
 
-Shenora grows by harvest (its D15): something proven in an application is generalized and moved in.
-So Daoris builds the host first and Shenora takes it in once it has proved itself. The owner said to
+*As filed:* Shenora grows by harvest (its D15), so Daoris would build the host first and Shenora take
+it in once it had proved itself. Its answer, below, changed that. The owner said to
 file the request in Shenora's own backlog (2026-09-28, *"you can file the TASKS.md"*), and it was filed
 there as one new entry, uncommitted, with nothing else in that repository touched. It asks for:
 
@@ -77,6 +75,13 @@ It leaves two questions to Shenora: where the engine's bytes come from (its D51,
 and their licences), and making the unsafe debug-port composition impossible. CHR1 answered the port
 question (per process, so the page is in reach), and the answer went to the owner for Shenora's
 entry, not into Shenora from here.
+
+**Shenora's answer (the owner, in Shenora's session, 2026-09-28, as its backlog records it).** The
+kit builds the host now, as a package of its own (`Shenora.Windows.Chromium` on CefSharp), with the
+engine's bytes arriving through its upstream package and never inside a kit package. The first
+adopter takes it *instead of writing its own host*, and a cross-platform desktop shell follows. So
+Daoris does not build the host: CHR2 waits on that package. Shenora's entry says to read CHR1's
+evidence rather than repeat it, which leaves the kit's own probe to what depends on the kit's frame.
 
 ## 4. Open
 
@@ -98,6 +103,6 @@ entry, not into Shenora from here.
 | Item | What lands | Proven by |
 |---|---|---|
 | **CHR1** ✓ | A scratch probe: an embedded Chromium in a WinForms window. It answered whether the debug port reaches every page in the process (it does); whether a tab a CDP client opens reaches the app (no: it gets an engine window); whether a session cookie survives a restart with the engine's own setting (yes); Playwright MCP attached and driving (yes, except opening a tab); the page-host round trip (0.2–0.3 ms median); and size, banner, codecs and licence | `docs/2026-09-28-chromium-embedding-evidence.md`, 2026-09-28 |
-| **CHR2** | The host: the control, the bridge over `IpcHostBridge`, the page transport, the coordinate space. The main and secondary windows move to it. The reply goes through the control, never the message's frame (the evidence's §6) | module tests for the pure parts, the web suite on the page transport, and a look at the window |
+| **CHR2** | The main and secondary windows move to `Shenora.Windows.Chromium` once it is released (§3). Daoris's part is the move: the package, the page transport, the splash and the trouble message on the new host, and a page process with no port | the web suite on the page transport, the deployment rehearsal, and a look at the window |
 | **CHR3** | The browser on the same engine, in a process of its own with its global request context and `PersistSessionCookies`, in the form the owner picks (§4). CDP on that process only. Supersedes BRW11 | a stub session handed `${browser}`, and an agent's tab seen by the person |
 | **CHR4** | The install carries it: `publish:desktop` places the runtime, and the deployment rehearsal starts the published shell on it and asserts which engine answered. The WebView2 path and its refusal go | `npm run rehearse:deploy` |

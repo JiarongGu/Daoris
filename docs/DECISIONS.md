@@ -3665,8 +3665,8 @@ as one uncommitted entry. `docs/2026-09-28-chromium-host-design.md` is the contr
 embedded engine's debug port may be one setting per process. If so, the browser runs in a process of
 its own, and that is CHR1's first question.
 
-**Open.** The embedding library (CefSharp is the candidate; CHR1 measures it), and with it the
-Chromium build and its media codecs.
+**Open** (answered by CHR1, below). The embedding library (CefSharp is the candidate; CHR1 measures
+it), and with it the Chromium build and its media codecs.
 
 **Rejected.**
 - **A standalone Chromium Daoris starts** (D84's recommendation). It gives a browser for free, but the
@@ -3675,3 +3675,13 @@ Chromium build and its media codecs.
   its model, and the owner said to start here.
 - **Editing Shenora from here** (D32). The one entry in its backlog is the request, written at the
   owner's say-so, and Shenora's own session or owner commits or declines it.
+
+**Amended the same day, by Shenora's answer** (the owner, in Shenora's session, as its backlog
+records it). *The kit builds it now*, as a package of its own (`Shenora.Windows.Chromium` on
+CefSharp), with the engine's bytes arriving through its upstream package. The first adopter *takes it
+instead of writing its own host*. So *built here first* is withdrawn, the rejection of *waiting for
+Shenora* no longer holds, and CHR2 waits on that release. **Measured by CHR1**
+(`docs/2026-09-28-chromium-embedding-evidence.md`): the embedding library did everything asked; the
+debug port is one setting per process and reached the page's bridge, so the browser runs in a process
+of its own; and the build has no H.264, AAC or HEVC. The rest stands. The browser's form, Daoris's
+chrome or the engine's own window, is CHR3's and the owner's.

@@ -58,8 +58,9 @@ D83, and CONSOLE2 and BRW10 (a sign-in that survives a restart) on 2026-09-28, a
 (2026-09-28): Daoris ships a Chromium for its browser, and the person's Edge is always an option.
 **Then D85 widened it** (2026-09-28): Daoris's own page moves to that Chromium too, embedded under
 Shenora's frame, built here first and asked of Shenora for the harvest (its backlog carries the
-request). CHR1, the probe, landed. **Next: CHR2, the host, and the owner's call on CHR3's form**
-(`docs/2026-09-28-chromium-host-design.md` §4). 🔴 **The owner also
+request). CHR1, the probe, landed. Shenora's answer is that the kit builds the host, so **CHR2 waits
+on its release, and next is the owner's call on CHR3's form**
+(`docs/2026-09-28-chromium-host-design.md` §3–§4). 🔴 **The owner also
 filed six rows from the first real workspace** (2026-09-28, *After the first real workspace*, "lets
 start them later"): workspace rules for how work lands, the default branch, cleaning up session
 branches, the session view, the map, and asking Daoris for help. Ask which comes first.
@@ -313,8 +314,7 @@ attached over CDP drives a WebView2.
 Edge is always an option.** `docs/2026-09-28-managed-edge-evidence.md` is what was measured: a real
 browser has these basics of its own, and an agent's tab there is one the person sees. The WebView2
 window (BRW1–BRW6, BRW10) stays until the engine lands. **D85 answered the engine's form**
-(2026-09-28): embedded, under Daoris's own windows, and the page's engine too. The engine is CHR3 now
-(below), and BRW11 is in the archive as superseded.
+(2026-09-28): embedded, and the page's engine too. CHR3 (below) supersedes BRW11.
 - [ ] **BRW12 — the person's Edge, as an option** (D84). A machine setting, with its terminal twin:
   Daoris's engine, or Edge on a profile under the home. The Edge option says what it brings: the
   person's Microsoft account, signed in on its own (the evidence's §5), and with sync on if they want
@@ -341,7 +341,8 @@ window (BRW1–BRW6, BRW10) stays until the engine lands. **D85 answered the eng
 `docs/2026-09-28-chromium-host-design.md` is the contract, and its §5 carries each row's detail.
 Shenora's backlog carries the request (filed 2026-09-28 at the owner's say-so, uncommitted there).
 CHR1 is in the archive: **the browser runs in a process of its own** (`docs/2026-09-28-chromium-embedding-evidence.md`).
-- [ ] **CHR2 — the host**, on Shenora's `IpcHostBridge`. The main and secondary windows move to it.
+- [ ] **CHR2 — move onto Shenora's Chromium host** (`Shenora.Windows.Chromium`, which the kit builds:
+  the contract's §3). **Waits on its release.**
 - [ ] **CHR3 — the browser on the same engine** (supersedes BRW11). **The owner's call first:** Daoris's
   own chrome around the control (BRW9 back), or the engine's own Chromium window (the contract's §4).
 - [ ] **CHR4 — the install carries it**, and the WebView2 path goes.
