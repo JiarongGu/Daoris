@@ -21,8 +21,8 @@ lists.
 
 ## State
 
-**Counts, and this is their one home:** sixteen commands, **495 CLI tests, 528 service, 799 driver,
-191 desktop modules, 80 devkit, 1201 web unit, 21 Playwright**, 66/66 release rehearsal, **289/289
+**Counts, and this is their one home:** sixteen commands, **500 CLI tests, 528 service, 799 driver,
+203 desktop modules, 80 devkit, 1201 web unit, 21 Playwright**, 66/66 release rehearsal, **289/289
 family rehearsal** (it names its own phases when you run it), **39/39 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge
 documents, 5 skills, 7 packs. The always-loaded core is **22,492 of 26,000 bytes** — a span in
@@ -54,7 +54,7 @@ branch. The owner then set two more directions, **D81**: a session works in its 
 mode, "as much as it can just like regular claude code". And **parallel sessions (PAR1)** and **a
 console tab for everything running (CONSOLE2)**. CHAIN2 landed as D82, PAR1 with it, STANDDOWN2 as
 D83, and CONSOLE2 and BRW10 (a sign-in that survives a restart) on 2026-09-28, all in the archive.
-**Next: the browser as a browser** (BRW6–BRW9, BRW4 and BRW5 in the archive), which the owner put
+**Next: the browser as a browser** (BRW7–BRW9, BRW4–BRW6 in the archive), which the owner put
 after the core workflow. 🔴 **Then the owner filed six rows from the first real workspace** (2026-09-28,
 *After the first real workspace*, "lets start them later"): workspace rules for how work lands, the
 default branch, cleaning up session branches, the session view, the map, and asking Daoris for help.
@@ -141,8 +141,8 @@ rather than designed.
 
 ## Backlog
 
-**Thirty-eight rows are open**: the six the first real workspace showed (WSR1–WSR3, SESS1, MAP4,
-HELP1); the in-app browser's five (BRW3, then BRW6–BRW9, the browser as a browser); the first goal's three (FG5,
+**Thirty-seven rows are open**: the six the first real workspace showed (WSR1–WSR3, SESS1, MAP4,
+HELP1); the in-app browser's four (BRW3, then BRW7–BRW9, the browser as a browser); the first goal's three (FG5,
 READACROSS1 the owner's, and SEM2 on a trigger); D76's held file tools;
 the eight REV3 left, WINDOW2 among them; seven leftovers (LAYOUT1, RAIL2, SURF11, CONSOLE3, FLAKE1, DEPLOY5, TEST1); two on the owner
 (TRUST2, AGT2c); and six on a trigger (see *Handover*). Every closed one is in `docs/task-archive.md`, and this file holds no
@@ -307,8 +307,6 @@ attached over CDP drives a WebView2.
 
 Each is its own landing, TDD, looked at on the window. The design's §4 lists these as deliberately
 not in v1. Amend it as each lands.
-- [ ] **BRW6 — history and completion.** The address bar completes from history and favorites.
-  History stays in the profile, and there is a clear.
 - [ ] **BRW7 — start it from the app, and route links to it.** A door as visible as the monitor's:
   the activity bar or the strip, not only View → *Browser*. A start page with the favorites. A
   setting for whether links on the page (a ticket in a quest, a URL in the conversation) open here

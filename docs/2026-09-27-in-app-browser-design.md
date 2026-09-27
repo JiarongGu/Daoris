@@ -106,6 +106,31 @@ test table the other matches.
 7. The two sides were compared on ASCII addresses. A host outside ASCII was not, and may be written in
    two forms.
 
+## 3b. History and completion (BRW6, 2026-09-28)
+
+WebView2 keeps a history of its own in the profile and offers no way to read it, so the window
+records each page a tab finishes loading in `<home>/browser/history.json`, on this machine only. The
+address bar completes from that and the favorites. **Reading and clearing are a twin** (the CLI's
+`daoris browser history list|clear` and `BrowserHistory.cs`, each with the same reading table);
+recording a visit and completing are the window's alone.
+
+```json
+{ "visits": [ { "url": "https://site.example/board", "title": "Board", "last": "2026-09-28T09:00:00Z", "count": 3 } ] }
+```
+
+1. **No file is no history**, and a file that cannot be read shows none and is not written over, as
+   §3a says for favorites.
+2. **A row** follows the favorites' address rule and title rule; one that fails is skipped. `last` is
+   a time, the earliest there is when it is not one; `count` is a positive whole number, once when it
+   is not one. **Most recent first.**
+3. **A visit** to a page that is there counts it again and moves it forward; a new one is added. Past
+   500 pages the least recent go.
+4. **Clearing** empties the list and keeps what an editor has no field for. The window also asks
+   WebView2 to forget its own history for the profile. Sign-ins and favorites stay.
+5. **A completion** is a favorite first, then history, each page once, matched in its address or its
+   title whatever the case. A host that starts with what was typed comes before one that only contains
+   it, and history then goes by how often, then how lately. A typed scheme alone matches nothing.
+
 ## 4. What is deliberately not in it
 
 - **Downloads, devtools, history UI.** v1 was one page an agent and a person share; tabs came with

@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
 import {
-  addFavorite, commandBrowser, favoriteAddress, favoritesFile, readFavorites, removeFavorite,
+  addFavorite, clearHistory, commandBrowser, favoriteAddress, favoritesFile, historyFile, readFavorites,
+  readHistory, removeFavorite,
 } from '../src/browser.ts';
 import { captureError, makeFixture } from './_fixture.ts';
 
@@ -148,6 +149,70 @@ test('an editor keeps what it has no field for', () => {
   fx.cleanup();
 });
 
+// BRW6: the history's reading and clearing — the same table as `BrowserHistoryTests.cs`. Recording a
+// visit is the window's alone.
+
+function writeHistory(home: string, json: string): void {
+  mkdirSync(dirname(historyFile(home)), { recursive: true });
+  writeFileSync(historyFile(home), json, 'utf8');
+}
+
+test('no history file is no history', () => {
+  const fx = makeFixture('history-none');
+  assert.deepEqual(readHistory(fx.root), { visits: [], problem: null });
+  fx.cleanup();
+});
+
+test('visits come back most recent first with a title or the host', () => {
+  const fx = makeFixture('history-order');
+  writeHistory(fx.root, JSON.stringify({ visits: [
+    { url: 'https://site.example/board', title: 'Board', last: '2026-09-28T09:00:00Z', count: 3 },
+    { url: 'javascript:alert(1)', last: '2026-09-28T12:00:00Z', count: 1 },
+    { url: 'http://localhost:4200/', last: '2026-09-28T10:00:00Z' },
+    { url: 'https://old.example/', title: 'Old', last: 'not a time', count: 9 },
+  ] }));
+  assert.deepEqual(readHistory(fx.root).visits, [
+    { url: 'http://localhost:4200/', title: 'localhost', last: '2026-09-28T10:00:00.000Z', count: 1 },
+    { url: 'https://site.example/board', title: 'Board', last: '2026-09-28T09:00:00.000Z', count: 3 },
+    { url: 'https://old.example/', title: 'Old', last: null, count: 9 },
+  ]);
+  fx.cleanup();
+});
+
+test('a history file that cannot be read shows none and is not cleared over', () => {
+  for (const content of ['not json', '{ "visits": "nope" }']) {
+    const fx = makeFixture('history-unreadable');
+    writeHistory(fx.root, content);
+    assert.ok(readHistory(fx.root).problem);
+    assert.ok(captureError(() => clearHistory(fx.root)));
+    assert.equal(readFileSync(historyFile(fx.root), 'utf8'), content);
+    fx.cleanup();
+  }
+});
+
+test('clearing empties the history and keeps what it has no field for', () => {
+  const fx = makeFixture('history-clear');
+  writeHistory(fx.root, JSON.stringify({ version: 2, visits: [{ url: 'https://site.example/', last: '2026-09-28T09:00:00Z' }] }));
+  clearHistory(fx.root);
+  const file = JSON.parse(readFileSync(historyFile(fx.root), 'utf8'));
+  assert.equal(file.version, 2);
+  assert.deepEqual(file.visits, []);
+  assert.deepEqual(readHistory(fx.root).visits, []);
+  fx.cleanup();
+});
+
+test('`browser history` lists the most recent and clears', () => {
+  const fx = makeFixture('history-command');
+  assert.match(run(['history', 'list'], fx.root).out, /no history yet/);
+  writeHistory(fx.root, JSON.stringify({ visits: [
+    { url: 'https://site.example/board', title: 'Board', last: '2026-09-28T09:00:00Z', count: 3 },
+  ] }));
+  assert.match(run(['history', 'list'], fx.root).out, /Board\s+https:\/\/site\.example\/board\s+3×/);
+  assert.match(run(['history', 'clear'], fx.root).out, /forgot 1 page/);
+  assert.match(run(['history', 'list'], fx.root).out, /no history yet/);
+  fx.cleanup();
+});
+
 // The command itself.
 
 test('`browser favorite` lists, adds and removes, in sentences', () => {
@@ -167,9 +232,9 @@ test('`browser favorite` with no home refuses, naming the variable (D63)', () =>
   assert.match(String(error?.message), /DAORIS_HOME/);
 });
 
-test('`browser` knows only `favorite`, and says what it takes', () => {
+test('`browser` knows `favorite` and `history`, and says what it takes', () => {
   const fx = makeFixture('favorites-usage');
-  assert.match(String(captureError(() => run(['tabs'], fx.root))?.message), /browser favorite/);
+  assert.match(String(captureError(() => run(['tabs'], fx.root))?.message), /browser favorite.*browser history/s);
   assert.match(String(captureError(() => run(['favorite', 'add'], fx.root))?.message), /needs an address/);
   fx.cleanup();
 });

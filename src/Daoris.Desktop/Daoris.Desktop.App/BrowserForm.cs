@@ -78,6 +78,17 @@ public sealed class BrowserForm : OptimizedForm
     private ContextMenuStrip? _favoritesMenu;
     private IReadOnlyList<Favorite> _favorites = [];
 
+    /// <summary>
+    /// The history (BRW6): each page a tab finishes loading, kept under the home, and the completions
+    /// the address bar offers from it and the favorites.
+    /// </summary>
+    private readonly ListBox _suggestions;
+    private IReadOnlyList<Suggestion> _offered = [];
+    private IReadOnlyList<Visit> _visits = [];
+
+    /// <summary>The address is being set by the window, not typed: no completions for that.</summary>
+    private bool _settingAddress;
+
     /// <summary>Completes once the browser listens on its port — what a server's attach waits on.</summary>
     public Task Ready => _ready.Task;
 
@@ -155,12 +166,48 @@ public sealed class BrowserForm : OptimizedForm
             // An empty bar says what it is for: about:blank and data: pages report no address.
             PlaceholderText = "Type an address. What you sign in to here, sessions use.",
         };
+        // The completions (BRW6): favorites first, then history, under the box as the person types.
+        // Up and Down choose one, Enter goes to it (or to what was typed), Escape closes them.
+        _suggestions = new ListBox
+        {
+            Visible = false,
+            BorderStyle = BorderStyle.FixedSingle,
+            BackColor = palette.Surface,
+            ForeColor = palette.Ink,
+            Font = new Font("Segoe UI", 10f),
+            IntegralHeight = true,
+            TabStop = false,
+            AccessibleName = "Suggestions",
+        };
+        _suggestions.MouseDown += (_, _) =>
+        {
+            if (_suggestions.IndexFromPoint(_suggestions.PointToClient(Cursor.Position)) is var at and >= 0) Go(Suggested(at));
+        };
+        _address.TextChanged += (_, _) => { if (!_settingAddress && _address.Focused) Complete(); };
+        _address.Leave += (_, _) => BeginInvoke(() => { if (!_suggestions.Focused) HideSuggestions(); });
         _address.KeyDown += (_, key) =>
         {
-            if (key.KeyCode != Keys.Enter) return;
-            key.SuppressKeyPress = true;
-            // A page, or nothing: the bar is for web pages, and what is not one stays typed (D78).
-            if (InAppBrowser.Address(_address.Text) is { } page && Front?.CoreWebView2 is { } core) core.Navigate(page);
+            switch (key.KeyCode)
+            {
+                case Keys.Down when _suggestions.Visible:
+                    _suggestions.SelectedIndex = Math.Min(_suggestions.SelectedIndex + 1, _suggestions.Items.Count - 1);
+                    key.SuppressKeyPress = true;
+                    return;
+                case Keys.Up when _suggestions.Visible:
+                    _suggestions.SelectedIndex = Math.Max(_suggestions.SelectedIndex - 1, -1);
+                    key.SuppressKeyPress = true;
+                    return;
+                case Keys.Escape when _suggestions.Visible:
+                    HideSuggestions();
+                    key.SuppressKeyPress = true;
+                    return;
+                case Keys.Enter:
+                    key.SuppressKeyPress = true;
+                    // A chosen completion, or what was typed: a page, or nothing, since the bar is for web
+                    // pages and what is not one stays typed (D78).
+                    Go(_suggestions.Visible && _suggestions.SelectedIndex >= 0 ? Suggested(_suggestions.SelectedIndex) : _address.Text);
+                    return;
+            }
         };
         bar.Controls.Add(_address, 3, 0);
 
@@ -168,8 +215,8 @@ public sealed class BrowserForm : OptimizedForm
         _star = Glyph("", "Keep this page as a favorite", palette, ToggleFavorite);
         _star.Margin = new Padding(4, 0, 0, 0);
         bar.Controls.Add(_star, 4, 0);
-        _favoritesButton = Glyph("", "Favorites", palette, ShowFavorites);
-        _tips.SetToolTip(_favoritesButton, "Favorites");
+        _favoritesButton = Glyph("", "Favorites and history", palette, ShowFavorites);
+        _tips.SetToolTip(_favoritesButton, "Favorites and history");
         bar.Controls.Add(_favoritesButton, 5, 0);
 
         _favoritesBar = new FlowLayoutPanel
@@ -211,10 +258,17 @@ public sealed class BrowserForm : OptimizedForm
         Controls.Add(_favoritesBar);
         Controls.Add(bar);
         Controls.Add(_strip);
+        // Over the page, never docked: a completion list that pushed the page down would move what the
+        // person is reading every time they type.
+        Controls.Add(_suggestions);
 
         Load += async (_, _) => await BringUpAsync();
         // Another door may have changed them while the window was behind (D50).
-        Activated += (_, _) => ReadFavorites();
+        Activated += (_, _) =>
+        {
+            ReadFavorites();
+            ReadHistory();
+        };
     }
 
     /// <summary>Brought up by a session, it does not take the keyboard from the person.</summary>
@@ -326,6 +380,7 @@ public sealed class BrowserForm : OptimizedForm
             _keeping.Start();
 
             ReadFavorites();
+            ReadHistory();
 
             _ready.TrySetResult();
         }
@@ -407,11 +462,13 @@ public sealed class BrowserForm : OptimizedForm
         core.SourceChanged += (_, _) => Named(id, core);
         core.DocumentTitleChanged += (_, _) => Named(id, core);
         core.WindowCloseRequested += (_, _) => CloseTab(id);
-        core.NavigationCompleted += (_, _) =>
+        core.NavigationCompleted += (_, done) =>
         {
             if (core.Source.StartsWith("http", StringComparison.OrdinalIgnoreCase)) _noticeStrip.Visible = false;
             // Kept after every page, which is where a sign-in ends (BRW10).
             Keep();
+            // A page that loaded is history (BRW6); one that failed is not somewhere the person went.
+            if (done.IsSuccess) Record(core.Source, core.DocumentTitle);
         };
     }
 
@@ -421,7 +478,7 @@ public sealed class BrowserForm : OptimizedForm
         var name = BrowserTabs.Name(core.DocumentTitle, core.Source);
         if (_chips.TryGetValue(id, out var chip)) chip.Name(name);
         if (_tabs.Front != id) return;
-        _address.Text = core.Source == "about:blank" ? string.Empty : core.Source;
+        SetAddress(core.Source == "about:blank" ? string.Empty : core.Source);
         Text = name == "New tab" ? WindowTitle : $"{WindowTitle} · {name}";
         StarState();
     }
@@ -436,7 +493,7 @@ public sealed class BrowserForm : OptimizedForm
         if (_pages[front].CoreWebView2 is { } core) Named(front, core);
         else
         {
-            _address.Text = string.Empty;
+            SetAddress(string.Empty);
             Text = WindowTitle;
         }
     }
@@ -485,6 +542,106 @@ public sealed class BrowserForm : OptimizedForm
         var room = _strip.ClientSize.Width - _strip.Padding.Horizontal - _newTab.Width - 8;
         var each = Math.Clamp(room / _chips.Count, Tab.Narrowest(Font), Tab.Widest(Font));
         foreach (var chip in _chips.Values) chip.Width(each);
+    }
+
+    /// <summary>The address as the window sets it: a page's own, which offers no completions.</summary>
+    private void SetAddress(string text)
+    {
+        _settingAddress = true;
+        try
+        {
+            _address.Text = text;
+        }
+        finally
+        {
+            _settingAddress = false;
+        }
+    }
+
+    /// <summary>Go to a page in the tab in front — a web page, or nowhere (D78).</summary>
+    private void Go(string typed)
+    {
+        HideSuggestions();
+        if (InAppBrowser.Address(typed) is { } page && Front?.CoreWebView2 is { } core) core.Navigate(page);
+    }
+
+    private string Suggested(int at) => _offered[at].Url;
+
+    /// <summary>What the bar offers for what is typed: shown under the box, the first not chosen.</summary>
+    private void Complete()
+    {
+        _offered = BrowserHistory.Suggest(_address.Text, _favorites, _visits, limit: 8);
+        if (_offered.Count == 0)
+        {
+            HideSuggestions();
+            return;
+        }
+
+        _suggestions.BeginUpdate();
+        _suggestions.Items.Clear();
+        foreach (var offer in _offered) _suggestions.Items.Add($"{(offer.Favorite ? "★ " : "")}{offer.Title}  —  {offer.Url}");
+        _suggestions.SelectedIndex = -1;
+        _suggestions.EndUpdate();
+
+        // Under the address box, as wide as it, in the form's own coordinates.
+        var under = PointToClient(_address.Parent!.PointToScreen(new Point(_address.Left, _address.Bottom)));
+        _suggestions.SetBounds(under.X, under.Y + 1, _address.Width,
+            _suggestions.ItemHeight * _offered.Count + SystemInformation.BorderSize.Height * 2 + 2);
+        _suggestions.Visible = true;
+        _suggestions.BringToFront();
+    }
+
+    private void HideSuggestions()
+    {
+        _suggestions.Visible = false;
+        _offered = [];
+    }
+
+    /// <summary>The history again, from the file: what the completions and the menu read.</summary>
+    private void ReadHistory()
+    {
+        var read = BrowserHistory.Read(_home);
+        _visits = read.Visits;
+        if (read.Problem is { } problem) Say($"History: {problem}.");
+    }
+
+    /// <summary>
+    /// A page that loaded, into the history. A file that could not be read is left alone, and says so
+    /// once; the page still loaded.
+    /// </summary>
+    private void Record(string source, string? title)
+    {
+        try
+        {
+            if (BrowserHistory.Visit(_home, source, string.IsNullOrWhiteSpace(title) ? null : title, DateTimeOffset.UtcNow)) ReadHistory();
+        }
+        catch (Exception error) when (error is InvalidOperationException or IOException or UnauthorizedAccessException)
+        {
+            if (!_noticeStrip.Visible) Say(error.Message);
+        }
+    }
+
+    /// <summary>
+    /// Forget the history: Daoris's own, and WebView2's for this profile, which a page can read back
+    /// through visited-link colouring. Sign-ins and favorites stay.
+    /// </summary>
+    private async Task ClearHistoryAsync()
+    {
+        try
+        {
+            BrowserHistory.Clear(_home);
+            if (Front?.CoreWebView2 is { } core)
+            {
+                await core.Profile.ClearBrowsingDataAsync(CoreWebView2BrowsingDataKinds.BrowsingHistory);
+            }
+
+            ReadHistory();
+            Say("The history is forgotten. Sign-ins and favorites are kept.");
+        }
+        catch (Exception error) when (error is InvalidOperationException or IOException or UnauthorizedAccessException)
+        {
+            Say(error.Message);
+        }
     }
 
     /// <summary>A sentence under the bar, until the person loads a page.</summary>
@@ -611,6 +768,21 @@ public sealed class BrowserForm : OptimizedForm
             item.Click += (_, _) => Front?.CoreWebView2?.Navigate(favorite.Url);
             _favoritesMenu.Items.Add(item);
         }
+
+        // The most recent pages (BRW6), then the one way to forget them all.
+        ReadHistory();
+        _favoritesMenu.Items.Add(new ToolStripSeparator());
+        _favoritesMenu.Items.Add(new ToolStripMenuItem("Recent") { Enabled = false });
+        foreach (var visit in _visits.Take(10))
+        {
+            var item = new ToolStripMenuItem(visit.Title) { ToolTipText = visit.Url };
+            item.Click += (_, _) => Front?.CoreWebView2?.Navigate(visit.Url);
+            _favoritesMenu.Items.Add(item);
+        }
+
+        var clear = new ToolStripMenuItem("Clear history") { Enabled = _visits.Count > 0, ToolTipText = "Sign-ins and favorites are kept" };
+        clear.Click += async (_, _) => await ClearHistoryAsync();
+        _favoritesMenu.Items.Add(clear);
 
         _favoritesMenu.Show(_favoritesButton, new Point(0, _favoritesButton.Height));
     }

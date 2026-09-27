@@ -106,12 +106,14 @@ const USAGE = `daoris <command> [options]
                          add <folder>              copy one in under its id
                          remove <id>               take it out; what it kept stays
                          enable|disable <id>       a row, never a rename
-  browser [verb]       the in-app browser's favorites ($DAORIS_HOME/browser/favorites.json),
-                       the same the window's star keeps:
+  browser [verb]       the in-app browser's favorites and history ($DAORIS_HOME/browser/),
+                       the same files the window keeps:
                          favorite list             what is kept, in the bar's order
                          favorite add <address> [--title T]
                                                    keep a page
                          favorite remove <address> stop keeping it
+                         history list [--limit N]  the pages it loaded, most recent first
+                         history clear             forget them all
 
   connect, retire and import are the MANAGEMENT commands: opt-in, they talk to a
   service, and no gate ever runs them. remote, agent, driver, plugin and browser are

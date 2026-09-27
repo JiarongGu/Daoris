@@ -6800,3 +6800,27 @@ add|list|remove`, D50). They are the person's, never a session's.
   twice. The bar is now replaced in one step, and a read inside a read is dropped.
 
 CLI 495, modules 191, deployment 39.
+
+## BRW6 — history and completion (2026-09-28)
+
+The row as filed: The address bar completes from history and favorites. History stays in the
+profile, and there is a clear.
+
+- **The history is Daoris's own record**, because WebView2 keeps one in the profile and offers no
+  way to read it. Each page a tab finishes loading goes into `<home>/browser/history.json`, on this
+  machine only: counted again when it is there, most recent first, and at most 500 pages. The rules
+  are the in-app browser design's §3b. Reading and clearing are a twin with the CLI's `daoris browser
+  history list|clear` (the same reading table in `BrowserHistory.cs` and `browser.ts`). Recording and
+  completing are the window's.
+- **Completion** is a list under the address box as the person types: a favorite first, then history,
+  each page once, matched in the address or the title. A host that starts with what was typed comes
+  first, then how often, then how lately. Up and Down choose, Enter goes, Escape closes, a press goes.
+- **The clear** is in the favorites-and-history menu, under the ten most recent pages. It empties
+  Daoris's history and asks WebView2 to forget its own; sign-ins and favorites stay.
+- **Looked at on the window**, through CDP and UI Automation: four loads recorded three pages with
+  their titles and counts; typing `chi` offered the child page; the menu listed the favorites, then
+  the recent pages most recent first; its clear emptied the file, and the terminal's list agreed.
+  **Found on the way:** a second scripted edit matched the line the first had just written, and the
+  window read its history twice on activation. It was put right with the edit tool.
+
+CLI 500, modules 203, deployment 39.

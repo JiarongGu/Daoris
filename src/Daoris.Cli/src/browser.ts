@@ -157,6 +157,70 @@ export function removeFavorite(home: string, typed: string): boolean {
   return true;
 }
 
+// BRW6: the history — `<home>/browser/history.json`, which the window records as pages load. This side
+// lists and clears it, by the reading rules `BrowserHistory.cs` holds (the design, §3b).
+
+export const HISTORY_FILE = join('browser', 'history.json');
+
+export interface Visit { url: string; title: string; last: string | null; count: number }
+
+export function historyFile(home: string): string {
+  return join(home, HISTORY_FILE);
+}
+
+function historyRows(home: string): { file: Record<string, unknown> | null; rows: unknown[] | null; problem: string | null } {
+  const path = historyFile(home);
+  const { value, problem } = readJsonObject(path);
+  if (problem !== null) return { file: null, rows: null, problem };
+  if (value === null) return { file: null, rows: null, problem: null };
+  if (!('visits' in value)) return { file: value, rows: [], problem: null };
+  if (!Array.isArray(value.visits)) return { file: null, rows: null, problem: `${path}'s visits is not a list` };
+  return { file: value, rows: value.visits, problem: null };
+}
+
+/** When it was last visited, as an ISO time, or null when the row does not say in one — the earliest. */
+function lastOf(row: Record<string, unknown>): string | null {
+  const last = text(row, 'last');
+  if (last === null) return null;
+  const at = new Date(last);
+  return Number.isNaN(at.getTime()) ? null : at.toISOString();
+}
+
+/** How often, or once when the row does not say in a positive whole number. */
+function countOf(row: Record<string, unknown>): number {
+  return Number.isInteger(row.count) && (row.count as number) > 0 ? row.count as number : 1;
+}
+
+/** The history, most recent first; a row that is not a page skipped, as a reader skips it in the shell. */
+export function readHistory(home: string): { visits: Visit[]; problem: string | null } {
+  const { rows, problem } = historyRows(home);
+  const visits: Visit[] = [];
+  for (const row of rows ?? []) {
+    if (!isRow(row)) continue;
+    const url = text(row, 'url');
+    const page = url === null ? null : favoriteAddress(url);
+    if (page) visits.push({ url: page, title: titleOf(row, page), last: lastOf(row), count: countOf(row) });
+  }
+
+  const time = (visit: Visit) => (visit.last === null ? -Infinity : Date.parse(visit.last));
+  visits.sort((a, b) => time(b) - time(a));
+  return { visits, problem };
+}
+
+/** Forget every page, keeping what an editor has no field for. Refused over a file it could not read. */
+export function clearHistory(home: string): number {
+  const { file, rows, problem } = historyRows(home);
+  if (problem !== null) {
+    throw new DaorisError(`${problem}. Fix it, or delete it to start from nothing — `
+      + 'the history will not write over a file it could not read.');
+  }
+  if (file === null) return 0;
+
+  const forgot = (rows ?? []).length;
+  writeJsonAtomic(historyFile(home), { ...file, visits: [] });
+  return forgot;
+}
+
 /** The home, or the refusal every management verb gives without one (D63). */
 function requireHome(): string {
   const home = daorisHome();
@@ -165,14 +229,52 @@ function requireHome(): string {
 }
 
 const USAGE = '`daoris browser favorite list`, `daoris browser favorite add <address> [--title T]`, '
-  + 'or `daoris browser favorite remove <address>`';
+  + '`daoris browser favorite remove <address>`, `daoris browser history list [--limit N]` '
+  + 'or `daoris browser history clear`';
+
+/** `browser history list|clear`: what the window recorded, most recent first, or forget it all. */
+function commandHistory(verb: string, argv: string[], write: (line: string) => void): ExitCode {
+  const home = requireHome();
+  switch (verb) {
+    case 'list': {
+      const { visits, problem } = readHistory(home);
+      if (problem) {
+        write(`daoris: ⚠ ${problem}`);
+        return 1;
+      }
+      if (visits.length === 0) {
+        write('daoris: no history yet — the in-app browser records the pages it loads.');
+        return 0;
+      }
+      const limit = Number(flagValue(argv, '--limit') ?? 20);
+      const shown = visits.slice(0, Number.isInteger(limit) && limit > 0 ? limit : 20);
+      write(`daoris: ${historyFile(home)} — the ${shown.length} most recent of ${visits.length}`);
+      const width = Math.max(...shown.map((v) => v.title.length));
+      for (const visit of shown) {
+        write(`  ${visit.title.padEnd(width)}  ${visit.url}  ${visit.count}×${visit.last ? `  ${visit.last.slice(0, 10)}` : ''}`);
+      }
+      return 0;
+    }
+
+    case 'clear': {
+      const forgot = clearHistory(home);
+      write(`daoris: forgot ${forgot} ${forgot === 1 ? 'page' : 'pages'}. The window forgets its own history `
+        + 'the next time it is cleared from there.');
+      return 0;
+    }
+
+    default:
+      throw new DaorisError(`\`browser history\` does not know \`${verb}\` — it takes ${USAGE}.`);
+  }
+}
 
 /**
- * The in-app browser from a terminal: its favorites, the same file the window's star and bar keep
- * (D50). Management class: it edits one file under the home and talks to nothing.
+ * The in-app browser from a terminal: its favorites and its history, the same files the window keeps
+ * (D50). Management class: it edits files under the home and talks to nothing.
  */
 export function commandBrowser({ argv, write }: CommandArgs): ExitCode {
-  const [area, verb = 'list', address] = operands(argv, new Set(['--title']));
+  const [area, verb = 'list', address] = operands(argv, new Set(['--title', '--limit']));
+  if (area === 'history') return commandHistory(verb, argv, write);
   if (area !== 'favorite') throw new DaorisError(`\`browser\` takes ${USAGE}.`);
 
   const home = requireHome();
