@@ -53,6 +53,7 @@ what was measured, and it stays a record of that moment. A *record* is append-on
 | `2026-09-25-stream-json-evidence.md` | evidence | D76, CONV3a, CONV5 |
 | `2026-09-25-message-content-evidence.md` | evidence | D76, CONV4c, CONV4d |
 | `2026-09-27-first-goal-study.md` | study | D77, the first goal: what INT6 would have met, the references, Lyntai's storage |
+| `2026-09-28-console2-streams-evidence.md` | evidence | CONSOLE2: a subagent, a background task and a command's output on the protocol door, once declared |
 
 ## Records
 

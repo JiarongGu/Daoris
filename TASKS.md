@@ -380,15 +380,11 @@ is behind a sign-in. FG1–FG4 are in the archive. **INT6 is reshaped as FG5.**
   and each process it starts (the dev servers FG5's verify session left running were visible nowhere
   but their ports). Needs the adapters to say which frames belong to which sub-session, and the
   driver to capture a started process's output.
-  **Found in the Claude Code ACP adapter (2026-09-27): the wire already carries all three, if the
-  client declares them.** Subagents stream as their own sessions when `clientCapabilities.subagents`
-  is an object (`acp-subagents.js`). Background work, which is how a dev server runs, is published as
-  a task lifecycle under an AIR async-tasks capability (`async-tasks.js`). A command's output streams
-  on its tool call as `_meta.terminal_info`, then `terminal_output`, then `terminal_exit`, when
-  `_meta.terminal_output` is true. Daoris declares none of them today. The order: **2a** declare
-  them in a probe and record the real frames (an evidence doc, as ACP3's); **2b** the driver keeps
-  one stream per session, sub-session and task, and ends a task's with the session (ORPHAN1's twin);
-  **2c** the page's console gets a tab per stream.
+  **2a is done** (2026-09-28, `docs/2026-09-28-console2-streams-evidence.md`): a subagent is a
+  session of its own under AIR's `nativeSubagentSessions`, a background task's output is a file the
+  harness writes, and `terminal_output` streams nothing. **Next: 2b**, one stream per session,
+  sub-session and task in the driver (the evidence's *What Daoris takes*), then **2c**, a tab per
+  stream.
 - [ ] ⏸ **SEM2 — vectors that persist** (after SEM1, held). SEM1 embeds what is on disk once per
   process, on first use. The MCP host is one process per session, so with an embedder configured,
   each session's first search embeds the whole corpus. Lyntai.Storage.Sqlite's vector store would
