@@ -168,6 +168,29 @@ public sealed class SessionOutputTests
         Assert.Equal(["[exited with code 0]"], tail.Lines.Select(l => l.Text));
     }
 
+    /// <summary>
+    /// A stream opening or ending is news for its session (CONSOLE2c): it is how a page's console
+    /// grows a tab while the session runs. A session's end is news only when it ended a stream.
+    /// </summary>
+    [Fact]
+    public void A_stream_opening_or_ending_is_heard_by_its_session()
+    {
+        var output = new SessionOutput();
+        var heard = new List<string>();
+        output.Streamed += heard.Add;
+
+        output.Append("s1", "hello");
+        output.Close("s0");
+        output.Open("s1", new SessionStream("task/t1", SessionStreamKind.Task, "dev server"));
+        output.Open("s1", new SessionStream("task/t1", SessionStreamKind.Task, "dev server"));
+        output.End("s1", "task/t1", "completed");
+        output.Open("s2", new SessionStream("subagent/a", SessionStreamKind.Subagent, "reader"));
+        output.Close("s2");
+        output.Close("s2");
+
+        Assert.Equal(["s1", "s1", "s2", "s2"], heard);
+    }
+
     /// <summary>A session's end is its streams' end: nothing it started is still talking afterwards.</summary>
     [Fact]
     public void Closing_a_session_closes_its_streams()

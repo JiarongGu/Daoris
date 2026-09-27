@@ -194,6 +194,21 @@ public sealed class DriverModule : ModuleBase
                 };
             }
 
+            // What a session runs beside itself (CONSOLE2c): each subagent and background task, with
+            // the key its console is tailed by over `TAIL_SESSION`. Asked on open and again when a
+            // `SESSION_STREAMS` event names the session.
+            case "SESSION_STREAMS":
+            {
+                var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
+                return new
+                {
+                    Session = id,
+                    Streams = _loop.Output.Streams(id)
+                        .Select(stream => new { stream.Key, stream.Kind, stream.Name, stream.Live, stream.State })
+                        .ToArray(),
+                };
+            }
+
             // A conversation in a repository (D49 §3). The record is the service's and the lock is the
             // ledger's; what only this side can do is put a harness behind it — a process on this
             // machine, which never leaves it (D46 §7).

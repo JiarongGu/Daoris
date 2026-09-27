@@ -302,7 +302,12 @@ controls are in the frame design's §3.
     faint (`work/code.css`), with its language and a copy button; the agent's HTML is text, and a link
     opens outside the window. A plan's done step is a check, never a strike-through. An empty record
     says why (a text-only door, or a session from before conversations were kept). **The console is
-    the raw view**, and its empty sentence points at the conversation above.
+    the raw view**, and its empty sentence points at the conversation above. **It has a tab for each
+    thing that is running** (CONSOLE2): the session first, then each subagent and background task it
+    started, in the order they opened. A tab is its name, its kind's glyph and a mark, and it is named
+    by kind and state in words (*background · running*). One tab is no tabs, so a session that runs
+    nothing beside itself keeps the header it had. Picking a tab opens a hidden panel, and a stream the
+    session no longer lists falls back to the session's own console.
   - **The composer's turn** (CONV4b): while a turn runs *send* reads *queue*, and what waits behind it
     sits above the box under *waiting for this turn to end*; *stop turn* stands beside the endings,
     neutral, only while the driver says a turn is in flight and only on a door that can see a turn

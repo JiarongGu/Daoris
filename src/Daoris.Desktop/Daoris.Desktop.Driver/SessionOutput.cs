@@ -129,6 +129,26 @@ public sealed class SessionOutput
             _clock += 1;
             _sessions[key] = new Buffer { Parent = sessionId, Stream = stream, Touched = _clock, Opened = _clock };
         }
+
+        Heard(sessionId);
+    }
+
+    /// <summary>
+    /// Raised with a session's id when one of its streams opens or ends (CONSOLE2c) — how a page's
+    /// console grows a tab while the session runs. Guarded as <see cref="Lined"/> is.
+    /// </summary>
+    public event Action<string>? Streamed;
+
+    private void Heard(string sessionId)
+    {
+        try
+        {
+            Streamed?.Invoke(sessionId);
+        }
+        catch (Exception)
+        {
+            // A subscriber's failure is its own, as a line's is.
+        }
     }
 
     /// <summary>
@@ -143,6 +163,8 @@ public sealed class SessionOutput
             buffer.Live = false;
             buffer.State = state ?? buffer.State;
         }
+
+        Heard(sessionId);
     }
 
     /// <summary>The streams a session has opened, oldest first.</summary>
@@ -229,11 +251,18 @@ public sealed class SessionOutput
     /// <remarks>Its streams end with it: nothing a session started is still talking once it has ended.</remarks>
     public void Close(string sessionId)
     {
+        var ended = false;
         lock (_gate)
         {
             if (_sessions.TryGetValue(sessionId, out var buffer)) buffer.Live = false;
-            foreach (var stream in StreamsOf(sessionId)) stream.Live = false;
+            foreach (var stream in StreamsOf(sessionId).Where(stream => stream.Live))
+            {
+                stream.Live = false;
+                ended = true;
+            }
         }
+
+        if (ended) Heard(sessionId);
     }
 
     /// <summary>Sessions with a buffer here — what "there is a console to show" means. Their streams are not listed.</summary>

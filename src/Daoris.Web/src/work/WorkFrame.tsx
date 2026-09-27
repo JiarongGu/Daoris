@@ -6,7 +6,7 @@ import { buildChain } from '../map/chain';
 import { useAnswerSession, useQuests, useRegistry, useSessions } from '../queries';
 import {
   stopNotice, type TurnStop, useCancelTurn, useEndChat, useHarnesses, useResolveSession, useSendMessage,
-  NO_TURNS, useChatTurns, useSessionOpenings, useStartChat, useStopSession, useTreeFiles,
+  NO_TURNS, useChatTurns, useSessionOpenings, useSessionStreams, useStartChat, useStopSession, useTreeFiles,
 } from '../shell';
 import { Button, Drawer, failure, Icon, type Notify, SESSION_ACTIVE, Tip, useErrorNotify } from '../ui';
 import { AttendedSession, noteIsInTheHead } from './AttendedSession';
@@ -23,6 +23,7 @@ import { SessionTimeline } from './SessionTimeline';
 import { SessionRail } from './SessionRail';
 import { StartSession, type StartChoice } from './StartSession';
 import { OutputPanel, PANEL_MIN, Splitter } from './frame';
+import { panelTabs } from './streams';
 import { dockRange, frameLayout, RAIL } from './layout';
 import { store, stored } from '../lib/stored';
 
@@ -197,6 +198,16 @@ export function WorkFrame({ selected, onSelect, notify, onSendBack, onAnswerAsk,
     ? (quests.data ?? []).find((row) => row.id === attended.quest) ?? null
     : null;
   const live = attended ? SESSION_ACTIVE.has(attended.state) : false;
+
+  // What the session runs beside itself, a tab each in the panel (CONSOLE2c). The panel shows the
+  // session's own console unless the person picked a stream of it, and one it no longer lists falls
+  // back to the session rather than to an empty well.
+  const streams = useSessionStreams(attended?.id ?? null);
+  const [picked, setPicked] = useState<string | null>(null);
+  useEffect(() => setPicked(null), [attended?.id]);
+  const shown = attended
+    ? (picked && streams.some((row) => row.key === picked) ? picked : attended.id)
+    : null;
 
   // A conversation is the only thing there is anything to say to. A driven session also holds a
   // tree, but it was given its whole target at once and has no channel to speak into — an input
@@ -584,11 +595,20 @@ export function WorkFrame({ selected, onSelect, notify, onSendBack, onAnswerAsk,
         <OutputPanel
           // The panel keeps its height; a session with nothing held here says so as a sentence, not as
           // an empty bordered well, which read as a field on the installed window.
-          console={attended ? <SessionConsole id={attended.id} fill quiet={t('work.panel.silent')} /> : null}
+          console={attended && shown
+            ? <SessionConsole id={shown} fill quiet={t(shown === attended.id ? 'work.panel.silent' : 'work.panel.streamSilent')} />
+            : null}
           height={Math.max(PANEL_MIN, height)}
           collapsed={collapsed}
           onResize={resize}
           onToggle={toggle}
+          tabs={attended ? panelTabs(attended.id, streams) : undefined}
+          selected={shown ?? undefined}
+          onSelect={(key) => {
+            setPicked(key === attended?.id ? null : key);
+            // Picking what to read is asking to read it: a hidden panel opens.
+            if (collapsed) toggle();
+          }}
         />
       </div>
 

@@ -44,6 +44,33 @@ export const Panels: StoryObj = {
   ),
 };
 
+/**
+ * A tab for each thing that is running (CONSOLE2c): the session, then a subagent that finished, a
+ * background task still going, one that failed, and one with a name too long for its tab.
+ */
+export const PanelTabs: StoryObj = {
+  render: () => (
+    <div className="grid w-[40rem] gap-6">
+      <OutputPanel
+        console={<SessionConsole id="s1a2b3c4/task/bs00" fill quiet="nothing held here" />}
+        height={140}
+        collapsed={false}
+        onResize={() => {}}
+        onToggle={() => {}}
+        selected="s1a2b3c4/task/bs00"
+        onSelect={() => {}}
+        tabs={[
+          { key: 's1a2b3c4', kind: 'session', label: 'session', tone: 'idle', status: "the session's own console" },
+          { key: 's1a2b3c4/subagent/a2fe', kind: 'subagent', label: 'Read README first line', tone: 'ended', status: 'subagent · completed' },
+          { key: 's1a2b3c4/task/bs00', kind: 'task', label: 'dev server', tone: 'live', status: 'background · running' },
+          { key: 's1a2b3c4/task/bt01', kind: 'task', label: 'npm test', tone: 'failed', status: 'background · failed' },
+          { key: 's1a2b3c4/subagent/a9', kind: 'subagent', label: '检查世界流式加载引擎的每一个分块预算，并报告超出预算的地方', tone: 'live', status: 'subagent · running' },
+        ]}
+      />
+    </div>
+  ),
+};
+
 const PROFILES = [
   { name: 'personal', login: 'in' as const },
   { name: 'work', login: 'out' as const },

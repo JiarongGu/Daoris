@@ -251,6 +251,37 @@ describe('the Work frame', () => {
     expect((await screen.findByText(/second/)).textContent).toBe('first\nsecond');
   });
 
+  /**
+   * CONSOLE2c: what the session runs beside itself is a tab of its own, and appears as it starts. The
+   * panel shows the session's console until the person picks a stream, then tails that stream's key.
+   */
+  it('grows a tab for each stream the session runs, and a picked tab shows that stream', async () => {
+    let streams: object[] = [];
+    invoke.mockImplementation(async (_module: string, type: string, request?: { payload?: { id?: string } }) => {
+      if (type === 'SESSION_STREAMS') return { session: 's1a2b3c4', streams };
+      if (type === 'TAIL_SESSION') {
+        return request?.payload?.id === 's1a2b3c4/task/bs00'
+          ? { session: 's1a2b3c4/task/bs00', lines: [{ sequence: 1, text: 'listening on 4200' }], sequence: 1, live: true, dropped: 0 }
+          : { session: 's1a2b3c4', lines: [{ sequence: 1, text: '→ background: dev server' }], sequence: 1, live: true, dropped: 0 };
+      }
+      return DRIVER_STATE;
+    });
+
+    show('s1a2b3c4');
+    await screen.findByText(/→ background: dev server/);
+    expect(screen.queryByRole('tablist')).toBeNull();
+
+    streams = [{ key: 's1a2b3c4/task/bs00', kind: 'task', name: 'dev server', live: true, state: null }];
+    await act(async () => { eventHandlers.get('DAORIS.SESSION_STREAMS')!({ session: 's1a2b3c4' }); });
+
+    const tab = await screen.findByRole('tab', { name: /dev server — background · running/ });
+    await userEvent.click(tab);
+
+    expect(await screen.findByText(/listening on 4200/)).toBeTruthy();
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'TAIL_SESSION', { payload: { id: 's1a2b3c4/task/bs00' } });
+    expect(screen.getByRole('tab', { name: /dev server/ }).getAttribute('aria-selected')).toBe('true');
+  });
+
   /** Another session's output is not this panel's — the event carries whose it is. */
   it('ignores a batch for a different session', async () => {
     invoke.mockImplementation(async (_module: string, type: string) => (type === 'TAIL_SESSION'

@@ -6690,3 +6690,32 @@ three questions for the person, and the record read `stood-down: someone else ha
 
 Service 528, driver 780, web 1191, and two family-rehearsal checks over HTTP. Also: the
 `DrivenSessionInputTests` start wait is 60 seconds, after the load flake recurred (FLAKE1).
+
+## CONSOLE2 — the console has a tab for each thing that is running (2026-09-28)
+
+The row as filed: *(the owner, 2026-09-27: "the console display should be able to have multiple tabs
+so we dont miss any console (like different subsessions and console that runs by the session)").*
+Today it is one stream per session. The design wants tabs: the session itself, each sub-session it
+spawns (a harness's own subagents), and each process it starts (the dev servers FG5's verify session
+left running were visible nowhere but their ports). Needs the adapters to say which frames belong to
+which sub-session, and the driver to capture a started process's output.
+
+Landed in three parts.
+- **2a, the evidence** (`docs/2026-09-28-console2-streams-evidence.md`, `tools/console2-probe.mjs`).
+  Two real turns over `claude-agent-acp` 0.79.0. A subagent is a session of its own under AIR's
+  `nativeSubagentSessions`. The protocol's own `subagents` key is stripped by the ACP SDK's schema at
+  1.4.0, so it alone switches nothing on. A background task's output is a file the harness writes,
+  and none of it is on the wire. `terminal_output` streams nothing. And the agent speaks after its
+  turn has ended, when its background work finishes.
+- **2b, the driver.** The protocol door asks for both, routes each update by `params.sessionId`, and
+  keeps each subagent and task as a console stream under the session (`AcpStreams`, `OutputTail`,
+  `SessionOutput`'s streams). A subagent's words stay out of the session's transcript, because the
+  driver reads a transcript's last plain lines as what the session said to the person. The rules are
+  in the interactive design's §2.
+- **2c, the tabs.** `SESSION_STREAMS` lists a session's streams, and an event of the same name says
+  when one opens or ends. The output panel has a tab for the session and each stream, each named by
+  how it stands, in both languages. Looked at on the window with a real chat on the protocol door: a
+  background ticker and a subagent each got a tab, the ticker's tab read its file as it grew, and
+  both ended `completed`.
+
+Driver 797, modules 152, web 1198, Playwright 21, family 289, deployment 39. What it left is CONSOLE3.

@@ -580,6 +580,39 @@ public sealed class DriverModuleTests : Bridge
     }
 
     /// <summary>
+    /// CONSOLE2c: what a session runs beside itself is listed over the bridge, each with the key its
+    /// console is tailed by, and a stream opening or ending is news the page hears, naming only the
+    /// session, so a missed one costs a list the page asks for anyway.
+    /// </summary>
+    [Fact]
+    public async Task A_sessions_streams_are_listed_and_a_stream_opening_or_ending_is_news()
+    {
+        var loop = Loop();
+        var module = new DriverModule(Bus, loop);
+        loop.Output.Open("s1", new SessionStream("task/t1", SessionStreamKind.Task, "dev server"));
+        loop.Output.End("s1", "task/t1", "completed");
+        loop.Output.Open("s1", new SessionStream("subagent/a", SessionStreamKind.Subagent, "reader"));
+
+        var listed = await AnswerAsync(module, "SESSION_STREAMS", new { id = "s1" });
+
+        Assert.Equal("s1", listed.GetProperty("session").GetString());
+        var streams = listed.GetProperty("streams").EnumerateArray().ToList();
+        Assert.Equal(["s1/task/t1", "s1/subagent/a"], streams.Select(s => s.GetProperty("key").GetString()));
+        Assert.Equal(("task", "dev server", false, "completed"), (
+            streams[0].GetProperty("kind").GetString(), streams[0].GetProperty("name").GetString(),
+            streams[0].GetProperty("live").GetBoolean(), streams[0].GetProperty("state").GetString()));
+        Assert.True(streams[1].GetProperty("live").GetBoolean());
+        Assert.Equal(JsonValueKind.Null, streams[1].GetProperty("state").ValueKind);
+
+        await UntilAsync(() => Raised.Count(m => m.Type == "SESSION_STREAMS") == 3);
+        Assert.All(Raised.Where(m => m.Type == "SESSION_STREAMS"),
+            m => Assert.Equal("""{"Session":"s1"}""", JsonSerializer.Serialize(m.Payload)));
+
+        var none = await AnswerAsync(module, "SESSION_STREAMS", new { id = "nothing-here" });
+        Assert.Empty(none.GetProperty("streams").EnumerateArray());
+    }
+
+    /// <summary>
     /// D76 §2 (CONV1): a session's conversation is read back over the bridge a page at a time — the
     /// newest first, then earlier, then only what is newer — from the record under the home, so it
     /// answers after a restart when the console's window is long gone.

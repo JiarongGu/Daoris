@@ -8,7 +8,7 @@ import en from '../locales/en.json';
 import zh from '../locales/zh.json';
 import { SessionConsole } from '../SessionConsole';
 import { SESSION_ACTIVE } from '../ui';
-import { ActivityBar, AppStrip, OutputPanel, Splitter, StatusBar } from './frame';
+import { ActivityBar, AppStrip, OutputPanel, type PanelTab, Splitter, StatusBar } from './frame';
 
 /** The provider the application mounts once (`main.tsx`); a tooltip outside one throws. */
 const render = (node: ReactElement) => {
@@ -379,5 +379,44 @@ describe('the output panel', () => {
     );
     expect(screen.getByText(/keeps what a session prints while this app runs/)).toBeTruthy();
     expect(container.querySelector('pre')).toBeNull();
+  });
+
+  // CONSOLE2c: a tab for each thing that is running, so no console is missed.
+  const TABS: PanelTab[] = [
+    { key: 's1', kind: 'session', label: 'session', tone: 'idle', status: "the session's own console" },
+    { key: 's1/subagent/a2fe', kind: 'subagent', label: 'Read README first line', tone: 'ended', status: 'subagent · completed' },
+    { key: 's1/task/bs00', kind: 'task', label: 'dev server', tone: 'live', status: 'background · running' },
+  ];
+
+  it('has a tab for the session and each stream it runs, named by how each stands', () => {
+    const onSelect = vi.fn();
+    render(
+      <OutputPanel
+        console={null} height={180} collapsed={false} onResize={() => {}} onToggle={() => {}}
+        tabs={TABS} selected="s1/task/bs00" onSelect={onSelect}
+      />,
+    );
+
+    const tabs = screen.getAllByRole('tab');
+    expect(tabs.map((tab) => tab.getAttribute('aria-label'))).toEqual([
+      "session — the session's own console",
+      'Read README first line — subagent · completed',
+      'dev server — background · running',
+    ]);
+    expect(tabs.map((tab) => tab.getAttribute('aria-selected'))).toEqual(['false', 'false', 'true']);
+
+    fireEvent.click(tabs[1]!);
+    expect(onSelect).toHaveBeenCalledWith('s1/subagent/a2fe');
+  });
+
+  it('keeps the header it had when the session runs nothing beside itself', () => {
+    render(
+      <OutputPanel
+        console={null} height={180} collapsed={false} onResize={() => {}} onToggle={() => {}}
+        tabs={TABS.slice(0, 1)} selected="s1" onSelect={() => {}}
+      />,
+    );
+
+    expect(screen.queryByRole('tablist')).toBeNull();
   });
 });

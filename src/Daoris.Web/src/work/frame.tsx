@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button, CountBadge, Dot, Icon, type IconName, Tip } from '../ui';
+import { Button, CountBadge, Dot, DotMark, Icon, type IconName, Tip } from '../ui';
 import { CAPTION_ATTRIBUTE, CAPTION_SLOTS } from './caption';
 import { cn } from '../lib/cn';
 import { Mark } from '../Mark';
@@ -500,6 +500,22 @@ export function Splitter({ label, value, min, max, edge, onChange, onReset }: {
   );
 }
 
+/**
+ * One tab of the output panel (CONSOLE2): the session's own console, or something it runs beside
+ * itself — a subagent, or background work.
+ */
+export type PanelTab = {
+  /** What the console under it tails. */
+  key: string;
+  kind: 'session' | 'subagent' | 'task';
+  label: string;
+  tone: 'live' | 'ended' | 'failed' | 'idle';
+  /** How it stands, in words: the tab is named by it, so the mark is never hue alone (D41 §6). */
+  status: string;
+};
+
+const TAB_ICON: Record<PanelTab['kind'], IconName> = { session: 'frameWork', subagent: 'think', task: 'execute' };
+
 /** What a person can drag the panel between. Below the floor it is not a panel, it is a sliver. */
 export const PANEL_MIN = 96;
 export const PANEL_MAX = 720;
@@ -519,8 +535,12 @@ const PANEL_STEP = 48;
  * **Closing is deterministic**: nothing reopens this panel but the person. It is the reference
  * console's rule, and the reason is that a layout which springs back on a window resize teaches
  * people not to trust the control.
+ *
+ * **A tab per thing that is running** (CONSOLE2): the session, then each subagent and background
+ * task it started, so none of their output is missed. One tab is no tabs — a session running
+ * nothing beside itself keeps the header it had.
  */
-export function OutputPanel({ console: stream, height, collapsed, onResize, onToggle }: {
+export function OutputPanel({ console: stream, height, collapsed, onResize, onToggle, tabs, selected, onSelect }: {
   /**
    * The attended session's console, or null when nothing is attended — a state rather than an
    * absence. Handed in by the organism above, because the console reaches the bridge and a molecule
@@ -531,9 +551,15 @@ export function OutputPanel({ console: stream, height, collapsed, onResize, onTo
   collapsed: boolean;
   onResize: (height: number) => void;
   onToggle: () => void;
+  /** The session's tab first, then its streams, oldest first. */
+  tabs?: PanelTab[];
+  /** The tab whose console is shown. */
+  selected?: string;
+  onSelect?: (key: string) => void;
 }) {
   const { t } = useTranslation();
   const clamp = (value: number) => Math.min(PANEL_MAX, Math.max(PANEL_MIN, value));
+  const tabbed = tabs && tabs.length > 1;
 
   const drag = (event: React.PointerEvent<HTMLDivElement>) => {
     event.preventDefault();
@@ -572,9 +598,32 @@ export function OutputPanel({ console: stream, height, collapsed, onResize, onTo
         />
       )}
 
-      <header className="flex items-center gap-2 px-4 py-1">
-        <span className="text-meta text-ink-faint">{t('work.panel.title')}</span>
-        <Button variant="ghost" className="ml-auto" onClick={onToggle}>
+      <header className="flex min-w-0 items-center gap-2 px-4 py-1">
+        <span className="shrink-0 text-meta text-ink-faint">{t('work.panel.title')}</span>
+        {tabbed && (
+          <div role="tablist" aria-label={t('work.panel.tabs')} className="flex min-w-0 items-center gap-0.5 overflow-x-auto">
+            {tabs.map((tab) => (
+              <button
+                key={tab.key}
+                type="button"
+                role="tab"
+                aria-selected={selected === tab.key}
+                aria-label={`${tab.label} — ${tab.status}`}
+                title={tab.status}
+                onClick={() => onSelect?.(tab.key)}
+                className={cn(
+                  'flex max-w-48 shrink-0 cursor-pointer items-center gap-1.5 rounded-control border-0 px-2 py-0.5 text-meta transition-colors duration-(--speed)',
+                  selected === tab.key ? 'bg-raised text-ink' : 'bg-transparent text-ink-faint hover:text-ink',
+                )}
+              >
+                <Icon name={TAB_ICON[tab.kind]} size={12} className="shrink-0" />
+                <span className="min-w-0 truncate">{tab.label}</span>
+                <DotMark tone={tab.tone} />
+              </button>
+            ))}
+          </div>
+        )}
+        <Button variant="ghost" className="ml-auto shrink-0" onClick={onToggle}>
           {collapsed ? t('work.panel.show') : t('work.panel.hide')}
         </Button>
       </header>

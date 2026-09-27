@@ -40,7 +40,17 @@ public sealed class DriverLoop(
     /// processes are, and readable only through this shell: output is transcript-class material and
     /// never leaves the machine (D47 §4).
     /// </summary>
-    public SessionOutput Output { get; } = new();
+    public SessionOutput Output { get; } = Announcing(new SessionOutput(), eventBus);
+
+    /// <summary>
+    /// A stream opening or ending (CONSOLE2c) becomes the page's <c>SESSION_STREAMS</c> event. It names
+    /// the session and nothing else: the page asks for the list, so a missed event costs nothing.
+    /// </summary>
+    private static SessionOutput Announcing(SessionOutput output, IEventBus bus)
+    {
+        output.Streamed += session => _ = bus.EmitAsync("DAORIS", "SESSION_STREAMS", new { Session = session });
+        return output;
+    }
 
     /// <summary>
     /// What sessions did, as typed events (D76 §2) — the conversation the page renders, kept under the

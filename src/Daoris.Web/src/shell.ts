@@ -463,6 +463,59 @@ export function useSessionConsole(sessionId: string | null) {
 }
 
 /**
+ * One thing a session runs beside itself (CONSOLE2): a subagent its harness spawned, or background
+ * work it started, as a console stream of its own. `key` is what `useSessionConsole` tails it by.
+ */
+export type SessionStreamRow = {
+  key: string;
+  kind: string;
+  name: string;
+  live: boolean;
+  /** How it ended, in the wire's word — null while it runs. */
+  state: string | null;
+};
+
+/**
+ * A session's streams, oldest first (CONSOLE2).
+ *
+ * @remarks
+ * Desktop-only for the console's reason (D47 §4). Asked for on open, and again whenever the driver
+ * says one of this session's streams opened or ended (`SESSION_STREAMS`). Defensive about the shape,
+ * as the console is: a shell older than this answers something else, and then the session simply has
+ * no streams.
+ */
+export function useSessionStreams(sessionId: string | null): SessionStreamRow[] {
+  const { isAvailable } = useShenora();
+  const [streams, setStreams] = useState<SessionStreamRow[]>([]);
+  const [asked, setAsked] = useState(0);
+  const attended = useRef(sessionId);
+  attended.current = sessionId;
+
+  useEffect(() => setStreams([]), [sessionId]);
+
+  useEffect(() => {
+    if (!isAvailable || !sessionId) return;
+    let current = true;
+    void getBridge()
+      .invoke<{ session?: string; streams?: unknown }>('DAORIS.DRIVER', 'SESSION_STREAMS', { payload: { id: sessionId } })
+      .then((answer) => {
+        if (!current || attended.current !== sessionId) return;
+        const rows = Array.isArray(answer?.streams) ? answer.streams : [];
+        setStreams(rows.filter((row): row is SessionStreamRow =>
+          typeof row?.key === 'string' && typeof row?.name === 'string' && typeof row?.kind === 'string'));
+      })
+      .catch(() => {});
+    return () => { current = false; };
+  }, [isAvailable, sessionId, asked]);
+
+  useShenoraEvent('DAORIS', 'SESSION_STREAMS', (payload) => {
+    if (sessionId && (payload as { session?: string } | undefined)?.session === sessionId) setAsked((n) => n + 1);
+  });
+
+  return streams;
+}
+
+/**
  * A session's conversation (D76, CONV1): its record read back a page at a time, and its live events
  * merged in as the driver writes them.
  *
