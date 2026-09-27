@@ -21,9 +21,9 @@ lists.
 
 ## State
 
-**Counts, and this is their one home:** sixteen commands, **500 CLI tests, 528 service, 799 driver,
-203 desktop modules, 80 devkit, 1201 web unit, 21 Playwright**, 66/66 release rehearsal, **289/289
-family rehearsal** (it names its own phases when you run it), **39/39 deployment rehearsal** (D60),
+**Counts, and this is their one home:** sixteen commands, **501 CLI tests, 528 service, 799 driver,
+222 desktop modules, 80 devkit, 1201 web unit, 21 Playwright**, 66/66 release rehearsal, **289/289
+family rehearsal** (it names its own phases when you run it), **45/45 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge
 documents, 5 skills, 7 packs. The always-loaded core is **22,492 of 26,000 bytes** — a span in
 `AGENTS.md` since D59 — and **advisory rather than enforced** (D54: a fact gates, a judgement
@@ -54,13 +54,11 @@ branch. The owner then set two more directions, **D81**: a session works in its 
 mode, "as much as it can just like regular claude code". And **parallel sessions (PAR1)** and **a
 console tab for everything running (CONSOLE2)**. CHAIN2 landed as D82, PAR1 with it, STANDDOWN2 as
 D83, and CONSOLE2 and BRW10 (a sign-in that survives a restart) on 2026-09-28, all in the archive.
-**Then the browser as a browser** (BRW4–BRW6 in the archive), until **D84 changed its course**
-(2026-09-28): Daoris ships a Chromium for its browser, and the person's Edge is always an option.
-**Then D85 widened it** (2026-09-28): Daoris's own page moves to that Chromium too, embedded under
-Shenora's frame, built here first and asked of Shenora for the harvest (its backlog carries the
-request). CHR1, the probe, landed. Shenora's answer is that the kit builds the host, so **CHR2 waits
-on its release, and next is the owner's call on CHR3's form**
-(`docs/2026-09-28-chromium-host-design.md` §3–§4). 🔴 **The owner also
+**Then the browser as a browser** (BRW4–BRW6), until **D84 and D85** (2026-09-28): Daoris ships a
+Chromium for its browser and, once Shenora's host is released, for its page (CHR2 waits on it).
+**CHR1 and CHR3 landed: the browser is `daoris-browser`, the engine's own window.** Next are the
+owner's calls on CHR5 and CHR7, and a republish when the owner says (it adds about 350 MB, and the
+person signs in again). 🔴 **The owner also
 filed six rows from the first real workspace** (2026-09-28, *After the first real workspace*, "lets
 start them later"): workspace rules for how work lands, the default branch, cleaning up session
 branches, the session view, the map, and asking Daoris for help. Ask which comes first.
@@ -146,8 +144,8 @@ rather than designed.
 
 ## Backlog
 
-**Forty rows are open**: the six the first real workspace showed (WSR1–WSR3, SESS1, MAP4,
-HELP1); D85's three (CHR2–CHR4); the in-app browser's four (BRW3, BRW7, BRW8, and D84's BRW12); the first goal's three (FG5,
+**Forty-two rows are open**: the six the first real workspace showed (WSR1–WSR3, SESS1, MAP4,
+HELP1); D85's five (CHR2, CHR4–CHR7); the in-app browser's four (BRW3, BRW7, BRW8, and D84's BRW12); the first goal's three (FG5,
 READACROSS1 the owner's, and SEM2 on a trigger); D76's held file tools;
 the eight REV3 left, WINDOW2 among them; seven leftovers (LAYOUT1, RAIL2, SURF11, CONSOLE3, FLAKE1, DEPLOY5, TEST1); two on the owner
 (TRUST2, AGT2c); and six on a trigger (see *Handover*). Every closed one is in `docs/task-archive.md`, and this file holds no
@@ -310,11 +308,9 @@ attached over CDP drives a WebView2.
 > and etc, which can help to managed the use) and also should be able to start from the daoris app
 > … start them after you complate current task (which is more important as the core workflow)"*
 
-🔴 **D84 changes the course (2026-09-28): Daoris ships a Chromium for its browser, and the person's
-Edge is always an option.** `docs/2026-09-28-managed-edge-evidence.md` is what was measured: a real
-browser has these basics of its own, and an agent's tab there is one the person sees. The WebView2
-window (BRW1–BRW6, BRW10) stays until the engine lands. **D85 answered the engine's form**
-(2026-09-28): embedded, and the page's engine too. CHR3 (below) supersedes BRW11.
+🔴 **D84 changed the course (2026-09-28): Daoris ships a Chromium for its browser, and the person's
+Edge is always an option** (`docs/2026-09-28-managed-edge-evidence.md`). The engine landed as CHR3
+(below), in place of the WebView2 window.
 - [ ] **BRW12 — the person's Edge, as an option** (D84). A machine setting, with its terminal twin:
   Daoris's engine, or Edge on a profile under the home. The Edge option says what it brings: the
   person's Microsoft account, signed in on its own (the evidence's §5), and with sync on if they want
@@ -323,14 +319,13 @@ window (BRW1–BRW6, BRW10) stays until the engine lands. **D85 answered the eng
 - [ ] **BRW7 — start it from the app, and route links to it.** A door as visible as the monitor's:
   the activity bar or the strip, not only View → *Browser*. A setting for whether links on the page
   (a ticket in a quest, a URL in the conversation) open in Daoris's browser or the system browser,
-  orca's link routing. It opens whichever browser the machine uses (CHR3, BRW12). Under D85 the
-  embedded browser's start page is Daoris's to draw, and Edge's is its own.
+  orca's link routing. It opens whichever browser the machine uses (CHR3, BRW12), on that
+  browser's own start page.
 - [ ] **BRW8 — who is driving.** Say when a session is driving the browser, name the session, and
   link to it, so the person knows whose hands are on the page before they type into it. **Measured
   with BRW4 (2026-09-28):** an agent's current tab is the first page it found, not the one in front.
-  In a real browser its own tabs are visible (D84's evidence). Under D85 the embedded browser's chrome
-  is Daoris's again, so it can be said there. With the Edge option (BRW12), that window is not Daoris's
-  to draw in, so it is said in Daoris (the session, the strip) or by an extension Edge loads.
+  In a real browser its own tabs are visible (D84's evidence). Neither the engine's window (CHR3) nor
+  Edge's is Daoris's to draw in, so it is said in Daoris (the session, the strip) or by an extension.
 
 ### Chromium under the windows (owner, 2026-09-28 → D85)
 
@@ -340,11 +335,17 @@ window (BRW1–BRW6, BRW10) stays until the engine lands. **D85 answered the eng
 
 `docs/2026-09-28-chromium-host-design.md` is the contract, and its §5 carries each row's detail.
 Shenora's backlog carries the request (filed 2026-09-28 at the owner's say-so, uncommitted there).
-CHR1 is in the archive: **the browser runs in a process of its own** (`docs/2026-09-28-chromium-embedding-evidence.md`).
+CHR1 and CHR3 are in the archive: **the browser is `daoris-browser`, a process of its own showing the
+engine's own window** (`docs/2026-09-28-chromium-embedding-evidence.md`, §11–§15 for CHR3).
 - [ ] **CHR2 — move onto Shenora's Chromium host** (`Shenora.Windows.Chromium`, which the kit builds:
   the contract's §3). **Waits on its release.**
-- [ ] **CHR3 — the browser on the same engine** (supersedes BRW11). **The owner's call first:** Daoris's
-  own chrome around the control (BRW9 back), or the engine's own Chromium window (the contract's §4).
+- [ ] **CHR5 — Daoris's favorites and history, now read by no window.** The engine keeps its own.
+  **The owner's call:** retire `daoris browser` and its two files (carrying saved favorites into the
+  engine's bookmarks once), or point it at the engine's.
+- [ ] **CHR6 — an agent opens a tab.** The engine announces a new target as `other`, so no browser MCP
+  takes it up (evidence §12): a CDP proxy at `${browser}`, or a report to CEF (the owner's to file).
+- [ ] **CHR7 — other software's Chrome extensions** reach the profile, each waiting on the person's
+  approval (evidence §14). **The owner's call:** keep that, or refuse them (a switch still to measure).
 - [ ] **CHR4 — the install carries it**, and the WebView2 path goes.
 
 ### The first goal — a real workspace, a ticket, a task started (owner, 2026-09-27 → D77)

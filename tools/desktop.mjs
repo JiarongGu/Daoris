@@ -222,6 +222,18 @@ export function prune(entries, { keep = 25, maxBytes = 150 * 1024 * 1024 } = {})
 // Everything below runs; everything above is asserted.
 
 const DESKTOP_PROJECT = join(repoRoot, 'src', 'Daoris.Desktop', 'Daoris.Desktop.App');
+// Daoris's own browser (D85, CHR3): a process of its own, which the shell starts beside itself.
+const BROWSER_PROJECT = join(repoRoot, 'src', 'Daoris.Desktop', 'Daoris.Desktop.Browser');
+
+/**
+ * The browser beside the shell the instruments address: an install's own under `app/`, or this
+ * checkout's build. Matched by path, as every instrument here matches, so a capture never
+ * photographs a browser some other shell started.
+ */
+function browserExe(shell) {
+  const installed = join(dirname(shell), 'app', 'daoris-browser', 'daoris-browser.exe');
+  return existsSync(installed) ? installed : assemblyExe(BROWSER_PROJECT);
+}
 const HTTP_PROJECT = join(repoRoot, 'src', 'Daoris.Service', 'Daoris.Service.Http');
 const MCP_PROJECT = join(repoRoot, 'src', 'Daoris.Service', 'Daoris.Service.Mcp');
 const WEB = join(repoRoot, 'src', 'Daoris.Web');
@@ -297,8 +309,8 @@ function takeWindow(args) {
 
 /** What the shell captions that window — how the OS-level capture finds it. */
 function windowCaption(window) {
-  // Daoris's own browser (D78) is captioned `Daoris — Browser`, then its page's title.
-  if (window === 'browser') return 'Browser';
+  // Daoris's own browser (D85) is the engine's own window, captioned `<page> - Chromium`.
+  if (window === 'browser') return 'Chromium';
   return window === 'monitor' ? 'Monitor' : window;
 }
 
@@ -366,6 +378,7 @@ async function build(args) {
   // wwwroot, so a host built before the bundle serves the previous one, and the shell shows it.
   run('npm', ['--prefix', WEB, 'run', 'build'], { shell: true });
   run('dotnet', ['build', HTTP_PROJECT, '-c', configuration]);
+  run('dotnet', ['build', BROWSER_PROJECT, '-c', configuration]);
   run('dotnet', ['build', DESKTOP_PROJECT, '-c', configuration]);
   console.log('\nbuilt — `node tools/desktop.mjs run` to look at it.');
 }
@@ -580,10 +593,16 @@ async function main(command, args) {
       const name = (args[0] ?? `shell-${new Date().toISOString().slice(11, 19).replaceAll(':', '')}`)
         .replace(/[^\w.-]/g, '-');
 
+      // The browser is another process since CHR3, and every one of its windows is the engine's own,
+      // captioned `<page> - Chromium`.
+      const browser = window === 'browser' ? browserExe(exe) : null;
+      if (window === 'browser' && !browser) fail('the browser is not built — `node tools/desktop.mjs build`.');
+      const whose = browser
+        ? ['-ProcessName', 'daoris-browser', '-ExePath', browser]
+        : ['-ProcessName', 'daoris-desktop', '-ExePath', exe];
       const capture = () => run('powershell', ['-NoProfile', '-ExecutionPolicy', 'Bypass',
         '-File', join(repoRoot, 'tools', 'shot-window.ps1'),
-        '-ProcessName', 'daoris-desktop',
-        '-ExePath', exe,
+        ...whose,
         ...(window ? ['-WindowTitle', windowCaption(window)] : []),
         '-OutFile', join(SHOTS, `${name}.png`)]);
 

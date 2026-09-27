@@ -78,7 +78,7 @@ internal static class Program
             serviceUrl,
             home,
             // Daoris's own browser (D78), for a plugin server that drives it.
-            sp.GetRequiredService<BrowserHost>()));
+            sp.GetRequiredService<EngineBrowserHost>()));
         builder.Services.AddSingleton<MainForm>();
         // The session-control surface's host half: the page's driver controls land here (D46 §6).
         builder.Services.AddIpcModule<DriverModule>();
@@ -98,13 +98,12 @@ internal static class Program
         builder.Services.AddSingleton<SecondaryWindowHost>();
         builder.Services.AddSingleton<ISecondaryWindows>(
             sp => sp.GetRequiredService<SecondaryWindowHost>());
-        // Daoris's own browser (D78): one more of those windows, in an environment of its own, with its
-        // profile under the home — the directory `driver.json` sits in, as every machine file's is.
-        builder.Services.AddSingleton(sp => new BrowserHost(
-            sp.GetRequiredService<SecondaryWindows>(),
-            sp.GetRequiredService<ShenoraPaths>(),
+        // Daoris's own browser (D78, D85): the engine's own window, in a process of its own
+        // (`daoris-browser`), with its profile under the home — the directory `driver.json` sits in,
+        // as every machine file's is.
+        builder.Services.AddSingleton(_ => new EngineBrowserHost(
             Path.GetDirectoryName(Path.GetFullPath(Daoris.Driver.DriverConfig.ResolvePath()))!));
-        builder.Services.AddSingleton<Daoris.Driver.IInAppBrowser>(sp => sp.GetRequiredService<BrowserHost>());
+        builder.Services.AddSingleton<Daoris.Driver.IInAppBrowser>(sp => sp.GetRequiredService<EngineBrowserHost>());
         builder.Services.AddSingleton(new PlatformAddress(serviceUrl));
         builder.Services.AddIpcModule<WindowsModule>();
 

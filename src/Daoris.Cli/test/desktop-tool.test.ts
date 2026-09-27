@@ -172,6 +172,12 @@ test('the capture script and the tool agree with the project on the process name
 
   assert.ok(readText(join(repoRoot, 'tools', 'shot-window.ps1')).includes(`$ProcessName = '${assembly}'`));
   assert.ok(readText(join(repoRoot, 'tools', 'desktop.mjs')).includes(`'-ProcessName', '${assembly}'`));
+
+  // Daoris's own browser is another process since CHR3, and `shot --window browser` photographs it.
+  const browser = /<AssemblyName>([^<]+)<\/AssemblyName>/.exec(readText(join(
+    repoRoot, 'src', 'Daoris.Desktop', 'Daoris.Desktop.Browser', 'Daoris.Desktop.Browser.csproj')))?.[1];
+  assert.ok(browser, 'the browser declares an assembly name');
+  assert.ok(readText(join(repoRoot, 'tools', 'desktop.mjs')).includes(`'-ProcessName', '${browser}'`));
 });
 
 test('a prune keeps the newest captures and drops the rest', () => {

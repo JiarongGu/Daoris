@@ -85,7 +85,8 @@ evidence rather than repeat it, which leaves the kit's own probe to what depends
 
 ## 4. Open
 
-- **The browser's form (CHR3, the owner's call).** CHR1 found the engine offers two:
+- **The browser's form: decided, the engine's own window** (the owner, 2026-09-28: *"lets do it now
+  please download"*, on the recommendation). CHR1 had found the engine offers two:
   - Daoris's own chrome around the control (BRW4–BRW6 carried, BRW9 back);
   - the engine's own Chromium window, where an agent's tabs already land, with its own history,
     bookmarks, find, devtools and downloads, but Chromium's UI rather than Daoris's.
@@ -104,5 +105,5 @@ evidence rather than repeat it, which leaves the kit's own probe to what depends
 |---|---|---|
 | **CHR1** ✓ | A scratch probe: an embedded Chromium in a WinForms window. It answered whether the debug port reaches every page in the process (it does); whether a tab a CDP client opens reaches the app (no: it gets an engine window); whether a session cookie survives a restart with the engine's own setting (yes); Playwright MCP attached and driving (yes, except opening a tab); the page-host round trip (0.2–0.3 ms median); and size, banner, codecs and licence | `docs/2026-09-28-chromium-embedding-evidence.md`, 2026-09-28 |
 | **CHR2** | The main and secondary windows move to `Shenora.Windows.Chromium` once it is released (§3). Daoris's part is the move: the package, the page transport, the splash and the trouble message on the new host, and a page process with no port | the web suite on the page transport, the deployment rehearsal, and a look at the window |
-| **CHR3** | The browser on the same engine, in a process of its own with its global request context and `PersistSessionCookies`, in the form the owner picks (§4). CDP on that process only. Supersedes BRW11 | a stub session handed `${browser}`, and an agent's tab seen by the person |
+| **CHR3** ✓ | `daoris-browser`: the engine's own window, in a process of its own with its global request context and `PersistSessionCookies`, CDP on that process only, started by the shell behind `IInAppBrowser` and carried by the install under `app/daoris-browser/`. Supersedes BRW11 | the deployment rehearsal: the deployed shell's driver brings up the install's own browser for a session's server, and it goes with the shell; a look on the scratch shell (evidence §11–§15) |
 | **CHR4** | The install carries it: `publish:desktop` places the runtime, and the deployment rehearsal starts the published shell on it and asserts which engine answered. The WebView2 path and its refusal go | `npm run rehearse:deploy` |

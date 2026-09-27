@@ -10,6 +10,7 @@ got its shape is in `docs/DECISIONS.md` and `docs/task-archive.md`, not here.
 | `Daoris.Desktop.Driver.Host` | `daoris-driver`, the headless door onto the same library: the tick, chat, ask, trees and sync |
 | `Daoris.Desktop.Modules` | The shell's head: the loop, the host supervisor, every IPC module the page talks to, and `Refusals`, where a refusal is declared once as a code the page translates. Plain `net10.0`, with its own tests and gate |
 | `Daoris.Desktop.App` | `daoris-desktop`, the window and only the window, on Shenora.Windows 0.16.0 (D22) |
+| `Daoris.Desktop.Browser` | `daoris-browser`, Daoris's own browser (D85, CHR3): Chromium through CefSharp, in a process of its own because the engine's debug port reaches every page in its process. It shows the engine's own window, which it opens over that port, and ends when its last window closes or the shell does. The shell starts it; an install carries it under `app/daoris-browser/` with two locales |
 
 The adapters are the stub, `acp-stub` (the protocol door with no model in it), `claude-code`, and the
 protocol door's configurations `claude-code-acp`, `codex-acp` and `dsh`. A session's record is
@@ -22,7 +23,7 @@ concluded from its exit code and its quest, never from what it said.
 | `DAORIS.DRIVER` | The driver: its state and tick reports; the drivable set, holds, trees, strikes, notifications and the intake harness; trust and retry; a session's live console (`TAIL_SESSION`, batched `SESSION_OUTPUT`) and the streams it runs beside itself, a subagent or a background task each (`SESSION_STREAMS`, and a `SESSION_STREAMS` event when one opens or ends), its record a page at a time (`SESSION_HISTORY`, batched `SESSION_EVENTS`, from the typed events kept beside each transcript), a conversation (`START_CHAT`, `SESSION_INPUT` with files, `END_CHAT`, `CANCEL_TURN`, `SESSION_QUEUE`), stop and resolve, review (`SESSION_DIFF`, merge or discard a tree), the files a composer's `@` offers (`SESSION_FILES`), and a conversation's first line and a search of what sessions said (`SESSION_OPENINGS`, `SESSION_SEARCH`); the toolchain (`HARNESSES`, `HARNESS_ACTION` relayed under `<harness>:<action>`, its input and cancel); plugins, permission rules and proposals, usage; `NUDGE` after a publish or an ask, and `SYNC_NOW` |
 | `DAORIS.REGISTRY` | A folder picked and inspected; an existing manifest's declaration written, uncommitted, for that repository's review |
 | `DAORIS.REMOTES` | The machine's `remotes.json`, the file `daoris remote` edits: a key goes in, and only its audit prefix comes back |
-| `DAORIS.WINDOWS` | Named secondary windows: `monitor` and `session:<id>`; and `OPEN_BROWSER`, Daoris's own browser (D78): its own WebView2 environment and profile under the home, no bridge, a loopback CDP port that a plugin's browser MCP attaches to |
+| `DAORIS.WINDOWS` | Named secondary windows: `monitor` and `session:<id>`; and `OPEN_BROWSER`, Daoris's own browser (D78, D85): `daoris-browser` started, or its window brought forward. Its profile is under the home at `browser/engine`, with no bridge, and a loopback CDP port that a plugin's browser MCP attaches to |
 
 These doors are the shell's alone: machine-local facts never reach a browser (D47 §4), so none of
 them is an HTTP route. A session's *record* is on the host; its console, events and diff are here.

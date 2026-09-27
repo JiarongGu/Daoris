@@ -6877,3 +6877,37 @@ It left CHR3's form to the owner: Daoris's chrome around the control, or the eng
 **Found on the way:** a reply through the message's own frame never arrived and said nothing (the
 evidence's §6). The driver's first runs read a restarted host's old log and a stale report, and each
 was put right before its number was kept.
+
+## CHR3 — the browser on the same engine (2026-09-28)
+
+The row as filed: *(supersedes BRW11). The owner's call first: Daoris's own chrome around the control
+(BRW9 back), or the engine's own Chromium window (the contract's §4).* The owner's call: *"lets do it
+now please download"*, on the recommendation of the engine's own window.
+
+**Outcome.** `daoris-browser` (`src/Daoris.Desktop/Daoris.Desktop.Browser`) is CefSharp 152 with no
+control, in a process of its own:
+- It opens the engine's own window over its own port, and ends when its last window closes or the
+  shell does.
+- The shell starts it behind `IInAppBrowser` (`EngineBrowserHost`), with the profile at
+  `<home>/browser/engine` and `PersistSessionCookies`. The driver, the plugins and `${browser}` are
+  unchanged.
+- The pure half is `EngineBrowser`, `EngineBrowserOptions` and `EngineCdp` in the modules. They cover
+  the arguments the shell writes and the browser parses, the locale, where the executable is found
+  (the install first) and which targets are windows. There are 19 tests, one watched fail by
+  sabotage.
+- The publish carries it under `app/daoris-browser/` with two locales, and
+  `deployment-rehearsal.test.ts` holds that folder against `EngineBrowser.InstallHome`.
+- The dev loop builds it, and `shot --window browser` photographs it.
+
+**Proven by:**
+- The deployment rehearsal: the deployed shell's own driver brought up the install's browser for a
+  session's `${browser}` server, on the home's profile, handed the server, and the browser went with
+  the shell.
+- A look on the scratch shell: a second press brings the window forward, a press after closing starts
+  another, and `kill` takes it with the shell.
+
+**Found on the way** (evidence §11–§15):
+- No agent can open a tab, because the engine announces a new target as `other` (CHR6).
+- The machine's Chrome extensions reach the profile (CHR7).
+- Focus is Windows' to give.
+- Daoris's favorites and history are read by no window now (CHR5).

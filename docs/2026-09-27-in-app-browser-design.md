@@ -12,8 +12,22 @@
 > why.
 >
 > **Amended by D85 (2026-09-28).** The Chromium is embedded, under Daoris's own windows, and hosts
-> the app's page too (`docs/2026-09-28-chromium-host-design.md`). So the window's own chrome (§3.2's
-> tabs, §3a, §3b) is carried onto the new engine rather than handed to another program (CHR3).
+> the app's page too (`docs/2026-09-28-chromium-host-design.md`).
+>
+> **Amended by CHR3 (2026-09-28): the browser is `daoris-browser`, the engine's own window.** The
+> owner took the recommendation (*"lets do it now"*). What each section is now:
+> - **§3.1:** a process of its own, because the engine's port reaches every page in its process. It
+>   holds no control and no Daoris page, and the shell's process has no port.
+> - **§3.2:** the window, its tabs, history, bookmarks, find, devtools and downloads are the engine's
+>   own. View → *Browser* and the palette open it, a second press brings it forward, and it closes
+>   with the shell.
+> - **§3.3:** the profile is `<home>/browser/engine`, and the engine keeps a sign-in across a restart
+>   itself (`PersistSessionCookies`). BRW10's sealed file is not used by it.
+> - **§3.4–§3.6 stand:** a port picked free for the shell's life, `${browser}`, and the driver asking
+>   first. 🔴 **An agent drives the tab it finds and cannot open another**, because the engine
+>   announces a new target as `other` (`docs/2026-09-28-chromium-embedding-evidence.md` §12).
+> - **§3a and §3b:** Daoris's `favorites.json` and `history.json` are read by no window now, since the
+>   engine keeps its own bookmarks and history. Their terminal twin is the owner's call (TASKS).
 
 ## 0. Why the first answer is not enough
 

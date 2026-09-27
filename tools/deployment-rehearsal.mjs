@@ -50,7 +50,9 @@ import { setTimeout as sleep } from 'node:timers/promises';
 import { copyTree, isMain } from './fsx.mjs';
 import { capture, makeChecker, openTranscript } from './rehearsal-kit.mjs';
 // The install's layout, from the script that makes it (REV3 CLEAN1) — never a second spelling of it.
-import { HOME, HOST_EXE, HOST_HOME, LAUNCHER } from './desktop-publish.mjs';
+import {
+  BROWSER_EXE, BROWSER_HOME, BROWSER_LOCALES, HOME, HOST_EXE, HOST_HOME, LAUNCHER,
+} from './desktop-publish.mjs';
 
 // ---------------------------------------------------------------------------------------------
 // Everything above the divider runs; everything below it is asserted by
@@ -131,6 +133,8 @@ const newcomer = join(family, 'newcomer');
 
 const shellExe = join(install, LAUNCHER);
 const installedHost = join(install, ...HOST_HOME, HOST_EXE);
+/** Daoris's own browser inside the install (D85, CHR3), which the deployed shell starts beside itself. */
+const installedBrowser = join(install, ...BROWSER_HOME, BROWSER_EXE);
 
 /** The line the stub says, and the line phase 5 looks for on disk. Both halves, one constant. */
 const NON_ASCII = 'stub: 道衍 — the unfolding of the way';
@@ -300,6 +304,17 @@ async function main() {
   check(`the host is under ${HOST_HOME.join('/')}/`, existsSync(installedHost), installedHost);
   check('…and its bundle travelled beside it',
     existsSync(join(install, ...HOST_HOME, 'wwwroot', 'index.html')));
+
+  // Daoris's own browser (D85, CHR3), the other counterpart set: where the shell looks first, with
+  // the engine beside it and only the two languages it is ever asked for.
+  check(`the browser is under ${BROWSER_HOME.join('/')}/`, existsSync(installedBrowser), installedBrowser);
+  const localesKept = existsSync(join(install, ...BROWSER_HOME, 'locales'))
+    ? readdirSync(join(install, ...BROWSER_HOME, 'locales')).sort()
+    : [];
+  check('…with its engine beside it, and only the locales the install keeps',
+    existsSync(join(install, ...BROWSER_HOME, 'libcef.dll'))
+      && localesKept.join() === [...BROWSER_LOCALES].sort().join(),
+    `locales: ${localesKept.join(', ') || '(none)'}`);
 
   // Framework-dependent on purpose (D43's opposite case): it carries no .NET this machine has.
   const shellSize = existsSync(shellExe) ? statSync(shellExe).size : 0;
@@ -473,6 +488,19 @@ if (!done.ok) throw new Error(done.text);
   // them in its loop and stops them in its Stop), and is what a deployed machine actually runs.
   copyTree(join(examplesRoot, 'plugins', 'hold-by-title'), join(home, 'plugins', 'hold-by-title'));
 
+  // A server that drives Daoris's own browser (D78 §3.5): before the deployed shell's driver hands a
+  // session its servers, it has to bring up the browser the INSTALL carries. The stub never runs the
+  // server; what is measured is that the browser came up, from where, and on which profile.
+  mkdirSync(join(home, 'plugins', 'drives-the-browser'), { recursive: true });
+  writeFileSync(join(home, 'plugins', 'drives-the-browser', 'plugin.json'), `${JSON.stringify({
+    id: 'drives-the-browser',
+    apiVersion: 1,
+    name: 'Drives the browser',
+    version: '1.0.0',
+    description: 'A server handed Daoris’s own browser, for the deployment rehearsal.',
+    servers: [{ name: 'browser', command: ['node', '-e', '0', '${browser}'] }],
+  }, null, 2)}\n`);
+
   // The person's standing choices, scratch-local. Written BEFORE the shell starts: the loop begins
   // with the app, and a config arriving late makes the first ticks say "nothing is opted in".
   writeFileSync(join(home, 'driver.json'), `${JSON.stringify({
@@ -643,6 +671,20 @@ if (!done.ok) throw new Error(done.text);
     Boolean(record?.id) && new RegExp(`${record.id} ${questId} newcomer completed stub`).test(ended),
     ended || '(no ended.log)');
 
+  // The browser the driver brought up for the session's server: the install's own, on the profile
+  // under this run's home, and the session was handed its server rather than told it was withheld.
+  const browsers = running(installedBrowser);
+  const browserLine = browsers.length
+    ? powershell(`(Get-CimInstance Win32_Process -Filter "ProcessId = ${browsers[0]}").CommandLine`).trim()
+    : '';
+  check('the deployed shell’s driver brought up the install’s own browser for the session',
+    browsers.length === 1, browsers.length ? `pid ${browsers.join(', ')}` : 'no daoris-browser from the install');
+  check('…on its profile under this machine’s home',
+    browserLine.includes(join(home, 'browser', 'engine')), browserLine || '(no command line)');
+  check('…and the session was handed the server that drives it',
+    bytes.length > 0 && !bytes.toString('utf8').includes('was not handed'),
+    bytes.toString('utf8').split('\n').find((line) => line.includes('was not handed')) ?? '(no transcript)');
+
   // -------------------------------------------------------------- 6. it stops without orphaning
 
   section('6. Closing the shell stops what the shell owns');
@@ -658,6 +700,14 @@ if (!done.ok) throw new Error(done.text);
   const hooksLeft = hookProcesses();
   check('and the plugin’s process went with the loop', hooksLeft.length === 0,
     hooksLeft.map((pid) => `pid ${pid}`).join(', '));
+  // The browser closes its windows when the shell ends (`--parent`), as the shell's own window did.
+  let browsersLeft = running(installedBrowser);
+  for (let attempt = 0; attempt < 10 && browsersLeft.length > 0; attempt += 1) {
+    await sleep(500);
+    browsersLeft = running(installedBrowser);
+  }
+  check('and the browser went with the shell', browsersLeft.length === 0,
+    browsersLeft.map((pid) => `pid ${pid}`).join(', '));
 
   // -------------------------------------------------------------- 7. report
 

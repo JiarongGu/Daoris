@@ -25,6 +25,13 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- The engine Daoris ships for its browser (D84, D85): Chromium through CefSharp, whose runtime
+         package pins the Chromium build. Only `Daoris.Desktop.Browser` references it, so no other
+         project carries its 400 MB. Measured first: docs/2026-09-28-chromium-embedding-evidence.md. -->
+    <PackageVersion Include="CefSharp.WinForms.NETCore" Version="152.0.100" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
     <PackageVersion Include="xunit" Version="2.9.2" />
     <PackageVersion Include="xunit.runner.visualstudio" Version="2.8.2" />

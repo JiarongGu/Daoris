@@ -58,6 +58,22 @@ export const HOST_HOME = Object.freeze(['app', 'daoris-knowledge-http']);
 /** The service host's file name inside {@link HOST_HOME}. */
 export const HOST_EXE = 'daoris-knowledge-http.exe';
 
+/**
+ * Where Daoris's own browser goes (D85, CHR3): a process of its own, carrying the engine's runtime
+ * beside it. The other half of this counterpart set is `EngineBrowser.InstallHome`, which the shell
+ * looks in first; `deployment-rehearsal.test.ts` reads both.
+ */
+export const BROWSER_HOME = Object.freeze(['app', 'daoris-browser']);
+
+/** The browser's file name inside {@link BROWSER_HOME}. */
+export const BROWSER_EXE = 'daoris-browser.exe';
+
+/**
+ * The engine's locale files an install keeps: the two languages Daoris speaks, and the two
+ * `EngineBrowser.Locale` ever asks for. The other 218 are 48 MB nobody reads.
+ */
+export const BROWSER_LOCALES = Object.freeze(['en-US.pak', 'zh-CN.pak']);
+
 /** The shell's own home, which it creates on first start (D63). */
 export const HOME = 'data';
 
@@ -136,6 +152,7 @@ function main() {
   const to = isAbsolute(toArg) ? toArg : resolve(process.cwd(), toArg);
 
   const APP = 'src/Daoris.Desktop/Daoris.Desktop.App';
+  const BROWSER = 'src/Daoris.Desktop/Daoris.Desktop.Browser';
   const HTTP = 'src/Daoris.Service/Daoris.Service.Http';
   const WEB = 'src/Daoris.Web';
 
@@ -157,7 +174,8 @@ function main() {
    */
   const installed = join(to, LAUNCHER);
   if (process.platform === 'win32' && existsSync(installed)) {
-    const held = running(installed);
+    // The browser follows the shell out, so a running one is a shell still running, or just gone.
+    const held = [...running(installed), ...running(join(to, ...BROWSER_HOME, BROWSER_EXE))];
     if (held.length > 0) {
       console.error(`desktop-publish: the install at \`${to}\` is running (pid ${held.join(', ')}).`);
       console.error('  Close it and re-run — a running application holds its own executable open, and');
@@ -185,6 +203,24 @@ function main() {
   run(`dotnet publish "${APP}" -c Release -r win-x64 --self-contained false `
     + '-p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true '
     + `-p:DebugType=none -p:AllowedReferenceRelatedFileExtensions=none -o "${to}" --nologo`);
+
+  // Daoris's own browser (D85, CHR3), always: the shell starts it, so a shell without it has a
+  // browser menu that does nothing. Replaced rather than published over, as the host is below, so
+  // an engine upgrade leaves no file of the last one beside it.
+  console.log(`desktop-publish: publishing Daoris's browser under ${BROWSER_HOME.join('/')}/…`);
+  const browser = join(to, ...BROWSER_HOME);
+  rmSync(browser, { recursive: true, force: true });
+  run(`dotnet publish "${BROWSER}" -c Release -r win-x64 --self-contained false `
+    + `-p:DebugType=none -p:AllowedReferenceRelatedFileExtensions=none -o "${browser}" --nologo`);
+  const locales = join(browser, 'locales');
+  if (!BROWSER_LOCALES.every((file) => existsSync(join(locales, file)))) {
+    console.error(`desktop-publish: the browser's publish carries no ${BROWSER_LOCALES.join(' or ')} — `
+      + 'the engine would start with no language it is asked for.');
+    process.exit(1);
+  }
+  for (const file of readdirSync(locales)) {
+    if (!BROWSER_LOCALES.includes(file)) rmSync(join(locales, file));
+  }
 
   if (flag('--service')) {
     // Supporting binaries go under `app/`, which is the shape the neighbouring applications on this
@@ -224,7 +260,7 @@ Published from a Daoris workspace by \`tools/desktop-publish.mjs\`.
 | | |
 |---|---|
 | \`${LAUNCHER}\` | **the application** — the only thing to run. One file. |
-| \`${HOST_HOME[0]}/\` | supporting binaries, when published with \`--service\`. Nothing to open. |
+| \`${HOST_HOME[0]}/\` | supporting binaries: Daoris's own browser and the Chromium it runs on, and the HTTP host when published with \`--service\`. Nothing to open. |
 | \`${HOME}/\` | **the Daoris home**: the registry, the quests, the drivable set, the harness profiles, the installed service binaries — and the WebView2 profile and the window's geometry. |
 
 Anything else in this folder is not the application's — repositories it drives, typically — and a

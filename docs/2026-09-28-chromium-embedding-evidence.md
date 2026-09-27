@@ -87,6 +87,32 @@ runs, the range is given.
   Daoris-side answer takes a target the engine made. orca answers it with a CDP proxy. Not measured
   here.
 
+## What CHR3 then measured on `daoris-browser` itself (2026-09-28)
+
+The browser as built: the engine with no control, in a process of its own, making its windows over
+its own port (`src/Daoris.Desktop/Daoris.Desktop.Browser`), started by the shell.
+
+11. **A process with no control opens its first window over its own port**, in 0.7 s: the engine's own
+    Chromium window on its new-tab page. Closing that window ends the process in about 3 s. Ending the
+    shell closes the browser's windows and ends it in under a second. A sign-in survived a restart.
+12. 🔴 **Why no agent can open a tab.** A target made by `Target.createTarget` is announced in
+    `Target.targetCreated` as type **`other`**, and only shows as a `page` in `/json/list` afterwards.
+    Its browser context is the default one, so that is not the cause. Playwright MCP's
+    `browser_tabs new` fails as before, and so does Chrome DevTools MCP's `new_page` (*"Failed to create
+    a page for context (id = undefined)"*): both wait for a `page`. The tab they asked for does open,
+    in the person's window. Driving the current tab works in both.
+13. **Focus is Windows' to give.** Started from a background process, the first window took the
+    foreground once without being asked to stay back, and once when asked. Windows' own foreground
+    rules decided, not the request.
+14. 🔴 **The machine's Chrome extensions reach the engine's profile.** On a fresh profile the app menu
+    read *Action required: New extension added (…)*, naming a download manager's helper that another
+    program had registered for Google Chrome under `HKLM\SOFTWARE\Google\Chrome\Extensions`, which the
+    engine reads.
+    It is not installed until the person approves it (the profile had no extensions folder). The profile
+    is sealed from the person's accounts, and not from what other software registers for Chrome.
+15. **Nothing of it lands under the user profile**, apart from the OS temp folder's timestamp, which
+    the run's other processes also write.
+
 ## Not measured
 
 - Shenora's frameless form hosting the control, per-monitor DPI, and a secondary window's own engine.
