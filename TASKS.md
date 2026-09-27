@@ -54,6 +54,14 @@ branch. The owner then set two more directions, **D81**: a session works in its 
 mode, "as much as it can just like regular claude code". And **parallel sessions (PAR1)** and **a
 console tab for everything running (CONSOLE2)**. CHAIN2 landed as D82, PAR1 with it, and STANDDOWN2 as
 D83, all in the archive. **Next: CONSOLE2.**
+🔴 **Where the 2026-09-27 session stopped (the owner: "lets continue in next session").** The first
+goal's loop is met (FG5's sixth leg). The install runs `c3e6516`. The workspace's `4805151` (one-line
+tool names, whole last words on a parked card) is not on it yet: republishing restarts the app, and
+that signs the in-app browser out (BRW10), so ask before doing it. **The owner has five open calls:**
+the verify step's camera-GUID defect, sent to the front end as a quest before any camera note is
+saved; whether the daily view gains a note chip; the single-select answer said back on the ticket;
+merging four docs commits left on session branches, in both repositories; and READACROSS1. The
+private notes name the branches and ids.
 D76's round is done, and its leftovers (RAIL2, SURF11) stand behind these. Nothing is pushed or
 published, and a release is still blocked on REH1.
 - **Landed:** CONV1 (the record), CONV2 (the view), CONV3a (Claude Code's `stream-json`), CONV3b
