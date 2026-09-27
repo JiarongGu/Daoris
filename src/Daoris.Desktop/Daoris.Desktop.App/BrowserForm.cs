@@ -5,8 +5,8 @@ using WebView2Control = Microsoft.Web.WebView2.WinForms.WebView2;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// Daoris's own browser (D78): one framed window with an address bar, in a WebView2 environment of
-/// its own — the page the person signs in to and a session drives over CDP.
+/// Daoris's own browser (D78): one framed window with tabs and an address bar, in a WebView2
+/// environment of its own — the pages the person signs in to and a session drives over CDP.
 /// </summary>
 /// <remarks>
 /// <para>🔴 <b>No bridge, and never the app's environment.</b> A standard browser MCP attached over CDP
@@ -14,6 +14,11 @@ namespace Daoris.Desktop;
 /// under that would hold the machine. So this window has its own user-data folder, which is its own
 /// browser process, and the debug port it opens reaches nothing else. It never builds a
 /// <c>WebViewIpcBridge</c>.</para>
+///
+/// <para><b>Tabs (BRW4)</b>, a WebView2 each on the one environment, so each is a CDP target on the same
+/// port. Where a tab opens and which is in front after one closes is <see cref="BrowserTabs"/>'s. A
+/// page's new window becomes a tab beside it, handed back to the page as its window, so
+/// <c>window.opener</c> still works.</para>
 ///
 /// <para><b>Shown without taking focus when an agent brings it up.</b> The person opens it to sign in
 /// and to watch. A session brings it up because a server needs its endpoint, and a window stealing
@@ -25,13 +30,25 @@ namespace Daoris.Desktop;
 public sealed class BrowserForm : OptimizedForm
 {
     private const string AdditionalArgumentsVariable = "WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS";
+    private const string WindowTitle = "Daoris — Browser";
 
-    private readonly WebView2Control _webView;
+    private readonly ChromePalette _palette;
     private readonly TextBox _address;
+    private readonly FlowLayoutPanel _strip;
+    private readonly Button _newTab;
+    private readonly Panel _content;
     private readonly string _profile;
     private readonly int _port;
     private readonly bool _activate;
     private readonly TaskCompletionSource _ready = new(TaskCreationOptions.RunContinuationsAsynchronously);
+
+    /// <summary>The tabs' order and which is in front (BRW4); the pages and their strip entries by id.</summary>
+    private readonly BrowserTabs _tabs = new();
+    private readonly Dictionary<int, WebView2Control> _pages = [];
+    private readonly Dictionary<int, Tab> _chips = [];
+
+    /// <summary>One environment for every tab: one browser process, one profile, one CDP port.</summary>
+    private CoreWebView2Environment? _environment;
 
     /// <summary>The sign-in kept across a restart (BRW10): put back before the first page, kept after each.</summary>
     private readonly BrowserSessionCookies _cookies;
@@ -64,12 +81,30 @@ public sealed class BrowserForm : OptimizedForm
         _port = port;
         _activate = activate;
         _cookies = cookies;
-        var palette = ChromePalette.For(MainForm.OperatingSystemPrefersDark());
+        _palette = ChromePalette.For(MainForm.OperatingSystemPrefersDark());
+        var palette = _palette;
 
-        Text = "Daoris — Browser";
+        Text = WindowTitle;
         StartPosition = FormStartPosition.CenterScreen;
 
-        _webView = new WebView2Control { Dock = DockStyle.Fill, DefaultBackgroundColor = palette.Page };
+        _content = new Panel { Dock = DockStyle.Fill, BackColor = palette.Page };
+
+        // The tabs, above the bar. The one in front wears the bar's colour and joins it, as in any
+        // browser, so the page the address belongs to is the one that reads as attached to it.
+        _strip = new FlowLayoutPanel
+        {
+            Dock = DockStyle.Top,
+            AutoSize = true,
+            AutoSizeMode = AutoSizeMode.GrowAndShrink,
+            WrapContents = false,
+            BackColor = palette.Page,
+            Padding = new Padding(6, 5, 6, 0),
+            AccessibleName = "Tabs",
+        };
+        _newTab = Glyph("", "New tab (Ctrl+T)", palette, () => _ = OpenTabAsync(opener: null, address: "about:blank", focus: true));
+        _newTab.BackColor = palette.Page;
+        _strip.Controls.Add(_newTab);
+        _strip.Resize += (_, _) => Fit();
 
         var bar = new TableLayoutPanel
         {
@@ -85,9 +120,12 @@ public sealed class BrowserForm : OptimizedForm
         bar.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
         bar.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
 
-        bar.Controls.Add(Glyph("", "Back", palette, () => { if (_webView.CanGoBack) _webView.GoBack(); }), 0, 0);
-        bar.Controls.Add(Glyph("", "Forward", palette, () => { if (_webView.CanGoForward) _webView.GoForward(); }), 1, 0);
-        bar.Controls.Add(Glyph("", "Reload", palette, () => _webView.Reload()), 2, 0);
+        // 🔴 Each glyph is a private-use character, which most views show as nothing: a rewrite that
+        // copied these from a read wrote empty strings, and the bar lost its buttons (BRW4, seen on
+        // the window). Check the bytes after touching one.
+        bar.Controls.Add(Glyph("", "Back", palette, () => { if (Front is { CanGoBack: true } page) page.GoBack(); }), 0, 0);
+        bar.Controls.Add(Glyph("", "Forward", palette, () => { if (Front is { CanGoForward: true } page) page.GoForward(); }), 1, 0);
+        bar.Controls.Add(Glyph("", "Reload", palette, () => Front?.Reload()), 2, 0);
 
         _address = new TextBox
         {
@@ -106,7 +144,7 @@ public sealed class BrowserForm : OptimizedForm
             if (key.KeyCode != Keys.Enter) return;
             key.SuppressKeyPress = true;
             // A page, or nothing: the bar is for web pages, and what is not one stays typed (D78).
-            if (InAppBrowser.Address(_address.Text) is { } page && _webView.CoreWebView2 is { } core) core.Navigate(page);
+            if (InAppBrowser.Address(_address.Text) is { } page && Front?.CoreWebView2 is { } core) core.Navigate(page);
         };
         bar.Controls.Add(_address, 3, 0);
 
@@ -130,16 +168,61 @@ public sealed class BrowserForm : OptimizedForm
         };
         _noticeStrip.Controls.Add(_notice);
 
-        // Docked from the last added: the bar at the top, the notice under it, the page in the rest.
-        Controls.Add(_webView);
+        // Docked from the last added: the tabs at the top, the bar under them, the notice under that,
+        // and the page in the rest.
+        Controls.Add(_content);
         Controls.Add(_noticeStrip);
         Controls.Add(bar);
+        Controls.Add(_strip);
 
         Load += async (_, _) => await BringUpAsync();
     }
 
     /// <summary>Brought up by a session, it does not take the keyboard from the person.</summary>
     protected override bool ShowWithoutActivation => !_activate;
+
+    /// <summary>The page in front, or null before the first tab is up.</summary>
+    private WebView2Control? Front => _tabs.Front is { } id ? _pages.GetValueOrDefault(id) : null;
+
+    /// <summary>The window's keys while the bar or the strip has the keyboard.</summary>
+    protected override bool ProcessCmdKey(ref Message msg, Keys keyData) =>
+        Shortcut(keyData) || base.ProcessCmdKey(ref msg, keyData);
+
+    /// <summary>
+    /// A browser's keys: a new tab, closing one, the next and previous, and the address. True when the
+    /// key was one of them.
+    /// </summary>
+    /// <remarks>
+    /// 🔴 Heard twice over, because a page has the keyboard most of the time and the form never sees
+    /// its keys. The WebView2 control raises its own <c>KeyDown</c> for them: its controller's
+    /// accelerator handler builds the key from <c>VirtualKey | ModifierKeys</c>, calls <c>OnKeyDown</c>,
+    /// and hands <c>Handled</c> back to the browser (read from the control's IL, WebView2 1.0.3800.47). So each
+    /// page's <c>KeyDown</c> is wired here, and <see cref="ProcessCmdKey"/> covers the bar and the strip.
+    /// </remarks>
+    private bool Shortcut(Keys keyData)
+    {
+        switch (keyData)
+        {
+            case Keys.Control | Keys.T:
+                _ = OpenTabAsync(opener: null, address: "about:blank", focus: true);
+                return true;
+            case Keys.Control | Keys.W:
+                if (_tabs.Front is { } front) CloseTab(front);
+                return true;
+            case Keys.Control | Keys.Tab:
+                Bring(_tabs.Step(+1));
+                return true;
+            case Keys.Control | Keys.Shift | Keys.Tab:
+                Bring(_tabs.Step(-1));
+                return true;
+            case Keys.Control | Keys.L:
+                _address.Focus();
+                _address.SelectAll();
+                return true;
+            default:
+                return false;
+        }
+    }
 
     private static Button Glyph(string glyph, string name, ChromePalette palette, Action press)
     {
@@ -171,7 +254,6 @@ public sealed class BrowserForm : OptimizedForm
         try
         {
             var arguments = InAppBrowser.Arguments(_port);
-            CoreWebView2Environment environment;
 
             // 🔴 The dev loop opens the APP's debug port through this variable, for the instruments, and
             // the variable reaches every environment this process creates. Left in place, this browser
@@ -182,7 +264,7 @@ public sealed class BrowserForm : OptimizedForm
             try
             {
                 if (!string.IsNullOrEmpty(inherited)) Environment.SetEnvironmentVariable(AdditionalArgumentsVariable, arguments);
-                environment = await CoreWebView2Environment.CreateAsync(
+                _environment = await CoreWebView2Environment.CreateAsync(
                     browserExecutableFolder: null,
                     userDataFolder: _profile,
                     options: new CoreWebView2EnvironmentOptions(additionalBrowserArguments: arguments));
@@ -192,33 +274,19 @@ public sealed class BrowserForm : OptimizedForm
                 if (!string.IsNullOrEmpty(inherited)) Environment.SetEnvironmentVariable(AdditionalArgumentsVariable, inherited);
             }
 
-            await _webView.EnsureCoreWebView2Async(environment);
-            var core = _webView.CoreWebView2;
-
-            // One page per window in v1 (D78 §3.2): a link that asks for a new window opens here.
-            core.NewWindowRequested += (_, asked) =>
+            // The first tab, and the sign-in back before its first page loads (BRW10).
+            await OpenTabAsync(opener: null, address: null, focus: _activate);
+            if (Front?.CoreWebView2 is { } first)
             {
-                asked.Handled = true;
-                if (InAppBrowser.Address(asked.Uri) is { } page) core.Navigate(page);
-            };
-            core.SourceChanged += (_, _) => _address.Text = core.Source;
-            core.DocumentTitleChanged += (_, _) =>
-                Text = string.IsNullOrWhiteSpace(core.DocumentTitle) ? "Daoris — Browser" : $"Daoris — Browser · {core.DocumentTitle}";
+                await RestoreAsync(first);
+                first.Navigate("about:blank");
+            }
 
-            // The sign-in back before the first page loads (BRW10), and kept after every page, which
-            // is where a sign-in ends, and on a timer for what a page changes without loading.
-            await RestoreAsync(core);
-            core.NavigationCompleted += (_, _) =>
-            {
-                if (core.Source.StartsWith("http", StringComparison.OrdinalIgnoreCase)) _noticeStrip.Visible = false;
-                Keep();
-            };
+            // Kept on a timer too, for what a page changes without loading (BRW10).
             _keeping.Tick += (_, _) => Keep();
             _keeping.Start();
 
-            core.Navigate("about:blank");
             _ready.TrySetResult();
-            if (_activate) _address.Focus();
         }
         catch (Exception error)
         {
@@ -228,11 +296,153 @@ public sealed class BrowserForm : OptimizedForm
             {
                 Dock = DockStyle.Fill,
                 Text = error.Message,
-                ForeColor = ChromePalette.For(MainForm.OperatingSystemPrefersDark()).Ink,
+                ForeColor = _palette.Ink,
                 Padding = new Padding(24),
                 Font = new Font("Segoe UI", 10.5f),
             });
         }
+    }
+
+    /// <summary>
+    /// A new tab, in front: the person's, going to <paramref name="address"/>, or a page's new window
+    /// beside its <paramref name="opener"/>, handed back to that page as the window it asked for.
+    /// </summary>
+    private async Task OpenTabAsync(
+        int? opener, string? address, bool focus = false, CoreWebView2NewWindowRequestedEventArgs? asked = null)
+    {
+        if (_environment is null) return;
+
+        var id = _tabs.Open(opener);
+        var page = new WebView2Control { Dock = DockStyle.Fill, DefaultBackgroundColor = _palette.Page };
+        page.KeyDown += (_, key) => key.Handled = Shortcut(key.KeyData);
+        _pages[id] = page;
+        _content.Controls.Add(page);
+        _chips[id] = new Tab(this, id);
+        Arrange();
+        Bring(id);
+
+        await page.EnsureCoreWebView2Async(_environment);
+        var core = page.CoreWebView2;
+        Wire(id, core);
+
+        if (asked is not null) asked.NewWindow = core;
+        else if (address is not null) core.Navigate(address);
+
+        if (focus)
+        {
+            _address.Focus();
+            _address.SelectAll();
+        }
+    }
+
+    /// <summary>What a tab's page tells the window: its address, its title, a new window, its close.</summary>
+    private void Wire(int id, CoreWebView2 core)
+    {
+        core.NewWindowRequested += async (_, asked) =>
+        {
+            // A page's new window is a tab beside it (BRW4), and only ever a web page: a script, a file
+            // or data asked for as a window goes nowhere, as it would from the address bar.
+            if (asked.Uri is not ("" or "about:blank") && InAppBrowser.Address(asked.Uri) is null)
+            {
+                asked.Handled = true;
+                return;
+            }
+
+            var deferral = asked.GetDeferral();
+            try
+            {
+                await OpenTabAsync(opener: id, address: null, asked: asked);
+            }
+            catch (Exception)
+            {
+                // A tab that could not open: the page's window.open returns nothing, as a blocked popup does.
+                asked.Handled = true;
+            }
+            finally
+            {
+                deferral.Complete();
+            }
+        };
+        core.SourceChanged += (_, _) => Named(id, core);
+        core.DocumentTitleChanged += (_, _) => Named(id, core);
+        core.WindowCloseRequested += (_, _) => CloseTab(id);
+        core.NavigationCompleted += (_, _) =>
+        {
+            if (core.Source.StartsWith("http", StringComparison.OrdinalIgnoreCase)) _noticeStrip.Visible = false;
+            // Kept after every page, which is where a sign-in ends (BRW10).
+            Keep();
+        };
+    }
+
+    /// <summary>A tab's name in the strip, and the window's title and the address when it is in front.</summary>
+    private void Named(int id, CoreWebView2 core)
+    {
+        var name = BrowserTabs.Name(core.DocumentTitle, core.Source);
+        if (_chips.TryGetValue(id, out var chip)) chip.Name(name);
+        if (_tabs.Front != id) return;
+        _address.Text = core.Source == "about:blank" ? string.Empty : core.Source;
+        Text = name == "New tab" ? WindowTitle : $"{WindowTitle} · {name}";
+    }
+
+    /// <summary>Bring a tab to the front: its page shown, its entry joined to the bar, its address in the bar.</summary>
+    private void Bring(int? id)
+    {
+        if (id is not { } front || !_pages.ContainsKey(front)) return;
+        _tabs.Bring(front);
+        foreach (var (key, page) in _pages) page.Visible = key == front;
+        foreach (var (key, chip) in _chips) chip.Front(key == front);
+        if (_pages[front].CoreWebView2 is { } core) Named(front, core);
+        else
+        {
+            _address.Text = string.Empty;
+            Text = WindowTitle;
+        }
+    }
+
+    /// <summary>Close a tab; the last one closing closes the window, as in any browser.</summary>
+    private void CloseTab(int id)
+    {
+        if (!_pages.Remove(id, out var page)) return;
+        var stays = _tabs.Close(id);
+        if (_chips.Remove(id, out var chip)) chip.Dispose();
+        _content.Controls.Remove(page);
+        page.Dispose();
+
+        if (!stays)
+        {
+            Close();
+            return;
+        }
+
+        Arrange();
+        Bring(_tabs.Front);
+    }
+
+    /// <summary>The strip's entries in the tabs' order, the new-tab button after them.</summary>
+    private void Arrange()
+    {
+        _strip.SuspendLayout();
+        var at = 0;
+        foreach (var id in _tabs.Order)
+        {
+            if (_chips.TryGetValue(id, out var chip)) _strip.Controls.SetChildIndex(chip.Entry, at++);
+        }
+
+        _strip.Controls.SetChildIndex(_newTab, at);
+        _strip.ResumeLayout();
+        Fit();
+    }
+
+    /// <summary>
+    /// Each entry as wide as a tab's name reads well, and narrower as tabs are added, so the strip
+    /// holds them all and the new-tab button stays in reach, as a browser's tabs shrink.
+    /// </summary>
+    private void Fit()
+    {
+        if (_chips.Count == 0) return;
+        var room = _strip.ClientSize.Width - _strip.Padding.Horizontal - _newTab.Width - 8;
+        var each = Math.Clamp(room / _chips.Count, Tab.Narrowest(Font), Tab.Widest(Font));
+        foreach (var chip in _chips.Values) chip.Width(each);
     }
 
     /// <summary>
@@ -275,7 +485,8 @@ public sealed class BrowserForm : OptimizedForm
     /// </summary>
     private async void Keep()
     {
-        if (_keepingNow || _webView.CoreWebView2 is not { } core) return;
+        // Any tab's cookie manager is the profile's: one environment holds them all.
+        if (_keepingNow || Front?.CoreWebView2 is not { } core) return;
         _keepingNow = true;
         try
         {
@@ -303,5 +514,96 @@ public sealed class BrowserForm : OptimizedForm
         // A window closed before it came up must not leave a waiter hanging.
         _ready.TrySetException(new InvalidOperationException("the in-app browser was closed."));
         base.OnFormClosed(e);
+    }
+
+    /// <summary>One tab's entry in the strip: its name, which brings it forward, and its close.</summary>
+    private sealed class Tab : IDisposable
+    {
+        private readonly BrowserForm _form;
+        private readonly Button _title;
+        private readonly Button _close;
+
+        public FlowLayoutPanel Entry { get; }
+
+        public Tab(BrowserForm form, int id)
+        {
+            _form = form;
+            var palette = form._palette;
+            _title = new Button
+            {
+                Text = "New tab",
+                Font = new Font("Segoe UI", 9.5f),
+                FlatStyle = FlatStyle.Flat,
+                ForeColor = palette.Ink,
+                TextAlign = ContentAlignment.MiddleLeft,
+                AutoEllipsis = true,
+                AutoSize = false,
+                Height = TextRenderer.MeasureText("Ag", new Font("Segoe UI", 9.5f)).Height + 12,
+                Margin = Padding.Empty,
+                Padding = new Padding(6, 0, 0, 0),
+                TabStop = false,
+                // 🔴 A button, not a PageTab: that role made it a tab item with no pattern at all, so
+                // nothing that reads the window could press it (seen through UI Automation). What it
+                // is and whether it is in front is its description.
+            };
+            _title.FlatAppearance.BorderSize = 0;
+            _title.FlatAppearance.MouseOverBackColor = palette.Hover;
+            _title.Click += (_, _) => form.Bring(id);
+            // A middle click closes a tab, as in any browser.
+            _title.MouseUp += (_, press) => { if (press.Button == MouseButtons.Middle) form.CloseTab(id); };
+
+            _close = Glyph("", "Close tab (Ctrl+W)", palette, () => form.CloseTab(id));
+            _close.Font = new Font("Segoe Fluent Icons", 8f);
+            _close.Padding = new Padding(4, 2, 4, 2);
+            _close.Margin = new Padding(0, 0, 4, 0);
+
+            Entry = new FlowLayoutPanel
+            {
+                AutoSize = true,
+                AutoSizeMode = AutoSizeMode.GrowAndShrink,
+                WrapContents = false,
+                Margin = new Padding(0, 0, 2, 0),
+                Padding = Padding.Empty,
+            };
+            Entry.Controls.Add(_title);
+            Entry.Controls.Add(_close);
+            _close.Anchor = AnchorStyles.None;
+            form._strip.Controls.Add(Entry);
+            // Named from the start: a blank tab's page may report no title or address to name it by.
+            Name("New tab");
+            Front(false);
+        }
+
+        /// <summary>The narrowest a tab gets: its close button and a few letters of its name.</summary>
+        public static int Narrowest(Font font) => TextRenderer.MeasureText("Mmmm", font).Width;
+
+        /// <summary>The widest: enough to read a page's title.</summary>
+        public static int Widest(Font font) => TextRenderer.MeasureText("A page title of a fair length here", font).Width;
+
+        public void Name(string name)
+        {
+            _title.Text = name;
+            _title.AccessibleName = name;
+            _close.AccessibleName = $"Close {name}";
+        }
+
+        /// <summary>In front, it wears the bar's colour; behind, the strip's.</summary>
+        public void Front(bool front)
+        {
+            var colour = front ? _form._palette.Surface : _form._palette.Page;
+            Entry.BackColor = colour;
+            _title.BackColor = colour;
+            _close.BackColor = colour;
+            _title.AccessibleDescription = front ? "Tab, in front" : "Tab";
+        }
+
+        /// <summary>The whole entry's width, the close button's share taken off the name.</summary>
+        public void Width(int width) => _title.Width = Math.Max(24, width - _close.Width - _close.Margin.Horizontal);
+
+        public void Dispose()
+        {
+            _form._strip.Controls.Remove(Entry);
+            Entry.Dispose();
+        }
     }
 }

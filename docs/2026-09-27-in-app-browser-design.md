@@ -46,6 +46,14 @@ machine. That sets the first rule below.
    a session is handed a server that needs it. It is one framed window with an address bar,
    back, forward and reload, following the viewer's theme where a window can (WINDOW2 says where it
    cannot). One page per window in v1. A link that asks for a new window opens in the same one.
+   **Amended by BRW4 (2026-09-28): tabs.** Several pages, a WebView2 each on the one environment,
+   so each is a CDP target on the same port. A tab the person asks for goes last, a page's new window
+   is a tab beside that page, handed back to it as its window so `window.opener` works, and closing
+   the tab in front brings its right neighbour forward. Ctrl+T, Ctrl+W, Ctrl+Tab and Ctrl+L. **Which
+   tab an agent drives is the agent's:** Playwright MCP takes the first page it finds as current, not
+   the one in front (measured), and moves when it opens or selects one. 🔴 **A tab an agent opens over
+   CDP has no window** (measured): it is a page in the browser process that nothing shows, so the
+   person cannot watch it. BRW8 carries that.
 3. **Its profile is Daoris's**, under the home (D63), and it persists. The person signs in there
    once, and every session after uses that sign-in. The sign-in is the person's to make, never a
    session's. **Amended by BRW10 (2026-09-28): the sign-in survives a restart.** An identity server's
@@ -73,8 +81,8 @@ machine. That sets the first rule below.
 
 ## 4. What is deliberately not in it
 
-- **Tabs, downloads, devtools, history UI.** v1 is one page an agent and a person share. orca's
-  pane is the reference for what comes after, when somebody asks.
+- **Downloads, devtools, history UI.** v1 was one page an agent and a person share; tabs came with
+  BRW4. orca's pane is the reference for what comes after, when somebody asks.
 - **A browser per session or per worktree.** One browser, one profile, one sign-in. Two sessions at
   once share it, which the cap of one on this machine avoids today. That changes when somebody runs
   two.

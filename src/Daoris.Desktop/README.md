@@ -109,6 +109,14 @@ bytes. Everything this loop provides is what hid two of the first deployment's f
 | `eval [--window <name>] "<js>"` | evaluate inside one of the running shell's pages — **the only instrument that sees the bridge-attached half** (the Settings page, the driver controls, the console, chat). `--window` picks a secondary window's page (SURF8); without it, the application's own |
 | `click [--window <name>] "<css>"` | click exactly one element, and say what it clicked; a selector matching none or several is a refusal, not a first match |
 
+**A native window's controls are pressed through UI Automation, not typed at** (BRW4, 2026-09-28).
+Keystrokes and clicks synthesized from an agent's terminal (`SendKeys`, `keybd_event`,
+`mouse_event`) did not reach the shell's windows at all, not even the address bar. UI Automation's
+Invoke, scoped to the scratch shell's process id, pressed every button. A shortcut over a page is
+then read from the WebView2 control's own code rather than pressed. Scope anything that presses or
+types to the scratch shell's pid, never to a caption: the owner's install opens windows of the same
+names.
+
 **A dev run gets its own machine, and that is a safety property rather than a convenience.** The shell
 runs the driver loop, and the driver spawns **real agent sessions in real repositories**. So `run`
 redirects the home and every machine-local file under it, clears the remote environment pair

@@ -22,7 +22,7 @@ lists.
 ## State
 
 **Counts, and this is their one home:** fifteen commands, **483 CLI tests, 528 service, 799 driver,
-158 desktop modules, 80 devkit, 1201 web unit, 21 Playwright**, 66/66 release rehearsal, **289/289
+166 desktop modules, 80 devkit, 1201 web unit, 21 Playwright**, 66/66 release rehearsal, **289/289
 family rehearsal** (it names its own phases when you run it), **39/39 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge
 documents, 5 skills, 7 packs. The always-loaded core is **22,492 of 26,000 bytes** — a span in
@@ -54,7 +54,8 @@ branch. The owner then set two more directions, **D81**: a session works in its 
 mode, "as much as it can just like regular claude code". And **parallel sessions (PAR1)** and **a
 console tab for everything running (CONSOLE2)**. CHAIN2 landed as D82, PAR1 with it, STANDDOWN2 as
 D83, and CONSOLE2 and BRW10 (a sign-in that survives a restart) on 2026-09-28, all in the archive.
-**Next: the browser as a browser** (BRW4–BRW9), which the owner put after the core workflow.
+**Next: the browser as a browser** (BRW5–BRW9, BRW4's tabs in the archive), which the owner put
+after the core workflow.
 🔴 **Where the 2026-09-27 session stopped (the owner: "lets continue in next session").** The first
 goal's loop is met (FG5's sixth leg). The install runs `c3e6516`, and nothing since is on it.
 🔴 **Republishing still signs the browser out ONCE**, because the running install keeps no cookies
@@ -137,7 +138,7 @@ rather than designed.
 
 ## Backlog
 
-**Thirty-three rows are open**: the in-app browser's seven (BRW3, then BRW4–BRW9, the browser as a browser); the first goal's three (FG5,
+**Thirty-two rows are open**: the in-app browser's six (BRW3, then BRW5–BRW9, the browser as a browser); the first goal's three (FG5,
 READACROSS1 the owner's, and SEM2 on a trigger); D76's held file tools;
 the eight REV3 left, WINDOW2 among them; six leftovers (RAIL2, SURF11, CONSOLE3, FLAKE1, DEPLOY5, TEST1); two on the owner
 (TRUST2, AGT2c); and six on a trigger (see *Handover*). Every closed one is in `docs/task-archive.md`, and this file holds no
@@ -267,9 +268,6 @@ attached over CDP drives a WebView2.
 
 Each is its own landing, TDD, looked at on the window. The design's §4 lists these as deliberately
 not in v1. Amend it as each lands.
-- [ ] **BRW4 — tabs.** Several pages, a strip to switch, `Ctrl+T` and `Ctrl+W`, and a link that
-  asks for a new window opens a tab. Decide which tab an agent drives. CDP exposes each as a
-  target, and the default should be the one in front, said in the strip.
 - [ ] **BRW5 — favorites.** A star in the address bar, a favorites bar, and a menu. They are kept in
   `<home>/browser/favorites.json` (D63), with a terminal twin (`daoris browser favorite
   add|list|remove`, D50). They are the person's, never a session's.
@@ -281,6 +279,9 @@ not in v1. Amend it as each lands.
   or in the system browser, orca's link routing.
 - [ ] **BRW8 — who is driving.** The window says when a session is driving it, names the session,
   and links to it, so the person knows whose hands are on the page before they type into it.
+  **Measured with BRW4 (2026-09-28):** an agent's current tab is the first page it found, not the one
+  in front, and **a tab it opens over CDP (`browser_tabs new`) has no window at all**: the person
+  cannot see what it does there. Say which tab a session is on, and keep its work where it can be seen.
 - [ ] **BRW9 — the rest of a browser's basics.** Find in page (`Ctrl+F`), zoom, devtools (`F12`),
   downloads to `<home>/browser/downloads` with a shelf, and the theme once WINDOW2 gives the window
   a channel.

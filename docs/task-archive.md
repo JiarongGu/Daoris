@@ -6745,3 +6745,32 @@ restarted, and the same session came back on a new browser process. The control,
 with the kept file deleted, came back signed out. The file holds no cookie value in plain text, and a
 file of garbage showed the strip. Modules 158, deployment 39. The install still runs without it, so
 its next republish signs out once more.
+
+## BRW4 — tabs (2026-09-28)
+
+The row as filed: Several pages, a strip to switch, `Ctrl+T` and `Ctrl+W`, and a link that asks for a
+new window opens a tab. Decide which tab an agent drives. CDP exposes each as a target, and the
+default should be the one in front, said in the strip.
+
+- **The order** is `BrowserTabs` (modules, 8 tests): a tab the person asks for goes last, a page's
+  new window sits beside that page, either comes to the front, and closing the one in front brings its
+  right neighbour forward, or its left at the end. The last tab closing closes the window.
+- **The window** holds a WebView2 per tab on the one environment, so each is a CDP target on the
+  same port. A page's new window is a tab handed back to it as its window, so `window.opener` works
+  (a `target=_blank` link has none, as Chromium has made the default). The strip's front tab wears the
+  bar's colour. Tabs narrow as they are added, with a middle click to close. Ctrl+T, Ctrl+W,
+  Ctrl+Tab and Ctrl+L.
+- **Decided: which tab an agent drives is the agent's.** Measured: Playwright MCP, attached, listed
+  every tab and took the first page it found as current, not the one in front. So the row's default
+  is not Daoris's to set, and the strip says only which tab is in front. Also measured: **a tab an
+  agent opens over CDP has no window**, and nothing shows it. That finding went to BRW8.
+- **Looked at on the window.** New-window links and `window.open` made tabs beside their opener, a
+  page's `window.close()` closed its tab, and the strip's buttons opened, brought forward and closed
+  tabs, pressed through UI Automation. Keystrokes synthesized from the terminal did not reach the
+  window. So the shortcuts over a page rest on the WebView2 control's IL (its accelerator handler
+  raises `KeyDown` and carries `Handled` back), not on a key pressed. **Found and fixed on the way:**
+  the bar's three glyphs were lost to a rewrite, being private-use characters no view shows. A tab's
+  entry as a `PageTab` had no pattern, so nothing that reads the window could press it. A blank tab's
+  close button had no name.
+
+Modules 166, deployment 39.
