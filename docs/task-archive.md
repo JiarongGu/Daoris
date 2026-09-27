@@ -6774,3 +6774,29 @@ default should be the one in front, said in the strip.
   close button had no name.
 
 Modules 166, deployment 39.
+
+## BRW5 — favorites (2026-09-28)
+
+The row as filed: A star in the address bar, a favorites bar, and a menu. They are kept in
+`<home>/browser/favorites.json` (D63), with a terminal twin (`daoris browser favorite
+add|list|remove`, D50). They are the person's, never a session's.
+
+- **The file is a twin**, and its rules are the in-app browser design's §3a: no file is no favorites;
+  a file that cannot be read shows none and an editor refuses to write over it; a row's address
+  follows the bar's rule, and one that fails it is skipped by a reader and kept by an editor; a title
+  is its own, or the host; the file's order is the bar's; adding an address already kept keeps its
+  place; an editor keeps what it has no field for. `BrowserFavorites.cs` (modules) and `browser.ts`
+  (the CLI) each carry the same table, fifteen address cases answered alike.
+- **The terminal's door** is `daoris browser`, the sixteenth command, a management verb that edits one
+  file under the home.
+- **The window's**: a star beside the address, filled when the page in front is kept; a favorites bar
+  under the address, a press to go there and a middle press for a new tab, which appears with the
+  first favorite; and a list button whose menu holds them all. Read again whenever the window comes
+  forward, since the terminal may have changed them.
+- **Looked at on the window**, pressed through UI Automation: the star kept a page with its title; the
+  terminal added a second and the menu showed it; a favorite navigated the front tab; unstarring
+  removed it, and `daoris browser favorite list` agreed. **Found and fixed on the way:** disposing the
+  bar's old buttons moved the focus and read the favorites again mid-read, and every favorite showed
+  twice. The bar is now replaced in one step, and a read inside a read is dropped.
+
+CLI 495, modules 191, deployment 39.

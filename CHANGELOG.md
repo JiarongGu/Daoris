@@ -9,7 +9,7 @@ The first version: doctrine that installs, is checked, and flows back.
 
 ### The tool
 
-- **Fifteen commands.** `analyze` reports what adopting would do before it does it; `init` writes a
+- **Sixteen commands.** `analyze` reports what adopting would do before it does it; `init` writes a
   manifest and reports what is available without guessing;
   `sync` materializes the selected packs and writes the lock; `check` gates on drift, staleness and
   index freshness, and **reports** the always-loaded budget rather than failing on it (a fact gates, a
@@ -25,9 +25,11 @@ The first version: doctrine that installs, is checked, and flows back.
   edits the machine's map of one deployment per workspace, talking to nothing and never printing a key
   back; `agent` manages the agent tools sessions run on and the named accounts they run as, spawning
   each tool's own installer and sign-in — and keeps an API key only for an account that is one
-  (D67); `driver` sets what this machine drives; and `plugin` lists, adds, removes and switches the
-  machine's plugins, loading no code from any of them. `agent` **spawns**; `connect`, `retire` and
-  `import` talk to a service; `remote`, `driver` and `plugin` only edit files under the Daoris home.
+  (D67); `driver` sets what this machine drives; `plugin` lists, adds, removes and switches the
+  machine's plugins, loading no code from any of them; and `browser` keeps the in-app browser's
+  favorites, the same file the window's star keeps. `agent` **spawns**; `connect`, `retire` and
+  `import` talk to a service; `remote`, `driver`, `plugin` and `browser` only edit files under the
+  Daoris home.
 - **A pack may switch a core row off, and the repository confirms it** (D71). A pack's `pack.json`
   offers `switchesOff`: a core rule, knowledge document or skill, with the reason its own document
   replaces it. The row goes off only when `daoris.json` names it under `switchedOff`. Until then it

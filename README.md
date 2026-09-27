@@ -62,6 +62,7 @@ ever fetches anything, and `check` therefore works with no network at all.
 | `agent` | Agents (Claude Code, Codex, dsh) and the accounts they run as: `list`, `install`/`update`/`login <agent>`, `profile list\|add\|remove\|default …`. **Spawns each agent's own tooling; keeps no sign-in** |
 | `driver` | What this machine drives: `list`, `drive`/`undrive`, `hold`/`resume`, `cap <n>`, `adapter <name>`. **Edits one file under the Daoris home** |
 | `plugin` | This machine's plugins: `list`, `add <folder>`, `remove <id>`, `enable`/`disable <id>`. **Edits under the home's `plugins/`; loads no code** |
+| `browser` | The in-app browser's favorites: `favorite list`, `favorite add <address>`, `favorite remove <address>`. **Edits one file under the home** |
 
 
 `sync` accepts `--dry-run` (print the plan, write nothing) and `--force`. `upstream` accepts `--all` to
@@ -70,11 +71,10 @@ promote every locally-edited canonical file at once. `connect` accepts `--worksp
 and `agent login` accepts `--profile <name>`.
 
 **A workspace is the unit of sharing**: knowledge, quests and session records cross between repositories
-within one and never across one, so a machine can hold a game family and a work family without either
-seeing the other. Membership is **wiring, like a git remote** — `connect --workspace aurora` records it
-in this machine's registry and writes nothing into the repository, so a fork, a mirror and a second
-machine may each wire the same repository differently. Omitting the flag leaves existing wiring alone;
-a repository nobody ever wired is in `default`.
+within one and never across one. Membership is **wiring, like a git remote** — `connect --workspace
+aurora` records it in this machine's registry and writes nothing into the repository, so a fork and a
+second machine may each wire it differently. Omitting the flag leaves existing wiring alone; a
+repository nobody ever wired is in `default`.
 
 **A workspace's sharing has two halves, and they live apart.** Whether a repository's material *may*
 leave the machine is its own `daoris.json` — tracked, reviewed, and silent by default. *Where* it would

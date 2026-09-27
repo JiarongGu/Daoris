@@ -79,6 +79,33 @@ machine. That sets the first rule below.
 7. **Nothing loads into a host** (D64 §7 stands). The browser is Daoris's own code in the shell. The
    plugin declares a process that speaks CDP to it, and a plugin still cannot add a view.
 
+## 3a. Favorites (BRW5, 2026-09-28)
+
+The person's, never a session's: a star in the bar keeps the page in front, a bar under the address
+holds them, and a menu lists them all. **Two doors** (D50): the window, and `daoris browser favorite
+add|list|remove` in a terminal. So `<home>/browser/favorites.json` is a **twin** file: the CLI's
+`browser.ts` and the modules' `BrowserFavorites.cs` read and edit it with their own code, each with a
+test table the other matches.
+
+```json
+{ "favorites": [ { "url": "https://site.example/board", "title": "Board" } ] }
+```
+
+1. **No file is no favorites.** A file that is not a JSON object, or whose `favorites` is not a list,
+   shows none and says why, and **an editor refuses to write over it**.
+2. **A row's address follows the bar's rule**: trimmed; nothing with a space; a host with no scheme is
+   HTTPS unless it is this machine (`localhost`, `127.0.0.1`, `[::1]`), then HTTP; only `http` and
+   `https`, with a host and no user or password; the form kept is the parsed absolute address.
+   `about:blank` is no page to keep. A row whose `url` fails the rule is skipped by a reader and kept
+   by an editor.
+3. **A title** is a non-blank string, or else the address's host.
+4. **The file's order is the bar's.** Adding appends. Adding an address already kept keeps its place,
+   and takes the new title if one was given.
+5. **Removing** is by address, under the same rule.
+6. **An editor keeps what it has no field for**, on the file and on each row.
+7. The two sides were compared on ASCII addresses. A host outside ASCII was not, and may be written in
+   two forms.
+
 ## 4. What is deliberately not in it
 
 - **Downloads, devtools, history UI.** v1 was one page an agent and a person share; tabs came with

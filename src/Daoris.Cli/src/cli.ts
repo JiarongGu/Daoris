@@ -16,6 +16,7 @@ import { commandHarness } from './toolchain.ts';
 import { releaseFetcher } from './service.ts';
 import { commandDriver } from './driverconfig.ts';
 import { commandPlugin } from './plugins.ts';
+import { commandBrowser } from './browser.ts';
 import type { CommandArgs } from './types.ts';
 
 /** The package root — `src/` sits one level below it, `dist/` likewise once built. */
@@ -105,9 +106,15 @@ const USAGE = `daoris <command> [options]
                          add <folder>              copy one in under its id
                          remove <id>               take it out; what it kept stays
                          enable|disable <id>       a row, never a rename
+  browser [verb]       the in-app browser's favorites ($DAORIS_HOME/browser/favorites.json),
+                       the same the window's star keeps:
+                         favorite list             what is kept, in the bar's order
+                         favorite add <address> [--title T]
+                                                   keep a page
+                         favorite remove <address> stop keeping it
 
   connect, retire and import are the MANAGEMENT commands: opt-in, they talk to a
-  service, and no gate ever runs them. remote, agent, driver and plugin are
+  service, and no gate ever runs them. remote, agent, driver, plugin and browser are
   management too — they edit files under the Daoris home ($DAORIS_HOME, the
   installed application's own data folder; nothing lives under your profile),
   and agent spawns each agent's own tooling. Of them only agent pin opens a
@@ -147,6 +154,7 @@ const commands: Record<string, (args: CommandArgs) => ExitCode | Promise<ExitCod
   agent: (args) => commandHarness(args, releaseFetcher()),
   driver: commandDriver,
   plugin: commandPlugin,
+  browser: commandBrowser,
   analyze: commandAnalyze,
 };
 

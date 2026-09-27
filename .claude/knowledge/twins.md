@@ -51,6 +51,7 @@ map found this first (WSP3), and every twin since was built the same way for the
 | Rule proposals (D74) | `ruleproposals.ts` | `RuleProposals.cs` | `RuleProposals.cs` |
 | A folder's trust (D73) | `trust.ts` | `ClaudeTrust.cs` | — |
 | Plugins (D64) | `plugins.ts` | `Plugins.cs` | — |
+| The in-app browser's favorites (BRW5) | `browser.ts` | `BrowserFavorites.cs` (the desktop modules) | — |
 | The code map (MAP3) | — | `CodeMapFile.cs` | `CodeMap.cs` (the devkit produces it) |
 
 A twin not in this table is still a twin: the rule is the arrangement, and the table is where to

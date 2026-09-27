@@ -51,7 +51,7 @@ public sealed class BrowserHost(SecondaryWindows windows, ShenoraPaths paths, st
                 // Runs ON the window's own STA thread; the pump shows it once its geometry is applied.
                 CreateForm = () =>
                 {
-                    var form = new BrowserForm(InAppBrowser.ProfileFolder(home), _port, activate, _cookies);
+                    var form = new BrowserForm(InAppBrowser.ProfileFolder(home), _port, activate, _cookies, home);
                     opened.TrySetResult(form);
                     return form;
                 },

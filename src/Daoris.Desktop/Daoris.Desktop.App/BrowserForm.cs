@@ -65,10 +65,23 @@ public sealed class BrowserForm : OptimizedForm
     private readonly Label _notice;
     private readonly Panel _noticeStrip;
 
+    /// <summary>
+    /// The person's favorites (BRW5): the star keeps the page in front, the bar under the address holds
+    /// them, the menu lists them all. Read from the home's file, which a terminal edits too (D50), so it
+    /// is read again whenever the window comes forward.
+    /// </summary>
+    private readonly string _home;
+    private readonly Button _star;
+    private readonly Button _favoritesButton;
+    private readonly FlowLayoutPanel _favoritesBar;
+    private readonly ToolTip _tips = new();
+    private ContextMenuStrip? _favoritesMenu;
+    private IReadOnlyList<Favorite> _favorites = [];
+
     /// <summary>Completes once the browser listens on its port — what a server's attach waits on.</summary>
     public Task Ready => _ready.Task;
 
-    public BrowserForm(string profile, int port, bool activate, BrowserSessionCookies cookies)
+    public BrowserForm(string profile, int port, bool activate, BrowserSessionCookies cookies, string home)
         : base(new OptimizedFormOptions
         {
             FramelessChrome = false,
@@ -81,6 +94,7 @@ public sealed class BrowserForm : OptimizedForm
         _port = port;
         _activate = activate;
         _cookies = cookies;
+        _home = home;
         _palette = ChromePalette.For(MainForm.OperatingSystemPrefersDark());
         var palette = _palette;
 
@@ -110,7 +124,7 @@ public sealed class BrowserForm : OptimizedForm
         {
             Dock = DockStyle.Top,
             AutoSize = true,
-            ColumnCount = 4,
+            ColumnCount = 6,
             RowCount = 1,
             BackColor = palette.Surface,
             Padding = new Padding(6, 5, 8, 5),
@@ -119,6 +133,8 @@ public sealed class BrowserForm : OptimizedForm
         bar.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
         bar.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
         bar.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
+        bar.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
+        bar.ColumnStyles.Add(new ColumnStyle(SizeType.AutoSize));
 
         // 🔴 Each glyph is a private-use character, which most views show as nothing: a rewrite that
         // copied these from a read wrote empty strings, and the bar lost its buttons (BRW4, seen on
@@ -148,6 +164,26 @@ public sealed class BrowserForm : OptimizedForm
         };
         bar.Controls.Add(_address, 3, 0);
 
+        // The star keeps the page in front (BRW5); the list beside it holds every favorite.
+        _star = Glyph("", "Keep this page as a favorite", palette, ToggleFavorite);
+        _star.Margin = new Padding(4, 0, 0, 0);
+        bar.Controls.Add(_star, 4, 0);
+        _favoritesButton = Glyph("", "Favorites", palette, ShowFavorites);
+        _tips.SetToolTip(_favoritesButton, "Favorites");
+        bar.Controls.Add(_favoritesButton, 5, 0);
+
+        _favoritesBar = new FlowLayoutPanel
+        {
+            Dock = DockStyle.Top,
+            AutoSize = true,
+            AutoSizeMode = AutoSizeMode.GrowAndShrink,
+            WrapContents = false,
+            Visible = false,
+            BackColor = palette.Surface,
+            Padding = new Padding(8, 0, 8, 4),
+            AccessibleName = "Favorites",
+        };
+
         _notice = new Label
         {
             AutoSize = true,
@@ -168,14 +204,17 @@ public sealed class BrowserForm : OptimizedForm
         };
         _noticeStrip.Controls.Add(_notice);
 
-        // Docked from the last added: the tabs at the top, the bar under them, the notice under that,
-        // and the page in the rest.
+        // Docked from the last added: the tabs at the top, the bar under them, the favorites under
+        // that, then the notice, and the page in the rest.
         Controls.Add(_content);
         Controls.Add(_noticeStrip);
+        Controls.Add(_favoritesBar);
         Controls.Add(bar);
         Controls.Add(_strip);
 
         Load += async (_, _) => await BringUpAsync();
+        // Another door may have changed them while the window was behind (D50).
+        Activated += (_, _) => ReadFavorites();
     }
 
     /// <summary>Brought up by a session, it does not take the keyboard from the person.</summary>
@@ -286,6 +325,8 @@ public sealed class BrowserForm : OptimizedForm
             _keeping.Tick += (_, _) => Keep();
             _keeping.Start();
 
+            ReadFavorites();
+
             _ready.TrySetResult();
         }
         catch (Exception error)
@@ -382,6 +423,7 @@ public sealed class BrowserForm : OptimizedForm
         if (_tabs.Front != id) return;
         _address.Text = core.Source == "about:blank" ? string.Empty : core.Source;
         Text = name == "New tab" ? WindowTitle : $"{WindowTitle} · {name}";
+        StarState();
     }
 
     /// <summary>Bring a tab to the front: its page shown, its entry joined to the bar, its address in the bar.</summary>
@@ -443,6 +485,134 @@ public sealed class BrowserForm : OptimizedForm
         var room = _strip.ClientSize.Width - _strip.Padding.Horizontal - _newTab.Width - 8;
         var each = Math.Clamp(room / _chips.Count, Tab.Narrowest(Font), Tab.Widest(Font));
         foreach (var chip in _chips.Values) chip.Width(each);
+    }
+
+    /// <summary>A sentence under the bar, until the person loads a page.</summary>
+    private void Say(string sentence)
+    {
+        _notice.Text = sentence;
+        _noticeStrip.Visible = true;
+    }
+
+    /// <summary>
+    /// The favorites again, from the file: the bar redrawn, the star set. A file that could not be read
+    /// shows none and says why (the design, §3a).
+    /// </summary>
+    /// <remarks>
+    /// 🔴 Re-entry-proof. Disposing the bar's old buttons can move the focus and raise
+    /// <c>Activated</c>, which reads the favorites again from inside this read: the bar showed every
+    /// favorite twice (seen on the window). So the new buttons replace the old in one step, the old go
+    /// last, and a read that starts inside another is the one already under way.
+    /// </remarks>
+    private void ReadFavorites()
+    {
+        if (_readingFavorites) return;
+        _readingFavorites = true;
+        try
+        {
+            var read = BrowserFavorites.Read(_home);
+            _favorites = read.Favorites;
+            if (read.Problem is { } problem) Say($"Favorites: {problem}.");
+
+            var fresh = _favorites.Select(FavoriteButton).Cast<Control>().ToArray();
+            var old = _favoritesBar.Controls.Cast<Control>().ToArray();
+            _favoritesBar.SuspendLayout();
+            _favoritesBar.Controls.Clear();
+            _favoritesBar.Controls.AddRange(fresh);
+            // An empty bar is room taken for nothing: it appears with the first favorite.
+            _favoritesBar.Visible = _favorites.Count > 0;
+            _favoritesBar.ResumeLayout();
+            foreach (var button in old) button.Dispose();
+            StarState();
+        }
+        finally
+        {
+            _readingFavorites = false;
+        }
+    }
+
+    private bool _readingFavorites;
+
+    /// <summary>One favorite on the bar: its name, its address on hover, a press goes there, a middle press opens a tab.</summary>
+    private Button FavoriteButton(Favorite favorite)
+    {
+        var font = new Font("Segoe UI", 9f);
+        var button = new Button
+        {
+            Text = favorite.Title,
+            Font = font,
+            FlatStyle = FlatStyle.Flat,
+            ForeColor = _palette.Ink,
+            BackColor = _palette.Surface,
+            AutoEllipsis = true,
+            AutoSize = false,
+            Width = Math.Min(TextRenderer.MeasureText(favorite.Title, font).Width + 16, Tab.Widest(font) * 2 / 3),
+            Height = TextRenderer.MeasureText("Ag", font).Height + 8,
+            Margin = new Padding(0, 0, 2, 0),
+            TabStop = false,
+            AccessibleName = favorite.Title,
+            AccessibleDescription = favorite.Url,
+        };
+        button.FlatAppearance.BorderSize = 0;
+        button.FlatAppearance.MouseOverBackColor = _palette.Hover;
+        button.FlatAppearance.MouseDownBackColor = _palette.Pressed;
+        button.Click += (_, _) => Front?.CoreWebView2?.Navigate(favorite.Url);
+        button.MouseUp += (_, press) =>
+        {
+            if (press.Button == MouseButtons.Middle) _ = OpenTabAsync(opener: null, address: favorite.Url);
+        };
+        _tips.SetToolTip(button, favorite.Url);
+        return button;
+    }
+
+    /// <summary>The star says whether the page in front is kept, and is off where there is no page to keep.</summary>
+    private void StarState()
+    {
+        var source = Front?.CoreWebView2?.Source;
+        var page = source is null ? null : BrowserFavorites.Address(source);
+        var kept = page is not null && _favorites.Any(favorite => favorite.Url == page);
+        _star.Enabled = page is not null;
+        _star.Text = kept ? "" : "";
+        _star.AccessibleName = kept ? "Stop keeping this page" : "Keep this page as a favorite";
+        _tips.SetToolTip(_star, _star.AccessibleName);
+    }
+
+    /// <summary>Keep the page in front, or stop keeping it. A file that could not be read is left alone, and says so.</summary>
+    private void ToggleFavorite()
+    {
+        if (Front?.CoreWebView2 is not { } core || BrowserFavorites.Address(core.Source) is not { } page) return;
+        try
+        {
+            if (_favorites.Any(favorite => favorite.Url == page)) BrowserFavorites.Remove(_home, page);
+            else BrowserFavorites.Add(_home, page, string.IsNullOrWhiteSpace(core.DocumentTitle) ? null : core.DocumentTitle);
+        }
+        catch (Exception error) when (error is InvalidOperationException or IOException or UnauthorizedAccessException)
+        {
+            Say(error.Message);
+        }
+
+        ReadFavorites();
+    }
+
+    /// <summary>Every favorite in a menu, for the ones the bar has no room for.</summary>
+    private void ShowFavorites()
+    {
+        ReadFavorites();
+        _favoritesMenu?.Dispose();
+        _favoritesMenu = new ContextMenuStrip();
+        if (_favorites.Count == 0)
+        {
+            _favoritesMenu.Items.Add(new ToolStripMenuItem("No favorites yet: the star keeps the page in front") { Enabled = false });
+        }
+
+        foreach (var favorite in _favorites)
+        {
+            var item = new ToolStripMenuItem(favorite.Title) { ToolTipText = favorite.Url };
+            item.Click += (_, _) => Front?.CoreWebView2?.Navigate(favorite.Url);
+            _favoritesMenu.Items.Add(item);
+        }
+
+        _favoritesMenu.Show(_favoritesButton, new Point(0, _favoritesButton.Height));
     }
 
     /// <summary>

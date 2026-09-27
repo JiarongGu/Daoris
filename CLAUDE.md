@@ -37,7 +37,7 @@ about a neighbour could only either ignore it or trespass.
 
 ## Current state
 
-**Built and proven; nothing published.** Fifteen commands and a canon of 8 core rules, 5 core
+**Built and proven; nothing published.** Sixteen commands and a canon of 8 core rules, 5 core
 knowledge documents, 5 core skills and 7 packs; the test counts live in `TASKS.md`'s State, their one
 home. Daoris carries its own manifest and syncs core into its own `AGENTS.md` region and
 `.claude/`. It was **adopted
