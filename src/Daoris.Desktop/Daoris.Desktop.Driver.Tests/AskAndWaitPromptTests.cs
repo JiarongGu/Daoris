@@ -40,6 +40,22 @@ public sealed class AskAndWaitPromptTests
     }
 
     /// <summary>
+    /// D83, reached on purpose: FG5's second verify session needed a sign-in only the person could give,
+    /// and DECLINED — because its instruction offered only done or decline, so the quest closed with the
+    /// work unchecked. A session told it may stop and ask parks instead, and the person's answer carries
+    /// the quest on in the same tree.
+    /// </summary>
+    [Fact]
+    public void A_quests_target_says_what_only_the_person_can_give_is_asked_for_by_stopping_not_declining()
+    {
+        var prompt = TargetPrompt.Compose(Target());
+
+        Assert.Contains("only the person can give", prompt);
+        Assert.Contains("end your turn with the quest still taken", prompt);
+        Assert.Contains("rather than declining", prompt);
+    }
+
+    /// <summary>
     /// 🔴 The claiming instruction says "if the quest is already taken, stand down" — which a resumed
     /// session's quest always is. Handed that, it would finish having done nothing, every time.
     /// </summary>

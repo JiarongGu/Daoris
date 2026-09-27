@@ -21,7 +21,7 @@ lists.
 
 ## State
 
-**Counts, and this is their one home:** fifteen commands, **483 CLI tests, 528 service, 780 driver,
+**Counts, and this is their one home:** fifteen commands, **483 CLI tests, 528 service, 781 driver,
 151 desktop modules, 80 devkit, 1191 web unit, 21 Playwright**, 66/66 release rehearsal, **285/285
 family rehearsal** (it names its own phases when you run it), **39/39 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge
@@ -127,7 +127,7 @@ rather than designed.
 
 ## Backlog
 
-**Thirty-two rows are open**: the in-app browser's seven (BRW3, then BRW4–BRW9, the browser as a browser); the first goal's three (FG5,
+**Thirty-three rows are open**: the in-app browser's eight (BRW3, then BRW4–BRW10, the browser as a browser); the first goal's three (FG5,
 CONSOLE2, and SEM2 on a trigger); D76's held file tools;
 the eight REV3 left, WINDOW2 among them; five leftovers (RAIL2, SURF11, FLAKE1, DEPLOY5, TEST1); two on the owner
 (TRUST2, AGT2c); and six on a trigger (see *Handover*). Every closed one is in `docs/task-archive.md`, and this file holds no
@@ -271,6 +271,12 @@ not in v1. Amend it as each lands.
   or in the system browser, orca's link routing.
 - [ ] **BRW8 — who is driving.** The window says when a session is driving it, names the session,
   and links to it, so the person knows whose hands are on the page before they type into it.
+- [ ] **BRW10 — a sign-in survives the application restarting** (FG5, 2026-09-27). The owner signed in
+  to a dev identity in the in-app browser, then the application restarted twice (republishing), and the
+  next session found an empty cookie jar. An identity server's session cookie ends with the browser
+  process, and WebView2 does not restore session cookies. Keep them across a restart, encrypted to the
+  account (DPAPI) under `<home>/browser/`, restored before the first page loads. Until then, restarting
+  the application signs the browser out.
 - [ ] **BRW9 — the rest of a browser's basics.** Find in page (`Ctrl+F`), zoom, devtools (`F12`),
   downloads to `<home>/browser/downloads` with a shelf, and the theme once WINDOW2 gives the window
   a channel.
@@ -322,6 +328,21 @@ is behind a sign-in. FG1–FG4 are in the archive. **INT6 is reshaped as FG5.**
   which surfaced three new rows (ORPHAN1, STANDDOWN2, CHAIN2). The branch is the owner's to review
   and merge (D51). Waiting on the owner as well: four rule proposals and the dev nav config apply,
   a live write the session rightly left alone.
+  **The fourth leg (the owner: "you can merge this in and restart the same request").** The develop
+  branch is merged into the front end's line, locally, and not pushed. The tree's unstaged placeholder
+  was dropped first, since the merge door refuses uncommitted work. The pre-D82 verify quest was
+  declined and its ask closed. The ticket was asked again in its original words, which ASKAGAIN1 now
+  lets through, so the whole chain runs on D80–D83.
+  **What it showed.** The intake routed it. The develop step found the merged work, verified it
+  against the ticket instead of rebuilding it, landed the knowledge rule the first session had been
+  refused, and closed done. It ran in `auto` with no refusal, and its console had no `?`. It asked the
+  backend whether a note may carry several issue types (D79). The backend's own agent answered from
+  its code, which the front end cannot see: single-valued, one note per issue. It pinned that in its
+  own docs. That session and the verify step ran side by side (PAR1), and the verify step's tree grew
+  from the develop step's branch (D82). The verify step **declined** for want of a dev sign-in. The
+  owner had signed in, and two republishing restarts dropped it (BRW10). It declined rather than parked
+  because its instruction offered only done or decline. It now also says what only the person can give
+  is asked for by stopping, which parks it (D83).
 - [ ] **CONSOLE2 — the console has a tab for each thing that is running** (the owner, 2026-09-27:
   *"the console display should be able to have multiple tabs so we dont miss any console (like
   different subsessions and console that runs by the session)"*). Today it is one stream per session.

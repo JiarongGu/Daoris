@@ -248,6 +248,11 @@ public static class TargetPrompt
         what you need and why, commit what you have so far, then respond to `#{target.QuestId}` with `wait`
         on that new quest's id, and end your turn. The quest stays yours, and you are started again here,
         in this tree, with its answer.
+
+        If it needs something only the person can give — a sign-in, a go-ahead for an act outside this
+        repository, a choice between options that is theirs — say exactly what and why in your last
+        message, commit what you have, and end your turn with the quest still taken, rather than declining.
+        The person answers, and you are started again here, in this tree, with their words.
         """;
 
     private const string Proposing =
