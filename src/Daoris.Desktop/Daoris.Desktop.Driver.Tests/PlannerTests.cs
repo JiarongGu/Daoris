@@ -231,6 +231,45 @@ public sealed class PlannerTests
         Assert.Contains("s1", only.Reason);
     }
 
+    // ── parallel sessions, one per tree (PAR1) ────────────────────────────────────────────────────
+    //
+    // The owner: separate repositories and sessions exist "to have clean domain separation and parallel
+    // running for sessions". D51 made the TREE the lock; a repository whose sessions each open their
+    // own tree has no reason to run one at a time, and the ledger already locks per tree.
+
+    [Fact]
+    public void Where_sessions_open_their_own_trees_an_active_session_does_not_hold_the_repository()
+    {
+        var plan = Plan([Quest()], active: [new SessionView("s1", "Game")], config: Config() with { Trees = ["Game"] });
+
+        Assert.Equal(StartVerdict.Start, Assert.Single(plan).Verdict);
+    }
+
+    [Fact]
+    public void Where_sessions_open_their_own_trees_several_quests_start_together_up_to_the_cap()
+    {
+        var plan = Plan([Quest("q1"), Quest("q2"), Quest("q3")], config: Config(cap: 2) with { Trees = ["Game"] });
+
+        Assert.Equal([StartVerdict.Start, StartVerdict.Start, StartVerdict.AtCapacity], plan.Select(c => c.Verdict));
+    }
+
+    /// <summary>
+    /// 🔴 A resume or a carry-on goes back into its earlier session's tree, so a live session IN that
+    /// tree still holds it — the tree is the lock, and one tree takes one session.
+    /// </summary>
+    [Fact]
+    public void A_resume_into_a_tree_a_live_session_holds_waits_for_it()
+    {
+        var prior = new PriorSession("s1", "D:/trees/s-1", "failed", "timed out.", Repository: "Game");
+        var snapshot = Ran([Quest(status: "Taken")], ("q1", prior)) with
+        {
+            Active = [new SessionView("s9", "Game") { Tree = "D:/trees/s-1" }],
+        };
+
+        Assert.Equal(StartVerdict.RepositoryBusy,
+            Assert.Single(Planner.Plan(snapshot, Config() with { Trees = ["Game"] })).Verdict);
+    }
+
     /// <summary>Oldest first, one per repository — the second ask queues behind the first.</summary>
     [Fact]
     public void The_oldest_open_quest_starts_and_the_next_queues_behind_it()
@@ -472,6 +511,35 @@ public sealed class PlannerTests
     /// Only a FAILED last run is a cut-off. A completed one ended well (its close or its wait), and a
     /// taken quest that just sits after one is a person's or another machine's to move.
     /// </summary>
+    // ── a chain's next step starts on the step before (CHAIN2) ───────────────────────────────────
+    //
+    // FG5: the verify step grew a fresh tree from the canonical line and could not see the develop
+    // step's work, which sat unmerged on that session's branch. The owner: start on the parent's branch.
+
+    [Fact]
+    public void A_next_step_in_the_same_repository_builds_on_its_parents_last_run()
+    {
+        var develop = new PriorSession("s1", "D:/trees/s-a900f1ad", "completed", "reached done.", Repository: "Game");
+        var verify = Quest("q2") with { Parent = "q1" };
+
+        var only = Assert.Single(Planner.Plan(Ran([verify], ("q1", develop)), Config()));
+
+        Assert.Equal(StartVerdict.Start, only.Verdict);
+        Assert.Equal(develop, only.BuildsOn);
+        Assert.Null(only.Resumes);
+    }
+
+    /// <summary>A step to ANOTHER repository has nothing of the parent's in its tree to build on.</summary>
+    [Fact]
+    public void A_next_step_in_another_repository_starts_from_its_own_canonical_line()
+    {
+        var elsewhere = new PriorSession("s1", "D:/trees/s-1", "completed", "reached done.", Repository: "Engine");
+
+        var only = Assert.Single(Planner.Plan(Ran([Quest("q2") with { Parent = "q1" }], ("q1", elsewhere)), Config()));
+
+        Assert.Null(only.BuildsOn);
+    }
+
     [Fact]
     public void A_taken_quest_whose_last_session_here_ended_well_is_not_carried_on()
     {

@@ -30,7 +30,9 @@ public sealed record QuestView(string Id, string From, string To, string Title, 
 /// <param name="Tree">Where it ran — its own tree where the repository opted in, the root otherwise; null when unsaid.</param>
 /// <param name="State">How its record ended — `failed` is a cut-off, which a later session carries on (D80).</param>
 /// <param name="Note">What its record said about that ending — the words a session carrying on is told.</param>
-public sealed record PriorSession(string Session, string? Tree, string State = "", string? Note = null);
+/// <param name="Repository">Where it ran — whether a chain's next step can build on its tree (CHAIN2).</param>
+public sealed record PriorSession(
+    string Session, string? Tree, string State = "", string? Note = null, string? Repository = null);
 
 /// <summary>One step of a chain, as the service answered it.</summary>
 public sealed record QuestStepView(string To, string Title, string Body);
@@ -85,6 +87,12 @@ public sealed record SessionView(
     /// <c>ask #id</c>, which no quest names — so the planner never finds it busy with anything.
     /// </summary>
     public string? Ask { get; init; }
+
+    /// <summary>
+    /// The tree it holds (D51), or null when unsaid — where a repository opens a tree per session, the
+    /// tree is the lock the planner asks about (PAR1).
+    /// </summary>
+    public string? Tree { get; init; }
 }
 
 public static class ActiveSessions
@@ -187,6 +195,12 @@ public sealed record Consideration(
     /// the resume carries on in. Null for every first start.
     /// </summary>
     public PriorSession? Resumes { get; init; }
+
+    /// <summary>
+    /// For a chain's next step in the same repository (CHAIN2): the step before's last run, whose
+    /// branch this step's tree grows from, so it sees the unmerged work it builds on or checks.
+    /// </summary>
+    public PriorSession? BuildsOn { get; init; }
 }
 
 public static class Considerations
@@ -260,7 +274,14 @@ public static class Planner
         {
             if (quest.Status == "Open")
             {
-                considerations.Add(Consider(quest));
+                var considered = Consider(quest);
+                // A chain's next step in the repository its parent ran in builds on that run (CHAIN2).
+                considerations.Add(considered.Verdict == StartVerdict.Start
+                                   && quest.Parent is { } parent
+                                   && snapshot.LastRun.TryGetValue(parent, out var before)
+                                   && string.Equals(before.Repository, quest.To, StringComparison.OrdinalIgnoreCase)
+                    ? considered with { BuildsOn = before }
+                    : considered);
             }
             else if (quest is { Status: "Taken", Awaits: { Length: > 0 } awaits }
                      && snapshot.LastRun.TryGetValue(quest.Id, out var prior))
@@ -282,7 +303,7 @@ public static class Planner
         // a failed start is retried: the strikes count every cut-off, and the third parks it.
         Consideration CarryOn(QuestView quest, PriorSession cutOff)
         {
-            var considered = Consider(quest);
+            var considered = Consider(quest, into: cutOff);
             return considered.Verdict == StartVerdict.Start
                 ? considered with
                 {
@@ -307,13 +328,15 @@ public static class Planner
                     + "once that is answered.");
             }
 
-            var considered = Consider(quest);
+            var considered = Consider(quest, into: prior);
             return considered.Verdict == StartVerdict.Start
                 ? considered with { Reason = $"resuming in `{quest.To}` — `#{awaits}` is answered.", Resumes = prior }
                 : considered;
         }
 
-        Consideration Consider(QuestView quest)
+        // `into`: the earlier session whose tree a resume or a carry-on goes back into — the one tree a
+        // live session there would hold (PAR1). Null for a first start, which grows a tree of its own.
+        Consideration Consider(QuestView quest, PriorSession? into = null)
         {
             var repo = snapshot.Repositories.FirstOrDefault(r =>
                 string.Equals(r.Repository, quest.To, StringComparison.OrdinalIgnoreCase));
@@ -375,13 +398,25 @@ public static class Planner
                     + $"`daoris driver retry {quest.Id}` starts it again once you know why.");
             }
 
-            if (blockedBy.TryGetValue(quest.To, out var session))
+            // 🔴 The TREE is the lock (D51), and where every session here opens its own there is no
+            // reason to run one at a time (PAR1, the owner: "clean domain separation and parallel
+            // running"). What still holds is the one tree a resume or a carry-on goes back into.
+            if (config.OpensOwnTree(quest.To))
+            {
+                if (into is { Tree: { Length: > 0 } tree }
+                    && snapshot.Active.FirstOrDefault(s => SameTree(s.Tree, tree)) is { } holder)
+                {
+                    return new(quest, StartVerdict.RepositoryBusy,
+                        $"session `{holder.Id}` is active in the tree `#{quest.Id}` goes back into — one session per tree.");
+                }
+            }
+            else if (blockedBy.TryGetValue(quest.To, out var session))
             {
                 return new(quest, StartVerdict.RepositoryBusy,
-                    $"session `{session}` is active in `{quest.To}` — one session per repository.");
+                    $"session `{session}` is active in `{quest.To}` — one session per repository, whose root "
+                    + "is its one tree. Sessions there run side by side once they open trees of their own.");
             }
-
-            if (startedThisTick.TryGetValue(quest.To, out var ahead))
+            else if (startedThisTick.TryGetValue(quest.To, out var ahead))
             {
                 return new(quest, StartVerdict.RepositoryBusy,
                     $"queued behind quest `#{ahead}` in `{quest.To}` — oldest first, one at a time.");
@@ -398,4 +433,10 @@ public static class Planner
             return new(quest, StartVerdict.Start, $"starting in `{quest.To}`.", repo.Root, repo.Workspace);
         }
     }
+
+    /// <summary>Two tree paths are one tree — separators and case aside, as Windows sees them.</summary>
+    private static bool SameTree(string? a, string? b) =>
+        a is { Length: > 0 } && b is { Length: > 0 }
+        && string.Equals(
+            a.Replace('\\', '/').TrimEnd('/'), b.Replace('\\', '/').TrimEnd('/'), StringComparison.OrdinalIgnoreCase);
 }

@@ -4,7 +4,8 @@ namespace Daoris.Driver;
 /// <param name="Branch">The session's own branch, never reused; git itself refuses a second use.</param>
 /// <param name="BasedOn">Which point the branch grew from, spelled for a person — the canonical line, or HEAD with the reason.</param>
 /// <param name="Sentence">The whole act in one sentence, price included — for whoever is watching.</param>
-public sealed record TreeOpened(string Path, string Branch, string BasedOn, string Sentence);
+/// <param name="GrewFrom">The chain step's branch it grew from (CHAIN2), when it did — null for the canonical line.</param>
+public sealed record TreeOpened(string Path, string Branch, string BasedOn, string Sentence, string? GrewFrom = null);
 
 /// <param name="Removed">Whether the tree is gone. False is a refusal, not a failure.</param>
 /// <param name="Message">What happened, or what would have been lost and how to mean it.</param>
@@ -52,8 +53,13 @@ public sealed class SessionTrees(string home)
     /// Open a fresh tree for a session in <paramref name="root"/>. Throws <see cref="DriverException"/>
     /// with git's own words when it cannot — before any record exists, which is the caller's contract.
     /// </summary>
+    /// <param name="from">
+    /// A branch to grow from instead of the canonical line — the one a chain's previous step landed on
+    /// in this repository (CHAIN2), so the next step's tree holds the unmerged work it builds on or
+    /// checks. One that no longer exists falls back to the canonical line, and the answer says so.
+    /// </param>
     public async Task<TreeOpened> OpenAsync(
-        string root, string repository, string workspace, CancellationToken ct = default)
+        string root, string repository, string workspace, CancellationToken ct = default, string? from = null)
     {
         // The root must BE the top of its own working tree — proven, not assumed. Git resolves a
         // repository by walking UP from wherever it is asked, so a root that is not one (a
@@ -85,6 +91,25 @@ public sealed class SessionTrees(string home)
             ? $"the canonical line `{canonical}`"
             : "the root's HEAD (no canonical line is declared)";
 
+        // A chain's previous step's branch, where it still stands (CHAIN2). Session branches are refs
+        // of the root's own repository, so a linked worktree grows from one like any other branch.
+        var start = canonical ?? "HEAD";
+        string? grewFrom = null;
+        if (from is { Length: > 0 })
+        {
+            var (known, _, _) = await WorkingTree.GitAsync(
+                root, ["rev-parse", "--verify", "--quiet", $"refs/heads/{from}"], ct).ConfigureAwait(false);
+            if (known == 0)
+            {
+                start = grewFrom = from;
+                basedOn = $"`{from}`, the branch the step before it landed on (not merged yet)";
+            }
+            else
+            {
+                basedOn += $" — `{from}`, the branch the step before it landed on, is gone";
+            }
+        }
+
         var name = $"s-{Guid.NewGuid().ToString("N")[..8]}";
         var branch = $"daoris/{name}";
         var path = Path.Combine(TreesRoot, workspace, repository, name);
@@ -95,7 +120,7 @@ public sealed class SessionTrees(string home)
         // The first real workspace did, and every tick's `worktree add` failed. Said on the command
         // line, so nothing in the repository's own configuration changes.
         var (code, _, stderr) = await WorkingTree.GitAsync(
-            root, ["-c", "core.longpaths=true", "worktree", "add", "-b", branch, path, canonical ?? "HEAD"], ct)
+            root, ["-c", "core.longpaths=true", "worktree", "add", "-b", branch, path, start], ct)
             .ConfigureAwait(false);
         if (code != 0)
         {
@@ -113,7 +138,8 @@ public sealed class SessionTrees(string home)
             $"opened a session tree at {path} on `{branch}`, from {basedOn} — a fresh tree holds "
             + "nothing git does not track: no installed dependencies, no build outputs. The "
             + "repository's own setup cost is paid here, and in exchange the root's uncommitted work "
-            + "holds nothing.");
+            + "holds nothing.",
+            grewFrom);
     }
 
     /// <summary>

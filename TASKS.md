@@ -21,7 +21,7 @@ lists.
 
 ## State
 
-**Counts, and this is their one home:** fifteen commands, **483 CLI tests, 525 service, 768 driver,
+**Counts, and this is their one home:** fifteen commands, **483 CLI tests, 525 service, 776 driver,
 151 desktop modules, 80 devkit, 1189 web unit, 21 Playwright**, 66/66 release rehearsal, **285/285
 family rehearsal** (it names its own phases when you run it), **39/39 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge
@@ -52,7 +52,8 @@ cut-off carried on), both in the archive. The chain's verify step found three mo
 (in the archive). **CHAIN2 has the owner's answer**: a same-repository step starts on the parent's
 branch. The owner then set two more directions, **D81**: a session works in its harness's own `auto`
 mode, "as much as it can just like regular claude code". And **parallel sessions (PAR1)** and **a
-console tab for everything running (CONSOLE2)**. Next: CHAIN2, STANDDOWN2, PAR1, then CONSOLE2.
+console tab for everything running (CONSOLE2)**. CHAIN2 landed as D82, and PAR1 with it, both in the
+archive. Next: STANDDOWN2, then CONSOLE2.
 D76's round is done, and its leftovers (RAIL2, SURF11) stand behind these. Nothing is pushed or
 published, and a release is still blocked on REH1.
 - **Landed:** CONV1 (the record), CONV2 (the view), CONV3a (Claude Code's `stream-json`), CONV3b
@@ -126,8 +127,8 @@ rather than designed.
 
 ## Backlog
 
-**Thirty-five rows are open**: the in-app browser's seven (BRW3, then BRW4–BRW9, the browser as a browser); the first goal's six (FG5,
-STANDDOWN2, CHAIN2, PAR1, CONSOLE2, and SEM2 on a trigger); D76's held file tools;
+**Thirty-three rows are open**: the in-app browser's seven (BRW3, then BRW4–BRW9, the browser as a browser); the first goal's four (FG5,
+STANDDOWN2, CONSOLE2, and SEM2 on a trigger); D76's held file tools;
 the eight REV3 left, WINDOW2 among them; five leftovers (RAIL2, SURF11, FLAKE1, DEPLOY5, TEST1); two on the owner
 (TRUST2, AGT2c); and six on a trigger (see *Handover*). Every closed one is in `docs/task-archive.md`, and this file holds no
 ticked rows, by the `task-lifecycle` rule it also ships. A heading below holds open rows only.
@@ -329,18 +330,6 @@ is behind a sign-in. FG1–FG4 are in the archive. **INT6 is reshaped as FG5.**
   connector knows its session (PERM2), so the take could carry it. Then this ending is
   `awaiting-person`, with the session's last words, and the person answering needs a way to carry
   the quest on.
-- [ ] **CHAIN2 — a chain's next step cannot see the step before it** (FG5, 2026-09-27). The develop
-  step's work landed on its session branch, which nothing merges (D51). The verify step `then`
-  published at once, to the same repository, and its session grew a fresh tree from the canonical
-  line, without that work. The intake's verify step also needed a sign-in and a live config apply,
-  both the person's. Decide whether a same-repository step starts on the parent's branch, waits for
-  the person's merge, or is left for the person when it needs a live environment.
-- [ ] **PAR1 — sessions run in parallel, one per tree rather than one per repository** (the owner,
-  2026-09-27: separate repositories and sessions exist *"to have clean domain separation and parallel
-  running for sessions"*). The planner starts one session per repository (`RepositoryBusy`), even
-  where every session opens its own tree. D51 made the tree the lock, and the ledger already enforces
-  it per tree. For a repository with trees on, plan up to the cap, oldest first, each in a tree of its
-  own. The install's cap is also 1, set during FG5's setup, and that is the person's to raise.
 - [ ] **CONSOLE2 — the console has a tab for each thing that is running** (the owner, 2026-09-27:
   *"the console display should be able to have multiple tabs so we dont miss any console (like
   different subsessions and console that runs by the session)"*). Today it is one stream per session.

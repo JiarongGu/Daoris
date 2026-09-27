@@ -463,7 +463,12 @@ public sealed partial class Driver(
         {
             try
             {
-                opened = await _trees.OpenAsync(root, quest.To, start.Workspace ?? "default", ct)
+                // A chain's next step in its parent's repository grows from the branch the parent
+                // landed on (CHAIN2), named as the trees name their branches — so a verify step sees
+                // the unmerged work it exists to check.
+                opened = await _trees.OpenAsync(
+                        root, quest.To, start.Workspace ?? "default", ct,
+                        from: start.BuildsOn?.Tree is { Length: > 0 } parentTree ? $"daoris/{Path.GetFileName(parentTree)}" : null)
                     .ConfigureAwait(false);
             }
             catch (DriverException error)
@@ -543,6 +548,7 @@ public sealed partial class Driver(
                 // driver, because the session may not run `git status` itself.
                 CutOff = carryingOn ? start.Resumes!.Note ?? "it ended before closing the quest." : null,
                 InFlight = carryingOn ? await WorkingTree.UncommittedAsync(workTree, ct: ct).ConfigureAwait(false) : [],
+                GrewFrom = opened?.GrewFrom,
             };
             var (info, harnessNotice) = Prepare(adapter, target, selection);
 

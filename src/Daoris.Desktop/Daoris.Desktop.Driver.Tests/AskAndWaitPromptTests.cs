@@ -90,6 +90,21 @@ public sealed class AskAndWaitPromptTests
         Assert.Contains("Never write outside", prompt);
     }
 
+    /// <summary>
+    /// CHAIN2: a next step whose tree grew from its parent's branch is told the work is here, so it
+    /// neither asks for a merge nor tries to make one — FG5's verify step asked for exactly that.
+    /// </summary>
+    [Fact]
+    public void A_next_step_grown_from_its_parents_branch_is_told_the_work_is_in_its_tree()
+    {
+        var prompt = TargetPrompt.Compose(Target() with { Parent = "p1", GrewFrom = "daoris/s-a900f1ad" });
+
+        Assert.Contains("It follows quest `#p1`", prompt);
+        Assert.Contains("grew from `daoris/s-a900f1ad`", prompt);
+        Assert.Contains("no merge to wait for", prompt);
+        Assert.DoesNotContain("grew from", TargetPrompt.Compose(Target() with { Parent = "p1" }));
+    }
+
     /// <summary>A close with no note says so and where the answer is, rather than quoting nothing.</summary>
     [Fact]
     public void A_question_closed_without_a_note_points_at_the_quest_and_what_landed()

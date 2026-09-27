@@ -6653,3 +6653,23 @@ Each printed as `toolu_… → ?`, and the ending printed the id. Now the consol
 title per session. Progress and status-less updates print nothing, and the ending reads `✓ <title>`
 or `✗ <title> failed`, on both doors. A `usage_update` without numbers prints nothing either. The
 record keeps every update as an event, as before.
+
+## CHAIN2 — a chain's next step starts on the step before's branch (2026-09-27 → D82)
+
+Found on FG5's verify step, which grew from the canonical line and could not see the develop step's
+unmerged work. The owner chose *"On the parent's branch"*. The driver reads each quest's last run
+with its repository. For an open step whose parent's last run was in the same repository, the plan
+carries that run, and the tree grows from its branch (`SessionTrees.OpenAsync(from:)`). A branch
+that is gone falls back to the canonical line and says so. The instruction says the parent's work
+is in the tree and there is no merge to make. Driver 773, including a real-git test that the grown
+tree holds the parent branch's commit.
+
+## PAR1 — sessions run side by side, one per tree (2026-09-27)
+
+The owner: separate repositories and sessions exist *"to have clean domain separation and parallel
+running for sessions"*. The planner started one session per repository even where every session opens
+its own tree. D51 made the tree the lock, and the ledger already locks per tree. For a repository
+with trees on, an active session no longer holds it, and several of its quests start in one tick,
+oldest first, up to the cap. A resume or a carry-on still waits while a live session holds the tree
+it goes back into. A repository without trees keeps one session at a time in its root, and the reason
+now says trees are how to run them side by side. Driver 776.

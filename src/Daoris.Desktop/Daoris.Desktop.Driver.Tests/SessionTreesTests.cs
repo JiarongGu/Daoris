@@ -276,6 +276,39 @@ public sealed class SessionTreesTests : IDisposable
         Assert.Equal("", (await GitAsync(root, "branch", "--list", "daoris/*")).Trim());
     }
 
+    /// <summary>
+    /// CHAIN2, the owner's answer: a chain's next step to the same repository starts ON the branch the
+    /// step before it landed on, so a verify step sees the unmerged work it exists to check.
+    /// </summary>
+    [Fact]
+    public async Task A_tree_grown_from_a_named_branch_holds_that_branchs_work()
+    {
+        var root = await MakeRepositoryAsync("engine");
+        var trees = new SessionTrees(_home);
+        var develop = await trees.OpenAsync(root, "engine", "aurora");
+        await File.WriteAllTextAsync(Path.Combine(develop.Path, "notes.ts"), "export const notes = true;\n");
+        await GitAsync(develop.Path, "add", ".");
+        await GitAsync(develop.Path, "commit", "-m", "the develop step's work");
+
+        var verify = await trees.OpenAsync(root, "engine", "aurora", from: develop.Branch);
+
+        Assert.True(File.Exists(Path.Combine(verify.Path, "notes.ts")), "the next step's tree lacks the work before it");
+        Assert.Contains(develop.Branch, verify.BasedOn);
+        Assert.NotEqual(develop.Branch, verify.Branch);
+    }
+
+    /// <summary>A branch that is gone — merged and deleted, or discarded — falls back to the canonical line, and says so.</summary>
+    [Fact]
+    public async Task A_named_branch_that_is_gone_grows_from_the_canonical_line_and_says_why()
+    {
+        var root = await MakeRepositoryAsync("engine");
+
+        var opened = await new SessionTrees(_home).OpenAsync(root, "engine", "aurora", from: "daoris/s-gone0000");
+
+        Assert.Contains("canonical line", opened.BasedOn);
+        Assert.Contains("daoris/s-gone0000", opened.BasedOn);
+    }
+
     // ---------------------------------------------------------------------------------- fixtures
 
     private async Task<string> MakeRepositoryAsync(string name)

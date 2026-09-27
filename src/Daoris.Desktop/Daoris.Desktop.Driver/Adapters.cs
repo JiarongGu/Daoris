@@ -72,6 +72,12 @@ public sealed record SessionTarget(
     public IReadOnlyList<string> InFlight { get; init; } = [];
 
     /// <summary>
+    /// The branch this session's tree grew from when it is a chain's next step in its parent's
+    /// repository (CHAIN2) — the parent's unmerged work is in the tree. Null for the canonical line.
+    /// </summary>
+    public string? GrewFrom { get; init; }
+
+    /// <summary>
     /// The target a quest's session is handed: the quest as the service answered it, run in
     /// <paramref name="workTree"/> — the repository's own tree where it opted in (D51), its root
     /// otherwise — naming the code map that tree keeps.
@@ -284,7 +290,11 @@ public static class TargetPrompt
         if (target.Parent is { } parent)
         {
             text.AppendLine().AppendLine(
-                $"It follows quest `#{parent}`, which is done — read that quest for the work this one builds on.");
+                $"It follows quest `#{parent}`, which is done — read that quest for the work this one builds on."
+                + (target.GrewFrom is { } branch
+                    ? $" That work is in this tree: it grew from `{branch}`, the branch `#{parent}` landed on, "
+                      + "which is not merged yet — so there is no merge to wait for or to make."
+                    : ""));
         }
 
         if (target.Then.Count > 0)

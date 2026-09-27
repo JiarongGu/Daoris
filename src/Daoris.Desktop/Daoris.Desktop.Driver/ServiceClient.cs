@@ -450,6 +450,8 @@ public sealed class ServiceClient : IDisposable
             {
                 // An intake's ask (D65 §1b) — how a parked one is ended when the person answers it.
                 Ask = Text(session, "ask"),
+                // The tree it holds — the lock where a repository opens a tree per session (PAR1).
+                Tree = Text(session, "tree"),
             });
         }
 
@@ -504,7 +506,8 @@ public sealed class ServiceClient : IDisposable
             var at = DateTimeOffset.TryParse(Text(session, "created"), out var created) ? created : DateTimeOffset.MinValue;
             if (last.TryGetValue(quest, out var seen) && seen.At > at) continue;
             last[quest] = (new PriorSession(
-                Text(session, "id") ?? "", Text(session, "tree"), Text(session, "state") ?? "", Text(session, "note")), at);
+                Text(session, "id") ?? "", Text(session, "tree"), Text(session, "state") ?? "", Text(session, "note"),
+                Text(session, "repository")), at);
         }
 
         return last.ToDictionary(pair => pair.Key, pair => pair.Value.Session, StringComparer.OrdinalIgnoreCase);
