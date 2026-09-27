@@ -10,12 +10,15 @@ public sealed class EngineBrowserTests : Bridge
 {
     private static readonly string Home = Path.Combine(Path.GetTempPath(), "daoris-engine-home");
 
-    /// <summary>Under the home (D63), and apart from the WebView2 window's profile: another engine's files.</summary>
+    /// <summary>
+    /// Under the home (D63), and apart from the WebView2 window's old `browser/profile`, which a
+    /// machine that ran it still holds: another engine's files, never read as this one's.
+    /// </summary>
     [Fact]
     public void Its_profile_is_the_homes_and_not_the_webview_windows()
     {
         Assert.Equal(Path.Combine(Home, "browser", "engine"), EngineBrowser.ProfileFolder(Home));
-        Assert.NotEqual(InAppBrowser.ProfileFolder(Home), EngineBrowser.ProfileFolder(Home));
+        Assert.NotEqual(Path.Combine(Home, "browser", "profile"), EngineBrowser.ProfileFolder(Home));
     }
 
     [Fact]

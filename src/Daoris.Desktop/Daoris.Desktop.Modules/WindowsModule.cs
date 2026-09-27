@@ -42,8 +42,8 @@ public sealed class WindowsModule(
         switch (request.Type)
         {
             // Not a route into the bundle like the others: the browser shows pages that are not
-            // Daoris's, in an environment that holds no bridge (D78 §3.1). Opening it again brings it
-            // forward, as every window here does.
+            // Daoris's, in a process of its own that holds no bridge (D78 §3.1, D85). Opening it
+            // again brings it forward, as every window here does.
             case "OPEN_BROWSER":
             {
                 browser?.Show();

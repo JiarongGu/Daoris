@@ -6911,3 +6911,8 @@ control, in a process of its own:
 - The machine's Chrome extensions reach the profile (CHR7).
 - Focus is Windows' to give.
 - Daoris's favorites and history are read by no window now (CHR5).
+
+**Then the WebView2 window went**, as D84 said it would once the engine landed (the same day, its own
+commit): the form and its host, the sealed-cookie store and its DPAPI seal, the tab strip, and
+`InAppBrowser`'s WebView2 members, with their 15 tests. The favorites and history files, their module
+code and `daoris browser` stay until the owner's call on CHR5.

@@ -5,30 +5,15 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
-/// Daoris's own browser (D78): a window of the shell, in its own WebView2 environment, that the person
-/// signs in to and sessions drive over CDP. The window is WinForms and lives in the shell; what is here
-/// is every judgement it makes — where its profile is, what it listens on, and which addresses the
-/// person's address bar will go to.
+/// Daoris's own browser (D78), whichever engine shows it: the endpoint a server attaches to, the port
+/// it listens on, the address rule its favorites and history keep, and the page's door onto it. Where
+/// its profile is and how it starts is the engine's (<see cref="EngineBrowserTests"/>).
 /// </summary>
 public sealed class InAppBrowserTests : Bridge
 {
-    /// <summary>
-    /// Under the home (D63), and never the app's own WebView2 folder: two folders are two browser
-    /// processes, so the debug port on this one reaches nothing of the page that holds the bridge.
-    /// </summary>
     [Fact]
-    public void Its_profile_is_the_homes_and_not_the_apps_own()
+    public void It_is_reached_on_loopback_at_the_port_it_was_given()
     {
-        var home = Path.Combine("C:", "somewhere", "data");
-
-        Assert.Equal(Path.Combine(home, "browser", "profile"), InAppBrowser.ProfileFolder(home));
-        Assert.DoesNotContain("webview2", InAppBrowser.ProfileFolder(home), StringComparison.OrdinalIgnoreCase);
-    }
-
-    [Fact]
-    public void It_listens_on_loopback_at_the_port_it_was_given()
-    {
-        Assert.Equal("--remote-debugging-port=9422", InAppBrowser.Arguments(9422));
         Assert.Equal("http://127.0.0.1:9422", InAppBrowser.Endpoint(9422));
     }
 

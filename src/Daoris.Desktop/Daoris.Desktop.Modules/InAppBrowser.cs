@@ -4,30 +4,16 @@ using System.Net.Sockets;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// The judgements Daoris's own browser makes (D78), kept out of the WinForms window so they are
-/// tested like everything else here: where its profile lives, what it listens on, and which addresses
-/// the person's address bar goes to.
+/// What Daoris's own browser is reached by, whichever engine shows it (D78): the endpoint, the port,
+/// and the address rule its favorites and history keep. Where it starts and what it runs on is
+/// <see cref="EngineBrowser"/>'s (D85, CHR3).
 /// </summary>
 /// <remarks>
-/// <para><b>Its own environment, its own folder, no bridge.</b> The probe that proved a standard
-/// browser MCP drives a WebView2 over CDP also navigated the app's own page away. The page holds
-/// the bridge, so it must never be under an agent's CDP. Two user-data folders are two browser
-/// processes, and the port on this one reaches nothing of the other.</para>
-///
 /// <para><b>Loopback, and said.</b> Any process on this machine can drive the browser while it
 /// runs, as with any browser started with a debugging port. The design says so (D78 §3.4).</para>
 /// </remarks>
 public static class InAppBrowser
 {
-    /// <summary>The window's name among the shell's windows — and its geometry file's.</summary>
-    public const string WindowName = "browser";
-
-    /// <summary>Its profile: under the home (D63), and the person's sign-in lives here.</summary>
-    public static string ProfileFolder(string home) => Path.Combine(home, "browser", "profile");
-
-    /// <summary>What its environment is started with: the debug port, on loopback (Chromium's default address).</summary>
-    public static string Arguments(int port) => $"--remote-debugging-port={port}";
-
     /// <summary>The endpoint a server attaches to — `--cdp-endpoint` for Playwright MCP, `--browserUrl` for DevTools MCP.</summary>
     public static string Endpoint(int port) => $"http://127.0.0.1:{port}";
 
