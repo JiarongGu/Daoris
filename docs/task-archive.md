@@ -6636,3 +6636,20 @@ The driver's reaper walks a tree from a live root, and the agent had already exi
 tracked harness joins a Windows job object that kills on close, and so does everything it starts. The
 untrack at the session's end closes it. This covers quest sessions, intakes and conversations, and is
 a no-op off Windows. FIX-LOG has the mechanism. Driver 766.
+
+## POSTURE1 — a driven session in its harness's own `auto` mode (2026-09-27 → D81)
+
+The owner, asked whether the verify session might apply a config to dev only: *"not dev only this
+should be able to do a much as it can just like regular claude code or codex"*. The Claude Code ACP
+adapter names `auto|acceptEdits`, and the session sets the first posture the agent offers. It is
+never `bypassPermissions`. The rules handed at spawn keep what the doctrine keeps (no push, the tree
+guard). The pipe door is unchanged until `auto` is measured there. Driver 768 with the posture tests.
+
+## CONSOLE1 — the console's `?`s (2026-09-27)
+
+The owner: *"we have a lot '?' display in the console rn"*. Measured in FG5's transcripts, each tool
+call was followed by five to eight status-less updates (its input and output arriving in pieces).
+Each printed as `toolu_… → ?`, and the ending printed the id. Now the console remembers each call's
+title per session. Progress and status-less updates print nothing, and the ending reads `✓ <title>`
+or `✗ <title> failed`, on both doors. A `usage_update` without numbers prints nothing either. The
+record keeps every update as an event, as before.

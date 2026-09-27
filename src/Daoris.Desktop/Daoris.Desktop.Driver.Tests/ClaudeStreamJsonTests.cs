@@ -145,7 +145,8 @@ public sealed class ClaudeStreamJsonTests
         Assert.Equal(("toolu_1", "completed"), (result.Id, result.Status));
         Assert.Equal("The file src/chunk.rs has been updated.", Assert.Single(result.Content!).Text);
 
-        Assert.Contains(lines, line => line.Contains("Edit src/chunk.rs"));
+        // The ending is said by the call's name, never its id (the owner's "?"s in the console).
+        Assert.Equal(["→ Edit src/chunk.rs", "  ✓ Edit src/chunk.rs"], lines);
     }
 
     [Fact]

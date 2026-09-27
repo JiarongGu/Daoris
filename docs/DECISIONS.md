@@ -3516,3 +3516,30 @@ ended the same way, on an account limit (ACPEND1).
   happens: an account limit, a crash, a machine that sleeps.
 - **Carrying on a clean exit with the quest still taken** (a stand-down). That shape includes
   somebody else having the quest, and the driver cannot tell the two apart.
+
+## D81 — A driven session works in its harness's own judged mode, as a regular session would (2026-09-27)
+
+**Decision.** On the protocol door, Claude Code sessions drive in `auto`, the harness's own mode in
+which it judges each action, where the adapter offers it. An adapter that does not offer `auto` gets
+`acceptEdits`, as before. An adapter now names its postures in order of preference, and the session
+sets the first the agent offers. It is still never `bypassPermissions`, which judges nothing. What
+the doctrine keeps is kept by the rules handed at spawn, which hold in every mode: no push by default,
+the tree guard on writes outside the session's tree, and the connector's tools. A permission request
+that still reaches the driver is refused, as D52 says. The pipe door keeps
+`--permission-mode acceptEdits` until `auto` is measured there.
+
+**Why.** The owner, 2026-09-27, asked whether the verify session might apply a config to dev only:
+*"not dev only this should be able to do a much as it can just like regular claude code or codex"*.
+FG5's sessions did the work and then stopped at every command that was not on a short list: `npm`
+scripts, a syntax check, a generator, `git merge`. Each refusal became a rule proposal waiting for a
+person, which is the friction D37's automation-first direction exists to remove. `acceptEdits`
+accepted edits and refused everything else. `auto` is the mode a person runs Claude Code in when it
+should act without asking, with the harness's own judgement in place of a list.
+
+**Rejected.**
+- **`bypassPermissions` by default.** "As much as it can" is not "with no judgement at all", and the
+  owner's own sessions are not run that way. A person may choose it later, explicitly.
+- **Answering permission requests on the person's behalf.** That is D52's rejected shape. The driver
+  is a component, and the judgement belongs to the harness or to the person.
+- **Growing the handed allow-list command by command.** That is what FG5 was doing, one proposal
+  per refusal, and it never catches up with a real repository's tooling.

@@ -3297,7 +3297,7 @@ check(
   'the transcript holds RENDERED updates, not the wire',
   acpTranscript.includes('taking quest ' + acpQuestId)
     && /→ write/.test(acpTranscript)
-    && /t1 → completed/.test(acpTranscript)
+    && /✓ write/.test(acpTranscript)
     && !acpTranscript.includes('"jsonrpc"'),
   acpTranscript.slice(0, 600),
 );

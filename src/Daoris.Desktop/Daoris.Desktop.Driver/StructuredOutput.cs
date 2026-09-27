@@ -44,6 +44,9 @@ public sealed class ClaudeStreamJson : IStreamMapper
 {
     private string? _message;
     private readonly HashSet<string> _streamed = new(StringComparer.Ordinal);
+
+    /// <summary>Each tool call's title by its id, so its result is said by name rather than by id.</summary>
+    private readonly Dictionary<string, string> _titles = new(StringComparer.Ordinal);
     private long? _context;
     private AcpUsage? _usage;
 
@@ -132,6 +135,7 @@ public sealed class ClaudeStreamJson : IStreamMapper
                     break;
                 case "tool_use":
                     var call = ToolCall(block);
+                    if (call.Id is { } callId && call.Title is { } called) _titles[callId] = called;
                     lines.Add($"→ {call.Title}");
                     events.Add(call);
                     if (Plan(block) is { } plan) events.Add(plan);
@@ -151,7 +155,7 @@ public sealed class ClaudeStreamJson : IStreamMapper
         return new(lines, events);
     }
 
-    private static StreamMapped User(JsonElement frame)
+    private StreamMapped User(JsonElement frame)
     {
         if (!frame.TryGetProperty("message", out var message) || message.ValueKind != JsonValueKind.Object)
         {
@@ -166,7 +170,9 @@ public sealed class ClaudeStreamJson : IStreamMapper
             var failed = block.TryGetProperty("is_error", out var error) && error.ValueKind == JsonValueKind.True;
             var id = Str(block, "tool_use_id");
             var status = failed ? "failed" : "completed";
-            lines.Add($"  {id ?? "tool"} → {status}");
+            // Said by the call's name, never its id — an id says nothing to a person reading along.
+            var name = id is not null && _titles.TryGetValue(id, out var known) ? known : "a tool";
+            lines.Add(failed ? $"  ✗ {name} failed" : $"  ✓ {name}");
             events.Add(new SessionEvent
             {
                 Kind = SessionEventKind.Tool,

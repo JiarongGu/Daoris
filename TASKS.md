@@ -21,7 +21,7 @@ lists.
 
 ## State
 
-**Counts, and this is their one home:** fifteen commands, **483 CLI tests, 525 service, 766 driver,
+**Counts, and this is their one home:** fifteen commands, **483 CLI tests, 525 service, 768 driver,
 151 desktop modules, 80 devkit, 1189 web unit, 21 Playwright**, 66/66 release rehearsal, **285/285
 family rehearsal** (it names its own phases when you run it), **39/39 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge
@@ -49,7 +49,10 @@ and is resumed in the same tree with the answer. **ACPEND1 landed with it**: the
 limit had been recorded as a stand-down. **The second run then met the first goal**: a ticket read,
 routed, developed, gated and closed done with no repository named. That needed ASKAGAIN1 and D80 (a
 cut-off carried on), both in the archive. The chain's verify step found three more. ORPHAN1 is fixed
-(in the archive), and **STANDDOWN2 is next, then CHAIN2**, which needs the owner's call.
+(in the archive). **CHAIN2 has the owner's answer**: a same-repository step starts on the parent's
+branch. The owner then set two more directions, **D81**: a session works in its harness's own `auto`
+mode, "as much as it can just like regular claude code". And **parallel sessions (PAR1)** and **a
+console tab for everything running (CONSOLE2)**. Next: CHAIN2, STANDDOWN2, PAR1, then CONSOLE2.
 D76's round is done, and its leftovers (RAIL2, SURF11) stand behind these. Nothing is pushed or
 published, and a release is still blocked on REH1.
 - **Landed:** CONV1 (the record), CONV2 (the view), CONV3a (Claude Code's `stream-json`), CONV3b
@@ -123,8 +126,8 @@ rather than designed.
 
 ## Backlog
 
-**Thirty-three rows are open**: the in-app browser's seven (BRW3, then BRW4–BRW9, the browser as a browser); the first goal's four (FG5,
-STANDDOWN2, CHAIN2, and SEM2 on a trigger); D76's held file tools;
+**Thirty-five rows are open**: the in-app browser's seven (BRW3, then BRW4–BRW9, the browser as a browser); the first goal's six (FG5,
+STANDDOWN2, CHAIN2, PAR1, CONSOLE2, and SEM2 on a trigger); D76's held file tools;
 the eight REV3 left, WINDOW2 among them; five leftovers (RAIL2, SURF11, FLAKE1, DEPLOY5, TEST1); two on the owner
 (TRUST2, AGT2c); and six on a trigger (see *Handover*). Every closed one is in `docs/task-archive.md`, and this file holds no
 ticked rows, by the `task-lifecycle` rule it also ships. A heading below holds open rows only.
@@ -332,6 +335,19 @@ is behind a sign-in. FG1–FG4 are in the archive. **INT6 is reshaped as FG5.**
   line, without that work. The intake's verify step also needed a sign-in and a live config apply,
   both the person's. Decide whether a same-repository step starts on the parent's branch, waits for
   the person's merge, or is left for the person when it needs a live environment.
+- [ ] **PAR1 — sessions run in parallel, one per tree rather than one per repository** (the owner,
+  2026-09-27: separate repositories and sessions exist *"to have clean domain separation and parallel
+  running for sessions"*). The planner starts one session per repository (`RepositoryBusy`), even
+  where every session opens its own tree. D51 made the tree the lock, and the ledger already enforces
+  it per tree. For a repository with trees on, plan up to the cap, oldest first, each in a tree of its
+  own. The install's cap is also 1, set during FG5's setup, and that is the person's to raise.
+- [ ] **CONSOLE2 — the console has a tab for each thing that is running** (the owner, 2026-09-27:
+  *"the console display should be able to have multiple tabs so we dont miss any console (like
+  different subsessions and console that runs by the session)"*). Today it is one stream per session.
+  The design wants tabs: the session itself, each sub-session it spawns (a harness's own subagents),
+  and each process it starts (the dev servers FG5's verify session left running were visible nowhere
+  but their ports). Needs the adapters to say which frames belong to which sub-session, and the
+  driver to capture a started process's output.
 - [ ] ⏸ **SEM2 — vectors that persist** (after SEM1, held). SEM1 embeds what is on disk once per
   process, on first use. The MCP host is one process per session, so with an embedder configured,
   each session's first search embeds the whole corpus. Lyntai.Storage.Sqlite's vector store would

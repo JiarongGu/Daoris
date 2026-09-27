@@ -700,11 +700,14 @@ public sealed class ClaudeAcpAdapter : ISessionAdapter
     public SessionWire Wire => SessionWire.Acp;
 
     /// <summary>
-    /// D37 in Claude Code's vocabulary — the same posture the pipe door passes as
-    /// <c>--permission-mode acceptEdits</c>, observed on this wire in the evaluation's §1a. Never
-    /// <c>bypassPermissions</c>, however available the wire makes it.
+    /// <c>auto</c> where the adapter offers it — Claude Code's own mode, in which the harness judges
+    /// each action — and <c>acceptEdits</c>, the posture observed in the evaluation's §1a, from one that
+    /// does not (D81: the owner asked that a session "be able to do as much as it can just like regular
+    /// claude code"). Never <c>bypassPermissions</c>, which judges nothing, however available the wire
+    /// makes it. The pipe door still passes <c>--permission-mode acceptEdits</c>: <c>auto</c> is measured
+    /// on this wire and not yet on that one.
     /// </summary>
-    public string? AcpPosture => "acceptEdits";
+    public string? AcpPosture => "auto|acceptEdits";
 
     /// <summary>
     /// The adapter takes turns on its own wire, which is all this seam asks of an interactive

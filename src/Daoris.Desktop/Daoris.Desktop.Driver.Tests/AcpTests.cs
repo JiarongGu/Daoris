@@ -296,8 +296,49 @@ public sealed class AcpTests
         await new AcpSession(agent.Incoming, agent.Outgoing, lines.Add)
             .RunAsync("D:/fam/Game", "read the readme", CancellationToken.None);
 
-        Assert.Contains(lines, line => line.Contains("read"));
-        Assert.Contains(lines, line => line.Contains("completed"));
+        Assert.Equal(["→ read", "  ✓ read"], lines.Where(line => line.Contains("read")));
+    }
+
+    /// <summary>
+    /// 🔴 The owner, 2026-09-27: "we have a lot '?' display in the console". Measured in FG5's
+    /// transcripts: every tool call was followed by five to eight updates that carry no status (its
+    /// input and output arriving in pieces), each printed as <c>toolu_… → ?</c>, and its end printed
+    /// its id, which says nothing to a person. An update with no status says nothing to the console,
+    /// and an ending names the tool by the title its call gave it.
+    /// </summary>
+    [Fact]
+    public async Task A_tools_progress_updates_print_nothing_and_its_end_names_the_tool()
+    {
+        var lines = new List<string>();
+        static string Update(string fields) =>
+            $$$$"""{"jsonrpc":"2.0","method":"session/update","params":{"sessionId":"s-1","update":{"sessionUpdate":"tool_call_update","toolCallId":"toolu_01AB",{{{{fields}}}}}}}""";
+        var agent = new FakeAgent((frame, self) =>
+        {
+            switch (frame.GetProperty("method").GetString())
+            {
+                case "initialize": return Ok(frame, """{"protocolVersion":1}""");
+                case "session/new": return Ok(frame, """{"sessionId":"s-1"}""");
+                case "session/prompt":
+                    self.Push("""{"jsonrpc":"2.0","method":"session/update","params":{"sessionId":"s-1","update":{"sessionUpdate":"tool_call","toolCallId":"toolu_01AB","title":"grep","status":"pending"}}}""");
+                    self.Push(Update("\"rawInput\":{\"pattern\":\"note\"}"));
+                    self.Push(Update("\"content\":[]"));
+                    self.Push(Update("\"status\":\"in_progress\""));
+                    self.Push(Update("\"title\":\"grep note in src\""));
+                    self.Push(Update("\"status\":\"completed\""));
+                    self.Push("""{"jsonrpc":"2.0","method":"session/update","params":{"sessionId":"s-1","update":{"sessionUpdate":"tool_call","toolCallId":"toolu_02CD","title":"Terminal","status":"pending"}}}""");
+                    self.Push("""{"jsonrpc":"2.0","method":"session/update","params":{"sessionId":"s-1","update":{"sessionUpdate":"tool_call_update","toolCallId":"toolu_02CD","status":"failed"}}}""");
+                    return Ok(frame, """{"stopReason":"end_turn"}""");
+                default: return frame.TryGetProperty("id", out _) ? Ok(frame, "{}") : null;
+            }
+        });
+
+        await new AcpSession(agent.Incoming, agent.Outgoing, lines.Add)
+            .RunAsync("D:/fam/Game", "find the notes", CancellationToken.None);
+
+        var tools = lines.Where(line => line.TrimStart().StartsWith('→') || line.Contains('✓') || line.Contains('✗')).ToList();
+        Assert.Equal(["→ grep", "  ✓ grep note in src", "→ Terminal", "  ✗ Terminal failed"], tools);
+        Assert.DoesNotContain(lines, line => line.Contains('?'));
+        Assert.DoesNotContain(lines, line => line.Contains("toolu_"));
     }
 
     /// <summary>
@@ -419,7 +460,7 @@ public sealed class AcpTests
             .RunAsync("D:/fam/Game", "cap the hydration", CancellationToken.None);
 
         Assert.Equal(
-            ["· the cap belongs in the streamer", "Capped at 4 per frame.", "The tests pass.", "→ Run tests [pending]", "Done."],
+            ["· the cap belongs in the streamer", "Capped at 4 per frame.", "The tests pass.", "→ Run tests", "Done."],
             lines);
     }
 
@@ -612,7 +653,7 @@ public sealed class AcpTests
 
         Assert.Equal("end_turn", outcome.StopReason);
         Assert.Contains(lines, line => line.Contains("quest_respond"));
-        Assert.Contains(lines, line => line.Contains("completed"));
+        Assert.Contains(lines, line => line.Contains("✓ mcp__daoris-knowledge__quest_respond"));
     }
 
     /// <summary>
@@ -891,29 +932,18 @@ public sealed class AcpTests
     /// `default`, `acceptEdits`, `plan`, `auto`, `bypassPermissions`).
     /// </summary>
     /// <remarks>
-    /// The posture itself is unchanged and is D37's: edits auto-accept because they are reversible
-    /// and in-repository, and <b>nothing at the outward boundary is ever auto-approved</b> — which
-    /// is why <c>bypassPermissions</c> is not what is asked for even though the wire offers it.
+    /// <b>D81</b> (the owner, 2026-09-27: a session "should be able to do as much as it can just like
+    /// regular claude code or codex"): Claude Code drives in <c>auto</c>, its own mode where the
+    /// harness judges each action, rather than <c>acceptEdits</c> with every command refused. Still
+    /// never <c>bypassPermissions</c>, which judges nothing, however available the wire makes it.
     /// </remarks>
     [Fact]
     public async Task The_permission_posture_is_set_as_a_mode_when_the_agent_offers_one()
     {
-        var agent = new FakeAgent((frame, self) =>
-        {
-            _ = self;
-            var method = frame.TryGetProperty("method", out var m) ? m.GetString() : null;
-            return method switch
-            {
-                // The shape §1a observed: modes, with a current one, on the session.
-                "session/new" => Ok(frame, """
-                    {"sessionId":"s-1","modes":{"currentModeId":"default","availableModes":[
-                      {"id":"default","name":"Manual"},{"id":"acceptEdits","name":"Accept edits"},
-                      {"id":"bypassPermissions","name":"Bypass"}]}}
-                    """),
-                "session/prompt" => Ok(frame, """{"stopReason":"end_turn"}"""),
-                _ => frame.TryGetProperty("id", out _) ? Ok(frame, "{}") : null,
-            };
-        });
+        var agent = PostureAgent("""
+            {"id":"default","name":"Manual"},{"id":"acceptEdits","name":"Accept edits"},
+            {"id":"auto","name":"Auto"},{"id":"bypassPermissions","name":"Bypass"}
+            """);
 
         // 🔴 The posture comes from the ADAPTER, not from a constant in the session (ACP3) — taken
         // here from the real one, so this test fails if the Claude adapter ever stops naming it.
@@ -922,14 +952,51 @@ public sealed class AcpTests
         await new AcpSession(agent.Incoming, agent.Outgoing, _ => { }, closeTimeout: null, posture)
             .RunAsync("D:/fam/Game", "do the thing", CancellationToken.None);
 
-        var mode = agent.Sent
-            .Select(line => JsonDocument.Parse(line).RootElement)
-            .FirstOrDefault(f => f.TryGetProperty("method", out var m) && m.GetString() == "session/set_mode");
-
-        Assert.Equal("acceptEdits", mode.GetProperty("params").GetProperty("modeId").GetString());
-        // 🔴 Never the one that would widen the boundary, however available the wire makes it.
+        Assert.Equal("auto", ModeSet(agent));
+        // 🔴 Never the one that judges nothing, however available the wire makes it.
         Assert.DoesNotContain(agent.Sent, line => line.Contains("bypassPermissions"));
     }
+
+    /// <summary>
+    /// An adapter too old to offer <c>auto</c> is driven in the next posture it names — the one Daoris
+    /// always used — never in a neighbouring mode the adapter did not list (D81, ACP3).
+    /// </summary>
+    [Fact]
+    public async Task Without_auto_on_offer_the_next_named_posture_is_set_and_nothing_wider()
+    {
+        var agent = PostureAgent("""
+            {"id":"default","name":"Manual"},{"id":"acceptEdits","name":"Accept edits"},
+            {"id":"bypassPermissions","name":"Bypass"}
+            """);
+
+        await new AcpSession(agent.Incoming, agent.Outgoing, _ => { }, closeTimeout: null,
+                AdapterSet.Built().Resolve("claude-code-acp").AcpPosture)
+            .RunAsync("D:/fam/Game", "do the thing", CancellationToken.None);
+
+        Assert.Equal("acceptEdits", ModeSet(agent));
+        Assert.DoesNotContain(agent.Sent, line => line.Contains("bypassPermissions"));
+    }
+
+    private static FakeAgent PostureAgent(string modes) => new((frame, self) =>
+    {
+        _ = self;
+        var method = frame.TryGetProperty("method", out var m) ? m.GetString() : null;
+        return method switch
+        {
+            // The shape §1a observed: modes, with a current one, on the session.
+            "session/new" => Ok(frame, $$$"""
+                {"sessionId":"s-1","modes":{"currentModeId":"default","availableModes":[{{{modes}}}]}}
+                """),
+            "session/prompt" => Ok(frame, """{"stopReason":"end_turn"}"""),
+            _ => frame.TryGetProperty("id", out _) ? Ok(frame, "{}") : null,
+        };
+    });
+
+    private static string? ModeSet(FakeAgent agent) => agent.Sent
+        .Select(line => JsonDocument.Parse(line).RootElement)
+        .Where(f => f.TryGetProperty("method", out var m) && m.GetString() == "session/set_mode")
+        .Select(f => f.GetProperty("params").GetProperty("modeId").GetString())
+        .FirstOrDefault();
 
     /// <summary>
     /// 🔴 <b>An agent that offers the posture is still not set to it when the ADAPTER names none</b>

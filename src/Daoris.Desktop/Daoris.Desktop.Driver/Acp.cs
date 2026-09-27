@@ -599,17 +599,19 @@ public sealed class AcpSession(
     /// The permission posture Daoris drives under, expressed as this wire's own mode (ACP2).
     /// </summary>
     /// <remarks>
-    /// <para><b>The posture is unchanged and is D37's</b> — edits auto-accept because they are
-    /// reversible and in-repository, and everything else runs under the repository's own checked-in
-    /// configuration. Only its EXPRESSION moved: the pipe door passes
-    /// <c>--permission-mode acceptEdits</c>, and this door sets a mode, which is what the evaluation
-    /// observed Claude Code offering on `session/new` (§1a).</para>
+    /// <para><b>D81 widened it, by decision</b>: the owner asked that a session "be able to do as much
+    /// as it can just like regular claude code or codex", so an adapter may name <c>auto</c>, the mode
+    /// in which the harness judges each action itself, ahead of <c>acceptEdits</c>. What the doctrine
+    /// keeps is kept by the rules handed at spawn (no push, the tree guard), which hold in every mode.
+    /// This door sets a mode, which is what the evaluation observed Claude Code offering on
+    /// `session/new` (§1a).</para>
     ///
-    /// <para>🔴 <b>Never a mode the agent did not offer, and never a wider one.</b> The wire also
-    /// offers <c>bypassPermissions</c>; a driver that reached for a neighbouring mode when its own
-    /// was missing is how a permission boundary widens without a decision. An agent that offers no
-    /// modes is left exactly alone — its permissions are its own business, which is the stub's
-    /// shape and any future harness's right.</para>
+    /// <para>🔴 <b>Never a mode the adapter did not name, and never one the agent did not offer.</b> The
+    /// wire also offers <c>bypassPermissions</c>; a driver that reached for a neighbouring mode when
+    /// its own was missing is how a permission boundary widens without a decision. An adapter names
+    /// its postures in order, and the first the agent offers is set. An agent that offers no modes is
+    /// left exactly alone — its permissions are its own business, which is the stub's shape and any
+    /// future harness's right.</para>
     /// </remarks>
     private async Task SetPostureAsync(JsonElement created, CancellationToken ct)
     {
@@ -624,22 +626,26 @@ public sealed class AcpSession(
             return;
         }
 
-        var offered = false;
+        var offered = new HashSet<string>(StringComparer.Ordinal);
         foreach (var mode in available.EnumerateArray())
         {
-            if (mode.TryGetProperty("id", out var id) && id.GetString() == posture) offered = true;
+            if (mode.TryGetProperty("id", out var id) && id.GetString() is { } name) offered.Add(name);
         }
 
-        if (!offered) return;
+        // The adapter names its postures in order of preference, `|`-separated (D81): the first the
+        // agent offers is the one. None offered is left alone, exactly as a single posture was.
+        var chosen = posture.Split('|', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)
+            .FirstOrDefault(offered.Contains);
+        if (chosen is null) return;
 
         // Already there is nothing to ask for — and an agent that started in the posture is a fact
         // worth not overwriting with an identical call.
-        if (modes.TryGetProperty("currentModeId", out var current) && current.GetString() == posture)
+        if (modes.TryGetProperty("currentModeId", out var current) && current.GetString() == chosen)
         {
             return;
         }
 
-        await RequestAsync("session/set_mode", new { sessionId = _sessionId, modeId = posture }, ct)
+        await RequestAsync("session/set_mode", new { sessionId = _sessionId, modeId = chosen }, ct)
             .ConfigureAwait(false);
     }
 
@@ -687,18 +693,39 @@ public sealed class AcpSession(
     ///
     /// <para>The agent's words are not rendered here: they arrive in chunks, and
     /// <see cref="AcpConsole"/> joins them into lines from the event <see cref="Map"/> made (UX5 U3).</para>
+    ///
+    /// <para>🔴 <b>A tool is named by its title, and only its end is a line</b> (the owner: "we have a
+    /// lot '?' display in the console"). A call streams its input and output as updates that carry no
+    /// status, five to eight per call in FG5's transcripts, and each printed as <c>toolu_… → ?</c>. The
+    /// record keeps every one of them as an event. The console says the call, then how it ended, by
+    /// the name the call gave it, which <paramref name="titles"/> remembers per session.</para>
     /// </remarks>
-    internal static string? Render(JsonElement update)
+    internal static string? Render(JsonElement update, IDictionary<string, string> titles)
     {
         var kind = Kind(update);
+        var id = Field(update, "toolCallId");
+        if (kind is "tool_call" or "tool_call_update" && id is not null && Field(update, "title") is { Length: > 0 } title)
+        {
+            titles[id] = title;
+        }
+
+        var name = id is not null && titles.TryGetValue(id, out var known) ? known : Field(update, "title") ?? "a tool";
 
         return kind switch
         {
             "agent_message_chunk" or "agent_thought_chunk" => null,
-            "tool_call" => $"→ {Field(update, "title") ?? Field(update, "toolCallId") ?? "tool"}"
-                           + (Field(update, "status") is { } s ? $" [{s}]" : ""),
-            "tool_call_update" => $"  {Field(update, "toolCallId") ?? "tool"} → {Field(update, "status") ?? "?"}",
-            "usage_update" => $"  context {Field(update, "used") ?? "?"}/{Field(update, "size") ?? "?"}",
+            "tool_call" => $"→ {name}" + (Field(update, "status") is { } s and not ("pending" or "in_progress") ? $" [{s}]" : ""),
+            "tool_call_update" => Field(update, "status") switch
+            {
+                "completed" => $"  ✓ {name}",
+                "failed" => $"  ✗ {name} failed",
+                // Progress, and the pieces of a call's input and output, say nothing a line should.
+                null or "pending" or "in_progress" => null,
+                var other => $"  {name}: {other}",
+            },
+            "usage_update" => Field(update, "used") is { } used && Field(update, "size") is { } size
+                ? $"  context {used}/{size}"
+                : null,
             null => $"[update] {Compact(update)}",
             _ => $"[{kind}] {Compact(update)}",
         };
@@ -966,6 +993,9 @@ internal sealed class AcpConsole : IDisposable
     private string? _openKind;
     private bool _disposed;
 
+    /// <summary>Each tool call's title by its id, so its ending is said by name rather than by id.</summary>
+    private readonly Dictionary<string, string> _titles = new(StringComparer.Ordinal);
+
     /// <param name="quiet">
     /// 🔴 How long before an open line is shown with nothing after it. Joining chunks alone held a
     /// line until the next update, and an agent that says something and then waits sends none: the
@@ -1003,7 +1033,7 @@ internal sealed class AcpConsole : IDisposable
             }
 
             End();
-            if (AcpSession.Render(update) is { } rendered) _onLine(rendered);
+            if (AcpSession.Render(update, _titles) is { } rendered) _onLine(rendered);
         }
     }
 

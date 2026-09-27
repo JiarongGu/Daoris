@@ -41,7 +41,7 @@ public sealed class Acp3AdapterTests : IDisposable
     /// id would have been silently driven at whatever mode it happened to start in.
     /// </summary>
     [Theory]
-    [InlineData("claude-code-acp", "acceptEdits")]  // observed live, evaluation §1a
+    [InlineData("claude-code-acp", "auto|acceptEdits")]  // D81: auto where offered, else as observed live (evaluation §1a)
     [InlineData("codex-acp", "agent")]              // read from codex-acp@1.12.0's own bundle
     public void Each_protocol_harness_states_the_posture_in_its_own_vocabulary(string name, string posture)
     {
