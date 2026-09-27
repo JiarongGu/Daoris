@@ -3,8 +3,8 @@ import assert from 'node:assert/strict';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
 import {
-  addFavorite, clearHistory, commandBrowser, favoriteAddress, favoritesFile, historyFile, readFavorites,
-  readHistory, removeFavorite,
+  addFavorite, commandBrowser, favoriteAddress, favoritesFile, readBrowserSettings, readFavorites,
+  removeFavorite, setExtensions, settingsFile,
 } from '../src/browser.ts';
 import { captureError, makeFixture } from './_fixture.ts';
 
@@ -149,67 +149,76 @@ test('an editor keeps what it has no field for', () => {
   fx.cleanup();
 });
 
-// BRW6: the history's reading and clearing — the same table as `BrowserHistoryTests.cs`. Recording a
-// visit is the window's alone.
+// CHR7: the browser's settings, `<home>/browser/settings.json` — the same table as
+// `BrowserSettingsTests.cs`. `daoris-browser` reads it each time it starts.
 
-function writeHistory(home: string, json: string): void {
-  mkdirSync(dirname(historyFile(home)), { recursive: true });
-  writeFileSync(historyFile(home), json, 'utf8');
+function writeSettings(home: string, json: string): void {
+  mkdirSync(dirname(settingsFile(home)), { recursive: true });
+  writeFileSync(settingsFile(home), json, 'utf8');
 }
 
-test('no history file is no history', () => {
-  const fx = makeFixture('history-none');
-  assert.deepEqual(readHistory(fx.root), { visits: [], problem: null });
+test('no settings file offers other software\'s extensions, as the engine does', () => {
+  const fx = makeFixture('settings-none');
+  assert.deepEqual(readBrowserSettings(fx.root), { extensions: 'offer', problem: null });
   fx.cleanup();
 });
 
-test('visits come back most recent first with a title or the host', () => {
-  const fx = makeFixture('history-order');
-  writeHistory(fx.root, JSON.stringify({ visits: [
-    { url: 'https://site.example/board', title: 'Board', last: '2026-09-28T09:00:00Z', count: 3 },
-    { url: 'javascript:alert(1)', last: '2026-09-28T12:00:00Z', count: 1 },
-    { url: 'http://localhost:4200/', last: '2026-09-28T10:00:00Z' },
-    { url: 'https://old.example/', title: 'Old', last: 'not a time', count: 9 },
-  ] }));
-  assert.deepEqual(readHistory(fx.root).visits, [
-    { url: 'http://localhost:4200/', title: 'localhost', last: '2026-09-28T10:00:00.000Z', count: 1 },
-    { url: 'https://site.example/board', title: 'Board', last: '2026-09-28T09:00:00.000Z', count: 3 },
-    { url: 'https://old.example/', title: 'Old', last: null, count: 9 },
-  ]);
-  fx.cleanup();
-});
+// The extensions setting, answer for answer, as the C# table.
+const EXTENSIONS: [unknown, 'offer' | 'refuse'][] = [
+  ['offer', 'offer'],
+  ['refuse', 'refuse'],
+  ['REFUSE', 'offer'],
+  ['block', 'offer'],
+  [true, 'offer'],
+  [null, 'offer'],
+];
 
-test('a history file that cannot be read shows none and is not cleared over', () => {
-  for (const content of ['not json', '{ "visits": "nope" }']) {
-    const fx = makeFixture('history-unreadable');
-    writeHistory(fx.root, content);
-    assert.ok(readHistory(fx.root).problem);
-    assert.ok(captureError(() => clearHistory(fx.root)));
-    assert.equal(readFileSync(historyFile(fx.root), 'utf8'), content);
+test('the extensions setting is offer or refuse, and anything else is the default', () => {
+  for (const [value, expected] of EXTENSIONS) {
+    const fx = makeFixture('settings-value');
+    writeSettings(fx.root, JSON.stringify({ extensions: value }));
+    assert.deepEqual(readBrowserSettings(fx.root), { extensions: expected, problem: null }, JSON.stringify(value));
     fx.cleanup();
   }
 });
 
-test('clearing empties the history and keeps what it has no field for', () => {
-  const fx = makeFixture('history-clear');
-  writeHistory(fx.root, JSON.stringify({ version: 2, visits: [{ url: 'https://site.example/', last: '2026-09-28T09:00:00Z' }] }));
-  clearHistory(fx.root);
-  const file = JSON.parse(readFileSync(historyFile(fx.root), 'utf8'));
+test('a settings file that cannot be read shows the default and is not written over', () => {
+  for (const content of ['not json', '[1]']) {
+    const fx = makeFixture('settings-unreadable');
+    writeSettings(fx.root, content);
+    const read = readBrowserSettings(fx.root);
+    assert.equal(read.extensions, 'offer');
+    assert.ok(read.problem);
+    assert.ok(captureError(() => setExtensions(fx.root, 'refuse')));
+    assert.equal(readFileSync(settingsFile(fx.root), 'utf8'), content);
+    fx.cleanup();
+  }
+});
+
+test('setting the extensions keeps what it has no field for', () => {
+  const fx = makeFixture('settings-keep');
+  writeSettings(fx.root, JSON.stringify({ version: 2, extensions: 'offer', theirs: { kept: true } }));
+  setExtensions(fx.root, 'refuse');
+  const file = JSON.parse(readFileSync(settingsFile(fx.root), 'utf8'));
   assert.equal(file.version, 2);
-  assert.deepEqual(file.visits, []);
-  assert.deepEqual(readHistory(fx.root).visits, []);
+  assert.deepEqual(file.theirs, { kept: true });
+  assert.equal(readBrowserSettings(fx.root).extensions, 'refuse');
   fx.cleanup();
 });
 
-test('`browser history` lists the most recent and clears', () => {
-  const fx = makeFixture('history-command');
-  assert.match(run(['history', 'list'], fx.root).out, /no history yet/);
-  writeHistory(fx.root, JSON.stringify({ visits: [
-    { url: 'https://site.example/board', title: 'Board', last: '2026-09-28T09:00:00Z', count: 3 },
-  ] }));
-  assert.match(run(['history', 'list'], fx.root).out, /Board\s+https:\/\/site\.example\/board\s+3×/);
-  assert.match(run(['history', 'clear'], fx.root).out, /forgot 1 page/);
-  assert.match(run(['history', 'list'], fx.root).out, /no history yet/);
+test('`browser extensions` says the setting and sets it', () => {
+  const fx = makeFixture('settings-command');
+  assert.match(run(['extensions'], fx.root).out, /offered/);
+  assert.match(run(['extensions', 'refuse'], fx.root).out, /refused.*next time/s);
+  assert.match(run(['extensions'], fx.root).out, /refused/);
+  assert.match(String(captureError(() => run(['extensions', 'maybe'], fx.root))?.message), /offer.*refuse/);
+  fx.cleanup();
+});
+
+/** The browser keeps its own history now (CHR5), and a person who typed the old command is told where. */
+test('`browser history` is retired, and says where the history is', () => {
+  const fx = makeFixture('history-retired');
+  assert.match(String(captureError(() => run(['history', 'list'], fx.root))?.message), /browser's own history/);
   fx.cleanup();
 });
 
@@ -232,9 +241,9 @@ test('`browser favorite` with no home refuses, naming the variable (D63)', () =>
   assert.match(String(error?.message), /DAORIS_HOME/);
 });
 
-test('`browser` knows `favorite` and `history`, and says what it takes', () => {
+test('`browser` knows `favorite` and `extensions`, and says what it takes', () => {
   const fx = makeFixture('favorites-usage');
-  assert.match(String(captureError(() => run(['tabs'], fx.root))?.message), /browser favorite.*browser history/s);
+  assert.match(String(captureError(() => run(['tabs'], fx.root))?.message), /browser favorite.*browser extensions/s);
   assert.match(String(captureError(() => run(['favorite', 'add'], fx.root))?.message), /needs an address/);
   fx.cleanup();
 });

@@ -41,6 +41,13 @@ public static class EngineBrowser
     public static string ProfileDirectory(string profileFolder) => Path.Combine(profileFolder, "Default");
 
     /// <summary>
+    /// The home a profile folder is under — <see cref="ProfileFolder"/> undone — where the browser finds
+    /// Daoris's favorites and its settings at each start.
+    /// </summary>
+    public static string HomeOf(string profileFolder) =>
+        Path.GetDirectoryName(Path.GetDirectoryName(Path.TrimEndingDirectorySeparator(profileFolder))!)!;
+
+    /// <summary>
     /// The engine's language, from the person's: one of the two the install keeps (en-US, zh-CN), so
     /// the engine never asks for a locale file that was left out.
     /// </summary>

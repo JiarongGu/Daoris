@@ -62,7 +62,7 @@ ever fetches anything, and `check` therefore works with no network at all.
 | `agent` | Agents (Claude Code, Codex, dsh) and the accounts they run as: `list`, `install`/`update`/`login <agent>`, `profile list\|add\|remove\|default …`. **Spawns each agent's own tooling; keeps no sign-in** |
 | `driver` | What this machine drives: `list`, `drive`/`undrive`, `hold`/`resume`, `cap <n>`, `adapter <name>`. **Edits one file under the Daoris home** |
 | `plugin` | This machine's plugins: `list`, `add <folder>`, `remove <id>`, `enable`/`disable <id>`. **Edits under the home's `plugins/`; loads no code** |
-| `browser` | The in-app browser's favorites and history: `favorite list\|add\|remove`, `history list\|clear`. **Edits files under the home** |
+| `browser` | Daoris's browser: `favorite list\|add\|remove` (a Daoris folder on its bar) and `extensions offer\|refuse`. **Edits files under the home** |
 
 
 `sync` accepts `--dry-run` (print the plan, write nothing) and `--force`. `upstream` accepts `--all` to

@@ -27,8 +27,14 @@
 >   first. That port is a relay onto the engine's own (CHR6), which calls a new tab a `page` where the
 >   engine says `other`, so an agent's browser MCP can open tabs
 >   (`docs/2026-09-28-chromium-embedding-evidence.md` §12, §17–§19).
-> - **§3a and §3b:** Daoris's `favorites.json` and `history.json` are read by no window now, since the
->   engine keeps its own bookmarks and history. Their terminal twin is the owner's call (TASKS).
+> - **§3a stands, shown differently (CHR5):** `favorites.json` is still Daoris's, a twin with
+>   `daoris browser favorite`. At each start `daoris-browser` puts it in a *Daoris* folder on the
+>   engine's bookmarks bar, found by its id wherever the person moved it. The person's own bookmarks
+>   are never touched.
+> - **§3b is retired:** the engine keeps its own history, and `daoris browser history` is gone.
+> - **A settings file, `<home>/browser/settings.json` (CHR7):** another twin
+>   (`daoris browser extensions`, `BrowserSettings.cs`). It says whether other software's Chrome
+>   extensions are offered, as the engine does, or refused before it starts.
 
 ## 0. Why the first answer is not enough
 

@@ -39,6 +39,7 @@ internal static class Program
         }
 
         Directory.CreateDirectory(options.Profile);
+        Prepare(options.Profile);
 
         // The engine listens on a port of its own, and the port the shell hands out is the relay's
         // (CHR6): the one place the engine's announcement of a new tab is said right.
@@ -110,6 +111,59 @@ internal static class Program
 
         return 0;
     }
+
+    /// <summary>
+    /// Before the engine reads its profile: Daoris's favorites become its folder on the bookmarks bar
+    /// (CHR5), and other software's Chrome extensions are refused or offered as the settings say
+    /// (CHR7). Each file that cannot be read is left as it is, and the browser starts regardless.
+    /// </summary>
+    private static void Prepare(string profile)
+    {
+        var home = EngineBrowser.HomeOf(profile);
+        Directory.CreateDirectory(EngineBrowser.ProfileDirectory(profile));
+        var record = EngineProfile.ReadRecord(ReadText(EngineProfile.RecordPath(profile)));
+        var preferences = ReadText(EngineProfile.PreferencesPath(profile));
+        var preferencesBefore = preferences;
+
+        var favorites = BrowserFavorites.Read(home);
+        if (favorites.Problem is null
+            && EngineProfile.WithFavorites(ReadText(EngineProfile.BookmarksPath(profile)), favorites.Favorites, DateTimeOffset.UtcNow)
+                is var (bookmarks, created))
+        {
+            Daoris.Driver.AtomicFile.WriteText(EngineProfile.BookmarksPath(profile), bookmarks);
+
+            // Once, when its folder first appears: a bar that is hidden shows nothing Daoris put there.
+            // After that the bar is the person's to hide.
+            if (created && !record.BarShown && EngineProfile.ShowBar(preferences) is { } shown)
+            {
+                preferences = shown;
+                record = record with { BarShown = true };
+            }
+        }
+
+        if (BrowserSettings.Read(home).Extensions == ExtensionsSetting.Refuse)
+        {
+            if (EngineProfile.Refuse(preferences, ExternalExtensions.Registered(), record.Refused) is var (refusing, refused))
+            {
+                preferences = refusing;
+                record = record with { Refused = refused };
+            }
+        }
+        else if (record.Refused.Count > 0 && EngineProfile.Offer(preferences, record.Refused) is { } offering)
+        {
+            preferences = offering;
+            record = record with { Refused = [] };
+        }
+
+        if (preferences is not null && preferences != preferencesBefore)
+        {
+            Daoris.Driver.AtomicFile.WriteText(EngineProfile.PreferencesPath(profile), preferences);
+        }
+
+        Daoris.Driver.AtomicFile.WriteText(EngineProfile.RecordPath(profile), EngineProfile.WriteRecord(record));
+    }
+
+    private static string? ReadText(string path) => File.Exists(path) ? File.ReadAllText(path) : null;
 
     /// <summary>The shell has gone: close every window over the engine's own socket, and wait for them to go.</summary>
     private static async Task CloseAllAsync(EngineCdp engine)

@@ -7,8 +7,9 @@ import { HOME_SENTENCE, daorisHome } from './home.ts';
 import type { CommandArgs } from './types.ts';
 
 /**
- * The in-app browser's favorites (BRW5): `<home>/browser/favorites.json`, the person's and never a
- * session's, kept from a terminal as the window keeps them (D50: two doors).
+ * The in-app browser's favorites (BRW5, CHR5): `<home>/browser/favorites.json`, the person's and never a
+ * session's, kept from a terminal and from the Settings screen (D50: two doors). `daoris-browser` puts
+ * them in a *Daoris* folder on its bookmarks bar each time it starts.
  *
  * 🔴 A TWIN file (the in-app browser design, §3a): the desktop modules' `BrowserFavorites.cs` reads and
  * edits it with its own code, and each side carries the same test table (`browser.test.ts` here,
@@ -157,68 +158,39 @@ export function removeFavorite(home: string, typed: string): boolean {
   return true;
 }
 
-// BRW6: the history — `<home>/browser/history.json`, which the window records as pages load. This side
-// lists and clears it, by the reading rules `BrowserHistory.cs` holds (the design, §3b).
+// CHR7: the browser's settings — `<home>/browser/settings.json`, which `daoris-browser` reads each time
+// it starts. 🔴 A TWIN file as the favorites are: `BrowserSettings.cs` in the desktop modules reads and
+// edits it with its own code, and `BrowserSettingsTests.cs` carries this side's table.
 
-export const HISTORY_FILE = join('browser', 'history.json');
+export const SETTINGS_FILE = join('browser', 'settings.json');
 
-export interface Visit { url: string; title: string; last: string | null; count: number }
+/**
+ * What the browser does with extensions other software registered for Chrome on this machine: `offer`
+ * them for the person's approval, as the engine does, or `refuse` them before it starts.
+ */
+export type ExtensionsSetting = 'offer' | 'refuse';
 
-export function historyFile(home: string): string {
-  return join(home, HISTORY_FILE);
+export function settingsFile(home: string): string {
+  return join(home, SETTINGS_FILE);
 }
 
-function historyRows(home: string): { file: Record<string, unknown> | null; rows: unknown[] | null; problem: string | null } {
-  const path = historyFile(home);
-  const { value, problem } = readJsonObject(path);
-  if (problem !== null) return { file: null, rows: null, problem };
-  if (value === null) return { file: null, rows: null, problem: null };
-  if (!('visits' in value)) return { file: value, rows: [], problem: null };
-  if (!Array.isArray(value.visits)) return { file: null, rows: null, problem: `${path}'s visits is not a list` };
-  return { file: value, rows: value.visits, problem: null };
+/** The settings, or the defaults with why a file that was there gave none. */
+export function readBrowserSettings(home: string): { extensions: ExtensionsSetting; problem: string | null } {
+  const { value, problem } = readJsonObject(settingsFile(home));
+  const extensions = value?.extensions === 'refuse' ? 'refuse' : 'offer';
+  return { extensions, problem };
 }
 
-/** When it was last visited, as an ISO time, or null when the row does not say in one — the earliest. */
-function lastOf(row: Record<string, unknown>): string | null {
-  const last = text(row, 'last');
-  if (last === null) return null;
-  const at = new Date(last);
-  return Number.isNaN(at.getTime()) ? null : at.toISOString();
-}
-
-/** How often, or once when the row does not say in a positive whole number. */
-function countOf(row: Record<string, unknown>): number {
-  return Number.isInteger(row.count) && (row.count as number) > 0 ? row.count as number : 1;
-}
-
-/** The history, most recent first; a row that is not a page skipped, as a reader skips it in the shell. */
-export function readHistory(home: string): { visits: Visit[]; problem: string | null } {
-  const { rows, problem } = historyRows(home);
-  const visits: Visit[] = [];
-  for (const row of rows ?? []) {
-    if (!isRow(row)) continue;
-    const url = text(row, 'url');
-    const page = url === null ? null : favoriteAddress(url);
-    if (page) visits.push({ url: page, title: titleOf(row, page), last: lastOf(row), count: countOf(row) });
-  }
-
-  const time = (visit: Visit) => (visit.last === null ? -Infinity : Date.parse(visit.last));
-  visits.sort((a, b) => time(b) - time(a));
-  return { visits, problem };
-}
-
-/** Forget every page, keeping what an editor has no field for. Refused over a file it could not read. */
-export function clearHistory(home: string): number {
-  const { file, rows, problem } = historyRows(home);
+/** Set the extensions setting, keeping what an editor has no field for. Refused over a file it could not read. */
+export function setExtensions(home: string, extensions: ExtensionsSetting): void {
+  const { value, problem } = readJsonObject(settingsFile(home));
   if (problem !== null) {
-    throw new DaorisError(`${problem}. Fix it, or delete it to start from nothing — `
-      + 'the history will not write over a file it could not read.');
+    throw new DaorisError(`${problem}. Fix it, or delete it to start from the defaults — `
+      + 'the browser\'s settings will not write over a file they could not read.');
   }
-  if (file === null) return 0;
 
-  const forgot = (rows ?? []).length;
-  writeJsonAtomic(historyFile(home), { ...file, visits: [] });
-  return forgot;
+  mkdirSync(dirname(settingsFile(home)), { recursive: true });
+  writeJsonAtomic(settingsFile(home), { ...(value ?? {}), extensions });
 }
 
 /** The home, or the refusal every management verb gives without one (D63). */
@@ -229,56 +201,47 @@ function requireHome(): string {
 }
 
 const USAGE = '`daoris browser favorite list`, `daoris browser favorite add <address> [--title T]`, '
-  + '`daoris browser favorite remove <address>`, `daoris browser history list [--limit N]` '
-  + 'or `daoris browser history clear`';
+  + '`daoris browser favorite remove <address>`, or `daoris browser extensions [offer|refuse]`';
 
-/** `browser history list|clear`: what the window recorded, most recent first, or forget it all. */
-function commandHistory(verb: string, argv: string[], write: (line: string) => void): ExitCode {
+/** `browser extensions [offer|refuse]`: say the setting, or set it for the browser's next start. */
+function commandExtensions(value: string | undefined, write: (line: string) => void): ExitCode {
   const home = requireHome();
-  switch (verb) {
-    case 'list': {
-      const { visits, problem } = readHistory(home);
-      if (problem) {
-        write(`daoris: ⚠ ${problem}`);
-        return 1;
-      }
-      if (visits.length === 0) {
-        write('daoris: no history yet — the in-app browser records the pages it loads.');
-        return 0;
-      }
-      const limit = Number(flagValue(argv, '--limit') ?? 20);
-      const shown = visits.slice(0, Number.isInteger(limit) && limit > 0 ? limit : 20);
-      write(`daoris: ${historyFile(home)} — the ${shown.length} most recent of ${visits.length}`);
-      const width = Math.max(...shown.map((v) => v.title.length));
-      for (const visit of shown) {
-        write(`  ${visit.title.padEnd(width)}  ${visit.url}  ${visit.count}×${visit.last ? `  ${visit.last.slice(0, 10)}` : ''}`);
-      }
-      return 0;
-    }
-
-    case 'clear': {
-      const forgot = clearHistory(home);
-      write(`daoris: forgot ${forgot} ${forgot === 1 ? 'page' : 'pages'}. The window forgets its own history `
-        + 'the next time it is cleared from there.');
-      return 0;
-    }
-
-    default:
-      throw new DaorisError(`\`browser history\` does not know \`${verb}\` — it takes ${USAGE}.`);
+  if (value === undefined) {
+    const { extensions, problem } = readBrowserSettings(home);
+    if (problem) write(`daoris: ⚠ ${problem}; the default holds.`);
+    write(extensions === 'refuse'
+      ? 'daoris: extensions other software registered for Chrome are refused by Daoris\'s browser.'
+      : 'daoris: extensions other software registered for Chrome are offered by Daoris\'s browser, '
+        + 'each for your approval.');
+    return problem ? 1 : 0;
   }
+
+  if (value !== 'offer' && value !== 'refuse') {
+    throw new DaorisError(`\`browser extensions\` takes \`offer\` or \`refuse\`, not \`${value}\`.`);
+  }
+
+  setExtensions(home, value);
+  write(`daoris: extensions other software registered for Chrome will be ${value === 'refuse' ? 'refused' : 'offered'} `
+    + 'the next time Daoris\'s browser starts.');
+  return 0;
 }
 
 /**
- * The in-app browser from a terminal: its favorites and its history, the same files the window keeps
- * (D50). Management class: it edits files under the home and talks to nothing.
+ * The in-app browser from a terminal: its favorites, which it shows in a *Daoris* folder on its
+ * bookmarks bar, and its settings — the same files the Settings screen keeps (D50). Management class:
+ * it edits files under the home and talks to nothing.
  */
 export function commandBrowser({ argv, write }: CommandArgs): ExitCode {
-  const [area, verb = 'list', address] = operands(argv, new Set(['--title', '--limit']));
-  if (area === 'history') return commandHistory(verb, argv, write);
+  const [area, verb, address] = operands(argv, new Set(['--title']));
+  if (area === 'extensions') return commandExtensions(verb, write);
+  if (area === 'history') {
+    throw new DaorisError('`browser history` is retired: Daoris\'s browser keeps the browser\'s own history '
+      + 'now, on its History page, where it is cleared as well.');
+  }
   if (area !== 'favorite') throw new DaorisError(`\`browser\` takes ${USAGE}.`);
 
   const home = requireHome();
-  switch (verb) {
+  switch (verb ?? 'list') {
     case 'list': {
       const { favorites, problem } = readFavorites(home);
       if (problem) {
@@ -286,8 +249,8 @@ export function commandBrowser({ argv, write }: CommandArgs): ExitCode {
         return 1;
       }
       if (favorites.length === 0) {
-        write('daoris: no favorites yet — the star in the in-app browser\'s bar keeps a page,');
-        write('  or `daoris browser favorite add <address>`.');
+        write('daoris: no favorites yet — `daoris browser favorite add <address>` keeps a page, and');
+        write('  Daoris\'s browser shows them in a Daoris folder on its bookmarks bar.');
         return 0;
       }
       write(`daoris: ${favoritesFile(home)}`);

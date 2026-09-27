@@ -132,6 +132,17 @@ a `page`.
 20. **Seeding `extensions.external_uninstalls`** in the profile's preferences with a registered
     extension's id stopped the engine offering it (no *Action required*). The engine kept the entry
     rather than resetting it, and without the seed the offer came back.
+21. **A bookmarks file written from nothing, with no checksum, is taken.** A *Daoris* folder written
+    onto the bar was shown (with `bookmark_bar.show_on_all_tabs`) and was still there, unchanged,
+    after a clean close.
+22. **The settings applied at start, end to end** (`daoris-browser` on a scratch home):
+    - *refuse*: the folder was on the bar and the offer was gone;
+    - *offer*: the offer came back;
+    - *no favorites*: the folder went;
+    - an id the person had refused was still refused after Daoris offered again.
+
+    The engine raises its *Action required* chip once: an offer left unanswered waits on its
+    extensions page afterwards.
 
 ## Not measured
 

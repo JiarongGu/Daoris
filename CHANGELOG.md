@@ -27,7 +27,7 @@ The first version: doctrine that installs, is checked, and flows back.
   each tool's own installer and sign-in — and keeps an API key only for an account that is one
   (D67); `driver` sets what this machine drives; `plugin` lists, adds, removes and switches the
   machine's plugins, loading no code from any of them; and `browser` keeps the in-app browser's
-  favorites and lists or clears its history, the same files the window keeps. `agent` **spawns**; `connect`, `retire` and
+  favorites, which it shows in a Daoris folder on its bookmarks bar, and its settings. `agent` **spawns**; `connect`, `retire` and
   `import` talk to a service; `remote`, `driver`, `plugin` and `browser` only edit files under the
   Daoris home.
 - **A pack may switch a core row off, and the repository confirms it** (D71). A pack's `pack.json`
