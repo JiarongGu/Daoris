@@ -22,7 +22,7 @@ lists.
 ## State
 
 **Counts, and this is their one home:** sixteen commands, **501 CLI tests, 528 service, 799 driver,
-207 desktop modules, 80 devkit, 1201 web unit, 21 Playwright**, 66/66 release rehearsal, **289/289
+222 desktop modules, 80 devkit, 1201 web unit, 21 Playwright**, 66/66 release rehearsal, **289/289
 family rehearsal** (it names its own phases when you run it), **45/45 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge
 documents, 5 skills, 7 packs. The always-loaded core is **22,492 of 26,000 bytes** — a span in
@@ -56,9 +56,9 @@ console tab for everything running (CONSOLE2)**. CHAIN2 landed as D82, PAR1 with
 D83, and CONSOLE2 and BRW10 (a sign-in that survives a restart) on 2026-09-28, all in the archive.
 **Then the browser as a browser** (BRW4–BRW6), until **D84 and D85** (2026-09-28): Daoris ships a
 Chromium for its browser and, once Shenora's host is released, for its page (CHR2 waits on it).
-**CHR1 and CHR3 landed: the browser is `daoris-browser`, the engine's own window.** Next are the
-owner's calls on CHR5 and CHR7, and a republish when the owner says (it adds about 350 MB, and the
-person signs in again). 🔴 **The owner also
+**CHR1, CHR3 and CHR6 landed: the browser is `daoris-browser`, the engine's own window.** Next are
+CHR5 and CHR7 as the owner answered them, then one republish once the owner has closed Daoris (it
+adds about 350 MB, and the person signs in again). 🔴 **The owner also
 filed six rows from the first real workspace** (2026-09-28, *After the first real workspace*, "lets
 start them later"): workspace rules for how work lands, the default branch, cleaning up session
 branches, the session view, the map, and asking Daoris for help. Ask which comes first.
@@ -144,8 +144,8 @@ rather than designed.
 
 ## Backlog
 
-**Forty-two rows are open**: the six the first real workspace showed (WSR1–WSR3, SESS1, MAP4,
-HELP1); D85's five (CHR2, CHR4–CHR7); the in-app browser's four (BRW3, BRW7, BRW8, and D84's BRW12); the first goal's three (FG5,
+**Forty-one rows are open**: the six the first real workspace showed (WSR1–WSR3, SESS1, MAP4,
+HELP1); D85's four (CHR2, CHR4, CHR5, CHR7); the in-app browser's four (BRW3, BRW7, BRW8, and D84's BRW12); the first goal's three (FG5,
 READACROSS1 the owner's, and SEM2 on a trigger); D76's held file tools;
 the eight REV3 left, WINDOW2 among them; seven leftovers (LAYOUT1, RAIL2, SURF11, CONSOLE3, FLAKE1, DEPLOY5, TEST1); two on the owner
 (TRUST2, AGT2c); and six on a trigger (see *Handover*). Every closed one is in `docs/task-archive.md`, and this file holds no
@@ -335,17 +335,19 @@ Edge is always an option** (`docs/2026-09-28-managed-edge-evidence.md`). The eng
 
 `docs/2026-09-28-chromium-host-design.md` is the contract, and its §5 carries each row's detail.
 Shenora's backlog carries the request (filed 2026-09-28 at the owner's say-so, uncommitted there).
-CHR1 and CHR3 are in the archive: **the browser is `daoris-browser`, a process of its own showing the
-engine's own window** (`docs/2026-09-28-chromium-embedding-evidence.md`, §11–§15 for CHR3).
+CHR1, CHR3 and CHR6 are in the archive: **the browser is `daoris-browser`, a process of its own
+showing the engine's own window, and agents open tabs in it through a relay**
+(`docs/2026-09-28-chromium-embedding-evidence.md`).
 - [ ] **CHR2 — move onto Shenora's Chromium host** (`Shenora.Windows.Chromium`, which the kit builds:
   the contract's §3). **Waits on its release.**
-- [ ] **CHR5 — Daoris's favorites and history, now read by no window.** The engine keeps its own.
-  **The owner's call:** retire `daoris browser` and its two files (carrying saved favorites into the
-  engine's bookmarks once), or point it at the engine's.
-- [ ] **CHR6 — an agent opens a tab.** The engine announces a new target as `other`, so no browser MCP
-  takes it up (evidence §12): a CDP proxy at `${browser}`, or a report to CEF (the owner's to file).
-- [ ] **CHR7 — other software's Chrome extensions** reach the profile, each waiting on the person's
-  approval (evidence §14). **The owner's call:** keep that, or refuse them (a switch still to measure).
+- [ ] **CHR5 — Daoris's favorites on the browser's bar** (owner, 2026-09-28). They stay Daoris's:
+  `favorites.json`, `daoris browser favorite`, and a Settings screen. Each start puts them in a
+  *Daoris* folder on the engine's bookmarks bar. History is the engine's own, so
+  `daoris browser history` is retired.
+- [ ] **CHR7 — other software's Chrome extensions, a setting** (owner: *"configurable"*): offer them
+  for approval, as the engine does, or refuse them. Refusing seeds the profile's
+  `external_uninstalls` (evidence §20). It has two doors: `daoris browser extensions` and the same
+  Settings screen.
 - [ ] **CHR4 — the install carries it**, and the WebView2 path goes.
 
 ### The first goal — a real workspace, a ticket, a task started (owner, 2026-09-27 → D77)

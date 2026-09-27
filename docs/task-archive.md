@@ -6916,3 +6916,30 @@ control, in a process of its own:
 commit): the form and its host, the sealed-cookie store and its DPAPI seal, the tab strip, and
 `InAppBrowser`'s WebView2 members, with their 15 tests. The favorites and history files, their module
 code and `daoris browser` stay until the owner's call on CHR5.
+
+## CHR6 — an agent opens a tab (2026-09-28)
+
+The row as filed: *The engine announces a new target as `other`, so no browser MCP takes it up
+(evidence §12): a CDP proxy at `${browser}`, or a report to CEF (the owner's to file).* The owner:
+*"yes allow"*.
+
+**Outcome.** The relay:
+- `daoris-browser` keeps the engine on a port of its own and answers `${browser}` with `CdpRelay`, in
+  the modules.
+- The relay passes every HTTP request and socket message through, and says a target the engine calls
+  `other` is a `page` when its address is a tab. That covers a web page, a blank tab and the new-tab
+  page, in an announcement, an attachment or a target list.
+- An HTTP answer names the relay's port, not the engine's, so a client never goes around it.
+- It answers a closing socket before passing the close on.
+
+**Proven by:**
+- 15 tests, including one through a real socket and a stand-in engine; the correction was watched
+  failing, 8 of 15 red.
+- Playwright MCP's `browser_tabs new` and Chrome DevTools MCP's `new_page` both opened a tab in the
+  person's window (evidence §17–§19).
+
+**Found on the way:**
+- The engine's windows use `<root>/Default` whatever cache path they are given. `daoris-browser` names
+  it now (§16).
+- A first sabotage bound as `(false && …) || …` and broke one case of 15; it was read, not believed.
+- No report was sent to CEF; filing one stays the owner's.

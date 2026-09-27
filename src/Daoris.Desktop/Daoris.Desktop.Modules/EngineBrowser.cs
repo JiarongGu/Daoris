@@ -33,6 +33,14 @@ public static class EngineBrowser
     public static string ProfileFolder(string home) => Path.Combine(home, "browser", "engine");
 
     /// <summary>
+    /// The profile the engine's windows actually use, inside <see cref="ProfileFolder"/>: its
+    /// `Default`, as Chrome's own profiles are named. Measured (2026-09-28): a window made over CDP
+    /// ignored a cache path set elsewhere and used this one, so the engine is told this one too, and
+    /// its preferences, bookmarks and cookies are all here.
+    /// </summary>
+    public static string ProfileDirectory(string profileFolder) => Path.Combine(profileFolder, "Default");
+
+    /// <summary>
     /// The engine's language, from the person's: one of the two the install keeps (en-US, zh-CN), so
     /// the engine never asks for a locale file that was left out.
     /// </summary>

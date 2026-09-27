@@ -112,6 +112,26 @@ its own port (`src/Daoris.Desktop/Daoris.Desktop.Browser`), started by the shell
     is sealed from the person's accounts, and not from what other software registers for Chrome.
 15. **Nothing of it lands under the user profile**, apart from the OS temp folder's timestamp, which
     the run's other processes also write.
+16. **The engine's windows use `<root>/Default`, not the cache path they were given**: a cache path
+    set to another folder left that folder empty. So the engine is told `Default`, and its preferences,
+    bookmarks and cookies are all there. Beside it are the engine's own component folders (Safe
+    Browsing lists, optimization hints and others), which it fetches from Google.
+
+## What the relay changed (CHR6, 2026-09-28)
+
+`daoris-browser` now keeps the engine on a port of its own and answers `${browser}` with a relay
+(`CdpRelay`). The relay passes every request and message through unchanged, except a target the engine
+announces as `other` whose address is a tab (a web page, a blank tab, the new-tab page), which it calls
+a `page`.
+
+17. **Playwright MCP 0.0.82 opens a tab through it**: `browser_tabs new` made tab 1 and made it
+    current, and `browser_navigate` went to that tab, shown in front in the person's window.
+18. **Chrome DevTools MCP opens one too**: `new_page` listed the new page and selected it.
+19. **What it leaves alone**: the engine's own windows (`devtools://`), extensions' pages and its
+    browser UI keep their types. Held by `CdpRelayTests`, with the correction watched failing.
+20. **Seeding `extensions.external_uninstalls`** in the profile's preferences with a registered
+    extension's id stopped the engine offering it (no *Action required*). The engine kept the entry
+    rather than resetting it, and without the seed the offer came back.
 
 ## Not measured
 

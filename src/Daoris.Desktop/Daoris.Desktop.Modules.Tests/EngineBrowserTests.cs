@@ -19,6 +19,8 @@ public sealed class EngineBrowserTests : Bridge
     {
         Assert.Equal(Path.Combine(Home, "browser", "engine"), EngineBrowser.ProfileFolder(Home));
         Assert.NotEqual(Path.Combine(Home, "browser", "profile"), EngineBrowser.ProfileFolder(Home));
+        Assert.Equal(Path.Combine(Home, "browser", "engine", "Default"),
+            EngineBrowser.ProfileDirectory(EngineBrowser.ProfileFolder(Home)));
     }
 
     [Fact]

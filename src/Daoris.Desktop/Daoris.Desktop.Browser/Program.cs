@@ -15,6 +15,10 @@ namespace Daoris.Desktop.Browser;
 /// devtools only to a target made that way (`docs/2026-09-28-chromium-embedding-evidence.md` §2), and
 /// an agent's tabs land in it too. So the first window is made the same way an agent's is.</para>
 ///
+/// <para><b>The port it is given is a relay's</b> (CHR6): the engine listens on one of its own, and
+/// <see cref="CdpRelay"/> answers <c>${browser}</c>, calling a new tab the page it is where the engine
+/// says <c>other</c>, so an agent's browser MCP can open tabs.</para>
+///
 /// <para><b>Nothing under the user profile</b> (D63): with no <c>--profile</c> it refuses, rather than
 /// let the engine pick a folder of its own.</para>
 /// </remarks>
@@ -35,13 +39,17 @@ internal static class Program
         }
 
         Directory.CreateDirectory(options.Profile);
+
+        // The engine listens on a port of its own, and the port the shell hands out is the relay's
+        // (CHR6): the one place the engine's announcement of a new tab is said right.
+        var enginePort = InAppBrowser.FreePort();
         var settings = new CefSettings
         {
             RootCachePath = options.Profile,
-            CachePath = Path.Combine(options.Profile, "profile"),
+            CachePath = EngineBrowser.ProfileDirectory(options.Profile),
             // The sign-in survives a restart with the engine's own setting (the evidence's §5).
             PersistSessionCookies = true,
-            RemoteDebuggingPort = options.Port,
+            RemoteDebuggingPort = enginePort,
             LogFile = Path.Combine(options.Profile, "engine.log"),
             LogSeverity = LogSeverity.Warning,
             Locale = EngineBrowser.Locale(CultureInfo.CurrentUICulture.Name),
@@ -57,7 +65,7 @@ internal static class Program
 
         try
         {
-            return RunAsync(options).GetAwaiter().GetResult();
+            return RunAsync(options, enginePort).GetAwaiter().GetResult();
         }
         finally
         {
@@ -65,7 +73,7 @@ internal static class Program
         }
     }
 
-    private static async Task<int> RunAsync(EngineBrowserOptions options)
+    private static async Task<int> RunAsync(EngineBrowserOptions options, int enginePort)
     {
         Process? shell = null;
         if (options.Parent is { } parent)
@@ -80,8 +88,9 @@ internal static class Program
             }
         }
 
-        using var engine = new EngineCdp(options.Port);
+        using var engine = new EngineCdp(enginePort);
         for (var i = 0; i < 100 && !await engine.AnswersAsync(); i++) await Task.Delay(100);
+        await using var relay = CdpRelay.Start(options.Port, enginePort);
 
         await engine.NewWindowAsync("chrome://newtab/", options.Background);
 

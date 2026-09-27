@@ -24,8 +24,9 @@
 > - **§3.3:** the profile is `<home>/browser/engine`, and the engine keeps a sign-in across a restart
 >   itself (`PersistSessionCookies`). BRW10's sealed file is not used by it.
 > - **§3.4–§3.6 stand:** a port picked free for the shell's life, `${browser}`, and the driver asking
->   first. 🔴 **An agent drives the tab it finds and cannot open another**, because the engine
->   announces a new target as `other` (`docs/2026-09-28-chromium-embedding-evidence.md` §12).
+>   first. That port is a relay onto the engine's own (CHR6), which calls a new tab a `page` where the
+>   engine says `other`, so an agent's browser MCP can open tabs
+>   (`docs/2026-09-28-chromium-embedding-evidence.md` §12, §17–§19).
 > - **§3a and §3b:** Daoris's `favorites.json` and `history.json` are read by no window now, since the
 >   engine keeps its own bookmarks and history. Their terminal twin is the owner's call (TASKS).
 

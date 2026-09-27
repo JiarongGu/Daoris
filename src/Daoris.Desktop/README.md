@@ -10,7 +10,7 @@ got its shape is in `docs/DECISIONS.md` and `docs/task-archive.md`, not here.
 | `Daoris.Desktop.Driver.Host` | `daoris-driver`, the headless door onto the same library: the tick, chat, ask, trees and sync |
 | `Daoris.Desktop.Modules` | The shell's head: the loop, the host supervisor, every IPC module the page talks to, and `Refusals`, where a refusal is declared once as a code the page translates. Plain `net10.0`, with its own tests and gate |
 | `Daoris.Desktop.App` | `daoris-desktop`, the window and only the window, on Shenora.Windows 0.16.0 (D22) |
-| `Daoris.Desktop.Browser` | `daoris-browser`, Daoris's own browser (D85, CHR3): Chromium through CefSharp, in a process of its own because the engine's debug port reaches every page in its process. It shows the engine's own window, which it opens over that port, and ends when its last window closes or the shell does. The shell starts it; an install carries it under `app/daoris-browser/` with two locales |
+| `Daoris.Desktop.Browser` | `daoris-browser`, Daoris's own browser (D85, CHR3): Chromium through CefSharp, in a process of its own because the engine's debug port reaches every page in its process. It shows the engine's own window, which it opens over the engine's own port, and answers `${browser}` with a relay (`CdpRelay`) that calls a new tab a page where the engine says `other`. It ends when its last window closes or the shell does. The shell starts it; an install carries it under `app/daoris-browser/` with two locales |
 
 The adapters are the stub, `acp-stub` (the protocol door with no model in it), `claude-code`, and the
 protocol door's configurations `claude-code-acp`, `codex-acp` and `dsh`. A session's record is
