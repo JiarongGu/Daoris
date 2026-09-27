@@ -24,7 +24,7 @@ import { SessionRail } from './SessionRail';
 import { StartSession, type StartChoice } from './StartSession';
 import { OutputPanel, PANEL_MIN, Splitter } from './frame';
 import { panelTabs } from './streams';
-import { dockRange, frameLayout, RAIL } from './layout';
+import { DOCK, dockRange, frameLayout, RAIL } from './layout';
 import { store, stored } from '../lib/stored';
 
 // Per-viewer conveniences, like the language and the workspace scope (D42): a remembered layout is
@@ -34,8 +34,25 @@ const PANEL_CLOSED = 'daoris.panelClosed';
 // The frame's columns (FRAME6): the widths the person dragged, and what they closed.
 const RAIL_WIDTH = 'daoris.railWidth';
 const RAIL_CLOSED = 'daoris.railClosed';
-const DOCK_WIDTH = 'daoris.dockWidth';
+// The dock's dragged width, as a SHARE of the window (LAYOUT1). `daoris.dockWidth` held pixels, and a
+// dock kept in pixels stayed the same while the window grew; one held there is read once, as its share
+// of the window it is read in, and then forgotten.
+const DOCK_SHARE = 'daoris.dockShare';
+const DOCK_WIDTH_PIXELS = 'daoris.dockWidth';
 const DOCK_CLOSED = 'daoris.dockClosed';
+
+/** The dock's share of the window the person dragged it to, or null where they never did. */
+function rememberedShare(): number | null {
+  const share = Number(stored(DOCK_SHARE));
+  if (Number.isFinite(share) && share > 0 && share < 1) return share;
+
+  const pixels = rememberedWidth(DOCK_WIDTH_PIXELS);
+  if (pixels === null || window.innerWidth <= 0) return null;
+  const converted = Math.min(pixels / window.innerWidth, DOCK.cap);
+  store(DOCK_SHARE, String(converted));
+  store(DOCK_WIDTH_PIXELS, null);
+  return converted;
+}
 
 function remembered(key: string, fallback: number): number {
   const held = Number(stored(key));
@@ -147,14 +164,14 @@ export function WorkFrame({ selected, onSelect, notify, onSendBack, onAnswerAsk,
   const width = useFrameWidth(root);
   const [railWidth, setRailWidth] = useState(() => rememberedWidth(RAIL_WIDTH));
   const [railClosed, setRailClosed] = useState(() => stored(RAIL_CLOSED) === '1');
-  const [dockWidth, setDockWidth] = useState(() => rememberedWidth(DOCK_WIDTH));
+  const [dockShare, setDockShare] = useState(rememberedShare);
   // 🔴 Closed until the person opens it (UX5 U7), as the reference's dock opens on demand: open by
   // default at 45%, it left a 1400px window's conversation 442px. So an absent choice is closed, and
   // opening is remembered as `0` beside closing's `1`.
   const [dockClosed, setDockClosed] = useState(() => stored(DOCK_CLOSED) !== '0');
   const [dockFull, setDockFull] = useState(false);
   const layout = frameLayout(width.viewport, width.frame, {
-    rail: railWidth, railClosed, dock: dockWidth, dockClosed, dockFull,
+    rail: railWidth, railClosed, dockShare, dockClosed, dockFull,
   });
 
   const resizeRail = (next: number | null) => {
@@ -165,9 +182,11 @@ export function WorkFrame({ selected, onSelect, notify, onSendBack, onAnswerAsk,
     setRailClosed(closed);
     store(RAIL_CLOSED, closed ? '1' : null);
   };
+  /** A drag lands as the dock's share of the window it was dragged in; null is the default again. */
   const resizeDock = (next: number | null) => {
-    setDockWidth(next);
-    store(DOCK_WIDTH, next === null ? null : String(next));
+    const share = next === null || width.viewport <= 0 ? null : next / width.viewport;
+    setDockShare(share);
+    store(DOCK_SHARE, share === null ? null : String(share));
   };
   const closeDock = (closed: boolean) => {
     setDockClosed(closed);

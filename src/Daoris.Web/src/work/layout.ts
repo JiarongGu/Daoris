@@ -18,7 +18,12 @@ export const CENTRE_FLOOR = 400;
 export type FramePrefs = {
   rail: number | null;
   railClosed: boolean;
-  dock: number | null;
+  /**
+   * The dock's share of the window, once dragged (LAYOUT1). Never pixels: a width kept in pixels
+   * stayed the same while the window grew, and read as a pane stuck at a small size. The rail keeps
+   * pixels, because a list is as wide as its rows and its bounds say so.
+   */
+  dockShare: number | null;
   dockClosed: boolean;
   /** The dock over the whole frame, asked for — which a narrow window also does by itself. */
   dockFull: boolean;
@@ -63,7 +68,7 @@ export function frameLayout(viewport: number, frame: number, prefs: FramePrefs):
   if (prefs.dockClosed) return { rail, dock: { mode: 'closed', width: DOCK.strip } };
   if (prefs.dockFull || viewport < DOCK.fullBelow) return { rail, dock: { mode: 'full', width: frame } };
 
-  const wanted = Math.min(prefs.dock ?? Math.round(viewport * DOCK.share), Math.floor(viewport * DOCK.cap));
+  const wanted = Math.min(Math.round(viewport * (prefs.dockShare ?? DOCK.share)), Math.floor(viewport * DOCK.cap));
   const room = frame - rail.width - CENTRE_FLOOR;
   return room < DOCK.floor
     ? { rail, dock: { mode: 'cramped', width: DOCK.floor } }

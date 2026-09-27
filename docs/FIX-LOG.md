@@ -5,6 +5,36 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## The session dock stayed narrow while the window grew (2026-09-28)
+
+**Symptom.** The owner, on the installed window: *"box content does not auto resize with the outer
+window so it always stay as a small width"*. Where *accept* is pressed, in the review pane of the
+Work frame's right dock. Measured on the scratch shell: the window went from 1518 to 1923 CSS px,
+and the dock stayed at 389.
+
+**Root cause.** FRAME6 (`778d3a2`) remembered a dragged dock width in pixels, in `daoris.dockWidth`.
+`frameLayout` took that width as it was and clamped it only to the dock's floor, the 70% cap and the
+room the session needs. So once a person had dragged the dock at one window size, it kept that size at
+every other. An undragged dock was 45% of the window and followed it (865 at 1923), so the defect
+showed only after a drag, which is why it read as some windows and not others.
+
+**Fix.** `FramePrefs.dockShare` is the dock's share of the window (`work/layout.ts`), stored in
+`daoris.dockShare`. A drag lands as its share of the window it was dragged in. A pixel width left by
+an earlier build is read once, as its share of the window it is read in, and then removed. The rail
+keeps pixels on purpose: it is a list, bounded to 264–420px.
+
+**Verify.**
+- The layout test *keeps a dragged width as a share*, watched failing with the share pinned to one
+  window's width.
+- Two frame tests: a drag stored as a share that grows with the window, and a pixel width converted
+  once.
+- On the scratch shell, the old pixel width planted at 1518: 389 there, 493 at 1923.
+- The sweep the row asked for, by code and by looking at every main view at 1923: no other container
+  holds a width it should not. Each cap left is a reading measure, a form sized to its fields, an
+  overlay, or the monitor's sidebar.
+
+**Commit:** pending.
+
 ## A conversation said "working…" under words its agent said after the turn (2026-09-28)
 
 **Symptom.** Looking at CONSOLE2 on a real chat, the turn ended, and then the agent spoke again when

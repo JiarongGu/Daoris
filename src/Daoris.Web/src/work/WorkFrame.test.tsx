@@ -1431,7 +1431,7 @@ describe('acting on what a session landed', () => {
  * chose.
  */
 describe('the frame\'s geometry (FRAME6)', () => {
-  const KEPT = ['daoris.railWidth', 'daoris.railClosed', 'daoris.dockWidth', 'daoris.dockClosed'];
+  const KEPT = ['daoris.railWidth', 'daoris.railClosed', 'daoris.dockWidth', 'daoris.dockShare', 'daoris.dockClosed'];
   const widen = (width: number) => act(() => {
     Object.defineProperty(window, 'innerWidth', { configurable: true, value: width });
     window.dispatchEvent(new Event('resize'));
@@ -1489,6 +1489,36 @@ describe('the frame\'s geometry (FRAME6)', () => {
 
     widen(1600);
     expect(await screen.findByRole('separator', { name: 'rail width' })).toBeInTheDocument();
+  });
+
+  /**
+   * LAYOUT1 (the owner: *"box content does not auto resize with the outer window so it always stay as
+   * a small width"*): a dragged dock was remembered in pixels and stayed 389px while the window grew
+   * from 1518 to 1923 (measured on the shell). It is remembered as its share of the window now.
+   */
+  it('remembers a dragged dock as its share of the window, so it grows when the window does', async () => {
+    show('s1a2b3c4');
+    const edge = await screen.findByRole('separator', { name: 'panel width' });
+    edge.focus();
+    await userEvent.keyboard('{ArrowRight}');
+    const dragged = Number(screen.getByRole('separator', { name: 'panel width' }).getAttribute('aria-valuenow'));
+    expect(Number(window.localStorage.getItem('daoris.dockShare'))).toBeCloseTo(dragged / 1600, 5);
+
+    widen(2400);
+    expect(Number(screen.getByRole('separator', { name: 'panel width' }).getAttribute('aria-valuenow')))
+      .toBe(Math.round(2400 * (dragged / 1600)));
+  });
+
+  it('reads a width kept in pixels once, as its share of the window, and forgets the pixels', async () => {
+    window.localStorage.setItem('daoris.dockWidth', '400');
+    show('s1a2b3c4');
+
+    expect(await screen.findByRole('separator', { name: 'panel width' })).toHaveAttribute('aria-valuenow', '400');
+    expect(window.localStorage.getItem('daoris.dockShare')).toBe(String(400 / 1600));
+    expect(window.localStorage.getItem('daoris.dockWidth')).toBeNull();
+
+    widen(2000);
+    expect(screen.getByRole('separator', { name: 'panel width' })).toHaveAttribute('aria-valuenow', '500');
   });
 
   /**

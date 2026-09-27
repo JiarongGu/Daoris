@@ -6990,3 +6990,33 @@ browser extensions` and the same Settings screen.*
 - 11 twin tests, and the refusal rule watched failing.
 - End to end on a scratch home (evidence §22): refused, offered again, and the person's own refusal
   kept.
+
+## LAYOUT1 — a window's content keeps a small width when the window grows (2026-09-28)
+
+The row as filed: *(the owner, 2026-09-28: "accept window box content does not auto resize with the
+outer window so it always stay as a small width, (might be more having the same issue you do need to
+do a verifiy later)"). Seen where accept is pressed: most likely the review pane (`DiffPane`, whose
+accept merges), or a rule proposal's card in Settings. Find which, fix it, then sweep every surface
+and window at a narrow, a middle and a wide size, in both themes. List each one that holds a fixed or
+capped width where it should follow its container, and say why for one that caps on purpose.*
+
+**Outcome.**
+- It was the Work frame's right dock, where the review's *accept* is, and not its content. A dragged
+  dock was kept in pixels (FRAME6), so it stayed 389 while the window went from 1518 to 1923.
+- It is kept as a share of the window now (`FramePrefs.dockShare`), and a pixel width from an
+  earlier build is converted once.
+- `docs/FIX-LOG.md` has the root cause.
+
+**The sweep:**
+- *By code:* every capped or fixed width in the page's source. Each is a reading measure on prose
+  (`max-w-prose`), a form sized to its fields, an overlay (tooltip, toast, dialog, the palette, a
+  popover), the monitor's 17.5rem sidebar, or a table column that shrinks to its numbers. None holds a
+  container narrow that should follow the window.
+- *By looking:* Overview, Sessions with the dock open, Quests, Projects, Map, Convergence and Search,
+  each at the wide size (1923), where a width that does not grow shows. All fill it.
+- *Not photographed:* the narrow and middle sizes of every view, the dark theme (a theme changes no
+  width), and the monitor and a detached session, whose code holds no such cap.
+
+**Proven by:**
+- The layout test watched failing, and two frame tests.
+- The measure on the shell, before and after the fix.

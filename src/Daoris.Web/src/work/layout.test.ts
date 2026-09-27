@@ -4,7 +4,7 @@ import { CENTRE_FLOOR, DOCK, type FramePrefs, frameLayout, RAIL } from './layout
 // The Work frame's geometry (FRAME6, components plan §3a): the reference console's field-tested
 // numbers, as one pure function so every width a window can be is an ordinary assertion.
 
-const NONE: FramePrefs = { rail: null, railClosed: false, dock: null, dockClosed: false, dockFull: false };
+const NONE: FramePrefs = { rail: null, railClosed: false, dockShare: null, dockClosed: false, dockFull: false };
 /** A window `viewport` wide, whose frame is that less the 48px activity bar. */
 const at = (viewport: number, prefs: Partial<FramePrefs> = {}) =>
   frameLayout(viewport, viewport - 48, { ...NONE, ...prefs });
@@ -26,13 +26,24 @@ describe('the rail', () => {
 });
 
 describe('the dock', () => {
-  it('opens at 45% of the window and keeps the width the person gave it', () => {
+  it('opens at 45% of the window and keeps the share the person gave it', () => {
     expect(at(1600).dock).toEqual({ mode: 'docked', width: 720 });
-    expect(at(1600, { dock: 500 }).dock).toEqual({ mode: 'docked', width: 500 });
+    expect(at(1600, { dockShare: 500 / 1600 }).dock).toEqual({ mode: 'docked', width: 500 });
+  });
+
+  /**
+   * LAYOUT1 (the owner, 2026-09-28): a dragged dock was kept in pixels, so it stayed 389px while the
+   * window grew from 1518 to 1923 (measured on the shell). A share grows and shrinks with the window.
+   */
+  it('keeps a dragged width as a share, so it follows the window as it grows and shrinks', () => {
+    const share = 389 / 1518;
+    expect(at(1518, { dockShare: share }).dock.width).toBe(389);
+    expect(at(1923, { dockShare: share }).dock.width).toBe(Math.round(1923 * share));
+    expect(at(2560, { dockShare: share }).dock.width).toBe(Math.round(2560 * share));
   });
 
   it('never takes more than 70% of the window', () => {
-    expect(at(3000, { dock: 2500 }).dock).toEqual({ mode: 'docked', width: 2100 });
+    expect(at(3000, { dockShare: 2500 / 3000 }).dock).toEqual({ mode: 'docked', width: 2100 });
   });
 
   it('gives way to keep the session at its floor, down to its own', () => {

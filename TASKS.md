@@ -22,7 +22,7 @@ lists.
 ## State
 
 **Counts, and this is their one home:** sixteen commands, **502 CLI tests, 528 service, 799 driver,
-249 desktop modules, 80 devkit, 1205 web unit, 21 Playwright**, 66/66 release rehearsal, **289/289
+249 desktop modules, 80 devkit, 1208 web unit, 21 Playwright**, 66/66 release rehearsal, **289/289
 family rehearsal** (it names its own phases when you run it), **45/45 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge
 documents, 5 skills, 7 packs. The always-loaded core is **22,492 of 26,000 bytes** — a span in
@@ -144,10 +144,10 @@ rather than designed.
 
 ## Backlog
 
-**Thirty-nine rows are open**: the six the first real workspace showed (WSR1–WSR3, SESS1, MAP4,
+**Thirty-eight rows are open**: the six the first real workspace showed (WSR1–WSR3, SESS1, MAP4,
 HELP1); D85's two (CHR2, CHR4); the in-app browser's four (BRW3, BRW7, BRW8, and D84's BRW12); the first goal's three (FG5,
 READACROSS1 the owner's, and SEM2 on a trigger); D76's held file tools;
-the eight REV3 left, WINDOW2 among them; seven leftovers (LAYOUT1, RAIL2, SURF11, CONSOLE3, FLAKE1, DEPLOY5, TEST1); two on the owner
+the eight REV3 left, WINDOW2 among them; six leftovers (RAIL2, SURF11, CONSOLE3, FLAKE1, DEPLOY5, TEST1); two on the owner
 (TRUST2, AGT2c); and six on a trigger (see *Handover*). Every closed one is in `docs/task-archive.md`, and this file holds no
 ticked rows, by the `task-lifecycle` rule it also ships. A heading below holds open rows only.
 
@@ -403,15 +403,6 @@ TDD, looked at on the window, and the ones that touch a real session use one (au
 
 ### Open — the arc's leftovers, in the order they are worth doing
 
-- [ ] **LAYOUT1 — a window's content keeps a small width when the window grows** (the owner,
-  2026-09-28: *"accept window box content does not auto resize with the outer window so it always stay
-  as a small width, (might be more having the same issue you do need to do a verifiy later)"*). Seen
-  where *accept* is pressed: most likely the review pane (`DiffPane`, whose *accept* merges), or a
-  rule proposal's card in Settings. Find which, fix it, then **sweep every surface and window** (the
-  main window's views, the dock at each width and full, the monitor, a detached session, the
-  in-app browser, drawers and dialogs) at a narrow, a middle and a wide size, in both themes. List
-  each one that holds a fixed or capped width where it should follow its container, and say why for
-  one that caps on purpose (a reading measure).
 
 - [ ] **RAIL2 — a live chat's last move is its last turn** (UX5 U62). The rail and the head say
   *moved* from the session record, which moves on state changes only, so seconds after an answer a
