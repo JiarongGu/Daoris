@@ -706,10 +706,10 @@ public sealed class AcpSession(
         var id = Field(update, "toolCallId");
         if (kind is "tool_call" or "tool_call_update" && id is not null && Field(update, "title") is { Length: > 0 } title)
         {
-            titles[id] = title;
+            titles[id] = OneLine(title);
         }
 
-        var name = id is not null && titles.TryGetValue(id, out var known) ? known : Field(update, "title") ?? "a tool";
+        var name = id is not null && titles.TryGetValue(id, out var known) ? known : OneLine(Field(update, "title") ?? "a tool");
 
         return kind switch
         {
@@ -729,6 +729,18 @@ public sealed class AcpSession(
             null => $"[update] {Compact(update)}",
             _ => $"[{kind}] {Compact(update)}",
         };
+    }
+
+    /// <summary>
+    /// A tool's name as one console line (FG5): a shell call's title is its whole command, and a
+    /// heredoc printed across raw lines that then read as the agent's words. The first line, capped.
+    /// </summary>
+    internal static string OneLine(string title, int limit = 160)
+    {
+        var first = title.ReplaceLineEndings("\n").Split('\n', 2);
+        var line = first[0].TrimEnd();
+        var cut = line.Length > limit || first.Length > 1;
+        return (line.Length > limit ? line[..limit].TrimEnd() : line) + (cut ? " …" : "");
     }
 
     /// <summary>

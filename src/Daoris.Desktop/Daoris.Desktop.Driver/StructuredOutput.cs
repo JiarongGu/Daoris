@@ -135,8 +135,10 @@ public sealed class ClaudeStreamJson : IStreamMapper
                     break;
                 case "tool_use":
                     var call = ToolCall(block);
-                    if (call.Id is { } callId && call.Title is { } called) _titles[callId] = called;
-                    lines.Add($"→ {call.Title}");
+                    // On one line, however long the command — a heredoc printed raw reads as the agent's words.
+                    var named = AcpSession.OneLine(call.Title ?? "a tool");
+                    if (call.Id is { } callId) _titles[callId] = named;
+                    lines.Add($"→ {named}");
                     events.Add(call);
                     if (Plan(block) is { } plan) events.Add(plan);
                     break;

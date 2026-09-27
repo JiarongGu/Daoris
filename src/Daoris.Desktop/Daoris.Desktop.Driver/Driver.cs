@@ -1092,7 +1092,12 @@ public sealed partial class Driver(
     /// after its last tool and before the driver's closing line — what a session that parks to ask the
     /// person said to them. Kept to its END, where a question list sits, and null when there is none.
     /// </summary>
-    internal static string? LastWords(string transcript, int limit = 700)
+    /// <remarks>
+    /// Four thousand characters, not seven hundred (FG5): a parked session's message is the person's
+    /// whole brief, and the apply session's was 2,500 long — cut to its end, the card kept the command
+    /// and lost the question.
+    /// </remarks>
+    internal static string? LastWords(string transcript, int limit = 4000)
     {
         IReadOnlyList<string> lines;
         try

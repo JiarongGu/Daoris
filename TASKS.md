@@ -21,7 +21,7 @@ lists.
 
 ## State
 
-**Counts, and this is their one home:** fifteen commands, **483 CLI tests, 528 service, 781 driver,
+**Counts, and this is their one home:** fifteen commands, **483 CLI tests, 528 service, 782 driver,
 151 desktop modules, 80 devkit, 1191 web unit, 21 Playwright**, 66/66 release rehearsal, **285/285
 family rehearsal** (it names its own phases when you run it), **39/39 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge
@@ -127,8 +127,8 @@ rather than designed.
 
 ## Backlog
 
-**Thirty-three rows are open**: the in-app browser's eight (BRW3, then BRW4–BRW10, the browser as a browser); the first goal's three (FG5,
-CONSOLE2, and SEM2 on a trigger); D76's held file tools;
+**Thirty-four rows are open**: the in-app browser's eight (BRW3, then BRW4–BRW10, the browser as a browser); the first goal's four (FG5,
+CONSOLE2, READACROSS1 the owner's, and SEM2 on a trigger); D76's held file tools;
 the eight REV3 left, WINDOW2 among them; five leftovers (RAIL2, SURF11, FLAKE1, DEPLOY5, TEST1); two on the owner
 (TRUST2, AGT2c); and six on a trigger (see *Handover*). Every closed one is in `docs/task-archive.md`, and this file holds no
 ticked rows, by the `task-lifecycle` rule it also ships. A heading below holds open rows only.
@@ -343,6 +343,20 @@ is behind a sign-in. FG1–FG4 are in the archive. **INT6 is reshaped as FG5.**
   owner had signed in, and two republishing restarts dropped it (BRW10). It declined rather than parked
   because its instruction offered only done or decline. It now also says what only the person can give
   is asked for by stopping, which parks it (D83).
+  **The fifth leg: park and answer, live.** The verify was asked again. The intake put the dev config
+  apply first, which **parked** asking for a dev sign-in. The owner signed in, the answer went on the
+  card, and a session carried the quest on in the same tree. That one parked again with an exact
+  diagnosis: the account holds `FactoryUser` in another org, and the change needs `SiteAdmin` on the
+  Sustainable Beef org. The apply now waits on such an account. The card had quoted only the end of
+  its 2,500-character message, and a heredoc'd command's title had printed as its words. Both are
+  fixed: last words keep 4,000 characters, and a tool is named on one line.
+- [ ] **READACROSS1 — may a session READ another repository?** (the owner's call; FG5, 2026-09-27).
+  Under D81's `auto` mode the apply session read the backend's controller, its roles and its
+  service wiring to diagnose a 403, cited them by file and line, and wrote nothing there. D79 says
+  what another repository knows is asked of it, and the owner said then *"it should request to
+  [the backend]"*. The owner has since said a session should do *"as much as it can just like
+  regular claude code"*. Decide: reads across are fine and writes never, or reads are asked too. The
+  answer is a handed rule, and a sentence in the instruction.
 - [ ] **CONSOLE2 — the console has a tab for each thing that is running** (the owner, 2026-09-27:
   *"the console display should be able to have multiple tabs so we dont miss any console (like
   different subsessions and console that runs by the session)"*). Today it is one stream per session.

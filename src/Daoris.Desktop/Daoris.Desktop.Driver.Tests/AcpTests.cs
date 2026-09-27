@@ -306,6 +306,36 @@ public sealed class AcpTests
     /// its id, which says nothing to a person. An update with no status says nothing to the console,
     /// and an ending names the tool by the title its call gave it.
     /// </summary>
+    /// <summary>
+    /// 🔴 Measured on FG5's apply session: a shell call's title is its whole command, heredoc and all,
+    /// and it printed across a dozen raw lines — which then read as the agent's own words, so a commit
+    /// message became the "last words" a parked card quoted. A tool is named on one line.
+    /// </summary>
+    [Fact]
+    public async Task A_tool_is_named_on_one_line_however_long_its_command()
+    {
+        var lines = new List<string>();
+        var agent = new FakeAgent((frame, self) =>
+        {
+            switch (frame.GetProperty("method").GetString())
+            {
+                case "initialize": return Ok(frame, """{"protocolVersion":1}""");
+                case "session/new": return Ok(frame, """{"sessionId":"s-1"}""");
+                case "session/prompt":
+                    self.Push("""{"jsonrpc":"2.0","method":"session/update","params":{"sessionId":"s-1","update":{"sessionUpdate":"tool_call","toolCallId":"t1","title":"git commit -F - <<'EOF'\ndocs: name the role\n\nThe body of the message.\nEOF","status":"pending"}}}""");
+                    self.Push("""{"jsonrpc":"2.0","method":"session/update","params":{"sessionId":"s-1","update":{"sessionUpdate":"tool_call_update","toolCallId":"t1","status":"completed"}}}""");
+                    return Ok(frame, """{"stopReason":"end_turn"}""");
+                default: return frame.TryGetProperty("id", out _) ? Ok(frame, "{}") : null;
+            }
+        });
+
+        await new AcpSession(agent.Incoming, agent.Outgoing, lines.Add)
+            .RunAsync("D:/fam/Game", "commit it", CancellationToken.None);
+
+        Assert.Equal(["→ git commit -F - <<'EOF' …", "  ✓ git commit -F - <<'EOF' …"], lines.Where(line => line.Contains("git commit")));
+        Assert.DoesNotContain(lines, line => line.Contains("The body of the message."));
+    }
+
     [Fact]
     public async Task A_tools_progress_updates_print_nothing_and_its_end_names_the_tool()
     {
