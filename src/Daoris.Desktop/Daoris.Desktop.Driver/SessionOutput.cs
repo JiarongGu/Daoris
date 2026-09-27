@@ -18,6 +18,49 @@ public sealed record ConsoleLine(long Sequence, string Text);
 public sealed record ConsoleTail(
     IReadOnlyList<ConsoleLine> Lines, long Sequence, bool Live, long Dropped);
 
+/// <summary>The kinds a <see cref="SessionStream"/> can be (CONSOLE2).</summary>
+public static class SessionStreamKind
+{
+    /// <summary>A sub-session the harness spawned, streaming as a session of its own.</summary>
+    public const string Subagent = "subagent";
+
+    /// <summary>Background work the session started, such as a dev server, whose output is a file.</summary>
+    public const string Task = "task";
+}
+
+/// <summary>
+/// Something a session is running beside itself (CONSOLE2): a subagent, or background work.
+/// </summary>
+/// <param name="Id">Unique within its session: <c>subagent/&lt;id&gt;</c> or <c>task/&lt;id&gt;</c>, the wire's id.</param>
+/// <param name="Kind">A <see cref="SessionStreamKind"/>.</param>
+/// <param name="Name">What the harness called it.</param>
+public sealed record SessionStream(string Id, string Kind, string Name)
+{
+    /// <summary>
+    /// How a stream ended when its session ended first: the harness never said, and nothing it
+    /// started outlives the session (ORPHAN1's job object).
+    /// </summary>
+    public const string SessionEnded = "session-ended";
+}
+
+/// <summary>
+/// One session's streams, kept under that session (CONSOLE2) — what a door hands the wire so a
+/// subagent's lines and a task's output land beside the session rather than in it.
+/// </summary>
+public sealed class SessionStreams(SessionOutput output, string sessionId)
+{
+    public void Open(SessionStream stream) => output.Open(sessionId, stream);
+
+    public void Line(string streamId, string text) => output.Append(SessionOutput.Key(sessionId, streamId), text);
+
+    public void End(string streamId, string? state) => output.End(sessionId, streamId, state);
+}
+
+/// <summary>One stream under a session, as a reader lists them.</summary>
+/// <param name="Key">What to tail it by — <see cref="SessionOutput.Key"/>.</param>
+/// <param name="State">How it ended, in the wire's word, or null while it runs.</param>
+public sealed record StreamState(string Key, string Kind, string Name, bool Live, string? State);
+
 /// <summary>
 /// What a session is saying, as it says it (D49 §2) — the transcript capture, teed into memory.
 /// </summary>
@@ -34,6 +77,11 @@ public sealed record ConsoleTail(
 /// <para><b>Bounded twice</b>: lines per session, and sessions retained. A live session is never
 /// evicted; an ended one is kept only long enough that a person who was watching can still read how
 /// it finished.</para>
+///
+/// <para><b>A session's streams are buffers of their own</b> (CONSOLE2): each subagent and each
+/// background task it runs, under <see cref="Key"/>, so any reader tails one exactly as it tails a
+/// session. They ride with their session: they are not counted as sessions retained, they leave
+/// when it is evicted, and its end is theirs.</para>
 /// </remarks>
 public sealed class SessionOutput
 {
@@ -50,11 +98,65 @@ public sealed class SessionOutput
         public long Dropped;
         public bool Live = true;
         public long Touched;
+
+        /// <summary>The session a stream belongs to, and what it is — null for a session's own buffer.</summary>
+        public string? Parent;
+        public SessionStream? Stream;
+        public string? State;
+
+        /// <summary>When a stream was opened, which is the order a reader lists them in.</summary>
+        public long Opened;
     }
 
     private readonly object _gate = new();
     private readonly Dictionary<string, Buffer> _sessions = new(StringComparer.OrdinalIgnoreCase);
     private long _clock;
+
+    /// <summary>What a session's stream is tailed by: the session's id, then the stream's own.</summary>
+    public static string Key(string sessionId, string streamId) => $"{sessionId}/{streamId}";
+
+    /// <summary>
+    /// Begin a stream under a session. Opening one already open changes nothing, so an announcement
+    /// the wire repeats does not reset what was said.
+    /// </summary>
+    public void Open(string sessionId, SessionStream stream)
+    {
+        lock (_gate)
+        {
+            var key = Key(sessionId, stream.Id);
+            if (_sessions.ContainsKey(key)) return;
+            Ensure(sessionId);
+            _clock += 1;
+            _sessions[key] = new Buffer { Parent = sessionId, Stream = stream, Touched = _clock, Opened = _clock };
+        }
+    }
+
+    /// <summary>
+    /// End a stream, in the wire's word. The last ending is the one kept: a task that finished on its
+    /// own is said <c>stopped</c> and then <c>completed</c> (CONSOLE2a).
+    /// </summary>
+    public void End(string sessionId, string streamId, string? state)
+    {
+        lock (_gate)
+        {
+            if (!_sessions.TryGetValue(Key(sessionId, streamId), out var buffer) || buffer.Parent is null) return;
+            buffer.Live = false;
+            buffer.State = state ?? buffer.State;
+        }
+    }
+
+    /// <summary>The streams a session has opened, oldest first.</summary>
+    public IReadOnlyList<StreamState> Streams(string sessionId)
+    {
+        lock (_gate)
+        {
+            return [.. _sessions
+                .Where(entry => entry.Value.Parent is { } parent && parent.Equals(sessionId, StringComparison.OrdinalIgnoreCase))
+                .OrderBy(entry => entry.Value.Opened)
+                .Select(entry => new StreamState(
+                    entry.Key, entry.Value.Stream!.Kind, entry.Value.Stream.Name, entry.Value.Live, entry.Value.State))];
+        }
+    }
 
     /// <summary>
     /// Raised for every line, as it arrives. The shell turns this into its IPC event; nothing else
@@ -78,7 +180,9 @@ public sealed class SessionOutput
 
             buffer.Sequence += 1;
             buffer.Touched = ++_clock;
-            buffer.Live = true;
+            // A session that speaks again is live again. A stream that ended stays ended: a line its
+            // file still held is the last of it, never a second life.
+            if (buffer.Parent is null) buffer.Live = true;
             line = new ConsoleLine(buffer.Sequence, text);
             buffer.Lines.Enqueue(line);
             while (buffer.Lines.Count > LinesPerSession)
@@ -122,41 +226,59 @@ public sealed class SessionOutput
     }
 
     /// <summary>Mark a session's stream ended. Its buffer stays readable until room is needed.</summary>
+    /// <remarks>Its streams end with it: nothing a session started is still talking once it has ended.</remarks>
     public void Close(string sessionId)
     {
         lock (_gate)
         {
             if (_sessions.TryGetValue(sessionId, out var buffer)) buffer.Live = false;
+            foreach (var stream in StreamsOf(sessionId)) stream.Live = false;
         }
     }
 
-    /// <summary>Sessions with a buffer here — what "there is a console to show" means.</summary>
+    /// <summary>Sessions with a buffer here — what "there is a console to show" means. Their streams are not listed.</summary>
     public IReadOnlyList<string> Buffered
     {
         get
         {
-            lock (_gate) return [.. _sessions.Keys];
+            lock (_gate) return [.. _sessions.Where(entry => entry.Value.Parent is null).Select(entry => entry.Key)];
         }
     }
+
+    /// <summary>A session's own buffer, made when a stream arrives before the session has said anything.</summary>
+    private void Ensure(string sessionId)
+    {
+        if (_sessions.ContainsKey(sessionId)) return;
+        _sessions[sessionId] = new Buffer { Touched = ++_clock };
+        Evict();
+    }
+
+    private IEnumerable<Buffer> StreamsOf(string sessionId) => _sessions.Values
+        .Where(buffer => buffer.Parent is { } parent && parent.Equals(sessionId, StringComparison.OrdinalIgnoreCase));
 
     /// <summary>
     /// Make room, never at a live session's expense: the oldest ENDED buffer goes first. With every
     /// retained session still live nothing is evicted — a machine running sixteen at once has a
     /// different problem, and dropping the console of a session someone is watching would be the
-    /// wrong answer to it.
+    /// wrong answer to it. Only sessions count, and a session's streams leave with it.
     /// </summary>
     private void Evict()
     {
-        while (_sessions.Count > SessionsRetained)
+        while (_sessions.Count(entry => entry.Value.Parent is null) > SessionsRetained)
         {
             var oldest = _sessions
-                .Where(entry => !entry.Value.Live)
+                .Where(entry => entry.Value.Parent is null && !entry.Value.Live)
                 .OrderBy(entry => entry.Value.Touched)
                 .Select(entry => entry.Key)
                 .FirstOrDefault();
 
             if (oldest is null) return;
             _sessions.Remove(oldest);
+            foreach (var key in _sessions.Where(entry => entry.Value.Parent is { } parent
+                         && parent.Equals(oldest, StringComparison.OrdinalIgnoreCase)).Select(entry => entry.Key).ToList())
+            {
+                _sessions.Remove(key);
+            }
         }
     }
 }

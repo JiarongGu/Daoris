@@ -108,6 +108,11 @@ public sealed record AcpOutcome(
 /// How long the agent's words may go quiet before the console shows the line they left open
 /// (<see cref="AcpConsole"/>); <see cref="AcpConsole.Quiet"/> when not given.
 /// </param>
+/// <param name="streams">
+/// Where what the session runs beside itself is kept (CONSOLE2): each subagent and each background
+/// task as a console stream of its own (<see cref="AcpStreams"/>). Null asks the agent for none, and
+/// every update is the session's, as before.
+/// </param>
 public sealed class AcpSession(
     TextReader incoming,
     TextWriter outgoing,
@@ -116,7 +121,8 @@ public sealed class AcpSession(
     string? posture = null,
     object? meta = null,
     Action<SessionEvent>? onEvent = null,
-    TimeSpan? quiet = null)
+    TimeSpan? quiet = null,
+    SessionStreams? streams = null)
 {
     /// <summary>The protocol version this client speaks. Stated, never negotiated downward silently.</summary>
     private const int ProtocolVersion = 1;
@@ -139,6 +145,9 @@ public sealed class AcpSession(
 
     /// <summary>The console's lines, joined from the agent's streamed words (UX5 U3).</summary>
     private readonly AcpConsole _console = new(onLine, quiet ?? AcpConsole.Quiet);
+
+    /// <summary>What the session runs beside itself (CONSOLE2), once it is open and when it is kept.</summary>
+    private AcpStreams? _beside;
 
     /// <summary>
     /// The largest context reading this session has reported (TOOL3), or null when it reported none —
@@ -172,9 +181,15 @@ public sealed class AcpSession(
         }
         finally
         {
+            // A driven session's end is its turn's (CONSOLE2): what it left running ends with it, and
+            // is said while the caller's transcript is still open, before the reader is let go.
+            await EndStreamsAsync().ConfigureAwait(false);
             Release();
         }
     }
+
+    /// <summary>End what the session runs beside itself, saying so. Idempotent, and never throws.</summary>
+    private Task EndStreamsAsync() => _beside?.EndAllAsync() ?? Task.CompletedTask;
 
     /// <summary>
     /// Open the session a conversation lives in (CONV3b): the reader started, the handshake, a session
@@ -188,6 +203,7 @@ public sealed class AcpSession(
     public async Task OpenAsync(string cwd, CancellationToken ct, IReadOnlyList<AcpMcpServer>? servers = null)
     {
         if (_pump is not null) throw new DriverException("this ACP session is already open.");
+        if (streams is not null) _beside = new AcpStreams(streams, _console, Emit, quiet ?? AcpConsole.Quiet);
         _pump = PumpAsync(_pumpStop.Token);
 
         await RequestAsync(
@@ -195,10 +211,7 @@ public sealed class AcpSession(
             new
             {
                 protocolVersion = ProtocolVersion,
-                // Declared honestly: this client offers the agent no filesystem and no terminal of
-                // its own. The session works in `cwd` with the harness's own tools, under the
-                // repository's own checked-in configuration — the adapter obligation D46 §5 states.
-                clientCapabilities = new { fs = new { readTextFile = false, writeTextFile = false }, terminal = false },
+                clientCapabilities = Capabilities(streams is not null),
                 clientInfo = new { name = "daoris-driver", version = "0" },
             },
             ct).ConfigureAwait(false);
@@ -248,6 +261,29 @@ public sealed class AcpSession(
 
         await SetPostureAsync(created, ct).ConfigureAwait(false);
     }
+
+    /// <summary>What this client asks of the agent at <c>initialize</c>.</summary>
+    /// <remarks>
+    /// <para>Declared honestly: this client offers the agent no filesystem and no terminal of its own.
+    /// The session works in `cwd` with the harness's own tools, under the repository's own checked-in
+    /// configuration — the adapter obligation D46 §5 states.</para>
+    ///
+    /// <para><b>A session whose streams are kept asks for them</b> (CONSOLE2), by the spelling that
+    /// arrives: AIR's <c>nativeSubagentSessions</c> and <c>asyncTasks</c>. 🔴 The protocol's own
+    /// <c>subagents</c> alone switches nothing on at ACP SDK 1.4.0, whose schema drops the key before
+    /// the adapter reads it. It is sent too, for when the schema carries it. <c>terminal_output</c> is
+    /// never asked for: it streams nothing, and it moves a command's output out of the field the record
+    /// reads (docs/2026-09-28-console2-streams-evidence.md).</para>
+    /// </remarks>
+    internal static object Capabilities(bool streams) => streams
+        ? new
+        {
+            fs = new { readTextFile = false, writeTextFile = false },
+            terminal = false,
+            subagents = new { },
+            _meta = new { jetbrains = new { air = new { version = 1, capabilities = new[] { "nativeSubagentSessions", "asyncTasks" } } } },
+        }
+        : new { fs = new { readTextFile = false, writeTextFile = false }, terminal = false };
 
     /// <summary>
     /// One turn: the text as a prompt on the open session, answered by the agent's stop reason — which
@@ -412,6 +448,9 @@ public sealed class AcpSession(
         }
         finally
         {
+            // What it ran beside itself ends with it (CONSOLE2), said before the console closes.
+            await EndStreamsAsync().ConfigureAwait(false);
+
             // An agent's last words before its stream ended are the ones a person reads the console for.
             _console.Dispose();
 
@@ -467,6 +506,11 @@ public sealed class AcpSession(
             && p.TryGetProperty("update", out var update))
         {
             Interlocked.Increment(ref _updates);
+
+            // 🔴 Routed by whose it is (CONSOLE2): a subagent speaks under its own session id, and a
+            // client that reads every update as the session's merges the child into the parent.
+            if (_beside is not null && _beside.Take(StringField(p, "sessionId"), _sessionId, update)) return;
+
             Measure(update);
             var structured = Map(update);
             _console.Update(update, structured);
@@ -890,7 +934,7 @@ public sealed class AcpSession(
                 : null;
 
     /// <summary>Which update this is, or null when the wire did not say in a string.</summary>
-    private static string? Kind(JsonElement update) =>
+    internal static string? Kind(JsonElement update) =>
         update.TryGetProperty("sessionUpdate", out var kind) && kind.ValueKind == JsonValueKind.String
             ? kind.GetString()
             : null;
@@ -1026,6 +1070,10 @@ internal sealed class AcpConsole : IDisposable
     {
         lock (_gate)
         {
+            // A subagent's console is closed with its session while the reader may still hand it a
+            // late update (CONSOLE2); a closed timer would throw into the reader.
+            if (_disposed) return;
+
             if (mapped is { Kind: SessionEventKind.Message or SessionEventKind.Thought, Text: { } words })
             {
                 if (_openKind != mapped.Kind) End();
@@ -1046,6 +1094,17 @@ internal sealed class AcpConsole : IDisposable
 
             End();
             if (AcpSession.Render(update, _titles) is { } rendered) _onLine(rendered);
+        }
+    }
+
+    /// <summary>A line of the door's own, after whatever the agent's words left open (CONSOLE2).</summary>
+    public void Line(string text)
+    {
+        lock (_gate)
+        {
+            if (_disposed) return;
+            End();
+            _onLine(text);
         }
     }
 

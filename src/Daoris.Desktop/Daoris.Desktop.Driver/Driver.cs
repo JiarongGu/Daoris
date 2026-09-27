@@ -1023,8 +1023,11 @@ public sealed partial class Driver(
             if (connector is not null) offered.Add(connector);
             offered.AddRange(servers ?? _servers);
 
+            // What it runs beside itself, each its own console stream (CONSOLE2) — kept wherever the
+            // session's own console is.
             var outcome = await new AcpSession(
-                    process.StandardOutput, process.StandardInput, Line, closeTimeout: null, posture, meta, Event)
+                    process.StandardOutput, process.StandardInput, Line, closeTimeout: null, posture, meta, Event,
+                    streams: output is null ? null : new SessionStreams(output, sessionId))
                 .RunAsync(cwd, prompt, ct, offered).ConfigureAwait(false);
 
             Line($"— the turn ended: {outcome.StopReason}, after {outcome.Updates} update(s). The "

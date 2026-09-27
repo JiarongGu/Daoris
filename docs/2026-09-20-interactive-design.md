@@ -61,6 +61,25 @@ speak.
   stands regardless. Found by a test: a mocked bridge answering the wrong object crashed the drawer,
   which is precisely what a console must never do.
 
+**Amended by CONSOLE2 (2026-09-28): a session's console is several streams.** On the protocol door
+a session asks its agent for what it runs beside itself, and the driver keeps each as a stream of its
+own under the session: every subagent its harness spawns, and every background task it starts. The
+evidence is `docs/2026-09-28-console2-streams-evidence.md`. Five rules from building it:
+
+- **A stream is a buffer under a key**, `<session>/subagent/<id>` or `<session>/task/<id>`, tailed
+  exactly as a session is. Streams ride with their session. They are not counted as sessions retained,
+  they leave when it is evicted, and its end is theirs.
+- **A subagent's updates are routed by `params.sessionId`**: its words and tools go to its stream,
+  never to the session's console, record or transcript. The driver reads a transcript's last plain
+  lines as what the session said to the person, so a subagent's words there would be quoted as the
+  session's.
+- **A task's stream is its output file**, read as it grows (`OutputTail`), because none of its
+  output is on the wire. The path stays in the driver.
+- **The session's console says each one started and how it ended.** Its record holds a subagent as
+  one card (`stream` names its console), since asking for subagents takes the `Agent` call off the
+  session's wire. A task adds no card: its tool call is its card.
+- **What is still open when the session ends is ended with it**, and its stream says so.
+
 **What the family rehearsal can reach, and what it cannot.** The gate drives the headless host, which
 has no IPC bridge by design, so it proves the DURABLE half: the transcript still holds what the
 session said after the pump grew a second destination. The in-memory half — the buffer's bounds,

@@ -132,6 +132,12 @@ public sealed record SessionEvent
     /// <summary>A tool call's raw output, compact and bounded.</summary>
     public string? Output { get; init; }
 
+    /// <summary>
+    /// For a card that stands for something the session runs beside itself (CONSOLE2): the stream its
+    /// own console is kept under, as <see cref="SessionStream.Id"/> names it.
+    /// </summary>
+    public string? Stream { get; init; }
+
     public IReadOnlyList<PlanEntry>? Entries { get; init; }
 
     public long? Used { get; init; }

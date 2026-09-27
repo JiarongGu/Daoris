@@ -122,6 +122,95 @@ public sealed class SessionOutputTests
         Assert.Contains($"ended-{SessionOutput.SessionsRetained - 1}", output.Buffered);
     }
 
+    /// <summary>
+    /// A subagent or a background task is a stream of its own (CONSOLE2): its own tail, listed under
+    /// the session that started it, and nothing of it in the session's.
+    /// </summary>
+    [Fact]
+    public void A_sub_stream_is_its_own_tail_listed_under_its_session()
+    {
+        var output = new SessionOutput();
+        output.Append("s1", "the session");
+        output.Open("s1", new SessionStream("task/t1", SessionStreamKind.Task, "dev server"));
+
+        output.Append(SessionOutput.Key("s1", "task/t1"), "listening on 4200");
+
+        Assert.Equal(["the session"], output.Tail("s1").Lines.Select(l => l.Text));
+        var tail = output.Tail(SessionOutput.Key("s1", "task/t1"));
+        Assert.Equal(["listening on 4200"], tail.Lines.Select(l => l.Text));
+        Assert.True(tail.Live);
+        var listed = Assert.Single(output.Streams("s1"));
+        Assert.Equal(("s1/task/t1", "task", "dev server", true, (string?)null),
+            (listed.Key, listed.Kind, listed.Name, listed.Live, listed.State));
+        Assert.Empty(output.Streams("s2"));
+    }
+
+    /// <summary>
+    /// 🔴 The LAST ending is the one kept: the adapter says <c>stopped</c> and then <c>completed</c> in
+    /// the same millisecond for a task that finished on its own (CONSOLE2a). And a line that arrives
+    /// after the end is kept without calling the stream live again.
+    /// </summary>
+    [Fact]
+    public void A_stream_keeps_its_last_ending_and_a_late_line_does_not_revive_it()
+    {
+        var output = new SessionOutput();
+        output.Open("s1", new SessionStream("task/t1", SessionStreamKind.Task, "ticker"));
+
+        output.End("s1", "task/t1", "stopped");
+        output.End("s1", "task/t1", "completed");
+        output.Append(SessionOutput.Key("s1", "task/t1"), "[exited with code 0]");
+
+        var listed = Assert.Single(output.Streams("s1"));
+        Assert.False(listed.Live);
+        Assert.Equal("completed", listed.State);
+        var tail = output.Tail(SessionOutput.Key("s1", "task/t1"));
+        Assert.False(tail.Live);
+        Assert.Equal(["[exited with code 0]"], tail.Lines.Select(l => l.Text));
+    }
+
+    /// <summary>A session's end is its streams' end: nothing it started is still talking afterwards.</summary>
+    [Fact]
+    public void Closing_a_session_closes_its_streams()
+    {
+        var output = new SessionOutput();
+        output.Append("s1", "hello");
+        output.Open("s1", new SessionStream("subagent/a1", SessionStreamKind.Subagent, "reader"));
+
+        output.Close("s1");
+
+        Assert.False(Assert.Single(output.Streams("s1")).Live);
+        Assert.False(output.Tail(SessionOutput.Key("s1", "subagent/a1")).Live);
+    }
+
+    /// <summary>
+    /// Streams ride with their session under the bound: they do not count as sessions retained, so a
+    /// session that spawned five subagents does not cost five other sessions their consoles, and they
+    /// leave when their session is evicted.
+    /// </summary>
+    [Fact]
+    public void Streams_count_with_their_session_and_leave_with_it()
+    {
+        var output = new SessionOutput();
+        output.Append("old", "done");
+        output.Open("old", new SessionStream("task/t1", SessionStreamKind.Task, "old task"));
+        output.Close("old");
+        for (var i = 0; i < SessionOutput.SessionsRetained - 1; i++)
+        {
+            output.Append($"s{i}", "going");
+            for (var n = 0; n < 3; n++) output.Open($"s{i}", new SessionStream($"subagent/{n}", SessionStreamKind.Subagent, $"agent {n}"));
+        }
+
+        // Sixteen sessions and forty-six streams: nothing evicted yet.
+        Assert.Equal(SessionOutput.SessionsRetained, output.Buffered.Count);
+        Assert.Contains("old", output.Buffered);
+
+        output.Append("new", "one more");
+
+        Assert.DoesNotContain("old", output.Buffered);
+        Assert.Empty(output.Streams("old"));
+        Assert.Empty(output.Tail(SessionOutput.Key("old", "task/t1")).Lines);
+    }
+
     [Fact]
     public void Every_line_is_offered_live_as_it_arrives()
     {

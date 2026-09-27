@@ -20,7 +20,7 @@ what was measured, and it stays a record of that moment. A *record* is append-on
 | `2026-09-19-platform-ux.md` | contract | the design language (D41, D56) | Current. §4 records what each looking pass settled; read it before changing anything a person looks at |
 | `2026-09-19-frontend-architecture.md` | method | the platform's stack and tests (D42) | Current |
 | `2026-09-20-workspace-design.md` | contract | workspaces (D48, WSP) | Current |
-| `2026-09-20-interactive-design.md` | contract | chat, console, managed harnesses (D49, SES) | Current, with D67 noted |
+| `2026-09-20-interactive-design.md` | contract | chat, console, managed harnesses (D49, SES) | Current, with D67 and CONSOLE2's streams noted |
 | `2026-09-20-remote-design.md` | contract | the remote (D47) | Current; its superseded list names what D68 replaced |
 | `2026-09-21-working-surface-design.md` | contract | the working surface (D51, D52) | Current, with D66 noted |
 | `2026-09-21-working-surface-components.md` | method | how a screen is built | Current: a story first, and a molecule imports no hook |

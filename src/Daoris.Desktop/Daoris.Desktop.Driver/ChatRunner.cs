@@ -543,7 +543,8 @@ public sealed class ChatRunner(
 
         var errors = Driver.PumpAsync(process.StandardError, file, sessionId, output, CancellationToken.None);
         var session = new AcpSession(
-            process.StandardOutput, process.StandardInput, Line, closeTimeout: null, chat.Posture, chat.Meta, Record);
+            process.StandardOutput, process.StandardInput, Line, closeTimeout: null, chat.Posture, chat.Meta, Record,
+            streams: output is null ? null : new SessionStreams(output, sessionId));
 
         Exception? failed = null;
         try

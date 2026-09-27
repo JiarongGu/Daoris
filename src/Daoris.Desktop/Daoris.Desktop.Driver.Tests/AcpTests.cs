@@ -1300,6 +1300,189 @@ public sealed class AcpTests
         Assert.Empty(servers.EnumerateArray());
     }
 
+    // ── CONSOLE2: what a session runs beside itself (docs/2026-09-28-console2-streams-evidence.md) ──
+
+    /// <summary>An agent that answers the calls, and says <paramref name="during"/> inside its one turn.</summary>
+    private static FakeAgent Turn(Action<FakeAgent> during) => new((frame, self) =>
+    {
+        switch (frame.GetProperty("method").GetString())
+        {
+            case "initialize":
+                return Ok(frame, """{"protocolVersion":1,"agentCapabilities":{}}""");
+            case "session/new":
+                return Ok(frame, """{"sessionId":"s-1"}""");
+            case "session/prompt":
+                during(self);
+                return Ok(frame, """{"stopReason":"end_turn"}""");
+            default:
+                return frame.TryGetProperty("id", out _) ? Ok(frame, "{}") : null;
+        }
+    });
+
+    private static string Update(string session, string update) =>
+        """{"jsonrpc":"2.0","method":"session/update","params":{"sessionId":""" + JsonSerializer.Serialize(session)
+        + ""","update":""" + update + "}}";
+
+    /// <summary>
+    /// A session whose streams are kept asks for them, by the spelling that arrives: AIR's two
+    /// capabilities, and the protocol's own <c>subagents</c> for when the SDK's schema carries it. It
+    /// never asks for <c>terminal_output</c>, which streams nothing and moves a command's output out of
+    /// the field the record reads. A session given nowhere to keep them asks for nothing.
+    /// </summary>
+    [Fact]
+    public async Task A_session_given_streams_asks_for_subagents_and_tasks_and_one_given_none_asks_for_nothing()
+    {
+        var kept = Simple();
+        await new AcpSession(kept.Incoming, kept.Outgoing, _ => { }, streams: new SessionStreams(new SessionOutput(), "d-1"))
+            .RunAsync("D:/fam/Game", "do the work", CancellationToken.None);
+
+        var asked = kept.Frame(0).GetProperty("params").GetProperty("clientCapabilities");
+        Assert.Equal(JsonValueKind.Object, asked.GetProperty("subagents").ValueKind);
+        var air = asked.GetProperty("_meta").GetProperty("jetbrains").GetProperty("air");
+        Assert.Equal(1, air.GetProperty("version").GetInt32());
+        Assert.Equal(["asyncTasks", "nativeSubagentSessions"],
+            air.GetProperty("capabilities").EnumerateArray().Select(c => c.GetString()).Order());
+        Assert.False(asked.GetProperty("_meta").TryGetProperty("terminal_output", out _));
+
+        var plain = Simple();
+        await new AcpSession(plain.Incoming, plain.Outgoing, _ => { })
+            .RunAsync("D:/fam/Game", "do the work", CancellationToken.None);
+
+        var none = plain.Frame(0).GetProperty("params").GetProperty("clientCapabilities");
+        Assert.False(none.TryGetProperty("subagents", out _));
+        Assert.False(none.TryGetProperty("_meta", out _));
+    }
+
+    /// <summary>
+    /// 🔴 A subagent's updates come under its own <c>params.sessionId</c>, and a client that ignores it
+    /// merges the child into the parent. Here the child's words and tools go to its own stream. The
+    /// parent's console says it started and how it ended, and the parent's record holds it as one card,
+    /// because declaring the capability took the <c>Agent</c> call off the parent's wire.
+    /// </summary>
+    [Fact]
+    public async Task A_subagent_streams_as_its_own_and_is_one_card_in_its_parents_record()
+    {
+        var output = new SessionOutput();
+        var lines = new List<string>();
+        var events = new List<SessionEvent>();
+        var agent = Turn(self =>
+        {
+            self.Push(Update("s-1", """{"sessionUpdate":"subagent_spawned","subagentSessionId":"a2fe","name":"Read README first line","task":"Read README.md and reply with its first line.","capabilities":{}}"""));
+            self.Push(Update("a2fe", """{"sessionUpdate":"agent_message_chunk","content":{"type":"text","text":"I'll read it.\n"}}"""));
+            self.Push(Update("a2fe", """{"sessionUpdate":"tool_call","toolCallId":"toolu_r","title":"Read README.md","kind":"read","status":"pending"}"""));
+            self.Push(Update("a2fe", """{"sessionUpdate":"tool_call_update","toolCallId":"toolu_r","status":"completed"}"""));
+            self.Push(Update("s-1", """{"sessionUpdate":"subagent_state_update","subagentSessionId":"a2fe","state":"completed"}"""));
+            self.Push(Update("s-1", """{"sessionUpdate":"agent_message_chunk","content":{"type":"text","text":"It says hello.\n"}}"""));
+        });
+
+        await new AcpSession(agent.Incoming, agent.Outgoing, lines.Add, onEvent: events.Add, streams: new SessionStreams(output, "d-1"))
+            .RunAsync("D:/fam/Game", "do the work", CancellationToken.None);
+
+        Assert.Contains("→ subagent: Read README first line", lines);
+        Assert.Contains("  ✓ subagent: Read README first line", lines);
+        Assert.Contains("It says hello.", lines);
+        Assert.DoesNotContain(lines, line => line.Contains("I'll read it.") || line.Contains("README.md"));
+
+        var child = output.Tail(SessionOutput.Key("d-1", "subagent/a2fe")).Lines.Select(l => l.Text).ToList();
+        Assert.Equal(["I'll read it.", "→ Read README.md", "  ✓ Read README.md"], child);
+        var listed = Assert.Single(output.Streams("d-1"));
+        Assert.Equal((SessionStreamKind.Subagent, "Read README first line", false, "completed"),
+            (listed.Kind, listed.Name, listed.Live, listed.State));
+
+        var cards = events.Where(e => e.Kind == SessionEventKind.Tool).ToList();
+        Assert.Equal(2, cards.Count);
+        Assert.All(cards, card => Assert.Equal(("a2fe", "subagent/a2fe"), (card.Id, card.Stream)));
+        Assert.Equal(("Read README first line", "think", "in_progress"), (cards[0].Title, cards[0].ToolKind, cards[0].Status));
+        Assert.Equal("Read README.md and reply with its first line.", Assert.Single(cards[0].Content!).Text);
+        Assert.Equal("completed", cards[1].Status);
+        Assert.DoesNotContain(events, e => e.Text is { } text && text.Contains("I'll read it."));
+    }
+
+    /// <summary>
+    /// A background task's output is a file its harness writes, and the task names it (CONSOLE2a): the
+    /// stream is that file, read as it grows. Its ending is the LAST state the wire gave, since a task
+    /// that finished on its own is said <c>stopped</c> and then <c>completed</c> in one breath.
+    /// </summary>
+    [Fact]
+    public async Task A_background_task_streams_its_output_file_and_ends_with_its_last_state()
+    {
+        var file = Path.Combine(Path.GetTempPath(), $"daoris-task-{Guid.NewGuid():N}.output");
+        File.WriteAllText(file, "bg tick 1\nbg tick 2\n\n[exited with code 0]\n");
+        try
+        {
+            var output = new SessionOutput();
+            var lines = new List<string>();
+            var events = new List<SessionEvent>();
+            var path = JsonSerializer.Serialize(file);
+            var agent = Turn(self =>
+            {
+                self.Push(Update("s-1", """{"sessionUpdate":"async_task_spawned","asyncTaskId":"bs00","name":"Start a ticker","taskType":"shell","showInTranscript":false,"canStop":true}"""));
+                self.Push(Update("s-1", """{"sessionUpdate":"async_task_progress","asyncTaskId":"bs00","toolCallId":"toolu_b"}"""));
+                self.Push(Update("s-1", $$"""{"sessionUpdate":"async_task_progress","asyncTaskId":"bs00","outputFilePath":{{path}},"toolCallId":"toolu_b"}"""));
+                self.Push(Update("s-1", $$"""{"sessionUpdate":"async_task_state_update","asyncTaskId":"bs00","state":"stopped","outputFilePath":{{path}}}"""));
+                self.Push(Update("s-1", $$"""{"sessionUpdate":"async_task_state_update","asyncTaskId":"bs00","state":"completed","outputFilePath":{{path}}}"""));
+            });
+
+            await new AcpSession(agent.Incoming, agent.Outgoing, lines.Add, onEvent: events.Add, streams: new SessionStreams(output, "d-1"))
+                .RunAsync("D:/fam/Game", "do the work", CancellationToken.None);
+
+            Assert.Equal(["bg tick 1", "bg tick 2", "", "[exited with code 0]"],
+                output.Tail(SessionOutput.Key("d-1", "task/bs00")).Lines.Select(l => l.Text));
+            var listed = Assert.Single(output.Streams("d-1"));
+            Assert.Equal((SessionStreamKind.Task, "Start a ticker", false, "completed"),
+                (listed.Kind, listed.Name, listed.Live, listed.State));
+
+            Assert.Contains("→ background: Start a ticker", lines);
+            Assert.Single(lines, line => line.Contains("background: Start a ticker") && !line.StartsWith('→'));
+            Assert.Contains("  ✓ background: Start a ticker", lines);
+            // Its tool call is its card (`showInTranscript: false`): the task adds none, and no raw row.
+            Assert.DoesNotContain(events, e => e.Kind is SessionEventKind.Tool or SessionEventKind.Raw);
+        }
+        finally
+        {
+            File.Delete(file);
+        }
+    }
+
+    /// <summary>
+    /// A session's end is its streams' end (ORPHAN1's twin, said on the console): a subagent or a task
+    /// still open when the session closes is ended with it, says so, and its card says so too.
+    /// </summary>
+    [Fact]
+    public async Task A_stream_still_open_when_the_session_ends_ends_with_it_and_says_so()
+    {
+        var output = new SessionOutput();
+        var events = new List<SessionEvent>();
+        var agent = Turn(self =>
+        {
+            self.Push(Update("s-1", """{"sessionUpdate":"subagent_spawned","subagentSessionId":"a9","name":"Long reader","task":"read everything","capabilities":{}}"""));
+            self.Push(Update("s-1", """{"sessionUpdate":"async_task_spawned","asyncTaskId":"t9","name":"dev server","taskType":"shell","canStop":true}"""));
+        });
+
+        await new AcpSession(agent.Incoming, agent.Outgoing, _ => { }, onEvent: events.Add, streams: new SessionStreams(output, "d-1"))
+            .RunAsync("D:/fam/Game", "do the work", CancellationToken.None);
+
+        var streams = output.Streams("d-1");
+        Assert.Equal(2, streams.Count);
+        Assert.All(streams, stream => Assert.Equal((false, SessionStream.SessionEnded), (stream.Live, stream.State)));
+        Assert.All(streams, stream => Assert.Equal("— ended with its session", output.Tail(stream.Key).Lines.Last().Text));
+        Assert.Equal(SessionStream.SessionEnded, events.Last(e => e.Kind == SessionEventKind.Tool).Status);
+    }
+
+    /// <summary>With nowhere to keep them, a child's updates are the session's, exactly as before CONSOLE2.</summary>
+    [Fact]
+    public async Task Without_streams_a_childs_update_is_the_sessions_as_before()
+    {
+        var lines = new List<string>();
+        var agent = Turn(self =>
+            self.Push(Update("a2fe", """{"sessionUpdate":"tool_call","toolCallId":"toolu_r","title":"Read README.md","kind":"read","status":"pending"}""")));
+
+        await new AcpSession(agent.Incoming, agent.Outgoing, lines.Add)
+            .RunAsync("D:/fam/Game", "do the work", CancellationToken.None);
+
+        Assert.Contains("→ Read README.md", lines);
+    }
+
     /// <summary>An agent that answers the three calls and nothing else — the shape most tests need.</summary>
     // 🔴 The parameter is `self`, not `_`. A lambda parameter named `_` SHADOWS the discard in
     // `TryGetProperty("id", out _)` below, and the error it produces names neither.

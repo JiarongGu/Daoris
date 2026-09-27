@@ -21,8 +21,8 @@ lists.
 
 ## State
 
-**Counts, and this is their one home:** fifteen commands, **483 CLI tests, 528 service, 782 driver,
-151 desktop modules, 80 devkit, 1191 web unit, 21 Playwright**, 66/66 release rehearsal, **285/285
+**Counts, and this is their one home:** fifteen commands, **483 CLI tests, 528 service, 796 driver,
+151 desktop modules, 80 devkit, 1191 web unit, 21 Playwright**, 66/66 release rehearsal, **289/289
 family rehearsal** (it names its own phases when you run it), **39/39 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge
 documents, 5 skills, 7 packs. The always-loaded core is **22,492 of 26,000 bytes** — a span in
@@ -382,9 +382,9 @@ is behind a sign-in. FG1–FG4 are in the archive. **INT6 is reshaped as FG5.**
   driver to capture a started process's output.
   **2a is done** (2026-09-28, `docs/2026-09-28-console2-streams-evidence.md`): a subagent is a
   session of its own under AIR's `nativeSubagentSessions`, a background task's output is a file the
-  harness writes, and `terminal_output` streams nothing. **Next: 2b**, one stream per session,
-  sub-session and task in the driver (the evidence's *What Daoris takes*), then **2c**, a tab per
-  stream.
+  harness writes, and `terminal_output` streams nothing. **2b is done** (2026-09-28): the protocol
+  door asks for both and keeps each as its own console stream (`AcpStreams`, `OutputTail`), with the
+  rules in the interactive design's §2. **Next: 2c**, a tab per stream in the output panel.
 - [ ] ⏸ **SEM2 — vectors that persist** (after SEM1, held). SEM1 embeds what is on disk once per
   process, on first use. The MCP host is one process per session, so with an embedder configured,
   each session's first search embeds the whole corpus. Lyntai.Storage.Sqlite's vector store would
