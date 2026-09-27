@@ -6627,3 +6627,12 @@ in a tree nothing would open again.
 
 Service 525, driver 765 (a real tick on the protocol door: refused after the take, then carried on in
 the same tree to done), CLI 483, and two family-rehearsal checks over HTTP.
+
+## ORPHAN1 — whatever a session starts ends with it (2026-09-27)
+
+Found on FG5's verify step. The session's dev servers, started from its harness's background shell,
+were still listening an hour after its record concluded, on 4200 and 4288. They were stopped by hand.
+The driver's reaper walks a tree from a live root, and the agent had already exited on its own. Now a
+tracked harness joins a Windows job object that kills on close, and so does everything it starts. The
+untrack at the session's end closes it. This covers quest sessions, intakes and conversations, and is
+a no-op off Windows. FIX-LOG has the mechanism. Driver 766.

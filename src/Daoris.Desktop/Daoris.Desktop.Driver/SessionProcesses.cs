@@ -193,11 +193,18 @@ public sealed class SessionProcesses(string? markers = null)
     /// Why this session takes no person's line, in the driver's words — null for a conversation, the
     /// one kind that takes turns with a person.
     /// </param>
+    /// <remarks>
+    /// 🔴 The process joins a job as it is tracked (ORPHAN1), and disposing the handle ends whatever is
+    /// still in it — a dev server a session started from a background shell, found running after its
+    /// session had ended. Called straight after the spawn by every site, so the job is joined before
+    /// the harness has had time to start anything.
+    /// </remarks>
     public IDisposable Track(string sessionId, Process process, string? refusesInput = null)
     {
+        var job = ProcessJob.Hold(process);
         lock (_gate) _running[sessionId] = new Entry { Process = process, RefusesInput = refusesInput };
         Mark(sessionId, process);
-        return new Untrack(this, sessionId);
+        return new Untrack(this, sessionId, job);
     }
 
     /// <summary>
@@ -287,12 +294,14 @@ public sealed class SessionProcesses(string? markers = null)
         }
     }
 
-    private sealed class Untrack(SessionProcesses owner, string sessionId) : IDisposable
+    private sealed class Untrack(SessionProcesses owner, string sessionId, ProcessJob job) : IDisposable
     {
         public void Dispose()
         {
             lock (owner._gate) owner._running.Remove(sessionId);
             owner.Unmark(sessionId);
+            // Last: whatever the session started and left running ends with it (ORPHAN1).
+            job.Dispose();
         }
     }
 }

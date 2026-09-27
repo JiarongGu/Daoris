@@ -21,7 +21,7 @@ lists.
 
 ## State
 
-**Counts, and this is their one home:** fifteen commands, **483 CLI tests, 525 service, 765 driver,
+**Counts, and this is their one home:** fifteen commands, **483 CLI tests, 525 service, 766 driver,
 151 desktop modules, 80 devkit, 1189 web unit, 21 Playwright**, 66/66 release rehearsal, **285/285
 family rehearsal** (it names its own phases when you run it), **39/39 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge
@@ -48,8 +48,8 @@ wait** (ASK1–ASK3, in the archive). A session publishes its question, parks it
 and is resumed in the same tree with the answer. **ACPEND1 landed with it**: the same run's account
 limit had been recorded as a stand-down. **The second run then met the first goal**: a ticket read,
 routed, developed, gated and closed done with no repository named. That needed ASKAGAIN1 and D80 (a
-cut-off carried on), both in the archive. **Next: ORPHAN1, STANDDOWN2 and CHAIN2**, which the chain's
-verify step found.
+cut-off carried on), both in the archive. The chain's verify step found three more. ORPHAN1 is fixed
+(in the archive), and **STANDDOWN2 is next, then CHAIN2**, which needs the owner's call.
 D76's round is done, and its leftovers (RAIL2, SURF11) stand behind these. Nothing is pushed or
 published, and a release is still blocked on REH1.
 - **Landed:** CONV1 (the record), CONV2 (the view), CONV3a (Claude Code's `stream-json`), CONV3b
@@ -123,8 +123,8 @@ rather than designed.
 
 ## Backlog
 
-**Thirty-four rows are open**: the in-app browser's seven (BRW3, then BRW4–BRW9, the browser as a browser); the first goal's five (FG5,
-ORPHAN1, STANDDOWN2, CHAIN2, and SEM2 on a trigger); D76's held file tools;
+**Thirty-three rows are open**: the in-app browser's seven (BRW3, then BRW4–BRW9, the browser as a browser); the first goal's four (FG5,
+STANDDOWN2, CHAIN2, and SEM2 on a trigger); D76's held file tools;
 the eight REV3 left, WINDOW2 among them; five leftovers (RAIL2, SURF11, FLAKE1, DEPLOY5, TEST1); two on the owner
 (TRUST2, AGT2c); and six on a trigger (see *Handover*). Every closed one is in `docs/task-archive.md`, and this file holds no
 ticked rows, by the `task-lifecycle` rule it also ships. A heading below holds open rows only.
@@ -318,12 +318,6 @@ is behind a sign-in. FG1–FG4 are in the archive. **INT6 is reshaped as FG5.**
   which surfaced three new rows (ORPHAN1, STANDDOWN2, CHAIN2). The branch is the owner's to review
   and merge (D51). Waiting on the owner as well: four rule proposals and the dev nav config apply,
   a live write the session rightly left alone.
-- [ ] **ORPHAN1 — a session's background processes outlive it** (FG5, 2026-09-27). The verify session
-  started its repository's dev servers from a background shell. When its turn ended the agent exited
-  and they kept running, holding ports 4200 and 4288 and a tree whose session was over. Their parent
-  chain ran back to the ended agent. They were stopped by hand. The driver ends the agent it tracks
-  and nothing below it. On Windows a job object that kills on close holds a whole process tree, and
-  a process group does it elsewhere.
 - [ ] **STANDDOWN2 — a session that took its quest and ended asking the person reads as a stand-down**
   (FG5, 2026-09-27). The verify session took its quest, then ended its turn holding it open with
   three questions for the person (a merge, a sign-in, a live config apply). The record said

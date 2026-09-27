@@ -5,6 +5,33 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## A session's dev servers outlived it, holding two ports and a finished tree (2026-09-27)
+
+**Symptom.** FG5's verify session started its repository's dev servers (`npm run start`: Angular on
+4200, Vite on 4288) from its harness's background shell. It ended its turn, and the record
+concluded. An hour later both servers were still listening, serving the finished session's tree.
+Their parent chain ran bash → npm → `concurrently` → the servers, back to the agent's pid, which no
+longer existed. They were stopped by hand, and the person's own dev server would have collided with
+them on 4200.
+
+**Root cause.** The driver ends what it tracks: `EndIfRunning`, and a stop, call
+`Process.Kill(entireProcessTree: true)`. That walks the tree from a live root. On the ordinary path
+the agent exits on its own once its turn ends and stdin closes, so the call finds nothing running.
+Whatever the agent started in the background is by then nobody's child, and nothing ever named it.
+The reaper has been there since REV3, and the gap has been there as long.
+
+**Fix.** `ProcessJob`: on Windows the spawned harness joins a job object that kills on close, as it
+is tracked (`SessionProcesses.Track`). Every process it starts joins the same job, detached or not,
+since the job does not allow breaking away. The untrack at the session's end closes the handle and
+ends them all, and so does the driver's own exit. It covers every spawn that is tracked: quest
+sessions, intakes and conversations. Elsewhere it is a no-op for now, since Windows is where the
+defect was measured.
+
+**Verify.** `ProcessJobTests` starts a parent that launches a detached child with a heartbeat and
+exits. It asserts the child outlives its parent (the measured shape, and red before the fix on the
+next assertion), then that the child stops beating once the session is untracked. Driver 766.
+**The general rule:** a supervisor that ends only the process it started has not ended the work.
+
 ## An account's limit cut a session off mid-edit, and the record said somebody else had the quest (2026-09-27)
 
 **Symptom.** FG5's development session worked twenty minutes on its quest in its own tree. Its last
