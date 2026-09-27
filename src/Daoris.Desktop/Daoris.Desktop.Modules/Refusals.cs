@@ -98,6 +98,15 @@ public static class Refusals
     public const string PluginActionUnknown = "PLUGIN_ACTION_UNKNOWN";
     public const string PluginBusy = "PLUGIN_BUSY";
 
+    /// <summary>A favorite that is no web page: the bar's rule keeps only `http` and `https` pages (CHR5).</summary>
+    public const string BrowserNotAPage = "BROWSER_NOT_A_PAGE";
+
+    /// <summary>A favorites or settings file that could not be read, which an edit will not write over.</summary>
+    public const string BrowserFileUnreadable = "BROWSER_FILE_UNREADABLE";
+
+    /// <summary>An extensions setting that is neither `offer` nor `refuse` (CHR7).</summary>
+    public const string BrowserSettingUnknown = "BROWSER_SETTING_UNKNOWN";
+
     /// <summary>Every code a module here can raise — what the catalogue test enumerates.</summary>
     public static IReadOnlyList<string> All =>
     [
@@ -106,6 +115,7 @@ public static class Refusals
         SessionMoveNotYours, SessionDeclineNeedsReason, SessionNotReviewable, SessionNoBase, SessionRangeUnreadable,
         SessionTreeUnlisted, HarnessProfileNeeded, WindowUnknown,
         PluginUnknown, PluginActionUnknown, PluginBusy,
+        BrowserNotAPage, BrowserFileUnreadable, BrowserSettingUnknown,
     ];
 
     /// <summary>

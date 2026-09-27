@@ -104,6 +104,9 @@ internal static class Program
         builder.Services.AddSingleton(_ => new EngineBrowserHost(
             Path.GetDirectoryName(Path.GetFullPath(Daoris.Driver.DriverConfig.ResolvePath()))!));
         builder.Services.AddSingleton<Daoris.Driver.IInAppBrowser>(sp => sp.GetRequiredService<EngineBrowserHost>());
+        // Its favorites and settings, as a Settings domain (CHR5, CHR7): the files `daoris browser`
+        // edits, read by `daoris-browser` each time it starts.
+        builder.Services.AddIpcModule<BrowserModule>();
         builder.Services.AddSingleton(new PlatformAddress(serviceUrl));
         builder.Services.AddIpcModule<WindowsModule>();
 

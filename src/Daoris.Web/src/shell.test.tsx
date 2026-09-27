@@ -581,8 +581,10 @@ describe('the machine settings surface', () => {
     show(<SettingsView notify={() => {}} section="driver" onSection={onSection} />);
 
     const domains = await screen.findByRole('navigation', { name: 'Settings domains' });
-    await waitFor(() => expect(within(domains).getAllByRole('button')).toHaveLength(7));
+    await waitFor(() => expect(within(domains).getAllByRole('button')).toHaveLength(8));
     expect(within(domains).getByRole('button', { name: 'Driver' })).toHaveAttribute('aria-current', 'page');
+    // Daoris's browser (CHR5, CHR7) is a machine's domain, last in the list.
+    expect(within(domains).getAllByRole('button').at(-1)?.textContent).toBe('Browser');
     expect(await screen.findByLabelText('Park a quest after this many failed sessions')).toBeTruthy();
     // A card alone in its domain does not say the domain's name again: the list already has.
     expect(screen.getAllByText('Driver')).toHaveLength(1);
@@ -740,6 +742,79 @@ describe('the plugins card', () => {
 
     expect(await screen.findByText(/daoris plugin add/)).toBeTruthy();
     expect(screen.getByText('C:/somewhere/data/plugins')).toBeTruthy();
+  });
+});
+
+/**
+ * Daoris's browser on Settings (CHR5, CHR7): the favorites it shows on its bookmarks bar and the
+ * extensions setting, over the files `daoris browser` edits (D50). A machine domain: the bridge, never
+ * the service.
+ */
+describe('the browser domain', () => {
+  const BROWSER = {
+    favoritesPath: 'C:/somewhere/data/browser/favorites.json',
+    favorites: [{ url: 'https://site.example/board', title: 'Board' }],
+    favoritesProblem: null,
+    settingsPath: 'C:/somewhere/data/browser/settings.json',
+    extensions: 'offer',
+    settingsProblem: null,
+  };
+
+  beforeEach(() => {
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => respond(String(input))));
+    invoke.mockImplementation(async (module: string) => (module === 'DAORIS.BROWSER' ? BROWSER : DRIVER_STATE));
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    invoke.mockReset();
+  });
+
+  it('shows the favorites and the extensions setting from the machine, and nothing over the service', async () => {
+    show(<SettingsView notify={() => {}} section="browser" />);
+
+    expect(await screen.findByText('Board')).toBeTruthy();
+    expect(screen.getByText('https://site.example/board')).toBeTruthy();
+    expect(screen.getByText('C:/somewhere/data/browser/favorites.json')).toBeTruthy();
+    expect(screen.getByRole('radio', { name: 'offer' }).getAttribute('aria-checked')).toBe('true');
+    expect(screen.getByText(/next time Daoris's browser starts/)).toBeTruthy();
+    expect(invoke).toHaveBeenCalledWith('DAORIS.BROWSER', 'STATE', {});
+    expect(serviceCalls()).toEqual([]);
+  });
+
+  it('keeping and removing a page land as the verbs a terminal has', async () => {
+    const notify = vi.fn();
+    show(<SettingsView notify={notify} section="browser" />);
+    await screen.findByText('Board');
+
+    await userEvent.type(screen.getByPlaceholderText('https://…'), 'site.example/new');
+    await userEvent.type(screen.getByPlaceholderText("the page's host"), 'New');
+    await userEvent.click(screen.getByRole('button', { name: 'keep it' }));
+    expect(invoke).toHaveBeenCalledWith('DAORIS.BROWSER', 'ADD_FAVORITE', { payload: { address: 'site.example/new', title: 'New' } });
+    await waitFor(() => expect(notify).toHaveBeenCalledWith('New is a favorite.'));
+
+    await userEvent.click(screen.getByRole('button', { name: 'remove' }));
+    expect(invoke).toHaveBeenCalledWith('DAORIS.BROWSER', 'REMOVE_FAVORITE', { payload: { address: 'https://site.example/board' } });
+  });
+
+  it('refusing other software\'s extensions says it holds from the next start', async () => {
+    const notify = vi.fn();
+    show(<SettingsView notify={notify} section="browser" />);
+
+    await userEvent.click(await screen.findByRole('radio', { name: 'refuse' }));
+
+    expect(invoke).toHaveBeenCalledWith('DAORIS.BROWSER', 'SET_EXTENSIONS', { payload: { extensions: 'refuse' } });
+    await waitFor(() => expect(notify).toHaveBeenCalledWith(
+      "Other software's extensions will be refused from the browser's next start."));
+  });
+
+  it('a file that could not be read is said, with where it is, and no list is guessed', async () => {
+    invoke.mockImplementation(async (module: string) => (module === 'DAORIS.BROWSER'
+      ? { ...BROWSER, favorites: [], favoritesProblem: 'C:/somewhere/data/browser/favorites.json is not a JSON object' }
+      : DRIVER_STATE));
+    show(<SettingsView notify={() => {}} section="browser" />);
+
+    expect(await screen.findByText(/could not be read: .*is not a JSON object/)).toBeTruthy();
+    expect(screen.queryByText('No favorites yet.')).toBeNull();
   });
 });
 

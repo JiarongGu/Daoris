@@ -5,9 +5,9 @@ import { cn } from './lib/cn';
 import { useRegistry, useStatus, useWorkspaceHoldings } from './queries';
 import { useScope } from './scope';
 import {
-  useDriver, useHarnessAction, useHarnessEnded, useHarnesses, usePluginAction, usePlugins, useRefreshHarnesses,
-  useRemotes, useRuleAction, useRuleProposal, useRules, useSetIntake, useSetNotify, useSetStrikes,
-  useStarts, useUnwireRemote, useUsage, useWireRemote,
+  useAddFavorite, useBrowserSettings, useDriver, useHarnessAction, useHarnessEnded, useHarnesses, usePluginAction,
+  usePlugins, useRefreshHarnesses, useRemotes, useRemoveFavorite, useRuleAction, useRuleProposal, useRules,
+  useSetExtensions, useSetIntake, useSetNotify, useSetStrikes, useStarts, useUnwireRemote, useUsage, useWireRemote,
 } from './shell';
 import { AgentRules } from './settings/AgentRules';
 import { proposalChange } from './settings/proposals';
@@ -35,7 +35,8 @@ import { workspacesOf } from './workspaces';
  * (D47 §4) — the machine's half is absent there, never disabled.
  */
 /** Settings' domains, in the order its list shows them (D75 §2). */
-export type SettingsSection = 'appearance' | 'ai' | 'workspace' | 'driver' | 'agents' | 'permissions' | 'plugins';
+export type SettingsSection =
+  | 'appearance' | 'ai' | 'workspace' | 'driver' | 'agents' | 'permissions' | 'plugins' | 'browser';
 
 /** A part of a domain a menu item is named for (UX5 U72), found by the id `settings-<anchor>`. */
 export type SettingsAnchor = 'usage' | 'proposals' | 'wiring';
@@ -50,6 +51,7 @@ const SECTIONS: readonly { id: SettingsSection; machine: boolean }[] = [
   { id: 'agents', machine: true },
   { id: 'permissions', machine: true },
   { id: 'plugins', machine: true },
+  { id: 'browser', machine: true },
 ];
 
 /**
@@ -147,6 +149,7 @@ export function SettingsView({ notify, section = 'appearance', onSection, anchor
           {shown === 'agents' && <HarnessRoster notify={notify} />}
           {shown === 'permissions' && <Rules notify={notify} />}
           {shown === 'plugins' && <Plugins notify={notify} />}
+          {shown === 'browser' && <BrowserDomain notify={notify} />}
         </div>
       </div>
     </section>
@@ -563,6 +566,141 @@ function WiringSettings({ notify }: { notify: Notify }) {
         </div>
         )}
       </Card>
+  );
+}
+
+/**
+ * Daoris's browser (CHR5, CHR7): its favorites, which it shows in a Daoris folder on its bookmarks
+ * bar, and whether other software's Chrome extensions are offered or refused. The same two files
+ * `daoris browser` edits (D50), which `daoris-browser` reads each time it starts, so the page says
+ * that an edit shows at the next start rather than implying it shows now.
+ */
+function BrowserDomain({ notify }: { notify: Notify }) {
+  const { t } = useTranslation();
+  const state = useBrowserSettings();
+  const add = useAddFavorite();
+  const remove = useRemoveFavorite();
+  const setExtensions = useSetExtensions();
+  useErrorNotify(state.error, notify);
+  const onError = failure(notify);
+
+  const [address, setAddress] = useState('');
+  const [title, setTitle] = useState('');
+  const data = state.data;
+
+  const keep = () => add.mutate(
+    { address: address.trim(), ...(title.trim() ? { title: title.trim() } : {}) },
+    {
+      onSuccess: () => {
+        notify(t('settings.browser.favorites.added', { title: title.trim() || address.trim() }));
+        setAddress('');
+        setTitle('');
+      },
+      onError,
+    });
+
+  return (
+    <>
+      <Prose className="mb-3">{t('settings.browser.nextStart')}</Prose>
+
+      <Card id="settings-favorites" className="scroll-mt-3">
+        <SectionTitle>{t('settings.browser.favorites.title')}</SectionTitle>
+        <SettingRow
+          label={t('settings.browser.favorites.label')}
+          hint={t('settings.browser.favorites.hint')}
+          control={data && <PathText path={data.favoritesPath} className="text-small text-ink-faint" />}
+        />
+        {data?.favoritesProblem && (
+          <p className="mt-3 border-l-[3px] border-warn bg-raised px-3.5 py-2 text-body text-ink-soft">
+            {t('settings.browser.unreadable', { file: data.favoritesPath, problem: data.favoritesProblem })}
+          </p>
+        )}
+        {data && data.favorites.length === 0 && !data.favoritesProblem && (
+          <Prose className="mt-3">{t('settings.browser.favorites.none')}</Prose>
+        )}
+        {data && data.favorites.length > 0 && (
+          <ul className="m-0 mt-3 list-none p-0">
+            {data.favorites.map((favorite) => (
+              <li
+                key={favorite.url}
+                className="flex flex-wrap items-baseline gap-3 border-t border-line py-2 first:border-t-0"
+              >
+                <span className="text-body text-ink">{favorite.title}</span>
+                <PathText path={favorite.url} className="text-small text-ink-faint" />
+                <Button
+                  variant="ghost"
+                  className="ml-auto"
+                  disabled={remove.isPending}
+                  onClick={() => remove.mutate({ address: favorite.url }, {
+                    onSuccess: () => notify(t('settings.browser.favorites.removed', { url: favorite.url })),
+                    onError,
+                  })}
+                >
+                  {t('settings.browser.favorites.remove')}
+                </Button>
+              </li>
+            ))}
+          </ul>
+        )}
+        {/* The rule runs the card's width, as the list's rows do; the fields are sized to what they
+            hold, an address long and a title short. */}
+        <div className="mt-3 border-t border-line pt-3">
+        <div className="grid max-w-[48rem] items-end gap-2 md:grid-cols-[minmax(0,1fr)_12rem_auto]">
+          <label className="grid gap-1 text-small text-ink-faint">
+            {t('settings.browser.favorites.address')}
+            <input
+              value={address}
+              onChange={(event) => setAddress(event.target.value)}
+              placeholder="https://…"
+              className="rounded-control border border-line-strong bg-raised px-2.5 py-1.5 font-mono text-body text-ink"
+            />
+          </label>
+          <label className="grid gap-1 text-small text-ink-faint">
+            {t('settings.browser.favorites.titleField')}
+            <input
+              value={title}
+              onChange={(event) => setTitle(event.target.value)}
+              placeholder={t('settings.browser.favorites.titlePlaceholder')}
+              className="rounded-control border border-line-strong bg-raised px-2.5 py-1.5 text-body text-ink"
+            />
+          </label>
+          <Button variant="primary" disabled={!address.trim() || add.isPending} onClick={keep}>
+            <Icon name="plus" size={13} />
+            {t('settings.browser.favorites.add')}
+          </Button>
+        </div>
+        </div>
+      </Card>
+
+      <Card id="settings-extensions" className="mt-3.5 scroll-mt-3">
+        <SectionTitle>{t('settings.browser.extensions.title')}</SectionTitle>
+        <SettingRow
+          label={t('settings.browser.extensions.label')}
+          hint={t('settings.browser.extensions.hint')}
+          control={data && (
+            <Segmented
+              label={t('settings.browser.extensions.label')}
+              value={data.extensions}
+              options={[
+                { value: 'offer', label: t('settings.browser.extensions.offer') },
+                { value: 'refuse', label: t('settings.browser.extensions.refuse') },
+              ]}
+              onChange={(extensions) => setExtensions.mutate({ extensions }, {
+                onSuccess: () => notify(t('settings.browser.extensions.set', {
+                  choice: t(extensions === 'refuse' ? 'settings.browser.extensions.refused' : 'settings.browser.extensions.offered'),
+                })),
+                onError,
+              })}
+            />
+          )}
+        />
+        {data?.settingsProblem && (
+          <p className="mt-3 border-l-[3px] border-warn bg-raised px-3.5 py-2 text-body text-ink-soft">
+            {t('settings.browser.unreadable', { file: data.settingsPath, problem: data.settingsProblem })}
+          </p>
+        )}
+      </Card>
+    </>
   );
 }
 

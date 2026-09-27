@@ -335,6 +335,51 @@ export const useWireRemote = () =>
 export const useUnwireRemote = () => useWiringChange<{ workspace: string }>('REMOVE');
 
 /**
+ * Daoris's browser, as a Settings domain (CHR5, CHR7): its favorites, shown in a Daoris folder on its
+ * bookmarks bar, and whether other software's Chrome extensions are offered or refused.
+ *
+ * @remarks
+ * Shell-only, like every machine domain: the same files `daoris browser` edits and `daoris-browser`
+ * reads each time it starts, which the service has no route onto (D47 §4).
+ */
+export type BrowserSettingsState = {
+  favoritesPath: string;
+  favorites: { url: string; title: string }[];
+  /** Why the favorites file gave none, when it was there and could not be read. */
+  favoritesProblem: string | null;
+  settingsPath: string;
+  extensions: 'offer' | 'refuse';
+  settingsProblem: string | null;
+};
+
+const callBrowser = <TData,>(type: string, payload?: Record<string, unknown>): Promise<TData> =>
+  getBridge().invoke<TData>('DAORIS.BROWSER', type, payload ? { payload } : {});
+
+export const useBrowserSettings = () => {
+  const { isAvailable } = useShenora();
+  return useQuery({
+    queryKey: keys.browserSettings,
+    queryFn: () => callBrowser<BrowserSettingsState>('STATE'),
+    enabled: isAvailable,
+  });
+};
+
+/** An edit to the browser's files. Each answers with the whole state, as the remotes' do. */
+function useBrowserChange<TVariables extends Record<string, unknown>>(type: string) {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (variables: TVariables) => callBrowser<BrowserSettingsState>(type, variables),
+    onSuccess: (state) => client.setQueryData(keys.browserSettings, state),
+  });
+}
+
+export const useAddFavorite = () => useBrowserChange<{ address: string; title?: string }>('ADD_FAVORITE');
+
+export const useRemoveFavorite = () => useBrowserChange<{ address: string }>('REMOVE_FAVORITE');
+
+export const useSetExtensions = () => useBrowserChange<{ extensions: 'offer' | 'refuse' }>('SET_EXTENSIONS');
+
+/**
  * Open one of this build's secondary windows (D55 §b, SURF8): the monitor, or one session detached.
  *
  * @remarks

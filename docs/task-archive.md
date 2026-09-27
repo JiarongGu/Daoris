@@ -6943,3 +6943,50 @@ The row as filed: *The engine announces a new target as `other`, so no browser M
   it now (§16).
 - A first sabotage bound as `(false && …) || …` and broke one case of 15; it was read, not believed.
 - No report was sent to CEF; filing one stays the owner's.
+
+## CHR5 — Daoris's favorites on the browser's bar (2026-09-28)
+
+The row as filed: *(owner, 2026-09-28). They stay Daoris's: `favorites.json`, `daoris browser
+favorite`, and a Settings screen. Each start puts them in a Daoris folder on the engine's bookmarks
+bar. History is the engine's own, so `daoris browser history` is retired.*
+
+**Outcome.**
+- `daoris-browser` writes `favorites.json` into the engine's `Default/Bookmarks` before the engine
+  starts, as a *Daoris* folder (`EngineProfile.WithFavorites`). The folder is found by a fixed id
+  wherever the person moved it, and with no favorites it goes. The person's own bookmarks are never
+  touched, and a file it cannot read is left as it is.
+- The bar is shown once, when the folder first appears, and after that it is the person's to hide.
+- The screen door is Settings → Browser (`BrowserModule`, `DAORIS.BROWSER`), alongside the terminal's.
+- `daoris browser history` is retired with a sentence saying where the history is now, and
+  `BrowserHistory.cs` went with it.
+
+**Proven by:**
+- 22 `EngineProfileTests`.
+- 6 `BrowserModuleTests`: the file afterwards, a refusal by code, an unreadable file left alone.
+- 4 page tests over the mocked bridge.
+- Measured on the engine (evidence §21–§22): a bookmarks file written from nothing, with no checksum,
+  is taken.
+- A look on the scratch shell, in both themes: the domain, and the folder on the browser's bar from
+  the same file.
+
+**Found on the way:** the add form's rule stopped partway across its card, and now runs the card's
+width.
+
+## CHR7 — other software's Chrome extensions, a setting (2026-09-28)
+
+The row as filed: *(owner: "configurable"): offer them for approval, as the engine does, or refuse
+them. Refusing seeds the profile's `external_uninstalls` (evidence §20). It has two doors: `daoris
+browser extensions` and the same Settings screen.*
+
+**Outcome.**
+- `<home>/browser/settings.json` is a twin: `browser.ts` and `BrowserSettings.cs`, with one test table
+  on both sides. Offer is the default.
+- On *refuse*, `daoris-browser` reads what other software registered for Chrome and Chromium (the
+  machine's and the account's keys), and seeds them into the profile before the engine starts. It
+  records which ids it refused in `<profile>/daoris.json`.
+- On *offer*, it takes back only those, so a refusal the person made in the browser survives.
+
+**Proven by:**
+- 11 twin tests, and the refusal rule watched failing.
+- End to end on a scratch home (evidence §22): refused, offered again, and the person's own refusal
+  kept.

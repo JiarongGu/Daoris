@@ -30,6 +30,7 @@ export const keys = {
   driver: ['driver'] as const,
   /** The machine's wiring — shell-only, like the driver's state (D48 §5). */
   remotes: ['remotes'] as const,
+  browserSettings: ['browser-settings'] as const,
   /** This machine's harnesses and the accounts they run as — shell-only too (D49 §4). */
   harnesses: ['harnesses'] as const,
   // Under the roster's key, so everything that invalidates the roster asks the wiring again: an
