@@ -63,10 +63,10 @@ filed six rows from the first real workspace** (2026-09-28, *After the first rea
 start them later"): workspace rules for how work lands, the default branch, cleaning up session
 branches, the session view, the map, and asking Daoris for help. Ask which comes first.
 🔴 **Where the 2026-09-27 session stopped (the owner: "lets continue in next session").** The first
-goal's loop is met (FG5's sixth leg). The install runs `c3e6516`, and nothing since is on it.
-🔴 **Republishing still signs the browser out ONCE**, because the running install keeps no cookies
-yet. After that republish, a restart keeps the sign-in (BRW10). So ask before republishing, and the
-owner signs in once more after it. **The owner has five open calls:**
+goal's loop is met (FG5's sixth leg). 🔴 **Republishing is the session's own call** (the owner,
+2026-09-29: *"you can always republish if you need"*): the install keeps its sign-in across a
+restart (BRW10). The one rule left is the app's: a republish closes it, so never while a session on
+it is running; a parked one has no process and survives. **The owner has five open calls:**
 the verify step's camera-GUID defect, sent to the front end as a quest before any camera note is
 saved; whether the daily view gains a note chip; the single-select answer said back on the ticket;
 merging four docs commits left on session branches, in both repositories; and READACROSS1. The
