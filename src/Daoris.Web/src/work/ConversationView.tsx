@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { type ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { compact, span } from '../format';
 import { cn } from '../lib/cn';
@@ -28,8 +28,16 @@ import { ToolCard } from './ToolCard';
  */
 export function ConversationView({
   turns, tree, structured, chat = false, live = false, turnRunning, loaded = true, earlier = false, onLoadEarlier,
+  reveal, toolbar,
 }: {
   turns: Turn[];
+  /**
+   * The block a jump or a search landed on (SESS1 S9), by its key: its fold opens and it is marked.
+   * The organism scrolls to it; this only draws it.
+   */
+  reveal?: string;
+  /** The way through a long run, where the organism offers one — above the conversation, kept in view. */
+  toolbar?: ReactNode;
   /**
    * Whether this session's door keeps a conversation's structure, as its harness declares (D76 §1) —
    * or undefined where that is not known. It is what an empty record is read by.
@@ -76,6 +84,7 @@ export function ConversationView({
     // own: the agent's words are content, shown at the width they are given (UX5 U16, the owner: a
     // 768px cap was half a maximized window).
     <section aria-label={t('work.conversation.label')} className="grid w-full grid-cols-[minmax(0,1fr)] gap-3">
+      {toolbar && <div className="sticky -top-3 z-10 -mx-1 border-b border-line bg-page px-1 pb-1.5 pt-3">{toolbar}</div>}
       {/* Where the page began past the ask, the gap is inside its turn, after the ask (SESS1 S1). */}
       {earlier && onLoadEarlier && !turns[0]?.gap && <Earlier onLoadEarlier={onLoadEarlier} />}
       {turns.map((turn, index) => (
@@ -85,6 +94,7 @@ export function ConversationView({
           tree={tree}
           running={(turnRunning ?? live) && index === turns.length - 1 && !turn.ended}
           onLoadEarlier={earlier && turn.gap ? onLoadEarlier : undefined}
+          reveal={reveal}
         />
       ))}
     </section>
@@ -100,10 +110,23 @@ function Earlier({ onLoadEarlier }: { onLoadEarlier: () => void }) {
   );
 }
 
-function TurnView({ turn, tree, running, onLoadEarlier }: {
+/** A block as the page holds it: named by its key, so a jump can find it, and marked when it is the one. */
+function Held({ id, reveal, children }: { id: string; reveal?: string; children: ReactNode }) {
+  return (
+    <div
+      data-block={id}
+      className={cn('min-w-0 scroll-mt-12', reveal === id && 'rounded-control outline-2 outline-offset-4 outline-accent/60')}
+    >
+      {children}
+    </div>
+  );
+}
+
+function TurnView({ turn, tree, running, onLoadEarlier, reveal }: {
   turn: Turn;
   tree?: string | null;
   running: boolean;
+  reveal?: string;
   /** The page began past this turn's ask: the earlier events belong between it and what is held. */
   onLoadEarlier?: () => void;
 }) {
@@ -113,11 +136,11 @@ function TurnView({ turn, tree, running, onLoadEarlier }: {
 
   return (
     <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-1.5">
-      {turn.ask && <AskView ask={turn.ask} />}
+      {turn.ask && <Held id={turn.ask.key} reveal={reveal}><AskView ask={turn.ask} /></Held>}
       {onLoadEarlier && <Earlier onLoadEarlier={onLoadEarlier} />}
       {parts.map((part) => (part.kind === 'run'
-        ? <RunView key={part.key} items={part.items} open={part.open} tree={tree} />
-        : <BlockView key={part.block.key} block={part.block} tree={tree} />))}
+        ? <RunView key={part.key} items={part.items} open={part.open} tree={tree} reveal={reveal} />
+        : <Held key={part.block.key} id={part.block.key} reveal={reveal}><BlockView block={part.block} tree={tree} /></Held>))}
       {running && <Dot tone="live" label={t('work.conversation.working')} className="mt-1" />}
       {/* The session ended inside this turn (SESS1 S4): said once, in the passive, never as a failure —
           the driver's note above says why, when it knows. */}
@@ -237,9 +260,16 @@ function BlockView({ block, tree }: { block: Block; tree?: string | null }) {
  * A run of work between two things the agent said: one line that counts its calls, its failures in
  * the failed tone, and whether it thought — a press opens its cards, and another folds them again.
  */
-function RunView({ items, open: startsOpen, tree }: { items: Block[]; open: boolean; tree?: string | null }) {
+function RunView({ items, open: startsOpen, tree, reveal }: {
+  items: Block[]; open: boolean; tree?: string | null; reveal?: string;
+}) {
   const { t } = useTranslation();
   const [open, setOpen] = useState(startsOpen);
+  // A jump that lands inside shows the fold it lands in, drawn at once so the jump can reach it; the
+  // person may fold it again, which puts that jump aside.
+  const [dismissed, setDismissed] = useState<string | undefined>();
+  const holds = Boolean(reveal) && reveal !== dismissed && items.some((item) => item.key === reveal);
+  const shown = open || holds;
   const { tools, failed, thought } = runCount(items);
   const parts = [
     tools > 0 && t('work.conversation.tools', { count: tools }),
@@ -252,19 +282,24 @@ function RunView({ items, open: startsOpen, tree }: { items: Block[]; open: bool
     <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-1.5">
       <button
         type="button"
-        aria-expanded={open}
+        aria-expanded={shown}
         // One name for the whole line: the failed count is its own span for its tone.
         aria-label={failed > 0 ? `${said} · ${t('work.conversation.failed', { count: failed })}` : said}
-        onClick={() => setOpen((was) => !was)}
+        onClick={() => {
+          if (holds) setDismissed(reveal);
+          setOpen(!shown);
+        }}
         className="flex items-center gap-1.5 justify-self-start border-0 bg-transparent p-0 text-small text-ink-faint hover:text-ink"
       >
-        <Icon name={open ? 'chevronDown' : 'chevronRight'} size={13} />
+        <Icon name={shown ? 'chevronDown' : 'chevronRight'} size={13} />
         {said}
         {failed > 0 && (
           <span className="text-st-declined">{`· ${t('work.conversation.failed', { count: failed })}`}</span>
         )}
       </button>
-      {open && items.map((item) => <BlockView key={item.key} block={item} tree={tree} />)}
+      {shown && items.map((item) => (
+        <Held key={item.key} id={item.key} reveal={reveal}><BlockView block={item} tree={tree} /></Held>
+      ))}
     </div>
   );
 }

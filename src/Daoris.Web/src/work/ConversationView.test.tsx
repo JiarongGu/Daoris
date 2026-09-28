@@ -329,6 +329,28 @@ describe('ConversationView', () => {
     expect(screen.getByText('a call begun earlier')).toBeTruthy();
   });
 
+  /** SESS1 S9: a jump that lands inside a fold opens it and marks the block; the person may fold it again. */
+  it('opens the fold a jump lands in, marks the block, and lets the person fold it again', async () => {
+    const events = [
+      ev({ kind: 'user', origin: 'target', text: 'go' }),
+      ev({ kind: 'message', id: 'w1', text: 'Starting.' }),
+      ev({ kind: 'tool', id: 'j1', title: 'Read a', status: 'completed' }),
+      ev({ kind: 'tool', id: 'j2', title: 'npm test', status: 'failed', output: '3 failing' }),
+      ev({ kind: 'message', id: 'w2', text: 'Done.' }),
+      ev({ kind: 'turn', stopReason: 'end_turn' }),
+    ];
+    const { turns, where } = toTurns(events);
+    const failedAt = events[3]!.seq;
+    render(<Tooltip.Provider><ConversationView turns={turns} reveal={where[failedAt]} /></Tooltip.Provider>);
+
+    expect(screen.getByText('npm test')).toBeTruthy();
+    const block = screen.getByText('npm test').closest('[data-block]')!;
+    expect(block.className).toContain('outline-accent');
+
+    await userEvent.click(screen.getByRole('button', { name: /2 tool calls/ }));
+    expect(screen.queryByText('npm test')).toBeNull();
+  });
+
   /** SESS1 S6: a record from before the refusal named its call carries the request's JSON; two lines, the rest on a press. */
   it('shows a long note of the driver\'s as two lines, and the rest on a press', async () => {
     const long = `permission refused: {"toolCallId":"toolu_01","rawInput":{"command":"${'x'.repeat(300)}"}} — the repository's own configuration governs`;

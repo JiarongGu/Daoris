@@ -12,6 +12,10 @@ sessions showed against it.
 sessions a person answered, and runs of up to 1,855 events (1,316 tool updates, 117 message chunks, 13
 driver notes, one ask and no turn end). Names of repositories and quests stay out of this file.
 
+**Also found while fixing:** the toolbar kept at the top of the conversation showed the text scrolling
+under it, first through a translucent background, then through the scroll region's own padding, where
+Chromium pins a sticky element: it is solid, and pinned over that padding (`-top-3`).
+
 **Instruments learned on the pass.**
 - **`shot` photographs a minimized window as a 314 × 50 caption.** The installed window was
   minimized, and restoring it would put it in front of its owner. Chromium's own
@@ -35,7 +39,16 @@ driver notes, one ask and no turn end). Names of repositories and quests stay ou
 | S4 | **A call running when the session ended reads *running* for good**: the failed run's last call, the gate it was waiting on, says 运行中 under the driver's note that the session failed | `work/conversation.ts`, `ToolCard.tsx` | fixed: `settle` marks a turn the session ended inside as cut, says *The session ended here, before this turn did.*, and draws the calls it left open as *stopped*, the quiet tone CONV4b gave a stopped call. Looked at: the last call reads *stopped* under the driver's failure note |
 | S5 | **A tool call titled by its raw id** (`toolu_…`). Every call in the records has a title (1,206 of 1,206); this one **began on an earlier page**, so the newest page held only its updates, which carry none, and the card fell back to its id | `work/conversation.ts`, `work/ToolCard.tsx` | fixed: a card opened from an update is *a call begun earlier*, never its id |
 | S6 | **The driver's permission refusal is raw JSON**: *permission refused: {"toolCallId":…,"rawInput":{…}} (732 chars)*, where the tool and its command are what a reader needs | the driver's note | fixed: the driver names the refused call by its title, else its kind, and gives the note the call's id, so it folds with that call's run; the console keeps the request as the wire said it. A record written before this keeps its JSON, and a long driver note now shows two lines and the rest on a press, since nothing reads that JSON to shorten it |
-| S7 | **The attended session is not marked** among its quest's sessions in *how this work flowed*: two pills under the quest, and nothing says which one is being read | `map/ChainStrip.tsx` | |
+| S7 | **The attended session is not marked** among its quest's sessions in *how this work flowed*: two pills under the quest, and nothing says which one is being read | `map/ChainStrip.tsx` | fixed: the strip marks *this session* and offers no door to it, tells a quest's sessions apart by how long each ran, and underlines the others faintly at rest, as a quest title that is a door is. The strip in a quest's drawer gains the same |
 | S8 | **An empty console holds a third of the centre** after a restart, saying it holds nothing | the output panel | drop: the panel keeps its height on purpose (a panel that moved with its content read as a field on the installed window), and hiding it is one press the window remembers (`daoris.panelClosed`) |
-| S9 | **No way through a long run**: no jump to the first failure or to the last words, no search within the session | `work/SessionConversation.tsx` | |
-| S10 | **What the session caused is not on it**: the branch it left and whether that landed (WSR3) is only on Settings → Session branches | the head | |
+| S9 | **No way through a long run**: no jump to the first failure or to the last words, no search within the session | `work/SessionConversation.tsx` | fixed: a long run (more than a page, or more than 20 blocks) has a toolbar kept at the top of the conversation: *first failure*, from where the driver says the first failed call began (`EventPage.FirstFailure`); *last words*; and *find in this session*, the driver's search within one session (`Within`: what was said and the calls by their titles), stepped with Enter and the arrows. A jump loads the pages before until the page holds its event, opens the fold it lands in and outlines the block. Looked at: on the long run, *first failure* loaded the earlier pages and outlined the first refused call; *gates* found two places, and *last words* the agent's last message |
+| S10 | **What the session caused is not on it**: the branch it left and whether that landed (WSR3) is only on Settings → Session branches | the head | fixed: the head says the branch its own tree left and whether its work landed (*landed on `feature/x`*, *3 commits no branch of yours holds*), from the clean-up's list, found by the tree's folder. Not seen on the window: the scratch machine's one session tree was cleaned up by WSR3's look; the head's and the frame's tests hold it, a Windows path included |
+
+## Not reached by this pass
+
+What the study's §5 asks and these findings did not cover, so SESS1 stays open for it:
+- **What a session waits on, at the top, with the one action that moves it.** No session on the real
+  workspace was waiting when this pass looked, so there was nothing true to look at.
+- **A tool's output read well**: its size when collapsed, a command's exit code and how long it ran.
+- **Where it came from and what it caused, beyond the chain**: the session it carries on from and
+  the answer that resumed it, the quests it published, and the questions it asked another repository.

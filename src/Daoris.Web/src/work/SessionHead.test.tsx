@@ -65,6 +65,25 @@ describe('the attended session\'s head', () => {
     expect(screen.getByRole('button', { name: 'decline…' })).toBeInTheDocument();
   });
 
+  /** SESS1 S10: what its own tree left — the branch, and whether its work is on a branch of the person's. */
+  it('says what its own tree left: the branch, and whether its work landed', () => {
+    const { rerender } = render(<SessionHead session={session({ state: 'completed' })} branch={{
+      repository: 'engine', workspace: 'default', branch: 'daoris/s-a900f1ad', hasTree: true,
+      kind: 'unlanded', commits: 3, removable: false,
+    }} />);
+    expect(screen.getByText('daoris/s-a900f1ad')).toBeInTheDocument();
+    expect(screen.getByText('3 commits no branch of yours holds')).toBeInTheDocument();
+
+    rerender(<SessionHead session={session({ state: 'completed' })} branch={{
+      repository: 'engine', workspace: 'default', branch: 'daoris/s-a900f1ad', hasTree: true,
+      kind: 'landed', commits: 3, where: 'feature/0fda18-fix', removable: true,
+    }} />);
+    expect(screen.getByText('landed on feature/0fda18-fix')).toBeInTheDocument();
+
+    rerender(<SessionHead session={session({ state: 'completed' })} />);
+    expect(screen.queryByText('its work')).toBeNull();
+  });
+
   it('is the record: identity, state, and what the session ran on and as', () => {
     render(<SessionHead session={session()} quest={quest()} />);
 

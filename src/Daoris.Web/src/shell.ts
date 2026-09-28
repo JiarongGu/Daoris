@@ -289,6 +289,8 @@ export const useSweepPlan = () => {
     queryKey: keys.sweep,
     queryFn: () => call<{ branches: SweepBranch[] }>('SWEEP_PLAN'),
     enabled: isAvailable,
+    // It asks git in every repository with a checkout here: a minute is fresh enough to read a session by.
+    staleTime: 60_000,
   });
 };
 
@@ -670,6 +672,8 @@ export function useSessionEvents(sessionId: string | null) {
   const [earlier, setEarlier] = useState(false);
   // What the session was first asked, where the newest page does not hold it (SESS1): a long run reads from it.
   const [opening, setOpening] = useState<SessionEvent | null>(null);
+  // Where the first failed call began, wherever it is in the run (SESS1 S9) — the jump's target.
+  const [firstFailure, setFirstFailure] = useState<number | null>(null);
   // Whether the history has answered, so an empty record reads as "nothing said" only once it is one.
   const [loaded, setLoaded] = useState(false);
   // The newest sequence held, and which session it belongs to — read inside the event handler, which
@@ -695,6 +699,7 @@ export function useSessionEvents(sessionId: string | null) {
     setEvents([]);
     setEarlier(false);
     setOpening(null);
+    setFirstFailure(null);
     setLoaded(false);
     if (!isAvailable || !sessionId) return;
 
@@ -705,6 +710,7 @@ export function useSessionEvents(sessionId: string | null) {
         hold(page.events ?? []);
         setEarlier(Boolean(page.earlier));
         setOpening(page.opening ?? null);
+        setFirstFailure(typeof page.firstFailure === 'number' ? page.firstFailure : null);
       })
       // A record that failed to load is a quiet absence: the session's head above it is already there.
       .catch(() => {})
@@ -744,7 +750,7 @@ export function useSessionEvents(sessionId: string | null) {
     }
   }, [events, history]);
 
-  return { events, opening, earlier, loaded, loadEarlier };
+  return { events, opening, firstFailure, earlier, loaded, loadEarlier };
 }
 
 /** Where a conversation's turns stand, as the driver holds them (CONV4a). */
@@ -1284,12 +1290,14 @@ export type SessionHit = { session: string; seq: number; kind: string; snippet: 
  * record, bounded by the host and saying so (`cut`). Asked from two letters on — one letter matches
  * everything — and the caller debounces, so a word typed is one question, not one per key.
  */
-export const useSessionSearch = (query: string) => {
+export const useSessionSearch = (query: string, session?: string) => {
   const { isAvailable } = useShenora();
   const q = query.trim();
   return useQuery({
-    queryKey: keys.sessionSearch(q),
-    queryFn: () => call<{ query: string; hits: SessionHit[]; cut: boolean }>('SESSION_SEARCH', { q }),
+    queryKey: keys.sessionSearch(q, session),
+    // Within one session, where one is named (SESS1 S9): its words and its calls by their titles.
+    queryFn: () => call<{ query: string; hits: SessionHit[]; cut: boolean }>(
+      'SESSION_SEARCH', { q, ...(session ? { session } : {}) }),
     enabled: isAvailable && q.length >= 2,
     staleTime: 10_000,
     refetchOnWindowFocus: false,

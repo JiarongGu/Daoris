@@ -238,6 +238,45 @@ public sealed class SessionEventsTests : IDisposable
         Assert.Null(events.Page("nothing-asked", limit: 2).Opening);
     }
 
+    /// <summary>
+    /// SESS1 S9: a jump to the first failure needs to know where it began, wherever it is in the run —
+    /// the call's first event, since the failure itself is an update to it.
+    /// </summary>
+    [Fact]
+    public void A_page_says_where_the_first_failed_call_began()
+    {
+        var events = new SessionEvents(_directory);
+        events.Append("a1b2c3", Asked("go", origin: "target"));
+        events.Append("a1b2c3", new SessionEvent { Kind = SessionEventKind.Tool, Id = "c1", Title = "Read a", Status = "completed" });
+        var begun = events.Append("a1b2c3", new SessionEvent { Kind = SessionEventKind.Tool, Id = "c2", Title = "npm test", Status = "in_progress" });
+        events.Append("a1b2c3", Message("hm"));
+        events.Append("a1b2c3", new SessionEvent { Kind = SessionEventKind.Tool, Id = "c2", Status = "failed" });
+
+        Assert.Equal(begun.Seq, events.Page("a1b2c3", limit: 1).FirstFailure);
+        events.Append("clean1", Message("nothing failed"));
+        Assert.Null(events.Page("clean1").FirstFailure);
+    }
+
+    /// <summary>SESS1 S9: one session searched — what was said and the calls by their titles, in order.</summary>
+    [Fact]
+    public void Within_one_session_finds_its_words_and_its_calls_in_order()
+    {
+        var events = new SessionEvents(_directory);
+        events.Append("a1b2c3", Asked("Run the gates and fix what fails"));
+        events.Append("a1b2c3", new SessionEvent { Kind = SessionEventKind.Tool, Id = "c1", Status = "pending" });
+        events.Append("a1b2c3", new SessionEvent { Kind = SessionEventKind.Tool, Id = "c1", Title = "npm run gates", Status = "completed" });
+        events.Append("a1b2c3", Message("The gates are clean."));
+        events.Append("other1", Message("gates elsewhere"));
+
+        var found = events.Within("a1b2c3", "gates");
+
+        Assert.Equal(["user", "tool", "message"], found.Hits.Select(hit => hit.Kind));
+        Assert.Equal(2, found.Hits[1].Seq);
+        Assert.All(found.Hits, hit => Assert.Equal("a1b2c3", hit.Session));
+        Assert.False(found.Cut);
+        Assert.Empty(events.Within("a1b2c3", "g").Hits);
+    }
+
     /// <summary>How a page that missed a live batch closes the gap without re-reading the start.</summary>
     [Fact]
     public void After_answers_only_what_is_newer()

@@ -21,8 +21,8 @@ lists.
 
 ## State
 
-**Counts, and this is their one home:** sixteen commands, **513 CLI tests, 528 service, 862 driver,
-287 desktop modules, 80 devkit, 1252 web unit, 21 Playwright**, 66/66 release rehearsal, **291/291
+**Counts, and this is their one home:** sixteen commands, **513 CLI tests, 528 service, 864 driver,
+287 desktop modules, 80 devkit, 1268 web unit, 21 Playwright**, 66/66 release rehearsal, **291/291
 family rehearsal** (it names its own phases when you run it), **45/45 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge
 documents, 5 skills, 7 packs. The always-loaded core is **22,492 of 26,000 bytes** — a span in
@@ -164,7 +164,8 @@ requirements, and the owner's calls. Its recommended order is the order below.
   from: `LandingRules.Problem` refuses any other form today, and says so.
 - [ ] **SESS1 — the session view: its log and its working relationships** (study §5; in progress,
   its ledger `docs/2026-09-28-sess1-session-view.md` says what the real sessions showed and what each
-  finding became: the reading order and the folds have landed, and S7, S9 and S10 are open). One reading
+  finding became: all ten landed or were dropped. **Still open**, the ledger's *not reached*: what a
+  session waits on at the top, a tool's exit and duration, and the relationships beyond the chain). One reading
   order with the console one press away. Long runs folded, with jumps to the first failure and the last
   words, and search within a session. What it waits on, at the top. Where it came from and what it
   caused, drawn as a thread from the ask to the last step. Looked at on the real workspace's

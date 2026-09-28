@@ -174,6 +174,12 @@ public sealed record EventPage(IReadOnlyList<SessionEvent> Events, bool Earlier,
     /// it, or nothing was asked.
     /// </summary>
     public SessionEvent? Opening { get; init; }
+
+    /// <summary>
+    /// Where the session's first failed call began (SESS1 S9), wherever it is in the run — the call's
+    /// first event, since the failure is an update to it — or null when no call failed.
+    /// </summary>
+    public long? FirstFailure { get; init; }
 }
 
 /// <summary>
@@ -298,9 +304,11 @@ public sealed class SessionEvents(string directory)
         var take = Math.Clamp(limit, 1, MaxPage);
         var page = older.Skip(Math.Max(0, older.Count - take)).ToList();
         var opening = all.FirstOrDefault(e => e.Kind == SessionEventKind.User);
+        var failed = all.FirstOrDefault(e => e.Kind == SessionEventKind.Tool && e.Status == "failed" && e.Id is not null);
         return new EventPage(page, older.Count > page.Count, latest)
         {
             Opening = opening is not null && page.Count > 0 && opening.Seq < page[0].Seq ? opening : null,
+            FirstFailure = failed is null ? null : all.First(e => e.Kind == SessionEventKind.Tool && e.Id == failed.Id).Seq,
         };
     }
 
@@ -402,6 +410,50 @@ public sealed class SessionEvents(string directory)
         }
 
         return new SessionSearch(hits, cut);
+    }
+
+    /// <summary>A search within one session's record, at most — a long run's every mention of a word.</summary>
+    public const int WithinLimit = 100;
+
+    /// <summary>
+    /// One session's record searched (SESS1 S9): what was said, and each call by its title, in the order
+    /// they came — a hit's sequence is where its message or its call began, the block the page draws.
+    /// </summary>
+    public SessionSearch Within(string sessionId, string query, int limit = WithinLimit)
+    {
+        var wanted = query.Trim();
+        var path = PathOf(sessionId);
+        if (wanted.Length < 2 || !File.Exists(path)) return new([], false);
+
+        var hits = new List<SessionHit>();
+        var cut = false;
+        foreach (var (seq, kind, text) in Passages(path).Concat(Calls(path)).OrderBy(passage => passage.Seq))
+        {
+            var at = text.IndexOf(wanted, StringComparison.OrdinalIgnoreCase);
+            if (at < 0) continue;
+            if (hits.Count == limit)
+            {
+                cut = true;
+                break;
+            }
+
+            hits.Add(new SessionHit(sessionId, seq, kind, Snippet(text, at, wanted.Length)));
+        }
+
+        return new SessionSearch(hits, cut);
+    }
+
+    /// <summary>Each call once, by the title its updates last gave it, at the sequence where it began.</summary>
+    private static IEnumerable<(long Seq, string Kind, string Text)> Calls(string path)
+    {
+        var calls = new Dictionary<string, (long Seq, string? Title)>(StringComparer.Ordinal);
+        foreach (var e in Lines(path))
+        {
+            if (e.Kind != SessionEventKind.Tool || e.Id is not { } id) continue;
+            calls[id] = calls.TryGetValue(id, out var known) ? (known.Seq, e.Title ?? known.Title) : (e.Seq, e.Title);
+        }
+
+        return calls.Values.Where(call => call.Title is { Length: > 0 }).Select(call => (call.Seq, SessionEventKind.Tool, call.Title!));
     }
 
     /// <summary>

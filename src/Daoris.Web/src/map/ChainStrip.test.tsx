@@ -72,6 +72,33 @@ describe('the chain strip', () => {
     expect(onSession).toHaveBeenCalledWith(expect.objectContaining({ id: 's1' }));
   });
 
+  /**
+   * SESS1 S7, from the first real workspace: under a quest carried on three times the strip drew three
+   * identical rows, and nothing said which was the one being read.
+   */
+  it('marks the session being read, and tells a quest\'s sessions apart by when and how long', () => {
+    const onSession = vi.fn();
+    render(<ChainStrip
+      attended="s2"
+      chain={buildChain('a', QUESTS, [
+        run('s1', 'a', { state: 'failed', created: '2026-09-23T01:00:00Z', updated: '2026-09-23T01:30:00Z' }),
+        run('s2', 'a', { created: '2026-09-23T02:00:00Z', updated: '2026-09-23T02:12:00Z' }),
+      ])}
+      onSession={onSession}
+    />);
+
+    const rows = within(screen.getByRole('region', { name: 'How this work ran' })).getAllByRole('listitem')
+      .filter((item) => /claude-code/.test(item.textContent ?? '') && item.tagName === 'LI' && !item.querySelector('li'));
+    expect(rows.map((row) => row.textContent)).toEqual([
+      expect.stringMatching(/failed.*claude-code.*ran 30m/),
+      expect.stringMatching(/completed.*claude-code.*ran 12m.*this session/),
+    ]);
+    // The one being read is not a door to itself; the other is.
+    expect(screen.getAllByRole('button', { name: 'claude-code' })).toHaveLength(1);
+    fireEvent.click(screen.getByRole('button', { name: 'claude-code' }));
+    expect(onSession).toHaveBeenCalledWith(expect.objectContaining({ id: 's1' }));
+  });
+
   it('offers no door where the surface gave none', () => {
     render(<ChainStrip chain={buildChain('b', QUESTS, [run('s1', 'a')])} />);
 

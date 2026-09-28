@@ -75,6 +75,8 @@ export type EventPage = {
   latest: number;
   /** What the session was first asked, where the page does not hold it (SESS1) — a long run reads from it. */
   opening?: SessionEvent | null;
+  /** Where the session's first failed call began, wherever it is in the run (SESS1 S9), or null. */
+  firstFailure?: number | null;
 };
 
 /**
@@ -165,10 +167,12 @@ export type Usage = { used: number; size: number; most: number };
  */
 export function toTurns(
   events: readonly SessionEvent[], { opening }: { opening?: SessionEvent | null } = {},
-): { turns: Turn[]; usage?: Usage } {
+): { turns: Turn[]; usage?: Usage; where: Record<number, string> } {
   const turns: Turn[] = [];
   let usage: Usage | undefined;
   let current: Turn | null = null;
+  // Which block each event is part of (SESS1 S9): a jump lands on an event, and shows its block.
+  const where: Record<number, string> = {};
 
   const open = (key: string, ask?: Ask): Turn => {
     const turn: Turn = { key, ask, items: [] };
@@ -186,6 +190,7 @@ export function toTurns(
   // gap after it is where the earlier events belong.
   if (opening && !events.some((event) => event.seq === opening.seq)) {
     open(`e${opening.seq}`, asked(opening, `e${opening.seq}`)).gap = true;
+    where[opening.seq] = `e${opening.seq}`;
   }
 
   for (const event of events) {
@@ -193,6 +198,7 @@ export function toTurns(
     switch (event.kind) {
       case 'user':
         open(key, asked(event, key));
+        where[event.seq] = key;
         break;
       case 'turn': {
         const turn = here(key);
@@ -220,8 +226,10 @@ export function toTurns(
         if (same) {
           last.text = `${last.text ?? ''}${event.text ?? ''}`;
           last.id ??= event.id;
+          where[event.seq] = last.key;
         } else {
           turn.items.push({ key, kind: event.kind, at: event.at, text: event.text ?? '', ...(event.id ? { id: event.id } : {}) });
+          where[event.seq] = key;
         }
         break;
       }
@@ -232,7 +240,9 @@ export function toTurns(
           for (const field of ['title', 'toolKind', 'status', 'locations', 'content', 'input', 'output'] as const) {
             if (event[field] != null) (card as Record<string, unknown>)[field] = event[field];
           }
+          where[event.seq] = card.key;
         } else {
+          where[event.seq] = key;
           turn.items.push({
             key, kind: 'tool', at: event.at, id: event.id, title: event.title, toolKind: event.toolKind,
             status: event.status, locations: event.locations, content: event.content,
@@ -248,6 +258,7 @@ export function toTurns(
         const plan = turn.items.find((b) => b.kind === 'plan');
         if (plan) plan.entries = event.entries ?? [];
         else turn.items.push({ key, kind: 'plan', at: event.at, entries: event.entries ?? [] });
+        where[event.seq] = plan?.key ?? key;
         break;
       }
       case 'usage':
@@ -258,9 +269,11 @@ export function toTurns(
       case 'note':
         // A note about one call carries its id (SESS1 S6), so it folds with that call's run.
         here(key).items.push({ key, kind: 'note', at: event.at, text: event.text, ...(event.id ? { id: event.id } : {}) });
+        where[event.seq] = key;
         break;
       default:
         here(key).items.push({ key, kind: 'raw', at: event.at, title: event.title, text: event.text, raw: event.raw });
+        where[event.seq] = key;
     }
   }
 
@@ -270,7 +283,7 @@ export function toTurns(
     if (turn.ask && first) turn.firstAfter = since(turn.ask.at, first.at);
   }
 
-  return { turns, usage };
+  return { turns, usage, where };
 }
 
 /**

@@ -1244,6 +1244,24 @@ describe('acting on what a session landed', () => {
     expect(screen.getByText('feature/0fda18-fix', { selector: 'code' })).toBeTruthy();
   });
 
+  /** SESS1 S10: the head finds its branch in the clean-up's list by the tree's folder, on a Windows path too. */
+  it('names the branch its tree left and whether its work landed, in the head', async () => {
+    SESSIONS = [{ ...IN_A_TREE, tree: 'C:\\somewhere\\.daoris\\trees\\default\\engine\\s-abc12345' }];
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'SESSION_DIFF') return DIFF;
+      if (type === 'SWEEP_PLAN') {
+        return { branches: [{ repository: 'engine', workspace: 'default', branch: 'daoris/s-abc12345', hasTree: true,
+          kind: 'landed', commits: 2, where: 'feature/x', removable: true }] };
+      }
+      return DRIVER_STATE;
+    });
+
+    show('s1a2b3c4');
+
+    expect(await screen.findByText('landed on feature/x')).toBeTruthy();
+    expect(screen.getByText('daoris/s-abc12345')).toBeTruthy();
+  });
+
   it('accepts by asking the driver to land the work, and renders whatever it says back', async () => {
     invoke.mockImplementation(async (_module: string, type: string) => {
       if (type === 'SESSION_DIFF') return DIFF;

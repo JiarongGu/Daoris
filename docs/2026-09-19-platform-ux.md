@@ -298,7 +298,10 @@ controls are in the frame design's §3.
     failures in the failed tone (*5 tool calls · 1 failed*); a run of one is shown as itself, and the
     run in hand stays open while the turn goes on, which says *working…*. A driven session is one
     turn, so folding a turn whole hid its account of the run. A turn the session ended inside says so,
-    and its open calls read *stopped*. The driver's composed
+    and its open calls read *stopped*. **A long run has a way through**, kept at the top of the
+    conversation: *first failure*, *last words*, and *find in this session*; a jump opens the fold it
+    lands in and outlines the block. The head says the branch its own tree left and whether its work
+    landed, and *how this work ran* marks *this session*. The driver's composed
     target is folded to two lines and named as the driver's. A tool call is a row that says what it
     did (its kind's glyph, title, file, an edit's `+n −m`, its status), closed by default and open when
     it failed, its text without the fence an adapter wrapped it in (U63). **Code is the paper's

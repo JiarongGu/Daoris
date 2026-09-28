@@ -54,7 +54,7 @@ export const keys = {
   allOpenings: ['openings'] as const,
   openings: (ids: string[]) => ['openings', ...ids] as const,
   /** What sessions said, searched on this machine's record (RAIL1) — shell-only. */
-  sessionSearch: (q: string) => ['session-search', q] as const,
+  sessionSearch: (q: string, session?: string) => ['session-search', q, session ?? ''] as const,
   entry: (id: string) => ['entry', id] as const,
   convergence: (minimumSimilarity: number, workspace: string | null) =>
     ['convergence', minimumSimilarity, workspace ?? '*'] as const,

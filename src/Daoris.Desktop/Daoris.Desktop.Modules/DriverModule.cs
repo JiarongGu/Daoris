@@ -224,7 +224,7 @@ public sealed class DriverModule : ModuleBase
                 var page = Number(request, "after") is { } after
                     ? _loop.Events.After(id, after)
                     : _loop.Events.Page(id, Number(request, "before"), (int)(Number(request, "limit") ?? SessionEvents.PageLimit));
-                return new { Session = id, Events = page.Events.ToArray(), page.Earlier, page.Latest, page.Opening };
+                return new { Session = id, Events = page.Events.ToArray(), page.Earlier, page.Latest, page.Opening, page.FirstFailure };
             }
 
             case "TAIL_SESSION":
@@ -391,7 +391,8 @@ public sealed class DriverModule : ModuleBase
             {
                 var query = PayloadHelper.GetRequiredValue<string>(request.Payload, "q");
                 await Task.CompletedTask;
-                var found = _loop.Events.Search(query);
+                // Within one session, where the page names it (SESS1 S9): its words and its calls' titles.
+                var found = Optional(request, "session") is { } one ? _loop.Events.Within(one, query) : _loop.Events.Search(query);
                 return new
                 {
                     Query = query,

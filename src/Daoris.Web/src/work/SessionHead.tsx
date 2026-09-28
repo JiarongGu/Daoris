@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next';
+import type { SweepBranch } from '../settings/Sweep';
 import type { Quest, Session } from '../api';
 import { ago, elapsed, sessionTool } from '../format';
 import { MetaLine, Pill, SESSION_ACTIVE, SESSION_TONE, shownState, WaitingCard } from '../ui';
@@ -34,9 +35,14 @@ import { RunningIntake } from './RunningIntake';
  */
 export function SessionHead({
   session, quest, opening, taking, resolving = false, stopping = false, onResolve, onAnswerAsk, onStop,
-  onAnswerSession,
+  onAnswerSession, branch,
 }: {
   session: Session;
+  /**
+   * The branch its own tree left, as the clean-up judged it (SESS1 S10, D88): whether its work landed,
+   * where, or what only it holds. Absent where it has no tree of its own here, or nothing has answered.
+   */
+  branch?: SweepBranch | null;
   /** Whether a turn is in flight, as the driver says: a live chat between turns reads idle (UX5 U17). */
   taking?: boolean;
   /** The quest it serves, where the caller has it — absent is a state, not a gap (D49 §3). */
@@ -134,9 +140,23 @@ export function SessionHead({
             value: elapsed(session.created, running ? null : session.updated),
           },
           { label: t('work.head.moved'), value: ago(session.updated) },
+          // What it left (SESS1 S10): the branch, and whether its work is on a branch of the person's.
+          { label: t('work.head.branch'), value: branch?.branch ?? null, mono: true },
+          { label: t('work.head.itsWork'), value: branch ? landed(t, branch) : null },
         ]}
       />
 
     </header>
   );
+}
+
+/** Whether a session's branch landed, in a few words for the head (D88's proof). */
+function landed(t: (key: string, options?: Record<string, unknown>) => string, branch: SweepBranch): string {
+  switch (branch.kind) {
+    case 'empty': return t('work.head.landed.empty', { line: branch.where ?? '' });
+    case 'landed': return branch.where ? t('work.head.landed.on', { where: branch.where }) : t('work.head.landed.somewhere');
+    case 'unlanded': return t('work.head.landed.not', { count: branch.commits });
+    case 'dirty': return t('work.head.landed.dirty');
+    default: return t('work.head.landed.inUse');
+  }
 }

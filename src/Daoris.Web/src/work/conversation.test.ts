@@ -248,6 +248,22 @@ describe('toTurns, on a page of a long run', () => {
   });
 });
 
+/** SESS1 S9: a jump lands on an event; the page opens and shows the block that event is part of. */
+describe('where each event landed', () => {
+  it('names the block each event is part of: a message\'s chunks, a call\'s updates, the ask', () => {
+    const { where } = toTurns([
+      e(1, { kind: 'user', text: 'go' }),
+      e(2, { text: 'Look' }),
+      e(3, { text: 'ing.' }),
+      e(4, { kind: 'tool', id: 'c1', title: 'npm test', status: 'in_progress' }),
+      e(5, { kind: 'usage', used: 1, size: 2 }),
+      e(6, { kind: 'tool', id: 'c1', status: 'failed' }),
+    ]);
+
+    expect(where).toEqual({ 1: 'e1', 2: 'e2', 3: 'e2', 4: 'e4', 6: 'e4' });
+  });
+});
+
 describe('settle', () => {
   const run = (...over: Partial<SessionEvent>[]) => toTurns(over.map((o, i) => e(i + 1, o))).turns;
 

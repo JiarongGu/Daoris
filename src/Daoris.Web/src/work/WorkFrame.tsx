@@ -6,7 +6,7 @@ import { buildChain } from '../map/chain';
 import { useAnswerSession, useQuests, useRegistry, useSessions } from '../queries';
 import {
   stopNotice, type TurnStop, useCancelTurn, useEndChat, useHarnesses, useResolveSession, useSendMessage,
-  NO_TURNS, useChatTurns, useSessionOpenings, useSessionStreams, useStartChat, useStopSession, useTreeFiles,
+  NO_TURNS, useChatTurns, useSessionOpenings, useSessionStreams, useStartChat, useStopSession, useSweepPlan, useTreeFiles,
 } from '../shell';
 import { Button, Drawer, failure, Icon, type Notify, SESSION_ACTIVE, Tip, useErrorNotify } from '../ui';
 import { AttendedSession, noteIsInTheHead } from './AttendedSession';
@@ -217,6 +217,13 @@ export function WorkFrame({ selected, onSelect, notify, onSendBack, onAnswerAsk,
     ? (quests.data ?? []).find((row) => row.id === attended.quest) ?? null
     : null;
   const live = attended ? SESSION_ACTIVE.has(attended.state) : false;
+  // What the attended session's own tree left (SESS1 S10): its branch in the clean-up's list, found by
+  // the name the trees give it — `daoris/` and the tree's folder.
+  const sweep = useSweepPlan();
+  const branch = attended?.tree && Array.isArray(sweep.data?.branches)
+    ? sweep.data.branches.find((row) => row.repository === attended.repository
+      && row.branch === `daoris/${attended.tree!.split(/[\\/]/).filter(Boolean).pop()}`) ?? null
+    : null;
 
   // What the session runs beside itself, a tab each in the panel (CONSOLE2c). The panel shows the
   // session's own console unless the person picked a stream of it, and one it no longer lists falls
@@ -555,6 +562,7 @@ export function WorkFrame({ selected, onSelect, notify, onSendBack, onAnswerAsk,
             onStop={here && intake ? onStop : undefined}
             chain={quest ? buildChain(quest.id, quests.data ?? [], sessions.data ?? []) : []}
             onSession={(session) => attend(session.id)}
+            branch={branch}
           />
           {/* The conversation (D76): below the record, in the same scroll, so the head is read once
               and the words are what the region follows. Only where the session ran: a teammate's

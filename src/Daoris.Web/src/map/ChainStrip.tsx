@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import type { Quest, Session } from '../api';
-import { sessionTool } from '../format';
+import { elapsed, sessionTool } from '../format';
 import { Pill, QUEST_TONE, SectionTitle, SESSION_TONE } from '../ui';
 import { cn } from '../lib/cn';
 import type { ChainStep } from './chain';
@@ -28,8 +28,10 @@ const MARK: Record<ChainStep['kind'], string> = {
  * quest being read is named as such, and a step not yet published says so. A mark's hue only
  * repeats what the words already say.
  */
-export function ChainStrip({ chain, level = 2, onQuest, onSession }: {
+export function ChainStrip({ chain, level = 2, attended, onQuest, onSession }: {
   chain: ChainStep[];
+  /** The session being read, where the strip sits beside one: marked, and no door to itself (SESS1 S7). */
+  attended?: string;
   /** The heading level where it sits: its own section in a drawer, under a session's head in Work. */
   level?: 2 | 3;
   onQuest?: (quest: Quest) => void;
@@ -50,7 +52,7 @@ export function ChainStrip({ chain, level = 2, onQuest, onSession }: {
               className={cn('absolute left-0 top-1.5 size-[7px] rounded-full border', MARK[step.kind],
                 step.kind === 'quest' && step.current && 'size-[9px] -left-px top-[5px] bg-accent')}
             />
-            <Step step={step} onQuest={onQuest} onSession={onSession} />
+            <Step step={step} attended={attended} onQuest={onQuest} onSession={onSession} />
           </li>
         ))}
       </ol>
@@ -67,8 +69,9 @@ function key(step: ChainStep, index: number): string {
   return `${step.kind}-${step.id}`;
 }
 
-function Step({ step, onQuest, onSession }: {
+function Step({ step, attended, onQuest, onSession }: {
   step: ChainStep;
+  attended?: string;
   onQuest?: (quest: Quest) => void;
   onSession?: (session: Session) => void;
 }) {
@@ -137,22 +140,30 @@ function Step({ step, onQuest, onSession }: {
         )
         : (
           <ul className="m-0 grid list-none gap-1 p-0">
-            {sessions.map((session) => (
-              <li key={session.id} className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5">
-                <Pill tone={SESSION_TONE[session.state]}>{t(`sessionState.${session.state}`)}</Pill>
-                {onSession
-                  ? (
-                    <button
-                      type="button"
-                      onClick={() => onSession(session)}
-                      className="min-w-0 cursor-pointer truncate border-0 bg-transparent p-0 text-left font-mono text-meta text-ink-soft underline-offset-2 hover:text-accent hover:underline"
-                    >
-                      {sessionTool(session)}
-                    </button>
-                  )
-                  : <span className="min-w-0 truncate font-mono text-meta text-ink-soft">{sessionTool(session)}</span>}
-              </li>
-            ))}
+            {sessions.map((session) => {
+              // A quest carried on several times drew identical rows: when and how long tell them
+              // apart, and the one being read says so and is no door to itself (SESS1 S7).
+              const here = session.id === attended;
+              return (
+                <li key={session.id} className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5">
+                  <Pill tone={SESSION_TONE[session.state]}>{t(`sessionState.${session.state}`)}</Pill>
+                  {onSession && !here
+                    ? (
+                      <button
+                        type="button"
+                        onClick={() => onSession(session)}
+                        // Underlined at rest, faintly, as a quest title that is a door is.
+                        className="min-w-0 cursor-pointer truncate border-0 bg-transparent p-0 text-left font-mono text-meta text-ink-soft underline decoration-line-strong underline-offset-2 hover:text-accent hover:decoration-accent"
+                      >
+                        {sessionTool(session)}
+                      </button>
+                    )
+                    : <span className="min-w-0 truncate font-mono text-meta text-ink-soft">{sessionTool(session)}</span>}
+                  <span className="text-meta text-ink-faint">{t('chain.ran', { span: elapsed(session.created, session.updated) })}</span>
+                  {here && <span className="text-meta font-medium text-ink">{t('chain.thisSession')}</span>}
+                </li>
+              );
+            })}
           </ul>
         )}
     </div>

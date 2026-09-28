@@ -3,6 +3,7 @@ import type { Quest, Session } from '../api';
 import { EmptyState } from '../ui';
 import type { ChainStep } from '../map/chain';
 import { ChainStrip } from '../map/ChainStrip';
+import type { SweepBranch } from '../settings/Sweep';
 import type { Resolution } from './AwaitingPerson';
 import { SessionHead } from './SessionHead';
 import { SessionTimeline } from './SessionTimeline';
@@ -37,8 +38,10 @@ export const noteIsInTheHead = (session: Session, answerableHere: boolean) =>
 
 export function AttendedSession({
   session, quest, opening, taking, resolving, stopping, onResolve, onAnswerAsk, onStop, onAnswerSession,
-  chain = [], onSession, timeline = 'dock',
+  chain = [], onSession, timeline = 'dock', branch,
 }: {
+  /** The branch its own tree left, as the clean-up judged it (SESS1 S10) — the head's. */
+  branch?: SweepBranch | null;
   /** The attended session, or null when the person has not chosen one. */
   session: Session | null;
   quest?: Quest | null;
@@ -96,8 +99,9 @@ export function AttendedSession({
         onAnswerAsk={onAnswerAsk}
         onStop={onStop}
         onAnswerSession={onAnswerSession}
+        branch={branch}
       />
-      {chain.length > 1 && <ChainStrip chain={chain} level={3} onSession={onSession} />}
+      {chain.length > 1 && <ChainStrip chain={chain} level={3} attended={session.id} onSession={onSession} />}
       {/* The timeline lives in the right dock since SURF6 gave the dock its second occupant. It stayed
           here on a narrow window while the dock was hidden there; FRAME6 keeps the dock at every width,
           and the copy here drew it twice. Only a window with no dock carries it. */}
