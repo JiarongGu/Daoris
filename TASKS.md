@@ -435,7 +435,9 @@ TDD, looked at on the window, and the ones that touch a real session use one (au
   was slow, so it needs the same treatment. **Seen again 2026-09-28**, beside a third: in consecutive
   full runs the `acp-stub` case failed once, then `HookTests.A_real_hook_process_is_started_in_its_folder_with_its_data_and_id_in_the_environment`
   failed in its cleanup, the plugin folder still held by the hook's process, and the next full run
-  passed 862/862. The cleanup deletes before the process has let go.
+  passed 862/862. The cleanup deletes before the process has let go. **Seen again 2026-09-29**: one
+  failure in a full run of 898 during HELP1c, not named because only the summary line was kept; the
+  next three full runs passed 898/898. Keep a full run's whole output, so the next one names itself.
 
 - [ ] **DEPLOY5 — the artefact gate holds a chat open at close.** The fix for a chat left `working`
   when the shell closes (FIX-LOG, 2026-09-25) is held by driver tests at the runner. But the defect
