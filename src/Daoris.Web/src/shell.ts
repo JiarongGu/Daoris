@@ -7,6 +7,7 @@ import type { ToolDoor } from './tools';
 // The shape lives beside the components that render it, so a molecule can name it without
 // importing this module (SURF6).
 import type { SessionDiff } from './work/diff';
+import type { HelpProposal } from './help/ProposalCard';
 import { type ChatMessage, type EventPage, mergeEvents, type SessionEvent } from './work/conversation';
 import { toUpload } from './attachments';
 import type { WiringAnswer } from './map/wiring';
@@ -903,6 +904,39 @@ export const useStartHelp = () => {
   return useMutation({
     mutationFn: () => call<{ sessionId: string | null; message: string; running?: boolean }>('START_HELP'),
     onSuccess: () => void client.invalidateQueries({ queryKey: keys.allSessions }),
+  });
+};
+
+/**
+ * What one conversation of Ask Daoris's proposed that waits for the person (HELP1c, D89), each already
+ * judged with the route's own code: one the route would refuse never arrives here, and its agent is told
+ * why. Asked again every few seconds while the conversation runs, since a proposal lands mid-turn.
+ */
+export const useHelpProposals = (session: string | null, live: boolean) => {
+  const { isAvailable } = useShenora();
+  return useQuery({
+    queryKey: ['help-proposals', session],
+    queryFn: async () => {
+      const answer = await call<{ proposals?: unknown }>('HELP_PROPOSALS', { session: session! });
+      return Array.isArray(answer?.proposals) ? answer.proposals as HelpProposal[] : [];
+    },
+    enabled: isAvailable && session !== null,
+    refetchInterval: live ? 4000 : false,
+  });
+};
+
+/** The person's Apply and Not now on a proposal: the result goes back into the conversation (D89). */
+export const useSettleHelp = () => {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (settle: { id: string; apply: boolean }) =>
+      call<{ message: string; applied?: boolean }>(settle.apply ? 'HELP_APPLY' : 'HELP_DISMISS', { id: settle.id }),
+    onSuccess: () => {
+      void client.invalidateQueries({ queryKey: ['help-proposals'] });
+      // What an Apply changed: the driver's file, and an ask it made.
+      void client.invalidateQueries({ queryKey: keys.driver });
+      void client.invalidateQueries({ queryKey: keys.allSessions });
+    },
   });
 };
 

@@ -7199,3 +7199,40 @@ shown as such.*
 - On the scratch shell: the card listed the one real session tree's branch as holding nothing beyond
   `main`, the press removed it and its tree, and git then showed no session branch and only the root's
   worktree.
+
+## HELP1 — ask Daoris (2026-09-29 → D89)
+
+The row as filed: *(study §4; the design note is `docs/2026-09-29-ask-daoris-design.md`, its two calls
+made as D89). A chat about Daoris itself, from a button on the strip, the palette and `F1`, in the right
+dock. It knows the view and the selection. It helps by proposing Daoris's own terminal commands (D50),
+each confirmed by the person, and turns start something into an ask. Starter prompts come from what the
+machine lacks. It is a harness session in a room of its own, allowed only `daoris` and `daoris-driver`.
+The owner's calls: its harness and account, and whether a confirmation may be remembered.*
+
+**The owner's calls** (D89): its own agent under Settings → *Daoris's own AI*, off until named; and
+always confirm, nothing remembered.
+
+**Outcome**, in five landings, each looked at on the scratch window with real conversations:
+- **Its agent** (`af014aa`): `helperAdapter`, `daoris driver helper <agent>|off`, `SET_HELPER`.
+- **HELP1d, the panel** (`9759d83`): at the application's right edge rather than a tab of Sessions'
+  dock, which closes with a change of view; its starters from what the machine lacks, each with its
+  screen and command.
+- **HELP1a, the conversation** (`a42219e`): a room under the home written from the driver's own
+  answers, a chat in it recorded in `daoris:help`, one running per room. **Its session runs in the
+  agent's own asking mode, the one exception to D81**: under `auto` the first real conversation ran
+  shell commands over a checkout, and a helper able to run a command could run `daoris driver`
+  unconfirmed. The strip's door became a named button, the owner having found no easy way in.
+- **HELP1b, where the person is** (`c818525`): one agent-facing line ahead of the words, when it
+  changed, kept in the record as a note and never as the person's; the attended session found among
+  ended ones too. The rail's group says Ask Daoris.
+- **HELP1c, proposals**: `setting_propose` and `ask_propose` write a file each; the driver judges
+  one with the route's own code and names, shows the card or hands the refusal back to the
+  conversation, and *apply* makes the screen's edit. Never `permission_propose`.
+- **Not built**: a refusal the screen shows is not carried in the preface (nothing holds one in a
+  shape the page can hand over), and "the machine as it stands" is read once, at each open.
+
+**Proven by:** the service's help-session and proposal-box tests; the driver's room, chat (the
+protocol door's mode, the connector, the preface) and proposal tests; the modules' routes; the
+page's panel, conversation, preface and card tests; the family rehearsal, the deployment rehearsal
+and Playwright, unchanged and green.
+

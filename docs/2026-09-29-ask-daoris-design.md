@@ -128,7 +128,14 @@ line git can name. With an agent named, a starter is also a first message.
    pending proposal with the route's code when the panel asks for them; one the route would refuse is
    never shown, and its refusal goes back into the conversation in the route's words. *Apply* makes
    the same edit the screen's route makes, and *Not now* dismisses; either result goes back into the
-   conversation as the person's next message.
+   conversation as the person's next message. *Built 2026-09-29, as planned*: the doors are the
+   twelve `daoris driver` verbs the room's table names (drive, undrive, hold, resume, trees, line,
+   landing, intake, helper, strikes, timeout, notify) and an ask. The driver's check is the config's
+   own edits, which throw the route's refusal, plus the names the routes do not check and a helper
+   can invent: a registered repository, a workspace, an agent. **Not the rules**: the room is never
+   handed `permission_propose`, since PERM2 applies a narrowing with nobody's press. On the scratch
+   window, asked to make a repository land on feature branches, the helper proposed exactly that
+   with its reason; *apply* wrote the file the screen writes, and it acknowledged the result.
 4. **HELP1d**: the starters, and the no-agent tier. *Built 2026-09-29:* waiting sessions, nothing
    registered or driven, a tool no account is signed in to, a repository with no line, and Ask Daoris
    with no agent, each with its door and its terminal command; the strip's button, the palette's

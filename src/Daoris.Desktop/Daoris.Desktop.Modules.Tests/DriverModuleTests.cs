@@ -791,6 +791,31 @@ public sealed class DriverModuleTests : Bridge
         Assert.Contains("daoris driver helper <agent>", refusal);
     }
 
+    /// <summary>
+    /// HELP1c: the person's Not now settles a proposal of Ask Daoris's, and a settled one takes no second
+    /// press. Listing and applying judge against the registry, so they wait for the loop like the review.
+    /// </summary>
+    [Fact]
+    public async Task Not_now_settles_an_Ask_Daoris_proposal_once_and_listing_waits_for_the_loop()
+    {
+        var folder = HelpProposals.FolderOf(Path.GetDirectoryName(DriverConfigPath)!);
+        Directory.CreateDirectory(folder);
+        File.WriteAllText(Path.Combine(folder, "p1a2b3c4.json"), """
+            { "id": "p1a2b3c4", "proposed": "2026-09-29T10:00:00Z", "by": { "session": "h1" }, "kind": "setting",
+              "door": "drive", "target": "engine", "workspace": null, "value": null, "sentence": null,
+              "why": "the person asked", "state": "proposed", "note": null }
+            """);
+        var module = Module();
+
+        var dismissed = await AnswerAsync(module, "HELP_DISMISS", new { id = "p1a2b3c4" });
+
+        Assert.Contains("did not apply `#p1a2b3c4`", dismissed.GetProperty("message").GetString());
+        Assert.Equal("dismissed", HelpProposals.Find(Path.GetDirectoryName(DriverConfigPath)!, "p1a2b3c4")!.State);
+        Assert.Contains("already dismissed", await RefusalAsync(module, "HELP_DISMISS", new { id = "p1a2b3c4" }));
+        Assert.Contains(Refusals.DriverNotReady, await RefusalAsync(module, "HELP_PROPOSALS", new { session = "h1" }));
+        Assert.Contains(Refusals.DriverNotReady, await RefusalAsync(module, "HELP_APPLY", new { id = "p1a2b3c4" }));
+    }
+
     [Fact]
     public async Task Ask_Daoris_asked_for_before_the_loop_is_up_says_so()
     {

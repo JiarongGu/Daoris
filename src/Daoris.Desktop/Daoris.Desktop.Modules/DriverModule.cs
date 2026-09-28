@@ -342,6 +342,84 @@ public sealed class DriverModule : ModuleBase
                 return new { start.SessionId, start.Message, Running = false };
             }
 
+            // Ask Daoris's proposals (HELP1c, D89): what one conversation proposed that waits for the
+            // person, each judged with the route's own code first. One the route would refuse is never
+            // shown: it is settled refused, and the agent hears why in the route's words.
+            case "HELP_PROPOSALS":
+            {
+                var session = PayloadHelper.GetRequiredValue<string>(request.Payload, "session");
+                var service = _loop.Service ?? throw NotReady();
+                var (config, facts) = await HelpFactsAsync(service, cancellationToken).ConfigureAwait(false);
+                var shown = new List<object>();
+                foreach (var proposal in HelpProposals.Pending(_loop.Home, session))
+                {
+                    var plan = HelpProposals.Plan(proposal, config, facts);
+                    if (plan.Refusal is { } refused)
+                    {
+                        HelpProposals.Settle(_loop.Home, proposal.Id, "refused", refused);
+                        _loop.Chat?.Say(session, $"Daoris did not show proposal `#{proposal.Id}` to the person — the route refuses it: {refused}");
+                        continue;
+                    }
+
+                    shown.Add(new { proposal.Id, proposal.Kind, plan.Describe, plan.Terminal, proposal.Why });
+                }
+
+                return new { Session = session, Proposals = shown.ToArray() };
+            }
+
+            // The person's Apply: the same edit the screen's route makes, judged again first, since the
+            // machine may have moved since the card was drawn. The result goes back into the conversation
+            // as the person's next message, so the agent knows (D89).
+            case "HELP_APPLY":
+            {
+                var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
+                var service = _loop.Service ?? throw NotReady();
+                var proposal = HelpProposals.Find(_loop.Home, id)
+                    ?? throw new DriverException($"there is no proposal `#{id}` on this machine.");
+                if (proposal.State != "proposed") throw new DriverException($"proposal `#{id}` is already {proposal.State}.");
+
+                var (config, facts) = await HelpFactsAsync(service, cancellationToken).ConfigureAwait(false);
+                var plan = HelpProposals.Plan(proposal, config, facts);
+                string told;
+                if (plan.Refusal is { } refused)
+                {
+                    HelpProposals.Settle(_loop.Home, id, "refused", refused);
+                    told = $"Not applied: `#{id}` — the route refuses it: {refused}";
+                }
+                else if (proposal.Kind == "ask")
+                {
+                    var answer = await service
+                        .AskAsync(proposal.Workspace!, proposal.Sentence!, [], [], null, cancellationToken).ConfigureAwait(false);
+                    HelpProposals.Settle(_loop.Home, id, answer.Ok ? "applied" : "refused", answer.Message);
+                    told = $"{(answer.Ok ? "Applied" : "Not applied")}: `#{id}` (`{plan.Terminal}`) — {answer.Message}";
+                    _loop.Nudge();
+                }
+                else
+                {
+                    Change(plan.Apply!);
+                    HelpProposals.Settle(_loop.Home, id, "applied", null);
+                    told = $"Applied: `#{id}` — {plan.Describe} (`{plan.Terminal}`)";
+                }
+
+                if (proposal.Session is { } said) _loop.Chat?.Say(said, told);
+                return new { Message = told, Applied = plan.Refusal is null };
+            }
+
+            // The person's Not now: nothing changes, and the agent is told so.
+            case "HELP_DISMISS":
+            {
+                var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
+                var proposal = HelpProposals.Find(_loop.Home, id)
+                    ?? throw new DriverException($"there is no proposal `#{id}` on this machine.");
+                if (proposal.State != "proposed") throw new DriverException($"proposal `#{id}` is already {proposal.State}.");
+
+                HelpProposals.Settle(_loop.Home, id, "dismissed", null);
+                var told = $"Not now: the person did not apply `#{id}`.";
+                if (proposal.Session is { } said) _loop.Chat?.Say(said, told);
+                await Task.CompletedTask.ConfigureAwait(false);
+                return new { Message = told };
+            }
+
             // The person's half of the turn-taking. False is an answer — the session ended while they
             // were typing — and never an error. 🔴 A session that takes no input is REFUSED instead, in
             // the driver's words (INT4h): false would tell a stale page it ended when it is running.
@@ -1757,6 +1835,19 @@ public sealed class DriverModule : ModuleBase
                 .Select(p => new { Workspace = p.Key, p.Value.Form, p.Value.Pattern, p.Value.Tidy }).ToArray(),
             Running = _loop.Processes.Running,
         };
+    }
+
+    /// <summary>
+    /// What a proposal of Ask Daoris's is judged against (HELP1c): the driver's file, and the names the
+    /// machine holds — its registered repositories and their circles, and the agents it has.
+    /// </summary>
+    private async Task<(DriverConfig Config, HelpMachineFacts Facts)> HelpFactsAsync(ServiceClient service, CancellationToken ct)
+    {
+        var snapshot = await service.SnapshotAsync(ct).ConfigureAwait(false);
+        var workspaces = snapshot.Repositories.Select(known => known.Workspace)
+            .Append(RemoteTarget.DefaultWorkspace).Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
+        return (DriverConfig.Load(_loop.ConfigPath), new HelpMachineFacts(
+            [.. snapshot.Repositories.Select(known => known.Repository)], workspaces, _loop.Harnesses.Adapters.Names));
     }
 
     private void Change(Func<DriverConfig, DriverConfig> change)

@@ -4,12 +4,14 @@ import { HELP_REPOSITORY } from '../api';
 import { sentence } from '../format';
 import { useHelpSessions } from '../queries';
 import {
-  NO_TURNS, useCancelTurn, useChatTurns, useEndChat, useHarnesses, useSendMessage, useStartHelp, useStopSession,
+  NO_TURNS, useCancelTurn, useChatTurns, useEndChat, useHarnesses, useHelpProposals, useSendMessage, useSettleHelp,
+  useStartHelp, useStopSession,
 } from '../shell';
 import { SESSION_ACTIVE } from '../ui';
 import { Composer } from '../work/Composer';
 import { SessionConversation } from '../work/SessionConversation';
 import type { AskConversationSlot } from './AskPanel';
+import { ProposalCard } from './ProposalCard';
 import { type HelpWhere, prefaceOf } from './where';
 
 /**
@@ -137,6 +139,27 @@ export function useAskConversation(scroller: RefObject<HTMLElement | null>, wher
     />
   );
 
-  const slot: AskConversationSlot = { body: conversation, composer, ended: shown !== null && !live, onNew: shown ? onNew : undefined };
+  // What the conversation proposes (HELP1c): each card is judged by the route before it arrives, and
+  // Apply or Not now goes back into the conversation as the person's next message.
+  const proposals = useHelpProposals(shown?.id ?? null, live);
+  const settle = useSettleHelp();
+  const cards = proposals.data ?? [];
+  const proposed = cards.length > 0 ? (
+    <ul aria-label={t('help.proposal.list')} className="m-0 mt-3 grid list-none gap-2.5 p-0">
+      {cards.map((proposal) => (
+        <ProposalCard
+          key={proposal.id}
+          proposal={proposal}
+          pending={settle.isPending}
+          onApply={(id) => settle.mutate({ id, apply: true }, { onError: (error) => setRefusal(sentence(error)) })}
+          onDismiss={(id) => settle.mutate({ id, apply: false }, { onError: (error) => setRefusal(sentence(error)) })}
+        />
+      ))}
+    </ul>
+  ) : null;
+
+  const slot: AskConversationSlot = {
+    body: conversation, proposals: proposed, composer, ended: shown !== null && !live, onNew: shown ? onNew : undefined,
+  };
   return slot;
 }

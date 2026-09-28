@@ -96,6 +96,8 @@ builder.Services.AddSingleton(intake);
 // Where a session's proposal to change the rules goes (PERM2, D74): the home the driver names on the
 // connector it offers — the one its rules live in — else the account's. A file there, never a row.
 builder.Services.AddSingleton(RuleProposalBox.FromEnvironment());
+// And Ask Daoris's (HELP1c, D89), under the same home: a file each, for the person to apply.
+builder.Services.AddSingleton(HelpProposalBox.FromEnvironment());
 
 // The ambient scope (D48 §4): this process is spawned BY a repository's session, so its working
 // directory is that repository — which is the one thing that makes "my own circle" answerable without

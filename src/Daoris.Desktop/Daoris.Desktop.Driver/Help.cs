@@ -114,6 +114,10 @@ public static class HelpRoom
         $"mcp__{KnowledgeConnector.ServerName}__knowledge_get",
         $"mcp__{KnowledgeConnector.ServerName}__knowledge_repositories",
         $"mcp__{KnowledgeConnector.ServerName}__quest_list",
+        // It proposes, and the person applies (HELP1c, D89). Never `permission_propose`: PERM2 applies a
+        // narrowing at the tick with nobody's press, and every change here is the person's.
+        $"mcp__{KnowledgeConnector.ServerName}__setting_propose",
+        $"mcp__{KnowledgeConnector.ServerName}__ask_propose",
     ];
 
     public static string PathOf(string home) => Path.Combine(home, Folder);
@@ -194,12 +198,16 @@ public static class HelpRoom
         text.Append("edit here is overwritten.\n\n");
 
         text.Append("## What you may do\n\n");
-        text.Append("You read, and you advise. You change nothing: every change is the person's, made on a screen or with\n");
-        text.Append("a terminal command, and the two always do the same thing. When a change would help, name both: the\n");
-        text.Append("screen and where on it, and the command. Read the family through `daoris-knowledge` (the registry,\n");
-        text.Append("its knowledge, its quests) when the question needs more than this page.\n\n");
+        text.Append("You read, you advise, and you propose. You change nothing yourself: every change is the person's, made\n");
+        text.Append("on a screen or with a terminal command, and the two always do the same thing. When a change would\n");
+        text.Append("help, name both — the screen and where on it, and the command — and, where the person wants it made,\n");
+        text.Append("propose it: `setting_propose` for one of the doors below that `daoris driver` spells, `ask_propose` to\n");
+        text.Append("start something as an ask at a workspace. A proposal is a card with Apply and Not now; nothing\n");
+        text.Append("changes until the person presses Apply, and their answer comes back as their next message. Read the\n");
+        text.Append("family through `daoris-knowledge` (the registry, its knowledge, its quests) when the question needs\n");
+        text.Append("more than this page.\n\n");
         text.Append("Never offer to push, merge, discard, sign in, or handle a key: those stay the person's own presses,\n");
-        text.Append("where they already are. Starting work is an ask, and an ask is the person's to make.\n\n");
+        text.Append("where they already are.\n\n");
 
         text.Append("## The doors\n\n");
         text.Append("| To | On the screen | At a terminal |\n");

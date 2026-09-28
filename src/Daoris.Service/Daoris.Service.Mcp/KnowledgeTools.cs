@@ -22,11 +22,12 @@ namespace Daoris.Knowledge.Mcp;
 /// the driver started it — what a rule proposal records as its author (PERM2).
 /// </param>
 /// <param name="proposals">Where a proposal to change the rules is written (PERM2, D74) — under the home.</param>
+/// <param name="help">Where Ask Daoris's proposals are written (HELP1c, D89) — under the home.</param>
 [McpServerToolType]
 public sealed class KnowledgeTools(
     KnowledgeService service, QuestStore quests, QuestExchange exchange, AmbientWorkspace ambient,
     AskDesk? asks = null, IntakeScope? intake = null, RuleProposalBox? proposals = null,
-    SessionLedger? ledger = null)
+    SessionLedger? ledger = null, HelpProposalBox? help = null)
 {
     /// <summary>
     /// Which circle this call answers from: what the caller named, or the workspace of the repository
@@ -509,6 +510,47 @@ public sealed class KnowledgeTools(
             new RuleChange(action.Trim().ToLowerInvariant(), scope.Trim().ToLowerInvariant(), name, list?.Trim().ToLowerInvariant(), rule, id, on),
             why, intake?.Session, intake?.Ask, Directory.GetCurrentDirectory(), DateTimeOffset.UtcNow);
         return message;
+    }
+
+    [McpServerTool(Name = "setting_propose")]
+    [Description(
+        "Ask Daoris only: propose a change to how this machine drives its repositories, for the person to "
+        + "apply. It becomes a card saying what it changes and the terminal command that does the same, with "
+        + "Apply and Not now; nothing changes until the person presses Apply, and their answer comes back as "
+        + "their next message. Each door is a `daoris driver` verb: drive, undrive, hold, resume, trees, line, "
+        + "landing, intake, helper, strikes, timeout, notify. Never for a push, a merge, a discard, a sign-in "
+        + "or a key: those stay the person's own presses.")]
+    public string ProposeSetting(
+        [Description("The door, as `daoris driver` spells it: drive, undrive, hold, resume, trees, line, landing, intake, helper, strikes, timeout or notify.")]
+        string door,
+        [Description("Why: what the person asked, and what the change would do. The person decides on this.")]
+        string why,
+        [Description("The repository, for drive, undrive, hold, resume, trees, and a line or a landing set for one repository.")]
+        string? target = null,
+        [Description("The workspace, for a line or a landing set for every repository in it. Name this or target, not both.")]
+        string? workspace = null,
+        [Description("What it is set to, as the CLI takes it: `on`/`off` (trees, notify), a branch or `--clear` (line), `merge`, `branch <pattern>` with `--tidy` if wanted, or `--clear` (landing), an agent or `off` (intake, helper), a number (strikes, timeout minutes).")]
+        string? value = null)
+    {
+        var box = help ?? HelpProposalBox.FromEnvironment();
+        return box.ProposeSetting(new SettingChange(door, target, workspace, value), why, intake?.Session, DateTimeOffset.UtcNow).Message;
+    }
+
+    [McpServerTool(Name = "ask_propose")]
+    [Description(
+        "Ask Daoris only: propose starting something — an ask made at a workspace, which the driver's loop "
+        + "then answers as it answers any ask. The person sees it as a card and presses Apply to make the ask; "
+        + "nothing is asked until they do. Never publishes a quest itself.")]
+    public string ProposeAsk(
+        [Description("The ask's words: what is to be done, as the person would say it, with any ticket or link in them.")]
+        string sentence,
+        [Description("The workspace it is asked at.")]
+        string workspace,
+        [Description("Why: what the person asked for. The person decides on this.")]
+        string why)
+    {
+        var box = help ?? HelpProposalBox.FromEnvironment();
+        return box.ProposeAsk(sentence, workspace, why, intake?.Session, DateTimeOffset.UtcNow).Message;
     }
 
     [McpServerTool(Name = "knowledge_refresh")]

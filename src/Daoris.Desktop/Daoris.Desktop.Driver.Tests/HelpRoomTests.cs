@@ -106,7 +106,10 @@ public sealed class HelpRoomTests : IDisposable
         foreach (var token in new[] { "{quest}", "{session}", "{slug}", "{repository}" }) Assert.Contains(token, agents);
         Assert.Contains("Settings → Daoris's own AI", agents);
         // It reads and advises; the moves that stay the person's are named as never its own.
-        Assert.Contains("You change nothing", agents);
+        Assert.Contains("You change nothing yourself", agents);
+        // It proposes (HELP1c): a card the person applies, through the connector's two tools.
+        Assert.Contains("`setting_propose`", agents);
+        Assert.Contains("`ask_propose`", agents);
         Assert.Contains("push, merge, discard, sign in", agents);
     }
 
@@ -136,6 +139,10 @@ public sealed class HelpRoomTests : IDisposable
         Assert.Contains("mcp__daoris-knowledge__registry", allowed);
         Assert.Contains("mcp__daoris-knowledge__knowledge_search", allowed);
         Assert.DoesNotContain("mcp__daoris-knowledge__quest_publish", allowed);
+        // It proposes, and the person applies (HELP1c) — never PERM2's rule proposal, whose narrowing applies itself.
+        Assert.Contains("mcp__daoris-knowledge__setting_propose", allowed);
+        Assert.Contains("mcp__daoris-knowledge__ask_propose", allowed);
+        Assert.DoesNotContain("mcp__daoris-knowledge__permission_propose", allowed);
         Assert.DoesNotContain(allowed, rule => rule.StartsWith("Bash", StringComparison.Ordinal)
             || rule.StartsWith("Edit", StringComparison.Ordinal) || rule.StartsWith("Write", StringComparison.Ordinal));
     }

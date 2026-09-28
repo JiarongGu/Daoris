@@ -21,8 +21,8 @@ lists.
 
 ## State
 
-**Counts, and this is their one home:** sixteen commands, **514 CLI tests, 531 service, 878 driver,
-290 desktop modules, 80 devkit, 1301 web unit, 21 Playwright**, 66/66 release rehearsal, **291/291
+**Counts, and this is their one home:** sixteen commands, **514 CLI tests, 545 service, 898 driver,
+291 desktop modules, 80 devkit, 1305 web unit, 21 Playwright**, 66/66 release rehearsal, **291/291
 family rehearsal** (it names its own phases when you run it), **45/45 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge
 documents, 5 skills, 7 packs. The always-loaded core is **22,492 of 26,000 bytes** — a span in
@@ -144,8 +144,8 @@ rather than designed.
 
 ## Backlog
 
-**Thirty-six rows are open**: the five the first real workspace showed (WSR4, SESS1, MAP4, HELP1,
-and DOCK1 from 2026-09-29; WSR2, WSR1 and WSR3 landed as D86, D87 and D88); D85's two (CHR2, CHR4); the in-app browser's three (BRW3, BRW7, BRW8); the first goal's three (FG5,
+**Thirty-five rows are open**: the four the first real workspace showed (WSR4, SESS1, MAP4, and
+DOCK1 from 2026-09-29; WSR2, WSR1 and WSR3 landed as D86, D87 and D88, HELP1 as D89); D85's two (CHR2, CHR4); the in-app browser's three (BRW3, BRW7, BRW8); the first goal's three (FG5,
 READACROSS1 the owner's, and SEM2 on a trigger); D76's held file tools;
 the eight REV3 left, WINDOW2 among them; six leftovers (RAIL2, SURF11, CONSOLE3, FLAKE1, DEPLOY5, TEST1); two on the owner
 (TRUST2, AGT2c); and six on a trigger (see *Handover*). Every closed one is in `docs/task-archive.md`, and this file holds no
@@ -174,12 +174,6 @@ requirements, and the owner's calls. Its recommended order is the order below.
   circle (the real one has twenty-nine repositories). Asks, chains and what depends on what, each its
   own kind of line, from a declared source and never guessed. Open-only or a time window. Sessions
   live on their nodes. Looked at with twenty-nine nodes in both themes.
-- [ ] **HELP1 — ask Daoris** (study §4; the design note is `docs/2026-09-29-ask-daoris-design.md`, its two calls made as D89; **in progress**: its agent choice, HELP1d (the panel with its starters), HELP1a (the conversation in its room) and HELP1b (where the person is) have landed; HELP1c, its proposals, is open). A chat about Daoris itself, from a button
-  on the strip, the palette and `F1`, in the right dock. It knows the view and the selection. It
-  helps by proposing Daoris's own terminal commands (D50), each confirmed by the person, and turns
-  *start something* into an ask. Starter prompts come from what the machine lacks. It is a harness
-  session in a room of its own, allowed only `daoris` and `daoris-driver`. **The owner's calls:**
-  its harness and account, and whether a confirmation may be remembered.
 - [ ] **DOCK1 — panels that dock, as VS Code's do** (owner, 2026-09-29: *"we should be able to dock
   panels like vscode did"*, said beside *"there is no easy way to open the daoris chat"*). Today each
   region has one place: the rail and the right dock inside Sessions, the output panel under them,

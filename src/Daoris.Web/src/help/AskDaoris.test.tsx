@@ -30,6 +30,7 @@ const HELP = {
 
 let SESSIONS: unknown[] = [];
 let HELPER: string | null = 'claude-code-acp';
+let PROPOSALS: unknown[] = [];
 const asked: string[] = [];
 
 function respond(url: string): Response {
@@ -54,6 +55,9 @@ function bridge(start: { sessionId: string | null; message: string } = { session
       case 'SESSION_HISTORY': return { session: HELP.id, events: [], earlier: false, latest: 0 };
       case 'SESSION_QUEUE': return { session: HELP.id, queued: [], taking: false };
       case 'END_CHAT': return { ended: true };
+      case 'HELP_PROPOSALS': return { session: HELP.id, proposals: PROPOSALS };
+      case 'HELP_APPLY': return { message: 'Applied: `#p1a2b3c4` — Drive `engine`.', applied: true };
+      case 'HELP_DISMISS': return { message: 'Not now: the person did not apply `#p1a2b3c4`.' };
       default: return {};
     }
   });
@@ -154,6 +158,27 @@ describe('Ask Daoris, with an agent named', () => {
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'END_CHAT', { payload: { id: HELP.id } });
     // Cleared: the starters are back, and the next message opens the next conversation.
     expect(await screen.findByText(/Ask below about Daoris on this machine/)).toBeInTheDocument();
+  });
+
+  /** HELP1c: what it proposes is a card under the conversation, applied or not by the person's press. */
+  it('shows what the conversation proposes, and applies or dismisses it on the person\'s press', async () => {
+    SESSIONS = [HELP];
+    PROPOSALS = [{
+      id: 'p1a2b3c4', kind: 'setting', describe: 'Drive `engine`: a quest addressed to it starts a session on this machine.',
+      terminal: 'daoris driver drive engine', why: 'the person asked for engine to be driven',
+    }];
+    bridge();
+    show();
+
+    const cards = await screen.findByRole('list', { name: 'what Ask Daoris proposes' });
+    expect(within(cards).getByText('daoris driver drive engine', { selector: 'code' })).toBeInTheDocument();
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HELP_PROPOSALS', { payload: { session: HELP.id } });
+
+    await userEvent.click(within(cards).getByRole('button', { name: 'apply' }));
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HELP_APPLY', { payload: { id: 'p1a2b3c4' } });
+    await userEvent.click(within(cards).getByRole('button', { name: 'not now' }));
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HELP_DISMISS', { payload: { id: 'p1a2b3c4' } });
+    PROPOSALS = [];
   });
 
   it('says a conversation that ended has, and that a message starts the next', async () => {

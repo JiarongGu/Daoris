@@ -119,6 +119,14 @@ which names no session, so its proposal lands under `DAORIS_HOME` as one from *a
 did not start*. A malformed rule, a scope with no name or an empty reason is refused with nothing
 written. With no home at all, every proposal is refused.
 
+**Ask Daoris proposes the same way, and never applies** (HELP1c, D89). Its conversation's connector
+offers `setting_propose` (one of the `daoris driver` doors: drive, undrive, hold, resume, trees,
+line, landing, intake, helper, strikes, timeout, notify) and `ask_propose` (something to start, as
+an ask at a workspace). Each writes one file under `<home>/help/proposals/`, the same home as the
+rules proposals, checked here for its shape only: whether the route would take it is the driver's,
+which judges it with the route's own code before the person sees a card, and settles it when they
+press Apply or Not now. Only the helper's room allows the two tools; no other session is handed them.
+
 **The semantic pass has been proven on a real pair.** Two repositories derived the same principle
 independently and wrote it in different vocabulary; word overlap scores them at **25%**, below the
 duplicate threshold, so the CLI's `doctor` structurally cannot see them. Indexed here with a local

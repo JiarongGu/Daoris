@@ -1,5 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import { AskPanel } from './AskPanel';
+import { ProposalCard } from './ProposalCard';
 import { starters } from './starters';
 
 // Ask Daoris (HELP1, D89): its panel on a machine that lacks everything, on one that lacks nothing,
@@ -52,6 +53,30 @@ export const Talking: Story = {
       composer: <div className="border-t border-line px-4 py-3 text-small text-ink-faint">the composer</div>,
       ended: false,
       onNew: () => {},
+    },
+  },
+};
+
+/** HELP1c: what the conversation proposes sits under it, for the person to apply or not. */
+export const Proposing: Story = {
+  args: {
+    ...Talking.args,
+    conversation: {
+      ...Talking.args!.conversation!,
+      proposals: (
+        <ul className="m-0 mt-3 grid list-none gap-2.5 p-0">
+          <ProposalCard
+            proposal={{
+              id: 'p1a2b3c4', kind: 'setting',
+              describe: 'Land `engine`\'s accepted work on a branch `feature/{quest}-{slug}`, its tree removed once landed.',
+              terminal: 'daoris driver landing engine branch feature/{quest}-{slug} --tidy',
+              why: 'you asked for its work on feature branches',
+            }}
+            onApply={() => {}}
+            onDismiss={() => {}}
+          />
+        </ul>
+      ),
     },
   },
 };

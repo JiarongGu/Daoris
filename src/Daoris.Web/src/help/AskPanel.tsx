@@ -7,6 +7,8 @@ import type { Starter, StarterDoor } from './starters';
 export type AskConversationSlot = {
   /** The newest conversation's record, or null when there is none to show. */
   body: ReactNode | null;
+  /** What it proposes that waits for the person (HELP1c), or null. */
+  proposals?: ReactNode;
   composer: ReactNode;
   /** Whether the conversation shown has ended, so a message starts the next. */
   ended: boolean;
@@ -60,6 +62,7 @@ export function AskPanel({ starters, helper, conversation, scroller, onGo, onClo
         {talking ? (
           <>
             {conversation!.body}
+            {conversation!.proposals}
             {conversation!.ended && <Prose className="mt-3 text-small text-ink-faint">{t('help.ended')}</Prose>}
           </>
         ) : (
