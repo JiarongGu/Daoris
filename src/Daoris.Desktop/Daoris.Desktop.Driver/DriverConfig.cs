@@ -111,6 +111,37 @@ public sealed record DriverConfig(
     public DriverConfig WithWorkspaceLine(string workspace, string? branch) =>
         this with { WorkspaceLines = Set(WorkspaceLines, workspace, branch) };
 
+    /// <summary>
+    /// How work lands, as the person set it (WSR1, D87), by repository. It wins over the workspace's;
+    /// empty — the default — is the merge door as it always was (<see cref="LandingRules.Choose"/>).
+    /// </summary>
+    public IReadOnlyDictionary<string, LandingRule> Landings { get; init; } =
+        new Dictionary<string, LandingRule>(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>A workspace's landing rule, for every repository in it that sets none of its own.</summary>
+    public IReadOnlyDictionary<string, LandingRule> WorkspaceLandings { get; init; } =
+        new Dictionary<string, LandingRule>(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>Set a repository's landing rule, or clear it with null to take its workspace's or the merge.</summary>
+    public DriverConfig WithLanding(string repository, LandingRule? rule) =>
+        this with { Landings = Set(Landings, repository, rule) };
+
+    /// <summary>Set a workspace's landing rule, or clear it with null.</summary>
+    public DriverConfig WithWorkspaceLanding(string workspace, LandingRule? rule) =>
+        this with { WorkspaceLandings = Set(WorkspaceLandings, workspace, rule) };
+
+    private static IReadOnlyDictionary<string, LandingRule> Set(
+        IReadOnlyDictionary<string, LandingRule> map, string key, LandingRule? rule)
+    {
+        var next = new Dictionary<string, LandingRule>(map, StringComparer.OrdinalIgnoreCase);
+        if (rule is null) next.Remove(key);
+        else next[key] = LandingRules.Problem(rule) is { } problem ? throw new DriverException(problem) : Kept(rule);
+        return next;
+    }
+
+    /// <summary>A rule as it is kept: a merge carries no pattern, whatever it was handed.</summary>
+    private static LandingRule Kept(LandingRule rule) => rule.Form == LandingForm.Merge ? LandingRule.Merge : rule;
+
     private static IReadOnlyDictionary<string, string> Set(IReadOnlyDictionary<string, string> map, string key, string? branch)
     {
         var next = new Dictionary<string, string>(map, StringComparer.OrdinalIgnoreCase);
@@ -188,6 +219,9 @@ public sealed record DriverConfig(
             // a line should not start carrying an empty one.
             WriteMap(writer, "lines", Lines);
             WriteMap(writer, "workspaceLines", WorkspaceLines);
+            // Written only when set (WSR1), for the same reason: absent is the merge it always was.
+            WriteRules(writer, "landings", Landings);
+            WriteRules(writer, "workspaceLandings", WorkspaceLandings);
             writer.WriteStartObject("commands");
             foreach (var (name, command) in Commands.OrderBy(c => c.Key, StringComparer.Ordinal))
             {
@@ -209,6 +243,38 @@ public sealed record DriverConfig(
         writer.WriteStartObject(name);
         foreach (var (key, value) in map.OrderBy(pair => pair.Key, StringComparer.Ordinal)) writer.WriteString(key, value);
         writer.WriteEndObject();
+    }
+
+    private static void WriteRules(Utf8JsonWriter writer, string name, IReadOnlyDictionary<string, LandingRule> map)
+    {
+        if (map.Count == 0) return;
+        writer.WriteStartObject(name);
+        foreach (var (key, rule) in map.OrderBy(pair => pair.Key, StringComparer.Ordinal))
+        {
+            writer.WriteStartObject(key);
+            writer.WriteString("form", rule.Form);
+            if (rule.Pattern is not null) writer.WriteString("pattern", rule.Pattern);
+            writer.WriteEndObject();
+        }
+
+        writer.WriteEndObject();
+    }
+
+    /// <summary>A map of names to landing rules; one that could not land work — an unknown form, a pattern that names no branch — is skipped.</summary>
+    private static IReadOnlyDictionary<string, LandingRule> RuleMap(JsonElement root, string name)
+    {
+        var map = new Dictionary<string, LandingRule>(StringComparer.OrdinalIgnoreCase);
+        if (root.TryGetProperty(name, out var element) && element.ValueKind == JsonValueKind.Object)
+        {
+            foreach (var property in element.EnumerateObject())
+            {
+                if (property.Value.ValueKind != JsonValueKind.Object) continue;
+                var rule = new LandingRule(String(property.Value, "form") ?? "", String(property.Value, "pattern"));
+                if (LandingRules.Problem(rule) is null) map[property.Name] = Kept(rule);
+            }
+        }
+
+        return map;
     }
 
     /// <summary>A map of names to branch names; an entry that is not one git would take is skipped.</summary>
@@ -288,6 +354,8 @@ public sealed record DriverConfig(
             IntakeAdapter = String(root, "intakeAdapter")?.Trim() is { Length: > 0 } intake ? intake : null,
             Lines = BranchMap(root, "lines"),
             WorkspaceLines = BranchMap(root, "workspaceLines"),
+            Landings = RuleMap(root, "landings"),
+            WorkspaceLandings = RuleMap(root, "workspaceLandings"),
         };
     }
 

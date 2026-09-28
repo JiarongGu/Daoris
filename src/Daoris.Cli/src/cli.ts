@@ -94,7 +94,11 @@ const USAGE = `daoris <command> [options]
                                                    the branch its work grows from
                                                    and lands on (--workspace <name>
                                                    for each repo there with none)
-                         notify on|off            say so when a session parks,
+                         landing <repo> merge|branch <pattern>|--clear
+                                                   how accepted work lands: into
+                                                   the line, or on a branch you
+                                                   push (--workspace <name> too)
+                         notify on|off           say so when a session parks,
                                                    or ends without you asking
                          intake <adapter>|off      answer an ask the declarations
                                                    do not settle with a session

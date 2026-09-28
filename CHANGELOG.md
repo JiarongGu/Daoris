@@ -636,6 +636,14 @@ The first version: doctrine that installs, is checked, and flows back.
   verbatim, and the variables that choose its model; on the desktop, the intake's agent — off, or a
   way in this machine has — and the account an intake in each circle runs as. What a start runs on
   lists the intake as a second job, and the status bar's tier leads there.
+- **How work lands is a workspace's rule** (WSR1, D87). Accepting a session's work merged it into
+  the line on this machine, which skips a team's review. A workspace, or one repository, can now say
+  **branch** with a pattern such as `feature/{quest}-{slug}`. Accepting then puts the work on that new
+  branch, from the session's branch, with nothing merged and no checkout touched, for the person to push
+  and open a pull request from. The review says where a press sends the work before it is pressed. A
+  session whose work goes through review is told not to merge or push it. Set it with `daoris driver
+  landing` or Settings → Workspace → *How work lands*. Daoris never pushes; that form is a plugin's, and
+  not built yet.
 - **A repository's line can be set** (WSR2, D86). The branch its work grows from and lands on was
   only git's guess (`origin/HEAD`, else `main`, else `master`). A person now sets it per repository or
   as a workspace's default, with `daoris driver line` or Settings → Workspace → *Lines*, and a

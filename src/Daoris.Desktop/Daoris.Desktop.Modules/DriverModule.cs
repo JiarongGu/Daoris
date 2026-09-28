@@ -125,9 +125,21 @@ public sealed class DriverModule : ModuleBase
                         .OrderBy(known => known.Repository, StringComparer.Ordinal)
                         .Select(known => (known.Repository, known.Workspace, known.Root)),
                     cancellationToken).ConfigureAwait(false);
+                var config = DriverConfig.Load(_loop.ConfigPath);
                 return new
                 {
                     Lines = lines.Select(line => new { line.Repository, line.Workspace, line.Branch, line.Source }).ToArray(),
+                    // How each one's work lands (WSR1), from the same file and the same circles.
+                    Landings = lines.Select(line => (line, landing: LandingRules.Choose(config, line.Repository, line.Workspace)))
+                        .Select(pair => new
+                        {
+                            pair.line.Repository,
+                            pair.line.Workspace,
+                            pair.landing.Rule.Form,
+                            pair.landing.Rule.Pattern,
+                            pair.landing.Source,
+                        })
+                        .ToArray(),
                 };
             }
 
@@ -398,6 +410,31 @@ public sealed class DriverModule : ModuleBase
             case "MERGE_SESSION_TREE":
             case "DISCARD_SESSION_TREE":
                 return await ActOnTreeAsync(request, cancellationToken);
+
+            // How a reviewed session's work lands (WSR1, D87): what a press WOULD do, said before it —
+            // merge into the line, or the branch the rule names for this session — and the press, which
+            // applies the repository's rule. `MERGE_SESSION_TREE` stays the merge alone.
+            case "LANDING":
+            case "LAND_SESSION_TREE":
+                return await LandAsync(request, cancellationToken);
+
+            // A repository's landing rule or a workspace's, or either cleared with no form — the same file
+            // `daoris driver landing` edits: one truth, two doors (D50).
+            case "SET_LANDING":
+            {
+                var repository = Optional(request, "repository");
+                var workspace = Optional(request, "workspace");
+                if ((repository is null) == (workspace is null))
+                {
+                    throw new DriverException("a landing rule is set for a `repository` or a `workspace` — name one of them.");
+                }
+
+                var rule = Optional(request, "form") is { } form ? new LandingRule(form, Optional(request, "pattern")) : null;
+                Change(config => workspace is not null
+                    ? config.WithWorkspaceLanding(workspace, rule)
+                    : config.WithLanding(repository!, rule));
+                return State();
+            }
 
             // This machine's harnesses, and the accounts they run as (D49 §4). Detection is free and
             // read-only — it asks each tool its own version and each profile's own login state — so
@@ -1079,6 +1116,44 @@ public sealed class DriverModule : ModuleBase
     }
 
     /// <summary>
+    /// A reviewed session's landing (WSR1, D87): the plan before the press, or the press itself.
+    /// </summary>
+    /// <remarks>
+    /// The pattern is expanded from the session's quest and its title, or for a conversation from the
+    /// session and what the person first said — this machine's own record, never the session record's.
+    /// A refusal is an answer, as the merge door's are.
+    /// </remarks>
+    private async Task<object?> LandAsync(IpcRequest request, CancellationToken cancellationToken)
+    {
+        var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
+        var service = _loop.Service ?? throw NotReady();
+
+        var (tree, _) = await service.SessionGroundAsync(id, cancellationToken);
+        if (string.IsNullOrWhiteSpace(tree))
+        {
+            throw Refusals.Because(
+                Refusals.SessionNotReviewable,
+                "this session's record names no working tree on this machine, so there is nothing here to land.",
+                ("session", id));
+        }
+
+        var questId = await service.SessionQuestAsync(id, cancellationToken);
+        var quest = questId is null ? null : await service.FindQuestAsync(questId, cancellationToken);
+        var subject = new LandingSubject(id, questId, quest?.Title ?? _loop.Events.Openings([id]).GetValueOrDefault(id));
+        var trees = new SessionTrees(_loop.Home);
+
+        if (request.Type == "LANDING")
+        {
+            var plan = await trees.PlanAsync(tree, subject, cancellationToken);
+            return new { Session = id, plan.Form, plan.Target, plan.Source };
+        }
+
+        var landed = await trees.LandAsync(tree, subject, cancellationToken);
+        _loop.Nudge();
+        return new { Session = id, Done = landed.Landed, landed.Message, landed.Branch };
+    }
+
+    /// <summary>
     /// The three moves a person may make on a parked session — `completed`, `declined`, `stopped`,
     /// each carrying what they want the record to say (design §4).
     /// </summary>
@@ -1566,6 +1641,11 @@ public sealed class DriverModule : ModuleBase
                 .Select(p => new { Repository = p.Key, Branch = p.Value }).ToArray(),
             WorkspaceLines = config.WorkspaceLines.OrderBy(p => p.Key, StringComparer.Ordinal)
                 .Select(p => new { Workspace = p.Key, Branch = p.Value }).ToArray(),
+            // The landing rules as set (WSR1), as rows for the same reason.
+            Landings = config.Landings.OrderBy(p => p.Key, StringComparer.Ordinal)
+                .Select(p => new { Repository = p.Key, p.Value.Form, p.Value.Pattern }).ToArray(),
+            WorkspaceLandings = config.WorkspaceLandings.OrderBy(p => p.Key, StringComparer.Ordinal)
+                .Select(p => new { Workspace = p.Key, p.Value.Form, p.Value.Pattern }).ToArray(),
             Running = _loop.Processes.Running,
         };
     }

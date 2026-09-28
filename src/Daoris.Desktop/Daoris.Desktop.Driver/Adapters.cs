@@ -84,6 +84,13 @@ public sealed record SessionTarget(
     public string? GrewFrom { get; init; }
 
     /// <summary>
+    /// How this session's work will land, when it runs in a tree of its own (WSR1, D87) — so a session
+    /// whose work goes through review knows not to merge or push it. Null, or a merge, says nothing,
+    /// and the instruction reads as it always has.
+    /// </summary>
+    public LandingPlan? LandsOn { get; init; }
+
+    /// <summary>
     /// The target a quest's session is handed: the quest as the service answered it, run in
     /// <paramref name="workTree"/> — the repository's own tree where it opted in (D51), its root
     /// otherwise — naming the code map that tree keeps.
@@ -141,7 +148,7 @@ public static class TargetPrompt
         repository under its own doctrine and gates, then close it: `done` when it has landed, or
         `decline` with the reason — the reason is the part the asker can act on. If the quest is already
         taken or closed, stand down and finish without changing anything.
-        {Mapped(target)}
+        {Mapped(target)}{Landing(target)}
         {Asking(target)}
 
         {Proposing}
@@ -172,7 +179,7 @@ public static class TargetPrompt
         Carry on from there, inside this repository under its own doctrine and gates, then close
         `#{target.QuestId}`: `done` when it has landed, or `decline` with the reason — the reason is the part
         the asker can act on.
-        {Mapped(target)}
+        {Mapped(target)}{Landing(target)}
         {Asking(target)}
 
         {Proposing}
@@ -202,7 +209,7 @@ public static class TargetPrompt
         Finish from there rather than starting again, inside this repository under its own doctrine and
         gates, then close `#{target.QuestId}`: `done` when it has landed, or `decline` with the reason —
         the reason is the part the asker can act on. Commit as you go, so a second cut-off loses less.
-        {Mapped(target)}
+        {Mapped(target)}{Landing(target)}
         {Asking(target)}
 
         {Proposing}
@@ -288,6 +295,20 @@ public static class TargetPrompt
           the same shape — each module's `id` unique, its `path` relative to the repository, its `summary`
           one line, and each dependency naming two modules by `id`. A map that breaks that shape is shown as
           nothing at all, so leave it whole.
+
+          """;
+
+    /// <summary>
+    /// How the work lands, said only where it goes through review: the branch the person will push and
+    /// open a pull request from, and that the session makes neither move itself (D87).
+    /// </summary>
+    private static string Landing(SessionTarget target) => target.LandsOn is not { Form: LandingForm.Branch } plan
+        ? ""
+        : $"""
+
+          This work goes through review. When it is done, the person puts this tree's branch on
+          `{plan.Target}` and opens a pull request from it. Commit your work on this branch as you go —
+          do not merge it, push it, or open a pull request yourself.
 
           """;
 

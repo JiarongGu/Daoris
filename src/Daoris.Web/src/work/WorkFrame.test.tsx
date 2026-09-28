@@ -1230,10 +1230,24 @@ describe('acting on what a session landed', () => {
     await screen.findByText('src/chunk.ts');
   };
 
-  it('accepts by asking the driver to merge, and renders whatever it says back', async () => {
+  /** WSR1 (D87): the pane says where a press sends the work before it is pressed, in the driver's plan. */
+  it('says before the press that accepting puts the work on the branch the rule names', async () => {
     invoke.mockImplementation(async (_module: string, type: string) => {
       if (type === 'SESSION_DIFF') return DIFF;
-      if (type === 'MERGE_SESSION_TREE') {
+      if (type === 'LANDING') return { session: 's1a2b3c4', form: 'branch', target: 'feature/0fda18-fix', source: 'workspace' };
+      return DRIVER_STATE;
+    });
+
+    await review();
+
+    expect(await screen.findByText(/for you to push and open a pull request from/)).toBeTruthy();
+    expect(screen.getByText('feature/0fda18-fix', { selector: 'code' })).toBeTruthy();
+  });
+
+  it('accepts by asking the driver to land the work, and renders whatever it says back', async () => {
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'SESSION_DIFF') return DIFF;
+      if (type === 'LAND_SESSION_TREE') {
         return { session: 's1a2b3c4', done: true, message: 'merged `daoris/x` into `main` — 2 commit(s).' };
       }
       return DRIVER_STATE;
@@ -1242,7 +1256,7 @@ describe('acting on what a session landed', () => {
     await review();
     await userEvent.click(screen.getByRole('button', { name: 'accept' }));
 
-    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'MERGE_SESSION_TREE', {
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'LAND_SESSION_TREE', {
       payload: { id: 's1a2b3c4' },
     });
     expect(await screen.findByText(/merged `daoris\/x` into `main`/)).toBeTruthy();
@@ -1255,7 +1269,7 @@ describe('acting on what a session landed', () => {
   it('renders a refused merge verbatim and changes nothing', async () => {
     invoke.mockImplementation(async (_module: string, type: string) => {
       if (type === 'SESSION_DIFF') return DIFF;
-      if (type === 'MERGE_SESSION_TREE') {
+      if (type === 'LAND_SESSION_TREE') {
         return {
           session: 's1a2b3c4', done: false,
           message: "the repository's own checkout is not clean (2 paths), and merging into somebody's work in flight is exactly what Daoris does not do.",

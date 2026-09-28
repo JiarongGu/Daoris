@@ -7121,3 +7121,46 @@ line reads it from one place.*
   - cleared from the screen, and the repositories fell back to the workspace's line.
 - The screenshots found two defects, now fixed: a row with *Clear* moved its field out of the column,
   and in dark an inherited line read as a set one.
+
+## WSR1 — workspace rules: how work lands (2026-09-28)
+
+The row as filed: *(study §1). An integration rule per workspace, with a repository override: merge
+into a named line, carry the work onto a feature branch named by a pattern for the person to push, or
+push and open a pull request. Set in Settings and from a terminal, and carried to the review screen,
+chains and the session's instruction. **The owner's call first:** whether Daoris may ever push and open
+a pull request (D37 keeps both human).*
+
+**The owner's call** (D87): *"this should be configurable, and lets say no push or open pr on default
+but we should be able to support later for plugin to control since there will be different platform
+for pr"*. The push form is WSR4, a plugin's.
+
+**Outcome.**
+- `driver.json` gains `landings` and `workspaceLandings`, written only when set. A rule is `merge` or
+  `branch` with a pattern. `LandingRules.Choose` picks the repository's rule, then its workspace's,
+  then merge, and says which.
+- The pattern can say `{quest}`, `{session}`, `{slug}` (the title's words, up to 40 characters) and
+  `{repository}`. It must name one branch per session, and git must take the result. The same rule
+  and table are on both sides of the twin.
+- **The branch form** (`SessionTrees.LandAsync`) makes one branch from the session's branch. It moves
+  no checkout, merges nothing and pushes nothing, and it refuses a branch that already exists rather
+  than moving it. The merge form is the merge door as it was.
+- **Before the press:** the review says where accepting sends the work (the `LANDING` route).
+  *Accept* presses `LAND_SESSION_TREE`. A session in its own tree under the branch form is told its
+  work goes through review, and not to merge or push it. Chains are unchanged (D82): a later step's
+  branch holds the earlier step's work, so landing the last step carries the chain.
+- Two doors (D50): `daoris driver landing <repo>|--workspace <name> merge|branch <pattern>|--clear`,
+  and Settings → Workspace → *How work lands* (`SET_LANDING`).
+
+**Proven by:**
+- 23 `LandingTests`: the pattern table, the slug, precedence, the file, and on real git the branch
+  form leaving a dirty checkout on another branch as it was, an existing branch refused and unmoved,
+  nothing to land, uncommitted work, merge as the default, the plan, and the instruction. Sabotage
+  turned the existing-branch guard's and the instruction's tests red.
+- 3 driver-module tests; 4 CLI tests; 6 molecule tests and 3 stories; 1 work-frame test for the
+  sentence before the press, and the two accept tests moved to the land route.
+- On the scratch shell: a branch rule set from the screen landed in the file and in the terminal's
+  listing. Screenshots found two defects, now fixed: the card's bold marks showed as asterisks, and an
+  inherited pattern read as a set one.
+- Not seen on the window: the review's sentence on a real session. The scratch machine's one session
+  tree was past the rail's first page. Vitest holds the pane's rendering, and the driver tests hold the
+  plan and the press on real git.

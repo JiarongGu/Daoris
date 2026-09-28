@@ -12,6 +12,7 @@ import { toUpload } from './attachments';
 import type { WiringAnswer } from './map/wiring';
 import type { AgentRulesState, RuleListName, RuleScopeName } from './settings/AgentRules';
 import type { LineChange, RepositoryLine } from './settings/Lines';
+import type { LandingChange, LandingRule, RepositoryLanding } from './settings/Landings';
 
 export type { DiffFile, SessionDiff } from './work/diff';
 
@@ -58,6 +59,10 @@ export type DriverState = {
   lines?: { repository: string; branch: string }[];
   /** And by workspace, for each repository there that sets none of its own. */
   workspaceLines?: { workspace: string; branch: string }[];
+  /** How work lands as set (WSR1, D87), by repository — absent on a shell older than it. */
+  landings?: ({ repository: string } & LandingRule)[];
+  /** And by workspace. */
+  workspaceLandings?: ({ workspace: string } & LandingRule)[];
 };
 
 const call = <TData,>(type: string, payload?: Record<string, unknown>): Promise<TData> =>
@@ -248,7 +253,7 @@ export const useLines = () => {
   const { isAvailable } = useShenora();
   return useQuery({
     queryKey: keys.lines,
-    queryFn: () => call<{ lines: RepositoryLine[] }>('LINES'),
+    queryFn: () => call<{ lines: RepositoryLine[]; landings?: RepositoryLanding[] }>('LINES'),
     enabled: isAvailable,
   });
 };
@@ -257,6 +262,22 @@ export const useLines = () => {
  * Set a repository's line or a workspace's, or clear it with no branch — the file `daoris driver
  * line` edits (D50). What every repository's line is moves with it, so that answer is asked again.
  */
+/**
+ * Set how work lands in a repository or a workspace, or clear it with no form — the file `daoris driver
+ * landing` edits (D50). Every repository's answer moves with it, so that is asked again.
+ */
+export const useSetLanding = () => {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (change: LandingChange) => call<DriverState>('SET_LANDING', change),
+    onSuccess: (state) => {
+      client.setQueryData(keys.driver, state);
+      void client.invalidateQueries({ queryKey: keys.lines });
+      void client.invalidateQueries({ queryKey: keys.allLandings });
+    },
+  });
+};
+
 export const useSetLine = () => {
   const client = useQueryClient();
   return useMutation({
@@ -1286,10 +1307,24 @@ export const useTreeFiles = (session: string | null, wanted: boolean) => {
  */
 export type TreeAct = { session: string; done: boolean; message: string };
 
-export const useMergeSessionTree = () => {
+/**
+ * What accepting this session would do under its repository's landing rule (WSR1, D87): merge into
+ * the line, or the branch it would make — said before the press. Only for a session with a tree here.
+ */
+export const useLanding = (id: string | null) => {
+  const { isAvailable } = useShenora();
+  return useQuery({
+    queryKey: keys.landing(id ?? ''),
+    queryFn: () => call<{ session: string; form?: string; target?: string; source?: string }>('LANDING', { id }),
+    enabled: isAvailable && id !== null,
+  });
+};
+
+/** Accept a session: its work lands as its repository's rule says — merged, or put on a branch to push. */
+export const useLandSessionTree = () => {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => call<TreeAct>('MERGE_SESSION_TREE', { id }),
+    mutationFn: (id: string) => call<TreeAct & { branch?: string }>('LAND_SESSION_TREE', { id }),
     onSuccess: (result) => {
       // Only a merge that happened changes what a diff or a removal would say.
       if (result.done) {

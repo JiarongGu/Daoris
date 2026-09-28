@@ -438,6 +438,20 @@ public sealed class ServiceClient : IDisposable
     /// <para>🔴 <b>Closed records too</b> (GROUND1): <c>/api/sessions</c> alone means ACTIVE, and a session
     /// is reviewed, merged or discarded once it has ended — which read here as a session with no tree.</para>
     /// </remarks>
+    /// <summary>The quest a session serves, or null for a conversation's or an intake's (WSR1: what a landing names).</summary>
+    public async Task<string?> SessionQuestAsync(string id, CancellationToken ct = default)
+    {
+        using var document = JsonDocument.Parse(
+            await GetAsync("/api/sessions?includeClosed=true", ct).ConfigureAwait(false));
+
+        foreach (var session in document.RootElement.EnumerateArray())
+        {
+            if (Text(session, "id") == id) return Text(session, "quest") is { Length: > 0 } quest ? quest : null;
+        }
+
+        return null;
+    }
+
     public async Task<(string? Tree, string? BaseCommit)> SessionGroundAsync(
         string id, CancellationToken ct = default)
     {

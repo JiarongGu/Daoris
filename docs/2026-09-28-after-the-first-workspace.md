@@ -24,6 +24,9 @@ and the calls that are the owner's. The order at the end is a recommendation.
 
 ## 1. Workspace rules — how work lands (WSR1)
 
+> **Decided and built: D87** (2026-09-28). The owner's call: configurable, no push or pull request by
+> default, and that form a plugin's (WSR4). What follows is the study as written.
+
 **Today.** A session works on its own branch, `daoris/s-<id>`, in its own tree (D51). The one way that
 work lands is the merge door (`SessionTrees.MergeAsync`): `--no-ff` into the repository's canonical
 line, in the repository's own root, which must be clean and already on that line. Nothing pushes, and

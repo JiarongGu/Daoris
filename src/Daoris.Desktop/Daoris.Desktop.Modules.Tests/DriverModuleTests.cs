@@ -209,6 +209,42 @@ public sealed class DriverModuleTests : Bridge
         Assert.False(File.Exists(DriverConfigPath) && DriverConfig.Load(DriverConfigPath).Lines.Count > 0);
     }
 
+    /// <summary>How work lands (WSR1, D87): the screen's half of `daoris driver landing`, over the same file.</summary>
+    [Fact]
+    public async Task Setting_a_landing_rule_writes_the_same_file_the_terminal_edits()
+    {
+        var module = Module();
+        await AnswerAsync(module, "SET_LANDING", new { workspace = "aurora", form = "branch", pattern = "feature/{quest}-{slug}" });
+        var state = await AnswerAsync(module, "SET_LANDING", new { repository = "engine", form = "merge" });
+
+        var config = DriverConfig.Load(DriverConfigPath);
+        Assert.Equal("feature/{quest}-{slug}", config.WorkspaceLandings["aurora"].Pattern);
+        Assert.Equal(LandingRule.Merge, config.Landings["engine"]);
+        Assert.Equal("branch", state.GetProperty("workspaceLandings")[0].GetProperty("form").GetString());
+        Assert.Equal("engine", state.GetProperty("landings")[0].GetProperty("repository").GetString());
+
+        var cleared = await AnswerAsync(module, "SET_LANDING", new { workspace = "aurora" });
+        Assert.Equal(0, cleared.GetProperty("workspaceLandings").GetArrayLength());
+    }
+
+    [Fact]
+    public async Task A_landing_rule_that_could_not_land_work_is_refused_in_the_drivers_words()
+    {
+        var fixedName = await RefusalAsync(Module(), "SET_LANDING", new { repository = "engine", form = "branch", pattern = "feature/fixed" });
+        Assert.Contains("`{quest}` or `{session}`", fixedName);
+
+        var push = await RefusalAsync(Module(), "SET_LANDING", new { repository = "engine", form = "push" });
+        Assert.Contains("a plugin's to do", push);
+    }
+
+    /// <summary>A plan or a press reads the session's record, so before the driver is up each is the cold-start sentence.</summary>
+    [Fact]
+    public async Task Landing_before_the_driver_is_up_is_a_sentence()
+    {
+        Assert.Contains(Refusals.DriverNotReady, await RefusalAsync(Module(), "LANDING", new { id = "s1a2b3c4" }));
+        Assert.Contains(Refusals.DriverNotReady, await RefusalAsync(Module(), "LAND_SESSION_TREE", new { id = "s1a2b3c4" }));
+    }
+
     /// <summary>What each repository's line is needs the registry's checkouts, so before the driver is up it is the cold-start sentence.</summary>
     [Fact]
     public async Task Asking_the_lines_before_the_driver_is_up_is_a_sentence()

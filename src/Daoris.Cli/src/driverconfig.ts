@@ -49,6 +49,10 @@ export interface DriverChoices {
   lines: Record<string, string>;
   /** A workspace's line, for every repository in it that sets none of its own. */
   workspaceLines: Record<string, string>;
+  /** How each repository's work lands, as the person set it (WSR1, D87). */
+  landings: Record<string, LandingRule>;
+  /** A workspace's landing rule, for every repository in it that sets none of its own. */
+  workspaceLandings: Record<string, LandingRule>;
   rest: Record<string, unknown>;
 }
 
@@ -58,8 +62,54 @@ export const DEFAULT_TIMEOUT_MINUTES = 30;
 /** Drives nothing, holds nothing — the safe shape silence takes, matching the driver's own default. */
 const EMPTY: DriverChoices = {
   drivable: [], holds: [], trees: [], cap: 2, adapter: 'claude-code', notify: true,
-  strikes: 3, forgiven: {}, intakeAdapter: null, timeoutMinutes: null, lines: {}, workspaceLines: {}, rest: {},
+  strikes: 3, forgiven: {}, intakeAdapter: null, timeoutMinutes: null, lines: {}, workspaceLines: {},
+  landings: {}, workspaceLandings: {}, rest: {},
 };
+
+/**
+ * How a session's work lands (WSR1, D87): merged into the line, or put on a branch the pattern names,
+ * for the person to push. Pushing and opening a pull request is a plugin's form, not yet built (WSR4).
+ */
+export interface LandingRule {
+  form: string;
+  pattern?: string;
+}
+
+/** What a pattern may say — the driver's `LandingRules.Placeholders`. One of the first two is required. */
+const PLACEHOLDERS = ['quest', 'session', 'slug', 'repository'];
+
+/** What a pattern is tried against before it is kept — the driver tries the same names. */
+const SAMPLE: Record<string, string> = { quest: '0fda18', session: 's1a2b3c4', slug: 'sample-work', repository: 'engine' };
+
+/**
+ * What is wrong with a landing rule, in a sentence, or null when it can land work. `LandingRules.Problem`
+ * in the driver is the twin, and both carry the same pattern table.
+ */
+export function landingProblem(rule: LandingRule): string | null {
+  if (rule.form === 'merge') return null;
+  if (rule.form !== 'branch') {
+    return `\`${rule.form}\` is not a way work lands here — \`merge\` or \`branch\`. `
+      + 'Pushing and opening a pull request is a plugin\'s to do, and none can yet.';
+  }
+
+  const pattern = rule.pattern ?? '';
+  if (pattern.trim().length === 0) return 'a branch pattern needs a name — e.g. `feature/{quest}-{slug}`.';
+
+  for (const [used, name] of pattern.matchAll(/\{([^{}]*)\}/g)) {
+    if (!PLACEHOLDERS.includes(name!)) {
+      return `\`${used}\` is not something a pattern can say — ${PLACEHOLDERS.map((p) => `\`{${p}}\``).join(', ')}.`;
+    }
+  }
+
+  if (!pattern.includes('{quest}') && !pattern.includes('{session}')) {
+    return 'a pattern needs `{quest}` or `{session}`, or every session\'s work would be put on one branch.';
+  }
+
+  const sample = PLACEHOLDERS.reduce((text, name) => text.replaceAll(`{${name}}`, SAMPLE[name]!), pattern);
+  return sample.includes('{') || sample.includes('}') || !isBranchName(sample)
+    ? `\`${pattern}\` does not make a branch name git would take — it gives \`${sample}\`.`
+    : null;
+}
 
 /**
  * A name the line may be set to (WSR2): git's own rules for a ref name, the ones a person could break
@@ -97,11 +147,11 @@ export function readDriverChoices(path = driverConfigPath()): DriverChoices {
     throw new DaorisError(`${problem}. Fix it, or delete it to start from nothing — `
       + 'this command will not overwrite a file it could not understand.');
   }
-  if (parsed === null) return { ...EMPTY, lines: {}, workspaceLines: {}, rest: {} };
+  if (parsed === null) return { ...EMPTY, lines: {}, workspaceLines: {}, landings: {}, workspaceLandings: {}, rest: {} };
 
   const {
     drivable, holds, trees, cap, adapter, notify, strikes, forgiven, intakeAdapter, timeoutMinutes,
-    lines, workspaceLines, ...rest
+    lines, workspaceLines, landings, workspaceLandings, ...rest
   } = parsed;
   return {
     drivable: names(drivable),
@@ -130,6 +180,9 @@ export function readDriverChoices(path = driverConfigPath()): DriverChoices {
     // ignore must not be listed as if it held.
     lines: branchMap(lines),
     workspaceLines: branchMap(workspaceLines),
+    // A rule that could not land work is not read, as the driver does not read it.
+    landings: ruleMap(landings),
+    workspaceLandings: ruleMap(workspaceLandings),
     rest,
   };
 }
@@ -154,6 +207,9 @@ export function writeDriverChoices(path: string, choices: DriverChoices): void {
     // Written only when set (WSR2): absent is the checkout's guess, and the driver writes them the same way.
     ...(Object.keys(choices.lines).length > 0 ? { lines: choices.lines } : {}),
     ...(Object.keys(choices.workspaceLines).length > 0 ? { workspaceLines: choices.workspaceLines } : {}),
+    // Written only when set (WSR1): absent is the merge it always was.
+    ...(Object.keys(choices.landings).length > 0 ? { landings: choices.landings } : {}),
+    ...(Object.keys(choices.workspaceLandings).length > 0 ? { workspaceLandings: choices.workspaceLandings } : {}),
   });
 }
 
@@ -377,8 +433,8 @@ export function commandDriver({ argv, write }: CommandArgs): ExitCode {
 
       const set = clear ? null : branch!;
       writeDriverChoices(path, workspace
-        ? { ...choices, workspaceLines: withBranch(choices.workspaceLines, workspace, set) }
-        : { ...choices, lines: withBranch(choices.lines, name, set) });
+        ? { ...choices, workspaceLines: withEntry(choices.workspaceLines, workspace, set) }
+        : { ...choices, lines: withEntry(choices.lines, name, set) });
 
       const whose = workspace ? `repositories in the workspace \`${workspace}\`` : `\`${name}\``;
       write(set === null
@@ -394,9 +450,52 @@ export function commandDriver({ argv, write }: CommandArgs): ExitCode {
       return 0;
     }
 
+    // How work lands (WSR1, D87) — for one repository, or with `--workspace` for every repository in
+    // it that sets none of its own: `merge` into the line, or `branch <pattern>` for the person to push.
+    // Unset, it is the merge it always was. Daoris never pushes; that form is a plugin's (WSR4).
+    case 'landing': {
+      const workspace = flagValue(argv, '--workspace');
+      const clear = argv.includes('--clear');
+      const words = operands(argv, new Set(['--workspace'])).slice(1);
+      const name = workspace ?? words.shift();
+      const [form, pattern] = words;
+      if (!name || (!clear && !form)) {
+        throw new DaorisError(
+          '`driver landing` needs <repository>|--workspace <name>, then merge|branch <pattern>|--clear — '
+          + 'e.g. `daoris driver landing --workspace aurora branch "feature/{quest}-{slug}"`.');
+      }
+
+      const rule: LandingRule | null = clear ? null : { form: form!, ...(pattern !== undefined ? { pattern } : {}) };
+      const problem = rule === null ? null : landingProblem(rule);
+      if (problem !== null) throw new DaorisError(problem);
+
+      writeDriverChoices(path, workspace
+        ? { ...choices, workspaceLandings: withEntry(choices.workspaceLandings, workspace, rule && kept(rule)) }
+        : { ...choices, landings: withEntry(choices.landings, name, rule && kept(rule)) });
+
+      const whose = workspace ? `repositories in the workspace \`${workspace}\`` : `\`${name}\``;
+      if (rule === null) {
+        write(`daoris: work in ${whose} lands as ${workspace ? 'each one\'s own rule, else ' : 'its workspace\'s rule, else '}`
+          + 'the merge into its line.');
+      } else if (rule.form === 'merge') {
+        write(`daoris: work in ${whose} is merged into the line when you accept it, in the repository's own checkout.`);
+      } else {
+        write(`daoris: work in ${whose} is put on a branch named \`${rule.pattern}\` when you accept it —`);
+        write('  from the session\'s branch, with nothing merged and no checkout touched. You push it and open');
+        write('  the pull request: Daoris never pushes (D87).');
+      }
+
+      if (rule !== null && workspace) {
+        write('  A repository with a rule of its own keeps it — `daoris driver landing <repository> --clear` hands it back.');
+      }
+
+      write(`  Written to ${path} — the review reads it at each press, so nothing restarts.`);
+      return 0;
+    }
+
     default:
       throw new DaorisError(
-        `unknown driver verb '${verb}' — one of: list, drive, undrive, hold, resume, trees, line, notify, `
+        `unknown driver verb '${verb}' — one of: list, drive, undrive, hold, resume, trees, line, landing, notify, `
         + 'strikes, retry, timeout, cap, adapter, intake');
   }
 
@@ -448,6 +547,15 @@ export function commandDriver({ argv, write }: CommandArgs): ExitCode {
 
     for (const [workspace, branch] of Object.entries(choices.workspaceLines)) {
       write(`  line       workspace ${workspace}  ${branch}  (for each repository there that sets none)`);
+    }
+
+    const spelled = (rule: LandingRule) => (rule.form === 'branch' ? `branch ${rule.pattern}` : rule.form);
+    for (const [repository, rule] of Object.entries(choices.landings)) {
+      write(`  landing    ${repository}  ${spelled(rule)}`);
+    }
+
+    for (const [workspace, rule] of Object.entries(choices.workspaceLandings)) {
+      write(`  landing    workspace ${workspace}  ${spelled(rule)}  (for each repository there that sets none)`);
     }
 
     // A hold on something not opted in is inert, and saying so is the point: it reads as protection
@@ -517,10 +625,29 @@ function branchMap(value: unknown): Record<string, string> {
   return held;
 }
 
-/** The map with `key` set to `branch`, or removed — matched without case, as the driver matches it. */
-function withBranch(map: Record<string, string>, key: string, branch: string | null): Record<string, string> {
+/** The map with `key` set to `value`, or removed — matched without case, as the driver matches it. */
+function withEntry<T>(map: Record<string, T>, key: string, value: T | null): Record<string, T> {
   const kept = Object.fromEntries(Object.entries(map).filter(([name]) => name.toLowerCase() !== key.toLowerCase()));
-  return branch === null ? kept : { ...kept, [key]: branch };
+  return value === null ? kept : { ...kept, [key]: value };
+}
+
+/** A map of names to landing rules; one that could not land work is skipped, as the driver skips it. */
+function ruleMap(value: unknown): Record<string, LandingRule> {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
+  const held: Record<string, LandingRule> = {};
+  for (const [name, rule] of Object.entries(value as Record<string, unknown>)) {
+    if (!rule || typeof rule !== 'object') continue;
+    const { form, pattern } = rule as Record<string, unknown>;
+    const read: LandingRule = { form: typeof form === 'string' ? form : '', ...(typeof pattern === 'string' ? { pattern } : {}) };
+    if (landingProblem(read) === null) held[name] = kept(read);
+  }
+
+  return held;
+}
+
+/** A rule as it is kept: a merge carries no pattern — the driver keeps it the same way. */
+function kept(rule: LandingRule): LandingRule {
+  return rule.form === 'merge' ? { form: 'merge' } : { form: rule.form, pattern: rule.pattern! };
 }
 
 function names(value: unknown): string[] {

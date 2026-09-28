@@ -7,7 +7,7 @@ import { useScope } from './scope';
 import {
   useAddFavorite, useBrowserSettings, useDriver, useHarnessAction, useHarnessEnded, useHarnesses, useLines,
   usePluginAction, usePlugins, useRefreshHarnesses, useRemotes, useRemoveFavorite, useRuleAction, useRuleProposal, useRules,
-  useSetBrowser, useSetExtensions, useSetIntake, useSetLine, useSetNotify, useSetStrikes, useStarts, useUnwireRemote, useUsage,
+  useSetBrowser, useSetExtensions, useSetIntake, useSetLanding, useSetLine, useSetNotify, useSetStrikes, useStarts, useUnwireRemote, useUsage,
   useWireRemote,
 } from './shell';
 import { AgentRules } from './settings/AgentRules';
@@ -15,6 +15,7 @@ import { proposalChange } from './settings/proposals';
 import { StartWiringList } from './map/StartWiring';
 import { SessionConsole } from './SessionConsole';
 import { AiJobs, type SearchTier } from './settings/AiJobs';
+import { LandingList } from './settings/Landings';
 import { LineList } from './settings/Lines';
 import { SignIn } from './SignIn';
 import { byTool, doorLabel, type ToolDoor } from './tools';
@@ -146,6 +147,7 @@ export function SettingsView({ notify, section = 'appearance', onSection, anchor
               {attached && <WiringSettings notify={notify} />}
               {attached && <Starts notify={notify} />}
               {attached && <LineSettings notify={notify} />}
+              {attached && <LandingSettings notify={notify} />}
             </>
           )}
           {shown === 'driver' && <DriverSettings notify={notify} />}
@@ -438,6 +440,36 @@ function LineSettings({ notify }: { notify: Notify }) {
           notify(change.branch
             ? t('settings.lines.saved', { name, branch: change.branch })
             : t('settings.lines.cleared', { name }));
+        },
+        onError: failure(notify),
+      })}
+    />
+  );
+}
+
+/**
+ * How work lands in each repository and each workspace (WSR1, D87): the driver's own choice, and the
+ * screen's half of `daoris driver landing` (D50). Shell-only, beside the lines it lands on.
+ */
+function LandingSettings({ notify }: { notify: Notify }) {
+  const { t } = useTranslation();
+  const answer = useLines();
+  const driver = useDriver();
+  const setLanding = useSetLanding();
+
+  return (
+    <LandingList
+      landings={Array.isArray(answer.data?.landings) ? answer.data.landings : []}
+      workspaceLandings={driver.data?.workspaceLandings ?? []}
+      busy={setLanding.isPending}
+      onSet={(change) => setLanding.mutate(change, {
+        onSuccess: () => {
+          const name = change.repository ?? change.workspace ?? '';
+          notify(!change.form
+            ? t('settings.landing.cleared', { name })
+            : change.form === 'branch'
+              ? t('settings.landing.savedBranch', { name, pattern: change.pattern })
+              : t('settings.landing.savedMerge', { name }));
         },
         onError: failure(notify),
       })}

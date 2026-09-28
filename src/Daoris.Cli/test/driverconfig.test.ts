@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { commandDriver, driverConfigPath, isBranchName, readDriverChoices } from '../src/driverconfig.ts';
+import { commandDriver, driverConfigPath, isBranchName, landingProblem, readDriverChoices } from '../src/driverconfig.ts';
 import { makeFixture, captureError } from './_fixture.ts';
 
 /**
@@ -229,6 +229,71 @@ test('the lines survive edits made by verbs that do not know them, and one git w
   fx.cleanup();
 });
 
+/**
+ * WSR1 (D87): how work lands — merged into the line, or put on a branch a pattern names, for the
+ * person to push. `LandingTests.cs` holds the same pattern table, answer for answer.
+ */
+const PATTERNS: [string, boolean][] = [
+  ['feature/{quest}-{slug}', true], ['review/{session}', true], ['team/{repository}/{quest}', true],
+  ['', false], ['feature/fixed', false], ['feature/{slug}', false], ['feature/{nope}-{quest}', false],
+  ['feature/{quest', false], ['feature/{quest}..x', false], ['feature {quest}', false],
+];
+
+test('a pattern names a branch git would take, and one per session', () => {
+  for (const [pattern, valid] of PATTERNS) {
+    assert.equal(landingProblem({ form: 'branch', pattern }) === null, valid, JSON.stringify(pattern));
+  }
+
+  assert.equal(landingProblem({ form: 'merge' }), null);
+  assert.match(landingProblem({ form: 'push' })!, /a plugin's to do/);
+});
+
+test('landing sets a repository\'s rule, a workspace\'s, and clears either', () => {
+  const fx = makeFixture('driver-landing');
+
+  const branch = run(['landing', '--workspace', 'aurora', 'branch', 'feature/{quest}-{slug}'], at(fx));
+  assert.match(branch.out, /feature\/\{quest\}-\{slug\}/);
+  assert.match(branch.out, /never pushes/);
+  run(['landing', 'engine', 'merge'], at(fx));
+
+  const choices = readDriverChoices(at(fx));
+  assert.deepEqual(choices.workspaceLandings, { aurora: { form: 'branch', pattern: 'feature/{quest}-{slug}' } });
+  assert.deepEqual(choices.landings, { engine: { form: 'merge' } });
+  assert.match(run(['list'], at(fx)).out,
+    /landing\s+engine\s+merge[\s\S]*landing\s+workspace aurora\s+branch feature\/\{quest\}-\{slug\}/);
+
+  run(['landing', 'engine', '--clear'], at(fx));
+  run(['landing', '--workspace', 'aurora', '--clear'], at(fx));
+  const cleared = readDriverChoices(at(fx));
+  assert.deepEqual([cleared.landings, cleared.workspaceLandings], [{}, {}]);
+  assert.equal('landings' in JSON.parse(readFileSync(at(fx), 'utf8')), false);
+  fx.cleanup();
+});
+
+test('landing refuses a rule that could not land work, and says what it needs', () => {
+  const fx = makeFixture('driver-landing-refused');
+  assert.match(captureError(() => run(['landing', 'engine', 'branch', 'feature/fixed'], at(fx))).message, /\{quest\}` or `\{session\}/);
+  assert.match(captureError(() => run(['landing', 'engine', 'branch'], at(fx))).message, /pattern/);
+  assert.match(captureError(() => run(['landing', 'engine', 'push'], at(fx))).message, /a plugin's to do/);
+  assert.match(captureError(() => run(['landing', 'engine'], at(fx))).message, /merge\|branch <pattern>\|--clear/);
+  fx.cleanup();
+});
+
+test('the landing rules survive edits by verbs that do not know them, and one that could not land is not read', () => {
+  const fx = makeFixture('driver-landing-preserve');
+  writeFileSync(at(fx), JSON.stringify({
+    landings: { engine: { form: 'merge' }, odd: { form: 'push' }, bad: { form: 'branch', pattern: 'fixed' } },
+    workspaceLandings: { aurora: { form: 'branch', pattern: 'review/{session}' } },
+  }));
+
+  run(['cap', '3'], at(fx));
+
+  const choices = readDriverChoices(at(fx));
+  assert.deepEqual(choices.landings, { engine: { form: 'merge' } });
+  assert.deepEqual(choices.workspaceLandings, { aurora: { form: 'branch', pattern: 'review/{session}' } });
+  fx.cleanup();
+});
+
 test('trees needs on or off, and says so', () => {
   const fx = makeFixture('driver-trees-arg');
   assert.match(captureError(() => run(['trees', 'engine'], at(fx))).message, /on\|off/);
@@ -283,7 +348,7 @@ test('an unknown verb names the ones that exist', () => {
 
   assert.match(error.message, /unknown driver verb 'frobnicate'/);
   assert.match(
-    error.message, /list, drive, undrive, hold, resume, trees, line, notify, strikes, retry, timeout, cap, adapter, intake/);
+    error.message, /list, drive, undrive, hold, resume, trees, line, landing, notify, strikes, retry, timeout, cap, adapter, intake/);
   fx.cleanup();
 });
 

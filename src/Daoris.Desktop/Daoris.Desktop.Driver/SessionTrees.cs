@@ -271,6 +271,145 @@ public sealed class SessionTrees(string home)
             + "discard it when you are done with it.");
     }
 
+    /// <summary>Whether <paramref name="path"/> is a tree this home opened — the only kind a landing rule reaches.</summary>
+    public bool Holds(string path) =>
+        Path.GetFullPath(path).StartsWith(Path.GetFullPath(TreesRoot) + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// What a press on this tree would do under its repository's landing rule (WSR1, D87): merge into
+    /// the line, or make the branch the pattern names for this session — said before the press.
+    /// </summary>
+    public async Task<LandingPlan> PlanAsync(string path, LandingSubject subject, CancellationToken ct = default)
+    {
+        var full = Path.GetFullPath(path);
+        var (workspace, repository) = OwnerOf(full);
+        var landing = LandingRules.Choose(Config(), repository, workspace);
+        if (landing.Rule.Form == LandingForm.Branch)
+        {
+            return new(LandingForm.Branch, LandingRules.Expand(landing.Rule.Pattern!, NamesOf(subject, repository)), landing.Source);
+        }
+
+        var (code, commonDir, _) = Directory.Exists(full)
+            ? await WorkingTree.GitAsync(full, ["rev-parse", "--path-format=absolute", "--git-common-dir"], ct).ConfigureAwait(false)
+            : (1, "", "");
+        var line = code == 0
+            ? (await LineAsync(Path.GetDirectoryName(commonDir.Trim())!, repository, workspace, ct).ConfigureAwait(false)).Branch
+            : null;
+        return new(LandingForm.Merge, line ?? "", landing.Source);
+    }
+
+    /// <summary>
+    /// The press on a reviewed session (WSR1, D87): its work lands as its repository's rule says —
+    /// merged into the line (<see cref="MergeAsync"/>), or put on a new branch for the person to push.
+    /// </summary>
+    public async Task<TreeLanding> LandAsync(string path, LandingSubject subject, CancellationToken ct = default)
+    {
+        var full = Path.GetFullPath(path);
+        var (workspace, repository) = OwnerOf(full);
+        var landing = LandingRules.Choose(Config(), repository, workspace);
+        if (landing.Rule.Form != LandingForm.Branch)
+        {
+            var merged = await MergeAsync(path, ct).ConfigureAwait(false);
+            return new(merged.Merged, merged.Message);
+        }
+
+        return await BranchAsync(full, workspace, repository,
+            LandingRules.Expand(landing.Rule.Pattern!, NamesOf(subject, repository)), ct).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Put a session's work on a new branch, from the session's own branch, which grew from the line.
+    /// </summary>
+    /// <remarks>
+    /// 🔴 <b>It writes nothing to the checkout</b>: it makes one ref in the repository and moves no
+    /// checkout, so the root may be dirty and on any branch, and is left exactly so. A branch of that
+    /// name already there is refused and never moved — it may be somebody's. Nothing pushes (D87).
+    /// </remarks>
+    private async Task<TreeLanding> BranchAsync(string full, string workspace, string repository, string name, CancellationToken ct)
+    {
+        if (!Holds(full))
+        {
+            return new(false, $"{full} is not a session tree — this lands only trees Daoris opened, under {TreesRoot}.");
+        }
+
+        if (!Directory.Exists(full))
+        {
+            return new(false, $"there is no tree at {full}.");
+        }
+
+        var (rootCode, commonDir, rootErr) = await WorkingTree.GitAsync(
+            full, ["rev-parse", "--path-format=absolute", "--git-common-dir"], ct).ConfigureAwait(false);
+        if (rootCode != 0)
+        {
+            return new(false, $"{full} is not a working tree git recognises: {FirstLine(rootErr)}");
+        }
+
+        var root = Path.GetDirectoryName(commonDir.Trim())!;
+        var (_, branchOut, _) = await WorkingTree.GitAsync(full, ["rev-parse", "--abbrev-ref", "HEAD"], ct).ConfigureAwait(false);
+        var branch = branchOut.Trim();
+        if (branch is "" or "HEAD")
+        {
+            return new(false, $"the tree at {full} is not on a branch, so there is nothing to land.");
+        }
+
+        // Uncommitted work would not travel with the branch — the same reason the merge door gives.
+        var (_, dirty, _) = await WorkingTree.GitAsync(full, ["status", "--porcelain"], ct).ConfigureAwait(false);
+        if (!string.IsNullOrWhiteSpace(dirty))
+        {
+            return new(false,
+                $"the session's tree has uncommitted work — {dirty.Trim().Split('\n').Length} path(s) — which a "
+                + "branch would leave behind. Commit it in the tree first, or decide it is not wanted.");
+        }
+
+        var line = (await LineAsync(root, repository, workspace, ct).ConfigureAwait(false)).Branch;
+        var against = line is null ? "HEAD" : await ComparableAsync(root, line, ct).ConfigureAwait(false) ?? line;
+        var (logCode, ahead, logErr) = await WorkingTree.GitAsync(
+            root, ["log", "--oneline", $"{against}..{branch}"], ct).ConfigureAwait(false);
+        if (logCode != 0)
+        {
+            return new(false, $"git cannot compare `{branch}` with `{line ?? "HEAD"}` here: {FirstLine(logErr)} "
+                + "Fetch it, or set another line with `daoris driver line`.");
+        }
+
+        if (string.IsNullOrWhiteSpace(ahead))
+        {
+            return new(false, $"`{branch}` holds nothing `{line ?? "HEAD"}` does not — nothing to land.");
+        }
+
+        if (!BranchName.IsValid(name))
+        {
+            return new(false, $"the landing rule names `{name}` for this session, which is not a branch name git "
+                + "would take. Change the pattern with `daoris driver landing`.");
+        }
+
+        var (exists, _, _) = await WorkingTree.GitAsync(
+            root, ["rev-parse", "--verify", "--quiet", $"refs/heads/{name}"], ct).ConfigureAwait(false);
+        if (exists == 0)
+        {
+            return new(false, $"`{name}` is already a branch in `{repository}`, and Daoris does not move a branch it "
+                + "did not make. Rename or delete it there, or change the pattern with `daoris driver landing`.");
+        }
+
+        var (code, _, err) = await WorkingTree.GitAsync(root, ["branch", name, branch], ct).ConfigureAwait(false);
+        if (code != 0)
+        {
+            return new(false, $"git would not make `{name}`: {FirstLine(err)}");
+        }
+
+        var count = ahead.Trim().Split('\n').Length;
+        return new(true,
+            $"put the work on `{name}` — {count} commit(s) from `{line ?? "HEAD"}`. Push it and open the pull request "
+            + $"from there: `git push -u origin {name}`. Nothing was merged and the checkout was not touched; the tree "
+            + "is still there — discard it when you are done with it.",
+            name);
+    }
+
+    private DriverConfig Config() => DriverConfig.Load(Path.Combine(home, "driver.json"));
+
+    /// <summary>What a pattern is expanded from: the quest, or the session where there is none; the title's words.</summary>
+    private static LandingNames NamesOf(LandingSubject subject, string repository) =>
+        new(subject.Quest ?? subject.Session, LandingRules.Slug(subject.Title), repository, subject.Session);
+
     /// <summary>
     /// Remove a session tree — <b>and only a session tree</b>: anything outside the trees home is
     /// somebody's checkout, and is refused before git is asked anything.
@@ -390,7 +529,7 @@ public sealed class SessionTrees(string home)
     /// set it between one tree and the next, and a cached answer would grow the second from the old line.
     /// </summary>
     private Task<Line> LineAsync(string root, string repository, string workspace, CancellationToken ct) =>
-        CanonicalLine.ResolveAsync(root, repository, workspace, DriverConfig.Load(Path.Combine(home, "driver.json")), ct);
+        CanonicalLine.ResolveAsync(root, repository, workspace, Config(), ct);
 
     /// <summary>
     /// Where a tree on <paramref name="branch"/> grows from: the branch itself where this checkout has

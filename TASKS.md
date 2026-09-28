@@ -21,8 +21,8 @@ lists.
 
 ## State
 
-**Counts, and this is their one home:** sixteen commands, **508 CLI tests, 528 service, 828 driver,
-282 desktop modules, 80 devkit, 1219 web unit, 21 Playwright**, 66/66 release rehearsal, **289/289
+**Counts, and this is their one home:** sixteen commands, **512 CLI tests, 528 service, 851 driver,
+285 desktop modules, 80 devkit, 1228 web unit, 21 Playwright**, 66/66 release rehearsal, **289/289
 family rehearsal** (it names its own phases when you run it), **45/45 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge
 documents, 5 skills, 7 packs. The always-loaded core is **22,492 of 26,000 bytes** — a span in
@@ -144,8 +144,8 @@ rather than designed.
 
 ## Backlog
 
-**Thirty-seven rows are open**: the six the first real workspace showed (WSR1, WSR3, WSR4, SESS1,
-MAP4, HELP1; WSR2 landed as D86); D85's two (CHR2, CHR4); the in-app browser's three (BRW3, BRW7, BRW8); the first goal's three (FG5,
+**Thirty-six rows are open**: the five the first real workspace showed (WSR3, WSR4, SESS1, MAP4,
+HELP1; WSR2 and WSR1 landed as D86 and D87); D85's two (CHR2, CHR4); the in-app browser's three (BRW3, BRW7, BRW8); the first goal's three (FG5,
 READACROSS1 the owner's, and SEM2 on a trigger); D76's held file tools;
 the eight REV3 left, WINDOW2 among them; six leftovers (RAIL2, SURF11, CONSOLE3, FLAKE1, DEPLOY5, TEST1); two on the owner
 (TRUST2, AGT2c); and six on a trigger (see *Handover*). Every closed one is in `docs/task-archive.md`, and this file holds no
@@ -158,14 +158,10 @@ ticked rows, by the `task-lifecycle` rule it also ships. A heading below holds o
 
 `docs/2026-09-28-after-the-first-workspace.md` is the study: what each part has today, the gap, the
 requirements, and the owner's calls. Its recommended order is the order below.
-- [ ] **WSR1 — workspace rules: how work lands** (study §1, **D87**). An integration rule per
-  workspace, with a repository override: merge into the line (D86), or carry the work onto a feature
-  branch named by a pattern for the person to push. Set in Settings and from a terminal, and carried
-  to the review screen, chains and the session's instruction. The owner's call is made (D87): Daoris
-  never pushes; that form is a plugin's (WSR4).
 - [ ] **WSR4 — a plugin lands work: push and open a pull request** (D87). The landing rule names a
   plugin, and the plugin, for its platform, pushes the branch and opens the pull request over its
-  wire (D64). Off by default, and configurable per workspace. Waits on WSR1.
+  wire (D64). Off by default, and configurable per workspace. WSR1's branch form is what it starts
+  from: `LandingRules.Problem` refuses any other form today, and says so.
 - [ ] **WSR3 — session branches cleaned up after they land** (study §2). After work lands, its tree
   and branch go, under the workspace's rule, only when git proves the work is on its target. A bulk
   clean of every landed or empty `daoris/s-*` branch, listed before it is pressed, with a terminal

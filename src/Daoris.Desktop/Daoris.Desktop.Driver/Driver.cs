@@ -549,6 +549,11 @@ public sealed partial class Driver(
                 CutOff = carryingOn ? start.Resumes!.Note ?? "it ended before closing the quest." : null,
                 InFlight = carryingOn ? await WorkingTree.UncommittedAsync(workTree, ct: ct).ConfigureAwait(false) : [],
                 GrewFrom = opened?.GrewFrom,
+                // How its work will land (WSR1, D87), for a session in a tree of its own — the only kind
+                // the review's press reaches.
+                LandsOn = _trees.Holds(workTree)
+                    ? await _trees.PlanAsync(workTree, new LandingSubject(sessionId, quest.Id, quest.Title), ct).ConfigureAwait(false)
+                    : null,
                 // The person's answer, when the session before parked to ask them (STANDDOWN2).
                 PersonSaid = carryingOn ? start.Resumes!.Answer : null,
             };

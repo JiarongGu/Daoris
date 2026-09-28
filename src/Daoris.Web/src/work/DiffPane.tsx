@@ -2,8 +2,8 @@ import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { sentence } from '../format';
 import { store, stored } from '../lib/stored';
-import { useDiscardSessionTree, useMergeSessionTree, useSessionDiff } from '../shell';
-import { Button, EmptyState, Segmented, SkeletonRows } from '../ui';
+import { useDiscardSessionTree, useLandSessionTree, useLanding, useSessionDiff } from '../shell';
+import { Button, EmptyState, Inline, Segmented, SkeletonRows } from '../ui';
 import { DiffFileRow } from './DiffFileRow';
 import type { DiffLayout } from './PatchView';
 
@@ -21,8 +21,9 @@ const LAYOUT = 'daoris.reviewLayout';
  * **Reading and acting are separate routes.** The diff route is read-only by construction; the acts
  * are their own, so a surface built to *show* the work cannot change it by accident.
  *
- * **The verbs are Daoris's, never an editor's**: *accept* — merge the session's tree into the
- * canonical line — *discard the tree*, and *send it back as a quest*. Never keep/reject per hunk: the
+ * **The verbs are Daoris's, never an editor's**: *accept* — land the work as the repository's rule
+ * says (WSR1, D87): merged into its line, or put on a branch for the person to push, and the pane says
+ * which before the press — *discard the tree*, and *send it back as a quest*. Never keep/reject per hunk: the
  * session already committed, and reaching in to fix what you are reviewing is what D32 forbids.
  * Sending it back is the one move Daoris has that an editor does not, and it is a door into the
  * platform's own composer rather than a second publish path.
@@ -51,7 +52,9 @@ export function DiffPane({ session, hasTree = false, onSendBack }: {
 }) {
   const { t } = useTranslation();
   const diff = useSessionDiff(session);
-  const merge = useMergeSessionTree();
+  const land = useLandSessionTree();
+  // What a press would do, asked only where there is a tree to land.
+  const landing = useLanding(hasTree ? session : null);
   const discard = useDiscardSessionTree();
 
   // Per-reader, per-session, and never written down: which files this person has opened and which
@@ -130,15 +133,27 @@ export function DiffPane({ session, hasTree = false, onSendBack }: {
   const acts = !hasTree && !onSendBack ? null : (
     <footer className="grid shrink-0 gap-2 border-t border-line px-3 py-2">
       {said && <p className="m-0 text-small text-ink-soft">{said}</p>}
+      {/* Where a press sends the work, before it is pressed (D87). A shell older than the rule
+          answers no form, and the pane then claims nothing. */}
+      {!said && hasTree && landing.data?.form === 'branch' && landing.data.target && (
+        <p className="m-0 text-small text-ink-faint">
+          <Inline text={t('work.review.landsOnBranch', { branch: landing.data.target })} />
+        </p>
+      )}
+      {!said && hasTree && landing.data?.form === 'merge' && landing.data.target && (
+        <p className="m-0 text-small text-ink-faint">
+          <Inline text={t('work.review.landsOnLine', { line: landing.data.target })} />
+        </p>
+      )}
 
       <div className="flex flex-wrap items-center gap-2">
         {hasTree && (
           <Button
             variant="primary"
-            disabled={merge.isPending}
-            onClick={() => act(merge.mutateAsync(session))}
+            disabled={land.isPending}
+            onClick={() => act(land.mutateAsync(session))}
           >
-            {merge.isPending ? t('work.review.accepting') : t('work.review.accept')}
+            {land.isPending ? t('work.review.accepting') : t('work.review.accept')}
           </Button>
         )}
 
