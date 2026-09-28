@@ -73,6 +73,8 @@ export type EventPage = {
   earlier: boolean;
   /** The newest sequence the session has. */
   latest: number;
+  /** What the session was first asked, where the page does not hold it (SESS1) — a long run reads from it. */
+  opening?: SessionEvent | null;
 };
 
 /**
@@ -100,6 +102,11 @@ export type Block = {
    * own status, never instead of it — the card opens to what the harness said about it.
    */
   stopped?: boolean;
+  /**
+   * A call this page holds only the updates of (SESS1 S5): it began on an earlier page, and an update
+   * carries no title. Said so, rather than named by its id.
+   */
+  continued?: boolean;
 };
 
 /** What was asked — by the person, or the target the driver composed — and what the person attached. */
@@ -123,6 +130,10 @@ export type ChatMessage = { text: string; files: string[] };
 export type Turn = {
   key: string;
   ask?: Ask;
+  /** Events between the ask and the items are not held yet (SESS1): the page began past the ask. */
+  gap?: boolean;
+  /** The session ended inside this turn, with the wire never saying the turn did (SESS1 S4). */
+  cut?: boolean;
   items: Block[];
   ended?: string;
   tokens?: TurnTokens;
@@ -152,7 +163,9 @@ export type Usage = { used: number; size: number; most: number };
  *   running; either way the person stopped it, and a failure shown in the alarm's colour would say
  *   otherwise. A call that failed and was followed by more work failed on its own.
  */
-export function toTurns(events: readonly SessionEvent[]): { turns: Turn[]; usage?: Usage } {
+export function toTurns(
+  events: readonly SessionEvent[], { opening }: { opening?: SessionEvent | null } = {},
+): { turns: Turn[]; usage?: Usage } {
   const turns: Turn[] = [];
   let usage: Usage | undefined;
   let current: Turn | null = null;
@@ -164,15 +177,22 @@ export function toTurns(events: readonly SessionEvent[]): { turns: Turn[]; usage
     return turn;
   };
   const here = (key: string): Turn => current ?? open(key);
+  const asked = (event: SessionEvent, key: string): Ask => ({
+    key, text: event.text ?? '', origin: event.origin ?? 'person', at: event.at,
+    ...(event.files?.length ? { files: event.files } : {}),
+  });
+
+  // What was asked first, where the page began past it (SESS1 S1): the run reads from its ask, and the
+  // gap after it is where the earlier events belong.
+  if (opening && !events.some((event) => event.seq === opening.seq)) {
+    open(`e${opening.seq}`, asked(opening, `e${opening.seq}`)).gap = true;
+  }
 
   for (const event of events) {
     const key = `e${event.seq}`;
     switch (event.kind) {
       case 'user':
-        open(key, {
-          key, text: event.text ?? '', origin: event.origin ?? 'person', at: event.at,
-          ...(event.files?.length ? { files: event.files } : {}),
-        });
+        open(key, asked(event, key));
         break;
       case 'turn': {
         const turn = here(key);
@@ -217,6 +237,8 @@ export function toTurns(events: readonly SessionEvent[]): { turns: Turn[]; usage
             key, kind: 'tool', at: event.at, id: event.id, title: event.title, toolKind: event.toolKind,
             status: event.status, locations: event.locations, content: event.content,
             input: event.input, output: event.output,
+            // A call's first event names it; one with no name is an update to a call begun earlier.
+            ...(event.title ? {} : { continued: true }),
           });
         }
         break;
@@ -234,7 +256,8 @@ export function toTurns(events: readonly SessionEvent[]): { turns: Turn[]; usage
         }
         break;
       case 'note':
-        here(key).items.push({ key, kind: 'note', at: event.at, text: event.text });
+        // A note about one call carries its id (SESS1 S6), so it folds with that call's run.
+        here(key).items.push({ key, kind: 'note', at: event.at, text: event.text, ...(event.id ? { id: event.id } : {}) });
         break;
       default:
         here(key).items.push({ key, kind: 'raw', at: event.at, title: event.title, text: event.text, raw: event.raw });
@@ -248,6 +271,81 @@ export function toTurns(events: readonly SessionEvent[]): { turns: Turn[]; usage
   }
 
   return { turns, usage };
+}
+
+/**
+ * The turns as a session that has ended leaves them (SESS1 S4): the last one, if the wire never said
+ * it ended, was cut — and the calls it left open never finished, so they read *stopped*, never
+ * *running* for good. A live session is left as it is: its last turn may simply be going on.
+ */
+export function settle(turns: Turn[], live: boolean): Turn[] {
+  const last = turns[turns.length - 1];
+  if (live || !last || last.ended) return turns;
+  const cut: Turn = {
+    ...last,
+    cut: true,
+    items: last.items.map((item) => (item.kind === 'tool' && item.status !== 'completed' && item.status !== 'failed'
+      ? { ...item, stopped: true }
+      : item)),
+  };
+  return [...turns.slice(0, -1), cut];
+}
+
+/** What a turn draws, in order: a block on its own, or a run of work folded to a line that counts it. */
+export type Segment =
+  | { kind: 'block'; block: Block }
+  | { kind: 'run'; key: string; items: Block[]; open: boolean };
+
+/**
+ * The work a run folds: calls, the agent's thinking, and the driver's note about one call (its id says
+ * which). The agent's words, its plan and the driver's notes about the session stand alone.
+ */
+const WORK = new Set(['tool', 'thought', 'raw']);
+const isWork = (item: Block) => WORK.has(item.kind) || (item.kind === 'note' && Boolean(item.id));
+
+/**
+ * A turn's items as a reader reads them (SESS1 S3): every word the agent said stays in view, and the
+ * work between two of them folds into one run that counts it. A run of one is shown as itself, since
+ * folding it saves nothing; the last run stays open while the turn goes on (`tailOpen`), so the work in
+ * hand is in view.
+ *
+ * @remarks
+ * This replaces folding a finished turn whole. A driven session is one turn — one ask, then the run —
+ * so the whole-turn fold hid the agent's narration of hundreds of calls behind one row, and a run that
+ * never ended folded nothing at all (the first real workspace, 2026-09-28).
+ */
+export function segments(items: readonly Block[], tailOpen: boolean): Segment[] {
+  const parts: Segment[] = [];
+  let run: Block[] = [];
+  const close = () => {
+    if (run.length === 1) parts.push({ kind: 'block', block: run[0]! });
+    else if (run.length > 1) parts.push({ kind: 'run', key: `run-${run[0]!.key}`, items: run, open: false });
+    run = [];
+  };
+
+  for (const item of items) {
+    if (isWork(item)) run.push(item);
+    else {
+      close();
+      parts.push({ kind: 'block', block: item });
+    }
+  }
+  close();
+
+  const last = parts[parts.length - 1];
+  if (tailOpen && last?.kind === 'run') parts[parts.length - 1] = { ...last, open: true };
+  return parts;
+}
+
+/** What a folded run holds, for the line that stands for it: its calls, how many failed, whether it thought. */
+export function runCount(items: readonly Block[]): { tools: number; failed: number; thought: boolean } {
+  const tools = items.filter((item) => item.kind === 'tool');
+  return {
+    tools: tools.length,
+    // A call the stop or the session's end cut is not a failure (CONV4b), whatever the wire answered.
+    failed: tools.filter((item) => item.status === 'failed' && !item.stopped).length,
+    thought: items.some((item) => item.kind === 'thought'),
+  };
 }
 
 /** Milliseconds from one stamp to a later one, or undefined when either is not a time. */

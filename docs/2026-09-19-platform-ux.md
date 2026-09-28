@@ -292,9 +292,13 @@ controls are in the frame design's §3.
     window, its review, its id.
   - **The centre is the record, then the conversation**, one scroll, following the centre's width
     (U16): the head read once, then the agent's words, which the region follows until the person
-    scrolls up and is then offered *back to bottom*; a long history offers *load earlier*. **A finished
-    turn folds its work** into one row that counts it (*3 tool calls · 1 message · thought*) and leaves
-    the last message open; a running turn is all open and says *working…*. The driver's composed
+    scrolls up and is then offered *back to bottom*. **A long run reads from what it was asked**
+    (SESS1): the ask comes first, and *load earlier* sits in the gap after it. **Every word the agent
+    said stays in view, and the work between two of them folds** into one row that counts it and its
+    failures in the failed tone (*5 tool calls · 1 failed*); a run of one is shown as itself, and the
+    run in hand stays open while the turn goes on, which says *working…*. A driven session is one
+    turn, so folding a turn whole hid its account of the run. A turn the session ended inside says so,
+    and its open calls read *stopped*. The driver's composed
     target is folded to two lines and named as the driver's. A tool call is a row that says what it
     did (its kind's glyph, title, file, an edit's `+n −m`, its status), closed by default and open when
     it failed, its text without the fence an adapter wrapped it in (U63). **Code is the paper's

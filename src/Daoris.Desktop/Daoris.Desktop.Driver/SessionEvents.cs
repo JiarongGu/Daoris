@@ -166,7 +166,15 @@ public sealed record SessionSearch(IReadOnlyList<SessionHit> Hits, bool Cut);
 /// <summary>One page of a session's events, oldest first.</summary>
 /// <param name="Earlier">Whether events older than this page exist — what "load earlier" asks after.</param>
 /// <param name="Latest">The newest sequence the session has — what a live page merges after.</param>
-public sealed record EventPage(IReadOnlyList<SessionEvent> Events, bool Earlier, long Latest);
+public sealed record EventPage(IReadOnlyList<SessionEvent> Events, bool Earlier, long Latest)
+{
+    /// <summary>
+    /// What the session was first asked, where this page does not hold it (SESS1): a long run is read
+    /// from its ask, and the newest page of one is hundreds of events past it. Null when the page holds
+    /// it, or nothing was asked.
+    /// </summary>
+    public SessionEvent? Opening { get; init; }
+}
 
 /// <summary>
 /// A session's structure, kept on the machine (D76 §2): <c>&lt;id&gt;.events.jsonl</c> beside the
@@ -289,7 +297,11 @@ public sealed class SessionEvents(string directory)
         var older = before is { } b ? all.Where(e => e.Seq < b).ToList() : all;
         var take = Math.Clamp(limit, 1, MaxPage);
         var page = older.Skip(Math.Max(0, older.Count - take)).ToList();
-        return new EventPage(page, older.Count > page.Count, latest);
+        var opening = all.FirstOrDefault(e => e.Kind == SessionEventKind.User);
+        return new EventPage(page, older.Count > page.Count, latest)
+        {
+            Opening = opening is not null && page.Count > 0 && opening.Seq < page[0].Seq ? opening : null,
+        };
     }
 
     /// <summary>Everything newer than <paramref name="after"/> — how a page that missed a batch closes the gap.</summary>

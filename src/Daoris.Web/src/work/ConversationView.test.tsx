@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import '../i18n';
 import { ConversationView } from './ConversationView';
-import { type SessionEvent, toTurns } from './conversation';
+import { type SessionEvent, settle, toTurns } from './conversation';
 
 // The conversation's molecule (D76, CONV2), props in: every state it can be in is a turn list built
 // by the same fold the organism uses, so what is asserted here is what a session would show.
@@ -261,6 +261,85 @@ describe('ConversationView', () => {
     expect(container.textContent).toBe('');
   });
 
+  /**
+   * SESS1 S3, from the first real workspace: a driven session is one turn, so folding the turn whole hid
+   * the agent's account of hundreds of calls behind one row. Its words stay; the work between them folds.
+   */
+  it('keeps every word the agent said, and folds the work between them into runs that count failures', async () => {
+    view([
+      ev({ kind: 'user', origin: 'target', text: 'Your target is the quest…' }),
+      ev({ kind: 'message', text: 'Looking at the loader first.' }),
+      ev({ kind: 'tool', id: 'r1', title: 'Read loader.rs', toolKind: 'read', status: 'completed' }),
+      ev({ kind: 'tool', id: 'r2', title: 'git stash list', toolKind: 'execute', status: 'failed', output: 'refused' }),
+      ev({ kind: 'message', id: 'm2', text: 'Clean. Now the gates.' }),
+      ev({ kind: 'message', id: 'm3', text: 'Landed.' }),
+      ev({ kind: 'turn', stopReason: 'end_turn' }),
+    ]);
+
+    expect(screen.getByText('Looking at the loader first.')).toBeTruthy();
+    expect(screen.getByText('Clean. Now the gates.')).toBeTruthy();
+    const fold = screen.getByRole('button', { name: /2 tool calls · 1 failed/ });
+    expect(screen.queryByText('Read loader.rs')).toBeNull();
+
+    await userEvent.click(fold);
+    expect(screen.getByText('Read loader.rs')).toBeTruthy();
+    expect(screen.getByText('refused')).toBeTruthy();
+  });
+
+  /** SESS1 S1: a long run is read from its ask, and *load earlier* sits where the missing events belong. */
+  it('reads a long run from what it was asked, with load earlier where the gap is', async () => {
+    let asked = 0;
+    const opening = ev({ kind: 'user', origin: 'target', text: 'Your target is the quest…' });
+    const page = [ev({ kind: 'message', text: 'Clean. Now the gates.' })];
+    render(
+      <Tooltip.Provider>
+        <ConversationView turns={toTurns(page, { opening }).turns} earlier onLoadEarlier={() => { asked += 1; }} />
+      </Tooltip.Provider>,
+    );
+
+    const target = screen.getByText('the target Daoris composed');
+    const earlier = screen.getByRole('button', { name: 'load earlier' });
+    const words = screen.getByText('Clean. Now the gates.');
+    // In the order a reader reads them: the ask, the gap, then the page.
+    expect(target.compareDocumentPosition(earlier) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(earlier.compareDocumentPosition(words) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+
+    await userEvent.click(earlier);
+    expect(asked).toBe(1);
+  });
+
+  /** SESS1 S4: the session ended inside the turn, so its open call never finished — never *running* for good. */
+  it('says a session ended inside the turn it cut, and the call it left open stopped', () => {
+    const events = [
+      ev({ kind: 'user', origin: 'target', text: 'go' }),
+      ev({ kind: 'tool', id: 'g1', title: 'npm run gates', toolKind: 'execute', status: 'in_progress' }),
+    ];
+    render(<Tooltip.Provider><ConversationView turns={settle(toTurns(events).turns, false)} /></Tooltip.Provider>);
+
+    expect(screen.getByText('stopped')).toBeTruthy();
+    expect(screen.queryByText('running')).toBeNull();
+    expect(screen.getByText(/The session ended here/)).toBeTruthy();
+  });
+
+  /** SESS1 S5: a call the page holds only the updates of began earlier, and says so, never its id. */
+  it('says a call began earlier where the page holds only its updates, never naming it by its id', () => {
+    view([ev({ kind: 'tool', id: 'toolu_01ExampleCallId', status: 'completed' })]);
+
+    expect(screen.queryByText(/toolu_/)).toBeNull();
+    expect(screen.getByText('a call begun earlier')).toBeTruthy();
+  });
+
+  /** SESS1 S6: a record from before the refusal named its call carries the request's JSON; two lines, the rest on a press. */
+  it('shows a long note of the driver\'s as two lines, and the rest on a press', async () => {
+    const long = `permission refused: {"toolCallId":"toolu_01","rawInput":{"command":"${'x'.repeat(300)}"}} — the repository's own configuration governs`;
+    view([ev({ kind: 'note', text: long })]);
+
+    const show = screen.getByRole('button', { name: 'show all' });
+    expect(show).toHaveAttribute('aria-expanded', 'false');
+    await userEvent.click(show);
+    expect(show).toHaveAttribute('aria-expanded', 'true');
+  });
+
   it('offers earlier turns when the record holds more than the page', async () => {
     let asked = 0;
     view(FINISHED(), { earlier: true, onLoadEarlier: () => { asked += 1; } });
@@ -342,7 +421,7 @@ describe('ConversationView', () => {
       ev({ kind: 'turn', stopReason: 'cancelled' }),
     ]);
 
-    await userEvent.click(screen.getByRole('button', { name: /1 tool call/ }));
+    // A run of one is shown as itself (SESS1): folding it would save nothing.
     const card = screen.getByRole('button', { name: /Run the tests/ });
     expect(within(card).getByText('stopped')).toBeTruthy();
     expect(within(card).queryByText('failed')).toBeNull();

@@ -668,6 +668,8 @@ export function useSessionEvents(sessionId: string | null) {
   const { isAvailable } = useShenora();
   const [events, setEvents] = useState<SessionEvent[]>([]);
   const [earlier, setEarlier] = useState(false);
+  // What the session was first asked, where the newest page does not hold it (SESS1): a long run reads from it.
+  const [opening, setOpening] = useState<SessionEvent | null>(null);
   // Whether the history has answered, so an empty record reads as "nothing said" only once it is one.
   const [loaded, setLoaded] = useState(false);
   // The newest sequence held, and which session it belongs to — read inside the event handler, which
@@ -692,6 +694,7 @@ export function useSessionEvents(sessionId: string | null) {
     latest.current = 0;
     setEvents([]);
     setEarlier(false);
+    setOpening(null);
     setLoaded(false);
     if (!isAvailable || !sessionId) return;
 
@@ -701,6 +704,7 @@ export function useSessionEvents(sessionId: string | null) {
         if (!current || !page) return;
         hold(page.events ?? []);
         setEarlier(Boolean(page.earlier));
+        setOpening(page.opening ?? null);
       })
       // A record that failed to load is a quiet absence: the session's head above it is already there.
       .catch(() => {})
@@ -740,7 +744,7 @@ export function useSessionEvents(sessionId: string | null) {
     }
   }, [events, history]);
 
-  return { events, earlier, loaded, loadEarlier };
+  return { events, opening, earlier, loaded, loadEarlier };
 }
 
 /** Where a conversation's turns stand, as the driver holds them (CONV4a). */

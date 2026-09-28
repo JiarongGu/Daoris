@@ -61,7 +61,8 @@ export function ToolCard({ call, tree }: {
       .reduce((sum, c) => ({ added: sum.added + c.added, removed: sum.removed + c.removed }), { added: 0, removed: 0 })
     : null;
   const where = call.locations?.[0] ? inTree(call.locations[0], tree) : undefined;
-  const title = inTree(call.title || call.id || t('work.tool.untitled'), tree);
+  // Never the id (SESS1 S5): a call the page holds only the updates of says it began earlier.
+  const title = inTree(call.title || t(call.continued ? 'work.tool.continued' : 'work.tool.untitled'), tree);
   const status = call.status ?? 'pending';
   const hasBody = Boolean(call.content?.length || call.input || call.output);
 

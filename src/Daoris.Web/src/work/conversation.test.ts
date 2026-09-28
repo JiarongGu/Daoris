@@ -20,7 +20,7 @@ vi.mock('@shenora/react', () => ({
 }));
 
 import { useChatTurns, useSessionEvents } from '../shell';
-import { mergeEvents, type SessionEvent, toTurns } from './conversation';
+import { mergeEvents, runCount, segments, type SessionEvent, settle, toTurns } from './conversation';
 
 const said = (seq: number, text = `m${seq}`): SessionEvent => ({ seq, at: '2026-09-25T00:00:00Z', kind: 'message', text });
 
@@ -215,6 +215,114 @@ describe('toTurns', () => {
   });
 });
 
+/**
+ * SESS1, looked at on the first real workspace: a driven session is one ask and then its whole run —
+ * 1,855 events in the longest — so the page holds its newest 200, past the ask and past the start of
+ * the calls it shows.
+ */
+describe('toTurns, on a page of a long run', () => {
+  const target = e(1, { kind: 'user', origin: 'target', text: 'Your target is the quest…' });
+
+  it('opens with what was asked when the page does not hold it, and marks the gap after it', () => {
+    const { turns } = toTurns([e(901, { text: 'Clean. Now the gates:' })], { opening: target });
+
+    expect(turns).toHaveLength(1);
+    expect(turns[0]!.ask?.text).toBe('Your target is the quest…');
+    expect(turns[0]!.gap).toBe(true);
+    expect(turns[0]!.items.map((item) => item.text)).toEqual(['Clean. Now the gates:']);
+  });
+
+  it('holds the ask once, with no gap, when the page reaches it', () => {
+    const { turns } = toTurns([target, e(2, { text: 'first' })], { opening: target });
+
+    expect(turns).toHaveLength(1);
+    expect(turns[0]!.gap).toBeUndefined();
+  });
+
+  it('says a call it holds only the updates of began earlier, never naming it by its id', () => {
+    const { turns } = toTurns([e(900, { kind: 'tool', id: 'toolu_01Example', status: 'completed' })], { opening: target });
+
+    const call = turns[0]!.items[0]!;
+    expect(call.continued).toBe(true);
+    expect(call.title).toBeUndefined();
+  });
+});
+
+describe('settle', () => {
+  const run = (...over: Partial<SessionEvent>[]) => toTurns(over.map((o, i) => e(i + 1, o))).turns;
+
+  it('marks a turn the session ended inside as cut, and the calls it left open as stopped', () => {
+    const turns = settle(run(
+      { kind: 'user', origin: 'target', text: 'go' },
+      { kind: 'tool', id: 'c1', title: 'npm test', status: 'failed' },
+      { kind: 'tool', id: 'c2', title: 'npm run gates', status: 'in_progress' },
+    ), false);
+
+    expect(turns[0]!.cut).toBe(true);
+    expect(turns[0]!.items.map((item) => item.stopped ?? false)).toEqual([false, true]);
+  });
+
+  it('leaves a live session and a finished turn as they are', () => {
+    const open = run({ kind: 'user', text: 'go' }, { kind: 'tool', id: 'c1', title: 'npm test', status: 'in_progress' });
+    expect(settle(open, true)[0]!.cut).toBeUndefined();
+
+    const done = run({ kind: 'user', text: 'go' }, { kind: 'message', text: 'done' }, { kind: 'turn', stopReason: 'end_turn' });
+    expect(settle(done, false)[0]!.cut).toBeUndefined();
+  });
+});
+
+describe('segments', () => {
+  const blocks = (...over: Partial<SessionEvent>[]) => toTurns(over.map((o, i) => e(i + 1, o))).turns[0]!.items;
+
+  it('keeps every word the agent said, and folds the work between them into runs that count it', () => {
+    const parts = segments(blocks(
+      { kind: 'message', text: 'Looking at the loader.' },
+      { kind: 'tool', id: 'c1', title: 'Read a', status: 'completed' },
+      { kind: 'thought', text: 'hm' },
+      { kind: 'tool', id: 'c2', title: 'Bash b', status: 'failed' },
+      { kind: 'message', text: 'Fixed.' },
+      { kind: 'tool', id: 'c3', title: 'Read c', status: 'completed' },
+      { kind: 'message', text: 'Done.' },
+    ), false);
+
+    expect(parts.map((part) => (part.kind === 'run' ? `run ${part.items.length} ${part.open ? 'open' : 'folded'}` : part.block.text ?? part.block.title)))
+      .toEqual(['Looking at the loader.', 'run 3 folded', 'Fixed.', 'Read c', 'Done.']);
+    expect(runCount(parts[1]!.kind === 'run' ? parts[1]!.items : [])).toEqual({ tools: 2, failed: 1, thought: true });
+  });
+
+  it('keeps the last run open while the turn goes on, so the work in hand is in view', () => {
+    const parts = segments(blocks(
+      { kind: 'message', text: 'Running the gates.' },
+      { kind: 'tool', id: 'c1', title: 'npm test', status: 'completed' },
+      { kind: 'tool', id: 'c2', title: 'npm run e2e', status: 'in_progress' },
+    ), true);
+
+    expect(parts[1]).toMatchObject({ kind: 'run', open: true });
+  });
+
+  it('keeps a plan and the driver\'s notes out of the fold', () => {
+    const parts = segments(blocks(
+      { kind: 'tool', id: 'c1', title: 'Read a', status: 'completed' },
+      { kind: 'note', text: 'permission refused: Bash' },
+      { kind: 'tool', id: 'c2', title: 'Read b', status: 'completed' },
+    ), false);
+
+    expect(parts.map((part) => part.kind === 'run' ? 'run' : part.block.kind)).toEqual(['tool', 'note', 'tool']);
+  });
+
+  /** SESS1 S6: the driver's refusal of one call names it, and folds with the run that call is in. */
+  it('folds the driver\'s note about one call with that call\'s run', () => {
+    const parts = segments(blocks(
+      { kind: 'tool', id: 'c1', title: 'Read a', status: 'completed' },
+      { kind: 'note', id: 'c2', text: 'permission refused: `git stash list`' },
+      { kind: 'tool', id: 'c2', title: 'git stash list', status: 'failed' },
+    ), false);
+
+    expect(parts).toHaveLength(1);
+    expect(parts[0]).toMatchObject({ kind: 'run', open: false });
+  });
+});
+
 describe('mergeEvents', () => {
   it('keeps one of each sequence, in order, whichever arrived first', () => {
     expect(mergeEvents([said(1), said(3)], [said(2), said(3), said(4)]).map((e) => e.seq)).toEqual([1, 2, 3, 4]);
@@ -230,6 +338,16 @@ describe('useSessionEvents', () => {
     await waitFor(() => expect(texts(result.current.events)).toEqual(['m4', 'm5']));
     expect(result.current.earlier).toBe(true);
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_HISTORY', { payload: { id: 's1' } });
+  });
+
+  /** SESS1 S1: the page past the ask carries it, and the hook holds it for the conversation to open with. */
+  it('holds what the session was first asked, where its newest page does not', async () => {
+    const opening = { seq: 1, at: '2026-09-25T00:00:00Z', kind: 'user', origin: 'target', text: 'Your target is…' };
+    invoke.mockResolvedValue({ session: 's1', events: [said(900)], earlier: true, latest: 900, opening });
+
+    const { result } = renderHook(() => useSessionEvents('s1'));
+
+    await waitFor(() => expect(result.current.opening?.text).toBe('Your target is…'));
   });
 
   it('merges a live batch after the history, never doubling what it already holds', async () => {

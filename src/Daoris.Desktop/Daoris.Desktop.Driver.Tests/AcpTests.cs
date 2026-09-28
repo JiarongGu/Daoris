@@ -587,7 +587,42 @@ public sealed class AcpTests
 
         var note = Assert.Single(events, e => e.Kind == SessionEventKind.Note);
         Assert.Contains("permission refused", note.Text);
-        Assert.Contains("git push", note.Text);
+        // SESS1 S6: the call by its title, as a reader knows it — never the request's JSON — and the
+        // call's id, so the page keeps the refusal with the call it refused.
+        Assert.Contains("`git push`", note.Text);
+        Assert.DoesNotContain("toolCallId", note.Text);
+        Assert.Equal("c9", note.Id);
+    }
+
+    /// <summary>A call the wire names by no title is refused as what it is, bounded, still never its JSON.</summary>
+    [Fact]
+    public async Task A_refused_call_with_no_title_is_named_by_its_kind()
+    {
+        var events = new List<SessionEvent>();
+        var lines = new List<string>();
+        var agent = new FakeAgent((frame, self) =>
+        {
+            if (!frame.TryGetProperty("method", out var method)) return null;
+
+            switch (method.GetString())
+            {
+                case "initialize": return Ok(frame, """{"protocolVersion":1}""");
+                case "session/new": return Ok(frame, """{"sessionId":"s-1"}""");
+                case "session/prompt":
+                    self.Push("""{"jsonrpc":"2.0","id":901,"method":"session/request_permission","params":{"sessionId":"s-1","toolCall":{"toolCallId":"c10","kind":"execute","rawInput":{"command":"rm -rf build"}},"options":[{"optionId":"no","name":"Reject","kind":"reject_once"}]}}""");
+                    return Ok(frame, """{"stopReason":"end_turn"}""");
+                default: return frame.TryGetProperty("id", out _) ? Ok(frame, "{}") : null;
+            }
+        });
+
+        await new AcpSession(agent.Incoming, agent.Outgoing, lines.Add, onEvent: events.Add)
+            .RunAsync("D:/fam/Game", "clean it", CancellationToken.None);
+
+        var note = Assert.Single(events, e => e.Kind == SessionEventKind.Note);
+        Assert.Contains("an unnamed `execute` call", note.Text);
+        Assert.DoesNotContain("rawInput", note.Text);
+        // The console is the raw view, and keeps the request as the wire said it.
+        Assert.Contains(lines, line => line.Contains("rawInput", StringComparison.Ordinal));
     }
 
     /// <summary>

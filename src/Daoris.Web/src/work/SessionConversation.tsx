@@ -2,7 +2,7 @@ import { type RefObject, useEffect, useMemo, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useHarnesses, useSessionEvents } from '../shell';
 import { Icon } from '../ui';
-import { toTurns, type Usage } from './conversation';
+import { settle, toTurns, type Usage } from './conversation';
 import { ConversationView } from './ConversationView';
 import { useFollowTail } from './followTail';
 
@@ -37,12 +37,17 @@ export function SessionConversation({ session, adapter, chat = false, tree, live
   onUsage?: (session: string, usage?: Usage) => void;
 }) {
   const { t } = useTranslation();
-  const { events, earlier, loaded, loadEarlier } = useSessionEvents(session);
+  const { events, opening, earlier, loaded, loadEarlier } = useSessionEvents(session);
   // The door's own word on what an empty record means — undefined until the roster answers, which reads
   // as the console sentence: it claims least.
   const harnesses = useHarnesses();
   const structured = harnesses.data?.harnesses?.find((row) => row.harness === adapter)?.structured;
-  const { turns, usage } = useMemo(() => toTurns(events), [events]);
+  // Read from what was asked (SESS1 S1), and as an ended session leaves it: a turn it ended inside says
+  // so, and its open calls read stopped rather than running for good (S4).
+  const { turns, usage } = useMemo(() => {
+    const read = toTurns(events, { opening });
+    return { turns: settle(read.turns, live), usage: read.usage };
+  }, [events, opening, live]);
 
   // Told on a change of reading only: a callback that changed on every render would otherwise tell the
   // frame, which re-renders, which hands a new callback, round and round.

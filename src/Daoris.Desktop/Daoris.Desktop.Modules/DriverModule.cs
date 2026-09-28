@@ -224,7 +224,7 @@ public sealed class DriverModule : ModuleBase
                 var page = Number(request, "after") is { } after
                     ? _loop.Events.After(id, after)
                     : _loop.Events.Page(id, Number(request, "before"), (int)(Number(request, "limit") ?? SessionEvents.PageLimit));
-                return new { Session = id, Events = page.Events.ToArray(), page.Earlier, page.Latest };
+                return new { Session = id, Events = page.Events.ToArray(), page.Earlier, page.Latest, page.Opening };
             }
 
             case "TAIL_SESSION":

@@ -21,8 +21,8 @@ lists.
 
 ## State
 
-**Counts, and this is their one home:** sixteen commands, **513 CLI tests, 528 service, 860 driver,
-287 desktop modules, 80 devkit, 1237 web unit, 21 Playwright**, 66/66 release rehearsal, **291/291
+**Counts, and this is their one home:** sixteen commands, **513 CLI tests, 528 service, 862 driver,
+287 desktop modules, 80 devkit, 1252 web unit, 21 Playwright**, 66/66 release rehearsal, **291/291
 family rehearsal** (it names its own phases when you run it), **45/45 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge
 documents, 5 skills, 7 packs. The always-loaded core is **22,492 of 26,000 bytes** — a span in
@@ -162,7 +162,9 @@ requirements, and the owner's calls. Its recommended order is the order below.
   plugin, and the plugin, for its platform, pushes the branch and opens the pull request over its
   wire (D64). Off by default, and configurable per workspace. WSR1's branch form is what it starts
   from: `LandingRules.Problem` refuses any other form today, and says so.
-- [ ] **SESS1 — the session view: its log and its working relationships** (study §5). One reading
+- [ ] **SESS1 — the session view: its log and its working relationships** (study §5; in progress,
+  its ledger `docs/2026-09-28-sess1-session-view.md` says what the real sessions showed and what each
+  finding became: the reading order and the folds have landed, and S7, S9 and S10 are open). One reading
   order with the console one press away. Long runs folded, with jumps to the first failure and the last
   words, and search within a session. What it waits on, at the top. Where it came from and what it
   caused, drawn as a thread from the ask to the last step. Looked at on the real workspace's
@@ -425,7 +427,10 @@ TDD, looked at on the window, and the ones that touch a real session use one (au
   real-tick classes in the suite): `DrivenSessionInputTests`' `acp-stub` case failed once in a full
   run, and passed alone and on the next full run. Its wait for the session to start is 15 seconds,
   under a suite that spawns node in several classes at once. The assertion does not say which step
-  was slow, so it needs the same treatment.
+  was slow, so it needs the same treatment. **Seen again 2026-09-28**, beside a third: in consecutive
+  full runs the `acp-stub` case failed once, then `HookTests.A_real_hook_process_is_started_in_its_folder_with_its_data_and_id_in_the_environment`
+  failed in its cleanup, the plugin folder still held by the hook's process, and the next full run
+  passed 862/862. The cleanup deletes before the process has let go.
 
 - [ ] **DEPLOY5 — the artefact gate holds a chat open at close.** The fix for a chat left `working`
   when the shell closes (FIX-LOG, 2026-09-25) is held by driver tests at the runner. But the defect

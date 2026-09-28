@@ -623,13 +623,21 @@ public sealed class AcpSession(
             ? new JsonObject { ["outcome"] = "cancelled" }
             : new JsonObject { ["outcome"] = "selected", ["optionId"] = rejectId };
 
-        var tool = frame.TryGetProperty("params", out var q) && q.ValueKind == JsonValueKind.Object
-                   && q.TryGetProperty("toolCall", out var call)
-            ? Compact(call) : "a tool call";
-        var refused = $"permission refused: {tool} — the repository's own configuration governs, and the "
-                      + "driver may not widen it";
-        onLine($"  {refused}");
-        Emit(new SessionEvent { Kind = SessionEventKind.Note, Text = refused });
+        var call = frame.TryGetProperty("params", out var q) && q.ValueKind == JsonValueKind.Object
+                   && q.TryGetProperty("toolCall", out var named) && named.ValueKind == JsonValueKind.Object
+            ? named : (JsonElement?)null;
+        const string governs = " — the repository's own configuration governs, and the driver may not widen it";
+        // The console is the raw view, and keeps the request as the wire said it.
+        onLine($"  permission refused: {(call is { } raw ? Compact(raw) : "a tool call")}{governs}");
+        // 🔴 The record names the call as a reader knows it (SESS1 S6): its title, else its kind — the
+        // request's JSON made every refusal four lines of wire. Its id keeps the note with its call.
+        Emit(new SessionEvent
+        {
+            Kind = SessionEventKind.Note,
+            Id = call is { } c && c.TryGetProperty("toolCallId", out var callId) && callId.ValueKind == JsonValueKind.String
+                ? callId.GetString() : null,
+            Text = $"permission refused: {Named(call)}{governs}",
+        });
 
         await SendAsync(new JsonObject
         {
@@ -947,6 +955,22 @@ public sealed class AcpSession(
             : null;
 
     /// <summary>Bounded raw JSON: enough to recognise, never a log file on one line.</summary>
+    /// <summary>A tool call as a reader knows it: its title, bounded; else its kind; else "a tool call".</summary>
+    private static string Named(JsonElement? call)
+    {
+        if (call is not { } c) return "a tool call";
+        if (c.TryGetProperty("title", out var title) && title.ValueKind == JsonValueKind.String
+            && title.GetString()?.Trim() is { Length: > 0 } text)
+        {
+            return $"`{(text.Length <= 160 ? text : text[..160] + "…")}`";
+        }
+
+        return c.TryGetProperty("kind", out var kind) && kind.ValueKind == JsonValueKind.String
+               && kind.GetString() is { Length: > 0 } k
+            ? $"an unnamed `{k}` call"
+            : "a tool call";
+    }
+
     private static string Compact(JsonElement element)
     {
         var raw = element.GetRawText();

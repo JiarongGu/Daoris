@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { compact, span } from '../format';
 import { cn } from '../lib/cn';
 import { Button, Dot, Icon, Tip } from '../ui';
-import type { Ask, Block, PlanEntry, Turn } from './conversation';
+import { type Ask, type Block, type PlanEntry, runCount, segments, type Turn } from './conversation';
 import { Markdown } from './Markdown';
 import { ToolCard } from './ToolCard';
 
@@ -12,9 +12,13 @@ import { ToolCard } from './ToolCard';
  * turn ended — drawn from the typed events the driver keeps, never parsed from the console.
  *
  * @remarks
- * - **A finished turn folds its work.** Its tool calls, thoughts and earlier messages collapse into
- *   one row that counts them, and its last message stays open: what the agent concluded is what a
- *   reader came back for, and how it got there is one press away. A running turn is all open.
+ * - **Every word the agent said stays in view, and the work between two of them folds** (SESS1): a
+ *   run of calls and thinking is one row that counts it and its failures, one press from its cards.
+ *   The run in hand stays open while the turn goes on, and where the session ended inside a turn.
+ *   Folding a finished turn whole hid a driven session's account of its run behind one row, since a
+ *   driven session is one turn (the first real workspace, 2026-09-28).
+ * - **A long run reads from what it was asked**: the ask comes first, and *load earlier* sits where
+ *   the events the page does not hold belong.
  * - **The agent's words are Markdown**; the person's are shown as written. Both are content, never
  *   translated (translation-parity).
  * - **A session whose door carries only text** has no conversation to draw, and says so, pointing at
@@ -72,45 +76,52 @@ export function ConversationView({
     // own: the agent's words are content, shown at the width they are given (UX5 U16, the owner: a
     // 768px cap was half a maximized window).
     <section aria-label={t('work.conversation.label')} className="grid w-full grid-cols-[minmax(0,1fr)] gap-3">
-      {earlier && onLoadEarlier && (
-        <Button variant="ghost" onClick={onLoadEarlier} className="justify-self-center text-small">
-          {t('work.conversation.earlier')}
-        </Button>
-      )}
+      {/* Where the page began past the ask, the gap is inside its turn, after the ask (SESS1 S1). */}
+      {earlier && onLoadEarlier && !turns[0]?.gap && <Earlier onLoadEarlier={onLoadEarlier} />}
       {turns.map((turn, index) => (
-        <TurnView key={turn.key} turn={turn} tree={tree} running={(turnRunning ?? live) && index === turns.length - 1 && !turn.ended} />
+        <TurnView
+          key={turn.key}
+          turn={turn}
+          tree={tree}
+          running={(turnRunning ?? live) && index === turns.length - 1 && !turn.ended}
+          onLoadEarlier={earlier && turn.gap ? onLoadEarlier : undefined}
+        />
       ))}
     </section>
   );
 }
 
-function TurnView({ turn, tree, running }: { turn: Turn; tree?: string | null; running: boolean }) {
+function Earlier({ onLoadEarlier }: { onLoadEarlier: () => void }) {
   const { t } = useTranslation();
-  const [unfolded, setUnfolded] = useState(false);
+  return (
+    <Button variant="ghost" onClick={onLoadEarlier} className="justify-self-center text-small">
+      {t('work.conversation.earlier')}
+    </Button>
+  );
+}
 
-  // A finished turn with more than its answer folds everything but its last message.
-  const last = turn.items[turn.items.length - 1];
-  const answer = turn.ended && last?.kind === 'message' ? last : undefined;
-  const work = answer ? turn.items.slice(0, -1) : turn.items;
-  const folds = Boolean(turn.ended) && work.length > 0 && !unfolded;
+function TurnView({ turn, tree, running, onLoadEarlier }: {
+  turn: Turn;
+  tree?: string | null;
+  running: boolean;
+  /** The page began past this turn's ask: the earlier events belong between it and what is held. */
+  onLoadEarlier?: () => void;
+}) {
+  const { t } = useTranslation();
+  // The run in hand stays open while the turn goes on, and where the session ended inside it.
+  const parts = segments(turn.items, running || Boolean(turn.cut));
 
   return (
     <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-1.5">
       {turn.ask && <AskView ask={turn.ask} />}
-      {folds
-        ? <FoldRow items={work} onOpen={() => setUnfolded(true)} />
-        : work.map((item) => <BlockView key={item.key} block={item} tree={tree} />)}
-      {turn.ended && unfolded && work.length > 0 && (
-        <button
-          type="button"
-          onClick={() => setUnfolded(false)}
-          className="justify-self-start border-0 bg-transparent p-0 text-meta text-ink-faint hover:text-ink"
-        >
-          {t('work.conversation.fold')}
-        </button>
-      )}
-      {answer && <BlockView block={answer} />}
+      {onLoadEarlier && <Earlier onLoadEarlier={onLoadEarlier} />}
+      {parts.map((part) => (part.kind === 'run'
+        ? <RunView key={part.key} items={part.items} open={part.open} tree={tree} />
+        : <BlockView key={part.block.key} block={part.block} tree={tree} />))}
       {running && <Dot tone="live" label={t('work.conversation.working')} className="mt-1" />}
+      {/* The session ended inside this turn (SESS1 S4): said once, in the passive, never as a failure —
+          the driver's note above says why, when it knows. */}
+      {turn.cut && <p className="m-0 text-meta text-ink-faint">{t('work.conversation.cut')}</p>}
       {/* Stopped, in the passive (CONV4b): a driven session's timeout cancels a turn too, and the
           page cannot know whose stop it was. Never the wire's word, and never a failure's tone. */}
       {turn.ended === 'cancelled' && <p className="m-0 text-meta text-ink-faint">{t('work.conversation.stopped')}</p>}
@@ -222,27 +233,39 @@ function BlockView({ block, tree }: { block: Block; tree?: string | null }) {
   }
 }
 
-/** A finished turn's work, counted on one line; a press opens it. */
-function FoldRow({ items, onOpen }: { items: Block[]; onOpen: () => void }) {
+/**
+ * A run of work between two things the agent said: one line that counts its calls, its failures in
+ * the failed tone, and whether it thought — a press opens its cards, and another folds them again.
+ */
+function RunView({ items, open: startsOpen, tree }: { items: Block[]; open: boolean; tree?: string | null }) {
   const { t } = useTranslation();
-  const tools = items.filter((b) => b.kind === 'tool').length;
-  const messages = items.filter((b) => b.kind === 'message').length;
-  const thought = items.some((b) => b.kind === 'thought');
+  const [open, setOpen] = useState(startsOpen);
+  const { tools, failed, thought } = runCount(items);
   const parts = [
     tools > 0 && t('work.conversation.tools', { count: tools }),
-    messages > 0 && t('work.conversation.messages', { count: messages }),
     thought && t('work.conversation.thought'),
   ].filter(Boolean);
 
+  const said = parts.length > 0 ? parts.join(' · ') : t('work.conversation.worked');
+
   return (
-    <button
-      type="button"
-      onClick={onOpen}
-      className="flex items-center gap-1.5 justify-self-start border-0 bg-transparent p-0 text-small text-ink-faint hover:text-ink"
-    >
-      <Icon name="chevronRight" size={13} />
-      {parts.length > 0 ? parts.join(' · ') : t('work.conversation.worked')}
-    </button>
+    <div className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-1.5">
+      <button
+        type="button"
+        aria-expanded={open}
+        // One name for the whole line: the failed count is its own span for its tone.
+        aria-label={failed > 0 ? `${said} · ${t('work.conversation.failed', { count: failed })}` : said}
+        onClick={() => setOpen((was) => !was)}
+        className="flex items-center gap-1.5 justify-self-start border-0 bg-transparent p-0 text-small text-ink-faint hover:text-ink"
+      >
+        <Icon name={open ? 'chevronDown' : 'chevronRight'} size={13} />
+        {said}
+        {failed > 0 && (
+          <span className="text-st-declined">{`· ${t('work.conversation.failed', { count: failed })}`}</span>
+        )}
+      </button>
+      {open && items.map((item) => <BlockView key={item.key} block={item} tree={tree} />)}
+    </div>
   );
 }
 
@@ -306,14 +329,35 @@ function PlanView({ entries }: { entries: PlanEntry[] }) {
   );
 }
 
-/** The driver's own sentence about the session — a refusal, a missing connector. */
+/** How long a driver's note may be before it shows two lines and the rest on a press. */
+const LONG_NOTE = 240;
+
+/**
+ * The driver's own sentence about the session — a refusal, a missing connector. A long one shows two
+ * lines and the rest on a press (SESS1 S6): records written before the refusal named its call carry the
+ * request's JSON, four lines each, and nothing reads that JSON to shorten it.
+ */
 function NoteLine({ text }: { text: string }) {
   const { t } = useTranslation();
+  const long = text.length > LONG_NOTE;
+  const [open, setOpen] = useState(!long);
   return (
-    <p className="m-0 text-small text-ink-soft">
-      <span className="mr-1.5 text-meta uppercase tracking-[0.06em] text-ink-faint">{t('work.conversation.driver')}</span>
-      {text}
-    </p>
+    <div className="text-small text-ink-soft">
+      <p className={cn('m-0 wrap-anywhere', !open && 'line-clamp-2')}>
+        <span className="mr-1.5 text-meta uppercase tracking-[0.06em] text-ink-faint">{t('work.conversation.driver')}</span>
+        {text}
+      </p>
+      {long && (
+        <button
+          type="button"
+          aria-expanded={open}
+          onClick={() => setOpen((was) => !was)}
+          className="border-0 bg-transparent p-0 text-meta text-ink-faint hover:text-ink"
+        >
+          {open ? t('work.conversation.hide') : t('work.conversation.show')}
+        </button>
+      )}
+    </div>
   );
 }
 

@@ -218,6 +218,26 @@ public sealed class SessionEventsTests : IDisposable
         Assert.All([latest, earlier, first], page => Assert.Equal(5, page.Latest));
     }
 
+    /// <summary>
+    /// SESS1 S1: what the session was asked comes with every page it is not already in, so a long run
+    /// reads from its ask rather than from the middle — and a page that holds it carries none twice.
+    /// </summary>
+    [Fact]
+    public void A_page_that_does_not_hold_the_opening_ask_carries_it()
+    {
+        var events = new SessionEvents(_directory);
+        events.Append("a1b2c3", Asked("Your target is the quest…", origin: "target"));
+        for (var i = 1; i <= 5; i++) events.Append("a1b2c3", Message($"m{i}"));
+
+        var latest = events.Page("a1b2c3", limit: 2);
+        Assert.Equal("Your target is the quest…", latest.Opening?.Text);
+        Assert.Equal(1, latest.Opening?.Seq);
+
+        var whole = events.Page("a1b2c3", limit: 20);
+        Assert.Null(whole.Opening);
+        Assert.Null(events.Page("nothing-asked", limit: 2).Opening);
+    }
+
     /// <summary>How a page that missed a live batch closes the gap without re-reading the start.</summary>
     [Fact]
     public void After_answers_only_what_is_newer()
