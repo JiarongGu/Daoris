@@ -45,6 +45,8 @@ const ORGANISMS = new Set<string>([
   './work/MonitorWindow.tsx',
   './work/SessionRail.tsx',
   './work/WorkFrame.tsx',
+  // Ask Daoris's organism (HELP1): it reads the machine, so the panel and the starters do not.
+  './help/AskDaoris.tsx',
 ]);
 
 /**
@@ -71,7 +73,8 @@ export function offenders(files: [path: string, source: string][]): string[] {
 // `asks/` and `compose/` since INT4c: the ask's molecules, and the carry fields both composers share.
 // `settings/` since AGT6: Daoris's own AI, drawn from props — SettingsView above it holds the queries.
 // `projects/` since INT3c: the driver's row, drawn from props — ProjectsView above it holds the driver.
-const sources = import.meta.glob('./{ui.tsx,work/**/*.{ts,tsx},map/**/*.{ts,tsx},asks/**/*.{ts,tsx},compose/**/*.{ts,tsx},settings/**/*.{ts,tsx},projects/**/*.{ts,tsx}}', {
+// `help/` since HELP1: Ask Daoris's panel and its starters, drawn from props — AskDaoris holds the machine.
+const sources = import.meta.glob('./{ui.tsx,work/**/*.{ts,tsx},map/**/*.{ts,tsx},asks/**/*.{ts,tsx},compose/**/*.{ts,tsx},settings/**/*.{ts,tsx},projects/**/*.{ts,tsx},help/**/*.{ts,tsx}}', {
   eager: true, query: '?raw', import: 'default',
 }) as Record<string, string>;
 

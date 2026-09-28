@@ -174,7 +174,7 @@ requirements, and the owner's calls. Its recommended order is the order below.
   circle (the real one has twenty-nine repositories). Asks, chains and what depends on what, each its
   own kind of line, from a declared source and never guessed. Open-only or a time window. Sessions
   live on their nodes. Looked at with twenty-nine nodes in both themes.
-- [ ] **HELP1 — ask Daoris** (study §4; the design note is `docs/2026-09-29-ask-daoris-design.md`, its build order HELP1a–d, its two calls the owner's). A chat about Daoris itself, from a button
+- [ ] **HELP1 — ask Daoris** (study §4; the design note is `docs/2026-09-29-ask-daoris-design.md`, its two calls made as D89; **in progress**: its agent choice and HELP1d, the panel with its starters, have landed; HELP1a–c, the conversation and its proposals, are open). A chat about Daoris itself, from a button
   on the strip, the palette and `F1`, in the right dock. It knows the view and the selection. It
   helps by proposing Daoris's own terminal commands (D50), each confirmed by the person, and turns
   *start something* into an ask. Starter prompts come from what the machine lacks. It is a harness

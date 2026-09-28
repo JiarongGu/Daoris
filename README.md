@@ -60,7 +60,7 @@ ever fetches anything, and `check` therefore works with no network at all.
 | `import` | Registers a folder's subdirectories in one go, safe to re-run; `--workspace` names their circle |
 | `remote` | This machine's remotes, one per workspace: `list`, `add <workspace> --url … [--key …]`, `remove <workspace>`. **Edits one file under the home; talks to nothing** |
 | `agent` | Agents (Claude Code, Codex, dsh) and the accounts they run as: `list`, `install`/`update`/`login <agent>`, `profile list\|add\|remove\|default …`. **Spawns each agent's own tooling; keeps no sign-in** |
-| `driver` | What this machine drives: `list`, `drive`/`undrive`, `hold`/`resume`, `cap <n>`, `adapter <name>`. **Edits one file under the Daoris home** |
+| `driver` | What this machine drives, and how: `drive`/`hold`, `line`, `landing`, `helper` and more (`driver list`). **Edits one file under the Daoris home** |
 | `plugin` | This machine's plugins: `list`, `add <folder>`, `remove <id>`, `enable`/`disable <id>`. **Edits under the home's `plugins/`; loads no code** |
 | `browser` | Daoris's browser: `favorite list\|add\|remove`, `extensions offer\|refuse`, `use daoris\|edge`. **Edits files under the home** |
 

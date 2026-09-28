@@ -6,7 +6,7 @@ import * as RadixSelect from '@radix-ui/react-select';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import * as Checkbox from '@radix-ui/react-checkbox';
 import {
-  ArrowDown, ArrowDownToLine, ArrowLeftRight, ArrowUp, Brain, Check, ChevronDown, ChevronRight, ChevronUp, Cloud,
+  ArrowDown, ArrowDownToLine, ArrowLeftRight, ArrowUp, Brain, Check, ChevronDown, ChevronRight, ChevronUp, CircleHelp, Cloud,
   CloudOff, Compass, Copy, Ellipsis, FileDiff, FilePen, FileText, Gauge, GitMerge, Globe, Inbox, Info, KeyRound, Languages,
   LayoutDashboard, LayoutGrid, Layers, Link, ListTodo, LogIn, Maximize2, Minimize2, Monitor, Network,
   PanelLeftClose, PanelLeftOpen, PanelRightClose, Paperclip, Plug, Plus,
@@ -47,6 +47,8 @@ const ICONS = {
   // The way through a long run (SESS1): the previous match, and the jump to where it first failed.
   chevronUp: ChevronUp,
   failure: TriangleAlert,
+  // Ask Daoris (HELP1): its button on the strip, and its panel's heading.
+  help: CircleHelp,
   // The second screen (SURF8): the monitor window, and popping one session out into its own.
   monitor: Monitor,
   external: SquareArrowOutUpRight,

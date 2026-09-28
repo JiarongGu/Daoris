@@ -16,8 +16,10 @@ through the same door the screen uses, so what it can do is exactly what the per
 ## 2. The doors
 
 - **An app-strip button** beside the palette, **the palette's *Ask Daoris***, and **F1**.
-- It opens as a tab of the right dock (*Ask Daoris*, beside *Timeline* and *Review*), so it sits
-  beside whatever the person is looking at, and it survives a change of view.
+- It opens as **a panel at the application's right edge**, beside whatever view is in front of the
+  person, and it stays open across views. *As built (HELP1d):* not a tab of Sessions' right dock, as
+  first written, since that dock exists only inside Sessions and a panel there would close with a
+  change of view. Whether it is open is this viewer's, remembered like the view.
 - One conversation per machine, carried on across opens. *New conversation* starts again.
 
 ## 3. The room
@@ -90,7 +92,10 @@ line git can name. With an agent named, a starter is also a first message.
    intake's plumbing, as a conversation rather than one turn).
 2. **HELP1b**: where the person is, as the preface.
 3. **HELP1c**: `setting_propose` and `ask_propose`, the validation, the card, Apply.
-4. **HELP1d**: the starters, and the no-agent tier.
+4. **HELP1d**: the starters, and the no-agent tier. *Built 2026-09-29:* waiting sessions, nothing
+   registered or driven, a tool no account is signed in to, a repository with no line, and Ask Daoris
+   with no agent, each with its door and its terminal command; the strip's button, the palette's
+   *Ask Daoris* and F1 open the panel. Its agent choice (D89) is Settings → *Daoris's own AI*.
 
 ## 10. Not chosen
 

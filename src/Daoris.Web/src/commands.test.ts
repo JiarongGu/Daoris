@@ -17,6 +17,7 @@ const world = (over: Partial<Parameters<typeof commands>[0]> = {}): Parameters<t
   review: vi.fn(),
   monitor: vi.fn(),
   browser: vi.fn(),
+  help: vi.fn(),
   ask: vi.fn(),
   ...over,
 });

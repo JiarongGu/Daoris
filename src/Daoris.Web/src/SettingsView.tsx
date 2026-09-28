@@ -43,7 +43,7 @@ export type SettingsSection =
   | 'appearance' | 'ai' | 'workspace' | 'driver' | 'agents' | 'permissions' | 'plugins' | 'browser';
 
 /** A part of a domain a menu item is named for (UX5 U72), found by the id `settings-<anchor>`. */
-export type SettingsAnchor = 'usage' | 'proposals' | 'wiring';
+export type SettingsAnchor = 'usage' | 'proposals' | 'wiring' | 'lines';
 
 /** Which domains need this machine: a browser is never offered one (D47 §4). */
 const SECTIONS: readonly { id: SettingsSection; machine: boolean }[] = [

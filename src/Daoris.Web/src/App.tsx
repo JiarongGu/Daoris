@@ -5,6 +5,7 @@ import {
   useStatus, useSyncStanding, useWorkspaceHoldings, useWorkspaces,
 } from './queries';
 import { useScope } from './scope';
+import { AskDaoris } from './help/AskDaoris';
 import { WorkspaceSwitcher } from './WorkspaceSwitcher';
 import {
   Button, Drawer, failure, Icon, LanguageSwitcher, Prose, SESSION_ACTIVE, Tip, Toasts,
@@ -63,6 +64,8 @@ const ATTENDING = 'daoris.attending';
  * window cannot show is Settings' own business: it opens on Appearance instead.
  */
 const SETTINGS_SECTION = 'daoris.settings';
+/** Whether Ask Daoris's panel is open (HELP1) — this viewer's, remembered like the view. */
+const HELP = 'daoris.help';
 
 function rememberedView(): Tab {
   // Landing on Overview is the safe half of the choice.
@@ -123,6 +126,10 @@ export function App() {
   // The same "is a shell here" answer every control uses — one detection path, not two that drift.
   const driver = useDriver();
   const attached = driver.data !== undefined;
+  // Ask Daoris (HELP1): a panel beside every view, so it stays open as the person moves.
+  const [helpOpen, setHelpOpen] = useState(() => stored(HELP) === '1');
+  useEffect(() => { store(HELP, helpOpen ? '1' : '0'); }, [helpOpen]);
+  const toggleHelp = useCallback(() => setHelpOpen((was) => !was), []);
   // The status bar's other two facts. Both share caches the frames already fill, so neither is a
   // second fetch — and both are absent in a browser, which is what the bar then says.
   const running = useSessions(null, false);
@@ -269,9 +276,15 @@ export function App() {
   };
 
   // Ctrl/Cmd+K, the one this class of application has agreed on. Captured on the window so it works
-  // wherever focus is — except inside a text field, where a person typing is typing.
+  // wherever focus is — except inside a text field, where a person typing is typing. F1 is help's key
+  // everywhere, a field included, since it types nothing (HELP1).
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'F1' && attached) {
+        event.preventDefault();
+        toggleHelp();
+        return;
+      }
       if (event.key !== 'k' || !(event.ctrlKey || event.metaKey)) return;
       const inside = event.target as HTMLElement | null;
       if (inside?.tagName === 'INPUT' || inside?.tagName === 'TEXTAREA') return;
@@ -280,7 +293,7 @@ export function App() {
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, []);
+  }, [attached, toggleHelp]);
 
   // The attended session is remembered alongside the view (D56), so a relaunch into Sessions reopens
   // what the person was watching rather than an empty column.
@@ -360,12 +373,28 @@ export function App() {
         // The palette's way in is the command center now, not a 14px glyph wedged against the
         // caption buttons — same dialog, a target a person can find.
         center={(
-          <CommandCenter
-            scope={scopeNamed ?? t('palette.scope')}
-            shortcut="Ctrl K"
-            onOpen={() => setPalette(true)}
-            label={t('palette.open')}
-          />
+          <div className="flex w-full min-w-0 items-center gap-1.5">
+            <CommandCenter
+              scope={scopeNamed ?? t('palette.scope')}
+              shortcut="Ctrl K"
+              onOpen={() => setPalette(true)}
+              label={t('palette.open')}
+            />
+            {/* Ask Daoris's door on the strip (HELP1), beside the palette: where a person looks for help. */}
+            {attached && (
+              <Tip content={t('help.open')}>
+                <Button
+                  variant="ghost"
+                  aria-label={t('help.open')}
+                  aria-pressed={helpOpen}
+                  onClick={toggleHelp}
+                  className="h-7 w-7 justify-center px-0"
+                >
+                  <Icon name="help" size={15} />
+                </Button>
+              </Tip>
+            )}
+          </div>
         )}
       />
 
@@ -504,6 +533,15 @@ export function App() {
               </div>
             </main>
           )}
+        {attached && helpOpen && (
+          <AskDaoris
+            onClose={() => setHelpOpen(false)}
+            onGo={(door) => {
+              if (door.view === 'settings' && door.section) openSettings(door.section, door.anchor);
+              else setView(door.view);
+            }}
+          />
+        )}
       </div>
 
       {/* Ambient truth, true on every view without being looked at (D55). Which circle and whether
@@ -624,6 +662,7 @@ export function App() {
             : undefined,
           // Asking lives at the head of Quests (INT4c); the palette goes there and opens the composer.
           ask: () => { setView('quests'); setAsking(true); },
+          help: () => setHelpOpen(true),
         })}
       />
 

@@ -79,6 +79,8 @@ export function commands(world: {
    * so it needs no shell, only this machine.
    */
   ask: () => void;
+  /** Open Ask Daoris (HELP1): its panel beside whatever is in front of the person. Shell-only. */
+  help: () => void;
   /**
    * Detach the attended session into a window of its own (SURF8) — absent when nothing is attended,
    * for the reason every other absence here is: a palette is a promise that what it lists can be
@@ -133,6 +135,14 @@ export function commands(world: {
         title: world.label('work.browser'),
         keywords: 'browser web page sign in login ticket chrome jira',
         run: world.browser,
+      },
+      {
+        id: 'work.help',
+        icon: 'help',
+        group: world.group('work'),
+        title: world.label('work.help'),
+        keywords: 'help ask daoris setup configure how f1 问道衍 帮助',
+        run: world.help,
       },
     );
 
