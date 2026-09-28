@@ -3101,6 +3101,16 @@ check(
   cleanListed.out + cleanKept.out,
 );
 
+// Accepting a session's work from a terminal (WSR1, D87): D50's second door, which the landing had not
+// had until AR-2202's work was landed. --plan says where it would go by the workspace's rule, and does
+// nothing: with no rule set, a merge into the line.
+const landPlan = run(`dotnet "${driverDll}" trees land ${isolatedRecord?.id} --plan`, scratch, cleanEnv);
+check(
+  '`daoris-driver trees land <session> --plan` says where accepting its work would put it, and moves nothing',
+  landPlan.code === 0 && /would merge its work into `\S+` \(default\)/.test(landPlan.out) && existsSync(treePath),
+  landPlan.out,
+);
+
 const forcedRemove = run(
   `dotnet "${driverDll}" trees remove "${treePath}" --force`, scratch,
   { DAORIS_DRIVER_CONFIG: driverConfig });

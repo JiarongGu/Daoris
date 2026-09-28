@@ -106,12 +106,45 @@ internal static class TreesConsole
                 return 0;
             }
 
+            // Accepting a session's work (WSR1, D87): the review's Accept, from a terminal — D50's second
+            // door, which the landing had not had. The workspace's rule decides the form (merged into the
+            // line, or a branch for the person to push), and --plan says where it would go and does nothing.
+            case ["land", var session, ..]:
+            {
+                using var service = ServiceClient.FromEnvironment();
+                var (tree, _) = await service.SessionGroundAsync(session).ConfigureAwait(false);
+                if (string.IsNullOrWhiteSpace(tree))
+                {
+                    Console.Error.WriteLine($"trees: session `{session}` names no working tree on this machine, so there is nothing here to land.");
+                    return 1;
+                }
+
+                var questId = await service.SessionQuestAsync(session).ConfigureAwait(false);
+                var quest = questId is null ? null : await service.FindQuestAsync(questId).ConfigureAwait(false);
+                var subject = new LandingSubject(
+                    session, questId,
+                    quest?.Title ?? new SessionEvents(Path.Combine(home, "sessions")).Openings([session]).GetValueOrDefault(session));
+
+                if (args.Contains("--plan"))
+                {
+                    var plan = await trees.PlanAsync(tree, subject).ConfigureAwait(false);
+                    Console.WriteLine($"trees: accepting `{session}` would {(plan.Form == "branch" ? "put its work on the branch" : "merge its work into")} `{plan.Target}` ({plan.Source}).");
+                    return 0;
+                }
+
+                var landed = await trees.LandAsync(tree, subject).ConfigureAwait(false);
+                Console.WriteLine($"trees: {landed.Message}");
+                return landed.Landed ? 0 : 1;
+            }
+
             default:
-                Console.Error.WriteLine("usage: daoris-driver trees [list | remove <path> [--force] | clean [--yes]]");
+                Console.Error.WriteLine("usage: daoris-driver trees [list | remove <path> [--force] | clean [--yes] | land <session> [--plan]]");
                 Console.Error.WriteLine("  A session's worktree (D51). Removal refuses while the tree holds");
                 Console.Error.WriteLine("  uncommitted changes or work no branch of yours holds; --force means it.");
                 Console.Error.WriteLine("  clean lists every session branch with what it holds; --yes removes those");
                 Console.Error.WriteLine("  whose work is on a branch of yours, or that hold nothing (D88).");
+                Console.Error.WriteLine("  land accepts a session's work as the review's Accept does, by the workspace's");
+                Console.Error.WriteLine("  rule; --plan says where it would go and does nothing (D87).");
                 return 2;
         }
     }

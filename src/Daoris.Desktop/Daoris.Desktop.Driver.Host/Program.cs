@@ -38,10 +38,11 @@ using Daoris.Driver;
 //                 words, and its quest is carried on in the same tree at the next tick, handed them.
 //                 Nothing after the id is "carry on". The page's box on the parked quest is the other door.
 //
-//   trees [list | remove <path> [--force] | clean [--yes]]
+//   trees [list | remove <path> [--force] | clean [--yes] | land <session> [--plan]]
 //                 the session worktrees this machine has grown (D51): list them, or remove one —
 //                 refusing while it holds uncommitted changes or unmerged commits, unless forced —
-//                 or list every session branch and, with --yes, remove the empty and landed (D88).
+//                 or list every session branch and, with --yes, remove the empty and landed (D88),
+//                 or accept a session's work as the review's Accept does, by the workspace's rule (D87).
 //
 //   sync [status | dismiss <quest>] [--workspace <name>]
 //                 one pass now, the tick's own, for every circle with a remote or the one named; with
