@@ -120,10 +120,10 @@ internal static class TreesConsole
                 }
 
                 var questId = await service.SessionQuestAsync(session).ConfigureAwait(false);
-                var quest = questId is null ? null : await service.FindQuestAsync(questId).ConfigureAwait(false);
-                var subject = new LandingSubject(
-                    session, questId,
-                    quest?.Title ?? new SessionEvents(Path.Combine(home, "sessions")).Openings([session]).GetValueOrDefault(session));
+                // Named for the chain's first quest (WSR5), as the review's press names it.
+                var subject = await LandingRules.SubjectAsync(
+                    session, questId, quest => service.FindQuestAsync(quest),
+                    new SessionEvents(Path.Combine(home, "sessions")).Openings([session]).GetValueOrDefault(session)).ConfigureAwait(false);
 
                 if (args.Contains("--plan"))
                 {

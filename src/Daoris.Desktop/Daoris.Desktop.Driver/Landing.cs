@@ -151,6 +151,31 @@ public static class LandingRules
         return slug.Length > 0 ? slug.ToString() : "work";
     }
 
+    /// <summary>
+    /// What a landing is named for (WSR5): the session, and the chain's FIRST quest with its title — the
+    /// one the ask became — walking up each step's parent; a chat with no quest has its opening line.
+    /// </summary>
+    /// <remarks>
+    /// 🔴 A chain lands from its last step (WSR1), so naming it for that step's quest named AR-2202's work
+    /// `feature/verify-in-prod-…-381807d1f7bd`, after its verify step. The walk stops where the service no
+    /// longer answers for a parent, and after twenty steps, which no chain reaches.
+    /// </remarks>
+    public static async Task<LandingSubject> SubjectAsync(
+        string session, string? quest, Func<string, Task<QuestView?>> find, string? opening)
+    {
+        if (quest is null) return new LandingSubject(session, null, opening);
+
+        var current = await find(quest).ConfigureAwait(false);
+        if (current is null) return new LandingSubject(session, quest, opening);
+        for (var steps = 0; steps < 20 && current.Parent is { Length: > 0 } parent; steps++)
+        {
+            if (await find(parent).ConfigureAwait(false) is not { } above) break;
+            current = above;
+        }
+
+        return new LandingSubject(session, current.Id, current.Title);
+    }
+
     /// <summary>The repository's rule, else its workspace's (a repository in no workspace is in `default`'s), else merge.</summary>
     public static Landing Choose(DriverConfig config, string repository, string? workspace)
     {

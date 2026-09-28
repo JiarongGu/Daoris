@@ -7236,3 +7236,20 @@ protocol door's mode, the connector, the preface) and proposal tests; the module
 page's panel, conversation, preface and card tests; the family rehearsal, the deployment rehearsal
 and Playwright, unchanged and green.
 
+## WSR5 — a chain lands named after its first quest (2026-09-29)
+
+The row as filed: *(found landing AR-2202, 2026-09-29). A chain lands from its last step (WSR1), so a
+branch pattern's `{quest}` and `{slug}` are that step's: AR-2202's six commits landed as
+`feature/verify-in-prod-that-ar-2202-s-empty-381807d1f7bd`, named for its verify step. The chain's
+first quest, the one the ask became, should name the branch.*
+
+**Outcome.** `LandingRules.SubjectAsync` walks up each step's `Parent` to the chain's first quest (the
+service answers for closed quests), stopping where a parent is no longer answered for and after twenty
+steps, and names the landing for it; a chat keeps its opening line. The review's press and the new
+terminal door, `daoris-driver trees land <session> [--plan]`, both use it. AR-2202 itself landed
+before this, under its verify step's name.
+
+**Proven by:** `LandingTests.A_chain_lands_named_after_its_first_quest` (a three-step chain, a lone
+quest, a parent the service no longer answers for, a chat); the family rehearsal's `trees land --plan`
+check; the real chain's verify step reads `parent: 34a9d57b8fd5` on the owner's install.
+

@@ -53,6 +53,32 @@ public sealed class LandingTests : IDisposable
     public void A_slug_is_the_title_in_words_git_takes(string? title, string slug) =>
         Assert.Equal(slug, LandingRules.Slug(title));
 
+    /// <summary>
+    /// WSR5, found landing AR-2202: a chain lands from its last step, and its branch was named for that
+    /// step (`feature/verify-in-prod-…-381807d1f7bd`). It is named for the chain's first quest — the one
+    /// the ask became — walking up each step's parent, and a quest with none is its own.
+    /// </summary>
+    [Fact]
+    public async Task A_chain_lands_named_after_its_first_quest()
+    {
+        var quests = new Dictionary<string, QuestView>
+        {
+            ["34a9d57b8fd5"] = new("34a9d57b8fd5", "ask #53e0f1", "report-ui", "AR-2202: the OEE dashboard shows Empty Shackles 0", "", "Done"),
+            ["381807d1f7bd"] = new("381807d1f7bd", "ask #53e0f1", "report-ui", "Verify in prod that AR-2202's reading is real", "", "Done") { Parent = "34a9d57b8fd5" },
+            ["cafe01"] = new("cafe01", "ask #53e0f1", "report-ui", "a third step", "", "Open") { Parent = "381807d1f7bd" },
+        };
+        Task<QuestView?> Find(string id) => Task.FromResult(quests.GetValueOrDefault(id));
+
+        var subject = await LandingRules.SubjectAsync("fd12f1bc", "cafe01", Find, opening: null);
+
+        Assert.Equal(new LandingSubject("fd12f1bc", "34a9d57b8fd5", "AR-2202: the OEE dashboard shows Empty Shackles 0"), subject);
+        Assert.Equal(new LandingSubject("s1", "34a9d57b8fd5", "AR-2202: the OEE dashboard shows Empty Shackles 0"),
+            await LandingRules.SubjectAsync("s1", "34a9d57b8fd5", Find, opening: null));
+        // A parent the service no longer answers for ends the walk where it is; a chat has its opening.
+        Assert.Equal("cafe01", (await LandingRules.SubjectAsync("s2", "cafe01", id => Task.FromResult(id == "cafe01" ? quests[id] : null), null)).Quest);
+        Assert.Equal(new LandingSubject("c1", null, "tidy the docs"), await LandingRules.SubjectAsync("c1", null, Find, "tidy the docs"));
+    }
+
     [Fact]
     public void A_pattern_is_expanded_from_the_session_it_lands()
     {

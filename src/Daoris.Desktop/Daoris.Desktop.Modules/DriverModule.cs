@@ -1323,8 +1323,10 @@ public sealed class DriverModule : ModuleBase
         }
 
         var questId = await service.SessionQuestAsync(id, cancellationToken);
-        var quest = questId is null ? null : await service.FindQuestAsync(questId, cancellationToken);
-        var subject = new LandingSubject(id, questId, quest?.Title ?? _loop.Events.Openings([id]).GetValueOrDefault(id));
+        // Named for the chain's first quest (WSR5): a chain lands from its last step.
+        var subject = await LandingRules.SubjectAsync(
+            id, questId, quest => service.FindQuestAsync(quest, cancellationToken),
+            _loop.Events.Openings([id]).GetValueOrDefault(id));
         var trees = new SessionTrees(_loop.Home);
 
         if (request.Type == "LANDING")
