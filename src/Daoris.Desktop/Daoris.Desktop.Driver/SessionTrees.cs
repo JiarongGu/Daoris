@@ -115,12 +115,12 @@ public sealed class SessionTrees(string home)
         var path = Path.Combine(TreesRoot, workspace, repository, name);
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
 
-        // 🔴 Long paths, for this one command (2026-09-27): a tree's prefix is longer than the root's, so
-        // a repository whose deepest file fits under its root can cross Windows' 260 characters here.
-        // The first real workspace did, and every tick's `worktree add` failed. Said on the command
-        // line, so nothing in the repository's own configuration changes.
+        // 🔴 Long paths (2026-09-27): a tree's prefix is longer than the root's, so a repository whose
+        // deepest file fits under its root can cross Windows' 260 characters here. The first real
+        // workspace did, and every tick's `worktree add` failed. `WorkingTree.GitAsync` says
+        // `core.longpaths` on every call since, removal and status included (2026-09-28).
         var (code, _, stderr) = await WorkingTree.GitAsync(
-            root, ["-c", "core.longpaths=true", "worktree", "add", "-b", branch, path, start], ct)
+            root, ["worktree", "add", "-b", branch, path, start], ct)
             .ConfigureAwait(false);
         if (code != 0)
         {
@@ -414,7 +414,8 @@ public sealed class SessionTrees(string home)
 
             if (now.Tree is { } tree)
             {
-                var (removeCode, _, removeErr) = await WorkingTree.GitAsync(root, ["worktree", "remove", tree], ct).ConfigureAwait(false);
+                var (removeCode, _, removeErr) = await WorkingTree.GitAsync(
+                    root, ["worktree", "remove", tree], ct).ConfigureAwait(false);
                 if (removeCode != 0)
                 {
                     results.Add(new(now, false, $"git would not remove its tree: {FirstLine(removeErr)}"));
@@ -655,6 +656,8 @@ public sealed class SessionTrees(string home)
             }
         }
 
+        // A tree past Windows' 260 characters is removed with long paths, which every git call here says:
+        // without them git let go of the tree, then failed deleting its files (2026-09-28).
         var removeArgs = force
             ? new[] { "worktree", "remove", "--force", full }
             : ["worktree", "remove", full];

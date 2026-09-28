@@ -449,6 +449,13 @@ public static class WorkingTree
             StandardOutputEncoding = Encoding.UTF8,
             StandardErrorEncoding = Encoding.UTF8,
         };
+        // 🔴 Long paths, for every call (2026-09-28): a session tree's prefix is longer than its root's, so
+        // a file that fits under the root can pass Windows' 260 characters in a tree. Without this git
+        // cannot open it, and says so as a change it cannot read: the first real workspace's clean-up kept
+        // two trees for "uncommitted work" that was three committed files, and a removal failed half done.
+        // Said on the command line, so nothing in the repository's own configuration changes.
+        info.ArgumentList.Add("-c");
+        info.ArgumentList.Add("core.longpaths=true");
         foreach (var argument in arguments) info.ArgumentList.Add(argument);
 
         try

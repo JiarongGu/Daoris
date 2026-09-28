@@ -157,6 +157,50 @@ public sealed class SweepTests : IDisposable
         Assert.Contains(tree.Branch, await GitAsync(root, "branch", "--list", "daoris/*"));
     }
 
+    /// <summary>
+    /// 🔴 A tree whose files' paths pass Windows' 260 characters is removed, as it was opened: the first
+    /// real workspace's discarded tree failed with "Filename too long", after git had let go of it.
+    /// </summary>
+    [Fact]
+    public async Task A_tree_with_paths_past_260_characters_is_removed()
+    {
+        var root = await RepositoryAsync("engine");
+        var trees = new SessionTrees(_home);
+        var tree = await trees.OpenAsync(root, "engine", "aurora");
+        var deep = Path.Combine([tree.Path, .. Enumerable.Repeat("a-folder-name-long-enough-to-matter", 8)]);
+        Directory.CreateDirectory(deep);
+        await File.WriteAllTextAsync(Path.Combine(deep, "work-in-a-deep-place.txt"), "deep\n");
+        Assert.True(Path.Combine(deep, "work-in-a-deep-place.txt").Length > 260);
+
+        var removal = await trees.RemoveAsync(tree.Path, force: true);
+
+        Assert.True(removal.Removed, removal.Message);
+        Assert.False(Directory.Exists(tree.Path));
+        Assert.Empty((await GitAsync(root, "branch", "--list", tree.Branch)).Trim());
+    }
+
+    /// <summary>
+    /// 🔴 A committed file past 260 characters is not uncommitted work: without long paths git cannot
+    /// read it and reports it changed, and the first real workspace's clean-up kept two trees for it.
+    /// </summary>
+    [Fact]
+    public async Task A_committed_file_past_260_characters_is_not_taken_for_uncommitted_work()
+    {
+        var root = await RepositoryAsync("engine");
+        var trees = new SessionTrees(_home);
+        var tree = await trees.OpenAsync(root, "engine", "aurora");
+        var deep = Path.Combine([tree.Path, .. Enumerable.Repeat("a-folder-name-long-enough-to-matter", 8)]);
+        Directory.CreateDirectory(deep);
+        await File.WriteAllTextAsync(Path.Combine(deep, "committed-in-a-deep-place.txt"), "deep\n");
+        await GitAsync(tree.Path, "-c", "core.longpaths=true", "add", "-A");
+        await GitAsync(tree.Path, "-c", "core.longpaths=true", "-c", "user.email=fixture@example.test", "-c", "user.name=Fixture", "commit", "-m", "deep");
+        await GitAsync(root, "branch", "keep", tree.Branch);
+
+        var plan = await trees.SweepPlanAsync([("engine", "aurora", root)], new HashSet<string>());
+
+        Assert.Equal(SweepKind.Landed, KindOf(plan, tree.Branch));
+    }
+
     /// <summary>The tidy rule: once a press lands the work, its tree and branch go — and the landed branch stays.</summary>
     [Fact]
     public async Task A_tidy_rule_removes_the_tree_and_branch_once_the_work_lands()

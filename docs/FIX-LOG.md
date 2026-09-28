@@ -5,6 +5,34 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## A session tree past 260 characters could be opened, and not read or removed (2026-09-28)
+
+**Symptom.** Cleaning up the first real workspace's session branches, a forced removal of a discarded
+tree failed with *Filename too long*, after git had already let go of the tree. Its folder was left
+half deleted and its branch behind. Two other trees were kept by the clean-up for *uncommitted work*
+(3 paths each) whose diffs, whitespace and line ends included, showed no change at all.
+
+**Root cause.** A session tree's path is longer than its repository's root, so a file that fits
+under the root can pass Windows' 260 characters in a tree. The 2026-09-27 fix gave `core.longpaths`
+to the one command that opens a tree (`worktree add`). Every other git call in a tree ran without
+it: `worktree remove` could not delete the deep files, and `status` could not read them, so it
+reported the three committed files as changed.
+
+**Fix.** `WorkingTree.GitAsync`, the driver's one git runner, says `-c core.longpaths=true` on every
+call, and the per-call copies are gone. Said on the command line, so no repository's configuration
+changes. The half-deleted folder was removed by hand, since git no longer knew it; its branch held no
+commits of its own and went with the clean-up.
+
+**Verify.**
+- `SweepTests`: *a tree with paths past 260 characters is removed*, and *a committed file past 260
+  characters is not taken for uncommitted work*. Both failed first with the real messages.
+- On the real workspace, the rebuilt clean-up listed all eight branches to go, and removed 8 of 8.
+
+**The trap.** Long paths are a property of the location, and a fix at one call site leaves every
+other call at that location with the same trap. Say it where every call passes.
+
+**Commit.** pending
+
 ## A Settings test failed every full run and passed every time alone (2026-09-28)
 
 **Symptom.** `SettingsView in a browser > lists every workspace…` failed in three full runs of the
