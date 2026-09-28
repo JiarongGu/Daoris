@@ -74,8 +74,15 @@ export function AttentionRow({ item, onOpen }: {
           {IN_A_CIRCLE.has(item.kind) ? t('work.attention.circle', { circle: item.where }) : item.where}
         </span>
       </span>
+      {/* 🔴 No display utility beside the clamp: `block` overrode the box it needs, and a parked
+          session's whole analysis filled the band (2026-09-29). */}
       {item.detail && (
-        <span className="mt-0.5 line-clamp-2 block text-small text-ink-soft"><Inline text={item.detail} /></span>
+        <span className="mt-0.5 line-clamp-2 text-small text-ink-soft"><Inline text={item.detail} /></span>
+      )}
+      {/* Where the door goes, said on it: a row that only read as a notice left the owner with
+          nowhere to answer a parked session (2026-09-29). */}
+      {onOpen && (
+        <span className="mt-1 block text-small font-medium text-accent">{t(`work.attention.open.${item.kind}`)}</span>
       )}
     </>
   );

@@ -91,6 +91,33 @@ describe('opening one', () => {
   });
 
   /**
+   * 🔴 The owner, on the first real parked session (2026-09-29): *"it says waiting for me … but no
+   * where to reply"*. The row was the door, and nothing on it said so: it read as a notice. A door row
+   * names where it goes.
+   */
+  it('says where its door goes', () => {
+    const { unmount } = render(<AttentionRow item={PARKED} onOpen={vi.fn()} />);
+    expect(screen.getByRole('button')).toHaveTextContent('open it to answer');
+    unmount();
+
+    render(<AttentionRow item={PARKED} />);
+    expect(screen.queryByText('open it to answer')).toBeNull();
+  });
+
+  /**
+   * 🔴 The same look: a parked session's whole analysis, a screen of it, filled the band, because a
+   * `block` beside `line-clamp-2` overrode the display the clamp needs. jsdom lays nothing out, so this
+   * holds the class the clamp depends on, and the window holds the look.
+   */
+  it('keeps a long analysis to two lines, with nothing overriding the clamp', () => {
+    const { container } = render(<AttentionRow item={{ ...PARKED, detail: 'a long analysis '.repeat(80) }} onOpen={vi.fn()} />);
+
+    const clamped = container.querySelector('.line-clamp-2')!;
+    expect(clamped).not.toBeNull();
+    expect([...clamped.classList].filter((name) => /^(block|inline|flex|grid|inline-block)$/.test(name))).toEqual([]);
+  });
+
+  /**
    * A door opens something, or it is not a door (platform language §4): a browser's parked row was a
    * button that did nothing. Knowing is the half that travels, so the row is still there — as text.
    */

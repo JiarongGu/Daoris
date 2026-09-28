@@ -5,6 +5,34 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## A parked session filled Overview's band, and nothing said the row was the door (2026-09-29)
+
+**Symptom.** The owner, with the first real session parked for their sign-in: *"it says waiting for
+me to signin, I did but no where to reply in session or any place to retrigger"*. The installed
+Overview showed the parked session in *what needs you* as a screen of text, its whole analysis, with
+no button in sight. The answer door was one press away (the row opens the session in Sessions,
+whose waiting card carries *answer and carry on…*), and nothing on the row said so.
+
+**Root cause.** Two. The detail's `line-clamp-2` sat beside `block`, and `block` overrode the
+display the clamp needs, so no analysis was ever held to two lines: a short one hid it, and the first
+long one filled the band. And a door row said what was waiting and never where it led, so a row that
+had stopped looking like a row read as a notice.
+
+**Fix.** No display utility beside the clamp. A row with a door says where it goes, in its accent, by
+kind: *open it to answer*, *open the ask to publish it*, *open the rules to answer it*, and so on. A
+row with nowhere to go (a browser's parked session) says nothing of the kind, as before. The owner
+was unblocked from a terminal first (`daoris-driver answer`).
+
+**Verify.**
+- `AttentionRow.test.tsx`: *says where its door goes* and *keeps a long analysis to two lines, with
+  nothing overriding the clamp*. Both failed first.
+- On the scratch window, both themes: each row carries its verb, and the analyses sit at two lines.
+
+**The trap.** jsdom lays nothing out, so a clamp that clamps nothing passes every test that renders
+it. A class that depends on another class's absence needs a test that says so.
+
+**Commit.** pending
+
 ## A session tree past 260 characters could be opened, and not read or removed (2026-09-28)
 
 **Symptom.** Cleaning up the first real workspace's session branches, a forced removal of a discarded
