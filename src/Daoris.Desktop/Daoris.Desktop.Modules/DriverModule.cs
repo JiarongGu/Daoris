@@ -357,7 +357,7 @@ public sealed class DriverModule : ModuleBase
                     if (plan.Refusal is { } refused)
                     {
                         HelpProposals.Settle(_loop.Home, proposal.Id, "refused", refused);
-                        _loop.Chat?.Say(session, $"Daoris did not show proposal `#{proposal.Id}` to the person — the route refuses it: {refused}");
+                        _loop.Chat?.Say(session, InPersonsWords($"Daoris did not show proposal `#{proposal.Id}` to the person — the route refuses it: {refused}"));
                         continue;
                     }
 
@@ -401,7 +401,7 @@ public sealed class DriverModule : ModuleBase
                     told = $"Applied: `#{id}` — {plan.Describe} (`{plan.Terminal}`)";
                 }
 
-                if (proposal.Session is { } said) _loop.Chat?.Say(said, told);
+                if (proposal.Session is { } said) _loop.Chat?.Say(said, InPersonsWords(told));
                 return new { Message = told, Applied = plan.Refusal is null };
             }
 
@@ -415,7 +415,7 @@ public sealed class DriverModule : ModuleBase
 
                 HelpProposals.Settle(_loop.Home, id, "dismissed", null);
                 var told = $"Not now: the person did not apply `#{id}`.";
-                if (proposal.Session is { } said) _loop.Chat?.Say(said, told);
+                if (proposal.Session is { } said) _loop.Chat?.Say(said, InPersonsWords(told));
                 await Task.CompletedTask.ConfigureAwait(false);
                 return new { Message = told };
             }
@@ -1849,6 +1849,12 @@ public sealed class DriverModule : ModuleBase
         return (DriverConfig.Load(_loop.ConfigPath), new HelpMachineFacts(
             [.. snapshot.Repositories.Select(known => known.Repository)], workspaces, _loop.Harnesses.Adapters.Names));
     }
+
+    /// <summary>
+    /// A result said into Ask Daoris's conversation in the person's name (HELP1c): plain words, since a
+    /// person's message renders verbatim and a sentence full of backticks read as noise on the window.
+    /// </summary>
+    private static string InPersonsWords(string told) => told.Replace("`", "", StringComparison.Ordinal);
 
     private void Change(Func<DriverConfig, DriverConfig> change)
     {
