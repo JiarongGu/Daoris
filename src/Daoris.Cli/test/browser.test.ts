@@ -157,9 +157,37 @@ function writeSettings(home: string, json: string): void {
   writeFileSync(settingsFile(home), json, 'utf8');
 }
 
-test('no settings file offers other software\'s extensions, as the engine does', () => {
+test('no settings file offers other software\'s extensions, as the engine does, and uses Daoris\'s browser', () => {
   const fx = makeFixture('settings-none');
-  assert.deepEqual(readBrowserSettings(fx.root), { extensions: 'offer', problem: null });
+  assert.deepEqual(readBrowserSettings(fx.root), { extensions: 'offer', browser: 'daoris', problem: null });
+  fx.cleanup();
+});
+
+// BRW12: which browser, answer for answer, as the C# table.
+const BROWSERS: [unknown, 'daoris' | 'edge'][] = [
+  ['daoris', 'daoris'],
+  ['edge', 'edge'],
+  ['Edge', 'daoris'],
+  ['chrome', 'daoris'],
+  [1, 'daoris'],
+];
+
+test('the browser is daoris or edge, and anything else is Daoris\'s own', () => {
+  for (const [value, expected] of BROWSERS) {
+    const fx = makeFixture('settings-browser');
+    writeSettings(fx.root, JSON.stringify({ browser: value, extensions: 'refuse' }));
+    assert.deepEqual(readBrowserSettings(fx.root), { extensions: 'refuse', browser: expected, problem: null }, JSON.stringify(value));
+    fx.cleanup();
+  }
+});
+
+test('`browser use` says which browser and sets it, keeping the rest', () => {
+  const fx = makeFixture('settings-use');
+  assert.match(run(['use'], fx.root).out, /Daoris's own browser/);
+  writeSettings(fx.root, JSON.stringify({ extensions: 'refuse' }));
+  assert.match(run(['use', 'edge'], fx.root).out, /Edge.*Microsoft account/s);
+  assert.deepEqual(readBrowserSettings(fx.root), { extensions: 'refuse', browser: 'edge', problem: null });
+  assert.match(String(captureError(() => run(['use', 'firefox'], fx.root))?.message), /daoris.*edge/);
   fx.cleanup();
 });
 
@@ -177,7 +205,7 @@ test('the extensions setting is offer or refuse, and anything else is the defaul
   for (const [value, expected] of EXTENSIONS) {
     const fx = makeFixture('settings-value');
     writeSettings(fx.root, JSON.stringify({ extensions: value }));
-    assert.deepEqual(readBrowserSettings(fx.root), { extensions: expected, problem: null }, JSON.stringify(value));
+    assert.deepEqual(readBrowserSettings(fx.root), { extensions: expected, browser: 'daoris', problem: null }, JSON.stringify(value));
     fx.cleanup();
   }
 });
@@ -243,7 +271,7 @@ test('`browser favorite` with no home refuses, naming the variable (D63)', () =>
 
 test('`browser` knows `favorite` and `extensions`, and says what it takes', () => {
   const fx = makeFixture('favorites-usage');
-  assert.match(String(captureError(() => run(['tabs'], fx.root))?.message), /browser favorite.*browser extensions/s);
+  assert.match(String(captureError(() => run(['tabs'], fx.root))?.message), /browser favorite.*browser extensions.*browser use/s);
   assert.match(String(captureError(() => run(['favorite', 'add'], fx.root))?.message), /needs an address/);
   fx.cleanup();
 });

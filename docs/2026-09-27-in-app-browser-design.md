@@ -35,6 +35,10 @@
 > - **A settings file, `<home>/browser/settings.json` (CHR7):** another twin
 >   (`daoris browser extensions`, `BrowserSettings.cs`). It says whether other software's Chrome
 >   extensions are offered, as the engine does, or refused before it starts.
+> - **The person's Edge, as an option (BRW12):** the same file's `browser` field, set with
+>   `daoris browser use` or in Settings → Browser. Edge runs on `<home>/browser/edge`, with its port
+>   recorded so a restarted shell adopts it, and it needs no relay. Keeping its sign-in across a
+>   restart is BRW13.
 
 ## 0. Why the first answer is not enough
 

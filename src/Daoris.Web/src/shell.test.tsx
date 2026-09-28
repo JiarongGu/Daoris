@@ -757,6 +757,9 @@ describe('the browser domain', () => {
     favoritesProblem: null,
     settingsPath: 'C:/somewhere/data/browser/settings.json',
     extensions: 'offer',
+    browser: 'daoris',
+    edgeFound: true,
+    edgeProfile: 'C:/somewhere/data/browser/edge',
     settingsProblem: null,
   };
 
@@ -805,6 +808,33 @@ describe('the browser domain', () => {
     expect(invoke).toHaveBeenCalledWith('DAORIS.BROWSER', 'SET_EXTENSIONS', { payload: { extensions: 'refuse' } });
     await waitFor(() => expect(notify).toHaveBeenCalledWith(
       "Other software's extensions will be refused from the browser's next start."));
+  });
+
+  /** BRW12: the person's Edge, as an option, saying what it brings before it is chosen. */
+  it('choosing Edge lands as the verb a terminal has, and says what Edge brings', async () => {
+    const notify = vi.fn();
+    show(<SettingsView notify={notify} section="browser" />);
+
+    expect(await screen.findByRole('radio', { name: "Daoris's own" })).toHaveAttribute('aria-checked', 'true');
+    await userEvent.click(screen.getByRole('radio', { name: 'your Edge' }));
+
+    expect(invoke).toHaveBeenCalledWith('DAORIS.BROWSER', 'SET_BROWSER', { payload: { browser: 'edge' } });
+    await waitFor(() => expect(notify).toHaveBeenCalledWith('your Edge, from the next time the browser is opened.'));
+  });
+
+  it('with Edge chosen, says its profile, its account and its default profile, and whose favorites these are', async () => {
+    invoke.mockImplementation(async (module: string) => (module === 'DAORIS.BROWSER' ? { ...BROWSER, browser: 'edge' } : DRIVER_STATE));
+    show(<SettingsView notify={() => {}} section="browser" />);
+
+    expect(await screen.findByText(/C:\/somewhere\/data\/browser\/edge.*Microsoft account.*default Edge profile cannot be driven/)).toBeTruthy();
+    expect(screen.getByText(/Edge keeps its own/)).toBeTruthy();
+  });
+
+  it('a machine with no Edge says so before it is chosen', async () => {
+    invoke.mockImplementation(async (module: string) => (module === 'DAORIS.BROWSER' ? { ...BROWSER, edgeFound: false } : DRIVER_STATE));
+    show(<SettingsView notify={() => {}} section="browser" />);
+
+    expect(await screen.findByText(/No Edge is installed on this machine/)).toBeTruthy();
   });
 
   it('a file that could not be read is said, with where it is, and no list is guessed', async () => {

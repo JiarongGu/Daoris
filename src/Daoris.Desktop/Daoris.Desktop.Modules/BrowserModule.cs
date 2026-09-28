@@ -75,6 +75,22 @@ public sealed class BrowserModule(IEventBus events) : ModuleBase(events: events)
                 return Task.FromResult<object?>(State(home));
             }
 
+            case "SET_BROWSER":
+            {
+                var browser = PayloadHelper.GetRequiredValue<string>(request.Payload, "browser");
+                if (browser is not (BrowserChoice.Daoris or BrowserChoice.Edge))
+                {
+                    throw Refusals.Because(
+                        Refusals.BrowserChoiceUnknown,
+                        $"The browser is `daoris` or `edge`, not `{browser}`.",
+                        ("value", browser));
+                }
+
+                Unreadable(BrowserSettings.Read(home).Problem, BrowserSettings.FilePath(home));
+                BrowserSettings.SetBrowser(home, browser);
+                return Task.FromResult<object?>(State(home));
+            }
+
             default:
                 throw UnknownType(request);
         }
@@ -101,6 +117,11 @@ public sealed class BrowserModule(IEventBus events) : ModuleBase(events: events)
             FavoritesProblem = favorites.Problem,
             SettingsPath = BrowserSettings.FilePath(home),
             settings.Extensions,
+            settings.Browser,
+            // Whether the Edge option has an Edge to start on this machine, so the page can say so
+            // before it is chosen rather than after a press does nothing.
+            EdgeFound = EdgeBrowser.Locate() is not null,
+            EdgeProfile = EdgeBrowser.ProfileFolder(home),
             SettingsProblem = settings.Problem,
         };
     }

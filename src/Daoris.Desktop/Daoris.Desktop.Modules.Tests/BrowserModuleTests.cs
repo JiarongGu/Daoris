@@ -1,3 +1,5 @@
+using System.Text.Json;
+
 namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
@@ -47,6 +49,27 @@ public sealed class BrowserModuleTests : Bridge
 
         Assert.Contains(Refusals.BrowserNotAPage, refusal);
         Assert.False(File.Exists(BrowserFavorites.FilePath(Home)));
+    }
+
+    [Fact]
+    public async Task Choosing_Edge_writes_the_settings_file_and_the_state_says_where_its_profile_is()
+    {
+        var state = await AnswerAsync(Module(), "SET_BROWSER", new { browser = "edge" });
+
+        Assert.Equal(BrowserChoice.Edge, BrowserSettings.Read(Home).Browser);
+        Assert.Equal(BrowserChoice.Edge, state.GetProperty("browser").GetString());
+        Assert.Equal(EdgeBrowser.ProfileFolder(Home), state.GetProperty("edgeProfile").GetString());
+        // Whether this machine has an Edge is the machine's; that the page is told either way is the contract.
+        Assert.Contains(state.GetProperty("edgeFound").ValueKind, new[] { JsonValueKind.True, JsonValueKind.False });
+    }
+
+    [Fact]
+    public async Task A_browser_that_is_neither_is_refused_by_code()
+    {
+        var refusal = await RefusalAsync(Module(), "SET_BROWSER", new { browser = "firefox" });
+
+        Assert.Contains(Refusals.BrowserChoiceUnknown, refusal);
+        Assert.False(File.Exists(BrowserSettings.FilePath(Home)));
     }
 
     [Fact]

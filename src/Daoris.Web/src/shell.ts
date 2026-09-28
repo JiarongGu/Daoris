@@ -349,6 +349,12 @@ export type BrowserSettingsState = {
   favoritesProblem: string | null;
   settingsPath: string;
   extensions: 'offer' | 'refuse';
+  /** Which browser sessions drive and the person opens (BRW12). */
+  browser: 'daoris' | 'edge';
+  /** Whether this machine has an Edge for that choice to start. */
+  edgeFound: boolean;
+  /** The profile of Daoris's that Edge runs on — never the person's default, which cannot be driven. */
+  edgeProfile: string;
   settingsProblem: string | null;
 };
 
@@ -378,6 +384,8 @@ export const useAddFavorite = () => useBrowserChange<{ address: string; title?: 
 export const useRemoveFavorite = () => useBrowserChange<{ address: string }>('REMOVE_FAVORITE');
 
 export const useSetExtensions = () => useBrowserChange<{ extensions: 'offer' | 'refuse' }>('SET_EXTENSIONS');
+
+export const useSetBrowser = () => useBrowserChange<{ browser: 'daoris' | 'edge' }>('SET_BROWSER');
 
 /**
  * Open one of this build's secondary windows (D55 §b, SURF8): the monitor, or one session detached.

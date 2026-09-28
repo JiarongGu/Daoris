@@ -107,6 +107,9 @@ public static class Refusals
     /// <summary>An extensions setting that is neither `offer` nor `refuse` (CHR7).</summary>
     public const string BrowserSettingUnknown = "BROWSER_SETTING_UNKNOWN";
 
+    /// <summary>A browser choice that is neither `daoris` nor `edge` (BRW12).</summary>
+    public const string BrowserChoiceUnknown = "BROWSER_CHOICE_UNKNOWN";
+
     /// <summary>Every code a module here can raise — what the catalogue test enumerates.</summary>
     public static IReadOnlyList<string> All =>
     [
@@ -115,7 +118,7 @@ public static class Refusals
         SessionMoveNotYours, SessionDeclineNeedsReason, SessionNotReviewable, SessionNoBase, SessionRangeUnreadable,
         SessionTreeUnlisted, HarnessProfileNeeded, WindowUnknown,
         PluginUnknown, PluginActionUnknown, PluginBusy,
-        BrowserNotAPage, BrowserFileUnreadable, BrowserSettingUnknown,
+        BrowserNotAPage, BrowserFileUnreadable, BrowserSettingUnknown, BrowserChoiceUnknown,
     ];
 
     /// <summary>

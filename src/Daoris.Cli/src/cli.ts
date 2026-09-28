@@ -114,6 +114,8 @@ const USAGE = `daoris <command> [options]
                          favorite remove <address> stop keeping it
                          extensions [offer|refuse] other software's Chrome extensions: offered
                                                    for your approval, or refused
+                         use [daoris|edge]         Daoris's own browser, or your Edge on a
+                                                   profile of Daoris's
 
   connect, retire and import are the MANAGEMENT commands: opt-in, they talk to a
   service, and no gate ever runs them. remote, agent, driver, plugin and browser are

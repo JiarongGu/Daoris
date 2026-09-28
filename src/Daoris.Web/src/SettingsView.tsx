@@ -7,7 +7,8 @@ import { useScope } from './scope';
 import {
   useAddFavorite, useBrowserSettings, useDriver, useHarnessAction, useHarnessEnded, useHarnesses, usePluginAction,
   usePlugins, useRefreshHarnesses, useRemotes, useRemoveFavorite, useRuleAction, useRuleProposal, useRules,
-  useSetExtensions, useSetIntake, useSetNotify, useSetStrikes, useStarts, useUnwireRemote, useUsage, useWireRemote,
+  useSetBrowser, useSetExtensions, useSetIntake, useSetNotify, useSetStrikes, useStarts, useUnwireRemote, useUsage,
+  useWireRemote,
 } from './shell';
 import { AgentRules } from './settings/AgentRules';
 import { proposalChange } from './settings/proposals';
@@ -581,6 +582,7 @@ function BrowserDomain({ notify }: { notify: Notify }) {
   const add = useAddFavorite();
   const remove = useRemoveFavorite();
   const setExtensions = useSetExtensions();
+  const setBrowser = useSetBrowser();
   useErrorNotify(state.error, notify);
   const onError = failure(notify);
 
@@ -603,7 +605,42 @@ function BrowserDomain({ notify }: { notify: Notify }) {
     <>
       <Prose className="mb-3">{t('settings.browser.nextStart')}</Prose>
 
-      <Card id="settings-favorites" className="scroll-mt-3">
+      {/* Which browser (BRW12): Daoris's own, or the person's Edge on a profile of Daoris's. */}
+      <Card id="settings-which-browser" className="scroll-mt-3">
+        <SectionTitle>{t('settings.browser.which.title')}</SectionTitle>
+        <SettingRow
+          label={t('settings.browser.which.label')}
+          hint={data?.browser === 'edge'
+            ? t('settings.browser.which.hintEdge', { profile: data.edgeProfile })
+            : t('settings.browser.which.hintDaoris')}
+          control={data && (
+            <Segmented
+              label={t('settings.browser.which.label')}
+              value={data.browser}
+              options={[
+                { value: 'daoris', label: t('settings.browser.which.daoris') },
+                { value: 'edge', label: t('settings.browser.which.edge') },
+              ]}
+              onChange={(browser) => setBrowser.mutate({ browser }, {
+                onSuccess: () => notify(t('settings.browser.which.set', {
+                  choice: t(browser === 'edge' ? 'settings.browser.which.edge' : 'settings.browser.which.daoris'),
+                })),
+                onError,
+              })}
+            />
+          )}
+        />
+        {data && !data.edgeFound && (
+          <p className="mt-3 border-l-[3px] border-warn bg-raised px-3.5 py-2 text-body text-ink-soft">
+            {t('settings.browser.which.noEdge')}
+          </p>
+        )}
+        {data?.browser === 'edge' && (
+          <Prose className="mt-3 text-small">{t('settings.browser.ownOnly')}</Prose>
+        )}
+      </Card>
+
+      <Card id="settings-favorites" className="mt-3.5 scroll-mt-3">
         <SectionTitle>{t('settings.browser.favorites.title')}</SectionTitle>
         <SettingRow
           label={t('settings.browser.favorites.label')}

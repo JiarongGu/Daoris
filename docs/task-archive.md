@@ -7020,3 +7020,38 @@ capped width where it should follow its container, and say why for one that caps
 **Proven by:**
 - The layout test watched failing, and two frame tests.
 - The measure on the shell, before and after the fix.
+
+## BRW12 — the person's Edge, as an option (2026-09-28)
+
+The row as filed: *(D84). A machine setting, with its terminal twin: Daoris's engine, or Edge on a
+profile under the home. The Edge option says what it brings: the person's Microsoft account, signed in
+on its own (the evidence's §5), and with sync on if they want their own sign-ins and extensions.
+Driving the person's default profile is not possible, since Chromium refuses a debug port there, and
+the screen says so.*
+
+**Outcome.**
+- `settings.json` gains `browser: daoris | edge`, a twin like the rest of the file.
+- Its doors are `daoris browser use [daoris|edge]` and a *Which browser* card at the head of
+  Settings → Browser. Both say what Edge brings: the Microsoft account, signed in on its own; sync and
+  extensions that are the person's to turn on; and a default profile that cannot be driven.
+- The card warns when this machine has no Edge.
+- `EngineBrowserHost` reads the choice at each bring-up. For Edge it starts `msedge` on
+  `<home>/browser/edge` with a debug port, records the port in `<home>/browser/edge.json`, and adopts a
+  recorded Edge that still answers as one, so a second start never hands off to an Edge on a port
+  nobody knows.
+- Edge needs no relay, because it announces its own tabs as pages.
+
+**Proven by:**
+- 13 `EdgeBrowserTests`.
+- The twin tables on both sides.
+- Module tests for the choice and its refusal code.
+- 3 page tests.
+- On the scratch shell, with a real Edge: chosen, opened on the scratch profile answering as
+  `Edg/154`, and adopted, not doubled, by a second press and by a restarted shell.
+
+**Left open:** Edge still drops a session cookie at a restart, and carrying it is BRW13.
+
+**Found on the way:** a port recorded as a string read as one until the kind was checked.
+
+**Privacy:** the scratch Edge profile, which Edge signs in to the Windows account on its own, was
+deleted after the check, and nothing of it was photographed.

@@ -15,8 +15,18 @@ public static class ExtensionsSetting
     public const string Refuse = "refuse";
 }
 
+/// <summary>
+/// Which browser sessions drive and the person opens (BRW12, D84): Daoris's own, the engine it ships,
+/// or the person's Edge on a profile of Daoris's.
+/// </summary>
+public static class BrowserChoice
+{
+    public const string Daoris = "daoris";
+    public const string Edge = "edge";
+}
+
 /// <summary>What the settings file holds, and why a file that was there gave only the defaults.</summary>
-public sealed record BrowserSettingsRead(string Extensions, string? Problem);
+public sealed record BrowserSettingsRead(string Extensions, string Browser, string? Problem);
 
 /// <summary>
 /// Daoris's browser's settings (CHR7): <c>&lt;home&gt;/browser/settings.json</c>, which
@@ -42,7 +52,8 @@ public static class BrowserSettings
         var extensions = file is not null && Text(file, "extensions") == ExtensionsSetting.Refuse
             ? ExtensionsSetting.Refuse
             : ExtensionsSetting.Offer;
-        return new(extensions, problem);
+        var browser = file is not null && Text(file, "browser") == BrowserChoice.Edge ? BrowserChoice.Edge : BrowserChoice.Daoris;
+        return new(extensions, browser, problem);
     }
 
     /// <summary>Set the extensions setting for the browser's next start.</summary>
@@ -54,6 +65,23 @@ public static class BrowserSettings
             throw new InvalidOperationException($"The extensions setting is `offer` or `refuse`, not `{extensions}`.");
         }
 
+        Set(home, "extensions", extensions);
+    }
+
+    /// <summary>Choose the browser for the next time one is opened.</summary>
+    /// <exception cref="InvalidOperationException">A value that is neither, or a file this could not read.</exception>
+    public static void SetBrowser(string home, string browser)
+    {
+        if (browser is not (BrowserChoice.Daoris or BrowserChoice.Edge))
+        {
+            throw new InvalidOperationException($"The browser is `daoris` or `edge`, not `{browser}`.");
+        }
+
+        Set(home, "browser", browser);
+    }
+
+    private static void Set(string home, string field, string value)
+    {
         var (file, problem) = Load(home);
         if (problem is not null)
         {
@@ -62,7 +90,7 @@ public static class BrowserSettings
         }
 
         file ??= [];
-        file["extensions"] = extensions;
+        file[field] = value;
         var path = FilePath(home);
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
         AtomicFile.WriteText(path, file.ToJsonString(Indented).ReplaceLineEndings("\n") + "\n");

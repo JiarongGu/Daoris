@@ -183,6 +183,19 @@ public sealed class EngineCdp(int port) : IDisposable
         }
     }
 
+    /// <summary>The endpoint's own account of itself (`/json/version`), or null when nothing answers.</summary>
+    public async Task<string?> VersionAsync(CancellationToken ct = default)
+    {
+        try
+        {
+            return await _http.GetStringAsync("json/version", ct).ConfigureAwait(false);
+        }
+        catch (Exception error) when (error is HttpRequestException or TaskCanceledException)
+        {
+            return null;
+        }
+    }
+
     /// <summary>The page targets, or null when the engine does not answer.</summary>
     public async Task<IReadOnlyList<string>?> PagesAsync(CancellationToken ct = default)
     {

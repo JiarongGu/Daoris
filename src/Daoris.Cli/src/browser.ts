@@ -170,19 +170,26 @@ export const SETTINGS_FILE = join('browser', 'settings.json');
  */
 export type ExtensionsSetting = 'offer' | 'refuse';
 
+/**
+ * Which browser a session drives and the person opens (BRW12, D84): Daoris's own, the engine it ships,
+ * or the person's Edge on a profile of Daoris's.
+ */
+export type BrowserChoice = 'daoris' | 'edge';
+
 export function settingsFile(home: string): string {
   return join(home, SETTINGS_FILE);
 }
 
 /** The settings, or the defaults with why a file that was there gave none. */
-export function readBrowserSettings(home: string): { extensions: ExtensionsSetting; problem: string | null } {
+export function readBrowserSettings(home: string): { extensions: ExtensionsSetting; browser: BrowserChoice; problem: string | null } {
   const { value, problem } = readJsonObject(settingsFile(home));
   const extensions = value?.extensions === 'refuse' ? 'refuse' : 'offer';
-  return { extensions, problem };
+  const browser = value?.browser === 'edge' ? 'edge' : 'daoris';
+  return { extensions, browser, problem };
 }
 
-/** Set the extensions setting, keeping what an editor has no field for. Refused over a file it could not read. */
-export function setExtensions(home: string, extensions: ExtensionsSetting): void {
+/** Set one field, keeping what an editor has no field for. Refused over a file it could not read. */
+function setField(home: string, field: 'extensions' | 'browser', choice: string): void {
   const { value, problem } = readJsonObject(settingsFile(home));
   if (problem !== null) {
     throw new DaorisError(`${problem}. Fix it, or delete it to start from the defaults — `
@@ -190,7 +197,15 @@ export function setExtensions(home: string, extensions: ExtensionsSetting): void
   }
 
   mkdirSync(dirname(settingsFile(home)), { recursive: true });
-  writeJsonAtomic(settingsFile(home), { ...(value ?? {}), extensions });
+  writeJsonAtomic(settingsFile(home), { ...(value ?? {}), [field]: choice });
+}
+
+export function setExtensions(home: string, extensions: ExtensionsSetting): void {
+  setField(home, 'extensions', extensions);
+}
+
+export function setBrowser(home: string, browser: BrowserChoice): void {
+  setField(home, 'browser', browser);
 }
 
 /** The home, or the refusal every management verb gives without one (D63). */
@@ -201,7 +216,33 @@ function requireHome(): string {
 }
 
 const USAGE = '`daoris browser favorite list`, `daoris browser favorite add <address> [--title T]`, '
-  + '`daoris browser favorite remove <address>`, or `daoris browser extensions [offer|refuse]`';
+  + '`daoris browser favorite remove <address>`, `daoris browser extensions [offer|refuse]`, '
+  + 'or `daoris browser use [daoris|edge]`';
+
+/** `browser use [daoris|edge]`: say which browser, or choose it for the next time one is opened. */
+function commandUse(value: string | undefined, write: (line: string) => void): ExitCode {
+  const home = requireHome();
+  if (value === undefined) {
+    const { browser, problem } = readBrowserSettings(home);
+    if (problem) write(`daoris: ⚠ ${problem}; the default holds.`);
+    write(browser === 'edge'
+      ? 'daoris: sessions and you use your Edge, on a profile of Daoris\'s under the home.'
+      : 'daoris: sessions and you use Daoris\'s own browser, the engine it ships.');
+    return problem ? 1 : 0;
+  }
+
+  if (value !== 'daoris' && value !== 'edge') {
+    throw new DaorisError(`\`browser use\` takes \`daoris\` or \`edge\`, not \`${value}\`.`);
+  }
+
+  setBrowser(home, value);
+  write(value === 'edge'
+    ? 'daoris: Edge, from the next time the browser is opened. Edge signs its profile in to your Microsoft '
+      + 'account on its own, and its sync and extensions are yours to turn on. Your default Edge profile '
+      + 'cannot be driven: Chromium refuses a debug port there, so Daoris gives Edge a profile of its own.'
+    : 'daoris: Daoris\'s own browser, from the next time the browser is opened.');
+  return 0;
+}
 
 /** `browser extensions [offer|refuse]`: say the setting, or set it for the browser's next start. */
 function commandExtensions(value: string | undefined, write: (line: string) => void): ExitCode {
@@ -234,6 +275,7 @@ function commandExtensions(value: string | undefined, write: (line: string) => v
 export function commandBrowser({ argv, write }: CommandArgs): ExitCode {
   const [area, verb, address] = operands(argv, new Set(['--title']));
   if (area === 'extensions') return commandExtensions(verb, write);
+  if (area === 'use') return commandUse(verb, write);
   if (area === 'history') {
     throw new DaorisError('`browser history` is retired: Daoris\'s browser keeps the browser\'s own history '
       + 'now, on its History page, where it is cleared as well.');

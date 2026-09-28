@@ -19,8 +19,33 @@ public sealed class BrowserSettingsTests : Bridge
     }
 
     [Fact]
-    public void No_settings_file_offers_other_softwares_extensions_as_the_engine_does() =>
-        Assert.Equal(new BrowserSettingsRead(ExtensionsSetting.Offer, null), BrowserSettings.Read(Home));
+    public void No_settings_file_offers_other_softwares_extensions_as_the_engine_does_and_uses_Daoris_browser() =>
+        Assert.Equal(new BrowserSettingsRead(ExtensionsSetting.Offer, BrowserChoice.Daoris, null), BrowserSettings.Read(Home));
+
+    /// <summary>Which browser (BRW12) — the CLI's twin table holds these cases, answer for answer.</summary>
+    [Theory]
+    [InlineData("\"daoris\"", "daoris")]
+    [InlineData("\"edge\"", "edge")]
+    [InlineData("\"Edge\"", "daoris")]
+    [InlineData("\"chrome\"", "daoris")]
+    [InlineData("1", "daoris")]
+    public void The_browser_is_daoris_or_edge_and_anything_else_is_Daoris_own(string value, string expected)
+    {
+        Write($$"""{ "browser": {{value}}, "extensions": "refuse" }""");
+
+        Assert.Equal(new BrowserSettingsRead(ExtensionsSetting.Refuse, expected, null), BrowserSettings.Read(Home));
+    }
+
+    [Fact]
+    public void Choosing_the_browser_keeps_the_rest_and_refuses_what_is_neither()
+    {
+        Write("""{ "extensions": "refuse" }""");
+
+        BrowserSettings.SetBrowser(Home, BrowserChoice.Edge);
+
+        Assert.Equal(new BrowserSettingsRead(ExtensionsSetting.Refuse, BrowserChoice.Edge, null), BrowserSettings.Read(Home));
+        Assert.Throws<InvalidOperationException>(() => BrowserSettings.SetBrowser(Home, "firefox"));
+    }
 
     /// <summary>The extensions setting — the CLI's twin table holds these cases, answer for answer.</summary>
     [Theory]
@@ -34,7 +59,7 @@ public sealed class BrowserSettingsTests : Bridge
     {
         Write($$"""{ "extensions": {{value}} }""");
 
-        Assert.Equal(new BrowserSettingsRead(expected, null), BrowserSettings.Read(Home));
+        Assert.Equal(new BrowserSettingsRead(expected, BrowserChoice.Daoris, null), BrowserSettings.Read(Home));
     }
 
     [Theory]
