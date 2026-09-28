@@ -36,7 +36,7 @@ function isStripSpace(target: EventTarget, strip: EventTarget) {
  * where there is no window to command and none of them are passed at all.
  */
 export function AppStrip({
-  scope, center, menus, captionRoom,
+  scope, center, menus, trailing, captionRoom,
   stripRef, onDragStart, onToggleMaximize, onResizeTop,
 }: {
   /** The workspace switcher, or nothing while the deployment holds one circle (WSP5). */
@@ -45,6 +45,11 @@ export function AppStrip({
   center?: ReactNode;
   /** The application's menus — settings, help — which is what a title bar holds in an IDE. */
   menus?: ReactNode;
+  /**
+   * What toggles a region, at the strip's right beside the window's controls, as VS Code's layout
+   * toggles sit — Ask Daoris's door, since it opens the right region (the owner, 2026-09-29).
+   */
+  trailing?: ReactNode;
   captionRoom?: boolean;
   stripRef?: (element: HTMLElement | null) => void;
   /** Absent in a browser: there is no window to move, so the strip is simply a strip. */
@@ -112,6 +117,7 @@ export function AppStrip({
 
       <div {...{ [STRIP_SPACE]: 'end' }} className="flex h-full flex-1 basis-0 items-center justify-end gap-3">
         <div className="flex items-center gap-2">{scope}</div>
+        {trailing && <div className="flex items-center gap-1">{trailing}</div>}
 
         {/* Reserved, never drawn: the window owns these pixels. Three slots of 44px — the width the
             strip has always held open, so nothing shifted when they became real. */}

@@ -71,6 +71,24 @@ describe('AppStrip', () => {
     rerender(<AppStrip captionRoom />);
     expect(container.querySelectorAll('[data-caption]')).toHaveLength(3);
   });
+
+  /**
+   * The owner (2026-09-29): *"since we moved ask daoris to the right so you should move the icon to it
+   * too instead of in the top mid"*. What toggles the right region sits at the strip's right, beside
+   * the window's controls, as VS Code's layout toggles do — after the scope, before the caption room.
+   */
+  it('holds what toggles the right region at its right edge, before the window controls', () => {
+    const { container } = render(
+      <AppStrip center={<span>center</span>} scope={<span>scope</span>} trailing={<button type="button">ask</button>} captionRoom />,
+    );
+
+    const end = container.querySelector('[data-strip-space="end"]')!;
+    const order = [...end.querySelectorAll('span, button, [data-caption]')].map((node) =>
+      node.getAttribute('data-caption') ? 'caption' : node.textContent);
+    expect(order.slice(0, 2)).toEqual(['scope', 'ask']);
+    expect(order.slice(2)).toEqual(['caption', 'caption', 'caption']);
+    expect(container.querySelector('[data-strip-space="center"]')!.textContent).toBe('center');
+  });
 });
 
 describe('ActivityBar', () => {

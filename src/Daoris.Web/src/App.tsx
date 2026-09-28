@@ -414,32 +414,31 @@ export function App() {
         // The palette's way in is the command center now, not a 14px glyph wedged against the
         // caption buttons — same dialog, a target a person can find.
         center={(
-          <div className="flex w-full min-w-0 items-center gap-1.5">
-            <CommandCenter
-              scope={scopeNamed ?? t('palette.scope')}
-              shortcut="Ctrl K"
-              onOpen={() => setPalette(true)}
-              label={t('palette.open')}
-            />
-            {/* Ask Daoris's door on the strip (HELP1), beside the palette: where a person looks for help.
-                Named, not a bare glyph: the owner, 2026-09-29, *"there is no easy way to open the daoris
-                chat"*. The name gives way at a narrow window, where the strip is one line by rule. */}
-            {attached && (
-              <Tip content={t('help.open')}>
-                <Button
-                  variant="ghost"
-                  aria-label={t('help.open')}
-                  aria-pressed={helpOpen}
-                  onClick={toggleHelp}
-                  className="h-7 shrink-0 gap-1.5 whitespace-nowrap px-2 text-small"
-                >
-                  <Icon name="help" size={15} />
-                  <span className="max-md:hidden">{t('help.title')}</span>
-                </Button>
-              </Tip>
-            )}
-          </div>
+          <CommandCenter
+            scope={scopeNamed ?? t('palette.scope')}
+            shortcut="Ctrl K"
+            onOpen={() => setPalette(true)}
+            label={t('palette.open')}
+          />
         )}
+        // Ask Daoris's door (HELP1) at the strip's right, beside the window controls, since it opens the
+        // right region: the owner, 2026-09-29, "since we moved ask daoris to the right so you should move
+        // the icon to it too". Named, not a bare glyph ("there is no easy way to open the daoris chat");
+        // the name gives way at a narrow window, where the strip is one line by rule.
+        trailing={attached ? (
+          <Tip content={t('help.open')}>
+            <Button
+              variant="ghost"
+              aria-label={t('help.open')}
+              aria-pressed={helpOpen}
+              onClick={toggleHelp}
+              className="h-7 shrink-0 gap-1.5 whitespace-nowrap px-2 text-small"
+            >
+              <Icon name="help" size={15} />
+              <span className="max-md:hidden">{t('help.title')}</span>
+            </Button>
+          </Tip>
+        ) : undefined}
       />
 
       {/* No narrow-window stacking. The 15rem sidebar this replaced had to become a top bar under

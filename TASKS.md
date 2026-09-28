@@ -22,7 +22,7 @@ lists.
 ## State
 
 **Counts, and this is their one home:** sixteen commands, **514 CLI tests, 545 service, 899 driver,
-291 desktop modules, 80 devkit, 1309 web unit, 21 Playwright**, 66/66 release rehearsal, **291/291
+291 desktop modules, 80 devkit, 1310 web unit, 21 Playwright**, 66/66 release rehearsal, **292/292
 family rehearsal** (it names its own phases when you run it), **45/45 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge
 documents, 5 skills, 7 packs. The always-loaded core is **22,492 of 26,000 bytes** — a span in
@@ -144,8 +144,8 @@ rather than designed.
 
 ## Backlog
 
-**Thirty-five rows are open**: the four the first real workspace showed (WSR4, SESS1, MAP4, and
-DOCK1 from 2026-09-29; WSR2, WSR1 and WSR3 landed as D86, D87 and D88, HELP1 as D89); D85's two (CHR2, CHR4); the in-app browser's three (BRW3, BRW7, BRW8); the first goal's three (FG5,
+**Thirty-six rows are open**: the five the first real workspace showed (WSR4, SESS1, MAP4, and
+DOCK1 and WSR5 from 2026-09-29; WSR2, WSR1 and WSR3 landed as D86, D87 and D88, HELP1 as D89); D85's two (CHR2, CHR4); the in-app browser's three (BRW3, BRW7, BRW8); the first goal's three (FG5,
 READACROSS1 the owner's, and SEM2 on a trigger); D76's held file tools;
 the eight REV3 left, WINDOW2 among them; six leftovers (RAIL2, SURF11, CONSOLE3, FLAKE1, DEPLOY5, TEST1); two on the owner
 (TRUST2, AGT2c); and six on a trigger (see *Handover*). Every closed one is in `docs/task-archive.md`, and this file holds no
@@ -183,7 +183,13 @@ requirements, and the owner's calls. Its recommended order is the order below.
   on every view rather than only in Sessions, and whether *Move to* comes before drag. SURF11, the
   layout toggles, is the same question from the other end, so the two are designed together. **The
   design note is `docs/2026-09-29-dock-design.md`**: move before drag, the right region the
-  application's, DOCK1a–e in order; its first step, Ask Daoris as one right region, is `b21b60f`.
+  application's, DOCK1a–e in order; its first step, Ask Daoris as one right region, is `b21b60f`,
+  and its door moved to the strip's right beside the window controls (the owner: *"since we moved ask
+  daoris to the right so you should move the icon to it too"*).
+- [ ] **WSR5 — a chain lands named after its first quest** (found landing AR-2202, 2026-09-29). A
+  chain lands from its last step (WSR1), so a branch pattern's `{quest}` and `{slug}` are that step's:
+  AR-2202's six commits landed as `feature/verify-in-prod-that-ar-2202-s-empty-381807d1f7bd`, named
+  for its verify step. The chain's first quest, the one the ask became, should name the branch.
 
 ### What REV3 left (2026-09-25)
 

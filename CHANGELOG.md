@@ -636,6 +636,23 @@ The first version: doctrine that installs, is checked, and flows back.
   verbatim, and the variables that choose its model; on the desktop, the intake's agent — off, or a
   way in this machine has — and the account an intake in each circle runs as. What a start runs on
   lists the intake as a second job, and the status bar's tier leads there.
+- **Ask Daoris: a conversation about Daoris itself, which proposes and you apply** (HELP1, D89). Its
+  own agent under Settings → *Daoris's own AI*, off until named; with none, it lists what the machine
+  lacks, each with the screen that fixes it and the command that does the same. With one, it talks in
+  a room of its own, told what the machine holds and where you are on the screen, reading the family
+  and nothing else, and it runs in the agent's own asking mode, the one exception to D81. A change it
+  wants is a card saying what it changes and the command that does the same, checked by the driver
+  first; nothing changes until you press **apply**. It is the one right region: a tab of the right dock
+  on Sessions, resizable on its own elsewhere, opened by its button at the strip's right, `F1` or
+  `Ctrl+Alt+I`.
+- **A parked session is answered where you read its question, and your answer shows as yours.** A
+  driven session parked to ask you gets a box at its foot, since its old door was a button at the top
+  of a long record; your answer is kept in its record beneath the question and opens the session that
+  carries on. Overview's *what needs you* rows say where each goes (*open it to answer*) and keep an
+  analysis to two lines.
+- **`daoris-driver trees land <session>`** accepts a session's work from a terminal, as the review's
+  Accept does, by the workspace's rule; `--plan` says where it would go. A tidied landing no longer
+  also says its tree is still there.
 - **Session branches are cleaned up once their work lands** (WSR3, D88). They piled up: one repository
   had sixteen empty ones. A branch's work counts as landed when a branch of the person's holds every
   commit: the line, a feature branch, or one they pushed. Settings → Workspace → *Session branches*
