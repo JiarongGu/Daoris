@@ -13,11 +13,17 @@ import { attendedOf, type HelpWhere } from './where';
  * the conversation (HELP1a). Shell-only: most of it is this machine's, which a browser may not learn
  * (D47 §4).
  */
-export function AskDaoris({ where, attending = null, onGo, onClose }: {
+export function AskDaoris({ where, attending = null, framed = true, width, range, onResize, onResetWidth, onGo, onClose }: {
   /** What is on the screen, told to the conversation ahead of the person's words (HELP1b). */
   where?: Omit<HelpWhere, 'session'>;
   /** The session attended, found here among every session — an ended one is still what the person reads. */
   attending?: string | null;
+  /** Its own region (true), or a tab of Sessions' right dock, whose frame and close are the dock's. */
+  framed?: boolean;
+  width?: number;
+  range?: { min: number; max: number };
+  onResize?: (width: number) => void;
+  onResetWidth?: () => void;
   onGo: (door: StarterDoor) => void;
   onClose: () => void;
 }) {
@@ -50,6 +56,11 @@ export function AskDaoris({ where, attending = null, onGo, onClose }: {
       helper={helper}
       conversation={helper ? conversation : undefined}
       scroller={scroller}
+      framed={framed}
+      width={width}
+      range={range}
+      onResize={onResize}
+      onResetWidth={onResetWidth}
       onGo={onGo}
       onClose={onClose}
     />

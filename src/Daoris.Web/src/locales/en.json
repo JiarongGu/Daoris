@@ -137,6 +137,7 @@
   "help.intro": "What this machine lacks, each with the screen that fixes it and the command that does the same. Name an agent under Daoris's own AI to talk with Ask Daoris as well.",
   "help.introAgent": "Ask below about Daoris on this machine: a screen, a refusal, how to drive a repository or start a task. Ask Daoris runs on {{agent}} and changes nothing itself. What this machine lacks comes first, each with the screen that fixes it and the command that does the same.",
   "help.new": "new conversation",
+  "help.resize": "resize Ask Daoris",
   "help.proposal.list": "what Ask Daoris proposes",
   "help.proposal.title": "Ask Daoris proposes",
   "help.proposal.command": "the same at a terminal: `{{command}}`",

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   useAsks, useEntry, useQuests, useRefreshIndex, useRegistry, useRepositories, useSessions,
@@ -6,6 +6,7 @@ import {
 } from './queries';
 import { useScope } from './scope';
 import { AskDaoris } from './help/AskDaoris';
+import type { StarterDoor } from './help/starters';
 import { WorkspaceSwitcher } from './WorkspaceSwitcher';
 import {
   Button, Drawer, failure, Icon, LanguageSwitcher, Prose, SESSION_ACTIVE, Tip, Toasts,
@@ -66,6 +67,9 @@ const ATTENDING = 'daoris.attending';
 const SETTINGS_SECTION = 'daoris.settings';
 /** Whether Ask Daoris's panel is open (HELP1) — this viewer's, remembered like the view. */
 const HELP = 'daoris.help';
+/** Its width where it is the right region on its own — this viewer's, as the dock's share is. */
+const HELP_WIDTH = 'daoris.helpWidth';
+const HELP_DEFAULT_WIDTH = 384;
 
 function rememberedView(): Tab {
   // Landing on Overview is the safe half of the choice.
@@ -126,10 +130,27 @@ export function App() {
   // The same "is a shell here" answer every control uses — one detection path, not two that drift.
   const driver = useDriver();
   const attached = driver.data !== undefined;
-  // Ask Daoris (HELP1): a panel beside every view, so it stays open as the person moves.
+  // Ask Daoris (HELP1): the one right region — on Sessions a tab of the right dock, elsewhere the region
+  // itself, resized by its edge (the owner, 2026-09-29: "the ask daoris need to be a better location").
   const [helpOpen, setHelpOpen] = useState(() => stored(HELP) === '1');
   useEffect(() => { store(HELP, helpOpen ? '1' : '0'); }, [helpOpen]);
-  const toggleHelp = useCallback(() => setHelpOpen((was) => !was), []);
+  const [helpWidth, setHelpWidth] = useState(() => Number(stored(HELP_WIDTH)) || HELP_DEFAULT_WIDTH);
+  const resizeHelp = (next: number | null) => {
+    setHelpWidth(next ?? HELP_DEFAULT_WIDTH);
+    store(HELP_WIDTH, next === null ? null : String(Math.round(next)));
+  };
+  // Bumped each time the person asks for it on Sessions, where the dock opens on its tab.
+  const [helpFocus, setHelpFocus] = useState(0);
+  // On Sessions its door opens the dock on it (the dock has its own close); elsewhere it toggles.
+  const toggleHelp = useCallback(() => {
+    if (onSessions.current) {
+      setHelpOpen(true);
+      setHelpFocus((was) => was + 1);
+    } else {
+      setHelpOpen((was) => !was);
+    }
+  }, []);
+  const onSessions = useRef(false);
   // The status bar's other two facts. Both share caches the frames already fill, so neither is a
   // second fetch — and both are absent in a browser, which is what the bar then says.
   const running = useSessions(null, false);
@@ -150,6 +171,12 @@ export function App() {
   // Sessions does not exist in a browser (D55): no stream, no tree path, nothing honest to show. A
   // remembered `sessions` where no shell answers falls back rather than rendering an empty view.
   const view: Tab = tab === 'sessions' && !attached ? 'overview' : tab;
+  onSessions.current = view === 'sessions';
+  // Open on another view and carried to Sessions, it lands on the dock's tab rather than vanishing.
+  useEffect(() => {
+    // Only the move onto Sessions, so `helpOpen` is read and not watched.
+    if (view === 'sessions' && helpOpen) setHelpFocus((was) => was + 1);
+  }, [view]);
 
   // The scope (WSP5): which circle this window is looking at. The roster comes from the registry
   // unscoped — the one reader that must see every workspace — and a remembered choice the deployment
@@ -280,7 +307,9 @@ export function App() {
   // everywhere, a field included, since it types nothing (HELP1).
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
-      if (event.key === 'F1' && attached) {
+      // `Ctrl+Alt+I` too, the key VS Code gives its chat, so a hand that knows one knows the other.
+      const chatKey = event.key.toLowerCase() === 'i' && event.ctrlKey && event.altKey;
+      if ((event.key === 'F1' || chatKey) && attached) {
         event.preventDefault();
         toggleHelp();
         return;
@@ -314,6 +343,18 @@ export function App() {
   // session opens in Sessions, which only a shell has. An ask opens its record, where it is answered
   // (INT4d), and a quest nobody can take opens its own drawer. Both of those a browser has too.
   const openAsk = (id: string) => { setAskFocus(id); setView('quests'); };
+  // What Ask Daoris is handed wherever it stands: what is on the screen (HELP1b) — the view, the scope,
+  // the settings domain on Settings, and the attended session on Sessions — and its two ways out.
+  const askProps = {
+    where: { view, workspace: scope.workspace ?? null, settings: settingsSection },
+    attending,
+    onClose: () => setHelpOpen(false),
+    onGo: (door: StarterDoor) => {
+      if (door.view === 'settings' && door.section) openSettings(door.section, door.anchor);
+      else setView(door.view);
+    },
+  };
+
   const attentionDoors: AttentionDoors = {
     ...(attached ? { parked: (item) => openInWork(item.id) } : {}),
     proposal: (item) => openAsk(item.id),
@@ -464,6 +505,9 @@ export function App() {
               }}
               // A parked intake's answer is on its ask (INT4g): the same door the band's ask rows use.
               onAnswerAsk={openAsk}
+              // Ask Daoris as a tab of the right dock: one right region, never a second column.
+              ask={attached ? <AskDaoris {...askProps} framed={false} /> : undefined}
+              askFocus={helpFocus}
             />
           )
           : (
@@ -536,17 +580,13 @@ export function App() {
               </div>
             </main>
           )}
-        {attached && helpOpen && (
+        {attached && helpOpen && view !== 'sessions' && (
           <AskDaoris
-            // What is on the screen (HELP1b): the view, the scope, the settings domain on Settings, and
-            // the attended session on Sessions with what a parked one asks.
-            where={{ view, workspace: scope.workspace ?? null, settings: settingsSection }}
-            attending={attending}
-            onClose={() => setHelpOpen(false)}
-            onGo={(door) => {
-              if (door.view === 'settings' && door.section) openSettings(door.section, door.anchor);
-              else setView(door.view);
-            }}
+            {...askProps}
+            width={helpWidth}
+            range={{ min: 320, max: Math.max(360, Math.floor(window.innerWidth / 2)) }}
+            onResize={resizeHelp}
+            onResetWidth={() => resizeHelp(null)}
           />
         )}
       </div>

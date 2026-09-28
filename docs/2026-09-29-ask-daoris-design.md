@@ -22,6 +22,21 @@ through the same door the screen uses, so what it can do is exactly what the per
   change of view. Whether it is open is this viewer's, remembered like the view.
 - One conversation per machine, carried on across opens. *New conversation* starts again.
 
+**Where it lives, looked at again (the owner, 2026-09-29: *"the ask daoris need to be a better
+location please refer to a better ui/ux design"*).** On the installed window the panel was a second
+right column beside Sessions' own dock, at a fixed width, so the centre was squeezed between two side
+bars. The references agree on one right region:
+- **VS Code** opens the Chat view in the **Secondary Side Bar**, the one right region, next to the
+  editor; reached from a Chat menu beside the Command Center or `Ctrl+Alt+I`; Quick Chat is a light
+  box at the top, like the palette; the region toggles, resizes, and can move to the panel.
+- **Cursor**'s AI pane is the same right side bar (`Ctrl+L`), movable to the panel.
+- **JetBrains** AI Chat is a tool window on the **right toolbar**.
+
+So: **one right region.** On Sessions, Ask Daoris is a tab of the right dock beside *timeline* and
+*review*, sharing its resize, its close and its full; the strip's button and `Ctrl+Alt+I` open the
+dock on it. On every other view it is that region with Ask Daoris alone, resizable by its edge and
+remembered. Quick Ask (a palette-like box for one question) and moving the region are DOCK1's.
+
 ## 3. The room
 
 `<home>/help/`, re-rendered at every open (the intake's rule, D65 §1b), never a repository and never

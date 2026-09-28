@@ -142,6 +142,35 @@ describe('the Work frame', () => {
    * centre's width, as content does everywhere (platform language §4: content is shown as it is).
    * jsdom lays nothing out, so this holds the absence of a cap and the window holds the look.
    */
+  /**
+   * One right region (the owner, 2026-09-29: *"the ask daoris need to be a better location"*): on
+   * Sessions, Ask Daoris is a tab of the right dock beside the timeline and the review, as VS Code's
+   * chat is a view of its one right side bar — never a second column beside the dock.
+   */
+  it('holds Ask Daoris as a tab of the right dock, and opens the dock on it when asked', async () => {
+    SESSIONS = [DRIVEN];
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const view = (askFocus: number) => (
+      <QueryClientProvider client={client}>
+        <Tooltip.Provider>
+          <WorkFrame selected="s1a2b3c4" onSelect={vi.fn()} notify={() => {}} ask={<p>the ask panel</p>} askFocus={askFocus} />
+        </Tooltip.Provider>
+      </QueryClientProvider>
+    );
+    const { rerender } = render(view(0));
+
+    // Closed, the dock's strip offers it beside the other two.
+    expect(await screen.findByRole('button', { name: 'open Ask Daoris' })).toBeInTheDocument();
+    expect(screen.queryByText('the ask panel')).toBeNull();
+
+    rerender(view(1));
+    expect(await screen.findByRole('tab', { name: 'Ask Daoris', selected: true })).toBeInTheDocument();
+    expect(screen.getByText('the ask panel')).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('tab', { name: /timeline/i }));
+    expect(screen.queryByText('the ask panel')).toBeNull();
+  });
+
   it('lets the head and the composer follow the centre\'s width, however wide the window', async () => {
     SESSIONS = [DRIVEN, CHAT];
     show('c0ffee11');

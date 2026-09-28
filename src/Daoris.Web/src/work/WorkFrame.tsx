@@ -1,4 +1,4 @@
-import { type RefObject, useCallback, useEffect, useRef, useState } from 'react';
+import { type ReactNode, type RefObject, useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { SessionConsole } from '../SessionConsole';
 import { sentence } from '../format';
@@ -117,7 +117,7 @@ const door = (structured?: boolean): 'structured' | 'text' | undefined =>
  * timeline and the review (components plan §3a); the console is the panel below, the
  * conversation's raw view.
  */
-export function WorkFrame({ selected, onSelect, notify, onSendBack, onAnswerAsk, intent, onIntentTaken }: {
+export function WorkFrame({ selected, onSelect, notify, onSendBack, onAnswerAsk, intent, onIntentTaken, ask, askFocus = 0 }: {
   /**
    * The attended session, held by the application — because a door into Work from somewhere else
    * (a quest's record) has to be able to say WHICH session, and a selection this frame kept to
@@ -143,6 +143,14 @@ export function WorkFrame({ selected, onSelect, notify, onSendBack, onAnswerAsk,
    */
   intent?: 'start' | 'review' | null;
   onIntentTaken?: () => void;
+  /**
+   * Ask Daoris, as a tab of the right dock (the owner, 2026-09-29: "the ask daoris need to be a better
+   * location"): one right region, as VS Code's chat is a view of its secondary side bar, never a
+   * second column beside the dock. Absent where no shell is attached.
+   */
+  ask?: ReactNode;
+  /** Bumped each time the person asks for Ask Daoris (its door, `F1`), which opens the dock on it. */
+  askFocus?: number;
 }) {
   const { t } = useTranslation();
   // A refusal belongs to the session that gave it: attending another by any door (a notification, the
@@ -420,13 +428,26 @@ export function WorkFrame({ selected, onSelect, notify, onSendBack, onAnswerAsk,
   // so the palette's ask never landed. The parent is told from an effect, not during this render.
   // The attended session's dock surface: the one it had, or the timeline it opens on (FRAME6).
   const dockKey = attended?.id ?? '';
-  const dock: DockTab = docked[dockKey] ?? 'timeline';
-  const setDock = (tab: DockTab) => setDocked((was) => ({ ...was, [dockKey]: tab }));
+  // Ask Daoris is the machine's, not the attended session's: its tab stays whichever session is attended.
+  const [asking, setAsking] = useState(false);
+  const dock: DockTab = asking && ask ? 'ask' : docked[dockKey] ?? 'timeline';
+  const setDock = (tab: DockTab) => {
+    setAsking(tab === 'ask');
+    if (tab !== 'ask') setDocked((was) => ({ ...was, [dockKey]: tab }));
+  };
   // The person opening the dock on a surface — from its strip, or the palette's review.
   const openDock = (tab: DockTab) => {
     setDock(tab);
     closeDock(false);
   };
+
+  // The person asked for Ask Daoris — its door on the strip, `F1`, the palette: the dock opens on it.
+  useEffect(() => {
+    if (askFocus <= 0) return;
+    setAsking(true);
+    setDockClosed(false);
+    store(DOCK_CLOSED, '0');
+  }, [askFocus]);
 
   const [taken, setTaken] = useState<typeof intent>(null);
   if (intent && intent !== taken) {
@@ -688,8 +709,11 @@ export function WorkFrame({ selected, onSelect, notify, onSendBack, onAnswerAsk,
         onClose={() => closeDock(true)}
         onOpen={openDock}
         onFull={setDockFull}
+        ask={Boolean(ask)}
       >
-        {dock === 'review'
+        {dock === 'ask'
+          ? ask
+          : dock === 'review'
           ? (
             <DiffPane
               session={attended?.id ?? null}

@@ -33,6 +33,35 @@ describe('Ask Daoris', () => {
     expect(onClose).toHaveBeenCalledOnce();
   });
 
+  /** In the right dock it is the dock's tab: no frame of its own, no title and no close — the dock has those. */
+  it('drops its own frame, title and close when a dock holds it, and keeps starting again', () => {
+    render(
+      <AskPanel
+        framed={false}
+        starters={[]}
+        helper="claude-code-acp"
+        conversation={{ body: <p>the conversation</p>, composer: <p>the box</p>, ended: false, onNew: vi.fn() }}
+        onGo={vi.fn()}
+        onClose={vi.fn()}
+      />,
+    );
+
+    expect(screen.queryByRole('complementary')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'close Ask Daoris' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'new conversation' })).toBeInTheDocument();
+    expect(screen.getByText('the conversation')).toBeInTheDocument();
+    expect(screen.getByText('the box')).toBeInTheDocument();
+  });
+
+  /** On every other view it is the one right region, resized by its left edge and remembered by the caller. */
+  it('is resized by its left edge where it stands alone', async () => {
+    const onResize = vi.fn();
+    render(<AskPanel starters={[]} helper={null} width={420} range={{ min: 320, max: 800 }} onResize={onResize} onGo={vi.fn()} onClose={vi.fn()} />);
+
+    expect(screen.getByRole('complementary', { name: 'Ask Daoris' })).toHaveStyle({ width: '420px' });
+    expect(screen.getByRole('separator', { name: 'resize Ask Daoris' })).toBeInTheDocument();
+  });
+
   it('says so when the machine lacks nothing, and names the agent it runs on', () => {
     render(<AskPanel starters={[]} helper="claude-code-acp" onGo={vi.fn()} onClose={vi.fn()} />);
 

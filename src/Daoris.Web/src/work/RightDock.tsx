@@ -9,7 +9,7 @@ import type { DockMode } from './layout';
 // occupant — a dock holding one thing is a pane with extra chrome — and SURF6's diff is that
 // occupant, so the timeline moves here and the attended column gets its height back.
 
-export type DockTab = 'timeline' | 'review';
+export type DockTab = 'timeline' | 'review' | 'ask';
 
 /**
  * The right dock: per-session surfaces, keyed to whatever the person is attending.
@@ -31,9 +31,14 @@ export type DockTab = 'timeline' | 'review';
  * - `closed`, a strip of its tabs, since nothing but the person opens it again.
  */
 export function RightDock({
-  tab, onTab, mode, width, range, autoFull = false, onResize, onResetWidth, onClose, onOpen, onFull, children,
+  tab, onTab, mode, width, range, autoFull = false, ask = false, onResize, onResetWidth, onClose, onOpen, onFull, children,
 }: {
   tab: DockTab;
+  /**
+   * Whether Ask Daoris is one of its tabs — the one right region, as VS Code's chat is a view of its
+   * secondary side bar (the owner, 2026-09-29: "the ask daoris need to be a better location").
+   */
+  ask?: boolean;
   onTab: (tab: DockTab) => void;
   mode: DockMode;
   width: number;
@@ -53,6 +58,7 @@ export function RightDock({
   const tabs: { id: DockTab; label: string; icon: IconName }[] = [
     { id: 'timeline', label: t('work.review.timelineTab'), icon: 'quests' },
     { id: 'review', label: t('work.review.tab'), icon: 'diff' },
+    ...(ask ? [{ id: 'ask' as const, label: t('help.title'), icon: 'help' as const }] : []),
   ];
 
   if (mode === 'closed') {
@@ -114,7 +120,8 @@ export function RightDock({
               aria-selected={tab === id}
               onClick={() => onTab(id)}
               className={cn(
-                'flex items-center gap-1.5 border-b-2 px-3 py-1.5 text-small transition-colors duration-(--speed)',
+                // One line: a tab's name that wraps reads as two tabs (Ask Daoris, found looking at it).
+                'flex items-center gap-1.5 whitespace-nowrap border-b-2 px-3 py-1.5 text-small transition-colors duration-(--speed)',
                 tab === id
                   ? 'border-b-accent text-ink'
                   : 'border-b-transparent text-ink-faint hover:text-ink',
