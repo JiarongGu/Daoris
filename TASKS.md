@@ -144,8 +144,8 @@ rather than designed.
 
 ## Backlog
 
-**Thirty-five rows are open**: the four the first real workspace showed (WSR4, SESS1, MAP4, HELP1;
-WSR2, WSR1 and WSR3 landed as D86, D87 and D88); D85's two (CHR2, CHR4); the in-app browser's three (BRW3, BRW7, BRW8); the first goal's three (FG5,
+**Thirty-six rows are open**: the five the first real workspace showed (WSR4, SESS1, MAP4, HELP1,
+and DOCK1 from 2026-09-29; WSR2, WSR1 and WSR3 landed as D86, D87 and D88); D85's two (CHR2, CHR4); the in-app browser's three (BRW3, BRW7, BRW8); the first goal's three (FG5,
 READACROSS1 the owner's, and SEM2 on a trigger); D76's held file tools;
 the eight REV3 left, WINDOW2 among them; six leftovers (RAIL2, SURF11, CONSOLE3, FLAKE1, DEPLOY5, TEST1); two on the owner
 (TRUST2, AGT2c); and six on a trigger (see *Handover*). Every closed one is in `docs/task-archive.md`, and this file holds no
@@ -180,6 +180,14 @@ requirements, and the owner's calls. Its recommended order is the order below.
   *start something* into an ask. Starter prompts come from what the machine lacks. It is a harness
   session in a room of its own, allowed only `daoris` and `daoris-driver`. **The owner's calls:**
   its harness and account, and whether a confirmation may be remembered.
+- [ ] **DOCK1 — panels that dock, as VS Code's do** (owner, 2026-09-29: *"we should be able to dock
+  panels like vscode did"*, said beside *"there is no easy way to open the daoris chat"*). Today each
+  region has one place: the rail and the right dock inside Sessions, the output panel under them,
+  Ask Daoris at the application's edge. VS Code lets a view move between the primary side bar, the
+  secondary side bar and the panel, by drag or *Move to*, and remembers where. **A design note
+  first**: which views move (Ask Daoris, the console, the dock's tabs, the rail), which places exist
+  on every view rather than only in Sessions, and whether *Move to* comes before drag. SURF11, the
+  layout toggles, is the same question from the other end, so the two are designed together.
 
 ### What REV3 left (2026-09-25)
 
