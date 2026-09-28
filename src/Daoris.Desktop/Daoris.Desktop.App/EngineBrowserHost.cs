@@ -33,6 +33,13 @@ public sealed class EngineBrowserHost(string home) : IInAppBrowser
     private readonly SemaphoreSlim _gate = new(1, 1);
     private Process? _process;
 
+    /// <summary>How often Edge's session cookies are read while it runs: its closing is the person's, and unannounced.</summary>
+    private static readonly TimeSpan KeepEvery = TimeSpan.FromSeconds(30);
+
+    /// <summary>Edge's kept sign-in (BRW13), sealed to the account. Daoris's own engine keeps its own.</summary>
+    private readonly BrowserSessionCookies _edgeSignIn = new(home, new DpapiSeal());
+    private System.Threading.Timer? _keeper;
+
     /// <summary>Which browser the settings choose (BRW12), read each time: a terminal may have changed it.</summary>
     private bool EdgeChosen => BrowserSettings.Read(home).Browser == BrowserChoice.Edge;
 
@@ -145,6 +152,7 @@ public sealed class EngineBrowserHost(string home) : IInAppBrowser
                         await running.NewWindowAsync("edge://newtab/", background: !activate, ct).ConfigureAwait(false);
                     }
 
+                    await KeepEdgeSignInAsync(recorded).ConfigureAwait(false);
                     return recorded;
                 }
             }
@@ -165,7 +173,15 @@ public sealed class EngineBrowserHost(string home) : IInAppBrowser
             var deadline = DateTime.UtcNow + BringUpLimit;
             while (DateTime.UtcNow < deadline)
             {
-                if (await edge.PagesAsync(ct).ConfigureAwait(false) is { Count: > 0 }) return port;
+                if (await edge.PagesAsync(ct).ConfigureAwait(false) is { Count: > 0 })
+                {
+                    // A fresh Edge holds none of the session cookies it had (the Edge evidence, §3): put
+                    // back the kept ones it does not hold, before anyone navigates, then keep them again.
+                    await RestoreEdgeSignInAsync(edge, ct).ConfigureAwait(false);
+                    await KeepEdgeSignInAsync(port).ConfigureAwait(false);
+                    return port;
+                }
+
                 await Task.Delay(100, ct).ConfigureAwait(false);
             }
 
@@ -174,6 +190,60 @@ public sealed class EngineBrowserHost(string home) : IInAppBrowser
         finally
         {
             _gate.Release();
+        }
+    }
+
+    /// <summary>
+    /// Keep Edge's session cookies now, and every <see cref="KeepEvery"/> after, for as long as the
+    /// recorded port answers as an Edge. Each look reads the record again: Edge restarted is another port.
+    /// </summary>
+    private async Task KeepEdgeSignInAsync(int port)
+    {
+        await SaveEdgeSignInAsync(port).ConfigureAwait(false);
+        _keeper ??= new System.Threading.Timer(_ => _ = SaveRecordedEdgeSignInAsync(), null, KeepEvery, KeepEvery);
+    }
+
+    private async Task SaveRecordedEdgeSignInAsync()
+    {
+        var record = EdgeBrowser.RecordPath(home);
+        if (EdgeBrowser.RecordedPort(File.Exists(record) ? File.ReadAllText(record) : null) is { } port)
+        {
+            await SaveEdgeSignInAsync(port).ConfigureAwait(false);
+        }
+    }
+
+    private async Task SaveEdgeSignInAsync(int port)
+    {
+        try
+        {
+            using var edge = new EngineCdp(port);
+            if (await edge.VersionAsync().ConfigureAwait(false) is not { } version || !EdgeBrowser.IsEdge(version)) return;
+            var answer = await edge.BrowserCallAsync("Storage.getCookies", new { }).ConfigureAwait(false);
+            _edgeSignIn.Save(CdpCookies.FromCdp(answer));
+        }
+        catch (Exception error) when (error is HttpRequestException or System.Net.WebSockets.WebSocketException
+                                          or InvalidOperationException or IOException or TaskCanceledException)
+        {
+            // Edge closed between the look and the read, or a moment's miss: the next look keeps them.
+        }
+    }
+
+    private async Task RestoreEdgeSignInAsync(EngineCdp edge, CancellationToken ct)
+    {
+        var kept = _edgeSignIn.Load();
+        if (kept.Count == 0) return;
+        try
+        {
+            var present = CdpCookies.FromCdp(await edge.BrowserCallAsync("Storage.getCookies", new { }, ct).ConfigureAwait(false));
+            var missing = BrowserSessionCookies.ToRestore(kept, present);
+            if (missing.Count > 0)
+            {
+                await edge.BrowserCallAsync("Storage.setCookies", CdpCookies.ToSetCookies(missing), ct).ConfigureAwait(false);
+            }
+        }
+        catch (Exception error) when (error is HttpRequestException or System.Net.WebSockets.WebSocketException or InvalidOperationException)
+        {
+            // An Edge that will not take them back opens signed out, where it would have been anyway.
         }
     }
 }

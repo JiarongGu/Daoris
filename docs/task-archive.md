@@ -7055,3 +7055,30 @@ the screen says so.*
 
 **Privacy:** the scratch Edge profile, which Edge signs in to the Windows account on its own, was
 deleted after the check, and nothing of it was photographed.
+
+## BRW13 — Edge keeps a sign-in across a restart (2026-09-28)
+
+The row as filed: *(D84: "whatever the engine, Daoris keeps a sign-in across a restart itself, over
+CDP"). BRW12 landed the Edge option, and Edge still drops a session cookie when it restarts (the Edge
+evidence, §3). Carry them over CDP as the evidence's §4 measured: read them while Edge runs, seal them
+to the account, and put them back before its first page. BRW10's sealed carry is in history
+(`7480b97^`) to start from.*
+
+**Outcome.**
+- BRW10's sealed store came back from history, pointed at Edge (`<home>/browser/edge-session-cookies.bin`),
+  and so did its DPAPI seal.
+- New is `CdpCookies`: CDP's cookie shape to Daoris's and back.
+- The shell's host keeps Edge's session cookies at each bring-up and every 30 seconds while the
+  recorded port answers as an Edge, since the person's closing it is unannounced.
+- When Daoris starts a fresh Edge, the host puts back the kept ones it does not hold, before anyone
+  navigates.
+- Daoris's own browser needs none of this: its engine keeps them itself.
+
+**Proven by:**
+- The restored sealed-store tests (the file under the home, sealed, only session cookies, a foreign
+  seal opening nothing).
+- 3 `CdpCookiesTests`.
+- On the scratch shell with a real Edge 154 and a stand-in identity site: signed in, kept, Edge
+  closed, opened again from Daoris on a new port, and the same session came back. That Edge alone
+  loses it was measured on this Edge (the evidence, §3).
+- The scratch Edge profile and its kept cookies were deleted after.

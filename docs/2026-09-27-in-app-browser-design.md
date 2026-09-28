@@ -37,8 +37,9 @@
 >   extensions are offered, as the engine does, or refused before it starts.
 > - **The person's Edge, as an option (BRW12):** the same file's `browser` field, set with
 >   `daoris browser use` or in Settings → Browser. Edge runs on `<home>/browser/edge`, with its port
->   recorded so a restarted shell adopts it, and it needs no relay. Keeping its sign-in across a
->   restart is BRW13.
+>   recorded so a restarted shell adopts it, and it needs no relay. Its sign-in survives Edge
+>   restarting (BRW13): Daoris reads its session cookies over CDP while it runs, seals them to the
+>   account in `<home>/browser/edge-session-cookies.bin`, and puts them back when it starts Edge again.
 
 ## 0. Why the first answer is not enough
 

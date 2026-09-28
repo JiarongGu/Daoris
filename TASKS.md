@@ -22,7 +22,7 @@ lists.
 ## State
 
 **Counts, and this is their one home:** sixteen commands, **504 CLI tests, 528 service, 799 driver,
-270 desktop modules, 80 devkit, 1211 web unit, 21 Playwright**, 66/66 release rehearsal, **289/289
+279 desktop modules, 80 devkit, 1211 web unit, 21 Playwright**, 66/66 release rehearsal, **289/289
 family rehearsal** (it names its own phases when you run it), **45/45 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge
 documents, 5 skills, 7 packs. The always-loaded core is **22,492 of 26,000 bytes** — a span in
@@ -144,8 +144,8 @@ rather than designed.
 
 ## Backlog
 
-**Thirty-eight rows are open**: the six the first real workspace showed (WSR1–WSR3, SESS1, MAP4,
-HELP1); D85's two (CHR2, CHR4); the in-app browser's four (BRW3, BRW7, BRW8, BRW13); the first goal's three (FG5,
+**Thirty-seven rows are open**: the six the first real workspace showed (WSR1–WSR3, SESS1, MAP4,
+HELP1); D85's two (CHR2, CHR4); the in-app browser's three (BRW3, BRW7, BRW8); the first goal's three (FG5,
 READACROSS1 the owner's, and SEM2 on a trigger); D76's held file tools;
 the eight REV3 left, WINDOW2 among them; six leftovers (RAIL2, SURF11, CONSOLE3, FLAKE1, DEPLOY5, TEST1); two on the owner
 (TRUST2, AGT2c); and six on a trigger (see *Handover*). Every closed one is in `docs/task-archive.md`, and this file holds no
@@ -310,12 +310,7 @@ attached over CDP drives a WebView2.
 
 🔴 **D84 changed the course (2026-09-28): Daoris ships a Chromium for its browser, and the person's
 Edge is always an option** (`docs/2026-09-28-managed-edge-evidence.md`). The engine landed as CHR3
-(below), in place of the WebView2 window.
-- [ ] **BRW13 — Edge keeps a sign-in across a restart** (D84: *"whatever the engine, Daoris keeps a
-  sign-in across a restart itself, over CDP"*). BRW12 landed the Edge option, and Edge still drops a
-  session cookie when it restarts (the Edge evidence, §3). Carry them over CDP as the evidence's §4
-  measured: read them while Edge runs, seal them to the account, and put them back before its first
-  page. BRW10's sealed carry is in history (`7480b97^`) to start from.
+(below), in place of the WebView2 window, and the Edge option as BRW12 and BRW13, in the archive.
 - [ ] **BRW7 — start it from the app, and route links to it.** A door as visible as the monitor's:
   the activity bar or the strip, not only View → *Browser*. A setting for whether links on the page
   (a ticket in a quest, a URL in the conversation) open in Daoris's browser or the system browser,
