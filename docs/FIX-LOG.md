@@ -31,7 +31,7 @@ was unblocked from a terminal first (`daoris-driver answer`).
 **The trap.** jsdom lays nothing out, so a clamp that clamps nothing passes every test that renders
 it. A class that depends on another class's absence needs a test that says so.
 
-**Commit.** pending
+**Commit.** `e86a358`
 
 ## A session tree past 260 characters could be opened, and not read or removed (2026-09-28)
 
