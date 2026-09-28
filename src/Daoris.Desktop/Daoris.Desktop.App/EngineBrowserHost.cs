@@ -164,7 +164,9 @@ public sealed class EngineBrowserHost(string home) : IInAppBrowser
             var port = InAppBrowser.FreePort();
             var profile = EdgeBrowser.ProfileFolder(home);
             Directory.CreateDirectory(profile);
-            var start = new ProcessStartInfo(executable) { UseShellExecute = false };
+            // Edge is a windowed program and opens no console either way; said anyway, because every
+            // spawn the desktop makes says it (NoConsoleWindowTests), and a rule with exceptions is a list.
+            var start = new ProcessStartInfo(executable) { UseShellExecute = false, CreateNoWindow = true };
             foreach (var argument in EdgeBrowser.Arguments(profile, port)) start.ArgumentList.Add(argument);
             Process.Start(start)?.Dispose();
             Daoris.Driver.AtomicFile.WriteText(record, EdgeBrowser.Record(port));
