@@ -65,7 +65,7 @@ export type MentionSource = { files: string[] | null; unlisted: number; refusal:
 export function Composer({
   live, sending = false, refusal, endings = true, draft, onDraft,
   queued = [], taking = false, stoppable = false, stopping = false, mentions, onMentioning, context, placeholder,
-  onSend, onFinish, onStop, onStopTurn,
+  attachments = true, sendLabel, onSend, onFinish, onStop, onStopTurn,
 }: {
   /** Whether anything is listening. False is an ending, not a disabled state. */
   live: boolean;
@@ -90,6 +90,10 @@ export function Composer({
   onMentioning?: (writing: boolean) => void;
   /** What the box says while empty, where the conversation is not a repository's (HELP1a). */
   placeholder?: string;
+  /** Whether files go with a message. An answer to a parked session is words, and takes none. */
+  attachments?: boolean;
+  /** What the send button says, where sending is a move of its own (an answer that carries a session on). */
+  sendLabel?: string;
   /** How full the session's context is, for the ring under the box (CONV5). Absent, no ring. */
   context?: { usage?: Usage; door?: 'structured' | 'text' };
   /** The words and the files attached to them. */
@@ -208,7 +212,7 @@ export function Composer({
       // capped, it was half a maximized window).
       className="grid gap-2 border-t border-line px-4 py-3"
       onSubmit={(event) => { event.preventDefault(); say(); }}
-      {...(live ? attach.handlers : {})}
+      {...(live && attachments ? attach.handlers : {})}
     >
       {refusal && <p className="m-0 text-small text-st-declined">{refusal}</p>}
       {!live && writing && <p className="m-0 text-small text-ink-soft">{t('work.composer.over')}</p>}
@@ -323,10 +327,10 @@ export function Composer({
           )
           : (
             <Button type="submit" variant="primary" disabled={(!text.trim() && files.length === 0) || sending}>
-              {t('work.composer.send')}
+              {sendLabel ?? t('work.composer.send')}
             </Button>
           ))}
-        {live && (
+        {live && attachments && (
           <>
             <Tip content={t('work.composer.attachTip')}>
               <Button

@@ -884,6 +884,31 @@ describe('clearing a parked session', () => {
     window.localStorage.removeItem('daoris.drafts');
   });
 
+  /**
+   * 🔴 The owner, on the first real parked session (2026-09-29): *"there is no way I can input the
+   * answer"*. The door was a button in the card at the top of a record of 1,800 events, and they read
+   * the question at its foot. A parked driven session is answered from the box at the foot, where a
+   * chat is, and the card says so — one owner for the answer (D56).
+   */
+  it('answers a parked driven session from the box at the foot, and the card says the box carries it on', async () => {
+    show('p4rk3d00');
+
+    const box = await screen.findByLabelText('message');
+    expect(screen.queryByRole('button', { name: 'answer and carry on…' })).toBeNull();
+    expect(screen.getByText(/Answering it in the box below lets it carry on/)).toBeInTheDocument();
+    // An answer is words: nothing to attach, and no ending of the box's own (the card holds those).
+    expect(screen.queryByRole('button', { name: 'attach files' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'finish' })).toBeNull();
+
+    await userEvent.type(box, 'go ahead with the PUT');
+    await userEvent.click(screen.getByRole('button', { name: 'carry on with this answer' }));
+
+    await waitFor(() => expect(vi.mocked(fetch)).toHaveBeenCalledWith(
+      '/api/sessions/p4rk3d00/answer', expect.objectContaining({ method: 'POST' })));
+    const [, init] = vi.mocked(fetch).mock.calls.find(([url]) => String(url).endsWith('/answer'))!;
+    expect(JSON.parse(String(init!.body))).toEqual({ answer: 'go ahead with the PUT' });
+  });
+
   it('shows the analysis and the three moves on the attended session', async () => {
     show('p4rk3d00');
 

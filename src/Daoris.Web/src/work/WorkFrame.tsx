@@ -249,6 +249,13 @@ export function WorkFrame({ selected, onSelect, notify, onSendBack, onAnswerAsk,
   // refuses such a line too; the frame offers no box, and the head carries the stop.
   const intake = attended ? isIntake(attended) : false;
   const talking = Boolean(attended && conversation && here && !intake);
+  // 🔴 A driven session parked to ask the person is answered from the box at the foot, where a chat's
+  // is (the owner, 2026-09-29: "there is no way I can input the answer" — the door was a button at the
+  // top of a record of 1,800 events, and the question is read at its foot). The card above keeps the
+  // endings and says the box carries it on: one owner for the answer (D56).
+  const answering = Boolean(attended && here && !intake && !conversation && attended.quest
+    && attended.state === 'awaiting-person');
+  const [answerDraft, setAnswerDraft] = useState('');
 
   // What the person was typing to this conversation, kept per session and across a reload (CONV4b).
   const [draft, setDraft] = useDraft(talking ? attended!.id : null);
@@ -399,7 +406,12 @@ export function WorkFrame({ selected, onSelect, notify, onSendBack, onAnswerAsk,
     if (!attended) return;
     answer.mutate({ id: attended.id, answer: words }, {
       onSuccess: () => notify(t('work.awaiting.answered')),
-      onError: failure(notify),
+      onError: (error) => {
+        // 🔴 The box at the foot let go of the words when it sent; an answer that did not arrive hands
+        // them back, as a message does (REV3).
+        if (words) setAnswerDraft((was) => [words, was.trim()].filter(Boolean).join('\n\n'));
+        failure(notify)(error);
+      },
     });
   };
 
@@ -557,7 +569,7 @@ export function WorkFrame({ selected, onSelect, notify, onSendBack, onAnswerAsk,
             resolving={resolve.isPending || answer.isPending}
             stopping={stop.isPending}
             onResolve={here ? onResolve : undefined}
-            onAnswerSession={here ? onAnswerSession : undefined}
+            onAnswerSession={here && !answering ? onAnswerSession : undefined}
             onAnswerAsk={here ? onAnswerAsk : undefined}
             onStop={here && intake ? onStop : undefined}
             chain={quest ? buildChain(quest.id, quests.data ?? [], sessions.data ?? []) : []}
@@ -619,6 +631,23 @@ export function WorkFrame({ selected, onSelect, notify, onSendBack, onAnswerAsk,
               onError: failure(notify),
             })}
             onStop={onStop}
+          />
+        )}
+
+        {answering && attended && (
+          <Composer
+            key={`answer:${attended.id}`}
+            live
+            endings={false}
+            attachments={false}
+            sending={answer.isPending}
+            placeholder={t('work.awaiting.answerPlaceholder')}
+            sendLabel={t('work.awaiting.answerConfirm')}
+            draft={answerDraft}
+            onDraft={setAnswerDraft}
+            onSend={(text) => onAnswerSession(text.trim() || null)}
+            onFinish={() => {}}
+            onStop={() => {}}
           />
         )}
 

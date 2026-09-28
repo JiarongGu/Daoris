@@ -5,6 +5,32 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## A parked driven session could be answered only from the top of its record (2026-09-29)
+
+**Symptom.** The owner, reading a parked session's question on the installed window: *"there is no way
+I can input the answer"*. The session's last words, at the foot of a record of 1,800 events, asked for
+a go-ahead, and nothing near them took one.
+
+**Root cause.** A driven session has no composer: it was handed its whole target at once, so the frame
+offers no box. Its answer door (STANDDOWN2) was a button in the waiting card at the very top of the
+session, above the conversation. The conversation opens on its last words, where the question is, so
+the door was a record's length away from the question it answers.
+
+**Fix.** A parked driven session is answered from a box at the foot, where a chat's composer is: words
+only, no attachments, its button *carry on with this answer*. The card above keeps finish, decline and
+stop, and says the box below carries it on, which is the chat's pattern: one owner for the answer
+(D56). An answer that does not arrive goes back into the box.
+
+**Verify.**
+- `WorkFrame.test.tsx`: *answers a parked driven session from the box at the foot, and the card says
+  the box carries it on*, posting the words to the session's answer door.
+- The owner was told where the old door was, and offered the terminal's `daoris-driver answer`.
+
+**The trap.** A door placed where the design says the question is, not where the screen shows it: the
+conversation's own reading order (SESS1 S1, last words in view) moved the question and left the door.
+
+**Commit.** pending
+
 ## A parked session filled Overview's band, and nothing said the row was the door (2026-09-29)
 
 **Symptom.** The owner, with the first real session parked for their sign-in: *"it says waiting for
