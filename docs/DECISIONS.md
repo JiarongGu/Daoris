@@ -3749,3 +3749,34 @@ Daoris already has for behaviour it does not carry (D64).
   write a durable push authorisation into core, where D37 keeps push human.
 - **Rebasing the work onto the line's current tip.** It rewrites the session's commits. The branch
   form keeps them as they were made, and the person's review shows where they started.
+
+## D88 — A session's branch goes once git proves its work is on a branch of the person's (2026-09-28)
+
+**Decision (WSR3, from the owner's *"after merge to master or feature branch we should cleanup daoris
+branches"*).**
+- **The proof.** A session branch's work is landed when every commit on it is on a branch that is
+  not Daoris's: a local branch outside `daoris/`, or a remote-tracking branch. The line, a feature
+  branch the branch form made, and a branch the person pushed all count. Commits only Daoris's
+  branches hold are unlanded, including a chain's earlier step, whose branch is also Daoris's. One
+  proof serves every door: a tree's removal without `--force`, the tidy after a landing, and the
+  clean-up.
+- **The tidy is the person's rule.** A landing rule may say `tidy`: once a press lands the work,
+  its tree and branch go, if the proof holds. Without it, the tree stays, as it always has.
+- **The clean-up is the person's press.** Every session branch on this machine is listed first with
+  what it holds: landed, empty, unlanded, holding uncommitted work, or in use by a session still
+  running or waiting. Then one press removes those the proof clears, checking each again right
+  before it goes. Unlanded work, uncommitted work and a session in use are kept and named. The
+  terminal twin is `daoris-driver trees clean`, which lists and, with `--yes`, removes.
+
+This amends **D51 rule 7** (*nothing deletes itself*): a removal now happens only by a person's press
+or a rule the person set, and always behind the proof.
+
+**Why.** Branches piled up: FG5 left sixteen empty ones in one repository before they were deleted
+by hand. The line alone is the wrong proof once work lands on a feature branch: it would call that
+work unlanded forever, and a person forcing removals by hand is the risk the proof is for.
+
+**Rejected.**
+- **Proving against the line only.** It refuses every branch the branch form landed (D87).
+- **Deleting a branch git calls merged (`branch -d`).** Git asks only about the checkout's HEAD, so a
+  branch landed on a feature branch would stay, and one merged into whatever the checkout happens to
+  be on would go.

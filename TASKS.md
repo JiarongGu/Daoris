@@ -162,7 +162,8 @@ requirements, and the owner's calls. Its recommended order is the order below.
   plugin, and the plugin, for its platform, pushes the branch and opens the pull request over its
   wire (D64). Off by default, and configurable per workspace. WSR1's branch form is what it starts
   from: `LandingRules.Problem` refuses any other form today, and says so.
-- [ ] **WSR3 — session branches cleaned up after they land** (study §2). After work lands, its tree
+- [ ] **WSR3 — session branches cleaned up after they land** (study §2, **D88**: the proof, the tidy
+  rule, and the clean-up as a press; in progress). After work lands, its tree
   and branch go, under the workspace's rule, only when git proves the work is on its target. A bulk
   clean of every landed or empty `daoris/s-*` branch, listed before it is pressed, with a terminal
   twin. A branch whose commits never landed is shown as such.
