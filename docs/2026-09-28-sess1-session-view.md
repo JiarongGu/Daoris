@@ -49,6 +49,9 @@ Chromium pins a sticky element: it is solid, and pinned over that padding (`-top
 What the study's §5 asks and these findings did not cover, so SESS1 stays open for it:
 - **What a session waits on, at the top, with the one action that moves it.** No session on the real
   workspace was waiting when this pass looked, so there was nothing true to look at.
-- **A tool's output read well**: its size when collapsed, a command's exit code and how long it ran.
+- ~~**A tool's output read well**: its size when collapsed, a command's exit code and how long it ran.~~
+  *Landed 2026-09-29:* a call says how long it ran, by the driver's clock (from a second on), and,
+  folded, how many lines it carried. **An exit code is not a field on the wire**, and the card reads
+  nothing out of a call's output, so it is not shown.
 - **Where it came from and what it caused, beyond the chain**: the session it carries on from and
   the answer that resumed it, the quests it published, and the questions it asked another repository.

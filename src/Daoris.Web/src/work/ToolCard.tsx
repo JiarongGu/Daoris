@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { span } from '../format';
 import { cn } from '../lib/cn';
 import { Dot, Icon, type IconName } from '../ui';
 import type { Block, ToolContent } from './conversation';
@@ -65,6 +66,12 @@ export function ToolCard({ call, tree }: {
   const title = inTree(call.title || t(call.continued ? 'work.tool.continued' : 'work.tool.untitled'), tree);
   const status = call.status ?? 'pending';
   const hasBody = Boolean(call.content?.length || call.input || call.output);
+  // How long it ran, by the driver's clock (SESS1): from its first event to the update that ended it —
+  // said from a second on, since under that is the time the wire takes, not the call.
+  const took = call.finished ? Date.parse(call.finished) - Date.parse(call.at) : Number.NaN;
+  // How much it carried, closed: the lines of its text and output. An edit says its size as +n −m.
+  const texts = [...(call.content ?? []).filter((item) => item.type !== 'diff').map((item) => item.text ?? ''), call.output ?? ''];
+  const carried = counts ? 0 : texts.reduce((sum, text) => sum + (text ? text.split(/\r?\n/).length : 0), 0);
 
   return (
     <div className={cn('my-1.5 rounded-control border bg-raised', failed ? 'border-warn' : 'border-line')}>
@@ -87,8 +94,12 @@ export function ToolCard({ call, tree }: {
             <span className="text-st-declined">−{counts.removed}</span>
           </span>
         )}
+        {!open && carried > 1 && (
+          <span className="shrink-0 text-meta tabular-nums text-ink-faint">{t('work.tool.lines', { count: carried })}</span>
+        )}
+        {took >= 1000 && <span className="ml-auto shrink-0 text-meta tabular-nums text-ink-faint">{span(took)}</span>}
         <Dot
-          className="ml-auto shrink-0"
+          className={cn('shrink-0', !(took >= 1000) && 'ml-auto')}
           tone={stopped ? 'idle' : STATUS_TONE[status] ?? 'idle'}
           label={stopped ? t('work.tool.status.stopped') : t(`work.tool.status.${status}`, { defaultValue: status })}
         />

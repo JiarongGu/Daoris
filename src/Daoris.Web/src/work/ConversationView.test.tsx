@@ -351,6 +351,20 @@ describe('ConversationView', () => {
     expect(screen.queryByText('npm test')).toBeNull();
   });
 
+  /**
+   * SESS1: a tool's output read well — how long the call ran, by the driver's clock, and, closed, how
+   * much it carried. An exit code is not on the wire, and nothing is read out of the output for one.
+   */
+  it('says how long a call ran and, closed, how many lines it carried', () => {
+    view([
+      ev({ kind: 'tool', id: 'd1', title: 'npm run gates', toolKind: 'execute', status: 'in_progress', at: '2026-09-25T00:00:00Z' }),
+      ev({ kind: 'tool', id: 'd1', status: 'completed', output: 'one\ntwo\nthree', at: '2026-09-25T00:01:05Z' }),
+    ]);
+
+    expect(screen.getByText('1m 5s')).toBeTruthy();
+    expect(screen.getByText('3 lines')).toBeTruthy();
+  });
+
   /** SESS1 S6: a record from before the refusal named its call carries the request's JSON; two lines, the rest on a press. */
   it('shows a long note of the driver\'s as two lines, and the rest on a press', async () => {
     const long = `permission refused: {"toolCallId":"toolu_01","rawInput":{"command":"${'x'.repeat(300)}"}} — the repository's own configuration governs`;

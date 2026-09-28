@@ -784,6 +784,8 @@
   "work.code.copied": "已复制",
   "work.code.plain": "文本",
   "work.tool.untitled": "一次工具调用",
+  "work.tool.lines": "{{count}} 行",
+  "work.tool.lines_other": "{{count}} 行",
   "work.tool.continued": "一次更早开始的调用",
   "work.find.label": "在本会话中查找",
   "work.find.firstFailure": "首次失败",

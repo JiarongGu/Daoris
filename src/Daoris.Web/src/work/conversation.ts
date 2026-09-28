@@ -109,6 +109,8 @@ export type Block = {
    * carries no title. Said so, rather than named by its id.
    */
   continued?: boolean;
+  /** When the call finished, by the driver's clock: the update that said it completed or failed (SESS1). */
+  finished?: string;
 };
 
 /** What was asked — by the person, or the target the driver composed — and what the person attached. */
@@ -240,6 +242,7 @@ export function toTurns(
           for (const field of ['title', 'toolKind', 'status', 'locations', 'content', 'input', 'output'] as const) {
             if (event[field] != null) (card as Record<string, unknown>)[field] = event[field];
           }
+          if (event.status === 'completed' || event.status === 'failed') card.finished = event.at;
           where[event.seq] = card.key;
         } else {
           where[event.seq] = key;
@@ -249,6 +252,7 @@ export function toTurns(
             input: event.input, output: event.output,
             // A call's first event names it; one with no name is an update to a call begun earlier.
             ...(event.title ? {} : { continued: true }),
+            ...(event.status === 'completed' || event.status === 'failed' ? { finished: event.at } : {}),
           });
         }
         break;

@@ -784,6 +784,8 @@
   "work.code.copied": "copied",
   "work.code.plain": "text",
   "work.tool.untitled": "a tool call",
+  "work.tool.lines": "{{count}} line",
+  "work.tool.lines_other": "{{count}} lines",
   "work.tool.continued": "a call begun earlier",
   "work.find.label": "Find in this session",
   "work.find.firstFailure": "first failure",
