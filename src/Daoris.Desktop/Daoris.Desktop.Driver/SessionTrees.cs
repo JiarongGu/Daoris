@@ -266,9 +266,7 @@ public sealed class SessionTrees(string home)
         }
 
         var landed = ahead.Trim().Split('\n').Length;
-        return new(true,
-            $"merged `{branch}` into `{canonical}` — {landed} commit(s). The tree is still there; "
-            + "discard it when you are done with it.");
+        return new(true, $"merged `{branch}` into `{canonical}` — {landed} commit(s).{TreeStays}");
     }
 
     /// <summary>Whether <paramref name="path"/> is a tree this home opened — the only kind a landing rule reaches.</summary>
@@ -298,6 +296,9 @@ public sealed class SessionTrees(string home)
         return new(LandingForm.Merge, line ?? "", landing.Source);
     }
 
+    /// <summary>What a landing says of the tree it leaves — dropped when a tidy removed it.</summary>
+    private const string TreeStays = " The tree is still there; discard it when you are done with it.";
+
     /// <summary>
     /// The press on a reviewed session (WSR1, D87): its work lands as its repository's rule says —
     /// merged into the line (<see cref="MergeAsync"/>), or put on a new branch for the person to push.
@@ -325,9 +326,11 @@ public sealed class SessionTrees(string home)
         var tidied = await RemoveAsync(path, force: false, ct).ConfigureAwait(false);
         return landed with
         {
-            Message = landed.Message + (tidied.Removed
-                ? $" Tidied, as the rule says: {tidied.Message}"
-                : $" The rule says to tidy, and the tree stays: {tidied.Message}"),
+            // 🔴 The sentence that the tree stays goes when the tidy removed it: the message said both
+            // (found landing AR-2202, 2026-09-29).
+            Message = tidied.Removed
+                ? landed.Message.Replace(TreeStays, "", StringComparison.Ordinal) + $" Tidied, as the rule says: {tidied.Message}"
+                : landed.Message + $" The rule says to tidy, and the tree stays: {tidied.Message}",
         };
     }
 
@@ -577,8 +580,7 @@ public sealed class SessionTrees(string home)
         var count = ahead.Trim().Split('\n').Length;
         return new(true,
             $"put the work on `{name}` — {count} commit(s) from `{line ?? "HEAD"}`. Push it and open the pull request "
-            + $"from there: `git push -u origin {name}`. Nothing was merged and the checkout was not touched; the tree "
-            + "is still there — discard it when you are done with it.",
+            + $"from there: `git push -u origin {name}`. Nothing was merged and the checkout was not touched.{TreeStays}",
             name);
     }
 

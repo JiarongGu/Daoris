@@ -218,6 +218,9 @@ public sealed class SweepTests : IDisposable
         Assert.Empty((await GitAsync(root, "branch", "--list", tree.Branch)).Trim());
         Assert.Contains("the work", await GitAsync(root, "log", "feature/0fda18", "--oneline"));
         Assert.Contains("removed", landed.Message);
+        // 🔴 Found landing AR-2202 (2026-09-29): the message said the tree "is still there — discard it"
+        // and, a sentence later, that the tidy had removed it.
+        Assert.DoesNotContain("still there", landed.Message);
     }
 
     [Fact]
