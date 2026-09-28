@@ -29,7 +29,7 @@ stop, and says the box below carries it on, which is the chat's pattern: one own
 **The trap.** A door placed where the design says the question is, not where the screen shows it: the
 conversation's own reading order (SESS1 S1, last words in view) moved the question and left the door.
 
-**Commit.** pending
+**Commit.** `1d6bedb`
 
 ## A parked session filled Overview's band, and nothing said the row was the door (2026-09-29)
 
