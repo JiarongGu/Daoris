@@ -23,7 +23,7 @@ seconds later.
 **Verify.** With only that find given eight seconds, the full run passed 1219/1219. Then it passed
 again with the suite-wide setting and the per-call change reverted.
 
-**Commit.** pending
+**Commit.** `a4f3139`
 
 ## A tree whose line only origin had was removed as if its work had landed (2026-09-28)
 
@@ -52,7 +52,7 @@ cannot say whether work landed on it.
 **The trap.** A git call read for its output alone treats a failure as an empty answer. Where empty
 means "safe to delete", check the exit code.
 
-**Commit.** pending
+**Commit.** `a4f3139`
 
 ## The session dock stayed narrow while the window grew (2026-09-28)
 
