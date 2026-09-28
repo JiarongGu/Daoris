@@ -181,7 +181,9 @@ requirements, and the owner's calls. Its recommended order is the order below.
   secondary side bar and the panel, by drag or *Move to*, and remembers where. **A design note
   first**: which views move (Ask Daoris, the console, the dock's tabs, the rail), which places exist
   on every view rather than only in Sessions, and whether *Move to* comes before drag. SURF11, the
-  layout toggles, is the same question from the other end, so the two are designed together.
+  layout toggles, is the same question from the other end, so the two are designed together. **The
+  design note is `docs/2026-09-29-dock-design.md`**: move before drag, the right region the
+  application's, DOCK1a–e in order; its first step, Ask Daoris as one right region, is `b21b60f`.
 
 ### What REV3 left (2026-09-25)
 
