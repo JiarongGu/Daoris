@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { api, type AskAction } from './api';
+import { api, type AskAction, HELP_REPOSITORY } from './api';
 import { useScope } from './scope';
 import { workspaceOf, workspacesOf } from './workspaces';
 
@@ -193,6 +193,16 @@ export const useSessions = (repository: string | null, includeClosed: boolean) =
     queryFn: ({ signal }) => api.sessions(repository, includeClosed, workspace, signal),
   });
 };
+
+/**
+ * Ask Daoris's conversations (HELP1a, D89), across every workspace: it belongs to none, so the scope a
+ * person is working in must not hide the conversation beside it.
+ */
+export const useHelpSessions = () =>
+  useQuery({
+    queryKey: keys.sessions(HELP_REPOSITORY, true, null),
+    queryFn: ({ signal }) => api.sessions(HELP_REPOSITORY, true, null, signal),
+  });
 
 /** One document, read on demand — the Reader's fetch, cached like every other read. */
 export const useEntry = (id: string | null) =>

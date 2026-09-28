@@ -593,6 +593,30 @@ if (mode == ServiceMode.Local)
             _ => Results.BadRequest(new ErrorResponse(outcome.Message)),
         };
     });
+
+    // Ask Daoris (HELP1a, D89): the record of the conversation about Daoris itself, in the room the
+    // driver keeps for it. Local like the intake's; the process is the driver's.
+    app.MapPost("/api/sessions/help", async (
+        ComposedService s, HttpContext http, OpenHelpRequest body, CancellationToken ct) =>
+    {
+        if (string.IsNullOrWhiteSpace(body.Room))
+        {
+            return Results.BadRequest(new ErrorResponse("room is required — where Ask Daoris's conversation runs"));
+        }
+
+        var outcome = await s.Ledger.OpenHelpAsync(
+            // The adapter is the harness, never a model (D24). Silence takes the supported one.
+            string.IsNullOrWhiteSpace(body.Adapter) ? "claude-code" : body.Adapter,
+            body.Room, DateTimeOffset.UtcNow, body.HarnessVersion, body.Profile, ct);
+
+        return outcome.Refusal switch
+        {
+            SessionOpenRefusal.None => Results.Ok(
+                new SessionActionResponse(ToSession(outcome.Session!, MachineLocal(http)), outcome.Message)),
+            SessionOpenRefusal.RepositoryBusy => Results.Conflict(new ErrorResponse(outcome.Message)),
+            _ => Results.BadRequest(new ErrorResponse(outcome.Message)),
+        };
+    });
 }
 
 // The driver's session records (D46). State only: the service never spawns a process — the record is

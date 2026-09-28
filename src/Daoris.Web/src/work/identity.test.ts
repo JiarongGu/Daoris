@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import i18n from '../i18n';
-import type { Quest, Session } from '../api';
-import { inTree, ownTree, sessionOrigin, sessionTitle, treeName } from './identity';
+import { HELP_REPOSITORY, type Quest, type Session } from '../api';
+import { inTree, isHelp, ownTree, sessionOrigin, sessionTitle, treeName } from './identity';
 
 const session = (over: Partial<Session> = {}): Session => ({
   id: 's1',
@@ -187,5 +187,20 @@ describe('a path inside the session\'s tree', () => {
   it('reads a POSIX tree the same way, and changes nothing with no tree in hand', () => {
     expect(inTree('Read /srv/engine/src/lib.rs', '/srv/engine/')).toBe('Read src/lib.rs');
     expect(inTree('Read /srv/engine/src/lib.rs', null)).toBe('Read /srv/engine/src/lib.rs');
+  });
+});
+
+describe('the sessions of Ask Daoris (HELP1a)', () => {
+  /** A twin (`twins.md`): the service's `SessionLedger.HelpRepository` and the driver's `HelpRoom.Repository`. */
+  it('are recorded in a repository no folder can be called', () => {
+    expect(HELP_REPOSITORY).toBe('daoris:help');
+  });
+
+  it('are told by that repository, and called Ask Daoris until the person has said something', () => {
+    const help = session({ repository: HELP_REPOSITORY, kind: 'chat' });
+    expect(isHelp(help)).toBe(true);
+    expect(isHelp(session({ kind: 'chat' }))).toBe(false);
+    expect(sessionTitle(help)).toBe(i18n.t('help.title'));
+    expect(sessionTitle(help, null, 'how do I drive a repository?')).toBe('how do I drive a repository?');
   });
 });

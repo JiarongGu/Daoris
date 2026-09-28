@@ -169,6 +169,101 @@ public sealed class ChatRunner(
             return new(null, message);
         }
 
+        return await RunAsync(
+            sessionId, message, resolved, selection, config,
+            new ChatPlace(
+                known.Repository, workTree,
+                // What the conversation's agent may do (PERM1, D72) — the same union a driven session in
+                // this repository is handed. What the person attaches is kept outside the tree, for this
+                // conversation alone, and the agent reads it where it lies (CONV4c): a read of exactly that
+                // folder, INT4j's rule — every other read there would be asked, and every ask is refused (D52).
+                (file, id) =>
+                {
+                    var composed = PermissionRules.Compose(file, known.Workspace, repository);
+                    return composed with { Allow = [.. composed.Allow, PermissionRules.ReadRule(ChatFiles.Folder(home, id))] };
+                },
+                Plugins: true, ConnectorOnPipe: false, Posture: null),
+            onEnded, ct).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Open Ask Daoris's conversation (HELP1a, D89): a chat about Daoris itself, in the room written from
+    /// <paramref name="machine"/> under the home, on the helper's agent. The record is the service's; the
+    /// process is this machine's.
+    /// </summary>
+    /// <remarks>
+    /// <para><b>It reads, and it advises</b>: handed the knowledge connector on either door, the room's
+    /// allow-list and the person's denies, and none of the plugins' servers — a browser brought up for a
+    /// tool it is not allowed would be a window for nothing.</para>
+    ///
+    /// <para><b>One at a time</b>: the ledger refuses a second while one runs, naming it. The caller hands
+    /// the person the running one rather than asking for another.</para>
+    /// </remarks>
+    public async Task<ChatStart> StartHelpAsync(
+        string adapter, DriverConfig config, HelpMachine machine,
+        Func<string, string, Task>? onEnded = null, CancellationToken ct = default)
+    {
+        var resolved = _harnesses.Adapters.Resolve(adapter);
+        if (!resolved.Interactive)
+        {
+            return new(
+                null,
+                $"the `{resolved.Name}` adapter does not hold conversations — it spawns an agent that "
+                + "takes its target once and runs to completion. Name another under Settings → Daoris's own AI, "
+                + "or `daoris driver helper <agent>`.");
+        }
+
+        // The account the default circle names, then the machine's (D89): Ask Daoris belongs to no workspace.
+        var selection = await _harnesses.SelectAsync(resolved.Name, config, null, null, ct).ConfigureAwait(false);
+        if (!selection.Allowed) return new(null, selection.Refusal!);
+
+        string room;
+        try
+        {
+            room = HelpRoom.Prepare(home, machine);
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            return new(null, $"Ask Daoris's room could not be written — {error.Message}");
+        }
+
+        var (sessionId, message) = await service
+            .OpenHelpAsync(resolved.Name, room, selection.Version, selection.Profile, ct)
+            .ConfigureAwait(false);
+        if (sessionId is null) return new(null, message);
+
+        return await RunAsync(
+            sessionId, message, resolved, selection, config,
+            new ChatPlace(
+                HelpRoom.Repository, room,
+                (file, id) => HelpRoom.Rules(file, ChatFiles.Folder(home, id)),
+                Plugins: false, ConnectorOnPipe: true, Posture: HelpRoom.Posture),
+            onEnded, ct).ConfigureAwait(false);
+    }
+
+    /// <summary>What differs between a conversation in a repository and Ask Daoris's in its room (HELP1a).</summary>
+    /// <param name="Name">What the conversation is for: the repository, or <see cref="HelpRoom.Repository"/>.</param>
+    /// <param name="Tree">Where its process runs.</param>
+    /// <param name="Rules">What its agent may do, from this machine's rules file and its session id.</param>
+    /// <param name="Plugins">Whether the plugins' servers are handed — and Daoris's browser brought up for one.</param>
+    /// <param name="ConnectorOnPipe">
+    /// Whether the knowledge connector is handed on the pipe door too. The protocol door always carries
+    /// it; a repository's own `.mcp.json` wires it on the pipe, and a room has none.
+    /// </param>
+    /// <param name="Posture">The protocol door's mode for this conversation, or null for the adapter's own (D81).</param>
+    private sealed record ChatPlace(
+        string Name, string Tree, Func<PermissionFile, string, RuleLists> Rules, bool Plugins, bool ConnectorOnPipe,
+        string? Posture);
+
+    /// <summary>
+    /// A conversation whose record is open: its process spawned with its rules and servers, its door's
+    /// turns held, and its watch started — or, when the spawn fails, its record concluded.
+    /// </summary>
+    private async Task<ChatStart> RunAsync(
+        string sessionId, string message, ISessionAdapter resolved, HarnessSelection selection, DriverConfig config,
+        ChatPlace place, Func<string, string, Task>? onEnded, CancellationToken ct)
+    {
+        var workTree = place.Tree;
         var transcript = Path.Combine(home, "sessions", $"{sessionId}.log");
         Directory.CreateDirectory(Path.GetDirectoryName(transcript)!);
 
@@ -177,13 +272,13 @@ public sealed class ChatRunner(
         string? servers = null;
         object? meta = null;
         IReadOnlyList<AcpMcpServer> pluginServers = [];
-        string? browserNotice;
+        string? browserNotice = null;
         try
         {
             await service.AdvanceAsync(sessionId, "starting", ct: ct).ConfigureAwait(false);
 
             var info = resolved.PrepareChat(
-                new ChatTarget(repository, workTree, service.BaseUrl),
+                new ChatTarget(place.Name, workTree, service.BaseUrl),
                 config.Commands.GetValueOrDefault(resolved.Name));
             if (resolved.Toolchain is { } toolchain)
             {
@@ -192,22 +287,14 @@ public sealed class ChatRunner(
                     selection.Environment);
             }
 
-            // What the conversation's agent may do (PERM1, D72) — the same union a driven session in
-            // this repository is handed, by each door's own way: a flag on the pipe, `session/new`'s
-            // `_meta` on the protocol door, now that a conversation there opens a session (CONV3b).
+            // What the conversation's agent may do (PERM1, D72), handed by each door's own way: a flag on
+            // the pipe, `session/new`'s `_meta` on the protocol door, now that a conversation there opens a
+            // session (CONV3b).
             if (resolved.TakesSettings)
             {
                 var file = PermissionRules.Load(home);
-                var composed = PermissionRules.Compose(file, known?.Workspace, repository);
-                // What the person attaches is kept outside the tree, for this conversation alone, and the
-                // agent reads it where it lies (CONV4c): a read of exactly that folder, INT4j's rule —
-                // every other read there would be asked, and every ask is refused (D52).
-                composed = composed with
-                {
-                    Allow = [.. composed.Allow, PermissionRules.ReadRule(ChatFiles.Folder(home, sessionId))],
-                };
                 rules = SpawnSettings.Write(
-                    home, sessionId, composed,
+                    home, sessionId, place.Rules(file, sessionId),
                     PermissionRules.GuardsTree(file) ? TreeGuard.For(home, workTree) : null);
                 if (rules is not null && resolved.Wire == SessionWire.Pipe) resolved.HandSettings(info, rules);
                 else if (rules is not null) meta = resolved.AcpSessionMeta(rules);
@@ -215,16 +302,21 @@ public sealed class ChatRunner(
 
             // The plugins' servers, resolved once for both doors — with Daoris's own browser brought up
             // for one that drives it (D78), or that one left out and the conversation told why.
-            (pluginServers, browserNotice) = await InAppBrowserServers.HandAsync(
-                PluginCatalog.Load(home, _harnesses.Adapters.Names).Servers, browser, ct).ConfigureAwait(false);
-            if (browserNotice is not null) Record(sessionId, new SessionEvent { Kind = SessionEventKind.Note, Text = browserNotice });
+            if (place.Plugins)
+            {
+                (pluginServers, browserNotice) = await InAppBrowserServers.HandAsync(
+                    PluginCatalog.Load(home, _harnesses.Adapters.Names).Servers, browser, ct).ConfigureAwait(false);
+                if (browserNotice is not null) Record(sessionId, new SessionEvent { Kind = SessionEventKind.Note, Text = browserNotice });
+            }
 
             // 🔴 The servers the plugins hand every session (D64, D65 §1f), on this door too (REV3). The
             // protocol door carries them on `session/new` (`Servers`); a driven or intake session on the
-            // pipe is handed a file — and a conversation on the pipe was handed nothing at all.
+            // pipe is handed a file — and a conversation on the pipe was handed nothing at all. A room
+            // has no `.mcp.json` of its own, so its connector goes in the same file (HELP1a).
             if (resolved.Wire == SessionWire.Pipe)
             {
-                servers = SpawnServers.Hand(resolved, info, home, sessionId, pluginServers);
+                servers = SpawnServers.Hand(
+                    resolved, info, home, sessionId, place.ConnectorOnPipe ? Servers(sessionId, pluginServers) : pluginServers);
             }
 
             process = Process.Start(info)
@@ -263,7 +355,7 @@ public sealed class ChatRunner(
         if (resolved.Wire == SessionWire.Acp)
         {
             chat = new ProtocolChat(
-                resolved.AcpPosture, meta, workTree, Servers(sessionId, pluginServers), Changed,
+                place.Posture ?? resolved.AcpPosture, meta, workTree, Servers(sessionId, pluginServers), Changed,
                 stopped: () => processes.WasStopRequested(sessionId));
             _turned[sessionId] = chat;
         }
@@ -278,7 +370,7 @@ public sealed class ChatRunner(
         // What the conversation consumed counts toward the account it ran as (USAGE1), as a driven
         // session's does: at its end, at its high-water mark, where the door reported one.
         void Measured(AcpUsage used) => _usage.Record(new UsageEntry(
-            sessionId, known.Repository, resolved.Name, selection.Profile, used.Used, used.Size, DateTimeOffset.UtcNow));
+            sessionId, place.Name, resolved.Name, selection.Profile, used.Used, used.Size, DateTimeOffset.UtcNow));
 
         var watch = WatchAsync(sessionId, process, transcript, onEnded, Measured, rules, mapper, chat, native, servers);
         _watching[sessionId] = watch;

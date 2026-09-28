@@ -1,5 +1,5 @@
 import i18n from '../i18n';
-import type { Quest, Session } from '../api';
+import { HELP_REPOSITORY, type Quest, type Session } from '../api';
 
 // The working surface's derived identity (docs/2026-09-21-working-surface-design.md §3). Pure, so
 // the rail and the head cannot disagree about what a session is called — which is the whole reason
@@ -30,12 +30,16 @@ export function sessionTitle(session: Session, quest?: Quest | null, opening?: s
   if (quest?.title) return quest.title;
   if (session.quest) return `#${session.quest}`;
   if (session.ask) return i18n.t('work.intake.title', { ask: session.ask });
+  if (isHelp(session) && !opening) return i18n.t('help.title');
   if (session.kind === 'chat' && opening) return opening;
   return i18n.t(session.kind === 'chat' ? 'work.identity.conversation' : 'work.identity.session');
 }
 
 /** Whether a session is an intake (INT4b): the one kind of record that names an ask. */
 export const isIntake = (session: Session): boolean => Boolean(session.ask);
+
+/** Whether a session is Ask Daoris's conversation (HELP1a, D89), by the repository it is recorded in. */
+export const isHelp = (session: Session): boolean => session.repository === HELP_REPOSITORY;
 
 /**
  * Which machine holds this session — or null when it is the deployment's own.

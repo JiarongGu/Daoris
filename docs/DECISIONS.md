@@ -3804,3 +3804,11 @@ applies (D74).
   press.
 - **Running `daoris` commands from the room.** The install does not carry the CLI, and a helper that
   ran commands would be a second door with its own approval problem.
+
+**As built (HELP1a, 2026-09-29): its session is the one exception to D81.** Every other session runs
+in its harness's own `auto` mode; Ask Daoris's asks the agent for its own asking mode (`default`)
+where the agent offers it. The first real conversation ran shell commands under `auto`, reading a
+checkout to research its answer, which showed the room's allow-list is no gate in a mode that judges
+its own actions — and a helper able to run a command could run `daoris driver …`, the change nobody
+confirmed that this decision forbids. In `default` every tool off the allow-list asks, and over the
+protocol door every ask is refused by construction (D52).

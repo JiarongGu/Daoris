@@ -298,6 +298,50 @@ public sealed class DriverModule : ModuleBase
                 return new { start.SessionId, start.Message };
             }
 
+            // Ask Daoris's conversation (HELP1a, D89): the one this machine is running, carried on — one
+            // per machine — or a new one in its room, written from the machine as the driver holds it now.
+            case "START_HELP":
+            {
+                // Asked first: no service answer changes it, and it says what to do.
+                var config = DriverConfig.Load(_loop.ConfigPath);
+                if (config.HelperAdapter is not { Length: > 0 } helper)
+                {
+                    throw new DriverException(
+                        "Ask Daoris has no agent to run on — name one under Settings → Daoris's own AI, or "
+                        + "`daoris driver helper <agent>`. Its starters need none.");
+                }
+
+                var chat = _loop.Chat ?? throw NotReady();
+                var service = _loop.Service ?? throw NotReady();
+                var snapshot = await service.SnapshotAsync(cancellationToken).ConfigureAwait(false);
+                var held = _loop.Processes.Running;
+                if (snapshot.Active.FirstOrDefault(session =>
+                        session.Repository == HelpRoom.Repository && held.Contains(session.Id, StringComparer.OrdinalIgnoreCase)) is { } running)
+                {
+                    return new { SessionId = running.Id, Message = $"Ask Daoris `{running.Id}` is carried on.", Running = true };
+                }
+
+                var lines = await CanonicalLine.OfAsync(
+                    config,
+                    snapshot.Repositories
+                        .OrderBy(known => known.Repository, StringComparer.Ordinal)
+                        .Select(known => (known.Repository, (string?)known.Workspace, known.Root)),
+                    cancellationToken).ConfigureAwait(false);
+                var roster = await _loop.Harnesses.RosterAsync(config, ct: cancellationToken).ConfigureAwait(false);
+                var asks = (await service.AsksAsync(cancellationToken).ConfigureAwait(false)).Count(ask => ask.State == "Proposed");
+                var machine = HelpRoom.Describe(
+                    config, snapshot, lines, roster, adapter => _loop.Harnesses.Toolchain(adapter)?.Product, asks);
+
+                var start = await chat.StartHelpAsync(
+                    helper, config, machine,
+                    onEnded: (session, state) =>
+                        _events.EmitAsync("DAORIS", "SESSION_ENDED", new { Session = session, State = state }),
+                    ct: cancellationToken).ConfigureAwait(false);
+
+                _loop.Nudge();
+                return new { start.SessionId, start.Message, Running = false };
+            }
+
             // The person's half of the turn-taking. False is an answer — the session ended while they
             // were typing — and never an error. 🔴 A session that takes no input is REFUSED instead, in
             // the driver's words (INT4h): false would tell a stale page it ended when it is running.

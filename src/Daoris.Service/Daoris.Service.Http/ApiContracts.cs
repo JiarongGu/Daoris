@@ -152,6 +152,9 @@ public sealed record OpenChatRequest(
 // that is about to run a process there. The circle comes from the ask, never from the caller.
 public sealed record OpenIntakeRequest(
     string? Ask, string? Adapter, string? Room, string? HarnessVersion = null, string? Profile = null);
+// Ask Daoris (HELP1a, D89): the room its conversation runs in, the driver's to name.
+public sealed record OpenHelpRequest(
+    string? Adapter, string? Room, string? HarnessVersion = null, string? Profile = null);
 public sealed record AdvanceSessionRequest(string? State, string? Note, string? Evidence, string? Transcript);
 public sealed record SessionActionResponse(SessionResponse Session, string Message);
 public sealed record FeedEntryRecord(string? Kind, string? Title, string? Body, string? RelativePath, string? Anchor);
@@ -235,6 +238,7 @@ public sealed record FeedRefusalResponse(string Error, bool Information);
 [JsonSerializable(typeof(OpenSessionRequest))]
 [JsonSerializable(typeof(OpenChatRequest))]
 [JsonSerializable(typeof(OpenIntakeRequest))]
+[JsonSerializable(typeof(OpenHelpRequest))]
 [JsonSerializable(typeof(AdvanceSessionRequest))]
 [JsonSerializable(typeof(SessionActionResponse))]
 

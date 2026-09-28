@@ -161,6 +161,58 @@ public sealed class SessionLedger(
     }
 
     /// <summary>
+    /// The "repository" an Ask Daoris session is recorded in (HELP1a, D89). No repository can be
+    /// called this — a colon is in no folder name — so it never collides with a registered one.
+    /// </summary>
+    /// <remarks>A twin (`.claude/knowledge/twins.md`): the driver's <c>HelpRoom.Repository</c> and the
+    /// page's <c>HELP_REPOSITORY</c> spell it too, and each side's test holds the spelling.</remarks>
+    public const string HelpRepository = "daoris:help";
+
+    /// <summary>
+    /// Open Ask Daoris's conversation (HELP1a, D89) — a chat about Daoris itself, in the room the
+    /// driver keeps for it under its home.
+    /// </summary>
+    /// <remarks>
+    /// <para><b>The intake's open, for a conversation.</b> It serves no quest and no ask, so nothing
+    /// plans from it, and it belongs to no workspace: it is about the whole machine.</para>
+    ///
+    /// <para><b>One running per room</b>, which is one per machine: a second is refused naming the
+    /// first, and the driver hands the page the running one rather than asking for another.</para>
+    /// </remarks>
+    public async Task<SessionOpenOutcome> OpenHelpAsync(
+        string adapter, string room, DateTimeOffset now,
+        string? harnessVersion = null, string? profile = null, CancellationToken ct = default)
+    {
+        var holding = Trees.Normalize(room)
+            ?? throw new ArgumentException("Ask Daoris runs in a room — name it", nameof(room));
+
+        return await sessions.ExclusiveAsync(async inside =>
+        {
+            var running = await sessions.RunningInTreeAsync(holding, inside).ConfigureAwait(false);
+            if (running is not null)
+            {
+                return new SessionOpenOutcome(
+                    SessionOpenRefusal.RepositoryBusy,
+                    $"Ask Daoris already has a conversation running — `{running.Id}` ({Spell(running.State)}). "
+                    + "One runs at a time; carry that one on, or finish it first.",
+                    Session: null);
+            }
+
+            // No base commit, for the intake's reason: the room is no repository.
+            var session = await sessions
+                .CreateAsync(
+                    null, HelpRepository, adapter, now, workspace: null, SessionKind.Chat,
+                    harnessVersion, profile, holding, baseCommit: null, inside)
+                .ConfigureAwait(false);
+
+            return new SessionOpenOutcome(
+                SessionOpenRefusal.None,
+                $"Ask Daoris `{session.Id}` opened, via {adapter}.",
+                session);
+        }, ct).ConfigureAwait(false);
+    }
+
+    /// <summary>
     /// Open a chat in a repository (D49 §3) — a person-initiated session serving no quest yet.
     /// </summary>
     /// <remarks>

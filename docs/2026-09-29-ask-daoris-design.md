@@ -89,7 +89,31 @@ line git can name. With an agent named, a starter is also a first message.
 ## 9. Build order
 
 1. **HELP1a**: the doors, the dock tab, the room, and the conversation as a chat in the room (the
-   intake's plumbing, as a conversation rather than one turn).
+   intake's plumbing, as a conversation rather than one turn). *Plan (2026-09-29):* the ledger opens
+   a help session as the intake's is opened, a chat serving no quest in "repository" `daoris:help`
+   (a colon no folder name holds), one running per room; `START_HELP` renders the room from the
+   machine and starts the chat there on the helper's agent, or hands back the one already running;
+   the panel shows the newest help session's conversation with a composer, and a message with none
+   running starts one. *Built 2026-09-29, as planned*, with what building it settled:
+   - **The room says what the machine holds from the driver's own answers** (`HelpRoom.Describe`):
+     its file, the registry, each repository's line and landing rule, the roster. Names and states;
+     no root, no profile's home, no key. Every terminal command in its doors table is spelled as
+     the CLI's help spells it, and the timeout, which has no screen, says so.
+   - **Its rules are the room's allows and the person's denies**, never the person's allows, which
+     are for work in a repository; the connector is handed on both doors, and no plugin's server
+     (a browser brought up for a tool it may not use would be a window for nothing).
+   - **Its conversations are read across every workspace**: it belongs to none, and the scope a
+     person works in must not hide the conversation beside it.
+   - **A running conversation is carried on only where this process holds it**: after a restart,
+     the one that ran is shown ended, and a message opens the next.
+   - 🔴 **Its session asks for the agent's own asking mode** (`default`), never D81's `auto`. The
+     first real conversation, on the scratch window, ran `grep` and `sed` over a checkout under
+     `auto` to research its answer: the allow-list is not a gate in a mode that judges its own
+     actions, and a helper that can run a command can run `daoris driver …`, a change nobody
+     confirmed. Asked again in `default`, every read outside the room was refused, and it answered
+     from the room. Its room now also says what a landing pattern may say, which it had to guess.
+   - **Found on the same look:** the strip's door was a bare glyph, and the owner found no easy way
+     to open the chat. It is a named button now, the name giving way at a narrow window.
 2. **HELP1b**: where the person is, as the preface.
 3. **HELP1c**: `setting_propose` and `ask_propose`, the validation, the card, Apply.
 4. **HELP1d**: the starters, and the no-agent tier. *Built 2026-09-29:* waiting sessions, nothing

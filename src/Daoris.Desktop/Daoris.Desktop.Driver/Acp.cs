@@ -626,7 +626,9 @@ public sealed class AcpSession(
         var call = frame.TryGetProperty("params", out var q) && q.ValueKind == JsonValueKind.Object
                    && q.TryGetProperty("toolCall", out var named) && named.ValueKind == JsonValueKind.Object
             ? named : (JsonElement?)null;
-        const string governs = " — the repository's own configuration governs, and the driver may not widen it";
+        // Said of every place a session runs — a repository, an intake's room, Ask Daoris's — since the
+        // rules it was handed and the place's own settings are what refused it, wherever that is.
+        const string governs = " — the rules it runs under govern, and the driver may not widen them";
         // The console is the raw view, and keeps the request as the wire said it.
         onLine($"  permission refused: {(call is { } raw ? Compact(raw) : "a tool call")}{governs}");
         // 🔴 The record names the call as a reader knows it (SESS1 S6): its title, else its kind — the

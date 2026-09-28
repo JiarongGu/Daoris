@@ -347,6 +347,30 @@ public sealed class OrphanedSessionTests : IDisposable
                             .Where(s => all || s["state"]!.GetValue<string>() is "queued" or "starting" or "working" or "awaiting-person")
                             .Select(s => s.DeepClone())]).ToJsonString());
 
+                    // Ask Daoris (HELP1a): one running at a time, refused naming it, as the ledger does.
+                    case ("POST", "/api/sessions/help"):
+                    {
+                        var running = _sessions.FirstOrDefault(s => s["repository"]!.GetValue<string>() == "daoris:help"
+                            && s["state"]!.GetValue<string>() is "queued" or "starting" or "working");
+                        if (running is not null)
+                        {
+                            return (409, new JsonObject
+                            {
+                                ["error"] = $"Ask Daoris already has a conversation running — `{running["id"]}`.",
+                            }.ToJsonString());
+                        }
+
+                        var body = Body();
+                        var session = new JsonObject
+                        {
+                            ["id"] = $"h{_sessions.Count + 1}", ["repository"] = "daoris:help",
+                            ["state"] = "starting", ["kind"] = "chat", ["tree"] = body["room"]!.GetValue<string>(),
+                            ["adapter"] = body["adapter"]!.GetValue<string>(),
+                        };
+                        _sessions.Add(session);
+                        return (200, new JsonObject { ["session"] = session.DeepClone(), ["message"] = "opened" }.ToJsonString());
+                    }
+
                     case ("POST", "/api/sessions/chat"):
                     {
                         var session = new JsonObject

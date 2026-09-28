@@ -895,6 +895,18 @@ export const useStartChat = () => {
 };
 
 /**
+ * Ask Daoris's conversation (HELP1a, D89): the one this machine is running, carried on, or a new one in
+ * its room. Refused in the driver's words while no agent is named for it (D89: off until named).
+ */
+export const useStartHelp = () => {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: () => call<{ sessionId: string | null; message: string; running?: boolean }>('START_HELP'),
+    onSuccess: () => void client.invalidateQueries({ queryKey: keys.allSessions }),
+  });
+};
+
+/**
  * This machine's harnesses, and the accounts they run as (D49 §4, D50).
  *
  * @remarks

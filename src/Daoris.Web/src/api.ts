@@ -194,6 +194,15 @@ export type Session = {
 };
 
 /**
+ * The "repository" Ask Daoris's sessions are recorded in (HELP1a, D89): a colon is in no folder name,
+ * so no registered repository is ever called this.
+ *
+ * @remarks A twin (`.claude/knowledge/twins.md`): the service's `SessionLedger.HelpRepository` and the
+ * driver's `HelpRoom.Repository` spell it too, and each side's test holds the spelling.
+ */
+export const HELP_REPOSITORY = 'daoris:help';
+
+/**
  * What one re-scan changed — and, when the semantic half failed, the service's own sentence.
  *
  * `absent` names registered repositories whose checkout is no longer where the registry says it is

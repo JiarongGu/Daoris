@@ -228,6 +228,27 @@ public sealed class ServiceClient : IDisposable
         return await OpenRecordAsync("/api/sessions/intake", body, ct).ConfigureAwait(false);
     }
 
+    /// <summary>
+    /// Ask the ledger to open Ask Daoris's conversation (HELP1a, D89), in the room this side is about to
+    /// run it in. A refusal is an answer, not an exception — usually that one is already running.
+    /// </summary>
+    public async Task<(string? SessionId, string Message)> OpenHelpAsync(
+        string adapter, string room, string? harnessVersion = null, string? profile = null,
+        CancellationToken ct = default)
+    {
+        var body = WriteJson(writer =>
+        {
+            writer.WriteStartObject();
+            writer.WriteString("adapter", adapter);
+            writer.WriteString("room", room);
+            if (harnessVersion is not null) writer.WriteString("harnessVersion", harnessVersion);
+            if (profile is not null) writer.WriteString("profile", profile);
+            writer.WriteEndObject();
+        });
+
+        return await OpenRecordAsync("/api/sessions/help", body, ct).ConfigureAwait(false);
+    }
+
     /// <summary>This machine's asks that are not closed, newest first — what the loop finds intakes in.</summary>
     public async Task<IReadOnlyList<AskView>> AsksAsync(CancellationToken ct = default)
     {

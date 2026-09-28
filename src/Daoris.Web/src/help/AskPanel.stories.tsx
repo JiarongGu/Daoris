@@ -37,3 +37,25 @@ export const OneLine: Story = {
 };
 
 export const LacksNothing: Story = { args: { helper: 'claude-code-acp' } };
+
+/** HELP1a: the conversation takes the panel, and the composer sits at its foot. The record's own look is the conversation's stories'. */
+export const Talking: Story = {
+  args: {
+    helper: 'claude-code-acp',
+    conversation: {
+      body: (
+        <div className="grid gap-3 text-small text-ink">
+          <p className="m-0 rounded-control bg-raised px-3 py-2">how do I make engine land on a feature branch?</p>
+          <p className="m-0">Settings → Workspace → How work lands, or `daoris driver landing engine branch feature/&#123;slug&#125;`.</p>
+        </div>
+      ),
+      composer: <div className="border-t border-line px-4 py-3 text-small text-ink-faint">the composer</div>,
+      ended: false,
+      onNew: () => {},
+    },
+  },
+};
+
+export const Ended: Story = {
+  args: { ...Talking.args, conversation: { ...Talking.args!.conversation!, ended: true } },
+};

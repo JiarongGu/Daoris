@@ -777,6 +777,31 @@ public sealed class DriverModuleTests : Bridge
         Assert.Contains(Refusals.DriverNotReady, refusal);
     }
 
+    /// <summary>
+    /// Ask Daoris (HELP1a, D89) is off until its agent is named, and says where to name one — asked
+    /// before the loop is, since no service answer changes it.
+    /// </summary>
+    [Fact]
+    public async Task Ask_Daoris_with_no_agent_named_says_where_to_name_one()
+    {
+        var refusal = await RefusalAsync(Module(), "START_HELP");
+
+        Assert.Contains(Refusals.DriverRefused, refusal);
+        Assert.Contains("Settings → Daoris's own AI", refusal);
+        Assert.Contains("daoris driver helper <agent>", refusal);
+    }
+
+    [Fact]
+    public async Task Ask_Daoris_asked_for_before_the_loop_is_up_says_so()
+    {
+        var module = Module();
+        await AnswerAsync(module, "SET_HELPER", new { adapter = "claude-code-acp" });
+
+        var refusal = await RefusalAsync(module, "START_HELP");
+
+        Assert.Contains(Refusals.DriverNotReady, refusal);
+    }
+
     /// <summary>Detection is free and read-only (D49 §4) — the roster answers with no service at all.</summary>
     /// <summary>
     /// The plugins (D64) as the page reads them: the same catalogue the driver reads each tick, each

@@ -64,7 +64,7 @@ export type MentionSource = { files: string[] | null; unlisted: number; refusal:
  */
 export function Composer({
   live, sending = false, refusal, endings = true, draft, onDraft,
-  queued = [], taking = false, stoppable = false, stopping = false, mentions, onMentioning, context,
+  queued = [], taking = false, stoppable = false, stopping = false, mentions, onMentioning, context, placeholder,
   onSend, onFinish, onStop, onStopTurn,
 }: {
   /** Whether anything is listening. False is an ending, not a disabled state. */
@@ -88,6 +88,8 @@ export function Composer({
   mentions?: MentionSource;
   /** Told whether a mention is being written, so the frame asks for the files only then. */
   onMentioning?: (writing: boolean) => void;
+  /** What the box says while empty, where the conversation is not a repository's (HELP1a). */
+  placeholder?: string;
   /** How full the session's context is, for the ring under the box (CONV5). Absent, no ring. */
   context?: { usage?: Usage; door?: 'structured' | 'text' };
   /** The words and the files attached to them. */
@@ -295,7 +297,7 @@ export function Composer({
             }}
             onSelect={(event) => follow(event.currentTarget)}
             onKeyDown={onKeyDown}
-            placeholder={t('work.composer.placeholder')}
+            placeholder={placeholder ?? t('work.composer.placeholder')}
             className={cn(
               'min-h-14 resize-y rounded-control border bg-raised px-2.5 py-1.5 text-body text-ink transition-colors duration-(--speed) read-only:bg-page read-only:text-ink-soft',
               // Where a dragged file will go: the whole form takes it, and the box lights up to say so.

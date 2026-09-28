@@ -380,7 +380,9 @@ export function App() {
               onOpen={() => setPalette(true)}
               label={t('palette.open')}
             />
-            {/* Ask Daoris's door on the strip (HELP1), beside the palette: where a person looks for help. */}
+            {/* Ask Daoris's door on the strip (HELP1), beside the palette: where a person looks for help.
+                Named, not a bare glyph: the owner, 2026-09-29, *"there is no easy way to open the daoris
+                chat"*. The name gives way at a narrow window, where the strip is one line by rule. */}
             {attached && (
               <Tip content={t('help.open')}>
                 <Button
@@ -388,9 +390,10 @@ export function App() {
                   aria-label={t('help.open')}
                   aria-pressed={helpOpen}
                   onClick={toggleHelp}
-                  className="h-7 w-7 justify-center px-0"
+                  className="h-7 shrink-0 gap-1.5 whitespace-nowrap px-2 text-small"
                 >
                   <Icon name="help" size={15} />
+                  <span className="max-md:hidden">{t('help.title')}</span>
                 </Button>
               </Tip>
             )}
