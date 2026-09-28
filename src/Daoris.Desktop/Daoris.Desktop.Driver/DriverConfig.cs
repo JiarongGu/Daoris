@@ -93,6 +93,17 @@ public sealed record DriverConfig(
         this with { IntakeAdapter = string.IsNullOrWhiteSpace(adapter) ? null : adapter.Trim() };
 
     /// <summary>
+    /// The harness Ask Daoris runs on (HELP1, D89), or null for none: it offers only its starters then.
+    /// Off until named, as the intake is, and named apart from it: answering asks and helping a person
+    /// are two jobs, and changing one must not quietly move the other.
+    /// </summary>
+    public string? HelperAdapter { get; init; }
+
+    /// <summary>Which harness Ask Daoris runs on here, or null for none.</summary>
+    public DriverConfig WithHelper(string? adapter) =>
+        this with { HelperAdapter = string.IsNullOrWhiteSpace(adapter) ? null : adapter.Trim() };
+
+    /// <summary>
     /// The line a repository's work grows from and lands on, as the person set it (WSR2), by
     /// repository. It wins over the workspace's and over the checkout's guess (<see cref="CanonicalLine"/>).
     /// Empty — the default — is the guess alone, today's behaviour.
@@ -204,6 +215,7 @@ public sealed record DriverConfig(
             writer.WriteString("adapter", Adapter);
             // Written only when named: absent IS off, and the CLI twin writes it the same way.
             if (IntakeAdapter is not null) writer.WriteString("intakeAdapter", IntakeAdapter);
+            if (HelperAdapter is not null) writer.WriteString("helperAdapter", HelperAdapter);
             writer.WriteBoolean("notify", Notify);
             writer.WriteNumber("timeoutMinutes", TimeoutMinutes);
             writer.WriteNumber("pollSeconds", PollSeconds);
@@ -356,6 +368,8 @@ public sealed record DriverConfig(
         {
             // 🔴 Absent means OFF — see IntakeAdapter for why this is the opposite of `notify`.
             IntakeAdapter = String(root, "intakeAdapter")?.Trim() is { Length: > 0 } intake ? intake : null,
+            // Absent means OFF, as the intake's does (D89).
+            HelperAdapter = String(root, "helperAdapter")?.Trim() is { Length: > 0 } helper ? helper : null,
             Lines = BranchMap(root, "lines"),
             WorkspaceLines = BranchMap(root, "workspaceLines"),
             Landings = RuleMap(root, "landings"),

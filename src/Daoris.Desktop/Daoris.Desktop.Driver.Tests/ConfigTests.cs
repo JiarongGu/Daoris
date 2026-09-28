@@ -71,14 +71,34 @@ public sealed class ConfigTests
     [Fact]
     public void The_intake_harness_survives_every_other_edit_and_can_be_turned_off()
     {
-        var on = DriverConfig.Parse("""{"intakeAdapter":"claude-code-acp","drivable":["engine"]}""");
+        TheHarnessSurvives("intakeAdapter", config => config.IntakeAdapter, (config, adapter) => config.WithIntake(adapter));
+    }
+
+    /// <summary>
+    /// Ask Daoris's own agent (HELP1, D89): its own choice, off until named, and kept by every other
+    /// edit — named apart from the intake's, since answering asks and helping a person are two jobs.
+    /// </summary>
+    [Fact]
+    public void Ask_daoris_runs_on_its_own_agent_off_until_named()
+    {
+        Assert.Null(DriverConfig.Parse("{}").HelperAdapter);
+        Assert.DoesNotContain("helperAdapter", DriverConfig.Empty.ToJson());
+        Assert.Null(DriverConfig.Parse("""{"intakeAdapter":"claude-code-acp"}""").HelperAdapter);
+        TheHarnessSurvives("helperAdapter", config => config.HelperAdapter, (config, adapter) => config.WithHelper(adapter));
+    }
+
+    private static void TheHarnessSurvives(
+        string field, Func<DriverConfig, string?> read, Func<DriverConfig, string?, DriverConfig> set)
+    {
+        var on = DriverConfig.Parse($$"""{"{{field}}":"claude-code-acp","drivable":["engine"]}""");
 
         var edited = DriverConfig.Parse(on.WithNotify(false).WithDrivable("tools", true).ToJson());
 
-        Assert.Equal("claude-code-acp", edited.IntakeAdapter);
-        Assert.Null(DriverConfig.Parse(edited.WithIntake(null).ToJson()).IntakeAdapter);
-        Assert.Equal("stub", DriverConfig.Parse(edited.WithIntake(" stub ").ToJson()).IntakeAdapter);
+        Assert.Equal("claude-code-acp", read(edited));
+        Assert.Null(read(DriverConfig.Parse(set(edited, null).ToJson())));
+        Assert.Equal("stub", read(DriverConfig.Parse(set(edited, " stub ").ToJson())));
     }
+
 
     [Fact]
     public void A_full_config_round_trips()

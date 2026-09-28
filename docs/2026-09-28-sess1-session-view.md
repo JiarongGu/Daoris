@@ -47,8 +47,11 @@ Chromium pins a sticky element: it is solid, and pinned over that padding (`-top
 ## Not reached by this pass
 
 What the study's §5 asks and these findings did not cover, so SESS1 stays open for it:
-- **What a session waits on, at the top, with the one action that moves it.** No session on the real
-  workspace was waiting when this pass looked, so there was nothing true to look at.
+- ~~**What a session waits on, at the top, with the one action that moves it.**~~ No session on the
+  real workspace was waiting, so this was looked at on the scratch machine's parked conversation
+  (2026-09-29): it opens with *This one is waiting on you*, its question, *finish it*, *decline…* and
+  *stop it*, and says that answering in the box carries it on. A wait on another repository lives on
+  its quest (D79), and a sign-in or trust hold in *What needs you*. Nothing changed.
 - ~~**A tool's output read well**: its size when collapsed, a command's exit code and how long it ran.~~
   *Landed 2026-09-29:* a call says how long it ran, by the driver's clock (from a second on), and,
   folded, how many lines it carried. **An exit code is not a field on the wire**, and the card reads

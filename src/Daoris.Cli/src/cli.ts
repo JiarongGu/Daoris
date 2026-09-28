@@ -104,6 +104,8 @@ const USAGE = `daoris <command> [options]
                          intake <adapter>|off      answer an ask the declarations
                                                    do not settle with a session
                                                    on that harness, a login each
+                         helper <adapter>|off      the agent Ask Daoris runs on;
+                                                   it proposes, and you apply
                          strikes <n>               park a quest after n failed
                                                    sessions; 0 never parks
                          retry <quest> [--at <n>]  start a parked quest again

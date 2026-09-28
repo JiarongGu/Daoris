@@ -361,7 +361,7 @@ test('an unknown verb names the ones that exist', () => {
 
   assert.match(error.message, /unknown driver verb 'frobnicate'/);
   assert.match(
-    error.message, /list, drive, undrive, hold, resume, trees, line, landing, notify, strikes, retry, timeout, cap, adapter, intake/);
+    error.message, /list, drive, undrive, hold, resume, trees, line, landing, notify, strikes, retry, timeout, cap, adapter, intake, helper/);
   fx.cleanup();
 });
 
@@ -385,6 +385,27 @@ test('intake names the harness that answers asks, and off turns it off again', (
   assert.equal(readDriverChoices(at(fx)).intakeAdapter, null);
   // Absent, never null on disk: silence is what both artefacts read as off.
   assert.equal('intakeAdapter' in JSON.parse(readFileSync(at(fx), 'utf8')), false);
+  fx.cleanup();
+});
+
+/**
+ * Ask Daoris's own agent (HELP1, D89): the terminal's half of the desktop's `SET_HELPER`. Off until
+ * named, and apart from the intake's: answering asks and helping a person are two jobs.
+ */
+test('helper names the agent Ask Daoris runs on, apart from the intake, and off turns it off', () => {
+  const fx = makeFixture('driver-helper');
+  run(['intake', 'claude-code-acp'], at(fx));
+
+  assert.match(run(['list'], at(fx)).out, /helper {5}off/);
+  const on = run(['helper', 'codex-acp'], at(fx));
+  assert.match(on.out, /Ask Daoris/);
+  assert.deepEqual(
+    [readDriverChoices(at(fx)).helperAdapter, readDriverChoices(at(fx)).intakeAdapter], ['codex-acp', 'claude-code-acp']);
+  assert.match(run(['list'], at(fx)).out, /helper {5}codex-acp/);
+
+  run(['helper', 'off'], at(fx));
+  assert.equal('helperAdapter' in JSON.parse(readFileSync(at(fx), 'utf8')), false);
+  assert.match(captureError(() => run(['helper'], at(fx))).message, /<adapter>\|off/);
   fx.cleanup();
 });
 

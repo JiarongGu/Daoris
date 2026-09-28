@@ -95,6 +95,25 @@ describe("Daoris's own AI", () => {
     expect(onChange).toHaveBeenLastCalledWith(null);
   });
 
+  /** HELP1 (D89): Ask Daoris's own agent, a third job, off until named — and absent where it is given none. */
+  it('names an agent for Ask Daoris on its own control, off by default', async () => {
+    const onChange = vi.fn();
+    show({ search: LEXICAL, helper: { adapter: null, agents: [{ value: 'codex-acp', label: 'Codex — codex-acp' }], onChange } });
+
+    expect(screen.getByRole('combobox', { name: 'the Ask Daoris agent' })).toHaveTextContent('Off — starters only');
+    expect(screen.getByText(/offers starters from what this machine lacks/)).toBeInTheDocument();
+    const user = userEvent.setup();
+    screen.getByRole('combobox', { name: 'the Ask Daoris agent' }).focus();
+    await user.keyboard('{Enter}');
+    await user.click(await screen.findByRole('option', { name: 'Codex — codex-acp' }));
+    expect(onChange).toHaveBeenLastCalledWith('codex-acp');
+  });
+
+  it('has no Ask Daoris row where it is given none', () => {
+    show({ search: LEXICAL });
+    expect(screen.queryByRole('combobox', { name: 'the Ask Daoris agent' })).toBeNull();
+  });
+
   /** Which account runs it is the driver's answer, per circle, named the way the roster names it. */
   it('says which account an intake in each circle runs as, and which setting chose it', () => {
     show({

@@ -171,6 +171,15 @@ public sealed class DriverModule : ModuleBase
                 return State();
             }
 
+            // The agent Ask Daoris runs on (HELP1, D89), or null for none — the same file
+            // `daoris driver helper <adapter>|off` edits: one truth, two doors (D50).
+            case "SET_HELPER":
+            {
+                var adapter = Optional(request, "adapter");
+                Change(config => config.WithHelper(adapter));
+                return State();
+            }
+
             // The person's grant of a folder the driver is holding for the harness's trust (D73) — the
             // screen's half of `daoris agent trust`. Only a pair this machine's last tick held is
             // granted, in the file that tick read; the terminal is the door that names any folder.
@@ -1688,6 +1697,8 @@ public sealed class DriverModule : ModuleBase
             // Off is "" on the wire, never null: the bridge leaves a null out, and the page tells a
             // shell older than the intake by this field's absence (AGT6, seen on the window).
             IntakeAdapter = config.IntakeAdapter ?? "",
+            // Off is "" on the wire for the intake's reason: a shell older than Ask Daoris sends no field.
+            HelperAdapter = config.HelperAdapter ?? "",
             // The lines as set (WSR2), as rows rather than an object's keys: a key policy on the
             // bridge would respell a repository's name.
             Lines = config.Lines.OrderBy(p => p.Key, StringComparer.Ordinal)

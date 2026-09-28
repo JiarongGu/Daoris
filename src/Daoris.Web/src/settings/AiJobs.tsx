@@ -23,6 +23,15 @@ export type IntakeJob = {
   busy?: boolean;
 };
 
+/** Ask Daoris on THIS machine (HELP1, D89): the agent it runs on, or null — it offers its starters then. */
+export type HelperJob = {
+  adapter: string | null;
+  /** What the machine can name: each way in it has, as a person knows it. */
+  agents: { value: string; label: string }[];
+  onChange: (adapter: string | null) => void;
+  busy?: boolean;
+};
+
 /** Off, as the control's value. The terminal spells it the same way (`daoris driver intake off`). */
 const OFF = 'off';
 
@@ -46,7 +55,7 @@ const OFF = 'off';
  * intake <agent>|off` (D50), and which account an intake runs as is the driver's answer per circle,
  * read rather than recomputed, so the page cannot name an account the loop would not take.
  */
-export function AiJobs({ search, intake }: { search?: SearchTier; intake?: IntakeJob }) {
+export function AiJobs({ search, intake, helper }: { search?: SearchTier; intake?: IntakeJob; helper?: HelperJob }) {
   const { t } = useTranslation();
 
   return (
@@ -66,6 +75,7 @@ export function AiJobs({ search, intake }: { search?: SearchTier; intake?: Intak
       </SettingRow>
 
       {intake && <Intake intake={intake} />}
+      {helper && <Helper helper={helper} />}
     </Card>
   );
 }
@@ -136,6 +146,41 @@ function Intake({ intake }: { intake: IntakeJob }) {
           ))}
         </ul>
       )}
+    </SettingRow>
+  );
+}
+
+/**
+ * Ask Daoris's agent (HELP1, D89): its own choice, off until named. It reads, and proposes; every
+ * change it proposes is the person's to apply. Off, it offers its starters — the no-agent tier (D24).
+ */
+function Helper({ helper }: { helper: HelperJob }) {
+  const { t } = useTranslation();
+  // What is in effect is shown as itself, as the intake's is: a name typed at a terminal stays named.
+  const agents = helper.adapter && !helper.agents.some((agent) => agent.value === helper.adapter)
+    ? [...helper.agents, { value: helper.adapter, label: helper.adapter }]
+    : helper.agents;
+
+  return (
+    <SettingRow
+      label={t('settings.ai.helper.label')}
+      hint={t('settings.ai.helper.hint')}
+      why={t('settings.ai.helper.why')}
+      control={(
+        <SelectField
+          value={helper.adapter ?? OFF}
+          onChange={(value) => {
+            if (helper.busy) return;
+            helper.onChange(value === OFF ? null : value);
+          }}
+          options={[{ value: OFF, label: t('settings.ai.helper.off') }, ...agents]}
+          ariaLabel={t('settings.ai.helper.agent')}
+        />
+      )}
+    >
+      <p className="m-0 max-w-prose text-small text-ink-soft">
+        {helper.adapter ? t('settings.ai.helper.tierOn', { agent: helper.adapter }) : t('settings.ai.helper.tierOff')}
+      </p>
     </SettingRow>
   );
 }

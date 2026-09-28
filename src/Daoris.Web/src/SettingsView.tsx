@@ -7,7 +7,7 @@ import { useScope } from './scope';
 import {
   useAddFavorite, useBrowserSettings, useDriver, useHarnessAction, useHarnessEnded, useHarnesses, useLines,
   usePluginAction, usePlugins, useRefreshHarnesses, useRemotes, useRemoveFavorite, useRuleAction, useRuleProposal, useRules,
-  useSetBrowser, useSetExtensions, useSetIntake, useSetLanding, useSetLine, useSetNotify, useSweep, useSweepPlan, useSetStrikes, useStarts, useUnwireRemote, useUsage,
+  useSetBrowser, useSetExtensions, useSetHelper, useSetIntake, useSetLanding, useSetLine, useSetNotify, useSweep, useSweepPlan, useSetStrikes, useStarts, useUnwireRemote, useUsage,
   useWireRemote,
 } from './shell';
 import { AgentRules } from './settings/AgentRules';
@@ -188,6 +188,7 @@ function MachineAi({ search, notify }: { search?: SearchTier; notify: Notify }) 
   const roster = useHarnesses();
   const registry = useRegistry('machine');
   const setIntake = useSetIntake();
+  const setHelper = useSetHelper();
   // The circles *What a start runs on* names, spelled the same way — so both cards read one answer.
   const workspaces = workspacesOf(registry.data ?? []);
   const answer = useStarts(workspaces);
@@ -216,6 +217,20 @@ function MachineAi({ search, notify }: { search?: SearchTier; notify: Notify }) 
             onSuccess: () => notify(adapter
               ? t('settings.ai.intake.named', { agent: adapter })
               : t('settings.ai.intake.cleared')),
+            onError: failure(notify),
+          }),
+        }
+        : undefined}
+      // Ask Daoris's own agent (D89): absent on a shell older than it, "" off, as the intake's.
+      helper={driver.data && 'helperAdapter' in driver.data
+        ? {
+          adapter: driver.data.helperAdapter || null,
+          agents,
+          busy: setHelper.isPending,
+          onChange: (adapter) => setHelper.mutate({ adapter }, {
+            onSuccess: () => notify(adapter
+              ? t('settings.ai.helper.named', { agent: adapter })
+              : t('settings.ai.helper.cleared')),
             onError: failure(notify),
           }),
         }

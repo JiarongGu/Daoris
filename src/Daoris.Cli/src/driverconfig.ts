@@ -43,6 +43,8 @@ export interface DriverChoices {
   forgiven: Record<string, number>;
   /** The harness an ask's intake session runs on (INT4b, D65 §1b) — null, and no intake runs. */
   intakeAdapter: string | null;
+  /** The agent Ask Daoris runs on (HELP1, D89) — null, and it offers only its starters. */
+  helperAdapter: string | null;
   /** How long a session may run before the driver kills it — null is the driver's own default. */
   timeoutMinutes: number | null;
   /** The line each repository's work grows from and lands on, as the person set it (WSR2). */
@@ -62,7 +64,7 @@ export const DEFAULT_TIMEOUT_MINUTES = 30;
 /** Drives nothing, holds nothing — the safe shape silence takes, matching the driver's own default. */
 const EMPTY: DriverChoices = {
   drivable: [], holds: [], trees: [], cap: 2, adapter: 'claude-code', notify: true,
-  strikes: 3, forgiven: {}, intakeAdapter: null, timeoutMinutes: null, lines: {}, workspaceLines: {},
+  strikes: 3, forgiven: {}, intakeAdapter: null, helperAdapter: null, timeoutMinutes: null, lines: {}, workspaceLines: {},
   landings: {}, workspaceLandings: {}, rest: {},
 };
 
@@ -152,7 +154,7 @@ export function readDriverChoices(path = driverConfigPath()): DriverChoices {
   if (parsed === null) return { ...EMPTY, lines: {}, workspaceLines: {}, landings: {}, workspaceLandings: {}, rest: {} };
 
   const {
-    drivable, holds, trees, cap, adapter, notify, strikes, forgiven, intakeAdapter, timeoutMinutes,
+    drivable, holds, trees, cap, adapter, notify, strikes, forgiven, intakeAdapter, helperAdapter, timeoutMinutes,
     lines, workspaceLines, landings, workspaceLandings, ...rest
   } = parsed;
   return {
@@ -174,6 +176,9 @@ export function readDriverChoices(path = driverConfigPath()): DriverChoices {
     // spends a real login on every ask, so it runs only where a person named the harness for it.
     intakeAdapter: typeof intakeAdapter === 'string' && intakeAdapter.trim().length > 0
       ? intakeAdapter.trim() : null,
+    // Absent means OFF, as the intake's does — the driver's reading (D89).
+    helperAdapter: typeof helperAdapter === 'string' && helperAdapter.trim().length > 0
+      ? helperAdapter.trim() : null,
     // Read as the driver reads it (`DriverConfig`: a whole number, lifted to at least one), so the
     // listing never names a number the driver would not use.
     timeoutMinutes: typeof timeoutMinutes === 'number' && Number.isInteger(timeoutMinutes)
@@ -203,6 +208,7 @@ export function writeDriverChoices(path: string, choices: DriverChoices): void {
     forgiven: choices.forgiven,
     // Written only when named — absent IS off, and the driver writes it the same way.
     ...(choices.intakeAdapter ? { intakeAdapter: choices.intakeAdapter } : {}),
+    ...(choices.helperAdapter ? { helperAdapter: choices.helperAdapter } : {}),
     // Written only when set: absent is the driver's own default, and an edit elsewhere must not
     // pin today's default into a file that never chose it.
     ...(choices.timeoutMinutes !== null ? { timeoutMinutes: choices.timeoutMinutes } : {}),
@@ -388,6 +394,27 @@ export function commandDriver({ argv, write }: CommandArgs): ExitCode {
     // Which harness answers an ask with an intake session (INT4b, D65 §1b), or `off`. A NAME rather
     // than on|off: which harness answers asks and which does the work are two choices, and changing
     // the second must not quietly move the first. The desktop's `SET_INTAKE` is the other door (D50).
+    // The agent Ask Daoris runs on (HELP1, D89), or `off`: its own name, since answering asks and helping
+    // a person are two jobs. The desktop's `SET_HELPER` is the other door (D50).
+    case 'helper': {
+      const agent = argv.slice(1).find((token) => !token.startsWith('--'));
+      if (!agent) {
+        throw new DaorisError('`driver helper` needs <adapter>|off — e.g. `daoris driver helper claude-code-acp`.');
+      }
+
+      const off = agent === 'off';
+      writeDriverChoices(path, { ...choices, helperAdapter: off ? null : agent });
+      write(off
+        ? 'daoris: Ask Daoris runs no agent here — it offers its starters, each a door to the screen that fixes it.'
+        : `daoris: Ask Daoris runs on \`${agent}\`. It reads, and proposes; every change is yours to apply (D89).`);
+      if (!off && !(agent in TOOLCHAINS)) {
+        write('  Daoris manages no toolchain for that name — `daoris agent list` shows the ones it does.');
+      }
+
+      write(`  Written to ${path}.`);
+      return 0;
+    }
+
     case 'intake': {
       const named = argv.slice(1).find((token) => !token.startsWith('--'));
       if (!named) {
@@ -507,7 +534,7 @@ export function commandDriver({ argv, write }: CommandArgs): ExitCode {
     default:
       throw new DaorisError(
         `unknown driver verb '${verb}' — one of: list, drive, undrive, hold, resume, trees, line, landing, notify, `
-        + 'strikes, retry, timeout, cap, adapter, intake');
+        + 'strikes, retry, timeout, cap, adapter, intake, helper');
   }
 
   function list(): ExitCode {
@@ -527,6 +554,9 @@ export function commandDriver({ argv, write }: CommandArgs): ExitCode {
 
     write(`  notify     ${choices.notify ? 'on' : 'off'}`
       + `  (a session parking, or ending without you asking${choices.notify ? '' : ' — not said'})`);
+    write(choices.helperAdapter
+      ? `  helper     ${choices.helperAdapter}  (Ask Daoris — it proposes, and you apply)`
+      : '  helper     off — Ask Daoris offers its starters; `daoris driver helper <adapter>` names an agent');
     write(choices.intakeAdapter
       ? `  intake     ${choices.intakeAdapter}  (an ask the declarations do not settle opens a session — a login each)`
       : '  intake     off — asks are answered by declarations only; `daoris driver intake <adapter>` names a harness');
