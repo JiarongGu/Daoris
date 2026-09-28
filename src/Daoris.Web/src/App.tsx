@@ -538,6 +538,10 @@ export function App() {
           )}
         {attached && helpOpen && (
           <AskDaoris
+            // What is on the screen (HELP1b): the view, the scope, the settings domain on Settings, and
+            // the attended session on Sessions with what a parked one asks.
+            where={{ view, workspace: scope.workspace ?? null, settings: settingsSection }}
+            attending={attending}
             onClose={() => setHelpOpen(false)}
             onGo={(door) => {
               if (door.view === 'settings' && door.section) openSettings(door.section, door.anchor);

@@ -96,6 +96,36 @@ public sealed class HelpChatTests : IDisposable
         Assert.Equal(HelpRoom.Repository, Assert.Single(usage.Sessions).Repository);
     }
 
+    /// <summary>
+    /// Where the person is (HELP1b): handed to the agent ahead of their words, and kept in the record as
+    /// what it was told — never as something the person said.
+    /// </summary>
+    [Fact]
+    public async Task Where_the_person_is_reaches_the_agent_ahead_of_their_words_and_is_not_theirs_in_the_record()
+    {
+        await using var service = StandInService.Start(Path.Combine(_home, "engine"));
+        var (runner, events, _, client, config) = Runner(service);
+        using var _c = client;
+        using var _r = runner;
+        var id = (await runner.StartHelpAsync("acp-stub", config, Machine)).SessionId!;
+        string Seen() => $"heard [{string.Join(" | ", StubFile.Lines(Heard))}]";
+
+        Assert.True(runner.Say(id, "why is this parked?", preface: "Where the person is now: the Sessions view."));
+        Assert.True(runner.Say(id, "and now?"));
+        await Until(() => events.Page(id).Events.Count(e => e.Kind == SessionEventKind.Turn) == 2, Seen);
+
+        Assert.Equal(
+            // Noted as JSON, so the blank line between the preface and the words is spelled `\n\n`.
+            ["prompt: \"Where the person is now: the Sessions view.\\n\\nwhy is this parked?\"", "prompt: \"and now?\""],
+            StubFile.Lines(Heard).Where(line => line.StartsWith("prompt: ", StringComparison.Ordinal)));
+        var kept = events.Page(id).Events
+            .Where(e => e.Kind is SessionEventKind.User or SessionEventKind.Note)
+            .Select(e => $"{e.Kind}: {e.Text}");
+        Assert.Equal(
+            ["note: told where the person is: Where the person is now: the Sessions view.", "user: why is this parked?", "user: and now?"],
+            kept);
+    }
+
     /// <summary>One conversation per machine: a second while one runs is refused in the ledger's words, naming it.</summary>
     [Fact]
     public async Task A_second_conversation_while_one_runs_is_refused_naming_it()
@@ -162,6 +192,7 @@ public sealed class HelpChatTests : IDisposable
                 send({ jsonrpc: '2.0', id: frame.id, result: {} });
               } else if (frame.method === 'session/prompt') {
                 const said = frame.params.prompt[0].text;
+                note('prompt: ' + JSON.stringify(said));
                 send({ jsonrpc: '2.0', method: 'session/update', params: { sessionId: 'acp-help',
                   update: { sessionUpdate: 'agent_message_chunk', content: { type: 'text', text: 'heard ' + said } } } });
                 send({ jsonrpc: '2.0', method: 'session/update', params: { sessionId: 'acp-help',

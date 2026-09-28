@@ -443,19 +443,20 @@ public sealed class ChatRunner(
     /// refusal — too many, too large — reaches the person while they are still looking, and nothing
     /// half-kept is sent.
     /// </param>
+    /// <param name="preface">Where the person is (HELP1b), handed to the agent ahead of the words, or null.</param>
     /// <exception cref="DriverException">The files are more than a message carries.</exception>
-    public bool Say(string sessionId, string message, IReadOnlyList<ChatUpload>? files = null)
+    public bool Say(string sessionId, string message, IReadOnlyList<ChatUpload>? files = null, string? preface = null)
     {
         var held = _turned.ContainsKey(sessionId) || _talking.ContainsKey(sessionId);
         var kept = held && files is { Count: > 0 } ? ChatFiles.Keep(home, sessionId, files) : [];
-        var said = new ChatMessage(message, kept);
+        var said = new ChatMessage(message, kept) { Preface = ChatMessage.Bound(preface) };
 
         if (_turned.TryGetValue(sessionId, out var chat)) return chat.Turns.Say(said);
 
         // A text-only door keeps the person's words where it keeps the agent's — the console. In the
         // record they would be half a conversation: questions with no answers beside them. A file it is
         // handed is named by its path, which any agent can read.
-        var text = message + ChatFiles.PathLines(kept);
+        var text = said.Prompt + ChatFiles.PathLines(kept);
         var framed = _talking.TryGetValue(sessionId, out var adapter) ? adapter.FrameMessage(text) : text;
         return processes.Send(sessionId, framed);
     }
@@ -497,6 +498,14 @@ public sealed class ChatRunner(
         Text = message.Text,
         Files = message.Files.Count > 0 ? [.. message.Files.Select(file => file.Name)] : null,
     };
+
+    /// <summary>
+    /// What the agent was told beside the person's words (HELP1b), as the record keeps it: a note, never
+    /// the person's, so a reader later sees what the agent knew and who said what.
+    /// </summary>
+    private static SessionEvent? Told(ChatMessage message) => message.Preface is { Length: > 0 } preface
+        ? new SessionEvent { Kind = SessionEventKind.Note, Text = $"told where the person is: {preface}" }
+        : null;
 
     /// <summary>One event into a conversation's record. Sent is what the person asked for; the record's failure is its own.</summary>
     private void Record(string sessionId, SessionEvent e) => _events.Keep(sessionId, e, say: null);
@@ -739,11 +748,12 @@ public sealed class ChatRunner(
         {
             if (await _open.Task.ConfigureAwait(false) is not { } session) return;
 
+            if (Told(message) is { } told) _record(told);
             _record(Asked(message));
             try
             {
                 // Each attached file a `resource_link` to where it is kept (CONV4c).
-                await session.PromptAsync(message.Text, CancellationToken.None, sent, message.Files).ConfigureAwait(false);
+                await session.PromptAsync(message.Prompt, CancellationToken.None, sent, message.Files).ConfigureAwait(false);
             }
             catch (Exception error) when (error is DriverException or IOException or ObjectDisposedException
                                               or InvalidOperationException)
@@ -824,10 +834,11 @@ public sealed class ChatRunner(
                 {
                     var ended = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
                     lock (_gate) _turn = ended;
+                    if (Told(message) is { } told) record(told);
                     record(Asked(message));
                     // Each attached file named by its path, which the agent reads with its own tool
                     // (CONV4c, measured); the record keeps the person's words, not these lines.
-                    if (!processes.Send(sessionId, adapter.FrameMessage(message.Text + ChatFiles.PathLines(message.Files))))
+                    if (!processes.Send(sessionId, adapter.FrameMessage(message.Prompt + ChatFiles.PathLines(message.Files))))
                     {
                         // Nothing is listening: the process is going, and its watch concludes the record.
                         record(new SessionEvent { Kind = SessionEventKind.Note, Text = "the message could not be sent: the harness had gone." });

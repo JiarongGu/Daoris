@@ -114,8 +114,21 @@ line git can name. With an agent named, a starter is also a first message.
      from the room. Its room now also says what a landing pattern may say, which it had to guess.
    - **Found on the same look:** the strip's door was a bare glyph, and the owner found no easy way
      to open the chat. It is a named button now, the name giving way at a narrow window.
-2. **HELP1b**: where the person is, as the preface.
-3. **HELP1c**: `setting_propose` and `ask_propose`, the validation, the card, Apply.
+2. **HELP1b**: where the person is, as the preface. *Built 2026-09-29:* one line, agent-facing and
+   so untranslated (`help/where.ts`): the view or the Settings domain, the workspace in scope, and on
+   Sessions the attended session with its state and up to 280 characters of what a parked one asks.
+   The page sends it with a message only when it changed since the last one that conversation was
+   handed. The driver hands the agent the preface, a blank line, then the words, on every door, and
+   the record keeps it as a note, *told where the person is*, never as the person's words. A refusal on
+   the screen is not carried yet: nothing holds one in a shape the page can hand over.
+3. **HELP1c**: `setting_propose` and `ask_propose`, the validation, the card, Apply. *Plan
+   (2026-09-29):* the connector's two tools write a file each under the home the driver names on the
+   connector (`<home>/help/proposals/<id>.json`, PERM2's shape), shape-checked there and nothing more:
+   the route's own validation is the driver's, which the service cannot run. So the driver checks a
+   pending proposal with the route's code when the panel asks for them; one the route would refuse is
+   never shown, and its refusal goes back into the conversation in the route's words. *Apply* makes
+   the same edit the screen's route makes, and *Not now* dismisses; either result goes back into the
+   conversation as the person's next message.
 4. **HELP1d**: the starters, and the no-agent tier. *Built 2026-09-29:* waiting sessions, nothing
    registered or driven, a tool no account is signed in to, a repository with no line, and Ask Daoris
    with no agent, each with its door and its terminal command; the strip's button, the palette's

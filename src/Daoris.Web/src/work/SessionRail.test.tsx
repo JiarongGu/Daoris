@@ -232,6 +232,15 @@ describe('the session rail', () => {
     expect(within(group).queryByText('busy')).toBeNull();
   });
 
+  /** HELP1a: Ask Daoris's conversations group under its own name, never the record's `daoris:help`. */
+  it('names Ask Daoris\'s group by its name, not by the repository its records are kept in', async () => {
+    SESSIONS = [{ ...base, id: 'h1e1p000', quest: null, kind: 'chat', repository: 'daoris:help', state: 'working' }];
+    show(<SessionRail notify={() => {}} />);
+
+    expect(await screen.findByRole('heading', { name: 'Ask Daoris' })).toBeInTheDocument();
+    expect(screen.queryByText('daoris:help')).toBeNull();
+  });
+
   it('says busy without a name when the session holds the registered root', async () => {
     show(<SessionRail notify={() => {}} />);
 

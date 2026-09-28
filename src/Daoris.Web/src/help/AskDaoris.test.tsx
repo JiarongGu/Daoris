@@ -21,6 +21,7 @@ vi.mock('@shenora/react', () => ({
 
 import '../i18n';
 import { AskDaoris } from './AskDaoris';
+import type { HelpWhere } from './where';
 
 const HELP = {
   id: 'h1e1p000', quest: null, repository: 'daoris:help', adapter: 'claude-code-acp', state: 'working',
@@ -33,7 +34,11 @@ const asked: string[] = [];
 
 function respond(url: string): Response {
   asked.push(url);
-  if (url.startsWith('/api/sessions')) return Response.json(SESSIONS);
+  // As the ledger answers: an ended session only to a caller that asks for closed ones.
+  if (url.startsWith('/api/sessions')) {
+    return Response.json(url.includes('includeClosed=true') ? SESSIONS
+      : SESSIONS.filter((row) => ['queued', 'starting', 'working', 'awaiting-person'].includes((row as { state: string }).state)));
+  }
   if (url.startsWith('/api/registry')) return Response.json([]);
   throw new Error(`unstubbed request: ${url}`);
 }
@@ -54,12 +59,12 @@ function bridge(start: { sessionId: string | null; message: string } = { session
   });
 }
 
-function show() {
+function show(where?: Omit<HelpWhere, 'session'>, attending: string | null = null) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
     <QueryClientProvider client={client}>
       <Tooltip.Provider>
-        <AskDaoris onGo={vi.fn()} onClose={vi.fn()} />
+        <AskDaoris where={where} attending={attending} onGo={vi.fn()} onClose={vi.fn()} />
       </Tooltip.Provider>
     </QueryClientProvider>,
   );
@@ -93,6 +98,30 @@ describe('Ask Daoris, with an agent named', () => {
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'START_HELP', {});
     // Its conversations are read across every workspace: it belongs to none.
     expect(asked.some((url) => url.includes('repository=daoris%3Ahelp') && !url.includes('workspace='))).toBe(true);
+  });
+
+  /** HELP1b: where the person is goes ahead of their words, and an unchanged screen is not said twice. */
+  it('hands the conversation where the person is, once for as long as the screen is the same', async () => {
+    // The attended session has ENDED — what the person reads is named all the same (found looking at HELP1b).
+    SESSIONS = [HELP, { ...HELP, id: 'p4rk3d00', repository: 'engine', state: 'completed', note: 'Which one?' }];
+    bridge();
+    show({ view: 'sessions', workspace: 'aurora' }, 'p4rk3d00');
+
+    const box = await screen.findByLabelText('message');
+    await userEvent.type(box, 'what is it asking?');
+    await userEvent.click(screen.getByRole('button', { name: 'send' }));
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_INPUT', {
+      payload: {
+        id: HELP.id, text: 'what is it asking?',
+        preface: 'Where the person is now: the Sessions view, workspace `aurora`, attending session `p4rk3d00` in `engine`, which is completed. It says: "Which one?".',
+      },
+    }));
+
+    await userEvent.type(box, 'and then?');
+    await userEvent.click(screen.getByRole('button', { name: 'send' }));
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_INPUT', {
+      payload: { id: HELP.id, text: 'and then?' },
+    }));
   });
 
   it('keeps the words in the box, with the driver\'s sentence, when no conversation can start', async () => {

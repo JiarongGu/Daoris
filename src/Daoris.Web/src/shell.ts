@@ -1189,10 +1189,12 @@ export const useStarts = (workspaces: string[]) => {
  */
 export const useSendMessage = () =>
   useMutation({
-    mutationFn: async (message: { id: string; text: string; files?: File[] }) => {
+    // A preface (HELP1b) is where the person is, handed to the agent ahead of the words; absent for most.
+    mutationFn: async (message: { id: string; text: string; files?: File[]; preface?: string }) => {
       const files = message.files?.length ? await Promise.all(message.files.map(toUpload)) : [];
       return call<{ sent: boolean }>('SESSION_INPUT', {
         id: message.id, text: message.text, ...(files.length > 0 ? { files } : {}),
+        ...(message.preface ? { preface: message.preface } : {}),
       });
     },
   });

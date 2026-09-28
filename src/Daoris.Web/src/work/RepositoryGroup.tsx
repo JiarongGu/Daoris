@@ -19,9 +19,11 @@ import { Pill } from '../ui';
  * would be inventing news out of a query that had not returned.
  */
 export function RepositoryGroup({
-  repository, count, drivable, held, busy, adopted, hasCheckout, children,
+  repository, label, count, drivable, held, busy, adopted, hasCheckout, children,
 }: {
   repository: string;
+  /** What the header says, where the group is not a repository's (Ask Daoris's). Absent, the repository. */
+  label?: string;
   /** How many session rows sit under this header. */
   count: number;
   /** The machine's standing choice: the driver may start work here (D46 §6). */
@@ -59,7 +61,7 @@ export function RepositoryGroup({
   return (
     <section className="border-t border-line first:border-t-0">
       <header className="flex items-baseline justify-between gap-2 px-2.5 pb-1 pt-2.5">
-        <h3 className="m-0 truncate text-small font-semibold text-ink">{repository}</h3>
+        <h3 className="m-0 truncate text-small font-semibold text-ink">{label ?? repository}</h3>
         <span
           title={t('work.group.sessions', { count })}
           className="shrink-0 font-mono text-meta text-ink-faint"

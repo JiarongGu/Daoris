@@ -1,4 +1,4 @@
-import { type RefObject, useState } from 'react';
+import { type RefObject, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { HELP_REPOSITORY } from '../api';
 import { sentence } from '../format';
@@ -10,6 +10,7 @@ import { SESSION_ACTIVE } from '../ui';
 import { Composer } from '../work/Composer';
 import { SessionConversation } from '../work/SessionConversation';
 import type { AskConversationSlot } from './AskPanel';
+import { type HelpWhere, prefaceOf } from './where';
 
 /**
  * Ask Daoris's conversation (HELP1a, D89): the organism that holds the newest help session's record
@@ -22,10 +23,14 @@ import type { AskConversationSlot } from './AskPanel';
  * no start button to press before asking. *New conversation* finishes the one running and clears the
  * panel; the next message opens the next.
  *
+ * **Where the person is goes ahead of their words** (HELP1b): the view, the workspace in scope, the
+ * session they attend and what a parked one asks — said when it changed since the last message to that
+ * conversation, so the agent is not handed the same line every turn.
+ *
  * Its words reach nothing but the harness, as every conversation's do (D24): the driver makes no model
  * call. Desktop-only for the console's reason (D47 §4): the record arrives over the bridge.
  */
-export function useAskConversation(scroller: RefObject<HTMLElement | null>) {
+export function useAskConversation(scroller: RefObject<HTMLElement | null>, where?: HelpWhere) {
   const { t } = useTranslation();
   const sessions = useHelpSessions();
   // The session the person started again from: shown no longer, whatever the list still says.
@@ -55,10 +60,19 @@ export function useAskConversation(scroller: RefObject<HTMLElement | null>) {
     if (text) setDraft((was) => [text, was.trim()].filter(Boolean).join('\n\n'));
   };
 
-  const deliver = (id: string, text: string, files: File[]) => send.mutate({ id, text, files }, {
-    onSuccess: (answer) => { if (!answer.sent) giveBack(text, t('help.notSent')); },
-    onError: (error) => giveBack(text, sentence(error)),
-  });
+  // The last preface each conversation was handed, so an unchanged screen is not said again.
+  const told = useRef(new Map<string, string>());
+  const deliver = (id: string, text: string, files: File[]) => {
+    const now = where ? prefaceOf(where) : undefined;
+    const preface = now && told.current.get(id) !== now ? now : undefined;
+    send.mutate({ id, text, files, ...(preface ? { preface } : {}) }, {
+      onSuccess: (answer) => {
+        if (!answer.sent) giveBack(text, t('help.notSent'));
+        else if (preface) told.current.set(id, preface);
+      },
+      onError: (error) => giveBack(text, sentence(error)),
+    });
+  };
 
   const onSend = (text: string, files: File[]) => {
     setRefusal(null);

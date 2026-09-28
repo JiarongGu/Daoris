@@ -1,6 +1,6 @@
 import { Fragment, type ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { Quest, Session } from '../api';
+import { HELP_REPOSITORY, type Quest, type Session } from '../api';
 import { useQuests, useRegistry, useSessions } from '../queries';
 import { partition, waitingFirst } from './rail';
 import { type SessionHit, useDriver, useOpenWindow, useSessionOpenings, useSessionSearch } from '../shell';
@@ -203,6 +203,8 @@ export function SessionRail({ selected = null, onSelect, notify, compact = false
           <RepositoryGroup
             key={repository}
             repository={repository}
+            // Ask Daoris's records are kept in `daoris:help`, which is no repository and no name (HELP1a).
+            label={repository === HELP_REPOSITORY ? t('help.title') : undefined}
             count={rows.length}
             // The driver answers only where a shell is attached (D46 §6); with no answer these stay
             // undefined, and the header asserts nothing rather than reading silence as "no".

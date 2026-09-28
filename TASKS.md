@@ -21,8 +21,8 @@ lists.
 
 ## State
 
-**Counts, and this is their one home:** sixteen commands, **514 CLI tests, 531 service, 877 driver,
-290 desktop modules, 80 devkit, 1293 web unit, 21 Playwright**, 66/66 release rehearsal, **291/291
+**Counts, and this is their one home:** sixteen commands, **514 CLI tests, 531 service, 878 driver,
+290 desktop modules, 80 devkit, 1301 web unit, 21 Playwright**, 66/66 release rehearsal, **291/291
 family rehearsal** (it names its own phases when you run it), **45/45 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge
 documents, 5 skills, 7 packs. The always-loaded core is **22,492 of 26,000 bytes** — a span in
@@ -174,7 +174,7 @@ requirements, and the owner's calls. Its recommended order is the order below.
   circle (the real one has twenty-nine repositories). Asks, chains and what depends on what, each its
   own kind of line, from a declared source and never guessed. Open-only or a time window. Sessions
   live on their nodes. Looked at with twenty-nine nodes in both themes.
-- [ ] **HELP1 — ask Daoris** (study §4; the design note is `docs/2026-09-29-ask-daoris-design.md`, its two calls made as D89; **in progress**: its agent choice, HELP1d (the panel with its starters) and HELP1a (the conversation in its room) have landed; HELP1b, where the person is, and HELP1c, its proposals, are open). A chat about Daoris itself, from a button
+- [ ] **HELP1 — ask Daoris** (study §4; the design note is `docs/2026-09-29-ask-daoris-design.md`, its two calls made as D89; **in progress**: its agent choice, HELP1d (the panel with its starters), HELP1a (the conversation in its room) and HELP1b (where the person is) have landed; HELP1c, its proposals, is open). A chat about Daoris itself, from a button
   on the strip, the palette and `F1`, in the right dock. It knows the view and the selection. It
   helps by proposing Daoris's own terminal commands (D50), each confirmed by the person, and turns
   *start something* into an ask. Starter prompts come from what the machine lacks. It is a harness

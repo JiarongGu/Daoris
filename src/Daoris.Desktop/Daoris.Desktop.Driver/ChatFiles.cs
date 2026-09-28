@@ -10,7 +10,24 @@ public sealed record ChatUpload(string Name, byte[] Content);
 public sealed record KeptFile(string Name, string Path);
 
 /// <summary>One message of a conversation: the person's words and the files they attached (CONV4c).</summary>
-public sealed record ChatMessage(string Text, IReadOnlyList<KeptFile> Files);
+public sealed record ChatMessage(string Text, IReadOnlyList<KeptFile> Files)
+{
+    /// <summary>The most a preface carries: a few lines of where the person is, never a document.</summary>
+    public const int PrefaceLimit = 1200;
+
+    /// <summary>
+    /// Where the person is, handed to the agent ahead of their words (HELP1b) — what the screen already
+    /// shows, said when it changed. Never the person's words: the record keeps it as what the agent was told.
+    /// </summary>
+    public string? Preface { get; init; }
+
+    /// <summary>What the agent is handed: the preface, a blank line, then the person's words.</summary>
+    public string Prompt => Preface is { Length: > 0 } preface ? $"{preface}\n\n{Text}" : Text;
+
+    /// <summary>A preface as a message carries it: trimmed, bounded, and null when there is none.</summary>
+    public static string? Bound(string? preface) =>
+        preface?.Trim() is { Length: > 0 } said ? said.Length > PrefaceLimit ? said[..PrefaceLimit] : said : null;
+}
 
 /// <summary>
 /// What a person attaches to a conversation (CONV4c), kept under the home for the session it was sent

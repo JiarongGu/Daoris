@@ -5,6 +5,7 @@ import { byTool } from '../tools';
 import { useAskConversation } from './AskConversation';
 import { AskPanel } from './AskPanel';
 import { type StarterDoor, starters } from './starters';
+import { attendedOf, type HelpWhere } from './where';
 
 /**
  * Ask Daoris's organism (HELP1, D89): it reads what the machine holds — the registry, the driver, the
@@ -12,14 +13,24 @@ import { type StarterDoor, starters } from './starters';
  * the conversation (HELP1a). Shell-only: most of it is this machine's, which a browser may not learn
  * (D47 §4).
  */
-export function AskDaoris({ onGo, onClose }: { onGo: (door: StarterDoor) => void; onClose: () => void }) {
+export function AskDaoris({ where, attending = null, onGo, onClose }: {
+  /** What is on the screen, told to the conversation ahead of the person's words (HELP1b). */
+  where?: Omit<HelpWhere, 'session'>;
+  /** The session attended, found here among every session — an ended one is still what the person reads. */
+  attending?: string | null;
+  onGo: (door: StarterDoor) => void;
+  onClose: () => void;
+}) {
   const registry = useRegistry('machine');
   const driver = useDriver();
   const roster = useHarnesses();
   const sessions = useSessions(null, false);
   const lines = useLines();
   const scroller = useRef<HTMLDivElement>(null);
-  const conversation = useAskConversation(scroller);
+  // Every session, ended ones included: the same query Sessions makes, so it is asked once.
+  const everything = useSessions(null, true);
+  const conversation = useAskConversation(
+    scroller, where ? { ...where, session: attendedOf(attending, everything.data ?? []) } : undefined);
 
   const helper = driver.data?.helperAdapter || null;
   const found = starters({

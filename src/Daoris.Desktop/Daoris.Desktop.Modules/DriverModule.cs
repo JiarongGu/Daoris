@@ -352,7 +352,8 @@ public sealed class DriverModule : ModuleBase
                 if (_loop.Processes.RefusesInput(id) is { } why) throw new DriverException(why);
                 // What the person attached, kept for this conversation before the message goes (CONV4c).
                 var files = request.Payload is { } payload ? FilesOf(payload) : [];
-                return new { Sent = _loop.Chat?.Say(id, text, files) ?? false };
+                // Where the person is (HELP1b), which the agent is handed ahead of the words; absent for most.
+                return new { Sent = _loop.Chat?.Say(id, text, files, Optional(request, "preface")) ?? false };
             }
 
             // Finishing a conversation rather than cutting it off: the harness gets end-of-input, says
