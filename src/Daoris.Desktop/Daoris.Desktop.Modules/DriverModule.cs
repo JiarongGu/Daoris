@@ -119,13 +119,13 @@ public sealed class DriverModule : ModuleBase
             {
                 var service = _loop.Service ?? throw NotReady();
                 var snapshot = await service.SnapshotAsync(cancellationToken).ConfigureAwait(false);
+                var config = DriverConfig.Load(_loop.ConfigPath);
                 var lines = await CanonicalLine.OfAsync(
-                    DriverConfig.Load(_loop.ConfigPath),
+                    config,
                     snapshot.Repositories
                         .OrderBy(known => known.Repository, StringComparer.Ordinal)
-                        .Select(known => (known.Repository, known.Workspace, known.Root)),
+                        .Select(known => (known.Repository, (string?)known.Workspace, known.Root)),
                     cancellationToken).ConfigureAwait(false);
-                var config = DriverConfig.Load(_loop.ConfigPath);
                 return new
                 {
                     Lines = lines.Select(line => new { line.Repository, line.Workspace, line.Branch, line.Source }).ToArray(),
