@@ -3780,3 +3780,27 @@ work unlanded forever, and a person forcing removals by hand is the risk the pro
 - **Deleting a branch git calls merged (`branch -d`).** Git asks only about the checkout's HEAD, so a
   branch landed on a feature branch would stay, and one merged into whatever the checkout happens to
   be on would go.
+
+## D89 — Ask Daoris is a session that proposes, on an agent of its own choosing, and every change is confirmed (2026-09-29)
+
+**Decision (HELP1, the owner's calls on `docs/2026-09-29-ask-daoris-design.md` §8).** Ask Daoris is a
+conversation with a harness session in a room of its own (`<home>/help/`), opened from the app strip,
+the palette and F1 into the right dock. It reads, and it proposes. A setting is proposed through the
+same route the screen uses, and an ask through the ask door. **It runs on an agent of its own**, named
+under Settings → *Daoris's own AI* as a third job, off until named, as the intake is. **Every change is
+confirmed**: its card says what it changes and the terminal command that does the same, and nothing
+applies until the person presses Apply. With no agent named, it offers starters from what the machine
+lacks, each a door to the screen that fixes it (D24's no-model tier).
+
+**Why.** The owner, setting the first real workspace's landing rule: *"we will need some chat agent to
+support configure for workspace"*. Proposing through the screen's own routes keeps what it can do
+exactly what the person can do (D50), and PERM2 already settled that an agent proposes and the person
+applies (D74).
+
+**Rejected.**
+- **Following the intake's agent.** Answering asks and helping a person are two jobs that may want
+  two agents, and changing one must not quietly move the other (the intake's own reasoning, INT4b).
+- **Remembering a confirmation per kind of change.** Not in this build: every change is the person's
+  press.
+- **Running `daoris` commands from the room.** The install does not carry the CLI, and a helper that
+  ran commands would be a second door with its own approval problem.

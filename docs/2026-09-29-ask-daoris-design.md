@@ -1,7 +1,7 @@
 # Ask Daoris — a conversation about Daoris itself (HELP1)
 
 **Carried by:** HELP1 in `TASKS.md`. **Status:** design, written before the build, with the owner's
-two calls marked (§8). The requirement is `docs/2026-09-28-after-the-first-workspace.md` §4. The owner,
+two calls made (§8, D89). The requirement is `docs/2026-09-28-after-the-first-workspace.md` §4. The owner,
 setting the first real workspace's landing rule (2026-09-28): *"I think we will need some chat agent to
 support configure for workspace"*.
 
@@ -76,13 +76,13 @@ lacks**, each a door to the screen that fixes it and its terminal command: no wo
 drivable, an agent with no account signed in, a session waiting on the person, a repository with no
 line git can name. With an agent named, a starter is also a first message.
 
-## 8. The owner's calls
+## 8. The owner's calls — made (2026-09-29, D89)
 
-1. **Which agent and account it runs on** when a machine has several. *Proposed:* a third job under
-   Settings → *Daoris's own AI*, with its own agent choice and the account each circle's default
-   names, off until named, as the intake is.
-2. **Whether a confirmation may be remembered** per kind of change. *Proposed:* not in this build.
-   Every change is confirmed.
+1. **Which agent and account it runs on**: *its own choice in Settings*. A third job under Settings →
+   *Daoris's own AI*, with its own agent choice and the account each circle's default names, off
+   until named, as the intake is.
+2. **Whether a confirmation may be remembered**: *always confirm*. Every change shows its card, and
+   nothing applies on its own.
 
 ## 9. Build order
 
