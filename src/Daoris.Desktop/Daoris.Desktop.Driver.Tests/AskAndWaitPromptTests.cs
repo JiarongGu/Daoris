@@ -126,6 +126,22 @@ public sealed class AskAndWaitPromptTests
     }
 
     /// <summary>
+    /// 🔴 The owner, having answered a parked session: *"it does not display my input"*. The carry-on's
+    /// record opens with the target and then the person's answer, as theirs, so the conversation shows
+    /// what they said rather than folding it inside the target.
+    /// </summary>
+    [Fact]
+    public void A_carry_on_after_the_persons_answer_opens_with_the_target_and_then_their_words()
+    {
+        var opening = Daoris.Driver.Driver.Opening("the target", "go ahead with the PUT");
+
+        Assert.Equal(
+            [("user", "target", "the target"), ("user", "person", "go ahead with the PUT")],
+            opening.Select(e => (e.Kind, e.Origin, e.Text)));
+        Assert.Equal([("user", "target", "the target")], Daoris.Driver.Driver.Opening("the target", null).Select(e => (e.Kind, e.Origin, e.Text)));
+    }
+
+    /// <summary>
     /// CHAIN2: a next step whose tree grew from its parent's branch is told the work is here, so it
     /// neither asks for a merge nor tries to make one — FG5's verify step asked for exactly that.
     /// </summary>

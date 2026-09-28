@@ -569,10 +569,19 @@ public sealed partial class Driver(
                         ? $"resumes `#{quest.Id}` now that `#{answered.Id}` is answered"
                           + (resumedIn is null ? "." : $", in the tree session `{start.Resumes!.Session}` asked from.")
                         : carryingOn
-                            ? $"carries `#{quest.Id}` on after session `{start.Resumes!.Session}` was cut off"
+                            ? (start.Resumes!.Answer is not null
+                                ? $"carries `#{quest.Id}` on with your answer to session `{start.Resumes.Session}`"
+                                : $"carries `#{quest.Id}` on after session `{start.Resumes.Session}` was cut off")
                               + (resumedIn is null ? "." : ", in the tree it worked in.")
                             : null),
                 ct: ct).ConfigureAwait(false);
+
+            // The answer beneath the question it answers (STANDDOWN2): the session that asked ends with
+            // the person's words in its own record, where they read the question.
+            if (carryingOn && start.Resumes!.Answer is { Length: > 0 } answeredWith)
+            {
+                _events.Keep(start.Resumes.Session, new SessionEvent { Kind = SessionEventKind.User, Origin = "person", Text = answeredWith }, say: null);
+            }
 
             var transcript = Path.Combine(home, "sessions", $"{sessionId}.log");
             Directory.CreateDirectory(Path.GetDirectoryName(transcript)!);
@@ -882,9 +891,9 @@ public sealed partial class Driver(
         var acp = adapter.Wire == SessionWire.Acp
             // The posture rides with it, because it is the ADAPTER's (ACP3): three harnesses name the
             // same D37 boundary three different ways, and one of them does not name it on the wire.
-            ? CaptureAcpAsync(process, transcript, sessionId, cwd, prompt, adapter.AcpPosture, harnessNotice, ct, scope, rules.Meta, handedServers ?? _servers)
+            ? CaptureAcpAsync(process, transcript, sessionId, cwd, prompt, adapter.AcpPosture, harnessNotice, ct, scope, rules.Meta, handedServers ?? _servers, target.PersonSaid)
             : null;
-        var structured = acp is null ? Structured(adapter, process, transcript, sessionId, prompt, ct, preamble) : null;
+        var structured = acp is null ? Structured(adapter, process, transcript, sessionId, prompt, ct, preamble, target.PersonSaid) : null;
         Task capture = acp ?? structured ?? CaptureAsync(process, transcript, sessionId, ct, preamble);
 
         await service.AdvanceAsync(sessionId, "working", transcript: transcript, ct: ct).ConfigureAwait(false);
@@ -943,12 +952,30 @@ public sealed partial class Driver(
     /// </summary>
     private Task<AcpUsage?>? Structured(
         ISessionAdapter adapter, Process process, string transcript, string sessionId, string prompt,
-        CancellationToken ct, string? preamble = null) =>
+        CancellationToken ct, string? preamble = null, string? personSaid = null) =>
         adapter.StructuredOutput() is { } mapper
             ? CaptureStructuredAsync(
                 process.StandardOutput, process.StandardError, transcript, sessionId, output, _events, mapper,
-                prompt, ct, preamble)
+                prompt, ct, preamble, personSaid: personSaid)
             : null;
+
+    /// <summary>
+    /// A session's opening in its record: the target the driver composed, then — for a carry-on the person
+    /// answered (STANDDOWN2) — their answer, as theirs.
+    /// </summary>
+    /// <remarks>
+    /// 🔴 The owner, having answered a parked session (2026-09-29): *"it does not display my input"*. The
+    /// words travelled only inside the target, which the conversation folds, so the one thing the person
+    /// said was nowhere they would look.
+    /// </remarks>
+    internal static IReadOnlyList<SessionEvent> Opening(string prompt, string? personSaid) =>
+        personSaid is { Length: > 0 } said
+            ?
+            [
+                new SessionEvent { Kind = SessionEventKind.User, Origin = "target", Text = prompt },
+                new SessionEvent { Kind = SessionEventKind.User, Origin = "person", Text = said },
+            ]
+            : [new SessionEvent { Kind = SessionEventKind.User, Origin = "target", Text = prompt }];
 
     /// <summary>
     /// The protocol door's capture (D53): an ACP session held over this process's stdio, with the
@@ -976,7 +1003,7 @@ public sealed partial class Driver(
         Process process, string transcript, string sessionId, string cwd, string prompt,
         string? posture, string? harnessNotice, CancellationToken ct,
         IReadOnlyDictionary<string, string>? scope = null, object? meta = null,
-        IReadOnlyList<AcpMcpServer>? servers = null)
+        IReadOnlyList<AcpMcpServer>? servers = null, string? personSaid = null)
     {
         await using var file = new StreamWriter(transcript, append: false);
 
@@ -1000,8 +1027,9 @@ public sealed partial class Driver(
 
         try
         {
-            // What was asked, first: the target the driver composed is the conversation's opening line.
-            Event(new SessionEvent { Kind = SessionEventKind.User, Origin = "target", Text = prompt });
+            // What was asked, first: the target the driver composed is the conversation's opening line,
+            // and a person's answer it carries on from follows it, as theirs.
+            foreach (var opening in Opening(prompt, personSaid)) Event(opening);
 
             // What this harness is doing that daoris has not been able to govern (ACP3). On the
             // transcript rather than swallowed: it is a fact about how this session ran, and the
@@ -1202,7 +1230,7 @@ public sealed partial class Driver(
     internal static async Task<AcpUsage?> CaptureStructuredAsync(
         TextReader stdout, TextReader stderr, string transcript, string sessionId, SessionOutput? output,
         SessionEvents? events, IStreamMapper mapper, string? prompt, CancellationToken ct, string? preamble = null,
-        Action<SessionEvent>? observed = null)
+        Action<SessionEvent>? observed = null, string? personSaid = null)
     {
         await using var file = new StreamWriter(transcript, append: false);
 
@@ -1215,7 +1243,10 @@ public sealed partial class Driver(
         void Event(SessionEvent e) => events?.Keep(sessionId, e, Line);
 
         if (preamble is { Length: > 0 }) Line(preamble);
-        if (prompt is not null) Event(new SessionEvent { Kind = SessionEventKind.User, Origin = "target", Text = prompt });
+        if (prompt is not null)
+        {
+            foreach (var opening in Opening(prompt, personSaid)) Event(opening);
+        }
 
         var errors = PumpAsync(stderr, file, sessionId, output, ct);
         while (await stdout.ReadLineAsync(ct).ConfigureAwait(false) is { } line)
