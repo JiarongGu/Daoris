@@ -590,8 +590,43 @@ async function main(command, args) {
        * whole point of asking is that the main window is not the one wanted. */
       const window = takeWindow(args);
 
+      /* `--page [--size WxH]` asks Chromium for the PAGE over the debug port instead of photographing
+       * the window (SESS1). A minimized window photographs as its 314 × 50 caption, and restoring an
+       * installed one puts it in front of its owner; the page renders without either. `--size` lays it
+       * out at a width and height for the capture and puts it back after. It is the page alone: the
+       * native frame and caption buttons are not in it, which is what the window capture is for. */
+      const page = args.indexOf('--page');
+      const sizeFlag = args.indexOf('--size');
+      const size = sizeFlag === -1 ? null : /^(\d+)x(\d+)$/.exec(args[sizeFlag + 1] ?? '');
+      if (sizeFlag !== -1) {
+        if (!size) fail('usage: shot [name] --page [--size <width>x<height>]');
+        args.splice(sizeFlag, 2);
+      }
+      if (page !== -1) args.splice(args.indexOf('--page'), 1);
+
       const name = (args[0] ?? `shell-${new Date().toISOString().slice(11, 19).replaceAll(':', '')}`)
         .replace(/[^\w.-]/g, '-');
+
+      if (page !== -1) {
+        const cdp = await attach(window);
+        try {
+          if (size) {
+            await cdp.send('Emulation.setDeviceMetricsOverride', {
+              width: Number(size[1]), height: Number(size[2]), deviceScaleFactor: 1, mobile: false,
+            });
+            await new Promise((resolve) => setTimeout(resolve, 600));
+          }
+          const shot = await cdp.send('Page.captureScreenshot', { format: 'png' });
+          mkdirSync(SHOTS, { recursive: true });
+          writeFileSync(join(SHOTS, `${name}.png`), Buffer.from(shot.data, 'base64'));
+          console.log(`captured the page -> ${join(SHOTS, `${name}.png`)}`);
+        } finally {
+          if (size) await cdp.send('Emulation.clearDeviceMetricsOverride').catch(() => {});
+          cdp.close();
+        }
+        pruneShots();
+        break;
+      }
 
       // The browser is another process since CHR3, and every one of its windows is the engine's own,
       // captioned `<page> - Chromium`.

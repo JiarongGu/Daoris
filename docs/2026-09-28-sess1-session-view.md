@@ -16,7 +16,11 @@ driver notes, one ask and no turn end). Names of repositories and quests stay ou
 - **`shot` photographs a minimized window as a 314 × 50 caption.** The installed window was
   minimized, and restoring it would put it in front of its owner. Chromium's own
   `Page.captureScreenshot` over the debug port renders the page without touching the window, at a
-  size set by `Emulation.setDeviceMetricsOverride` (a scratch probe in `_fixtures/sess1/`).
+  size set by `Emulation.setDeviceMetricsOverride`: now `npm run desktop -- shot --page [--size WxH]`.
+  🔴 A `--size` capture lays the page out again, so a region scrolled to its end in the window's own
+  size may not be at its end in the capture's: measure a position without `--size`.
+- **Real content without the owner's window**: copy one real session's event record over a scratch
+  session's (both under the gitignored `_fixtures/`), look in the scratch window, and put it back.
 - **The installed window speaks 中文**: find controls by their Chinese names (会话, 设置, 工作区), or
   read `document.documentElement.lang` first, as UX5 said.
 - **A session is opened by its rail row**, whose text begins with its state and duration.
