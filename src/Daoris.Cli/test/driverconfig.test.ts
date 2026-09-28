@@ -270,6 +270,19 @@ test('landing sets a repository\'s rule, a workspace\'s, and clears either', () 
   fx.cleanup();
 });
 
+test('landing --tidy asks for the tree and branch to go once the work lands, and is written only when on (D88)', () => {
+  const fx = makeFixture('driver-landing-tidy');
+
+  const said = run(['landing', 'engine', 'merge', '--tidy'], at(fx));
+  assert.match(said.out, /tree and its branch go/);
+  assert.deepEqual(readDriverChoices(at(fx)).landings, { engine: { form: 'merge', tidy: true } });
+  assert.match(run(['list'], at(fx)).out, /landing\s+engine\s+merge, tidy/);
+
+  run(['landing', 'engine', 'merge'], at(fx));
+  assert.equal(JSON.parse(readFileSync(at(fx), 'utf8')).landings.engine.tidy, undefined);
+  fx.cleanup();
+});
+
 test('landing refuses a rule that could not land work, and says what it needs', () => {
   const fx = makeFixture('driver-landing-refused');
   assert.match(captureError(() => run(['landing', 'engine', 'branch', 'feature/fixed'], at(fx))).message, /\{quest\}` or `\{session\}/);

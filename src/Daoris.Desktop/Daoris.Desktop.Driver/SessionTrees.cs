@@ -307,15 +307,192 @@ public sealed class SessionTrees(string home)
         var full = Path.GetFullPath(path);
         var (workspace, repository) = OwnerOf(full);
         var landing = LandingRules.Choose(Config(), repository, workspace);
+        TreeLanding landed;
         if (landing.Rule.Form != LandingForm.Branch)
         {
             var merged = await MergeAsync(path, ct).ConfigureAwait(false);
-            return new(merged.Merged, merged.Message);
+            landed = new(merged.Merged, merged.Message);
+        }
+        else
+        {
+            landed = await BranchAsync(full, workspace, repository,
+                LandingRules.Expand(landing.Rule.Pattern!, NamesOf(subject, repository)), ct).ConfigureAwait(false);
         }
 
-        return await BranchAsync(full, workspace, repository,
-            LandingRules.Expand(landing.Rule.Pattern!, NamesOf(subject, repository)), ct).ConfigureAwait(false);
+        // The tidy the person's rule asked for (D88): the tree and its branch go once the work lands, behind
+        // the same proof an unforced removal makes — never forced.
+        if (!landed.Landed || !landing.Rule.Tidy) return landed;
+        var tidied = await RemoveAsync(path, force: false, ct).ConfigureAwait(false);
+        return landed with
+        {
+            Message = landed.Message + (tidied.Removed
+                ? $" Tidied, as the rule says: {tidied.Message}"
+                : $" The rule says to tidy, and the tree stays: {tidied.Message}"),
+        };
     }
+
+    /// <summary>
+    /// How many commits on <paramref name="revision"/> no branch of the person's holds (D88) — a local
+    /// branch outside <c>daoris/</c>, or a remote-tracking one. Zero is landed; null is git unable to say.
+    /// </summary>
+    public static async Task<int?> UnlandedAsync(string cwd, string revision, CancellationToken ct = default)
+    {
+        var (code, log, _) = await UnlandedLogAsync(cwd, revision, ct).ConfigureAwait(false);
+        return code != 0 ? null : log.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).Length;
+    }
+
+    private static Task<(int Code, string Stdout, string Stderr)> UnlandedLogAsync(string cwd, string revision, CancellationToken ct) =>
+        WorkingTree.GitAsync(cwd,
+            ["log", "--oneline", revision, "--not", "--exclude=daoris/*", "--branches", "--exclude=*/daoris/*", "--remotes"], ct);
+
+    /// <summary>
+    /// Every session branch in these repositories, with what it holds (D88) — the list a person reads
+    /// before the clean-up is pressed. Nothing is changed.
+    /// </summary>
+    /// <param name="inUse">The trees sessions still running or waiting name — kept whatever they hold.</param>
+    public async Task<IReadOnlyList<SweepItem>> SweepPlanAsync(
+        IEnumerable<(string Repository, string? Workspace, string? Root)> repositories, IReadOnlySet<string> inUse,
+        CancellationToken ct = default)
+    {
+        var busy = new HashSet<string>(inUse.Select(Normal), StringComparer.OrdinalIgnoreCase);
+        var items = new List<SweepItem>();
+        foreach (var (repository, workspace, root) in repositories)
+        {
+            if (string.IsNullOrWhiteSpace(root) || !Directory.Exists(root)) continue;
+            var (code, refs, _) = await WorkingTree.GitAsync(
+                root, ["for-each-ref", "--format=%(refname:short)", "refs/heads/daoris/"], ct).ConfigureAwait(false);
+            if (code != 0) continue;
+
+            var worktrees = await WorktreesAsync(root, ct).ConfigureAwait(false);
+            var line = (await LineAsync(root, repository, RemoteTarget.Workspace(workspace), ct).ConfigureAwait(false)).Branch;
+            foreach (var branch in refs.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))
+            {
+                items.Add(await JudgeAsync(
+                    root, repository, RemoteTarget.Workspace(workspace), branch, worktrees.GetValueOrDefault(branch), line, busy, ct)
+                    .ConfigureAwait(false));
+            }
+        }
+
+        return items;
+    }
+
+    /// <summary>
+    /// The clean-up (D88): every session branch the proof clears goes, with its tree, and the rest are
+    /// kept and named. 🔴 Each is judged again right before it goes — a list is a fact about a moment.
+    /// </summary>
+    /// <param name="only">The branches the person saw listed to go, as <c>repository:branch</c>; null for every one the proof clears now.</param>
+    public async Task<IReadOnlyList<SweepResult>> SweepAsync(
+        IEnumerable<(string Repository, string? Workspace, string? Root)> repositories, IReadOnlySet<string> inUse,
+        IReadOnlySet<string>? only = null, CancellationToken ct = default)
+    {
+        var known = repositories.ToList();
+        var busy = new HashSet<string>(inUse.Select(Normal), StringComparer.OrdinalIgnoreCase);
+        var results = new List<SweepResult>();
+        foreach (var item in await SweepPlanAsync(known, inUse, ct).ConfigureAwait(false))
+        {
+            if (only is not null && !only.Contains($"{item.Repository}:{item.Branch}"))
+            {
+                continue;
+            }
+
+            if (!item.Removable)
+            {
+                results.Add(new(item, false, "kept"));
+                continue;
+            }
+
+            var root = known.First(r => string.Equals(r.Repository, item.Repository, StringComparison.OrdinalIgnoreCase)).Root!;
+            var worktrees = await WorktreesAsync(root, ct).ConfigureAwait(false);
+            var line = (await LineAsync(root, item.Repository, item.Workspace, ct).ConfigureAwait(false)).Branch;
+            var now = await JudgeAsync(root, item.Repository, item.Workspace, item.Branch, worktrees.GetValueOrDefault(item.Branch), line, busy, ct)
+                .ConfigureAwait(false);
+            if (!now.Removable)
+            {
+                results.Add(new(now, false, "it changed since the list, and is kept"));
+                continue;
+            }
+
+            if (now.Tree is { } tree)
+            {
+                var (removeCode, _, removeErr) = await WorkingTree.GitAsync(root, ["worktree", "remove", tree], ct).ConfigureAwait(false);
+                if (removeCode != 0)
+                {
+                    results.Add(new(now, false, $"git would not remove its tree: {FirstLine(removeErr)}"));
+                    continue;
+                }
+            }
+
+            // -D, because the proof was made in this call; git's own -d asks only about the checkout's HEAD.
+            var (deleteCode, _, deleteErr) = await WorkingTree.GitAsync(root, ["branch", "-D", now.Branch], ct).ConfigureAwait(false);
+            results.Add(deleteCode == 0
+                ? new(now, true, now.Tree is null ? "removed" : "removed, with its tree")
+                : new(now, false, $"git would not delete the branch: {FirstLine(deleteErr)}"));
+        }
+
+        return results;
+    }
+
+    private static async Task<SweepItem> JudgeAsync(
+        string root, string repository, string workspace, string branch, string? tree, string? line,
+        HashSet<string> busy, CancellationToken ct)
+    {
+        SweepItem Item(string kind, int commits = 0, string? where = null, string? detail = null) =>
+            new(repository, workspace, branch, tree, kind, commits, where, detail);
+
+        if (tree is not null && busy.Contains(Normal(tree))) return Item(SweepKind.InUse);
+
+        if (tree is not null)
+        {
+            var (_, dirty, _) = await WorkingTree.GitAsync(tree, ["status", "--porcelain"], ct).ConfigureAwait(false);
+            if (!string.IsNullOrWhiteSpace(dirty))
+            {
+                return Item(SweepKind.Dirty, detail: $"{dirty.Trim().Split('\n').Length} path(s) uncommitted");
+            }
+        }
+
+        var (code, log, err) = await UnlandedLogAsync(root, branch, ct).ConfigureAwait(false);
+        if (code != 0) return Item(SweepKind.Unlanded, detail: $"git could not tell: {FirstLine(err)}");
+        var unlanded = log.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        if (unlanded.Length > 0) return Item(SweepKind.Unlanded, unlanded.Length, detail: string.Join('\n', unlanded.Take(3)));
+
+        var against = line is null ? null : await ComparableAsync(root, line, ct).ConfigureAwait(false);
+        if (against is not null)
+        {
+            var (_, ahead, _) = await WorkingTree.GitAsync(root, ["rev-list", "--count", $"{against}..{branch}"], ct).ConfigureAwait(false);
+            if (ahead.Trim() == "0") return Item(SweepKind.Empty, where: line);
+        }
+
+        // Where it landed, for the list: the first branch of the person's that holds its tip.
+        var (_, holders, _) = await WorkingTree.GitAsync(
+            root, ["branch", "--all", "--contains", branch, "--format=%(refname:short)"], ct).ConfigureAwait(false);
+        var where = holders.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .FirstOrDefault(name => !name.StartsWith("daoris/", StringComparison.Ordinal) && !name.Contains("/daoris/", StringComparison.Ordinal));
+        var (_, count, _) = await WorkingTree.GitAsync(
+            root, ["rev-list", "--count", branch, "--not", against ?? "HEAD"], ct).ConfigureAwait(false);
+        return Item(SweepKind.Landed, int.TryParse(count.Trim(), out var n) ? n : 0, where);
+    }
+
+    /// <summary>Which tree each branch is checked out in, from git's own list.</summary>
+    private static async Task<Dictionary<string, string>> WorktreesAsync(string root, CancellationToken ct)
+    {
+        var (_, porcelain, _) = await WorkingTree.GitAsync(root, ["worktree", "list", "--porcelain"], ct).ConfigureAwait(false);
+        var trees = new Dictionary<string, string>(StringComparer.Ordinal);
+        string? path = null;
+        foreach (var raw in porcelain.Split('\n'))
+        {
+            var line = raw.TrimEnd('\r');
+            if (line.StartsWith("worktree ", StringComparison.Ordinal)) path = line["worktree ".Length..];
+            else if (line.StartsWith("branch refs/heads/", StringComparison.Ordinal) && path is not null)
+            {
+                trees[line["branch refs/heads/".Length..]] = Path.GetFullPath(path);
+            }
+        }
+
+        return trees;
+    }
+
+    private static string Normal(string path) =>
+        Path.GetFullPath(path).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
 
     /// <summary>
     /// Put a session's work on a new branch, from the session's own branch, which grew from the line.
@@ -459,24 +636,22 @@ public sealed class SessionTrees(string home)
 
             var (workspace, repository) = OwnerOf(full);
             var canonical = (await LineAsync(root, repository, workspace, ct).ConfigureAwait(false)).Branch ?? "HEAD";
-            // 🔴 Where git has the line, and a comparison git could not make keeps the tree: its empty
-            // output read as "nothing unmerged", and a tree whose line only origin had went with its work.
-            var against = canonical == "HEAD" ? canonical : await ComparableAsync(root, canonical, ct).ConfigureAwait(false);
-            var (logCode, unmerged, logErr) = against is null
-                ? (1, "", $"git has no branch `{canonical}` here or on origin.")
-                : await WorkingTree.GitAsync(root, ["log", "--oneline", $"{against}..{branch}"], ct).ConfigureAwait(false);
+            // Landed (D88): a branch of the person's holds every commit — the line, a branch the branch form
+            // made, one they pushed. Asked of the tree's own HEAD, so a detached tree is judged by what it
+            // holds. 🔴 A comparison git could not make keeps the tree: an empty answer is not "landed".
+            var (logCode, unmerged, logErr) = await UnlandedLogAsync(full, "HEAD", ct).ConfigureAwait(false);
             if (logCode != 0)
             {
                 return new(false,
-                    $"Daoris cannot tell whether the work on `{branch}` is on `{canonical}`: {FirstLine(logErr)} "
-                    + "The tree stays. Set the line with `daoris driver line`, or say it again with --force to discard it.");
+                    $"Daoris cannot tell whether the work on `{branch}` is landed: {FirstLine(logErr)} "
+                    + "The tree stays; say it again with --force to discard it.");
             }
 
             if (!string.IsNullOrWhiteSpace(unmerged))
             {
                 return new(false,
-                    $"the tree at {path} holds commits `{canonical}` has not taken:\n{unmerged.Trim()}\n"
-                    + "Merge them from the root, or say it again with --force to discard them.");
+                    $"the tree at {path} holds commits `{canonical}` has not taken, and no other branch of yours holds "
+                    + $"them:\n{unmerged.Trim()}\nLand them from the review, or say it again with --force to discard them.");
             }
         }
 
@@ -489,11 +664,12 @@ public sealed class SessionTrees(string home)
             return new(false, $"git would not remove the tree: {FirstLine(removeErr)}");
         }
 
-        // The branch goes with its tree — -d where the pre-check proved it safe, -D where the person
-        // forced it. A branch left behind would resurrect "never reused" as a growing pile of names.
+        // The branch goes with its tree — where this call's proof cleared it (D88) or the person forced it.
+        // -D either way: git's own -d asks only whether the checkout's HEAD holds it, which kept every
+        // branch the branch form had landed. A branch left behind would resurrect "never reused" as a pile.
         if (branch is not "" and not "HEAD")
         {
-            await WorkingTree.GitAsync(root, ["branch", force ? "-D" : "-d", branch], ct).ConfigureAwait(false);
+            await WorkingTree.GitAsync(root, ["branch", "-D", branch], ct).ConfigureAwait(false);
         }
 
         return new(true, $"removed the session tree at {path} (branch `{branch}`).");

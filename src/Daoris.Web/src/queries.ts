@@ -33,6 +33,7 @@ export const keys = {
   browserSettings: ['browser-settings'] as const,
   lines: ['driver', 'lines'] as const,
   allLandings: ['driver', 'landing'] as const,
+  sweep: ['driver', 'sweep'] as const,
   landing: (session: string) => ['driver', 'landing', session] as const,
   /** This machine's harnesses and the accounts they run as — shell-only too (D49 §4). */
   harnesses: ['harnesses'] as const,

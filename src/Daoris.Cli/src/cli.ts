@@ -97,7 +97,8 @@ const USAGE = `daoris <command> [options]
                          landing <repo> merge|branch <pattern>|--clear
                                                    how accepted work lands: into
                                                    the line, or on a branch you
-                                                   push (--workspace <name> too)
+                                                   push (--workspace <name> too;
+                                                   --tidy removes the tree after)
                          notify on|off           say so when a session parks,
                                                    or ends without you asking
                          intake <adapter>|off      answer an ask the declarations

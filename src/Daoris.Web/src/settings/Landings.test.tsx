@@ -60,6 +60,18 @@ describe('the landing card', () => {
     expect(onSet).toHaveBeenLastCalledWith({ repository: 'tools', form: 'branch', pattern: 'review/{session}' });
   });
 
+  /** D88: the tidy rides the rule — the tree and its branch go once a press lands the work. */
+  it('sends the tidy with the rule when it is ticked', async () => {
+    const onSet = draw();
+    const user = userEvent.setup();
+    const forge = screen.getByRole('region', { name: 'forge' });
+
+    await user.click(within(forge).getAllByRole('checkbox', { name: 'tidy once landed' })[1]!);
+    await user.click(within(forge).getAllByRole('button', { name: 'Set' })[1]!);
+
+    expect(onSet).toHaveBeenLastCalledWith({ repository: 'tools', form: 'merge', tidy: true });
+  });
+
   it('shows an inherited pattern as the placeholder, never as a value', () => {
     draw();
 

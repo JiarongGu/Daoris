@@ -7164,3 +7164,38 @@ for pr"*. The push form is WSR4, a plugin's.
 - Not seen on the window: the review's sentence on a real session. The scratch machine's one session
   tree was past the rail's first page. Vitest holds the pane's rendering, and the driver tests hold the
   plan and the press on real git.
+
+## WSR3 — session branches cleaned up after they land (2026-09-28)
+
+The row as filed: *(study §2). After work lands, its tree and branch go, under the workspace's rule,
+only when git proves the work is on its target. A bulk clean of every landed or empty `daoris/s-*`
+branch, listed before it is pressed, with a terminal twin. A branch whose commits never landed is
+shown as such.*
+
+**Outcome** (D88).
+- **The proof**, `SessionTrees.UnlandedAsync`: the commits on a branch that no local branch outside
+  `daoris/` and no remote-tracking branch holds. Zero is landed. It serves a tree's removal without
+  `--force`, which now also takes a tree whose work is on a feature branch, the tidy, and the clean-up.
+  The branch is deleted with `-D` once the proof clears it, because git's `-d` asks only about the
+  checkout's HEAD.
+- **The tidy**: a landing rule may say `tidy`, and the tree and branch go as soon as a press lands the
+  work (`--tidy`, and *tidy once landed* on the landing card).
+- **The clean-up**: `SweepPlanAsync` lists every `daoris/` branch in each repository with a checkout
+  here, as empty, landed (and where), unlanded (with its commits), holding uncommitted work, or in
+  use by a running or waiting session. `SweepAsync` removes the empty and landed ones, only those the
+  person saw listed, each judged again right before it goes.
+- Two doors (D50): `daoris-driver trees clean [--yes]`, and Settings → Workspace → *Session branches*
+  (`SWEEP_PLAN`, `SWEEP`). Projects names a repository whose session branches hold unlanded work.
+
+**Proven by:**
+- 9 `SweepTests` on real git: landed by merge, by feature branch and by remote; a chain step's work
+  counted as unlanded; removal without force; every kind in the plan; the clean-up; work committed
+  after the plan kept; the tidy; the file. With the person's local branches dropped from the proof,
+  7 went red.
+- 2 driver-module tests, 1 CLI test, 5 molecule tests and 4 stories, and 1 landing-card test for the
+  tidy.
+- The family rehearsal gains two checks: an unlanded branch is listed and kept by `trees clean --yes`,
+  and an empty one is listed to go, then removed.
+- On the scratch shell: the card listed the one real session tree's branch as holding nothing beyond
+  `main`, the press removed it and its tree, and git then showed no session branch and only the root's
+  worktree.

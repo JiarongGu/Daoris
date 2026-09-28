@@ -6,7 +6,7 @@ import { DriverChoices } from './projects/DriverChoices';
 import { ago, figure } from './format';
 import { useRegistry, useRepositories } from './queries';
 import { useScope } from './scope';
-import { useDriver, useHarnesses, useLines, useSetDrivable, useSetHold, useSetTrees } from './shell';
+import { useDriver, useHarnesses, useLines, useSetDrivable, useSetHold, useSetTrees, useSweepPlan } from './shell';
 import { doorOf } from './tools';
 import {
   Button, Card, Chip, EmptyState, failure, Icon, Inline, type Notify, PageHeader, Prose, SkeletonRows, Tip,
@@ -46,6 +46,11 @@ export function ProjectsView({
   const lines = useLines();
   const lineOf = (repository: string) => (Array.isArray(lines.data?.lines) ? lines.data.lines : [])
     .find((line) => line.repository === repository && line.branch);
+  // Session branches holding work no branch of the person's holds (WSR3, D88) — named on the repository,
+  // so work is not lost in a pile nobody reads. Settings → Workspace lists them one by one.
+  const sweep = useSweepPlan();
+  const unlandedIn = (repository: string) => (Array.isArray(sweep.data?.branches) ? sweep.data.branches : [])
+    .filter((branch) => branch.repository === repository && branch.kind === 'unlanded').length;
   // The driver bridge included: a STATE that fails silently reads as a machine with no driver.
   useErrorNotify(registry.error ?? repositories.error ?? driver.error, notify);
 
@@ -173,7 +178,8 @@ export function ProjectsView({
                   lines up under the first. As one flowing line, a wrapped chip fell back under its
                   label (POLISH4). */}
               {(project.owns.length > 0 || project.accepts.length > 0 || project.packs.length > 0
-                || counts?.fed || project.workspace || lineOf(project.repository)) && (
+                || counts?.fed || project.workspace || lineOf(project.repository)
+                || unlandedIn(project.repository) > 0) && (
                 <dl className="m-0 mt-2 grid grid-cols-[max-content_1fr] items-baseline gap-x-3 gap-y-2">
                   {project.owns.length > 0 && (
                     <Row label={t('projects.owns')}>
@@ -230,6 +236,13 @@ export function ProjectsView({
                       </Row>
                     );
                   })()}
+                  {unlandedIn(project.repository) > 0 && (
+                    <Row label={t('projects.unlandedLabel')}>
+                      <span className="text-small text-warn">
+                        {t('projects.unlanded', { count: unlandedIn(project.repository) })}
+                      </span>
+                    </Row>
+                  )}
                 </dl>
               )}
               {/* The person's standing choices for THIS machine's driver (D46 §6) — rendered only

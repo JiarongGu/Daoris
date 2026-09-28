@@ -140,7 +140,7 @@ public sealed record DriverConfig(
     }
 
     /// <summary>A rule as it is kept: a merge carries no pattern, whatever it was handed.</summary>
-    private static LandingRule Kept(LandingRule rule) => rule.Form == LandingForm.Merge ? LandingRule.Merge : rule;
+    private static LandingRule Kept(LandingRule rule) => rule.Form == LandingForm.Merge ? rule with { Pattern = null } : rule;
 
     private static IReadOnlyDictionary<string, string> Set(IReadOnlyDictionary<string, string> map, string key, string? branch)
     {
@@ -254,6 +254,8 @@ public sealed record DriverConfig(
             writer.WriteStartObject(key);
             writer.WriteString("form", rule.Form);
             if (rule.Pattern is not null) writer.WriteString("pattern", rule.Pattern);
+            // Written only when on: absent is the tree staying, as it always has.
+            if (rule.Tidy) writer.WriteBoolean("tidy", true);
             writer.WriteEndObject();
         }
 
@@ -269,7 +271,9 @@ public sealed record DriverConfig(
             foreach (var property in element.EnumerateObject())
             {
                 if (property.Value.ValueKind != JsonValueKind.Object) continue;
-                var rule = new LandingRule(String(property.Value, "form") ?? "", String(property.Value, "pattern"));
+                var rule = new LandingRule(
+                    String(property.Value, "form") ?? "", String(property.Value, "pattern"),
+                    property.Value.TryGetProperty("tidy", out var tidy) && tidy.ValueKind == JsonValueKind.True);
                 if (LandingRules.Problem(rule) is null) map[property.Name] = Kept(rule);
             }
         }

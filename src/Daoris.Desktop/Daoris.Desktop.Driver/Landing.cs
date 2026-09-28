@@ -13,8 +13,12 @@ public static class LandingForm
     public const string Branch = "branch";
 }
 
-/// <summary>How a session's work lands: a form, and for <see cref="LandingForm.Branch"/> the pattern that names the branch.</summary>
-public sealed record LandingRule(string Form, string? Pattern = null)
+/// <summary>
+/// How a session's work lands: a form, for <see cref="LandingForm.Branch"/> the pattern that names the
+/// branch, and whether the tree and its branch go once a press lands the work (<paramref name="Tidy"/>,
+/// D88) — only where git proves the work is on a branch of the person's.
+/// </summary>
+public sealed record LandingRule(string Form, string? Pattern = null, bool Tidy = false)
 {
     public static readonly LandingRule Merge = new(LandingForm.Merge);
 }
@@ -41,6 +45,37 @@ public sealed record LandingPlan(string Form, string Target, string Source);
 
 /// <summary>What came of a press. A refusal is an answer, as the merge door's are, and names what the person would do.</summary>
 public sealed record TreeLanding(bool Landed, string Message, string? Branch = null);
+
+/// <summary>What a session branch holds, for the clean-up's list (D88). Only the first two go.</summary>
+public static class SweepKind
+{
+    /// <summary>Nothing beyond the line.</summary>
+    public const string Empty = "empty";
+
+    /// <summary>Every commit on a branch of the person's.</summary>
+    public const string Landed = "landed";
+
+    /// <summary>Commits only Daoris's branches hold — kept, and named.</summary>
+    public const string Unlanded = "unlanded";
+
+    /// <summary>Its tree holds uncommitted work — kept.</summary>
+    public const string Dirty = "dirty";
+
+    /// <summary>A session still running or waiting names its tree — kept.</summary>
+    public const string InUse = "in-use";
+}
+
+/// <param name="Commits">Unlanded: how many only Daoris holds. Landed: how many it carried.</param>
+/// <param name="Where">Landed: the first branch of the person's that holds it. Empty: the line.</param>
+/// <param name="Detail">Git's own lines where they say more: the unlanded commits, the uncommitted count.</param>
+public sealed record SweepItem(
+    string Repository, string Workspace, string Branch, string? Tree, string Kind, int Commits, string? Where, string? Detail)
+{
+    public bool Removable => Kind is SweepKind.Empty or SweepKind.Landed;
+}
+
+/// <summary>What the clean-up did with one branch, in the driver's words.</summary>
+public sealed record SweepResult(SweepItem Item, bool Removed, string Message);
 
 /// <summary>
 /// The landing rules (WSR1, D87): which applies to a repository, whether a pattern can name a branch,

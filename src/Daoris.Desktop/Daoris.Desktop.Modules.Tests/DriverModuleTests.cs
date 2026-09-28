@@ -237,6 +237,24 @@ public sealed class DriverModuleTests : Bridge
         Assert.Contains("a plugin's to do", push);
     }
 
+    /// <summary>The tidy rides the rule (D88), and is written only when on.</summary>
+    [Fact]
+    public async Task A_tidy_landing_rule_writes_the_same_file()
+    {
+        var state = await AnswerAsync(Module(), "SET_LANDING", new { repository = "engine", form = "merge", tidy = true });
+
+        Assert.True(DriverConfig.Load(DriverConfigPath).Landings["engine"].Tidy);
+        Assert.True(state.GetProperty("landings")[0].GetProperty("tidy").GetBoolean());
+    }
+
+    /// <summary>The clean-up reads the registry's checkouts and the sessions in use, so before the driver is up it is the cold-start sentence.</summary>
+    [Fact]
+    public async Task The_clean_up_before_the_driver_is_up_is_a_sentence()
+    {
+        Assert.Contains(Refusals.DriverNotReady, await RefusalAsync(Module(), "SWEEP_PLAN"));
+        Assert.Contains(Refusals.DriverNotReady, await RefusalAsync(Module(), "SWEEP", new { only = new[] { "engine:daoris/s-x" } }));
+    }
+
     /// <summary>A plan or a press reads the session's record, so before the driver is up each is the cold-start sentence.</summary>
     [Fact]
     public async Task Landing_before_the_driver_is_up_is_a_sentence()

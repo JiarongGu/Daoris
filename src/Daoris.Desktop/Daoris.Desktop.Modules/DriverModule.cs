@@ -137,6 +137,7 @@ public sealed class DriverModule : ModuleBase
                             pair.line.Workspace,
                             pair.landing.Rule.Form,
                             pair.landing.Rule.Pattern,
+                            pair.landing.Rule.Tidy,
                             pair.landing.Source,
                         })
                         .ToArray(),
@@ -418,6 +419,12 @@ public sealed class DriverModule : ModuleBase
             case "LAND_SESSION_TREE":
                 return await LandAsync(request, cancellationToken);
 
+            // The clean-up (WSR3, D88): every session branch here with what it holds — then, on the
+            // person's press, those the proof clears, and only those the page listed to go (`only`).
+            case "SWEEP_PLAN":
+            case "SWEEP":
+                return await SweepAsync(request, cancellationToken);
+
             // A repository's landing rule or a workspace's, or either cleared with no form — the same file
             // `daoris driver landing` edits: one truth, two doors (D50).
             case "SET_LANDING":
@@ -429,7 +436,9 @@ public sealed class DriverModule : ModuleBase
                     throw new DriverException("a landing rule is set for a `repository` or a `workspace` — name one of them.");
                 }
 
-                var rule = Optional(request, "form") is { } form ? new LandingRule(form, Optional(request, "pattern")) : null;
+                var rule = Optional(request, "form") is { } form
+                    ? new LandingRule(form, Optional(request, "pattern"), Flag(request, "tidy"))
+                    : null;
                 Change(config => workspace is not null
                     ? config.WithWorkspaceLanding(workspace, rule)
                     : config.WithLanding(repository!, rule));
@@ -1116,6 +1125,49 @@ public sealed class DriverModule : ModuleBase
     }
 
     /// <summary>
+    /// The clean-up's list, or its press (WSR3, D88), over every repository with a checkout here. A tree a
+    /// session still running or waiting names is kept whatever it holds.
+    /// </summary>
+    private async Task<object?> SweepAsync(IpcRequest request, CancellationToken cancellationToken)
+    {
+        var service = _loop.Service ?? throw NotReady();
+        var registry = await service.RegistryAsync(cancellationToken);
+        var inUse = (await service.ActiveSessionsAsync(cancellationToken))
+            .Select(session => session.Tree).OfType<string>().Where(tree => tree.Length > 0).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var repositories = registry
+            .Where(row => !string.IsNullOrWhiteSpace(row.Root))
+            .OrderBy(row => row.Repository, StringComparer.Ordinal)
+            .Select(row => (row.Repository, (string?)row.Workspace, row.Root))
+            .ToList();
+        var trees = new SessionTrees(_loop.Home);
+
+        object Row(SweepItem item) => new
+        {
+            item.Repository, item.Workspace, item.Branch, HasTree = item.Tree is not null,
+            item.Kind, item.Commits, item.Where, item.Detail, item.Removable,
+        };
+
+        if (request.Type == "SWEEP_PLAN")
+        {
+            return new { Branches = (await trees.SweepPlanAsync(repositories, inUse, cancellationToken)).Select(Row).ToArray() };
+        }
+
+        HashSet<string>? only = null;
+        if (request.Payload is { } payload && payload.TryGetProperty("only", out var named) && named.ValueKind == JsonValueKind.Array)
+        {
+            only = named.EnumerateArray().Where(e => e.ValueKind == JsonValueKind.String).Select(e => e.GetString()!).ToHashSet(StringComparer.Ordinal);
+        }
+
+        var results = await trees.SweepAsync(repositories, inUse, only, cancellationToken);
+        _loop.Nudge();
+        return new
+        {
+            Results = results.Select(result => new { Branch = Row(result.Item), result.Removed, result.Message }).ToArray(),
+            Removed = results.Count(result => result.Removed),
+        };
+    }
+
+    /// <summary>
     /// A reviewed session's landing (WSR1, D87): the plan before the press, or the press itself.
     /// </summary>
     /// <remarks>
@@ -1643,9 +1695,9 @@ public sealed class DriverModule : ModuleBase
                 .Select(p => new { Workspace = p.Key, Branch = p.Value }).ToArray(),
             // The landing rules as set (WSR1), as rows for the same reason.
             Landings = config.Landings.OrderBy(p => p.Key, StringComparer.Ordinal)
-                .Select(p => new { Repository = p.Key, p.Value.Form, p.Value.Pattern }).ToArray(),
+                .Select(p => new { Repository = p.Key, p.Value.Form, p.Value.Pattern, p.Value.Tidy }).ToArray(),
             WorkspaceLandings = config.WorkspaceLandings.OrderBy(p => p.Key, StringComparer.Ordinal)
-                .Select(p => new { Workspace = p.Key, p.Value.Form, p.Value.Pattern }).ToArray(),
+                .Select(p => new { Workspace = p.Key, p.Value.Form, p.Value.Pattern, p.Value.Tidy }).ToArray(),
             Running = _loop.Processes.Running,
         };
     }

@@ -13,6 +13,7 @@ import type { WiringAnswer } from './map/wiring';
 import type { AgentRulesState, RuleListName, RuleScopeName } from './settings/AgentRules';
 import type { LineChange, RepositoryLine } from './settings/Lines';
 import type { LandingChange, LandingRule, RepositoryLanding } from './settings/Landings';
+import type { SweepBranch } from './settings/Sweep';
 
 export type { DiffFile, SessionDiff } from './work/diff';
 
@@ -274,6 +275,32 @@ export const useSetLanding = () => {
       client.setQueryData(keys.driver, state);
       void client.invalidateQueries({ queryKey: keys.lines });
       void client.invalidateQueries({ queryKey: keys.allLandings });
+    },
+  });
+};
+
+/**
+ * Every session branch here with what it holds (WSR3, D88) — the clean-up's list. Desktop-only: it is
+ * read off this machine's checkouts.
+ */
+export const useSweepPlan = () => {
+  const { isAvailable } = useShenora();
+  return useQuery({
+    queryKey: keys.sweep,
+    queryFn: () => call<{ branches: SweepBranch[] }>('SWEEP_PLAN'),
+    enabled: isAvailable,
+  });
+};
+
+/** The clean-up's press: only the branches the list showed to go, each judged again by the driver. */
+export const useSweep = () => {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (only: string[]) =>
+      call<{ results: { branch: SweepBranch; removed: boolean; message: string }[]; removed: number }>('SWEEP', { only }),
+    onSuccess: () => {
+      void client.invalidateQueries({ queryKey: keys.sweep });
+      void client.invalidateQueries({ queryKey: keys.allSessions });
     },
   });
 };

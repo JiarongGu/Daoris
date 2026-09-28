@@ -7,7 +7,7 @@ import { useScope } from './scope';
 import {
   useAddFavorite, useBrowserSettings, useDriver, useHarnessAction, useHarnessEnded, useHarnesses, useLines,
   usePluginAction, usePlugins, useRefreshHarnesses, useRemotes, useRemoveFavorite, useRuleAction, useRuleProposal, useRules,
-  useSetBrowser, useSetExtensions, useSetIntake, useSetLanding, useSetLine, useSetNotify, useSetStrikes, useStarts, useUnwireRemote, useUsage,
+  useSetBrowser, useSetExtensions, useSetIntake, useSetLanding, useSetLine, useSetNotify, useSweep, useSweepPlan, useSetStrikes, useStarts, useUnwireRemote, useUsage,
   useWireRemote,
 } from './shell';
 import { AgentRules } from './settings/AgentRules';
@@ -17,6 +17,7 @@ import { SessionConsole } from './SessionConsole';
 import { AiJobs, type SearchTier } from './settings/AiJobs';
 import { LandingList } from './settings/Landings';
 import { LineList } from './settings/Lines';
+import { SweepList } from './settings/Sweep';
 import { SignIn } from './SignIn';
 import { byTool, doorLabel, type ToolDoor } from './tools';
 import {
@@ -148,6 +149,7 @@ export function SettingsView({ notify, section = 'appearance', onSection, anchor
               {attached && <Starts notify={notify} />}
               {attached && <LineSettings notify={notify} />}
               {attached && <LandingSettings notify={notify} />}
+              {attached && <SweepSettings notify={notify} />}
             </>
           )}
           {shown === 'driver' && <DriverSettings notify={notify} />}
@@ -471,6 +473,29 @@ function LandingSettings({ notify }: { notify: Notify }) {
               ? t('settings.landing.savedBranch', { name, pattern: change.pattern })
               : t('settings.landing.savedMerge', { name }));
         },
+        onError: failure(notify),
+      })}
+    />
+  );
+}
+
+/**
+ * The clean-up (WSR3, D88): the driver's list of every session branch here, and the press. Shell-only,
+ * because it is read off this machine's checkouts.
+ */
+function SweepSettings({ notify }: { notify: Notify }) {
+  const { t } = useTranslation();
+  const plan = useSweepPlan();
+  const sweep = useSweep();
+  useErrorNotify(plan.error, notify);
+
+  return (
+    <SweepList
+      branches={Array.isArray(plan.data?.branches) ? plan.data.branches : undefined}
+      busy={sweep.isPending || plan.isFetching}
+      onLook={() => void plan.refetch()}
+      onClean={(only) => sweep.mutate(only, {
+        onSuccess: (done) => notify(t('settings.sweep.done', { removed: done.removed, count: only.length })),
         onError: failure(notify),
       })}
     />

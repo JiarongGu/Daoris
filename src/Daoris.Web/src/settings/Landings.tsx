@@ -1,10 +1,13 @@
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '../lib/cn';
-import { Button, Card, Chip, Inline, Prose, SectionTitle, Segmented, SettingRow } from '../ui';
+import { Button, Card, CheckField, Chip, Inline, Prose, SectionTitle, Segmented, SettingRow } from '../ui';
 
-/** How a session's work lands (WSR1, D87): merged into the line, or put on a branch the pattern names. */
-export type LandingRule = { form: string; pattern?: string };
+/**
+ * How a session's work lands (WSR1, D87): merged into the line, or put on a branch the pattern names —
+ * and whether its tree and branch go once a press lands it (D88).
+ */
+export type LandingRule = { form: string; pattern?: string; tidy?: boolean };
 
 /** Where a repository's rule came from: set for it, set for its workspace, or the default merge. */
 export type LandingSource = 'repository' | 'workspace' | 'default';
@@ -13,7 +16,7 @@ export type LandingSource = 'repository' | 'workspace' | 'default';
 export type RepositoryLanding = { repository: string; workspace: string; source: LandingSource } & LandingRule;
 
 /** A change to a rule: a repository's or a workspace's, cleared when it names no form. */
-export type LandingChange = { repository?: string; workspace?: string; form?: string; pattern?: string };
+export type LandingChange = { repository?: string; workspace?: string; form?: string; pattern?: string; tidy?: boolean };
 
 const MERGE: LandingRule = { form: 'merge' };
 
@@ -21,7 +24,7 @@ const MERGE: LandingRule = { form: 'merge' };
 const EXAMPLE = 'feature/{quest}-{slug}';
 
 const same = (a?: LandingRule, b?: LandingRule) =>
-  a?.form === b?.form && (a?.form !== 'branch' || a?.pattern === b?.pattern);
+  a?.form === b?.form && (a?.form !== 'branch' || a?.pattern === b?.pattern) && Boolean(a?.tidy) === Boolean(b?.tidy);
 
 /**
  * How work lands (WSR1, D87): what accepting a session does, per workspace, with a repository's
@@ -114,18 +117,23 @@ function LandingField({ name, set, inherited, busy, onSave }: {
   const { t } = useTranslation();
   const start = set ?? inherited;
   const [form, setForm] = useState(start.form);
+  const [tidy, setTidy] = useState(Boolean(start.tidy));
   // Only a pattern SET on this row is a value; an inherited one is the placeholder, and must not read
   // as set — in dark the two looked alike on the lines card (seen on the window).
   const [pattern, setPattern] = useState(set?.pattern ?? '');
   // The answer moves when either door edits the file, and the control follows it.
   useEffect(() => {
     setForm(start.form);
+    setTidy(Boolean(start.tidy));
     setPattern(set?.pattern ?? '');
-  }, [start.form, set?.pattern]);
+  }, [start.form, start.tidy, set?.pattern]);
 
   // What an empty field means: the pattern this row inherits, else the example.
   const fallback = inherited.form === 'branch' && inherited.pattern ? inherited.pattern : EXAMPLE;
-  const draft: LandingRule = form === 'branch' ? { form, pattern: pattern.trim() || fallback } : MERGE;
+  const draft: LandingRule = {
+    ...(form === 'branch' ? { form, pattern: pattern.trim() || fallback } : MERGE),
+    ...(tidy ? { tidy: true } : {}),
+  };
   const changed = !same(draft, set ?? inherited);
 
   return (
@@ -155,6 +163,13 @@ function LandingField({ name, set, inherited, busy, onSave }: {
           className="w-56 rounded-control border border-line-strong bg-raised px-2.5 py-1 font-mono text-small text-ink placeholder:italic placeholder:text-ink-faint"
         />
       )}
+      <CheckField
+        label={t('settings.landing.tidy')}
+        checked={tidy}
+        onChange={setTidy}
+        disabled={busy}
+        className="text-small"
+      />
       <Button type="submit" disabled={busy || !changed}>{t('settings.landing.set')}</Button>
       <Button
         variant="ghost"

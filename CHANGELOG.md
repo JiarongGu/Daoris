@@ -636,6 +636,15 @@ The first version: doctrine that installs, is checked, and flows back.
   verbatim, and the variables that choose its model; on the desktop, the intake's agent — off, or a
   way in this machine has — and the account an intake in each circle runs as. What a start runs on
   lists the intake as a second job, and the status bar's tier leads there.
+- **Session branches are cleaned up once their work lands** (WSR3, D88). They piled up: one repository
+  had sixteen empty ones. A branch's work counts as landed when a branch of the person's holds every
+  commit: the line, a feature branch, or one they pushed. Settings → Workspace → *Session branches*
+  lists every session branch with what it holds, and one press removes those that hold nothing or
+  whose work has landed, with their trees. Work nothing of the person's holds, uncommitted work, and a
+  tree a session still uses are kept, and Projects names a repository whose branches hold such work.
+  `daoris-driver trees clean` is the same list from a terminal, and `--yes` is the press. A landing
+  rule can say *tidy*, so the tree and branch go as soon as the work lands. A tree whose work is on a
+  feature branch is now removed without `--force`.
 - **How work lands is a workspace's rule** (WSR1, D87). Accepting a session's work merged it into
   the line on this machine, which skips a team's review. A workspace, or one repository, can now say
   **branch** with a pattern such as `feature/{quest}-{slug}`. Accepting then puts the work on that new

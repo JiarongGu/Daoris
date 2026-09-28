@@ -3089,6 +3089,18 @@ check(
   treeOnly.text,
 );
 
+// The clean-up from a terminal (WSR3, D88): the list first, and work no branch of the person's holds
+// is kept and named — even when the press is made.
+const cleanEnv = { DAORIS_DRIVER_CONFIG: driverConfig, DAORIS_SERVICE_URL: BASE };
+const cleanListed = run(`dotnet "${driverDll}" trees clean`, scratch, cleanEnv);
+const cleanKept = run(`dotnet "${driverDll}" trees clean --yes`, scratch, cleanEnv);
+check(
+  '`daoris-driver trees clean` lists the tree’s branch as kept, holding work no branch of yours holds — and --yes keeps it',
+  cleanListed.code === 0 && /kept\s+newcomer\s+daoris\/\S+\s+1 commit\(s\) no branch of yours holds/.test(cleanListed.out)
+    && cleanKept.code === 0 && /kept\s+newcomer\s+daoris\//.test(cleanKept.out) && existsSync(treePath),
+  cleanListed.out + cleanKept.out,
+);
+
 const forcedRemove = run(
   `dotnet "${driverDll}" trees remove "${treePath}" --force`, scratch,
   { DAORIS_DRIVER_CONFIG: driverConfig });
@@ -3097,6 +3109,18 @@ check(
   forcedRemove.code === 0 && !existsSync(treePath)
     && !new RegExp('daoris/').test(run('git branch --list "daoris/*"', newcomer).out),
   forcedRemove.out,
+);
+
+// A session branch that holds nothing goes on the press, after the list says it would.
+run('git branch daoris/s-rehearse', newcomer);
+const emptyListed = run(`dotnet "${driverDll}" trees clean`, scratch, cleanEnv);
+const emptyCleaned = run(`dotnet "${driverDll}" trees clean --yes`, scratch, cleanEnv);
+check(
+  '…and a session branch holding nothing is listed to go, then removed by --yes',
+  /goes\s+newcomer\s+daoris\/s-rehearse\s+nothing beyond/.test(emptyListed.out)
+    && emptyCleaned.code === 0 && /removed\s+newcomer\s+daoris\/s-rehearse/.test(emptyCleaned.out)
+    && !/daoris\/s-rehearse/.test(run('git branch --list "daoris/*"', newcomer).out),
+  emptyListed.out + emptyCleaned.out,
 );
 
 // Leave the root as section 7 left it — later phases assume the dirty file is theirs to manage.

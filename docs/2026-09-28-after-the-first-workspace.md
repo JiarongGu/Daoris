@@ -62,6 +62,8 @@ if form 3 is kept.
 
 ## 2. Session branches cleaned up after they land (WSR3)
 
+> **Decided and built: D88** (2026-09-28). What follows is the study as written.
+
 **Today.** Removing a session tree deletes its branch, with `-d` when git proves the work is on the
 canonical line and `-D` only when the person forces it. A merge leaves the tree and branch in place,
 deliberately (D51 rules 6–7: nothing deletes itself). So branches pile up: FG5 left sixteen empty

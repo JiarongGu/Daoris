@@ -73,6 +73,8 @@ const EMPTY: DriverChoices = {
 export interface LandingRule {
   form: string;
   pattern?: string;
+  /** Once a press lands the work, its tree and branch go — behind the driver's proof (D88). Absent is off. */
+  tidy?: boolean;
 }
 
 /** What a pattern may say — the driver's `LandingRules.Placeholders`. One of the first two is required. */
@@ -465,7 +467,11 @@ export function commandDriver({ argv, write }: CommandArgs): ExitCode {
           + 'e.g. `daoris driver landing --workspace aurora branch "feature/{quest}-{slug}"`.');
       }
 
-      const rule: LandingRule | null = clear ? null : { form: form!, ...(pattern !== undefined ? { pattern } : {}) };
+      const rule: LandingRule | null = clear ? null : {
+        form: form!,
+        ...(pattern !== undefined ? { pattern } : {}),
+        ...(argv.includes('--tidy') ? { tidy: true } : {}),
+      };
       const problem = rule === null ? null : landingProblem(rule);
       if (problem !== null) throw new DaorisError(problem);
 
@@ -483,6 +489,11 @@ export function commandDriver({ argv, write }: CommandArgs): ExitCode {
         write(`daoris: work in ${whose} is put on a branch named \`${rule.pattern}\` when you accept it —`);
         write('  from the session\'s branch, with nothing merged and no checkout touched. You push it and open');
         write('  the pull request: Daoris never pushes (D87).');
+      }
+
+      if (rule?.tidy) {
+        write('  Once a press lands the work, its tree and its branch go — only where git proves the work is on a');
+        write('  branch of yours. Without --tidy the tree stays until you discard it.');
       }
 
       if (rule !== null && workspace) {
@@ -549,7 +560,8 @@ export function commandDriver({ argv, write }: CommandArgs): ExitCode {
       write(`  line       workspace ${workspace}  ${branch}  (for each repository there that sets none)`);
     }
 
-    const spelled = (rule: LandingRule) => (rule.form === 'branch' ? `branch ${rule.pattern}` : rule.form);
+    const spelled = (rule: LandingRule) =>
+      (rule.form === 'branch' ? `branch ${rule.pattern}` : rule.form) + (rule.tidy ? ', tidy' : '');
     for (const [repository, rule] of Object.entries(choices.landings)) {
       write(`  landing    ${repository}  ${spelled(rule)}`);
     }
@@ -637,17 +649,24 @@ function ruleMap(value: unknown): Record<string, LandingRule> {
   const held: Record<string, LandingRule> = {};
   for (const [name, rule] of Object.entries(value as Record<string, unknown>)) {
     if (!rule || typeof rule !== 'object') continue;
-    const { form, pattern } = rule as Record<string, unknown>;
-    const read: LandingRule = { form: typeof form === 'string' ? form : '', ...(typeof pattern === 'string' ? { pattern } : {}) };
+    const { form, pattern, tidy } = rule as Record<string, unknown>;
+    const read: LandingRule = {
+      form: typeof form === 'string' ? form : '',
+      ...(typeof pattern === 'string' ? { pattern } : {}),
+      ...(tidy === true ? { tidy: true } : {}),
+    };
     if (landingProblem(read) === null) held[name] = kept(read);
   }
 
   return held;
 }
 
-/** A rule as it is kept: a merge carries no pattern — the driver keeps it the same way. */
+/** A rule as it is kept: a merge carries no pattern, and the tidy only when on — the driver keeps it the same way. */
 function kept(rule: LandingRule): LandingRule {
-  return rule.form === 'merge' ? { form: 'merge' } : { form: rule.form, pattern: rule.pattern! };
+  return {
+    ...(rule.form === 'merge' ? { form: 'merge' } : { form: rule.form, pattern: rule.pattern! }),
+    ...(rule.tidy ? { tidy: true } : {}),
+  };
 }
 
 function names(value: unknown): string[] {
