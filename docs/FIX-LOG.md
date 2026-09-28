@@ -31,7 +31,7 @@ commits of its own and went with the clean-up.
 **The trap.** Long paths are a property of the location, and a fix at one call site leaves every
 other call at that location with the same trap. Say it where every call passes.
 
-**Commit.** pending
+**Commit.** `5734758`
 
 ## A Settings test failed every full run and passed every time alone (2026-09-28)
 
