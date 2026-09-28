@@ -5,6 +5,55 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## A Settings test failed every full run and passed every time alone (2026-09-28)
+
+**Symptom.** `SettingsView in a browser > lists every workspace…` failed in three full runs of the
+web unit suite in a row (the platform gate's first step), showing "0 workspaces". It passed alone, and
+beside the stories and shell files.
+
+**Root cause.** Testing-library's `findBy` waits one second. A file's first find waits on its first
+fetch through React Query. With 83 files in parallel workers, that took longer than a second once the
+suite had grown by a file of stories. It is the class the vite config's `testTimeout` comment names
+for typing tests (2026-09-24): time a loaded machine takes, not a defect.
+
+**Fix.** `configure({ asyncUtilTimeout: 5_000 })` in `src/test/setup.tsx`, for the whole suite. A
+number per call would be a list someone appends to. A find that never matches still fails, five
+seconds later.
+
+**Verify.** With only that find given eight seconds, the full run passed 1219/1219. Then it passed
+again with the suite-wide setting and the per-call change reverted.
+
+**Commit.** pending
+
+## A tree whose line only origin had was removed as if its work had landed (2026-09-28)
+
+**Symptom.** Found while building WSR2, before it shipped. A repository's line set to `develop`, with
+this checkout holding `develop` only as `origin/develop`. A session tree grown from it with a commit
+of its own was removed without `--force`, and the answer said it was. Only git's own `branch -d`,
+which refused to delete a branch not merged into the checkout's HEAD, kept the commits. The merge door
+said "`develop` already holds everything — nothing to merge".
+
+**Root cause.** Both doors asked `git log --oneline <line>..<branch>` and read only its output. With
+no local `<line>`, git exits non-zero and prints nothing to stdout, and an empty answer read as
+"nothing unmerged". The same flaw was latent before WSR2 whenever git could not compare. The guess
+(`origin/HEAD`, else `main`, else `master`) almost always names a local branch, and a line a person
+sets need not.
+
+**Fix.** `SessionTrees.ComparableAsync` names the line where git has it: the local branch, else
+`origin/<line>`, else nothing. Both doors compare against that name and check git's exit code. A
+comparison git cannot make is a refusal that keeps the tree and says why. A line git has nowhere
+cannot say whether work landed on it.
+
+**Verify.**
+- `CanonicalLineTests`: *work on a line only origin has is not taken for landed*, and *a tree is not
+  removed against a line git cannot find*.
+- With the exit-code checks off and the comparison back on the bare line name, both went red.
+
+**The trap.** A git call read for its output alone treats a failure as an empty answer. Where empty
+means "safe to delete", check the exit code.
+
+**Commit.** pending
+
 ## The session dock stayed narrow while the window grew (2026-09-28)
 
 **Symptom.** The owner, on the installed window: *"box content does not auto resize with the outer

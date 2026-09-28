@@ -178,6 +178,47 @@ public sealed class DriverModuleTests : Bridge
     }
 
     /// <summary>
+    /// A repository's line (WSR2): the screen's half of `daoris driver line`, over the same file. The
+    /// names ride as rows, not as an object's keys, so no key policy on the bridge can respell one.
+    /// </summary>
+    [Fact]
+    public async Task Setting_a_line_writes_the_same_file_the_terminal_edits()
+    {
+        var module = Module();
+        await AnswerAsync(module, "SET_LINE", new { workspace = "aurora", branch = "develop" });
+        var state = await AnswerAsync(module, "SET_LINE", new { repository = "Engine", branch = "release/2026.09" });
+
+        var config = DriverConfig.Load(DriverConfigPath);
+        Assert.Equal("release/2026.09", config.Lines["Engine"]);
+        Assert.Equal("develop", config.WorkspaceLines["aurora"]);
+        Assert.Equal("Engine", state.GetProperty("lines")[0].GetProperty("repository").GetString());
+        Assert.Equal("aurora", state.GetProperty("workspaceLines")[0].GetProperty("workspace").GetString());
+
+        var cleared = await AnswerAsync(module, "SET_LINE", new { repository = "engine" });
+        Assert.Equal(0, cleared.GetProperty("lines").GetArrayLength());
+    }
+
+    [Fact]
+    public async Task A_line_git_would_not_take_or_one_with_no_owner_is_refused_in_a_sentence()
+    {
+        var bad = await RefusalAsync(Module(), "SET_LINE", new { repository = "engine", branch = "a..b" });
+        Assert.Contains("not a branch name git would take", bad);
+
+        var neither = await RefusalAsync(Module(), "SET_LINE", new { branch = "develop" });
+        Assert.Contains("a `repository` or a `workspace`", neither);
+        Assert.False(File.Exists(DriverConfigPath) && DriverConfig.Load(DriverConfigPath).Lines.Count > 0);
+    }
+
+    /// <summary>What each repository's line is needs the registry's checkouts, so before the driver is up it is the cold-start sentence.</summary>
+    [Fact]
+    public async Task Asking_the_lines_before_the_driver_is_up_is_a_sentence()
+    {
+        var refusal = await RefusalAsync(Module(), "LINES");
+
+        Assert.Contains(Refusals.DriverNotReady, refusal);
+    }
+
+    /// <summary>
     /// Notifications (SURF5b): the desktop half of a machine-local switch whose other door is
     /// `daoris driver notify on|off`. One file, two editors (D50) — and it is ON until somebody
     /// says otherwise, because a driver nobody has to watch is the whole point of one.

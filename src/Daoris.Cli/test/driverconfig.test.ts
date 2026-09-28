@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { commandDriver, driverConfigPath, readDriverChoices } from '../src/driverconfig.ts';
+import { commandDriver, driverConfigPath, isBranchName, readDriverChoices } from '../src/driverconfig.ts';
 import { makeFixture, captureError } from './_fixture.ts';
 
 /**
@@ -174,6 +174,61 @@ test('trees opts a repository into session worktrees, and off takes it back out'
   fx.cleanup();
 });
 
+/**
+ * WSR2: a repository's line — the branch its work grows from and lands on — set by the person, per
+ * repository or for a whole workspace, winning over the checkout's guess. `CanonicalLineTests.cs`
+ * holds the same branch-name table, answer for answer.
+ */
+const BRANCHES: [string, boolean][] = [
+  ['main', true], ['develop', true], ['feature/team-x', true], ['release/2026.09', true],
+  ['', false], ['has space', false], ['-dash', false], ['a..b', false], ['ends/', false], ['x.lock', false],
+  ['a:b', false], ['@', false], ['a@{1}', false], ['.hidden', false], ['feat/.x', false], ['a//b', false],
+  ['a b', false], ['a\u0085b', false],
+];
+
+test('a line is a name git would take', () => {
+  for (const [name, valid] of BRANCHES) assert.equal(isBranchName(name), valid, JSON.stringify(name));
+});
+
+test('line sets a repository\'s line, a workspace\'s default, and clears either', () => {
+  const fx = makeFixture('driver-line');
+
+  const set = run(['line', 'engine', 'develop'], at(fx));
+  assert.deepEqual(readDriverChoices(at(fx)).lines, { engine: 'develop' });
+  assert.match(set.out, /engine.*develop/);
+
+  run(['line', '--workspace', 'aurora', 'release'], at(fx));
+  assert.deepEqual(readDriverChoices(at(fx)).workspaceLines, { aurora: 'release' });
+  assert.match(run(['list'], at(fx)).out, /line\s+engine\s+develop[\s\S]*line\s+workspace aurora\s+release/);
+
+  run(['line', 'engine', '--clear'], at(fx));
+  run(['line', '--workspace', 'aurora', '--clear'], at(fx));
+  const cleared = readDriverChoices(at(fx));
+  assert.deepEqual([cleared.lines, cleared.workspaceLines], [{}, {}]);
+  // Absent is the checkout's guess, and a file that never chose a line carries none.
+  assert.equal('lines' in JSON.parse(readFileSync(at(fx), 'utf8')), false);
+  fx.cleanup();
+});
+
+test('line refuses a name git would not take, and a missing one', () => {
+  const fx = makeFixture('driver-line-refused');
+  assert.match(captureError(() => run(['line', 'engine', 'a..b'], at(fx))).message, /branch name/);
+  assert.match(captureError(() => run(['line', 'engine'], at(fx))).message, /<branch>\|--clear/);
+  fx.cleanup();
+});
+
+test('the lines survive edits made by verbs that do not know them, and one git would refuse is not read', () => {
+  const fx = makeFixture('driver-line-preserve');
+  writeFileSync(at(fx), JSON.stringify({ lines: { engine: 'develop', odd: 'has space' }, workspaceLines: { aurora: 'release' } }));
+
+  run(['cap', '3'], at(fx));
+
+  const choices = readDriverChoices(at(fx));
+  assert.deepEqual(choices.lines, { engine: 'develop' });
+  assert.deepEqual(choices.workspaceLines, { aurora: 'release' });
+  fx.cleanup();
+});
+
 test('trees needs on or off, and says so', () => {
   const fx = makeFixture('driver-trees-arg');
   assert.match(captureError(() => run(['trees', 'engine'], at(fx))).message, /on\|off/);
@@ -228,7 +283,7 @@ test('an unknown verb names the ones that exist', () => {
 
   assert.match(error.message, /unknown driver verb 'frobnicate'/);
   assert.match(
-    error.message, /list, drive, undrive, hold, resume, trees, notify, strikes, retry, timeout, cap, adapter, intake/);
+    error.message, /list, drive, undrive, hold, resume, trees, line, notify, strikes, retry, timeout, cap, adapter, intake/);
   fx.cleanup();
 });
 

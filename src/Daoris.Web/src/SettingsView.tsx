@@ -5,9 +5,9 @@ import { cn } from './lib/cn';
 import { useRegistry, useStatus, useWorkspaceHoldings } from './queries';
 import { useScope } from './scope';
 import {
-  useAddFavorite, useBrowserSettings, useDriver, useHarnessAction, useHarnessEnded, useHarnesses, usePluginAction,
-  usePlugins, useRefreshHarnesses, useRemotes, useRemoveFavorite, useRuleAction, useRuleProposal, useRules,
-  useSetBrowser, useSetExtensions, useSetIntake, useSetNotify, useSetStrikes, useStarts, useUnwireRemote, useUsage,
+  useAddFavorite, useBrowserSettings, useDriver, useHarnessAction, useHarnessEnded, useHarnesses, useLines,
+  usePluginAction, usePlugins, useRefreshHarnesses, useRemotes, useRemoveFavorite, useRuleAction, useRuleProposal, useRules,
+  useSetBrowser, useSetExtensions, useSetIntake, useSetLine, useSetNotify, useSetStrikes, useStarts, useUnwireRemote, useUsage,
   useWireRemote,
 } from './shell';
 import { AgentRules } from './settings/AgentRules';
@@ -15,6 +15,7 @@ import { proposalChange } from './settings/proposals';
 import { StartWiringList } from './map/StartWiring';
 import { SessionConsole } from './SessionConsole';
 import { AiJobs, type SearchTier } from './settings/AiJobs';
+import { LineList } from './settings/Lines';
 import { SignIn } from './SignIn';
 import { byTool, doorLabel, type ToolDoor } from './tools';
 import {
@@ -144,6 +145,7 @@ export function SettingsView({ notify, section = 'appearance', onSection, anchor
               <WorkspaceList />
               {attached && <WiringSettings notify={notify} />}
               {attached && <Starts notify={notify} />}
+              {attached && <LineSettings notify={notify} />}
             </>
           )}
           {shown === 'driver' && <DriverSettings notify={notify} />}
@@ -411,6 +413,35 @@ function DriverSettings({ notify }: { notify: Notify }) {
         </SettingRow>
       </Card>
     </>
+  );
+}
+
+/**
+ * Each repository's line and each workspace's default (WSR2): the driver's own resolution, and the
+ * screen's half of `daoris driver line` (D50). Shell-only, because the guess is read off a checkout.
+ */
+function LineSettings({ notify }: { notify: Notify }) {
+  const { t } = useTranslation();
+  const answer = useLines();
+  const driver = useDriver();
+  const setLine = useSetLine();
+  useErrorNotify(answer.error, notify);
+
+  return (
+    <LineList
+      lines={Array.isArray(answer.data?.lines) ? answer.data.lines : []}
+      workspaceLines={driver.data?.workspaceLines ?? []}
+      busy={setLine.isPending}
+      onSet={(change) => setLine.mutate(change, {
+        onSuccess: () => {
+          const name = change.repository ?? change.workspace ?? '';
+          notify(change.branch
+            ? t('settings.lines.saved', { name, branch: change.branch })
+            : t('settings.lines.cleared', { name }));
+        },
+        onError: failure(notify),
+      })}
+    />
   );
 }
 

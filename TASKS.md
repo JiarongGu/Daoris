@@ -21,8 +21,8 @@ lists.
 
 ## State
 
-**Counts, and this is their one home:** sixteen commands, **504 CLI tests, 528 service, 799 driver,
-279 desktop modules, 80 devkit, 1211 web unit, 21 Playwright**, 66/66 release rehearsal, **289/289
+**Counts, and this is their one home:** sixteen commands, **508 CLI tests, 528 service, 828 driver,
+282 desktop modules, 80 devkit, 1219 web unit, 21 Playwright**, 66/66 release rehearsal, **289/289
 family rehearsal** (it names its own phases when you run it), **45/45 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge
 documents, 5 skills, 7 packs. The always-loaded core is **22,492 of 26,000 bytes** — a span in
@@ -144,8 +144,8 @@ rather than designed.
 
 ## Backlog
 
-**Thirty-seven rows are open**: the six the first real workspace showed (WSR1–WSR3, SESS1, MAP4,
-HELP1); D85's two (CHR2, CHR4); the in-app browser's three (BRW3, BRW7, BRW8); the first goal's three (FG5,
+**Thirty-six rows are open**: the five the first real workspace showed (WSR1, WSR3, SESS1, MAP4,
+HELP1; WSR2 landed as D86); D85's two (CHR2, CHR4); the in-app browser's three (BRW3, BRW7, BRW8); the first goal's three (FG5,
 READACROSS1 the owner's, and SEM2 on a trigger); D76's held file tools;
 the eight REV3 left, WINDOW2 among them; six leftovers (RAIL2, SURF11, CONSOLE3, FLAKE1, DEPLOY5, TEST1); two on the owner
 (TRUST2, AGT2c); and six on a trigger (see *Handover*). Every closed one is in `docs/task-archive.md`, and this file holds no
@@ -158,9 +158,6 @@ ticked rows, by the `task-lifecycle` rule it also ships. A heading below holds o
 
 `docs/2026-09-28-after-the-first-workspace.md` is the study: what each part has today, the gap, the
 requirements, and the owner's calls. Its recommended order is the order below.
-- [ ] **WSR2 — the default branch is the repository's, and a person can set it** (study §3). Today it
-  is `origin/HEAD`, else `main`, else `master`, and cannot be set. A per-repository setting with a
-  workspace default wins over the guess. Everything that reads the line reads it from one place.
 - [ ] **WSR1 — workspace rules: how work lands** (study §1). An integration rule per workspace, with a
   repository override: merge into a named line, carry the work onto a feature branch named by a
   pattern for the person to push, or push and open a pull request. Set in Settings and from a

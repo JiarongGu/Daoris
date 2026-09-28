@@ -1,6 +1,13 @@
 import '@testing-library/jest-dom/vitest';
+import { configure } from '@testing-library/react';
 import { setProjectAnnotations } from '@storybook/react-vite';
 import preview from '../../.storybook/preview';
+
+// 🔴 A `findBy` waits five seconds, not testing-library's one — the vite config's `testTimeout` has
+// the same reason. A file's first find waits on its first fetch through React Query, and across 83
+// files in parallel workers that took over a second: SettingsView's workspace list failed every full
+// run on 2026-09-28 and passed every time alone. What never appears still fails, five seconds later.
+configure({ asyncUtilTimeout: 5_000 });
 
 // The three environment shims the bilingual sibling learned to need first; adopted with the layer.
 

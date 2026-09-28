@@ -7082,3 +7082,42 @@ to the account, and put them back before its first page. BRW10's sealed carry is
   closed, opened again from Daoris on a new port, and the same session came back. That Edge alone
   loses it was measured on this Edge (the evidence, §3).
 - The scratch Edge profile and its kept cookies were deleted after.
+
+## WSR2 — the default branch is the repository's, and a person can set it (2026-09-28)
+
+The row as filed: *(study §3). Today it is `origin/HEAD`, else `main`, else `master`, and cannot be
+set. A per-repository setting with a workspace default wins over the guess. Everything that reads the
+line reads it from one place.*
+
+**Outcome** (D86).
+- `driver.json` gains `lines` and `workspaceLines`, written only when set.
+- `CanonicalLine` resolves in this order: the repository's own line, then its workspace's (a
+  repository in no workspace takes `default`'s), then the checkout's guess. It always says which one
+  answered.
+- Every door reads it:
+  - a session tree's start, and through it a chain's next step;
+  - the merge door, whose refusal names the set line;
+  - a tree's removal;
+  - sync's feed.
+- A line only the remote has is grown from `origin/<line>`. One that is nowhere is refused before
+  anything is created.
+- The merge door and a tree's removal compare against the line where git has it. When git cannot
+  compare, the answer is a refusal, not "nothing unmerged". Before this, a tree whose line only origin
+  had was removed as if its work had landed (FIX-LOG).
+- Two doors (D50): `daoris driver line <repo>|--workspace <name> <branch>|--clear`, and Settings →
+  Workspace → *Lines* (the `SET_LINE` and `LINES` routes). Projects shows each repository's line and
+  what said so.
+- The branch-name rule is a twin, with one table on both sides.
+
+**Proven by:**
+- 29 `CanonicalLineTests`, with real git for the open, workspace, origin, refusal, merge and removal
+  cases. Sabotaging the reader turned 5 red, and sabotaging the comparison turned its 2 red.
+- 3 driver-module tests: the file, the refusal sentences, and the cold start.
+- 4 CLI tests, including the branch-name table.
+- 5 molecule tests and 3 stories.
+- On the scratch shell, both themes:
+  - set from the screen, and it landed in the file;
+  - a workspace default set from the terminal was shown on the screen;
+  - cleared from the screen, and the repositories fell back to the workspace's line.
+- The screenshots found two defects, now fixed: a row with *Clear* moved its field out of the column,
+  and in dark an inherited line read as a set one.

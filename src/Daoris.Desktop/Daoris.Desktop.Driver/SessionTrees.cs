@@ -83,17 +83,17 @@ public sealed class SessionTrees(string home)
                 + "does not name. Re-run `daoris connect` from the actual root.");
         }
 
-        // WSP4's resolution, reused rather than re-derived: the repository's canonical line where it
-        // declared one, the root's HEAD otherwise — and the answer SAYS which, because a branch grown
+        // The repository's line (WSR2): what the person set for it or its workspace, else the
+        // checkout's guess, else the root's HEAD — and the answer SAYS which, because a branch grown
         // from the wrong point is invisible until merge time.
-        var canonical = await WorkingTree.DefaultBranchAsync(root, ct).ConfigureAwait(false);
-        var basedOn = canonical is not null
-            ? $"the canonical line `{canonical}`"
+        var line = await LineAsync(root, repository, workspace, ct).ConfigureAwait(false);
+        var basedOn = line.Branch is not null
+            ? CanonicalLine.Describe(line)
             : "the root's HEAD (no canonical line is declared)";
+        var start = line.Branch is { } set ? await StartOfAsync(root, set, line, repository, ct).ConfigureAwait(false) : "HEAD";
 
         // A chain's previous step's branch, where it still stands (CHAIN2). Session branches are refs
         // of the root's own repository, so a linked worktree grows from one like any other branch.
-        var start = canonical ?? "HEAD";
         string? grewFrom = null;
         if (from is { Length: > 0 })
         {
@@ -206,15 +206,25 @@ public sealed class SessionTrees(string home)
                 + "leave behind. Commit it in the tree first, or decide it is not wanted.");
         }
 
-        var canonical = await WorkingTree.DefaultBranchAsync(root, ct).ConfigureAwait(false);
-        if (canonical is null)
+        var (workspace, repository) = OwnerOf(full);
+        var line = await LineAsync(root, repository, workspace, ct).ConfigureAwait(false);
+        if (line.Branch is not { } canonical)
         {
-            return new(false, "this repository has no canonical line git can name, so there is "
-                + "nowhere to merge to.");
+            return new(false, "this repository has no canonical line git can name, and none is set, so "
+                + "there is nowhere to merge to. Set one with `daoris driver line`.");
         }
 
-        var (_, ahead, _) = await WorkingTree.GitAsync(
-            root, ["log", "--oneline", $"{canonical}..{branch}"], ct).ConfigureAwait(false);
+        // 🔴 Compared where git has the line, and a comparison git could not make is not "nothing to
+        // merge": a line only origin has made `log` fail, and its empty output said the work was there.
+        var against = await ComparableAsync(root, canonical, ct).ConfigureAwait(false) ?? canonical;
+        var (aheadCode, ahead, aheadErr) = await WorkingTree.GitAsync(
+            root, ["log", "--oneline", $"{against}..{branch}"], ct).ConfigureAwait(false);
+        if (aheadCode != 0)
+        {
+            return new(false, $"git cannot compare `{branch}` with `{canonical}` here: {FirstLine(aheadErr)} "
+                + "Fetch it, or set another line with `daoris driver line`.");
+        }
+
         if (string.IsNullOrWhiteSpace(ahead))
         {
             // An empty merge commit would say work moved when none did.
@@ -237,8 +247,8 @@ public sealed class SessionTrees(string home)
         if (!string.Equals(on, canonical, StringComparison.Ordinal))
         {
             return new(false,
-                $"the repository's checkout is on `{on}`, not `{canonical}`. Daoris does not switch a "
-                + "branch in a checkout it did not create — put it on the canonical line, then merge.");
+                $"the repository's checkout is on `{on}`, not {CanonicalLine.Describe(line)}. Daoris does "
+                + $"not switch a branch in a checkout it did not create — put it on `{canonical}`, then merge.");
         }
 
         // `--no-ff` so the merge is one commit a person can read and revert as a unit, and `--no-edit`
@@ -308,9 +318,21 @@ public sealed class SessionTrees(string home)
                     + "destroy that work; commit it there or say it again with --force, meaning it.");
             }
 
-            var canonical = await WorkingTree.DefaultBranchAsync(root, ct).ConfigureAwait(false) ?? "HEAD";
-            var (_, unmerged, _) = await WorkingTree.GitAsync(
-                root, ["log", "--oneline", $"{canonical}..{branch}"], ct).ConfigureAwait(false);
+            var (workspace, repository) = OwnerOf(full);
+            var canonical = (await LineAsync(root, repository, workspace, ct).ConfigureAwait(false)).Branch ?? "HEAD";
+            // 🔴 Where git has the line, and a comparison git could not make keeps the tree: its empty
+            // output read as "nothing unmerged", and a tree whose line only origin had went with its work.
+            var against = canonical == "HEAD" ? canonical : await ComparableAsync(root, canonical, ct).ConfigureAwait(false);
+            var (logCode, unmerged, logErr) = against is null
+                ? (1, "", $"git has no branch `{canonical}` here or on origin.")
+                : await WorkingTree.GitAsync(root, ["log", "--oneline", $"{against}..{branch}"], ct).ConfigureAwait(false);
+            if (logCode != 0)
+            {
+                return new(false,
+                    $"Daoris cannot tell whether the work on `{branch}` is on `{canonical}`: {FirstLine(logErr)} "
+                    + "The tree stays. Set the line with `daoris driver line`, or say it again with --force to discard it.");
+            }
+
             if (!string.IsNullOrWhiteSpace(unmerged))
             {
                 return new(false,
@@ -361,6 +383,56 @@ public sealed class SessionTrees(string home)
         }
 
         return found;
+    }
+
+    /// <summary>
+    /// The repository's line (WSR2), from the choices beside this home, read per call: the person may
+    /// set it between one tree and the next, and a cached answer would grow the second from the old line.
+    /// </summary>
+    private Task<Line> LineAsync(string root, string repository, string workspace, CancellationToken ct) =>
+        CanonicalLine.ResolveAsync(root, repository, workspace, DriverConfig.Load(Path.Combine(home, "driver.json")), ct);
+
+    /// <summary>
+    /// Where a tree on <paramref name="branch"/> grows from: the branch itself where this checkout has
+    /// it, its copy on <c>origin</c> where only that exists, and a refusal for a line set to a branch
+    /// the checkout has nowhere — a tree grown from the wrong point is invisible until merge time.
+    /// </summary>
+    private static async Task<string> StartOfAsync(string root, string branch, Line line, string repository, CancellationToken ct)
+    {
+        var (local, _, _) = await WorkingTree.GitAsync(
+            root, ["rev-parse", "--verify", "--quiet", $"refs/heads/{branch}"], ct).ConfigureAwait(false);
+        if (local == 0) return branch;
+        if (line.Source == LineSource.Checkout) return branch;
+
+        var (remote, _, _) = await WorkingTree.GitAsync(
+            root, ["rev-parse", "--verify", "--quiet", $"refs/remotes/origin/{branch}"], ct).ConfigureAwait(false);
+        if (remote == 0) return $"origin/{branch}";
+
+        throw new DriverException(
+            $"{CanonicalLine.Describe(line)} is `{repository}`'s line, and its checkout has no such branch, here "
+            + $"or on origin. Fetch it, or set another with `daoris driver line {repository} <branch>`.");
+    }
+
+    /// <summary>
+    /// The name git compares <paramref name="branch"/> by here: the local branch, else origin's copy,
+    /// else null — a line this checkout has nowhere.
+    /// </summary>
+    private static async Task<string?> ComparableAsync(string root, string branch, CancellationToken ct)
+    {
+        foreach (var (reference, name) in new[] { ($"refs/heads/{branch}", branch), ($"refs/remotes/origin/{branch}", $"origin/{branch}") })
+        {
+            var (code, _, _) = await WorkingTree.GitAsync(root, ["rev-parse", "--verify", "--quiet", reference], ct).ConfigureAwait(false);
+            if (code == 0) return name;
+        }
+
+        return null;
+    }
+
+    /// <summary>A tree's workspace and repository, read from the layout Daoris itself chose (`trees/&lt;workspace&gt;/&lt;repository&gt;/&lt;name&gt;`).</summary>
+    private (string Workspace, string Repository) OwnerOf(string full)
+    {
+        var parts = Path.GetRelativePath(TreesRoot, full).Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+        return parts.Length >= 3 ? (parts[0], parts[1]) : ("", "");
     }
 
     private static string FirstLine(string text)

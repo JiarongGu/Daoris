@@ -92,6 +92,35 @@ public sealed record DriverConfig(
     public DriverConfig WithIntake(string? adapter) =>
         this with { IntakeAdapter = string.IsNullOrWhiteSpace(adapter) ? null : adapter.Trim() };
 
+    /// <summary>
+    /// The line a repository's work grows from and lands on, as the person set it (WSR2), by
+    /// repository. It wins over the workspace's and over the checkout's guess (<see cref="CanonicalLine"/>).
+    /// Empty — the default — is the guess alone, today's behaviour.
+    /// </summary>
+    public IReadOnlyDictionary<string, string> Lines { get; init; } =
+        new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>A workspace's line, for every repository in it that sets none of its own (WSR2).</summary>
+    public IReadOnlyDictionary<string, string> WorkspaceLines { get; init; } =
+        new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>Set a repository's line, or clear it with null to take the workspace's or the guess again.</summary>
+    public DriverConfig WithLine(string repository, string? branch) => this with { Lines = Set(Lines, repository, branch) };
+
+    /// <summary>Set a workspace's line, or clear it with null.</summary>
+    public DriverConfig WithWorkspaceLine(string workspace, string? branch) =>
+        this with { WorkspaceLines = Set(WorkspaceLines, workspace, branch) };
+
+    private static IReadOnlyDictionary<string, string> Set(IReadOnlyDictionary<string, string> map, string key, string? branch)
+    {
+        var next = new Dictionary<string, string>(map, StringComparer.OrdinalIgnoreCase);
+        if (branch is null) next.Remove(key);
+        else next[key] = BranchName.IsValid(branch)
+            ? branch
+            : throw new DriverException($"`{branch}` is not a branch name git would take.");
+        return next;
+    }
+
     public const string PathVariable = "DAORIS_DRIVER_CONFIG";
 
     /// <summary>
@@ -155,6 +184,10 @@ public sealed record DriverConfig(
             }
 
             writer.WriteEndObject();
+            // Written only when set (WSR2): absent is the checkout's guess, and a file that never chose
+            // a line should not start carrying an empty one.
+            WriteMap(writer, "lines", Lines);
+            WriteMap(writer, "workspaceLines", WorkspaceLines);
             writer.WriteStartObject("commands");
             foreach (var (name, command) in Commands.OrderBy(c => c.Key, StringComparer.Ordinal))
             {
@@ -168,6 +201,33 @@ public sealed record DriverConfig(
         }
 
         return System.Text.Encoding.UTF8.GetString(stream.ToArray()) + "\n";
+    }
+
+    private static void WriteMap(Utf8JsonWriter writer, string name, IReadOnlyDictionary<string, string> map)
+    {
+        if (map.Count == 0) return;
+        writer.WriteStartObject(name);
+        foreach (var (key, value) in map.OrderBy(pair => pair.Key, StringComparer.Ordinal)) writer.WriteString(key, value);
+        writer.WriteEndObject();
+    }
+
+    /// <summary>A map of names to branch names; an entry that is not one git would take is skipped.</summary>
+    private static IReadOnlyDictionary<string, string> BranchMap(JsonElement root, string name)
+    {
+        var map = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        if (root.TryGetProperty(name, out var element) && element.ValueKind == JsonValueKind.Object)
+        {
+            foreach (var property in element.EnumerateObject())
+            {
+                if (property.Value.ValueKind == JsonValueKind.String
+                    && property.Value.GetString() is { } branch && BranchName.IsValid(branch))
+                {
+                    map[property.Name] = branch;
+                }
+            }
+        }
+
+        return map;
     }
 
     /// <summary>This machine's answer to "may I drive that repository, now" — one flag flipped at a time.</summary>
@@ -226,6 +286,8 @@ public sealed record DriverConfig(
         {
             // 🔴 Absent means OFF — see IntakeAdapter for why this is the opposite of `notify`.
             IntakeAdapter = String(root, "intakeAdapter")?.Trim() is { Length: > 0 } intake ? intake : null,
+            Lines = BranchMap(root, "lines"),
+            WorkspaceLines = BranchMap(root, "workspaceLines"),
         };
     }
 

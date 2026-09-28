@@ -90,7 +90,11 @@ const USAGE = `daoris <command> [options]
                          trees <repo> on|off       sessions there open their own
                                                    worktree (D51) — your dirty
                                                    root stops holding the driver
-                         notify on|off             say so when a session parks,
+                         line <repo> <branch>|--clear
+                                                   the branch its work grows from
+                                                   and lands on (--workspace <name>
+                                                   for each repo there with none)
+                         notify on|off            say so when a session parks,
                                                    or ends without you asking
                          intake <adapter>|off      answer an ask the declarations
                                                    do not settle with a session

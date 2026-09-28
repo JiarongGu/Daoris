@@ -291,7 +291,12 @@ public sealed class RemoteSync : IDisposable
         // The canonical line rides the registration, because the deployment cannot ask git and this
         // machine can (D48 §6). Read per tick rather than cached: a repository's default branch changes
         // about once in its life, and the tick that follows should know.
-        var defaultBranch = await WorkingTree.DefaultBranchAsync(repo.Root, ct).ConfigureAwait(false);
+        // The line the person set wins over the checkout's guess here too (WSR2): the deployment orders
+        // feeds by the line this machine says is canonical, and one answer for every door is the point.
+        // No home is no choices, and the guess alone, as before.
+        var configPath = Environment.GetEnvironmentVariable(DriverConfig.PathVariable) ?? DaorisHome.File("driver.json");
+        var choices = configPath is null ? DriverConfig.Empty : DriverConfig.Load(configPath);
+        var defaultBranch = (await CanonicalLine.ResolveAsync(repo.Root, repo.Repository, _workspace, choices, ct).ConfigureAwait(false)).Branch;
 
         // Where this checkout stands, asked of git at the moment of feeding — the claim the deployment
         // will compare against what it holds (D48 §6).

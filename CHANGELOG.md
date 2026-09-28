@@ -636,6 +636,13 @@ The first version: doctrine that installs, is checked, and flows back.
   verbatim, and the variables that choose its model; on the desktop, the intake's agent — off, or a
   way in this machine has — and the account an intake in each circle runs as. What a start runs on
   lists the intake as a second job, and the status bar's tier leads there.
+- **A repository's line can be set** (WSR2, D86). The branch its work grows from and lands on was
+  only git's guess (`origin/HEAD`, else `main`, else `master`). A person now sets it per repository or
+  as a workspace's default, with `daoris driver line` or Settings → Workspace → *Lines*, and a
+  repository's own setting wins. A session's tree, the merge, a tree's removal, sync's feed and a
+  chain's next step all read it from one place. Projects shows each repository's line and what said
+  so. A line only the remote has is grown from `origin/`, and one that is nowhere is refused, naming
+  the verb that changes it.
 - **Two conversations in one repository no longer break the driver.** A conversation in a checkout
   beside another in its own tree (D51) made every tick fail on a duplicate key, starting nothing
   until one ended.

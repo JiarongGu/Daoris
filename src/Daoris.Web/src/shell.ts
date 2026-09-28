@@ -11,6 +11,7 @@ import { type ChatMessage, type EventPage, mergeEvents, type SessionEvent } from
 import { toUpload } from './attachments';
 import type { WiringAnswer } from './map/wiring';
 import type { AgentRulesState, RuleListName, RuleScopeName } from './settings/AgentRules';
+import type { LineChange, RepositoryLine } from './settings/Lines';
 
 export type { DiffFile, SessionDiff } from './work/diff';
 
@@ -53,6 +54,10 @@ export type DriverState = {
    * sentence — or null. Standing, because it is true for as long as that host runs.
    */
   hostNotice?: string | null;
+  /** The lines as set (WSR2), by repository — absent on a shell older than them. */
+  lines?: { repository: string; branch: string }[];
+  /** And by workspace, for each repository there that sets none of its own. */
+  workspaceLines?: { workspace: string; branch: string }[];
 };
 
 const call = <TData,>(type: string, payload?: Record<string, unknown>): Promise<TData> =>
@@ -234,6 +239,34 @@ export const useSetDrivable = () => useDriverChange<{ repository: string; drivab
 export const useSetHold = () => useDriverChange<{ repository: string; held: boolean }>('SET_HOLD');
 /** Session trees (D51): the same file `daoris driver trees <repo> on|off` edits — two editors, one truth. */
 export const useSetTrees = () => useDriverChange<{ repository: string; ownTree: boolean }>('SET_TREES');
+
+/**
+ * Every repository's line here and what said so (WSR2). Desktop-only: the guess is read off a
+ * checkout, and only this machine holds one.
+ */
+export const useLines = () => {
+  const { isAvailable } = useShenora();
+  return useQuery({
+    queryKey: keys.lines,
+    queryFn: () => call<{ lines: RepositoryLine[] }>('LINES'),
+    enabled: isAvailable,
+  });
+};
+
+/**
+ * Set a repository's line or a workspace's, or clear it with no branch — the file `daoris driver
+ * line` edits (D50). What every repository's line is moves with it, so that answer is asked again.
+ */
+export const useSetLine = () => {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (change: LineChange) => call<DriverState>('SET_LINE', change),
+    onSuccess: (state) => {
+      client.setQueryData(keys.driver, state);
+      void client.invalidateQueries({ queryKey: keys.lines });
+    },
+  });
+};
 
 /**
  * What the shell can say about a folder on this machine (D48 §7) — the one thing a page cannot find

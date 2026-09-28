@@ -6,7 +6,7 @@ import { DriverChoices } from './projects/DriverChoices';
 import { ago, figure } from './format';
 import { useRegistry, useRepositories } from './queries';
 import { useScope } from './scope';
-import { useDriver, useHarnesses, useSetDrivable, useSetHold, useSetTrees } from './shell';
+import { useDriver, useHarnesses, useLines, useSetDrivable, useSetHold, useSetTrees } from './shell';
 import { doorOf } from './tools';
 import {
   Button, Card, Chip, EmptyState, failure, Icon, Inline, type Notify, PageHeader, Prose, SkeletonRows, Tip,
@@ -42,6 +42,10 @@ export function ProjectsView({
   const setDrivable = useSetDrivable();
   const setHold = useSetHold();
   const setTrees = useSetTrees();
+  // Each repository's line as the driver resolves it (WSR2) — shell-only, and absent in a browser.
+  const lines = useLines();
+  const lineOf = (repository: string) => (Array.isArray(lines.data?.lines) ? lines.data.lines : [])
+    .find((line) => line.repository === repository && line.branch);
   // The driver bridge included: a STATE that fails silently reads as a machine with no driver.
   useErrorNotify(registry.error ?? repositories.error ?? driver.error, notify);
 
@@ -169,7 +173,7 @@ export function ProjectsView({
                   lines up under the first. As one flowing line, a wrapped chip fell back under its
                   label (POLISH4). */}
               {(project.owns.length > 0 || project.accepts.length > 0 || project.packs.length > 0
-                || counts?.fed || project.workspace) && (
+                || counts?.fed || project.workspace || lineOf(project.repository)) && (
                 <dl className="m-0 mt-2 grid grid-cols-[max-content_1fr] items-baseline gap-x-3 gap-y-2">
                   {project.owns.length > 0 && (
                     <Row label={t('projects.owns')}>
@@ -211,6 +215,21 @@ export function ProjectsView({
                       <Tip content={t('projects.workspaceTip')}><Chip>{project.workspace}</Chip></Tip>
                     </Row>
                   )}
+                  {lineOf(project.repository) && (() => {
+                    /* The branch this machine grows its work here from and lands it on (WSR2), and what
+                       said so — Settings → Workspace is where it is set. */
+                    const line = lineOf(project.repository)!;
+                    return (
+                      <Row label={t('projects.line')}>
+                        <span className="text-small text-ink-soft">
+                          <Inline text={t(`settings.lines.from.${line.source}`, {
+                            branch: line.branch, workspace: line.workspace,
+                          })}
+                          />
+                        </span>
+                      </Row>
+                    );
+                  })()}
                 </dl>
               )}
               {/* The person's standing choices for THIS machine's driver (D46 §6) — rendered only

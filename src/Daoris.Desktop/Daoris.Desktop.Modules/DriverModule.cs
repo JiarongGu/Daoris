@@ -95,6 +95,42 @@ public sealed class DriverModule : ModuleBase
                 return State();
             }
 
+            // A repository's line, or a workspace's (WSR2), or either cleared with no branch — the same
+            // file `daoris driver line` edits: one truth, two doors (D50).
+            case "SET_LINE":
+            {
+                var branch = Optional(request, "branch");
+                var repository = Optional(request, "repository");
+                var workspace = Optional(request, "workspace");
+                if ((repository is null) == (workspace is null))
+                {
+                    throw new DriverException("a line is set for a `repository` or a `workspace` — name one of them.");
+                }
+
+                Change(config => workspace is not null
+                    ? config.WithWorkspaceLine(workspace, branch)
+                    : config.WithLine(repository!, branch));
+                return State();
+            }
+
+            // Every repository's line here and what said so (WSR2), for the screen. The checkouts are
+            // the registry's, so this waits for the driver like the review does.
+            case "LINES":
+            {
+                var service = _loop.Service ?? throw NotReady();
+                var snapshot = await service.SnapshotAsync(cancellationToken).ConfigureAwait(false);
+                var lines = await CanonicalLine.OfAsync(
+                    DriverConfig.Load(_loop.ConfigPath),
+                    snapshot.Repositories
+                        .OrderBy(known => known.Repository, StringComparer.Ordinal)
+                        .Select(known => (known.Repository, known.Workspace, known.Root)),
+                    cancellationToken).ConfigureAwait(false);
+                return new
+                {
+                    Lines = lines.Select(line => new { line.Repository, line.Workspace, line.Branch, line.Source }).ToArray(),
+                };
+            }
+
             // Whether this machine interrupts the person at all (SURF5b). The same file
             // `daoris driver notify on|off` edits — one truth, two doors (D50).
             case "SET_NOTIFY":
@@ -1524,6 +1560,12 @@ public sealed class DriverModule : ModuleBase
             // Off is "" on the wire, never null: the bridge leaves a null out, and the page tells a
             // shell older than the intake by this field's absence (AGT6, seen on the window).
             IntakeAdapter = config.IntakeAdapter ?? "",
+            // The lines as set (WSR2), as rows rather than an object's keys: a key policy on the
+            // bridge would respell a repository's name.
+            Lines = config.Lines.OrderBy(p => p.Key, StringComparer.Ordinal)
+                .Select(p => new { Repository = p.Key, Branch = p.Value }).ToArray(),
+            WorkspaceLines = config.WorkspaceLines.OrderBy(p => p.Key, StringComparer.Ordinal)
+                .Select(p => new { Workspace = p.Key, Branch = p.Value }).ToArray(),
             Running = _loop.Processes.Running,
         };
     }

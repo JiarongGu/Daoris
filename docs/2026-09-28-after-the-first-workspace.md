@@ -76,6 +76,8 @@ ones in one repository before they were deleted by hand, and several with docs c
 
 ## 3. The default branch is the repository's, and a person can set it (WSR2)
 
+> **Decided and built: D86** (2026-09-28). What follows is the study as written.
+
 **Today.** `WorkingTree.DefaultBranchAsync` asks the checkout (`origin/HEAD`), then tries `main` and
 `master`, and the merge door, chains and sync all use that answer. A person cannot say otherwise.
 

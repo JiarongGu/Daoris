@@ -44,6 +44,7 @@ map found this first (WSP3), and every twin since was built the same way for the
 | The file | The CLI | The driver | The service |
 |---|---|---|---|
 | The home (`DAORIS_HOME`, D63) | `home.ts` | `DaorisHome.cs` | `DaorisHome.cs` |
+| The driver's choices (D46 §6), with each repository's line and its branch-name rule (WSR2) | `driverconfig.ts` | `DriverConfig.cs`, `CanonicalLine.cs` | — |
 | The remotes map (WSP3) | `remotemap.ts` | `RemoteTarget.cs` | `RemoteConfig.cs` |
 | Harnesses, pins and accounts (D57, D67) | `toolchain.ts` | `Harnesses.cs` | — |
 | A maker's release channel (AGT2b) | `channels.ts` | `ReleaseChannel.cs` | — |

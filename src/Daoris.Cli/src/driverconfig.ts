@@ -14,7 +14,7 @@
 
 import { requireHomeFile } from './home.ts';
 import { DaorisError } from './errors.ts';
-import { operands } from './args.ts';
+import { flagValue, operands } from './args.ts';
 import { readJsonObject, writeJsonAtomic } from './fsx.ts';
 import { TOOLCHAINS } from './toolchain.ts';
 import type { CommandArgs } from './types.ts';
@@ -45,6 +45,10 @@ export interface DriverChoices {
   intakeAdapter: string | null;
   /** How long a session may run before the driver kills it — null is the driver's own default. */
   timeoutMinutes: number | null;
+  /** The line each repository's work grows from and lands on, as the person set it (WSR2). */
+  lines: Record<string, string>;
+  /** A workspace's line, for every repository in it that sets none of its own. */
+  workspaceLines: Record<string, string>;
   rest: Record<string, unknown>;
 }
 
@@ -54,8 +58,28 @@ export const DEFAULT_TIMEOUT_MINUTES = 30;
 /** Drives nothing, holds nothing — the safe shape silence takes, matching the driver's own default. */
 const EMPTY: DriverChoices = {
   drivable: [], holds: [], trees: [], cap: 2, adapter: 'claude-code', notify: true,
-  strikes: 3, forgiven: {}, intakeAdapter: null, timeoutMinutes: null, rest: {},
+  strikes: 3, forgiven: {}, intakeAdapter: null, timeoutMinutes: null, lines: {}, workspaceLines: {}, rest: {},
 };
+
+/**
+ * A name the line may be set to (WSR2): git's own rules for a ref name, the ones a person could break
+ * by typing. `BranchName.IsValid` in the driver is the twin, and both carry the same test table.
+ */
+export function isBranchName(name: string): boolean {
+  return name.length > 0 && name.length <= 200
+    && name !== '@'
+    && !name.startsWith('-') && !name.startsWith('/') && !name.endsWith('/') && !name.endsWith('.')
+    && !name.includes('..') && !name.includes('//') && !name.includes('@{')
+    && ![...name].some(refused)
+    && name.split('/').every((part) => !part.startsWith('.') && !part.endsWith('.lock'));
+
+  // The driver's `char.IsWhiteSpace || char.IsControl`, spelled for JavaScript: C0 and C1 controls,
+  // any space, and the characters git gives a meaning to.
+  function refused(c: string): boolean {
+    const code = c.codePointAt(0)!;
+    return code < 0x20 || (code >= 0x7f && code <= 0x9f) || /\s/u.test(c) || '~^:?*[\\'.includes(c);
+  }
+}
 
 /**
  * The choices as they stand.
@@ -73,9 +97,12 @@ export function readDriverChoices(path = driverConfigPath()): DriverChoices {
     throw new DaorisError(`${problem}. Fix it, or delete it to start from nothing — `
       + 'this command will not overwrite a file it could not understand.');
   }
-  if (parsed === null) return { ...EMPTY, rest: {} };
+  if (parsed === null) return { ...EMPTY, lines: {}, workspaceLines: {}, rest: {} };
 
-  const { drivable, holds, trees, cap, adapter, notify, strikes, forgiven, intakeAdapter, timeoutMinutes, ...rest } = parsed;
+  const {
+    drivable, holds, trees, cap, adapter, notify, strikes, forgiven, intakeAdapter, timeoutMinutes,
+    lines, workspaceLines, ...rest
+  } = parsed;
   return {
     drivable: names(drivable),
     holds: names(holds),
@@ -99,6 +126,10 @@ export function readDriverChoices(path = driverConfigPath()): DriverChoices {
     // listing never names a number the driver would not use.
     timeoutMinutes: typeof timeoutMinutes === 'number' && Number.isInteger(timeoutMinutes)
       ? Math.max(1, timeoutMinutes) : null,
+    // An entry git would refuse is not read, as the driver does not read it: a line the driver would
+    // ignore must not be listed as if it held.
+    lines: branchMap(lines),
+    workspaceLines: branchMap(workspaceLines),
     rest,
   };
 }
@@ -120,6 +151,9 @@ export function writeDriverChoices(path: string, choices: DriverChoices): void {
     // Written only when set: absent is the driver's own default, and an edit elsewhere must not
     // pin today's default into a file that never chose it.
     ...(choices.timeoutMinutes !== null ? { timeoutMinutes: choices.timeoutMinutes } : {}),
+    // Written only when set (WSR2): absent is the checkout's guess, and the driver writes them the same way.
+    ...(Object.keys(choices.lines).length > 0 ? { lines: choices.lines } : {}),
+    ...(Object.keys(choices.workspaceLines).length > 0 ? { workspaceLines: choices.workspaceLines } : {}),
   });
 }
 
@@ -322,9 +356,47 @@ export function commandDriver({ argv, write }: CommandArgs): ExitCode {
       return 0;
     }
 
+    // The line a repository's work grows from and lands on (WSR2) — for one repository, or with
+    // `--workspace` for every repository in it that sets none of its own. Unset, the checkout's own
+    // guess stands (`origin/HEAD`, else main, else master), which is what it always was.
+    case 'line': {
+      const workspace = flagValue(argv, '--workspace');
+      const clear = argv.includes('--clear');
+      const [, first, second] = operands(argv, new Set(['--workspace']));
+      const name = workspace ?? first;
+      const branch = workspace ? first : second;
+      if (!name || (!clear && !branch)) {
+        throw new DaorisError(
+          '`driver line` needs <repository>|--workspace <name>, then <branch>|--clear — '
+          + 'e.g. `daoris driver line aurora-engine develop`.');
+      }
+
+      if (!clear && !isBranchName(branch!)) {
+        throw new DaorisError(`\`${branch}\` is not a branch name git would take.`);
+      }
+
+      const set = clear ? null : branch!;
+      writeDriverChoices(path, workspace
+        ? { ...choices, workspaceLines: withBranch(choices.workspaceLines, workspace, set) }
+        : { ...choices, lines: withBranch(choices.lines, name, set) });
+
+      const whose = workspace ? `repositories in the workspace \`${workspace}\`` : `\`${name}\``;
+      write(set === null
+        ? `daoris: ${whose} take${workspace ? '' : 's'} ${workspace ? 'their' : 'its'} line from `
+          + `${workspace ? 'their own setting or ' : 'its workspace, else '}the checkout again.`
+        : `daoris: work in ${whose} grows from \`${set}\` and lands on it.`);
+      if (set !== null && workspace) {
+        write('  A repository with a line of its own keeps it — `daoris driver line <repository> --clear` hands it back.');
+      }
+
+      write('  A session already running keeps the line it started from.');
+      write(`  Written to ${path} — the driver re-reads it every tick, so nothing restarts.`);
+      return 0;
+    }
+
     default:
       throw new DaorisError(
-        `unknown driver verb '${verb}' — one of: list, drive, undrive, hold, resume, trees, notify, `
+        `unknown driver verb '${verb}' — one of: list, drive, undrive, hold, resume, trees, line, notify, `
         + 'strikes, retry, timeout, cap, adapter, intake');
   }
 
@@ -368,6 +440,14 @@ export function commandDriver({ argv, write }: CommandArgs): ExitCode {
       if (!choices.drivable.some((name) => name.toLowerCase() === repository.toLowerCase())) {
         write(`  trees      ${repository}  (sessions there open their own tree when anything spawns one)`);
       }
+    }
+
+    for (const [repository, branch] of Object.entries(choices.lines)) {
+      write(`  line       ${repository}  ${branch}`);
+    }
+
+    for (const [workspace, branch] of Object.entries(choices.workspaceLines)) {
+      write(`  line       workspace ${workspace}  ${branch}  (for each repository there that sets none)`);
     }
 
     // A hold on something not opted in is inert, and saying so is the point: it reads as protection
@@ -424,6 +504,23 @@ function marks(value: unknown): Record<string, number> {
   }
 
   return held;
+}
+
+/** A map of names to branch names; an entry git would not take is skipped, as the driver skips it. */
+function branchMap(value: unknown): Record<string, string> {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
+  const held: Record<string, string> = {};
+  for (const [name, branch] of Object.entries(value as Record<string, unknown>)) {
+    if (typeof branch === 'string' && isBranchName(branch)) held[name] = branch;
+  }
+
+  return held;
+}
+
+/** The map with `key` set to `branch`, or removed — matched without case, as the driver matches it. */
+function withBranch(map: Record<string, string>, key: string, branch: string | null): Record<string, string> {
+  const kept = Object.fromEntries(Object.entries(map).filter(([name]) => name.toLowerCase() !== key.toLowerCase()));
+  return branch === null ? kept : { ...kept, [key]: branch };
 }
 
 function names(value: unknown): string[] {
