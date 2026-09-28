@@ -3715,3 +3715,37 @@ is read.
   no manifest, and it is driven all the same.
 - **Setting it only per workspace.** One repository in a circle can take work on a branch the others
   do not have, and the owner's words were about repositories.
+
+## D87 — How work lands is a workspace's rule; Daoris merges or makes a branch, and a push is a plugin's (2026-09-28)
+
+**Decision (WSR1, the owner's call).** Asked whether Daoris may ever push a session's branch and open
+a pull request, the owner answered: *"this should be configurable, and lets say no push or open pr on
+default but we should be able to support later for plugin to control since there will be different
+platform for pr"*. So:
+- **A workspace has a landing rule, and a repository may override it.** Two forms ship:
+  - *merge*: today's door, into the repository's line (D86);
+  - *branch*: the session's work is put on a new branch named by the rule's pattern, from the
+    session's branch, which grew from the line. The person pushes it and opens the pull request.
+  No rule is *merge*, which is today's behaviour.
+- **Daoris itself never pushes and never opens a pull request.** D37 stands. The form that does is
+  a **plugin's** (D64): the rule will name a plugin, and that plugin, speaking for its platform,
+  pushes and opens the pull request. That form is not built yet (WSR4), and until it is, no rule can
+  name one.
+- **The branch form writes nothing to the checkout.** It creates a branch in the repository and
+  moves no checkout, so the root may be dirty or on any branch. An existing branch of that name is
+  refused and never moved.
+- **The rule reaches every place work lands.** The review screen says what a press would do before
+  it is pressed. The door applies the rule. The session's instruction says how its work will land.
+  A chain's next step still starts on the step before's branch (D82), so landing the last step
+  carries the chain.
+
+**Why.** A shared repository takes work through review on its own platform, and a merge on one
+person's machine skips it (the first real workspace, study §1). Platforms differ in how a pull request
+is opened, which is the owner's reason for leaving that step to plugins, and a plugin is the seam
+Daoris already has for behaviour it does not carry (D64).
+
+**Rejected.**
+- **A built-in push and pull request for one host.** It would make one platform the default and
+  write a durable push authorisation into core, where D37 keeps push human.
+- **Rebasing the work onto the line's current tip.** It rewrites the session's commits. The branch
+  form keeps them as they were made, and the person's review shows where they started.
