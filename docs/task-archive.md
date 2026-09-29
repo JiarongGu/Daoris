@@ -7587,3 +7587,22 @@ stop reaches its session by the task's id; a subagent's key and another session'
 `streams.test.ts`, `WorkFrame.test.tsx` (the stop in view, none where the harness gave none; the console
 stops calling an ended stream live), and the scratch window with a stub agent whose dev server ticked
 into its tab until stopped. The real adapter's answer to the stop is unseen.
+
+## CONSOLE3b — tabs in the detached session window (2026-09-30)
+
+> **tabs in the detached session window**, whose console is still the session's alone — the second of
+> CONSOLE3's four.
+
+**Outcome.** A session in a window of its own carries its streams as the main window's panel does: the
+session's console, then a tab for each subagent and task, the picked one shown, one it no longer lists
+falling back to the session. With no stop: nothing in that window acts (D56's one owner across windows).
+
+**Found by looking**: the detached window headed a chat `conversation · working` beside a main window
+heading it `start the dev server · idle`, because it passed its head neither the chat's opening nor its
+turn state. It passes both now, as the monitor does. And the command palette's *Open this session in
+its own window* only seemed to do nothing: pointer presses on its rows over CDP did not land, and the
+same command by keyboard opened the window.
+
+**Proven by:** `DetachedSession.test.tsx` (the tabs, a picked stream, no stop; the head by the opening,
+idle between turns), and the scratch window: a stub agent's dev server ticking in the detached window's
+own tab, headed as in the main window.
