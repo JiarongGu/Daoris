@@ -32,7 +32,8 @@ import { SettingsView } from './SettingsView';
 import { HarnessRuns } from './harnessRuns';
 import { ShellSignals } from './ShellSignals';
 import { keys } from './queries';
-import { useNudge, useSyncNow } from './shell';
+import { useNudge, useSecondaryWindowTheme, useSyncNow } from './shell';
+import { setThemeChoice } from './theme';
 
 const DRIVER_STATE = { drivable: [], holds: [], running: ['s1a2b3c4'] };
 
@@ -2232,5 +2233,27 @@ describe('trusting a folder the driver is holding (D73)', () => {
     await userEvent.click(await within(band).findByRole('button', { name: /allow WebFetch for every session on this machine/ }));
 
     expect(rule).toHaveBeenCalledWith(expect.objectContaining({ kind: 'rule', id: 'p0000002', where: 'session i9n8t7k6' }));
+  });
+});
+
+/**
+ * WINDOW2: a secondary window's page tells its own frame which theme it is in, by the name it was
+ * opened under — Shenora's window commands route a second window's theme nowhere, so the native caption
+ * stayed on the OS's theme over a page on the viewer's choice.
+ */
+describe('a secondary window\'s caption (WINDOW2)', () => {
+  afterEach(() => {
+    setThemeChoice('system');
+    invoke.mockReset();
+  });
+
+  it('tells its own frame the theme on arrival and each time the choice changes', () => {
+    invoke.mockResolvedValue({ applied: true });
+    setThemeChoice('light');
+    renderHook(() => useSecondaryWindowTheme('monitor'));
+
+    expect(invoke).toHaveBeenLastCalledWith('DAORIS.WINDOWS', 'SET_THEME', { payload: { name: 'monitor', dark: false } });
+    act(() => setThemeChoice('dark'));
+    expect(invoke).toHaveBeenLastCalledWith('DAORIS.WINDOWS', 'SET_THEME', { payload: { name: 'monitor', dark: true } });
   });
 });

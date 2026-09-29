@@ -525,6 +525,9 @@ The first version: doctrine that installs, is checked, and flows back.
   session is on one of a line's quests, the line's count wears the same dashed ring a repository with
   a session does, in the session's colour, and a repository with several sessions says how many
   (MAP4d).
+- **The monitor and a detached session wear your theme on their title bar too** (WINDOW2). A dark
+  choice on a light Windows no longer shows a light title bar over a dark page, and the title bar
+  follows a change of theme at once.
 - **A sign-in survives leaving the Agents page** (SIGNIN1). Signing in to an account and going
   elsewhere while the browser waits no longer loses the code panel or the sentence saying how it
   ended: the panel is on its row when you come back, and the end is said wherever you are.

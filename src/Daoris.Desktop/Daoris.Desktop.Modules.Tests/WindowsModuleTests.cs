@@ -30,6 +30,14 @@ public sealed class WindowsModuleTests : Bridge
         }
 
         public IReadOnlyList<string> Opened => [.. _open.Order(StringComparer.Ordinal)];
+
+        public readonly List<(string Name, bool Dark)> Themed = [];
+
+        public bool SetTheme(string name, bool dark)
+        {
+            Themed.Add((name, dark));
+            return _open.Contains(name);
+        }
     }
 
     private readonly Windows _windows = new();
@@ -105,6 +113,33 @@ public sealed class WindowsModuleTests : Bridge
 
         Assert.Contains("WINDOW_UNKNOWN", refusal);
         Assert.Empty(_windows.Asked);
+    }
+
+    /// <summary>
+    /// WINDOW2: a secondary window's page tells its own frame which theme it is in, so its caption
+    /// follows the viewer's choice rather than the OS. By name, since every window's page talks to
+    /// the one module — and a window not open says so rather than failing.
+    /// </summary>
+    [Fact]
+    public async Task A_windows_page_tells_its_own_frame_its_theme_by_name()
+    {
+        await AnswerAsync(Module(), "OPEN", new { name = "monitor" });
+
+        var told = await AnswerAsync(Module(), "SET_THEME", new { name = "monitor", dark = true });
+        Assert.True(told.GetProperty("applied").GetBoolean());
+        Assert.Equal(("monitor", true), _windows.Themed.Single());
+
+        var gone = await AnswerAsync(Module(), "SET_THEME", new { name = "session:a1b2c3d4", dark = false });
+        Assert.False(gone.GetProperty("applied").GetBoolean());
+    }
+
+    [Fact]
+    public async Task A_theme_for_a_window_the_shell_does_not_know_is_refused()
+    {
+        var refusal = await RefusalAsync(Module(), "SET_THEME", new { name = "session:../x", dark = true });
+
+        Assert.Contains("WINDOW_UNKNOWN", refusal);
+        Assert.Empty(_windows.Themed);
     }
 
     /// <summary>

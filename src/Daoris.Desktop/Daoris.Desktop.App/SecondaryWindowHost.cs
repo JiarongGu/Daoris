@@ -35,6 +35,12 @@ public sealed class SecondaryWindowHost(
     /// </summary>
     private readonly HashSet<string> _asked = new(StringComparer.Ordinal);
 
+    /// <summary>
+    /// Each open window's form, by name, so its page can tell it the theme (WINDOW2). Removed as the
+    /// form closes, so a closed window is never told anything.
+    /// </summary>
+    private readonly Dictionary<string, SecondaryForm> _forms = new(StringComparer.Ordinal);
+
     public bool Open(string name, string address)
     {
         lock (_asked) _asked.Add(name);
@@ -43,7 +49,19 @@ public sealed class SecondaryWindowHost(
         {
             // 🔴 Runs ON the new window's STA thread. Create it, do not show it: the pump shows it
             // once the geometry has been applied.
-            CreateForm = () => new SecondaryForm(name, address, dispatcher, events, environment),
+            CreateForm = () =>
+            {
+                var form = new SecondaryForm(name, address, dispatcher, events, environment);
+                lock (_forms) _forms[name] = form;
+                form.FormClosed += (_, _) =>
+                {
+                    lock (_forms)
+                    {
+                        if (_forms.TryGetValue(name, out var held) && ReferenceEquals(held, form)) _forms.Remove(name);
+                    }
+                };
+                return form;
+            },
             StateStore = new JsonFileWindowStateStore(
                 Path.Combine(paths.DataArea("config"), "windows", SecondaryWindow.StateFile(name))),
             // 🔴 `MinWidth`/`MinHeight` here are ALSO applied as the form's DPI-scaled
@@ -58,6 +76,18 @@ public sealed class SecondaryWindowHost(
                 MinHeight = 360,
             },
         });
+    }
+
+    public bool SetTheme(string name, bool dark)
+    {
+        SecondaryForm? form;
+        lock (_forms) _forms.TryGetValue(name, out form);
+        if (form is null || form.IsDisposed || !form.IsHandleCreated) return false;
+
+        // 🔴 BeginInvoke, never Invoke: this arrives on the IPC thread, and the window runs its own
+        // pump — a blocking marshal is the deadlock this class's remarks warn about.
+        form.BeginInvoke(() => form.FollowPage(dark));
+        return true;
     }
 
     public IReadOnlyList<string> Opened

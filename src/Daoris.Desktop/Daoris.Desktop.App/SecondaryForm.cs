@@ -31,6 +31,8 @@ public sealed class SecondaryForm : OptimizedForm
     private readonly WebView2Control _webView;
     private readonly WebViewIpcBridge _bridge;
     private readonly Microsoft.Win32.UserPreferenceChangedEventHandler _themeChanged;
+    private bool _pageSaid;
+    private bool _pageDark;
 
     public SecondaryForm(
         string name,
@@ -55,22 +57,21 @@ public sealed class SecondaryForm : OptimizedForm
         Text = name == SecondaryWindow.Monitor ? "Daoris — Monitor" : $"Daoris — {name}";
         StartPosition = FormStartPosition.CenterScreen;
 
-        // 🔴 This window follows the OS THEME DIRECTLY, because it has no channel to be told.
-        // `WindowCommandModule` — where the main window gets `SET_THEME` from — targets one form and
-        // its module name is reserved and singular (D55 §b), so the page in here cannot reach its
-        // own frame. Without this a person who switches their theme with a monitor open keeps a
-        // light title bar over a dark page until they close and reopen it.
+        // The OS theme, until the page says which one it is in (WINDOW2: `FollowPage`, over
+        // `DAORIS.WINDOWS`). Shenora's window commands route a second window's `SET_THEME` nowhere,
+        // so the page tells this form by its name instead. Before it has spoken — the moments while
+        // WebView2 comes up — the OS is the best guess, and a person who switches their OS theme
+        // with the page not yet up still gets a matching title bar.
         _themeChanged = (_, changed) =>
         {
             if (changed.Category != Microsoft.Win32.UserPreferenceCategory.General) return;
+            // Once the page has said, it decides: it pushes again when the OS changes and its choice
+            // is the system's, and an explicit choice must not be undone by the OS turning.
+            if (_pageSaid) return;
             // BeginInvoke, never Invoke: this arrives on the system-events thread and every window
             // here runs its own pump — a blocking marshal is the deadlock the framework warns about.
             if (IsDisposed || !IsHandleCreated) return;
-            BeginInvoke(() =>
-            {
-                var next = ChromePalette.For(MainForm.OperatingSystemPrefersDark());
-                ApplyChromeTheme(next.Page, next.Line, MainForm.OperatingSystemPrefersDark());
-            });
+            BeginInvoke(() => Theme(MainForm.OperatingSystemPrefersDark()));
         };
         Microsoft.Win32.SystemEvents.UserPreferenceChanged += _themeChanged;
 
@@ -104,6 +105,60 @@ public sealed class SecondaryForm : OptimizedForm
 
         Load += async (_, _) => await BringUpAsync();
     }
+
+    /// <summary>
+    /// The theme the page in this window is in (WINDOW2) — the viewer's choice where there is one —
+    /// painted on the caption and border the page cannot reach. Called on this window's thread.
+    /// </summary>
+    public void FollowPage(bool dark)
+    {
+        _pageSaid = true;
+        _pageDark = dark;
+        Theme(dark);
+    }
+
+    /// <summary>
+    /// Paint the theme on this window's own frame: the background under the page, and the caption and
+    /// border the OS draws.
+    /// </summary>
+    /// <remarks>
+    /// 🔴 <c>OptimizedForm.ApplyChromeTheme</c> sets the DWM caption only for a FRAMELESS form (Shenora
+    /// 0.16 and 0.17 alike: <c>if (_options.FramelessChrome &amp;&amp; IsHandleCreated)</c>), and this one is
+    /// framed, so its caption never followed any theme — not the OS's either, whatever the handler
+    /// above intended. Found by looking at WINDOW2's fix, which set a theme nothing painted. So the
+    /// attribute is set here, on this window's own handle, and the frame is told to repaint: a caption
+    /// already on screen keeps its old colours until the next activation otherwise.
+    /// </remarks>
+    private void Theme(bool dark)
+    {
+        var palette = ChromePalette.For(dark);
+        ApplyChromeTheme(palette.Page, palette.Line, dark);
+        if (!IsHandleCreated) return;
+        var flag = dark ? 1 : 0;
+        _ = DwmSetWindowAttribute(Handle, DwmImmersiveDarkMode, ref flag, sizeof(int));
+        var border = palette.Line.R | (palette.Line.G << 8) | (palette.Line.B << 16);
+        _ = DwmSetWindowAttribute(Handle, DwmBorderColor, ref border, sizeof(int));
+        _ = SetWindowPos(Handle, IntPtr.Zero, 0, 0, 0, 0, FrameChanged);
+    }
+
+    /// <summary>The OS's theme on arrival, painted as soon as there is a window to paint.</summary>
+    protected override void OnHandleCreated(EventArgs e)
+    {
+        base.OnHandleCreated(e);
+        Theme(_pageSaid ? _pageDark : MainForm.OperatingSystemPrefersDark());
+    }
+
+    private const int DwmImmersiveDarkMode = 20;
+    private const int DwmBorderColor = 34;
+    /// <summary><c>SWP_NOSIZE | SWP_NOMOVE | SWP_NOZORDER | SWP_NOACTIVATE | SWP_FRAMECHANGED</c>.</summary>
+    private const uint FrameChanged = 0x0001 | 0x0002 | 0x0004 | 0x0010 | 0x0020;
+
+    [System.Runtime.InteropServices.DllImport("dwmapi.dll")]
+    private static extern int DwmSetWindowAttribute(IntPtr window, int attribute, ref int value, int size);
+
+    [System.Runtime.InteropServices.DllImport("user32.dll")]
+    [return: System.Runtime.InteropServices.MarshalAs(System.Runtime.InteropServices.UnmanagedType.Bool)]
+    private static extern bool SetWindowPos(IntPtr window, IntPtr after, int x, int y, int width, int height, uint flags);
 
     /// <summary>
     /// Unhook the system-events handler. <c>SystemEvents</c> holds a STATIC list, so a window that

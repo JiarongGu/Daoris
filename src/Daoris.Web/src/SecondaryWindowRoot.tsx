@@ -4,7 +4,8 @@ import { ShellSignals } from './ShellSignals';
 import { Toasts, useToasts } from './ui';
 import { DetachedSession } from './work/DetachedSession';
 import { MonitorWindow } from './work/MonitorWindow';
-import type { SecondaryWindow } from './work/window';
+import { useSecondaryWindowTheme } from './shell';
+import { MONITOR_WINDOW, type SecondaryWindow, sessionWindowName } from './work/window';
 
 /**
  * The root of a window that is not the application (D55 §b, SURF8).
@@ -27,6 +28,8 @@ export function SecondaryWindowRoot({ window: which }: { window: SecondaryWindow
   // frame already makes for a remembered mode it cannot honour.
   const { isAvailable } = useShenora();
   const { toasts, notify, dismiss } = useToasts();
+  // Its own frame's caption follows the theme this page is in (WINDOW2), not the OS's.
+  useSecondaryWindowTheme(which.kind === 'monitor' ? MONITOR_WINDOW : sessionWindowName(which.id));
 
   if (!isAvailable) return <App />;
 

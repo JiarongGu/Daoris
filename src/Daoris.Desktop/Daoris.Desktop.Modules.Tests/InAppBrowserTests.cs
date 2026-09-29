@@ -74,6 +74,8 @@ public sealed class InAppBrowserTests : Bridge
         public bool Open(string name, string address) => true;
 
         public IReadOnlyList<string> Opened => [];
+
+        public bool SetTheme(string name, bool dark) => false;
     }
 
     [Fact]

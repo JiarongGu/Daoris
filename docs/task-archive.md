@@ -7479,3 +7479,33 @@ have been set.
 still there, and its end said while away — beside the existing sign-in tests, and the web's 1404. The
 presentational boundary test placed the provider at the root, beside `shell.ts`, rather than under
 `settings/`.
+
+## WINDOW2 — a secondary window's caption follows the chosen theme (2026-09-30)
+
+The row as filed: *(found closing WINDOW1, 2026-09-27). Since WINDOW1 the page inside a monitor or a
+detached session follows the viewer's choice live, and its native title bar stays on the OS theme, so a
+dark choice on a light OS shows a dark page under a light caption. That was seen on the window.
+`SecondaryForm` follows the OS directly, because `WindowCommandModule`, the main window's `SET_THEME`
+channel, targets one form, and its module name is reserved and singular (D55 §b). The same caption
+showed before WINDOW1, when a window opened on a chosen theme. The fix needs a channel for the
+secondary window's own frame: the page's `setTheme` there, and a handler bound to that form. That is
+the shell's code, and Shenora's command module may need to grow.*
+
+**Outcome.** A channel of Daoris's own, so Shenora did not need to grow: `DAORIS.WINDOWS` answers
+`SET_THEME { name, dark }`, the name checked as `OPEN` checks it, and `SecondaryWindowHost` keeps each
+open form by name and paints the theme on its thread. The page in a secondary window tells it on
+arrival and on every change (`useSecondaryWindowTheme`). Once the page has spoken, the form stops
+following the OS, so an explicit choice is not undone by the OS turning. Shenora 0.17 routes a
+second window's other commands to that window, but still answers its `SET_THEME` with NO_ROUTE.
+
+**Found by looking**: the route alone changed nothing on the window. `OptimizedForm.ApplyChromeTheme`
+sets the DWM caption only for a frameless form (0.16 and 0.17 alike), so a framed secondary window's
+caption had never followed any theme, the OS's included. `SecondaryForm` now sets
+`DWMWA_USE_IMMERSIVE_DARK_MODE` and the border colour on its own handle and asks the frame to repaint.
+A request for Shenora's owner: `OptimizedFormOptions.ImmersiveDarkMode` and `ApplyChromeTheme` are
+silently ignored on a framed form; they could apply there too, or say they do not.
+
+**Proven by:** `WindowsModuleTests` (a window's theme reaches the host by name; an unknown name is
+refused), `shell.test.tsx` (the page tells its frame on arrival and on a change of choice), and the
+scratch window on a light OS: the monitor's caption dark under a dark choice, and light the moment the
+main window chose light.

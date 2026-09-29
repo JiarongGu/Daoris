@@ -50,17 +50,18 @@ public sealed class WindowsModule(
                 return Task.FromResult<object?>(State(opened: browser is not null));
             }
 
+            // A window's page telling its own frame the theme it is in (WINDOW2), so its native caption
+            // follows the viewer's choice. By name, the same checked name it was opened with.
+            case "SET_THEME":
+            {
+                var name = Known(PayloadHelper.GetRequiredValue<string>(request.Payload, "name"));
+                var dark = PayloadHelper.GetRequiredValue<bool>(request.Payload, "dark");
+                return Task.FromResult<object?>(new { Applied = windows.SetTheme(name, dark) });
+            }
+
             case "OPEN":
             {
-                var name = PayloadHelper.GetRequiredValue<string>(request.Payload, "name");
-                if (!SecondaryWindow.IsKnown(name))
-                {
-                    throw Refusals.Because(
-                        Refusals.WindowUnknown,
-                        $"`{name}` is not a window this build opens. The windows are `monitor` and "
-                        + "`session:<id>` for one session detached.",
-                        ("name", name));
-                }
+                var name = Known(PayloadHelper.GetRequiredValue<string>(request.Payload, "name"));
 
                 // False is not a failure: one window per name is the framework's contract, and the
                 // second press of "open the monitor" brings the monitor forward. That is what a
@@ -73,6 +74,15 @@ public sealed class WindowsModule(
                 throw UnknownType(request);
         }
     }
+
+    /// <summary>A name this build opens, or the refusal that says which names those are.</summary>
+    private static string Known(string name) => SecondaryWindow.IsKnown(name)
+        ? name
+        : throw Refusals.Because(
+            Refusals.WindowUnknown,
+            $"`{name}` is not a window this build opens. The windows are `monitor` and "
+            + "`session:<id>` for one session detached.",
+            ("name", name));
 
     /// <summary>
     /// What is open right now — asked of the shell at call time rather than cached, because the

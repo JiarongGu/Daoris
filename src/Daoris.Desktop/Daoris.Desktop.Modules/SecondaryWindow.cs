@@ -19,6 +19,14 @@ public interface ISecondaryWindows
 
     /// <summary>The names open right now.</summary>
     IReadOnlyList<string> Opened { get; }
+
+    /// <summary>
+    /// Tell the named window which theme its page is in, for the caption its frame paints (WINDOW2).
+    /// Shenora's window commands route a second window's <c>SET_THEME</c> nowhere (0.17: NO_ROUTE), so
+    /// the page says it here, by the name it was opened with.
+    /// </summary>
+    /// <returns>False when no window by that name is open: nothing to tell, and nothing wrong.</returns>
+    bool SetTheme(string name, bool dark);
 }
 
 /// <summary>

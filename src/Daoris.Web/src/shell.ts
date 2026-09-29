@@ -10,6 +10,7 @@ import type { SessionDiff } from './work/diff';
 import type { HelpProposal } from './help/ProposalCard';
 import { type ChatMessage, type EventPage, mergeEvents, type SessionEvent } from './work/conversation';
 import { toUpload } from './attachments';
+import { effectiveDark, subscribeTheme } from './theme';
 import type { WiringAnswer } from './map/wiring';
 import type { AgentRulesState, RuleListName, RuleScopeName } from './settings/AgentRules';
 import type { LineChange, RepositoryLine } from './settings/Lines';
@@ -495,6 +496,31 @@ export const useOpenWindow = () => useMutation({
     getBridge().invoke<{ opened: boolean; windows: string[] }>(
       'DAORIS.WINDOWS', 'OPEN', { payload: { name } }),
 });
+
+/**
+ * A secondary window's page telling its own frame which theme it is in (WINDOW2), by the name the
+ * window was opened under — on arrival, when the viewer's choice changes, and when the OS does. The
+ * main window's frame is told by Shenora's `SET_THEME`; a second window's has no route there (0.17:
+ * NO_ROUTE), so it goes through Daoris's own window module. Fire and forget: a window that cannot be
+ * told keeps the OS's caption, which is what it had before.
+ */
+export function useSecondaryWindowTheme(name: string) {
+  const { isAvailable } = useShenora();
+  useEffect(() => {
+    if (!isAvailable) return undefined;
+    const tell = () => {
+      void getBridge().invoke('DAORIS.WINDOWS', 'SET_THEME', { payload: { name, dark: effectiveDark() } }).catch(() => {});
+    };
+    tell();
+    const media = typeof window.matchMedia === 'function' ? window.matchMedia('(prefers-color-scheme: dark)') : null;
+    media?.addEventListener('change', tell);
+    const stop = subscribeTheme(tell);
+    return () => {
+      media?.removeEventListener('change', tell);
+      stop();
+    };
+  }, [isAvailable, name]);
+}
 
 /**
  * Daoris's own browser (D78): the window the person signs in to and watches an agent use. Not a route
