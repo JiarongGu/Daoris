@@ -45,7 +45,9 @@ public sealed record QuestResponse(
     IReadOnlyList<string> Links, IReadOnlyList<QuestAttachmentResponse> Attachments,
     IReadOnlyList<QuestStepWire> Then, string? Parent, IReadOnlyList<QuestConflictResponse> Conflicts,
     // The question its taker waits on (D79), or null.
-    string? Awaits = null);
+    string? Awaits = null,
+    // The session whose connector published it (SESS1), or null: a person's publish, or a chain step.
+    string? PublishedBy = null);
 // An attachment arrives with its CONTENT at a local host — base64 on the wire, which is what a byte
 // array is in JSON — and by NAME at a shared one, which keeps names and never bytes (D65 §2). The door
 // decides which shape its mode takes and refuses the other; the exchange never sees the wrong one.

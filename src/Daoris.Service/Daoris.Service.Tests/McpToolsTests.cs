@@ -130,6 +130,39 @@ public sealed class McpToolsTests : IAsyncLifetime
     }
 
     /// <summary>
+    /// SESS1: a quest says which session published it, from the name its connector was handed, so the
+    /// session's view can say what it caused without guessing from the times — an intake's publish on
+    /// its ask's behalf too. A publish no session made, the platform's own composer, names none.
+    /// </summary>
+    [Fact]
+    public async Task A_quest_says_which_session_published_it()
+    {
+        var asks = await AskStore.OpenAsync(_connection);
+        var sessions = await SessionStore.OpenAsync(_connection);
+        var exchange = new QuestExchange(_service, _quests, files: _files);
+        var desk = new AskDesk(_service, asks, exchange, _files);
+        var driven = new KnowledgeTools(
+            _service, _quests, exchange, new AmbientWorkspace(Path.Combine(_root, "family", "Asker")),
+            desk, new IntakeScope(null, "s1a2b3c4"));
+
+        await driven.PublishQuestAsync("Asker", "Owner", "Read the field names from config", "b");
+        await _tools.PublishQuestAsync("Asker", "Checker", "Verify the field names", "b");
+
+        var ask = (await desk.AskAsync(new AskRequest("default", "the chunk budget is hard-coded"), DateTimeOffset.UtcNow)).Ask!;
+        var room = Path.Combine(_root, "home", "intake", "default");
+        var intake = (await new SessionLedger(_quests, sessions, _service, asks)
+            .OpenIntakeAsync(ask.Id, "stub", room, DateTimeOffset.UtcNow)).Session!;
+        await new KnowledgeTools(
+                _service, _quests, exchange, new AmbientWorkspace(room, ask.Workspace), desk, new IntakeScope(ask.Id, intake.Id))
+            .PublishQuestAsync("intake", "Owner", "Cap the chunk budget", "The ask names it.");
+
+        var owed = await _quests.ListAsync(includeClosed: true);
+        Assert.Equal("s1a2b3c4", owed.Single(quest => quest.Title == "Read the field names from config").PublishedBy);
+        Assert.Null(owed.Single(quest => quest.To == "Checker").PublishedBy);
+        Assert.Equal(intake.Id, owed.Single(quest => quest.Title == "Cap the chunk budget").PublishedBy);
+    }
+
+    /// <summary>
     /// STANDDOWN2: a session the driver started takes its quest through its own connector, and the take
     /// is written on its record. FG5's verify session took its quest and stopped to ask the person, and
     /// its end read "someone else has it", because nothing said whose take it was.

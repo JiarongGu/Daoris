@@ -332,6 +332,25 @@ public sealed class IntakeTests : IDisposable
         Assert.False(info.Environment.ContainsKey("DAORIS_QUEST_ATTACHMENTS"));
     }
 
+    /// <summary>
+    /// SESS1: a quest's session is named on its spawn too, as an intake's is, so a connector the harness
+    /// starts itself on the pipe door can say which session published a quest.
+    /// </summary>
+    [Fact]
+    public void A_quests_spawn_names_its_session_beside_its_quest()
+    {
+        var target = new SessionTarget("q1a2b3", "Cap the chunk budget", "why", "Asker", "Owner", _home, "http://localhost:0")
+        {
+            Session = "s1",
+        };
+
+        var info = new StubAdapter().Prepare(target, ["node", "agent.mjs"]);
+
+        Assert.Equal("q1a2b3", info.Environment["DAORIS_QUEST_ID"]);
+        Assert.Equal("s1", info.Environment[IntakeRoom.SessionVariable]);
+        Assert.False(info.Environment.ContainsKey(IntakeRoom.AskVariable));
+    }
+
     [Fact]
     public void The_pipe_harness_is_handed_the_intakes_instruction_not_a_quests()
     {

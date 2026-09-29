@@ -58,3 +58,23 @@ What the study's §5 asks and these findings did not cover, so SESS1 stays open 
   nothing out of a call's output, so it is not shown.
 - **Where it came from and what it caused, beyond the chain**: the session it carries on from and
   the answer that resumed it, the quests it published, and the questions it asked another repository.
+  *Plan (2026-09-29).* What the chain strip already draws stays there: the ask, each step, a quest's
+  sessions in order (so the session it carries on from), and what is still to come; the answer that
+  resumed a session is its conversation's opening. What nothing records is **which session published a
+  quest**: a quest says the repository that asked, and a session's quests could only be guessed from
+  the times. So it is recorded at the source, never guessed (the map's rule, MAP4): a quest carries
+  `publishedBy`, the session whose connector published it, from the `DAORIS_SESSION_ID` the driver
+  already hands every connector (PERM2), kept in the store, the log and the sync's wire like `parent`.
+  The native door's process gets the variable too, as an intake's does. The head then says **where it
+  came from** (the session that published its quest, a door to it) and **what it caused** (the quests
+  it published, each with its status, and the one its quest waits on marked as its question, with the
+  answer once there is one).
+  *Built 2026-09-29, as planned.* The head gains *Who it worked with* under the chain strip: *Asked by*
+  (the session that published its quest, a door to it, or named where this machine holds no record of
+  it), *Carried on once #q was answered* (a D79 question an earlier session asked), and *Asked of other
+  repositories* (each with its status, its question marked, the answer or *Not answered yet*). The
+  chain strip's quests became doors in Work too, which the study's *every stop pressable* asked for.
+  Looked at on the scratch window: a quest published through the scratch machine's real connector,
+  named as the parked conversation, came back over HTTP naming it, and its head read it in both
+  themes; its title opened the quest in Quests. Not looked at: *Asked by* and *Carried on* on real
+  sessions, since no session had published with the field yet; their tests hold them.

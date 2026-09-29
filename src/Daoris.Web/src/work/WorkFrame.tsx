@@ -27,6 +27,7 @@ import { panelTabs } from './streams';
 import { DOCK, dockRange, frameLayout, RAIL } from './layout';
 import { type FrameClosings, useFrameClosings } from './closings';
 import { type Place, type Placements, usePlacements, type ViewId, viewsIn } from './placements';
+import { relationsOf } from './relations';
 import { store, stored } from '../lib/stored';
 
 // Per-viewer conveniences, like the language and the workspace scope (D42): a remembered layout is
@@ -117,8 +118,13 @@ const door = (structured?: boolean): 'structured' | 'text' | undefined =>
  * conversation's raw view.
  */
 export function WorkFrame({
-  selected, onSelect, notify, onSendBack, onAnswerAsk, intent, onIntentTaken, ask, askFocus = 0, closings, placements,
+  selected, onSelect, notify, onSendBack, onAnswerAsk, onOpenQuest, intent, onIntentTaken, ask, askFocus = 0, closings, placements,
 }: {
+  /**
+   * Open a quest's record in Quests (SESS1): a stop on the chain, or a quest the session asked. The
+   * record is the application's to open, as an ask's is.
+   */
+  onOpenQuest?: (quest: string) => void;
   /**
    * The attended session, held by the application — because a door into Work from somewhere else
    * (a quest's record) has to be able to say WHICH session, and a selection this frame kept to
@@ -689,7 +695,9 @@ export function WorkFrame({
             onAnswerAsk={here ? onAnswerAsk : undefined}
             onStop={here && intake ? onStop : undefined}
             chain={quest ? buildChain(quest.id, quests.data ?? [], sessions.data ?? []) : []}
+            relations={attended ? relationsOf(attended, quest, quests.data ?? [], sessions.data ?? []) : undefined}
             onSession={(session) => attend(session.id)}
+            onQuest={onOpenQuest ? (row) => onOpenQuest(row.id) : undefined}
             branch={branch}
           />
           {/* The conversation (D76): below the record, in the same scroll, so the head is read once

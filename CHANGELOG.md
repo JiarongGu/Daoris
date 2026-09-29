@@ -665,6 +665,11 @@ The first version: doctrine that installs, is checked, and flows back.
   does the palette's *Quick Ask*; and whatever you type in the palette can be asked from its last row,
   *Ask Daoris: "…"*, which sends it straight in. *Open in the side bar* carries the same conversation
   on there. The palette's *Ask Daoris* now opens the side bar on it on Sessions, as `F1` does.
+- **A session says who it worked with** (SESS1). Its head, under the chain, names the session that
+  asked for its quest, the answer it carried on after, and what it asked of other repositories, each
+  with how it stands and its answer; every one is a door, and so are the chain's quests now. A quest
+  records the session that published it (`publishedBy`), from the name the driver hands every
+  session's connector, so none of this is guessed from the times.
 - **Ask Daoris knows the window** (HELP2): its room says how the window is laid out, how a view moves
   and the layout keys, and on Sessions it is told where the views stand, so a question about the
   screen is answered rather than guessed.

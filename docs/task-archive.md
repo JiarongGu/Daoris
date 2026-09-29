@@ -7293,3 +7293,34 @@ which views each region holds and whether it is showing, so a move is told with 
 **Proven by:** `HelpRoomTests.The_room_says_how_the_window_is_laid_out_and_how_a_view_moves`,
 `where.test.ts`'s layout case, the driver's 901 and the web's 1345.
 
+
+## SESS1 — the session view: its log and its working relationships (2026-09-28 → 2026-09-29)
+
+The row as filed: *(study §5; in progress, its ledger `docs/2026-09-28-sess1-session-view.md` says
+what the real sessions showed and what each finding became: all ten landed or were dropped. **Still
+open**, the ledger's *not reached*: what a session waits on at the top, a tool's exit and duration,
+and the relationships beyond the chain). One reading order with the console one press away. Long runs
+folded, with jumps to the first failure and the last words, and search within a session. What it
+waits on, at the top. Where it came from and what it caused, drawn as a thread from the ask to the
+last step. Looked at on the real workspace's sessions.*
+
+**Outcome.** The ledger holds each finding and what it became; in brief:
+- **The log** (`c908ced`, `5716ba7`): a long run opens with its ask and keeps the agent's words in
+  view with each run of work folded to a count; a turn the session ended inside reads *stopped*;
+  *first failure*, *last words* and *find in this session*; the attended session marked on the chain.
+- **What it left** (S10): the branch its own tree left and whether that landed, in the head.
+- **A tool's output** (`1393ad1`): how long a call ran, by the driver's clock, and folded, how many
+  lines it carried. An exit code is not a field on the wire, so it is not shown.
+- **What it waits on**: already at the top with its one moving action; nothing changed.
+- **Who it worked with** (this change): a quest now records the session that published it
+  (`publishedBy`, from the `DAORIS_SESSION_ID` the driver hands every connector and now every
+  native-door quest spawn), kept in the store, the log and the sync's wire. The head says who asked for
+  its quest, the answer it carried on after (D79), and what it asked of other repositories with each
+  one's status and answer; the chain strip's quests became doors in Work.
+
+**Proven by:** the ledger's looks; `McpToolsTests.A_quest_says_which_session_published_it`, the sync
+test's `publishedBy` across two machines, `IntakeTests.A_quests_spawn_names_its_session_beside_its_quest`,
+`relations.test.ts`, `SessionRelations.test.tsx` and the frame's *asked of another repository* case;
+on the scratch window, a quest published through the machine's real connector came back over HTTP
+naming its session, and that session's head showed it in both themes. Not seen on a real session yet:
+*Asked by* and *Carried on*, since nothing had published with the field before this.

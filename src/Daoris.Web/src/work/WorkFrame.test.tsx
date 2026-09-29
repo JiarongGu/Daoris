@@ -305,6 +305,36 @@ describe('the Work frame', () => {
     expect(window.localStorage.getItem('daoris.viewPlaces')).toBeNull();
   });
 
+  /**
+   * SESS1: who a session worked with, from what the records declare — a quest it published names it
+   * (`publishedBy`), so its head says what it asked of another repository, and the quest opens where
+   * quests are read.
+   */
+  it('says what the attended session asked of another repository, and opens that quest', async () => {
+    const asked = {
+      id: 'def456', from: 'engine', to: 'game', title: 'Read the budget from the level file', body: 'b',
+      status: 'Done', note: 'Done: it reads level.budget now.', filed: '2026-09-02T00:30:00Z', updated: '2026-09-02T00:50:00Z',
+      publishedBy: 's1a2b3c4',
+    };
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => (String(input).startsWith('/api/quests')
+      ? Response.json([...QUESTS, asked])
+      : respond(String(input)))));
+    const onOpenQuest = vi.fn();
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={client}>
+        <Tooltip.Provider>
+          <WorkFrame selected="s1a2b3c4" onSelect={vi.fn()} notify={() => {}} onOpenQuest={onOpenQuest} />
+        </Tooltip.Provider>
+      </QueryClientProvider>,
+    );
+
+    const worked = await screen.findByRole('region', { name: 'Who it worked with' });
+    expect(within(worked).getByText('Answered: Done: it reads level.budget now.')).toBeInTheDocument();
+    await userEvent.click(within(worked).getByRole('button', { name: 'Read the budget from the level file' }));
+    expect(onOpenQuest).toHaveBeenCalledWith('def456');
+  });
+
   it('lets the head and the composer follow the centre\'s width, however wide the window', async () => {
     SESSIONS = [DRIVEN, CHAT];
     show('c0ffee11');

@@ -1185,7 +1185,8 @@ static QuestResponse ToQuest(Quest q, QuestFiles? files, bool machineLocal) => n
     q.Then.Select(s => new QuestStepWire(s.To, s.Title, s.Body)).ToList(),
     q.Parent,
     q.Conflicts.Select(c => new QuestConflictResponse(c.Machine, c.Attempted.ToString(), c.Note, c.At, c.Sequence)).ToList(),
-    q.Awaits);
+    q.Awaits,
+    q.PublishedBy);
 
 // An ask's answer. A refusal is the desk's sentence, whole — including a named receiver the exchange
 // refused, whose message already says the ask was kept and where it was proposed instead.

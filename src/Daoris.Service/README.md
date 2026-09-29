@@ -77,6 +77,12 @@ never collides with an older quest of the same words. The whole chain is judged 
 every step must be addressable from the asker, and every step must live in the same home as the
 first, because each is published wherever the one before it closes.
 
+**A quest names the session that published it** (SESS1) as `publishedBy`, when a session's
+connector did. The driver names every session on the connector it hands over and on its spawn
+(`DAORIS_SESSION_ID`), and `quest_publish` records it, an intake's publish for its ask included. A
+person's publish and a chain step name none. It travels with the quest in the log and the sync, so a
+session's view can say what it asked of other repositories without guessing from the times.
+
 **An ask is a sentence entered at a workspace, not at a repository** (D65 §1a). It keeps its words,
 links and files (under `<home>/asks/<id>/`), who asked, and what became of it, and every record names
 the tier that answered. With no intake harness, the **declarations tier** ranks the workspace's

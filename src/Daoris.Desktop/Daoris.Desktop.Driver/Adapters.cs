@@ -41,7 +41,10 @@ public sealed record SessionTarget(
     /// </summary>
     public string? Ask { get; init; }
 
-    /// <summary>The session's own record — handed to an intake, whose connector names it when it publishes.</summary>
+    /// <summary>
+    /// The session's own record — handed to every session, whose connector names it when it publishes
+    /// (an intake's, D65 §1b; a quest's, SESS1).
+    /// </summary>
     public string? Session { get; init; }
 
     /// <summary>
@@ -568,6 +571,9 @@ internal static class Spawning
         info.Environment["DAORIS_QUEST_BODY"] = target.Body;
         info.Environment["DAORIS_QUEST_ASKER"] = target.Asker;
         info.Environment["DAORIS_TARGET"] = TargetPrompt.Compose(target);
+        // Its own record, as an intake's is named (SESS1): a connector the harness starts itself on the
+        // pipe door inherits it, and says which session published a quest.
+        if (target.Session is { } own) info.Environment[IntakeRoom.SessionVariable] = own;
 
         // The quest's files (D65 §2), when this machine holds any — absent rather than empty when it
         // does not, because a blank directory would read to a session as one that was emptied.

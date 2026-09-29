@@ -54,7 +54,8 @@ public sealed class QuestSyncTests : IAsyncLifetime
             "Asker", "Federated", "Cross the machines", "why", Now,
             links: ["https://tickets.example/T-1"],
             attachments: [new QuestAttachment("trace.log", new string('a', 64), 300)],
-            then: [new QuestStep("Federated", "Verify {parent}", "b")]);
+            then: [new QuestStep("Federated", "Verify {parent}", "b")],
+            publishedBy: "s1a2b3c4");
 
         await SyncAsync(_a);
         await SyncAsync(_b);
@@ -65,6 +66,8 @@ public sealed class QuestSyncTests : IAsyncLifetime
         Assert.Equal(["https://tickets.example/T-1"], arrived.Links);
         Assert.Equal("trace.log", Assert.Single(arrived.Attachments).Name);
         Assert.Equal("Verify {parent}", Assert.Single(arrived.Then).Title);
+        // Which session published it travels with it (SESS1): the session's record syncs too (SYNC4).
+        Assert.Equal("s1a2b3c4", arrived.PublishedBy);
         Assert.Equal(_a.Machine, Assert.Single(await _b.HistoryAsync(published.Id)).Machine);
     }
 

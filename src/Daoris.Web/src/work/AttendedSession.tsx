@@ -5,7 +5,9 @@ import type { ChainStep } from '../map/chain';
 import { ChainStrip } from '../map/ChainStrip';
 import type { SweepBranch } from '../settings/Sweep';
 import type { Resolution } from './AwaitingPerson';
+import type { Relations } from './relations';
 import { SessionHead } from './SessionHead';
+import { SessionRelations } from './SessionRelations';
 import { SessionTimeline } from './SessionTimeline';
 
 /**
@@ -38,8 +40,12 @@ export const noteIsInTheHead = (session: Session, answerableHere: boolean) =>
 
 export function AttendedSession({
   session, quest, opening, taking, resolving, stopping, onResolve, onAnswerAsk, onStop, onAnswerSession,
-  chain = [], onSession, timeline = 'dock', branch,
+  chain = [], onSession, onQuest, relations, timeline = 'dock', branch,
 }: {
+  /** Who it worked with beyond its chain (SESS1): the session that asked, and what it asked of others. */
+  relations?: Relations;
+  /** Open a quest's record — a stop on the chain, or one it asked. Absent where there is nowhere to open it. */
+  onQuest?: (quest: Quest) => void;
   /** The branch its own tree left, as the clean-up judged it (SESS1 S10) — the head's. */
   branch?: SweepBranch | null;
   /** The attended session, or null when the person has not chosen one. */
@@ -101,7 +107,9 @@ export function AttendedSession({
         onAnswerSession={onAnswerSession}
         branch={branch}
       />
-      {chain.length > 1 && <ChainStrip chain={chain} level={3} attended={session.id} onSession={onSession} />}
+      {/* Every stop a door (the study's §5: "every stop pressable"): a session attends, a quest opens. */}
+      {chain.length > 1 && <ChainStrip chain={chain} level={3} attended={session.id} onQuest={onQuest} onSession={onSession} />}
+      {relations && <SessionRelations relations={relations} onQuest={onQuest} onSession={onSession} />}
       {/* The timeline lives in the right dock since SURF6 gave the dock its second occupant. It stayed
           here on a narrow window while the dock was hidden there; FRAME6 keeps the dock at every width,
           and the copy here drew it twice. Only a window with no dock carries it. */}

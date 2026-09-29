@@ -78,6 +78,13 @@ public sealed record Quest(
     /// question itself when it resumes the quest.
     /// </summary>
     public string? Awaits { get; init; }
+
+    /// <summary>
+    /// The session whose connector published it, when a session did (SESS1) — null for a person's
+    /// publish, and for a chain step, which its parent's close published. Recorded at the source so a
+    /// session's view can say what it caused without guessing from the times.
+    /// </summary>
+    public string? PublishedBy { get; init; }
 }
 
 /// <summary>One step of a chain: whom to ask next, and what (D65 §4).</summary>
@@ -294,7 +301,8 @@ public sealed class QuestStore
                   then_steps  TEXT NOT NULL DEFAULT '[]',
                   parent      TEXT NULL,
                   conflicts   TEXT NOT NULL DEFAULT '[]',
-                  awaits      TEXT NULL
+                  awaits      TEXT NULL,
+                  published_by TEXT NULL
                 );
                 CREATE INDEX IF NOT EXISTS quests_receiver ON quests (receiver, status);
                 """;
@@ -316,6 +324,8 @@ public sealed class QuestStore
             ("quests", "conflicts", "conflicts TEXT NOT NULL DEFAULT '[]'"),
             // Ask and wait (D79): the question a taken quest waits on.
             ("quests", "awaits", "awaits TEXT NULL"),
+            // The session that published it (SESS1); a quest from before says none, which is true.
+            ("quests", "published_by", "published_by TEXT NULL"),
             ("quest_log", "remote", "remote INTEGER NULL"),
         })
         {
@@ -472,13 +482,15 @@ public sealed class QuestStore
     /// <param name="links">Addresses the quest carries, already judged by the exchange.</param>
     /// <param name="attachments">Files the quest carries, by name — the bytes are never this store's.</param>
     /// <param name="then">The chain after this quest (D65 §4), already judged by the exchange.</param>
+    /// <param name="publishedBy">The session whose connector published it, when one did (SESS1).</param>
     public async Task<Quest> PublishAsync(
         string from, string to, string title, string body, DateTimeOffset now,
         string? workspace = null,
         IReadOnlyList<string>? links = null,
         IReadOnlyList<QuestAttachment>? attachments = null,
         IReadOnlyList<QuestStep>? then = null,
-        CancellationToken ct = default)
+        CancellationToken ct = default,
+        string? publishedBy = null)
     {
         var id = MakeId(from, to, title);
         return await InTransactionAsync(async (transaction, inside) =>
@@ -495,6 +507,7 @@ public sealed class QuestStore
                 Links = links ?? [],
                 Attachments = attachments ?? [],
                 Then = then ?? [],
+                PublishedBy = string.IsNullOrWhiteSpace(publishedBy) ? null : publishedBy.Trim(),
             };
 
             return await PublishInAsync(asked, transaction, inside).ConfigureAwait(false);
@@ -592,15 +605,16 @@ public sealed class QuestStore
         await using var command = _connection.CreateCommand();
         command.Transaction = transaction;
         command.CommandText = """
-            INSERT INTO quests (id, sender, receiver, title, body, status, note, filed, updated, workspace, links, attachments, then_steps, parent, conflicts, awaits)
-            VALUES ($id, $sender, $receiver, $title, $body, $status, $note, $filed, $updated, $workspace, $links, $attachments, $then, $parent, $conflicts, $awaits)
+            INSERT INTO quests (id, sender, receiver, title, body, status, note, filed, updated, workspace, links, attachments, then_steps, parent, conflicts, awaits, published_by)
+            VALUES ($id, $sender, $receiver, $title, $body, $status, $note, $filed, $updated, $workspace, $links, $attachments, $then, $parent, $conflicts, $awaits, $publishedBy)
             ON CONFLICT (id) DO UPDATE SET
               sender = excluded.sender, receiver = excluded.receiver, title = excluded.title, body = excluded.body,
               status = excluded.status, note = excluded.note, filed = excluded.filed, updated = excluded.updated,
               workspace = excluded.workspace, links = excluded.links, attachments = excluded.attachments,
               then_steps = excluded.then_steps, parent = excluded.parent, conflicts = excluded.conflicts,
-              awaits = excluded.awaits
+              awaits = excluded.awaits, published_by = excluded.published_by
             """;
+        command.Parameters.AddWithValue("$publishedBy", (object?)quest.PublishedBy ?? DBNull.Value);
         command.Parameters.AddWithValue("$conflicts", ConflictsJson(quest.Conflicts));
         command.Parameters.AddWithValue("$links", LinksJson(quest.Links));
         command.Parameters.AddWithValue("$attachments", AttachmentsJson(quest.Attachments));
@@ -1341,6 +1355,7 @@ public sealed class QuestStore
         Parent = reader.IsDBNull(reader.GetOrdinal("parent")) ? null : reader.GetString(reader.GetOrdinal("parent")),
         Conflicts = ReadConflicts(reader.GetString(reader.GetOrdinal("conflicts"))),
         Awaits = reader.IsDBNull(reader.GetOrdinal("awaits")) ? null : reader.GetString(reader.GetOrdinal("awaits")),
+        PublishedBy = reader.IsDBNull(reader.GetOrdinal("published_by")) ? null : reader.GetString(reader.GetOrdinal("published_by")),
     };
 
     /// <summary>An operation as its log row holds it (<see cref="OperationColumns"/>) — a publish's payload is the quest as asked.</summary>
@@ -1371,6 +1386,7 @@ public sealed class QuestStore
                 Attachments = ReadAttachments(payload.GetProperty("attachments")),
                 Then = ReadSteps(payload.GetProperty("then")),
                 Parent = payload.TryGetProperty("parent", out var parent) ? parent.GetString() : null,
+                PublishedBy = payload.TryGetProperty("publishedBy", out var by) ? by.GetString() : null,
             };
 
         QuestOperationRef? dismisses = payload.TryGetProperty("dismisses", out var named)
@@ -1428,6 +1444,7 @@ public sealed class QuestStore
             writer.WritePropertyName("then");
             WriteSteps(writer, published.Then);
             if (published.Parent is not null) writer.WriteString("parent", published.Parent);
+            if (published.PublishedBy is not null) writer.WriteString("publishedBy", published.PublishedBy);
         }
 
         if (note is not null) writer.WriteString("note", note);

@@ -391,6 +391,8 @@ public sealed class KnowledgeTools(
                     Links = links ?? [],
                     Uploads = uploads,
                     Then = steps,
+                    // Which session asked (SESS1), as the driver named it on this connector (PERM2).
+                    PublishedBy = intake?.Session,
                 },
                 DateTimeOffset.UtcNow, ct)
             .ConfigureAwait(false);

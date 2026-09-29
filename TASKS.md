@@ -21,8 +21,8 @@ lists.
 
 ## State
 
-**Counts, and this is their one home:** sixteen commands, **514 CLI tests, 545 service, 901 driver,
-291 desktop modules, 80 devkit, 1345 web unit, 21 Playwright**, 66/66 release rehearsal, **292/292
+**Counts, and this is their one home:** sixteen commands, **514 CLI tests, 546 service, 902 driver,
+291 desktop modules, 80 devkit, 1357 web unit, 21 Playwright**, 66/66 release rehearsal, **292/292
 family rehearsal** (it names its own phases when you run it), **45/45 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge
 documents, 5 skills, 7 packs. The always-loaded core is **22,492 of 26,000 bytes** — a span in
@@ -144,8 +144,8 @@ rather than designed.
 
 ## Backlog
 
-**Thirty-four rows are open**: the four the first real workspace showed (WSR4, SESS1, MAP4, and
-DOCK1 from 2026-09-29; WSR2, WSR1 and WSR3 landed as D86, D87 and D88, HELP1 as D89); D85's two (CHR2, CHR4); the in-app browser's three (BRW3, BRW7, BRW8); the first goal's three (FG5,
+**Thirty-three rows are open**: the three the first real workspace showed (WSR4, MAP4, and DOCK1
+from 2026-09-29; WSR2, WSR1 and WSR3 landed as D86, D87 and D88, HELP1 as D89, SESS1 in the archive); D85's two (CHR2, CHR4); the in-app browser's three (BRW3, BRW7, BRW8); the first goal's three (FG5,
 READACROSS1 the owner's, and SEM2 on a trigger); D76's held file tools;
 the eight REV3 left, WINDOW2 among them; five leftovers (RAIL2, CONSOLE3, FLAKE1, DEPLOY5, TEST1); two on the owner
 (TRUST2, AGT2c); and six on a trigger (see *Handover*). Every closed one is in `docs/task-archive.md`, and this file holds no
@@ -162,14 +162,6 @@ requirements, and the owner's calls. Its recommended order is the order below.
   plugin, and the plugin, for its platform, pushes the branch and opens the pull request over its
   wire (D64). Off by default, and configurable per workspace. WSR1's branch form is what it starts
   from: `LandingRules.Problem` refuses any other form today, and says so.
-- [ ] **SESS1 — the session view: its log and its working relationships** (study §5; in progress,
-  its ledger `docs/2026-09-28-sess1-session-view.md` says what the real sessions showed and what each
-  finding became: all ten landed or were dropped. **Still open**, the ledger's *not reached*: what a
-  session waits on at the top, a tool's exit and duration, and the relationships beyond the chain). One reading
-  order with the console one press away. Long runs folded, with jumps to the first failure and the last
-  words, and search within a session. What it waits on, at the top. Where it came from and what it
-  caused, drawn as a thread from the ask to the last step. Looked at on the real workspace's
-  sessions.
 - [ ] **MAP4 — the map, finished** (study §6). A layered layout, pan, zoom and search for a big
   circle (the real one has twenty-nine repositories). Asks, chains and what depends on what, each its
   own kind of line, from a declared source and never guessed. Open-only or a time window. Sessions

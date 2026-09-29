@@ -147,6 +147,7 @@ public static class QuestWire
             writer.WriteString("title", asked.Title);
             writer.WriteString("body", asked.Body);
             if (asked.Parent is not null) writer.WriteString("parent", asked.Parent);
+            if (asked.PublishedBy is not null) writer.WriteString("publishedBy", asked.PublishedBy);
             writer.WriteStartArray("links");
             foreach (var link in asked.Links) writer.WriteStringValue(link);
             writer.WriteEndArray();
@@ -270,6 +271,7 @@ public static class QuestWire
                 Attachments = files,
                 Then = steps,
                 Parent = Text(asked, "parent"),
+                PublishedBy = Text(asked, "publishedBy"),
             };
         }
 

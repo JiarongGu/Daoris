@@ -469,7 +469,7 @@ public sealed class AskDesk(KnowledgeService service, AskStore asks, QuestExchan
             return new(AskRefusal.Closed, $"Ask `#{ask.Id}` is closed ({ask.Note}) — it becomes nothing more.", ask);
         }
 
-        var published = await PublishQuestAsync(ask, to, now, ct, draft).ConfigureAwait(false);
+        var published = await PublishQuestAsync(ask, to, now, ct, draft, session).ConfigureAwait(false);
         if (published.Quest is null) return new(AskRefusal.QuestRefused, published.Message, ask);
 
         var byIntake = session is { Length: > 0 } && string.Equals(session, ask.Intake, StringComparison.Ordinal);
@@ -501,7 +501,7 @@ public sealed class AskDesk(KnowledgeService service, AskStore asks, QuestExchan
     /// may be asked is the exchange's answer, never this desk's.
     /// </summary>
     private async Task<QuestPublishOutcome> PublishQuestAsync(
-        Ask ask, string to, DateTimeOffset now, CancellationToken ct, AskDraft? draft = null)
+        Ask ask, string to, DateTimeOffset now, CancellationToken ct, AskDraft? draft = null, string? session = null)
     {
         var uploads = new List<QuestUpload>();
         foreach (var attachment in ask.Attachments)
@@ -526,6 +526,8 @@ public sealed class AskDesk(KnowledgeService service, AskStore asks, QuestExchan
                 Uploads = [.. uploads, .. draft?.Uploads ?? []],
                 Then = draft?.Then ?? [],
                 Workspace = ask.Workspace,
+                // The session publishing, as its connector names it (SESS1): the intake that read the ask.
+                PublishedBy = session,
             },
             now, ct).ConfigureAwait(false);
     }

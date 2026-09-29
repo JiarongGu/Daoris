@@ -65,6 +65,9 @@ public sealed record QuestAsk(string From, string To, string Title, string Body)
     /// row to say it. Ignored for a registered sender, whose row is the machine's wiring and decides.
     /// </summary>
     public string? Workspace { get; init; }
+
+    /// <summary>The session whose connector publishes, when one does (SESS1) — kept on the quest.</summary>
+    public string? PublishedBy { get; init; }
 }
 
 /// <param name="Refusal"><see cref="QuestPublishRefusal.None"/> when the quest was published.</param>
@@ -241,7 +244,8 @@ public sealed class QuestExchange(
         }
 
         var quest = await quests.PublishAsync(
-            from, to, title, body, now, home, carried.Links, carried.Attachments, ask.Then, ct: ct).ConfigureAwait(false);
+            from, to, title, body, now, home, carried.Links, carried.Attachments, ask.Then, ct: ct,
+            publishedBy: ask.PublishedBy).ConfigureAwait(false);
 
         var caution = !target.Adopted
             // Registered is addressable; adopted is disciplined (D70). Said at publish, because it is

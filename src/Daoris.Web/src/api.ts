@@ -73,6 +73,11 @@ export type Quest = {
    * taken quest carrying one is waiting, not stuck: the driver resumes it once that quest closes.
    */
   awaits?: string | null;
+  /**
+   * The session whose connector published it (SESS1) — absent for a person's publish, a chain step,
+   * and a host older than the field, which all say the same: no session asked.
+   */
+  publishedBy?: string | null;
 };
 /**
  * A move that lost the race to the remote. `attempted` is the status it tried to reach; `note` is its

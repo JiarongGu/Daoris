@@ -581,6 +581,8 @@ export function App() {
               }}
               // A parked intake's answer is on its ask (INT4g): the same door the band's ask rows use.
               onAnswerAsk={openAsk}
+              // A quest on the chain, or one the session asked (SESS1), opens where quests are read.
+              onOpenQuest={(id) => { setQuestFocus(id); setView('quests'); }}
               // Ask Daoris as a tab of the right dock: one right region, never a second column.
               ask={attached ? <AskDaoris {...askProps} framed={false} /> : undefined}
               askFocus={helpFocus}

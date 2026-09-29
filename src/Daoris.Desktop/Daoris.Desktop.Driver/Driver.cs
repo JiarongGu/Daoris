@@ -543,6 +543,8 @@ public sealed partial class Driver(
             var adapter = _adapters.Resolve(config.Adapter);
             var target = SessionTarget.ForQuest(quest, workTree, service.BaseUrl) with
             {
+                // Named on its spawn as on its connector, so what it publishes says it did (SESS1).
+                Session = sessionId,
                 Answered = answered,
                 // What cut the last session off, and what it left uncommitted (D80) — read by the
                 // driver, because the session may not run `git status` itself.
