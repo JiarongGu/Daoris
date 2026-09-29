@@ -144,7 +144,7 @@ rather than designed.
 
 ## Backlog
 
-**Thirty-four rows are open**: the owner's seven of 2026-09-30 (WORK1, SHEN1, USE1, HELP5, LOG1,
+**Thirty-three rows are open**: the owner's six of 2026-09-30 (SHEN1, USE1, HELP5, LOG1,
 CONSOLE4, SETUP1), first; WSR4
 from the first real workspace (its other WSR, HELP, SESS, DOCK
 and MAP rows are in the archive); the four REV3 left (DIST1, BUDGET1 and HOME1 the owner's, and HTTP1);
@@ -164,17 +164,9 @@ ships. A heading below holds open rows only.
 > system by this way"*
 
 Logging went first (LOG1a landed); then the owner's later asks the same day came before the rest of
-it, in this order: their own workspace's work, then what they met on the window, then the kit.
+it: their own workspace's work (WORK1, archived), then the kit, then what they met on the window.
 Each row's parts land and are archived one by one (*"for all my request you can set them into
 TASK.md and complete one by one"*).
-- [ ] **WORK1 — the first real workspace's landed ticket, cleaned up; then its next ticket started**
-  (owner, 2026-09-30). The landed ticket's two tasks left their work across session branches in the
-  repository that owns it; the owner wants one clean branch to open a pull request from and merge,
-  and then the next ticket, already a quest there (twice: two asks made the same quest), started by
-  the local Daoris. Done through Daoris, as its doctrine says: that repository's own agent does the
-  cleanup in a conversation there, with nothing pushed (the pull request is the owner's). Then the
-  duplicate quest is declined, the repository's hold released, and the quest left to start. The
-  private notes name the repository, the tickets and the branches.
 - [ ] **SHEN1 — the kit's 0.18.0** (owner, 2026-09-30: *"shenora is updated to 0.18.0"*). Move every
   Shenora package from 0.17 to 0.18.0, read its changelog for what the shell relies on (the Chromium
   engine, the frame, the IPC modules, the window state), and run the deployment gate on the result.

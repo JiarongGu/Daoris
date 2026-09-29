@@ -7737,3 +7737,23 @@ retention, the cap, no home, a failing folder, many threads, a reader beside the
 service's `MachineLogTests` (8, the same table), `MachineLogProviderTests` (2: warnings and errors
 from any category, nothing below), and every gate: driver 935/936 with FLAKE1's known case passing
 ten runs alone, modules 308, service 561, verify, family 297/297, deploy 57/57, web 21 Playwright.
+
+## WORK1 — the first real workspace's landed ticket, cleaned up; its next ticket started (2026-09-30)
+
+> - [ ] **WORK1 — the first real workspace's landed ticket, cleaned up; then its next ticket started**
+>   (owner, 2026-09-30). The landed ticket's two tasks left their work across session branches in the
+>   repository that owns it; the owner wants one clean branch to open a pull request from and merge,
+>   and then the next ticket, already a quest there (twice: two asks made the same quest), started by
+>   the local Daoris. …
+
+**Outcome.** The owner merged the pull request themselves while this was read: the follow-up task's
+branch, built on the first task's six commits, carried both. Before anything was removed, both
+leftover branch tips were confirmed ancestors of the merged branch and every file it changed was
+confirmed identical in the target, since a squash merge leaves git unable to call them merged. The
+leftover session tree and its branch went through Daoris's own door (`daoris-driver trees remove`).
+The duplicate quest was declined naming the one kept, the repository's hold was released with
+`daoris driver resume`, and the driver took the next ticket's quest on its next tick.
+
+**Not done, and why:** deleting the two landed feature branches (`git branch -D`, since a squash merge
+makes `-d` refuse) was refused by the session's permission policy as destructive, so they are the
+owner's to delete; the private notes name them and their tips. Nothing was pushed.
