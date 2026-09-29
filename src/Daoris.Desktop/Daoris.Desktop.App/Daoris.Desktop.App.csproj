@@ -33,12 +33,12 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- The window's own icon, read from here: the exe is CEF's launcher, whose own face is CEF's until
-         `StampIcon.targets` gives it Daoris's. -->
+    <!-- The window's own icon, read from here: the exe is CEF's launcher, whose own face and name are
+         CEF's until `StampIdentity.targets` gives it Daoris's. -->
     <Content Include="daoris.ico" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
 
-  <Import Project="StampIcon.targets" />
+  <Import Project="StampIdentity.targets" />
 
   <ItemGroup>
     <!-- The window's head: the loop, the supervisor and every IPC module the page talks to. Separated

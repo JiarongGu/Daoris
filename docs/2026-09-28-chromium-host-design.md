@@ -149,7 +149,9 @@ commands and `SecondaryWindows` (its ADOPTION.md, *Stage 2 on Chromium*). What t
 - **Chromium's processes run from the application's executable** (`--type=renderer`, `gpu-process`,
   `utility`). Every tool that stopped or counted "what runs from this path" had to learn to tell the
   application apart: walked blindly, a stop waited fifteen seconds on each and then crashed a page.
-- **A copied launcher wears CEF's icon.** The build stamps Daoris's onto it after the layout.
+- **A copied launcher wears CEF's icon and name**: Task Manager and the taskbar called the window
+  "CEF Bootstrap Application". The build stamps Daoris's icon and version info onto it after the layout
+  (`StampIdentity.targets`), retrying while a freshly copied file is still held.
 - **The kit anchors its data area at the executable's folder** unless told, so an application in
   `app/` hands it the install's root; otherwise its profile lands in a second `data/` inside `app/`.
 - **Radix menus ignore a scripted `.click()`**: looking at a menu over CDP needs real pointer input

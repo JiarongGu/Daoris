@@ -41,8 +41,10 @@ public static class DesktopPage
     /// The host's own rule is its working directory, then its binary's directory — and in development
     /// ASP.NET serves the PROJECT's <c>wwwroot</c> even to a host started from <c>bin/</c>, through its static
     /// assets manifest. The walk up covers that: a workspace build's project is three folders above its
-    /// binary. Found by looking: the first rule named <c>bin</c>'s empty folder, and the window said so.
-    /// Where none holds a page, the working directory's is named, for the window's sentence.
+    /// binary, and four above a build for a runtime identifier, which is what a publish leaves in
+    /// <c>bin/</c>. Found by looking, twice: the first rule named <c>bin</c>'s empty folder, and then a
+    /// runtime build one folder deeper than the walk went; the window said so both times. Where none
+    /// holds a page, the working directory's is named, for the window's sentence.
     /// </remarks>
     public static string BundleOf(Daoris.Driver.HostLocation host)
     {
@@ -50,7 +52,7 @@ public static class DesktopPage
         if (File.Exists(Path.Combine(named, "index.html"))) return named;
 
         var directory = Path.GetDirectoryName(Path.GetFullPath(host.Executable)) is { } beside ? new DirectoryInfo(beside) : null;
-        for (var up = 0; directory is not null && up <= 3; up++, directory = directory.Parent)
+        for (var up = 0; directory is not null && up <= 4; up++, directory = directory.Parent)
         {
             var bundle = Path.Combine(directory.FullName, "wwwroot");
             if (File.Exists(Path.Combine(bundle, "index.html"))) return bundle;

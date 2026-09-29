@@ -5,6 +5,46 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## The dev loop's `kill` could close the owner's own window (2026-09-30)
+
+**Symptom.** None seen, found reading the path: after `desktop -- run --install`, the loop's record
+named the install's application, and the owner's own start of that install, through its launcher, runs
+from the same executable. `desktop -- kill` would have closed the window the owner opened.
+
+**Root cause.** `kill` asked which processes run from the recorded path and stopped all of them. That
+was right while the scratch build was the only thing on its path; `run --install` made the record name
+a path the person uses too.
+
+**Fix.** `kill` stops the pid the loop recorded (`startedHere`), and says nothing is running when that
+pid has ended, whoever else runs from the path. A record without a pid keeps the path's answer.
+
+**Verify.**
+- `desktop-tool.test.ts`: *kill stops the process the loop recorded, never another from the same path*.
+- On the machine: a scratch run stopped by its pid while the installed window, from another path, kept
+  running.
+
+**The trap.** A path is an identity only while one thing runs from it. On Chromium it was already
+several (the engine's own processes, D93), and an install is always the person's too.
+
+## The Chromium shell said its page was missing, twice (2026-09-30)
+
+**Symptom.** A scratch window on Chromium showed *"The platform's page was not found beside the service
+host"*, first naming the host's `bin/` folder, and later `bin/Release/net10.0/win-x64/`.
+
+**Root cause.** On WebView2 the window showed the host's own URL, so where the host found its bundle was
+the host's business. `ChromiumView` serves the bundle from a folder, so the shell has to name it
+(`DesktopPage.BundleOf`). A development host serves its PROJECT's `wwwroot` through the static assets
+manifest, three folders above `bin/Debug/net10.0/`, and a publish leaves a runtime build four above.
+
+**Fix.** The shell walks up from the host's executable to the first `wwwroot` holding a page, four
+folders at most, after the host's working directory.
+
+**Verify.** `DesktopPageTests`: a workspace build, a runtime build, an install, and none. On the
+window: the Overview rendered on the scratch shell after the Release build became the newest.
+
+**The trap.** The first fix covered the case in front of it. The dev loop takes the newest host build,
+and a publish makes a newer one, a folder deeper.
+
 ## A parked driven session could be answered only from the top of its record (2026-09-29)
 
 **Symptom.** The owner, reading a parked session's question on the installed window: *"there is no way

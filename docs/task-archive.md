@@ -7547,14 +7547,14 @@ framework-dependent single-file `Daoris.exe` (about 220 KB, Daoris's icon) that 
 in `app/shell-files.txt` so a republish removes the last engine's files; the browser and the host in
 folders of their own under `app/`. `InstallHome.RootOf` finds the install above `app/`, and the kit is
 handed the same root, so the home and the engine's profile stay in the install's `data/`. The build
-stamps Daoris's icon onto CEF's launcher (`StampIcon.targets`), both engines keep two locales, and the
+stamps Daoris's icon and name onto CEF's launcher (`StampIdentity.targets`), both engines keep two locales, and the
 process helpers tell the application from Chromium's own processes (`--type=`), which a blind stop had
 walked for fifteen seconds each and then killed.
 
 A first cut put the application at the root beside its engine, as a Chromium application's root; it
 passed 52/52 and was set aside for the launcher layout on the owner's direction.
 
-**Proven by:** `npm run rehearse:deploy` 56/56: the root holds only what makes an install, the launcher
+**Proven by:** `npm run rehearse:deploy` 57/57: the root holds only what makes an install, the launcher
 is small and hands over and exits, the page renders in a renderer from the install's executable with no
 WebView2 under the shell, the home is the install's `data/` and none is made in `app/`, and a republish
 removes the retired `daoris-desktop.exe` and a recorded engine file it no longer ships while leaving a

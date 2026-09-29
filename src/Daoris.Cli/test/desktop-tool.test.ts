@@ -10,7 +10,7 @@ import { readText, listFiles } from '../src/fsx.ts';
 // be a second description of the tool to keep in step with it — and the thing this suite asserts is
 // the tool's BEHAVIOUR, which a stale declaration would not protect.
 import {
-  CLEARED, REDIRECTED, SHELL_ORIGIN, assemblyExe, installedExe, isShell, prune, scratchEnvironment,
+  CLEARED, REDIRECTED, SHELL_ORIGIN, assemblyExe, installedExe, isShell, prune, scratchEnvironment, startedHere,
   // @ts-expect-error — untyped workspace tooling; see above
 } from '../../../tools/desktop.mjs';
 // @ts-expect-error — untyped workspace tooling; see above
@@ -113,22 +113,20 @@ test('a scratch run sets every redirected variable, and points the host at the w
 });
 
 /**
- * Both halves, or neither. The runtime always sets `AdditionalBrowserArguments`, which makes WebView2
- * ignore the environment variable — so it re-appends that variable itself, and only in development
- * mode. A run that sets the port without the mode opens no port at all, silently, which is how this
- * was found: a window that started perfectly and answered nothing.
+ * Both halves, or neither. The engine the shell ships (D92) opens the DevTools port the shell hands it
+ * only in development, so a run that sets the port without the mode opens no port at all, silently —
+ * a window that starts perfectly and answers nothing, which is how the WebView2 half of this was
+ * found before it. The WebView2 variable went with WebView2 (D93).
  */
 test('the debug port needs the runtime in dev mode, and neither is set unasked', () => {
   const env = environment();
-  assert.equal(env.WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS, '--remote-debugging-port=9333');
   assert.equal(env.DOTNET_ENVIRONMENT, 'Development');
-  // The Chromium the shell ships (D92) takes its DevTools port from the shell, in development only.
   assert.equal(env.DAORIS_DEVTOOLS_PORT, '9333');
+  assert.equal('WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS' in env, false);
 
   const quiet = scratchEnvironment({
     home: '/h', family: '/f', serviceUrl: 'http://127.0.0.1:5188', httpHost: '/x.exe',
   });
-  assert.equal('WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS' in quiet, false);
   assert.equal('DOTNET_ENVIRONMENT' in quiet, false);
   assert.equal('DAORIS_DEVTOOLS_PORT' in quiet, false);
 });
@@ -316,7 +314,7 @@ test('the processes running from a path are found by that path', { skip: process
  * the scratch and the install can both be up, and a reading taken in the other one is a claim about a
  * window nobody is looking at.
  */
-test('the shell is told apart by the host its page reaches, on either engine', () => {
+test('the shell is told apart by the host its page reaches', () => {
   const scratch = 'http://127.0.0.1:5188';
   const chromium = { chromium: true, webview: false, origin: SHELL_ORIGIN, host: 'http://127.0.0.1:5188' };
 
@@ -328,9 +326,8 @@ test('the shell is told apart by the host its page reaches, on either engine', (
   assert.equal(isShell({ chromium: false, webview: false, origin: SHELL_ORIGIN, host: scratch }, scratch), false,
     'a browser tab on the same address has no bridge');
 
-  // WebView2, while the install keeps it: the page is on the host's own origin.
-  assert.equal(isShell({ webview: true, chromium: false, origin: scratch, host: null }, scratch), true);
-  assert.equal(isShell({ webview: true, chromium: false, origin: 'http://localhost:5177', host: null }, scratch), false);
+  // WebView2 is no shell of Daoris's since D93, even on the host's own origin.
+  assert.equal(isShell({ webview: true, chromium: false, origin: scratch, host: null }, scratch), false);
   assert.equal(isShell(null, scratch), false);
 });
 
@@ -355,4 +352,16 @@ test('the application is told from the engine processes started from its own exe
     'garbage',
   ].join('\n');
   assert.deepEqual(applicationsIn(rows), [4200]);
+});
+
+/**
+ * `kill` stops what this loop started, by the pid it recorded (D93). After `run --install` the record
+ * names the install's application, and the person's own start of the same install runs from the same
+ * path: stopping by path closed their window.
+ */
+test('kill stops the process the loop recorded, never another from the same path', () => {
+  assert.deepEqual(startedHere([4100, 4200], { pid: 4200 }), [4200]);
+  assert.deepEqual(startedHere([4100], { pid: 4200 }), [], 'the recorded run has ended; the other is not ours');
+  assert.deepEqual(startedHere([4100], {}), [4100], 'a record without a pid keeps the old answer');
+  assert.deepEqual(startedHere([4100], null), [4100]);
 });

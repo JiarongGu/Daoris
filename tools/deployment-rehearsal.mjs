@@ -334,6 +334,13 @@ async function main() {
   check(`the application is ${[...SHELL_HOME, SHELL_EXE].join('/')}, with its engine beside it`,
     [SHELL_EXE, 'libcef.dll', 'icudtl.dat', 'resources.pak', 'Daoris.Desktop.App.dll'].every((name) => inApp.includes(name)),
     `app holds: ${inApp.join(', ')}`);
+  // What Task Manager and the taskbar call the window: a copied CEF launcher said "CEF Bootstrap
+  // Application" until the build stamped Daoris's name onto it (D93, `StampIdentity.targets`).
+  const described = existsSync(shellExe)
+    ? powershell(`(Get-Item -LiteralPath ${psQuote(shellExe)}).VersionInfo.FileDescription`).trim()
+    : '';
+  check('…and it is called Daoris, not by the launcher it was copied from', described === 'Daoris',
+    `FileDescription: ${described || '(none)'}`);
   check('…framework-dependent: no .NET runtime rode along',
     ![...atRoot, ...inApp].some((name) => /^(coreclr|hostfxr|hostpolicy)\.dll$/i.test(name)));
   const shellLocales = existsSync(join(install, ...SHELL_HOME, 'locales'))

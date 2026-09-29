@@ -42,7 +42,7 @@ import { fileURLToPath } from 'node:url';
 import { copyTree, isMain } from './fsx.mjs';
 // The install's layout, from the script that makes it (REV3 CLEAN1): one launcher at the root, the home in `data/`.
 import { HOME, LAUNCHER, RETIRED_LAUNCHERS, SHELL_EXE, SHELL_HOME } from './desktop-publish.mjs';
-import { applicationsAt, running, stopAll } from './processes.mjs';
+import { applicationsAt, running, stopAll, stopProcesses } from './processes.mjs';
 
 export const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 
@@ -108,15 +108,10 @@ export const CLEARED = [
 export function debugEnvironment(cdpPort) {
   if (!cdpPort) return {};
   return {
-    // Both halves are needed, and finding that out cost a run. WebView2 reads
-    // `WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS` only while nothing has set `AdditionalBrowserArguments`
-    // — and the runtime always sets it. What it does instead is re-append that env var itself, ONLY
-    // in development mode (`BrowserArguments.Build`), which is how a shipped window has nothing to
-    // attach to. So dev mode is not a preference here: it is the switch that lets the port through.
+    // Both halves are needed. The Chromium the shell ships (D92) opens the DevTools port the shell
+    // hands it only in development, which is how a shipped window has nothing to attach to. So dev
+    // mode is not a preference here: it is the switch that lets the port through.
     DOTNET_ENVIRONMENT: 'Development',
-    WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS: `--remote-debugging-port=${cdpPort}`,
-    // The Chromium the shell ships (D92): its DevTools port, which the shell hands its engine and the
-    // engine opens only in development — the same switch, for the same reason.
     DAORIS_DEVTOOLS_PORT: String(cdpPort),
   };
 }
@@ -291,6 +286,17 @@ const readRun = () => (existsSync(RUN_FILE) ? JSON.parse(readFileSync(RUN_FILE, 
  */
 const targetExe = () => readRun()?.exe ?? assemblyExe(DESKTOP_PROJECT);
 
+/**
+ * The running applications this loop started: the one its record names by pid, when it names one.
+ *
+ * 🔴 By pid, not by path (D93). After `run --install`, the record names the install's application,
+ * and the person's own start of that install runs from the same path: a kill by path closed the
+ * window they had opened themselves. A record from before pids were kept keeps the path's answer.
+ */
+export function startedHere(live, record) {
+  return Number.isInteger(record?.pid) ? live.filter((pid) => pid === record.pid) : live;
+}
+
 /** `--install <dir>`, taken off an argument list. */
 function takeInstall(args) {
   const at = args.indexOf('--install');
@@ -346,18 +352,14 @@ export const SHELL_ORIGIN = 'https://daoris.localhost';
  *
  * On Chromium (CHR2) the page is on the app's own origin, carries Shenora's Chromium mark, and names
  * the host it was told to reach. That host is how a run is told apart, because every shell's page has
- * the same origin. On WebView2, which the install keeps until CHR4 republishes it, the page is on the
- * host's own origin.
+ * the same origin. A WebView2 page is no shell of Daoris's since D93.
  */
 export function isShell(page, serviceUrl) {
-  if (!page) return false;
+  if (!page?.chromium) return false;
   const service = serviceUrl ? new URL(serviceUrl).origin : null;
-  if (page.chromium) {
-    let told = null;
-    try { told = page.host ? new URL(page.host).origin : null; } catch { told = null; }
-    return page.origin === SHELL_ORIGIN && (!service || told === service);
-  }
-  return Boolean(page.webview) && (!service || page.origin === service);
+  let told = null;
+  try { told = page.host ? new URL(page.host).origin : null; } catch { told = null; }
+  return page.origin === SHELL_ORIGIN && (!service || told === service);
 }
 
 /** What `isShell` reads, evaluated in the page. */
@@ -511,7 +513,7 @@ async function start(command, args) {
 
     serviceUrl = `http://127.0.0.1:${await freePort(5188)}`;
     environment = scratchEnvironment({ home, family, serviceUrl, httpHost, mcpHost, cdpPort });
-    // Its own root, so the WebView2 profile, the window geometry and the runtime's single-instance
+    // Its own root, so the engine's profile, the window geometry and the runtime's single-instance
     // scope all belong to this run — a scratch shell and a real one never contend for either.
     extra.push('--app-root', appRoot);
   }
@@ -605,14 +607,13 @@ async function main(command, args) {
       break;
 
     case 'kill': {
-      const exe = targetExe();
-      const live = applicationsAt(exe);
+      const live = startedHere(applicationsAt(targetExe()), readRun());
       if (!live.length) {
         console.log('no shell this loop started is running.');
         break;
       }
 
-      stopAll(exe);
+      stopProcesses(live);
       console.log(`stopped pid ${live.join(', ')}`);
       break;
     }

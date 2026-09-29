@@ -3915,8 +3915,9 @@ environment and exits; it references nothing, so it is framework-dependent, sing
 (`InstallHome.RootOf`: an `app` folder under a marked install), so the home is still the install's
 `data/`, and the kit is handed the same root so its data area is not a second `data/` inside `app/`.
 The host and the browser were already found beside the shell's own folder. The app's assembly is
-`Daoris.Desktop.App`, so CEF's launcher is `Daoris.Desktop.exe`, and the build stamps Daoris's icon onto
-it (`StampIcon.targets`): a copied launcher carries CEF's.
+`Daoris.Desktop.App`, so CEF's launcher is `Daoris.Desktop.exe`, and the build stamps Daoris's icon and
+version info onto it (`StampIdentity.targets`): a copied launcher carries CEF's, and Task Manager and
+the taskbar named the window "CEF Bootstrap Application".
 
 **What still holds from D60.** One executable at the root, nothing else a person could double-click,
 no symbols and no package doc files, and a publish that never writes over a name it did not write —

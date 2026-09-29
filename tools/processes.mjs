@@ -96,7 +96,10 @@ export const eachApplicationAt = (exe, each) => {
  * from the same executable with no window. Walked like the rest, each cost fifteen seconds of
  * waiting and then a forced kill that crashed a page; they exit with the application.
  */
-export const stopAll = (exe) => eachApplicationAt(exe, `
+export const stopAll = (exe) => stopProcesses(applicationsAt(exe));
+
+/** How one process is closed: its windows, repeatedly, and the force last. */
+const CLOSE = `
     $process = $_
     for ($attempt = 0; $attempt -lt 6 -and -not $process.HasExited; $attempt++) {
       $process.Refresh()
@@ -104,4 +107,8 @@ export const stopAll = (exe) => eachApplicationAt(exe, `
       $process.WaitForExit(2500) | Out-Null
     }
     if (-not $process.HasExited) { $process | Stop-Process -Force }
-  `);
+  `;
+
+/** Close these processes as {@link stopAll} closes an executable's applications. */
+export const stopProcesses = (pids) => (pids.length === 0 ? '' : powershell(
+  `Get-Process -Id ${pids.join(',')} -ErrorAction SilentlyContinue | ForEach-Object { ${CLOSE} }`));

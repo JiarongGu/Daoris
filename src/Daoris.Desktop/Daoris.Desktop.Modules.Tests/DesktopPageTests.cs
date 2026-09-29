@@ -42,6 +42,11 @@ public sealed class DesktopPageTests
             var dev = new Daoris.Driver.HostLocation(Path.Combine(bin, "host.exe"), bin);
             Assert.Equal(Path.Combine(project, "wwwroot"), DesktopPage.BundleOf(dev));
 
+            // A build for a runtime (what a publish leaves behind) sits one folder deeper, and still finds it.
+            var rid = Path.Combine(project, "bin", "Release", "net10.0", "win-x64");
+            Directory.CreateDirectory(rid);
+            Assert.Equal(Path.Combine(project, "wwwroot"), DesktopPage.BundleOf(new(Path.Combine(rid, "host.exe"), rid)));
+
             // An install: the page beside the host wins.
             Directory.CreateDirectory(Path.Combine(bin, "wwwroot"));
             File.WriteAllText(Path.Combine(bin, "wwwroot", "index.html"), "<html></html>");

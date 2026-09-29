@@ -21,9 +21,9 @@ lists.
 
 ## State
 
-**Counts, and this is their one home:** sixteen commands, **522 CLI tests, 553 service, 912 driver,
+**Counts, and this is their one home:** sixteen commands, **523 CLI tests, 553 service, 912 driver,
 302 desktop modules, 80 devkit, 1408 web unit, 21 Playwright**, 66/66 release rehearsal, **297/297
-family rehearsal** (it names its own phases when you run it), **56/56 deployment rehearsal** (D60),
+family rehearsal** (it names its own phases when you run it), **57/57 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge
 documents, 5 skills, 7 packs. The always-loaded core is **22,492 of 26,000 bytes** — a span in
 `AGENTS.md` since D59 — and **advisory rather than enforced** (D54: a fact gates, a judgement
