@@ -203,6 +203,19 @@ describe('the workspace map', () => {
     expect(localStorage.getItem('daoris.mapWhen')).toBe('open');
   });
 
+  it('rings a line\'s count while a session works one of its quests, and says so in words', async () => {
+    SESSIONS[0] = { ...SESSIONS[0]!, quest: 'q1' } as (typeof SESSIONS)[number];
+    try {
+      show();
+      const line = await screen.findByRole('button', { name: '2 quests from game to engine, a session working on one now' });
+      // The rail's hue for working, dashed like the node's ring: never hue alone.
+      expect(line.querySelector('circle[stroke-dasharray]')!.getAttribute('class')).toContain('stroke-st-taken');
+      expect(screen.getByRole('button', { name: '1 quest your asks became on game' }).querySelector('circle[stroke-dasharray]')).toBeNull();
+    } finally {
+      SESSIONS[0] = { id: 's1', repository: 'engine', adapter: 'stub', state: 'working', created: '', updated: '' };
+    }
+  });
+
   it('remembers which lines this viewer draws', async () => {
     localStorage.setItem('daoris.mapLines', JSON.stringify(['quests']));
     show();

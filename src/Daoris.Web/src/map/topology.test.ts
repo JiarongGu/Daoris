@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import type { Convergence, Quest, Registration, Session } from '../api';
-import { fitRadius, frameMap, placeLabel } from './MapCanvas';
+import { fitRadius, frameMap, placeLabel, ringAt } from './MapCanvas';
 import { textWidth } from './measure';
-import { buildTopology, keepQuests, LINE_KINDS, type LineKind, layoutRing, showLines } from './topology';
+import { ASKS, buildTopology, keepQuests, LINE_KINDS, type LineKind, layoutRing, showLines } from './topology';
 
 // MAP2 (D67 §3, `docs/2026-09-23-map-design.md` §1): the workspace's repositories and what actually
 // moved between them, read from data the service already serves — no model, no machine path.
@@ -118,6 +118,18 @@ describe('the workspace topology', () => {
     expect(ids('week')).toEqual(['recent']);
     expect(ids('month')).toEqual(['recent', 'lastMonth']);
     expect(ids('all')).toEqual(['recent', 'old', 'lastMonth']);
+  });
+
+  it('says a line is live while a session works one of its quests, and waiting on the person leads', () => {
+    const on = (quest: string, state: Session['state'], repository = 'engine'): Session => ({ ...session(repository, state), id: `s-${quest}-${state}`, quest });
+    const map = buildTopology([repo('engine'), repo('game')], [
+      quest('q1', 'game', 'engine'), quest('q2', 'game', 'engine'), quest('q3', 'engine', 'game'), quest('q4', 'ask #abc', 'game'),
+    ], [], [on('q1', 'working'), on('q2', 'awaiting-person'), on('q4', 'working', 'game'), on('q3', 'completed')]);
+
+    expect(map.quests.map((e) => [e.from, e.to, e.live])).toEqual([['engine', 'game', null], ['game', 'engine', 'parked']]);
+    expect(map.asks.map((e) => e.live)).toEqual(['working']);
+    // A repository says how many sessions are there when more than one is.
+    expect(map.nodes.find((n) => n.id === 'engine')!.sessions).toBe(2);
   });
 
   it('shows only the kinds of line a person chose, and every repository still', () => {
@@ -276,6 +288,25 @@ describe('the drawing\'s frame (UX5 U44)', () => {
 });
 
 describe('the ring layout', () => {
+  /** Seen on the window (MAP4b): at the centre of two repositories asked both ways, the asks hid both counts. */
+  it('stands the asks clear of every line between repositories, not on the centre they cross', () => {
+    for (const count of [2, 3, 4]) {
+      const ids = ['a', 'b', 'c', 'd'].slice(0, count);
+      const quests = ids.flatMap((from) => ids.filter((to) => to !== from).map((to, i) => quest(`${from}${to}${i}`, from, to)));
+      const map = buildTopology(ids.map((id) => repo(id)), [...quests, quest('x', 'ask #abc', 'a')], [], []);
+      const at = ringAt(map, 150);
+      const asks = at[ASKS]!;
+      // Every quest line's count sits at its curve's midpoint; none within the disc and the count's radii.
+      for (const edge of map.quests) {
+        const [a, b] = [at[edge.from]!, at[edge.to]!];
+        const [dx, dy] = [b.x - a.x, b.y - a.y];
+        const length = Math.hypot(dx, dy);
+        const middle = { x: (a.x + b.x) / 2 - (dy / length) * 18, y: (a.y + b.y) / 2 + (dx / length) * 18 };
+        expect(Math.hypot(middle.x - asks.x, middle.y - asks.y), `${count} repositories, ${edge.from}→${edge.to}`).toBeGreaterThan(31);
+      }
+    }
+  });
+
   it('takes the radius it is given', () => {
     const at = layoutRing(['a', 'b'], 600, 120);
     expect(at['a']).toEqual({ x: 300, y: 180 });

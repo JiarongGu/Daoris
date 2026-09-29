@@ -10,12 +10,12 @@ import { LayeredMap } from './LayeredMap';
 
 const render = (node: ReactElement) => rtlRender(<Tooltip.Provider>{node}</Tooltip.Provider>);
 
-const node = (id: string, extra: Partial<MapNode> = {}): MapNode => ({ id, owns: [], accepts: [], open: 0, working: false, parked: false, ...extra });
+const node = (id: string, extra: Partial<MapNode> = {}): MapNode => ({ id, owns: [], accepts: [], open: 0, working: false, parked: false, sessions: 0, ...extra });
 
 const IDS = Array.from({ length: 20 }, (_, index) => `repo-${String(index).padStart(2, '0')}`);
 const TOPOLOGY: Topology = {
   nodes: [...IDS.map((id) => node(id)), node('report-ui', { open: 2, working: true }), node('reports-db')],
-  quests: [{ from: 'report-ui', to: 'reports-db', quests: [], open: 1 }],
+  quests: [{ from: 'report-ui', to: 'reports-db', quests: [], open: 1, live: null }],
   asks: [],
   chains: [],
   knowledge: [{ a: 'reports-db', b: 'repo-03', groups: 2 }],
@@ -89,7 +89,7 @@ describe('the layered map', () => {
   it('draws a pair asked both ways as two lines apart, each with its own count in view', () => {
     const both: Topology = {
       ...TOPOLOGY,
-      quests: [...TOPOLOGY.quests, { from: 'reports-db', to: 'report-ui', quests: [], open: 1 }],
+      quests: [...TOPOLOGY.quests, { from: 'reports-db', to: 'report-ui', quests: [], open: 1, live: null }],
     };
     render(<LayeredMap topology={both} selected={null} onSelect={vi.fn()} />);
     const there = screen.getByRole('button', { name: /from report-ui to reports-db/ });
@@ -105,7 +105,7 @@ describe('the layered map', () => {
     // the left, and the view must take in the room it needs rather than keep the first frame.
     const asked: Topology = {
       ...TOPOLOGY,
-      quests: [...TOPOLOGY.quests, { from: 'repo-00', to: 'reports-db', quests: [], open: 1 }],
+      quests: [...TOPOLOGY.quests, { from: 'repo-00', to: 'reports-db', quests: [], open: 1, live: null }],
       knowledge: [],
     };
     const later: Topology = { ...asked, knowledge: [{ a: 'report-ui', b: 'repo-00', groups: 1 }] };

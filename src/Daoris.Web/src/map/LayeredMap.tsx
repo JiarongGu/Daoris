@@ -6,7 +6,9 @@ import * as Menu from '@radix-ui/react-dropdown-menu';
 import { cn } from '../lib/cn';
 import { Icon, Tip } from '../ui';
 import { CARD_H, type Card, layoutLayers, lineKey, type Point, ROUND } from './layers';
-import { ASKS_DASH, AsksMark, CHAIN_DASH, chainOpen, Count, type MapSelection, sameSelection } from './MapCanvas';
+import {
+  ASKS_DASH, AsksMark, CHAIN_DASH, chainOpen, Count, howMany, lineLabel, type MapSelection, sameSelection,
+} from './MapCanvas';
 import { ASKS, type Topology } from './topology';
 import { useTall, useWidth } from './useWidth';
 
@@ -361,7 +363,7 @@ export function LayeredMap({ topology, selected, onSelect, tools }: {
                 key={`a-${edge.to}`}
                 role="button"
                 tabIndex={0}
-                aria-label={t('map.asksLabel', { to: edge.to, count: edge.quests.length })}
+                aria-label={lineLabel(t, t('map.asksLabel', { to: edge.to, count: edge.quests.length }), edge.live)}
                 aria-pressed={chosen}
                 onClick={() => choose(line)}
                 onKeyDown={press(line)}
@@ -375,7 +377,7 @@ export function LayeredMap({ topology, selected, onSelect, tools }: {
                   markerEnd={open ? 'url(#layer-arrow-open)' : 'url(#layer-arrow-closed)'}
                   className={cn('shown', open ? 'stroke-accent' : 'stroke-line-strong', chosen ? 'stroke-[3.5]' : 'stroke-[1.5]')}
                 />
-                <Count x={mid.x} y={mid.y} open={open} count={edge.quests.length} />
+                <Count x={mid.x} y={mid.y} open={open} count={edge.quests.length} live={edge.live} />
               </g>
             );
           })}
@@ -395,7 +397,7 @@ export function LayeredMap({ topology, selected, onSelect, tools }: {
                 key={`c-${edge.from}-${edge.to}`}
                 role="button"
                 tabIndex={0}
-                aria-label={t('map.chainsLabel', { from: edge.from, to: edge.to, count: edge.steps.length + edge.waiting.length })}
+                aria-label={lineLabel(t, t('map.chainsLabel', { from: edge.from, to: edge.to, count: edge.steps.length + edge.waiting.length }), edge.live)}
                 aria-pressed={chosen}
                 onClick={() => choose(line)}
                 onKeyDown={press(line)}
@@ -410,7 +412,7 @@ export function LayeredMap({ topology, selected, onSelect, tools }: {
                   markerEnd={open ? 'url(#layer-arrow-open)' : 'url(#layer-arrow-closed)'}
                   className={cn('shown', open ? 'stroke-accent' : 'stroke-line-strong', chosen ? 'stroke-[3.5]' : 'stroke-2')}
                 />
-                <Count x={mid.x} y={mid.y} open={open} count={edge.steps.length + edge.waiting.length} />
+                <Count x={mid.x} y={mid.y} open={open} count={edge.steps.length + edge.waiting.length} live={edge.live} />
               </g>
             );
           })}
@@ -430,7 +432,7 @@ export function LayeredMap({ topology, selected, onSelect, tools }: {
                 key={`q-${edge.from}-${edge.to}`}
                 role="button"
                 tabIndex={0}
-                aria-label={t('map.questsLabel', { from: edge.from, to: edge.to, count: edge.quests.length })}
+                aria-label={lineLabel(t, t('map.questsLabel', { from: edge.from, to: edge.to, count: edge.quests.length }), edge.live)}
                 aria-pressed={chosen}
                 onClick={() => choose(line)}
                 onKeyDown={press(line)}
@@ -444,10 +446,7 @@ export function LayeredMap({ topology, selected, onSelect, tools }: {
                   style={{ strokeWidth: (chosen ? 2 : 0) + 1.5 + Math.min(edge.quests.length, 6) * 0.5 }}
                   className={cn('shown', open ? 'stroke-accent' : 'stroke-line-strong')}
                 />
-                <circle cx={mid.x} cy={mid.y} r={11} className={cn('fill-page stroke-[1.5]', open ? 'stroke-accent' : 'stroke-line-strong')} />
-                <text x={mid.x} y={mid.y} textAnchor="middle" dominantBaseline="central" className="fill-ink font-mono text-meta tabular-nums">
-                  {edge.quests.length}
-                </text>
+                <Count x={mid.x} y={mid.y} open={open} count={edge.quests.length} live={edge.live} />
               </g>
             );
           })}
@@ -498,7 +497,7 @@ export function LayeredMap({ topology, selected, onSelect, tools }: {
                 </text>
                 {there && (
                   <text x={left + 14} y={card.y + 14} className={cn('text-meta', there === 'parked' ? 'fill-st-open' : 'fill-ink-soft')}>
-                    {t(there === 'parked' ? 'map.parked' : 'map.working')}
+                    {t(there === 'parked' ? 'map.parked' : 'map.working')}{howMany(node.sessions)}
                   </text>
                 )}
                 <text x={right - 14} y={card.y} textAnchor="end" dominantBaseline="central" className={cn('font-mono text-small tabular-nums', node.open > 0 ? 'fill-ink' : 'fill-ink-faint')}>

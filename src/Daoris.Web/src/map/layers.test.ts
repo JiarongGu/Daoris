@@ -5,12 +5,12 @@ import { CARD_H, layoutLayers, lineKey, ROUND } from './layers';
 // MAP4: a circle too big for a ring, laid out in layers by who asks whom, with what nothing connects
 // set apart below. Pure and deterministic, so two looks at the same data draw the same picture.
 
-const node = (id: string): MapNode => ({ id, owns: [], accepts: [], open: 0, working: false, parked: false });
+const node = (id: string): MapNode => ({ id, owns: [], accepts: [], open: 0, working: false, parked: false, sessions: 0 });
 
 function topology(ids: string[], quests: [string, string][] = [], knowledge: [string, string][] = []): Topology {
   return {
     nodes: ids.map(node),
-    quests: quests.map(([from, to]) => ({ from, to, quests: [], open: 1 })),
+    quests: quests.map(([from, to]) => ({ from, to, quests: [], open: 1, live: null })),
     asks: [],
     chains: [],
     knowledge: knowledge.map(([a, b]) => ({ a, b, groups: 1 })),
@@ -107,8 +107,8 @@ describe('the layered map', () => {
   it('stands the asks left of what they became, and a chain\'s hop orders its columns as a quest does', () => {
     const data: Topology = {
       ...topology(['engine', 'game', 'docs']),
-      asks: [{ to: 'engine', asks: ['abc'], quests: [], open: 1 }],
-      chains: [{ from: 'engine', to: 'game', steps: [], waiting: [] }, { from: 'game', to: 'docs', steps: [], waiting: [] }],
+      asks: [{ to: 'engine', asks: ['abc'], quests: [], open: 1, live: null }],
+      chains: [{ from: 'engine', to: 'game', steps: [], waiting: [], live: null }, { from: 'game', to: 'docs', steps: [], waiting: [], live: null }],
     };
     const { at, loose } = layoutLayers(data);
     expect(at[ASKS]!.x).toBeLessThan(at.engine!.x);

@@ -22,7 +22,7 @@ lists.
 ## State
 
 **Counts, and this is their one home:** sixteen commands, **514 CLI tests, 546 service, 910 driver,
-292 desktop modules, 80 devkit, 1396 web unit, 21 Playwright**, 66/66 release rehearsal, **292/292
+292 desktop modules, 80 devkit, 1399 web unit, 21 Playwright**, 66/66 release rehearsal, **292/292
 family rehearsal** (it names its own phases when you run it), **45/45 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge
 documents, 5 skills, 7 packs. The always-loaded core is **22,492 of 26,000 bytes** — a span in
@@ -164,10 +164,11 @@ requirements, and the owner's calls. Its recommended order is the order below.
   wire (D64). Off by default, and configurable per workspace. WSR1's branch form is what it starts
   from: `LandingRules.Problem` refuses any other form today, and says so.
 - [ ] **MAP4 — the map, finished** (study §6). MAP4a (the layers, pan, zoom, search and the sizing
-  menu; map design §1a), MAP4b (asks and chains as lines of their own, switchable; §1b) and MAP4c
-  (open only, or what moved in 7 or 30 days; §1c) are built. Still open: **d** sessions live on their nodes, a quest's line
-  lit while it is worked; **e** what depends on what, from a declared source and never guessed (a
-  new declaration, so the CLI and the service change as twins). MAP4a was looked at on the real
+  menu; map design §1a), MAP4b (asks and chains as lines of their own, switchable; §1b), MAP4c
+  (open only, or what moved in 7 or 30 days; §1c) and MAP4d (a line live while a session is on one
+  of its quests; §1d, its ring not yet seen on the window) are built. Still open: **e** what
+  depends on what, from a declared source and never guessed (a new declaration, so the CLI and the
+  service change as twins). MAP4a was looked at on the real
   twenty-nine (dark, the install) and a scratch circle of twenty-three (both themes).
 ### What REV3 left (2026-09-25)
 

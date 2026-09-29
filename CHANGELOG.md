@@ -521,7 +521,10 @@ The first version: doctrine that installs, is checked, and flows back.
   arrow from the repository whose finished quest published the next step to where that step went,
   including the steps still to come. A *Lines* menu beside the size switches each kind of line on or
   off (quests, asks, chains, shared findings) and remembers your choice. The same menu chooses which
-  quests the lines draw: all, open only, or what moved in the last 7 or 30 days (MAP4c).
+  quests the lines draw: all, open only, or what moved in the last 7 or 30 days (MAP4c). While a
+  session is on one of a line's quests, the line's count wears the same dashed ring a repository with
+  a session does, in the session's colour, and a repository with several sessions says how many
+  (MAP4d).
 - **Menus look like menus, and scrollbars have no arrows.** The button that lists a region's views
   and moves them is now "⋯", as VS Code's is, rather than a down arrow. Scrollbars throughout are a
   thin bar with no ▲ and ▼ at its ends.

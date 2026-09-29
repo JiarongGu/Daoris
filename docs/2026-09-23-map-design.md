@@ -143,8 +143,22 @@ closed parent, and a repository's open count stays what is open to it now. Share
 time and are unaffected. The button says the choice while it is not *all*, and the viewer's choice
 is kept as the lines' is.
 
-**What MAP4 still owes** (TASKS): live sessions on their nodes (d), and *depends on* from a declared
-source (e).
+### 1d. MAP4d — sessions live on the map (built 2026-09-30)
+
+- **A line is live while a session is on one of its quests.** Its count wears the node's dashed ring,
+  in the hue the rail gives the session: taken's while it works, open's while it waits on the person,
+  which leads, as on a node. Its name says so in words. The same key line covers both marks. The map
+  follows live because a session or quest event already refreshes both reads.
+- **A node says how many sessions are there** when more than one is (`working now · 2`): a number in
+  any language.
+- **The ring's asks stand where they are clearest**, not at the centre: the centre, or a step toward
+  a gap between neighbours, kept clear of every repository and count first, and of the lines as far as
+  it can. Seen on the window: at the centre of two repositories asked both ways they hid both counts.
+- **Not seen on the window yet**: a live ring on a line. Neither machine held a session on a quest
+  during the look (the scratch's parked session is a chat). The unit tests hold its hue, dash and
+  words.
+
+**What MAP4 still owes** (TASKS): *depends on* from a declared source (e).
 
 ## 2. MAP1 — the workflow (second)
 

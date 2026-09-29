@@ -30,10 +30,18 @@ export type MapNode = {
    * It held the tree and was ringed "working now" until the window showed it (POLISH4).
    */
   parked: boolean;
+  /** How many sessions are there now, working or waiting on the person (MAP4d). */
+  sessions: number;
 };
 
+/**
+ * Whether a session is on one of a line's quests now (MAP4d): waiting on the person leads, as it does
+ * on a node, since it is the one the person acts on; else working; else none.
+ */
+export type Live = 'parked' | 'working' | null;
+
 /** Every quest that went from one repository on the map to another, one edge per direction. */
-export type QuestEdge = { from: string; to: string; quests: Quest[]; open: number };
+export type QuestEdge = { from: string; to: string; quests: Quest[]; open: number; live: Live };
 
 /** Two repositories that learned the same thing in different words (D17), once per pair. */
 export type KnowledgeEdge = { a: string; b: string; groups: number };
@@ -43,14 +51,14 @@ export type KnowledgeEdge = { a: string; b: string; groups: number };
  * later step, since a step is published on behalf of the same asker. The asks are one source on the
  * map, the person's, and which asks is the line's detail.
  */
-export type AskEdge = { to: string; asks: string[]; quests: Quest[]; open: number };
+export type AskEdge = { to: string; asks: string[]; quests: Quest[]; open: number; live: Live };
 
 /**
  * One hop of a chain (MAP4b, D65 §4): the repository whose done quest published the next step, to
  * that step's repository. A step keeps the original asker as its sender, so no quest line draws this
  * flow. `waiting` holds the steps an open quest will publish when it closes done.
  */
-export type ChainEdge = { from: string; to: string; steps: Quest[]; waiting: QuestStep[] };
+export type ChainEdge = { from: string; to: string; steps: Quest[]; waiting: QuestStep[]; live: Live };
 
 /**
  * The asks' place on a map (MAP4b): one source, the person's, from which each repository an ask put
@@ -125,7 +133,20 @@ export function buildTopology(
       open: quests.filter((q) => q.to === row.repository && isOpen(q)).length,
       working: sessions.some((s) => s.repository === row.repository && WORKING.has(s.state)),
       parked: sessions.some((s) => s.repository === row.repository && s.state === 'awaiting-person'),
+      sessions: sessions.filter((s) => s.repository === row.repository && (WORKING.has(s.state) || s.state === 'awaiting-person')).length,
     }));
+
+  // Which quests a session is on now, and how (MAP4d): waiting on the person leads.
+  const onQuest = new Map<string, Live>();
+  for (const s of sessions) {
+    if (!s.quest) continue;
+    if (s.state === 'awaiting-person') onQuest.set(s.quest, 'parked');
+    else if (WORKING.has(s.state) && onQuest.get(s.quest) !== 'parked') onQuest.set(s.quest, 'working');
+  }
+  const liveOf = (list: readonly Quest[]): Live => {
+    const states = list.map((q) => onQuest.get(q.id));
+    return states.includes('parked') ? 'parked' : states.includes('working') ? 'working' : null;
+  };
 
   let outside = 0;
   const edges = new Map<string, QuestEdge>();
@@ -134,7 +155,7 @@ export function buildTopology(
   for (const q of kept) {
     const ask = ASK.exec(q.from);
     if (ask && ids.has(q.to)) {
-      const edge = asked.get(q.to) ?? { to: q.to, asks: [], quests: [], open: 0 };
+      const edge = asked.get(q.to) ?? { to: q.to, asks: [], quests: [], open: 0, live: null };
       if (!edge.asks.includes(ask[1]!)) edge.asks.push(ask[1]!);
       edge.quests.push(q);
       if (isOpen(q)) edge.open += 1;
@@ -148,7 +169,7 @@ export function buildTopology(
     // A repository's quest to itself moved nothing between two places; it is its own count above.
     if (q.from === q.to) continue;
     const key = `${q.from}\u0000${q.to}`;
-    const edge = edges.get(key) ?? { from: q.from, to: q.to, quests: [], open: 0 };
+    const edge = edges.get(key) ?? { from: q.from, to: q.to, quests: [], open: 0, live: null };
     edge.quests.push(q);
     if (isOpen(q)) edge.open += 1;
     edges.set(key, edge);
@@ -174,7 +195,7 @@ export function buildTopology(
   const hops = new Map<string, ChainEdge>();
   const hop = (from: string, to: string) => {
     const key = `${from}\u0000${to}`;
-    const edge = hops.get(key) ?? { from, to, steps: [], waiting: [] };
+    const edge = hops.get(key) ?? { from, to, steps: [], waiting: [], live: null };
     hops.set(key, edge);
     return edge;
   };
@@ -189,6 +210,10 @@ export function buildTopology(
       from = step.to;
     }
   }
+
+  for (const edge of edges.values()) edge.live = liveOf(edge.quests);
+  for (const edge of asked.values()) edge.live = liveOf(edge.quests);
+  for (const edge of hops.values()) edge.live = liveOf(edge.steps);
 
   const byEnds = (a: string, b: string) => a.localeCompare(b);
   return {

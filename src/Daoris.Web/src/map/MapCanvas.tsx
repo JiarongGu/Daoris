@@ -1,7 +1,7 @@
 import { type KeyboardEvent, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '../lib/cn';
-import { ASKS, type ChainEdge, type Topology, layoutRing } from './topology';
+import { ASKS, type ChainEdge, type Live, type Topology, layoutRing } from './topology';
 import { type Frame, textWidth } from './measure';
 import { useTall, useWidth } from './useWidth';
 
@@ -47,16 +47,67 @@ export const ASKS_DASH = '10 4';
 export const CHAIN_DASH = '1 5';
 
 /**
- * Where everything stands on the ring: the repositories, and the asks at the centre, where every
- * line from them runs outward and crosses none of the ring's. One repository alone holds the centre,
- * so there the asks stand above it.
+ * Where everything stands on the ring: the repositories, and the asks inside it, where every line from
+ * them runs outward. One repository alone holds the centre, so there the asks stand above it.
  */
 export function ringAt(topology: Topology, radius: number): Record<string, { x: number; y: number }> {
   const at = layoutRing(topology.nodes.map((node) => node.id), SIZE, radius);
-  if (topology.asks.length > 0) {
-    at[ASKS] = topology.nodes.length > 1 ? { x: SIZE / 2, y: SIZE / 2 } : { x: SIZE / 2, y: SIZE / 2 - 2 * RADIUS - 48 };
-  }
+  if (topology.asks.length === 0) return at;
+  at[ASKS] = topology.nodes.length > 1 ? clearest(topology, at, radius) : { x: SIZE / 2, y: SIZE / 2 - 2 * RADIUS - 48 };
   return at;
+}
+
+/**
+ * The point inside the ring farthest from every repository and every line between them: the centre,
+ * or a step toward a gap between two neighbours. 🔴 Seen on the window: at the centre of two
+ * repositories the asks sat on both quest lines and hid both counts; a square's diagonals and a
+ * triangle's chords cross the middle too.
+ */
+function clearest(topology: Topology, at: Record<string, { x: number; y: number }>, radius: number) {
+  const centre = { x: SIZE / 2, y: SIZE / 2 };
+  const count = topology.nodes.length;
+  const candidates = [centre];
+  for (let gap = 0; gap < count; gap += 1) {
+    // Halfway between neighbours, in the ring's own angles (from the top, clockwise).
+    const angle = ((gap + 0.5) / count) * 2 * Math.PI - Math.PI / 2;
+    for (const reach of [0.2, 0.35, 0.5, 0.65]) {
+      candidates.push({ x: centre.x + Math.cos(angle) * radius * reach, y: centre.y + Math.sin(angle) * radius * reach });
+    }
+  }
+  // What must stay clear, first: every repository, and every line's count. Then, as far as it can,
+  // the lines themselves; a full circle asked every way leaves no point inside clear of every line,
+  // and a line passing under the disc hides less than a count would.
+  const counts: { x: number; y: number }[] = [];
+  const along: { x: number; y: number }[] = [];
+  const sample = (curve: ReturnType<typeof questCurve>) => {
+    counts.push(curve.middle);
+    const [x0, y0, cx, cy, x1, y1] = curve.d.match(/-?[\d.]+/g)!.map(Number);
+    for (let step = 0; step <= 10; step += 1) {
+      const t = step / 10;
+      along.push({
+        x: (1 - t) ** 2 * x0! + 2 * (1 - t) * t * cx! + t ** 2 * x1!,
+        y: (1 - t) ** 2 * y0! + 2 * (1 - t) * t * cy! + t ** 2 * y1!,
+      });
+    }
+  };
+  for (const edge of topology.quests) sample(questCurve(at[edge.from]!, at[edge.to]!));
+  for (const edge of topology.chains) sample(questCurve(at[edge.from]!, at[edge.to]!, CHAIN_BEND));
+  const lines = [...along];
+  for (const edge of topology.knowledge) {
+    const { d } = questCurve(at[edge.a]!, at[edge.b]!, 0);
+    const [x0, y0, , , x1, y1] = d.match(/-?[\d.]+/g)!.map(Number);
+    for (let step = 0; step <= 10; step += 1) lines.push({ x: x0! + ((x1! - x0!) * step) / 10, y: y0! + ((y1! - y0!) * step) / 10 });
+  }
+  const distance = (a: { x: number; y: number }, b: { x: number; y: number }) => Math.hypot(a.x - b.x, a.y - b.y);
+  const score = (point: { x: number; y: number }) => {
+    const must = Math.min(
+      ...topology.nodes.map((node) => distance(at[node.id]!, point) - RADIUS - ASKS_R - 8),
+      ...counts.map((middle) => distance(middle, point) - 11 - ASKS_R - 4),
+    );
+    const may = Math.min(Infinity, ...lines.map((p) => distance(p, point) - ASKS_R));
+    return must >= 0 ? 1000 + Math.min(may, 100) : must;
+  };
+  return candidates.reduce((best, point) => (score(point) > score(best) + 0.5 ? point : best));
 }
 
 /** Whether a chain's hop still has work in it: a step open now, or one still to be published. */
@@ -86,10 +137,26 @@ export function AsksMark({ x, y, r, count, width, onHover }: {
   );
 }
 
-/** A line's count, on the line, in the line's own state. */
-export function Count({ x, y, open, count }: { x: number; y: number; open: boolean; count: number }) {
+/** How many sessions a repository's word speaks for, when it is more than one (MAP4d): a number in any language. */
+export const howMany = (sessions: number) => (sessions > 1 ? ` · ${sessions}` : '');
+
+/** A line's name, and whether a session is on one of its quests now, since the ring is not words (MAP4d). */
+export const lineLabel = (t: (key: string) => string, label: string, live: Live) =>
+  (live ? `${label}${t(`map.lineLive.${live}`)}` : label);
+
+/**
+ * A line's count, on the line, in the line's own state; ringed as a node is while a session is on one
+ * of its quests (MAP4d), in the hue the rail gives that session, and dashed so it is never hue alone.
+ */
+export function Count({ x, y, open, count, live = null }: { x: number; y: number; open: boolean; count: number; live?: Live }) {
   return (
     <>
+      {live && (
+        <circle
+          cx={x} cy={y} r={16} fill="none" strokeDasharray="3 3"
+          className={cn('stroke-2', live === 'parked' ? 'stroke-st-open' : 'stroke-st-taken')}
+        />
+      )}
       <circle cx={x} cy={y} r={11} className={cn('fill-page stroke-[1.5]', open ? 'stroke-accent' : 'stroke-line-strong')} />
       <text x={x} y={y} textAnchor="middle" dominantBaseline="central" className="fill-ink font-mono text-meta tabular-nums">
         {count}
@@ -164,7 +231,8 @@ export function frameMap(
     const ring = node.parked || node.working ? RADIUS + 7 : RADIUS + 2;
     hold(x - ring, y - ring, x + ring, y + ring);
     const label = placeLabel(x, y);
-    const word = node.parked ? words.parked : node.working ? words.working : null;
+    const said = node.parked ? words.parked : node.working ? words.working : null;
+    const word = said === null ? null : `${said}${howMany(node.sessions)}`;
     const width = Math.max(textWidth(node.id, NAME_PX), word ? textWidth(word, WORD_PX) : 0);
     const from = label.anchor === 'start' ? label.x : label.anchor === 'end' ? label.x - width : label.x - width / 2;
     hold(from, label.y - NAME_PX, from + width, label.y + (word ? label.next : 0) + 4);
@@ -331,7 +399,7 @@ export function MapCanvas({ topology, selected, onSelect }: {
               key={`a-${edge.to}`}
               role="button"
               tabIndex={0}
-              aria-label={t('map.asksLabel', { to: edge.to, count: edge.quests.length })}
+              aria-label={lineLabel(t, t('map.asksLabel', { to: edge.to, count: edge.quests.length }), edge.live)}
               aria-pressed={chosen}
               onClick={() => choose(line)}
               onKeyDown={press(line)}
@@ -348,7 +416,7 @@ export function MapCanvas({ topology, selected, onSelect }: {
                 markerEnd={open ? 'url(#map-arrow-open)' : 'url(#map-arrow-closed)'}
                 className={cn('shown', open ? 'stroke-accent' : 'stroke-line-strong', chosen ? 'stroke-[3.5]' : 'stroke-[1.5]')}
               />
-              <Count x={middle.x} y={middle.y} open={open} count={edge.quests.length} />
+              <Count x={middle.x} y={middle.y} open={open} count={edge.quests.length} live={edge.live} />
             </g>
           );
         })}
@@ -363,7 +431,7 @@ export function MapCanvas({ topology, selected, onSelect }: {
               key={`c-${edge.from}-${edge.to}`}
               role="button"
               tabIndex={0}
-              aria-label={t('map.chainsLabel', { from: edge.from, to: edge.to, count: edge.steps.length + edge.waiting.length })}
+              aria-label={lineLabel(t, t('map.chainsLabel', { from: edge.from, to: edge.to, count: edge.steps.length + edge.waiting.length }), edge.live)}
               aria-pressed={chosen}
               onClick={() => choose(line)}
               onKeyDown={press(line)}
@@ -381,7 +449,7 @@ export function MapCanvas({ topology, selected, onSelect }: {
                 markerEnd={open ? 'url(#map-arrow-open)' : 'url(#map-arrow-closed)'}
                 className={cn('shown', open ? 'stroke-accent' : 'stroke-line-strong', chosen ? 'stroke-[3.5]' : 'stroke-2')}
               />
-              <Count x={middle.x} y={middle.y} open={open} count={edge.steps.length + edge.waiting.length} />
+              <Count x={middle.x} y={middle.y} open={open} count={edge.steps.length + edge.waiting.length} live={edge.live} />
             </g>
           );
         })}
@@ -396,7 +464,7 @@ export function MapCanvas({ topology, selected, onSelect }: {
               key={`q-${edge.from}-${edge.to}`}
               role="button"
               tabIndex={0}
-              aria-label={t('map.questsLabel', { from: edge.from, to: edge.to, count: edge.quests.length })}
+              aria-label={lineLabel(t, t('map.questsLabel', { from: edge.from, to: edge.to, count: edge.quests.length }), edge.live)}
               aria-pressed={chosen}
               onClick={() => choose(line)}
               onKeyDown={press(line)}
@@ -416,16 +484,7 @@ export function MapCanvas({ topology, selected, onSelect }: {
                 style={{ strokeWidth: (chosen ? 2 : 0) + 1.5 + Math.min(edge.quests.length, 6) * 0.5 }}
                 className={open ? 'stroke-accent' : 'stroke-line-strong'}
               />
-              <circle
-                cx={middle.x} cy={middle.y} r={11}
-                className={cn('fill-page stroke-[1.5]', open ? 'stroke-accent' : 'stroke-line-strong')}
-              />
-              <text
-                x={middle.x} y={middle.y} textAnchor="middle" dominantBaseline="central"
-                className="fill-ink font-mono text-meta tabular-nums"
-              >
-                {edge.quests.length}
-              </text>
+              <Count x={middle.x} y={middle.y} open={open} count={edge.quests.length} live={edge.live} />
             </g>
           );
         })}
@@ -482,7 +541,7 @@ export function MapCanvas({ topology, selected, onSelect }: {
                   x={label.x} y={label.y + label.next} textAnchor={label.anchor}
                   className={cn('text-meta', there === 'parked' ? 'fill-st-open' : 'fill-ink-soft')}
                 >
-                  {t(there === 'parked' ? 'map.parked' : 'map.working')}
+                  {t(there === 'parked' ? 'map.parked' : 'map.working')}{howMany(node.sessions)}
                 </text>
               )}
             </g>
