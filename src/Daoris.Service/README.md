@@ -15,8 +15,11 @@ searchable. The ledger side grew with it: a session record keys on the **working
 
 ## The registry — who is out there, and what they own
 
-Each repository declares a `domain` in its manifest: a one-line summary, the areas it **owns**, and the
-kinds of quest it **accepts**. The service reads those while indexing and serves them together.
+Each repository declares a `domain` in its manifest: a one-line summary, the areas it **owns**, the
+kinds of quest it **accepts**, and, optionally, the repositories it **uses** (D91), which the map draws
+as dependencies. The service reads those while indexing and serves them together. `uses` is read by
+one rule on every door (`Declared.Uses`, the CLI's `usesOf` its twin): trimmed, blanks and repeats in
+any case dropped, the repository's own name dropped, absent as empty.
 
 **Search answers "has anyone solved this"; the registry answers "whose problem is this."** Those are
 different questions, and only the second tells you where a change belongs — which is what makes a quest
