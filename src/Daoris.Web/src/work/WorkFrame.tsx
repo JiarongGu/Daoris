@@ -446,6 +446,11 @@ export function WorkFrame({
   };
   // The panel's shown view: the machine's, like its height, not the attended session's.
   const [panelPick, setPanelPick] = useState<ViewId>('console');
+  // The view being dragged (DOCK1e), so a region with nothing in it is drawn to be dropped on.
+  const [dragging, setDragging] = useState<ViewId | null>(null);
+  // 🔴 Told a beat after the drag starts, never inside it: Chromium drops a drag whose page changes
+  // under the pointer in the same task as `dragstart`, and drawing an emptied region is such a change.
+  const onDrag = (view: ViewId | null) => { window.setTimeout(() => setDragging(view), 0); };
   const panelView = panelViews.includes(panelPick) ? panelPick : panelViews[0];
   // The person opening the dock on a surface — from its strip.
   const openDock = (tab: DockTab) => {
@@ -466,6 +471,8 @@ export function WorkFrame({
   // region it leaves with nothing closes, as VS Code hides an empty one.
   const moveView = (view: ViewId, to: Place) => {
     const from = placed.places[view];
+    // A drop ends the drag here: the tab it started from is gone by the time `dragend` fires on it.
+    setDragging(null);
     if (from === to) return;
     placed.move(view, to);
     // Not `openView`: this render's places still say where the view was.
@@ -760,8 +767,9 @@ export function WorkFrame({
           />
         )}
 
-        {/* An emptied panel that is hidden is not drawn at all; opened, it says how to fill it. */}
-        {(panelViews.length > 0 || !collapsed) && (
+        {/* An emptied panel that is hidden is not drawn at all, unless a view is being dragged to it;
+            opened, it says how to fill it. */}
+        {(panelViews.length > 0 || !collapsed || dragging !== null) && (
           <OutputPanel
             console={consoleView}
             height={Math.max(PANEL_MIN, height)}
@@ -780,6 +788,7 @@ export function WorkFrame({
             onView={setPanelPick}
             onMove={moveView}
             onReset={placed.moved ? placed.reset : undefined}
+            onDrag={onDrag}
           >
             {panelView && panelView !== 'console' ? surface(panelView) : undefined}
           </OutputPanel>
@@ -789,14 +798,16 @@ export function WorkFrame({
       {/* The third column, built now that it has a second occupant (components plan §3a). It is
           keyed to the attended session like every other region, and it is what gives the centre
           column its height back — the timeline used to share that space with the composer and the
-          panel. An emptied one that is closed is not drawn at all (DOCK1b). */}
-      {(rightViews.length > 0 || !dockClosed) && (
+          panel. An emptied one that is closed is not drawn at all (DOCK1b), unless a view is being
+          dragged to it (DOCK1e). */}
+      {(rightViews.length > 0 || !dockClosed || dragging !== null) && (
         <RightDock
           tab={dock}
           onTab={setDock}
           views={rightViews}
           onMove={moveView}
           onReset={placed.moved ? placed.reset : undefined}
+          onDrag={onDrag}
           mode={layout.dock.mode}
           width={layout.dock.width}
           range={dockRange(width.viewport, width.frame, layout.rail.width)}

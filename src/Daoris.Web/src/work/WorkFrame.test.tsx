@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { act, cleanup, render, screen, waitFor, within } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Tooltip from '@radix-ui/react-tooltip';
@@ -100,6 +100,18 @@ function respond(url: string): Response {
   if (url.startsWith('/api/quests')) return Response.json(QUESTS);
   if (url.startsWith('/api/registry')) return Response.json(REGISTRY);
   throw new Error(`unstubbed request: ${url}`);
+}
+
+/** A drag's data as a page sees it (DOCK1e): jsdom has no `DataTransfer`, and a region reads its types. */
+function carried() {
+  const data: Record<string, string> = {};
+  return {
+    setData: (type: string, value: string) => { data[type] = value; },
+    getData: (type: string) => data[type] ?? '',
+    get types() { return Object.keys(data); },
+    effectAllowed: 'all',
+    dropEffect: 'none',
+  };
 }
 
 /** The frame with the application's selection held for it, as `App` holds it. */
@@ -204,6 +216,52 @@ describe('the Work frame', () => {
     expect(screen.queryByRole('tablist', { name: 'views in the panel' })).toBeNull();
     expect(screen.getByRole('tab', { name: 'Ask Daoris', selected: true })).toBeInTheDocument();
     expect(window.localStorage.getItem('daoris.viewPlaces')).toBeNull();
+  });
+
+  /** DOCK1e: dragging a tab to the other region is the same move as the menu's, by the pointer. */
+  it('moves a view dragged by its tab to the panel', async () => {
+    window.localStorage.setItem('daoris.dockClosed', '0');
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={client}>
+        <Tooltip.Provider>
+          <WorkFrame selected="s1a2b3c4" onSelect={vi.fn()} notify={() => {}} ask={<p>the ask panel</p>} />
+        </Tooltip.Provider>
+      </QueryClientProvider>,
+    );
+
+    const drag = carried();
+    fireEvent.dragStart(await screen.findByRole('tab', { name: 'Ask Daoris' }), { dataTransfer: drag });
+    const panel = screen.getByRole('region', { name: 'the panel' });
+    fireEvent.dragEnter(panel, { dataTransfer: drag });
+    fireEvent.dragOver(panel, { dataTransfer: drag });
+    fireEvent.drop(panel, { dataTransfer: drag });
+
+    expect(within(screen.getByRole('tablist', { name: 'views in the panel' })).getByRole('tab', { name: 'Ask Daoris', selected: true }))
+      .toBeInTheDocument();
+    expect(screen.getByText('the ask panel')).toBeInTheDocument();
+    expect(JSON.parse(window.localStorage.getItem('daoris.viewPlaces')!)).toEqual({ ask: 'panel' });
+  });
+
+  it('draws an emptied side bar while a view is dragged, so it can be dropped on', async () => {
+    // Everything moved to the panel and the side bar closed: it is not drawn at all.
+    window.localStorage.setItem('daoris.viewPlaces', JSON.stringify({ timeline: 'panel', review: 'panel' }));
+    window.localStorage.setItem('daoris.dockClosed', '1');
+    show('s1a2b3c4');
+    const tab = await screen.findByRole('tab', { name: 'Console' });
+    expect(screen.queryByRole('complementary', { name: 'right side bar' })).toBeNull();
+
+    const drag = carried();
+    fireEvent.dragStart(tab, { dataTransfer: drag });
+    // The frame is told a beat after the drag starts (Chromium drops a drag the page changes under).
+    await act(async () => { await new Promise((done) => setTimeout(done, 0)); });
+    const side = screen.getByRole('complementary', { name: 'right side bar' });
+    fireEvent.dragEnter(side, { dataTransfer: drag });
+    fireEvent.drop(side, { dataTransfer: drag });
+
+    expect(within(screen.getByRole('tablist', { name: 'right side bar' })).getByRole('tab', { name: 'Console', selected: true }))
+      .toBeInTheDocument();
+    expect(JSON.parse(window.localStorage.getItem('daoris.viewPlaces')!)).toEqual({ timeline: 'panel', review: 'panel', console: 'right' });
   });
 
   it('opens the region that holds Ask Daoris when asked for it, wherever it stands', async () => {

@@ -1,7 +1,7 @@
 # Panels that dock — the layout as the person's (DOCK1)
 
 **Carried by:** DOCK1 in `TASKS.md` (SURF11 is archived). **Status:** design, written before the
-build; DOCK1c and DOCK1b built, §4 says how. The
+build; DOCK1c, DOCK1b and DOCK1e built, §4 says how. The
 owner, 2026-09-29: *"we should be able to dock panels like vscode did"*, said beside *"there is no easy
 way to open the daoris chat"* and followed by *"the ask daoris need to be a better location please
 refer to a better ui/ux design"*. The first step, Ask Daoris as one right region, landed as `b21b60f`
@@ -51,7 +51,7 @@ choice (the dock's share, the rail's width), and *Reset layout* puts the default
 ## 4. Build order
 
 *Reordered 2026-09-29, before any of it was built, and again after DOCK1c:* the toggles come first,
-then the moves. The hoist is structural and
+then the moves, by menu and then by drag. The hoist is structural and
 shows nothing new (`b21b60f` already gives the eye one right region), while it splits the Work frame's
 layout rules (cramped, full, the narrow window's takeover) across two components on the busiest view.
 The toggles are what a person sees, use the strip's new trailing slot, and need only the three
@@ -89,10 +89,23 @@ closings lifted out of the Work frame.
      right is **the side bar** and the bottom **the panel** in every label now, as VS Code names
      them. And two sentences said where the console was (*below*, *above*), which a move makes false;
      they no longer say.
-3. **DOCK1a**: the right region hoisted out of the Work frame into the application, one component on
+3. **DOCK1e**: dragging a tab between regions. *Built 2026-09-29, after DOCK1b*, since it is the
+   part of VS Code's docking a person sees most, on the model DOCK1b laid (`work/viewDrag.ts`):
+   - **A drop is the menu's move**: the same `onMove`, so a drop and *Move to* never disagree, and the
+     menu stays the door for keys.
+   - **A tab carries where it came from** as a type of its own, because a page may read a drag's
+     types while it is over a region but not its data: a region lights up only for a view from the
+     other one, as VS Code's accent outline and wash, and ignores a file or a selection.
+   - **Every tab drags**, and the panel's lone view by its name, as VS Code's lone view by its title;
+     so do the closed side bar's icons.
+   - **An emptied region is drawn while a view is dragged**, so there is somewhere to drop it: the
+     hidden panel as its header, the closed side bar as its strip, marked by the side bar's own
+     picture rather than left a blank column at the window's edge. The frame learns of the drag a
+     beat after it starts, since Chromium drops a drag whose page changes in the same task.
+   - Not built: reordering tabs within a region, and splitting a region; neither was asked for.
+4. **DOCK1a**: the right region hoisted out of the Work frame into the application, one component on
    every view; Ask Daoris no longer has two hosts.
-4. **DOCK1d**: Quick Ask.
-5. **DOCK1e**: dragging a tab between regions.
+5. **DOCK1d**: Quick Ask.
 
 ## 5. Not chosen, for now
 

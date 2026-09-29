@@ -657,7 +657,9 @@ The first version: doctrine that installs, is checked, and flows back.
   locations*, in the tab list and the View menu, puts them back. The tab list names every tab in the
   region by its whole name, so a tab cut down to its icon is never the only way to it. The two
   regions are named *the side bar* and *the panel* everywhere now; the panel was called *the console*
-  and the side bar *the panel*.
+  and the side bar *the panel*. **Or drag a tab to the other region** (DOCK1e): the region lights up
+  while it is over, and a region with nothing in it appears for the drag, so there is always
+  somewhere to drop.
 - **A parked session is answered where you read its question, and your answer shows as yours.** A
   driven session parked to ask you gets a box at its foot, since its old door was a button at the top
   of a long record; your answer is kept in its record beneath the question and opens the session that

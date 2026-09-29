@@ -5,7 +5,8 @@ import { CAPTION_ATTRIBUTE, CAPTION_SLOTS } from './caption';
 import { cn } from '../lib/cn';
 import { Mark } from '../Mark';
 import type { Place, ViewId } from './placements';
-import { viewEntries, ViewsMenu } from './ViewsMenu';
+import { DropMark, viewEntries, ViewsMenu } from './ViewsMenu';
+import { dragProps, useViewDrop } from './viewDrag';
 
 // The window's own furniture (D55, extended by D56, simplified by D66): the app strip, the activity
 // bar, the status bar and the output panel. Small, presentational, and kept together because they
@@ -554,7 +555,7 @@ const PANEL_STEP = 48;
  */
 export function OutputPanel({
   console: stream, height, collapsed, onResize, onToggle, tabs, selected, onSelect,
-  views = ['console'], view, onView, onMove, onReset, children,
+  views = ['console'], view, onView, onMove, onReset, onDrag, children,
 }: {
   /**
    * The attended session's console, or null when nothing is attended — a state rather than an
@@ -578,11 +579,16 @@ export function OutputPanel({
   onView?: (view: ViewId) => void;
   onMove?: (view: ViewId, to: Place) => void;
   onReset?: () => void;
+  /** Told while one of its views is dragged, and with null when the drag ends (DOCK1e). */
+  onDrag?: (view: ViewId | null) => void;
   /** The shown view when it is not the console. */
   children?: ReactNode;
 }) {
   const { t } = useTranslation();
   const [menu, setMenu] = useState(false);
+  // A view dragged from the side bar lands here, hidden or shown (DOCK1e).
+  const drop = useViewDrop('panel', onMove);
+  const carry = (id: ViewId) => (onMove ? dragProps(id, 'panel', onDrag) : {});
   const clamp = (value: number) => Math.min(PANEL_MAX, Math.max(PANEL_MIN, value));
   const entries = viewEntries(t, views);
   const shown = entries.some((entry) => entry.id === view) ? view : entries[0]?.id;
@@ -602,7 +608,8 @@ export function OutputPanel({
   };
 
   return (
-    <section className="flex shrink-0 flex-col border-t border-line">
+    <section aria-label={t('layout.panel')} className="relative flex shrink-0 flex-col border-t border-line" {...drop.props}>
+      {drop.over && <DropMark />}
       {!collapsed && (
         <div
           role="separator"
@@ -638,6 +645,7 @@ export function OutputPanel({
                   aria-label={label}
                   title={label}
                   onClick={() => onView?.(id)}
+                  {...carry(id)}
                   onContextMenu={(event) => {
                     event.preventDefault();
                     onView?.(id);
@@ -655,9 +663,13 @@ export function OutputPanel({
               ))}
             </div>
           )
-          // One view is no tabs: the header it always had, named for what it holds.
+          // One view is no tabs: the header it always had, named for what it holds, and dragged by its
+          // name as VS Code's lone view is by its title (DOCK1e).
           : entries[0] && (
-            <span className="shrink-0 text-meta text-ink-faint">
+            <span
+              className={cn('shrink-0 text-meta text-ink-faint', onMove && 'cursor-grab')}
+              {...carry(entries[0].id)}
+            >
               {shown === 'console' ? t('work.panel.title') : entries[0].label}
             </span>
           )}

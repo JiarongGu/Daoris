@@ -12,6 +12,11 @@ const VIEW_NAME: Record<ViewId, string> = {
 };
 const VIEW_ICON: Record<ViewId, IconName> = { timeline: 'quests', review: 'diff', ask: 'help', console: 'frameWork' };
 
+/** Where a dragged view would land, lit as VS Code lights a container a tab is over (DOCK1e). */
+export function DropMark() {
+  return <div aria-hidden className="pointer-events-none absolute inset-0 z-30 border-2 border-accent bg-accent-soft opacity-70" />;
+}
+
 /** The views, named and pictured as every region's tabs show them: one name wherever a view stands. */
 export function viewEntries(t: (key: string) => string, views: readonly ViewId[]): ViewEntry[] {
   return views.map((id) => ({ id, label: t(VIEW_NAME[id]), icon: VIEW_ICON[id] }));

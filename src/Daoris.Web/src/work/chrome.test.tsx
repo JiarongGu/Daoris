@@ -19,6 +19,21 @@ const render = (node: ReactElement) => {
   };
 };
 
+/**
+ * A drag's data, as a page sees it (DOCK1e): jsdom has no `DataTransfer`, and a region reads a drag's
+ * types while it is over it, so the stand-in keeps the types in step with what was set.
+ */
+function carried(initial: Record<string, string> = {}) {
+  const data: Record<string, string> = { ...initial };
+  return {
+    setData: (type: string, value: string) => { data[type] = value; },
+    getData: (type: string) => data[type] ?? '',
+    get types() { return Object.keys(data); },
+    effectAllowed: 'all',
+    dropEffect: 'none',
+  };
+}
+
 // The application's chrome (D56, D66), as molecules: props in, states out. No shell, no service, no
 // arranged world — which is what lets "in a browser" and "with attention" be ordinary assertions
 // rather than integration setup (components plan §2).
@@ -471,6 +486,41 @@ describe('the output panel', () => {
     expect(screen.queryByRole('tablist')).toBeNull();
     expect(screen.getByText('Timeline')).toBeTruthy();
     expect(screen.getByText('the timeline')).toBeTruthy();
+  });
+
+  // DOCK1e: a view's tab dragged from the side bar and dropped here moves it; one of its own does not.
+  it('takes a view dragged from the side bar, lit while it is over, and not one of its own', () => {
+    const onMove = vi.fn();
+    render(
+      <OutputPanel console={null} height={180} collapsed={false} onResize={() => {}} onToggle={() => {}} views={['console', 'timeline']} onMove={onMove} />,
+    );
+    const panel = screen.getByRole('region', { name: 'the panel' });
+
+    // Its own tab carries where it came from, so the panel does not light up for a move to itself.
+    const own = carried();
+    fireEvent.dragStart(screen.getByRole('tab', { name: 'Timeline' }), { dataTransfer: own });
+    fireEvent.dragEnter(panel, { dataTransfer: own });
+    expect(panel.querySelector('[aria-hidden].border-accent')).toBeNull();
+    fireEvent.drop(panel, { dataTransfer: own });
+    expect(onMove).not.toHaveBeenCalled();
+
+    const from = carried({ 'application/x-daoris-view': 'ask', 'application/x-daoris-view-from-right': 'ask' });
+    fireEvent.dragEnter(panel, { dataTransfer: from });
+    expect(panel.querySelector('[aria-hidden].border-accent')).not.toBeNull();
+    fireEvent.drop(panel, { dataTransfer: from });
+    expect(onMove).toHaveBeenCalledWith('ask', 'panel');
+    expect(panel.querySelector('[aria-hidden].border-accent')).toBeNull();
+  });
+
+  it('ignores a drag that is not a view — a file, a selection', () => {
+    const onMove = vi.fn();
+    render(<OutputPanel console={null} height={180} collapsed={false} onResize={() => {}} onToggle={() => {}} onMove={onMove} />);
+    const panel = screen.getByRole('region', { name: 'the panel' });
+    const file = carried({ Files: '' });
+    fireEvent.dragEnter(panel, { dataTransfer: file });
+    fireEvent.drop(panel, { dataTransfer: file });
+    expect(panel.querySelector('[aria-hidden].border-accent')).toBeNull();
+    expect(onMove).not.toHaveBeenCalled();
   });
 
   it('says how to fill it when every view has moved out, rather than an empty well', () => {

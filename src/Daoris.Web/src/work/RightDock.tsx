@@ -5,7 +5,8 @@ import { cn } from '../lib/cn';
 import { Splitter } from './frame';
 import type { DockMode } from './layout';
 import type { Place, ViewId } from './placements';
-import { viewEntries, ViewsMenu } from './ViewsMenu';
+import { DropMark, viewEntries, ViewsMenu } from './ViewsMenu';
+import { dragProps, useViewDrop } from './viewDrag';
 
 // The frame's third column (components plan §3a). It was deliberately unbuilt until it had a SECOND
 // occupant — a dock holding one thing is a pane with extra chrome — and SURF6's diff is that
@@ -37,7 +38,7 @@ export type DockTab = ViewId;
  * `viewsIn` gives, any of which can move to the panel from its tab's menu. Emptied, it says so.
  */
 export function RightDock({
-  tab, onTab, views = ['timeline', 'review'], onMove, onReset,
+  tab, onTab, views = ['timeline', 'review'], onMove, onReset, onDrag,
   mode, width, range, autoFull = false, onResize, onResetWidth, onClose, onOpen, onFull, children,
 }: {
   /** The view shown; ignored when it is not one of `views`. */
@@ -52,6 +53,8 @@ export function RightDock({
   onMove?: (view: DockTab, to: Place) => void;
   /** Puts every view back where it started; absent while none has moved. */
   onReset?: () => void;
+  /** Told while one of its tabs is dragged, and with null when the drag ends (DOCK1e). */
+  onDrag?: (view: DockTab | null) => void;
   onTab: (tab: DockTab) => void;
   mode: DockMode;
   width: number;
@@ -72,14 +75,21 @@ export function RightDock({
 
   const tabs = viewEntries(t, views);
   const shown = tabs.some((entry) => entry.id === tab) ? tab : tabs[0]?.id;
+  // A view dragged from the panel lands here, closed or open (DOCK1e).
+  const drop = useViewDrop('right', onMove);
 
   if (mode === 'closed') {
     return (
       <aside
         aria-label={t('work.dock.label')}
-        className="flex shrink-0 flex-col items-center gap-0.5 border-l border-line py-1.5"
+        className="relative flex shrink-0 flex-col items-center gap-0.5 border-l border-line py-1.5"
         style={{ width }}
+        {...drop.props}
       >
+        {drop.over && <DropMark />}
+        {/* Emptied, it is drawn only while a view is dragged to it (DOCK1e), and says what it is by
+            the side bar's own picture rather than as a blank column at the window's edge. */}
+        {tabs.length === 0 && <Icon name="layoutRight" size={14} className="mt-1.5 text-ink-faint" aria-hidden />}
         {tabs.map(({ id, label, icon }) => (
           <Tip key={id} content={t('work.dock.open', { tab: label })} side="left">
             <Button
@@ -87,6 +97,7 @@ export function RightDock({
               aria-label={t('work.dock.open', { tab: label })}
               onClick={() => onOpen(id)}
               className="h-7 w-7 justify-center px-0"
+              {...(onMove ? dragProps(id, 'right', onDrag) : {})}
             >
               <Icon name={icon} size={14} />
             </Button>
@@ -108,7 +119,9 @@ export function RightDock({
         full ? 'absolute inset-0 z-20' : 'relative shrink-0 border-l border-line',
       )}
       style={full ? undefined : { width }}
+      {...drop.props}
     >
+      {drop.over && <DropMark />}
       {!full && range && onResize && (
         <Splitter
           label={t('work.dock.resize')}
@@ -139,6 +152,8 @@ export function RightDock({
                 aria-label={label}
                 aria-selected={shown === id}
                 onClick={() => onTab(id)}
+                // Dragged to the panel, it moves there (DOCK1e); the menu below is the same move by keys.
+                {...(onMove ? dragProps(id, 'right', onDrag) : {})}
                 // VS Code's tab menu: a right-click selects the tab and offers where it can go.
                 onContextMenu={(event) => {
                   event.preventDefault();
