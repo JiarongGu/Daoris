@@ -144,7 +144,8 @@ rather than designed.
 
 ## Backlog
 
-**Twenty-seven rows are open**: WSR4 from the first real workspace (its other WSR, HELP, SESS, DOCK
+**Thirty rows are open**: the owner's three of 2026-09-30 (LOG1, CONSOLE4, SETUP1), first; WSR4
+from the first real workspace (its other WSR, HELP, SESS, DOCK
 and MAP rows are in the archive); the four REV3 left (DIST1, BUDGET1 and HOME1 the owner's, and HTTP1);
 the in-app browser's three (BRW3, BRW7, BRW8); D85's two (TASKBAR1, CHR8); the first goal's four
 (FG5, READACROSS1 and HELPREAD1 the owner's, and SEM2 on a trigger); D76's held file tools; four
@@ -152,6 +153,52 @@ leftovers (CONSOLE3, FLAKE1, DEPLOY5, TEST1); two on the owner (TRUST2, AGT2c); 
 a trigger (TOOL4, TOOL5, PLUG7, CANON9, HARNESS1; see *Handover*). Every closed one is in
 `docs/task-archive.md`, and this file holds no ticked rows, by the `task-lifecycle` rule it also
 ships. A heading below holds open rows only.
+
+### Watch it, type into it, set it up (owner, 2026-09-30) — in this order
+
+> *"we also need to make input line for console too, so we can control console just like regular
+> console window (more into powershell style), and also we will need a setup guide for first use
+> daoris, so setup agent and agent for "daoris" (the main agent for daoris system) and other rules
+> … also setup proper logging system to moniter my use in local daoris and we can improve the
+> system by this way"*
+
+Logging goes first: every day it is not there is a day of use nobody can read back, and the other
+two are the first things it should watch. Each row's parts land and are archived one by one.
+- [ ] **LOG1 — a log of what happens on this machine, to improve Daoris from.** Today nothing is
+  written outside the session transcripts: the shell's, the driver loop's and the host's own lines go
+  to a console nobody has once the application is installed, and an unhandled exception leaves no
+  trace. (a) **One log, machine-local**: JSON lines under the home's `logs/`, one file a day, kept
+  for a bounded number of days, written by every process (the shell, the driver loop, the host, the
+  browser), each line naming its source, its event and its fields. Unhandled exceptions from every
+  process land there. (b) **What the person does, without their words**: the page reports views
+  opened, commands run, sessions started, stopped and finished with their durations, messages sent
+  (their length, never their text), proposals applied or dismissed, refusals shown by code, errors
+  caught; the driver reports each start's cost (spawn to ready, send to first answer — the delay
+  HELP4 found took a person to notice). Nothing is synced or served over HTTP (D47 §4), and the log
+  says what it holds. (c) **Two doors to read it** (D50): `daoris-driver logs` at a terminal, and a
+  Settings domain that shows the recent lines and opens the folder. (d) **A report for improving
+  Daoris**: `tools/usage-report.mjs --install <dir>` summarises a period (what was used most, what
+  was refused, what failed, what was slow), so a development session starts from the owner's real
+  use rather than a guess. A decision (D94) records the event set and what is never logged.
+- [ ] **CONSOLE4 — the console takes input: a terminal, PowerShell by default.** The console panel
+  gains a terminal tab beside the session streams: a real shell under a pseudo-console (ConPTY), so
+  prompts, colours, Ctrl+C, history and full-screen programs behave as in a console window, drawn
+  by a terminal renderer in the page. (a) The terminal: PowerShell 7 when installed, else Windows
+  PowerShell, started in the attended session's tree, else the workspace's first repository; the
+  install's environment in it (`DAORIS_HOME`, so the `daoris` CLI answers for this machine). (b) More
+  than one, and a choice of shell (PowerShell, Command Prompt, Git Bash when found), each a tab,
+  closed with its process. (c) Desktop-only (D47 §4): the keystrokes and output ride the bridge,
+  never HTTP. A decision (D95) records that the console became a place to type, and that a
+  session's own streams stay read-only (the composer is how a session is spoken to).
+- [ ] **SETUP1 — a first-use guide.** A fresh install opens on a guide rather than an empty window,
+  and the guide stays reachable later (the Daoris menu, the palette). Its steps are the machine's
+  own facts, each done when the fact holds, each with its screen and its terminal command (D50):
+  (1) **an agent**: a tool installed or pinned, and an account signed in (D57); (2) **Daoris's own
+  agent**: the agent Ask Daoris and the intake run on (D89, *Daoris's own AI*); (3) **a workspace
+  and its repositories**; (4) **the rules**: which repositories are driven, how their work lands
+  (WSR1), what agents may do (D72), notifications. Built on the facts Ask Daoris's starters already
+  read (HELP1d), so a step and a starter never disagree. A decision (D96) records the steps and
+  what makes one done.
 
 ### After the first real workspace (owner, 2026-09-28) — to start later
 
