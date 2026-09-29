@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { Convergence, Quest, Registration, Session } from '../api';
 import { fitRadius, frameMap, placeLabel } from './MapCanvas';
 import { textWidth } from './measure';
-import { buildTopology, layoutRing } from './topology';
+import { buildTopology, LINE_KINDS, type LineKind, layoutRing, showLines } from './topology';
 
 // MAP2 (D67 §3, `docs/2026-09-23-map-design.md` §1): the workspace's repositories and what actually
 // moved between them, read from data the service already serves — no model, no machine path.
@@ -44,7 +44,7 @@ describe('the workspace topology', () => {
     ]);
   });
 
-  /** An ask's sender, or a repository outside this circle, is not a node — and it is still counted. */
+  /** A repository outside this circle is not a node, and it is still counted. An ask is its own line (MAP4b). */
   it('counts quests with an end off the map rather than inventing a node for it', () => {
     const map = buildTopology([repo('engine')], [
       quest('q1', 'ask #abc', 'engine'),
@@ -53,9 +53,57 @@ describe('the workspace topology', () => {
     ], [], []);
 
     expect(map.quests).toEqual([]);
-    expect(map.outside).toBe(2);
+    expect(map.outside).toBe(1);
     // What is still open to a repository is its own count, wherever the quest came from.
     expect(map.nodes[0]!.open).toBe(2);
+  });
+
+  it('draws what the asks became: one line from the asks to each repository they put work on', () => {
+    const map = buildTopology([repo('engine'), repo('game')], [
+      quest('q1', 'ask #abc', 'engine'),
+      quest('q2', 'ask #abc', 'game', 'Done'),
+      quest('q3', 'ask #def', 'engine', 'Done'),
+      quest('q4', 'game', 'engine'),
+    ], [], []);
+
+    expect(map.asks.map((e) => [e.to, e.asks, e.quests.map((q) => q.id), e.open])).toEqual([
+      ['engine', ['abc', 'def'], ['q1', 'q3'], 1],
+      ['game', ['abc'], ['q2'], 0],
+    ]);
+    // A repository's own quest is still a quest line, and an ask's is not one.
+    expect(map.quests.map((e) => [e.from, e.to])).toEqual([['game', 'engine']]);
+  });
+
+  it('draws a chain from the repository whose done quest published a step to the step\'s repository', () => {
+    const first: Quest = { ...quest('q1', 'ask #abc', 'engine', 'Done') };
+    const second: Quest = { ...quest('q2', 'ask #abc', 'game'), parent: 'q1', then: [{ to: 'docs', title: 'write it up', body: '' }] };
+    const map = buildTopology([repo('engine'), repo('game'), repo('docs')], [first, second], [], []);
+
+    // The step that happened, and the step still to come from the quest open now.
+    expect(map.chains.map((e) => [e.from, e.to, e.steps.map((q) => q.id), e.waiting.map((s) => s.title)])).toEqual([
+      ['engine', 'game', ['q2'], []],
+      ['game', 'docs', [], ['write it up']],
+    ]);
+  });
+
+  it('draws no step still to come from a quest that closed, since its close published it or ended the chain', () => {
+    const declined: Quest = { ...quest('q1', 'game', 'engine', 'Declined'), then: [{ to: 'docs', title: 'never', body: '' }] };
+    const map = buildTopology([repo('engine'), repo('game'), repo('docs')], [declined], [], []);
+    expect(map.chains).toEqual([]);
+  });
+
+  it('shows only the kinds of line a person chose, and every repository still', () => {
+    const map = buildTopology([repo('engine'), repo('game')], [
+      quest('q1', 'ask #abc', 'engine'),
+      quest('q2', 'game', 'engine'),
+    ], [group(['engine', 'game'])], []);
+
+    const shown = showLines(map, new Set<LineKind>(['asks']));
+    expect(shown.asks).toHaveLength(1);
+    expect(shown.quests).toEqual([]);
+    expect(shown.knowledge).toEqual([]);
+    expect(shown.nodes).toHaveLength(2);
+    expect(showLines(map, new Set(LINE_KINDS))).toEqual(map);
   });
 
   it('marks where a session is working now', () => {

@@ -281,7 +281,8 @@ controls are in the frame design's §3.
   a measure: 🔴 `max-w-prose` on a flex item caps its `basis-full`, so the measure goes on a child of
   the full-width item, or the note stops breaking to its own line.
 - **Map** (MAP2; MAP4a past twelve repositories: columns by who asks whom, which pan and zoom, a
-  search, and a sizing menu behind the percentage) — the circle's repositories on a ring, the quests between them as directed arrows
+  search, and a sizing menu behind the percentage; MAP4b: what the asks became in long dashes, a
+  chain's hops dotted, and a *Lines* menu that switches each kind) — the circle's repositories on a ring, the quests between them as directed arrows
   with a count on each, and a shared finding as a dashed line; a detail panel beside the map says what
   the chosen node or line holds, and a legend says every mark in words, the number in a node
   included. It adds no actions: a quest in a detail opens its drawer (U46). What the window taught it

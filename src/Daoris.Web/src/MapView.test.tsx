@@ -56,7 +56,10 @@ describe('the workspace map', () => {
     ];
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => respond(String(input))));
   });
-  afterEach(() => vi.unstubAllGlobals());
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    localStorage.clear();
+  });
 
   it('draws each repository, the quests between them, and what they learned alike', async () => {
     show();
@@ -65,8 +68,10 @@ describe('the workspace map', () => {
     expect(screen.getByRole('button', { name: 'game, 1 open' })).toBeTruthy();
     expect(screen.getByRole('button', { name: '2 quests from game to engine' })).toBeTruthy();
     expect(screen.getByRole('button', { name: 'engine and game learned the same thing once' })).toBeTruthy();
-    // The ask is not a repository: it is not invented as a node, and it is still counted.
-    expect(screen.getByText(/1 quest comes from, or goes to, somewhere off this map/)).toBeTruthy();
+    // The ask is not a repository: it is drawn from the asks, the person's (MAP4b), and not counted off the map.
+    expect(screen.getByRole('button', { name: '1 quest your asks became on game' })).toBeTruthy();
+    expect(screen.getByRole('img', { name: '1 ask' })).toBeTruthy();
+    expect(screen.queryByText(/somewhere off this map/)).toBeNull();
     // The key says each line's meaning in words, not by hue alone (D41).
     expect(screen.getByText(/dashed line: the same thing learned in both/)).toBeTruthy();
     // 🔴 Seen on the window (POLISH4): the number inside a repository was in no key.
@@ -151,6 +156,75 @@ describe('the workspace map', () => {
     expect(screen.getByText('game → engine')).toBeTruthy();
     expect(screen.getByText('Expose a streaming budget')).toBeTruthy();
     expect(screen.getByText('Done')).toBeTruthy();
+  });
+
+  // ——— MAP4b: asks and chains, each its own kind of line, and a person chooses which are drawn.
+
+  const lines = async () => {
+    const button = await screen.findByRole('button', { name: /^Lines: / });
+    button.focus();
+    await userEvent.keyboard('{Enter}');
+  };
+
+  it('switches a kind of line off from an options menu, and its key goes with it', async () => {
+    show();
+    await screen.findByRole('button', { name: '2 quests from game to engine' });
+    await lines();
+
+    // Each kind is ticked, pictured and counted: two quests, one the asks became, none chained, one pair.
+    const items = screen.getAllByRole('menuitemcheckbox');
+    expect(items.map((item) => [item.textContent, item.getAttribute('aria-checked')])).toEqual([
+      ['Quests between repositories2', 'true'],
+      ['What your asks became1', 'true'],
+      ['Chains, step by step0', 'true'],
+      ['The same thing learned twice1', 'true'],
+    ]);
+    await userEvent.click(screen.getByRole('menuitemcheckbox', { name: /^The same thing learned twice/ }));
+    await userEvent.keyboard('{Escape}');
+
+    expect(screen.queryByRole('button', { name: 'engine and game learned the same thing once' })).toBeNull();
+    expect(screen.queryByText(/dashed line: the same thing learned in both/)).toBeNull();
+    expect(screen.getByRole('button', { name: 'Lines: 3 of 4 kinds drawn' })).toHaveTextContent('3/4');
+    // Every repository stays: a kind of line out of sight hides what moved, not who is in the circle.
+    expect(screen.getByRole('button', { name: /^engine, 1 open/ })).toBeTruthy();
+  });
+
+  it('remembers which lines this viewer draws', async () => {
+    localStorage.setItem('daoris.mapLines', JSON.stringify(['quests']));
+    show();
+    await screen.findByRole('button', { name: 'engine and game learned the same thing once' });
+    expect(screen.queryByRole('button', { name: '2 quests from game to engine' })).toBeNull();
+  });
+
+  it('says what the asks became on a repository, and which asks', async () => {
+    show();
+    await userEvent.click(await screen.findByRole('button', { name: '1 quest your asks became on game' }));
+    expect(screen.getByText('Your asks → game')).toBeTruthy();
+    expect(screen.getByText('ask #abc')).toBeTruthy();
+    expect(screen.getByRole('button', { name: /From an ask/ })).toBeTruthy();
+  });
+
+  it('draws a chain from the repository whose done quest published a step, and what is still to come', async () => {
+    QUESTS.push(
+      { id: 'q4', from: 'ask #abc', to: 'engine', title: 'Measure the budget', body: '', status: 'Done', filed: '', updated: '' },
+      {
+        id: 'q5', from: 'ask #abc', to: 'game', title: 'Use the measured budget', body: '', status: 'Open', filed: '', updated: '',
+        parent: 'q4', then: [{ to: 'engine', title: 'Report what it saved', body: '' }],
+      } as (typeof QUESTS)[number],
+    );
+    try {
+      show();
+      await userEvent.click(await screen.findByRole('button', { name: 'a chain from engine to game, 1 step' }));
+      expect(screen.getByText('engine → game, in a chain')).toBeTruthy();
+      expect(screen.getByRole('button', { name: /Use the measured budget/ })).toBeTruthy();
+
+      // The step the open quest will publish, from its repository onward.
+      await userEvent.click(screen.getByRole('button', { name: 'a chain from game to engine, 1 step' }));
+      expect(screen.getByText('not published yet')).toBeTruthy();
+      expect(screen.getByText('Report what it saved')).toBeTruthy();
+    } finally {
+      QUESTS.splice(3);
+    }
   });
 
   it('a shared finding leads to Convergence, where the findings are', async () => {

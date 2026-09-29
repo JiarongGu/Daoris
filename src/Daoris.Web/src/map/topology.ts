@@ -12,7 +12,7 @@
  * the edges are what happened. A map that drew both would draw the intent and the fact as the same
  * line.
  */
-import type { Convergence, Quest, Registration, Session } from '../api';
+import type { Convergence, Quest, QuestStep, Registration, Session } from '../api';
 
 export type MapNode = {
   id: string;
@@ -38,11 +38,38 @@ export type QuestEdge = { from: string; to: string; quests: Quest[]; open: numbe
 /** Two repositories that learned the same thing in different words (D17), once per pair. */
 export type KnowledgeEdge = { a: string; b: string; groups: number };
 
+/**
+ * What the asks became on one repository (MAP4b): every quest an ask put on it, directly or as a
+ * later step, since a step is published on behalf of the same asker. The asks are one source on the
+ * map, the person's, and which asks is the line's detail.
+ */
+export type AskEdge = { to: string; asks: string[]; quests: Quest[]; open: number };
+
+/**
+ * One hop of a chain (MAP4b, D65 §4): the repository whose done quest published the next step, to
+ * that step's repository. A step keeps the original asker as its sender, so no quest line draws this
+ * flow. `waiting` holds the steps an open quest will publish when it closes done.
+ */
+export type ChainEdge = { from: string; to: string; steps: Quest[]; waiting: QuestStep[] };
+
+/**
+ * The asks' place on a map (MAP4b): one source, the person's, from which each repository an ask put
+ * work on is reached. Its id holds a character no repository's name can. The layers stand it in the
+ * first column, as any asker; the ring puts it at the centre.
+ */
+export const ASKS = '\u0001asks';
+
+/** The kinds of line a person can show or hide, in the order the switches list them. */
+export const LINE_KINDS = ['quests', 'asks', 'chains', 'knowledge'] as const;
+export type LineKind = (typeof LINE_KINDS)[number];
+
 export type Topology = {
   nodes: MapNode[];
   quests: QuestEdge[];
+  asks: AskEdge[];
+  chains: ChainEdge[];
   knowledge: KnowledgeEdge[];
-  /** Quests with an end that is not a repository on this map: an ask, or another circle. */
+  /** Quests with an end that is not a repository on this map, nor an ask: another circle. */
   outside: number;
   /**
    * How many circles the nodes belong to: more than one only when the page is scoped to every
@@ -53,6 +80,8 @@ export type Topology = {
 
 const isOpen = (quest: Quest) => quest.status === 'Open' || quest.status === 'Taken';
 const WORKING: ReadonlySet<Session['state']> = new Set(['starting', 'working']);
+/** The sender every quest an ask becomes is published by (the service's `AskDesk.SenderOf`). */
+const ASK = /^ask #(\S+)$/;
 
 export function buildTopology(
   registry: readonly Registration[],
@@ -80,7 +109,17 @@ export function buildTopology(
 
   let outside = 0;
   const edges = new Map<string, QuestEdge>();
+  const asked = new Map<string, AskEdge>();
   for (const q of quests) {
+    const ask = ASK.exec(q.from);
+    if (ask && ids.has(q.to)) {
+      const edge = asked.get(q.to) ?? { to: q.to, asks: [], quests: [], open: 0 };
+      if (!edge.asks.includes(ask[1]!)) edge.asks.push(ask[1]!);
+      edge.quests.push(q);
+      if (isOpen(q)) edge.open += 1;
+      asked.set(q.to, edge);
+      continue;
+    }
     if (!ids.has(q.from) || !ids.has(q.to)) {
       outside += 1;
       continue;
@@ -107,13 +146,52 @@ export function buildTopology(
     }
   }
 
+  // The chains: each step from its parent's repository, and what an open quest will still publish.
+  // A closed quest's `then` is not still to come: a done close published its first step (which
+  // carries the rest), and a decline ended the chain.
+  const byId = new Map(quests.map((q) => [q.id, q]));
+  const hops = new Map<string, ChainEdge>();
+  const hop = (from: string, to: string) => {
+    const key = `${from}\u0000${to}`;
+    const edge = hops.get(key) ?? { from, to, steps: [], waiting: [] };
+    hops.set(key, edge);
+    return edge;
+  };
+  const onMap = (from: string, to: string) => ids.has(from) && ids.has(to) && from !== to;
+  for (const q of quests) {
+    const parent = q.parent ? byId.get(q.parent) : undefined;
+    if (parent && onMap(parent.to, q.to)) hop(parent.to, q.to).steps.push(q);
+    if (!isOpen(q)) continue;
+    let from = q.to;
+    for (const step of q.then ?? []) {
+      if (onMap(from, step.to)) hop(from, step.to).waiting.push(step);
+      from = step.to;
+    }
+  }
+
   const byEnds = (a: string, b: string) => a.localeCompare(b);
   return {
     nodes,
     quests: [...edges.values()].sort((x, y) => byEnds(x.from, y.from) || byEnds(x.to, y.to)),
+    asks: [...asked.values()].sort((x, y) => byEnds(x.to, y.to)),
+    chains: [...hops.values()].sort((x, y) => byEnds(x.from, y.from) || byEnds(x.to, y.to)),
     knowledge: [...pairs.values()].sort((x, y) => byEnds(x.a, y.a) || byEnds(x.b, y.b)),
     outside,
     circles,
+  };
+}
+
+/**
+ * The map with only the kinds of line a person chose (MAP4b). Every repository stays: hiding a kind of
+ * line hides what moved, never who is in the circle.
+ */
+export function showLines(topology: Topology, shown: ReadonlySet<LineKind>): Topology {
+  return {
+    ...topology,
+    quests: shown.has('quests') ? topology.quests : [],
+    asks: shown.has('asks') ? topology.asks : [],
+    chains: shown.has('chains') ? topology.chains : [],
+    knowledge: shown.has('knowledge') ? topology.knowledge : [],
   };
 }
 

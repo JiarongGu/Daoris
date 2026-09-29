@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { MapNode, Topology } from './topology';
+import { ASKS, type MapNode, type Topology } from './topology';
 import { CARD_H, layoutLayers, lineKey, ROUND } from './layers';
 
 // MAP4: a circle too big for a ring, laid out in layers by who asks whom, with what nothing connects
@@ -11,6 +11,8 @@ function topology(ids: string[], quests: [string, string][] = [], knowledge: [st
   return {
     nodes: ids.map(node),
     quests: quests.map(([from, to]) => ({ from, to, quests: [], open: 1 })),
+    asks: [],
+    chains: [],
     knowledge: knowledge.map(([a, b]) => ({ a, b, groups: 1 })),
     outside: 0,
     circles: 1,
@@ -100,6 +102,21 @@ describe('the layered map', () => {
     for (const id of ['b', 'd']) expect(Math.abs(way!.y - at[id]!.y)).toBeGreaterThanOrEqual(CARD_H / 2);
     // A line between neighbouring columns needs none.
     expect(routes[lineKey.quests('a', 'b')]).toBeUndefined();
+  });
+
+  it('stands the asks left of what they became, and a chain\'s hop orders its columns as a quest does', () => {
+    const data: Topology = {
+      ...topology(['engine', 'game', 'docs']),
+      asks: [{ to: 'engine', asks: ['abc'], quests: [], open: 1 }],
+      chains: [{ from: 'engine', to: 'game', steps: [], waiting: [] }, { from: 'game', to: 'docs', steps: [], waiting: [] }],
+    };
+    const { at, loose } = layoutLayers(data);
+    expect(at[ASKS]!.x).toBeLessThan(at.engine!.x);
+    expect(at.engine!.x).toBeLessThan(at.game!.x);
+    expect(at.game!.x).toBeLessThan(at.docs!.x);
+    expect(loose).toEqual([]);
+    // No asks, no asks card.
+    expect(layoutLayers(topology(['a', 'b'], [['a', 'b']])).at[ASKS]).toBeUndefined();
   });
 
   it('threads a shared finding across columns the same way, in its own direction', () => {

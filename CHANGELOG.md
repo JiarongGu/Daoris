@@ -516,6 +516,11 @@ The first version: doctrine that installs, is checked, and flows back.
   lines apart. What nothing connects waits below, by name. Drag or scroll to move about, Ctrl+wheel
   to zoom, and type to find a repository. The size is a menu behind the percentage: zoom in and out,
   the whole map, or a size by number.
+- **The map draws what your asks became, and chains step by step** (MAP4b). Your asks are one source
+  on the map, with a long-dashed line to each repository they put quests on. A chain draws a dotted
+  arrow from the repository whose finished quest published the next step to where that step went,
+  including the steps still to come. A *Lines* menu beside the size switches each kind of line on or
+  off (quests, asks, chains, shared findings) and remembers your choice.
 - **Menus look like menus, and scrollbars have no arrows.** The button that lists a region's views
   and moves them is now "⋯", as VS Code's is, rather than a down arrow. Scrollbars throughout are a
   thin bar with no ▲ and ▼ at its ends.

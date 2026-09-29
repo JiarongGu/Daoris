@@ -1,14 +1,19 @@
 import { type KeyboardEvent, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '../lib/cn';
-import { type Topology, layoutRing } from './topology';
+import { ASKS, type ChainEdge, type Topology, layoutRing } from './topology';
 import { type Frame, textWidth } from './measure';
 import { useTall, useWidth } from './useWidth';
 
-/** What a person has chosen on the map: a repository, the quests one way, or a shared finding. */
+/**
+ * What a person has chosen on the map: a repository, the quests one way, what the asks put on one
+ * repository, a chain's hop, or a shared finding.
+ */
 export type MapSelection =
   | { kind: 'node'; id: string }
   | { kind: 'quests'; from: string; to: string }
+  | { kind: 'asks'; to: string }
+  | { kind: 'chains'; from: string; to: string }
   | { kind: 'knowledge'; a: string; b: string };
 
 /** Whether two choices are the same part of the map. */
@@ -16,6 +21,8 @@ export function sameSelection(a: MapSelection | null, b: MapSelection | null): b
   if (a === null || b === null) return a === b;
   if (a.kind === 'node' && b.kind === 'node') return a.id === b.id;
   if (a.kind === 'quests' && b.kind === 'quests') return a.from === b.from && a.to === b.to;
+  if (a.kind === 'asks' && b.kind === 'asks') return a.to === b.to;
+  if (a.kind === 'chains' && b.kind === 'chains') return a.from === b.from && a.to === b.to;
   if (a.kind === 'knowledge' && b.kind === 'knowledge') return a.a === b.a && a.b === b.b;
   return false;
 }
@@ -31,19 +38,81 @@ const SPACING = 2 * RADIUS + 30;
 /** The sizes a name and its second line are drawn at: `text-small` and `text-meta`. */
 const NAME_PX = 12;
 const WORD_PX = 11;
+/** The asks' disc (MAP4b): smaller than a repository's, since it is a source and holds no count of its own. */
+const ASKS_R = 20;
+/** How far a chain's hop bends: past a quest's 36, so the two kinds between one pair stand apart. */
+const CHAIN_BEND = 72;
+/** What the asks' lines and a chain's hops are drawn with, beside a quest's solid line (D41: never colour alone). */
+export const ASKS_DASH = '10 4';
+export const CHAIN_DASH = '1 5';
+
+/**
+ * Where everything stands on the ring: the repositories, and the asks at the centre, where every
+ * line from them runs outward and crosses none of the ring's. One repository alone holds the centre,
+ * so there the asks stand above it.
+ */
+export function ringAt(topology: Topology, radius: number): Record<string, { x: number; y: number }> {
+  const at = layoutRing(topology.nodes.map((node) => node.id), SIZE, radius);
+  if (topology.asks.length > 0) {
+    at[ASKS] = topology.nodes.length > 1 ? { x: SIZE / 2, y: SIZE / 2 } : { x: SIZE / 2, y: SIZE / 2 - 2 * RADIUS - 48 };
+  }
+  return at;
+}
+
+/** Whether a chain's hop still has work in it: a step open now, or one still to be published. */
+export const chainOpen = (edge: ChainEdge) =>
+  edge.waiting.length > 0 || edge.steps.some((quest) => quest.status === 'Open' || quest.status === 'Taken');
+
+/**
+ * The asks' mark: a disc on the ring, a pill in the layers. It is a source and not a place, so it is
+ * no button; the pointer on it lights its lines, and each line is the button.
+ */
+export function AsksMark({ x, y, r, count, width, onHover }: {
+  x: number; y: number; r: number; count: number;
+  /** A pill this wide, where the layers give it a card's room; a disc of radius `r` where absent. */
+  width?: number;
+  onHover: (on: boolean) => void;
+}) {
+  const { t } = useTranslation();
+  return (
+    <g role="img" aria-label={t('map.asksCard', { count })} onPointerEnter={() => onHover(true)} onPointerLeave={() => onHover(false)}>
+      {width === undefined
+        ? <circle cx={x} cy={y} r={r} className="fill-accent-soft stroke-accent stroke-[1.5]" />
+        : <rect x={x - width / 2} y={y - r} width={width} height={2 * r} rx={r} className="fill-accent-soft stroke-accent stroke-[1.5]" />}
+      <text x={x} y={y} textAnchor="middle" dominantBaseline="central" className="fill-accent text-meta font-semibold">
+        {width === undefined ? t('map.asks') : t('map.asksCard', { count })}
+      </text>
+    </g>
+  );
+}
+
+/** A line's count, on the line, in the line's own state. */
+export function Count({ x, y, open, count }: { x: number; y: number; open: boolean; count: number }) {
+  return (
+    <>
+      <circle cx={x} cy={y} r={11} className={cn('fill-page stroke-[1.5]', open ? 'stroke-accent' : 'stroke-line-strong')} />
+      <text x={x} y={y} textAnchor="middle" dominantBaseline="central" className="fill-ink font-mono text-meta tabular-nums">
+        {count}
+      </text>
+    </>
+  );
+}
 
 
-/** A line from one node's edge to the other's, bent so the two directions never overlap. */
-function questCurve(a: { x: number; y: number }, b: { x: number; y: number }) {
+/**
+ * A line from one node's edge to the other's, bent so the two directions never overlap. A chain's
+ * hop bends further than a quest does, so the two kinds between one pair stand apart.
+ */
+function questCurve(a: { x: number; y: number }, b: { x: number; y: number }, bend = 36, from = RADIUS) {
   const dx = b.x - a.x;
   const dy = b.y - a.y;
   const length = Math.hypot(dx, dy) || 1;
   const [ux, uy] = [dx / length, dy / length];
-  const start = { x: a.x + ux * RADIUS, y: a.y + uy * RADIUS };
+  const start = { x: a.x + ux * from, y: a.y + uy * from };
   // Short of the working ring too, so the arrowhead is never drawn inside it.
   const end = { x: b.x - ux * (RADIUS + 10), y: b.y - uy * (RADIUS + 10) };
   // Perpendicular to the direction of travel: A→B and B→A bend to opposite sides by construction.
-  const control = { x: (a.x + b.x) / 2 - uy * 36, y: (a.y + b.y) / 2 + ux * 36 };
+  const control = { x: (a.x + b.x) / 2 - uy * bend, y: (a.y + b.y) / 2 + ux * bend };
   // The curve's own midpoint (t = ½ of the quadratic), where the count sits — ON the line, so the
   // thing a person aims at is the line itself.
   const middle = {
@@ -104,6 +173,12 @@ export function frameMap(
     const { middle } = questCurve(at[edge.from]!, at[edge.to]!);
     hold(middle.x - 12, middle.y - 12, middle.x + 12, middle.y + 12);
   }
+  for (const edge of topology.chains) {
+    const { middle } = questCurve(at[edge.from]!, at[edge.to]!, CHAIN_BEND);
+    hold(middle.x - 12, middle.y - 12, middle.x + 12, middle.y + 12);
+  }
+  const asks = at[ASKS];
+  if (asks) hold(asks.x - ASKS_R, asks.y - ASKS_R, asks.x + ASKS_R, asks.y + ASKS_R);
 
   if (left === Infinity) return { x: 0, y: 0, width: SIZE, height: SIZE };
   const pad = 8;
@@ -135,9 +210,8 @@ export function fitRadius(
   const floor = Math.max(LEAST, count > 1 ? SPACING / (2 * Math.sin(Math.PI / count)) : 0);
   if (room === undefined) return Math.max(FULL, floor);
   const most = Math.max(tall === undefined ? FULL : MOST, floor);
-  const ids = topology.nodes.map((node) => node.id);
   for (let radius = most; radius > floor; radius -= 4) {
-    const frame = frameMap(topology, layoutRing(ids, SIZE, radius), words);
+    const frame = frameMap(topology, ringAt(topology, radius), words);
     if (frame.width <= room && (tall === undefined || frame.height <= tall)) return radius;
   }
   return floor;
@@ -174,7 +248,8 @@ export function MapCanvas({ topology, selected, onSelect }: {
   const room = useWidth(box);
   const tall = useTall(box, BELOW);
   const words = { parked: t('map.parked'), working: t('map.working') };
-  const at = layoutRing(topology.nodes.map((n) => n.id), SIZE, fitRadius(topology, room, words, tall));
+  const at = ringAt(topology, fitRadius(topology, room, words, tall));
+  const askCount = new Set(topology.asks.flatMap((edge) => edge.asks)).size;
   const frame = frameMap(topology, at, words);
   const lit: MapSelection | null = hovered !== null ? { kind: 'node', id: hovered } : selected;
   /** A line stands forward when nothing is in focus, when a node in focus is one of its ends, or when it IS the chosen line. */
@@ -246,6 +321,71 @@ export function MapCanvas({ topology, selected, onSelect }: {
           );
         })}
 
+        {topology.asks.map((edge) => {
+          const { d, middle } = questCurve(at[ASKS]!, at[edge.to]!, 0, ASKS_R);
+          const line: MapSelection = { kind: 'asks', to: edge.to };
+          const chosen = sameSelection(selected, line);
+          const open = edge.open > 0;
+          return (
+            <g
+              key={`a-${edge.to}`}
+              role="button"
+              tabIndex={0}
+              aria-label={t('map.asksLabel', { to: edge.to, count: edge.quests.length })}
+              aria-pressed={chosen}
+              onClick={() => choose(line)}
+              onKeyDown={press(line)}
+              className={cn(
+                'cursor-pointer outline-none transition-opacity duration-(--speed) [&:focus-visible>path.shown]:stroke-ink',
+                !forward(line, ASKS, edge.to) && 'opacity-20',
+              )}
+            >
+              <path d={d} fill="none" stroke="transparent" strokeWidth={18} pointerEvents="stroke" />
+              <path
+                d={d}
+                fill="none"
+                strokeDasharray={ASKS_DASH}
+                markerEnd={open ? 'url(#map-arrow-open)' : 'url(#map-arrow-closed)'}
+                className={cn('shown', open ? 'stroke-accent' : 'stroke-line-strong', chosen ? 'stroke-[3.5]' : 'stroke-[1.5]')}
+              />
+              <Count x={middle.x} y={middle.y} open={open} count={edge.quests.length} />
+            </g>
+          );
+        })}
+
+        {topology.chains.map((edge) => {
+          const { d, middle } = questCurve(at[edge.from]!, at[edge.to]!, CHAIN_BEND);
+          const line: MapSelection = { kind: 'chains', from: edge.from, to: edge.to };
+          const chosen = sameSelection(selected, line);
+          const open = chainOpen(edge);
+          return (
+            <g
+              key={`c-${edge.from}-${edge.to}`}
+              role="button"
+              tabIndex={0}
+              aria-label={t('map.chainsLabel', { from: edge.from, to: edge.to, count: edge.steps.length + edge.waiting.length })}
+              aria-pressed={chosen}
+              onClick={() => choose(line)}
+              onKeyDown={press(line)}
+              className={cn(
+                'cursor-pointer outline-none transition-opacity duration-(--speed) [&:focus-visible>path.shown]:stroke-ink',
+                !forward(line, edge.from, edge.to) && 'opacity-20',
+              )}
+            >
+              <path d={d} fill="none" stroke="transparent" strokeWidth={18} pointerEvents="stroke" />
+              <path
+                d={d}
+                fill="none"
+                strokeDasharray={CHAIN_DASH}
+                strokeLinecap="round"
+                markerEnd={open ? 'url(#map-arrow-open)' : 'url(#map-arrow-closed)'}
+                className={cn('shown', open ? 'stroke-accent' : 'stroke-line-strong', chosen ? 'stroke-[3.5]' : 'stroke-2')}
+              />
+              <Count x={middle.x} y={middle.y} open={open} count={edge.steps.length + edge.waiting.length} />
+            </g>
+          );
+        })}
+
         {topology.quests.map((edge) => {
           const { d, middle } = questCurve(at[edge.from]!, at[edge.to]!);
           const line: MapSelection = { kind: 'quests', from: edge.from, to: edge.to };
@@ -289,6 +429,13 @@ export function MapCanvas({ topology, selected, onSelect }: {
             </g>
           );
         })}
+
+        {at[ASKS] && (
+          <AsksMark
+            x={at[ASKS].x} y={at[ASKS].y} r={ASKS_R} count={askCount}
+            onHover={(on) => setHovered(on ? ASKS : null)}
+          />
+        )}
 
         {topology.nodes.map((node) => {
           const { x, y } = at[node.id]!;

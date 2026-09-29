@@ -16,6 +16,8 @@ const IDS = Array.from({ length: 20 }, (_, index) => `repo-${String(index).padSt
 const TOPOLOGY: Topology = {
   nodes: [...IDS.map((id) => node(id)), node('report-ui', { open: 2, working: true }), node('reports-db')],
   quests: [{ from: 'report-ui', to: 'reports-db', quests: [], open: 1 }],
+  asks: [],
+  chains: [],
   knowledge: [{ a: 'reports-db', b: 'repo-03', groups: 2 }],
   outside: 0,
   circles: 1,
@@ -28,7 +30,7 @@ describe('the layered map', () => {
     expect(screen.getAllByRole('button', { name: /^repo-\d\d/ })).toHaveLength(20);
     expect(screen.getByRole('button', { name: /from report-ui to reports-db/ })).toBeInTheDocument();
     // What nothing connects is set apart, and says so.
-    expect(screen.getByText('No quests or shared findings yet')).toBeInTheDocument();
+    expect(screen.getByText('No line drawn to these')).toBeInTheDocument();
   });
 
   it('finds a repository as it is typed, and chooses the first on Enter', () => {

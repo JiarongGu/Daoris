@@ -1,11 +1,13 @@
-import { type KeyboardEvent, type PointerEvent, type SetStateAction, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  type KeyboardEvent, type PointerEvent, type ReactNode, type SetStateAction, useEffect, useMemo, useRef, useState,
+} from 'react';
 import { useTranslation } from 'react-i18next';
 import * as Menu from '@radix-ui/react-dropdown-menu';
 import { cn } from '../lib/cn';
 import { Icon, Tip } from '../ui';
 import { CARD_H, type Card, layoutLayers, lineKey, type Point, ROUND } from './layers';
-import { type MapSelection, sameSelection } from './MapCanvas';
-import type { Topology } from './topology';
+import { ASKS_DASH, AsksMark, CHAIN_DASH, chainOpen, Count, type MapSelection, sameSelection } from './MapCanvas';
+import { ASKS, type Topology } from './topology';
 import { useTall, useWidth } from './useWidth';
 
 /** What follows the viewport down to the window's foot: the legend, the card's padding, the status bar. */
@@ -18,6 +20,8 @@ const START_LEAST = 0.8;
 const ZOOM = { min: 0.25, max: 2.5, step: 1.25 } as const;
 /** How far each direction of a pair asked both ways runs off the middle: past a count bubble's radius. */
 const LANE = 12;
+/** How far a chain's hop beside a quest between the same two runs off the middle: past the quest's lane. */
+const CHAIN_LANE = 20;
 /** The sizes the sizing menu offers by name, as a map tool's zoom menu does. */
 const PRESETS = [0.5, 1, 2] as const;
 
@@ -97,10 +101,12 @@ function link(a: Card, b: Card, ways: Point[] = [], lane = 0) {
  * itself, which opens a sizing menu, for a pointer that has no wheel. It opens at a readable size on the connected part, never
  * smaller than four fifths of the type scale; *fit* shows it all when the person wants the whole.
  */
-export function LayeredMap({ topology, selected, onSelect }: {
+export function LayeredMap({ topology, selected, onSelect, tools }: {
   topology: Topology;
   selected: MapSelection | null;
   onSelect: (selection: MapSelection | null) => void;
+  /** The page's own controls for the map (its lines), set in this toolbar beside the size. */
+  tools?: ReactNode;
 }) {
   const { t } = useTranslation();
   const holder = useRef<HTMLDivElement>(null);
@@ -112,6 +118,7 @@ export function LayeredMap({ topology, selected, onSelect }: {
   };
   // The grid below wraps inside what the viewport shows at the opening scale, so it reads downward.
   const layout = useMemo(() => layoutLayers(topology, viewport.width / START_LEAST), [topology, viewport.width]);
+  const askCount = new Set(topology.asks.flatMap((edge) => edge.asks)).size;
 
   const fitted = (whole: boolean): View => {
     const { frame } = layout;
@@ -247,6 +254,7 @@ export function LayeredMap({ topology, selected, onSelect }: {
         {/* The size, and every way to change it, behind the size itself — a map tool's zoom menu, where
             there were an arrow down, an arrow up and a corner that meant *fit* (the owner, 2026-09-29:
             "instead of using the up down arrow ... use more '...' or options for sizing"). */}
+        {tools}
         <Menu.Root modal={false}>
           <Tip content={t('map.sizing')}>
             <Menu.Trigger asChild>
@@ -343,6 +351,70 @@ export function LayeredMap({ topology, selected, onSelect }: {
             );
           })}
 
+          {topology.asks.map((edge) => {
+            const { d, mid } = link(layout.at[ASKS]!, layout.at[edge.to]!, layout.routes[lineKey.asks(edge.to)]);
+            const line: MapSelection = { kind: 'asks', to: edge.to };
+            const chosen = sameSelection(selected, line);
+            const open = edge.open > 0;
+            return (
+              <g
+                key={`a-${edge.to}`}
+                role="button"
+                tabIndex={0}
+                aria-label={t('map.asksLabel', { to: edge.to, count: edge.quests.length })}
+                aria-pressed={chosen}
+                onClick={() => choose(line)}
+                onKeyDown={press(line)}
+                className={cn('cursor-pointer outline-none transition-opacity duration-(--speed) [&:focus-visible>path.shown]:stroke-ink', !forward(line, ASKS, edge.to) && 'opacity-20')}
+              >
+                <path d={d} fill="none" stroke="transparent" strokeWidth={18} pointerEvents="stroke" />
+                <path
+                  d={d}
+                  fill="none"
+                  strokeDasharray={ASKS_DASH}
+                  markerEnd={open ? 'url(#layer-arrow-open)' : 'url(#layer-arrow-closed)'}
+                  className={cn('shown', open ? 'stroke-accent' : 'stroke-line-strong', chosen ? 'stroke-[3.5]' : 'stroke-[1.5]')}
+                />
+                <Count x={mid.x} y={mid.y} open={open} count={edge.quests.length} />
+              </g>
+            );
+          })}
+
+          {topology.chains.map((edge) => {
+            const [from, to] = [layout.at[edge.from]!, layout.at[edge.to]!];
+            // Beside a quest between the same two, a chain's hop runs further out on its direction's side.
+            const beside = topology.quests.some((other) =>
+              (other.from === edge.from && other.to === edge.to) || (other.from === edge.to && other.to === edge.from));
+            const lane = beside ? (from.x < to.x ? -CHAIN_LANE : CHAIN_LANE) : 0;
+            const { d, mid } = link(from, to, layout.routes[lineKey.chains(edge.from, edge.to)], lane);
+            const line: MapSelection = { kind: 'chains', from: edge.from, to: edge.to };
+            const chosen = sameSelection(selected, line);
+            const open = chainOpen(edge);
+            return (
+              <g
+                key={`c-${edge.from}-${edge.to}`}
+                role="button"
+                tabIndex={0}
+                aria-label={t('map.chainsLabel', { from: edge.from, to: edge.to, count: edge.steps.length + edge.waiting.length })}
+                aria-pressed={chosen}
+                onClick={() => choose(line)}
+                onKeyDown={press(line)}
+                className={cn('cursor-pointer outline-none transition-opacity duration-(--speed) [&:focus-visible>path.shown]:stroke-ink', !forward(line, edge.from, edge.to) && 'opacity-20')}
+              >
+                <path d={d} fill="none" stroke="transparent" strokeWidth={18} pointerEvents="stroke" />
+                <path
+                  d={d}
+                  fill="none"
+                  strokeDasharray={CHAIN_DASH}
+                  strokeLinecap="round"
+                  markerEnd={open ? 'url(#layer-arrow-open)' : 'url(#layer-arrow-closed)'}
+                  className={cn('shown', open ? 'stroke-accent' : 'stroke-line-strong', chosen ? 'stroke-[3.5]' : 'stroke-2')}
+                />
+                <Count x={mid.x} y={mid.y} open={open} count={edge.steps.length + edge.waiting.length} />
+              </g>
+            );
+          })}
+
           {topology.quests.map((edge) => {
             const [from, to] = [layout.at[edge.from]!, layout.at[edge.to]!];
             // Asked both ways: each direction in a lane of its own, the rightward above and the other
@@ -379,6 +451,13 @@ export function LayeredMap({ topology, selected, onSelect }: {
               </g>
             );
           })}
+
+          {layout.at[ASKS] && (
+            <AsksMark
+              x={layout.at[ASKS].x} y={layout.at[ASKS].y} r={CARD_H / 2 - 6} width={layout.at[ASKS].width} count={askCount}
+              onHover={(on) => setHovered(on ? ASKS : null)}
+            />
+          )}
 
           {topology.nodes.map((node) => {
             const card = layout.at[node.id]!;

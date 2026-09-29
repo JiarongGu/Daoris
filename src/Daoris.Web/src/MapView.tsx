@@ -4,8 +4,9 @@ import { CodeMapCanvas, CodeMapDetail } from './map/CodeMap';
 import { MapCanvas, type MapSelection } from './map/MapCanvas';
 import { LayeredMap } from './map/LayeredMap';
 import { RING_MAX } from './map/layers';
+import { LinesMenu, lineCounts, useShownLines } from './map/LinesMenu';
 import { MapDetail } from './map/MapDetail';
-import { buildTopology } from './map/topology';
+import { buildTopology, type LineKind, showLines } from './map/topology';
 import { useCodeMap, useConvergence, useQuests, useRegistry, useSessions } from './queries';
 import { useScope } from './scope';
 import {
@@ -37,6 +38,7 @@ export function MapView({ notify, onOpenConvergence, onOpenQuest }: {
   const shared = useConvergence(SHARED);
   const sessions = useSessions(null, false);
   const [selected, setSelected] = useState<MapSelection | null>(null);
+  const [shownLines, toggleShown] = useShownLines();
   // One level in (MAP3a): the repository whose own code map is open, and the module chosen on it.
   const [code, setCode] = useState<string | null>(null);
   const [module, setModule] = useState<string | null>(null);
@@ -104,10 +106,18 @@ export function MapView({ notify, onOpenConvergence, onOpenQuest }: {
     );
   }
 
-  const topology = buildTopology(
+  const all = buildTopology(
     registry.data ?? [], quests.data ?? [],
     // Convergence may fail on its own — a lexical-only machine still has repositories and quests.
     shared.data ?? [], sessions.data ?? []);
+  // What is drawn is what the person chose to see (MAP4b); the detail still reads everything.
+  const topology = showLines(all, shownLines);
+  const toggleLine = (kind: LineKind) => {
+    // A chosen line of a kind going out of sight is no longer a choice on the map.
+    if (selected && selected.kind === kind) setSelected(null);
+    toggleShown(kind);
+  };
+  const lines = <LinesMenu shown={shownLines} counts={lineCounts(all)} onToggle={toggleLine} />;
   // Scoped to every workspace of several, it says so, as its empty state does (UX5 U49).
   const header = (
     <PageHeader
@@ -141,15 +151,23 @@ export function MapView({ notify, onOpenConvergence, onOpenQuest }: {
         <Card>
           {/* A ring holds a handful; a bigger circle is laid out in layers, which pan and zoom (MAP4). */}
           {topology.nodes.length > RING_MAX
-            ? <LayeredMap topology={topology} selected={selected} onSelect={(next) => setSelected(next)} />
-            : <MapCanvas topology={topology} selected={selected} onSelect={(next) => setSelected(next)} />}
+            ? <LayeredMap topology={topology} selected={selected} onSelect={(next) => setSelected(next)} tools={lines} />
+            : (
+              <>
+                <div className="mb-1 flex justify-end">{lines}</div>
+                <MapCanvas topology={topology} selected={selected} onSelect={(next) => setSelected(next)} />
+              </>
+            )}
           {/* The key, in words: each line's meaning is its shape as well as its hue (D41) — and the
-              number in a node, which no key named until the window showed it (POLISH4). */}
+              number in a node, which no key named until the window showed it (POLISH4). A kind out of
+              sight leaves the key with its lines. */}
           <ul className="m-0 mt-2 flex list-none flex-wrap gap-x-4 gap-y-1 p-0 text-meta text-ink-faint">
             <li>{t('map.legend.open')}</li>
-            <li>{t('map.legend.quests')}</li>
-            <li>{t('map.legend.closed')}</li>
-            <li>{t('map.legend.knowledge')}</li>
+            {shownLines.has('quests') && <li>{t('map.legend.quests')}</li>}
+            {shownLines.has('quests') && <li>{t('map.legend.closed')}</li>}
+            {shownLines.has('asks') && <li>{t('map.legend.asks')}</li>}
+            {shownLines.has('chains') && <li>{t('map.legend.chains')}</li>}
+            {shownLines.has('knowledge') && <li>{t('map.legend.knowledge')}</li>}
             <li>{t('map.legend.working')}</li>
           </ul>
           {topology.outside > 0 && (
@@ -158,7 +176,7 @@ export function MapView({ notify, onOpenConvergence, onOpenQuest }: {
         </Card>
         <Card>
           <MapDetail
-            topology={topology}
+            topology={all}
             selected={selected}
             onOpenConvergence={onOpenConvergence}
             onOpenCode={setCode}

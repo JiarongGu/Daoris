@@ -71,7 +71,11 @@ export function MapDetail({ topology, selected, onOpenConvergence, onOpenCode, o
   if (selected.kind === 'node') {
     const node = topology.nodes.find((n) => n.id === selected.id);
     if (!node) return hint;
-    const into = topology.quests.filter((e) => e.to === node.id).flatMap((e) => e.quests);
+    // What the asks put on it is a quest to it as well (MAP4b), whether or not its line is shown.
+    const into = [
+      ...topology.quests.filter((e) => e.to === node.id).flatMap((e) => e.quests),
+      ...topology.asks.filter((e) => e.to === node.id).flatMap((e) => e.quests),
+    ];
     const out = topology.quests.filter((e) => e.from === node.id).flatMap((e) => e.quests);
     return (
       <div className="grid gap-3">
@@ -121,6 +125,40 @@ export function MapDetail({ topology, selected, onOpenConvergence, onOpenCode, o
       <div className="grid gap-2">
         <p className="m-0 text-body font-semibold text-ink">{t('map.detail.edge', { from: edge.from, to: edge.to })}</p>
         <QuestList quests={edge.quests} onOpenQuest={onOpenQuest} />
+      </div>
+    );
+  }
+
+  if (selected.kind === 'asks') {
+    const edge = topology.asks.find((e) => e.to === selected.to);
+    if (!edge) return hint;
+    return (
+      <div className="grid gap-2">
+        <p className="m-0 text-body font-semibold text-ink">{t('map.detail.asks', { to: edge.to })}</p>
+        <div className="flex flex-wrap gap-1">{edge.asks.map((id) => <Chip key={id}>{t('chain.ask', { id })}</Chip>)}</div>
+        <QuestList quests={edge.quests} onOpenQuest={onOpenQuest} />
+      </div>
+    );
+  }
+
+  if (selected.kind === 'chains') {
+    const edge = topology.chains.find((e) => e.from === selected.from && e.to === selected.to);
+    if (!edge) return hint;
+    return (
+      <div className="grid gap-2">
+        <p className="m-0 text-body font-semibold text-ink">{t('map.detail.chain', { from: edge.from, to: edge.to })}</p>
+        <p className="m-0 text-small text-ink-soft">{t('map.detail.chainWhat', { from: edge.from })}</p>
+        {edge.steps.length > 0 && <QuestList quests={edge.steps} onOpenQuest={onOpenQuest} />}
+        {edge.waiting.length > 0 && (
+          <section>
+            <p className="m-0 mb-1 text-meta text-ink-faint">{t('chain.pending')}</p>
+            <ul className="m-0 grid list-none gap-0.5 p-0">
+              {edge.waiting.map((step, index) => (
+                <li key={`${step.to}-${index}`} className="px-1 py-1 text-small text-ink-soft">{step.title}</li>
+              ))}
+            </ul>
+          </section>
+        )}
       </div>
     );
   }

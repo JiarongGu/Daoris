@@ -111,8 +111,31 @@ over unchanged: status never by colour alone, every card and line a button, a ch
   the whole map and three sizes by number, each keyed way showing its key. An arrow stood for a
   direction the zoom does not have.
 
-**What MAP4 still owes** (TASKS): asks and chains as lines of their own (b), open-only or a time
-window (c), live sessions on their nodes (d), and *depends on* from a declared source (e).
+### 1b. MAP4b — asks and chains, each its own kind of line (built 2026-09-30)
+
+Both are read from the quest store, so they need no new data and no model.
+
+- **Asks** (long dashes). One source, *the asks*, the person's, with a line to each repository an ask
+  put work on. A quest counts when its sender is `ask #…`, directly or as a later step of that ask's
+  chain, since a step keeps the original asker. The line's detail names which asks. The layers stand
+  the source in the first column, as any asker; the ring puts it at the centre, where its lines run
+  outward and cross none of the ring's. Ask-born quests no longer count as off the map.
+- **Chains** (dotted arrows). A hop from the repository whose done quest published a step to that
+  step's repository (`parent`). A step's sender is the original asker, so no quest line ever drew this
+  flow. An open quest's `then` adds the hops still to come, which its detail lists as *not published
+  yet*. A closed quest's `then` adds none: a done close already published it, and a decline ended the
+  chain. Chains order the columns as quests do. On the ring they bend further than a quest, and in
+  the layers they take a lane of their own beside one.
+- **The person chooses which kinds are drawn** in a *Lines* menu beside the size, an options menu as
+  the owner asked of every control that is not a direction. Each kind is ticked, pictured by its line
+  and counted. The choice is the viewer's own and kept in the browser. The key keeps only the kinds
+  drawn, and every repository stays, since hiding a line hides what moved and not who is in the circle.
+  The detail still reads every kind, so a repository's *quests to it* include what the asks became.
+- **Seen on the real workspace**: six asks became eleven quests on one repository, and only two
+  quests were left off the map, down from thirteen.
+
+**What MAP4 still owes** (TASKS): open-only or a time window (c), live sessions on their nodes (d),
+and *depends on* from a declared source (e).
 
 ## 2. MAP1 — the workflow (second)
 
