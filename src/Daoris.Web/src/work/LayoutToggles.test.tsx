@@ -15,7 +15,7 @@ describe('the layout toggles', () => {
     render(<LayoutToggles regions={['rail', 'panel', 'right']} closed={{ rail: false, panel: true, right: true }} onToggle={vi.fn()} />);
 
     expect(screen.getByRole('button', { name: 'show or hide the session list (Ctrl+B)' })).toHaveAttribute('aria-pressed', 'true');
-    expect(screen.getByRole('button', { name: 'show or hide the console (Ctrl+J)' })).toHaveAttribute('aria-pressed', 'false');
+    expect(screen.getByRole('button', { name: 'show or hide the panel (Ctrl+J)' })).toHaveAttribute('aria-pressed', 'false');
     expect(screen.getByRole('button', { name: 'show or hide the right side bar (Ctrl+Alt+B)' })).toHaveAttribute('aria-pressed', 'false');
   });
 

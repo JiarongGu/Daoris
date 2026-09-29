@@ -71,6 +71,32 @@ export const PanelTabs: StoryObj = {
   ),
 };
 
+/**
+ * The panel as a region (DOCK1b): holding the console and Ask Daoris, moved in from the right side
+ * bar, with Ask Daoris shown; holding the timeline alone, named for it; and emptied, saying how to
+ * fill it.
+ */
+export const PanelViews: StoryObj = {
+  render: () => (
+    <div className="grid w-[40rem] gap-6">
+      <OutputPanel
+        console={<SessionConsole id="s1a2b3c4" fill quiet="nothing held here" />}
+        height={140} collapsed={false} onResize={() => {}} onToggle={() => {}}
+        views={['console', 'ask']} view="ask" onView={() => {}} onMove={() => {}} onReset={() => {}}
+      >
+        <p className="m-0 p-3 text-small text-ink-soft">Ask Daoris, the conversation about this machine.</p>
+      </OutputPanel>
+      <OutputPanel
+        console={null} height={100} collapsed={false} onResize={() => {}} onToggle={() => {}}
+        views={['timeline']} onMove={() => {}} onReset={() => {}}
+      >
+        <p className="m-0 p-3 text-small text-ink-soft">session opened · 12m ago</p>
+      </OutputPanel>
+      <OutputPanel console={null} height={80} collapsed={false} onResize={() => {}} onToggle={() => {}} views={[]} onReset={() => {}} />
+    </div>
+  ),
+};
+
 const PROFILES = [
   { name: 'personal', login: 'in' as const },
   { name: 'work', login: 'out' as const },

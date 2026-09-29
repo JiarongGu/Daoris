@@ -1,6 +1,7 @@
 # Panels that dock — the layout as the person's (DOCK1)
 
-**Carried by:** DOCK1 and SURF11 in `TASKS.md`. **Status:** design, written before the build. The
+**Carried by:** DOCK1 in `TASKS.md` (SURF11 is archived). **Status:** design, written before the
+build; DOCK1c and DOCK1b built, §4 says how. The
 owner, 2026-09-29: *"we should be able to dock panels like vscode did"*, said beside *"there is no easy
 way to open the daoris chat"* and followed by *"the ask daoris need to be a better location please
 refer to a better ui/ux design"*. The first step, Ask Daoris as one right region, landed as `b21b60f`
@@ -49,7 +50,8 @@ choice (the dock's share, the rail's width), and *Reset layout* puts the default
 
 ## 4. Build order
 
-*Reordered 2026-09-29, before any of it was built:* the toggles come first. The hoist is structural and
+*Reordered 2026-09-29, before any of it was built, and again after DOCK1c:* the toggles come first,
+then the moves. The hoist is structural and
 shows nothing new (`b21b60f` already gives the eye one right region), while it splits the Work frame's
 layout rules (cramped, full, the narrow window's takeover) across two components on the busiest view.
 The toggles are what a person sees, use the strip's new trailing slot, and need only the three
@@ -62,12 +64,33 @@ closings lifted out of the Work frame.
    the View menu's items ticked, with their keys. What the look found, and the owner said: Ask Daoris
    lost its own strip button, since its region's toggle, `F1` and `Ctrl+Alt+I` open it; and the dock's
    tabs shrink as a browser's do, the selected one whole and the rest cut to their icons, since a third
-   tab clipped the dock's close at its floor. An overflow list for more tabs than fit comes with the
-   tabs DOCK1b adds.
-2. **DOCK1a**: the right region hoisted out of the Work frame into the application, one component on
+   tab clipped the dock's close at its floor. The list for tabs that do not fit came with DOCK1b.
+2. **DOCK1b**: *Move to* for Ask Daoris and the console, between the right region and the panel;
+   remembered; *Reset layout*. *Built 2026-09-29, ahead of DOCK1a* for the toggles' reason: it is
+   what a person uses, and it needs no hoist. As built:
+   - **The views are all four**, Ask Daoris, the console, the timeline and the review; the places,
+     the right side bar and the panel (`work/placements.ts`). A region's own views read first, then
+     what was moved in, as a tab dragged into VS Code's panel lands at the end.
+   - **The move is on each region's tab list**, a button at the end of its tab row, and on a
+     right-click of a tab, which selects it first so the move names it. The list is Chrome's: every
+     tab the region holds by its whole name, which is the answer to the owner's *"display only icon
+     does not fix the limitation"*, since a tab cut to its icon is no longer the only way to it.
+   - **A moved view is shown where it went**, and a region it leaves with nothing closes, as VS Code
+     hides an empty container; opened again, it says how to fill it. A door that does not know where
+     a view stands (the palette's review, `F1`) opens whichever region holds it.
+   - **Remembered per viewer as what differs from the default** (`daoris.viewPlaces`), so a default
+     improved later reaches a viewer who never chose. **Reset view locations**, VS Code's name,
+     because it resets where views stand and not the sizes or what is closed: in the tab list once
+     something has moved, and in the View menu always.
+   - **Only on Sessions**, the one view with a panel. Away from it, Ask Daoris is the right region
+     wherever it stands on Sessions.
+   - **What the look found.** The regions' names collided: the right dock's controls said *the panel*
+     and the panel's said *the console*, so a menu offering *Move to the panel* named two places. The
+     right is **the side bar** and the bottom **the panel** in every label now, as VS Code names
+     them. And two sentences said where the console was (*below*, *above*), which a move makes false;
+     they no longer say.
+3. **DOCK1a**: the right region hoisted out of the Work frame into the application, one component on
    every view; Ask Daoris no longer has two hosts.
-3. **DOCK1b**: *Move to* for Ask Daoris and the console, between the right region and the panel;
-   remembered; *Reset layout*.
 4. **DOCK1d**: Quick Ask.
 5. **DOCK1e**: dragging a tab between regions.
 

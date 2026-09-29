@@ -46,3 +46,15 @@ export const FullInANarrowWindow: Story = { args: { mode: 'full', autoFull: true
 
 /** Closed: a strip of its tabs, since nothing but the person opens it again. */
 export const Closed: Story = { args: { mode: 'closed', width: 32 } };
+
+/**
+ * Holding what the person moved in (DOCK1b): Ask Daoris beside the session's two, and the console from
+ * the panel, at the end. At the floor the tabs give way to their icons, and the list at the row's end
+ * names every one.
+ */
+export const HoldingMovedViews: Story = {
+  args: { views: ['timeline', 'review', 'ask', 'console'], tab: 'console', width: 300, onMove: () => {}, onReset: () => {} },
+};
+
+/** Every view moved out: it says how to fill it, as VS Code's empty container does. */
+export const Emptied: Story = { args: { views: [], onReset: () => {} } };

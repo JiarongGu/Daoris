@@ -1,9 +1,11 @@
-import type { ReactNode } from 'react';
+import { type ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button, CountBadge, Dot, DotMark, Icon, type IconName, Tip } from '../ui';
 import { CAPTION_ATTRIBUTE, CAPTION_SLOTS } from './caption';
 import { cn } from '../lib/cn';
 import { Mark } from '../Mark';
+import type { Place, ViewId } from './placements';
+import { viewEntries, ViewsMenu } from './ViewsMenu';
 
 // The window's own furniture (D55, extended by D56, simplified by D66): the app strip, the activity
 // bar, the status bar and the output panel. Small, presentational, and kept together because they
@@ -545,8 +547,15 @@ const PANEL_STEP = 48;
  * **A tab per thing that is running** (CONSOLE2): the session, then each subagent and background
  * task it started, so none of their output is missed. One tab is no tabs — a session running
  * nothing beside itself keeps the header it had.
+ *
+ * **A region, not the console's alone** (DOCK1b): it holds whichever views stand in the panel, the
+ * console by default, as VS Code's panel does; with more than one, each is a tab, and the list at
+ * the header's end names them all and moves the shown one to the right side bar.
  */
-export function OutputPanel({ console: stream, height, collapsed, onResize, onToggle, tabs, selected, onSelect }: {
+export function OutputPanel({
+  console: stream, height, collapsed, onResize, onToggle, tabs, selected, onSelect,
+  views = ['console'], view, onView, onMove, onReset, children,
+}: {
   /**
    * The attended session's console, or null when nothing is attended — a state rather than an
    * absence. Handed in by the organism above, because the console reaches the bridge and a molecule
@@ -562,10 +571,22 @@ export function OutputPanel({ console: stream, height, collapsed, onResize, onTo
   /** The tab whose console is shown. */
   selected?: string;
   onSelect?: (key: string) => void;
+  /** The views standing in the panel (DOCK1b), the console alone until the person moves one. */
+  views?: readonly ViewId[];
+  /** The view shown; ignored when it is not one of `views`. */
+  view?: ViewId;
+  onView?: (view: ViewId) => void;
+  onMove?: (view: ViewId, to: Place) => void;
+  onReset?: () => void;
+  /** The shown view when it is not the console. */
+  children?: ReactNode;
 }) {
   const { t } = useTranslation();
+  const [menu, setMenu] = useState(false);
   const clamp = (value: number) => Math.min(PANEL_MAX, Math.max(PANEL_MIN, value));
-  const tabbed = tabs && tabs.length > 1;
+  const entries = viewEntries(t, views);
+  const shown = entries.some((entry) => entry.id === view) ? view : entries[0]?.id;
+  const tabbed = shown === 'console' && tabs && tabs.length > 1;
 
   const drag = (event: React.PointerEvent<HTMLDivElement>) => {
     event.preventDefault();
@@ -605,42 +626,111 @@ export function OutputPanel({ console: stream, height, collapsed, onResize, onTo
       )}
 
       <header className="flex min-w-0 items-center gap-2 px-4 py-1">
-        <span className="shrink-0 text-meta text-ink-faint">{t('work.panel.title')}</span>
-        {tabbed && (
-          <div role="tablist" aria-label={t('work.panel.tabs')} className="flex min-w-0 items-center gap-0.5 overflow-x-auto">
-            {tabs.map((tab) => (
-              <button
-                key={tab.key}
-                type="button"
-                role="tab"
-                aria-selected={selected === tab.key}
-                aria-label={`${tab.label} — ${tab.status}`}
-                title={tab.status}
-                onClick={() => onSelect?.(tab.key)}
-                className={cn(
-                  'flex max-w-48 shrink-0 cursor-pointer items-center gap-1.5 rounded-control border-0 px-2 py-0.5 text-meta transition-colors duration-(--speed)',
-                  selected === tab.key ? 'bg-raised text-ink' : 'bg-transparent text-ink-faint hover:text-ink',
-                )}
-              >
-                <Icon name={TAB_ICON[tab.kind]} size={12} className="shrink-0" />
-                <span className="min-w-0 truncate">{tab.label}</span>
-                <DotMark tone={tab.tone} />
-              </button>
-            ))}
-          </div>
-        )}
-        <Button variant="ghost" className="ml-auto shrink-0" onClick={onToggle}>
-          {collapsed ? t('work.panel.show') : t('work.panel.hide')}
-        </Button>
+        {entries.length > 1
+          ? (
+            <div role="tablist" aria-label={t('work.views.panel')} className="flex min-w-0 shrink items-center overflow-x-auto [scrollbar-width:none]">
+              {entries.map(({ id, label, icon }) => (
+                <button
+                  key={id}
+                  type="button"
+                  role="tab"
+                  aria-selected={shown === id}
+                  aria-label={label}
+                  title={label}
+                  onClick={() => onView?.(id)}
+                  onContextMenu={(event) => {
+                    event.preventDefault();
+                    onView?.(id);
+                    setMenu(true);
+                  }}
+                  className={cn(
+                    // The dock's tabs, a size down: the selected one whole, the rest giving way (DOCK1c).
+                    'flex max-w-40 items-center gap-1.5 whitespace-nowrap border-b-2 px-2 py-0.5 text-meta transition-colors duration-(--speed)',
+                    shown === id ? 'shrink-0 border-b-accent text-ink' : 'min-w-8 shrink border-b-transparent text-ink-faint hover:text-ink',
+                  )}
+                >
+                  <Icon name={icon} size={12} className="shrink-0" />
+                  <span className="min-w-0 truncate">{label}</span>
+                </button>
+              ))}
+            </div>
+          )
+          // One view is no tabs: the header it always had, named for what it holds.
+          : entries[0] && (
+            <span className="shrink-0 text-meta text-ink-faint">
+              {shown === 'console' ? t('work.panel.title') : entries[0].label}
+            </span>
+          )}
+        {tabbed && <StreamTabs tabs={tabs} selected={selected} onSelect={onSelect} />}
+        <div className="ml-auto flex shrink-0 items-center gap-1">
+          <ViewsMenu
+            region="panel"
+            views={entries}
+            selected={shown}
+            onSelect={(id) => onView?.(id)}
+            onMove={onMove}
+            onReset={onReset}
+            open={menu}
+            onOpenChange={setMenu}
+          />
+          <Button variant="ghost" className="shrink-0" onClick={onToggle}>
+            {collapsed ? t('work.panel.show') : t('work.panel.hide')}
+          </Button>
+        </div>
       </header>
 
-      {!collapsed && (
-        <div className="flex min-h-0 flex-col px-4 pb-3" style={{ height }}>
-          {/* The panel keeps its height; a session with nothing held here keeps it as a sentence,
-              not as an empty bordered well, which read as a field on the installed window. */}
-          {stream ?? <p className="m-0 text-small text-ink-faint">{t('work.panel.none')}</p>}
-        </div>
-      )}
+      {!collapsed && (shown === 'console' || !shown
+        ? (
+          <div className="flex min-h-0 flex-col px-4 pb-3" style={{ height }}>
+            {/* The panel keeps its height; a session with nothing held here keeps it as a sentence,
+                not as an empty bordered well, which read as a field on the installed window. */}
+            {shown
+              ? stream ?? <p className="m-0 text-small text-ink-faint">{t('work.panel.none')}</p>
+              // Every view moved out: VS Code's empty container, which says how to fill it.
+              : <p className="m-0 text-small text-ink-faint">{t('work.views.empty')}</p>}
+          </div>
+        )
+        : (
+          <div className="flex min-h-0 flex-col overflow-y-auto" style={{ height }}>
+            {children}
+          </div>
+        ))}
     </section>
+  );
+}
+
+/**
+ * The console's own tabs (CONSOLE2): the session, then each subagent and background task it runs,
+ * each named by how it stands. Its own molecule since DOCK1b, because the console can stand in the
+ * right side bar too, and its streams go with it.
+ */
+export function StreamTabs({ tabs, selected, onSelect }: {
+  tabs: PanelTab[];
+  selected?: string;
+  onSelect?: (key: string) => void;
+}) {
+  const { t } = useTranslation();
+  return (
+    <div role="tablist" aria-label={t('work.panel.tabs')} className="flex min-w-0 items-center gap-0.5 overflow-x-auto">
+      {tabs.map((tab) => (
+        <button
+          key={tab.key}
+          type="button"
+          role="tab"
+          aria-selected={selected === tab.key}
+          aria-label={`${tab.label} — ${tab.status}`}
+          title={tab.status}
+          onClick={() => onSelect?.(tab.key)}
+          className={cn(
+            'flex max-w-48 shrink-0 cursor-pointer items-center gap-1.5 rounded-control border-0 px-2 py-0.5 text-meta transition-colors duration-(--speed)',
+            selected === tab.key ? 'bg-raised text-ink' : 'bg-transparent text-ink-faint hover:text-ink',
+          )}
+        >
+          <Icon name={TAB_ICON[tab.kind]} size={12} className="shrink-0" />
+          <span className="min-w-0 truncate">{tab.label}</span>
+          <DotMark tone={tab.tone} />
+        </button>
+      ))}
+    </div>
   );
 }

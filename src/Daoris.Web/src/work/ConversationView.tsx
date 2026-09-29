@@ -22,7 +22,7 @@ import { ToolCard } from './ToolCard';
  * - **The agent's words are Markdown**; the person's are shown as written. Both are content, never
  *   translated (translation-parity).
  * - **A session whose door carries only text** has no conversation to draw, and says so, pointing at
- *   the console below — D76 §1's "stays text, and the page says so".
+ *   the console, wherever it stands (DOCK1b) — D76 §1's "stays text, and the page says so".
  *
  * A molecule: turns in, a press out. The organism above it holds the record.
  */

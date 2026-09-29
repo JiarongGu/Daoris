@@ -284,8 +284,11 @@ controls are in the frame design's §3.
   far as the window's height leaves it (U44, U59). A node's detail opens **its code map** (MAP3a), the
   same page one level in: modules as boxes in layers, what uses a module above it, an arrow that skips
   a layer bowed out past the column, and *Back to the workspace* where the page action goes.
-- **Sessions** (D55, D76) — a rail, the attended session, the dock on demand (U7), and the output panel
-  beneath.
+- **Sessions** (D55, D76) — a rail, the attended session, the right side bar on demand (U7), and the
+  panel beneath. Its four views (the timeline, the review, Ask Daoris, the console) move between the
+  side bar and the panel from each region's tab list (DOCK1b); in every label the right region is
+  *the side bar* and the bottom one *the panel*, as VS Code names them, never *the console*, which is
+  a view.
   - **The rail** groups by repository, what needs the person first; a group states its repository's
     facts (*drives here*, *held*, *busy* in words), and the ended sit beneath. It searches by name at
     once and by what was said when typing settles. A row's menu holds what has no other home: its own

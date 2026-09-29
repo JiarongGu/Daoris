@@ -38,7 +38,7 @@ what was measured, and it stays a record of that moment. A *record* is append-on
 | `2026-09-27-ask-and-wait-design.md` | contract | A session asks another repository, waits, and is resumed with the answer (D79) | Current. ASK1–ASK3 built; §1 amended while building (the quest stays taken); §1.6 is D80, the carry-on after a cut-off |
 | `2026-09-28-chromium-host-design.md` | contract | Daoris's page and its browser on an embedded Chromium it ships, under Shenora's frame (D85) | Current. CHR1 and CHR3 landed (the browser is `daoris-browser`, a process of its own); CHR2 waits on Shenora's host |
 | `2026-09-29-ask-daoris-design.md` | contract | Ask Daoris: a conversation about Daoris itself, which proposes and the person confirms (HELP1) | Built (HELP1a–d, D89); §2 records where it lives, one right region |
-| `2026-09-29-dock-design.md` | contract | Panels that dock as VS Code's do: views that move between regions, the region toggles, Quick Ask (DOCK1, SURF11) | Design, before the build |
+| `2026-09-29-dock-design.md` | contract | Panels that dock as VS Code's do: views that move between regions, the region toggles, Quick Ask (DOCK1, SURF11) | Design; DOCK1c and DOCK1b built (§4) |
 
 ## Studies and evidence
 

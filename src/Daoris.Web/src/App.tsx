@@ -7,6 +7,7 @@ import {
 import { useScope } from './scope';
 import { AskDaoris } from './help/AskDaoris';
 import { useFrameClosings } from './work/closings';
+import { usePlacements } from './work/placements';
 import { LAYOUT_KEYS, type LayoutRegion, LayoutToggles } from './work/LayoutToggles';
 import type { StarterDoor } from './help/starters';
 import { WorkspaceSwitcher } from './WorkspaceSwitcher';
@@ -146,6 +147,8 @@ export function App() {
   // What the person closed in the Work frame (DOCK1c): held here, so the strip's toggles, the View menu
   // and the keys reach them from every view.
   const closings = useFrameClosings();
+  // Where each view stands (DOCK1b): held here, so the View menu's reset reaches it.
+  const placements = usePlacements();
   // On Sessions its door opens the dock on it (the dock has its own close); elsewhere it toggles.
   const toggleHelp = useCallback(() => {
     if (onSessions.current) {
@@ -441,9 +444,15 @@ export function App() {
                   id: 'layout:right', label: t('layout.menu.right'), icon: LAYOUT_KEYS.right.icon, shortcut: LAYOUT_KEYS.right.keys,
                   checked: view === 'sessions' ? !closings.dock : helpOpen, separated: view !== 'sessions',
                 }] : []),
+                // VS Code's *Reset View Locations* (DOCK1b): every view back where it started. Said, and
+                // not choosable, while nothing has moved.
+                ...(view === 'sessions' ? [
+                  { id: 'views:reset', label: t('work.views.reset'), icon: 'refresh' as const, disabled: !placements.moved, separated: true },
+                ] : []),
               ]}
               onChoose={(_, item) => {
                 if (item === 'palette') { setPalette(true); return; }
+                if (item === 'views:reset') { placements.reset(); return; }
                 if (item.startsWith('layout:')) { toggleRegion(item.slice('layout:'.length) as LayoutRegion); return; }
                 if (item === 'monitor' && attached) openWindow.mutate(MONITOR_WINDOW);
                 if (item === 'browser' && attached) openBrowser.mutate();
@@ -461,10 +470,6 @@ export function App() {
             label={t('palette.open')}
           />
         )}
-        // Ask Daoris's door (HELP1) at the strip's right, beside the window controls, since it opens the
-        // right region: the owner, 2026-09-29, "since we moved ask daoris to the right so you should move
-        // the icon to it too". Named, not a bare glyph ("there is no easy way to open the daoris chat");
-        // the name gives way at a narrow window, where the strip is one line by rule.
         // The region toggles (DOCK1c, SURF11) at the strip's right, beside the window controls, as VS
         // Code's sit: Sessions' three, since the rail and the panel are its own, and the right side bar on
         // every view. Ask Daoris has no button of its own up here (the owner: "no ask daoris at top border
@@ -547,6 +552,7 @@ export function App() {
               ask={attached ? <AskDaoris {...askProps} framed={false} /> : undefined}
               askFocus={helpFocus}
               closings={closings}
+              placements={placements}
             />
           )
           : (

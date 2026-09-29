@@ -22,10 +22,11 @@ import { type DockTab, RightDock } from './RightDock';
 import { SessionTimeline } from './SessionTimeline';
 import { SessionRail } from './SessionRail';
 import { StartSession, type StartChoice } from './StartSession';
-import { OutputPanel, PANEL_MIN, Splitter } from './frame';
+import { OutputPanel, PANEL_MIN, Splitter, StreamTabs } from './frame';
 import { panelTabs } from './streams';
 import { DOCK, dockRange, frameLayout, RAIL } from './layout';
 import { type FrameClosings, useFrameClosings } from './closings';
+import { type Place, type Placements, usePlacements, type ViewId, viewsIn } from './placements';
 import { store, stored } from '../lib/stored';
 
 // Per-viewer conveniences, like the language and the workspace scope (D42): a remembered layout is
@@ -116,7 +117,7 @@ const door = (structured?: boolean): 'structured' | 'text' | undefined =>
  * conversation's raw view.
  */
 export function WorkFrame({
-  selected, onSelect, notify, onSendBack, onAnswerAsk, intent, onIntentTaken, ask, askFocus = 0, closings,
+  selected, onSelect, notify, onSendBack, onAnswerAsk, intent, onIntentTaken, ask, askFocus = 0, closings, placements,
 }: {
   /**
    * The attended session, held by the application — because a door into Work from somewhere else
@@ -153,6 +154,8 @@ export function WorkFrame({
   askFocus?: number;
   /** What the person closed, held by the application so the strip reaches it (DOCK1c). */
   closings?: FrameClosings;
+  /** Where each view stands, held by the application so the View menu's reset reaches it (DOCK1b). */
+  placements?: Placements;
 }) {
   const { t } = useTranslation();
   // A refusal belongs to the session that gave it: attending another by any door (a notification, the
@@ -177,6 +180,9 @@ export function WorkFrame({
   // the View menu reach them from every view; this frame's own where it is rendered alone.
   const own = useFrameClosings();
   const closed = closings ?? own;
+  // Where each view stands (DOCK1b): the application's where it holds them, this frame's own alone.
+  const ownPlaces = usePlacements();
+  const placed = placements ?? ownPlaces;
   const collapsed = closed.panel;
   const railClosed = closed.rail;
   const dockClosed = closed.dock;
@@ -424,34 +430,120 @@ export function WorkFrame({
   // so the palette's ask never landed. The parent is told from an effect, not during this render.
   // The attended session's dock surface: the one it had, or the timeline it opens on (FRAME6).
   const dockKey = attended?.id ?? '';
+  // What stands where (DOCK1b): Ask Daoris only where a shell handed it in.
+  const present = (view: ViewId) => view !== 'ask' || Boolean(ask);
+  const rightViews = viewsIn(placed.places, 'right', present);
+  const panelViews = viewsIn(placed.places, 'panel', present);
   // Ask Daoris is the machine's, not the attended session's: its tab stays whichever session is attended.
   const [asking, setAsking] = useState(false);
-  const dock: DockTab = asking && ask ? 'ask' : docked[dockKey] ?? 'timeline';
+  const sessionTab = docked[dockKey] ?? 'timeline';
+  const dock: DockTab | undefined = asking && rightViews.includes('ask')
+    ? 'ask'
+    : rightViews.includes(sessionTab) ? sessionTab : rightViews[0];
   const setDock = (tab: DockTab) => {
     setAsking(tab === 'ask');
     if (tab !== 'ask') setDocked((was) => ({ ...was, [dockKey]: tab }));
   };
-  // The person opening the dock on a surface — from its strip, or the palette's review.
+  // The panel's shown view: the machine's, like its height, not the attended session's.
+  const [panelPick, setPanelPick] = useState<ViewId>('console');
+  const panelView = panelViews.includes(panelPick) ? panelPick : panelViews[0];
+  // The person opening the dock on a surface — from its strip.
   const openDock = (tab: DockTab) => {
     setDock(tab);
     closeDock(false);
   };
+  // The person asking for a view by a door that does not know where it stands — the palette's review,
+  // Ask Daoris's `F1` — opens whichever region holds it, on it.
+  const openView = (view: ViewId) => {
+    if (placed.places[view] === 'panel') {
+      setPanelPick(view);
+      closed.setPanel(false);
+    } else {
+      openDock(view);
+    }
+  };
+  // A view moved (DOCK1b): shown where it went, as VS Code opens the container a view lands in, and a
+  // region it leaves with nothing closes, as VS Code hides an empty one.
+  const moveView = (view: ViewId, to: Place) => {
+    const from = placed.places[view];
+    if (from === to) return;
+    placed.move(view, to);
+    // Not `openView`: this render's places still say where the view was.
+    if (to === 'panel') {
+      setPanelPick(view);
+      closed.setPanel(false);
+    } else {
+      openDock(view);
+    }
+    if (viewsIn({ ...placed.places, [view]: to }, from, present).length === 0) {
+      if (from === 'panel') closed.setPanel(true);
+      else closeDock(true);
+    }
+  };
 
-  // The person asked for Ask Daoris — its door on the strip, `F1`, the palette: the dock opens on it.
+  // The person asked for Ask Daoris — the right side bar's toggle, `F1`, the palette: its region opens on it.
   useEffect(() => {
     if (askFocus <= 0) return;
-    setAsking(true);
-    closed.setDock(false);
-    // Only a new ask for it; the closings are read, not watched.
+    openView('ask');
+    // Only a new ask for it; where it stands and the closings are read, not watched.
   }, [askFocus]);
 
   const [taken, setTaken] = useState<typeof intent>(null);
   if (intent && intent !== taken) {
     setTaken(intent);
     if (intent === 'start') setStarting(true);
-    else openDock('review');
+    else openView('review');
   }
   if (!intent && taken) setTaken(null);
+
+  // The console and its streams (CONSOLE2c), for whichever region it stands in. A session with nothing
+  // held here says so as a sentence, not as an empty bordered well, which read as a field on the
+  // installed window.
+  const consoleView = attended && shown
+    ? <SessionConsole id={shown} fill quiet={t(shown === attended.id ? 'work.panel.silent' : 'work.panel.streamSilent')} />
+    : null;
+  const streamTabs = attended ? panelTabs(attended.id, streams) : undefined;
+  const pickStream = (key: string) => setPicked(key === attended?.id ? null : key);
+
+  /** A view's surface, drawn in whichever region it stands (DOCK1b). The panel draws the console itself. */
+  const surface = (view: ViewId, where: Place = 'panel') => {
+    if (view === 'ask') return ask;
+    if (view === 'review') {
+      return (
+        <DiffPane
+          session={attended?.id ?? null}
+          // A tree of its OWN: the repository's checkout is never merged or discarded (UX5 U66).
+          hasTree={Boolean(attended && ownTree(attended, (registry.data ?? []).find((row) => row.repository === attended.repository)?.root))}
+          onSendBack={onSendBack && attended
+            ? () => onSendBack(attended.repository)
+            : undefined}
+        />
+      );
+    }
+    if (view === 'console' && where === 'right') {
+      // In the side bar its streams go with it, above it, where the panel carries them in its header.
+      return (
+        <div className="flex min-h-0 flex-1 flex-col gap-2 p-3">
+          {streamTabs && streamTabs.length > 1 && (
+            <StreamTabs tabs={streamTabs} selected={shown ?? undefined} onSelect={pickStream} />
+          )}
+          {consoleView ?? <p className="m-0 text-small text-ink-faint">{t('work.panel.none')}</p>}
+        </div>
+      );
+    }
+    return attended
+      ? (
+        <div className="p-3">
+          <SessionTimeline
+            session={attended}
+            quest={quest}
+            hideCurrentNote={noteIsInTheHead(attended, here)}
+            titled={false}
+          />
+        </div>
+      )
+      : <p className="m-0 p-3 text-small text-ink-faint">{t('work.attended.none.body')}</p>;
+  };
   useEffect(() => { if (intent) onIntentTaken?.(); }, [intent, onIntentTaken]);
 
   const roster = Array.isArray(harnesses.data?.harnesses) ? harnesses.data.harnesses : [];
@@ -668,71 +760,57 @@ export function WorkFrame({
           />
         )}
 
-        <OutputPanel
-          // The panel keeps its height; a session with nothing held here says so as a sentence, not as
-          // an empty bordered well, which read as a field on the installed window.
-          console={attended && shown
-            ? <SessionConsole id={shown} fill quiet={t(shown === attended.id ? 'work.panel.silent' : 'work.panel.streamSilent')} />
-            : null}
-          height={Math.max(PANEL_MIN, height)}
-          collapsed={collapsed}
-          onResize={resize}
-          onToggle={toggle}
-          tabs={attended ? panelTabs(attended.id, streams) : undefined}
-          selected={shown ?? undefined}
-          onSelect={(key) => {
-            setPicked(key === attended?.id ? null : key);
-            // Picking what to read is asking to read it: a hidden panel opens.
-            if (collapsed) toggle();
-          }}
-        />
+        {/* An emptied panel that is hidden is not drawn at all; opened, it says how to fill it. */}
+        {(panelViews.length > 0 || !collapsed) && (
+          <OutputPanel
+            console={consoleView}
+            height={Math.max(PANEL_MIN, height)}
+            collapsed={collapsed}
+            onResize={resize}
+            onToggle={toggle}
+            tabs={streamTabs}
+            selected={shown ?? undefined}
+            onSelect={(key) => {
+              pickStream(key);
+              // Picking what to read is asking to read it: a hidden panel opens.
+              if (collapsed) toggle();
+            }}
+            views={panelViews}
+            view={panelView}
+            onView={setPanelPick}
+            onMove={moveView}
+            onReset={placed.moved ? placed.reset : undefined}
+          >
+            {panelView && panelView !== 'console' ? surface(panelView) : undefined}
+          </OutputPanel>
+        )}
       </div>
 
       {/* The third column, built now that it has a second occupant (components plan §3a). It is
           keyed to the attended session like every other region, and it is what gives the centre
           column its height back — the timeline used to share that space with the composer and the
-          panel. */}
-      <RightDock
-        tab={dock}
-        onTab={setDock}
-        mode={layout.dock.mode}
-        width={layout.dock.width}
-        range={dockRange(width.viewport, width.frame, layout.rail.width)}
-        // Full because the window is narrow, not because the person asked: only widening undoes it.
-        autoFull={layout.dock.mode === 'full' && !dockFull}
-        onResize={resizeDock}
-        onResetWidth={() => resizeDock(null)}
-        onClose={() => closeDock(true)}
-        onOpen={openDock}
-        onFull={setDockFull}
-        ask={Boolean(ask)}
-      >
-        {dock === 'ask'
-          ? ask
-          : dock === 'review'
-          ? (
-            <DiffPane
-              session={attended?.id ?? null}
-              // A tree of its OWN: the repository's checkout is never merged or discarded (UX5 U66).
-              hasTree={Boolean(attended && ownTree(attended, (registry.data ?? []).find((row) => row.repository === attended.repository)?.root))}
-              onSendBack={onSendBack && attended
-                ? () => onSendBack(attended.repository)
-                : undefined}
-            />
-          )
-          : attended
-            ? (
-              <div className="p-3">
-                <SessionTimeline
-                  session={attended}
-                  quest={quest}
-                  hideCurrentNote={noteIsInTheHead(attended, here)}
-                  titled={false}
-                />
-              </div>
-            )
-            : <p className="m-0 p-3 text-small text-ink-faint">{t('work.attended.none.body')}</p>}
-      </RightDock>
+          panel. An emptied one that is closed is not drawn at all (DOCK1b). */}
+      {(rightViews.length > 0 || !dockClosed) && (
+        <RightDock
+          tab={dock}
+          onTab={setDock}
+          views={rightViews}
+          onMove={moveView}
+          onReset={placed.moved ? placed.reset : undefined}
+          mode={layout.dock.mode}
+          width={layout.dock.width}
+          range={dockRange(width.viewport, width.frame, layout.rail.width)}
+          // Full because the window is narrow, not because the person asked: only widening undoes it.
+          autoFull={layout.dock.mode === 'full' && !dockFull}
+          onResize={resizeDock}
+          onResetWidth={() => resizeDock(null)}
+          onClose={() => closeDock(true)}
+          onOpen={openDock}
+          onFull={setDockFull}
+        >
+          {dock ? surface(dock, 'right') : null}
+        </RightDock>
+      )}
     </div>
   );
 }

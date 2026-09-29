@@ -437,4 +437,45 @@ describe('the output panel', () => {
 
     expect(screen.queryByRole('tablist')).toBeNull();
   });
+
+  // DOCK1b: a region, not the console's alone — it holds whichever views stand in the panel.
+  it('holds whichever views stand in it, a tab each, and draws the shown one', () => {
+    const onView = vi.fn();
+    render(
+      <OutputPanel
+        console={<p>the console</p>} height={180} collapsed={false} onResize={() => {}} onToggle={() => {}}
+        tabs={TABS} selected="s1" views={['console', 'ask']} view="ask" onView={onView}
+      >
+        <p>the ask panel</p>
+      </OutputPanel>,
+    );
+
+    const views = screen.getByRole('tablist', { name: 'views in the panel' });
+    expect(Array.from(views.querySelectorAll('[role="tab"]')).map((tab) => [tab.getAttribute('aria-label'), tab.getAttribute('aria-selected')]))
+      .toEqual([['Console', 'false'], ['Ask Daoris', 'true']]);
+    expect(screen.getByText('the ask panel')).toBeTruthy();
+    // The console's streams are the console's: not in the header while another view is shown.
+    expect(screen.queryByText('the console')).toBeNull();
+    expect(screen.queryByRole('tablist', { name: 'what is running' })).toBeNull();
+
+    fireEvent.click(screen.getByRole('tab', { name: 'Console' }));
+    expect(onView).toHaveBeenCalledWith('console');
+  });
+
+  it('is named for the one view it holds, with no tabs', () => {
+    render(
+      <OutputPanel console={null} height={180} collapsed={false} onResize={() => {}} onToggle={() => {}} views={['timeline']}>
+        <p>the timeline</p>
+      </OutputPanel>,
+    );
+    expect(screen.queryByRole('tablist')).toBeNull();
+    expect(screen.getByText('Timeline')).toBeTruthy();
+    expect(screen.getByText('the timeline')).toBeTruthy();
+  });
+
+  it('says how to fill it when every view has moved out, rather than an empty well', () => {
+    render(<OutputPanel console={<p>the console</p>} height={180} collapsed={false} onResize={() => {}} onToggle={() => {}} views={[]} />);
+    expect(screen.getByText(/Nothing is here now/)).toBeTruthy();
+    expect(screen.queryByText('the console')).toBeNull();
+  });
 });

@@ -595,7 +595,7 @@ test('a browser has no Sessions, and no mode to switch (D55, D66)', async ({ pag
   await page.reload();
   await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible();
   await expect(page.getByRole('navigation', { name: 'sessions' })).toHaveCount(0);
-  await expect(page.getByLabel('console height')).toHaveCount(0);
+  await expect(page.getByLabel('panel height')).toHaveCount(0);
   await expect(page.getByLabel('message')).toHaveCount(0);
   await page.evaluate(() => window.localStorage.removeItem('daoris.view'));
 
@@ -610,7 +610,7 @@ test('a browser has no Sessions, and no mode to switch (D55, D66)', async ({ pag
   // browser has no door onto one — the dock that would hold it is part of Sessions, and Sessions is
   // not rendered here at all.
   await expect(page.getByRole('tab', { name: 'Review' })).toHaveCount(0);
-  await expect(page.getByRole('tablist', { name: 'Session surfaces' })).toHaveCount(0);
+  await expect(page.getByRole('tablist', { name: 'right side bar' })).toHaveCount(0);
 });
 
 /**

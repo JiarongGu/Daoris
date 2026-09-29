@@ -171,6 +171,82 @@ describe('the Work frame', () => {
     expect(screen.queryByText('the ask panel')).toBeNull();
   });
 
+  /**
+   * DOCK1b (the owner, 2026-09-29: *"we should be able to dock panels like vscode did"*): a view moves
+   * between the right side bar and the panel from its tab's menu, as VS Code's *Move to Panel* does,
+   * is shown where it went, and stays there for this viewer.
+   */
+  it('moves Ask Daoris to the panel from its tab\'s menu, shows it there, and remembers it', async () => {
+    window.localStorage.setItem('daoris.dockClosed', '0');
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={client}>
+        <Tooltip.Provider>
+          <WorkFrame selected="s1a2b3c4" onSelect={vi.fn()} notify={() => {}} ask={<p>the ask panel</p>} />
+        </Tooltip.Provider>
+      </QueryClientProvider>,
+    );
+
+    // A right-click on its tab selects it and offers where it can go.
+    await userEvent.pointer({ keys: '[MouseRight]', target: await screen.findByRole('tab', { name: 'Ask Daoris' }) });
+    await userEvent.click(await screen.findByRole('menuitem', { name: 'Move Ask Daoris to the panel' }));
+
+    const panel = screen.getByRole('tablist', { name: 'views in the panel' });
+    expect(within(panel).getByRole('tab', { name: 'Ask Daoris', selected: true })).toBeInTheDocument();
+    expect(screen.getByText('the ask panel')).toBeInTheDocument();
+    expect(within(screen.getByRole('tablist', { name: 'right side bar' })).queryByRole('tab', { name: 'Ask Daoris' })).toBeNull();
+    expect(JSON.parse(window.localStorage.getItem('daoris.viewPlaces')!)).toEqual({ ask: 'panel' });
+
+    // Back again from the panel's own list, and nothing is left to remember.
+    screen.getByRole('button', { name: 'views in the panel' }).focus();
+    await userEvent.keyboard('{Enter}');
+    await userEvent.click(await screen.findByRole('menuitem', { name: 'Move Ask Daoris to the right side bar' }));
+    expect(screen.queryByRole('tablist', { name: 'views in the panel' })).toBeNull();
+    expect(screen.getByRole('tab', { name: 'Ask Daoris', selected: true })).toBeInTheDocument();
+    expect(window.localStorage.getItem('daoris.viewPlaces')).toBeNull();
+  });
+
+  it('opens the region that holds Ask Daoris when asked for it, wherever it stands', async () => {
+    window.localStorage.setItem('daoris.viewPlaces', JSON.stringify({ ask: 'panel' }));
+    window.localStorage.setItem('daoris.panelClosed', '1');
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={client}>
+        <Tooltip.Provider>
+          <WorkFrame selected="s1a2b3c4" onSelect={vi.fn()} notify={() => {}} ask={<p>the ask panel</p>} askFocus={1} />
+        </Tooltip.Provider>
+      </QueryClientProvider>,
+    );
+
+    const panel = await screen.findByRole('tablist', { name: 'views in the panel' });
+    expect(within(panel).getByRole('tab', { name: 'Ask Daoris', selected: true })).toBeInTheDocument();
+    expect(screen.getByText('the ask panel')).toBeInTheDocument();
+    expect(window.localStorage.getItem('daoris.panelClosed')).toBe('0');
+  });
+
+  it('closes a region a move leaves empty, and the reset puts every view back', async () => {
+    window.localStorage.setItem('daoris.dockClosed', '0');
+    show('s1a2b3c4');
+
+    screen.getByRole('button', { name: 'views in the panel' }).focus();
+    await userEvent.keyboard('{Enter}');
+    await userEvent.click(await screen.findByRole('menuitem', { name: 'Move Console to the right side bar' }));
+
+    // The console stands in the side bar now, and the panel it left held nothing else: it is gone.
+    expect(within(screen.getByRole('tablist', { name: 'right side bar' })).getByRole('tab', { name: 'Console', selected: true }))
+      .toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /the panel$/ })).toBeNull();
+
+    screen.getByRole('button', { name: 'views in the right side bar' }).focus();
+    await userEvent.keyboard('{Enter}');
+    await userEvent.click(await screen.findByRole('menuitem', { name: 'Reset view locations' }));
+
+    expect(screen.queryByRole('tab', { name: 'Console' })).toBeNull();
+    // Back where it started, and still hidden: only the person opens it again.
+    expect(screen.getByRole('button', { name: 'show the panel' })).toBeInTheDocument();
+    expect(window.localStorage.getItem('daoris.viewPlaces')).toBeNull();
+  });
+
   it('lets the head and the composer follow the centre\'s width, however wide the window', async () => {
     SESSIONS = [DRIVEN, CHAT];
     show('c0ffee11');
@@ -346,13 +422,13 @@ describe('the Work frame', () => {
   it('resizes the output panel from the keyboard and remembers the height', async () => {
     show('s1a2b3c4');
 
-    const handle = await screen.findByRole('separator', { name: 'console height' });
+    const handle = await screen.findByRole('separator', { name: 'panel height' });
     const before = Number(handle.getAttribute('aria-valuenow'));
     // A resize that needs a mouse is a resize some people do not have.
     handle.focus();
     await userEvent.keyboard('{ArrowUp}');
 
-    const grown = screen.getByRole('separator', { name: 'console height' });
+    const grown = screen.getByRole('separator', { name: 'panel height' });
     expect(Number(grown.getAttribute('aria-valuenow'))).toBeGreaterThan(before);
     expect(window.localStorage.getItem('daoris.panelHeight')).toBe(String(before + 48));
   });
@@ -360,9 +436,9 @@ describe('the Work frame', () => {
   it('hides the panel when the person hides it, and nothing else reopens it', async () => {
     show('s1a2b3c4');
 
-    await userEvent.click(await screen.findByRole('button', { name: 'hide the console' }));
-    expect(screen.queryByRole('separator', { name: 'console height' })).toBeNull();
-    expect(screen.getByRole('button', { name: 'show the console' })).toBeInTheDocument();
+    await userEvent.click(await screen.findByRole('button', { name: 'hide the panel' }));
+    expect(screen.queryByRole('separator', { name: 'panel height' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'show the panel' })).toBeInTheDocument();
   });
 });
 
@@ -1584,14 +1660,14 @@ describe('the frame\'s geometry (FRAME6)', () => {
    */
   it('remembers a dragged dock as its share of the window, so it grows when the window does', async () => {
     show('s1a2b3c4');
-    const edge = await screen.findByRole('separator', { name: 'panel width' });
+    const edge = await screen.findByRole('separator', { name: 'side bar width' });
     edge.focus();
     await userEvent.keyboard('{ArrowRight}');
-    const dragged = Number(screen.getByRole('separator', { name: 'panel width' }).getAttribute('aria-valuenow'));
+    const dragged = Number(screen.getByRole('separator', { name: 'side bar width' }).getAttribute('aria-valuenow'));
     expect(Number(window.localStorage.getItem('daoris.dockShare'))).toBeCloseTo(dragged / 1600, 5);
 
     widen(2400);
-    expect(Number(screen.getByRole('separator', { name: 'panel width' }).getAttribute('aria-valuenow')))
+    expect(Number(screen.getByRole('separator', { name: 'side bar width' }).getAttribute('aria-valuenow')))
       .toBe(Math.round(2400 * (dragged / 1600)));
   });
 
@@ -1599,12 +1675,12 @@ describe('the frame\'s geometry (FRAME6)', () => {
     window.localStorage.setItem('daoris.dockWidth', '400');
     show('s1a2b3c4');
 
-    expect(await screen.findByRole('separator', { name: 'panel width' })).toHaveAttribute('aria-valuenow', '400');
+    expect(await screen.findByRole('separator', { name: 'side bar width' })).toHaveAttribute('aria-valuenow', '400');
     expect(window.localStorage.getItem('daoris.dockShare')).toBe(String(400 / 1600));
     expect(window.localStorage.getItem('daoris.dockWidth')).toBeNull();
 
     widen(2000);
-    expect(screen.getByRole('separator', { name: 'panel width' })).toHaveAttribute('aria-valuenow', '500');
+    expect(screen.getByRole('separator', { name: 'side bar width' })).toHaveAttribute('aria-valuenow', '500');
   });
 
   /**
@@ -1616,7 +1692,7 @@ describe('the frame\'s geometry (FRAME6)', () => {
     window.localStorage.removeItem('daoris.dockClosed');
     show('s1a2b3c4');
     await screen.findByRole('button', { name: 'open Review' });
-    expect(screen.queryByRole('tablist', { name: 'Session surfaces' })).toBeNull();
+    expect(screen.queryByRole('tablist', { name: 'right side bar' })).toBeNull();
 
     await userEvent.click(screen.getByRole('button', { name: 'open Timeline' }));
     expect(await screen.findByRole('tab', { name: 'Timeline' })).toHaveAttribute('aria-selected', 'true');
@@ -1625,11 +1701,11 @@ describe('the frame\'s geometry (FRAME6)', () => {
 
   it('closes the dock to a strip, and opens it again only on the person\'s press, on the tab they chose', async () => {
     show('s1a2b3c4');
-    await userEvent.click(await screen.findByRole('button', { name: 'close the panel' }));
-    expect(screen.queryByRole('tablist', { name: 'Session surfaces' })).toBeNull();
+    await userEvent.click(await screen.findByRole('button', { name: 'close the side bar' }));
+    expect(screen.queryByRole('tablist', { name: 'right side bar' })).toBeNull();
 
     widen(2400);
-    expect(screen.queryByRole('tablist', { name: 'Session surfaces' })).toBeNull();
+    expect(screen.queryByRole('tablist', { name: 'right side bar' })).toBeNull();
     expect(window.localStorage.getItem('daoris.dockClosed')).toBe('1');
 
     await userEvent.click(screen.getByRole('button', { name: 'open Review' }));
@@ -1677,7 +1753,7 @@ describe('the frame\'s geometry (FRAME6)', () => {
     show('s1a2b3c4');
     expect(await screen.findByText(/too narrow to sit beside the session/)).toBeInTheDocument();
 
-    await userEvent.click(screen.getByRole('button', { name: 'close the panel' }));
+    await userEvent.click(screen.getByRole('button', { name: 'close the side bar' }));
     expect(screen.queryByText(/too narrow to sit beside the session/)).toBeNull();
   });
 });

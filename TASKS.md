@@ -22,7 +22,7 @@ lists.
 ## State
 
 **Counts, and this is their one home:** sixteen commands, **514 CLI tests, 545 service, 900 driver,
-291 desktop modules, 80 devkit, 1312 web unit, 21 Playwright**, 66/66 release rehearsal, **292/292
+291 desktop modules, 80 devkit, 1331 web unit, 21 Playwright**, 66/66 release rehearsal, **292/292
 family rehearsal** (it names its own phases when you run it), **45/45 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge
 documents, 5 skills, 7 packs. The always-loaded core is **22,492 of 26,000 bytes** — a span in
@@ -188,7 +188,10 @@ requirements, and the owner's calls. Its recommended order is the order below.
   daoris to the right so you should move the icon to it too"*). **DOCK1c landed** (SURF11, into the
   archive): the region toggles on the strip and in the View menu with VS Code's keys, Ask Daoris's own
   button gone from the strip (the owner: *"no ask daoris at top border bar"*), and the dock's tabs
-  shrinking as a browser's do. DOCK1a, b, d and e are open.
+  shrinking as a browser's do. **DOCK1b landed** (design note §4): the four views move between the
+  side bar and the panel from each region's tab list or a tab's right-click, remembered, with *Reset
+  view locations*; the tab list names every tab whole, however narrow the region. DOCK1a, d and e
+  are open.
 
 ### What REV3 left (2026-09-25)
 

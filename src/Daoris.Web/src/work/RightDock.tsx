@@ -1,15 +1,18 @@
 import { useTranslation } from 'react-i18next';
-import type { ReactNode } from 'react';
-import { Button, Icon, type IconName, Tip } from '../ui';
+import { type ReactNode, useState } from 'react';
+import { Button, Icon, Tip } from '../ui';
 import { cn } from '../lib/cn';
 import { Splitter } from './frame';
 import type { DockMode } from './layout';
+import type { Place, ViewId } from './placements';
+import { viewEntries, ViewsMenu } from './ViewsMenu';
 
 // The frame's third column (components plan §3a). It was deliberately unbuilt until it had a SECOND
 // occupant — a dock holding one thing is a pane with extra chrome — and SURF6's diff is that
 // occupant, so the timeline moves here and the attended column gets its height back.
 
-export type DockTab = 'timeline' | 'review' | 'ask';
+/** What the dock can show: any view that stands in the right side bar (DOCK1b). */
+export type DockTab = ViewId;
 
 /**
  * The right dock: per-session surfaces, keyed to whatever the person is attending.
@@ -29,16 +32,26 @@ export type DockTab = 'timeline' | 'review' | 'ask';
  * - `full` over the whole frame — the SAME element drawn larger, so a surface switched in and out of it
  *   is never drawn anew and keeps what the person did in it;
  * - `closed`, a strip of its tabs, since nothing but the person opens it again.
+ *
+ * **What it holds is the person's** (DOCK1b): the views standing in the right side bar, in the order
+ * `viewsIn` gives, any of which can move to the panel from its tab's menu. Emptied, it says so.
  */
 export function RightDock({
-  tab, onTab, mode, width, range, autoFull = false, ask = false, onResize, onResetWidth, onClose, onOpen, onFull, children,
+  tab, onTab, views = ['timeline', 'review'], onMove, onReset,
+  mode, width, range, autoFull = false, onResize, onResetWidth, onClose, onOpen, onFull, children,
 }: {
-  tab: DockTab;
+  /** The view shown; ignored when it is not one of `views`. */
+  tab?: DockTab;
   /**
-   * Whether Ask Daoris is one of its tabs — the one right region, as VS Code's chat is a view of its
-   * secondary side bar (the owner, 2026-09-29: "the ask daoris need to be a better location").
+   * The views standing here: the session's timeline and review, Ask Daoris beside them — the one
+   * right region, as VS Code's chat is a view of its secondary side bar (the owner, 2026-09-29: "the
+   * ask daoris need to be a better location") — and whatever the person moved in.
    */
-  ask?: boolean;
+  views?: readonly DockTab[];
+  /** Sends a view to the other region (DOCK1b). */
+  onMove?: (view: DockTab, to: Place) => void;
+  /** Puts every view back where it started; absent while none has moved. */
+  onReset?: () => void;
   onTab: (tab: DockTab) => void;
   mode: DockMode;
   width: number;
@@ -54,12 +67,11 @@ export function RightDock({
   children: ReactNode;
 }) {
   const { t } = useTranslation();
+  // The tab list's menu, opened by its button or by a right-click on a tab.
+  const [menu, setMenu] = useState(false);
 
-  const tabs: { id: DockTab; label: string; icon: IconName }[] = [
-    { id: 'timeline', label: t('work.review.timelineTab'), icon: 'quests' },
-    { id: 'review', label: t('work.review.tab'), icon: 'diff' },
-    ...(ask ? [{ id: 'ask' as const, label: t('help.title'), icon: 'help' as const }] : []),
-  ];
+  const tabs = viewEntries(t, views);
+  const shown = tabs.some((entry) => entry.id === tab) ? tab : tabs[0]?.id;
 
   if (mode === 'closed') {
     return (
@@ -114,7 +126,8 @@ export function RightDock({
           names. So they shrink as a browser's tabs and VS Code's do (the owner: "take design from vscode or
           browser tab design"): the selected tab keeps its whole name, as a browser's active tab keeps its
           width, and the others give way, each cut with an ellipsis down to its icon; only then do they
-          scroll. Every full name is its tab's own and its tip's. */}
+          scroll. Every full name is its tab's own and its tip's, and the list at the row's end (DOCK1b)
+          names them all, as Chrome's does, so a tab cut to its icon is never the only way to one. */}
       <div className="flex shrink-0 items-center border-b border-line pr-1">
         <div role="tablist" aria-label={t('work.dock.label')} className="flex min-w-0 flex-1 overflow-x-auto [scrollbar-width:none]">
           {tabs.map(({ id, label, icon }) => (
@@ -124,12 +137,18 @@ export function RightDock({
                 type="button"
                 role="tab"
                 aria-label={label}
-                aria-selected={tab === id}
+                aria-selected={shown === id}
                 onClick={() => onTab(id)}
+                // VS Code's tab menu: a right-click selects the tab and offers where it can go.
+                onContextMenu={(event) => {
+                  event.preventDefault();
+                  onTab(id);
+                  setMenu(true);
+                }}
                 className={cn(
                   // One line: a tab's name that wraps reads as two tabs (Ask Daoris, found looking at it).
                   'flex max-w-44 items-center gap-1.5 whitespace-nowrap border-b-2 px-3 py-1.5 text-small transition-colors duration-(--speed)',
-                  tab === id
+                  shown === id
                     ? 'shrink-0 border-b-accent text-ink'
                     : 'min-w-9 shrink border-b-transparent text-ink-faint hover:text-ink',
                 )}
@@ -142,6 +161,16 @@ export function RightDock({
         </div>
 
         <div className="ml-auto flex shrink-0 items-center gap-0.5">
+          <ViewsMenu
+            region="right"
+            views={tabs}
+            selected={shown}
+            onSelect={onTab}
+            onMove={onMove}
+            onReset={onReset}
+            open={menu}
+            onOpenChange={setMenu}
+          />
           {onFull && !autoFull && (
             <Tip content={t(full ? 'work.dock.unfull' : 'work.dock.full')}>
               <Button
@@ -173,9 +202,14 @@ export function RightDock({
         </p>
       )}
 
-      <div role="tabpanel" aria-labelledby={tabId(tab)} className="flex min-h-0 flex-1 flex-col overflow-y-auto">
-        {children}
-      </div>
+      {shown
+        ? (
+          <div role="tabpanel" aria-labelledby={tabId(shown)} className="flex min-h-0 flex-1 flex-col overflow-y-auto">
+            {children}
+          </div>
+        )
+        // Every view moved out: VS Code's empty container, which says how to fill it.
+        : <p className="m-0 p-3 text-small text-ink-faint">{t('work.views.empty')}</p>}
     </aside>
   );
 }
