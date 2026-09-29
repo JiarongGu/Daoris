@@ -484,6 +484,8 @@
   "plugin.terminal": "也可用 `daoris plugin list|add|remove|enable|disable`——同一个文件夹、同一个文件，两道门。",
   "harness.install": "安装",
   "harness.update": "更新",
+  "harness.update.pinTip": "把固定的版本移到最新发布：查出确切的版本号，装到 Daoris 管理的位置，再固定到它。已经是最新时什么也不下载。",
+  "harness.update.toolTip": "运行工具自带的更新程序，更新没有固定版本时会话运行的那一份。",
   "harness.profile-remove": "移除账户",
   "harness.profile-default": "选择会话使用的账户",
   "harness.refresh": "重新检测",

@@ -484,6 +484,8 @@
   "plugin.terminal": "Also `daoris plugin list|add|remove|enable|disable` — the same folder and the same file, either door.",
   "harness.install": "install",
   "harness.update": "update",
+  "harness.update.pinTip": "Moves the pin to the newest release: finds its exact version, installs it where Daoris keeps it, and pins that. Nothing is fetched when the pin is already the newest.",
+  "harness.update.toolTip": "Runs the tool's own updater, on the copy sessions run while nothing is pinned.",
   "harness.profile-remove": "removing an account",
   "harness.profile-default": "choosing the account sessions use",
   "harness.refresh": "look again",

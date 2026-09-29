@@ -385,6 +385,12 @@ public static class ClaudeReleases
 
     public const string Base = "https://downloads.claude.ai/claude-code-releases";
 
+    /// <summary>
+    /// Where the bucket names its newest release, as plain text (USE1a, the channel evidence §1). The
+    /// undocumented <c>stable</c> pointer beside it is not used. The CLI's <c>CLAUDE_LATEST</c> is the twin.
+    /// </summary>
+    public const string Latest = Base + "/latest";
+
     /// <summary>The release key's fingerprint, as the vendor publishes it — <b>the trust root</b>.</summary>
     public const string Fingerprint = "31DDDE24DDFAB679F42D7BD2BAA929FF1A7ECACE";
 
@@ -479,6 +485,36 @@ public static class ClaudeReleases
                 + $"{FirstSigned}), so Daoris cannot verify it and does not install it. Pin {FirstSigned} or later — or "
                 + "install that version with its own tooling, and unpinned, Daoris runs it from PATH.");
         }
+    }
+
+    /// <summary>
+    /// The exact version the bucket names as its newest release (USE1a) — what Update pins.
+    /// </summary>
+    /// <remarks>
+    /// 🔴 <b>The pointer only chooses a version; it vouches for nothing.</b> It is not signed, so it is
+    /// read as one exact version or refused, and the version it names is then installed by
+    /// <see cref="InstallAsync"/>, verified exactly as a typed one. A pin never names the pointer
+    /// itself: a pin meaning "whatever is newest today" would change under a running arrangement.
+    /// </remarks>
+    public static async Task<string> LatestAsync(CancellationToken ct, HttpMessageHandler? transport = null)
+    {
+        using var http = transport is null ? new HttpClient() : new HttpClient(transport, disposeHandler: false);
+        http.DefaultRequestHeaders.UserAgent.ParseAdd("daoris");
+
+        var body = await BytesAsync(http, Latest, ct).ConfigureAwait(false)
+            ?? throw new DriverException(
+                $"nothing answered at {Latest}, where the release channel names its newest Claude Code — nothing was "
+                + "fetched or pinned.");
+        var said = Encoding.UTF8.GetString(body).Trim();
+        if (!System.Text.RegularExpressions.Regex.IsMatch(said, @"^\d+\.\d+\.\d+$"))
+        {
+            var shown = said.Length > 60 ? said[..60] + "…" : said;
+            throw new DriverException(
+                $"the release channel's newest-release pointer at {Latest} answered `{shown}`, which is not a version — "
+                + "nothing was fetched or pinned.");
+        }
+
+        return said;
     }
 
     /// <summary>

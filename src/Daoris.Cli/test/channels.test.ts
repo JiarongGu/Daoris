@@ -6,8 +6,8 @@ import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { gzipSync } from 'node:zlib';
 import {
-  CLAUDE_RELEASE_FINGERPRINT, CLAUDE_RELEASE_KEY, CLAUDE_RELEASES, CODEX_GITHUB, CODEX_RELEASES,
-  claudePlatform, codexTarget, installFromChannel, refuseVersion,
+  CLAUDE_LATEST, CLAUDE_RELEASE_FINGERPRINT, CLAUDE_RELEASE_KEY, CLAUDE_RELEASES, CODEX_GITHUB, CODEX_LATEST,
+  CODEX_RELEASES, claudePlatform, codexTarget, installFromChannel, latestVersion, refuseVersion,
 } from '../src/channels.ts';
 import type { Fetcher } from '../src/channels.ts';
 import { dearmor, readPublicKeys } from '../src/openpgp.ts';
@@ -467,4 +467,36 @@ test('a package with no bin/codex in it is refused, and nothing is left where th
   assert.equal(existsSync(where), false);
   assert.equal(existsSync(`${where}.part`), false);
   fx.cleanup();
+});
+
+// ——— USE1a: where each channel names its newest release, which `agent update` pins.
+
+/**
+ * The pointer each channel publishes (the channel evidence, §1 and §2): Claude Code's `latest` answers a
+ * version as plain text, and Codex's `channels/latest` answers the release's own metadata. It only
+ * CHOOSES a version — the pin that follows verifies that version exactly as a typed one.
+ */
+test('each channel’s newest-release pointer is read as one exact version', async () => {
+  const claude = served({ [CLAUDE_LATEST]: '2.1.281\n' });
+  assert.equal(await latestVersion('claude-code-releases', claude.fetcher), '2.1.281');
+  assert.deepEqual(claude.asked, [`${CLAUDE_RELEASES}/latest`]);
+
+  // The vendor's own metadata, as the pointer answers it: the tag, less its `rust-v`.
+  const codex = served({ [CODEX_LATEST]: REAL_RELEASE });
+  assert.equal(await latestVersion('codex-releases', codex.fetcher), '0.156.1');
+  assert.deepEqual(codex.asked, ['https://releases.openai.com/codex/channels/latest']);
+});
+
+test('a pointer that answers no version, or nothing at all, is refused before anything is pinned', async () => {
+  for (const body of ['<html>maintenance</html>', 'latest', '2.1', '']) {
+    await assert.rejects(
+      latestVersion('claude-code-releases', served({ [CLAUDE_LATEST]: body }).fetcher),
+      /not a version[\s\S]*nothing was fetched or pinned/);
+  }
+  for (const body of ['{"tag_name":"v0.156.1"}', '{"name":"no tag"}', 'not json']) {
+    await assert.rejects(
+      latestVersion('codex-releases', served({ [CODEX_LATEST]: body }).fetcher),
+      /not a version[\s\S]*nothing was fetched or pinned/);
+  }
+  await assert.rejects(latestVersion('claude-code-releases', served({}).fetcher), /nothing answered at/);
 });

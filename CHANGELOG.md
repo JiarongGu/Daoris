@@ -574,6 +574,12 @@ The first version: doctrine that installs, is checked, and flows back.
   trusted for the binary; a version before 2.1.89, which has none, is refused. Codex's package must
   match both of its published hashes. Nothing is pinned unless everything verified. The Machine
   view's pin does the same for Claude Code. npm still installs the ACP adapters and dsh.
+- **Update on an agent does what it says** (USE1a). On a pinned agent, Update (on the Agents page, or
+  `daoris agent update <agent>`) finds the newest release as one exact version, installs it the way
+  a pin does, and pins it, saying `0.79.0 → 0.84.0`, or that the pin is already the newest and
+  nothing was fetched. npm answers for a package, and the maker's channel for Claude Code and Codex.
+  Unpinned, the agent's own updater runs, as before. An agent with neither offers no Update button,
+  and the button's tip says which of the two it does.
 - **Ask at a workspace, not a repository** (D65 §1a). `daoris-driver ask [--workspace <name>]
   [--to <repo>] [--file <path>]… [--url <address>]… "…"` records an ask: the sentence, its links
   and files, who asked, and what became of it, naming the tier that answered on every record. With

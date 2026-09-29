@@ -662,6 +662,10 @@ public sealed class DriverModule : ModuleBase
                             // Whether this door can run a sign-in at all — the same rule: a harness that
                             // declares no login flow gets no "Sign in" whose only outcome is a refusal.
                             SignsIn = toolchain?.LoginArguments is { Count: > 0 },
+                            // Which Update this door has (USE1a): "pin" moves the pin to the newest
+                            // release, "tool" runs the tool's own updater, and null offers none — the
+                            // same rule again, after Update on a pinned door answered only a refusal.
+                            Updates = toolchain is null ? null : HarnessActions.UpdateOf(toolchain, pinned),
                             // 🔴 Which TOOL's account this entry runs as, and which door it holds a
                             // session over. Both were already declared and neither reached the page,
                             // which is why the surface listed `claude-code` and `claude-code-acp` as two
@@ -893,7 +897,7 @@ public sealed class DriverModule : ModuleBase
                 Func<Task<int>> run = action switch
                 {
                     "install" => () => HarnessActions.InstallAsync(toolchain, stream, CancellationToken.None, track),
-                    "update" => () => HarnessActions.UpdateAsync(toolchain, command, stream, CancellationToken.None, track),
+                    "update" => () => UpdateAsync(harness, toolchain, command, stream, CancellationToken.None, track),
                     "login" => () => HarnessActions.LoginAsync(toolchain, command, profileHome, stream, CancellationToken.None, track),
                     "login-new" => () => SignInAsync(harness, fresh!, toolchain, command, profileHome, stream, config, track),
                     // The managed toolchain (TOOL2/D57) — the desktop's half of
@@ -1732,6 +1736,20 @@ public sealed class DriverModule : ModuleBase
         if (code == 0) _loop.Harnesses.Settings.WithVersion(harness, version).Save(_loop.Harnesses.SettingsPath);
         return code;
     }
+
+    /// <summary>
+    /// Update a door (USE1a): a pinned one moves its pin to the newest release, written the way
+    /// <see cref="PinAsync"/> writes one — only after that version is installed — and an unpinned one
+    /// runs its own updater. The machine's pin, the one the roster shows.
+    /// </summary>
+    private Task<int> UpdateAsync(
+        string harness, HarnessToolchain toolchain, IReadOnlyList<string>? command, Action<string> stream,
+        CancellationToken ct, Action<HarnessRun> started) =>
+        HarnessActions.UpdateAsync(
+            toolchain, command, _loop.Harnesses.Home, harness,
+            _loop.Harnesses.Settings.ResolveVersion(harness, null, null),
+            version => _loop.Harnesses.Settings.WithVersion(harness, version).Save(_loop.Harnesses.SettingsPath),
+            stream, ct, started);
 
     /// <summary>What every route that needs the loop's service says before it answers (REV3 CLEAN1: five wrote it).</summary>
     private static Exception NotReady() => Refusals.Because(

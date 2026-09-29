@@ -7,10 +7,10 @@ import { gzipSync } from 'node:zlib';
 import {
   TOOLCHAINS, addKeyAccount, commandHarness, harnessesPath, keyOf, managedBinary, managedHome,
   nextAccount, profileHome, profiles, probe, readHarnessSettings, removeProfile, resolveProfile,
-  resolveVersion, signInNew, writeHarnessSettings,
+  resolveVersion, signInNew, versionFromNpm, writeHarnessSettings,
 } from '../src/toolchain.ts';
 import type { Toolchain } from '../src/toolchain.ts';
-import { CODEX_RELEASES, codexTarget } from '../src/channels.ts';
+import { CLAUDE_LATEST, CODEX_LATEST, CODEX_RELEASES, codexTarget } from '../src/channels.ts';
 import type { Fetcher } from '../src/channels.ts';
 import { makeFixture } from './_fixture.ts';
 import { captureError } from './_fixture.ts';
@@ -840,15 +840,20 @@ test("a flag before the operands is not an operand: `pin --workspace aurora clau
   fx.cleanup();
 });
 
-/** The whole verb over a fetcher the test holds: fetch, verify, unpack, and only then pin. */
-async function runPin(argv: string[], path: string, fetcher: Fetcher): Promise<{ code: number; out: string }> {
+/**
+ * The whole verb over a fetcher the test holds: fetch, verify, unpack, and only then pin. `npm` is the
+ * package manager's stand-in, for the verbs that run one.
+ */
+async function runPin(
+  argv: string[], path: string, fetcher: Fetcher, npm?: string[],
+): Promise<{ code: number; out: string }> {
   const saved = process.env.DAORIS_HARNESS_CONFIG;
   process.env.DAORIS_HARNESS_CONFIG = path;
   const lines: string[] = [];
   try {
     const code = await commandHarness({
       root: process.cwd(), argv, write: (line) => lines.push(line), packageRoot: process.cwd(),
-    }, fetcher);
+    }, fetcher, npm);
     return { code, out: lines.join('\n') };
   } finally {
     if (saved === undefined) delete process.env.DAORIS_HARNESS_CONFIG;
@@ -946,4 +951,242 @@ test('re-pinning a version already installed downloads nothing', async () => {
   assert.match(result.out, /nothing was downloaded/);
   assert.equal(readHarnessSettings(at(fx)).versions.codex, '0.156.1');
   fx.cleanup();
+});
+
+// ——— USE1a: `agent update` does what it says. A pinned door with a package or a channel MOVES ITS PIN
+// to the newest release; an unpinned door with its own updater runs it; anything else is refused. The
+// desktop's `HarnessActions.UpdateAsync` is the twin, held by the same cases.
+
+/** A fetcher that fails the test if anything asks it: an npm door's update reaches no channel. */
+const NOWHERE: Fetcher = {
+  async bytes(url) { throw new Error(`nothing should have fetched ${url}`); },
+  async save(url) { throw new Error(`nothing should have fetched ${url}`); },
+};
+
+/**
+ * npm's stand-in: `view <package> version` runs the body given, and `install --prefix <dir> <spec>`
+ * lays down the adapter's shim where npm's would land. Every call is logged, in order.
+ */
+function standInNpm(fx: { root: string }, view: string): { npm: string[]; asked: () => string[] } {
+  const script = join(fx.root, 'npm-stand-in.mjs');
+  const log = join(fx.root, 'npm-asked.log');
+  writeFileSync(script, [
+    "import { appendFileSync, mkdirSync, writeFileSync } from 'node:fs';",
+    "import { join } from 'node:path';",
+    'const [verb, ...rest] = process.argv.slice(2);',
+    `appendFileSync(${JSON.stringify(log)}, [verb, ...rest].join(' ') + '\\n');`,
+    `if (verb === 'view') { ${view} }`,
+    "if (verb === 'install') {",
+    "  const bin = join(rest[rest.indexOf('--prefix') + 1], 'node_modules', '.bin');",
+    '  mkdirSync(bin, { recursive: true });',
+    "  writeFileSync(join(bin, 'claude-agent-acp'), '');",
+    '}',
+  ].join('\n'), 'utf8');
+  return {
+    npm: [process.execPath, script],
+    asked: () => (existsSync(log) ? readFileSync(log, 'utf8').split('\n').filter(Boolean) : []),
+  };
+}
+
+/** Pin a door at a version and put an install there, in npm's layout. */
+function pinnedAt(fx: { root: string }, name: string, version: string, workspace?: string): void {
+  const settings = readHarnessSettings(at(fx));
+  writeHarnessSettings(at(fx), workspace
+    ? { ...settings, workspaceVersions: { ...settings.workspaceVersions, [workspace]: { [name]: version } } }
+    : { ...settings, versions: { ...settings.versions, [name]: version } });
+  const bin = join(managedHome(fx.root, name, version), 'node_modules', '.bin');
+  mkdirSync(bin, { recursive: true });
+  writeFileSync(join(bin, TOOLCHAINS[name]!.binary[0]!), '', 'utf8');
+}
+
+const ACP_PACKAGE = '@agentclientprotocol/claude-agent-acp';
+
+/**
+ * Run with nothing on PATH. 🔴 Measured while proving these tests fail: a regression that fell back to
+ * the tool's own updater ran this machine's real `claude update` and `codex update`. With no PATH it
+ * fails the test instead, and touches nothing.
+ */
+async function pathless<T>(fx: { root: string }, fn: () => Promise<T>): Promise<T> {
+  const saved = process.env.PATH;
+  process.env.PATH = join(fx.root, 'nothing-on-path');
+  try {
+    return await fn();
+  } finally {
+    process.env.PATH = saved;
+  }
+}
+
+test('update moves a pinned npm door to the newest release, and says from what to what', async () => {
+  const fx = makeFixture('harness-update-npm');
+  pinnedAt(fx, 'claude-code-acp', '0.79.0');
+  const { npm, asked } = standInNpm(fx, "console.log('0.84.0');");
+
+  const result = await runPin(['update', 'claude-code-acp'], at(fx), NOWHERE, npm);
+
+  assert.equal(result.code, 0, result.out);
+  assert.match(result.out, /0\.79\.0 → 0\.84\.0/);
+  assert.equal(readHarnessSettings(at(fx)).versions['claude-code-acp'], '0.84.0');
+  assert.ok(managedBinary(fx.root, 'claude-code-acp', '0.84.0', ['claude-agent-acp']), 'the pin points at nothing');
+  // Resolved first, then installed at the CONCRETE version — never `@latest`.
+  assert.deepEqual(asked(), [
+    `view ${ACP_PACKAGE} version`,
+    `install --prefix ${managedHome(fx.root, 'claude-code-acp', '0.84.0')} ${ACP_PACKAGE}@0.84.0`,
+  ]);
+  fx.cleanup();
+});
+
+test('update of a pin that is already the newest fetches nothing and moves nothing', async () => {
+  const fx = makeFixture('harness-update-npm-newest');
+  pinnedAt(fx, 'claude-code-acp', '0.79.0');
+  const { npm, asked } = standInNpm(fx, "console.log('0.79.0');");
+
+  const result = await runPin(['update', 'claude-code-acp'], at(fx), NOWHERE, npm);
+
+  assert.equal(result.code, 0, result.out);
+  assert.match(result.out, /already the newest/);
+  assert.deepEqual(asked(), [`view ${ACP_PACKAGE} version`]);
+  assert.equal(readHarnessSettings(at(fx)).versions['claude-code-acp'], '0.79.0');
+  fx.cleanup();
+});
+
+test('update never moves a pin backwards, to a newest release older than it', async () => {
+  const fx = makeFixture('harness-update-npm-ahead');
+  pinnedAt(fx, 'claude-code-acp', '0.85.0');
+  const { npm, asked } = standInNpm(fx, "console.log('0.84.0');");
+
+  const result = await runPin(['update', 'claude-code-acp'], at(fx), NOWHERE, npm);
+
+  assert.equal(result.code, 0, result.out);
+  assert.match(result.out, /newer than/);
+  assert.equal(asked().length, 1);
+  assert.equal(readHarnessSettings(at(fx)).versions['claude-code-acp'], '0.85.0');
+  fx.cleanup();
+});
+
+/** npm that fails, or answers something that is not one version, is a sentence — never a stack trace. */
+test('update that cannot learn the newest version says so, and the pin stays', async () => {
+  for (const view of [
+    "console.error('npm error code E404'); process.exit(1);",
+    "console.log('{ weird: true }');",
+    "console.log('0.83.0'); console.log('0.84.0');",
+  ]) {
+    const fx = makeFixture('harness-update-npm-fails');
+    pinnedAt(fx, 'claude-code-acp', '0.79.0');
+    const { npm, asked } = standInNpm(fx, view);
+
+    await assert.rejects(
+      runPin(['update', 'claude-code-acp'], at(fx), NOWHERE, npm),
+      (error: Error) => /Nothing was fetched or pinned/.test(error.message) && /0\.79\.0/.test(error.message)
+        && !/\n\s+at /.test(error.message));
+    assert.deepEqual(asked(), [`view ${ACP_PACKAGE} version`]);
+    assert.equal(readHarnessSettings(at(fx)).versions['claude-code-acp'], '0.79.0');
+    fx.cleanup();
+  }
+});
+
+test('update moves the pin it names: a workspace’s, leaving the machine’s alone', async () => {
+  const fx = makeFixture('harness-update-npm-workspace');
+  pinnedAt(fx, 'claude-code-acp', '0.70.0');
+  pinnedAt(fx, 'claude-code-acp', '0.79.0', 'aurora');
+  const { npm } = standInNpm(fx, "console.log('0.84.0');");
+
+  const result = await runPin(['update', 'claude-code-acp', '--workspace', 'aurora'], at(fx), NOWHERE, npm);
+
+  assert.equal(result.code, 0, result.out);
+  assert.equal(readHarnessSettings(at(fx)).workspaceVersions['aurora']!['claude-code-acp'], '0.84.0');
+  assert.equal(readHarnessSettings(at(fx)).versions['claude-code-acp'], '0.70.0');
+
+  // A circle that pins nothing has no pin to move, and is told how to set one.
+  await assert.rejects(
+    runPin(['update', 'claude-code-acp', '--workspace', 'lab'], at(fx), NOWHERE, npm),
+    /pins no version[\s\S]*agent pin claude-code-acp/);
+  fx.cleanup();
+});
+
+test('update moves a pinned channel door to the version its channel names newest', async () => {
+  const fx = makeFixture('harness-update-channel');
+  const old = managedHome(fx.root, 'codex', '0.150.0');
+  mkdirSync(join(old, 'bin'), { recursive: true });
+  writeFileSync(join(old, 'bin', process.platform === 'win32' ? 'codex.exe' : 'codex'), '', 'utf8');
+  writeHarnessSettings(at(fx), { ...readHarnessSettings(at(fx)), versions: { codex: '0.150.0' } });
+  const served = codexServed('0.156.1', codexPackage());
+  const fetcher: Fetcher = {
+    async bytes(url) {
+      if (url === CODEX_LATEST) return Buffer.from(JSON.stringify({ tag_name: 'rust-v0.156.1' }));
+      return served.fetcher.bytes(url);
+    },
+    save: served.fetcher.save,
+  };
+
+  const result = await pathless(fx, () => runPin(['update', 'codex'], at(fx), fetcher));
+
+  assert.equal(result.code, 0, result.out);
+  assert.match(result.out, /0\.150\.0 → 0\.156\.1/);
+  assert.equal(readHarnessSettings(at(fx)).versions.codex, '0.156.1');
+  assert.ok(managedBinary(fx.root, 'codex', '0.156.1', ['codex']), 'the pin points at nothing');
+  fx.cleanup();
+});
+
+test('update of a channel pin already at the newest asks the pointer and nothing else', async () => {
+  const fx = makeFixture('harness-update-channel-newest');
+  const pinned = managedHome(fx.root, 'claude-code', '2.1.281');
+  mkdirSync(join(pinned, 'bin'), { recursive: true });
+  writeFileSync(join(pinned, 'bin', process.platform === 'win32' ? 'claude.exe' : 'claude'), '', 'utf8');
+  writeHarnessSettings(at(fx), { ...readHarnessSettings(at(fx)), versions: { 'claude-code': '2.1.281' } });
+  const asked: string[] = [];
+  const fetcher: Fetcher = {
+    async bytes(url) {
+      asked.push(url);
+      return url === CLAUDE_LATEST ? Buffer.from('2.1.281\n') : null;
+    },
+    async save(url) {
+      asked.push(url);
+      return null;
+    },
+  };
+
+  const result = await pathless(fx, () => runPin(['update', 'claude-code'], at(fx), fetcher));
+
+  assert.equal(result.code, 0, result.out);
+  assert.match(result.out, /already the newest/);
+  assert.deepEqual(asked, [CLAUDE_LATEST]);
+  fx.cleanup();
+});
+
+/** Unpinned, a door with an updater of its own runs it — the tool's own mechanism, as before. */
+test('update of an unpinned door runs the tool’s own updater', async () => {
+  const fx = makeFixture('harness-update-tool');
+  const script = join(fx.root, 'own-updater.mjs');
+  const marker = join(fx.root, 'updated.txt');
+  writeFileSync(script, `import { writeFileSync } from 'node:fs';\nwriteFileSync(${JSON.stringify(marker)}, process.argv.slice(2).join(' '));\n`, 'utf8');
+  const codex = TOOLCHAINS.codex!;
+  const binary = codex.binary;
+  codex.binary = [process.execPath, script];
+  try {
+    const result = await runPin(['update', 'codex'], at(fx), NOWHERE);
+
+    assert.equal(result.code, 0, result.out);
+    assert.equal(readFileSync(marker, 'utf8'), 'update');
+  } finally {
+    codex.binary = binary;
+  }
+  fx.cleanup();
+});
+
+test('update of an unpinned door with no updater of its own is refused, as before', () => {
+  const fx = makeFixture('harness-update-neither');
+  assert.match(captureError(() => run(['update', 'claude-code-acp'], at(fx))).message, /declares no updater/);
+  fx.cleanup();
+});
+
+/** What `npm view <package> version` answers, read defensively. The driver's `VersionFromNpm` is the twin. */
+test('npm’s answer is one version or none', () => {
+  assert.equal(versionFromNpm('0.84.0\n'), '0.84.0');
+  assert.equal(versionFromNpm('npm warn config production Use `--omit=dev` instead.\n0.84.0\n'), '0.84.0');
+  assert.equal(versionFromNpm("'0.84.0'\n"), '0.84.0');
+  assert.equal(versionFromNpm('1.0.0-beta.2\n'), '1.0.0-beta.2');
+  assert.equal(versionFromNpm(''), null);
+  assert.equal(versionFromNpm('{ weird: true }'), null);
+  assert.equal(versionFromNpm('0.83.0\n0.84.0\n'), null);
+  assert.equal(versionFromNpm('latest'), null);
 });

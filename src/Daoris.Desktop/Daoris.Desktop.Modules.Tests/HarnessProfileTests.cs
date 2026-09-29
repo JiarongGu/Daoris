@@ -265,6 +265,44 @@ public sealed class HarnessProfileTests : Bridge
         Assert.Empty(HarnessSettings.Profiles(Home, "dsh"));
     }
 
+    /// <summary>
+    /// 🔴 <b>Update does what it says</b> (USE1a). The roster says which Update each door has, so the
+    /// page offers the button only where pressing it does something: a pinned door with a package or a
+    /// channel moves its pin, an unpinned door with its own updater runs it, and the rest have none.
+    /// </summary>
+    [Fact]
+    public async Task The_roster_says_which_update_each_door_has()
+    {
+        new HarnessSettings().WithVersion("claude-code-acp", "0.79.0").Save(HarnessSettingsPath);
+
+        var roster = await AnswerAsync(Module(), "HARNESSES");
+
+        string? UpdateOf(string name)
+        {
+            var updates = roster.GetProperty("harnesses").EnumerateArray()
+                .Single(h => h.GetProperty("harness").GetString() == name)
+                .GetProperty("updates");
+            return updates.ValueKind == JsonValueKind.Null ? null : updates.GetString();
+        }
+
+        Assert.Equal("pin", UpdateOf("claude-code-acp"));
+        Assert.Equal("tool", UpdateOf("claude-code"));
+        Assert.Null(UpdateOf("codex-acp"));
+        Assert.Null(UpdateOf("dsh"));
+    }
+
+    /// <summary>
+    /// A door with no Update is refused at the bridge as well as offered nothing on the page — the
+    /// same sentence it always was, for a caller that sends the action anyway.
+    /// </summary>
+    [Fact]
+    public async Task Update_on_a_door_with_neither_is_refused_as_before()
+    {
+        var refusal = await RefusalAsync(Module(), "HARNESS_ACTION", new { harness = "dsh", action = "update" });
+
+        Assert.Contains("declares no updater", refusal);
+    }
+
     private static async Task UntilAsync(Func<bool> condition)
     {
         var patience = DateTime.UtcNow + TimeSpan.FromSeconds(15);

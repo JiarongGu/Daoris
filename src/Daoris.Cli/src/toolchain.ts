@@ -49,7 +49,7 @@ import { normalizeWorkspace } from './remotemap.ts';
 // A cycle with `plugins.ts`, harmless because both sides read the other only inside functions:
 // `harness list` shows the harnesses plugins declare, and the catalogue refuses the names this table has.
 import { readPlugins, resolvable } from './plugins.ts';
-import { installFromChannel, refuseVersion } from './channels.ts';
+import { installFromChannel, latestVersion, refuseVersion } from './channels.ts';
 import { commandRules } from './permissions.ts';
 import { PROPOSAL_VERBS, commandProposals } from './ruleproposals.ts';
 import { grantTrust, TRUST_FILE } from './trust.ts';
@@ -760,12 +760,15 @@ export function signInNew(
  * Verbs, not flags: `install` and `login` do entirely different things to different parts of the
  * machine, and a boolean distinguishing them is the shape that eventually gets defaulted wrong.
  *
- * `releases` is how `pin` reaches a vendor's channel (AGT2b): handed in by the dispatcher from
- * `service.ts`, so this module never holds a socket of its own. Every other verb is synchronous and
- * never touches it.
+ * `releases` is how `pin` reaches a vendor's channel (AGT2b), and how `update` asks one for its
+ * newest release (USE1a): handed in by the dispatcher from `service.ts`, so this module never holds a
+ * socket of its own. Every other verb never touches it.
+ *
+ * `npm` is the package manager a package pin, and a package pin's update, runs — npm itself, unless a
+ * test hands in a stand-in.
  */
 export function commandHarness(
-  { argv, write }: CommandArgs, releases: Fetcher | null = null,
+  { argv, write }: CommandArgs, releases: Fetcher | null = null, npm: string[] = ['npm'],
 ): ExitCode | Promise<ExitCode> {
   const verb = argv[0] ?? 'list';
   const path = harnessesPath();
@@ -787,8 +790,22 @@ export function commandHarness(
       return relay(toolchain.install, null, toolchain, write);
     }
 
+    // USE1a: update does what it says. A pinned agent with a package or a channel moves its pin to
+    // the newest release, since running its updater would change a different copy than the one
+    // sessions run. Unpinned, the agent's own updater runs, as it always did.
     case 'update': {
       const { name, toolchain } = required(argv, 'update');
+      const workspace = flagValue(argv, '--workspace');
+      const circle = workspace?.trim() ? normalizeWorkspace(workspace) : null;
+      const settings = readHarnessSettings(path);
+      const pin = (circle ? settings.workspaceVersions[circle]?.[name] : settings.versions[name])?.trim() || null;
+
+      if (pin && (toolchain.package || toolchain.channel)) return updatePin(name, toolchain, pin, circle);
+      if (circle) {
+        throw new DaorisError(
+          `the \`${circle}\` workspace pins no version of \`${name}\`, so there is no pin to move — `
+          + `\`daoris agent pin ${name} <version> --workspace ${circle}\` sets one.`);
+      }
       if (!toolchain.update) {
         throw new DaorisError(`\`${name}\` declares no updater — it updates itself, or its package manager does.`);
       }
@@ -849,18 +866,7 @@ export function commandHarness(
         return pinFromChannel(name, toolchain, toolchain.channel, version, where, workspace);
       }
 
-      write(`daoris: installing \`${toolchain.package}@${version}\` into a directory Daoris owns.`);
-      write(`  ${where}`);
-      const installed = relay(
-        ['npm', 'install', '--prefix', where, `${toolchain.package}@${version}`],
-        null, toolchain, write);
-      if (installed !== 0) {
-        write('  Nothing was pinned: a pin naming a version that is not there would run a different');
-        write('  tool than the one you asked for.');
-        return installed;
-      }
-
-      return pinned(name, version, workspace);
+      return pinFromPackage(name, toolchain, version, where, workspace);
     }
 
     case 'unpin': {
@@ -953,6 +959,114 @@ export function commandHarness(
     }
 
     return pinned(name, version, workspace);
+  }
+
+  /** Install one version from npm into a directory Daoris owns, and only then pin to it (TOOL2/D57). */
+  function pinFromPackage(
+    name: string, toolchain: Toolchain, version: string, where: string, workspace: string | undefined,
+  ): ExitCode {
+    write(`daoris: installing \`${toolchain.package}@${version}\` into a directory Daoris owns.`);
+    write(`  ${where}`);
+    const installed = relay([...npm, 'install', '--prefix', where, `${toolchain.package}@${version}`], null, toolchain, write);
+    if (installed !== 0) {
+      write('  Nothing was pinned: a pin naming a version that is not there would run a different');
+      write('  tool than the one you asked for.');
+      return installed;
+    }
+
+    return pinned(name, version, workspace);
+  }
+
+  /**
+   * Move a pin to the newest release (USE1a): resolve the newest to one exact version, then pin it
+   * exactly as `pin` does — the channel's verified install, or npm's. The pin never names a pointer.
+   */
+  function updatePin(
+    name: string, toolchain: Toolchain, pin: string, workspace: string | null,
+  ): ExitCode | Promise<ExitCode> {
+    const scope = workspace ? ` for the \`${workspace}\` workspace` : '';
+    const channel = toolchain.channel;
+    if (channel) {
+      write(`daoris: \`${name}\` is pinned at ${pin}${scope}. Asking ${toolchain.maker ?? 'its maker'}'s own release `
+        + 'channel which release is newest.');
+      return (async () => {
+        if (!releases) {
+          throw new DaorisError(`this build was given no way to reach ${toolchain.maker ?? 'the maker'}'s release channel, so nothing was fetched or pinned.`);
+        }
+        let newest: string;
+        try {
+          newest = await latestVersion(channel, releases);
+        } catch (error) {
+          if (!(error instanceof DaorisError)) throw error;
+          throw new DaorisError(`${error.message} The pin stays at ${pin}.`, error.exitCode);
+        }
+        return settle(name, toolchain, pin, newest)
+          ?? pinFromChannel(name, toolchain, channel, newest, managedHome(home, name, newest), workspace ?? undefined);
+      })();
+    }
+
+    write(`daoris: \`${name}\` is pinned at ${pin}${scope}. Asking npm which release of \`${toolchain.package}\` is newest.`);
+    const newest = newestOnNpm(toolchain.package!, pin);
+    return settle(name, toolchain, pin, newest)
+      ?? pinFromPackage(name, toolchain, newest, managedHome(home, name, newest), workspace ?? undefined);
+  }
+
+  /**
+   * The answer when the newest release does not move the pin — already there and installed, or older
+   * than a pin someone chose ahead of it — or null when it does, having said from what to what.
+   */
+  function settle(name: string, toolchain: Toolchain, pin: string, newest: string): ExitCode | null {
+    const order = compareReleases(newest, pin);
+    if (newest === pin && managedBinary(home, name, pin, toolchain.binary)) {
+      write(`daoris: \`${name}\` ${pin} is already the newest release — nothing was fetched, and the pin stays.`);
+      return 0;
+    }
+    if (order !== null && order < 0) {
+      write(`daoris: \`${name}\` is pinned at ${pin}, newer than the newest release (${newest}) — nothing was`);
+      write('  fetched, and the pin stays. Update never moves a pin backwards.');
+      return 0;
+    }
+
+    write(newest === pin
+      ? `daoris: \`${name}\` ${pin} is the newest release and is not installed here — installing it.`
+      : `daoris: \`${name}\` ${pin} → ${newest}`);
+    return null;
+  }
+
+  /**
+   * The newest version npm publishes of a package, asked with `npm view <package> version` — a spawn
+   * of the same kind the pin's `npm install` is. Anything but one version is a refusal that says so.
+   */
+  function newestOnNpm(pkg: string, pin: string): string {
+    const command = [...npm, 'view', pkg, 'version'];
+    write(`  $ ${command.join(' ')}`);
+    const [file, args, verbatim] = spawnable(command);
+    const result = spawnSync(file, args, {
+      encoding: 'utf8',
+      stdio: ['ignore', 'pipe', 'pipe'],
+      shell: false,
+      windowsHide: true,
+      ...(verbatim ? { windowsVerbatimArguments: true } : {}),
+    });
+    const stays = `Nothing was fetched or pinned, and the pin stays at ${pin}.`;
+
+    if (result.error) {
+      throw new DaorisError(`\`${command[0]}\` could not be run — ${result.error.message}. ${stays}`);
+    }
+    if (result.status !== 0) {
+      const said = firstLine(result.stderr ?? '') ?? firstLine(result.stdout ?? '');
+      throw new DaorisError(
+        `npm could not say which release of \`${pkg}\` is newest — it exited ${result.status ?? 'on a signal'}`
+        + `${said ? ` (${clip(said)})` : ''}. ${stays}`);
+    }
+
+    const version = versionFromNpm(result.stdout ?? '');
+    if (!version) {
+      const said = firstLine(result.stdout ?? '');
+      throw new DaorisError(
+        `npm answered no single version of \`${pkg}\`${said ? ` (it said \`${clip(said)}\`)` : ''}. ${stays}`);
+    }
+    return version;
   }
 
   /** Write the pin, and say what it now means. */
@@ -1370,6 +1484,48 @@ function firstLine(output: string): string | null {
   }
 
   return null;
+}
+
+/** One exact release, as npm and the channels write it — a prerelease or build suffix included. */
+const RELEASE = /^(\d+)\.(\d+)\.(\d+)(?:-([0-9A-Za-z.-]+))?(?:\+[0-9A-Za-z.-]+)?$/;
+
+/**
+ * The one version `npm view <package> version` answered, or null when it answered none or several
+ * (USE1a). A warning npm prints beside it is not a version, and quotes around one are npm's own.
+ * The driver's `VersionFromNpm` is the twin.
+ */
+export function versionFromNpm(output: string): string | null {
+  const found = new Set(output.split(/\r?\n/)
+    .map((line) => line.trim().replace(/^['"]+|['"]+$/g, ''))
+    .filter((line) => RELEASE.test(line)));
+  return found.size === 1 ? [...found][0]! : null;
+}
+
+/**
+ * Which of two releases is newer: negative when `a` is older, positive when newer, and null when
+ * either is not a version this can order. A release outranks its own prereleases.
+ */
+function compareReleases(a: string, b: string): number | null {
+  const left = RELEASE.exec(a);
+  const right = RELEASE.exec(b);
+  if (!left || !right) return null;
+
+  for (let at = 1; at <= 3; at++) {
+    // Compared as digit strings, so a number too long for a double still orders exactly.
+    const x = left[at]!.replace(/^0+/, '');
+    const y = right[at]!.replace(/^0+/, '');
+    if (x.length !== y.length) return x.length - y.length;
+    if (x !== y) return x < y ? -1 : 1;
+  }
+  if (left[4] === right[4]) return 0;
+  if (left[4] === undefined) return 1;
+  if (right[4] === undefined) return -1;
+  return left[4] < right[4] ? -1 : 1;
+}
+
+/** A line somebody else's tool printed, short enough to sit inside a sentence. */
+function clip(text: string): string {
+  return text.length > 160 ? `${text.slice(0, 160)}…` : text;
 }
 
 function asObject(value: unknown): Record<string, unknown> {

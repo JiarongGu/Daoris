@@ -165,7 +165,7 @@ download; AGT2c is that measurement.
 **Where the network is.** In the CLI it is still only in `service.ts`. `releaseFetcher()` is handed
 to `agent pin` by the dispatcher (`cli.ts`), so `toolchain.ts` and everything that judges a download
 import no network module. A dogfood test holds both halves, and the usage text names `agent pin` as
-the one management verb that opens a connection itself. The driver fetches through its own
+the one management verb that opens a connection itself (and, since USE1a, `agent update` beside it). The driver fetches through its own
 `HttpClient`, with no timeout: a Claude Code binary is over 200 MB, and the person's *stop* cancels
 it.
 
@@ -222,6 +222,29 @@ the repository's own allow-list counts. It reports each hold as a fact as well a
 
 **What the gates do not cover:** whether a key Daoris writes is honoured by the harness exactly as one
 it wrote, and whether a trusted parent covers a child. Both are measurable in one real run (D73).
+
+## 3c. Update, as built (USE1a, 2026-09-30)
+
+Update on a pinned `claude-code-acp` answered "declares no updater": the action knew only a tool's
+own updater, and a pinned door is a copy Daoris installed. Update now branches on the door, the same
+way in both artefacts (`HarnessActions.UpdateAsync`, `daoris agent update`):
+
+- **Pinned, with a package or a channel: the pin moves.** The newest release is resolved to one exact
+  version, then pinned exactly as `pin` does, and the pin is written only once that version is
+  installed. npm answers `npm view <package> version`, a spawn like the pin's own `npm install`. A
+  channel answers its newest-release pointer: Claude Code's `latest` (plain text, evidence §1) and
+  Codex's `channels/latest` (release metadata, evidence §2). The pointer is not signed, so it only
+  chooses the version, and that version is verified as a typed one would be. A pin already at the
+  newest, and installed, fetches nothing. A newest release older than the pin never moves it back.
+- **Unpinned, with an updater of its own:** the tool's updater runs, as before.
+- **Neither:** refused, as before, and the Agents surface offers no Update at all. The roster's
+  `updates` field (`pin`, `tool` or null) is what the page reads, with a tip saying which it does.
+
+The terminal's `update` takes `--workspace` to move that circle's pin; the screen moves the machine's.
+The driver declares only the Claude Code channel (§3a), so its channel half is Claude Code's.
+
+**What the gates do not cover:** npm and both pointers are stand-ins in every test, so whether the
+real `npm view` and the real pointers answer as the evidence recorded is unexercised.
 
 ## 4. Measurement
 
