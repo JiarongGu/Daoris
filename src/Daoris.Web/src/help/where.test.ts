@@ -47,7 +47,7 @@ describe('where the person is', () => {
    * HELP2: the helper cannot see the window, and asked what the panel held it guessed (DOCK1d's look).
    * On Sessions it is told where the views stand and which region is showing.
    */
-  it('says on Sessions which views each region holds, and whether it is showing', () => {
+  it('says which views each region holds, and whether it is showing', () => {
     expect(prefaceOf({
       view: 'sessions', workspace: null,
       layout: { right: ['timeline', 'ask'], panel: ['console', 'review'], rightShown: true, panelShown: false },
@@ -58,9 +58,11 @@ describe('where the person is', () => {
       layout: { right: ['timeline', 'review', 'ask', 'console'], panel: [], rightShown: false, panelShown: true },
     })).toBe('Where the person is now: the Sessions view, every workspace. The right side bar holds the timeline, the review, '
       + 'Ask Daoris and the console, and is closed; the panel holds nothing.');
-    // Away from Sessions there is no panel to speak of.
-    expect(prefaceOf({ view: 'quests', workspace: null, layout: { right: ['ask'], panel: [], rightShown: true, panelShown: true } }))
-      .toBe('Where the person is now: the Quests view, every workspace.');
+    // On every view, since the frame is (DOCK1a); only a caller with no frame leaves it out.
+    expect(prefaceOf({ view: 'quests', workspace: null, layout: { right: ['ask'], panel: ['console'], rightShown: true, panelShown: true } }))
+      .toBe('Where the person is now: the Quests view, every workspace. The right side bar holds Ask Daoris, and is open; '
+        + 'the panel holds the console, and is showing.');
+    expect(prefaceOf({ view: 'quests', workspace: null })).toBe('Where the person is now: the Quests view, every workspace.');
   });
 
   it('names a working session by its state, and one that asked nothing by no quote', () => {

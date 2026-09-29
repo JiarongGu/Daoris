@@ -127,7 +127,7 @@ public sealed class HelpRoomTests : IDisposable
         Assert.Contains("## The window", agents);
         foreach (var said in new[]
         {
-            "the right side bar", "the panel", "the timeline, the review, Ask Daoris and the console",
+            "the right side bar", "the panel", "the timeline, the review and the console", "Every view sits in one frame",
             "tab list", "right-click", "drag", "Reset view locations",
             "`Ctrl+B`", "`Ctrl+J`", "`Ctrl+Alt+B`", "`F1`", "`Ctrl+Alt+I`", "`Ctrl+Shift+Alt+L`", "`Ctrl+K`",
         })

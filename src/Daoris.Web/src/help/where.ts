@@ -71,8 +71,9 @@ export function prefaceOf(where: HelpWhere): string {
   const note = session?.note?.replace(/\s+/g, ' ').trim();
   if (note) said += ` It says: "${note.length > SAYS ? `${note.slice(0, SAYS).trimEnd()}…` : note}".`;
 
-  // Only Sessions has a panel, so only there is where the views stand a fact about the screen (HELP2).
-  const layout = where.view === 'sessions' ? where.layout : null;
+  // Where the views stand (HELP2), on every view since the frame is on every view (DOCK1a). Absent where
+  // there is no frame at all — a browser — which is the caller's to say by leaving it out.
+  const layout = where.layout;
   if (layout) {
     const region = (views: readonly ViewId[], shown: boolean, open: string, shut: string) =>
       views.length === 0 ? listed(views) : `${listed(views)}, and is ${shown ? open : shut}`;

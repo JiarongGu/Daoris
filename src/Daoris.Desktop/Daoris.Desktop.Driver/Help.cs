@@ -224,17 +224,18 @@ public static class HelpRoom
         text.Append("## The window\n\n");
         text.Append("The desktop is laid out as VS Code is. The activity bar at the left holds the views: Overview,\n");
         text.Append("Sessions, Quests, Projects, Map, Convergence and Search, with Settings at its foot; `Ctrl+K` opens\n");
-        text.Append("the command palette. On Sessions the session list is at the left, the attended session in the\n");
-        text.Append("centre, the panel beneath it, and the right side bar beside it. Four views stand in those two\n");
-        text.Append("regions and move between them: the timeline, the review, Ask Daoris and the console. A view moves\n");
-        text.Append("from its region's tab list (the button at the end of the tab row), by a right-click on its tab, or\n");
-        text.Append("by dragging its tab to the other region; View → Reset view locations puts every view back. The\n");
-        text.Append("three toggles beside the window controls, and the View menu, show or hide the session list\n");
-        text.Append("(`Ctrl+B`), the panel (`Ctrl+J`) and the right side bar (`Ctrl+Alt+B`). Away from Sessions the right\n");
-        text.Append("side bar is Ask Daoris alone. You open on `F1` or `Ctrl+Alt+I`, and Quick Ask, a box where the\n");
-        text.Append("palette opens, on `Ctrl+Shift+Alt+L`.\n\n");
-        text.Append("You cannot see the window. Where the person is, and on Sessions where the views stand, comes with\n");
-        text.Append("their message when it changed; for anything else on the screen, ask them rather than guess.\n\n");
+        text.Append("the command palette. Every view sits in one frame: the view in the centre, the panel beneath it,\n");
+        text.Append("and the right side bar beside it; on Sessions the session list is at the left and the centre is the\n");
+        text.Append("attended session. Four views stand in the two regions and move between them:\n");
+        text.Append("the timeline, the review and the console of the session attended on Sessions, and Ask Daoris.\n");
+        text.Append("A view moves from its region's tab list (the button at the end of the tab row), by a right-click on\n");
+        text.Append("its tab, or by dragging its tab to the other region; View → Reset view locations puts every view\n");
+        text.Append("back. The toggles beside the window controls, and the View menu, show or hide the panel (`Ctrl+J`)\n");
+        text.Append("and the right side bar (`Ctrl+Alt+B`) on every view, and the session list (`Ctrl+B`) on Sessions.\n");
+        text.Append("You open on `F1` or `Ctrl+Alt+I`, and Quick Ask, a box where the palette opens, on\n");
+        text.Append("`Ctrl+Shift+Alt+L`.\n\n");
+        text.Append("You cannot see the window. Where the person is, and where the views stand, comes with their\n");
+        text.Append("message when it changed; for anything else on the screen, ask them rather than guess.\n\n");
 
         text.Append("## This machine, now\n\n");
         text.Append(machine.Adapter is { Length: > 0 } adapter
