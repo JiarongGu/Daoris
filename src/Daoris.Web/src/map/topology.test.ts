@@ -132,6 +132,16 @@ describe('the workspace topology', () => {
     expect(map.nodes.find((n) => n.id === 'engine')!.sessions).toBe(2);
   });
 
+  it('draws what a repository says it uses, to each repository on the map it names (D91)', () => {
+    const map = buildTopology([
+      repo('game', { uses: ['engine', 'elsewhere', 'game'] }), repo('engine'), repo('tools', { uses: ['engine'] }),
+    ], [], [], []);
+    // A name the map does not hold draws nothing, and nothing depends on itself.
+    expect(map.depends).toEqual([{ from: 'game', to: 'engine' }, { from: 'tools', to: 'engine' }]);
+    // Declared, not something that happened: no quest line comes of it.
+    expect(map.quests).toEqual([]);
+  });
+
   it('shows only the kinds of line a person chose, and every repository still', () => {
     const map = buildTopology([repo('engine'), repo('game')], [
       quest('q1', 'ask #abc', 'engine'),

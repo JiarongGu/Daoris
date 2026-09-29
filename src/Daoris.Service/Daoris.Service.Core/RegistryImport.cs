@@ -67,7 +67,9 @@ public static class RegistryImport
                 Joined: joined,
                 // Knowledge feeds only from a joined repository (D47 §4). The CLI refuses this
                 // manifest; an import reads manifests the CLI never validated, so it narrows too.
-                SharesKnowledge: joined && remote is not null && Bool(remote.Value, "knowledge"));
+                SharesKnowledge: joined && remote is not null && Bool(remote.Value, "knowledge"),
+                // What it says it uses (D91), read by the one rule every door applies.
+                Uses: Declared.Uses(domain is null ? [] : Strings(domain.Value, "uses"), name));
         }
         // JSON of the wrong shape (an array, a string) throws InvalidOperationException from the element
         // reads, and is as broken as JSON that will not parse (REV3).

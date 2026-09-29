@@ -18,6 +18,7 @@ const TOPOLOGY: Topology = {
   quests: [{ from: 'report-ui', to: 'reports-db', quests: [], open: 1, live: null }],
   asks: [],
   chains: [],
+  depends: [],
   knowledge: [{ a: 'reports-db', b: 'repo-03', groups: 2 }],
   outside: 0,
   circles: 1,

@@ -247,6 +247,9 @@ check(
   (registry.json ?? []).filter((r) => r.registered).length === 2,
   registry.text,
 );
+// D91: what a repository says it uses is read from its own manifest by the import, as the rest is.
+const usesOf = (rows, name) => JSON.stringify((rows ?? []).find((r) => r.repository === name)?.uses ?? []);
+check('the game says it uses the engine, read from its manifest', usesOf(registry.json, 'game') === '["engine"]', registry.text);
 
 // -------------------------------------------------- 3. the real client registers
 
@@ -257,6 +260,9 @@ for (const name of EXAMPLES) {
   });
   check(`${name}: connect exits 0`, connect.code === 0, connect.out);
 }
+// …and the real client carries it through the real door, the twin's other half (D91).
+const connected = await api('GET', '/api/registry');
+check('after connect, the host still keeps what the game says it uses', usesOf(connected.json, 'game') === '["engine"]', connected.text);
 
 // -------------------------------------------------- 4. work routes as quests
 

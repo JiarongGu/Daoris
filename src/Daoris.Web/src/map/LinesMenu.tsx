@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import * as Menu from '@radix-ui/react-dropdown-menu';
 import { cn } from '../lib/cn';
 import { Icon, Tip } from '../ui';
-import { ASKS_DASH, CHAIN_DASH } from './MapCanvas';
+import { ASKS_DASH, CHAIN_DASH, DEPENDS_DASH } from './MapCanvas';
 import { LINE_KINDS, type LineKind, type Topology, type When, WHENS } from './topology';
 
 /** Where a viewer's choice of lines is kept: a convenience of theirs, so the browser's own storage. */
@@ -62,18 +62,22 @@ export function lineCounts(topology: Topology): Record<LineKind, number> {
     quests: topology.quests.reduce((sum, edge) => sum + edge.quests.length, 0),
     asks: topology.asks.reduce((sum, edge) => sum + edge.quests.length, 0),
     chains: topology.chains.reduce((sum, edge) => sum + edge.steps.length + edge.waiting.length, 0),
+    depends: topology.depends.length,
     knowledge: topology.knowledge.length,
   };
 }
 
 /** A kind's line as the map draws it, small, so the menu names each kind by its look as well as its word. */
 function Sample({ kind }: { kind: LineKind }) {
-  const dash = kind === 'asks' ? ASKS_DASH : kind === 'chains' ? CHAIN_DASH : kind === 'knowledge' ? '5 5' : undefined;
+  const dash = { quests: undefined, asks: ASKS_DASH, chains: CHAIN_DASH, depends: DEPENDS_DASH, knowledge: '5 5' }[kind];
   return (
     <svg width="28" height="8" aria-hidden className="shrink-0">
       <line
         x1="1" y1="4" x2="27" y2="4" strokeDasharray={dash} strokeLinecap={kind === 'chains' ? 'round' : undefined}
-        className={cn(kind === 'knowledge' ? 'stroke-ink-faint' : 'stroke-accent', kind === 'chains' ? 'stroke-2' : 'stroke-[1.5]')}
+        className={cn(
+          kind === 'knowledge' ? 'stroke-ink-faint' : kind === 'depends' ? 'stroke-ink-soft' : 'stroke-accent',
+          kind === 'chains' ? 'stroke-2' : 'stroke-[1.5]',
+        )}
       />
     </svg>
   );

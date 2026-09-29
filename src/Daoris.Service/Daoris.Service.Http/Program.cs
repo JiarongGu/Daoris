@@ -760,7 +760,9 @@ app.MapPost("/api/registry", async (ComposedService s, HttpContext http, Registe
         // and says nothing about the wiring, so a null must not re-point the repository to `default`.
         Workspace: hostWorkspace ?? body.Workspace,
         // The canonical line, as the checkout that registered knows it (D48 §6) — unstated preserves.
-        DefaultBranch: body.DefaultBranch);
+        DefaultBranch: body.DefaultBranch,
+        // What it says it uses (D91), part of the declaration and replaced with it.
+        Uses: Declared.Uses(body.Domain?.Uses, body.Repository));
 
     // A SHARED deployment holds many machines' copies of one declaration, so it orders them by the
     // commit each was read at, as it orders their knowledge (SYNC5b) — the last writer no longer wins.
@@ -878,7 +880,7 @@ app.MapGet("/api/registry", async (
         // Machine-local by design (D46): a filesystem path is answered only to a caller on this
         // machine, so a remote deployment never serves anyone's disk layout to the network.
         Root: MachineLocal(http) ? r.Root : null,
-        r.Joined, r.SharesKnowledge, r.InWorkspace, r.DefaultBranch, r.Addressable)));
+        r.Joined, r.SharesKnowledge, r.InWorkspace, r.DefaultBranch, r.Addressable, r.DependsOn)));
 
 // A repository's code map (MAP3a): its modules and how they depend on each other, read from its own
 // committed file — never written to (D32). A repository with a checkout here is read from it on each

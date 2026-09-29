@@ -525,6 +525,10 @@ The first version: doctrine that installs, is checked, and flows back.
   session is on one of a line's quests, the line's count wears the same dashed ring a repository with
   a session does, in the session's colour, and a repository with several sessions says how many
   (MAP4d).
+- **A repository can say what it depends on** (MAP4e, D91). `domain.uses` in `daoris.json` names the
+  repositories it uses. `connect` sends it, the service keeps it, and the desktop carries it to the
+  team's deployment and keeps it when Projects edits the declaration. The map draws it as a line of its
+  own, *says it uses*, which the Lines menu switches like the rest.
 - **A flatter look.** Corners are one step smaller everywhere (controls, cards, drawers and menus),
   the scrollbar's thumb is squared, and Overview's knowledge bars are thin and square-ended on a
   track, so a short one reads as a share of the longest rather than a blob.

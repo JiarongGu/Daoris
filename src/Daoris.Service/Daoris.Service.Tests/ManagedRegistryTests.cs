@@ -53,6 +53,19 @@ public sealed class RegistryImportTests : IDisposable
         Assert.Equal(Path.Combine(_root, "Cognition"), proposed.Root);
     }
 
+    /// <summary>D91: what a repository says it uses is read from its own manifest, by the one rule.</summary>
+    [Fact]
+    public void An_import_reads_what_a_repository_says_it_uses()
+    {
+        Repo("game", """{ "source": "s", "domain": { "summary": "the game", "owns": [], "accepts": [], "uses": ["engine", " ", "game", 7] } }""");
+        Repo("engine", """{ "source": "s", "domain": { "summary": "the engine", "owns": [], "accepts": [] } }""");
+
+        var proposed = RegistryImport.Propose(_root);
+
+        Assert.Equal(["engine"], proposed.Single(r => r.Repository == "game").DependsOn);
+        Assert.Empty(proposed.Single(r => r.Repository == "engine").DependsOn);
+    }
+
     /// <summary>
     /// The manifest's remote declaration is read here too (D47 §4) — and knowledge without join is
     /// narrowed, because an import reads manifests the CLI never validated.

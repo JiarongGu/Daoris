@@ -13,6 +13,7 @@ function topology(ids: string[], quests: [string, string][] = [], knowledge: [st
     quests: quests.map(([from, to]) => ({ from, to, quests: [], open: 1, live: null })),
     asks: [],
     chains: [],
+    depends: [],
     knowledge: knowledge.map(([a, b]) => ({ a, b, groups: 1 })),
     outside: 0,
     circles: 1,

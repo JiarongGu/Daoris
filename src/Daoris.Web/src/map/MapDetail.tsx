@@ -77,6 +77,8 @@ export function MapDetail({ topology, selected, onOpenConvergence, onOpenCode, o
       ...topology.asks.filter((e) => e.to === node.id).flatMap((e) => e.quests),
     ];
     const out = topology.quests.filter((e) => e.from === node.id).flatMap((e) => e.quests);
+    const uses = topology.depends.filter((e) => e.from === node.id).map((e) => e.to);
+    const usedBy = topology.depends.filter((e) => e.to === node.id).map((e) => e.from);
     return (
       <div className="grid gap-3">
         <header className="flex flex-wrap items-center gap-2">
@@ -104,6 +106,19 @@ export function MapDetail({ topology, selected, onOpenConvergence, onOpenCode, o
           <section>
             <p className="m-0 mb-1 text-meta text-ink-faint">{t('map.detail.accepts')}</p>
             <div className="flex flex-wrap gap-1">{node.accepts.map((a) => <Chip key={a}>{a}</Chip>)}</div>
+          </section>
+        )}
+        {/* What it says it uses, and who says they use it (D91): declarations, beside the others. */}
+        {uses.length > 0 && (
+          <section>
+            <p className="m-0 mb-1 text-meta text-ink-faint">{t('map.detail.uses')}</p>
+            <div className="flex flex-wrap gap-1">{uses.map((name) => <Chip key={name}>{name}</Chip>)}</div>
+          </section>
+        )}
+        {usedBy.length > 0 && (
+          <section>
+            <p className="m-0 mb-1 text-meta text-ink-faint">{t('map.detail.usedBy')}</p>
+            <div className="flex flex-wrap gap-1">{usedBy.map((name) => <Chip key={name}>{name}</Chip>)}</div>
           </section>
         )}
         <section>
@@ -159,6 +174,17 @@ export function MapDetail({ topology, selected, onOpenConvergence, onOpenCode, o
             </ul>
           </section>
         )}
+      </div>
+    );
+  }
+
+  if (selected.kind === 'depends') {
+    const edge = topology.depends.find((e) => e.from === selected.from && e.to === selected.to);
+    if (!edge) return hint;
+    return (
+      <div className="grid gap-2">
+        <p className="m-0 text-body font-semibold text-ink">{t('map.detail.depends', { from: edge.from, to: edge.to })}</p>
+        <p className="m-0 text-small text-ink-soft">{t('map.detail.dependsWhere', { from: edge.from })}</p>
       </div>
     );
   }

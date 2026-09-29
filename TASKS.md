@@ -21,8 +21,8 @@ lists.
 
 ## State
 
-**Counts, and this is their one home:** sixteen commands, **514 CLI tests, 546 service, 910 driver,
-292 desktop modules, 80 devkit, 1399 web unit, 21 Playwright**, 66/66 release rehearsal, **292/292
+**Counts, and this is their one home:** sixteen commands, **516 CLI tests, 553 service, 911 driver,
+293 desktop modules, 80 devkit, 1401 web unit, 21 Playwright**, 66/66 release rehearsal, **294/294
 family rehearsal** (it names its own phases when you run it), **45/45 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge
 documents, 5 skills, 7 packs. The always-loaded core is **22,492 of 26,000 bytes** — a span in
@@ -144,9 +144,9 @@ rather than designed.
 
 ## Backlog
 
-**Thirty-two rows are open**: the two the first real workspace showed (WSR4 and MAP4; WSR2, WSR1
-and WSR3 landed as D86, D87 and D88, HELP1 as D89, SESS3 as D90, and SESS1, SESS2 and DOCK1 are in
-the archive); D85's two (CHR2, CHR4); the in-app browser's three (BRW3, BRW7, BRW8); the first goal's three (FG5,
+**Thirty-one rows are open**: the one the first real workspace showed still open (WSR4; WSR2, WSR1
+and WSR3 landed as D86, D87 and D88, HELP1 as D89, SESS3 as D90, MAP4 with D91, and SESS1, SESS2
+and DOCK1 are in the archive); D85's two (CHR2, CHR4); the in-app browser's three (BRW3, BRW7, BRW8); the first goal's three (FG5,
 READACROSS1 the owner's, and SEM2 on a trigger); D76's held file tools;
 the eight REV3 left, WINDOW2 among them; five leftovers (RAIL2, CONSOLE3, FLAKE1, DEPLOY5, TEST1); two on the owner
 (TRUST2, AGT2c); and six on a trigger (see *Handover*). Every closed one is in `docs/task-archive.md`, and this file holds no
@@ -163,13 +163,7 @@ requirements, and the owner's calls. Its recommended order is the order below.
   plugin, and the plugin, for its platform, pushes the branch and opens the pull request over its
   wire (D64). Off by default, and configurable per workspace. WSR1's branch form is what it starts
   from: `LandingRules.Problem` refuses any other form today, and says so.
-- [ ] **MAP4 — the map, finished** (study §6). MAP4a (the layers, pan, zoom, search and the sizing
-  menu; map design §1a), MAP4b (asks and chains as lines of their own, switchable; §1b), MAP4c
-  (open only, or what moved in 7 or 30 days; §1c) and MAP4d (a line live while a session is on one
-  of its quests; §1d, its ring not yet seen on the window) are built. Still open: **e** what
-  depends on what, from a declared source and never guessed (a new declaration, so the CLI and the
-  service change as twins). MAP4a was looked at on the real
-  twenty-nine (dark, the install) and a scratch circle of twenty-three (both themes).
+
 ### What REV3 left (2026-09-25)
 
 REV3 is in the archive, and `docs/2026-09-25-rev3-review.md` is its ledger. These rows are what it

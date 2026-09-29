@@ -150,6 +150,11 @@ export interface Domain {
   owns: string[];
   /** Kinds of quest it welcomes. Guidance for the asker, not a contract. */
   accepts: string[];
+  /**
+   * The repositories it depends on, by the names the registry knows them by (D91). Optional: absent
+   * says nothing is declared. Read through `usesOf`, never directly.
+   */
+  uses?: string[];
 }
 
 /** `daoris.json` — inert data, deliberately (D26). */

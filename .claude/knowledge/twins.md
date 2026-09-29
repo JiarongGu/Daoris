@@ -54,6 +54,7 @@ map found this first (WSP3), and every twin since was built the same way for the
 | Plugins (D64) | `plugins.ts` | `Plugins.cs` | — |
 | The in-app browser's favorites and settings (BRW5, CHR7) | `browser.ts` | `BrowserFavorites.cs`, `BrowserSettings.cs` (the desktop modules, read by `daoris-browser` at each start) | — |
 | The code map (MAP3) | — | `CodeMapFile.cs` | `CodeMap.cs` (the devkit produces it) |
+| What a repository says it uses, `domain.uses` (D91) | `connect.ts` (`usesOf`) | `RemoteSyncPayloads.cs` carries it; `RegistryModule.cs` preserves it | `Registry.cs` (`Declared.Uses`), `RegistryImport.cs` |
 
 A twin not in this table is still a twin: the rule is the arrangement, and the table is where to
 look first.

@@ -111,6 +111,9 @@ public static class FeedDigest
         Field(text, registration.Joined ? "joined" : "local");
         Field(text, registration.SharesKnowledge ? "shares" : "keeps");
         Field(text, registration.DefaultBranch);
+        // What it says it uses (D91), only when it says something: a declaration of none hashes as it
+        // did before the field existed, so every row a deployment already holds keeps its digest.
+        if (registration.DependsOn.Count > 0) List(text, registration.DependsOn);
         return Of(text.ToString());
     }
 

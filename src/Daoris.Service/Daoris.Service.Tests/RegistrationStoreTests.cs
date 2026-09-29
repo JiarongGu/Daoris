@@ -45,6 +45,36 @@ public sealed class RegistrationStoreTests : IAsyncLifetime
         Assert.Equal(["desktop-app"], read.Packs);
     }
 
+    /// <summary>
+    /// D91: what a repository says it uses is part of its declaration — kept, read back by the one
+    /// rule, and replaced with the rest on the next registration (silence here says "nothing").
+    /// </summary>
+    [Fact]
+    public async Task What_a_repository_says_it_uses_round_trips_and_is_replaced_with_the_declaration()
+    {
+        await _store.UpsertAsync(Declared() with { Uses = [" engine ", "ENGINE", "Yumeora", "tools"] }, Now);
+        Assert.Equal(["engine", "tools"], Assert.Single(await _store.AllAsync()).DependsOn);
+
+        await _store.UpsertAsync(Declared(), Now.AddDays(1));
+        Assert.Empty(Assert.Single(await _store.AllAsync()).DependsOn);
+    }
+
+    /// <summary>
+    /// The rule `uses` is read by (D91), as a table the CLI's `usesOf` keeps line for line (twins):
+    /// absent is empty; trimmed; a blank dropped; a repeat in any case dropped, the first spelling kept;
+    /// the repository's own name dropped.
+    /// </summary>
+    [Theory]
+    [InlineData(null, "")]
+    [InlineData(new[] { "engine" }, "engine")]
+    [InlineData(new[] { " engine ", "" }, "engine")]
+    [InlineData(new[] { "engine", "ENGINE", "tools" }, "engine,tools")]
+    [InlineData(new[] { "game", "Game", "engine" }, "engine")]
+    public void Uses_reads_by_one_rule(string[]? declared, string expected)
+    {
+        Assert.Equal(expected, string.Join(',', Knowledge.Declared.Uses(declared, "game")));
+    }
+
     /// <summary>Re-registering is an update, not a duplicate: the repository is the identity.</summary>
     [Fact]
     public async Task Registering_again_replaces_the_declaration()

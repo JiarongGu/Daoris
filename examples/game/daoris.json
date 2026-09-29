@@ -11,6 +11,9 @@
     "accepts": [
       "a playtest finding, with the reproduction",
       "a content request, with its design intent"
+    ],
+    "uses": [
+      "engine"
     ]
   }
 }

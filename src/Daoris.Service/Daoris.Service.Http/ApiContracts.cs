@@ -84,7 +84,9 @@ public sealed record AskActionResponse(AskResponse Ask, string Message, QuestRes
 public sealed record QuestActionResponse(QuestResponse Quest, string Message);
 public sealed record RefreshResponse(
     int Entries, int Repositories, int Withheld, string? SemanticError, IReadOnlyList<string> Absent);
-public sealed record DomainRequest(string? Summary, IReadOnlyList<string>? Owns, IReadOnlyList<string>? Accepts);
+// `Uses` is what the repository says it depends on (D91); absent is nothing declared.
+public sealed record DomainRequest(
+    string? Summary, IReadOnlyList<string>? Owns, IReadOnlyList<string>? Accepts, IReadOnlyList<string>? Uses = null);
 // `Workspace` is null on the way IN when the client said nothing — which is what preserves the row
 // (D48 §2). It is never null on the way out: a reader is told which circle it is looking at.
 // `DefaultBranch` is the same shape for the same reason (D48 §6): the checkout that registers knows
@@ -119,7 +121,8 @@ public sealed record ImportedResponse(string Folder, int Imported, IReadOnlyList
 public sealed record RegistrationResponse(
     string Repository, bool Adopted, bool Registered, string? Summary,
     IReadOnlyList<string> Owns, IReadOnlyList<string> Accepts, IReadOnlyList<string> Packs, int Entries,
-    string? Root, bool Joined, bool SharesKnowledge, string Workspace, string? DefaultBranch, bool Addressable);
+    string? Root, bool Joined, bool SharesKnowledge, string Workspace, string? DefaultBranch, bool Addressable,
+    IReadOnlyList<string> Uses);
 // `Quest` is null for a chat (D49 §3) and `Kind` says which way in it was — the same record either
 // way, which is the point: a conversation is a session, not a second kind of thing.
 // `HarnessVersion` and `Profile` say which tool and which account produced this (D49 §4), and `Tree`

@@ -158,7 +158,22 @@ is kept as the lines' is.
   during the look (the scratch's parked session is a chat). The unit tests hold its hue, dash and
   words.
 
-**What MAP4 still owes** (TASKS): *depends on* from a declared source (e).
+### 1e. MAP4e — what depends on what, as each repository declares it (built 2026-09-30, D91)
+
+**The source is the repository's own manifest**: `domain.uses`, the repositories it depends on, by the
+registry's names. D91 has the reasoning and what was rejected (package references, the code maps, the
+quests themselves). The CLI sends it with `connect`, the service keeps it and reads it on import, the
+desktop carries it to a circle's deployment and its Projects form keeps it, and one rule reads it on
+every side (the twins' table). The map draws it as a line of its own, *says it uses*: dash and dot, in
+ink rather than the accent since it is a declaration and not work, with an open arrowhead and no count.
+It orders the layers as a quest does, since whoever depends would be the one asking. It takes the
+widest bend on the ring and its own lane beside a quest or chain in the layers. A repository's detail
+lists what it says it uses and who says they use it. A name the registry does not hold draws nothing.
+The example game declares the engine, and the family rehearsal holds the whole path.
+
+**MAP4 is finished.** Every requirement of the study's §6 is built: a layout for a big circle, every
+kind of relationship as its own switchable line, time and state, live sessions, and a look at the real
+twenty-nine in both themes.
 
 ## 2. MAP1 — the workflow (second)
 

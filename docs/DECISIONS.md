@@ -3836,3 +3836,33 @@ its tree, which a carry-on session would have to rebuild.
   It stays the parked answer's path (STANDDOWN2) and the pipe door's only possible one, not built.
 - **A conversation's stop semantics**, which hand queued words back (CONV4a): here the person stops
   the turn so their words go, so nothing is withdrawn.
+
+## D91 — What depends on what is declared by the repository that depends, as `domain.uses` (2026-09-30)
+
+**Decision (MAP4e, amending D34).** A repository's `domain` in its `daoris.json` may carry `uses`: the
+repositories it depends on, each by the name the registry knows it by. Absent is the same as empty:
+nothing declared. The CLI sends it with `connect`, the service keeps it with the registration and
+reads it on import, the desktop's sync carries it to a circle's deployment, and the map draws each one
+as a line of its own, *says it uses*, from the repository that declared it. A name the registry does
+not hold draws nothing; a repository naming itself is dropped. It is not a declaration on its own:
+`connect` still refuses a domain that says nothing about the repository itself (D35).
+
+**Why.** The study asked the map for *"what depends on what"* from a declared source, and nothing
+guessed from names (`docs/2026-09-28-after-the-first-workspace.md` §6). D34's reasoning is the
+reasoning here: a relationship between repositories is data about the repository that has it, kept
+next to it and reviewed by the people it describes, and a central list drifts. The repository that
+depends is the one that knows it does.
+
+**Declarations are drawn, now, as declarations.** The map's rule was that *owns* and *accepts* are a
+node's detail and the edges are what happened (map design §1). A dependency is a relationship, so it
+is a line, but it is a line of its own kind, named for what it is (*says it uses*), switchable with the
+rest, and never merged with the quests that actually moved.
+
+**Rejected.**
+- **Package references** (a `package.json` dependency, a `PackageReference`). Mapping a package to the
+  repository that publishes it is a guess unless each repository declares what it publishes, which is
+  the declaration this is, one step removed and per stack.
+- **The code maps' dependencies** (MAP3). They are modules inside one repository, and say nothing about
+  another.
+- **Inferring it from the quests.** That is what the quest lines already draw, and it is what happened,
+  not what depends.

@@ -2,7 +2,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { commandConnect, registration } from '../src/connect.ts';
+import { commandConnect, registration, usesOf } from '../src/connect.ts';
 import { isLocalService } from '../src/service.ts';
 import { readManifest } from '../src/config.ts';
 import { DaorisError } from '../src/errors.ts';
@@ -25,6 +25,32 @@ test('a local service is told the root', () => {
 
   assert.equal(body.root, '/srv/Repo');
   assert.equal(body.repository, 'Repo');
+});
+
+/**
+ * D91: what a repository says it uses, read by the rule the service's `Declared.Uses` holds too — the
+ * same table, line for line (twins): absent is empty; trimmed; a blank dropped; a repeat in any case
+ * dropped, the first spelling kept; the repository's own name dropped.
+ */
+test('uses reads by one rule, the service\'s twin', () => {
+  const table: [string[] | undefined, string][] = [
+    [undefined, ''],
+    [['engine'], 'engine'],
+    [[' engine ', ''], 'engine'],
+    [['engine', 'ENGINE', 'tools'], 'engine,tools'],
+    [['game', 'Game', 'engine'], 'engine'],
+  ];
+  for (const [uses, expected] of table) {
+    assert.equal(usesOf({ summary: '', owns: [], accepts: [], ...(uses ? { uses } : {}) }, 'game').join(','), expected, String(uses));
+  }
+});
+
+test('a declaration goes on the wire with what it uses, and without the field when it uses none', () => {
+  const said = registration('/srv/game', { ...manifest, domain: { ...manifest.domain!, uses: [' engine', 'game'] } }, 'game', 'http://localhost:5177');
+  assert.deepEqual(said.domain?.uses, ['engine']);
+
+  const silent = registration('/srv/game', manifest, 'game', 'http://localhost:5177');
+  assert.equal('uses' in (silent.domain ?? {}), false);
 });
 
 test('a remote service is not told the root', () => {

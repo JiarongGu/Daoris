@@ -296,6 +296,7 @@ public sealed class KnowledgeTools(
             if (entry.Summary is { Length: > 0 }) text.AppendLine(entry.Summary);
             if (entry.Owns.Count > 0) text.AppendLine($"- **owns:** {string.Join("; ", entry.Owns)}");
             if (entry.Accepts.Count > 0) text.AppendLine($"- **accepts:** {string.Join("; ", entry.Accepts)}");
+            if (entry.DependsOn.Count > 0) text.AppendLine($"- **uses:** {string.Join(", ", entry.DependsOn)}");
             if (entry.Packs.Count > 0) text.AppendLine($"- packs: {string.Join(", ", entry.Packs)}");
             text.AppendLine($"- {entry.Entries} indexed entries");
             text.AppendLine();

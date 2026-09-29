@@ -155,6 +155,11 @@ export type Registration = {
   joined?: boolean;
   sharesKnowledge?: boolean;
   /**
+   * The repositories it says it uses (D91), from its manifest's `domain.uses`, read by the host's rule.
+   * Absent from a host older than the field, which says the same as empty: nothing declared.
+   */
+  uses?: string[];
+  /**
    * Whether a quest can be addressed to it — the exchange's own judgement, answered by the host so no
    * page re-derives it (D70): an adopter, or a repository registered on that machine with a root, which
    * a browser is never told. Absent from a host older than D70, where only an adopter could be asked.

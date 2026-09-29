@@ -116,6 +116,26 @@ public sealed class RemoteSyncTests
     }
 
     /// <summary>
+    /// D91: what a joined repository says it uses travels with its declaration — and a declaration of
+    /// none goes on the wire exactly as it did before the field existed, so no deployment reads a
+    /// changed declaration where nothing changed.
+    /// </summary>
+    [Fact]
+    public void A_registration_payload_carries_what_it_says_it_uses_and_nothing_when_it_says_none()
+    {
+        var said = RemoteSyncPayloads.Registration(new RemoteSyncPayloads.JoinedRepository(
+            "game", "the game", [], [], [], false, "/somewhere", Uses: ["engine"]));
+        using (var document = JsonDocument.Parse(said))
+        {
+            Assert.Equal("engine", document.RootElement.GetProperty("domain").GetProperty("uses")[0].GetString());
+        }
+
+        var silent = RemoteSyncPayloads.Registration(new RemoteSyncPayloads.JoinedRepository(
+            "game", "the game", [], [], [], false, "/somewhere"));
+        Assert.DoesNotContain("uses", silent);
+    }
+
+    /// <summary>
     /// A quest pass, as a person hears it (D69): each move of this machine's that lost, each quest the
     /// remote would not keep — in its own words — and a circle still moving after every round.
     /// </summary>

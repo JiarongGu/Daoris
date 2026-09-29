@@ -41,6 +41,11 @@ namespace Daoris.Knowledge;
 /// feed — the deployment has not been told which line is canonical, and guessing one would refuse
 /// every feed from a repository that simply never said.
 /// </param>
+/// <param name="Uses">
+/// The repositories it says it depends on (D91), by the registry's names, from its manifest's
+/// `domain.uses`. Null and empty are the same: nothing declared. Read through <see cref="DependsOn"/>,
+/// which holds the rule its CLI twin (`connect.ts`, <c>usesOf</c>) holds too.
+/// </param>
 public sealed record Registration(
     string Repository,
     bool Adopted,
@@ -53,10 +58,14 @@ public sealed record Registration(
     bool Joined = false,
     bool SharesKnowledge = false,
     string? Workspace = null,
-    string? DefaultBranch = null)
+    string? DefaultBranch = null,
+    IReadOnlyList<string>? Uses = null)
 {
     /// <summary>The workspace this repository is wired to, with silence resolved to the default.</summary>
     public string InWorkspace => Workspaces.Normalize(Workspace);
+
+    /// <summary>What it says it uses, as the rule reads the declaration (D91).</summary>
+    public IReadOnlyList<string> DependsOn => Declared.Uses(Uses, Repository);
 
     /// <summary>Whether this repository has said anything useful about what it can be asked for.</summary>
     public bool Registered => Adopted && (!string.IsNullOrWhiteSpace(Summary) || Owns.Count > 0 || Accepts.Count > 0);
@@ -74,6 +83,29 @@ public sealed record Registration(
     /// no surface offers a receiver the exchange refuses.
     /// </remarks>
     public bool Addressable => Adopted || !string.IsNullOrWhiteSpace(Root);
+}
+
+/// <summary>
+/// How a declaration's `uses` reads (D91), the one rule every door here applies — and the CLI's
+/// `usesOf` holds too, by its own test table (twins): each name trimmed, a blank one dropped, a repeat
+/// in any case dropped with the first spelling kept, and the repository's own name dropped, since
+/// depending on itself says nothing. Absent is empty.
+/// </summary>
+public static class Declared
+{
+    public static IReadOnlyList<string> Uses(IEnumerable<string>? names, string repository)
+    {
+        var kept = new List<string>();
+        foreach (var raw in names ?? [])
+        {
+            var name = raw?.Trim();
+            if (string.IsNullOrEmpty(name)) continue;
+            if (string.Equals(name, repository, StringComparison.OrdinalIgnoreCase)) continue;
+            if (kept.Any(k => string.Equals(k, name, StringComparison.OrdinalIgnoreCase))) continue;
+            kept.Add(name);
+        }
+        return kept;
+    }
 }
 
 /// <summary>A repository looked up by name — in any case, as every door here matches it.</summary>

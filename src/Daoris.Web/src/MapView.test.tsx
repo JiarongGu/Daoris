@@ -173,10 +173,11 @@ describe('the workspace map', () => {
 
     // Each kind is ticked, pictured and counted: two quests, one the asks became, none chained, one pair.
     const items = screen.getAllByRole('menuitemcheckbox');
-    expect(items.map((item) => [item.textContent, item.getAttribute('aria-checked')])).toEqual([
+    expect(items.slice(0, 5).map((item) => [item.textContent, item.getAttribute('aria-checked')])).toEqual([
       ['Quests between repositories2', 'true'],
       ['What your asks became1', 'true'],
       ['Chains, step by step0', 'true'],
+      ['What each says it uses0', 'true'],
       ['The same thing learned twice1', 'true'],
     ]);
     await userEvent.click(screen.getByRole('menuitemcheckbox', { name: /^The same thing learned twice/ }));
@@ -184,7 +185,7 @@ describe('the workspace map', () => {
 
     expect(screen.queryByRole('button', { name: 'engine and game learned the same thing once' })).toBeNull();
     expect(screen.queryByText(/dashed line: the same thing learned in both/)).toBeNull();
-    expect(screen.getByRole('button', { name: 'Lines: 3 of 4 kinds drawn' })).toHaveTextContent('3/4');
+    expect(screen.getByRole('button', { name: 'Lines: 4 of 5 kinds drawn' })).toHaveTextContent('4/5');
     // Every repository stays: a kind of line out of sight hides what moved, not who is in the circle.
     expect(screen.getByRole('button', { name: /^engine, 1 open/ })).toBeTruthy();
   });
@@ -214,6 +215,16 @@ describe('the workspace map', () => {
     } finally {
       SESSIONS[0] = { id: 's1', repository: 'engine', adapter: 'stub', state: 'working', created: '', updated: '' };
     }
+  });
+
+  it('draws what a repository says it uses, and says where it said so (D91)', async () => {
+    REGISTRY = REGISTRY.map((row) => (row as { repository: string }).repository === 'game' ? { ...(row as object), uses: ['engine'] } : row);
+    show();
+    await userEvent.click(await screen.findByRole('button', { name: 'game says it uses engine' }));
+    expect(screen.getByText('Declared by game in its daoris.json, under domain.uses: what it says, not something that happened.')).toBeTruthy();
+
+    await userEvent.click(screen.getByRole('button', { name: /^engine, 1 open/ }));
+    expect(screen.getByText('said to be used by')).toBeTruthy();
   });
 
   it('remembers which lines this viewer draws', async () => {

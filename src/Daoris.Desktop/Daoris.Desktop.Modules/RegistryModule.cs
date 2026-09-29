@@ -130,6 +130,17 @@ public sealed class RegistryModule(IEventBus events, Func<string?> pickFolder) :
             writer.WriteString("summary", String(sent, "summary") ?? "");
             WriteStrings(writer, "owns", Strings(sent, "owns"));
             WriteStrings(writer, "accepts", Strings(sent, "accepts"));
+            // 🔴 What the form has no field for stays as it was: `uses` (D91), and anything a later
+            // version adds to the declaration. Rewriting the block from the form's three fields would
+            // delete a dependency the repository declared by hand, and nobody would see it go.
+            if (document.RootElement.TryGetProperty("domain", out var held) && held.ValueKind == JsonValueKind.Object)
+            {
+                foreach (var property in held.EnumerateObject())
+                {
+                    if (property.NameEquals("summary") || property.NameEquals("owns") || property.NameEquals("accepts")) continue;
+                    property.WriteTo(writer);
+                }
+            }
             writer.WriteEndObject();
 
             var join = Bool(sent, "join");

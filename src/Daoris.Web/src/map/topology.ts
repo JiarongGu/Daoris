@@ -61,6 +61,13 @@ export type AskEdge = { to: string; asks: string[]; quests: Quest[]; open: numbe
 export type ChainEdge = { from: string; to: string; steps: Quest[]; waiting: QuestStep[]; live: Live };
 
 /**
+ * What a repository says it uses (MAP4e, D91): its own declaration, `domain.uses`, drawn from it to
+ * each repository it names on the map. A declaration, not something that happened, so it is a line of
+ * its own kind, never merged with the quests.
+ */
+export type DependsEdge = { from: string; to: string };
+
+/**
  * The asks' place on a map (MAP4b): one source, the person's, from which each repository an ask put
  * work on is reached. Its id holds a character no repository's name can. The layers stand it in the
  * first column, as any asker; the ring puts it at the centre.
@@ -68,7 +75,7 @@ export type ChainEdge = { from: string; to: string; steps: Quest[]; waiting: Que
 export const ASKS = '\u0001asks';
 
 /** The kinds of line a person can show or hide, in the order the switches list them. */
-export const LINE_KINDS = ['quests', 'asks', 'chains', 'knowledge'] as const;
+export const LINE_KINDS = ['quests', 'asks', 'chains', 'depends', 'knowledge'] as const;
 export type LineKind = (typeof LINE_KINDS)[number];
 
 export type Topology = {
@@ -76,6 +83,7 @@ export type Topology = {
   quests: QuestEdge[];
   asks: AskEdge[];
   chains: ChainEdge[];
+  depends: DependsEdge[];
   knowledge: KnowledgeEdge[];
   /** Quests with an end that is not a repository on this map, nor an ask: another circle. */
   outside: number;
@@ -211,6 +219,11 @@ export function buildTopology(
     }
   }
 
+  // What each says it uses, to a repository on this map; a name the registry does not hold draws
+  // nothing, since the host has already read the list by its rule (D91).
+  const depends: DependsEdge[] = registry.flatMap((row) =>
+    (row.uses ?? []).filter((to) => ids.has(to) && to !== row.repository).map((to) => ({ from: row.repository, to })));
+
   for (const edge of edges.values()) edge.live = liveOf(edge.quests);
   for (const edge of asked.values()) edge.live = liveOf(edge.quests);
   for (const edge of hops.values()) edge.live = liveOf(edge.steps);
@@ -221,6 +234,7 @@ export function buildTopology(
     quests: [...edges.values()].sort((x, y) => byEnds(x.from, y.from) || byEnds(x.to, y.to)),
     asks: [...asked.values()].sort((x, y) => byEnds(x.to, y.to)),
     chains: [...hops.values()].sort((x, y) => byEnds(x.from, y.from) || byEnds(x.to, y.to)),
+    depends: depends.sort((x, y) => byEnds(x.from, y.from) || byEnds(x.to, y.to)),
     knowledge: [...pairs.values()].sort((x, y) => byEnds(x.a, y.a) || byEnds(x.b, y.b)),
     outside,
     circles,
@@ -237,6 +251,7 @@ export function showLines(topology: Topology, shown: ReadonlySet<LineKind>): Top
     quests: shown.has('quests') ? topology.quests : [],
     asks: shown.has('asks') ? topology.asks : [],
     chains: shown.has('chains') ? topology.chains : [],
+    depends: shown.has('depends') ? topology.depends : [],
     knowledge: shown.has('knowledge') ? topology.knowledge : [],
   };
 }

@@ -7411,3 +7411,31 @@ line and its review, the path on hover), `ChainLine.test.tsx`, `followTail.test.
 and the installed application after, in 中文: the completed session's conversation starting about
 450px down where it had been past 620, and the failed one saying the spend limit it failed on.
 
+## MAP4 — the map, finished (2026-09-29 → 2026-09-30, D91)
+
+The row as filed: *(study §6). A layered layout, pan, zoom and search for a big circle (the real one
+has twenty-nine repositories). Asks, chains and what depends on what, each its own kind of line, from
+a declared source and never guessed. Open-only or a time window. Sessions live on their nodes. Looked
+at with twenty-nine nodes in both themes.*
+
+**Outcome.** Five parts, each committed and each looked at on the window (map design §1a–§1e):
+- **a:** past twelve repositories, columns by who asks whom, a waypoint slot for a line that skips a
+  column, lanes for a pair asked both ways, the loose grid wrapped to the view, pan, zoom, search, and
+  the size as a menu.
+- **b:** asks and chains as lines of their own, switched from a *Lines* options menu.
+- **c:** which quests: all, open only, or 7 or 30 days.
+- **d:** a line's count ringed while a session is on one of its quests, and the ring's asks placed
+  clear of every count.
+- **e:** *says it uses*, from the repository's own `domain.uses` (D91), carried as twins by the CLI,
+  the service and the desktop.
+
+Along the way the owner asked for no arrows standing for what is not a direction (the zoom became a
+sizing menu, a region's views menu "⋯", the scrollbars lost their arrows) and for a flatter look
+(radii one step down, flat bars).
+
+**Proven by:** `layers.test.ts`, `LayeredMap.test.tsx`, `topology.test.ts`, `MapView.test.tsx` (the
+web's 1401), the service's `Declared.Uses` table and store round trip beside the CLI's `usesOf` table,
+the desktop's payload and form tests, and the family rehearsal's two new checks (294/294). Looked at on
+the real twenty-nine (dark) and a scratch circle of twenty-three (both themes). The one mark not seen
+on the window is a live ring on a line: no session was on a quest during the looks.
+

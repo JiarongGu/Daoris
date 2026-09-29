@@ -172,6 +172,7 @@ export function MapView({ notify, onOpenConvergence, onOpenQuest }: {
             {shownLines.has('quests') && <li>{t('map.legend.closed')}</li>}
             {shownLines.has('asks') && <li>{t('map.legend.asks')}</li>}
             {shownLines.has('chains') && <li>{t('map.legend.chains')}</li>}
+            {shownLines.has('depends') && <li>{t('map.legend.depends')}</li>}
             {shownLines.has('knowledge') && <li>{t('map.legend.knowledge')}</li>}
             <li>{t('map.legend.working')}</li>
           </ul>

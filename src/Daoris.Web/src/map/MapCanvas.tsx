@@ -14,6 +14,7 @@ export type MapSelection =
   | { kind: 'quests'; from: string; to: string }
   | { kind: 'asks'; to: string }
   | { kind: 'chains'; from: string; to: string }
+  | { kind: 'depends'; from: string; to: string }
   | { kind: 'knowledge'; a: string; b: string };
 
 /** Whether two choices are the same part of the map. */
@@ -23,6 +24,7 @@ export function sameSelection(a: MapSelection | null, b: MapSelection | null): b
   if (a.kind === 'quests' && b.kind === 'quests') return a.from === b.from && a.to === b.to;
   if (a.kind === 'asks' && b.kind === 'asks') return a.to === b.to;
   if (a.kind === 'chains' && b.kind === 'chains') return a.from === b.from && a.to === b.to;
+  if (a.kind === 'depends' && b.kind === 'depends') return a.from === b.from && a.to === b.to;
   if (a.kind === 'knowledge' && b.kind === 'knowledge') return a.a === b.a && a.b === b.b;
   return false;
 }
@@ -45,6 +47,10 @@ const CHAIN_BEND = 72;
 /** What the asks' lines and a chain's hops are drawn with, beside a quest's solid line (D41: never colour alone). */
 export const ASKS_DASH = '10 4';
 export const CHAIN_DASH = '1 5';
+/** What a repository says it uses (MAP4e): dash and dot, in ink rather than the accent, since it is a declaration and not work. */
+export const DEPENDS_DASH = '8 3 2 3';
+/** How far a declared dependency bends on the ring: past a chain's, so the three kinds between one pair stand apart. */
+const DEPENDS_BEND = 110;
 
 /**
  * Where everything stands on the ring: the repositories, and the asks inside it, where every line from
@@ -92,6 +98,15 @@ function clearest(topology: Topology, at: Record<string, { x: number; y: number 
   };
   for (const edge of topology.quests) sample(questCurve(at[edge.from]!, at[edge.to]!));
   for (const edge of topology.chains) sample(questCurve(at[edge.from]!, at[edge.to]!, CHAIN_BEND));
+  // A declared dependency has no count, so it only asks for room as a line.
+  for (const edge of topology.depends) {
+    const { d } = questCurve(at[edge.from]!, at[edge.to]!, DEPENDS_BEND);
+    const [x0, y0, cx, cy, x1, y1] = d.match(/-?[\d.]+/g)!.map(Number);
+    for (let step = 0; step <= 10; step += 1) {
+      const t = step / 10;
+      along.push({ x: (1 - t) ** 2 * x0! + 2 * (1 - t) * t * cx! + t ** 2 * x1!, y: (1 - t) ** 2 * y0! + 2 * (1 - t) * t * cy! + t ** 2 * y1! });
+    }
+  }
   const lines = [...along];
   for (const edge of topology.knowledge) {
     const { d } = questCurve(at[edge.a]!, at[edge.b]!, 0);
@@ -108,6 +123,36 @@ function clearest(topology: Topology, at: Record<string, { x: number; y: number 
     return must >= 0 ? 1000 + Math.min(may, 100) : must;
   };
   return candidates.reduce((best, point) => (score(point) > score(best) + 0.5 ? point : best));
+}
+
+/**
+ * What a repository says it uses (MAP4e): a declaration, so dash and dot in ink, an open head, and no
+ * count, since nothing moved along it. A button like every line, named for what it says.
+ */
+export function DependsLine({ d, marker, label, chosen, back, onChoose, onPress }: {
+  d: string; marker: string; label: string; chosen: boolean;
+  /** Whether it steps back while something else is in focus. */
+  back: boolean;
+  onChoose: () => void;
+  onPress: (event: KeyboardEvent) => void;
+}) {
+  return (
+    <g
+      role="button"
+      tabIndex={0}
+      aria-label={label}
+      aria-pressed={chosen}
+      onClick={onChoose}
+      onKeyDown={onPress}
+      className={cn('cursor-pointer outline-none transition-opacity duration-(--speed) [&:focus-visible>path.shown]:stroke-ink', back && 'opacity-20')}
+    >
+      <path d={d} fill="none" stroke="transparent" strokeWidth={18} pointerEvents="stroke" />
+      <path
+        d={d} fill="none" strokeDasharray={DEPENDS_DASH} markerEnd={marker}
+        className={cn('shown stroke-ink-soft', chosen ? 'stroke-[3]' : 'stroke-[1.5]')}
+      />
+    </g>
+  );
 }
 
 /** Whether a chain's hop still has work in it: a step open now, or one still to be published. */
@@ -245,6 +290,10 @@ export function frameMap(
     const { middle } = questCurve(at[edge.from]!, at[edge.to]!, CHAIN_BEND);
     hold(middle.x - 12, middle.y - 12, middle.x + 12, middle.y + 12);
   }
+  for (const edge of topology.depends) {
+    const { middle } = questCurve(at[edge.from]!, at[edge.to]!, DEPENDS_BEND);
+    hold(middle.x - 4, middle.y - 4, middle.x + 4, middle.y + 4);
+  }
   const asks = at[ASKS];
   if (asks) hold(asks.x - ASKS_R, asks.y - ASKS_R, asks.x + ASKS_R, asks.y + ASKS_R);
 
@@ -357,7 +406,24 @@ export function MapCanvas({ topology, selected, onSelect }: {
           <marker id="map-arrow-closed" viewBox="0 0 10 10" refX="8" refY="5" markerUnits="userSpaceOnUse" markerWidth="14" markerHeight="14" orient="auto-start-reverse">
             <path d="M 0 0 L 10 5 L 0 10 z" className="fill-line-strong" />
           </marker>
+          {/* Open, not filled: a declaration points without carrying anything. */}
+          <marker id="map-arrow-declared" viewBox="0 0 10 10" refX="8" refY="5" markerUnits="userSpaceOnUse" markerWidth="14" markerHeight="14" orient="auto-start-reverse">
+            <path d="M 1 1 L 9 5 L 1 9" fill="none" className="stroke-ink-soft stroke-[1.5]" />
+          </marker>
         </defs>
+
+        {topology.depends.map((edge) => {
+          const { d } = questCurve(at[edge.from]!, at[edge.to]!, DEPENDS_BEND);
+          const line: MapSelection = { kind: 'depends', from: edge.from, to: edge.to };
+          return (
+            <DependsLine
+              key={`d-${edge.from}-${edge.to}`} d={d} marker="url(#map-arrow-declared)"
+              label={t('map.dependsLabel', { from: edge.from, to: edge.to })}
+              chosen={sameSelection(selected, line)} back={!forward(line, edge.from, edge.to)}
+              onChoose={() => choose(line)} onPress={press(line)}
+            />
+          );
+        })}
 
         {topology.knowledge.map((edge) => {
           const a = at[edge.a]!;

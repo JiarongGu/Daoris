@@ -7,7 +7,7 @@ import { cn } from '../lib/cn';
 import { Icon, Tip } from '../ui';
 import { CARD_H, type Card, layoutLayers, lineKey, type Point, ROUND } from './layers';
 import {
-  ASKS_DASH, AsksMark, CHAIN_DASH, chainOpen, Count, howMany, lineLabel, type MapSelection, sameSelection,
+  ASKS_DASH, AsksMark, CHAIN_DASH, chainOpen, Count, DependsLine, howMany, lineLabel, type MapSelection, sameSelection,
 } from './MapCanvas';
 import { ASKS, type Topology } from './topology';
 import { useTall, useWidth } from './useWidth';
@@ -326,7 +326,28 @@ export function LayeredMap({ topology, selected, onSelect, tools }: {
             <marker id="layer-arrow-closed" viewBox="0 0 10 10" refX="8" refY="5" markerUnits="userSpaceOnUse" markerWidth="14" markerHeight="14" orient="auto-start-reverse">
               <path d="M 0 0 L 10 5 L 0 10 z" className="fill-line-strong" />
             </marker>
+            <marker id="layer-arrow-declared" viewBox="0 0 10 10" refX="8" refY="5" markerUnits="userSpaceOnUse" markerWidth="14" markerHeight="14" orient="auto-start-reverse">
+              <path d="M 1 1 L 9 5 L 1 9" fill="none" className="stroke-ink-soft stroke-[1.5]" />
+            </marker>
           </defs>
+
+          {topology.depends.map((edge) => {
+            const [from, to] = [layout.at[edge.from]!, layout.at[edge.to]!];
+            // Beside a quest or a chain between the same two, it runs on the far side of its direction's.
+            const beside = [...topology.quests, ...topology.chains].some((other) =>
+              (other.from === edge.from && other.to === edge.to) || (other.from === edge.to && other.to === edge.from));
+            const lane = beside ? (from.x < to.x ? CHAIN_LANE : -CHAIN_LANE) : 0;
+            const { d } = link(from, to, layout.routes[lineKey.depends(edge.from, edge.to)], lane);
+            const line: MapSelection = { kind: 'depends', from: edge.from, to: edge.to };
+            return (
+              <DependsLine
+                key={`d-${edge.from}-${edge.to}`} d={d} marker="url(#layer-arrow-declared)"
+                label={t('map.dependsLabel', { from: edge.from, to: edge.to })}
+                chosen={sameSelection(selected, line)} back={!forward(line, edge.from, edge.to)}
+                onChoose={() => choose(line)} onPress={press(line)}
+              />
+            );
+          })}
 
           {layout.caption !== null && (
             <text x={layout.caption.x} y={layout.caption.y} className="fill-ink-faint text-meta">{t('map.loose')}</text>

@@ -78,6 +78,7 @@ export const lineKey = {
   quests: (from: string, to: string) => `q:${from}>${to}`,
   asks: (to: string) => `a:${to}`,
   chains: (from: string, to: string) => `c:${from}>${to}`,
+  depends: (from: string, to: string) => `d:${from}>${to}`,
   knowledge: (a: string, b: string) => `k:${a}|${b}`,
 };
 
@@ -98,6 +99,8 @@ export function layoutLayers(topology: Topology, width = WIDTH): Layered {
     ...topology.quests.map((edge) => [edge.from, edge.to] as [string, string]),
     ...topology.asks.map((edge) => [ASKS, edge.to] as [string, string]),
     ...topology.chains.map((edge) => [edge.from, edge.to] as [string, string]),
+    // What a repository says it uses orders them too: whoever depends would be the one asking.
+    ...topology.depends.map((edge) => [edge.from, edge.to] as [string, string]),
   ];
   for (const [from, to] of directed) {
     if (!out.get(from)?.includes(to)) out.get(from)?.push(to);
@@ -183,6 +186,7 @@ export function layoutLayers(topology: Topology, width = WIDTH): Layered {
   for (const edge of topology.quests) thread(lineKey.quests(edge.from, edge.to), edge.from, edge.to);
   for (const edge of topology.asks) thread(lineKey.asks(edge.to), ASKS, edge.to);
   for (const edge of topology.chains) thread(lineKey.chains(edge.from, edge.to), edge.from, edge.to);
+  for (const edge of topology.depends) thread(lineKey.depends(edge.from, edge.to), edge.from, edge.to);
   for (const edge of topology.knowledge) thread(lineKey.knowledge(edge.a, edge.b), edge.a, edge.b);
 
   // Barycentre sweeps: each card toward the rows of its neighbours in the column it is compared with.

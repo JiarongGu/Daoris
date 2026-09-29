@@ -55,9 +55,10 @@ public static class RemoteSyncPayloads
     /// below, each of which has no field for a machine path; the tests assert on what goes on the
     /// wire, which is the only place the guarantee can be broken.
     /// </param>
+    /// <param name="Uses">What it says it depends on (D91), carried with the rest of the declaration.</param>
     public sealed record JoinedRepository(
         string Repository, string? Summary, IReadOnlyList<string> Owns, IReadOnlyList<string> Accepts,
-        IReadOnlyList<string> Packs, bool SharesKnowledge, string Root);
+        IReadOnlyList<string> Packs, bool SharesKnowledge, string Root, IReadOnlyList<string>? Uses = null);
 
     /// <summary>Every repository a registry answer names — joined or not, adopted or not.</summary>
     public static IReadOnlySet<string> Names(string registryJson)
@@ -115,7 +116,8 @@ public static class RemoteSyncPayloads
                 Strings(repo, "accepts"),
                 Strings(repo, "packs"),
                 repo.TryGetProperty("sharesKnowledge", out var s) && s.ValueKind == JsonValueKind.True,
-                root));
+                root,
+                Strings(repo, "uses")));
         }
 
         return joined;
@@ -151,6 +153,7 @@ public static class RemoteSyncPayloads
         writer.WriteStartArray("accepts");
         foreach (var accepts in repo.Accepts) writer.WriteStringValue(accepts);
         writer.WriteEndArray();
+        WriteUses(writer, repo.Uses ?? []);
         writer.WriteEndObject();
         writer.WriteBoolean("join", true);
         writer.WriteBoolean("shareKnowledge", repo.SharesKnowledge);
@@ -477,7 +480,20 @@ public static class RemoteSyncPayloads
         string.Join("\u001e", Strings(repo, "accepts")),
         string.Join("\u001e", Strings(repo, "packs")),
         repo.TryGetProperty("joined", out var j) && j.ValueKind == JsonValueKind.True,
-        repo.TryGetProperty("sharesKnowledge", out var s) && s.ValueKind == JsonValueKind.True);
+        repo.TryGetProperty("sharesKnowledge", out var s) && s.ValueKind == JsonValueKind.True,
+        string.Join("\u001e", Strings(repo, "uses")));
+
+    /// <summary>
+    /// What a repository says it uses (D91), written only when it says something: a declaration of none
+    /// goes on the wire exactly as it did before the field existed.
+    /// </summary>
+    private static void WriteUses(Utf8JsonWriter writer, IReadOnlyList<string> uses)
+    {
+        if (uses.Count == 0) return;
+        writer.WriteStartArray("uses");
+        foreach (var name in uses) writer.WriteStringValue(name);
+        writer.WriteEndArray();
+    }
 
     /// <summary>A teammate's row as this machine files it: the declaration, this circle's name, no root.</summary>
     private static string TeamCopy(JsonElement repo, string name, string workspace) => Write(writer =>
@@ -495,6 +511,7 @@ public static class RemoteSyncPayloads
         writer.WriteStartArray("accepts");
         foreach (var accepts in Strings(repo, "accepts")) writer.WriteStringValue(accepts);
         writer.WriteEndArray();
+        WriteUses(writer, Strings(repo, "uses"));
         writer.WriteEndObject();
         writer.WriteBoolean("join", repo.TryGetProperty("joined", out var j) && j.ValueKind == JsonValueKind.True);
         writer.WriteBoolean("shareKnowledge",

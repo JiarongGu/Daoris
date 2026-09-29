@@ -149,6 +149,33 @@ public sealed class RegistryModuleTests : Bridge
         Assert.Equal("rendering", root.GetProperty("domain").GetProperty("owns")[0].GetString());
     }
 
+    /// <summary>
+    /// D91: what a repository says it uses sits in the same block the form writes, and the form has no
+    /// field for it. Rewriting the block from its three fields deleted it, and nobody saw it go.
+    /// </summary>
+    [Fact]
+    public async Task Writing_a_declaration_keeps_what_the_domain_says_it_uses()
+    {
+        var path = Repository("game", new
+        {
+            source = "s",
+            domain = new { summary = "before", owns = Array.Empty<string>(), accepts = Array.Empty<string>(), uses = new[] { "engine" } },
+        });
+
+        await AnswerAsync(Module(), "WRITE_DECLARATION", new
+        {
+            path,
+            summary = "after",
+            owns = new[] { "gameplay" },
+            accepts = Array.Empty<string>(),
+        });
+
+        using var written = JsonDocument.Parse(File.ReadAllText(Path.Combine(path, "daoris.json")));
+        var domain = written.RootElement.GetProperty("domain");
+        Assert.Equal("after", domain.GetProperty("summary").GetString());
+        Assert.Equal("engine", domain.GetProperty("uses")[0].GetString());
+    }
+
     /// <summary>Knowledge without join is a manifest the CLI refuses; a form must not write one.</summary>
     [Fact]
     public async Task A_form_cannot_write_knowledge_without_join()

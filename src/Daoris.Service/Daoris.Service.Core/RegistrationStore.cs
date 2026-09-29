@@ -135,6 +135,9 @@ public sealed class RegistrationStore
             // that predates it, which is exactly what "nobody said" means — and what makes any branch
             // feedable for a repository that never declared one.
             ("default_branch", "default_branch TEXT NULL"),
+            // What it says it uses (D91): part of the declaration, replaced with it on every
+            // registration like `owns`. Empty for every row from before it — nothing declared.
+            ("uses", "uses TEXT NOT NULL DEFAULT '[]'"),
         })
         {
             await SchemaColumns.EnsureAsync(_connection, "registrations", column, definition, ct).ConfigureAwait(false);
@@ -202,11 +205,11 @@ public sealed class RegistrationStore
     {
         await using var command = _connection.CreateCommand();
         command.CommandText = $"""
-            INSERT INTO registrations (repository, summary, owns, accepts, packs, updated, root, joined, shares_knowledge, workspace, adopted, default_branch)
+            INSERT INTO registrations (repository, summary, owns, accepts, packs, updated, root, joined, shares_knowledge, workspace, adopted, default_branch, uses)
             VALUES ($repository, $summary, $owns, $accepts, $packs, $updated, $root, $joined, $shares,
-                    COALESCE($workspace, '{Workspaces.Default}'), $adopted, $default_branch)
+                    COALESCE($workspace, '{Workspaces.Default}'), $adopted, $default_branch, $uses)
             ON CONFLICT (repository) DO UPDATE SET
-              summary = $summary, owns = $owns, accepts = $accepts, packs = $packs, updated = $updated,
+              summary = $summary, owns = $owns, accepts = $accepts, packs = $packs, updated = $updated, uses = $uses,
               root = $root, joined = $joined, shares_knowledge = $shares, adopted = $adopted,
               workspace = COALESCE($workspace, workspace, '{Workspaces.Default}'),
               -- Unstated preserves, for the same reason the workspace does: `daoris connect` says
@@ -224,6 +227,7 @@ public sealed class RegistrationStore
         command.Parameters.AddWithValue("$owns", ToJson(registration.Owns));
         command.Parameters.AddWithValue("$accepts", ToJson(registration.Accepts));
         command.Parameters.AddWithValue("$packs", ToJson(registration.Packs));
+        command.Parameters.AddWithValue("$uses", ToJson(registration.DependsOn));
         command.Parameters.AddWithValue("$updated", now.ToString("O"));
         command.Parameters.AddWithValue("$root", (object?)registration.Root ?? DBNull.Value);
         command.Parameters.AddWithValue("$joined", registration.Joined ? 1 : 0);
@@ -516,7 +520,7 @@ public sealed class RegistrationStore
         await using var command = _connection.CreateCommand();
         command.CommandText =
             "SELECT repository, summary, owns, accepts, packs, root, joined, shares_knowledge, workspace, adopted, "
-            + "default_branch FROM registrations";
+            + "default_branch, uses FROM registrations";
 
         var registrations = new List<Registration>();
         await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
@@ -534,7 +538,8 @@ public sealed class RegistrationStore
                 Joined: reader.GetInt32(6) != 0,
                 SharesKnowledge: reader.GetInt32(7) != 0,
                 Workspace: Workspaces.Normalize(reader.IsDBNull(8) ? null : reader.GetString(8)),
-                DefaultBranch: reader.IsDBNull(10) ? null : reader.GetString(10)));
+                DefaultBranch: reader.IsDBNull(10) ? null : reader.GetString(10),
+                Uses: FromJson(reader.GetString(11))));
         }
 
         return registrations;

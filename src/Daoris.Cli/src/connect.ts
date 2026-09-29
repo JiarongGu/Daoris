@@ -58,12 +58,39 @@ export function registration(
   return {
     repository: name,
     packs: manifest.packs,
-    domain: manifest.domain ?? null,
+    domain: manifest.domain ? declaredDomain(manifest.domain, name) : null,
     join: manifest.remote?.join ?? false,
     shareKnowledge: manifest.remote?.knowledge ?? false,
     ...(isLocalService(serviceUrl) ? { root } : {}),
     ...(workspace ? { workspace } : {}),
   };
+}
+
+/**
+ * What a repository says it uses (D91), read by the rule the service's `Declared.Uses` holds too, by
+ * its own test table (twins): each name trimmed, a blank dropped, a repeat in any case dropped with
+ * the first spelling kept, and the repository's own name dropped. Absent is empty.
+ */
+export function usesOf(domain: Domain | undefined | null, repository: string): string[] {
+  const kept: string[] = [];
+  for (const raw of Array.isArray(domain?.uses) ? domain.uses : []) {
+    if (typeof raw !== 'string') continue;
+    const name = raw.trim();
+    const same = (other: string) => other.localeCompare(name, undefined, { sensitivity: 'accent' }) === 0;
+    if (!name || same(repository) || kept.some(same)) continue;
+    kept.push(name);
+  }
+  return kept;
+}
+
+/**
+ * The declaration as it goes on the wire: `uses` by its rule, and only when it says something, so a
+ * repository that declares none registers exactly as it did before the field existed.
+ */
+function declaredDomain(domain: Domain, repository: string): Domain {
+  const { uses: _declared, ...rest } = domain;
+  const uses = usesOf(domain, repository);
+  return uses.length > 0 ? { ...rest, uses } : rest;
 }
 
 /** True when the domain says enough for a sibling to know what is worth asking. */
@@ -153,6 +180,8 @@ export async function commandConnect({ root, argv, write }: CommandArgs): Promis
 
   write(`daoris: registered ${name} with ${url}`);
   write(`  owns ${manifest.domain!.owns.length} area(s); accepts ${manifest.domain!.accepts.length} kind(s)`);
+  const uses = usesOf(manifest.domain, name);
+  if (uses.length > 0) write(`  uses ${uses.join(', ')}`);
   if (landed?.workspace) write(`  workspace: ${landed.workspace} — this machine's wiring; nothing was written here`);
   write('  siblings can now address quests here, and see what is worth asking.');
   return 0;
