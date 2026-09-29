@@ -21,9 +21,9 @@ lists.
 
 ## State
 
-**Counts, and this is their one home:** sixteen commands, **535 CLI tests, 602 service, 994 driver,
-329 desktop modules, 80 devkit, 1447 web unit, 21 Playwright**, 66/66 release rehearsal, **301/301
-family rehearsal** (it names its own phases when you run it), **57/57 deployment rehearsal** (D60),
+**Counts, and this is their one home:** sixteen commands, **538 CLI tests, 602 service, 994 driver,
+320 desktop modules, 80 devkit, 1447 web unit, 21 Playwright**, 66/66 release rehearsal, **301/301
+family rehearsal** (it names its own phases when you run it), **58/58 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge
 documents, 5 skills, 7 packs. The always-loaded core is **22,492 of 26,000 bytes** — a span in
 `AGENTS.md` since D59 — and **advisory rather than enforced** (D54: a fact gates, a judgement
@@ -144,11 +144,11 @@ rather than designed.
 
 ## Backlog
 
-**Thirty-three rows are open**: the owner's six of 2026-09-30 (USE1, AGT6, HELP6, LOG1,
+**Thirty-two rows are open**: the owner's six of 2026-09-30 (USE1, AGT6, HELP6, LOG1,
 CONSOLE4, SETUP1), first; WSR4
 from the first real workspace (its other WSR, HELP, SESS, DOCK
 and MAP rows are in the archive); the four REV3 left (DIST1, BUDGET1 and HOME1 the owner's, and HTTP1);
-the in-app browser's three (BRW3, BRW7, BRW8); D85's two (TASKBAR1, CHR8); the first goal's four
+the in-app browser's three (BRW3, BRW7, BRW8); D85's one (TASKBAR1); the first goal's four
 (FG5, READACROSS1 and HELPREAD1 the owner's, and SEM2 on a trigger); D76's held file tools; four
 leftovers (CONSOLE3, FLAKE1, DEPLOY5, TEST1); two on the owner (TRUST2, AGT2c); REH1; and the rest on
 a trigger (TOOL4, TOOL5, PLUG7, CANON9, HARNESS1; see *Handover*). Every closed one is in
@@ -403,15 +403,6 @@ and the extensions setting are in Settings → Browser and `daoris browser`
   in `app/`, which the next publish moves under it. The window's property store can name the id and
   the relaunch command (`System.AppUserModel.ID`, `RelaunchCommand` pointing at the root launcher, its
   display name and icon); look on the owner's machine before and after.
-- [ ] **CHR8 — the browser onto the kit's engine, for one Chromium** (D92). Filed in Shenora's backlog
-  (2026-09-30, the owner's say-so, uncommitted there): a browser-only engine with Chrome-style windows
-  made over CDP, a production debug port for a process that holds no bridge, the engine settings
-  `daoris-browser` sets, and one CEF layout on disk. ~~Waits on Shenora.~~ **Unblocked by Shenora
-  0.18.0 (SHEN1)**: `ChromiumBrowserProcess` is that engine, a second process of the app's own
-  executable with Chromium's own windows, a debug port open in production behind a relay that
-  announces new tabs as pages, `PersistSessionCookies` and `Locale`. Moving `daoris-browser` onto it
-  drops CefSharp and the install's second CEF.
-
 ### The first goal — a real workspace, a ticket, a task started (owner, 2026-09-27 → D77)
 
 > *"I think we still does not meet the first goal: setup [the named workspace] as workspace and use

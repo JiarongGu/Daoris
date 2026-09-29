@@ -5,26 +5,41 @@ using System.Text.Json;
 namespace Daoris.Desktop;
 
 /// <summary>
-/// What starts Daoris's own browser on the engine it ships (D85, CHR3), and how it is found and read,
-/// kept out of both processes so it is tested like everything else here: the shell writes these
+/// What starts Daoris's own browser on the engine it ships (D85, CHR3), and how it is told apart and
+/// read, kept out of both processes so it is tested like everything else here: the shell writes these
 /// arguments, and `daoris-browser` parses them with the same code.
 /// </summary>
 /// <remarks>
 /// <para><b>A process of its own, by measurement.</b> The engine's debug port reaches every page in
 /// its process, the shell's page and its bridge included
-/// (`docs/2026-09-28-chromium-embedding-evidence.md` §1). So the browser is another executable, and the
+/// (`docs/2026-09-28-chromium-embedding-evidence.md` §1). So the browser is another process, and the
 /// shell's process has no port.</para>
 ///
 /// <para><b>The engine's own window.</b> A tab an agent opens over CDP joins a Chromium window of the
 /// engine's own (§2 there), so the browser IS those windows, with their tabs, history and devtools,
 /// rather than Daoris's chrome around a control.</para>
+///
+/// <para><b>The application's own executable</b> (CHR8, D99). `daoris-browser` is no longer an
+/// executable of its own with a CEF of its own: it is `Daoris.Desktop.exe` started with
+/// <see cref="Argument"/> first, whose <c>Main</c> hands the process to the kit's
+/// <c>ChromiumBrowserProcess.Run</c>. So an install carries one Chromium.</para>
 /// </remarks>
 public static class EngineBrowser
 {
-    public const string ExecutableName = "daoris-browser.exe";
+    /// <summary>
+    /// The argument that makes the application's executable the browser, first on its command line
+    /// (CHR8). A twin of `tools/processes.mjs`'s <c>BROWSER_ARGUMENT</c>, which tells the browser from
+    /// the application and the engine's processes; `desktop-tool.test.ts` reads both.
+    /// </summary>
+    public const string Argument = "--daoris-browser";
 
-    /// <summary>Its folder inside an install, beside the other supporting binaries under `app/`.</summary>
-    public static readonly string[] InstallHome = ["app", "daoris-browser"];
+    /// <summary>
+    /// Whether this start of the application is the browser: <see cref="Argument"/> is its FIRST
+    /// argument. First, because Chromium starts its renderer, GPU and utility processes from the same
+    /// executable (`--type=` first), and those belong to whichever Chromium started them, not here.
+    /// </summary>
+    public static bool IsBrowserProcess(IReadOnlyList<string> arguments) =>
+        arguments.Count > 0 && string.Equals(arguments[0], Argument, StringComparison.Ordinal);
 
     /// <summary>
     /// Its profile, under the home (D63). Not the WebView2 window's `browser/profile`: a different
@@ -55,38 +70,10 @@ public static class EngineBrowser
         uiCulture.StartsWith("zh", StringComparison.OrdinalIgnoreCase) ? "zh-CN" : "en-US";
 
     /// <summary>
-    /// Where `daoris-browser.exe` is, in the order they deserve trust: what the install carries, a
-    /// hand-assembled folder beside the shell, then the workspace build for development. The same
-    /// order as <c>ServiceHostLocator</c>, for the same reason (the first-deployment case study, 2a).
+    /// The engine's log in the profile folder: the kit names it (`ChromiumBrowserProcessOptions.UserDataFolder`),
+    /// and a browser that will not start says where to look.
     /// </summary>
-    public static IReadOnlyList<string> Candidates(string baseDirectory)
-    {
-        var candidates = new List<string>
-        {
-            Path.Combine([baseDirectory, .. InstallHome, ExecutableName]),
-            Path.Combine(baseDirectory, "daoris-browser", ExecutableName),
-        };
-
-        var directory = new DirectoryInfo(baseDirectory);
-        while (directory is not null && !File.Exists(Path.Combine(directory.FullName, "daoris.json")))
-        {
-            directory = directory.Parent;
-        }
-
-        if (directory is not null)
-        {
-            var project = Path.Combine(directory.FullName, "src", "Daoris.Desktop", "Daoris.Desktop.Browser");
-            foreach (var flavour in new[] { "Debug", "Release" })
-            {
-                candidates.Add(Path.Combine(project, "bin", flavour, "net10.0-windows", ExecutableName));
-            }
-        }
-
-        return candidates;
-    }
-
-    /// <summary>The first candidate that exists, or null: a browser this build cannot start, said, never guessed.</summary>
-    public static string? Locate(string baseDirectory) => Candidates(baseDirectory).FirstOrDefault(File.Exists);
+    public const string LogName = "cef.log";
 
     /// <summary>
     /// The pages an engine's `/json/list` names, in its order, as target ids. Anything that is not a page
@@ -110,52 +97,78 @@ public static class EngineBrowser
 /// <param name="Port">Its loopback debug port, which is the browser's endpoint.</param>
 /// <param name="Parent">The shell's process: the browser closes when it does, as the shell's window did.</param>
 /// <param name="Background">Open its first window without taking the person's focus, as a session asks.</param>
+/// <remarks>
+/// <b>The same four, spelled as Chromium reads a switch</b> (CHR8, D99): the browser is the
+/// application's executable now, whose command line Chromium reads too, and it takes a switch's value
+/// only after <c>=</c>. So each is one argument, <c>--daoris-&lt;name&gt;=&lt;value&gt;</c>, behind
+/// <see cref="EngineBrowser.Argument"/>; a value given as the next word would reach Chromium as a loose
+/// argument, and the prefix keeps every name clear of Chromium's own.
+/// </remarks>
 public sealed record EngineBrowserOptions(string Profile, int Port, int? Parent, bool Background)
 {
+    private const string ProfileSwitch = "--daoris-profile";
+    private const string PortSwitch = "--daoris-port";
+    private const string ParentSwitch = "--daoris-parent";
+    private const string BackgroundSwitch = "--daoris-background";
+
+    /// <summary>The whole command line after the executable: <see cref="EngineBrowser.Argument"/> first, then the options.</summary>
     public IReadOnlyList<string> ToArguments()
     {
-        var arguments = new List<string> { "--profile", Profile, "--port", Port.ToString(CultureInfo.InvariantCulture) };
-        if (Parent is { } parent) arguments.AddRange(["--parent", parent.ToString(CultureInfo.InvariantCulture)]);
-        if (Background) arguments.Add("--background");
+        var arguments = new List<string>
+        {
+            EngineBrowser.Argument,
+            $"{ProfileSwitch}={Profile}",
+            $"{PortSwitch}={Port.ToString(CultureInfo.InvariantCulture)}",
+        };
+        if (Parent is { } parent) arguments.Add($"{ParentSwitch}={parent.ToString(CultureInfo.InvariantCulture)}");
+        if (Background) arguments.Add(BackgroundSwitch);
         return arguments;
     }
 
     /// <summary>The options, or null with the reason. Anything unknown is refused rather than ignored.</summary>
     public static EngineBrowserOptions? Parse(IReadOnlyList<string> arguments, out string? problem)
     {
+        if (!EngineBrowser.IsBrowserProcess(arguments))
+        {
+            problem = $"{EngineBrowser.Argument} comes first: it is what makes this start the browser.";
+            return null;
+        }
+
         string? profile = null;
         int? port = null, parent = null;
         var background = false;
 
-        for (var i = 0; i < arguments.Count; i++)
+        foreach (var argument in arguments.Skip(1))
         {
-            string? Next() => i + 1 < arguments.Count ? arguments[++i] : null;
-            switch (arguments[i])
+            var equals = argument.IndexOf('=', StringComparison.Ordinal);
+            var name = equals < 0 ? argument : argument[..equals];
+            var value = equals < 0 ? null : argument[(equals + 1)..];
+            switch (name)
             {
-                case "--profile":
-                    profile = Next();
+                case ProfileSwitch when value is not null:
+                    profile = value;
                     break;
-                case "--port":
-                    port = int.TryParse(Next(), NumberStyles.None, CultureInfo.InvariantCulture, out var p) ? p : -1;
+                case PortSwitch when value is not null:
+                    port = int.TryParse(value, NumberStyles.None, CultureInfo.InvariantCulture, out var p) ? p : -1;
                     break;
-                case "--parent":
-                    parent = int.TryParse(Next(), NumberStyles.None, CultureInfo.InvariantCulture, out var q) ? q : -1;
+                case ParentSwitch when value is not null:
+                    parent = int.TryParse(value, NumberStyles.None, CultureInfo.InvariantCulture, out var q) ? q : -1;
                     break;
-                case "--background":
+                case BackgroundSwitch when value is null:
                     background = true;
                     break;
                 default:
-                    problem = $"`{arguments[i]}` is not an argument daoris-browser takes.";
+                    problem = $"`{argument}` is not an argument daoris-browser takes.";
                     return null;
             }
         }
 
         problem = profile is null || !Path.IsPathFullyQualified(profile)
-            ? "--profile <folder> is required, as a full path under the Daoris home."
+            ? $"{ProfileSwitch}=<folder> is required, as a full path under the Daoris home."
             : port is not (>= 1024 and <= 65535)
-                ? "--port <1024-65535> is required: the loopback port the browser listens on."
+                ? $"{PortSwitch}=<1024-65535> is required: the loopback port the browser listens on."
                 : parent is <= 0
-                    ? "--parent must be a process id."
+                    ? $"{ParentSwitch} must be a process id."
                     : null;
         return problem is null ? new EngineBrowserOptions(profile!, port!.Value, parent, background) : null;
     }

@@ -24,16 +24,10 @@
          with no desktop present. Both move together: they are one release. -->
     <PackageVersion Include="Shenora.Windows" Version="0.18.0" />
     <PackageVersion Include="Shenora" Version="0.18.0" />
-    <!-- The engine the shell's windows render on (D92): the kit's own CEF binding, and its build's
-         fetch of the pinned CEF (154). One release with the two above. -->
+    <!-- The engine the shell's windows render on (D92), and Daoris's browser too since CHR8 (D99,
+         `ChromiumBrowserProcess`): the kit's own CEF binding, and its build's fetch of the pinned CEF
+         (154). One engine in the install. One release with the two above. -->
     <PackageVersion Include="Shenora.Chromium" Version="0.18.0" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <!-- The engine Daoris ships for its browser (D84, D85): Chromium through CefSharp, whose runtime
-         package pins the Chromium build. Only `Daoris.Desktop.Browser` references it, so no other
-         project carries its 400 MB. Measured first: docs/2026-09-28-chromium-embedding-evidence.md. -->
-    <PackageVersion Include="CefSharp.WinForms.NETCore" Version="152.0.100" />
   </ItemGroup>
 
   <ItemGroup>

@@ -91,6 +91,18 @@ for a process that holds no bridge, the engine settings `daoris-browser` sets to
 cookies, cache paths under the home, log, locale, first-run switches), and one CEF layout on disk. Until
 it lands the install carries two engines (CHR8).
 
+**It landed in 0.18, and the browser moved (CHR8, D99, 2026-09-30).** `ChromiumBrowserProcess` is that
+engine: Chromium as a browser in a second process of the app's own executable, with Chromium's own
+windows, a debug port open in production behind a relay that announces a new tab as a `page`, and
+`PersistSessionCookies`, `Locale` and a profile folder as options. So `daoris-browser` is no longer an
+executable on CefSharp: it is `Daoris.Desktop.exe --daoris-browser …`, whose `Main` decides on that
+before anything else and calls `ChromiumBrowserProcess.Run`, and the shell starts it with
+`ChromiumBrowserProcess.Start`, never `Process.Start`. The install carries one Chromium again, and
+`app/daoris-browser/` goes on the next publish. What stays Daoris's: the profile under the home, the
+favorites and extensions prepared before the engine reads them (CHR5, CHR7), the first window made over
+the port, and the stop when the shell has gone. The arguments changed spelling, not content: the
+command line is Chromium's too now, so each is one `--daoris-<name>=<value>` switch.
+
 ## 4. Open
 
 - **The browser's form: decided, the engine's own window** (the owner, 2026-09-28: *"lets do it now
@@ -131,6 +143,7 @@ commands and `SecondaryWindows` (its ADOPTION.md, *Stage 2 on Chromium*). What t
 - **The browser cannot share it yet.** The kit's pages are Alloy style, and it has no Chrome-style
   window, which is the form CHR3 chose for `daoris-browser` on CefSharp 152. Moving the page alone ships
   **two engines**: CEF 154 is a 173 MB download (about 350–400 MB on disk) beside CefSharp's 352 MB.
+  *(0.18 added the Chrome-style browser, and the browser moved onto it: §3, CHR8.)*
 
 ## 5. Build order
 
@@ -140,6 +153,7 @@ commands and `SecondaryWindows` (its ADOPTION.md, *Stage 2 on Chromium*). What t
 | **CHR2** ✓ | The main and secondary windows on `ChromiumView` (Shenora 0.17, §4a, D92): the page on `https://daoris.localhost/`, told its host's loopback address (CHR2a); the shell on `UseChromiumEngine`, the bundle found as the host finds it, and the dev loop's instruments on the development DevTools port (CHR2b, CHR2c) | a look at the main window, the monitor and a detached session in both themes; caption buttons answering `HTMINBUTTON`/`HTMAXBUTTON`/`HTCLOSE` from the rectangles the page reported; the deployment rehearsal (§5a) |
 | **CHR3** ✓ | `daoris-browser`: the engine's own window, in a process of its own with its global request context and `PersistSessionCookies`, CDP on that process only, started by the shell behind `IInAppBrowser` and carried by the install under `app/daoris-browser/`. Supersedes BRW11 | the deployment rehearsal: the deployed shell's driver brings up the install's own browser for a session's server, and it goes with the shell; a look on the scratch shell (evidence §11–§15) |
 | **CHR4** ✓ | The install carries it (D93): `Daoris.exe`, a launcher, at the root, and the application beside its Chromium in `app/`, recorded in `app/shell-files.txt` so a republish removes the last engine's files; the gate starts the install through the launcher and asserts the engine off the process tree. The WebView2 path goes | `npm run rehearse:deploy` |
+| **CHR8** | One Chromium (D99): the browser is the application started with `--daoris-browser`, on Shenora 0.18's `ChromiumBrowserProcess`; the CefSharp project, its relay and `app/daoris-browser/` go, and the tools tell the browser from the application by its first argument | module and tool tests for the argument, the options and the classification; the deployment rehearsal: the install's application brings the browser up for a session's server on the home's profile, with its engine processes under it, and it goes with the shell |
 
 ### 5a. What the move found
 

@@ -3915,6 +3915,9 @@ development, and a published app has none (D78 §3.1 holds by construction).
   chosen form and rebuilds a browser's basics.
 - **Waiting for the kit**, which leaves the WebView2 prerequisite in place with no date to lose it.
 
+*Amended by D99 (CHR8, 2026-09-30): the browser followed on Shenora 0.18's `ChromiumBrowserProcess`,
+as the application's own executable started with `--daoris-browser`. One engine in the install again.*
+
 ## D93 — An install is a launcher, `app/` and `data/`, and the one thing to run is `Daoris.exe` (2026-09-30)
 
 **Decision (CHR4, amending D60's layout).** On the Chromium the shell ships (D92), the application's
@@ -3962,6 +3965,11 @@ title, product and version, so `StampIdentity.targets` is gone and the app proje
 its title and product. The kit also lays out only the locales the project names
 (`ShenoraChromiumLocales`), which the publish script had trimmed by hand; the script still trims the
 browser's own engine until CHR8.*
+
+*Amended by D99 (CHR8, 2026-09-30): the browser has no folder under `app/`; it is the application
+started with `--daoris-browser`, and a republish removes the old `app/daoris-browser/` by name. The
+script still trims the application's `locales/`, of the grammatical-gender stubs the kit lays out
+beside each language.*
 
 ## D94 — The machine keeps a log of what happens on it, without anyone's words, and nothing sends it anywhere (2026-09-30)
 
@@ -4111,3 +4119,59 @@ pure reading of the machine serves the guide and the starters, so the two cannot
 
 **Rejected.** A wizard of modal screens (a second copy of every setting, drifting from the first), and
 doing the setup for the person (signing in and choosing what is driven are theirs).
+
+## D99 — Daoris's browser is the application started as a browser, on the kit's engine: one Chromium (2026-09-30)
+
+**Decision (CHR8, closing D92's two engines).** `daoris-browser` stops being an executable of its own on
+CefSharp with a CEF of its own. It is the application's own executable, `Daoris.Desktop.exe`, started
+with `--daoris-browser` first. `Program.Main` recognises that before anything else and hands the process
+to Shenora 0.18's `ChromiumBrowserProcess.Run`, which runs Chromium as a browser: Chromium's own windows
+with their tabs, history, find, downloads and devtools, and a debug port open in production because the
+process holds no page of the app's. The shell starts it with `ChromiumBrowserProcess.Start`, never
+`Process.Start`. What `daoris-browser` set by hand are the kit's options now: the profile folder under
+the home (`<home>/browser/engine`, whose `Default` is the profile, D63), the locale,
+`PersistSessionCookies`, and the port it is handed, which the kit's relay serves, announcing a new tab as
+a `page` from the start, so Daoris's own `CdpRelay` goes. Daoris still prepares the profile before the
+engine reads it (the favorites folder, CHR5; the extensions setting, CHR7), makes the first window over
+the port, in the background when a session asked (CHR3), and stops the browser once the shell that
+started it has gone. The install loses `app/daoris-browser/` and its second Chromium.
+
+**The contract that changed.** `EngineBrowserOptions` carries the same four things (profile, port,
+parent, background), spelled `--daoris-profile=<folder>`, `--daoris-port=<n>`, `--daoris-parent=<pid>`
+and `--daoris-background` behind `--daoris-browser`. The browser's command line is Chromium's too now,
+and Chromium takes a switch's value only after `=`: `--profile <folder>` would reach it as an empty
+switch and a loose argument. The prefix keeps every name clear of Chromium's own. The routing argument
+comes **first**, because Chromium starts its renderer, GPU and utility processes from the same
+executable with `--type=` first, and those belong to the Chromium that started them.
+
+**Why.** D92 accepted two engines only until the kit could host the browser, and 0.18 does, in the form
+CHR3 chose. One engine is one Chromium to keep patched, one CEF on disk (about 350 MB less), and one set
+of locales. `Process.Start` is ruled out by the kit's own measurement: on Windows it hands the child
+every handle inheritable at that moment, a pipe end of Chromium's among them, and a browser that
+outlives the app by design then kept the app from returning from Chromium's shutdown.
+
+**What the tools had to learn.** The browser is a fourth kind of process on the application's path,
+beside the application and the engine's `--type=` processes. `tools/processes.mjs` tells it apart by its
+first argument (`BROWSER_ARGUMENT`, a twin of `EngineBrowser.Argument`); a stop of the application never
+walks it, because it has windows of its own and follows the shell out by itself; and
+`shot --window browser` names it by process id. A republish removes `app/daoris-browser/` by name, as
+D93 removes the retired launcher (`RETIRED_IN_APP`). The publish still trims the application's
+`locales/`: the kit lays out only the languages the project names, and puts three 18-byte
+grammatical-gender stubs beside each, which D93's amendment did not see.
+
+**Rejected.**
+- **A thin `daoris-browser.exe` on the kit's engine.** A second executable needs a CEF layout of its own
+  beside it, which is the second engine this removes; the kit runs the browser from the app's own
+  executable so that an install carries one.
+- **`StartUrl` for the first window.** It cannot ask for a window in the background, which a session's
+  bring-up does, and making it over the port is how an agent's windows are made too.
+- **The two-word arguments as they were.** They would reach Chromium as loose arguments, which Chrome
+  takes as pages to open. Nothing measured them harmless, and one character removes the question.
+- **The argument recognised anywhere on the command line.** An engine process that carried it would be
+  taken for the browser and refused by the strict parse: a renderer that never starts.
+
+**Not verified when it was written.** No window was started: the owner's install was running on the
+machine. The deployment rehearsal is what proves the browser comes up from the install's application,
+on its profile under the home, with its engine processes under it, and goes with the shell. **Open:**
+the person's Edge (BRW12) is still started with `Process.Start` and outlives the app by the same
+design; whether it can hold the app's exit the same way was not measured.

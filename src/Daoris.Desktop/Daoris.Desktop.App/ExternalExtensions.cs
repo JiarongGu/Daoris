@@ -1,6 +1,6 @@
 using Microsoft.Win32;
 
-namespace Daoris.Desktop.Browser;
+namespace Daoris.Desktop;
 
 /// <summary>
 /// The extensions other software registered for Chrome on this machine, which the engine reads and

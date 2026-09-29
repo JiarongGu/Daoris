@@ -27,6 +27,15 @@ internal static class Program
     [STAThread]
     private static void Main(string[] args)
     {
+        // Daoris's browser is this executable started with the browser's argument (CHR8, D99), decided
+        // before anything else: the kit starts Chromium as the app is composed, a process runs one
+        // Chromium, and the browser is not the window, its home or its log.
+        if (EngineBrowser.IsBrowserProcess(args))
+        {
+            Environment.ExitCode = BrowserProcess.Run(args);
+            return;
+        }
+
         // The home before anything else (D63): an install's `data/` folder is the Daoris home for this
         // process and every host and session it spawns. Before the builder, because every module
         // captures its path at construction — and a workspace build is left alone, so the dev loop's
@@ -131,8 +140,8 @@ internal static class Program
         builder.Services.AddSingleton<ISecondaryWindows>(
             sp => sp.GetRequiredService<SecondaryWindowHost>());
         // Daoris's own browser (D78, D85): the engine's own window, in a process of its own
-        // (`daoris-browser`), with its profile under the home — the directory `driver.json` sits in,
-        // as every machine file's is.
+        // (`daoris-browser`: this executable with the browser's argument, CHR8), with its profile under
+        // the home — the directory `driver.json` sits in, as every machine file's is.
         builder.Services.AddSingleton(_ => new EngineBrowserHost(
             Path.GetDirectoryName(Path.GetFullPath(Daoris.Driver.DriverConfig.ResolvePath()))!));
         builder.Services.AddSingleton<Daoris.Driver.IInAppBrowser>(sp => sp.GetRequiredService<EngineBrowserHost>());

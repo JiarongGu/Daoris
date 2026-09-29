@@ -51,8 +51,8 @@ import { copyTree, isMain } from './fsx.mjs';
 import { capture, makeChecker, openTranscript } from './rehearsal-kit.mjs';
 // The install's layout, from the script that makes it (REV3 CLEAN1) — never a second spelling of it.
 import {
-  BROWSER_EXE, BROWSER_HOME, HOME, HOST_EXE, HOST_HOME, KEPT_LOCALES, LAUNCHER, OWN, RETIRED_LAUNCHERS, SHELL_EXE,
-  SHELL_FILES, SHELL_HOME,
+  HOME, HOST_EXE, HOST_HOME, KEPT_LOCALES, LAUNCHER, OWN, RETIRED_BROWSER_EXE, RETIRED_IN_APP, RETIRED_LAUNCHERS,
+  SHELL_EXE, SHELL_FILES, SHELL_HOME,
 } from './desktop-publish.mjs';
 
 // ---------------------------------------------------------------------------------------------
@@ -136,8 +136,8 @@ const newcomer = join(family, 'newcomer');
 const launcherExe = join(install, LAUNCHER);
 const shellExe = join(install, ...SHELL_HOME, SHELL_EXE);
 const installedHost = join(install, ...HOST_HOME, HOST_EXE);
-/** Daoris's own browser inside the install (D85, CHR3), which the deployed shell starts beside itself. */
-const installedBrowser = join(install, ...BROWSER_HOME, BROWSER_EXE);
+/** Where the browser lived before CHR8, with an engine of its own: a republish removes it (D93, D99). */
+const retiredBrowser = join(install, ...SHELL_HOME, RETIRED_IN_APP[0]);
 
 /** The line the stub says, and the line phase 5 looks for on disk. Both halves, one constant. */
 const NON_ASCII = 'stub: 道衍 — the unfolding of the way';
@@ -162,7 +162,9 @@ const children = [];
 const run = (command, cwd, env = {}, timeout = 0) => capture(command, cwd, { env, timeout });
 
 const { CLEARED, REDIRECTED } = await import('./desktop.mjs');
-const { applicationsAt, eachApplicationAt, powershell, psQuote, running, stopAll } = await import('./processes.mjs');
+const {
+  applicationsAt, browsersAt, eachApplicationAt, powershell, psQuote, running, stopAll,
+} = await import('./processes.mjs');
 const { freePort } = await import('./cdp.mjs');
 
 const API_TIMEOUT = 30_000;
@@ -313,16 +315,11 @@ async function main() {
   check('…and its bundle travelled beside it',
     existsSync(join(install, ...HOST_HOME, 'wwwroot', 'index.html')));
 
-  // Daoris's own browser (D85, CHR3), the other counterpart set: where the shell looks first, with
-  // the engine beside it and only the two languages it is ever asked for.
-  check(`the browser is under ${BROWSER_HOME.join('/')}/`, existsSync(installedBrowser), installedBrowser);
-  const localesKept = existsSync(join(install, ...BROWSER_HOME, 'locales'))
-    ? readdirSync(join(install, ...BROWSER_HOME, 'locales')).sort()
-    : [];
-  check('…with its engine beside it, and only the locales the install keeps',
-    existsSync(join(install, ...BROWSER_HOME, 'libcef.dll'))
-      && localesKept.join() === [...KEPT_LOCALES].sort().join(),
-    `locales: ${localesKept.join(', ') || '(none)'}`);
+  // One Chromium (CHR8, D99): Daoris's browser is the application started with the browser's
+  // argument, so no folder under `app/` carries an executable and an engine of its own.
+  check('one Chromium: the browser has no folder and no engine of its own under app/',
+    RETIRED_IN_APP.every((name) => !inApp.includes(name)) && !inApp.some((name) => /cefsharp/i.test(name)),
+    `app holds: ${inApp.join(', ')}`);
 
   // The launcher is small and carries no runtime: it starts the application and exits.
   const launcherSize = existsSync(launcherExe) ? statSync(launcherExe).size : 0;
@@ -351,7 +348,7 @@ async function main() {
   const recorded = existsSync(join(install, ...SHELL_FILES))
     ? readFileSync(join(install, ...SHELL_FILES), 'utf8').split('\n').filter(Boolean).sort()
     : [];
-  const besideIt = [HOST_HOME.at(-1), BROWSER_HOME.at(-1), SHELL_FILES.at(-1)];
+  const besideIt = [HOST_HOME.at(-1), SHELL_FILES.at(-1)];
   check(`…and ${SHELL_FILES.join('/')} names every file the application put there, and nothing else`,
     recorded.includes(SHELL_EXE)
       && recorded.join() === inApp.filter((name) => !besideIt.includes(name)).sort().join(),
@@ -411,6 +408,11 @@ async function main() {
   // neighbour's file beside them must not.
   const retired = join(install, RETIRED_LAUNCHERS[0]);
   writeFileSync(retired, '');
+  // …and the browser's own folder an install from before CHR8 has, with its executable and its second
+  // engine: this script wrote it once, and writes it no more (D99).
+  mkdirSync(join(retiredBrowser, 'locales'), { recursive: true });
+  writeFileSync(join(retiredBrowser, RETIRED_BROWSER_EXE), '');
+  writeFileSync(join(retiredBrowser, 'libcef.dll'), '');
   const staleEngine = join(install, ...SHELL_HOME, 'stale-engine.dll');
   writeFileSync(staleEngine, '');
   if (existsSync(join(install, ...SHELL_FILES))) {
@@ -430,6 +432,8 @@ async function main() {
   check('…nor the launcher the single-file shell had, nor an engine file it no longer ships',
     !existsSync(retired) && !existsSync(staleEngine),
     [retired, staleEngine].filter(existsSync).join(', '));
+  check(`…nor the browser's own folder and its second engine (${[...SHELL_HOME, RETIRED_IN_APP[0]].join('/')}/)`,
+    !existsSync(retiredBrowser), retiredBrowser);
   check('…and a file it never wrote is still there', existsSync(neighbour));
   rmSync(neighbour, { force: true });
 
@@ -759,16 +763,25 @@ if (!done.ok) throw new Error(done.text);
     Boolean(record?.id) && new RegExp(`${record.id} ${questId} newcomer completed stub`).test(ended),
     ended || '(no ended.log)');
 
-  // The browser the driver brought up for the session's server: the install's own, on the profile
-  // under this run's home, and the session was handed its server rather than told it was withheld.
-  const browsers = running(installedBrowser);
+  // The browser the driver brought up for the session's server: the install's own application,
+  // started with the browser's argument (CHR8, D99), on the profile under this run's home, and the
+  // session was handed its server rather than told it was withheld.
+  const browsers = browsersAt(shellExe);
   const browserLine = browsers.length
     ? powershell(`(Get-CimInstance Win32_Process -Filter "ProcessId = ${browsers[0]}").CommandLine`).trim()
     : '';
   check('the deployed shell’s driver brought up the install’s own browser for the session',
-    browsers.length === 1, browsers.length ? `pid ${browsers.join(', ')}` : 'no daoris-browser from the install');
+    browsers.length === 1, browsers.length ? `pid ${browsers.join(', ')}` : 'no browser from the install’s application');
   check('…on its profile under this machine’s home',
     browserLine.includes(join(home, 'browser', 'engine')), browserLine || '(no command line)');
+  // One Chromium, the install's: the browser's pages render in the application's own executable too,
+  // in engine processes whose profile is the browser's rather than the window's.
+  const browserRenderers = browsers.length === 0 ? '' : powershell(
+    'Get-CimInstance Win32_Process -ErrorAction SilentlyContinue | '
+    + `Where-Object { $_.ExecutablePath -eq ${psQuote(shellExe)} -and $_.CommandLine -like '*--type=*' `
+    + `-and @(${browsers.join(',')}) -contains $_.ParentProcessId } | ForEach-Object { $_.ProcessId }`).trim();
+  check('…and its engine is the application’s own Chromium', browserRenderers !== '',
+    'no engine process started from the install’s executable under the browser');
   check('…and the session was handed the server that drives it',
     bytes.length > 0 && !bytes.toString('utf8').includes('was not handed'),
     bytes.toString('utf8').split('\n').find((line) => line.includes('was not handed')) ?? '(no transcript)');
@@ -780,8 +793,19 @@ if (!done.ok) throw new Error(done.text);
   shell = null;
   await sleep(1500);
 
-  // Everything from the install's executable, the engine's processes included: they follow the
-  // application out, a moment after it.
+  // The browser closes its windows when the shell ends (`--daoris-parent`), as the shell's own window
+  // did. Asked first, because since CHR8 it runs from the same executable as the application, and
+  // the check below would otherwise count it without naming it.
+  let browsersLeft = browsersAt(shellExe);
+  for (let attempt = 0; attempt < 20 && browsersLeft.length > 0; attempt += 1) {
+    await sleep(500);
+    browsersLeft = browsersAt(shellExe);
+  }
+  check('the browser went with the shell', browsersLeft.length === 0,
+    browsersLeft.map((pid) => `pid ${pid}`).join(', '));
+
+  // Everything from the install's executable, the engine's processes and the browser's included: they
+  // follow the application out, a moment after it.
   let shellsLeft = running(shellExe);
   for (let attempt = 0; attempt < 10 && shellsLeft.length > 0; attempt += 1) {
     await sleep(500);
@@ -796,14 +820,6 @@ if (!done.ok) throw new Error(done.text);
   const hooksLeft = hookProcesses();
   check('and the plugin’s process went with the loop', hooksLeft.length === 0,
     hooksLeft.map((pid) => `pid ${pid}`).join(', '));
-  // The browser closes its windows when the shell ends (`--parent`), as the shell's own window did.
-  let browsersLeft = running(installedBrowser);
-  for (let attempt = 0; attempt < 10 && browsersLeft.length > 0; attempt += 1) {
-    await sleep(500);
-    browsersLeft = running(installedBrowser);
-  }
-  check('and the browser went with the shell', browsersLeft.length === 0,
-    browsersLeft.map((pid) => `pid ${pid}`).join(', '));
 
   // -------------------------------------------------------------- 7. report
 

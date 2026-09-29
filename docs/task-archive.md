@@ -7907,3 +7907,26 @@ service's `deletable` allows; `daoris-driver quest delete <id>` and `daoris-driv
 **Known gap:** when a take loses to a delete, the driver's sentence still says another machine's
 take won. **Proven by:** the quest log, sync (including no resurrection), exchange and desk tests,
 service 602, vitest 1447, driver, and the family rehearsal's new delete checks.
+
+## CHR8 — Daoris's browser onto the kit's engine, for one Chromium (2026-09-30, D99)
+
+> - [ ] **CHR8 — the browser onto the kit's engine, for one Chromium** (D92). … **Unblocked by Shenora
+>   0.18.0 (SHEN1)**: `ChromiumBrowserProcess` is that engine … Moving `daoris-browser` onto it drops
+>   CefSharp and the install's second CEF.
+
+**Outcome** (built by a subagent in its own worktree, merged, then looked at and rehearsed on main). One
+Chromium in the install: Daoris's browser is `Daoris.Desktop.exe` started with `--daoris-browser`
+first, which `Main` hands to Shenora 0.18's `ChromiumBrowserProcess.Run` before anything else; the
+shell starts it with `ChromiumBrowserProcess.Start`, never `Process.Start` (which on Windows handed the
+browser a pipe of Chromium's and kept the app from exiting). The CefSharp project, Daoris's own
+`CdpRelay` (the kit's relay replaces it) and `app/daoris-browser/` are gone, and a republish removes
+that folder by name. Its options keep their four fields, spelled `--daoris-<name>=<value>` because the
+command line is Chromium's too. The tools tell the browser from the application and the engine's
+`--type=` processes by its first argument, so a stop never walks it. Seen on the scratch window: the
+palette's *Open Daoris's browser* opened Chromium's own window with its tabs, address bar and the
+Daoris favorites folder, and the browser closed with the shell.
+
+**Open (D99):** the Edge path (BRW12) still starts Edge with `Process.Start` and was not measured for
+the same exit hang. **Proven by:** deployment rehearsal 58/58 (no second engine, the retired folder
+removed, one browser process from the app's executable, gone with the shell), modules 320, driver
+994, CLI 538.

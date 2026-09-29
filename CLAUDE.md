@@ -102,7 +102,8 @@ workflow (`tools/release-prep.mjs`). A hand-bump leaves every file consistent an
 - **Two traps the desktop keeps.** `shot` needs **`--window <monitor|session:ID>`** or it
   photographs whichever window Windows calls main (`eval`/`click` default to the application's
   page). And on Chromium (D92/D93) the engine's renderer, GPU and utility processes run from the
-  app's **own exe** with `--type=`: count and stop the application, never every process on the path.
+  app's **own exe** with `--type=`, and so does the browser, with `--daoris-browser` first (D99):
+  count and stop the application, never every process on the path.
 - 🔴 **The desktop app is the focus, and the install is where it is judged** (owner, 2026-09-22 →
   **D62**): it carries the platform, runs the driver loop, hosts the machine's service, and is the
   only surface that reaches a machine-local fact. `npm run desktop -- run --install <dir>` starts the
@@ -133,7 +134,7 @@ workflow (`tools/release-prep.mjs`). A hand-bump leaves every file consistent an
   claimed), and breadth as **native adapters plus the ACP door, never a registry**. TOOL4 is held.
 - 🔴 **Daoris is DEPLOYED** (2026-09-22): `npm run publish:desktop -- --to <dir> --service` installs
   it — **`Daoris.exe`, a small launcher, at the root; the application (`app/Daoris.Desktop.exe`, on
-  its own Chromium), the host and the browser under `app/`** (D93); **the Daoris home in `data/`**;
+  its own Chromium, and the browser too, D99) and the host under `app/`** (D93); **the Daoris home in `data/`**;
   `--beside` when
   the folder already holds the repositories it drives — and **starting it starts the driver loop**.
   🔴 **Nothing of Daoris's lives under the user profile** (**D63**): `DAORIS_HOME` is the one seam,
