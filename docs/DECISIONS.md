@@ -3982,3 +3982,26 @@ and runs anyway; a write that fails is dropped, never thrown.
   session, under the record's rules.
 - **A logging library.** A file a day and a catalogue are each artefact's own few lines, and a library's
   configuration is one more thing an install carries.
+
+## D96 — The console panel gains a terminal: a real shell of the person's own, beside the sessions' read-only streams (2026-09-30)
+
+**Decision (CONSOLE4).** The console panel holds a terminal view: a shell under a Windows
+pseudo-console, drawn by a terminal renderer in the page, so it behaves as a console window does —
+prompts, colours, Ctrl+C, history, tab completion, full-screen programs. PowerShell 7 when installed,
+else Windows PowerShell, with the machine's other shells to choose; started in the attended session's
+tree, else the workspace's first repository, else the home; the install's `DAORIS_HOME` in its
+environment so the `daoris` CLI answers for this machine. Several at once, each a tab, each ended with
+its tab and all with the application. The owner's ask: *"we also need to make input line for console
+too, so we can control console just like regular console window (more into powershell style)"*. The
+contract is `docs/2026-09-30-terminal-design.md`.
+
+**What does not change.** A session's streams stay read-only and the composer stays the one way a
+session is spoken to: a keystroke into an agent's input could answer a permission prompt the driver
+refuses by construction (D52). The terminal is desktop-only, over the bridge (D47 §4), and a
+terminal's words never reach the machine log (D94).
+
+**Rejected.**
+- **A line-only input with no pseudo-console**: prompts, progress bars and full-screen programs
+  break, and *just like a console window* is the requirement.
+- **A native terminal package**: the pseudo-console is a few Win32 calls the driver library can make.
+- **Typing into a session's console**: the composer is that door.

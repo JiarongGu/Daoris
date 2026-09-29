@@ -184,7 +184,19 @@ TASK.md and complete one by one"*).
   bar's size breaks after Ask Daoris is moved to the panel and back** (*"after dock "ask daoris" from
   right to bottom and back to right the sizing of right panel is broken"*) — reproduced on the scratch
   window before it is fixed; (b)'s frame overflow is the first suspect. *(b), (d) and (e) landed
-  2026-09-30 (one defect for (b) and (e)), in the archive; (a) and (c) remain.*
+  2026-09-30 (one defect for (b) and (e)), in the archive; (a) and (c) remain.* (f) *Found the same
+  day, holding the ticket's verify step:* **the desktop does not find an npm-installed agent on
+  `PATH`.** The owner updated `claude-code-acp` with npm (0.84.0, `claude-agent-acp.cmd` in the Node
+  folder) and unpinned it; the CLI's `agent list` found it, and the desktop's driver held every start
+  with *"claude-code-acp is not installed on this machine"*, because it starts the bare command and
+  Windows then looks for an `.exe` only. The plugin door already resolves `PATHEXT` (`Plugins.cs`);
+  the harness door must too, for the probe and the spawn. Unblocked for now by pinning 0.84.0.
+  (g) *Seen once, to confirm:* **a driven session's own shell had no `git`, `tr` or `head` on its
+  `PATH`** (the ticket's verify session on `claude-code-acp` 0.84.0, the install started by
+  `desktop -- run --install` from a Git Bash shell): its agent worked round it by exporting Git's
+  folders in each command. The session before it, on 0.79.0 and a normal start, committed with git.
+  Check on a normal start before anything else, then decide whether the shell's environment or the
+  adapter's release is the cause.
 - [ ] **AGT6 — the agent's own settings, from Daoris: model, effort and the rest** (owner, 2026-09-30:
   *"we also need way to adjust the claude setup (since we have command to setup model effort or
   other setting in console but no way in daoris rn)"*). Claude Code sets its model, its effort and
@@ -194,7 +206,7 @@ TASK.md and complete one by one"*).
   profile (read the tool's settings schema, never guessed), with a Settings door and a terminal door
   (D50); and **one conversation's model**, which the protocol door can switch mid-session
   (`session/set_model`, and the models `session/new` answers with), as the console's `/model` does.
-  This reverses D49 §7 (*no model selection UI*) on the owner's word, so a decision records it and
+  This reverses D49 §7 (*no model selection UI*) on the owner's word, so a decision (D98) records it and
   how D24/model-decoupling still hold: the deployment still chooses, and the deployment is the person.
 - [ ] **QUEST1 — clear or delete a quest** (owner, 2026-09-30: *"and we do need way to clear or
   delete quest"*). Clearing is USE1(c) for asks, and closed quests already leave the default list.
@@ -237,7 +249,7 @@ TASK.md and complete one by one"*).
   install's environment in it (`DAORIS_HOME`, so the `daoris` CLI answers for this machine). (b) More
   than one, and a choice of shell (PowerShell, Command Prompt, Git Bash when found), each a tab,
   closed with its process. (c) Desktop-only (D47 §4): the keystrokes and output ride the bridge,
-  never HTTP. A decision (D95) records that the console became a place to type, and that a
+  never HTTP. *Designed 2026-09-30:* `docs/2026-09-30-terminal-design.md`, D96, records that the console became a place to type, and that a
   session's own streams stay read-only (the composer is how a session is spoken to).
 - [ ] **SETUP1 — a first-use guide.** A fresh install opens on a guide rather than an empty window,
   and the guide stays reachable later (the Daoris menu, the palette). Its steps are the machine's
@@ -246,7 +258,7 @@ TASK.md and complete one by one"*).
   agent**: the agent Ask Daoris and the intake run on (D89, *Daoris's own AI*); (3) **a workspace
   and its repositories**; (4) **the rules**: which repositories are driven, how their work lands
   (WSR1), what agents may do (D72), notifications. Built on the facts Ask Daoris's starters already
-  read (HELP1d), so a step and a starter never disagree. A decision (D96) records the steps and
+  read (HELP1d), so a step and a starter never disagree. A decision (D97) records the steps and
   what makes one done.
 
 ### After the first real workspace (owner, 2026-09-28) — to start later
