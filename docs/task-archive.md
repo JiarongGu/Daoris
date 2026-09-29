@@ -7846,3 +7846,28 @@ unspoken pre-opened conversation still leaves a session record, which can be the
 restart. The model's own latency (the account runs a 1M-context model at effort `xhigh`) is the
 owner's, and AGT6 gives it a door.
 **Proven by:** driver 961, vitest 1430 on main after the merge.
+
+## USE1a, USE1f — Update does what it says, and the desktop finds an agent npm put on PATH (2026-09-30)
+
+> - [ ] **USE1** … (a) **Update on a door with no updater** … (f) **the desktop does not find an
+>   npm-installed agent on `PATH`** …
+
+**Outcome** (built by a subagent in its own worktree, merged and re-tested on main). (a) On a pinned
+door with a package or a channel, Update finds the newest release as one exact version (`npm view`,
+or the channel's `latest` pointer, which only picks the version: it is then verified like one typed),
+installs and pins it through the pin's own path, writing the pin only once that version is installed;
+it says `0.79.0 → 0.84.0`, or that the pin is already newest and nothing was fetched, and never moves
+a pin backwards. An unpinned door with its own updater runs it; a door with neither shows no Update,
+which the roster's new `updates` field (`pin`, `tool`, null) decides. `daoris agent update <agent>
+[--workspace W]` is the terminal's side. (f) The probe and both doors' spawns resolve a bare command
+through the one PATHEXT resolver the plugin door uses, so an agent npm installed as a `.cmd` is found
+and started; a prompt a shim's `cmd.exe` would reinterpret (the pipe door's multi-line target) is
+refused in a sentence naming the fix (pin a version, or name a path in `commands`).
+
+**A side effect, owned:** while proving its new tests fail, the subagent briefly disabled the new
+branch and two tests fell through to the tool's own updater, running this machine's real `claude
+update` and `codex update` (Claude Code moved from 2.1.284 to 2.1.285). The tests now run with an
+empty PATH or a no-op updater and cannot start a real one.
+
+**Not covered:** the real `npm view` and the real channel pointers are stand-ins in every test.
+**Proven by:** driver 991, modules 329, vitest 1433, CLI 535, on main after the merge.

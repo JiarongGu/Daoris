@@ -423,8 +423,9 @@ test('the file-local management verbs reach no network module either', () => {
 });
 
 /**
- * `agent pin` DOES reach a network since AGT2b — a maker's release channel — and the usage text says
- * it is the one verb of its class that does. It reaches it the way `connect` reaches a service:
+ * `agent pin` DOES reach a network since AGT2b — a maker's release channel — and so does `agent update`
+ * on a pinned agent since USE1a, asking the channel for its newest release; the usage text says they are
+ * the verbs of their class that do. They reach it the way `connect` reaches a service:
  * through `service.ts`, which the DISPATCHER hands in. So the toolchain and everything that judges a
  * download (the channel, the signature, the archive) import no network module, and the one place the
  * two meet is a line in `cli.ts` a reviewer can read.

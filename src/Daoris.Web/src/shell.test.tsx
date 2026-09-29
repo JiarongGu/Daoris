@@ -1456,6 +1456,48 @@ describe('the harness roster', () => {
     expect(screen.queryByRole('button', { name: /^Log in/ })).toBeNull();
   });
 
+  /**
+   * 🔴 USE1a: Update on a pinned door answered only a refusal. The roster now says which Update each
+   * door has, and a door with none offers no button — Sign in's rule, and the pin's.
+   */
+  it('offers no update on a door the roster gives none', async () => {
+    show(<SettingsView notify={() => {}} section="agents" />);
+
+    await screen.findByText('claude 9.9.9');
+    expect(screen.queryByRole('button', { name: 'update' })).toBeNull();
+  });
+
+  it('offers update on a pinned door, and says it moves the pin to the newest release', async () => {
+    invoke.mockImplementation(async (_module: string, type: string) => (type === 'HARNESSES'
+      ? {
+        ...ROSTER,
+        harnesses: [{
+          ...ROSTER.harnesses[0], pinned: '0.79.0', updates: 'pin',
+          managed: 'C:/somewhere/.daoris/toolchain/claude-code/0.79.0/bin/claude.exe',
+        }, ROSTER.harnesses[1]],
+      }
+      : WIRING));
+    show(<SettingsView notify={() => {}} section="agents" />);
+
+    const update = await screen.findByRole('button', { name: 'update' });
+    await userEvent.hover(update);
+    expect(await screen.findByRole('tooltip')).toHaveTextContent(/newest release/);
+    await userEvent.click(update);
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HARNESS_ACTION', {
+      payload: { harness: 'claude-code', action: 'update' },
+    });
+  });
+
+  it('offers update on an unpinned door with its own updater, and says whose updater runs', async () => {
+    invoke.mockImplementation(async (_module: string, type: string) => (type === 'HARNESSES'
+      ? { ...ROSTER, harnesses: [{ ...ROSTER.harnesses[0], updates: 'tool' }, ROSTER.harnesses[1]] }
+      : WIRING));
+    show(<SettingsView notify={() => {}} section="agents" />);
+
+    await userEvent.hover(await screen.findByRole('button', { name: 'update' }));
+    expect(await screen.findByRole('tooltip')).toHaveTextContent(/own updater/);
+  });
+
   /** After "Add", the next step and what it does were nowhere: the logged-out row says both. */
   it('a logged-out account says what Log in will do', async () => {
     show(<SettingsView notify={() => {}} section="agents" />);

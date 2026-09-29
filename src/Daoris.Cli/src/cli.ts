@@ -52,7 +52,12 @@ const USAGE = `daoris <command> [options]
   agent [verb]         this machine's agents — Claude Code, Codex, dsh — and the
                        accounts they run as. A sign-in stays the tool's:
                          list                      installed? version? accounts?
-                         install|update <agent>    its OWN mechanism, never auto
+                         install <agent>           its OWN installer, never auto
+                         update <agent> [--workspace W]
+                                                   pinned: the pin moves to the
+                                                   newest release, resolved to
+                                                   one exact version; unpinned:
+                                                   the agent's own updater
                          login <agent> [--profile P]
                                                    its own login flow, run INTO
                                                    an account's directory
@@ -132,8 +137,9 @@ const USAGE = `daoris <command> [options]
   service, and no gate ever runs them. remote, agent, driver, plugin and browser are
   management too — they edit files under the Daoris home ($DAORIS_HOME, the
   installed application's own data folder; nothing lives under your profile),
-  and agent spawns each agent's own tooling. Of them only agent pin opens a
-  connection itself: a maker's release channel, for Claude Code and Codex.
+  and agent spawns each agent's own tooling. Of them only agent pin and agent
+  update open a connection themselves: a maker's release channel, for Claude
+  Code and Codex.
   Every doctrine command is offline.
 
 Options:

@@ -14,7 +14,8 @@
 // Two tests enforce exactly that shape. The second is the one that matters — a gate breaks by an
 // innocuous import three modules deep acquiring a socket, not by an obvious `fetch`.
 //
-// It reaches one other kind of host (AGT2b): a vendor's release channel, for `agent pin`. That is the
+// It reaches one other kind of host (AGT2b): a vendor's release channel, for `agent pin` (and for
+// `agent update`, which asks the channel for its newest release and then pins it, USE1a). That is the
 // same shape of conversation — a person asked for it, and no gate runs it — so it lives here rather
 // than giving the toolchain a socket of its own; the dispatcher hands the fetcher in.
 

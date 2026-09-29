@@ -1063,6 +1063,15 @@ public static class HarnessProbe
             }
         }
 
+        // 🔴 USE1f: what Windows can START, by the resolver installers already use. A bare name from
+        // PATH starts only as an `.exe`, so an agent npm installed globally (a `.cmd` shim, with a
+        // POSIX script beside it) probed absent and every start on it was held, though the CLI found
+        // it. Here because the probe and both doors' spawns all come through here, as the pin does;
+        // and a shim is held to the same rule about its arguments that a pinned `.cmd` now is.
+        info.FileName = HarnessActions.WindowsShim(
+            info.FileName, info.ArgumentList,
+            info.Environment.TryGetValue("PATH", out var path) ? path : null);
+
         // The ACP adapter runs the Agent SDK, which finds its CLI through its own seam (ACP2, §1a).
         // Applied here for the reason everything else here is: one line, both doors, no adapter that
         // can forget it. Null leaves it unset, so the SDK looks where it always did.
@@ -1585,14 +1594,16 @@ public static class HarnessActions
     /// (AGT2b) — else npm's own `--prefix`, aimed somewhere Daoris chose.
     /// </summary>
     /// <param name="transport">How a channel is reached — the network, unless a test holds its own.</param>
+    /// <param name="npm">The package manager a package pin runs — npm, unless a test holds a stand-in.</param>
     public static Task<int> PinAsync(
         HarnessToolchain toolchain, string home, string harness, string version, Action<string> write,
-        CancellationToken ct = default, Action<HarnessRun>? started = null, HttpMessageHandler? transport = null) =>
+        CancellationToken ct = default, Action<HarnessRun>? started = null, HttpMessageHandler? transport = null,
+        IReadOnlyList<string>? npm = null) =>
         toolchain.Channel is { Length: > 0 } channel
             ? PinFromChannelAsync(toolchain, channel, home, harness, version, write, ct, started, transport)
             : toolchain.Package is { Length: > 0 } package
             ? RunAsync(
-                ["npm", "install", "--prefix", HarnessSettings.ManagedHome(home, harness, version),
+                [.. npm ?? Npm, "install", "--prefix", HarnessSettings.ManagedHome(home, harness, version),
                  $"{package}@{version}"],
                 toolchain, profileHome: null, write, ct, started)
             : throw new DriverException(
@@ -1633,13 +1644,193 @@ public static class HarnessActions
         return 0;
     }
 
-    /// <summary>Update a present harness through its own updater.</summary>
+    private static readonly string[] Npm = ["npm"];
+
+    /// <summary>
+    /// Which Update a door has (USE1a): <c>"pin"</c> when it is pinned and declares a package or a
+    /// channel, so Update moves the pin to the newest release; <c>"tool"</c> when it is unpinned and
+    /// declares an updater of its own; otherwise null, and a surface offers no Update at all.
+    /// </summary>
+    /// <remarks>
+    /// A pinned door's own updater is never the answer: it would change the copy on <c>PATH</c> or the
+    /// configured command, not the copy sessions run. The CLI's <c>agent update</c> branches the same way.
+    /// </remarks>
+    /// <param name="pinned">This machine's pin for the door, or null.</param>
+    public static string? UpdateOf(HarnessToolchain toolchain, string? pinned) =>
+        !string.IsNullOrWhiteSpace(pinned)
+            ? toolchain.Package is { Length: > 0 } || toolchain.Channel is { Length: > 0 } ? "pin" : null
+            : toolchain.UpdateArguments is { Count: > 0 } ? "tool" : null;
+
+    /// <summary>
+    /// Update a door (USE1a), by <see cref="UpdateOf"/>: move a pin to the newest release, or run the
+    /// door's own updater. A door with neither is refused, as it always was.
+    /// </summary>
+    /// <param name="pinned">This machine's pin for the door, or null.</param>
+    /// <param name="pin">
+    /// Writes the new pin — called only once the version it names is installed, exactly as the pin
+    /// action writes its own.
+    /// </param>
+    /// <param name="transport">How a channel is reached — the network, unless a test holds its own.</param>
+    /// <param name="npm">The package manager a package door asks and installs with — npm, unless a test holds a stand-in.</param>
     public static Task<int> UpdateAsync(
-        HarnessToolchain toolchain, IReadOnlyList<string>? command, Action<string> write,
-        CancellationToken ct = default, Action<HarnessRun>? started = null) =>
-        toolchain.UpdateArguments is { Count: > 0 } update
-            ? RunAsync([.. toolchain.Command(command), .. update], toolchain, profileHome: null, write, ct, started)
-            : throw new DriverException("that agent declares no updater — it updates itself, or its package manager does.");
+        HarnessToolchain toolchain, IReadOnlyList<string>? command, string home, string harness, string? pinned,
+        Action<string> pin, Action<string> write, CancellationToken ct = default, Action<HarnessRun>? started = null,
+        HttpMessageHandler? transport = null, IReadOnlyList<string>? npm = null) =>
+        UpdateOf(toolchain, pinned) switch
+        {
+            "pin" => MovePinAsync(toolchain, home, harness, pinned!.Trim(), pin, write, ct, started, transport, npm),
+            "tool" => RunAsync(
+                [.. toolchain.Command(command), .. toolchain.UpdateArguments!], toolchain, profileHome: null, write, ct, started),
+            _ => throw new DriverException(!string.IsNullOrWhiteSpace(pinned)
+                ? $"that agent is pinned at {pinned} and declares no package or release channel to find a newer "
+                  + $"version in. Pin another with `daoris agent pin {harness} <version>`, or unpin it."
+                : "that agent declares no updater — it updates itself, or its package manager does."),
+        };
+
+    /// <summary>
+    /// Move a pin to the newest release (USE1a): resolve the newest to one exact version, then pin it
+    /// through <see cref="PinAsync"/> — the channel's verified install, or npm's. A pin never names a
+    /// pointer such as <c>latest</c>.
+    /// </summary>
+    private static async Task<int> MovePinAsync(
+        HarnessToolchain toolchain, string home, string harness, string pinned, Action<string> pin,
+        Action<string> write, CancellationToken ct, Action<HarnessRun>? started, HttpMessageHandler? transport,
+        IReadOnlyList<string>? npm)
+    {
+        string newest;
+        if (toolchain.Channel is { Length: > 0 } channel)
+        {
+            if (channel != ClaudeReleases.Channel)
+            {
+                throw new DriverException(
+                    $"this build knows no `{channel}` channel's newest release, so nothing was fetched or pinned. "
+                    + $"`daoris agent update {harness}` in a terminal knows every channel Daoris does.");
+            }
+
+            write($"{harness} is pinned at {pinned}. Asking {toolchain.Maker ?? "its maker"}'s own release channel "
+                + "which release is newest.");
+            // No process asks the pointer, so stopping it is cancelling the request.
+            using var asking = CancellationTokenSource.CreateLinkedTokenSource(ct);
+            started?.Invoke(new HarnessRun(asking));
+            try
+            {
+                newest = await ClaudeReleases.LatestAsync(asking.Token, transport).ConfigureAwait(false);
+            }
+            catch (DriverException error)
+            {
+                throw new DriverException($"{error.Message} The pin stays at {pinned}.");
+            }
+        }
+        else
+        {
+            write($"{harness} is pinned at {pinned}. Asking npm which release of {toolchain.Package} is newest.");
+            newest = await NewestOnNpmAsync(toolchain, npm ?? Npm, pinned, write, ct, started).ConfigureAwait(false);
+        }
+
+        if (newest == pinned && HarnessSettings.ManagedBinary(home, harness, pinned, toolchain.Binary) is not null)
+        {
+            write($"{pinned} is already the newest release — nothing was fetched, and the pin stays.");
+            return 0;
+        }
+        if (CompareReleases(newest, pinned) < 0)
+        {
+            write($"the pin, {pinned}, is newer than the newest release ({newest}) — nothing was fetched, and the pin "
+                + "stays. Update never moves a pin backwards.");
+            return 0;
+        }
+
+        write(newest == pinned
+            ? $"{pinned} is the newest release and is not installed here — installing it."
+            : $"{pinned} → {newest}");
+        var code = await PinAsync(toolchain, home, harness, newest, write, ct, started, transport, npm).ConfigureAwait(false);
+        if (code == 0) pin(newest);
+        else write($"nothing was pinned: the pin stays at {pinned}.");
+        return code;
+    }
+
+    /// <summary>
+    /// The newest version npm publishes of a door's package, asked with <c>npm view &lt;package&gt;
+    /// version</c> — a spawn of the same kind the pin's <c>npm install</c> is, streamed the same way.
+    /// Anything but one version is a refusal that says so.
+    /// </summary>
+    private static async Task<string> NewestOnNpmAsync(
+        HarnessToolchain toolchain, IReadOnlyList<string> npm, string pinned, Action<string> write,
+        CancellationToken ct, Action<HarnessRun>? started)
+    {
+        var package = toolchain.Package!;
+        var stays = $"Nothing was fetched or pinned, and the pin stays at {pinned}.";
+        var heard = new List<string>();
+
+        int code;
+        try
+        {
+            code = await RunAsync(
+                [.. npm, "view", package, "version"], toolchain, profileHome: null,
+                line =>
+                {
+                    // RunAsync echoes the command first; that line is Daoris's, not npm's answer.
+                    if (!line.StartsWith("$ ", StringComparison.Ordinal)) heard.Add(line);
+                    write(line);
+                },
+                ct, started).ConfigureAwait(false);
+        }
+        catch (DriverException error)
+        {
+            throw new DriverException($"{error.Message} {stays}");
+        }
+
+        var said = heard.Select(line => line.Trim()).FirstOrDefault(line => line.Length > 0);
+        var shown = said is null ? "" : $" ({(said.Length > 160 ? said[..160] + "…" : said)})";
+        if (code != 0)
+        {
+            throw new DriverException($"npm could not say which release of {package} is newest — it exited {code}{shown}. {stays}");
+        }
+
+        return VersionFromNpm(heard)
+            ?? throw new DriverException($"npm answered no single version of {package}{shown}. {stays}");
+    }
+
+    /// <summary>One exact release, as npm and the channels write it — a prerelease or build suffix included.</summary>
+    private static readonly Regex Release = new(
+        @"^(\d+)\.(\d+)\.(\d+)(?:-([0-9A-Za-z.-]+))?(?:\+[0-9A-Za-z.-]+)?$", RegexOptions.Compiled);
+
+    /// <summary>
+    /// The one version <c>npm view &lt;package&gt; version</c> answered, or null when it answered none
+    /// or several (USE1a). A warning npm prints beside it is not a version, and quotes around one are
+    /// npm's own. The CLI's <c>versionFromNpm</c> is the twin.
+    /// </summary>
+    public static string? VersionFromNpm(IEnumerable<string> lines)
+    {
+        var found = lines
+            .Select(line => line.Trim().Trim('\'', '"'))
+            .Where(line => Release.IsMatch(line))
+            .Distinct(StringComparer.Ordinal)
+            .ToList();
+        return found.Count == 1 ? found[0] : null;
+    }
+
+    /// <summary>
+    /// Which of two releases is newer: negative when <paramref name="a"/> is older, positive when newer,
+    /// and null when either is not a version this can order. A release outranks its own prereleases.
+    /// </summary>
+    private static int? CompareReleases(string a, string b)
+    {
+        var left = Release.Match(a);
+        var right = Release.Match(b);
+        if (!left.Success || !right.Success) return null;
+
+        for (var at = 1; at <= 3; at++)
+        {
+            // Compared as digit strings, so a number too long for any integer type orders rather than throws.
+            var (x, y) = (left.Groups[at].Value.TrimStart('0'), right.Groups[at].Value.TrimStart('0'));
+            var difference = x.Length != y.Length ? x.Length.CompareTo(y.Length) : string.CompareOrdinal(x, y);
+            if (difference != 0) return difference;
+        }
+
+        var (l, r) = (left.Groups[4], right.Groups[4]);
+        if (l.Success == r.Success) return l.Success ? string.CompareOrdinal(l.Value, r.Value) : 0;
+        return l.Success ? -1 : 1;
+    }
 
     /// <summary>
     /// Run the harness's own login flow INTO a profile. The directory is Daoris's; everything that
@@ -1679,8 +1870,8 @@ public static class HarnessActions
             StandardErrorEncoding = Encoding.UTF8,
         };
         foreach (var part in command.Skip(1)) info.ArgumentList.Add(part);
+        // Resolves the file Windows can start too (WindowsShim, USE1f): one line for every spawn.
         HarnessProbe.Apply(info, toolchain, profileHome);
-        info.FileName = WindowsShim(info.FileName, command.Skip(1), info.Environment["PATH"]);
 
         write($"$ {string.Join(' ', command)}");
 
@@ -1713,9 +1904,11 @@ public static class HarnessActions
     /// <remarks>
     /// 🔴 Every declared installer is `npm …`, and on Windows `npm` is `npm.cmd`: started by its bare
     /// name with no shell, Windows appends only `.exe` and finds nothing (REV3; the CLI's `spawnable` is
-    /// the twin, fixed 2026-09-22). A shim is then run by `cmd.exe`, which parses its arguments again —
-    /// so an argument it would reinterpret is refused rather than escaped: every one here is a path or
-    /// a `package@version`, and none legitimately carries one.
+    /// the twin, fixed 2026-09-22). An agent npm installed globally is the same shape (USE1f), so every
+    /// spawn of a harness comes through here, by <see cref="HarnessProbe.Apply"/>. A shim is then run by
+    /// `cmd.exe`, which parses its arguments again and stops at a line break — so an argument it would
+    /// reinterpret is refused rather than escaped. An installer's are paths and `package@version`s, and
+    /// never carry one; the pipe door's prompt does, and is refused on a shim rather than cut short.
     /// </remarks>
     internal static string WindowsShim(string command, IEnumerable<string> arguments, string? path)
     {
@@ -1732,9 +1925,13 @@ public static class HarnessActions
         {
             if (argument.IndexOfAny(['"', '%', '&', '|', '<', '>', '^', '\r', '\n']) >= 0)
             {
+                // Named by its first line, short: a whole prompt in a refusal is a page, not a sentence.
+                var line = argument.Split('\n')[0].TrimEnd('\r');
+                var shown = line.Length > 60 || line.Length < argument.Length ? $"{line[..Math.Min(line.Length, 60)]}…" : line;
                 throw new DriverException(
-                    $"`{argument}` cannot be passed to a Windows command shim safely. Run the agent's own "
-                    + "tooling from a terminal instead.");
+                    $"`{shown}` cannot be passed to a Windows command shim safely ({Path.GetFileName(file)} is one), "
+                    + "so it was not started. Run the agent's own tooling from a terminal, or point Daoris at the "
+                    + "tool's own executable: a pin, or its path in driver.json's `commands`.");
             }
         }
 

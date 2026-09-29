@@ -37,6 +37,12 @@ export interface ToolDoor {
   pinnable?: boolean;
   /** Whether this door can run the tool's sign-in — false where it declares no login flow. Absent from an older shell. */
   signsIn?: boolean;
+  /**
+   * Which Update this door has (USE1a): `pin` moves its pin to the newest release, `tool` runs the
+   * tool's own updater, and absent means none — so no Update is offered, rather than one that can
+   * only be refused.
+   */
+  updates?: 'pin' | 'tool' | null;
   /** Whether this agent takes an API key from Daoris (AGT3) — only where its key variable was measured. */
   takesKey?: boolean;
   /** The version this machine pinned, or null for whatever is on `PATH` (TOOL2/D57). */

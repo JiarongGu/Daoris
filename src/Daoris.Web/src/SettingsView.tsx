@@ -1476,10 +1476,14 @@ function HarnessRoster({ notify }: { notify: Notify }) {
                       {t('harness.install')}
                     </Button>
                   )}
-                  {harness.present && (
-                    <Button variant="ghost" disabled={busy} onClick={() => run(harness.harness, 'update')}>
-                      {t('harness.update')}
-                    </Button>
+                  {/* 🔴 USE1a: offered only where it does something, and saying which it does.
+                      It was offered on every door, and on a pinned one it could only be refused. */}
+                  {harness.present && (harness.updates === 'pin' || harness.updates === 'tool') && (
+                    <Tip content={t(harness.updates === 'pin' ? 'harness.update.pinTip' : 'harness.update.toolTip')}>
+                      <Button variant="ghost" disabled={busy} onClick={() => run(harness.harness, 'update')}>
+                        {t('harness.update')}
+                      </Button>
+                    </Tip>
                   )}
                 </span>
               </header>

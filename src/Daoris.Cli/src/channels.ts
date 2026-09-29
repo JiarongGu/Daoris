@@ -42,6 +42,14 @@ export const CODEX_RELEASES = 'https://releases.openai.com/codex/releases';
 export const CODEX_GITHUB = 'https://api.github.com/repos/openai/codex/releases/tags';
 
 /**
+ * Where each channel names its newest release (USE1a), per the channel evidence: Claude Code's
+ * `latest` answers a version as plain text, and Codex's `channels/latest` answers the newest
+ * release's own metadata. Claude Code's undocumented `stable` pointer is not used.
+ */
+export const CLAUDE_LATEST = `${CLAUDE_RELEASES}/latest`;
+export const CODEX_LATEST = 'https://releases.openai.com/codex/channels/latest';
+
+/**
  * The release key's fingerprint, as the vendor publishes it — **the trust root**, and a line of this
  * repository reviewed like any other. A vendor that rotates its key changes this through a change
  * somebody reads.
@@ -170,6 +178,51 @@ export function refuseVersion(channel: Channel, version: string): void {
       `\`${version}\` is not a Codex version — a pin names one exact release, like 0.156.1, not its `
       + 'tag and not a pointer.');
   }
+}
+
+/**
+ * The exact version a channel names as its newest release (USE1a) — what `agent update` pins.
+ *
+ * @remarks
+ * 🔴 **The pointer only chooses a version; it vouches for nothing.** It is not signed, so it is read as
+ * one exact version or refused, and the version it names is then installed through
+ * `installFromChannel`, verified exactly as a version a person typed would be. A pin is never the
+ * pointer itself: a pin that meant "whatever is newest today" would change under a running
+ * arrangement, which is what pinning exists to prevent.
+ */
+export async function latestVersion(channel: Channel, fetcher: Fetcher): Promise<string> {
+  const url = channel === 'claude-code-releases' ? CLAUDE_LATEST : CODEX_LATEST;
+  const body = await fetcher.bytes(url);
+  if (!body) {
+    throw new DaorisError(
+      `nothing answered at ${url}, where the channel names its newest release — nothing was fetched or pinned.`);
+  }
+
+  const said = channel === 'claude-code-releases' ? body.toString('utf8').trim() : codexTag(body);
+  try {
+    refuseVersion(channel, said);
+  } catch {
+    const shown = said.length > 60 ? `${said.slice(0, 60)}…` : said;
+    throw new DaorisError(
+      `the channel's newest-release pointer at ${url} answered \`${shown}\`, which is not a version — `
+      + 'nothing was fetched or pinned.');
+  }
+
+  return said;
+}
+
+/** The version a Codex release's metadata is tagged with (`rust-v<version>`), or what it said instead. */
+function codexTag(body: Buffer): string {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(body.toString('utf8'));
+  } catch {
+    return body.toString('utf8').trim();
+  }
+
+  const tag = parsed && typeof parsed === 'object' ? (parsed as { tag_name?: unknown }).tag_name : undefined;
+  if (typeof tag !== 'string') return '';
+  return tag.startsWith('rust-v') ? tag.slice('rust-v'.length) : tag;
 }
 
 /**

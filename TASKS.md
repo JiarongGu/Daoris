@@ -184,7 +184,7 @@ TASK.md and complete one by one"*).
   bar's size breaks after Ask Daoris is moved to the panel and back** (*"after dock "ask daoris" from
   right to bottom and back to right the sizing of right panel is broken"*) — reproduced on the scratch
   window before it is fixed; (b)'s frame overflow is the first suspect. *(b), (d) and (e) landed
-  2026-09-30 (one defect for (b) and (e)), in the archive; (a) and (c) remain.* (f) *Found the same
+  2026-09-30 (one defect for (b) and (e)), then (a) and (f), all in the archive; (c) remains (with QUEST1), and (g) is to confirm.* (f) *Found the same
   day, holding the ticket's verify step:* **the desktop does not find an npm-installed agent on
   `PATH`.** The owner updated `claude-code-acp` with npm (0.84.0, `claude-agent-acp.cmd` in the Node
   folder) and unpinned it; the CLI's `agent list` found it, and the desktop's driver held every start
