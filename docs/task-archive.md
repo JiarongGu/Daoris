@@ -7822,3 +7822,27 @@ recorded as capture starts).
 **Not covered:** the terminal conversation (`daoris-driver chat`) writes no session lines yet.
 **Proven by:** driver 949, modules 327 (the filter broken three ways turned its tests red each time),
 vitest 1426, on main after the merge.
+
+## HELP5 — Ask Daoris answers sooner (2026-09-30)
+
+> - [ ] **HELP5 — Ask Daoris answers sooner** (owner, 2026-09-30: *"and why there is a really long
+>   wait for "ask daoris""*). … (a) **The knowledge tools in the first request** … (b) **The room says
+>   it has no web either** … (c) **Open the conversation when the panel opens** …
+
+**Outcome** (built by a subagent in its own worktree, merged and re-tested on main). On the owner's real
+conversation the first word came about 30 s after the words reached the agent, over five model round
+trips, three of them Daoris's to remove. (a) The help room's spawn carries the adapter's own switch
+for loading tools up front (`ISessionAdapter.ToolsUpFront`: `ENABLE_TOOL_SEARCH=false` on both Claude
+Code doors, empty elsewhere); a repository's conversation keeps the harness's default. (b) The room
+says it has no web fetch or search, in the same sentence as the shell. (c) The page opens the
+conversation when the panel is shown, so the spawn and `session/new` are done before the person
+types: once per showing, again after *New conversation*, never beside a running one, silent when
+refused; the pre-opened one stays hidden until spoken in, so starters and an ended conversation stay
+in front, and words sent while it opens wait for it.
+
+**Not covered:** that the variable reaches `claude` through the adapter's Agent SDK and removes the
+search step rests on the binary's reading; a real conversation on the install confirms it. **Open:** an
+unspoken pre-opened conversation still leaves a session record, which can be the newest after a
+restart. The model's own latency (the account runs a 1M-context model at effort `xhigh`) is the
+owner's, and AGT6 gives it a door.
+**Proven by:** driver 961, vitest 1430 on main after the merge.

@@ -182,7 +182,7 @@ public sealed class ChatRunner(
                     var composed = PermissionRules.Compose(file, known.Workspace, repository);
                     return composed with { Allow = [.. composed.Allow, PermissionRules.ReadRule(ChatFiles.Folder(home, id))] };
                 },
-                Plugins: true, ConnectorOnPipe: false, Posture: null),
+                Plugins: true, ConnectorOnPipe: false, Posture: null, ToolsUpFront: false),
             onEnded, ct).ConfigureAwait(false);
     }
 
@@ -195,6 +195,9 @@ public sealed class ChatRunner(
     /// <para><b>It reads, and it advises</b>: handed the knowledge connector on either door, the room's
     /// allow-list and the person's denies, and none of the plugins' servers — a browser brought up for a
     /// tool it is not allowed would be a window for nothing.</para>
+    ///
+    /// <para><b>Its tools load with the first request</b> (HELP5), by the adapter's own switch where it names
+    /// one, so the first answer is not a search for the tools it was handed.</para>
     ///
     /// <para><b>One at a time</b>: the ledger refuses a second while one runs, naming it. The caller hands
     /// the person the running one rather than asking for another.</para>
@@ -237,7 +240,7 @@ public sealed class ChatRunner(
             new ChatPlace(
                 HelpRoom.Repository, room,
                 (file, id) => HelpRoom.Rules(file, ChatFiles.Folder(home, id)),
-                Plugins: false, ConnectorOnPipe: true, Posture: HelpRoom.Posture),
+                Plugins: false, ConnectorOnPipe: true, Posture: HelpRoom.Posture, ToolsUpFront: true),
             onEnded, ct).ConfigureAwait(false);
     }
 
@@ -251,9 +254,13 @@ public sealed class ChatRunner(
     /// it; a repository's own `.mcp.json` wires it on the pipe, and a room has none.
     /// </param>
     /// <param name="Posture">The protocol door's mode for this conversation, or null for the adapter's own (D81).</param>
+    /// <param name="ToolsUpFront">
+    /// Whether its tools load with the first request, by the adapter's own switch (HELP5): true for the room,
+    /// whose every answer reads the family, and false for a repository, which keeps the harness's default.
+    /// </param>
     private sealed record ChatPlace(
         string Name, string Tree, Func<PermissionFile, string, RuleLists> Rules, bool Plugins, bool ConnectorOnPipe,
-        string? Posture);
+        string? Posture, bool ToolsUpFront);
 
     /// <summary>
     /// A conversation whose record is open: its process spawned with its rules and servers, its door's
@@ -285,6 +292,13 @@ public sealed class ChatRunner(
                 HarnessProbe.Apply(
                     info, toolchain, selection.ProfileHome, selection.Binary, selection.ClaudeExecutable,
                     selection.Environment);
+            }
+
+            // HELP5: the helper paid a model round trip to find its own knowledge tools. Which variable
+            // stops that is a fact about the harness, so the adapter names it, and nothing here does.
+            if (place.ToolsUpFront)
+            {
+                foreach (var (name, value) in resolved.ToolsUpFront) info.Environment[name] = value;
             }
 
             // What the conversation's agent may do (PERM1, D72), handed by each door's own way: a flag on

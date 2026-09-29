@@ -19,6 +19,8 @@ export const keys = {
   considered: ['considered'] as const,
   /** The starts the last tick held for the agent's trust (D73) — written by the tick, like `considered`. */
   untrusted: ['untrusted'] as const,
+  /** Ask Daoris's conversation opened ahead of the person (HELP5) — kept by the page, never fetched. */
+  helpReadied: ['help-readied'] as const,
   allRepositories: ['repositories'] as const,
   repositories: (workspace: string | null) => ['repositories', workspace ?? '*'] as const,
   allRegistry: ['registry'] as const,

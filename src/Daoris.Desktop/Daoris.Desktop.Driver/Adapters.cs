@@ -1,3 +1,4 @@
+using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Text;
 using System.Text.Json;
@@ -494,6 +495,21 @@ public interface ISessionAdapter
     /// </summary>
     object? AcpSessionMeta(string settingsFile) => null;
 
+    /// <summary>
+    /// What a spawn of this harness carries so a session's tools load with its first request, rather than
+    /// behind a search step the agent must take first (HELP5). Empty where the harness has no such switch,
+    /// or nobody has read one in its binary.
+    /// </summary>
+    /// <remarks>
+    /// <para>Asked for by a conversation whose few tools are needed at once, which is Ask Daoris's: every
+    /// answer it gives reads the family. A repository's sessions never ask, and keep the harness's own
+    /// default, which is that harness's to change.</para>
+    ///
+    /// <para>Default empty, the silence-preserves rule every adapter default follows: an adapter opts in
+    /// when the switch is read in the binary it runs, like every other claim about somebody else's tool.</para>
+    /// </remarks>
+    IReadOnlyDictionary<string, string> ToolsUpFront => ReadOnlyDictionary<string, string>.Empty;
+
     /// <summary>The process that would be a CHAT: the same spawn, with stdin open.</summary>
     ProcessStartInfo PrepareChat(ChatTarget target, IReadOnlyList<string>? command) =>
         throw new DriverException(
@@ -795,6 +811,12 @@ public sealed class ClaudeAcpAdapter : ISessionAdapter
     /// </summary>
     public object? AcpSessionMeta(string settingsFile) =>
         new { claudeCode = new { options = new { settings = settingsFile } } };
+
+    /// <summary>
+    /// The pipe door's switch (HELP5), on this door's spawn: the Agent SDK runs <c>claude</c> with this
+    /// process's environment, which is how the pin's own switch reaches it too (AGT2).
+    /// </summary>
+    public IReadOnlyDictionary<string, string> ToolsUpFront => ClaudeCodeAdapter.LoadToolsUpFront;
 
     /// <summary>
     /// The adapter's own mechanisms. Pinned EXACT by default (D53's note on a harness that moved
@@ -1184,6 +1206,16 @@ public sealed class ClaudeCodeAdapter : ISessionAdapter
     /// </summary>
     internal static readonly IReadOnlyDictionary<string, string> StayPinned =
         new Dictionary<string, string> { ["DISABLE_UPDATES"] = "1" };
+
+    public IReadOnlyDictionary<string, string> ToolsUpFront => LoadToolsUpFront;
+
+    /// <summary>
+    /// 🔴 Read in the managed binary (HELP5, Claude Code 2.1.274): with <c>ENABLE_TOOL_SEARCH</c> unset, every
+    /// MCP tool waits behind a <c>ToolSearch</c> step, a whole model round trip before the agent's first real
+    /// move; a value its parser reads as false loads every tool with the first request instead.
+    /// </summary>
+    internal static readonly IReadOnlyDictionary<string, string> LoadToolsUpFront =
+        new Dictionary<string, string> { ["ENABLE_TOOL_SEARCH"] = "false" };
 
     private IReadOnlyList<string> Resolve(IReadOnlyList<string>? command) =>
         command is { Count: > 0 } ? command : Toolchain!.Binary;

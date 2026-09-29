@@ -1,3 +1,4 @@
+import { StrictMode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -20,6 +21,7 @@ vi.mock('@shenora/react', () => ({
 }));
 
 import '../i18n';
+import { keys } from '../queries';
 import { AskDaoris } from './AskDaoris';
 import type { HelpWhere } from './where';
 
@@ -62,6 +64,9 @@ function bridge(start: { sessionId: string | null; message: string } = { session
     }
   });
 }
+
+/** How many times the page asked the driver to open Ask Daoris's conversation. */
+const starts = () => invoke.mock.calls.filter(([, type]) => type === 'START_HELP').length;
 
 function show(where?: Omit<HelpWhere, 'session'>, attending: string | null = null) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -108,7 +113,8 @@ describe('Ask Daoris, with an agent named', () => {
    * HELP4: with none running, a message first opens the conversation, which takes seconds (the room is
    * written, the agent spawned). The person's words showed nowhere meanwhile, and read as lost. They are
    * shown at once, as opening Ask Daoris, and stay shown until the driver's own queue answers for the
-   * conversation — never gone while the session list catches up, and never shown twice.
+   * conversation — never gone while the session list catches up, and never shown twice. The send opens
+   * it here: the one opened as the panel showed (HELP5) was refused, silently.
    */
   it('shows the first words at once while the conversation opens, and keeps them until the driver has them', async () => {
     const words = 'tidy the branches so one PR is left';
@@ -116,6 +122,7 @@ describe('Ask Daoris, with an agent named', () => {
     bridge();
     const answered = invoke.getMockImplementation()!;
     invoke.mockImplementation(async (module: string, type: string, ...rest: unknown[]) => {
+      if (type === 'START_HELP' && starts() === 1) return { sessionId: null, message: 'not yet' };
       if (type === 'START_HELP') return new Promise((resolve) => { open = resolve; });
       // The driver holds them for a door still opening: taking, and saying why.
       if (type === 'SESSION_QUEUE') return { session: HELP.id, queued: [{ text: words, files: [] }], taking: true, opening: true };
@@ -133,11 +140,13 @@ describe('Ask Daoris, with an agent named', () => {
     show();
 
     const box = await screen.findByLabelText('message');
+    await waitFor(() => expect(starts()).toBe(1));
     await userEvent.type(box, words);
     await userEvent.click(screen.getByRole('button', { name: 'send' }));
 
     expect(await screen.findByText(words)).toBeInTheDocument();
     expect(screen.getByText('opening Ask Daoris…')).toBeInTheDocument();
+    expect(screen.queryByText('not yet')).toBeNull();
     expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_INPUT', expect.anything());
 
     holding = true;
@@ -154,6 +163,160 @@ describe('Ask Daoris, with an agent named', () => {
     await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_QUEUE', { payload: { id: HELP.id } }));
     await waitFor(() => expect(screen.getAllByText(words)).toHaveLength(1));
     expect(screen.getByText('opening Ask Daoris…')).toBeInTheDocument();
+  });
+
+  /**
+   * HELP5: the agent's spawn and its protocol session took seconds after the person pressed send. The
+   * conversation opens as the panel shows instead: once, however often the panel draws, and once under
+   * React's development double-mount. Nobody has spoken in it yet, so the panel goes on showing what it
+   * showed, and the first words go to it rather than opening another.
+   */
+  it('opens the conversation as the panel shows, once, and hands it the first words', async () => {
+    bridge();
+    const answered = invoke.getMockImplementation()!;
+    invoke.mockImplementation(async (module: string, type: string, ...rest: unknown[]) => {
+      // The ledger holds the record from the moment it opens.
+      if (type === 'START_HELP') SESSIONS = [HELP];
+      return answered(module, type, ...rest);
+    });
+    const listings = () => asked.filter((url) => url.includes('repository=daoris%3Ahelp')).length;
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    // Known before the first render, as on a page that has read them already: the panel is idle as it
+    // mounts, which is when the double-mount runs the effect twice.
+    client.setQueryData(keys.driver, { drivable: ['engine'], holds: [], trees: [], helperAdapter: HELPER });
+    client.setQueryData(keys.sessions(HELP.repository, true, null), []);
+    render(
+      <StrictMode>
+        <QueryClientProvider client={client}>
+          <Tooltip.Provider>
+            <AskDaoris onGo={vi.fn()} onClose={vi.fn()} />
+          </Tooltip.Provider>
+        </QueryClientProvider>
+      </StrictMode>,
+    );
+
+    await waitFor(() => expect(starts()).toBe(1));
+    // The list, asked again once it opened, holds it; the panel still shows its starters.
+    await waitFor(() => expect(listings()).toBeGreaterThanOrEqual(2));
+    await act(async () => {});
+    expect(screen.getByText(/Ask below about Daoris on this machine/)).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'new conversation' })).toBeNull();
+    // Asking every query again does not forget which one it is.
+    await act(() => client.invalidateQueries());
+    expect(screen.getByText(/Ask below about Daoris on this machine/)).toBeInTheDocument();
+
+    const box = await screen.findByLabelText('message');
+    await userEvent.type(box, 'how do I drive a repository?');
+    await userEvent.click(screen.getByRole('button', { name: 'send' }));
+
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_INPUT', {
+      payload: { id: HELP.id, text: 'how do I drive a repository?' },
+    }));
+    expect(starts()).toBe(1);
+    // Spoken in, it is the conversation the panel shows.
+    expect(await screen.findByRole('button', { name: 'new conversation' })).toBeInTheDocument();
+  });
+
+  /**
+   * HELP5 with HELP4: words sent while the conversation opened ahead is still opening show at once, as
+   * opening Ask Daoris, and go to it once it answers — never to a second one.
+   */
+  it('holds words sent while the conversation opened ahead is still opening, and gives them to it', async () => {
+    const words = 'why is engine held?';
+    let open: (answer: { sessionId: string | null; message: string }) => void = () => {};
+    bridge();
+    const answered = invoke.getMockImplementation()!;
+    invoke.mockImplementation(async (module: string, type: string, ...rest: unknown[]) => {
+      if (type === 'START_HELP') return new Promise((resolve) => { open = resolve; });
+      return answered(module, type, ...rest);
+    });
+    show();
+
+    // Opening before a word is typed.
+    await waitFor(() => expect(starts()).toBe(1));
+    const box = await screen.findByLabelText('message');
+    await userEvent.type(box, words);
+    await userEvent.click(screen.getByRole('button', { name: 'send' }));
+
+    expect(await screen.findByText(words)).toBeInTheDocument();
+    expect(screen.getByText('opening Ask Daoris…')).toBeInTheDocument();
+    expect(starts()).toBe(1);
+    expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_INPUT', expect.anything());
+
+    SESSIONS = [HELP];
+    await act(async () => { open({ sessionId: HELP.id, message: 'opened' }); });
+
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_INPUT', {
+      payload: { id: HELP.id, text: words },
+    }));
+    expect(starts()).toBe(1);
+  });
+
+  /**
+   * HELP5: the side bar and Quick Ask hold one conversation. The one opened ahead is spoken in from either
+   * host, and an opening that answers late, from the other, never hides the conversation spoken in.
+   */
+  it('keeps the conversation spoken in shown in both hosts, however late the other opening answers', async () => {
+    let late: (answer: { sessionId: string | null; message: string }) => void = () => {};
+    bridge();
+    const answered = invoke.getMockImplementation()!;
+    invoke.mockImplementation(async (module: string, type: string, ...rest: unknown[]) => {
+      if (type === 'START_HELP' && starts() === 1) return new Promise((resolve) => { late = resolve; });
+      if (type === 'START_HELP') SESSIONS = [HELP];
+      return answered(module, type, ...rest);
+    });
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    client.setQueryData(keys.driver, { drivable: ['engine'], holds: [], trees: [], helperAdapter: HELPER });
+    client.setQueryData(keys.sessions(HELP.repository, true, null), []);
+    const hosts = (count: number) => (
+      <QueryClientProvider client={client}>
+        <Tooltip.Provider>
+          {['side', 'quick'].slice(0, count).map((host) => <AskDaoris key={host} onGo={vi.fn()} onClose={vi.fn()} />)}
+        </Tooltip.Provider>
+      </QueryClientProvider>
+    );
+
+    const { rerender } = render(hosts(1));
+    // The side bar's opening, still on its way; then Quick Ask's, answered at once.
+    await waitFor(() => expect(starts()).toBe(1));
+    rerender(hosts(2));
+    await waitFor(() => expect(starts()).toBe(2));
+
+    await userEvent.type(screen.getAllByLabelText('message')[1], 'why is engine held?');
+    await userEvent.click(screen.getAllByRole('button', { name: 'send' })[1]);
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_INPUT', {
+      payload: { id: HELP.id, text: 'why is engine held?' },
+    }));
+    await waitFor(() => expect(screen.getAllByRole('button', { name: 'new conversation' })).toHaveLength(2));
+
+    // Settled all the way, its answer invalidating the list included, before the panels are read again.
+    const listings = asked.length;
+    await act(async () => { late({ sessionId: HELP.id, message: 'opened' }); });
+    await waitFor(() => expect(asked.length).toBeGreaterThan(listings));
+    await act(() => new Promise((settled) => { setTimeout(settled, 50); }));
+    expect(screen.getAllByRole('button', { name: 'new conversation' })).toHaveLength(2);
+  });
+
+  /**
+   * HELP5: a conversation that runs is carried on, so none is opened beside it. *New conversation*
+   * clears the panel, and once the one it finished has gone, the next opens ahead too.
+   */
+  it('opens none beside the one running, and the next once new conversation has finished it', async () => {
+    SESSIONS = [HELP];
+    bridge({ sessionId: 'n3xt0000', message: 'opened' });
+    show();
+
+    await screen.findByRole('button', { name: 'new conversation' });
+    await act(async () => {});
+    expect(starts()).toBe(0);
+
+    // Finishing it ends it, and the list says so when it is asked again.
+    SESSIONS = [{ ...HELP, state: 'completed' }];
+    await userEvent.click(screen.getByRole('button', { name: 'new conversation' }));
+
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'END_CHAT', { payload: { id: HELP.id } });
+    await waitFor(() => expect(starts()).toBe(1));
+    expect(await screen.findByText(/Ask below about Daoris on this machine/)).toBeInTheDocument();
   });
 
   /**
@@ -203,17 +366,25 @@ describe('Ask Daoris, with an agent named', () => {
     }));
   });
 
+  /**
+   * With HELP5: the conversation opened as the panel showed was refused, which says nothing and is not
+   * asked again while the person types. The send asks for itself, and says why it cannot.
+   */
   it('keeps the words in the box, with the driver\'s sentence, when no conversation can start', async () => {
     bridge({ sessionId: null, message: 'Claude Code has no account signed in.' });
     show();
 
     const box = await screen.findByLabelText('message');
+    await waitFor(() => expect(starts()).toBe(1));
     await userEvent.type(box, 'hello');
+    expect(screen.queryByText('Claude Code has no account signed in.')).toBeNull();
+    expect(starts()).toBe(1);
     await userEvent.click(screen.getByRole('button', { name: 'send' }));
 
     expect(await screen.findByText('Claude Code has no account signed in.')).toBeInTheDocument();
     expect((box as HTMLTextAreaElement).value).toBe('hello');
     expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_INPUT', expect.anything());
+    expect(starts()).toBe(2);
   });
 
   it('carries on the conversation running, and starts again on new conversation', async () => {
@@ -256,12 +427,15 @@ describe('Ask Daoris, with an agent named', () => {
     PROPOSALS = [];
   });
 
+  /** With HELP5: the next conversation opens ahead, and the one that ended stays in front until it is spoken in. */
   it('says a conversation that ended has, and that a message starts the next', async () => {
     SESSIONS = [{ ...HELP, state: 'completed' }];
-    bridge();
+    bridge({ sessionId: 'n3xt0000', message: 'opened' });
     show();
 
     const panel = await screen.findByRole('complementary', { name: 'Ask Daoris' });
+    await waitFor(() => expect(starts()).toBe(1));
+    await act(async () => {});
     expect(await within(panel).findByText('This conversation has ended. A message starts a new one.')).toBeInTheDocument();
   });
 });
@@ -278,11 +452,13 @@ describe('Ask Daoris, with no agent named', () => {
     invoke.mockReset();
   });
 
-  it('offers its starters and no message box', async () => {
+  it('offers its starters and no message box, and opens no conversation', async () => {
     bridge();
     show();
 
     expect(await screen.findByText(/Name an agent under Daoris's own AI/)).toBeInTheDocument();
     expect(screen.queryByLabelText('message')).toBeNull();
+    await act(async () => {});
+    expect(starts()).toBe(0);
   });
 });

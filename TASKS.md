@@ -144,7 +144,7 @@ rather than designed.
 
 ## Backlog
 
-**Thirty-four rows are open**: the owner's seven of 2026-09-30 (USE1, AGT6, QUEST1, HELP5, LOG1,
+**Thirty-three rows are open**: the owner's six of 2026-09-30 (USE1, AGT6, QUEST1, LOG1,
 CONSOLE4, SETUP1), first; WSR4
 from the first real workspace (its other WSR, HELP, SESS, DOCK
 and MAP rows are in the archive); the four REV3 left (DIST1, BUDGET1 and HOME1 the owner's, and HTTP1);
@@ -214,17 +214,6 @@ TASK.md and complete one by one"*).
   both doors (D50). The rule to decide and record: what a delete may reach once a session has taken the
   quest (its session record names it), and how a delete travels to a remote (D68) rather than being
   resurrected by the next sync.
-- [ ] **HELP5 — Ask Daoris answers sooner** (owner, 2026-09-30: *"and why there is a really long
-  wait for "ask daoris""*). Read off the installed window's session of 21:42: the words reached the
-  agent 3.2s after the conversation was made (spawn and the protocol session opening), its first
-  visible move came 10.6s after that, and its first word 26.4s after that — five model round trips
-  on a 1M-context model, three of them avoidable. (a) **The knowledge tools in the first request**:
-  Claude Code defers every MCP tool behind `ToolSearch` unless `ENABLE_TOOL_SEARCH` says otherwise
-  (read in the managed binary, 0.79.0: unset is always search, `false` is none), so the helper paid a
-  round trip to find its own tools. (b) **The room says it has no web either**: its fourth move was a
-  fetch of the ticket's URL, refused by construction. (c) **Open the conversation when the panel
-  opens**, so the spawn and the session are done before the person sends. The model itself is the
-  owner's to choose, in that account's own settings (D49 §7): the round trips are its latency.
 - [ ] **LOG1 — a log of what happens on this machine, to improve Daoris from.** Today nothing is
   written outside the session transcripts: the shell's, the driver loop's and the host's own lines go
   to a console nobody has once the application is installed, and an unhandled exception leaves no
