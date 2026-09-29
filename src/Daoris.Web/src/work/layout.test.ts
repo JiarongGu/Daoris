@@ -25,6 +25,20 @@ describe('the rail', () => {
   });
 });
 
+/** DOCK1a: the frame on a view with no rail — Overview, Quests — gives the rail's room to the rest. */
+describe('a view with no rail', () => {
+  it('has none, at any width, and the dock and the centre share what the rail would have taken', () => {
+    expect(at(1600, { noRail: true }).rail).toEqual({ width: 0, strip: false, auto: false });
+    expect(at(900, { noRail: true }).rail.width).toBe(0);
+    // A window where the rail's room would have cramped the dock does not cramp it without one.
+    // Just wide enough that the rail is whole, and too narrow for it, the centre's floor and the dock's.
+    const width = RAIL.autoBelow + 1;
+    expect(48 + RAIL.initial + CENTRE_FLOOR + DOCK.floor).toBeGreaterThan(width);
+    expect(at(width).dock.mode).toBe('cramped');
+    expect(at(width, { noRail: true }).dock.mode).toBe('docked');
+  });
+});
+
 describe('the dock', () => {
   it('opens at 45% of the window and keeps the share the person gave it', () => {
     expect(at(1600).dock).toEqual({ mode: 'docked', width: 720 });

@@ -288,7 +288,9 @@ controls are in the frame design's §3.
   panel beneath. Its four views (the timeline, the review, Ask Daoris, the console) move between the
   side bar and the panel from each region's tab list (DOCK1b); in every label the right region is
   *the side bar* and the bottom one *the panel*, as VS Code names them, never *the console*, which is
-  a view.
+  a view. **The side bar and the panel are on every view** (DOCK1a): one frame, as VS Code's
+  workbench is, with the view in its centre; the rail is Sessions' alone, and off Sessions the session
+  views say which session they speak for.
   - **The rail** groups by repository, what needs the person first; a group states its repository's
     facts (*drives here*, *held*, *busy* in words), and the ended sit beneath. It searches by name at
     once and by what was said when typing settles. A row's menu holds what has no other home: its own

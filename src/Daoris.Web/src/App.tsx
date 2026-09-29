@@ -69,11 +69,6 @@ const ATTENDING = 'daoris.attending';
  * window cannot show is Settings' own business: it opens on Appearance instead.
  */
 const SETTINGS_SECTION = 'daoris.settings';
-/** Whether Ask Daoris's panel is open (HELP1) — this viewer's, remembered like the view. */
-const HELP = 'daoris.help';
-/** Its width where it is the right region on its own — this viewer's, as the dock's share is. */
-const HELP_WIDTH = 'daoris.helpWidth';
-const HELP_DEFAULT_WIDTH = 384;
 
 function rememberedView(): Tab {
   // Landing on Overview is the safe half of the choice.
@@ -134,37 +129,18 @@ export function App() {
   // The same "is a shell here" answer every control uses — one detection path, not two that drift.
   const driver = useDriver();
   const attached = driver.data !== undefined;
-  // Ask Daoris (HELP1): the one right region — on Sessions a tab of the right dock, elsewhere the region
-  // itself, resized by its edge (the owner, 2026-09-29: "the ask daoris need to be a better location").
-  const [helpOpen, setHelpOpen] = useState(() => stored(HELP) === '1');
-  useEffect(() => { store(HELP, helpOpen ? '1' : '0'); }, [helpOpen]);
-  const [helpWidth, setHelpWidth] = useState(() => Number(stored(HELP_WIDTH)) || HELP_DEFAULT_WIDTH);
-  const resizeHelp = (next: number | null) => {
-    setHelpWidth(next ?? HELP_DEFAULT_WIDTH);
-    store(HELP_WIDTH, next === null ? null : String(Math.round(next)));
-  };
-  // Bumped each time the person asks for it on Sessions, where the dock opens on its tab.
+  // Ask Daoris (HELP1) is a view of the frame's regions on every view since DOCK1a (the owner: "the design
+  // language we using in session screen … should be apply to all screens"): bumped each time the person
+  // asks for it, and the frame opens whichever region holds it, on it.
   const [helpFocus, setHelpFocus] = useState(0);
-  // What the person closed in the Work frame (DOCK1c): held here, so the strip's toggles, the View menu
-  // and the keys reach them from every view.
+  // What the person closed in the frame (DOCK1c): held here, so the strip's toggles, the View menu and
+  // the keys reach them from every view.
   const closings = useFrameClosings();
   // Where each view stands (DOCK1b): held here, so the View menu's reset reaches it.
   const placements = usePlacements();
-  // On Sessions its door opens the dock on it (the dock has its own close); elsewhere it toggles.
-  const toggleHelp = useCallback(() => {
-    if (onSessions.current) {
-      setHelpOpen(true);
-      setHelpFocus((was) => was + 1);
-    } else {
-      setHelpOpen((was) => !was);
-    }
-  }, []);
-  // Open it, never close it: the palette's command and Quick Ask's *Open in the side bar*. On Sessions
-  // that is its region opened on it, which `setHelpOpen` alone did not do there.
-  const openHelp = () => {
-    setHelpOpen(true);
-    if (onSessions.current) setHelpFocus((was) => was + 1);
-  };
+  // Its doors open it, never close it — `F1`, `Ctrl+Alt+I`, the palette, Quick Ask's *Open in the side
+  // bar*; the region's own close and toggle are what close it, on every view alike.
+  const openHelp = useCallback(() => setHelpFocus((was) => was + 1), []);
   const onSessions = useRef(false);
   // Quick Ask (DOCK1d): open or not, and the question the palette handed it, one id per question.
   const [quick, setQuick] = useState(false);
@@ -198,27 +174,19 @@ export function App() {
   const view: Tab = tab === 'sessions' && !attached ? 'overview' : tab;
   onSessions.current = view === 'sessions';
 
-  // A region toggled (DOCK1c): the rail and the panel are Sessions', so elsewhere their keys do nothing;
-  // the right side bar is the dock on Sessions and Ask Daoris's region everywhere else. True when it did.
+  // A region toggled (DOCK1c): the side bar and the panel are the frame's on every view since DOCK1a, and
+  // the rail is Sessions' own list, so elsewhere its key does nothing. True when it did. In a browser
+  // there is no frame, only the view (D47 §4: the regions hold this machine's sessions).
   const toggleRegion = (region: LayoutRegion): boolean => {
-    if (region === 'right') {
-      if (view === 'sessions') closings.setDock(!closings.dock);
-      else if (attached) setHelpOpen((was) => !was);
-      else return false;
-      return true;
-    }
-    if (view !== 'sessions') return false;
-    if (region === 'rail') closings.setRail(!closings.rail);
-    else closings.setPanel(!closings.panel);
+    if (!attached) return false;
+    if (region === 'right') closings.setDock(!closings.dock);
+    else if (region === 'panel') closings.setPanel(!closings.panel);
+    else if (view === 'sessions') closings.setRail(!closings.rail);
+    else return false;
     return true;
   };
   const toggleRegionRef = useRef(toggleRegion);
   toggleRegionRef.current = toggleRegion;
-  // Open on another view and carried to Sessions, it lands on the dock's tab rather than vanishing.
-  useEffect(() => {
-    // Only the move onto Sessions, so `helpOpen` is read and not watched.
-    if (view === 'sessions' && helpOpen) setHelpFocus((was) => was + 1);
-  }, [view]);
 
   // The scope (WSP5): which circle this window is looking at. The roster comes from the registry
   // unscoped — the one reader that must see every workspace — and a remembered choice the deployment
@@ -360,7 +328,7 @@ export function App() {
       const chatKey = event.key.toLowerCase() === 'i' && event.ctrlKey && event.altKey;
       if ((event.key === 'F1' || chatKey) && attached) {
         event.preventDefault();
-        toggleHelp();
+        openHelp();
         return;
       }
       // The region toggles (DOCK1c), VS Code's keys: Ctrl+B the rail, Ctrl+J the panel, Ctrl+Alt+B the
@@ -379,7 +347,7 @@ export function App() {
     };
     window.addEventListener('keydown', onKey);
     return () => window.removeEventListener('keydown', onKey);
-  }, [attached, toggleHelp]);
+  }, [attached, openHelp]);
 
   // The attended session is remembered alongside the view (D56), so a relaunch into Sessions reopens
   // what the person was watching rather than an empty column.
@@ -414,7 +382,8 @@ export function App() {
       },
     },
     attending,
-    onClose: () => setHelpOpen(false),
+    // Unframed in the side bar, whose own close is the region's; nothing here closes on its own.
+    onClose: () => closings.setDock(true),
     onGo: (door: StarterDoor) => {
       if (door.view === 'settings' && door.section) openSettings(door.section, door.anchor);
       else setView(door.view);
@@ -432,6 +401,78 @@ export function App() {
     // answered beside them. Only a shell reads the rules.
     ...(attached ? { rule: () => openSettings('permissions') } : {}),
   };
+
+  /** Every view but Sessions, as the frame's centre in a shell and the whole window in a browser (DOCK1a). */
+  const renderView = () => (
+    // `relative`: the containing block for what is positioned inside the column. Without it an
+    // `sr-only` label far down a long page took the viewport as its block and stretched the
+    // document, which grew a second scrollbar beside this one (seen on the window, PERM1).
+    <main className="relative min-h-0 min-w-0 flex-1 overflow-y-auto px-6 pb-12 pt-5 max-md:px-3 max-md:pb-8 max-md:pt-4">
+      {/* No cap: content follows the window (UX5 U59, the owner), as the session's centre does
+          since U16. It was 72rem, and a maximized window left every view a third empty.
+          Prose keeps its own measure (`Prose`), and a form its own size. */}
+      <div>
+        {view === 'overview' && (
+          <OverviewView
+            onNavigate={setView}
+            onOpenQuest={(id) => { setQuestFocus(id); setView('quests'); }}
+            doors={attentionDoors}
+            notify={notify}
+          />
+        )}
+        {view === 'quests' && (
+          <QuestsView
+            notify={notify}
+            onAttend={attached ? openInWork : undefined}
+            opening={opening}
+            onOpened={() => setOpening(null)}
+            focus={questFocus}
+            onFocused={() => setQuestFocus(null)}
+            asking={asking}
+            onAsked={() => setAsking(false)}
+            askFocus={askFocus}
+            onAskFocused={() => setAskFocus(null)}
+          />
+        )}
+        {view === 'projects' && (
+          <ProjectsView
+            notify={notify}
+            addRequested={addRequested}
+            onAddOpened={() => setAddRequested(false)}
+            importRequested={importRequested}
+            onImportOpened={() => setImportRequested(false)}
+          />
+        )}
+        {view === 'map' && (
+          <MapView
+            notify={notify}
+            onOpenConvergence={() => setView('convergence')}
+            onOpenQuest={(id) => { setQuestFocus(id); setView('quests'); }}
+          />
+        )}
+        {view === 'convergence' && (
+          <ConvergenceView semantic={status.data?.semantic ?? false} onOpen={setReadingId} notify={notify} />
+        )}
+        {view === 'search' && (
+          <SearchView
+            onOpen={setReadingId}
+            notify={notify}
+            semantic={status.data?.semantic ?? false}
+            onConverge={() => setView('convergence')}
+          />
+        )}
+        {view === 'settings' && (
+          <SettingsView
+            notify={notify}
+            section={settingsSection}
+            onSection={chooseSettings}
+            anchor={settingsAnchor}
+            onAnchored={() => setSettingsAnchor(null)}
+          />
+        )}
+      </div>
+    </main>
+  );
 
   return (
     // A window, not a page (D55): the viewport IS the frame, every region scrolls inside it, and
@@ -468,18 +509,19 @@ export function App() {
                   // Daoris's own browser (D78): where the person signs in, and watches a session use it.
                   { id: 'browser', label: t('work.menu.browser'), icon: 'browser' as const },
                 ] : []),
-                // The region toggles' second door (DOCK1c, SURF11), with their keys, ticked while shown.
+                // The region toggles' second door (DOCK1c, SURF11), with their keys, ticked while shown: the
+                // rail on Sessions, whose list it is, and the panel and the side bar on every view (DOCK1a).
                 ...(view === 'sessions' ? [
                   { id: 'layout:rail', label: t('layout.menu.rail'), icon: LAYOUT_KEYS.rail.icon, shortcut: LAYOUT_KEYS.rail.keys, checked: !closings.rail, separated: true },
-                  { id: 'layout:panel', label: t('layout.menu.panel'), icon: LAYOUT_KEYS.panel.icon, shortcut: LAYOUT_KEYS.panel.keys, checked: !closings.panel },
                 ] : []),
-                ...(attached ? [{
-                  id: 'layout:right', label: t('layout.menu.right'), icon: LAYOUT_KEYS.right.icon, shortcut: LAYOUT_KEYS.right.keys,
-                  checked: view === 'sessions' ? !closings.dock : helpOpen, separated: view !== 'sessions',
-                }] : []),
-                // VS Code's *Reset View Locations* (DOCK1b): every view back where it started. Said, and
-                // not choosable, while nothing has moved.
-                ...(view === 'sessions' ? [
+                ...(attached ? [
+                  {
+                    id: 'layout:panel', label: t('layout.menu.panel'), icon: LAYOUT_KEYS.panel.icon, shortcut: LAYOUT_KEYS.panel.keys,
+                    checked: !closings.panel, separated: view !== 'sessions',
+                  },
+                  { id: 'layout:right', label: t('layout.menu.right'), icon: LAYOUT_KEYS.right.icon, shortcut: LAYOUT_KEYS.right.keys, checked: !closings.dock },
+                  // VS Code's *Reset View Locations* (DOCK1b): every view back where it started. Said, and
+                  // not choosable, while nothing has moved.
                   { id: 'views:reset', label: t('work.views.reset'), icon: 'refresh' as const, disabled: !placements.moved, separated: true },
                 ] : []),
               ]}
@@ -504,15 +546,13 @@ export function App() {
           />
         )}
         // The region toggles (DOCK1c, SURF11) at the strip's right, beside the window controls, as VS
-        // Code's sit: Sessions' three, since the rail and the panel are its own, and the right side bar on
-        // every view. Ask Daoris has no button of its own up here (the owner: "no ask daoris at top border
-        // bar"): it is a tab of the right side bar on Sessions and the whole of it elsewhere, so the right
-        // toggle, F1 and Ctrl+Alt+I are its doors.
+        // Code's sit: the panel and the right side bar on every view since DOCK1a, and the rail on Sessions,
+        // whose list it is. Ask Daoris has no button of its own up here (the owner: "no ask daoris at top
+        // border bar"): it is a tab of the side bar, so the right toggle, F1 and Ctrl+Alt+I are its doors.
         trailing={attached ? (
           <LayoutToggles
-            regions={view === 'sessions' ? ['rail', 'panel', 'right'] : ['right']}
-            closed={{ rail: closings.rail, panel: closings.panel, right: view === 'sessions' ? closings.dock : !helpOpen }}
-            names={view === 'sessions' ? {} : { right: t('help.title') }}
+            regions={view === 'sessions' ? ['rail', 'panel', 'right'] : ['panel', 'right']}
+            closed={{ rail: closings.rail, panel: closings.panel, right: closings.dock }}
             onToggle={toggleRegion}
           />
         ) : undefined}
@@ -563,9 +603,13 @@ export function App() {
           )}
         />
 
-        {/* Sessions fills the window because it is for WATCHING; every other view keeps the reading
-            cap, because that is what the cap is for (D55). */}
-        {view === 'sessions'
+        {/* 🔴 ONE frame on every view (DOCK1a, the owner: "the design language we using in session screen
+            (dockable, right tool bar, top layout setup) should be apply to all screens (for example
+            overview)"): the right side bar and the panel stay whatever the centre shows, as VS Code's
+            workbench does. One element in one place, so what is open, selected and sized survives a change
+            of view. Sessions' centre is its own; every other view is handed in. A browser has no frame:
+            its regions hold this machine's sessions (D47 §4), so it shows the view alone. */}
+        {attached
           ? (
             <WorkFrame
               selected={attending}
@@ -583,92 +627,16 @@ export function App() {
               onAnswerAsk={openAsk}
               // A quest on the chain, or one the session asked (SESS1), opens where quests are read.
               onOpenQuest={(id) => { setQuestFocus(id); setView('quests'); }}
-              // Ask Daoris as a tab of the right dock: one right region, never a second column.
-              ask={attached ? <AskDaoris {...askProps} framed={false} /> : undefined}
+              // Ask Daoris as a view of the frame's regions: one right region, never a second column.
+              ask={<AskDaoris {...askProps} framed={false} />}
               askFocus={helpFocus}
               closings={closings}
               placements={placements}
+              content={view === 'sessions' ? undefined : renderView()}
+              onOpenSessions={() => setView('sessions')}
             />
           )
-          : (
-            // `relative`: the containing block for what is positioned inside the column. Without it an
-            // `sr-only` label far down a long page took the viewport as its block and stretched the
-            // document, which grew a second scrollbar beside this one (seen on the window, PERM1).
-            <main className="relative min-w-0 flex-1 overflow-y-auto px-6 pb-12 pt-5 max-md:px-3 max-md:pb-8 max-md:pt-4">
-              {/* No cap: content follows the window (UX5 U59, the owner), as the session's centre does
-                  since U16. It was 72rem, and a maximized window left every view a third empty.
-                  Prose keeps its own measure (`Prose`), and a form its own size. */}
-              <div>
-                {view === 'overview' && (
-                  <OverviewView
-                    onNavigate={setView}
-                    onOpenQuest={(id) => { setQuestFocus(id); setView('quests'); }}
-                    doors={attentionDoors}
-                    notify={notify}
-                  />
-                )}
-                {view === 'quests' && (
-                  <QuestsView
-                    notify={notify}
-                    onAttend={attached ? openInWork : undefined}
-                    opening={opening}
-                    onOpened={() => setOpening(null)}
-                    focus={questFocus}
-                    onFocused={() => setQuestFocus(null)}
-                    asking={asking}
-                    onAsked={() => setAsking(false)}
-                    askFocus={askFocus}
-                    onAskFocused={() => setAskFocus(null)}
-                  />
-                )}
-                {view === 'projects' && (
-                  <ProjectsView
-                    notify={notify}
-                    addRequested={addRequested}
-                    onAddOpened={() => setAddRequested(false)}
-                    importRequested={importRequested}
-                    onImportOpened={() => setImportRequested(false)}
-                  />
-                )}
-                {view === 'map' && (
-                  <MapView
-                    notify={notify}
-                    onOpenConvergence={() => setView('convergence')}
-                    onOpenQuest={(id) => { setQuestFocus(id); setView('quests'); }}
-                  />
-                )}
-                {view === 'convergence' && (
-                  <ConvergenceView semantic={status.data?.semantic ?? false} onOpen={setReadingId} notify={notify} />
-                )}
-                {view === 'search' && (
-                  <SearchView
-                    onOpen={setReadingId}
-                    notify={notify}
-                    semantic={status.data?.semantic ?? false}
-                    onConverge={() => setView('convergence')}
-                  />
-                )}
-                {view === 'settings' && (
-                  <SettingsView
-                    notify={notify}
-                    section={settingsSection}
-                    onSection={chooseSettings}
-                    anchor={settingsAnchor}
-                    onAnchored={() => setSettingsAnchor(null)}
-                  />
-                )}
-              </div>
-            </main>
-          )}
-        {attached && helpOpen && view !== 'sessions' && (
-          <AskDaoris
-            {...askProps}
-            width={helpWidth}
-            range={{ min: 320, max: Math.max(360, Math.floor(window.innerWidth / 2)) }}
-            onResize={resizeHelp}
-            onResetWidth={() => resizeHelp(null)}
-          />
-        )}
+          : renderView()}
       </div>
 
       {/* Ambient truth, true on every view without being looked at (D55). Which circle and whether

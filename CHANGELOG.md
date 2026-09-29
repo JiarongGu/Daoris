@@ -642,14 +642,12 @@ The first version: doctrine that installs, is checked, and flows back.
   a room of its own, told what the machine holds and where you are on the screen, reading the family
   and nothing else, and it runs in the agent's own asking mode, the one exception to D81. A change it
   wants is a card saying what it changes and the command that does the same, checked by the driver
-  first; nothing changes until you press **apply**. It is the one right region: a tab of the right
-  side bar on Sessions, resizable on its own elsewhere, opened by the right side bar's toggle, `F1` or
-  `Ctrl+Alt+I`.
-- **The layout toggles are on the strip** (DOCK1c, SURF11). The session list, the panel and the
-  right side bar each have a toggle beside the window controls, pressed while shown, and an item in
-  the View menu with VS Code's keys: `Ctrl+B`, `Ctrl+J`, `Ctrl+Alt+B`. Away from Sessions the right
-  side bar is Ask Daoris, so its toggle is Ask Daoris's door there. The side bar's tabs shrink as a
-  browser's do, the selected one whole.
+  first; nothing changes until you press **apply**. It is a tab of the right side bar on every view,
+  opened by the side bar's toggle, `F1` or `Ctrl+Alt+I`.
+- **The layout toggles are on the strip** (DOCK1c, SURF11). The panel and the right side bar each
+  have a toggle beside the window controls on every view, and the session list on Sessions, pressed
+  while shown, and an item in the View menu with VS Code's keys: `Ctrl+B`, `Ctrl+J`, `Ctrl+Alt+B`.
+  The side bar's tabs shrink as a browser's do, the selected one whole.
 - **Views move between the right side bar and the panel** (DOCK1b), as VS Code's do. Ask Daoris, the
   console, the timeline and the review each carry *Move to* on their region's tab list, the button at
   the end of its tab row, and on a right-click of their tab; a moved view is shown where it went, and
@@ -665,6 +663,12 @@ The first version: doctrine that installs, is checked, and flows back.
   does the palette's *Quick Ask*; and whatever you type in the palette can be asked from its last row,
   *Ask Daoris: "…"*, which sends it straight in. *Open in the side bar* carries the same conversation
   on there. The palette's *Ask Daoris* now opens the side bar on it on Sessions, as `F1` does.
+- **The frame is on every view** (DOCK1a). Overview, Quests, Projects and the rest keep the right side
+  bar and the panel that Sessions has, with the same tabs, moves, drags and toggles, as VS Code's
+  workbench is one frame whatever its editor shows. They hold Ask Daoris and the attended session's
+  timeline, review and console, each saying which session it is with a way back to it. What is open
+  and selected stays as you move between views. Ask Daoris no longer has a panel of its own at the
+  edge: it is a tab of the side bar everywhere.
 - **Tell a working session something** (SESS3, D90). A driven session running on the protocol door
   now has a message box. What you send waits for its current turn to end and is then its next prompt,
   in the same session with everything it already knows; *send now* stops the turn so it goes at once.

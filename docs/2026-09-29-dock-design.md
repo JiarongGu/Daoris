@@ -1,7 +1,7 @@
 # Panels that dock — the layout as the person's (DOCK1)
 
 **Carried by:** DOCK1 in `TASKS.md` (SURF11 is archived). **Status:** design, written before the
-build; DOCK1c, DOCK1b, DOCK1e and DOCK1d built, §4 says how; DOCK1a is what remains. The
+build; all five built, DOCK1a last and widened by the owner; §4 says how. The
 owner, 2026-09-29: *"we should be able to dock panels like vscode did"*, said beside *"there is no easy
 way to open the daoris chat"* and followed by *"the ask daoris need to be a better location please
 refer to a better ui/ux design"*. The first step, Ask Daoris as one right region, landed as `b21b60f`
@@ -82,8 +82,8 @@ closings lifted out of the Work frame.
      improved later reaches a viewer who never chose. **Reset view locations**, VS Code's name,
      because it resets where views stand and not the sizes or what is closed: in the tab list once
      something has moved, and in the View menu always.
-   - **Only on Sessions**, the one view with a panel. Away from it, Ask Daoris is the right region
-     wherever it stands on Sessions.
+   - **Only on Sessions**, the one view with a panel, when it was built. Away from it, Ask Daoris was
+     the right region wherever it stood on Sessions — until DOCK1a put the frame on every view.
    - **What the look found.** The regions' names collided: the right dock's controls said *the panel*
      and the panel's said *the console*, so a menu offering *Move to the panel* named two places. The
      right is **the side bar** and the bottom **the panel** in every label now, as VS Code names
@@ -124,7 +124,22 @@ closings lifted out of the Work frame.
    all screens (for example overview)". So not the right region alone: Sessions' frame on every view,
    the side bar and the panel with their tab lists, moves and toggles, as VS Code's workbench is one
    frame whatever its editor shows. The question to settle first is what the regions hold away from
-   Sessions.
+   Sessions. *Built 2026-09-29:*
+   - **One frame, one element**: the application renders the Work frame on every view in a shell, with
+     Sessions' own centre on Sessions and the view handed in everywhere else (`content`), so what is
+     open, selected and sized survives a change of view. A browser keeps the view alone: the regions
+     hold this machine's sessions (D47 §4).
+   - **The regions hold what they hold on Sessions**: Ask Daoris, and the attended session's timeline,
+     review and console, as VS Code's panel shows the terminal whatever the editor shows. No rail away
+     from Sessions (`frameLayout`'s `noRail`): the session list is Sessions' own.
+   - **Ask Daoris has one host**: its edge panel and its own width are gone; `F1`, `Ctrl+Alt+I`, the
+     palette and Quick Ask's *Open in the side bar* open whichever region holds it.
+   - **The strip's toggles**: the panel and the side bar on every view, the rail on Sessions; the View
+     menu likewise, with *Reset view locations* on every view.
+   - **What the look found**: off Sessions nothing named the session the timeline and the console
+     spoke for, so each says *Attending …* with *open in Sessions*; the console's sentence said the
+     conversation was "in the centre", which is Overview there, and says Sessions now; and a timeline
+     off Sessions keeps a parked note, since no head carries it there.
 
 ## 5. Not chosen, for now
 

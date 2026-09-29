@@ -22,7 +22,7 @@ lists.
 ## State
 
 **Counts, and this is their one home:** sixteen commands, **514 CLI tests, 546 service, 910 driver,
-292 desktop modules, 80 devkit, 1359 web unit, 21 Playwright**, 66/66 release rehearsal, **292/292
+292 desktop modules, 80 devkit, 1361 web unit, 21 Playwright**, 66/66 release rehearsal, **292/292
 family rehearsal** (it names its own phases when you run it), **45/45 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge
 documents, 5 skills, 7 packs. The always-loaded core is **22,492 of 26,000 bytes** — a span in
@@ -144,9 +144,9 @@ rather than designed.
 
 ## Backlog
 
-**Thirty-four rows are open**: the four the first real workspace showed (WSR4, SESS2, MAP4, and DOCK1
-from 2026-09-29; WSR2, WSR1 and WSR3 landed as D86, D87 and D88, HELP1 as D89, SESS1 in the archive,
-SESS3 as D90); D85's two (CHR2, CHR4); the in-app browser's three (BRW3, BRW7, BRW8); the first goal's three (FG5,
+**Thirty-three rows are open**: the three the first real workspace showed (WSR4, SESS2 and MAP4;
+WSR2, WSR1 and WSR3 landed as D86, D87 and D88, HELP1 as D89, SESS3 as D90, and SESS1 and DOCK1 are
+in the archive); D85's two (CHR2, CHR4); the in-app browser's three (BRW3, BRW7, BRW8); the first goal's three (FG5,
 READACROSS1 the owner's, and SEM2 on a trigger); D76's held file tools;
 the eight REV3 left, WINDOW2 among them; five leftovers (RAIL2, CONSOLE3, FLAKE1, DEPLOY5, TEST1); two on the owner
 (TRUST2, AGT2c); and six on a trigger (see *Handover*). Every closed one is in `docs/task-archive.md`, and this file holds no
@@ -177,36 +177,6 @@ requirements, and the owner's calls. Its recommended order is the order below.
   circle (the real one has twenty-nine repositories). Asks, chains and what depends on what, each its
   own kind of line, from a declared source and never guessed. Open-only or a time window. Sessions
   live on their nodes. Looked at with twenty-nine nodes in both themes.
-- [ ] **DOCK1 — panels that dock, as VS Code's do** (owner, 2026-09-29: *"we should be able to dock
-  panels like vscode did"*, said beside *"there is no easy way to open the daoris chat"*). Today each
-  region has one place: the rail and the right dock inside Sessions, the output panel under them,
-  Ask Daoris at the application's edge. VS Code lets a view move between the primary side bar, the
-  secondary side bar and the panel, by drag or *Move to*, and remembers where. **A design note
-  first**: which views move (Ask Daoris, the console, the dock's tabs, the rail), which places exist
-  on every view rather than only in Sessions, and whether *Move to* comes before drag. SURF11, the
-  layout toggles, is the same question from the other end, so the two are designed together. **The
-  design note is `docs/2026-09-29-dock-design.md`**: move before drag, the right region the
-  application's, DOCK1a–e in order; its first step, Ask Daoris as one right region, is `b21b60f`,
-  and its door moved to the strip's right beside the window controls (the owner: *"since we moved ask
-  daoris to the right so you should move the icon to it too"*). **DOCK1c landed** (SURF11, into the
-  archive): the region toggles on the strip and in the View menu with VS Code's keys, Ask Daoris's own
-  button gone from the strip (the owner: *"no ask daoris at top border bar"*), and the dock's tabs
-  shrinking as a browser's do. **DOCK1b landed** (design note §4): the four views move between the
-  side bar and the panel from each region's tab list or a tab's right-click, remembered, with *Reset
-  view locations*; the tab list names every tab whole, however narrow the region. **DOCK1e landed**:
-  a tab dragged to the other region moves there, and an emptied region is drawn while a view is
-  dragged. **DOCK1d landed**: Quick Ask, Ask Daoris's conversation in a box at the palette's place,
-  on `Ctrl+Shift+Alt+L`, the palette's *Quick Ask*, and its last row, which asks what was typed.
-  (Its look found HELP2, Ask Daoris's room knowing the window: landed, in the archive.)
-  **DOCK1a is open, widened by the owner** (2026-09-29: *"the design language we using in session
-  screen (dockable, right tool bar, top layout setup) should be apply to all screens (for example
-  overview) so this is more like the design language of vscode"*): not only the right side bar hoisted
-  into the application, but Sessions' frame on every view, as VS Code's workbench is one frame
-  whatever the editor shows. The right side bar and the bottom panel exist on Overview, Quests and
-  the rest, with their tab lists, moves, drags and toggles, and the strip's three toggles on every
-  view; what each region holds off Sessions (Ask Daoris, the console, a view's own detail) is the
-  design question to answer first, in `docs/2026-09-29-dock-design.md`.
-
 ### What REV3 left (2026-09-25)
 
 REV3 is in the archive, and `docs/2026-09-25-rev3-review.md` is its ledger. These rows are what it

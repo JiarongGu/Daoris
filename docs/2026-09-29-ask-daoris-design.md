@@ -35,9 +35,10 @@ bars. The references agree on one right region:
 So: **one right region.** On Sessions, Ask Daoris is a tab of the right dock beside *timeline* and
 *review*, sharing its resize, its close and its full; `F1` and `Ctrl+Alt+I` open the dock on it. It has
 no button of its own on the strip (the owner: *"no ask daoris at top border bar"*, DOCK1c): the right
-side bar's toggle is its door, named for it where it is the whole region. On every other view it is that region with Ask Daoris alone, resizable by its edge and
-remembered. Quick Ask (a palette-like box for one question) and moving the region are DOCK1's: both
-built (`2026-09-29-dock-design.md` §4), Quick Ask on `Ctrl+Shift+Alt+L` and the palette's last row.
+side bar's toggle is its door. Quick Ask (a palette-like box for one question) and moving the region
+are DOCK1's: both built (`2026-09-29-dock-design.md` §4), Quick Ask on `Ctrl+Shift+Alt+L` and the
+palette's last row. *Since DOCK1a* the same side bar is on every view, so Ask Daoris has one host: the
+region on its own away from Sessions, with its own width, is gone.
 
 ## 3. The room
 

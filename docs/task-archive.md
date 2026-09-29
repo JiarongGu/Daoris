@@ -7356,3 +7356,33 @@ rehearsal's protocol phase. On the scratch window, a stand-in agent held its tur
 message, *send now* stopped the turn, and the conversation read the stop, the person's words, and the
 agent's reply to them in the same session.
 
+## DOCK1 — panels that dock, as VS Code's do (2026-09-29)
+
+The row as filed: *(owner, 2026-09-29: "we should be able to dock panels like vscode did", said beside
+"there is no easy way to open the daoris chat"). Today each region has one place: the rail and the
+right dock inside Sessions, the output panel under them, Ask Daoris at the application's edge. VS Code
+lets a view move between the primary side bar, the secondary side bar and the panel, by drag or Move
+to, and remembers where. A design note first: which views move (Ask Daoris, the console, the dock's
+tabs, the rail), which places exist on every view rather than only in Sessions, and whether Move to
+comes before drag. SURF11, the layout toggles, is the same question from the other end, so the two are
+designed together.* Widened by the owner the same day: *"the design language we using in session
+screen (dockable, right tool bar, top layout setup) should be apply to all screens (for example
+overview) so this is more like the design language of vscode"*.
+
+**Outcome** (`docs/2026-09-29-dock-design.md` §4, each step as built):
+- **DOCK1c** (`0c1b708`): the region toggles on the strip and in the View menu with VS Code's keys.
+- **DOCK1b** (`b3721e0`): the four views move between the side bar and the panel from a region's tab
+  list or a tab's right-click, remembered, with *Reset view locations*; the tab list names every tab
+  whole; the regions are *the side bar* and *the panel* in every label.
+- **DOCK1e** (`a41f8f6`): a tab dragged to the other region moves there.
+- **DOCK1d** (`b89aa8a`): Quick Ask, and the palette's last row asking what was typed.
+- **DOCK1a** (this change): the frame on every view in a shell — one element, Sessions' centre or the
+  view handed in, the side bar and the panel holding what they hold on Sessions, no rail elsewhere,
+  Ask Daoris with one host, the toggles and the View menu on every view; the session views off
+  Sessions say whose they are.
+
+**Proven by:** each step's tests (the placements, the views menu, the drag, Quick Ask, the no-rail
+layout, the frame with another view's content), the web's 1361 and Playwright's 21, and the scratch
+window in both themes at each step: Overview and Quests framed, the side bar keeping its tab across a
+change of view, the rail back on Sessions.
+

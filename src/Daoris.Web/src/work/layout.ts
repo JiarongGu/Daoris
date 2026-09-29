@@ -27,6 +27,11 @@ export type FramePrefs = {
   dockClosed: boolean;
   /** The dock over the whole frame, asked for — which a narrow window also does by itself. */
   dockFull: boolean;
+  /**
+   * A view with no rail at all (DOCK1a): the frame around Overview, Quests and the rest, whose centre
+   * is a view rather than a session. Not a closed rail, which leaves a strip to open it by.
+   */
+  noRail?: boolean;
 };
 
 /**
@@ -59,11 +64,13 @@ const clamp = (value: number, min: number, max: number) => Math.min(max, Math.ma
 export function frameLayout(viewport: number, frame: number, prefs: FramePrefs): FrameLayout {
   const auto = viewport < RAIL.autoBelow;
   const strip = prefs.railClosed || auto;
-  const rail = {
-    width: strip ? RAIL.strip : clamp(prefs.rail ?? RAIL.initial, RAIL.min, RAIL.max),
-    strip,
-    auto: auto && !prefs.railClosed,
-  };
+  const rail = prefs.noRail
+    ? { width: 0, strip: false, auto: false }
+    : {
+      width: strip ? RAIL.strip : clamp(prefs.rail ?? RAIL.initial, RAIL.min, RAIL.max),
+      strip,
+      auto: auto && !prefs.railClosed,
+    };
 
   if (prefs.dockClosed) return { rail, dock: { mode: 'closed', width: DOCK.strip } };
   if (prefs.dockFull || viewport < DOCK.fullBelow) return { rail, dock: { mode: 'full', width: frame } };

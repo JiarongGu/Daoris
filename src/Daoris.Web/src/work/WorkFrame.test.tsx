@@ -218,6 +218,45 @@ describe('the Work frame', () => {
     expect(window.localStorage.getItem('daoris.viewPlaces')).toBeNull();
   });
 
+  /**
+   * DOCK1a (the owner: *"the design language we using in session screen … should be apply to all
+   * screens (for example overview)"*): another view in the centre keeps the side bar and the panel,
+   * with their views, and has no session rail — the list is Sessions' own.
+   */
+  it('frames another view: its content in the centre, the side bar and the panel beside it, no rail', async () => {
+    window.localStorage.setItem('daoris.dockClosed', '0');
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const onOpenSessions = vi.fn();
+    render(
+      <QueryClientProvider client={client}>
+        <Tooltip.Provider>
+          <WorkFrame
+            selected="s1a2b3c4" onSelect={vi.fn()} notify={() => {}}
+            ask={<p>the ask panel</p>}
+            content={<main><h1>Overview</h1></main>}
+            onOpenSessions={onOpenSessions}
+          />
+        </Tooltip.Provider>
+      </QueryClientProvider>,
+    );
+
+    // Its session views say whose they are, since nothing else on this screen does, and lead back.
+    const side = screen.getByRole('complementary', { name: 'right side bar' });
+    expect(await within(side).findByText('Attending Expose a streaming budget')).toBeInTheDocument();
+    await userEvent.click(within(side).getByRole('button', { name: 'open in Sessions' }));
+    expect(onOpenSessions).toHaveBeenCalled();
+
+    expect(await screen.findByRole('heading', { level: 1, name: 'Overview' })).toBeInTheDocument();
+    expect(screen.getByRole('tablist', { name: 'right side bar' })).toBeInTheDocument();
+    expect(screen.getByRole('region', { name: 'the panel' })).toBeInTheDocument();
+    // No rail, and not the session's own centre either.
+    expect(screen.queryByRole('separator', { name: 'rail width' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'close the rail' })).toBeNull();
+    expect(screen.queryByRole('heading', { level: 2, name: 'Expose a streaming budget' })).toBeNull();
+    // The attended session's timeline is still a tab away, as VS Code's panel is whatever the editor shows.
+    expect(screen.getByRole('tab', { name: 'Timeline' })).toBeInTheDocument();
+  });
+
   /** DOCK1e: dragging a tab to the other region is the same move as the menu's, by the pointer. */
   it('moves a view dragged by its tab to the panel', async () => {
     window.localStorage.setItem('daoris.dockClosed', '0');

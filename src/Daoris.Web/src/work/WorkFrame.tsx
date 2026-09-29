@@ -12,7 +12,7 @@ import { Button, Drawer, failure, Icon, type Notify, SESSION_ACTIVE, Tip, useErr
 import { AttendedSession, noteIsInTheHead } from './AttendedSession';
 import { SessionConversation } from './SessionConversation';
 import type { Usage } from './conversation';
-import { isIntake, ownTree, sessionOrigin } from './identity';
+import { isIntake, ownTree, sessionOrigin, sessionTitle } from './identity';
 import { doorLabel } from '../tools';
 import type { Resolution } from './AwaitingPerson';
 import { Composer } from './Composer';
@@ -29,6 +29,7 @@ import { type FrameClosings, useFrameClosings } from './closings';
 import { type Place, type Placements, usePlacements, type ViewId, viewsIn } from './placements';
 import { relationsOf } from './relations';
 import { store, stored } from '../lib/stored';
+import { cn } from '../lib/cn';
 
 // Per-viewer conveniences, like the language and the workspace scope (D42): a remembered layout is
 // a preference, never machine wiring and never a tracked file.
@@ -119,7 +120,17 @@ const door = (structured?: boolean): 'structured' | 'text' | undefined =>
  */
 export function WorkFrame({
   selected, onSelect, notify, onSendBack, onAnswerAsk, onOpenQuest, intent, onIntentTaken, ask, askFocus = 0, closings, placements,
+  content, onOpenSessions,
 }: {
+  /** Go to Sessions, where the attended session is read whole — the door its line offers off Sessions. */
+  onOpenSessions?: () => void;
+  /**
+   * Another view's content in the frame's centre (DOCK1a, the owner: "the design language we using in
+   * session screen … should be apply to all screens"): Overview, Quests and the rest keep the right side
+   * bar and the panel, with every view that stands in them, as VS Code's workbench is one frame whatever
+   * its editor shows. No rail then: the session list is Sessions' own. Absent, the centre is Sessions'.
+   */
+  content?: ReactNode;
   /**
    * Open a quest's record in Quests (SESS1): a stop on the chain, or a quest the session asked. The
    * record is the application's to open, as an ask's is.
@@ -193,8 +204,10 @@ export function WorkFrame({
   const railClosed = closed.rail;
   const dockClosed = closed.dock;
   const [dockFull, setDockFull] = useState(false);
+  // Another view in the centre (DOCK1a): the frame without Sessions' rail.
+  const elsewhere = content !== undefined;
   const layout = frameLayout(width.viewport, width.frame, {
-    rail: railWidth, railClosed, dockShare, dockClosed, dockFull,
+    rail: railWidth, railClosed, dockShare, dockClosed, dockFull, noRail: elsewhere,
   });
 
   const resizeRail = (next: number | null) => {
@@ -556,11 +569,32 @@ export function WorkFrame({
   const streamTabs = attended ? panelTabs(attended.id, streams) : undefined;
   const pickStream = (key: string) => setPicked(key === attended?.id ? null : key);
 
+  // Off Sessions (DOCK1a) the session views speak for the session attended there, which nothing else on
+  // the screen names — so each says whose it is, with the way back to it (found looking at Overview).
+  const whose = (flush: boolean) => (elsewhere && attended ? (
+    // Flush in the panel, whose body carries its own gutter; inset in the side bar, as its views are.
+    <p className={cn('m-0 flex min-w-0 shrink-0 items-center gap-2 border-b border-line py-1.5 text-meta text-ink-faint', flush ? 'mb-2' : 'px-3')}>
+      <span className="min-w-0 truncate">
+        {t('work.frame.attending', { title: sessionTitle(attended, quest, openings[attended.id]) })}
+      </span>
+      {onOpenSessions && (
+        <button
+          type="button"
+          onClick={onOpenSessions}
+          className="shrink-0 cursor-pointer border-0 bg-transparent p-0 text-meta text-ink-soft underline decoration-line-strong underline-offset-2 hover:text-accent hover:decoration-accent"
+        >
+          {t('work.frame.open')}
+        </button>
+      )}
+    </p>
+  ) : null);
+  const withWhose = (surface: ReactNode, flush = false) => (elsewhere && attended ? <>{whose(flush)}{surface}</> : surface);
+
   /** A view's surface, drawn in whichever region it stands (DOCK1b). The panel draws the console itself. */
   const surface = (view: ViewId, where: Place = 'panel') => {
     if (view === 'ask') return ask;
     if (view === 'review') {
-      return (
+      return withWhose(
         <DiffPane
           session={attended?.id ?? null}
           // A tree of its OWN: the repository's checkout is never merged or discarded (UX5 U66).
@@ -568,30 +602,31 @@ export function WorkFrame({
           onSendBack={onSendBack && attended
             ? () => onSendBack(attended.repository)
             : undefined}
-        />
+        />,
       );
     }
     if (view === 'console' && where === 'right') {
       // In the side bar its streams go with it, above it, where the panel carries them in its header.
-      return (
+      return withWhose(
         <div className="flex min-h-0 flex-1 flex-col gap-2 p-3">
           {streamTabs && streamTabs.length > 1 && (
             <StreamTabs tabs={streamTabs} selected={shown ?? undefined} onSelect={pickStream} />
           )}
           {consoleView ?? <p className="m-0 text-small text-ink-faint">{t('work.panel.none')}</p>}
-        </div>
+        </div>,
       );
     }
     return attended
-      ? (
+      ? withWhose(
         <div className="p-3">
           <SessionTimeline
             session={attended}
             quest={quest}
-            hideCurrentNote={noteIsInTheHead(attended, here)}
+            // Off Sessions there is no head to carry the parked note, so the timeline keeps it.
+            hideCurrentNote={!elsewhere && noteIsInTheHead(attended, here)}
             titled={false}
           />
-        </div>
+        </div>,
       )
       : <p className="m-0 p-3 text-small text-ink-faint">{t('work.attended.none.body')}</p>;
   };
@@ -603,6 +638,7 @@ export function WorkFrame({
   return (
     // Positioned, so a dock filling the frame (FRAME6) lies over exactly this and nothing more.
     <div ref={root} className="relative flex min-h-0 flex-1">
+      {!elsewhere && (
       <aside className="relative flex shrink-0 flex-col border-r border-line" style={{ width: layout.rail.width }}>
         {/* The rail is a list of sessions, and NEW is one control (D56). It used to be a permanent
             287×200 form above the list — 27% of the rail, always, for something a person does
@@ -692,6 +728,7 @@ export function WorkFrame({
           />
         )}
       </aside>
+      )}
 
       {/* D41's single detail-and-form surface (§4), rather than a popover built for one form. */}
       {starting && (
@@ -720,6 +757,7 @@ export function WorkFrame({
       )}
 
       <div className="flex min-w-0 flex-1 flex-col">
+        {elsewhere ? content : (<>
         <div ref={centre} className="flex min-h-0 flex-1 flex-col overflow-y-auto px-4 py-3">
           <AttendedSession
             session={attended}
@@ -838,11 +876,13 @@ export function WorkFrame({
           />
         )}
 
+        </>)}
+
         {/* An emptied panel that is hidden is not drawn at all, unless a view is being dragged to it;
             opened, it says how to fill it. */}
         {(panelViews.length > 0 || !collapsed || dragging !== null) && (
           <OutputPanel
-            console={consoleView}
+            console={consoleView ? withWhose(consoleView, true) : null}
             height={Math.max(PANEL_MIN, height)}
             collapsed={collapsed}
             onResize={resize}
