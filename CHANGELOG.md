@@ -663,6 +663,11 @@ The first version: doctrine that installs, is checked, and flows back.
   does the palette's *Quick Ask*; and whatever you type in the palette can be asked from its last row,
   *Ask Daoris: "…"*, which sends it straight in. *Open in the side bar* carries the same conversation
   on there. The palette's *Ask Daoris* now opens the side bar on it on Sessions, as `F1` does.
+- **A session's head says how it stands** (SESS2). A finished session opens at its head rather than
+  its last line. Under the title, the head now says how it ended or why it failed, in the record's own
+  words; then what its tree left, with **review** beside work none of your branches holds; then one
+  quiet line of reference, the tree's path on hover. How the work ran is one line of stops, whole on
+  a press, instead of a list that pushed the conversation halfway down the window.
 - **The frame is on every view** (DOCK1a). Overview, Quests, Projects and the rest keep the right side
   bar and the panel that Sessions has, with the same tabs, moves, drags and toggles, as VS Code's
   workbench is one frame whatever its editor shows. They hold Ask Daoris and the attended session's

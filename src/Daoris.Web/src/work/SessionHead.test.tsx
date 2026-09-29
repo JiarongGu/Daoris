@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
 import i18n from '../i18n';
 import type { Quest, Session } from '../api';
+import type { SweepBranch } from '../settings/Sweep';
 import { SessionHead } from './SessionHead';
 
 // Props-only, like every molecule here: a parked session with its analysis, a record read over a
@@ -128,18 +129,17 @@ describe('the attended session\'s head', () => {
   });
 
   /**
-   * The design puts the FULL path here — the rail has no room for one and this does (D51 §9 makes
-   * it machine-local, which is a guard at the door, not a reason for the machine's own surface to
-   * hide it from the person who owns the checkout).
+   * SESS2 H3: the tree's whole machine path was the head's longest line, where the branch already
+   * names the tree. It stays the person's (D51 §9 guards the door, not this machine's own surface),
+   * on hover of the repository, and is no longer a line of its own.
    */
-  it('shows the whole tree path, breakable at its separators rather than overflowing', () => {
+  it('keeps the whole tree path on the repository\'s hover rather than as a line of its own', () => {
     const tree = 'C:/somewhere/.daoris/trees/default/engine/streaming-budget';
     render(<SessionHead session={session({ tree })} />);
 
-    // Whole, and broken after a separator before inside a name (UX5 U8: `family\g` / `ame`).
-    const path = screen.getByText((_, element) => element?.tagName === 'SPAN' && element.textContent === tree);
-    expect(path.className).toContain('wrap-anywhere');
-    expect(path.querySelectorAll('wbr')).toHaveLength(6);
+    expect(screen.queryByText('tree')).not.toBeInTheDocument();
+    expect(screen.queryByText(tree)).not.toBeInTheDocument();
+    expect(screen.getByText('engine')).toHaveAttribute('title', tree);
   });
 
   /**
@@ -179,15 +179,52 @@ describe('the attended session\'s head', () => {
   });
 
   /**
-   * The timeline below carries the driver's note WITH the time it was observed, which is strictly
-   * more than a bare sentence here — and one screen saying the same thing twice teaches a reader
-   * to skim both. A park is the exception: there the analysis is the reason the person is looking.
+   * SESS2 H5, H6 (reversing the rule that it left the note to the timeline, which since FRAME6 is in
+   * the side bar and starts closed): an ended session says how it stands in the record's own words —
+   * why a failed one failed — and a long note shows three lines with the rest a press away. A running
+   * session says nothing here: its conversation is the answer.
    */
-  it('leaves a driver observation to the timeline rather than repeating it', () => {
-    render(<SessionHead session={session({ state: 'failed', note: 'the process exited 1' })} />);
-
+  it('says why an ended session stands where it does, in the record\'s words, and nothing while it runs', async () => {
+    const { unmount } = render(<SessionHead session={session({ state: 'failed', note: 'the process exited 1' })} />);
     expect(screen.queryByText('This one is waiting on you')).not.toBeInTheDocument();
-    expect(screen.queryByText('the process exited 1')).not.toBeInTheDocument();
+    expect(screen.getByText('the process exited 1')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'show all' })).toBeNull();
+    unmount();
+
+    const long = `the agent's turn failed with the quest still taken: ${'the ACP agent refused the call. '.repeat(12)}`;
+    const second = render(<SessionHead session={session({ state: 'failed', note: long })} />);
+    expect(screen.getByText(long.trim(), { collapseWhitespace: false, exact: false }).className).toContain('line-clamp-3');
+    fireEvent.click(screen.getByRole('button', { name: 'show all' }));
+    expect(screen.getByRole('button', { name: 'show less' })).toBeInTheDocument();
+    second.unmount();
+
+    render(<SessionHead session={session({ state: 'working', note: 'reached working' })} />);
+    expect(screen.queryByText('reached working')).not.toBeInTheDocument();
+  });
+
+  /** SESS2 H4: what its tree left, with the move that acts on it when the work is the person's to take. */
+  it('says what its tree left, and offers the review when no branch of the person\'s holds the work', async () => {
+    const onReview = vi.fn();
+    const { unmount } = render(
+      <SessionHead
+        session={session({ state: 'completed' })}
+        branch={{ repository: 'engine', branch: 'daoris/s-43c14a70', kind: 'unlanded', commits: 2 } as SweepBranch}
+        onReview={onReview}
+      />,
+    );
+    expect(screen.getByText('daoris/s-43c14a70')).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'review' }));
+    expect(onReview).toHaveBeenCalledOnce();
+    unmount();
+
+    render(
+      <SessionHead
+        session={session({ state: 'completed' })}
+        branch={{ repository: 'engine', branch: 'daoris/s-1', kind: 'landed', where: 'feature/x', commits: 0 } as SweepBranch}
+        onReview={onReview}
+      />,
+    );
+    expect(screen.queryByRole('button', { name: 'review' })).toBeNull();
   });
 
   /**
@@ -199,8 +236,8 @@ describe('the attended session\'s head', () => {
 
     expect(screen.getByRole('heading', { name: 'intake for ask #0fda18' })).toBeInTheDocument();
     expect(screen.getByText('ask')).toBeInTheDocument();
-    expect(screen.getByText('#0fda18')).toBeInTheDocument();
-    expect(screen.getByText('room')).toBeInTheDocument();
+    // Its room's path is the ask's on hover (SESS2 H3), never a repository's tree.
+    expect(screen.getByText('#0fda18')).toHaveAttribute('title', INTAKE.tree);
     expect(screen.queryByText('repository')).toBeNull();
     expect(screen.queryByText('tree')).toBeNull();
   });

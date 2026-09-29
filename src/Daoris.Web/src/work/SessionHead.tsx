@@ -1,8 +1,10 @@
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { SweepBranch } from '../settings/Sweep';
 import type { Quest, Session } from '../api';
 import { ago, elapsed, sessionTool } from '../format';
-import { MetaLine, Pill, SESSION_ACTIVE, SESSION_TONE, shownState, WaitingCard } from '../ui';
+import { cn } from '../lib/cn';
+import { Button, MetaLine, Pill, SESSION_ACTIVE, SESSION_TONE, shownState, WaitingCard } from '../ui';
 import { AwaitingIntake } from './AwaitingIntake';
 import { AwaitingPerson, type Resolution } from './AwaitingPerson';
 import { isIntake, sessionOrigin, sessionTitle } from './identity';
@@ -15,18 +17,22 @@ import { RunningIntake } from './RunningIntake';
  * @remarks
  * **The rail's row and this head must not disagree**, so both derive their identity from
  * `sessionTitle` and neither invents one. What the head adds is the room the rail does not have:
- * the whole tree path rather than its last segment, the tool with its version and account, and
- * both ends of the clock.
+ * how it stands, what it left, the tool with its version and account, and both ends of the clock —
+ * and the tree's whole path on hover (SESS2: at the head's full weight it was its longest line).
  *
  * **`AwaitingPerson` gets a surface at last** (design §4). It has meant "only the person can clear
  * this" since D46 and had never been rendered anywhere. It sits **above** the record, because it is
  * the reason the person is looking, and it carries the three moves — which is why `onResolve` is a
  * prop: the head knows nothing about the bridge, and the frame that does hands it down.
  *
- * **It does not repeat the driver's note.** The timeline below carries it with the time it was
- * observed, which is strictly more than a bare sentence here — and one screen saying the same
- * thing twice teaches a reader to skim both. The one exception is a park, where the analysis IS
- * the reason the person is here.
+ * **It says how an ended session stands, in the record's note** (SESS2, reversing the rule that it
+ * did not): the rule rested on *"the timeline below carries it"*, and since FRAME6 the timeline is in
+ * the side bar, which starts closed (U7) — so a failed session's reason and a finished one's ending
+ * were on no screen the person had open. A running session says nothing here, since its conversation
+ * is the answer, and a parked one's note is its card's.
+ *
+ * **What it left comes with its move** (SESS2): work no branch of the person's holds has *review*
+ * beside it, where the metadata's last pair used to say it with nothing to press.
  *
  * **An absence is never a dash.** No tree is the registered root, no profile is the harness's own
  * configuration home, no machine is this deployment's own — and a browser over a keyed remote is
@@ -35,8 +41,10 @@ import { RunningIntake } from './RunningIntake';
  */
 export function SessionHead({
   session, quest, opening, taking, resolving = false, stopping = false, onResolve, onAnswerAsk, onStop,
-  onAnswerSession, branch,
+  onAnswerSession, branch, onReview,
 }: {
+  /** Open its review (the side bar's, or the panel's where it was moved) — what work left unlanded asks for. */
+  onReview?: () => void;
   session: Session;
   /**
    * The branch its own tree left, as the clean-up judged it (SESS1 S10, D88): whether its work landed,
@@ -112,23 +120,37 @@ export function SessionHead({
       )}
 
       {/* The state follows the title rather than the far edge (§4: status leads): the head is as wide
-          as the centre (UX5 U16), and at the edge the pill sat a thousand pixels from what it names. */}
+          as the centre (UX5 U16), and at the edge the pill sat a thousand pixels from what it names.
+          Two lines at most, whole on hover: a quest's title can run to a paragraph (SESS2). */}
       <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1.5">
-        <h2 className="m-0 text-title font-[650] leading-[1.35]">{sessionTitle(session, quest, opening)}</h2>
+        <h2 className="m-0 line-clamp-2 text-title font-[650] leading-[1.35]" title={sessionTitle(session, quest, opening)}>
+          {sessionTitle(session, quest, opening)}
+        </h2>
         <span className="flex shrink-0 items-baseline gap-2">
           <Pill tone={SESSION_TONE[shown]}>{t(`sessionState.${shown}`)}</Pill>
           <span className="font-mono text-meta text-ink-faint">{session.id}</span>
         </span>
       </div>
 
+      {/* How it stands, in the record's own words (SESS2 H5, H6): why a failed session failed, how a
+          finished one ended. Not while it runs, when the conversation below is the answer; not parked,
+          where the card above already carries it. */}
+      {!running && session.note && <Said note={session.note} />}
+
+      {/* What it left, and the move that acts on it (SESS2 H4): work no branch of the person's holds is
+          theirs to review, in the waiting hue; landed work is a quiet fact. */}
+      {branch && <Left branch={branch} onReview={onReview} />}
+
+      {/* The reference, quiet and on one line where it fits (SESS2 H2, H3): the tree's machine path is
+          the repository's on hover, and the branch is on the line above, where it means something. */}
       <MetaLine
+        className="text-meta"
         items={[
           // An intake serves an ask and runs in Daoris's own room, never a repository's tree
           // (INT4b) — its record says so rather than `repository: ask #…` (INT4g).
           intake
-            ? { label: t('work.intake.ask'), value: `#${session.ask}`, mono: true }
-            : { label: t('work.head.repository'), value: session.repository },
-          { label: t(intake ? 'work.intake.room' : 'work.head.tree'), value: session.tree ?? null, mono: true },
+            ? { label: t('work.intake.ask'), value: <span title={session.tree ?? undefined}>#{session.ask}</span>, mono: true }
+            : { label: t('work.head.repository'), value: <span title={session.tree ?? undefined}>{session.repository}</span> },
           { label: t('work.head.quest'), value: session.quest ? `#${session.quest}` : null, mono: true },
           { label: t('work.head.tool'), value: sessionTool(session) },
           { label: t('work.head.machine'), value: sessionOrigin(session) },
@@ -139,14 +161,48 @@ export function SessionHead({
             label: running ? t('work.head.elapsed') : t('work.head.ran'),
             value: elapsed(session.created, running ? null : session.updated),
           },
-          { label: t('work.head.moved'), value: ago(session.updated) },
-          // What it left (SESS1 S10): the branch, and whether its work is on a branch of the person's.
-          { label: t('work.head.branch'), value: branch?.branch ?? null, mono: true },
-          { label: t('work.head.itsWork'), value: branch ? landed(t, branch) : null },
+          // Only while it runs: an ended session's last move is its end, which *ran* already says.
+          { label: t('work.head.moved'), value: running ? ago(session.updated) : null },
         ]}
       />
 
     </header>
+  );
+}
+
+/** How much of the record's note the head shows before the rest is a press away. */
+const NOTE_LINES = 3;
+
+/** The record's own sentence about how the session stands — content, never translated. */
+function Said({ note }: { note: string }) {
+  const { t } = useTranslation();
+  const [whole, setWhole] = useState(false);
+  const long = note.length > 280 || note.split('\n').length > NOTE_LINES;
+  return (
+    <div className="grid justify-items-start gap-1">
+      <p className={cn('m-0 whitespace-pre-wrap text-body leading-relaxed text-ink-soft', !whole && 'line-clamp-3')}>{note}</p>
+      {long && (
+        <Button variant="ghost" className="px-0 py-0 text-small" onClick={() => setWhole((was) => !was)}>
+          {t(whole ? 'work.head.noteLess' : 'work.head.noteMore')}
+        </Button>
+      )}
+    </div>
+  );
+}
+
+/** What its own tree left, and whether the person has anything to do about it (SESS1 S10, SESS2 H4). */
+function Left({ branch, onReview }: { branch: SweepBranch; onReview?: () => void }) {
+  const { t } = useTranslation();
+  const theirs = branch.kind === 'unlanded' || branch.kind === 'dirty';
+  return (
+    <p className="m-0 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-small">
+      <span className="text-ink-faint">{t('work.head.itsWork')}</span>
+      <span className={theirs ? 'text-st-open' : 'text-ink-soft'}>{landed(t, branch)}</span>
+      <span className="min-w-0 truncate font-mono text-meta text-ink-faint">{branch.branch}</span>
+      {theirs && onReview && (
+        <Button className="px-2 py-0.5 text-small" onClick={onReview}>{t('work.head.review')}</Button>
+      )}
+    </p>
   );
 }
 

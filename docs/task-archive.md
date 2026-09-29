@@ -7386,3 +7386,28 @@ layout, the frame with another view's content), the web's 1361 and Playwright's 
 window in both themes at each step: Overview and Quests framed, the side bar keeping its tab across a
 change of view, the rail back on Sessions.
 
+## SESS2 — the session's top section, again (2026-09-29)
+
+The row as filed: *(owner, 2026-09-29: "we still need to improve the session ui/ux (currently the top
+section still not good enough)"). The head today: title and state, the id, the repository, the tree's
+path, the tool, started, running and moved; a parked session's card with its three moves; then How
+this work ran and Who it worked with above the conversation. Look before changing: read the owner's
+real sessions' heads read-only with SESS1's instruments, write what is wrong as numbered findings in a
+ledger as SESS1's was, and fix by what was found. To judge, not decided: the tree's whole machine path
+in the head, the chain and the relations pushing the conversation down, where the parked card sits,
+and what is primary (what it is doing, what it needs from the person) against what is reference (ids,
+paths, tool, times).*
+
+**Outcome.** The ledger, `docs/2026-09-29-sess2-session-head.md`, holds seven findings from the
+installed application's real heads, all fixed. An ended session opens at its head, not its tail. The
+head reads in order of use: title and state, the record's note saying how it stands (a failure's
+reason, how it ended; reversing the rule that left it to a timeline that had moved into a closed side
+bar), what its tree left with **review** beside unlanded work, and one quiet line of reference with
+the tree's path on hover. The chain is one line of stops, the attended quest as *this quest*, whole on
+a press and remembered. The parked card keeps its place above: it is the reason the person is there.
+
+**Proven by:** `SessionHead.test.tsx` (the note, its clamp and press, silence while running, the work
+line and its review, the path on hover), `ChainLine.test.tsx`, `followTail.test.tsx`, the web's 1367;
+and the installed application after, in 中文: the completed session's conversation starting about
+450px down where it had been past 620, and the failed one saying the spend limit it failed on.
+

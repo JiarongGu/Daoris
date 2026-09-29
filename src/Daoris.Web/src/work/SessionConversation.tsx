@@ -66,7 +66,8 @@ export function SessionConversation({ session, adapter, chat = false, tree, live
 
   // What changes when the conversation grows: the last event, and its text as chunks join it.
   const last = events[events.length - 1];
-  const { atTail, toTail } = useFollowTail(scroller, `${last?.seq ?? 0}:${turns.length}`, `${session}:${loaded}`);
+  // An ended session opens at its head, which says how it ended (SESS2 H1); a live one follows its tail.
+  const { atTail, toTail } = useFollowTail(scroller, `${last?.seq ?? 0}:${turns.length}`, `${session}:${loaded}`, !live);
 
   // The way through a long run (SESS1 S9).
   const long = earlier || turns.reduce((count, turn) => count + turn.items.length, 0) > LONG;

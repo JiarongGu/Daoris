@@ -14,9 +14,10 @@ const SLACK = 48;
  *
  * `grew` is anything that changes when the content does — the last event's sequence and its text's
  * length, so a message growing chunk by chunk counts. `opened` changes when a different session is
- * attended, which always starts at the tail.
+ * attended, which starts at the tail — or, `fromTop`, at the top: a session that has ended opens at
+ * its head, which says how it ended (SESS2 H1), with *last words* and the way to the bottom beside it.
  */
-export function useFollowTail(scroller: RefObject<HTMLElement | null>, grew: unknown, opened: unknown) {
+export function useFollowTail(scroller: RefObject<HTMLElement | null>, grew: unknown, opened: unknown, fromTop = false) {
   const [atTail, setAtTail] = useState(true);
   const following = useRef(true);
 
@@ -45,8 +46,19 @@ export function useFollowTail(scroller: RefObject<HTMLElement | null>, grew: unk
     return () => element.removeEventListener('scroll', onScroll);
   }, [scroller]);
 
-  // A new session opens at its tail.
-  useLayoutEffect(() => { toTail(); }, [opened, toTail]);
+  // A new session opens at its tail, or an ended one at its top, not followed (SESS2 H1).
+  useLayoutEffect(() => {
+    const element = scroller.current;
+    if (!fromTop || !element) {
+      toTail();
+      return;
+    }
+    element.scrollTop = 0;
+    const near = element.scrollHeight - element.clientHeight < SLACK;
+    following.current = near;
+    setAtTail(near);
+    // Only a new opening moves it; `fromTop` is read with it.
+  }, [opened, toTail]);
 
   // Growth follows only a reader who was following.
   useLayoutEffect(() => {

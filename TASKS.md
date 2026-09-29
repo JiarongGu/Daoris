@@ -22,7 +22,7 @@ lists.
 ## State
 
 **Counts, and this is their one home:** sixteen commands, **514 CLI tests, 546 service, 910 driver,
-292 desktop modules, 80 devkit, 1361 web unit, 21 Playwright**, 66/66 release rehearsal, **292/292
+292 desktop modules, 80 devkit, 1367 web unit, 21 Playwright**, 66/66 release rehearsal, **292/292
 family rehearsal** (it names its own phases when you run it), **45/45 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge
 documents, 5 skills, 7 packs. The always-loaded core is **22,492 of 26,000 bytes** — a span in
@@ -144,9 +144,9 @@ rather than designed.
 
 ## Backlog
 
-**Thirty-three rows are open**: the three the first real workspace showed (WSR4, SESS2 and MAP4;
-WSR2, WSR1 and WSR3 landed as D86, D87 and D88, HELP1 as D89, SESS3 as D90, and SESS1 and DOCK1 are
-in the archive); D85's two (CHR2, CHR4); the in-app browser's three (BRW3, BRW7, BRW8); the first goal's three (FG5,
+**Thirty-two rows are open**: the two the first real workspace showed (WSR4 and MAP4; WSR2, WSR1
+and WSR3 landed as D86, D87 and D88, HELP1 as D89, SESS3 as D90, and SESS1, SESS2 and DOCK1 are in
+the archive); D85's two (CHR2, CHR4); the in-app browser's three (BRW3, BRW7, BRW8); the first goal's three (FG5,
 READACROSS1 the owner's, and SEM2 on a trigger); D76's held file tools;
 the eight REV3 left, WINDOW2 among them; five leftovers (RAIL2, CONSOLE3, FLAKE1, DEPLOY5, TEST1); two on the owner
 (TRUST2, AGT2c); and six on a trigger (see *Handover*). Every closed one is in `docs/task-archive.md`, and this file holds no
@@ -163,16 +163,6 @@ requirements, and the owner's calls. Its recommended order is the order below.
   plugin, and the plugin, for its platform, pushes the branch and opens the pull request over its
   wire (D64). Off by default, and configurable per workspace. WSR1's branch form is what it starts
   from: `LandingRules.Problem` refuses any other form today, and says so.
-- [ ] **SESS2 — the session's top section, again** (owner, 2026-09-29: *"we still need to improve
-  the session ui/ux (currently the top section still not good enough)"*). The head today: title and
-  state, the id, the repository, the tree's path, the tool, started, running and moved; a parked
-  session's card with its three moves; then *How this work ran* and *Who it worked with* above the
-  conversation. **Look before changing**: read the owner's real sessions' heads read-only with SESS1's
-  instruments (`shot --page`, a real record seeded into the scratch window), write what is wrong as
-  numbered findings in a ledger as SESS1's was, and fix by what was found. To judge, not decided: the
-  tree's whole machine path in the head, the chain and the relations pushing the conversation down,
-  where the parked card sits, and what is primary (what it is doing, what it needs from the person)
-  against what is reference (ids, paths, tool, times).
 - [ ] **MAP4 — the map, finished** (study §6). A layered layout, pan, zoom and search for a big
   circle (the real one has twenty-nine repositories). Asks, chains and what depends on what, each its
   own kind of line, from a declared source and never guessed. Open-only or a time window. Sessions

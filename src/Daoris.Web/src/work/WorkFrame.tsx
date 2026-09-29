@@ -774,6 +774,8 @@ export function WorkFrame({
             relations={attended ? relationsOf(attended, quest, quests.data ?? [], sessions.data ?? []) : undefined}
             onSession={(session) => attend(session.id)}
             onQuest={onOpenQuest ? (row) => onOpenQuest(row.id) : undefined}
+            // Its review, wherever the review stands (SESS2 H4): the head's move beside unlanded work.
+            onReview={() => openView('review')}
             branch={branch}
           />
           {/* The conversation (D76): below the record, in the same scroll, so the head is read once
