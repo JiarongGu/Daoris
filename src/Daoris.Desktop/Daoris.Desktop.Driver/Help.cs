@@ -208,6 +208,17 @@ public static class HelpRoom
         text.Append("more than this page.\n\n");
         text.Append("Never offer to push, merge, discard, sign in, or handle a key: those stay the person's own presses,\n");
         text.Append("where they already are.\n\n");
+        // HELP4: the first repository question met a shell refused before it ran, then a guess at the
+        // repository's branches presented as its tree. Said plainly, so neither happens again.
+        text.Append("You have no shell, and you read no checkout: a command, or a file outside this room, is refused\n");
+        text.Append("before it runs, so never try one. What a repository's tree holds (its branches, its uncommitted\n");
+        text.Append("work, what is ready to push) is a repository's own work, so route it there. Propose an ask for\n");
+        text.Append("it with `ask_propose`, so that repository's agent does it with its own tools, or tell the person\n");
+        text.Append("to open a conversation in that repository (Sessions → Start a session). Where Daoris itself has a\n");
+        text.Append("door for what they want, name it first: session branches whose work landed are cleaned up under\n");
+        text.Append("Settings → Workspace → Session branches. When the family's knowledge and quests are all you can\n");
+        text.Append("see, say what you could not see: never build a repository's state from its quests and present it\n");
+        text.Append("as the tree.\n\n");
 
         text.Append("## The doors\n\n");
         text.Append("| To | On the screen | At a terminal |\n");

@@ -826,6 +826,7 @@ export function WorkFrame({
             onDraft={setDraft}
             queued={turns.queued}
             taking={turns.taking}
+            opening={turns.opening}
             // Only a door that can see a turn end can stop one; the roster says which (CONV3b).
             stoppable={roster.find((row) => row.harness === attended.adapter)?.structured === true}
             stopping={cancelTurn.isPending}

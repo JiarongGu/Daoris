@@ -7668,3 +7668,44 @@ another shell's) stays the rule, and two Daoris hosts are already told apart by 
 
 **Proven by:** `HostSupervisorTests` (something else answering is refused and said; a Daoris answer is
 adopted as before), and the deployment rehearsal's adoption of the installed host.
+
+## HELP4 — what the first real repository question found (2026-09-30)
+
+> *"I think I just found some issue in ask daoris (you might check the log) 1. its failed for user
+> permission automaticly, also my input does not reflect in the chat directly (showed by a huge delay)
+> this state need to be updated 3. and I ask to cleanup the git tree just leave a clean branch for
+> [a ticket's] pr but I think it confused"*
+>
+> - [ ] **HELP4 — what the first real repository question found.** (a) Its first move was a shell
+>   command, refused by construction (D52), because the room says *you read* and never that it has no
+>   shell; the refusal then read as a failure. (b) Unable to look, it rebuilt a repository's branches from
+>   the quest ledger and presented the guess as a table; the room never says to route a repository's own
+>   work there (an ask, or a conversation in that repository) or to name what it could not see, and its
+>   own doors carried the cleanup the person wanted (*Session branches*). (c) With none running, the
+>   person's first words appeared about six seconds late: the conversation opens first, and nothing
+>   shows the words meanwhile. Whether the room should read checkouts at all (git status, a file) is a
+>   widening of D89, so it is the owner's call and not taken here.
+
+**Outcome.** (a) The room says it has no shell and reads no checkout, so a command is never tried; and
+a call the driver refused is recorded as `refused`, not `failed`, so the conversation reads *not
+allowed here* in a quiet tone instead of an error. (b) The room says a repository's tree is that
+repository's to read and change: propose an ask, or send the person to a conversation there, name
+Daoris's own door first where one exists (*Settings → Workspace → Session branches*), and say what
+it could not see rather than build the tree from quests. (c) The first words show the moment they
+are sent, under *opening Ask Daoris…*, and stay until the driver's queue answers for the new
+conversation, so they never vanish while the session list catches up. The driver's queue now says
+`opening` beside `taking`: words held for a door still opening had been counted as a turn in flight,
+so every conversation's first message read *waiting for this turn to end* when nothing had answered.
+The composer follows `opening`, on Sessions as in Ask Daoris.
+
+**Not taken:** letting the helper read a checkout. That widens D89's allow-list, so it is held as
+HELPREAD1 for the owner. The branch cleanup itself belongs to that repository, through a
+conversation there or the Session branches door.
+
+**Proven by:** `HelpRoomTests` (the room says it has no shell and routes a repository's own work
+there), `AcpTests` (a call the driver refused is recorded as refused), `TurnStopTests` (words sent
+while the door opens are told as waiting for it), `DriverModuleTests` (the queue answer carries
+`opening`), vitest (`ConversationView`: a refused call reads *not allowed here*; `Composer`: the label
+follows `opening`; `AskDaoris`: the first words show at once and stay through the list's gap, shown
+once), and a look at the window with a slow stand-in agent: the words under *opening Ask Daoris…*,
+then in the conversation as *you*.

@@ -621,12 +621,13 @@ describe('the Work frame', () => {
   /** A session's last words arrive after it closed, and their batch says so: they do not make it live. */
   it('takes a batch that says the console ended as ended', async () => {
     invoke.mockImplementation(async (_module: string, type: string) => (type === 'TAIL_SESSION'
-      ? { session: 's1a2b3c4', lines: [{ sequence: 1, text: 'working' }], sequence: 1, live: true, dropped: 0 }
+      ? { session: 's1a2b3c4', lines: [{ sequence: 1, text: 'a line printed' }], sequence: 1, live: true, dropped: 0 }
       : DRIVER_STATE));
 
     show('s1a2b3c4');
-    await screen.findByText(/working/);
-    expect(screen.getByText('live')).toBeInTheDocument();
+    // A line only the console prints: `working` is also the session's state, drawn before the tail.
+    await screen.findByText(/a line printed/);
+    expect(await screen.findByText('live')).toBeInTheDocument();
 
     await act(async () => {
       eventHandlers.get('DAORIS.SESSION_OUTPUT')!({

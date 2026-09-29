@@ -15,9 +15,12 @@ const KIND_ICON: Record<string, IconName> = {
   fetch: 'fetch', think: 'think',
 };
 
-/** A tool call's status, as a liveness mark: running is live, a failure is the one alarm. */
+/**
+ * A tool call's status, as a liveness mark: running is live, a failure is the one alarm. A call the
+ * driver refused (HELP4) is not a failure of the harness's, so it is quiet.
+ */
 const STATUS_TONE: Record<string, 'live' | 'idle' | 'ended' | 'failed'> = {
-  pending: 'idle', in_progress: 'live', completed: 'ended', failed: 'failed',
+  pending: 'idle', in_progress: 'live', completed: 'ended', failed: 'failed', refused: 'idle',
 };
 
 /**

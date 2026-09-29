@@ -176,6 +176,33 @@ public sealed class TurnStopTests : IDisposable
         Assert.Contains("prompt: later", HeardLines());
     }
 
+    /// <summary>
+    /// 🔴 HELP4: words sent while the session is still opening wait for the door, not for a turn, and
+    /// the queue says which. Told only <c>taking</c>, the page read the first message of a conversation
+    /// as waiting for a turn to end when nothing had answered yet.
+    /// </summary>
+    [Fact]
+    public async Task Words_sent_while_the_door_opens_are_told_as_waiting_for_it()
+    {
+        await using var session = await Chat("acp-stub", slowOpen: true);
+
+        Assert.True(session.Runner.Say(session.Id, "early"));
+        var opening = session.Runner.Queue(session.Id);
+        Assert.True(opening.Opening);
+        Assert.True(opening.Taking);
+        Assert.Equal(["early"], Texts(opening.Queued));
+
+        await Until(() => Turns(session) == 1, () => session.Seen());
+        lock (session.Queues)
+        {
+            Assert.Contains(session.Queues, queue => queue.Opening && Texts(queue.Queued).SequenceEqual(["early"]));
+            // Once the door is open the turn is in flight, and nothing is opening any more.
+            Assert.Contains(session.Queues, queue => queue is { Taking: true, Opening: false, Queued.Count: 0 });
+        }
+
+        Assert.False(session.Runner.Queue(session.Id).Opening);
+    }
+
     /// <summary>Nothing running is an answer, never an error: the page asked a moment late.</summary>
     [Fact]
     public async Task Stopping_when_no_turn_runs_stops_nothing_and_says_so()

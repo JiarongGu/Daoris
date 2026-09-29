@@ -64,7 +64,7 @@ export type MentionSource = { files: string[] | null; unlisted: number; refusal:
  */
 export function Composer({
   live, sending = false, refusal, endings = true, draft, onDraft,
-  queued = [], taking = false, stoppable = false, stopping = false, mentions, onMentioning, context, placeholder,
+  queued = [], queuedLabel, taking = false, opening = false, stoppable = false, stopping = false, mentions, onMentioning, context, placeholder,
   attachments = true, sendLabel, stopTurnLabel, stopTurnTip, onSend, onFinish, onStop, onStopTurn,
 }: {
   /**
@@ -85,8 +85,12 @@ export function Composer({
   onDraft?: (text: string) => void;
   /** What the person sent that has not reached the harness, in the order sent (CONV4a), with its files' names. */
   queued?: ChatMessage[];
+  /** What the waiting words are waiting for, when it is not the turn in hand (HELP4: the conversation opening). */
+  queuedLabel?: string;
   /** A turn is on its way to the harness or running there. */
   taking?: boolean;
+  /** The conversation is still opening (HELP4): what waits, waits for it, not for a turn to end. */
+  opening?: boolean;
   /** Whether this session's door can stop a turn at all. */
   stoppable?: boolean;
   stopping?: boolean;
@@ -225,7 +229,7 @@ export function Composer({
 
       {live && queued.length > 0 && (
         <div className="grid gap-1">
-          <span id={waitingLabel} className="text-meta text-ink-faint">{t('work.composer.queued')}</span>
+          <span id={waitingLabel} className="text-meta text-ink-faint">{queuedLabel ?? t(taking && !opening ? 'work.composer.queued' : 'work.composer.opening')}</span>
           <ol aria-labelledby={waitingLabel} className="m-0 grid list-none gap-1 p-0">
             {queued.map((message, index) => (
               <li

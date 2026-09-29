@@ -21,8 +21,8 @@ lists.
 
 ## State
 
-**Counts, and this is their one home:** sixteen commands, **523 CLI tests, 553 service, 922 driver,
-306 desktop modules, 80 devkit, 1415 web unit, 21 Playwright**, 66/66 release rehearsal, **297/297
+**Counts, and this is their one home:** sixteen commands, **523 CLI tests, 553 service, 925 driver,
+306 desktop modules, 80 devkit, 1419 web unit, 21 Playwright**, 66/66 release rehearsal, **297/297
 family rehearsal** (it names its own phases when you run it), **57/57 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge
 documents, 5 skills, 7 packs. The always-loaded core is **22,492 of 26,000 bytes** — a span in
@@ -144,13 +144,14 @@ rather than designed.
 
 ## Backlog
 
-**Twenty-eight rows are open**: the one the first real workspace showed still open (WSR4; WSR2, WSR1
-and WSR3 landed as D86, D87 and D88, HELP1 as D89, SESS3 as D90, MAP4 with D91, and SESS1, SESS2
-and DOCK1 are in the archive); D85's two (CHR2, CHR4); the in-app browser's three (BRW3, BRW7, BRW8); the first goal's three (FG5,
-READACROSS1 the owner's, and SEM2 on a trigger); D76's held file tools;
-the six REV3 left; four leftovers (CONSOLE3, FLAKE1, DEPLOY5, TEST1); two on the owner
-(TRUST2, AGT2c); and six on a trigger (see *Handover*). Every closed one is in `docs/task-archive.md`, and this file holds no
-ticked rows, by the `task-lifecycle` rule it also ships. A heading below holds open rows only.
+**Twenty-seven rows are open**: WSR4 from the first real workspace (its other WSR, HELP, SESS, DOCK
+and MAP rows are in the archive); the four REV3 left (DIST1, BUDGET1 and HOME1 the owner's, and HTTP1);
+the in-app browser's three (BRW3, BRW7, BRW8); D85's two (TASKBAR1, CHR8); the first goal's four
+(FG5, READACROSS1 and HELPREAD1 the owner's, and SEM2 on a trigger); D76's held file tools; four
+leftovers (CONSOLE3, FLAKE1, DEPLOY5, TEST1); two on the owner (TRUST2, AGT2c); REH1; and the rest on
+a trigger (TOOL4, TOOL5, PLUG7, CANON9, HARNESS1; see *Handover*). Every closed one is in
+`docs/task-archive.md`, and this file holds no ticked rows, by the `task-lifecycle` rule it also
+ships. A heading below holds open rows only.
 
 ### After the first real workspace (owner, 2026-09-28) — to start later
 
@@ -333,6 +334,12 @@ is behind a sign-in. FG1–FG4 are in the archive. **INT6 is reshaped as FG5.**
   [the backend]"*. The owner has since said a session should do *"as much as it can just like
   regular claude code"*. Decide: reads across are fine and writes never, or reads are asked too. The
   answer is a handed rule, and a sentence in the instruction.
+- [ ] **HELPREAD1 — may Ask Daoris read a checkout?** (the owner's call; HELP4, 2026-09-30). The help
+  room reads the family's knowledge and quests and nothing else (D89): its first real repository
+  question (clean up a repository's branches) opened with a shell command, refused by construction.
+  HELP4 made the room say so and route such work to that repository. Decide whether it may also read
+  a registered tree: `git status`, a branch list, a file. That widens D89's allow-list, and the
+  question is READACROSS1's, asked of a helper that belongs to no repository.
 - [ ] ⏸ **SEM2 — vectors that persist** (after SEM1, held). SEM1 embeds what is on disk once per
   process, on first use. The MCP host is one process per session, so with an embedder configured,
   each session's first search embeds the whole corpus. Lyntai.Storage.Sqlite's vector store would

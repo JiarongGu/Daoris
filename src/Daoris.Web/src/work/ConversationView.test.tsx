@@ -158,6 +158,19 @@ describe('ConversationView', () => {
   });
 
   /**
+   * HELP4: a call the driver refused is not the harness failing: it reads as not allowed, in the quiet
+   * tone, closed, where a failure is the alarm and opens itself.
+   */
+  it('reads a call the driver refused as not allowed, not as a failure', () => {
+    const { container } = view([ev({ kind: 'tool', id: 'c6', title: 'ls data', toolKind: 'execute', status: 'refused', output: 'denied' })]);
+
+    expect(screen.getByText('not allowed here')).toBeTruthy();
+    expect(screen.queryByText('failed')).toBeNull();
+    expect(screen.queryByText('denied')).toBeNull();
+    expect(container.querySelector('.border-warn')).toBeNull();
+  });
+
+  /**
    * REV3 web-work F9: a call is drawn while it runs and fails later, on the same card. The card read
    * "failed" once, when it first drew, so a call that failed mid-turn stayed closed over the line the
    * reader came for. It opens when it fails — unless the person has already opened or closed it.

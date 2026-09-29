@@ -594,6 +594,44 @@ public sealed class AcpTests
         Assert.Equal("c9", note.Id);
     }
 
+    /// <summary>
+    /// HELP4: a call the driver refused ends on the wire as `failed`, and the record says `refused`: the
+    /// person saw Ask Daoris "fail" at a command it was never allowed to run. The console keeps the
+    /// wire's own word, beside the refusal's line.
+    /// </summary>
+    [Fact]
+    public async Task A_call_the_driver_refused_is_recorded_as_refused_not_failed()
+    {
+        var events = new List<SessionEvent>();
+        var lines = new List<string>();
+        var agent = new FakeAgent((frame, self) =>
+        {
+            if (!frame.TryGetProperty("method", out var method)) return null; // the client's answer
+
+            switch (method.GetString())
+            {
+                case "initialize": return Ok(frame, """{"protocolVersion":1}""");
+                case "session/new": return Ok(frame, """{"sessionId":"s-1"}""");
+                case "session/prompt":
+                    self.Push(Update("s-1", """{"sessionUpdate":"tool_call","toolCallId":"c9","title":"ls data","kind":"execute","status":"pending"}"""));
+                    self.Push("""{"jsonrpc":"2.0","id":900,"method":"session/request_permission","params":{"sessionId":"s-1","toolCall":{"toolCallId":"c9","title":"ls data"},"options":[{"optionId":"no","name":"Reject","kind":"reject_once"}]}}""");
+                    self.Push(Update("s-1", """{"sessionUpdate":"tool_call_update","toolCallId":"c9","status":"failed"}"""));
+                    self.Push(Update("s-1", """{"sessionUpdate":"tool_call","toolCallId":"c10","title":"cargo build","kind":"execute","status":"pending"}"""));
+                    self.Push(Update("s-1", """{"sessionUpdate":"tool_call_update","toolCallId":"c10","status":"failed"}"""));
+                    return Ok(frame, """{"stopReason":"end_turn"}""");
+                default: return frame.TryGetProperty("id", out _) ? Ok(frame, "{}") : null;
+            }
+        });
+
+        await new AcpSession(agent.Incoming, agent.Outgoing, lines.Add, onEvent: events.Add)
+            .RunAsync("D:/fam/Game", "look", CancellationToken.None);
+
+        Assert.Equal("refused", events.Last(e => e.Kind == SessionEventKind.Tool && e.Id == "c9").Status);
+        // A call nobody refused that failed is still a failure.
+        Assert.Equal("failed", events.Last(e => e.Kind == SessionEventKind.Tool && e.Id == "c10").Status);
+        Assert.Contains("  ✗ ls data failed", lines);
+    }
+
     /// <summary>A call the wire names by no title is refused as what it is, bounded, still never its JSON.</summary>
     [Fact]
     public async Task A_refused_call_with_no_title_is_named_by_its_kind()

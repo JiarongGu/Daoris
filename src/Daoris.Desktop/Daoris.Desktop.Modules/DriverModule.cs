@@ -500,7 +500,8 @@ public sealed class DriverModule : ModuleBase
                 var queue = inbox?.State ?? _loop.Chat?.Queue(id) ?? ChatQueue.Idle;
                 return new
                 {
-                    Session = id, Queued = queue.Queued.Select(Said).ToArray(), queue.Taking, Listening = inbox is not null,
+                    Session = id, Queued = queue.Queued.Select(Said).ToArray(), queue.Taking, queue.Opening,
+                    Listening = inbox is not null,
                     // When its last turn ended here (RAIL2), the page's "moved" for a live chat.
                     LastTurn = queue.LastTurnEnded,
                 };

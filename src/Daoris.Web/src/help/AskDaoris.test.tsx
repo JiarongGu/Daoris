@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
+import { act, cleanup, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Tooltip from '@radix-ui/react-tooltip';
@@ -102,6 +102,58 @@ describe('Ask Daoris, with an agent named', () => {
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'START_HELP', {});
     // Its conversations are read across every workspace: it belongs to none.
     expect(asked.some((url) => url.includes('repository=daoris%3Ahelp') && !url.includes('workspace='))).toBe(true);
+  });
+
+  /**
+   * HELP4: with none running, a message first opens the conversation, which takes seconds (the room is
+   * written, the agent spawned). The person's words showed nowhere meanwhile, and read as lost. They are
+   * shown at once, as opening Ask Daoris, and stay shown until the driver's own queue answers for the
+   * conversation — never gone while the session list catches up, and never shown twice.
+   */
+  it('shows the first words at once while the conversation opens, and keeps them until the driver has them', async () => {
+    const words = 'tidy the branches so one PR is left';
+    let open: (answer: { sessionId: string | null; message: string }) => void = () => {};
+    bridge();
+    const answered = invoke.getMockImplementation()!;
+    invoke.mockImplementation(async (module: string, type: string, ...rest: unknown[]) => {
+      if (type === 'START_HELP') return new Promise((resolve) => { open = resolve; });
+      // The driver holds them for a door still opening: taking, and saying why.
+      if (type === 'SESSION_QUEUE') return { session: HELP.id, queued: [{ text: words, files: [] }], taking: true, opening: true };
+      return answered(module, type, ...rest);
+    });
+    // The session list answers late, so the gap between the words going and the page watching the new
+    // conversation is one this test can stand in.
+    let listed: () => void = () => {};
+    const late = new Promise<void>((resolve) => { listed = resolve; });
+    let holding = false;
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      if (holding && String(input).startsWith('/api/sessions')) await late;
+      return respond(String(input));
+    }));
+    show();
+
+    const box = await screen.findByLabelText('message');
+    await userEvent.type(box, words);
+    await userEvent.click(screen.getByRole('button', { name: 'send' }));
+
+    expect(await screen.findByText(words)).toBeInTheDocument();
+    expect(screen.getByText('opening Ask Daoris…')).toBeInTheDocument();
+    expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_INPUT', expect.anything());
+
+    holding = true;
+    SESSIONS = [HELP];
+    await act(async () => { open({ sessionId: HELP.id, message: 'opened' }); });
+
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_INPUT', {
+      payload: { id: HELP.id, text: words },
+    }));
+    expect(screen.getByText(words)).toBeInTheDocument();
+    expect(screen.getByText('opening Ask Daoris…')).toBeInTheDocument();
+
+    await act(async () => { listed(); });
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_QUEUE', { payload: { id: HELP.id } }));
+    await waitFor(() => expect(screen.getAllByText(words)).toHaveLength(1));
+    expect(screen.getByText('opening Ask Daoris…')).toBeInTheDocument();
   });
 
   /**

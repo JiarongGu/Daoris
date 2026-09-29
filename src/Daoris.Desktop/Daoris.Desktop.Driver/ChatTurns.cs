@@ -23,7 +23,13 @@ public sealed record TurnStop(bool Cancelled, IReadOnlyList<ChatMessage> Withdra
 /// move: its record moves on state changes only, and writing it every turn would carry a chat's activity
 /// to a teammate's machine (D47 §4), so it is told here, machine-local, and never recorded.
 /// </param>
-public sealed record ChatQueue(bool Taking, IReadOnlyList<ChatMessage> Queued, DateTimeOffset? LastTurnEnded = null)
+/// <param name="Opening">
+/// The door is still opening (HELP4): what is queued waits for the session to be ready, not for a turn
+/// to end. The page says so; told only <paramref name="Taking"/>, a conversation's first words read as
+/// waiting behind a turn when nothing had answered yet.
+/// </param>
+public sealed record ChatQueue(
+    bool Taking, IReadOnlyList<ChatMessage> Queued, DateTimeOffset? LastTurnEnded = null, bool Opening = false)
 {
     /// <summary>Nothing running and nothing waiting — a conversation between turns, or none at all.</summary>
     public static readonly ChatQueue Idle = new(false, []);
@@ -70,6 +76,7 @@ internal sealed class ChatTurns(
     private readonly List<ChatMessage> _waiting = [];
     private ChatMessage? _holding;
     private bool _pumping;
+    private bool _opening;
     private bool _inFlight;
     private bool _sent;
     private bool _stopPending;
@@ -84,7 +91,7 @@ internal sealed class ChatTurns(
     {
         get
         {
-            lock (_gate) return new ChatQueue(_pumping, Snapshot(), _lastEnded);
+            lock (_gate) return Now();
         }
     }
 
@@ -199,7 +206,11 @@ internal sealed class ChatTurns(
             if (!readying.IsCompleted)
             {
                 // The door is still opening: the message is waiting on it, and says so.
-                lock (_gate) Publish();
+                lock (_gate)
+                {
+                    _opening = true;
+                    Publish();
+                }
             }
 
             bool open;
@@ -215,6 +226,7 @@ internal sealed class ChatTurns(
 
             lock (_gate)
             {
+                _opening = false;
                 if (!open)
                 {
                     _gone = true;
@@ -276,6 +288,8 @@ internal sealed class ChatTurns(
         if (late) _ = interrupt();
     }
 
+    private ChatQueue Now() => new(_pumping, Snapshot(), _lastEnded, _opening);
+
     private List<ChatMessage> Snapshot()
     {
         List<ChatMessage> now = _holding is null ? [] : [_holding];
@@ -286,9 +300,9 @@ internal sealed class ChatTurns(
     /// <summary>Tell where the turns stand when it differs from what was last told. Called under the gate, so told in order.</summary>
     private void Publish()
     {
-        var now = new ChatQueue(_pumping, Snapshot(), _lastEnded);
+        var now = Now();
         if (now.Taking == _published.Taking && now.Queued.SequenceEqual(_published.Queued)
-            && now.LastTurnEnded == _published.LastTurnEnded) return;
+            && now.LastTurnEnded == _published.LastTurnEnded && now.Opening == _published.Opening) return;
         _published = now;
         try
         {

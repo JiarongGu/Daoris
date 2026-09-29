@@ -816,6 +816,11 @@ export type SessionTurns = {
   /** A turn is on its way to the harness or running there — what stopping the turn acts on. */
   taking: boolean;
   /**
+   * The conversation's door is still opening (HELP4): what is queued waits for it, not for a turn to
+   * end. Absent where the driver did not say.
+   */
+  opening?: boolean;
+  /**
    * A driven session hears what the person adds (SESS3): its words are held and become its next prompt.
    * Absent for a conversation, which always does, and false for a driven session nothing could hear.
    */
@@ -843,9 +848,12 @@ const messagesOf = (list: unknown): ChatMessage[] =>
 
 /** The driver's answer, read defensively: anything that is not a queue is nothing waiting and nothing running. */
 const turnsOf = (answer: unknown): SessionTurns => {
-  const held = answer as { queued?: unknown; taking?: unknown; listening?: unknown; lastTurn?: unknown } | null | undefined;
+  const held = answer as {
+    queued?: unknown; taking?: unknown; opening?: unknown; listening?: unknown; lastTurn?: unknown;
+  } | null | undefined;
   return {
     queued: messagesOf(held?.queued), taking: held?.taking === true,
+    ...(held?.opening === true ? { opening: true } : {}),
     ...(typeof held?.listening === 'boolean' ? { listening: held.listening } : {}),
     ...(typeof held?.lastTurn === 'string' && held.lastTurn ? { lastTurn: held.lastTurn } : {}),
   };

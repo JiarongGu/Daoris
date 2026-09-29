@@ -8,6 +8,7 @@ import {
   useStartHelp, useStopSession,
 } from '../shell';
 import { SESSION_ACTIVE } from '../ui';
+import type { ChatMessage } from '../work/conversation';
 import { Composer } from '../work/Composer';
 import { SessionConversation } from '../work/SessionConversation';
 import type { AskConversationSlot } from './AskPanel';
@@ -57,13 +58,26 @@ export function useAskConversation(
   const stop = useStopSession();
   const cancelTurn = useCancelTurn();
   const roster = useHarnesses();
-  const turns = useChatTurns(shown && live ? [shown.id] : [])[shown?.id ?? ''] ?? NO_TURNS;
+  const held = useChatTurns(shown && live ? [shown.id] : []);
+  const turns = held[shown?.id ?? ''] ?? NO_TURNS;
   const structured = Array.isArray(roster.data?.harnesses)
     ? roster.data.harnesses.find((row) => row.harness === shown?.adapter)?.structured
     : undefined;
 
   const [draft, setDraft] = useState('');
   const [refusal, setRefusal] = useState<string | null>(null);
+  // The words that open a conversation (HELP4): opening one takes seconds — the room written, the
+  // agent spawned — and they showed nowhere meanwhile, so they read as lost. Held here until the
+  // driver's queue answers for the conversation they opened, which shows them from then on: let go
+  // any sooner, they vanished while the session list caught up. One that ended at once has no queue
+  // to answer, and its record says what became of them.
+  const [firstWords, setFirstWords] = useState<{ words: ChatMessage; session?: string } | null>(null);
+  const handedOver = firstWords?.session !== undefined && shown?.id === firstWords.session
+    && (!live || held[firstWords.session] !== undefined);
+  useEffect(() => {
+    if (handedOver) setFirstWords(null);
+  }, [handedOver]);
+  const waiting = firstWords && !handedOver ? firstWords.words : null;
   // 🔴 A message that did not arrive goes back into the box, never lost (the composer's own rule).
   const giveBack = (text: string, why: string) => {
     setRefusal(why);
@@ -72,15 +86,20 @@ export function useAskConversation(
 
   // The last preface each conversation was handed, so an unchanged screen is not said again.
   const told = useRef(new Map<string, string>());
-  const deliver = (id: string, text: string, files: File[]) => {
+  const deliver = (id: string, text: string, files: File[], lost?: () => void) => {
     const now = where ? prefaceOf(where) : undefined;
     const preface = now && told.current.get(id) !== now ? now : undefined;
     send.mutate({ id, text, files, ...(preface ? { preface } : {}) }, {
       onSuccess: (answer) => {
-        if (!answer.sent) giveBack(text, t('help.notSent'));
-        else if (preface) told.current.set(id, preface);
+        if (!answer.sent) {
+          lost?.();
+          giveBack(text, t('help.notSent'));
+        } else if (preface) told.current.set(id, preface);
       },
-      onError: (error) => giveBack(text, sentence(error)),
+      onError: (error) => {
+        lost?.();
+        giveBack(text, sentence(error));
+      },
     });
   };
 
@@ -91,17 +110,25 @@ export function useAskConversation(
       return;
     }
 
+    const words = { text, files: files.map((file) => file.name) };
+    setFirstWords({ words });
     start.mutate(undefined, {
       // The driver's own sentence when it cannot: no agent named, the agent signed out, one already
       // running elsewhere. Shown where the person pressed send, whole.
       onSuccess: (answer) => {
-        if (!answer.sessionId) giveBack(text, answer.message);
-        else {
+        if (!answer.sessionId) {
+          setFirstWords(null);
+          giveBack(text, answer.message);
+        } else {
           setCleared(null);
-          deliver(answer.sessionId, text, files);
+          setFirstWords({ words, session: answer.sessionId });
+          deliver(answer.sessionId, text, files, () => setFirstWords(null));
         }
       },
-      onError: (error) => giveBack(text, sentence(error)),
+      onError: (error) => {
+        setFirstWords(null);
+        giveBack(text, sentence(error));
+      },
     });
   };
 
@@ -145,7 +172,9 @@ export function useAskConversation(
       endings={live}
       draft={draft}
       onDraft={setDraft}
-      queued={turns.queued}
+      queued={waiting ? [waiting, ...turns.queued] : turns.queued}
+      // Words waiting on the conversation opening, rather than on a turn, are said as Ask Daoris opening.
+      queuedLabel={waiting || turns.opening || !turns.taking ? t('help.opening') : undefined}
       taking={turns.taking}
       stoppable={structured === true}
       stopping={cancelTurn.isPending}

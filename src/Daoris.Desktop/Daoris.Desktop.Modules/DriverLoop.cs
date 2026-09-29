@@ -267,6 +267,8 @@ public sealed class DriverLoop(
                 // The words and the names of their files — never where the files are kept.
                 Queued = queue.Queued.Select(message => new { message.Text, Files = message.Files.Select(file => file.Name).ToArray() }).ToArray(),
                 queue.Taking,
+                // Whether what waits, waits for the door to open rather than for a turn (HELP4).
+                queue.Opening,
                 // When its last turn ended here (RAIL2): the chat's last move, which its record never
                 // says. Machine-local, like everything this event carries.
                 LastTurn = queue.LastTurnEnded,

@@ -142,6 +142,31 @@ describe('the composer', () => {
   });
 
   /**
+   * HELP4: words waiting while no turn runs are waiting for the conversation to open, not for a turn:
+   * the label says which. Seen on the window, where a new Ask Daoris conversation's first words said
+   * they were waiting for a turn that did not exist yet.
+   */
+  it('says words wait for the conversation to open when no turn runs', () => {
+    show({ taking: false, queued: [{ text: 'tidy the branches', files: [] }] });
+
+    expect(screen.getByRole('list', { name: 'waiting for the conversation to open' })).toBeInTheDocument();
+    expect(screen.queryByRole('list', { name: 'waiting for this turn to end' })).not.toBeInTheDocument();
+  });
+
+  /**
+   * HELP4: the driver counts words held for a door still opening as a turn on its way (`taking`), and
+   * says `opening` beside it — so the label follows `opening`, not `taking`, until the door is open.
+   */
+  it('says words wait for the conversation to open while the driver says it is opening', () => {
+    const opening = show({ taking: true, opening: true, queued: [{ text: 'tidy the branches', files: [] }] });
+
+    expect(screen.getByRole('list', { name: 'waiting for the conversation to open' })).toBeInTheDocument();
+    opening.unmount();
+    show({ taking: true, opening: false, queued: [{ text: 'tidy the branches', files: [] }] });
+    expect(screen.getByRole('list', { name: 'waiting for this turn to end' })).toBeInTheDocument();
+  });
+
+  /**
    * CONV4b: a message sent while a turn runs waits for it (CONV4a), so the button says so, and what is
    * waiting is shown, in the order sent — it is in no record until it goes.
    */

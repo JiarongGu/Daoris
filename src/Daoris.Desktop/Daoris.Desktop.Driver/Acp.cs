@@ -544,11 +544,24 @@ public sealed class AcpSession(
             if (_beside is not null && _beside.Take(StringField(p, "sessionId"), _sessionId, update)) return;
 
             Measure(update);
-            var structured = Map(update);
+            var structured = Refused(Map(update));
             _console.Update(update, structured);
             if (structured is not null) Emit(structured);
         }
     }
+
+    /// <summary>The tool calls this client refused, by id (HELP4).</summary>
+    private readonly ConcurrentDictionary<string, byte> _refused = new(StringComparer.Ordinal);
+
+    /// <summary>
+    /// A call this client refused ends on the wire as `failed`, and the record says `refused` (HELP4):
+    /// the person read Ask Daoris as failing at a command it was never allowed to run. The console, the
+    /// raw view, keeps the wire's word beside the refusal's own line.
+    /// </summary>
+    private SessionEvent? Refused(SessionEvent? mapped) =>
+        mapped is { Kind: SessionEventKind.Tool, Status: "failed", Id: { } id } && _refused.ContainsKey(id)
+            ? mapped with { Status = "refused" }
+            : mapped;
 
     /// <summary>
     /// An event to whoever keeps the record — and a record that fails costs a line on the console,
@@ -661,6 +674,11 @@ public sealed class AcpSession(
         // Said of every place a session runs — a repository, an intake's room, Ask Daoris's — since the
         // rules it was handed and the place's own settings are what refused it, wherever that is.
         const string governs = " — the rules it runs under govern, and the driver may not widen them";
+        if (call is { } refusedCall && refusedCall.TryGetProperty("toolCallId", out var refusedId)
+            && refusedId.ValueKind == JsonValueKind.String && refusedId.GetString() is { } refusedName)
+        {
+            _refused[refusedName] = 0;
+        }
         // The console is the raw view, and keeps the request as the wire said it.
         onLine($"  permission refused: {(call is { } raw ? Compact(raw) : "a tool call")}{governs}");
         // 🔴 The record names the call as a reader knows it (SESS1 S6): its title, else its kind — the
