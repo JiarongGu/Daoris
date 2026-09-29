@@ -1062,10 +1062,12 @@ public sealed partial class Driver(
             offered.AddRange(servers ?? _servers);
 
             // What it runs beside itself, each its own console stream (CONSOLE2) — kept wherever the
-            // session's own console is.
-            var outcome = await new AcpSession(
-                    process.StandardOutput, process.StandardInput, Line, closeTimeout: null, posture, meta, Event,
-                    streams: output is null ? null : new SessionStreams(output, sessionId))
+            // session's own console is — and stoppable from its tab while the session runs (CONSOLE3a).
+            var session = new AcpSession(
+                process.StandardOutput, process.StandardInput, Line, closeTimeout: null, posture, meta, Event,
+                streams: output is null ? null : new SessionStreams(output, sessionId));
+            using var stops = output is null ? null : _processes.OpenTaskStops(sessionId, session.StopTaskAsync);
+            var outcome = await session
                 .RunAsync(
                     cwd, prompt, ct, offered, inbox,
                     // The person's words as theirs in the record, the moment they are handed over (SESS3):

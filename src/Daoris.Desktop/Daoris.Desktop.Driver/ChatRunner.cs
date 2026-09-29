@@ -646,6 +646,8 @@ public sealed class ChatRunner(
         var session = new AcpSession(
             process.StandardOutput, process.StandardInput, Line, closeTimeout: null, chat.Posture, chat.Meta, Record,
             streams: output is null ? null : new SessionStreams(output, sessionId));
+        // Its background work stoppable from its tab for as long as the conversation lasts (CONSOLE3a).
+        using var stops = output is null ? null : processes.OpenTaskStops(sessionId, session.StopTaskAsync);
 
         Exception? failed = null;
         try

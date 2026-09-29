@@ -627,6 +627,18 @@ export function useSessionConsole(sessionId: string | null) {
     take({ ...batch, live: true });
   });
 
+  // A stream's end is told as its session's streams changing (CONSOLE2c), never as a line, so a
+  // console tailing one of them asks again and the answer says whether it still runs. Found stopping
+  // a task on the window (CONSOLE3a): its tab said stopped while its console still said live.
+  useShenoraEvent('DAORIS', 'SESSION_STREAMS', (payload) => {
+    const session = (payload as { session?: string } | undefined)?.session;
+    if (!sessionId || !session || !sessionId.startsWith(`${session}/`)) return;
+    void getBridge()
+      .invoke<SessionTail>('DAORIS.DRIVER', 'TAIL_SESSION', { payload: { id: sessionId, after: seen.current } })
+      .then((tail) => { if (attended.current === sessionId && tail?.session === sessionId) take(tail); })
+      .catch(() => {});
+  });
+
   return { lines, live, dropped };
 }
 
@@ -641,6 +653,8 @@ export type SessionStreamRow = {
   live: boolean;
   /** How it ended, in the wire's word — null while it runs. */
   state: string | null;
+  /** Whether a person can stop it now (CONSOLE3a): its harness said so, and it runs. */
+  canStop?: boolean;
 };
 
 /**
@@ -1301,6 +1315,15 @@ export const stopNotice = (answer: StopAnswer) =>
       // Another Daoris process here runs it — a terminal's — so the record still says working (REV3).
       : answer.elsewhere ? 'quests.session.runElsewhere'
         : 'quests.session.notRunning';
+
+/**
+ * Stop one task a session runs, from its tab (CONSOLE3a): the harness's own stop, sent by the session
+ * that runs it. `stopped: false` is an answer — nothing here runs it any more, or its tool stopped
+ * nothing — and the tab changes when the wire says how the task ended, not when this answers.
+ */
+export const useStopTask = () => useMutation({
+  mutationFn: ({ id, key }: { id: string; key: string }) => call<{ stopped: boolean }>('STOP_TASK', { id, key }),
+});
 
 export const useStopSession = () => {
   const client = useQueryClient();

@@ -65,6 +65,45 @@ public sealed class SessionProcesses(string? markers = null)
         lock (_gate) return _inboxes.GetValueOrDefault(sessionId);
     }
 
+    private readonly Dictionary<string, Func<string, CancellationToken, Task<bool>>> _taskStops = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// Hold what stops a session's background work (CONSOLE3a) while its protocol-door session is open:
+    /// here, beside its inbox, for the same reason. The door disposes the answer when the session ends.
+    /// </summary>
+    public IDisposable OpenTaskStops(string sessionId, Func<string, CancellationToken, Task<bool>> stop)
+    {
+        lock (_gate) _taskStops[sessionId] = stop;
+        return new Closing(() =>
+        {
+            lock (_gate)
+            {
+                if (_taskStops.TryGetValue(sessionId, out var held) && held == stop) _taskStops.Remove(sessionId);
+            }
+        });
+    }
+
+    /// <summary>
+    /// Stop one task a session runs (CONSOLE3a) — true when its harness said it stopped. Null when no
+    /// session held here runs tasks under that id: one on the pipe door, another machine's, or ended.
+    /// </summary>
+    public async Task<bool?> StopTaskAsync(string sessionId, string taskId, CancellationToken ct)
+    {
+        Func<string, CancellationToken, Task<bool>>? stop;
+        lock (_gate) stop = _taskStops.GetValueOrDefault(sessionId);
+        return stop is null ? null : await stop(taskId, ct).ConfigureAwait(false);
+    }
+
+    private sealed class Closing(Action close) : IDisposable
+    {
+        private int _closed;
+
+        public void Dispose()
+        {
+            if (Interlocked.Exchange(ref _closed, 1) == 0) close();
+        }
+    }
+
     /// <summary>Session ids with a live process, for whoever renders "what is running right now".</summary>
     public IReadOnlyList<string> Running
     {

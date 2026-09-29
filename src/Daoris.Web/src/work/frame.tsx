@@ -519,6 +519,8 @@ export type PanelTab = {
   tone: 'live' | 'ended' | 'failed' | 'idle';
   /** How it stands, in words: the tab is named by it, so the mark is never hue alone (D41 §6). */
   status: string;
+  /** Whether a person can stop it from here (CONSOLE3a): a running task its harness said can be stopped. */
+  stoppable?: boolean;
 };
 
 const TAB_ICON: Record<PanelTab['kind'], IconName> = { session: 'frameWork', subagent: 'think', task: 'execute' };
@@ -552,7 +554,7 @@ const PANEL_STEP = 48;
  * the header's end names them all and moves the shown one to the right side bar.
  */
 export function OutputPanel({
-  console: stream, height, collapsed, onResize, onToggle, tabs, selected, onSelect,
+  console: stream, height, collapsed, onResize, onToggle, tabs, selected, onSelect, onStop,
   views = ['console'], view, onView, onMove, onReset, onDrag, children,
 }: {
   /**
@@ -570,6 +572,8 @@ export function OutputPanel({
   /** The tab whose console is shown. */
   selected?: string;
   onSelect?: (key: string) => void;
+  /** Stop a stoppable tab's task (CONSOLE3a). */
+  onStop?: (key: string) => void;
   /** The views standing in the panel (DOCK1b), the console alone until the person moves one. */
   views?: readonly ViewId[];
   /** The view shown; ignored when it is not one of `views`. */
@@ -671,7 +675,7 @@ export function OutputPanel({
               {shown === 'console' ? t('work.panel.title') : entries[0].label}
             </span>
           )}
-        {tabbed && <StreamTabs tabs={tabs} selected={selected} onSelect={onSelect} />}
+        {tabbed && <StreamTabs tabs={tabs} selected={selected} onSelect={onSelect} onStop={onStop} />}
         <div className="ml-auto flex shrink-0 items-center gap-1">
           <ViewsMenu
             region="panel"
@@ -713,34 +717,56 @@ export function OutputPanel({
  * The console's own tabs (CONSOLE2): the session, then each subagent and background task it runs,
  * each named by how it stands. Its own molecule since DOCK1b, because the console can stand in the
  * right side bar too, and its streams go with it.
+ *
+ * @remarks
+ * **The selected task carries its stop, after the tabs** (CONSOLE3a), as VS Code's panel carries *Kill
+ * Terminal* for the terminal in view: only while it runs and its harness said it can be stopped, and
+ * named for the task it stops. Not inside the tab list, which owns tabs and nothing else, and not
+ * inside a tab, whose content is one label to a screen reader.
  */
-export function StreamTabs({ tabs, selected, onSelect }: {
+export function StreamTabs({ tabs, selected, onSelect, onStop }: {
   tabs: PanelTab[];
   selected?: string;
   onSelect?: (key: string) => void;
+  onStop?: (key: string) => void;
 }) {
   const { t } = useTranslation();
+  const stoppable = tabs.find((tab) => tab.key === selected && tab.stoppable);
   return (
-    <div role="tablist" aria-label={t('work.panel.tabs')} className="flex min-w-0 items-center gap-0.5 overflow-x-auto">
-      {tabs.map((tab) => (
+    <div className="flex min-w-0 items-center gap-1">
+      <div role="tablist" aria-label={t('work.panel.tabs')} className="flex min-w-0 items-center gap-0.5 overflow-x-auto">
+        {tabs.map((tab) => (
+          <button
+            key={tab.key}
+            type="button"
+            role="tab"
+            aria-selected={selected === tab.key}
+            aria-label={`${tab.label} — ${tab.status}`}
+            title={tab.status}
+            onClick={() => onSelect?.(tab.key)}
+            className={cn(
+              'flex max-w-48 shrink-0 cursor-pointer items-center gap-1.5 rounded-control border-0 px-2 py-0.5 text-meta transition-colors duration-(--speed)',
+              selected === tab.key ? 'bg-raised text-ink' : 'bg-transparent text-ink-faint hover:text-ink',
+            )}
+          >
+            <Icon name={TAB_ICON[tab.kind]} size={12} className="shrink-0" />
+            <span className="min-w-0 truncate">{tab.label}</span>
+            <DotMark tone={tab.tone} />
+          </button>
+        ))}
+      </div>
+      {stoppable && onStop && (
         <button
-          key={tab.key}
           type="button"
-          role="tab"
-          aria-selected={selected === tab.key}
-          aria-label={`${tab.label} — ${tab.status}`}
-          title={tab.status}
-          onClick={() => onSelect?.(tab.key)}
-          className={cn(
-            'flex max-w-48 shrink-0 cursor-pointer items-center gap-1.5 rounded-control border-0 px-2 py-0.5 text-meta transition-colors duration-(--speed)',
-            selected === tab.key ? 'bg-raised text-ink' : 'bg-transparent text-ink-faint hover:text-ink',
-          )}
+          aria-label={t('work.panel.stream.stop', { name: stoppable.label })}
+          title={t('work.panel.stream.stop', { name: stoppable.label })}
+          onClick={() => onStop(stoppable.key)}
+          className="flex shrink-0 cursor-pointer items-center gap-1 rounded-control border-0 bg-transparent px-1.5 py-0.5 text-meta text-ink-faint transition-colors duration-(--speed) hover:bg-raised hover:text-warn"
         >
-          <Icon name={TAB_ICON[tab.kind]} size={12} className="shrink-0" />
-          <span className="min-w-0 truncate">{tab.label}</span>
-          <DotMark tone={tab.tone} />
+          <Icon name="stop" size={10} />
+          <span>{t('work.panel.stream.stopShort')}</span>
         </button>
-      ))}
+      )}
     </div>
   );
 }

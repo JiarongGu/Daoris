@@ -6,7 +6,7 @@ import { buildChain } from '../map/chain';
 import { useAnswerSession, useQuests, useRegistry, useSessions } from '../queries';
 import {
   stopNotice, type TurnStop, useCancelTurn, useEndChat, useHarnesses, useResolveSession, useSendMessage,
-  NO_TURNS, useChatTurns, useSessionOpenings, useSessionStreams, useStartChat, useStopSession, useSweepPlan, useTreeFiles,
+  NO_TURNS, useChatTurns, useSessionOpenings, useSessionStreams, useStartChat, useStopSession, useStopTask, useSweepPlan, useTreeFiles,
 } from '../shell';
 import { Button, Drawer, failure, Icon, type Notify, SESSION_ACTIVE, Tip, useErrorNotify } from '../ui';
 import { AttendedSession, noteIsInTheHead } from './AttendedSession';
@@ -567,6 +567,18 @@ export function WorkFrame({
     : null;
   const streamTabs = attended ? panelTabs(attended.id, streams) : undefined;
   const pickStream = (key: string) => setPicked(key === attended?.id ? null : key);
+  // A task stopped from its tab (CONSOLE3a): asked of the session that runs it; its tab changes when the
+  // wire says how it ended. What it was called is the tab's, for the notice.
+  const stopTask = useStopTask();
+  const stopStream = (key: string) => {
+    if (!attended) return;
+    const name = streams.find((row) => row.key === key)?.name ?? key;
+    stopTask.mutate({ id: attended.id, key }, {
+      onSuccess: ({ stopped }) => notify(t(stopped ? 'work.panel.stream.stopping' : 'work.panel.stream.notStopped', { name }),
+        stopped ? undefined : 'error'),
+      onError: (error) => notify(sentence(error), 'error'),
+    });
+  };
 
   // Off Sessions (DOCK1a) the session views speak for the session attended there, which nothing else on
   // the screen names — so each says whose it is, with the way back to it (found looking at Overview).
@@ -609,7 +621,7 @@ export function WorkFrame({
       return withWhose(
         <div className="flex min-h-0 flex-1 flex-col gap-2 p-3">
           {streamTabs && streamTabs.length > 1 && (
-            <StreamTabs tabs={streamTabs} selected={shown ?? undefined} onSelect={pickStream} />
+            <StreamTabs tabs={streamTabs} selected={shown ?? undefined} onSelect={pickStream} onStop={stopStream} />
           )}
           {consoleView ?? <p className="m-0 text-small text-ink-faint">{t('work.panel.none')}</p>}
         </div>,
@@ -892,6 +904,7 @@ export function WorkFrame({
             onToggle={toggle}
             tabs={streamTabs}
             selected={shown ?? undefined}
+            onStop={stopStream}
             onSelect={(key) => {
               pickStream(key);
               // Picking what to read is asking to read it: a hidden panel opens.

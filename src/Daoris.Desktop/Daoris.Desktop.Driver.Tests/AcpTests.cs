@@ -1504,6 +1504,64 @@ public sealed class AcpTests
     }
 
     /// <summary>
+    /// CONSOLE3a: a task its harness says can be stopped (<c>canStop</c>) is listed as one, and a stop
+    /// is the adapter's own request, <c>_session/async_task/stop</c> with the session and the task. The
+    /// stream ends on the wire's word after it, like any other ending, never on the request's answer.
+    /// </summary>
+    [Fact]
+    public async Task A_stoppable_task_is_stopped_over_the_wire_and_ends_on_the_wires_word()
+    {
+        var output = new SessionOutput();
+        var agent = new FakeAgent((frame, self) =>
+        {
+            switch (frame.GetProperty("method").GetString())
+            {
+                case "initialize": return Ok(frame, """{"protocolVersion":1,"agentCapabilities":{}}""");
+                case "session/new": return Ok(frame, """{"sessionId":"s-1"}""");
+                case "_session/async_task/stop":
+                    self.Push(Update("s-1", """{"sessionUpdate":"async_task_state_update","asyncTaskId":"t9","state":"stopped"}"""));
+                    return Ok(frame, """{"stopped":true}""");
+                default: return frame.TryGetProperty("id", out _) ? Ok(frame, "{}") : null;
+            }
+        });
+
+        var session = new AcpSession(agent.Incoming, agent.Outgoing, _ => { }, streams: new SessionStreams(output, "c-1"));
+        await session.OpenAsync("D:/fam/Game", CancellationToken.None);
+        agent.Push(Update("s-1", """{"sessionUpdate":"async_task_spawned","asyncTaskId":"t9","name":"dev server","taskType":"shell","canStop":true}"""));
+        agent.Push(Update("s-1", """{"sessionUpdate":"async_task_spawned","asyncTaskId":"t8","name":"a probe","taskType":"shell","canStop":false}"""));
+        await Until(() => output.Streams("c-1").Count == 2);
+
+        Assert.Equal([true, false], output.Streams("c-1").Select(stream => stream.CanStop));
+        Assert.True(await session.StopTaskAsync("t9", CancellationToken.None));
+
+        var stop = JsonDocument.Parse(agent.Sent.Single(line => line.Contains("_session/async_task/stop"))).RootElement.GetProperty("params");
+        Assert.Equal(("s-1", "t9"), (stop.GetProperty("sessionId").GetString(), stop.GetProperty("asyncTaskId").GetString()));
+        await Until(() => !output.Streams("c-1")[0].Live);
+        Assert.Equal("stopped", output.Streams("c-1")[0].State);
+        // Ended, a stream is no longer one to stop.
+        Assert.False(output.Streams("c-1")[0].CanStop);
+
+        session.Release();
+    }
+
+    /// <summary>A stop before the session is open has nothing to send, and says so as false.</summary>
+    [Fact]
+    public async Task A_stop_before_the_session_is_open_sends_nothing()
+    {
+        var agent = Simple();
+        var session = new AcpSession(agent.Incoming, agent.Outgoing, _ => { }, streams: new SessionStreams(new SessionOutput(), "c-1"));
+
+        Assert.False(await session.StopTaskAsync("t9", CancellationToken.None));
+        Assert.Empty(agent.Sent);
+    }
+
+    private static async Task Until(Func<bool> condition)
+    {
+        for (var attempt = 0; attempt < 200 && !condition(); attempt++) await Task.Delay(10);
+        Assert.True(condition(), "the condition did not hold within two seconds");
+    }
+
+    /// <summary>
     /// Two messages the agent sent one after another are two, by the id the wire gives each message
     /// (found looking at CONSOLE2): joined, the window read <c>DONESubagent finished</c>. Chunks of one
     /// message still join, and the id rides the record so the page can tell them apart too.

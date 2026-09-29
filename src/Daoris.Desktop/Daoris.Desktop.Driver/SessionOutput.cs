@@ -34,7 +34,10 @@ public static class SessionStreamKind
 /// <param name="Id">Unique within its session: <c>subagent/&lt;id&gt;</c> or <c>task/&lt;id&gt;</c>, the wire's id.</param>
 /// <param name="Kind">A <see cref="SessionStreamKind"/>.</param>
 /// <param name="Name">What the harness called it.</param>
-public sealed record SessionStream(string Id, string Kind, string Name)
+/// <param name="CanStop">
+/// Whether its harness said it can be stopped (CONSOLE3a) — a task's <c>canStop</c>, in the wire's word.
+/// </param>
+public sealed record SessionStream(string Id, string Kind, string Name, bool CanStop = false)
 {
     /// <summary>
     /// How a stream ended when its session ended first: the harness never said, and nothing it
@@ -59,7 +62,8 @@ public sealed class SessionStreams(SessionOutput output, string sessionId)
 /// <summary>One stream under a session, as a reader lists them.</summary>
 /// <param name="Key">What to tail it by — <see cref="SessionOutput.Key"/>.</param>
 /// <param name="State">How it ended, in the wire's word, or null while it runs.</param>
-public sealed record StreamState(string Key, string Kind, string Name, bool Live, string? State);
+/// <param name="CanStop">Whether a person can stop it now (CONSOLE3a): its harness said so, and it runs.</param>
+public sealed record StreamState(string Key, string Kind, string Name, bool Live, string? State, bool CanStop = false);
 
 /// <summary>
 /// What a session is saying, as it says it (D49 §2) — the transcript capture, teed into memory.
@@ -176,7 +180,8 @@ public sealed class SessionOutput
                 .Where(entry => entry.Value.Parent is { } parent && parent.Equals(sessionId, StringComparison.OrdinalIgnoreCase))
                 .OrderBy(entry => entry.Value.Opened)
                 .Select(entry => new StreamState(
-                    entry.Key, entry.Value.Stream!.Kind, entry.Value.Stream.Name, entry.Value.Live, entry.Value.State))];
+                    entry.Key, entry.Value.Stream!.Kind, entry.Value.Stream.Name, entry.Value.Live, entry.Value.State,
+                    entry.Value.Live && entry.Value.Stream.CanStop))];
         }
     }
 

@@ -5,7 +5,11 @@ import type { PanelTab } from './frame';
  * A stream as the driver lists it (CONSOLE2c): something a session runs beside itself — a subagent,
  * or background work — and the key its console is tailed by.
  */
-export type StreamRow = { key: string; kind: string; name: string; live: boolean; state: string | null };
+export type StreamRow = {
+  key: string; kind: string; name: string; live: boolean; state: string | null;
+  /** Whether its harness said it can be stopped (CONSOLE3a); absent from a shell older than that. */
+  canStop?: boolean;
+};
 
 /**
  * The output panel's tabs for a session (CONSOLE2c): its own console first, then each stream in the
@@ -21,7 +25,7 @@ export function panelTabs(sessionId: string, rows: StreamRow[]): PanelTab[] | un
   const t = i18n.t.bind(i18n);
 
   return [
-    { key: sessionId, kind: 'session', label: t('work.panel.tab.session'), tone: 'idle', status: t('work.panel.tab.own') },
+    { key: sessionId, kind: 'session', label: t('work.panel.tab.session'), tone: 'idle', status: t('work.panel.tab.own'), stoppable: false },
     ...rows.map((row): PanelTab => {
       const kind = row.kind === 'subagent' ? 'subagent' : 'task';
       const state = row.live
@@ -35,6 +39,8 @@ export function panelTabs(sessionId: string, rows: StreamRow[]): PanelTab[] | un
         label: row.name,
         tone: row.live ? 'live' : row.state === 'failed' ? 'failed' : 'ended',
         status: `${t(`work.panel.stream.${kind}`)} · ${state}`,
+        // Its harness's word while it runs (CONSOLE3a), never a guess from what kind of stream it is.
+        stoppable: row.live && row.canStop === true,
       };
     }),
   ];

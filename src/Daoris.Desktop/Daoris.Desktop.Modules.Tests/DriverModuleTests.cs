@@ -779,6 +779,39 @@ public sealed class DriverModuleTests : Bridge
     }
 
     /// <summary>
+    /// CONSOLE3a: a running task its harness said can be stopped is listed as one, and its tab's stop
+    /// reaches the session that runs it, by the task's own id. Only a task of that session, and a
+    /// session nothing here runs stops nothing, as an answer.
+    /// </summary>
+    [Fact]
+    public async Task A_stoppable_task_is_listed_so_and_its_stop_reaches_its_session()
+    {
+        var loop = Loop();
+        var module = new DriverModule(Bus, loop);
+        loop.Output.Open("s1", new SessionStream("task/t1", SessionStreamKind.Task, "dev server", CanStop: true));
+        loop.Output.Open("s1", new SessionStream("task/t2", SessionStreamKind.Task, "a probe"));
+        loop.Output.Open("s1", new SessionStream("subagent/a", SessionStreamKind.Subagent, "reader"));
+
+        var listed = (await AnswerAsync(module, "SESSION_STREAMS", new { id = "s1" })).GetProperty("streams").EnumerateArray().ToList();
+        Assert.Equal([true, false, false], listed.Select(s => s.GetProperty("canStop").GetBoolean()));
+
+        Assert.False((await AnswerAsync(module, "STOP_TASK", new { id = "s1", key = "s1/task/t1" })).GetProperty("stopped").GetBoolean());
+
+        var asked = new List<string>();
+        using var held = loop.Processes.OpenTaskStops("s1", (task, _) =>
+        {
+            asked.Add(task);
+            return Task.FromResult(true);
+        });
+        Assert.True((await AnswerAsync(module, "STOP_TASK", new { id = "s1", key = "s1/task/t1" })).GetProperty("stopped").GetBoolean());
+        Assert.Equal(["t1"], asked);
+
+        Assert.Contains(Refusals.DriverRefused, await RefusalAsync(module, "STOP_TASK", new { id = "s1", key = "s1/subagent/a" }));
+        Assert.Contains(Refusals.DriverRefused, await RefusalAsync(module, "STOP_TASK", new { id = "s1", key = "s2/task/t1" }));
+        Assert.Equal(["t1"], asked);
+    }
+
+    /// <summary>
     /// D76 §2 (CONV1): a session's conversation is read back over the bridge a page at a time — the
     /// newest first, then earlier, then only what is newer — from the record under the home, so it
     /// answers after a restart when the console's window is long gone.

@@ -10,11 +10,28 @@ import * as Tooltip from '@radix-ui/react-tooltip';
 // session happens here now — starting it, talking to it, ending it, and watching its console —
 // which is what "one home for the stream" (design §3) means as a test file.
 
-const { invoke, notifyReady, eventHandlers } = vi.hoisted(() => ({
-  invoke: vi.fn(),
-  notifyReady: vi.fn(() => Promise.resolve()),
-  eventHandlers: new Map<string, (payload: unknown) => void>(),
-}));
+const { invoke, notifyReady, eventHandlers } = vi.hoisted(() => {
+  // Every hook listening to an event hears it, as in the shell: each hook's latest handler is kept,
+  // told apart by its source, since a render hands over a new closure each time. One handler per
+  // event name meant a second listener (the console's, CONSOLE3a) silenced the first (the tabs').
+  const byName = new Map<string, Map<string, (payload: unknown) => void>>();
+  return {
+    invoke: vi.fn(),
+    notifyReady: vi.fn(() => Promise.resolve()),
+    eventHandlers: {
+      set: (name: string, handler: (payload: unknown) => void) => {
+        const all = byName.get(name) ?? new Map<string, (payload: unknown) => void>();
+        all.set(handler.toString(), handler);
+        byName.set(name, all);
+      },
+      get: (name: string) => (byName.has(name)
+        ? (payload: unknown) => { for (const handler of byName.get(name)!.values()) handler(payload); }
+        : undefined),
+      has: (name: string) => byName.has(name),
+      clear: () => byName.clear(),
+    },
+  };
+});
 
 vi.mock('@shenora/react', () => ({
   isShenoraAvailable: () => true,
@@ -510,6 +527,74 @@ describe('the Work frame', () => {
     expect(await screen.findByText(/listening on 4200/)).toBeTruthy();
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'TAIL_SESSION', { payload: { id: 's1a2b3c4/task/bs00' } });
     expect(screen.getByRole('tab', { name: /dev server/ }).getAttribute('aria-selected')).toBe('true');
+  });
+
+  /**
+   * CONSOLE3a: the task in view carries its stop after the tabs, as VS Code's panel carries *Kill
+   * Terminal*, and it asks the driver to stop that task of that session. The session's own tab, a task
+   * its harness cannot stop, and one that has ended carry none.
+   */
+  it('stops the background task in view, and offers no stop where its harness gave none', async () => {
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'SESSION_STREAMS') {
+        return {
+          session: 's1a2b3c4',
+          streams: [
+            { key: 's1a2b3c4/task/bs00', kind: 'task', name: 'dev server', live: true, state: null, canStop: true },
+            { key: 's1a2b3c4/task/bs01', kind: 'task', name: 'a probe', live: true, state: null, canStop: false },
+            { key: 's1a2b3c4/task/bs02', kind: 'task', name: 'old build', live: false, state: 'completed', canStop: false },
+          ],
+        };
+      }
+      if (type === 'STOP_TASK') return { stopped: true };
+      if (type === 'TAIL_SESSION') return { session: 's1a2b3c4', lines: [], sequence: 0, live: true, dropped: 0 };
+      return DRIVER_STATE;
+    });
+
+    show('s1a2b3c4');
+    await userEvent.click(await screen.findByRole('tab', { name: /a probe/ }));
+    expect(screen.queryByRole('button', { name: /^Stop / })).toBeNull();
+    await userEvent.click(screen.getByRole('tab', { name: /old build/ }));
+    expect(screen.queryByRole('button', { name: /^Stop / })).toBeNull();
+
+    await userEvent.click(screen.getByRole('tab', { name: /dev server/ }));
+    await userEvent.click(screen.getByRole('button', { name: 'Stop dev server' }));
+
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'STOP_TASK', { payload: { id: 's1a2b3c4', key: 's1a2b3c4/task/bs00' } });
+  });
+
+  /**
+   * A stream's end reaches the page as its session's streams changing, never as a line (CONSOLE2c):
+   * the console tailing that stream asks again and stops saying it is live. Found stopping a task on
+   * the window (CONSOLE3a): the tab said stopped, and the console above its output still said live.
+   */
+  it('stops calling a stream live once its session says it ended', async () => {
+    let live = true;
+    invoke.mockImplementation(async (_module: string, type: string, request?: { payload?: { id?: string } }) => {
+      if (type === 'SESSION_STREAMS') {
+        return {
+          session: 's1a2b3c4',
+          streams: [{ key: 's1a2b3c4/task/bs00', kind: 'task', name: 'dev server', live, state: live ? null : 'stopped' }],
+        };
+      }
+      if (type === 'TAIL_SESSION') {
+        return request?.payload?.id === 's1a2b3c4/task/bs00'
+          ? { session: 's1a2b3c4/task/bs00', lines: [{ sequence: 1, text: 'listening on 4200' }], sequence: 1, live, dropped: 0 }
+          : { session: 's1a2b3c4', lines: [], sequence: 0, live: true, dropped: 0 };
+      }
+      return DRIVER_STATE;
+    });
+
+    show('s1a2b3c4');
+    await userEvent.click(await screen.findByRole('tab', { name: /dev server/ }));
+    await screen.findByText(/listening on 4200/);
+    expect(screen.getByText('live')).toBeInTheDocument();
+
+    live = false;
+    await act(async () => { eventHandlers.get('DAORIS.SESSION_STREAMS')!({ session: 's1a2b3c4' }); });
+
+    await waitFor(() => expect(screen.queryByText('live')).toBeNull());
+    expect(screen.getByText(/listening on 4200/)).toBeInTheDocument();
   });
 
   /** Another session's output is not this panel's — the event carries whose it is. */

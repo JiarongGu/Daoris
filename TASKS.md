@@ -21,8 +21,8 @@ lists.
 
 ## State
 
-**Counts, and this is their one home:** sixteen commands, **523 CLI tests, 553 service, 912 driver,
-302 desktop modules, 80 devkit, 1408 web unit, 21 Playwright**, 66/66 release rehearsal, **297/297
+**Counts, and this is their one home:** sixteen commands, **523 CLI tests, 553 service, 917 driver,
+303 desktop modules, 80 devkit, 1411 web unit, 21 Playwright**, 66/66 release rehearsal, **297/297
 family rehearsal** (it names its own phases when you run it), **57/57 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge
 documents, 5 skills, 7 packs. The always-loaded core is **22,492 of 26,000 bytes** — a span in
@@ -376,12 +376,12 @@ TDD, looked at on the window, and the ones that touch a real session use one (au
 
 
 - [ ] **CONSOLE3 — what the console's tabs left** (CONSOLE2, 2026-09-28; the evidence is
-  `docs/2026-09-28-console2-streams-evidence.md`). Four, each its own landing: **stop a background
-  task from its tab**, which the adapter takes as `_session/async_task/stop` (`canStop: true`);
-  **the native door's streams**, since only the protocol door asks for them and no probe has read
-  `stream-json`'s `parent_tool_use_id` or its task messages; **tabs in the detached session window**,
-  whose console is still the session's alone; and **whether a driven session waits for its own
-  background work** before it closes, since today that work ends with the session.
+  `docs/2026-09-28-console2-streams-evidence.md`). Three left, each its own landing (stopping a task
+  from its tab, CONSOLE3a, is in the archive): **the native door's streams**, since only the protocol
+  door asks for them and no probe has read `stream-json`'s `parent_tool_use_id` or its task messages;
+  **tabs in the detached session window**, whose console is still the session's alone; and **whether a
+  driven session waits for its own background work** before it closes, since today that work ends
+  with the session. A stop against the real adapter is unseen: the request's shape is from its source.
 
 - [ ] **FLAKE1 — an intake test failed once in about 20 full driver runs.**
   `IntakeTests.An_ask_with_an_intake_harness_is_answered_by_a_session_that_publishes_onto_it`: the

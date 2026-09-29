@@ -371,6 +371,22 @@ public sealed class AcpSession(
         _sessionId is null ? Task.CompletedTask : NotifyAsync("session/cancel", new { sessionId = _sessionId });
 
     /// <summary>
+    /// Stop one piece of background work the session started (CONSOLE3a): the adapter's own request,
+    /// <c>_session/async_task/stop</c> with the session and the task, answered <c>{ stopped }</c>. Its
+    /// stream ends when the wire says how, as every task's does. False when the session is not open,
+    /// or the adapter answered that it stopped nothing; a refusal it sends back is its own words.
+    /// </summary>
+    public async Task<bool> StopTaskAsync(string asyncTaskId, CancellationToken ct)
+    {
+        if (_sessionId is null) return false;
+        var answer = await RequestAsync("_session/async_task/stop", new { sessionId = _sessionId, asyncTaskId }, ct)
+            .ConfigureAwait(false);
+        return answer.ValueKind == JsonValueKind.Object
+            && answer.TryGetProperty("stopped", out var stopped)
+            && stopped.ValueKind == JsonValueKind.True;
+    }
+
+    /// <summary>
     /// Close the session politely so the agent can flush and persist; its exit is still what the driver
     /// observes, and a close that fails changes nothing about what already happened.
     /// </summary>

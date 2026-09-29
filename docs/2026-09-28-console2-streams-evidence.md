@@ -156,7 +156,8 @@ For 2b and 2c. Each is a landing of its own, TDD, and looked at on the window.
   nothing here answers it.
 - **Left:** stopping one task from its tab (`_session/async_task/stop`) until a tab exists to put it
   on, and the native door's equivalents (`stream-json`'s `parent_tool_use_id` and task messages),
-  which no probe has read.
+  which no probe has read. **The stop landed as CONSOLE3a** (2026-09-30), against a stub agent that
+  answers the request as the source says; the real adapter's answer is still unseen.
 
 ## What this does not establish
 

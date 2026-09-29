@@ -262,9 +262,28 @@ public sealed class DriverModule : ModuleBase
                 {
                     Session = id,
                     Streams = _loop.Output.Streams(id)
-                        .Select(stream => new { stream.Key, stream.Kind, stream.Name, stream.Live, stream.State })
+                        .Select(stream => new { stream.Key, stream.Kind, stream.Name, stream.Live, stream.State, stream.CanStop })
                         .ToArray(),
                 };
+            }
+
+            // Stopping one task a session runs, from its tab (CONSOLE3a): the harness's own stop, sent by
+            // the session that runs it. Its stream ends when the wire says how. False is an answer — no
+            // session here runs it, or its harness stopped nothing — and a key that is not one of this
+            // session's tasks is refused in the driver's words, because the page never sends one.
+            case "STOP_TASK":
+            {
+                var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
+                var key = PayloadHelper.GetRequiredValue<string>(request.Payload, "key");
+                var prefix = SessionOutput.Key(id, $"{SessionStreamKind.Task}/");
+                if (!key.StartsWith(prefix, StringComparison.OrdinalIgnoreCase) || key.Length == prefix.Length)
+                {
+                    throw new DriverException($"`{key}` is not background work of session {id}: only a task can be stopped from its tab.");
+                }
+
+                var stopped = await _loop.Processes.StopTaskAsync(id, key[prefix.Length..], CancellationToken.None)
+                    .ConfigureAwait(false);
+                return new { Stopped = stopped ?? false };
             }
 
             // A conversation in a repository (D49 §3). The record is the service's and the lock is the

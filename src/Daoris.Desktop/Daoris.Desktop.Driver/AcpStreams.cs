@@ -216,7 +216,9 @@ internal sealed class AcpStreams(
             task = _tasks[id] = new Background(streamId, name);
         }
 
-        streams.Open(new SessionStream(streamId, SessionStreamKind.Task, name));
+        // Stoppable only when the harness says so (CONSOLE3a): its word, never a guess from the task's kind.
+        var canStop = update.TryGetProperty("canStop", out var stoppable) && stoppable.ValueKind == JsonValueKind.True;
+        streams.Open(new SessionStream(streamId, SessionStreamKind.Task, name, canStop));
         Say($"→ background: {AcpSession.OneLine(name)}");
         Watch(task, Str(update, "outputFilePath"));
         return true;
@@ -315,6 +317,7 @@ internal sealed class AcpStreams(
             "completed" => $"  ✓ {what}: {name}",
             "failed" => $"  ✗ {what}: {name} failed",
             SessionStream.SessionEnded => $"  {what}: {name} ended with its session",
+            "stopped" => $"  ■ {what}: {name} stopped",
             _ => $"  {what}: {name}: {state}",
         });
     }

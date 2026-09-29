@@ -39,4 +39,17 @@ describe("the output panel's tabs (CONSOLE2c)", () => {
     // A word this build has no key for is the wire's own word, never a blank.
     expect(unknown!.status).toBe('background · disconnected');
   });
+
+  /** CONSOLE3a: a tab is stoppable only while it runs and its harness said so — never by its kind. */
+  it('are stoppable only while running and when the harness said so', () => {
+    const [own, stoppable, silent, ended, older] = panelTabs('s1', [
+      row({ canStop: true }),
+      row({ canStop: false }),
+      row({ live: false, state: 'completed', canStop: true }),
+      row(),
+    ])!;
+
+    expect([own!.stoppable, stoppable!.stoppable, silent!.stoppable, ended!.stoppable, older!.stoppable])
+      .toEqual([false, true, false, false, false]);
+  });
 });

@@ -7561,3 +7561,29 @@ removes the retired `daoris-desktop.exe` and a recorded engine file it no longer
 neighbour's file alone. `InstallHomeTests`, `desktop-publish.test.ts` (the launcher, the publish and
 the app's assembly name agree), `desktop-tool.test.ts` (the engine-process filter, an install found by
 either layout).
+
+## CONSOLE3a — stop a background task from its tab (2026-09-30)
+
+> **stop a background task from its tab**, which the adapter takes as `_session/async_task/stop`
+> (`canStop: true`) — the first of CONSOLE3's four.
+
+**Outcome.** A task keeps its harness's `canStop` (`SessionStream.CanStop`), and the streams list says
+whether each can be stopped now: running, and its harness said so. `AcpSession.StopTaskAsync` sends
+`_session/async_task/stop` with the session and the task and reads `{ stopped }`; each door registers it
+in `SessionProcesses` beside the inbox for as long as its session is open, and `STOP_TASK` reaches it by
+the stream's key, refusing a key that is not one of that session's tasks. On the page the task in view
+carries its stop after the tabs, as VS Code's panel carries *Kill Terminal*: not inside the tab list,
+which owns tabs only. The stream ends on the wire's word after the request, and the session's console
+says `■ background: … stopped`.
+
+**Found by looking**: an ended stream's console still said *live*, because a stream's end reaches the
+page only as its session's streams changing. The console tailing a stream now asks again on that event.
+The frame tests' event mock kept one handler per event name, so the console's new listener silenced the
+tabs' one: every listening hook hears an event now, as in the shell.
+
+**Proven by:** `AcpTests` (a stoppable task stopped over the wire, ending on the wire's word; a stop
+before the session opens sends nothing), `TaskStopsTests`, `DriverModuleTests` (listed stoppable; the
+stop reaches its session by the task's id; a subagent's key and another session's are refused),
+`streams.test.ts`, `WorkFrame.test.tsx` (the stop in view, none where the harness gave none; the console
+stops calling an ended stream live), and the scratch window with a stub agent whose dev server ticked
+into its tab until stopped. The real adapter's answer to the stop is unseen.

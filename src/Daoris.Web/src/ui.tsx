@@ -10,7 +10,7 @@ import {
   CloudOff, Compass, Copy, Ellipsis, FileDiff, FilePen, FileText, Gauge, GitMerge, Globe, Inbox, Info, KeyRound, Languages,
   LayoutDashboard, LayoutGrid, Layers, Link, ListTodo, LogIn, Maximize2, Minimize2, Monitor, Network,
   PanelBottom, PanelLeft, PanelLeftClose, PanelLeftOpen, PanelRight, PanelRightClose, Paperclip, Plug, Plus,
-  RotateCw, Search, Settings, Shield, SquareArrowOutUpRight, SquareTerminal, Trash2, TriangleAlert,
+  RotateCw, Search, Settings, Shield, Square, SquareArrowOutUpRight, SquareTerminal, Trash2, TriangleAlert,
   Wrench, X,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -108,6 +108,9 @@ const ICONS = {
   unfull: Minimize2,
   // A row's own menu (RAIL1).
   more: Ellipsis,
+  // Stopping one piece of background work from its tab (CONSOLE3a): the square every player and
+  // terminal draws for stop, which is not the bin (removing) or the cross (closing).
+  stop: Square,
 } as const;
 
 export type IconName = keyof typeof ICONS;
