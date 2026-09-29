@@ -671,6 +671,7 @@
   "asks.state.Open": "asked",
   "asks.state.Proposed": "proposed",
   "asks.state.Published": "published",
+  "asks.state.Done": "done",
   "asks.state.Closed": "closed",
   "asks.tier.declarations": "by declarations only; no intake harness ran",
   "asks.tier.named": "the asker named the receiver",

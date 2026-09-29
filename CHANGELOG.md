@@ -603,6 +603,11 @@ The first version: doctrine that installs, is checked, and flows back.
   the next tick, without a reload. The record names who answered: the `intake` tier in words, and
   the intake session, which is a door into Sessions on the desktop. A band row with nowhere to go (a
   parked session, in a browser) is no longer a button.
+- **An ask whose work is finished leaves the list** (USE1c). An ask that became quests, every one of
+  which has closed (chain steps included), is **done**. The Asks list hides it as it hides a closed
+  one, and *include closed* shows it with a *done* pill, after every live ask. Done is worked out from
+  the quests each time the ask is read, so a quest closed on another machine counts as soon as it
+  syncs in. The same words asked again after an ask is done make a new ask.
 - **A repository registered without adopting can be asked, and driven over the protocol door**
   (INT3, D70). Registered is addressable; adopted is disciplined. A repository registered on this
   machine with a root takes quests, and a session the driver starts in it on a protocol agent is

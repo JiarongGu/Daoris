@@ -671,6 +671,7 @@
   "asks.state.Open": "已提出",
   "asks.state.Proposed": "已提议",
   "asks.state.Published": "已发布",
+  "asks.state.Done": "已完成",
   "asks.state.Closed": "已关闭",
   "asks.tier.declarations": "仅按声明判断；没有运行受理智能体",
   "asks.tier.named": "由提出者指定接收方",

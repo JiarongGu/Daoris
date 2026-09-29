@@ -2492,6 +2492,23 @@ The design's §1b *as built* has the whole of it. Four choices, each with its re
 - **"Ask the person" is a park that the person's answer to the ASK ends.** The question stays on the
   transcript, and only the ask's own intake moves its tier to `intake`.
 
+**Amended 2026-09-30, building USE1c: an ask whose work is finished is DONE, and done is derived.** On
+the owner's install every ask stayed *published* after every quest it became had closed, so the Asks
+list only grew. An ask is now `Done` when it became at least one quest and none of the quests asked
+BY it (`ask #<id>`, chain steps included) is open or taken. A step waiting on another repository is
+taken, so it counts as open. The default list hides a done ask as it hides a closed one; *include
+closed* shows it, and the page reads it with the closed ones. A closed ask stays closed, because the
+close is the person's word on it. The same words asked after an ask is done ask anew, for ASKAGAIN1's
+reason: that ask ended, and the default list no longer shows it.
+- **Derived on every read, never stored.** The desk reads the ask's standing from the quests asked by
+  it, so every door (`daoris-driver ask`, the MCP host, the page) sees one answer. A quest can close
+  on another machine, and the sync that brings the move here knows nothing of asks, which stay on this
+  machine (D68 §2). A stored state would need a write the sync cannot make.
+- **Rejected: storing `Done` at the close.** The close that finishes the last quest may happen on
+  another machine, or in a rebase. Every place a quest can move would then have to know about asks,
+  and a missed one would leave the defect in place. The cost of deriving is one read of the quests
+  asked by asks, per list.
+
 ## D66 — One bar: Sessions is a view, Settings is a place, and an account is made by signing in (2026-09-23)
 
 **Decision.** The owner looked at the desktop and asked four things (UX1–UX4 in the backlog). Two of

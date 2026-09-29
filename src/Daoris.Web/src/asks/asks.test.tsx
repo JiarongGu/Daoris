@@ -10,7 +10,7 @@ import { AskComposer, type AskDraft } from './AskComposer';
 import { AskRecord } from './AskRecord';
 import { asksInOrder } from './AsksSection';
 import {
-  BY_INTAKE, CLOSED, INTAKE_ASKED, INTAKE_PARKED, INTAKE_SESSION, NAMED, PROPOSED, PUBLISHED, REFUSED, UNKNOWN_TIER,
+  BY_INTAKE, CLOSED, DONE, INTAKE_ASKED, INTAKE_PARKED, INTAKE_SESSION, NAMED, PROPOSED, PUBLISHED, REFUSED, UNKNOWN_TIER,
   UNMATCHED,
 } from './fixtures';
 
@@ -344,5 +344,34 @@ describe('the asks, in the order they are read', () => {
     const closedEarliest = { ...CLOSED, id: 'c3', asked: '2026-09-01T09:00:00Z' };
 
     expect(asksInOrder([newer, closedEarliest, older]).map((ask) => ask.id)).toEqual(['a1', 'b2', 'c3']);
+  });
+
+  /** USE1c: an ask whose work is finished is read with the closed ones — it is not waiting on anyone. */
+  it('puts a done ask with the closed ones, after every live one', () => {
+    const live = { ...PUBLISHED, id: 'b2', asked: '2026-09-24T09:00:00Z' };
+    const doneEarliest = { ...DONE, id: 'd4', asked: '2026-09-01T09:00:00Z' };
+    const closed = { ...CLOSED, id: 'c3', asked: '2026-09-02T09:00:00Z' };
+
+    expect(asksInOrder([closed, doneEarliest, live]).map((ask) => ask.id)).toEqual(['b2', 'd4', 'c3']);
+  });
+});
+
+/**
+ * USE1c: an ask the service reports DONE — it became quests and every one of them closed. It says so in
+ * a pill of its own, reads as finished on the card, and names what it became.
+ */
+describe('a done ask', () => {
+  it('wears a done pill and reads as finished on its card, naming what it became', () => {
+    render(<AskCard ask={DONE} onOpen={() => {}} />);
+
+    expect(screen.getByText('done')).toBeInTheDocument();
+    expect(screen.getByText(/became #9a8b7c, #1f2e3d/)).toBeInTheDocument();
+    // Read as finished, the way a closed record is: the card's dimmed face.
+    expect(screen.getByRole('button').closest('.opacity-75')).not.toBeNull();
+  });
+
+  it('says it is done on its record', () => {
+    const { drawer } = record(DONE);
+    expect(within(drawer).getByText('done')).toBeInTheDocument();
   });
 });

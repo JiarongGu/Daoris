@@ -17,6 +17,15 @@ public enum AskState
 
     /// <summary>The person closed it, with a reason.</summary>
     Closed,
+
+    /// <summary>
+    /// Its work is finished (USE1c): it became at least one quest, and none of the quests asked by it is
+    /// open or taken — chain steps included, since a step is asked by the ask too. Never stored: the
+    /// desk derives it from the quests on every read, so a quest closed on another machine and synced
+    /// in is reflected with no write to the ask. A closed ask stays closed, because that is the
+    /// person's word on it.
+    /// </summary>
+    Done,
 }
 
 /// <summary>
@@ -359,10 +368,38 @@ public sealed class AskDesk(KnowledgeService service, AskStore asks, QuestExchan
     /// <summary>The sender every quest an ask becomes is published by.</summary>
     public static string SenderOf(string askId) => $"ask #{askId}";
 
-    public Task<IReadOnlyList<Ask>> ListAsync(string? workspace = null, bool includeClosed = false, CancellationToken ct = default) =>
-        asks.ListAsync(workspace, includeClosed, ct);
+    /// <summary>
+    /// A circle's asks, or every circle's, newest first, each as it STANDS (USE1c) — a done one only
+    /// when closed ones are asked for, as a closed one is.
+    /// </summary>
+    public async Task<IReadOnlyList<Ask>> ListAsync(string? workspace = null, bool includeClosed = false, CancellationToken ct = default)
+    {
+        var stored = await asks.ListAsync(workspace, includeClosed, ct).ConfigureAwait(false);
+        // One read for every ask's quests: a sender that is an ask always begins the same way.
+        var asked = (await exchange.Store.FromAsync(SenderOf(""), startingWith: true, ct).ConfigureAwait(false))
+            .ToLookup(quest => quest.From, StringComparer.Ordinal);
+        var standing = stored.Select(ask => Standing(ask, [.. asked[SenderOf(ask.Id)]]));
+        return [.. includeClosed ? standing : standing.Where(ask => ask.State != AskState.Done)];
+    }
 
-    public Task<Ask?> FindAsync(string id, CancellationToken ct = default) => asks.FindAsync(id, ct);
+    /// <summary>One ask as it stands (USE1c), or null when there is none.</summary>
+    public async Task<Ask?> FindAsync(string id, CancellationToken ct = default) =>
+        await asks.FindAsync(id, ct).ConfigureAwait(false) is { } ask
+            ? Standing(ask, await exchange.Store.FromAsync(SenderOf(ask.Id), ct: ct).ConfigureAwait(false))
+            : null;
+
+    /// <summary>
+    /// What an ask is, read against the quests asked by it (USE1c): a published ask whose every quest
+    /// has closed is <see cref="AskState.Done"/>. Derived on every read and never stored, because the
+    /// quests can move on another machine, and the sync that brings the move here knows nothing of
+    /// asks (D68 §2). One judgement, for every reader of an ask's state.
+    /// </summary>
+    /// <param name="asked">Every quest asked by this ask — chain steps included, closed ones included.</param>
+    public static Ask Standing(Ask ask, IReadOnlyList<Quest> asked) =>
+        ask.State == AskState.Published && asked.Count > 0
+        && asked.All(quest => quest.Status is QuestStatus.Done or QuestStatus.Declined)
+            ? ask with { State = AskState.Done }
+            : ask;
 
     /// <summary>
     /// Record an ask, and answer it: a named receiver is published to at once; otherwise the
@@ -394,11 +431,12 @@ public sealed class AskDesk(KnowledgeService service, AskStore asks, QuestExchan
         // The same words in the same circle are the same ask — a retry, or a person repeating
         // themselves, is answered with what became of the first, never a second copy. 🔴 Unless the
         // person CLOSED it (ASKAGAIN1): they ended that one, so the same words afterwards ask anew,
-        // and the closed record stays as it was. Found asking a ticket again after its run failed.
+        // and the closed record stays as it was. Found asking a ticket again after its run failed. A DONE
+        // ask ended as surely (USE1c): its work finished, and the default list no longer shows it.
         var id = AskStore.MakeId(workspace, sentence);
-        for (var again = 1; await asks.FindAsync(id, ct).ConfigureAwait(false) is { } existing; again++)
+        for (var again = 1; await FindAsync(id, ct).ConfigureAwait(false) is { } existing; again++)
         {
-            if (existing.State != AskState.Closed)
+            if (existing.State is not (AskState.Closed or AskState.Done))
             {
                 return new(AskRefusal.None, $"Ask `#{id}` was already asked in `{workspace}` — {Describe(existing)}", existing);
             }
@@ -475,7 +513,7 @@ public sealed class AskDesk(KnowledgeService service, AskStore asks, QuestExchan
         var byIntake = session is { Length: > 0 } && string.Equals(session, ask.Intake, StringComparison.Ordinal);
         await asks.RecordPublishedAsync(ask.Id, published.Quest.Id, byIntake ? ByIntake : null, now, ct)
             .ConfigureAwait(false);
-        var took = await asks.FindAsync(ask.Id, ct).ConfigureAwait(false) ?? ask;
+        var took = await FindAsync(ask.Id, ct).ConfigureAwait(false) ?? ask;
         return new(AskRefusal.None, published.Message, took, published.Quest);
     }
 
@@ -491,7 +529,7 @@ public sealed class AskDesk(KnowledgeService service, AskStore asks, QuestExchan
         if (ask is null) return new(AskRefusal.NotFound, $"No ask `#{id.TrimStart('#')}`.", Ask: null);
 
         await asks.RecordClosedAsync(ask.Id, reason.Trim(), now, ct).ConfigureAwait(false);
-        var closed = await asks.FindAsync(ask.Id, ct).ConfigureAwait(false) ?? ask;
+        var closed = await FindAsync(ask.Id, ct).ConfigureAwait(false) ?? ask;
         return new(AskRefusal.None, $"Ask `#{ask.Id}` is closed: {closed.Note}", closed);
     }
 
@@ -536,6 +574,7 @@ public sealed class AskDesk(KnowledgeService service, AskStore asks, QuestExchan
     private static string Describe(Ask ask) => ask.State switch
     {
         AskState.Published => $"it became {string.Join(", ", ask.Quests.Select(q => $"`#{q}`"))}.",
+        AskState.Done => $"done: it became {string.Join(", ", ask.Quests.Select(q => $"`#{q}`"))}, and every quest it asked has closed.",
         AskState.Closed => $"closed: {ask.Note}",
         // The honest sentence once a harness is on it — "no intake harness ran" would be untrue now.
         _ when ask.Intake is { } intake =>

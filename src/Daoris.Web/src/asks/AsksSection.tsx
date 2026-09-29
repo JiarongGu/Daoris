@@ -9,20 +9,20 @@ import { useScope } from '../scope';
 import { useDriver, useNudge } from '../shell';
 import { workspaceOf, workspacesOf } from '../workspaces';
 import { failure, type Notify, SectionTitle, useErrorNotify } from '../ui';
-import { AskCard } from './AskCard';
+import { AskCard, askEnded } from './AskCard';
 import { AskComposer, type AskDraft } from './AskComposer';
 import { AskRecord } from './AskRecord';
 
 const EMPTY_DRAFT: AskDraft = { circle: '', sentence: '', to: '', ...NO_CARRY };
 
 /**
- * The asks as the group reads them (UX5 U32): what has waited longest first, and a closed ask after
- * every live one, as a closed quest comes after the open ones. The service lists newest first, which
- * is its terminal door's order; the group ran in it, under quests that run oldest first.
+ * The asks as the group reads them (UX5 U32): what has waited longest first, and a closed or done ask
+ * (USE1c) after every live one, as a closed quest comes after the open ones. The service lists newest
+ * first, which is its terminal door's order; the group ran in it, under quests that run oldest first.
  */
 export function asksInOrder(asks: readonly Ask[]): Ask[] {
-  const closed = (ask: Ask) => (ask.state === 'Closed' ? 1 : 0);
-  return [...asks].sort((a, b) => closed(a) - closed(b) || a.asked.localeCompare(b.asked));
+  const ended = (ask: Ask) => (askEnded(ask) ? 1 : 0);
+  return [...asks].sort((a, b) => ended(a) - ended(b) || a.asked.localeCompare(b.asked));
 }
 
 /**

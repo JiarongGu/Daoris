@@ -156,6 +156,12 @@ public sealed class QuestExchange(
     /// </summary>
     public const int MaxChain = 5;
 
+    /// <summary>
+    /// The store this exchange judges over — for the ask desk, which reads an ask's standing from the
+    /// quests asked by it (USE1c) and judges nothing of its own about them.
+    /// </summary>
+    internal QuestStore Store => quests;
+
     /// <summary>A quest that carries nothing but its words — every caller before D65.</summary>
     public Task<QuestPublishOutcome> PublishAsync(
         string from, string to, string title, string body, DateTimeOffset now, CancellationToken ct = default) =>

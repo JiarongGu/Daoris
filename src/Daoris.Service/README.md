@@ -93,7 +93,10 @@ adopted repositories by the words their summary, `owns` and `accepts` share with
 proposes, with the matched words as evidence, and **publishes nothing**; a person turns a proposal
 into a quest. Naming the receiver publishes at once. An ask's quests are asked *by the ask*
 (`ask #<id>`), in the ask's own circle. The same words in the same circle are the same ask. Asks
-are machine-local: a local host's door, and `daoris-driver ask` from a terminal.
+are machine-local: a local host's door, and `daoris-driver ask` from a terminal. An ask is **done**
+(USE1c) once it became a quest and every quest asked by it, chain steps included, has closed. That is
+worked out from the quests on every read and never stored, so a quest closed on another machine
+counts when it syncs in. The default list hides a done ask as it hides a closed one.
 
 The judgement behind those — who may be addressed, what a refusal says, what declining requires —
 lives in one place, `QuestExchange`, shared by the MCP and HTTP hosts. Written per host it would

@@ -421,7 +421,9 @@ public static class IntakeObservation
     /// </summary>
     public static SessionConclusion? Answered(AskView ask) => ask.State switch
     {
-        "Published" => new("completed", $"the person answered ask `#{ask.Id}` — it became {Quests(ask.Quests)}."),
+        // Done is published with every quest closed (USE1c) — the service derives it, and a quest can
+        // close between two ticks.
+        "Published" or "Done" => new("completed", $"the person answered ask `#{ask.Id}` — it became {Quests(ask.Quests)}."),
         "Closed" => new("stopped", $"the person closed ask `#{ask.Id}`: {ask.Note}"),
         _ => null,
     };

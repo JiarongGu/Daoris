@@ -1337,6 +1337,26 @@ public sealed class QuestStore
         return quests;
     }
 
+    /// <summary>
+    /// Every quest one sender asked, closed ones included — or, <paramref name="startingWith"/>, every
+    /// quest whose sender begins with it. What an ask's standing is read from (USE1c): its quests are
+    /// the ones asked BY it, chain steps included, whichever machine last moved them.
+    /// </summary>
+    public async Task<IReadOnlyList<Quest>> FromAsync(
+        string sender, bool startingWith = false, CancellationToken ct = default)
+    {
+        await using var command = _connection.CreateCommand();
+        command.CommandText = startingWith
+            ? "SELECT * FROM quests WHERE substr(sender, 1, length($sender)) = $sender ORDER BY filed"
+            : "SELECT * FROM quests WHERE sender = $sender ORDER BY filed";
+        command.Parameters.AddWithValue("$sender", sender);
+
+        var quests = new List<Quest>();
+        await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
+        while (await reader.ReadAsync(ct).ConfigureAwait(false)) quests.Add(Read(reader));
+        return quests;
+    }
+
     private static Quest Read(SqliteDataReader reader) => new(
         reader.GetString(reader.GetOrdinal("id")),
         reader.GetString(reader.GetOrdinal("sender")),

@@ -38,6 +38,9 @@ export const REFUSED: Ask = {
   note: '`newcomer` is not an adopted repository in `aurora` — only an adopter can be asked.',
 };
 
+/** Every quest it became has closed (USE1c) — the service reports it done, derived from those quests. */
+export const DONE: Ask = { ...PUBLISHED, id: '6b5a4c3d2e1f', state: 'Done' };
+
 export const CLOSED: Ask = {
   ...PROPOSED, id: '2a3b4c5d6e7f', state: 'Closed', note: 'Answered in the design review instead.', updated: hoursAgo(1),
 };

@@ -457,6 +457,20 @@ public sealed class IntakeTests : IDisposable
         Assert.Equal("stopped", IntakeObservation.Answered(Ask() with { State = "Closed", Note = "No." })!.State);
     }
 
+    /// <summary>
+    /// USE1c: the service reports an ask whose quests have all closed as DONE, derived. A person who
+    /// published a parked intake's ask to a quest that closed before the next tick answered it all the
+    /// same — read as unanswered, the intake would stay parked for good.
+    /// </summary>
+    [Fact]
+    public void A_parked_intake_whose_ask_is_already_done_ends_as_answered()
+    {
+        var done = IntakeObservation.Answered(Ask() with { State = "Done", Quests = ["q1"] });
+
+        Assert.Equal("completed", done!.State);
+        Assert.Contains("`#q1`", done.Note);
+    }
+
     // ——— The loop, over a real process.
 
     /// <summary>

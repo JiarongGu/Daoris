@@ -123,7 +123,11 @@ export type QuestAction = { quest: Quest; message: string };
  * page has no word for is shown as the service wrote it. Optional fields are absent rather than null
  * on the wire — the host leaves nulls out.
  */
-export type AskState = 'Open' | 'Proposed' | 'Published' | 'Closed';
+/**
+ * `Done` is derived by the service (USE1c): the ask became quests and every one of them has closed.
+ * The default list leaves it out, as it leaves out a closed one.
+ */
+export type AskState = 'Open' | 'Proposed' | 'Published' | 'Done' | 'Closed';
 /** A repository the declarations tier proposed, with the words its declarations share with the ask. */
 export type DeclarationMatch = { repository: string; score: number; matched: string[] };
 export type Ask = {

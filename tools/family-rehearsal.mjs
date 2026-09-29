@@ -901,9 +901,11 @@ check(
 const settled = (await api('GET', `/api/asks/${settledAskId}`)).json;
 const newcomerQuests = (await api('GET', '/api/quests?repository=newcomer&includeClosed=true')).json ?? [];
 const intakeQuest = newcomerQuests.find((q) => q.from === `ask #${settledAskId}` && !q.parent);
+// DONE, not published (USE1c): the loop drove its whole chain in the same run, so every quest asked by
+// the ask has closed, and the service derives that the ask's work is finished.
 check(
   '…it published onto the ask — asked BY the ask, in its words — and the ask says the intake answered it',
-  settled?.state === 'Published' && settled.tier === 'intake' && settled.intake === intakeSession?.id
+  settled?.state === 'Done' && settled.tier === 'intake' && settled.intake === intakeSession?.id
     && intakeQuest?.title === 'Say hello, as the intake decided' && settled.quests?.includes(intakeQuest.id),
   JSON.stringify({ settled, intakeQuest }),
 );
