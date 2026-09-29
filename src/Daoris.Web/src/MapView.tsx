@@ -4,9 +4,9 @@ import { CodeMapCanvas, CodeMapDetail } from './map/CodeMap';
 import { MapCanvas, type MapSelection } from './map/MapCanvas';
 import { LayeredMap } from './map/LayeredMap';
 import { RING_MAX } from './map/layers';
-import { LinesMenu, lineCounts, useShownLines } from './map/LinesMenu';
+import { LinesMenu, lineCounts, useMapWhen, useShownLines } from './map/LinesMenu';
 import { MapDetail } from './map/MapDetail';
-import { buildTopology, type LineKind, showLines } from './map/topology';
+import { buildTopology, keepQuests, type LineKind, showLines } from './map/topology';
 import { useCodeMap, useConvergence, useQuests, useRegistry, useSessions } from './queries';
 import { useScope } from './scope';
 import {
@@ -39,6 +39,7 @@ export function MapView({ notify, onOpenConvergence, onOpenQuest }: {
   const sessions = useSessions(null, false);
   const [selected, setSelected] = useState<MapSelection | null>(null);
   const [shownLines, toggleShown] = useShownLines();
+  const [when, setWhen] = useMapWhen();
   // One level in (MAP3a): the repository whose own code map is open, and the module chosen on it.
   const [code, setCode] = useState<string | null>(null);
   const [module, setModule] = useState<string | null>(null);
@@ -109,7 +110,9 @@ export function MapView({ notify, onOpenConvergence, onOpenQuest }: {
   const all = buildTopology(
     registry.data ?? [], quests.data ?? [],
     // Convergence may fail on its own — a lexical-only machine still has repositories and quests.
-    shared.data ?? [], sessions.data ?? []);
+    shared.data ?? [], sessions.data ?? [],
+    // Which quests, as the person chose (MAP4c); a window is measured from this render.
+    keepQuests(when, Date.now()));
   // What is drawn is what the person chose to see (MAP4b); the detail still reads everything.
   const topology = showLines(all, shownLines);
   const toggleLine = (kind: LineKind) => {
@@ -117,7 +120,9 @@ export function MapView({ notify, onOpenConvergence, onOpenQuest }: {
     if (selected && selected.kind === kind) setSelected(null);
     toggleShown(kind);
   };
-  const lines = <LinesMenu shown={shownLines} counts={lineCounts(all)} onToggle={toggleLine} />;
+  const lines = (
+    <LinesMenu shown={shownLines} counts={lineCounts(all)} onToggle={toggleLine} when={when} onWhen={setWhen} />
+  );
   // Scoped to every workspace of several, it says so, as its empty state does (UX5 U49).
   const header = (
     <PageHeader

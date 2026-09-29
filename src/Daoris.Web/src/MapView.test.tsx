@@ -189,6 +189,20 @@ describe('the workspace map', () => {
     expect(screen.getByRole('button', { name: /^engine, 1 open/ })).toBeTruthy();
   });
 
+  it('draws only the open quests when the person chooses, says so on the button, and remembers it', async () => {
+    show();
+    await screen.findByRole('button', { name: '2 quests from game to engine' });
+    await lines();
+    await userEvent.click(screen.getByRole('menuitemradio', { name: 'Open only' }));
+    await userEvent.keyboard('{Escape}');
+
+    // The done one leaves the line; the open one stays, and a repository's open count does not move.
+    expect(screen.getByRole('button', { name: '1 quest from game to engine' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: /^Lines: / })).toHaveTextContent('· open');
+    expect(screen.getByRole('button', { name: /^engine, 1 open/ })).toBeTruthy();
+    expect(localStorage.getItem('daoris.mapWhen')).toBe('open');
+  });
+
   it('remembers which lines this viewer draws', async () => {
     localStorage.setItem('daoris.mapLines', JSON.stringify(['quests']));
     show();

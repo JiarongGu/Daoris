@@ -134,8 +134,17 @@ Both are read from the quest store, so they need no new data and no model.
 - **Seen on the real workspace**: six asks became eleven quests on one repository, and only two
   quests were left off the map, down from thirteen.
 
-**What MAP4 still owes** (TASKS): open-only or a time window (c), live sessions on their nodes (d),
-and *depends on* from a declared source (e).
+### 1c. MAP4c — which quests (built 2026-09-30)
+
+The same menu's second group chooses **which quests** the lines draw: all of them, open only, or what
+moved in the last 7 or 30 days, going by when each quest last moved (`updated`). The choice is
+applied as the topology is built (`keepQuests`), not afterwards, so a kept chain step still finds its
+closed parent, and a repository's open count stays what is open to it now. Shared findings have no
+time and are unaffected. The button says the choice while it is not *all*, and the viewer's choice
+is kept as the lines' is.
+
+**What MAP4 still owes** (TASKS): live sessions on their nodes (d), and *depends on* from a declared
+source (e).
 
 ## 2. MAP1 — the workflow (second)
 

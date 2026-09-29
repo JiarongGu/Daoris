@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { Convergence, Quest, Registration, Session } from '../api';
 import { fitRadius, frameMap, placeLabel } from './MapCanvas';
 import { textWidth } from './measure';
-import { buildTopology, LINE_KINDS, type LineKind, layoutRing, showLines } from './topology';
+import { buildTopology, keepQuests, LINE_KINDS, type LineKind, layoutRing, showLines } from './topology';
 
 // MAP2 (D67 §3, `docs/2026-09-23-map-design.md` §1): the workspace's repositories and what actually
 // moved between them, read from data the service already serves — no model, no machine path.
@@ -90,6 +90,34 @@ describe('the workspace topology', () => {
     const declined: Quest = { ...quest('q1', 'game', 'engine', 'Declined'), then: [{ to: 'docs', title: 'never', body: '' }] };
     const map = buildTopology([repo('engine'), repo('game'), repo('docs')], [declined], [], []);
     expect(map.chains).toEqual([]);
+  });
+
+  it('draws only the quests a person keeps, and still reads a kept step\'s closed parent', () => {
+    const done: Quest = { ...quest('q1', 'game', 'engine', 'Done') };
+    const step: Quest = { ...quest('q2', 'game', 'docs'), parent: 'q1' };
+    const map = buildTopology([repo('engine'), repo('game'), repo('docs')], [
+      done, step, quest('q3', 'ask #abc', 'engine', 'Done'), quest('q4', 'elsewhere', 'game', 'Done'),
+    ], [], [], keepQuests('open', Date.parse('2026-09-30T00:00:00Z')));
+
+    expect(map.quests.map((e) => [e.from, e.to])).toEqual([['game', 'docs']]);
+    expect(map.asks).toEqual([]);
+    expect(map.outside).toBe(0);
+    // The step is open, and its done parent still says where the chain came from.
+    expect(map.chains.map((e) => [e.from, e.to, e.steps.map((q) => q.id)])).toEqual([['engine', 'docs', ['q2']]]);
+    // A repository's open count is what is open to it now, whatever the map keeps.
+    expect(map.nodes.find((n) => n.id === 'docs')!.open).toBe(1);
+  });
+
+  it('keeps what moved within a window, by when each quest last moved', () => {
+    const now = Date.parse('2026-09-30T00:00:00Z');
+    const at = (id: string, updated: string, status: Quest['status'] = 'Done'): Quest => ({ ...quest(id, 'game', 'engine', status), updated });
+    const quests = [at('recent', '2026-09-27T00:00:00Z'), at('old', '2026-08-01T00:00:00Z'), at('lastMonth', '2026-09-05T00:00:00Z')];
+    const ids = (when: Parameters<typeof keepQuests>[0]) =>
+      buildTopology([repo('engine'), repo('game')], quests, [], [], keepQuests(when, now)).quests.flatMap((e) => e.quests.map((q) => q.id));
+
+    expect(ids('week')).toEqual(['recent']);
+    expect(ids('month')).toEqual(['recent', 'lastMonth']);
+    expect(ids('all')).toEqual(['recent', 'old', 'lastMonth']);
   });
 
   it('shows only the kinds of line a person chose, and every repository still', () => {

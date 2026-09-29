@@ -4,10 +4,11 @@ import * as Menu from '@radix-ui/react-dropdown-menu';
 import { cn } from '../lib/cn';
 import { Icon, Tip } from '../ui';
 import { ASKS_DASH, CHAIN_DASH } from './MapCanvas';
-import { LINE_KINDS, type LineKind, type Topology } from './topology';
+import { LINE_KINDS, type LineKind, type Topology, type When, WHENS } from './topology';
 
 /** Where a viewer's choice of lines is kept: a convenience of theirs, so the browser's own storage. */
 const KEY = 'daoris.mapLines';
+const WHEN_KEY = 'daoris.mapWhen';
 
 /**
  * Which kinds of line the map draws, as this viewer last chose (MAP4b). Every kind until they hide
@@ -34,6 +35,27 @@ export function useShownLines(): [ReadonlySet<LineKind>, (kind: LineKind) => voi
   return [new Set(LINE_KINDS.filter((kind) => !hidden.includes(kind))), toggle];
 }
 
+/** Which quests the map draws, as this viewer last chose (MAP4c): all of them until they choose. */
+export function useMapWhen(): [When, (when: When) => void] {
+  const [when, setWhen] = useState<When>(() => {
+    try {
+      const kept = localStorage.getItem(WHEN_KEY);
+      return (WHENS as readonly string[]).includes(kept ?? '') ? kept as When : 'all';
+    } catch {
+      return 'all';
+    }
+  });
+  const choose = (next: When) => {
+    setWhen(next);
+    try {
+      localStorage.setItem(WHEN_KEY, next);
+    } catch {
+      // Kept for this visit only.
+    }
+  };
+  return [when, choose];
+}
+
 /** How much each kind of line carries on this map: quests for the three kinds that move work, pairs for findings. */
 export function lineCounts(topology: Topology): Record<LineKind, number> {
   return {
@@ -57,14 +79,22 @@ function Sample({ kind }: { kind: LineKind }) {
   );
 }
 
+const ITEM = cn(
+  'flex cursor-pointer items-center gap-2 rounded-[4px] px-2 py-1.5 text-small text-ink-soft outline-none',
+  'data-[highlighted]:bg-raised data-[highlighted]:text-ink data-[state=checked]:text-ink',
+);
+
 /**
- * The switches for the map's lines (MAP4b): an options menu, as the owner asked of every control that
- * is not a direction, with each kind ticked while it is drawn, pictured by its line, and counted.
+ * The switches for the map's lines (MAP4b) and which quests they draw (MAP4c): an options menu, as the
+ * owner asked of every control that is not a direction. Each kind is ticked while it is drawn,
+ * pictured by its line, and counted; below, one choice of which quests, all of them until chosen.
  */
-export function LinesMenu({ shown, counts, onToggle }: {
+export function LinesMenu({ shown, counts, onToggle, when, onWhen }: {
   shown: ReadonlySet<LineKind>;
   counts: Record<LineKind, number>;
   onToggle: (kind: LineKind) => void;
+  when: When;
+  onWhen: (when: When) => void;
 }) {
   const { t } = useTranslation();
   const some = shown.size < LINE_KINDS.length;
@@ -83,6 +113,7 @@ export function LinesMenu({ shown, counts, onToggle }: {
           >
             {t('map.lines')}
             {some && <span className="font-mono text-meta tabular-nums text-ink-faint">{shown.size}/{LINE_KINDS.length}</span>}
+            {when !== 'all' && <span className="text-meta text-ink-faint">· {t(`map.when.short.${when}`)}</span>}
           </button>
         </Menu.Trigger>
       </Tip>
@@ -100,10 +131,7 @@ export function LinesMenu({ shown, counts, onToggle }: {
               // Stay open: a person switching lines usually switches more than one.
               onSelect={(event) => event.preventDefault()}
               onCheckedChange={() => onToggle(kind)}
-              className={cn(
-                'flex cursor-pointer items-center gap-2 rounded-[4px] px-2 py-1.5 text-small text-ink-soft outline-none',
-                'data-[highlighted]:bg-raised data-[highlighted]:text-ink data-[state=checked]:text-ink',
-              )}
+              className={ITEM}
             >
               <span className="flex w-3.5 shrink-0 justify-center">
                 <Menu.ItemIndicator><Icon name="check" size={12} /></Menu.ItemIndicator>
@@ -113,6 +141,18 @@ export function LinesMenu({ shown, counts, onToggle }: {
               <span className="font-mono text-meta tabular-nums text-ink-faint">{counts[kind]}</span>
             </Menu.CheckboxItem>
           ))}
+          <Menu.Separator className="my-1 h-px bg-line" />
+          <Menu.Label className="px-2 pb-1 pt-0.5 text-meta text-ink-faint">{t('map.when.title')}</Menu.Label>
+          <Menu.RadioGroup value={when} onValueChange={(value) => onWhen(value as When)}>
+            {WHENS.map((choice) => (
+              <Menu.RadioItem key={choice} value={choice} onSelect={(event) => event.preventDefault()} className={ITEM}>
+                <span className="flex w-3.5 shrink-0 justify-center">
+                  <Menu.ItemIndicator><Icon name="check" size={12} /></Menu.ItemIndicator>
+                </span>
+                <span className="flex-1 truncate">{t(`map.when.${choice}`)}</span>
+              </Menu.RadioItem>
+            ))}
+          </Menu.RadioGroup>
         </Menu.Content>
       </Menu.Portal>
     </Menu.Root>

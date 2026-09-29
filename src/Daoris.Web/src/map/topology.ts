@@ -83,11 +83,31 @@ const WORKING: ReadonlySet<Session['state']> = new Set(['starting', 'working']);
 /** The sender every quest an ask becomes is published by (the service's `AskDesk.SenderOf`). */
 const ASK = /^ask #(\S+)$/;
 
+/**
+ * Which quests the map draws (MAP4c), so a busy circle stays readable: all of them, the open ones, or
+ * what moved within a week or a month, by when each quest last moved.
+ */
+export const WHENS = ['all', 'open', 'week', 'month'] as const;
+export type When = (typeof WHENS)[number];
+const DAY = 24 * 60 * 60 * 1000;
+
+export function keepQuests(when: When, now: number): (quest: Quest) => boolean {
+  if (when === 'open') return isOpen;
+  if (when === 'all') return () => true;
+  const since = now - (when === 'week' ? 7 : 30) * DAY;
+  return (quest) => Date.parse(quest.updated) >= since;
+}
+
+/**
+ * @param keep - which quests the lines draw (`keepQuests`). A repository's open count is what is open
+ *   to it now, whatever is kept, and a kept step still finds its parent among every quest.
+ */
 export function buildTopology(
   registry: readonly Registration[],
   quests: readonly Quest[],
   convergence: readonly Convergence[],
   sessions: readonly Session[],
+  keep: (quest: Quest) => boolean = () => true,
 ): Topology {
   const ids = new Set(registry.map((row) => row.repository));
   const circles = new Set(registry.map((row) => row.workspace ?? '')).size;
@@ -110,7 +130,8 @@ export function buildTopology(
   let outside = 0;
   const edges = new Map<string, QuestEdge>();
   const asked = new Map<string, AskEdge>();
-  for (const q of quests) {
+  const kept = quests.filter(keep);
+  for (const q of kept) {
     const ask = ASK.exec(q.from);
     if (ask && ids.has(q.to)) {
       const edge = asked.get(q.to) ?? { to: q.to, asks: [], quests: [], open: 0 };
@@ -158,7 +179,7 @@ export function buildTopology(
     return edge;
   };
   const onMap = (from: string, to: string) => ids.has(from) && ids.has(to) && from !== to;
-  for (const q of quests) {
+  for (const q of kept) {
     const parent = q.parent ? byId.get(q.parent) : undefined;
     if (parent && onMap(parent.to, q.to)) hop(parent.to, q.to).steps.push(q);
     if (!isOpen(q)) continue;
