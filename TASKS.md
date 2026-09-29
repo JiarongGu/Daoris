@@ -144,7 +144,7 @@ rather than designed.
 
 ## Backlog
 
-**Thirty-three rows are open**: the owner's six of 2026-09-30 (USE1, AGT6, QUEST1, LOG1,
+**Thirty-four rows are open**: the owner's seven of 2026-09-30 (USE1, AGT6, HELP6, QUEST1, LOG1,
 CONSOLE4, SETUP1), first; WSR4
 from the first real workspace (its other WSR, HELP, SESS, DOCK
 and MAP rows are in the archive); the four REV3 left (DIST1, BUDGET1 and HOME1 the owner's, and HTTP1);
@@ -208,6 +208,15 @@ TASK.md and complete one by one"*).
   (`session/set_model`, and the models `session/new` answers with), as the console's `/model` does.
   This reverses D49 §7 (*no model selection UI*) on the owner's word, so a decision (D98) records it and
   how D24/model-decoupling still hold: the deployment still chooses, and the deployment is the person.
+- [ ] **HELP6 — Ask Daoris reaches everything** (owner, 2026-09-30: *"we need to have a good ui/ux or
+  easy access for everything use ask daoris"*). Ask Daoris proposes what the person confirms (HELP1c,
+  D89), but only for the doors it was built with: settings (drive, hold, landing, intake, helper,
+  strikes, timeout, notify) and an ask. Every door built since, and those being built now, should be
+  one it can propose through the same confirmed card: updating or pinning an agent (USE1a), deleting a
+  quest or an ask made by mistake (QUEST1), an account's model and effort (AGT6), opening the setup
+  guide at a step (SETUP1), and taking the person to any screen (*go*, which the panel already
+  carries). Each is the screen's own door, judged by the route that serves it, never a second path.
+  After those rows land.
 - [ ] **QUEST1 — clear or delete a quest** (owner, 2026-09-30: *"and we do need way to clear or
   delete quest"*). Clearing is USE1(c) for asks, and closed quests already leave the default list.
   Deleting is new: a quest or an ask made by mistake (a duplicate, a test) removed from the ledger, on
