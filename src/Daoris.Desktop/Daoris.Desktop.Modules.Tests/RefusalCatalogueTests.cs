@@ -50,6 +50,71 @@ public sealed class RefusalCatalogueTests
     }
 
     /// <summary>
+    /// REFUSE1: every code declared is one the catalogue test walks. `All` was a list kept by hand, so a
+    /// code left out of it escaped the translation check; it is read off the declarations now.
+    /// </summary>
+    [Fact]
+    public void Every_declared_code_is_one_the_catalogue_walks()
+    {
+        var declared = typeof(Refusals)
+            .GetFields(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static)
+            .Where(field => field.IsLiteral && field.FieldType == typeof(string))
+            .Select(field => (string)field.GetRawConstantValue()!)
+            .Order(StringComparer.Ordinal);
+
+        Assert.Equal(declared, Refusals.All.Order(StringComparer.Ordinal));
+        Assert.Equal(Refusals.All.Count, Refusals.All.Distinct(StringComparer.Ordinal).Count());
+    }
+
+    /// <summary>
+    /// REFUSE1: a module refuses through the catalogue and nowhere else. A code typed at a throw site,
+    /// or an exception built by hand, is a refusal no translation check can see.
+    /// </summary>
+    [Fact]
+    public void Every_throw_site_names_a_declared_code()
+    {
+        var names = typeof(Refusals)
+            .GetFields(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static)
+            .Where(field => field.IsLiteral && field.FieldType == typeof(string))
+            .Select(field => field.Name)
+            .ToHashSet(StringComparer.Ordinal);
+        var desktop = Path.Combine(RepositoryRoot(), "src", "Daoris.Desktop");
+        var sources = new[] { "Daoris.Desktop.Modules", "Daoris.Desktop.App" }
+            .SelectMany(project => Directory.EnumerateFiles(Path.Combine(desktop, project), "*.cs", SearchOption.AllDirectories))
+            .Where(path => !path.Contains($"{Path.DirectorySeparatorChar}obj{Path.DirectorySeparatorChar}")
+                && !path.Contains($"{Path.DirectorySeparatorChar}bin{Path.DirectorySeparatorChar}"))
+            .ToList();
+        Assert.NotEmpty(sources);
+
+        var problems = new List<string>();
+        var seen = 0;
+        foreach (var path in sources)
+        {
+            var text = File.ReadAllText(path);
+            var file = Path.GetFileName(path);
+            foreach (System.Text.RegularExpressions.Match call in System.Text.RegularExpressions.Regex.Matches(
+                text, @"Refusals\.Because\(\s*(?<code>[^,\s]+)\s*,"))
+            {
+                seen += 1;
+                var code = call.Groups["code"].Value;
+                if (!code.StartsWith("Refusals.", StringComparison.Ordinal) || !names.Contains(code["Refusals.".Length..]))
+                {
+                    problems.Add($"{file}: `{code}` is not a declared refusal");
+                }
+            }
+
+            if (file != "Refusals.cs" && text.Contains("new ShenoraException(", StringComparison.Ordinal))
+            {
+                problems.Add($"{file}: builds a ShenoraException by hand, outside the catalogue");
+            }
+        }
+
+        Assert.Empty(problems);
+        // A scan that matched nothing would pass on a moved or renamed helper: it has to see them.
+        Assert.True(seen > 10, $"the scan found {seen} refusal site(s); it should see every module's");
+    }
+
+    /// <summary>
     /// The driver's own sentences are rendered VERBATIM rather than re-authored, so that one entry
     /// must interpolate the message it is handed. A translation that dropped `{{message}}` would
     /// silently replace every driver refusal with one fixed sentence.

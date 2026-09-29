@@ -7632,3 +7632,18 @@ word; one open at the end ends with the session; without a console, the lines ar
 console's tests (`SessionOutputTests`, `ProtocolChatTests`, `WorkFrame.test.tsx`), and the scratch
 window with a stand-in `claude` replaying the probe's frames: a tab for the command reading its file,
 one for the subagent with its `Read` and its reply, and a finished chat no longer called live.
+
+## REFUSE1 — the refusal rule, enforced (2026-09-30)
+
+> - [ ] **REFUSE1 — the refusal rule, enforced** (modules F10). `Refusals.All` is kept by hand, so a
+>   code left out of it escapes the catalogue test, and nothing checks that a throw site uses a
+>   declared code. Enumerate the constants by reflection and scan the throw sites.
+
+**Outcome.** `Refusals.All` is read off the declared constants by reflection, so a new code is walked by
+the translation check the moment it is declared. A scan over the modules and the shell holds every
+`Refusals.Because(…)` to a declared `Refusals.<name>`, refuses a `ShenoraException` built anywhere but
+the catalogue, and proves it saw the throw sites (more than ten), so a moved helper cannot make it pass
+by matching nothing. No throw site needed changing.
+
+**Proven by:** `RefusalCatalogueTests` (every declared code is walked; every throw site names one),
+modules 305.

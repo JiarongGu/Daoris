@@ -110,16 +110,15 @@ public static class Refusals
     /// <summary>A browser choice that is neither `daoris` nor `edge` (BRW12).</summary>
     public const string BrowserChoiceUnknown = "BROWSER_CHOICE_UNKNOWN";
 
-    /// <summary>Every code a module here can raise — what the catalogue test enumerates.</summary>
-    public static IReadOnlyList<string> All =>
-    [
-        RemoteHalfDeclared, RepositoryNotAdopted, DriverNotReady, HarnessActionUnknown, HarnessActionIdle,
-        HarnessActionBusy, DriverRefused,
-        SessionMoveNotYours, SessionDeclineNeedsReason, SessionNotReviewable, SessionNoBase, SessionRangeUnreadable,
-        SessionTreeUnlisted, HarnessProfileNeeded, WindowUnknown,
-        PluginUnknown, PluginActionUnknown, PluginBusy,
-        BrowserNotAPage, BrowserFileUnreadable, BrowserSettingUnknown, BrowserChoiceUnknown,
-    ];
+    /// <summary>
+    /// Every code a module here can raise — what the catalogue test enumerates. Read off the
+    /// declarations above (REFUSE1): a list kept by hand let a code left out of it escape the check.
+    /// </summary>
+    public static IReadOnlyList<string> All { get; } = typeof(Refusals)
+        .GetFields(System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Static)
+        .Where(field => field.IsLiteral && field.FieldType == typeof(string))
+        .Select(field => (string)field.GetRawConstantValue()!)
+        .ToArray();
 
     /// <summary>
     /// Refuse, in the shape that survives the trip: a code the page translates, the values it
