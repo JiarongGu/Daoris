@@ -22,7 +22,7 @@ lists.
 ## State
 
 **Counts, and this is their one home:** sixteen commands, **523 CLI tests, 553 service, 922 driver,
-305 desktop modules, 80 devkit, 1415 web unit, 21 Playwright**, 66/66 release rehearsal, **297/297
+306 desktop modules, 80 devkit, 1415 web unit, 21 Playwright**, 66/66 release rehearsal, **297/297
 family rehearsal** (it names its own phases when you run it), **57/57 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge
 documents, 5 skills, 7 packs. The always-loaded core is **22,492 of 26,000 bytes** — a span in
@@ -184,10 +184,6 @@ found that is not session-sized, or is the owner's call. Each one was confirmed 
   install set one for the account. So a moved or second install runs on the first one's `data/`
   and says nothing. Either the install's own `data/` wins, or the inherited home wins and the shell
   says so.
-- [ ] **HOSTID1 — the shell adopts whatever answers `/api/status`** (modules F7). `HostSupervisor`
-  takes any process answering on the service port as this machine's host, and hands its page the
-  full bridge. The shell needs a way to tell its own host from another process, such as a token it
-  passes at spawn, or the install path the host reports.
 - [ ] **HTTP1 — the HTTP host under test** (service F19). The service suite references Core and the
   MCP host only, so the shared gate, the key check and path stripping are exercised by one
   rehearsal route each. The fix is a `WebApplicationFactory` suite over shared mode's doors.

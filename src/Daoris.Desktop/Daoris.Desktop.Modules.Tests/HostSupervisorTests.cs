@@ -48,6 +48,25 @@ public sealed class HostSupervisorTests : IDisposable
         Assert.Null(supervisor.Trouble);
     }
 
+    /// <summary>
+    /// HOSTID1: something answering on the service port is adopted only when it answers as a Daoris
+    /// host does, with the status the service gives (its search tier). Anything else is not this
+    /// machine's host, and the shell says what answered rather than feeding its page from it.
+    /// </summary>
+    [Fact]
+    public async Task Something_else_answering_on_the_port_is_not_adopted_and_the_shell_says_so()
+    {
+        using var squatter = await StubHost.StartAsync("<html>another program</html>", status: "{\"ok\":true}");
+        var supervisor = new HostSupervisor(squatter.Url, () => Carrying("index-CFwEAMAB.js"));
+
+        Assert.False(await supervisor.EnsureAsync());
+
+        Assert.NotNull(supervisor.Trouble);
+        Assert.Contains(squatter.Url, supervisor.Trouble);
+        Assert.Contains("not a Daoris host", supervisor.Trouble);
+        Assert.Null(supervisor.Notice);
+    }
+
     [Fact]
     public async Task Adopting_a_host_that_serves_this_install_s_own_page_is_silent()
     {
@@ -124,19 +143,22 @@ public sealed class HostSupervisorTests : IDisposable
             Url = url;
         }
 
-        public static async Task<StubHost> StartAsync(string page)
+        /// <summary>What a Daoris host's status says: its search tier (and more, which is not asked).</summary>
+        public const string DaorisStatus = "{\"semantic\":false,\"tier\":\"lexical only\",\"note\":null}";
+
+        public static async Task<StubHost> StartAsync(string page, string status = DaorisStatus)
         {
             var listener = new HttpListener();
             var url = $"http://127.0.0.1:{FreePort()}/";
             listener.Prefixes.Add(url);
             listener.Start();
             var host = new StubHost(listener, url.TrimEnd('/'));
-            _ = host.ServeAsync(page);
+            _ = host.ServeAsync(page, status);
             await Task.Yield();
             return host;
         }
 
-        private async Task ServeAsync(string page)
+        private async Task ServeAsync(string page, string status)
         {
             while (!_stopping.IsCancellationRequested)
             {
@@ -144,7 +166,7 @@ public sealed class HostSupervisorTests : IDisposable
                 try { context = await _listener.GetContextAsync(); }
                 catch (Exception error) when (error is HttpListenerException or ObjectDisposedException) { return; }
 
-                var body = context.Request.Url?.AbsolutePath == "/api/status" ? "{}" : page;
+                var body = context.Request.Url?.AbsolutePath == "/api/status" ? status : page;
                 var bytes = Encoding.UTF8.GetBytes(body);
                 context.Response.StatusCode = 200;
                 context.Response.ContentLength64 = bytes.Length;

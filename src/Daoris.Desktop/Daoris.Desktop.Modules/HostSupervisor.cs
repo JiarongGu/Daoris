@@ -38,7 +38,20 @@ public sealed partial class HostSupervisor(string serviceUrl, Func<HostLocation?
     /// <summary>True when the host answers — found running, or started here and now answering.</summary>
     public async Task<bool> EnsureAsync(CancellationToken ct = default)
     {
-        if (await AnswersAsync(ct).ConfigureAwait(false))
+        var found = await ProbeAsync(ct).ConfigureAwait(false);
+
+        // 🔴 HOSTID1: an answer is adopted only when it is a Daoris host's. Something else on the port —
+        // another program that happened to take it — is not this machine's host: its answers would be
+        // read as the machine's, and starting ours beside it would only fail to bind.
+        if (found == Answer.Foreign)
+        {
+            Trouble =
+                $"something is answering at {serviceUrl}, and it is not a Daoris host: its status is not the "
+                + "service's. Stop what holds that port, or set DAORIS_SERVICE_URL to another.";
+            return false;
+        }
+
+        if (found == Answer.Daoris)
         {
             // 🔴 The notice informs; it never decides (REV3). A throw while reading the install's own
             // page — unreadable, locked — used to escape here, and the loop counted a host that had
@@ -88,7 +101,7 @@ public sealed partial class HostSupervisor(string serviceUrl, Func<HostLocation?
 
         for (var attempt = 0; attempt < 100; attempt += 1)
         {
-            if (await AnswersAsync(ct).ConfigureAwait(false)) return true;
+            if (await ProbeAsync(ct).ConfigureAwait(false) == Answer.Daoris) return true;
             if (_owned is null || _owned.HasExited)
             {
                 Trouble = $"the service host at {location.Executable} exited before it answered.";
@@ -113,15 +126,41 @@ public sealed partial class HostSupervisor(string serviceUrl, Func<HostLocation?
         _owned = null;
     }
 
-    private async Task<bool> AnswersAsync(CancellationToken ct)
+    /// <summary>What answers the status probe: nothing, a Daoris host, or something else.</summary>
+    private enum Answer { None, Daoris, Foreign }
+
+    /// <summary>
+    /// Ask the status door. A Daoris host's status names its search tier (`tier`), as every version
+    /// has, so that is what tells one from another program on the port. Nothing more is claimed: two
+    /// Daoris hosts are told apart by the page each serves (<see cref="Notice"/>), never by this.
+    /// </summary>
+    private async Task<Answer> ProbeAsync(CancellationToken ct)
     {
         try
         {
             using var response = await _probe.GetAsync($"{serviceUrl.TrimEnd('/')}/api/status", ct)
                 .ConfigureAwait(false);
-            return response.IsSuccessStatusCode;
+            if (!response.IsSuccessStatusCode) return Answer.Foreign;
+            var body = await response.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
+            return IsDaorisStatus(body) ? Answer.Daoris : Answer.Foreign;
         }
         catch (Exception error) when (error is HttpRequestException or TaskCanceledException)
+        {
+            return Answer.None;
+        }
+    }
+
+    /// <summary>Whether a status body is a Daoris host's: an object naming its search tier.</summary>
+    internal static bool IsDaorisStatus(string body)
+    {
+        try
+        {
+            using var status = System.Text.Json.JsonDocument.Parse(body);
+            return status.RootElement.ValueKind == System.Text.Json.JsonValueKind.Object
+                && status.RootElement.TryGetProperty("tier", out var tier)
+                && tier.ValueKind == System.Text.Json.JsonValueKind.String;
+        }
+        catch (System.Text.Json.JsonException)
         {
             return false;
         }

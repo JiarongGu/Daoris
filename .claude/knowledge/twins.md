@@ -54,6 +54,7 @@ map found this first (WSP3), and every twin since was built the same way for the
 | Plugins (D64) | `plugins.ts` | `Plugins.cs` | — |
 | The in-app browser's favorites and settings (BRW5, CHR7) | `browser.ts` | `BrowserFavorites.cs`, `BrowserSettings.cs` (the desktop modules, read by `daoris-browser` at each start) | — |
 | The code map (MAP3) | — | `CodeMapFile.cs` | `CodeMap.cs` (the devkit produces it) |
+| A Daoris host's status names its search tier, `tier` (HOSTID1) | — | the shell's `HostSupervisor.IsDaorisStatus`, which adopts only such an answer | `StatusResponse.Tier` (`ApiContracts.cs`); the page's `Status` type reads it too |
 | An install's application, `app/Daoris.Desktop.exe` (D93) | `tools/desktop-publish.mjs`'s `SHELL_HOME` and `SHELL_EXE`, which lay it out | the launcher's `Launcher.AppFolder` and `Launcher.ShellExe`, which start it, and the app's `AssemblyName`, which names it; `desktop-publish.test.ts` reads all three | — |
 | The desktop page's origin on the engine it ships, `https://daoris.localhost` (D92) | — | the shell's `DesktopPage.VirtualHost` (CHR2b) | `DesktopPage.cs` (a local host allows it); the family rehearsal spells it a third time and asks with it, and `tools/desktop.mjs`'s `SHELL_ORIGIN` a fourth, to tell the shell's page from any other |
 | What a repository says it uses, `domain.uses` (D91) | `connect.ts` (`usesOf`) | `RemoteSyncPayloads.cs` carries it; `RegistryModule.cs` preserves it | `Registry.cs` (`Declared.Uses`), `RegistryImport.cs` |

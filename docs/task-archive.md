@@ -7647,3 +7647,24 @@ by matching nothing. No throw site needed changing.
 
 **Proven by:** `RefusalCatalogueTests` (every declared code is walked; every throw site names one),
 modules 305.
+
+## HOSTID1 — the shell adopts whatever answers `/api/status` (2026-09-30)
+
+> - [ ] **HOSTID1 — the shell adopts whatever answers `/api/status`** (modules F7). `HostSupervisor`
+>   takes any process answering on the service port as this machine's host, and hands its page the
+>   full bridge. The shell needs a way to tell its own host from another process, such as a token it
+>   passes at spawn, or the install path the host reports.
+
+**Outcome.** The supervisor adopts an answer only when it is a Daoris host's: a status object naming its
+search tier (`tier`), which every version of the service gives. Anything else on the port is refused
+with a sentence naming the address and what to do (stop what holds it, or move the service), and no
+host is started beside it, where it could only fail to bind. Since D92 the page is the install's own
+bundle, so what a foreign answer could have reached was the page's data, not the page.
+
+**Not taken:** a spawn token or a reported install path. Adoption of another Daoris host (a terminal's,
+another shell's) stays the rule, and two Daoris hosts are already told apart by the page each serves
+(the adoption notice). The status reporting an install path would tell a browser about the machine
+(D47 §4).
+
+**Proven by:** `HostSupervisorTests` (something else answering is refused and said; a Daoris answer is
+adopted as before), and the deployment rehearsal's adoption of the installed host.
