@@ -37,12 +37,12 @@ import { spawn, spawnSync } from 'node:child_process';
 import {
   existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, unlinkSync, writeFileSync,
 } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { basename, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { copyTree, isMain } from './fsx.mjs';
 // The install's layout, from the script that makes it (REV3 CLEAN1): one launcher at the root, the home in `data/`.
-import { HOME, LAUNCHER } from './desktop-publish.mjs';
-import { running, stopAll } from './processes.mjs';
+import { HOME, LAUNCHER, RETIRED_LAUNCHERS, SHELL_EXE, SHELL_HOME } from './desktop-publish.mjs';
+import { applicationsAt, running, stopAll } from './processes.mjs';
 
 export const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 
@@ -115,6 +115,9 @@ export function debugEnvironment(cdpPort) {
     // attach to. So dev mode is not a preference here: it is the switch that lets the port through.
     DOTNET_ENVIRONMENT: 'Development',
     WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS: `--remote-debugging-port=${cdpPort}`,
+    // The Chromium the shell ships (D92): its DevTools port, which the shell hands its engine and the
+    // engine opens only in development — the same switch, for the same reason.
+    DAORIS_DEVTOOLS_PORT: String(cdpPort),
   };
 }
 
@@ -161,13 +164,30 @@ export function assemblyExe(projectDir, { flavours = ['Debug', 'Release'] } = {}
     .exec(readFileSync(join(projectDir, project), 'utf8'))?.[1];
   if (!name) return null;
 
+  // On the Chromium the shell ships (D92), the exe is CEF's launcher, named from the assembly less
+  // `.App`, and the build lands in a runtime identifier's folder. 🔴 The launcher is copied with CEF's
+  // own file date, older than any build of ours, so it counts only with the assembly it starts beside
+  // it, and is dated by that assembly: dated by itself, a stale build in the folder above would win.
+  const launched = name.endsWith('.App');
+  const exeName = launched ? name.slice(0, -'.App'.length) : name;
   const found = [];
+  const consider = (folder) => {
+    const exe = join(folder, `${exeName}.exe`);
+    if (!existsSync(exe)) return;
+    const dated = launched ? join(folder, `${name}.dll`) : exe;
+    if (existsSync(dated)) found.push({ exe, at: statSync(dated).mtimeMs });
+  };
   for (const flavour of flavours) {
     const flavourDir = join(projectDir, 'bin', flavour);
     if (!existsSync(flavourDir)) continue;
     for (const framework of readdirSync(flavourDir)) {
-      const exe = join(flavourDir, framework, `${name}.exe`);
-      if (existsSync(exe)) found.push({ exe, at: statSync(exe).mtimeMs });
+      const frameworkDir = join(flavourDir, framework);
+      if (!statSync(frameworkDir).isDirectory()) continue;
+      consider(frameworkDir);
+      for (const rid of readdirSync(frameworkDir)) {
+        const ridDir = join(frameworkDir, rid);
+        if (statSync(ridDir).isDirectory()) consider(ridDir);
+      }
     }
   }
 
@@ -195,8 +215,14 @@ export function assemblyExe(projectDir, { flavours = ['Debug', 'Release'] } = {}
  */
 export function installedExe(directory) {
   if (!directory) return null;
-  const launcher = join(directory, LAUNCHER);
-  return existsSync(launcher) ? launcher : null;
+  // The application the launcher starts (D93): what holds the window, the debug port and the files,
+  // so what every instrument addresses. An install published before D93 has the single-file shell at
+  // its root instead, until its next publish replaces it.
+  if (existsSync(join(directory, LAUNCHER))) {
+    const shell = join(directory, ...SHELL_HOME, SHELL_EXE);
+    return existsSync(shell) ? shell : null;
+  }
+  return RETIRED_LAUNCHERS.map((name) => join(directory, name)).find(existsSync) ?? null;
 }
 
 /**
@@ -231,8 +257,10 @@ const BROWSER_PROJECT = join(repoRoot, 'src', 'Daoris.Desktop', 'Daoris.Desktop.
  * photographs a browser some other shell started.
  */
 function browserExe(shell) {
-  const installed = join(dirname(shell), 'app', 'daoris-browser', 'daoris-browser.exe');
-  return existsSync(installed) ? installed : assemblyExe(BROWSER_PROJECT);
+  // Beside the application in `app/` (D93), or under the root's `app/` for an install from before it.
+  const installed = [join(dirname(shell), 'daoris-browser', 'daoris-browser.exe'),
+    join(dirname(shell), 'app', 'daoris-browser', 'daoris-browser.exe')].find(existsSync);
+  return installed ?? assemblyExe(BROWSER_PROJECT);
 }
 const HTTP_PROJECT = join(repoRoot, 'src', 'Daoris.Service', 'Daoris.Service.Http');
 const MCP_PROJECT = join(repoRoot, 'src', 'Daoris.Service', 'Daoris.Service.Mcp');
@@ -307,6 +335,35 @@ function takeWindow(args) {
   return name;
 }
 
+/**
+ * The shell page's origin on the Chromium it ships (D92) — the shell's `DesktopPage.VirtualHost`,
+ * spelled here too so the instruments can tell the shell from any other page (`twins.md`).
+ */
+export const SHELL_ORIGIN = 'https://daoris.localhost';
+
+/**
+ * Whether a page is THIS run's shell, from what the page says of itself (`PAGE_IDENTITY`).
+ *
+ * On Chromium (CHR2) the page is on the app's own origin, carries Shenora's Chromium mark, and names
+ * the host it was told to reach. That host is how a run is told apart, because every shell's page has
+ * the same origin. On WebView2, which the install keeps until CHR4 republishes it, the page is on the
+ * host's own origin.
+ */
+export function isShell(page, serviceUrl) {
+  if (!page) return false;
+  const service = serviceUrl ? new URL(serviceUrl).origin : null;
+  if (page.chromium) {
+    let told = null;
+    try { told = page.host ? new URL(page.host).origin : null; } catch { told = null; }
+    return page.origin === SHELL_ORIGIN && (!service || told === service);
+  }
+  return Boolean(page.webview) && (!service || page.origin === service);
+}
+
+/** What `isShell` reads, evaluated in the page. */
+const PAGE_IDENTITY = '({ webview: !!window.chrome?.webview, chromium: !!window.__shenora_chromium, '
+  + "origin: location.origin, host: new URLSearchParams(location.search).get('host') })";
+
 /** What the shell captions that window — how the OS-level capture finds it. */
 function windowCaption(window) {
   // Daoris's own browser (D85) is the engine's own window, captioned `<page> - Chromium`.
@@ -343,15 +400,16 @@ async function attach(window = null) {
 
   /* IDENTIFY THE PAGE BEFORE REPORTING ITS ANSWER. The whole value of this instrument is that it
    * sees what nothing else can, so a reading taken in the wrong page is a claim about the desktop
-   * that nobody can contradict. `chrome.webview` exists only inside a WebView2 — it is what the
-   * bridge's transport is built on — and the origin is the one this run asked for. */
-  const host = await cdp.evaluate('({ webview: !!window.chrome?.webview, origin: location.origin })');
-  if (!host?.webview || (state.serviceUrl && host.origin !== new URL(state.serviceUrl).origin)) {
+   * that nobody can contradict. The bridge's mark exists only inside a Shenora host — it is what the
+   * transport is built on — and the host the page reaches is the one this run started. */
+  const page = await cdp.evaluate(PAGE_IDENTITY);
+  if (!isShell(page, state.serviceUrl)) {
     cdp.close();
+    const engine = page?.chromium ? 'a Chromium shell page' : page?.webview ? 'a WebView2' : 'a browser page';
     fail(
       `refusing: the page on ${state.cdpPort} is not this shell.\n`
-      + `  expected a WebView2 at ${new URL(state.serviceUrl).origin}\n`
-      + `  found     ${host?.webview ? 'a WebView2' : 'a browser page'} at ${host?.origin ?? '(unknown)'}`,
+      + `  expected the shell reaching ${state.serviceUrl ? new URL(state.serviceUrl).origin : '(any host)'}\n`
+      + `  found     ${engine} at ${page?.origin ?? '(unknown)'}${page?.host ? ` reaching ${page.host}` : ''}`,
       1);
   }
 
@@ -398,7 +456,7 @@ async function start(command, args) {
   }
   if (!exe) fail('the shell is not built — `node tools/desktop.mjs build`.');
 
-  const live = running(exe);
+  const live = applicationsAt(exe);
   if (live.length && command === 'restart') {
     stopAll(exe);
     console.log(`stopped pid ${live.join(', ')}`);
@@ -492,7 +550,7 @@ function doctor() {
   console.log(`  shell            ${shell ? ago(shell) : 'absent — `build`'}`);
 
   console.log('\nrunning');
-  const live = process.platform === 'win32' ? running(shell) : [];
+  const live = process.platform === 'win32' ? applicationsAt(shell) : [];
   console.log(`  this checkout    ${live.length ? `pid ${live.join(', ')}` : 'nothing'}`);
   // A host with no shell is usually an orphan — a shell that died without its teardown. It is NOT
   // killed here: this tool did not start it, and it may be a gate's. Named, so the person can act.
@@ -548,7 +606,7 @@ async function main(command, args) {
 
     case 'kill': {
       const exe = targetExe();
-      const live = running(exe);
+      const live = applicationsAt(exe);
       if (!live.length) {
         console.log('no shell this loop started is running.');
         break;
@@ -634,7 +692,7 @@ async function main(command, args) {
       if (window === 'browser' && !browser) fail('the browser is not built — `node tools/desktop.mjs build`.');
       const whose = browser
         ? ['-ProcessName', 'daoris-browser', '-ExePath', browser]
-        : ['-ProcessName', 'daoris-desktop', '-ExePath', exe];
+        : ['-ProcessName', basename(exe, '.exe'), '-ExePath', exe];
       const capture = () => run('powershell', ['-NoProfile', '-ExecutionPolicy', 'Bypass',
         '-File', join(repoRoot, 'tools', 'shot-window.ps1'),
         ...whose,

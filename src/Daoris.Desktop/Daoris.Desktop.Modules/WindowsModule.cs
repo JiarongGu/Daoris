@@ -66,7 +66,8 @@ public sealed class WindowsModule(
                 // False is not a failure: one window per name is the framework's contract, and the
                 // second press of "open the monitor" brings the monitor forward. That is what a
                 // person means by pressing it again.
-                var opened = windows.Open(name, SecondaryWindow.Address(platform.Url, name));
+                // Its page on the engine's app origin, told where the host is (D92).
+                var opened = windows.Open(name, DesktopPage.PathFor(platform.Url, name));
                 return Task.FromResult<object?>(State(opened));
             }
 

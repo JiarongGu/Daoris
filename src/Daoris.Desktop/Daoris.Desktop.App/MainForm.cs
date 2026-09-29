@@ -1,16 +1,17 @@
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
+using Shenora.Chromium;
 using Shenora.Core.Events;
 using Shenora.Core.Ipc;
-using Shenora.Core.Shell;
 using Shenora.Windows;
-using WebView2Control = Microsoft.Web.WebView2.WinForms.WebView2;
 
 namespace Daoris.Desktop;
 
 /// <summary>
-/// The one window: the platform the HTTP host serves, in a WebView — the same bytes a browser gets,
-/// which is the "one UI, two shells" rule holding (D38). The bridge is wired in the runtime's
-/// load-bearing order: constructed before init so early events buffer, attached after init and before
-/// navigation so the page's first messages are never lost.
+/// The one window: the platform the HTTP host serves — the same bytes a browser gets, which is the "one
+/// UI, two shells" rule holding (D38) — on the Chromium the install ships (D92, CHR2). A
+/// <c>ChromiumView</c> serves the bundle on the engine's app origin and bridges the page's IPC itself;
+/// the page reaches the host at its loopback address.
 /// </summary>
 /// <remarks>
 /// <para><b>It is frameless, and the page's app strip IS the title bar</b> (SURF7 / D56). No OS
@@ -26,9 +27,10 @@ namespace Daoris.Desktop;
 /// </remarks>
 public sealed class MainForm : OptimizedForm
 {
-    private readonly WebViewHost _host;
-    private readonly WebView2Control _webView;
-    private readonly WebViewIpcBridge _bridge;
+    private readonly ChromiumEngine _engine;
+    private readonly PlatformBundle _bundle;
+    private readonly string _serviceUrl;
+    private readonly ILogger<ChromiumView> _viewLog;
     private readonly SplashPanel _splash;
     private readonly DriverLoop _driver;
     private readonly HostSupervisor _supervisor;
@@ -37,11 +39,14 @@ public sealed class MainForm : OptimizedForm
     private Label? _trouble;
 
     public MainForm(
-        WebViewHostOptions hostOptions,
+        ChromiumEngine engine,
+        PlatformBundle bundle,
+        PlatformAddress platform,
         IMessageDispatcher dispatcher,
         IEventBus eventBus,
         DriverLoop driver,
-        HostSupervisor supervisor)
+        HostSupervisor supervisor,
+        ILogger<ChromiumView>? viewLog = null)
         : base(new OptimizedFormOptions
         {
             FramelessChrome = true,
@@ -55,6 +60,10 @@ public sealed class MainForm : OptimizedForm
             ImmersiveDarkMode = StartingPalette.IsDark,
         })
     {
+        _engine = engine;
+        _bundle = bundle;
+        _serviceUrl = platform.Url;
+        _viewLog = viewLog ?? NullLogger<ChromiumView>.Instance;
         _driver = driver;
         _supervisor = supervisor;
         _palette = StartingPalette;
@@ -62,19 +71,17 @@ public sealed class MainForm : OptimizedForm
         // Still set: it is the taskbar's label and the caption of the one MessageBox left.
         Text = "Daoris (道衍)";
 
-        // 🔴 The WINDOW's icon, which `ApplicationIcon` alone does not set: that property gives the
-        // executable its face in Explorer and the taskbar, and a WinForms form still opens wearing
-        // the framework's default unless told otherwise. Taken from the running executable rather
-        // than embedded a second time, so the two can never disagree.
+        // 🔴 The WINDOW's icon, which a WinForms form does not take from anywhere by itself: it opens
+        // wearing the framework's default unless told. Read from the `daoris.ico` the build copies
+        // beside this assembly (D92): the running executable is CEF's launcher now, and wears CEF's
+        // face, so the old reading of it would put Chromium's picture on the taskbar.
         //
         // It also fixes the tray: `SessionNotifier` reads `window.Icon ?? SystemIcons.Application`,
         // so every balloon this app raised wore a generic Windows glyph until now.
         try
         {
-            if (Environment.ProcessPath is { Length: > 0 } self)
-            {
-                Icon = System.Drawing.Icon.ExtractAssociatedIcon(self);
-            }
+            var face = Path.Combine(AppContext.BaseDirectory, "daoris.ico");
+            if (File.Exists(face)) Icon = new Icon(face);
         }
         catch (Exception)
         {
@@ -83,25 +90,10 @@ public sealed class MainForm : OptimizedForm
         MinimumSize = new Size(960, 600);
         CaptionButtonColors = CaptionColors(_palette);
 
-        _webView = new WebView2Control { Dock = DockStyle.Fill };
-        Controls.Add(_webView);
-
+        // The view comes once the host answers (BringUpAsync); the splash holds the window till then.
         _splash = new SplashPanel(new SplashPanelOptions { BackColor = _palette.Page });
         Controls.Add(_splash);
         _splash.BringToFront();
-
-        _bridge = new WebViewIpcBridge(_webView, new WebViewIpcBridgeOptions
-        {
-            Dispatcher = dispatcher,
-            EventBus = eventBus,
-            // Capabilities are promises the page may render buttons for, so only what is actually
-            // mapped is advertised. The driver's controls deliberately do NOT ride this list: the page
-            // gates them on the bridge being present and DAORIS.DRIVER answering STATE, which is the
-            // stronger test — a capability string could outlive the module it promises.
-            Shell = new ShellInfo { Name = "daoris-desktop", Capabilities = [] },
-        });
-
-        _host = new WebViewHost(_webView, hostOptions);
 
         // 🔴 MAPPED LATE, from where the window is created, because this facade needs the LIVE form —
         // never from the dispatcher's configure callback, which runs at provider-build time when no
@@ -114,10 +106,9 @@ public sealed class MainForm : OptimizedForm
             ToggleMaximize = ToggleMaximize,
             IsMaximized = () => AppPlacement == WindowPlacement.Maximized,
             ApplyTheme = ApplyTheme,
+            // The page's rectangles are read against the view that sent them (ChromiumView), per
+            // monitor, so no coordinate space is named here.
             SetCaptionButtons = SetCaptionButtons,
-            // The page's rectangles are relative to the WEB VIEW, and its DeviceDpi is what converts
-            // them — per-monitor, so a process-wide scale would be wrong on a mixed-DPI desktop.
-            CoordinateSpace = _webView,
         }));
 
         // The OS notification (SURF5b), which closes driver design open question 5: a session that
@@ -195,48 +186,43 @@ public sealed class MainForm : OptimizedForm
 
     private async Task BringUpAsync()
     {
-        if (!WebViewEnvironment.IsRuntimeAvailable())
-        {
-            MessageBox.Show(
-                "The WebView2 Runtime is not installed.\n\n"
-                + "Install the Evergreen WebView2 Runtime from Microsoft and start Daoris again.",
-                Text, MessageBoxButtons.OK, MessageBoxIcon.Error);
-            Close();
-            return;
-        }
-
         try
         {
-            await _host.InitializeAsync();
-            _bridge.Attach();
+            // Never a silent empty window: the page is the bundle beside the host, so a bundle that is
+            // not there is said before anything opens, with the likely cause named.
+            if (!_bundle.Present)
+            {
+                ShowTrouble(
+                    "The platform's page was not found beside the service host"
+                    + (_bundle.Folder is { } folder ? $" ({folder})" : "") + ".\n\n"
+                    + "Build it (npm --prefix src/Daoris.Web run build), or reinstall.");
+                return;
+            }
 
-            // Navigate only once the service answers — a WebView pointed at a port nobody holds
-            // renders a browser error page, which reads as "the app is broken" rather than "the
-            // host is still starting".
+            // The page comes once the service answers: every call it makes is to that host, and a page
+            // opened on a port nobody holds reads as "the app is broken" rather than "starting".
             if (!await _driver.HostReady)
             {
                 ShowTrouble(_supervisor.Trouble ?? "The local service host did not come up.");
                 return;
             }
 
-            _webView.CoreWebView2.NavigationCompleted += (_, completed) =>
+            // The page on the engine's app origin, told where its host is (D92). Its browser opens as
+            // the view's handle is created, which adding it to this shown window does.
+            var view = new ChromiumView(_engine, _viewLog)
             {
-                if (!_splash.IsDisposed)
-                {
-                    Controls.Remove(_splash);
-                    _splash.Dispose();
-                }
-
-                if (!completed.IsSuccess)
-                {
-                    // Never a silent dark window: say what failed, name the likely cause.
-                    ShowTrouble(
-                        $"The platform failed to load ({completed.WebErrorStatus}).\n\n"
-                        + "The service host answered its status probe but did not serve the page — "
-                        + "check that its bundle was built (npm --prefix src/Daoris.Web run build).");
-                }
+                Dock = DockStyle.Fill,
+                Path = DesktopPage.PathFor(_serviceUrl),
             };
-            _host.Navigate();
+            Controls.Add(view);
+            _splash.BringToFront();
+
+            if (view.Browser is { } browser) await browser.Created;
+            if (!_splash.IsDisposed)
+            {
+                Controls.Remove(_splash);
+                _splash.Dispose();
+            }
         }
         catch (Exception error)
         {
@@ -247,8 +233,8 @@ public sealed class MainForm : OptimizedForm
     /// <summary>
     /// Trouble is a page, never a modal. A MessageBox owned by this window DISABLES it — measured:
     /// the close button stops working, the app cannot be exited until someone finds the dialog, and
-    /// posting WM_CLOSE reports success while doing nothing. The one modal kept is the WebView2
-    /// runtime check, which closes the app immediately after.
+    /// posting WM_CLOSE reports success while doing nothing. The WebView2 runtime check, the one modal
+    /// once kept, went with WebView2 (D92): the engine is the install's own.
     /// </summary>
     private void ShowTrouble(string message)
     {

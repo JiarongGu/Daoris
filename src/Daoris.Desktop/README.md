@@ -9,7 +9,8 @@ got its shape is in `docs/DECISIONS.md` and `docs/task-archive.md`, not here.
 | `Daoris.Desktop.Driver` | The library: the loop and the planner; the adapter seam, whose `Toolchain` declares a harness's binary, version question, configuration home and install, update and login flows (D49 §4), and whose `Wire` is the door a session is held over — the pipe, or ACP (`AcpSession`, with a permission request refused by construction); `ChatRunner` for conversations; `HarnessRoster` (is the harness here, and which account does this run as); and `RemoteSync`, which rides the tick once per workspace |
 | `Daoris.Desktop.Driver.Host` | `daoris-driver`, the headless door onto the same library: the tick, chat, ask, trees and sync |
 | `Daoris.Desktop.Modules` | The shell's head: the loop, the host supervisor, every IPC module the page talks to, and `Refusals`, where a refusal is declared once as a code the page translates. Plain `net10.0`, with its own tests and gate |
-| `Daoris.Desktop.App` | `daoris-desktop`, the window and only the window, on Shenora.Windows 0.16.0 (D22) |
+| `Daoris.Desktop.App` | `Daoris.Desktop.exe`, the window and only the window, on Shenora 0.17's own Chromium (`ChromiumView`, D92): CEF's launcher, laid out beside the engine by the build, wearing Daoris's icon (`StampIcon.targets`) |
+| `Daoris.Desktop.Launcher` | `Daoris.exe`, the one thing at an install's root (D93): it starts `app/Daoris.Desktop.exe` with its arguments and exits. Framework-dependent, single-file, referencing nothing |
 | `Daoris.Desktop.Browser` | `daoris-browser`, Daoris's own browser (D85, CHR3): Chromium through CefSharp, in a process of its own because the engine's debug port reaches every page in its process. It shows the engine's own window, which it opens over the engine's own port, and answers `${browser}` with a relay (`CdpRelay`) that calls a new tab a page where the engine says `other`. It ends when its last window closes or the shell does. The shell starts it; an install carries it under `app/daoris-browser/` with two locales |
 
 The adapters are the stub, `acp-stub` (the protocol door with no model in it), `claude-code`, and the
@@ -37,10 +38,10 @@ them is an HTTP route. A session's *record* is on the host; its console, events 
   `Form.WindowState`, which lies about a window that maximizes by hand. `WindowCommandModule` is
   mapped **late**, from the form's constructor, because it needs a live form.
 - **Secondary windows** (SURF8) carry the same bundle at their own route, so they are the platform's
-  own components and not a second frontend. They keep their **native frame**; each builds its **own
-  WebView2 environment** (🔴 an environment is affine to the thread that created it, and sharing the
-  main window's fails the bring-up); each follows the OS theme directly, having no `SET_THEME`
-  channel; and they are disposed on shutdown rather than abandoned, because their threads are
+  own components and not a second frontend. They keep their **native frame**; each is a
+  `ChromiumView` on the one engine the app registers (D92), and its caption follows the page's
+  chosen theme through `DAORIS.WINDOWS SET_THEME` (WINDOW2), the kit's own having no route for a
+  framed window; and they are disposed on shutdown rather than abandoned, because their threads are
   background and an unwaited exit kills them before their geometry is saved.
 - **It notifies, and decides nothing** (SURF5b): a session that parks, or ends without the person
   asking, raises an OS balloon unless one of its windows has focus. `AttentionWatch` in the library
@@ -60,8 +61,10 @@ repository. Built on the family's desktop runtime sibling, consumed at a release
 
 ## Installing it (2026-09-22)
 
-`npm run publish:desktop -- --to <folder> --service` publishes the application: one
-`daoris-desktop.exe` at the folder's root, the service host with its bundle under `app/`, the
+`npm run publish:desktop -- --to <folder> --service` publishes the application (D93): `Daoris.exe`, a
+small launcher, at the folder's root; the application in `app/` beside its Chromium (its files listed in
+`app/shell-files.txt`, which the next publish removes before placing its own), the browser under
+`app/daoris-browser/` and the service host with its bundle under `app/daoris-knowledge-http/`; the
 install's own `data/` once it has run, and an `INSTALLED.md` saying so. **`data/` is the Daoris
 home** (D63): on first start the shell sets `DAORIS_HOME` to it for its own process — every host and
 session it spawns inherits it — and, once, for the account when it has none, so a terminal's `daoris`
@@ -108,7 +111,7 @@ bytes. Everything this loop provides is what hid two of the first deployment's f
 | `run --install <dir>` | start the **DEPLOYED** shell in that folder, on its own `data/` home, with the debug port attached. 🔴 The published application opens no port — this launch does, through the environment, which is the deliberate opt-in the first deployment asked for and did not build (case study 2d). `shot`, `eval`, `click` and `kill` then address that install, because they follow the run file rather than this checkout |
 | `restart` · `kill` | stop the shell **this checkout built** — matched by executable path, never by process name |
 | `shot [name] --page [--size WxH]` | capture the **page** over the debug port instead of the window (SESS1): a minimized window photographs as its 314 × 50 caption, and restoring an installed one puts it in front of its owner. `--size` lays the page out at that size for the capture and puts it back. The native frame is not in it |
-| `shot [name] [--theme light\|dark] [--window <name>]` | capture the window into `_fixtures/desktop/screenshots/` (PrintWindow + `PW_RENDERFULLCONTENT`, so the WebView2 composition is in it). `--theme` photographs the OTHER theme without touching the machine's setting — a media-query emulation over the debug port, which makes the page push `SET_THEME` and the **main** window repaint its native chrome (DWM border, caption buttons) for real: the only way to see that chrome in both. 🔴 A **secondary** window has no `SET_THEME` channel and follows the OS directly, so in a `--theme` capture its title bar stays in the machine's own theme — a light title bar over a dark monitor page there is the instrument, not a defect. 🔴 `--window monitor`, `--window browser` (D78) or `--window session:<id>` since SURF8: without it the capture takes whichever window **Windows** calls main, which with a secondary window open is not the caller's choice |
+| `shot [name] [--theme light\|dark] [--window <name>]` | capture the window into `_fixtures/desktop/screenshots/` (PrintWindow + `PW_RENDERFULLCONTENT`, so the engine's composition is in it). `--theme` photographs the OTHER theme without touching the machine's setting — a media-query emulation over the debug port, which makes the page push `SET_THEME` and the **main** window repaint its native chrome (DWM border, caption buttons) for real: the only way to see that chrome in both. A **secondary** window's page tells its own caption the theme (WINDOW2), so `--theme` repaints that too. 🔴 `--window monitor`, `--window browser` (D78) or `--window session:<id>` since SURF8: without it the capture takes whichever window **Windows** calls main, which with a secondary window open is not the caller's choice |
 | `eval [--window <name>] "<js>"` | evaluate inside one of the running shell's pages — **the only instrument that sees the bridge-attached half** (the Settings page, the driver controls, the console, chat). `--window` picks a secondary window's page (SURF8); without it, the application's own |
 | `click [--window <name>] "<css>"` | click exactly one element, and say what it clicked; a selector matching none or several is a refusal, not a first match |
 
@@ -116,7 +119,7 @@ bytes. Everything this loop provides is what hid two of the first deployment's f
 Keystrokes and clicks synthesized from an agent's terminal (`SendKeys`, `keybd_event`,
 `mouse_event`) did not reach the shell's windows at all, not even the address bar. UI Automation's
 Invoke, scoped to the scratch shell's process id, pressed every button. A shortcut over a page is
-then read from the WebView2 control's own code rather than pressed. Scope anything that presses or
+then read from the page's own code rather than pressed; a page's own controls take CDP input (`Input.dispatchMouseEvent`), which a Radix menu needs where a scripted `.click()` does nothing. Scope anything that presses or
 types to the scratch shell's pid, never to a caption: the owner's install opens windows of the same
 names.
 
@@ -124,15 +127,14 @@ names.
 runs the driver loop, and the driver spawns **real agent sessions in real repositories**. So `run`
 redirects the home and every machine-local file under it, clears the remote environment pair
 (inherited, it would feed a real deployment from a scratch store), takes a port of its own, passes
-`--app-root` so the WebView2 profile and window state are its own too, and copies `examples/` to work
+`--app-root` so the engine's profile and window state are its own too, and copies `examples/` to work
 over. `--real` is the person's own Daoris — the home their `DAORIS_HOME` names — and is spelled out
 for that reason. A test asserts the redirect list against the sources that build paths under the
 home, because a name missing there does not fail — it edits the person's real config.
 
 Two couplings the tool holds that nothing else does, both found by running it: the debug port needs
-**`DOTNET_ENVIRONMENT=Development`** as well (the runtime sets `AdditionalBrowserArguments`, which
-makes WebView2 ignore the environment variable, so it re-appends it itself — only in dev mode, which
-is why a shipped window has nothing to attach to), and the scratch port needs **`ASPNETCORE_URLS`** as
+**`DOTNET_ENVIRONMENT=Development`** as well (the engine opens `DAORIS_DEVTOOLS_PORT` only in
+development, which is why a shipped window has nothing to attach to — D78 §3.1 by construction), and the scratch port needs **`ASPNETCORE_URLS`** as
 well (the shell *probes* `DAORIS_SERVICE_URL` while the host *binds* `ASPNETCORE_URLS`, and nothing
 passes one to the other — move only the probe and the window waits on the splash forever).
 

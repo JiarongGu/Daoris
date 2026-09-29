@@ -10,7 +10,12 @@
     <TargetFramework>net10.0-windows</TargetFramework>
     <UseWindowsForms>true</UseWindowsForms>
     <RootNamespace>Daoris.Desktop</RootNamespace>
-    <AssemblyName>daoris-desktop</AssemblyName>
+    <!-- On the Chromium it ships (D92, CHR2): the build lays the app out beside CEF, and CEF's launcher
+         becomes the exe. It is named from this assembly less `.App`, so the application is
+         `Daoris.Desktop.exe`, which an install keeps in `app/` and starts from `Daoris.exe` at its root
+         (D93, `Daoris.Desktop.Launcher`). A runtime identifier is what picks CEF's build. -->
+    <AssemblyName>Daoris.Desktop.App</AssemblyName>
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
     <!-- A known, expected WebView2/WindowsBase reference conflict — demoted exactly as the runtime's
          own consumers demote it. -->
     <MSBuildWarningsAsMessages>$(MSBuildWarningsAsMessages);MSB3277</MSBuildWarningsAsMessages>
@@ -22,7 +27,18 @@
 
   <ItemGroup>
     <PackageReference Include="Shenora.Windows" />
+    <!-- Referenced HERE, not only through Shenora.Windows: only a direct reference runs the build that
+         fetches the pinned CEF and lays the app out beside its launcher. -->
+    <PackageReference Include="Shenora.Chromium" />
   </ItemGroup>
+
+  <ItemGroup>
+    <!-- The window's own icon, read from here: the exe is CEF's launcher, whose own face is CEF's until
+         `StampIcon.targets` gives it Daoris's. -->
+    <Content Include="daoris.ico" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <Import Project="StampIcon.targets" />
 
   <ItemGroup>
     <!-- The window's head: the loop, the supervisor and every IPC module the page talks to. Separated

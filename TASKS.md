@@ -21,9 +21,9 @@ lists.
 
 ## State
 
-**Counts, and this is their one home:** sixteen commands, **516 CLI tests, 553 service, 912 driver,
-295 desktop modules, 80 devkit, 1405 web unit, 21 Playwright**, 66/66 release rehearsal, **294/294
-family rehearsal** (it names its own phases when you run it), **45/45 deployment rehearsal** (D60),
+**Counts, and this is their one home:** sixteen commands, **522 CLI tests, 553 service, 912 driver,
+302 desktop modules, 80 devkit, 1408 web unit, 21 Playwright**, 66/66 release rehearsal, **297/297
+family rehearsal** (it names its own phases when you run it), **56/56 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge
 documents, 5 skills, 7 packs. The always-loaded core is **22,492 of 26,000 bytes** — a span in
 `AGENTS.md` since D59 — and **advisory rather than enforced** (D54: a fact gates, a judgement
@@ -55,10 +55,10 @@ mode, "as much as it can just like regular claude code". And **parallel sessions
 console tab for everything running (CONSOLE2)**. CHAIN2 landed as D82, PAR1 with it, STANDDOWN2 as
 D83, and CONSOLE2 and BRW10 (a sign-in that survives a restart) on 2026-09-28, all in the archive.
 **Then the browser as a browser** (BRW4–BRW6), until **D84 and D85** (2026-09-28): Daoris ships a
-Chromium for its browser and, once Shenora's host is released, for its page (CHR2 waits on it).
-**CHR1, CHR3, CHR5, CHR6 and CHR7 landed: the browser is `daoris-browser`, the engine's own window.**
-Next is one republish, once the owner has closed Daoris (it adds about 350 MB, and the person signs in
-again). 🔴 **The owner also
+Chromium for its browser and, once Shenora's host is released, for its page. **CHR1–CHR7 landed**
+(2026-09-30, D92, D93): the browser is `daoris-browser`, the engine's own window, and the page renders
+on Shenora 0.17's Chromium, in an install that is a `Daoris.exe` launcher, the application under `app/`
+and the home in `data/`. Two engines ride until Shenora can host the browser (CHR8). 🔴 **The owner also
 filed six rows from the first real workspace** (2026-09-28, *After the first real workspace*, "lets
 start them later"): workspace rules for how work lands, the default branch, cleaning up session
 branches, the session view, the map, and asking Daoris for help. Ask which comes first.
@@ -296,18 +296,12 @@ Edge is always an option** (`docs/2026-09-28-managed-edge-evidence.md`). The eng
 
 `docs/2026-09-28-chromium-host-design.md` is the contract, and its §5 carries each row's detail.
 Shenora's backlog carries the request (filed 2026-09-28 at the owner's say-so, uncommitted there).
-CHR1, CHR3, CHR5, CHR6 and CHR7 are in the archive: **the browser is `daoris-browser`, the engine's
-own window in a process of its own**. Agents open tabs in it through a relay, and Daoris's favorites
+CHR1–CHR7 are in the archive: **the browser is `daoris-browser`, the engine's own window in a
+process of its own**, and **the window renders on the Chromium the install carries** (CHR2, D92), in
+an install that is a `Daoris.exe` launcher, the application under `app/` and the home in `data/`
+(CHR4, D93). Agents open tabs in it through a relay, and Daoris's favorites
 and the extensions setting are in Settings → Browser and `daoris browser`
 (`docs/2026-09-28-chromium-embedding-evidence.md`).
-- [ ] **CHR2 — the main and secondary windows on `ChromiumView`** (Shenora 0.17, D92; the contract's
-  §4a). **CHR2a:** the page on the app origin, reaching its host at a loopback address the shell
-  gives it, which the host allows in local mode (a browser keeps its own origin). **CHR2b:** the shell
-  on `UseChromiumEngine` and `ChromiumView`, the app assembly renamed so `daoris-desktop.exe` is CEF's
-  launcher, the splash and the trouble message on the new host. **CHR2c:** the tools: the dev loop's
-  instruments on the development DevTools port, and `run --install` starting the install as development.
-- [ ] **CHR4 — the install carries it**, and the WebView2 path goes: `publish:desktop` lays out CEF, and
-  the deployment rehearsal starts the published shell on it and asserts which engine answered.
 - [ ] **CHR8 — the browser onto the kit's engine, for one Chromium** (D92). Filed in Shenora's backlog
   (2026-09-30, the owner's say-so, uncommitted there): a browser-only engine with Chrome-style windows
   made over CDP, a production debug port for a process that holds no bridge, the engine settings

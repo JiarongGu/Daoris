@@ -10,11 +10,13 @@ import { readText, listFiles } from '../src/fsx.ts';
 // be a second description of the tool to keep in step with it — and the thing this suite asserts is
 // the tool's BEHAVIOUR, which a stale declaration would not protect.
 import {
-  CLEARED, REDIRECTED, assemblyExe, installedExe, prune, scratchEnvironment,
+  CLEARED, REDIRECTED, SHELL_ORIGIN, assemblyExe, installedExe, isShell, prune, scratchEnvironment,
   // @ts-expect-error — untyped workspace tooling; see above
 } from '../../../tools/desktop.mjs';
 // @ts-expect-error — untyped workspace tooling; see above
-import { psQuote, running } from '../../../tools/processes.mjs';
+import { applicationsIn, isEngineProcess, psQuote, running } from '../../../tools/processes.mjs';
+// @ts-expect-error — untyped workspace tooling; see above
+import { SHELL_EXE } from '../../../tools/desktop-publish.mjs';
 
 /** What `prune` takes: one capture on disk. Declared here because the tool itself is untyped. */
 type Capture = { path: string; at: number; size: number };
@@ -120,12 +122,15 @@ test('the debug port needs the runtime in dev mode, and neither is set unasked',
   const env = environment();
   assert.equal(env.WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS, '--remote-debugging-port=9333');
   assert.equal(env.DOTNET_ENVIRONMENT, 'Development');
+  // The Chromium the shell ships (D92) takes its DevTools port from the shell, in development only.
+  assert.equal(env.DAORIS_DEVTOOLS_PORT, '9333');
 
   const quiet = scratchEnvironment({
     home: '/h', family: '/f', serviceUrl: 'http://127.0.0.1:5188', httpHost: '/x.exe',
   });
   assert.equal('WEBVIEW2_ADDITIONAL_BROWSER_ARGUMENTS' in quiet, false);
   assert.equal('DOTNET_ENVIRONMENT' in quiet, false);
+  assert.equal('DAORIS_DEVTOOLS_PORT' in quiet, false);
 });
 
 /**
@@ -154,6 +159,29 @@ test('the built executable is derived from the project, newest build first', () 
   assert.equal(assemblyExe(root), release, 'the newest build is what the person last asked for');
 });
 
+/**
+ * D92: on the Chromium the shell ships, the exe is CEF's launcher, named from the assembly less `.App`,
+ * in a runtime identifier's folder — and copied with CEF's own file date, so it is dated by the assembly
+ * it starts. Dated by itself, a stale build in the folder above would win.
+ */
+test('a launched assembly is found by its launcher beside it, dated by the assembly', () => {
+  const root = mkdtempSync(join(tmpdir(), 'daoris-exe-'));
+  writeFileSync(join(root, 'Thing.csproj'), '<Project><PropertyGroup>'
+    + '<AssemblyName>thing.App</AssemblyName></PropertyGroup></Project>');
+  const framework = join(root, 'bin', 'Debug', 'net10.0-windows');
+  mkdirSync(join(framework, 'win-x64'), { recursive: true });
+  const stale = join(framework, 'thing.exe');
+  writeFileSync(stale, '');
+  const launcher = join(framework, 'win-x64', 'thing.exe');
+  writeFileSync(launcher, '');
+  const assembly = join(framework, 'win-x64', 'thing.App.dll');
+  writeFileSync(assembly, '');
+  utimesSync(launcher, new Date(1), new Date(1));
+  utimesSync(stale, new Date(2), new Date(2));
+  utimesSync(assembly, new Date(3), new Date(3));
+  assert.equal(assemblyExe(root), launcher);
+});
+
 test('a project with no assembly name has no derivable executable', () => {
   const root = mkdtempSync(join(tmpdir(), 'daoris-exe-'));
   writeFileSync(join(root, 'Thing.csproj'), '<Project></Project>');
@@ -169,9 +197,14 @@ test('the capture script and the tool agree with the project on the process name
     repoRoot, 'src', 'Daoris.Desktop', 'Daoris.Desktop.App', 'Daoris.Desktop.App.csproj'));
   const assembly = /<AssemblyName>([^<]+)<\/AssemblyName>/.exec(csproj)?.[1];
   assert.ok(assembly, 'the shell declares an assembly name');
+  // On the Chromium it ships (D92) the process is CEF's launcher, named from the assembly less `.App`.
+  const process = assembly.endsWith('.App') ? assembly.slice(0, -'.App'.length) : assembly;
 
-  assert.ok(readText(join(repoRoot, 'tools', 'shot-window.ps1')).includes(`$ProcessName = '${assembly}'`));
-  assert.ok(readText(join(repoRoot, 'tools', 'desktop.mjs')).includes(`'-ProcessName', '${assembly}'`));
+  assert.ok(readText(join(repoRoot, 'tools', 'shot-window.ps1')).includes(`$ProcessName = '${process}'`));
+  // The tool names the process by the executable it photographs, so the build's and an install's
+  // launcher — `Daoris.exe`, or an older install's — are both found (CHR4).
+  assert.ok(readText(join(repoRoot, 'tools', 'desktop.mjs')).includes("'-ProcessName', basename(exe, '.exe')"));
+  assert.equal(`${process}.exe`, SHELL_EXE, 'the build names the application as the install does');
 
   // Daoris's own browser is another process since CHR3, and `shot --window browser` photographs it.
   const browser = /<AssemblyName>([^<]+)<\/AssemblyName>/.exec(readText(join(
@@ -198,8 +231,8 @@ test('a prune also enforces the size cap, oldest first', () => {
 /**
  * 🔴 Reaching the DEPLOYED shell — the instrument the first deployment recorded as missing and
  * deliberately did not build (case study 2d: *"the honest options are a deliberate opt-in flag or
- * nothing, and that is a decision, not a patch"*). The owner made that decision on 2026-09-22:
- * *"you should be develop to <install> ... the desktop app itself should be the main focus"*.
+ * nothing, and that is a decision, not a patch"*). D62 made it: the desktop app is the focus, and the
+ * install is where it is judged.
  *
  * What is asserted here is the part that is silently wrong when it breaks. The capture, the
  * attach and the kill all match a shell by its executable's PATH — that is what stops this loop
@@ -208,9 +241,29 @@ test('a prune also enforces the size cap, oldest first', () => {
  */
 test('an install is addressed by its folder, and the launcher is the one at its root', () => {
   const root = mkdtempSync(join(tmpdir(), 'daoris-install-'));
-  writeFileSync(join(root, 'daoris-desktop.exe'), '');
+  writeFileSync(join(root, 'Daoris.exe'), '');
+  // The launcher alone is not enough: it exits once it starts the application, which is what the
+  // instruments address (D93).
+  assert.equal(installedExe(root), null);
 
+  mkdirSync(join(root, 'app'), { recursive: true });
+  writeFileSync(join(root, 'app', 'Daoris.Desktop.exe'), '');
+  assert.equal(installedExe(root), join(root, 'app', 'Daoris.Desktop.exe'));
+});
+
+/**
+ * An install published before D93 has the single-file shell's launcher, and the instruments still
+ * reach it until its next publish replaces it: that is the install the owner has open meanwhile.
+ */
+test('an install from before the rename is found by the launcher it has', () => {
+  const root = mkdtempSync(join(tmpdir(), 'daoris-install-'));
+  writeFileSync(join(root, 'daoris-desktop.exe'), '');
   assert.equal(installedExe(root), join(root, 'daoris-desktop.exe'));
+
+  writeFileSync(join(root, 'Daoris.exe'), '');
+  mkdirSync(join(root, 'app'), { recursive: true });
+  writeFileSync(join(root, 'app', 'Daoris.Desktop.exe'), '');
+  assert.equal(installedExe(root), join(root, 'app', 'Daoris.Desktop.exe'), 'the current layout first');
 });
 
 /**
@@ -223,7 +276,7 @@ test('a folder holding no launcher is not an install', () => {
   assert.equal(installedExe(root), null);
 
   mkdirSync(join(root, 'app'), { recursive: true });
-  writeFileSync(join(root, 'app', 'daoris-desktop.exe'), '');
+  writeFileSync(join(root, 'app', 'Daoris.exe'), '');
   // Still null: the launcher is at the ROOT of an install by construction, and guessing one level
   // down would silently accept a folder that is not one.
   assert.equal(installedExe(root), null);
@@ -255,4 +308,51 @@ test('a path is quoted for PowerShell with its apostrophes doubled and its backs
 test('the processes running from a path are found by that path', { skip: process.platform !== 'win32' }, () => {
   assert.ok((running(process.execPath) as number[]).includes(process.pid));
   assert.deepEqual(running(''), []);
+});
+
+/**
+ * The instruments refuse to report from a page that is not this run's shell (CHR2c). On Chromium every
+ * shell's page has the same origin, so what tells this run's apart is the host it was told to reach:
+ * the scratch and the install can both be up, and a reading taken in the other one is a claim about a
+ * window nobody is looking at.
+ */
+test('the shell is told apart by the host its page reaches, on either engine', () => {
+  const scratch = 'http://127.0.0.1:5188';
+  const chromium = { chromium: true, webview: false, origin: SHELL_ORIGIN, host: 'http://127.0.0.1:5188' };
+
+  assert.equal(isShell(chromium, scratch), true);
+  assert.equal(isShell({ ...chromium, host: 'http://localhost:5177' }, scratch), false, 'the install, not this run');
+  assert.equal(isShell({ ...chromium, host: null }, scratch), false);
+  assert.equal(isShell({ ...chromium, host: 'not a url' }, scratch), false);
+  assert.equal(isShell({ ...chromium, origin: 'https://example.com' }, scratch), false);
+  assert.equal(isShell({ chromium: false, webview: false, origin: SHELL_ORIGIN, host: scratch }, scratch), false,
+    'a browser tab on the same address has no bridge');
+
+  // WebView2, while the install keeps it: the page is on the host's own origin.
+  assert.equal(isShell({ webview: true, chromium: false, origin: scratch, host: null }, scratch), true);
+  assert.equal(isShell({ webview: true, chromium: false, origin: 'http://localhost:5177', host: null }, scratch), false);
+  assert.equal(isShell(null, scratch), false);
+});
+
+/**
+ * On Chromium the engine's own processes run from the application's executable (CHR4), so "what runs
+ * from this path" counts renderers, a GPU process and utilities beside the one window. Closing those
+ * one by one cost fifteen seconds each and crashed a page; the application is the process with no
+ * `--type=`.
+ */
+test('the application is told from the engine processes started from its own executable', () => {
+  assert.equal(isEngineProcess('"D:\app\Daoris.exe"'), false);
+  assert.equal(isEngineProcess('"D:\app\Daoris.exe" --type=renderer --lang=en-US'), true);
+  assert.equal(isEngineProcess('"D:\app\Daoris.exe" --type=gpu-process'), true);
+  assert.equal(isEngineProcess('"D:\my--type=folder\Daoris.exe"'), false, 'a path is not a switch');
+  assert.equal(isEngineProcess(null), false);
+
+  const rows = [
+    '4100|"D:\app\Daoris.exe" --type=gpu-process --no-sandbox',
+    '4200|"D:\app\Daoris.exe" ',
+    '4300|"D:\app\Daoris.exe" --type=utility --utility-sub-type=network.mojom.NetworkService',
+    '',
+    'garbage',
+  ].join('\n');
+  assert.deepEqual(applicationsIn(rows), [4200]);
 });

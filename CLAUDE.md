@@ -83,7 +83,7 @@ workflow (`tools/release-prep.mjs`). A hand-bump leaves every file consistent an
 
 - `README.md` — the consuming story: install, the commands, the manifest, the three layers.
 - `docs/2026-08-04-daoris-design.md` — the **contract**. Read it first.
-- `docs/DECISIONS.md` — the numbered decision log (D1–D92) and why each was made. **D45 is the
+- `docs/DECISIONS.md` — the numbered decision log (D1–D93) and why each was made. **D45 is the
   direction: Daoris drives** — read it before planning anything; **D48–D50 are a closed arc**
   (workspaces; the interactive surface; management parity).
 - **The desktop is a code-gen-driven IDE** (D55): the organising object is a **session, not a file**,
@@ -99,9 +99,10 @@ workflow (`tools/release-prep.mjs`). A hand-bump leaves every file consistent an
   the literal form had drifted to fifteen values. The diagnosis was **measured**, which is how a
   design complaint became a decision. 🔴 **git walks UP** — a diff of a path that is not a
   repository answers for the one above it (FIX-LOG).
-- **Two traps the last surface items left** (2026-09-22). A secondary window needs its **own**
-  WebView2 environment, and `shot` needs **`--window <monitor|session:ID>`** or it photographs
-  whichever window Windows calls main (`eval`/`click` default to the application's page).
+- **Two traps the desktop keeps.** `shot` needs **`--window <monitor|session:ID>`** or it
+  photographs whichever window Windows calls main (`eval`/`click` default to the application's
+  page). And on Chromium (D92/D93) the engine's renderer, GPU and utility processes run from the
+  app's **own exe** with `--type=`: count and stop the application, never every process on the path.
 - 🔴 **The desktop app is the focus, and the install is where it is judged** (owner, 2026-09-22 →
   **D62**): it carries the platform, runs the driver loop, hosts the machine's service, and is the
   only surface that reaches a machine-local fact. `npm run desktop -- run --install <dir>` starts the
@@ -131,7 +132,9 @@ workflow (`tools/release-prep.mjs`). A hand-bump leaves every file consistent an
   high-water mark, totalled per account, machine-local; 🔴 **absent is never zero**, no price
   claimed), and breadth as **native adapters plus the ACP door, never a registry**. TOOL4 is held.
 - 🔴 **Daoris is DEPLOYED** (2026-09-22): `npm run publish:desktop -- --to <dir> --service` installs
-  it — one exe at the root, binaries under `app/`, **the Daoris home in `data/`**; `--beside` when
+  it — **`Daoris.exe`, a small launcher, at the root; the application (`app/Daoris.Desktop.exe`, on
+  its own Chromium), the host and the browser under `app/`** (D93); **the Daoris home in `data/`**;
+  `--beside` when
   the folder already holds the repositories it drives — and **starting it starts the driver loop**.
   🔴 **Nothing of Daoris's lives under the user profile** (**D63**): `DAORIS_HOME` is the one seam,
   set by the install for itself and once for the account; unset, the writers **refuse**.
@@ -176,7 +179,7 @@ provenance header goes under its frontmatter** (D14), because frontmatter is onl
 | `src/Daoris.Service/` | The cross-repo knowledge service — indexes the family, reachable over MCP |
 | `src/Daoris.Devkit/` | The shared dev toolkit — five universal gates, a **.NET AOT binary** |
 | `src/Daoris.Web/` | **The platform** (D38) — knowledge, quests, projects; the only UI; doctrine read-only |
-| `src/Daoris.Desktop/` | **The local driver** (D45/D46): the driver library + `daoris-driver` headless host + the shell's **modules** (every IPC surface the page talks to — plain `net10.0`, so it is tested and gated like everything else) + the `daoris-desktop` window |
+| `src/Daoris.Desktop/` | **The local driver** (D45/D46): the driver library + `daoris-driver` headless host + the shell's **modules** (every IPC surface the page talks to — plain `net10.0`, so it is tested and gated like everything else) + the window, `Daoris.Desktop.exe` on its own Chromium, started by the `Daoris.exe` launcher (D92, D93) |
 | `examples/` | The example family — two miniature adopters the family rehearsal drives (D39) |
 | `canon/` | **The doctrine itself** — root-level, because the service reads the same tree the CLI ships |
 | `canon/core/{rules,knowledge,skills}/` | The always-installed rules, on-demand knowledge, and discovery skills |

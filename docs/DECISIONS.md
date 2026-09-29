@@ -3897,3 +3897,44 @@ development, and a published app has none (D78 §3.1 holds by construction).
 - **The browser on Daoris's own chrome around an Alloy view**, for one engine now. It reverses CHR3's
   chosen form and rebuilds a browser's basics.
 - **Waiting for the kit**, which leaves the WebView2 prerequisite in place with no date to lose it.
+
+## D93 — An install is a launcher, `app/` and `data/`, and the one thing to run is `Daoris.exe` (2026-09-30)
+
+**Decision (CHR4, amending D60's layout).** On the Chromium the shell ships (D92), the application's
+executable is CEF's launcher, and it has to sit beside `libcef.dll`, the engine's resources and the app's
+own libraries: about thirty files and a `locales/` folder. They go in **`app/`**, and the install's root
+holds **`Daoris.exe`**, a small launcher, beside `app/`, `data/` and the marker. The application is
+`app/Daoris.Desktop.exe`; the browser and the HTTP host keep folders of their own under `app/`. This is
+the owner's direction twice over: *"the main entire app should just call Daoris.exe like regular app"*,
+and *"for app folder structure you can follow [a sibling application] which is properly structured"* —
+whose install is exactly this: a small launcher at the root, the application in `app/`, `data/` beside.
+
+**How the pieces find each other.** The launcher starts `app/Daoris.Desktop.exe` with its arguments and
+environment and exits; it references nothing, so it is framework-dependent, single-file and about
+220 KB, and it wears Daoris's icon. The application finds the install above its own folder
+(`InstallHome.RootOf`: an `app` folder under a marked install), so the home is still the install's
+`data/`, and the kit is handed the same root so its data area is not a second `data/` inside `app/`.
+The host and the browser were already found beside the shell's own folder. The app's assembly is
+`Daoris.Desktop.App`, so CEF's launcher is `Daoris.Desktop.exe`, and the build stamps Daoris's icon onto
+it (`StampIcon.targets`): a copied launcher carries CEF's.
+
+**What still holds from D60.** One executable at the root, nothing else a person could double-click,
+no symbols and no package doc files, and a publish that never writes over a name it did not write —
+the root's names are fixed again. The application's names in `app/` are recorded in
+`app/shell-files.txt`; a republish removes exactly those, and the single-file shell's root
+`daoris-desktop.exe`, then places the new set, so an engine upgrade leaves nothing of the last one.
+
+**What the tools had to learn.** Chromium starts its renderer, GPU and utility processes from the
+application's own executable, with `--type=`. A stop that walked every process from that path waited
+fifteen seconds on each windowless one and then force-killed it, which crashes a page. The tools tell
+the application from the engine's processes, and the deployment gate asserts the engine by the same
+tree: a renderer from the install's executable, and no WebView2 process under the shell. The gate starts
+the install the way a person does, through the launcher, and asserts that the launcher has gone.
+
+**Rejected.**
+- **A Chromium application's root**, `Daoris.exe` beside its engine as VS Code's `Code.exe` is. Built
+  and proven first (52/52), then set aside for the structure above: a busy root, and `--beside` would
+  have had to learn every name the engine writes.
+- **A native launcher that installs .NET when it is missing**, as the sibling's does. Daoris has
+  required .NET since D46 and has never offered to install it; that is a separate question.
+- **Keeping `daoris-desktop.exe`.** The application is named for itself.

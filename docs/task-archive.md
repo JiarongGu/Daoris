@@ -7509,3 +7509,55 @@ silently ignored on a framed form; they could apply there too, or say they do no
 refused), `shell.test.tsx` (the page tells its frame on arrival and on a change of choice), and the
 scratch window on a light OS: the monitor's caption dark under a dark choice, and light the moment the
 main window chose light.
+
+## CHR2 — the main and secondary windows on `ChromiumView` (2026-09-30, D92)
+
+> - [ ] **CHR2 — the main and secondary windows on `ChromiumView`** (Shenora 0.17, D92; the contract's
+>   §4a). **CHR2a:** the page on the app origin, reaching its host at a loopback address the shell
+>   gives it, which the host allows in local mode (a browser keeps its own origin). **CHR2b:** the shell
+>   on `UseChromiumEngine` and `ChromiumView`, the app assembly renamed so `daoris-desktop.exe` is CEF's
+>   launcher, the splash and the trouble message on the new host. **CHR2c:** the tools: the dev loop's
+>   instruments on the development DevTools port, and `run --install` starting the install as development.
+
+**Outcome.** CHR2a landed first (the page's `?host=`, accepted only when loopback and only in the
+shell; the host's CORS allowing `https://daoris.localhost` in local mode). CHR2b put the shell on
+`UseChromiumEngine` and a `ChromiumView` per window: `DesktopPage.PathFor` gives each window its path
+on the app origin, `DesktopPage.BundleOf` finds the bundle the host serves, and the WebView2 runtime
+check went with WebView2. CHR2c taught the instruments the new page: `isShell` tells this run's shell by
+the host its page reaches (every shell's page has the same origin), and a development run passes
+`DAORIS_DEVTOOLS_PORT`. The application's name became D93's.
+
+**Found by looking**: the bundle a development host serves is its project's, not `bin/`'s; a Radix
+menu needs real pointer input over CDP; and the native caption buttons are read with `WM_NCHITTEST`,
+which answered minimize, maximize and close from the rectangles the page reported
+(`docs/2026-09-28-chromium-host-design.md` §5a).
+
+**Proven by:** `DesktopPageTests`, `WindowsModuleTests`, `host.test.ts`, the family rehearsal's origin
+checks, `desktop-tool.test.ts` (`isShell`), and the scratch window on Chromium: the main window, the
+monitor and a detached session, in both themes, the secondary caption following dark.
+
+## CHR4 — the install carries it (2026-09-30, D93)
+
+> - [ ] **CHR4 — the install carries it**, and the WebView2 path goes: `publish:desktop` lays out CEF, and
+>   the deployment rehearsal starts the published shell on it and asserts which engine answered.
+
+**Outcome.** An install is a launcher, `app/` and `data/` (D93), the structure the owner pointed to: a
+framework-dependent single-file `Daoris.exe` (about 220 KB, Daoris's icon) that starts
+`app/Daoris.Desktop.exe` and exits; the application beside its Chromium in `app/`, its names recorded
+in `app/shell-files.txt` so a republish removes the last engine's files; the browser and the host in
+folders of their own under `app/`. `InstallHome.RootOf` finds the install above `app/`, and the kit is
+handed the same root, so the home and the engine's profile stay in the install's `data/`. The build
+stamps Daoris's icon onto CEF's launcher (`StampIcon.targets`), both engines keep two locales, and the
+process helpers tell the application from Chromium's own processes (`--type=`), which a blind stop had
+walked for fifteen seconds each and then killed.
+
+A first cut put the application at the root beside its engine, as a Chromium application's root; it
+passed 52/52 and was set aside for the launcher layout on the owner's direction.
+
+**Proven by:** `npm run rehearse:deploy` 56/56: the root holds only what makes an install, the launcher
+is small and hands over and exits, the page renders in a renderer from the install's executable with no
+WebView2 under the shell, the home is the install's `data/` and none is made in `app/`, and a republish
+removes the retired `daoris-desktop.exe` and a recorded engine file it no longer ships while leaving a
+neighbour's file alone. `InstallHomeTests`, `desktop-publish.test.ts` (the launcher, the publish and
+the app's assembly name agree), `desktop-tool.test.ts` (the engine-process filter, an install found by
+either layout).

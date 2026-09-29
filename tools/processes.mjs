@@ -37,6 +37,46 @@ export const running = (exe) => {
 };
 
 /**
+ * Whether a command line is one of the engine's own processes (CHR4). Chromium starts its renderer,
+ * GPU and utility processes from the app's executable, told which with `--type=`. They go with the
+ * browser process that started them, and one closed or killed on its own is a page that crashes,
+ * not a window that closes.
+ */
+export const isEngineProcess = (commandLine) => /(?:^|\s)--type=/.test(commandLine ?? '');
+
+/**
+ * The applications running from `exe`, the engine's own processes left out, from `pid|command line`
+ * rows. Exported for its test: the query is PowerShell's, the judgement is this.
+ */
+export function applicationsIn(rows) {
+  return rows.split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map((line) => {
+      const bar = line.indexOf('|');
+      return { pid: Number(line.slice(0, bar)), commandLine: line.slice(bar + 1) };
+    })
+    .filter(({ pid, commandLine }) => Number.isInteger(pid) && pid > 0 && !isEngineProcess(commandLine))
+    .map(({ pid }) => pid);
+}
+
+/** The pids of the applications running from `exe`: {@link running}, without the engine's own. */
+export const applicationsAt = (exe) => {
+  if (!exe) return [];
+  return applicationsIn(powershell(
+    'Get-CimInstance Win32_Process -ErrorAction SilentlyContinue | '
+    + `Where-Object { $_.ExecutablePath -eq ${psQuote(exe)} } | `
+    + 'ForEach-Object { "$($_.ProcessId)|$($_.CommandLine)" }'));
+};
+
+/** {@link processesAt} for the applications only: `each` runs for every one {@link applicationsAt} finds. */
+export const eachApplicationAt = (exe, each) => {
+  const pids = applicationsAt(exe);
+  return pids.length === 0 ? '' : powershell(
+    `Get-Process -Id ${pids.join(',')} -ErrorAction SilentlyContinue | ForEach-Object { ${each} }`);
+};
+
+/**
  * Stop the shells running from `exe` — by CLOSING them, so their own shutdown path runs, with the
  * force as the backstop rather than the method.
  *
@@ -51,8 +91,12 @@ export const running = (exe) => {
  * force kill lands. So this closes REPEATEDLY, re-reading the handle each time: the secondary
  * windows go first, the main window last, and the app exits on its own terms. Same trap as the one
  * `shot --window` exists for, in its third disguise.
+ *
+ * 🔴 The applications only (CHR4): on Chromium the engine's renderer, GPU and utility processes run
+ * from the same executable with no window. Walked like the rest, each cost fifteen seconds of
+ * waiting and then a forced kill that crashed a page; they exit with the application.
  */
-export const stopAll = (exe) => processesAt(exe, `
+export const stopAll = (exe) => eachApplicationAt(exe, `
     $process = $_
     for ($attempt = 0; $attempt -lt 6 -and -not $process.HasExited; $attempt++) {
       $process.Refresh()

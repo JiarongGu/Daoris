@@ -3,7 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop;
 
 /// <summary>What establishing an install's home did — for the person, once, on the channel they act on.</summary>
-/// <param name="Home">The home: `data/` beside the executable.</param>
+/// <param name="Home">The home: the install's `data/`, beside its launcher.</param>
 /// <param name="SetForUser">True when the user's environment gained the variable — this start, not any earlier one.</param>
 /// <param name="Moved">The entries that moved in from a `~/.daoris` of before D63, by name.</param>
 /// <param name="Failed">The entries that should have moved and could not — still where they were, named with the reason.</param>
@@ -16,7 +16,7 @@ public sealed record HomeEstablished(
 }
 
 /// <summary>
-/// The installed application's own home (D63). The `data` folder beside the executable is the Daoris
+/// The installed application's own home (D63). The install's `data` folder, beside its launcher, is the Daoris
 /// home: this process and everything it spawns read it from <c>DAORIS_HOME</c>, and the user's
 /// environment is offered the same variable so a terminal's <c>daoris</c> and a session's MCP host
 /// meet the same machine. <b>Nothing goes under the user profile</b> — not a file, not a pointer.
@@ -42,11 +42,31 @@ public static class InstallHome
     /// <summary>What a `~/.daoris` of before D63 keeps: the CLI's own service install (`publish:service --install`), which the CLI moves when it is asked to.</summary>
     private static readonly HashSet<string> Stays = new(StringComparer.OrdinalIgnoreCase) { "bin" };
 
+    /// <summary>The folder the shell runs from inside an install (D93), beside `data/`.</summary>
+    public const string AppFolder = "app";
+
     /// <summary>
-    /// What the install's own runtime writes under `data/` before Daoris has: the WebView2 profile and
-    /// the window's geometry. Their presence does not make the home a home that has state.
+    /// What the install's own runtime writes under `data/` before Daoris has: the engine's profile
+    /// (`chromium`, and `webview2` from before D92) and the window's geometry. Their presence does not
+    /// make the home a home that has state.
     /// </summary>
-    private static readonly HashSet<string> Runtime = new(StringComparer.OrdinalIgnoreCase) { "config", "webview2" };
+    private static readonly HashSet<string> Runtime = new(StringComparer.OrdinalIgnoreCase) { "config", "webview2", "chromium" };
+
+    /// <summary>
+    /// The install a shell runs in (D93): its own folder when that holds the marker, the folder above
+    /// when the shell runs from a marked install's `app/`, where the launcher at the root starts it —
+    /// and its own folder otherwise, which is no install.
+    /// </summary>
+    public static string RootOf(string baseDirectory)
+    {
+        var full = Path.TrimEndingDirectorySeparator(Path.GetFullPath(baseDirectory));
+        if (File.Exists(Path.Combine(full, Marker))) return full;
+        return string.Equals(Path.GetFileName(full), AppFolder, StringComparison.OrdinalIgnoreCase)
+            && Path.GetDirectoryName(full) is { } parent
+            && File.Exists(Path.Combine(parent, Marker))
+                ? parent
+                : full;
+    }
 
     /// <summary>
     /// Establish the home for an install, or answer null when this is not one — or when the
@@ -60,10 +80,11 @@ public static class InstallHome
         Action<string> setUser,
         string legacy)
     {
-        if (!File.Exists(Path.Combine(baseDirectory, Marker))) return null;
+        var root = RootOf(baseDirectory);
+        if (!File.Exists(Path.Combine(root, Marker))) return null;
         if (DaorisHome.Resolve(processEnvironment) is not null) return null;
 
-        var home = Path.Combine(baseDirectory, Folder);
+        var home = Path.Combine(root, Folder);
         Directory.CreateDirectory(home);
         setProcess(DaorisHome.Variable, home);
 

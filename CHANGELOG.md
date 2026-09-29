@@ -290,10 +290,13 @@ The first version: doctrine that installs, is checked, and flows back.
   Daoris made: run without one and dsh uses *your* configuration home, which Daoris does not write to
   — so it runs, and says what that means, and names the one command that fixes it. A home already
   holding a hand-written patch layer is reported, never overwritten.
-- **The desktop shell.** `daoris-desktop` brings up the local host (adopting one already running rather
+- **The desktop shell.** `Daoris.exe` brings up the local host (adopting one already running rather
   than double-starting), carries the platform in its window — the same bytes a browser gets — and runs
   the driver loop in-process, re-reading the person's standing choices every tick: drivable and hold
   per repository, stop a running session, all through the platform's own session-control surface.
+  The window renders on the Chromium the install carries, so the machine needs no WebView2 (D92), and
+  an install is a small `Daoris.exe` launcher, the application under `app/`, and the home in `data/`
+  (D93).
 - **A plugin is a folder that declares, and may speak** (D64). Under the home's `plugins/<id>/`, a
   `plugin.json` names what a plugin declares — configurations of the ACP door, so a fifth harness
   arrives as a file — and what it speaks. The catalogue reads the API version before anything else,

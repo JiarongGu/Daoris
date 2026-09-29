@@ -19,7 +19,7 @@ public static class DaorisHome
     /// <summary>The one sentence every refusal for a missing home carries.</summary>
     public const string Sentence =
         "no Daoris home: set DAORIS_HOME to the application's data folder (the `data` directory beside "
-        + "daoris-desktop.exe), or name the file's own variable. Daoris keeps nothing under the user profile.";
+        + "Daoris.exe), or name the file's own variable. Daoris keeps nothing under the user profile.";
 
     /// <summary>The home, or null when the environment names none. Blank is none.</summary>
     public static string? Resolve(Func<string, string?> environment)

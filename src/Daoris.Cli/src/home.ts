@@ -17,7 +17,7 @@ export const HOME_VARIABLE = 'DAORIS_HOME';
 /** The one sentence every refusal for a missing home carries. */
 export const HOME_SENTENCE =
   'no Daoris home: set DAORIS_HOME to the application\'s data folder (the `data` directory beside '
-  + 'daoris-desktop.exe), or name the file\'s own variable. Daoris keeps nothing under the user profile.';
+  + 'Daoris.exe), or name the file\'s own variable. Daoris keeps nothing under the user profile.';
 
 type Env = Record<string, string | undefined>;
 

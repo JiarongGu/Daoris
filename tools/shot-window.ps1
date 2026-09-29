@@ -5,8 +5,8 @@
 # nothing" rather than "the capture missed it".
 param(
     [Parameter(Mandatory = $true)][string]$OutFile,
-    [string]$ProcessName = 'daoris-desktop',
-    # WHICH daoris-desktop. There can be two on this machine — the one the owner actually uses and the
+    [string]$ProcessName = 'Daoris.Desktop',
+    # WHICH Daoris.Desktop. There can be two on this machine — the one the owner actually uses and the
     # build from this checkout — and taking whichever Windows lists first photographs the wrong one
     # silently. The sibling this is adapted from lost minutes to exactly that: a change "missing" from
     # a capture of an install that was nineteen commits behind. The caller always passes this.

@@ -51,7 +51,8 @@ import { copyTree, isMain } from './fsx.mjs';
 import { capture, makeChecker, openTranscript } from './rehearsal-kit.mjs';
 // The install's layout, from the script that makes it (REV3 CLEAN1) — never a second spelling of it.
 import {
-  BROWSER_EXE, BROWSER_HOME, BROWSER_LOCALES, HOME, HOST_EXE, HOST_HOME, LAUNCHER,
+  BROWSER_EXE, BROWSER_HOME, HOME, HOST_EXE, HOST_HOME, KEPT_LOCALES, LAUNCHER, OWN, RETIRED_LAUNCHERS, SHELL_EXE,
+  SHELL_FILES, SHELL_HOME,
 } from './desktop-publish.mjs';
 
 // ---------------------------------------------------------------------------------------------
@@ -131,7 +132,9 @@ const home = join(scratch, 'home');
 const family = join(scratch, 'family');
 const newcomer = join(family, 'newcomer');
 
-const shellExe = join(install, LAUNCHER);
+/** What a person double-clicks, and the application it starts from `app/` (D93), which holds the window. */
+const launcherExe = join(install, LAUNCHER);
+const shellExe = join(install, ...SHELL_HOME, SHELL_EXE);
 const installedHost = join(install, ...HOST_HOME, HOST_EXE);
 /** Daoris's own browser inside the install (D85, CHR3), which the deployed shell starts beside itself. */
 const installedBrowser = join(install, ...BROWSER_HOME, BROWSER_EXE);
@@ -159,7 +162,7 @@ const children = [];
 const run = (command, cwd, env = {}, timeout = 0) => capture(command, cwd, { env, timeout });
 
 const { CLEARED, REDIRECTED } = await import('./desktop.mjs');
-const { powershell, processesAt, running, stopAll } = await import('./processes.mjs');
+const { applicationsAt, eachApplicationAt, powershell, psQuote, running, stopAll } = await import('./processes.mjs');
 const { freePort } = await import('./cdp.mjs');
 
 const API_TIMEOUT = 30_000;
@@ -291,10 +294,15 @@ async function main() {
     published.out.split('\n').slice(-12).join('\n'));
 
   const atRoot = existsSync(install) ? readdirSync(install) : [];
-  check('one executable at the root, and it is the shell', launchers(atRoot).join() === LAUNCHER,
+  const inApp = existsSync(join(install, ...SHELL_HOME)) ? readdirSync(join(install, ...SHELL_HOME)) : [];
+  check('one executable at the root, and it is the launcher', launchers(atRoot).join() === LAUNCHER,
     `root holds: ${atRoot.join(', ')}`);
-  check('no symbols and no package doc files rode along', strays(atRoot).length === 0,
-    strays(atRoot).join(', '));
+  // A regular application's root (D93): the launcher, `app/` and the marker — `data/` arrives on the
+  // first start — and nothing else.
+  check('…and nothing at the root but what makes an install',
+    atRoot.every((name) => OWN.includes(name)), `root holds: ${atRoot.join(', ')}`);
+  check('no symbols and no package doc files rode along', strays([...atRoot, ...inApp]).length === 0,
+    strays([...atRoot, ...inApp]).join(', '));
   check('the marker says whose folder this is',
     existsSync(join(install, 'INSTALLED.md'))
     && readFileSync(join(install, 'INSTALLED.md'), 'utf8').startsWith('# Daoris — installed desktop'));
@@ -313,13 +321,34 @@ async function main() {
     : [];
   check('…with its engine beside it, and only the locales the install keeps',
     existsSync(join(install, ...BROWSER_HOME, 'libcef.dll'))
-      && localesKept.join() === [...BROWSER_LOCALES].sort().join(),
+      && localesKept.join() === [...KEPT_LOCALES].sort().join(),
     `locales: ${localesKept.join(', ') || '(none)'}`);
 
-  // Framework-dependent on purpose (D43's opposite case): it carries no .NET this machine has.
-  const shellSize = existsSync(shellExe) ? statSync(shellExe).size : 0;
-  check('the shell is one small file, not a self-contained runtime',
-    shellSize > 0 && shellSize < 40 * 1024 * 1024, `${Math.round(shellSize / 1024 / 1024)} MB`);
+  // The launcher is small and carries no runtime: it starts the application and exits.
+  const launcherSize = existsSync(launcherExe) ? statSync(launcherExe).size : 0;
+  check('the launcher is one small file, not a self-contained runtime',
+    launcherSize > 0 && launcherSize < 5 * 1024 * 1024, `${Math.round(launcherSize / 1024)} KB`);
+
+  // The application on its own Chromium (D92, D93): CEF's launcher in `app/`, with the engine and the
+  // app beside it. Framework-dependent on purpose (D43's opposite case): no .NET this machine has.
+  check(`the application is ${[...SHELL_HOME, SHELL_EXE].join('/')}, with its engine beside it`,
+    [SHELL_EXE, 'libcef.dll', 'icudtl.dat', 'resources.pak', 'Daoris.Desktop.App.dll'].every((name) => inApp.includes(name)),
+    `app holds: ${inApp.join(', ')}`);
+  check('…framework-dependent: no .NET runtime rode along',
+    ![...atRoot, ...inApp].some((name) => /^(coreclr|hostfxr|hostpolicy)\.dll$/i.test(name)));
+  const shellLocales = existsSync(join(install, ...SHELL_HOME, 'locales'))
+    ? readdirSync(join(install, ...SHELL_HOME, 'locales')).sort()
+    : [];
+  check('…and only the locales the install keeps',
+    shellLocales.join() === [...KEPT_LOCALES].sort().join(), `locales: ${shellLocales.join(', ') || '(none)'}`);
+  const recorded = existsSync(join(install, ...SHELL_FILES))
+    ? readFileSync(join(install, ...SHELL_FILES), 'utf8').split('\n').filter(Boolean).sort()
+    : [];
+  const besideIt = [HOST_HOME.at(-1), BROWSER_HOME.at(-1), SHELL_FILES.at(-1)];
+  check(`…and ${SHELL_FILES.join('/')} names every file the application put there, and nothing else`,
+    recorded.includes(SHELL_EXE)
+      && recorded.join() === inApp.filter((name) => !besideIt.includes(name)).sort().join(),
+    `recorded: ${recorded.join(', ') || '(nothing)'}`);
 
   // -------------------------------------------------------------- 2. the publish guard
 
@@ -369,6 +398,21 @@ async function main() {
   mkdirSync(assets, { recursive: true });
   writeFileSync(decoy, '// a bundle from a publish that is no longer current\n');
 
+  // The shell's own leftovers (CHR4), planted the same way: the single-file launcher an install from
+  // before CHR4 still has, and an engine file the last publish recorded that this build no longer
+  // ships — an engine upgrade that dropped a library. Both are this script's, so both must go, and a
+  // neighbour's file beside them must not.
+  const retired = join(install, RETIRED_LAUNCHERS[0]);
+  writeFileSync(retired, '');
+  const staleEngine = join(install, ...SHELL_HOME, 'stale-engine.dll');
+  writeFileSync(staleEngine, '');
+  if (existsSync(join(install, ...SHELL_FILES))) {
+    writeFileSync(join(install, ...SHELL_FILES),
+      `${readFileSync(join(install, ...SHELL_FILES), 'utf8')}stale-engine.dll\n`);
+  }
+  const neighbour = join(install, 'a-neighbours-notes.txt');
+  writeFileSync(neighbour, 'not the application’s\n');
+
   const republished = run(
     `node "${join(repoRoot, 'tools', 'desktop-publish.mjs')}" --to "${install}" --service`,
     repoRoot, {}, 15 * 60_000);
@@ -376,10 +420,17 @@ async function main() {
     republished.out.split('\n').slice(-8).join('\n'));
   check('…and it left no bundle from the publish before it', !existsSync(decoy),
     readdirSync(assets).filter((entry) => entry.endsWith('.js')).join(', '));
+  check('…nor the launcher the single-file shell had, nor an engine file it no longer ships',
+    !existsSync(retired) && !existsSync(staleEngine),
+    [retired, staleEngine].filter(existsSync).join(', '));
+  check('…and a file it never wrote is still there', existsSync(neighbour));
+  rmSync(neighbour, { force: true });
 
   // Whatever survives, `index.html` has to name something that is actually there — the check that
-  // would still hold if the replacement were done some other way.
-  const indexHtml = readFileSync(join(install, ...HOST_HOME, 'wwwroot', 'index.html'), 'utf8');
+  // would still hold if the replacement were done some other way. Read only if it is there: a gate
+  // that crashes on ENOENT reports a stack trace instead of the publish check that already failed.
+  const indexPath = join(install, ...HOST_HOME, 'wwwroot', 'index.html');
+  const indexHtml = existsSync(indexPath) ? readFileSync(indexPath, 'utf8') : '';
   const named = /assets\/(index-[\w.-]+\.js)/.exec(indexHtml)?.[1] ?? '';
   check('…and the page names a bundle the install actually has',
     Boolean(named) && existsSync(join(assets, named)), `index.html names ${named || '(nothing)'}`);
@@ -553,7 +604,8 @@ if (!done.ok) throw new Error(done.text);
   const environment = { ...process.env, ...shellEnvironment };
   for (const name of CLEARED) delete environment[name];
 
-  shell = spawn(shellExe, { cwd: install, env: environment, detached: true, stdio: 'ignore' });
+  // Started the way a person starts it: the launcher at the root, which hands over and exits.
+  shell = spawn(launcherExe, { cwd: install, env: environment, detached: true, stdio: 'ignore' });
   shell.unref();
 
   check('the platform answers — the deployed shell brought a host up', await answers(base, 200));
@@ -573,14 +625,43 @@ if (!done.ok) throw new Error(done.text);
       : 'no new host process appeared');
   console.log(`        located: ${started.map((host) => host.path).join(', ') || '(none)'}`);
 
-  const window = processesAt(shellExe, '"$($_.MainWindowHandle)|$($_.MainWindowTitle)"').trim();
+  // The application, not the engine's own processes, which run from the same executable (CHR4).
+  const window = eachApplicationAt(shellExe, '"$($_.MainWindowHandle)|$($_.MainWindowTitle)"').trim();
   check('the window is up', Boolean(window) && !window.startsWith('0|'), window || '(no process)');
+  // The launcher hands over and is gone: a launcher that lingered would be a second process holding
+  // the install for as long as the window is open.
+  check('…and the launcher that started it has exited', running(launcherExe).length === 0,
+    running(launcherExe).map((pid) => `pid ${pid}`).join(', '));
+
+  // WHICH ENGINE answered (CHR4). A published shell opens no debug port (D78 §3.1), so the answer is
+  // read off the process tree: the page renders in a renderer the INSTALL's own executable started,
+  // and no WebView2 process is the shell's child. A shell that fell back to WebView2, or a page that
+  // never rendered, fails here rather than looking fine in a screenshot.
+  const shellPids = applicationsAt(shellExe);
+  let renderers = [];
+  for (let attempt = 0; attempt < 20 && renderers.length === 0; attempt += 1) {
+    renderers = powershell(
+      'Get-CimInstance Win32_Process -ErrorAction SilentlyContinue | '
+      + `Where-Object { $_.ExecutablePath -eq ${psQuote(shellExe)} -and $_.CommandLine -like '*--type=renderer*' } | `
+      + 'ForEach-Object { $_.ProcessId }')
+      .split('\n').map((line) => line.trim()).filter(Boolean);
+    if (renderers.length === 0) await sleep(500);
+  }
+  check('the page renders on the install’s own Chromium', renderers.length > 0,
+    'no renderer process started from the install’s executable');
+  const webviews = shellPids.length === 0 ? '' : powershell(
+    'Get-CimInstance Win32_Process -Filter "Name = \'msedgewebview2.exe\'" -ErrorAction SilentlyContinue | '
+    + `Where-Object { @(${shellPids.join(',')}) -contains $_.ParentProcessId } | ForEach-Object { $_.ProcessId }`).trim();
+  check('…and not on WebView2', webviews === '', `WebView2 processes under the shell: ${webviews}`);
 
   // INSTALLED.md tells whoever opens the folder that `data/` is this install's own state. Nothing
   // read it back until now, and a deployed shell writing its WebView2 profile somewhere else is a
   // folder that cannot be deleted to uninstall.
   check(`the install keeps its own state in ${HOME}/`, existsSync(join(install, HOME)),
     readdirSync(install).join(', '));
+  // The application runs from `app/` and the home is still the install's (D93), never one beside it.
+  check(`…at the install’s root, not beside the application in ${SHELL_HOME.join('/')}/`,
+    !existsSync(join(install, ...SHELL_HOME, HOME)));
 
   // The plugin's process, started by the DEPLOYED shell's own loop from the home it was told. The
   // loop reconciles on its first tick, which follows the host coming up; waited for, never poked.
@@ -692,7 +773,15 @@ if (!done.ok) throw new Error(done.text);
   shell = null;
   await sleep(1500);
 
-  check('no shell of this install is left running', running(shellExe).length === 0);
+  // Everything from the install's executable, the engine's processes included: they follow the
+  // application out, a moment after it.
+  let shellsLeft = running(shellExe);
+  for (let attempt = 0; attempt < 10 && shellsLeft.length > 0; attempt += 1) {
+    await sleep(500);
+    shellsLeft = running(shellExe);
+  }
+  check('no shell of this install is left running, nor any of its engine’s processes', shellsLeft.length === 0,
+    shellsLeft.map((pid) => `pid ${pid}`).join(', '));
   const orphans = hostProcesses().filter((host) => !before.has(host.pid));
   check('and no host it started is orphaned', orphans.length === 0,
     orphans.map((host) => `pid ${host.pid} ${host.path}`).join(', '));
@@ -723,10 +812,11 @@ if (!done.ok) throw new Error(done.text);
     return;
   }
 
-  console.log('  The shell was published to a folder and driven from there: one launcher at the root');
-  console.log('  with no symbols beside it, a host under app/ with its own bundle answering on its');
-  console.log('  own, a folder somebody else owns refused before anything was built — then the');
-  console.log('  DEPLOYED window, told nothing about where its host lives, finding one that is not');
+  console.log('  The shell was published to a folder and driven from there: one launcher at the root,');
+  console.log('  Chromium’s, with its engine beside it and no symbols, a host under app/ with its own');
+  console.log('  bundle answering on its own, a folder somebody else owns refused before anything was');
+  console.log('  built, a republish leaving none of the last one’s files — then the DEPLOYED window,');
+  console.log('  rendering on its own Chromium, told nothing about where its host lives, finding one that is not');
   console.log('  this workspace’s build and keeping its state in data/ beside itself. Then a quest:');
   console.log('  spawned by the installed application’s own driver loop, carried to done through the');
   console.log('  session’s own door, and its transcript holding an em-dash and 道衍 BYTE FOR BYTE —');

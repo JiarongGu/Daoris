@@ -128,6 +128,48 @@ public sealed class InstallHomeTests : IDisposable
         Assert.Equal("{}", File.ReadAllText(Path.Combine(established.Home, "driver.json")));
     }
 
+    /// <summary>
+    /// D93: the shell runs from the install's <c>app/</c>, where the launcher at the root starts it, and
+    /// the home is still the install's <c>data/</c> — never a <c>data/</c> inside <c>app/</c>.
+    /// </summary>
+    [Fact]
+    public void A_shell_running_from_the_install_s_app_folder_makes_the_install_s_data_its_home()
+    {
+        var install = Install();
+        var app = Path.Combine(install, "app");
+        Directory.CreateDirectory(app);
+
+        Assert.Equal(install, InstallHome.RootOf(app));
+        var established = Establish(app);
+
+        Assert.Equal(Path.Combine(install, "data"), established!.Home);
+        Assert.False(Directory.Exists(Path.Combine(app, "data")));
+    }
+
+    /// <summary>An <c>app</c> folder is the install's only when the install is marked: a workspace's is not.</summary>
+    [Fact]
+    public void An_app_folder_with_no_marked_install_above_it_is_no_install()
+    {
+        var bare = Path.Combine(_root, "bare", "app");
+        Directory.CreateDirectory(bare);
+
+        Assert.Equal(bare, InstallHome.RootOf(bare));
+        Assert.Null(Establish(bare));
+    }
+
+    /// <summary>The engine's profile is written before Daoris has any state, and does not stop a legacy move.</summary>
+    [Fact]
+    public void The_engine_s_own_profile_is_not_state()
+    {
+        var install = Install();
+        Directory.CreateDirectory(Path.Combine(install, "data", "chromium"));
+        var legacy = Path.Combine(_root, "legacy");
+        Directory.CreateDirectory(legacy);
+        File.WriteAllText(Path.Combine(legacy, "driver.json"), "{}");
+
+        Assert.Equal(["driver.json"], Establish(install, legacy)!.Moved);
+    }
+
     [Fact]
     public void No_legacy_directory_is_nothing_to_move_and_the_notice_says_only_where_the_home_is()
     {

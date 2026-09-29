@@ -1,7 +1,6 @@
-using Shenora.Core.Events;
-using Shenora.Core.Ipc;
+using Microsoft.Extensions.Logging;
+using Shenora.Chromium;
 using Shenora.Windows;
-using WebView2Control = Microsoft.Web.WebView2.WinForms.WebView2;
 
 namespace Daoris.Desktop;
 
@@ -15,31 +14,25 @@ namespace Daoris.Desktop;
 /// its module name is reserved and singular. Hand-rolling a second dispatcher so a utility window
 /// could lose its close button's OS behaviour is a lot of machinery for a loss.</para>
 ///
-/// <para><b>Its own bridge, on the shared dispatcher and the shared bus.</b> Requests go to the same
-/// modules the main window talks to, and every event emitted on the bus reaches every attached
-/// bridge — which is how a second window watches the same live console without the driver keeping
-/// a second buffer (SES1: the buffer holds no cursor, so a reader is a position and not a
-/// registration).</para>
-///
-/// <para>🔴 <b>The bridge is constructed before init and attached after it</b>, in that order — the
-/// runtime's load-bearing sequence, so events emitted during the slow WebView2 initialization are
-/// buffered rather than lost. The main window does exactly the same thing for the same reason.</para>
+/// <para><b>Its page on the same engine, the same dispatcher and the same bus</b> (D92): a
+/// <c>ChromiumView</c> bridges its page's IPC itself, on this window's own thread. Requests go to the same
+/// modules the main window talks to, and every event emitted on the bus reaches every page — which is
+/// how a second window watches the same live console without the driver keeping a second buffer (SES1:
+/// the buffer holds no cursor, so a reader is a position and not a registration). Its page's window
+/// commands act on this window, not the main one.</para>
 /// </remarks>
 public sealed class SecondaryForm : OptimizedForm
 {
-    private readonly WebViewHost _host;
-    private readonly WebView2Control _webView;
-    private readonly WebViewIpcBridge _bridge;
+    private readonly ChromiumView _view;
     private readonly Microsoft.Win32.UserPreferenceChangedEventHandler _themeChanged;
     private bool _pageSaid;
     private bool _pageDark;
 
     public SecondaryForm(
         string name,
-        string address,
-        IMessageDispatcher dispatcher,
-        IEventBus events,
-        WebViewEnvironmentOptions environment)
+        string page,
+        ChromiumEngine engine,
+        ILogger<ChromiumView> log)
         : base(new OptimizedFormOptions
         {
             // Framed, which is the whole point (D55 §b) — but the DWM dark-mode flag and the border
@@ -51,8 +44,6 @@ public sealed class SecondaryForm : OptimizedForm
             ImmersiveDarkMode = MainForm.OperatingSystemPrefersDark(),
         })
     {
-        var palette = ChromePalette.For(MainForm.OperatingSystemPrefersDark());
-
         // The taskbar's label and the window's own caption — this one HAS a caption, so it is read.
         Text = name == SecondaryWindow.Monitor ? "Daoris — Monitor" : $"Daoris — {name}";
         StartPosition = FormStartPosition.CenterScreen;
@@ -60,7 +51,7 @@ public sealed class SecondaryForm : OptimizedForm
         // The OS theme, until the page says which one it is in (WINDOW2: `FollowPage`, over
         // `DAORIS.WINDOWS`). Shenora's window commands route a second window's `SET_THEME` nowhere,
         // so the page tells this form by its name instead. Before it has spoken — the moments while
-        // WebView2 comes up — the OS is the best guess, and a person who switches their OS theme
+        // the page comes up — the OS is the best guess, and a person who switches their OS theme
         // with the page not yet up still gets a matching title bar.
         _themeChanged = (_, changed) =>
         {
@@ -75,33 +66,11 @@ public sealed class SecondaryForm : OptimizedForm
         };
         Microsoft.Win32.SystemEvents.UserPreferenceChanged += _themeChanged;
 
-        _webView = new WebView2Control { Dock = DockStyle.Fill };
-        Controls.Add(_webView);
-
-        _bridge = new WebViewIpcBridge(_webView, new WebViewIpcBridgeOptions
-        {
-            Dispatcher = dispatcher,
-            EventBus = events,
-            Shell = new ShellInfo { Name = "daoris-desktop", Capabilities = [] },
-        });
-
-        _host = new WebViewHost(_webView, new WebViewHostOptions
-        {
-            Environment = environment,
-            // 🔴 A `CoreWebView2Environment` is AFFINE TO THE THREAD THAT CREATED IT, and this
-            // window runs its own STA pump — so it must build its own on the calling thread rather
-            // than borrow the main window's. Sharing it opens the window and then fails its
-            // bring-up with "CoreWebView2Environment members can only be accessed from the UI
-            // thread", which is a sentence in an otherwise empty window and nothing in a log.
-            // Same options and same user-data folder, so the two environments still share one
-            // browser process — this costs a handle, not a browser.
-            UseSharedEnvironment = false,
-            // The same bytes the main window shows, with one query parameter saying which window
-            // this is — a route into one bundle, never a second frontend (D38's one UI).
-            ProductionUrl = address,
-            DevUrl = address,
-            BackgroundColor = palette.Page,
-        });
+        // The same bytes the main window shows, with one query parameter saying which window this is —
+        // a route into one bundle, never a second frontend (D38's one UI). Its browser opens as the
+        // view's handle is created, on this window's own thread.
+        _view = new ChromiumView(engine, log) { Dock = DockStyle.Fill, Path = page };
+        Controls.Add(_view);
 
         Load += async (_, _) => await BringUpAsync();
     }
@@ -166,15 +135,14 @@ public sealed class SecondaryForm : OptimizedForm
     /// would still be handling theme changes.
     /// </summary>
     /// <remarks>
-    /// 🔴 And dispose the bridge (REV3). It subscribes to the WHOLE bus, and its flush timer lived on this
-    /// window's thread, which ends here — so a closed window's bridge queued every later event, the
-    /// sessions' console lines and conversations included, up to its ten-thousand cap, for as long as
-    /// the application ran. Once per window the person ever opened.
+    /// 🔴 A closed window's page must stop hearing the bus (REV3: a WebView2 bridge left attached queued
+    /// every later event, up to its cap, once per window ever opened). The view closes its browser, and
+    /// its page's IPC with it, as its handle goes; disposing it here makes that happen with the window.
     /// </remarks>
     protected override void OnFormClosed(FormClosedEventArgs e)
     {
         Microsoft.Win32.SystemEvents.UserPreferenceChanged -= _themeChanged;
-        _bridge.Dispose();
+        _view.Dispose();
         base.OnFormClosed(e);
     }
 
@@ -182,9 +150,7 @@ public sealed class SecondaryForm : OptimizedForm
     {
         try
         {
-            await _host.InitializeAsync();
-            _bridge.Attach();
-            _host.Navigate();
+            if (_view.Browser is { } browser) await browser.Created;
         }
         catch (Exception error)
         {

@@ -125,7 +125,7 @@ Daoris is a workspace, not a single tool (`docs/DECISIONS.md` D20). All five exi
 | `Daoris.Devkit` | The shared dev toolkit, as a .NET AOT binary | **built** |
 | `Daoris.Service` | Knowledge index, convergence, quests, sessions and the registry | **built and deployable** |
 | `Daoris.Web` | The platform — knowledge, quests, projects; doctrine read-only (D38) | **built** |
-| `Daoris.Desktop` | **The local driver** (D45/D46): the driver library, `daoris-driver`, and the `daoris-desktop` shell | **built** |
+| `Daoris.Desktop` | **The local driver** (D45/D46): the driver library, `daoris-driver`, and the shell (`Daoris.exe`) | **built** |
 
 ## Versions
 

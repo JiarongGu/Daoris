@@ -13,19 +13,25 @@
  * `sensitive-info` forbids, and a default would be one — the same rule `testbed.mjs` follows, for the
  * same reason.
  *
- * **Framework-dependent on purpose.** The shell already requires a Windows desktop runtime and the
- * WebView2 runtime; a self-contained publish would add ~150 MB to carry a .NET that this machine has
- * and would still not carry WebView2. The service hosts are the opposite case and are self-contained
- * — they are what a *server* runs, possibly without .NET at all (D43).
+ * **Framework-dependent on purpose.** The shell requires a Windows desktop runtime; a self-contained
+ * publish would add ~150 MB to carry a .NET that this machine has. It carries its own Chromium (D92,
+ * CHR4), so it no longer needs WebView2. The service hosts are the opposite case and are
+ * self-contained — they are what a *server* runs, possibly without .NET at all (D43).
+ *
+ * **The layout is a regular application's** (D93): `Daoris.exe` at the root is a small launcher and
+ * the one thing to run; the application is `app/Daoris.Desktop.exe`, CEF's launcher, beside its
+ * Chromium and its libraries, with the browser and the HTTP host in folders of their own under
+ * `app/`; `data/` is the home. The names the shell's publish put in `app/` are listed in
+ * `app/shell-files.txt`, so the next publish removes exactly those and nothing else.
  *
  * **What a deployed shell finds.** Nothing is wired into it: with no `DAORIS_*` overrides it makes
- * its own `data/` the Daoris home (D63) — the machine's registry, quests, drivable set and profiles
+ * the install's `data/` the Daoris home (D63) — the machine's registry, quests, drivable set and profiles
  * live there, and nothing under the user profile — and locates the HTTP host through
  * `ServiceHostLocator`, which looks beside the shell first. `--service` publishes a copy there, so
  * the folder is self-sufficient.
  */
 import { execSync } from 'node:child_process';
-import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, isAbsolute, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { isMain } from './fsx.mjs';
@@ -40,11 +46,33 @@ export const MARKER = 'INSTALLED.md';
 export const MARKER_HEADER = '# Daoris — installed desktop';
 
 /**
- * The install's layout, stated once (REV3 CLEAN1): one launcher at the root, supporting binaries
- * under `app/`, the home in `data/` (D63). The deployment gate, the dev loop and the testbed read
- * these rather than spelling the names again, which four of them did.
+ * The install's layout, stated once (REV3 CLEAN1): one launcher at the root, the application, the
+ * host and the browser under `app/`, the home in `data/` (D63, D93). The deployment gate, the dev
+ * loop and the testbed read these rather than spelling the names again, which four of them did.
+ *
+ * `Daoris.exe` since D93: the one thing to run is named for the application, as a regular one is.
  */
-export const LAUNCHER = 'daoris-desktop.exe';
+export const LAUNCHER = 'Daoris.exe';
+
+/**
+ * Where the application sits, and its name there (D93): CEF's launcher, beside its Chromium. A twin
+ * of `Launcher.AppFolder` and `Launcher.ShellExe` (`Daoris.Desktop.Launcher`), which starts it, and of
+ * the app's assembly name, which names it; `desktop-publish.test.ts` reads both.
+ */
+export const SHELL_HOME = Object.freeze(['app']);
+export const SHELL_EXE = 'Daoris.Desktop.exe';
+
+/**
+ * Launchers an earlier publish wrote at the root: the single-file shell before D93. A publish into
+ * its own install removes them, and the dev loop still finds an install not yet republished.
+ */
+export const RETIRED_LAUNCHERS = Object.freeze(['daoris-desktop.exe']);
+
+/**
+ * The names the shell's last publish put in `app/`, one per line (D93). What makes a republish
+ * remove the previous engine's files and nothing it did not write.
+ */
+export const SHELL_FILES = Object.freeze(['app', 'shell-files.txt']);
 
 /**
  * Where `--service` puts the HTTP host inside an install, as path segments.
@@ -69,10 +97,11 @@ export const BROWSER_HOME = Object.freeze(['app', 'daoris-browser']);
 export const BROWSER_EXE = 'daoris-browser.exe';
 
 /**
- * The engine's locale files an install keeps: the two languages Daoris speaks, and the two
- * `EngineBrowser.Locale` ever asks for. The other 218 are 48 MB nobody reads.
+ * The engine's locale files an install keeps, for the browser and for the shell alike: the two
+ * languages Daoris speaks, and the two `EngineBrowser.Locale` ever asks for. The other 218 are 48 MB
+ * nobody reads, and there are two engines to carry them (D92).
  */
-export const BROWSER_LOCALES = Object.freeze(['en-US.pak', 'zh-CN.pak']);
+export const KEPT_LOCALES = Object.freeze(['en-US.pak', 'zh-CN.pak']);
 
 /** The shell's own home, which it creates on first start (D63). */
 export const HOME = 'data';
@@ -81,7 +110,15 @@ export const HOME = 'data';
  * Every name a publish writes at the root of an install — and the shell's own `data/`, which it
  * creates on first start. Nothing else in that folder is ever this script's to touch.
  */
-export const OWN = Object.freeze([LAUNCHER, HOST_HOME[0], HOME, MARKER]);
+export const OWN = Object.freeze([LAUNCHER, SHELL_HOME[0], HOME, MARKER]);
+
+/** The names the last publish recorded in `app/shell-files.txt`, or none. */
+export function recordedShellFiles(install) {
+  const record = join(install, ...SHELL_FILES);
+  return existsSync(record)
+    ? readFileSync(record, 'utf8').split('\n').map((line) => line.trim()).filter(Boolean)
+    : [];
+}
 
 /** Whether this script published here before: the marker, with its header — a file with that name proves nothing. */
 export function isInstall(folder) {
@@ -152,6 +189,7 @@ function main() {
   const to = isAbsolute(toArg) ? toArg : resolve(process.cwd(), toArg);
 
   const APP = 'src/Daoris.Desktop/Daoris.Desktop.App';
+  const LAUNCHER_PROJECT = 'src/Daoris.Desktop/Daoris.Desktop.Launcher';
   const BROWSER = 'src/Daoris.Desktop/Daoris.Desktop.Browser';
   const HTTP = 'src/Daoris.Service/Daoris.Service.Http';
   const WEB = 'src/Daoris.Web';
@@ -172,10 +210,16 @@ function main() {
    * lines of `Microsoft.NET.HostModel.Bundle` internals for "close the app". Checked before anything
    * is built, so the answer arrives in a second rather than after the whole web bundle.
    */
-  const installed = join(to, LAUNCHER);
-  if (process.platform === 'win32' && existsSync(installed)) {
+  // The application and the single-file shell an install from before D93 still has: the launcher at
+  // the root exits once it has started the application, so it is the application that holds files.
+  const shells = [join(to, ...SHELL_HOME, SHELL_EXE), ...RETIRED_LAUNCHERS.map((name) => join(to, name))]
+    .filter(existsSync);
+  if (process.platform === 'win32' && shells.length > 0) {
     // The browser follows the shell out, so a running one is a shell still running, or just gone.
-    const held = [...running(installed), ...running(join(to, ...BROWSER_HOME, BROWSER_EXE))];
+    const held = [
+      ...shells.flatMap((shell) => running(shell)),
+      ...running(join(to, ...BROWSER_HOME, BROWSER_EXE)),
+    ];
     if (held.length > 0) {
       console.error(`desktop-publish: the install at \`${to}\` is running (pid ${held.join(', ')}).`);
       console.error('  Close it and re-run — a running application holds its own executable open, and');
@@ -191,18 +235,51 @@ function main() {
 
   // 🔴 ONE executable at the root, and nothing else that looks like one.
   //
-  // The first version published the default way: 24 entries, with `daoris-desktop.exe` buried
-  // alphabetically among DLLs, `.pdb`s and three stray WebView2 `.xml` doc files. A person opening the
-  // folder could not see what to run. A single-file publish answers it completely — 2.8 MB, one file —
-  // and is framework-dependent, so it carries no .NET it did not need to.
-  //
-  // `AllowedReferenceRelatedFileExtensions=none` is what stops the package doc files; they come from
-  // the WebView2 package rather than from this compile, so `GenerateDocumentationFile` does not reach
-  // them. `DebugType=none` drops the symbols an installed app has no use for.
-  console.log('desktop-publish: publishing the shell…');
+  // The first version published the default way: 24 entries, with the executable buried
+  // alphabetically among DLLs, `.pdb`s and three stray WebView2 `.xml` doc files. The root holds one
+  // small launcher now (D93), framework-dependent and single-file, wearing the application's icon, and
+  // everything it starts sits under `app/`.
+  const stages = join(repoRoot, 'src', 'Daoris.Desktop', 'Daoris.Desktop.App', 'bin', 'publish-stage');
+  rmSync(stages, { recursive: true, force: true });
+  console.log('desktop-publish: publishing the launcher…');
+  const launcherStage = join(stages, 'launcher');
+  run(`dotnet publish "${LAUNCHER_PROJECT}" -c Release -r win-x64 --self-contained false `
+    + '-p:PublishSingleFile=true -p:DebugType=none '
+    + `-p:AllowedReferenceRelatedFileExtensions=none -o "${launcherStage}" --nologo`);
+
+  // The application on its own Chromium (D92, D93): CEF's launcher beside the engine and the app's
+  // libraries. `AllowedReferenceRelatedFileExtensions=none` is what stops the package doc files; they
+  // come from the WebView2 package rather than from this compile, so `GenerateDocumentationFile` does
+  // not reach them. `DebugType=none` drops the symbols an installed app has no use for.
+  console.log('desktop-publish: publishing the application…');
+  const shellStage = join(stages, 'shell');
   run(`dotnet publish "${APP}" -c Release -r win-x64 --self-contained false `
-    + '-p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true '
-    + `-p:DebugType=none -p:AllowedReferenceRelatedFileExtensions=none -o "${to}" --nologo`);
+    + `-p:DebugType=none -p:AllowedReferenceRelatedFileExtensions=none -o "${shellStage}" --nologo`);
+  const locales = (folder) => {
+    const at = join(folder, 'locales');
+    if (!KEPT_LOCALES.every((file) => existsSync(join(at, file)))) {
+      console.error(`desktop-publish: ${folder} carries no ${KEPT_LOCALES.join(' or ')} — `
+        + 'the engine would start with no language it is asked for.');
+      process.exit(1);
+    }
+    for (const file of readdirSync(at)) {
+      if (!KEPT_LOCALES.includes(file)) rmSync(join(at, file));
+    }
+  };
+  locales(shellStage);
+
+  // What the last publish put in `app/` goes first, so an engine upgrade leaves none of its files
+  // behind — only the recorded names, never the host or the browser beside them. And the single-file
+  // shell an install from before D93 has at its root, which the launcher replaces.
+  const app = join(to, ...SHELL_HOME);
+  for (const name of recordedShellFiles(to)) rmSync(join(app, name), { recursive: true, force: true });
+  if (isInstall(to)) for (const name of RETIRED_LAUNCHERS) rmSync(join(to, name), { force: true });
+  mkdirSync(app, { recursive: true });
+  const staged = readdirSync(shellStage);
+  for (const name of staged) cpSync(join(shellStage, name), join(app, name), { recursive: true });
+  writeFileSync(join(to, ...SHELL_FILES), `${staged.sort().join('\n')}\n`);
+  cpSync(join(launcherStage, LAUNCHER), join(to, LAUNCHER));
+  rmSync(stages, { recursive: true, force: true });
 
   // Daoris's own browser (D85, CHR3), always: the shell starts it, so a shell without it has a
   // browser menu that does nothing. Replaced rather than published over, as the host is below, so
@@ -212,15 +289,7 @@ function main() {
   rmSync(browser, { recursive: true, force: true });
   run(`dotnet publish "${BROWSER}" -c Release -r win-x64 --self-contained false `
     + `-p:DebugType=none -p:AllowedReferenceRelatedFileExtensions=none -o "${browser}" --nologo`);
-  const locales = join(browser, 'locales');
-  if (!BROWSER_LOCALES.every((file) => existsSync(join(locales, file)))) {
-    console.error(`desktop-publish: the browser's publish carries no ${BROWSER_LOCALES.join(' or ')} — `
-      + 'the engine would start with no language it is asked for.');
-    process.exit(1);
-  }
-  for (const file of readdirSync(locales)) {
-    if (!BROWSER_LOCALES.includes(file)) rmSync(join(locales, file));
-  }
+  locales(browser);
 
   if (flag('--service')) {
     // Supporting binaries go under `app/`, which is the shape the neighbouring applications on this
@@ -259,9 +328,9 @@ Published from a Daoris workspace by \`tools/desktop-publish.mjs\`.
 
 | | |
 |---|---|
-| \`${LAUNCHER}\` | **the application** — the only thing to run. One file. |
-| \`${HOST_HOME[0]}/\` | supporting binaries: Daoris's own browser and the Chromium it runs on, and the HTTP host when published with \`--service\`. Nothing to open. |
-| \`${HOME}/\` | **the Daoris home**: the registry, the quests, the drivable set, the harness profiles, the installed service binaries — and the WebView2 profile and the window's geometry. |
+| \`${LAUNCHER}\` | **the application** — the only thing to run. A small launcher that starts \`${[...SHELL_HOME, SHELL_EXE].join('/')}\`. |
+| \`${SHELL_HOME[0]}/\` | the application itself, on the Chromium it carries (its files are listed in \`${SHELL_FILES.join('/')}\`); Daoris's own browser in \`${BROWSER_HOME.slice(1).join('/')}/\`; and the HTTP host in \`${HOST_HOME.slice(1).join('/')}/\` when published with \`--service\`. Nothing to open. |
+| \`${HOME}/\` | **the Daoris home**: the registry, the quests, the drivable set, the harness profiles, the installed service binaries — and the window's engine profile (\`chromium/\`) and its geometry. |
 
 Anything else in this folder is not the application's — repositories it drives, typically — and a
 re-publish never touches it.

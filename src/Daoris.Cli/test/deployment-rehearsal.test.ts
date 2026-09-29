@@ -64,17 +64,17 @@ test('the expected bytes are computed from the line, never spelled out', () => {
  */
 test('a launcher is what a person could double-click, and nothing else at the root is one', () => {
   assert.deepEqual(
-    launchers(['daoris-desktop.exe', 'INSTALLED.md', 'app', 'data', 'WebView2Loader.dll']),
-    ['daoris-desktop.exe']);
+    launchers(['Daoris.exe', 'INSTALLED.md', 'app', 'data', 'WebView2Loader.dll']),
+    ['Daoris.exe']);
   // Two launchers is the failure being guarded, not a pass with a favourite.
   assert.deepEqual(launchers(['a.exe', 'b.cmd', 'c.bat', 'd.txt']), ['a.exe', 'b.cmd', 'c.bat']);
 });
 
 test('symbols and package doc files are strays, and the marker and the bundle are not', () => {
   assert.deepEqual(
-    strays(['daoris-desktop.exe', 'daoris-desktop.pdb', 'WebView2Loader.xml', 'INSTALLED.md']),
-    ['daoris-desktop.pdb', 'WebView2Loader.xml']);
-  assert.deepEqual(strays(['daoris-desktop.exe', 'INSTALLED.md']), []);
+    strays(['Daoris.exe', 'Daoris.App.pdb', 'WebView2Loader.xml', 'INSTALLED.md']),
+    ['Daoris.App.pdb', 'WebView2Loader.xml']);
+  assert.deepEqual(strays(['Daoris.exe', 'INSTALLED.md']), []);
 });
 
 /**

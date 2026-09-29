@@ -1,0 +1,18 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Daoris's launcher (D93): the one executable at an install's root, `Daoris.exe`, which starts the
+       application from `app/`, where it sits beside its Chromium. Framework-dependent and single-file, so
+       it is small, and it references nothing: a launcher that needed the application's libraries would
+       be the application. -->
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <RootNamespace>Daoris.Desktop.Launcher</RootNamespace>
+    <AssemblyName>Daoris</AssemblyName>
+    <ApplicationIcon>..\Daoris.Desktop.App\daoris.ico</ApplicationIcon>
+    <Product>Daoris</Product>
+    <AssemblyTitle>Daoris</AssemblyTitle>
+    <Description>Daoris</Description>
+    <InvariantGlobalization>true</InvariantGlobalization>
+  </PropertyGroup>
+
+</Project>

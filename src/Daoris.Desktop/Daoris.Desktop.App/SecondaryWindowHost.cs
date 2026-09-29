@@ -22,11 +22,10 @@ namespace Daoris.Desktop;
 /// the reason.</para>
 /// </remarks>
 public sealed class SecondaryWindowHost(
-    IMessageDispatcher dispatcher,
-    IEventBus events,
-    WebViewEnvironmentOptions environment,
+    Shenora.Chromium.ChromiumEngine engine,
     ShenoraPaths paths,
-    SecondaryWindows windows) : ISecondaryWindows, IDisposable
+    SecondaryWindows windows,
+    Microsoft.Extensions.Logging.ILogger<ChromiumView>? log = null) : ISecondaryWindows, IDisposable
 {
     /// <summary>
     /// Every name asked for so far. <see cref="SecondaryWindows"/> answers whether a name is open but
@@ -51,7 +50,8 @@ public sealed class SecondaryWindowHost(
             // once the geometry has been applied.
             CreateForm = () =>
             {
-                var form = new SecondaryForm(name, address, dispatcher, events, environment);
+                var form = new SecondaryForm(
+                    name, address, engine, log ?? Microsoft.Extensions.Logging.Abstractions.NullLogger<ChromiumView>.Instance);
                 lock (_forms) _forms[name] = form;
                 form.FormClosed += (_, _) =>
                 {

@@ -51,7 +51,7 @@ public sealed class WindowsModuleTests : Bridge
 
         // The same bytes a browser gets, with one parameter — not a second frontend (D55 §b).
         Assert.Equal(
-            ("monitor", "http://localhost:5177/?window=monitor"),
+            ("monitor", "/?window=monitor&host=http%3A%2F%2Flocalhost%3A5177"),
             _windows.Asked.Single());
         Assert.True(state.GetProperty("opened").GetBoolean());
         Assert.Equal("monitor", state.GetProperty("windows")[0].GetString());
@@ -64,7 +64,7 @@ public sealed class WindowsModuleTests : Bridge
 
         var (name, address) = _windows.Asked.Single();
         Assert.Equal("session:a1b2c3d4", name);
-        Assert.Equal("http://localhost:5177/?window=session%3Aa1b2c3d4", address);
+        Assert.Equal("/?window=session%3Aa1b2c3d4&host=http%3A%2F%2Flocalhost%3A5177", address);
     }
 
     /// <summary>
@@ -77,7 +77,7 @@ public sealed class WindowsModuleTests : Bridge
         await AnswerAsync(Module(), "OPEN", new { name = "session:laptop/a1b2c3d4" });
 
         Assert.Equal(
-            "http://localhost:5177/?window=session%3Alaptop%2Fa1b2c3d4",
+            "/?window=session%3Alaptop%2Fa1b2c3d4&host=http%3A%2F%2Flocalhost%3A5177",
             _windows.Asked.Single().Address);
     }
 

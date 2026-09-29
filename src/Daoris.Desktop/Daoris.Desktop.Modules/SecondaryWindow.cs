@@ -12,7 +12,7 @@ namespace Daoris.Desktop;
 public interface ISecondaryWindows
 {
     /// <summary>
-    /// Open the named window at this address, or bring it forward when it is already open.
+    /// Open the named window at this page (a path on the engine's app origin, D92), or bring it forward when it is already open.
     /// </summary>
     /// <returns>True when a window was created; false when an existing one was activated.</returns>
     bool Open(string name, string address);
@@ -78,17 +78,6 @@ public static class SecondaryWindow
         name == Monitor
         || (name?.StartsWith(SessionPrefix, StringComparison.Ordinal) == true
             && SessionId.IsMatch(name[SessionPrefix.Length..]));
-
-    /// <summary>
-    /// Where the named window points: the platform's own bundle, with the name on it.
-    /// </summary>
-    /// <remarks>
-    /// The same URL the main window shows (D38's one UI) — a secondary window is a route, and the
-    /// route is a query parameter because the bundle is served as one page by a host that knows
-    /// nothing about client paths.
-    /// </remarks>
-    public static string Address(string serviceUrl, string name) =>
-        $"{serviceUrl.TrimEnd('/')}/?{Parameter}={Uri.EscapeDataString(name)}";
 
     /// <summary>The file this window's geometry is remembered in — one per name.</summary>
     public static string StateFile(string name) => $"{Uri.EscapeDataString(name)}.json";

@@ -137,6 +137,21 @@ commands and `SecondaryWindows` (its ADOPTION.md, *Stage 2 on Chromium*). What t
 | Item | What lands | Proven by |
 |---|---|---|
 | **CHR1** ✓ | A scratch probe: an embedded Chromium in a WinForms window. It answered whether the debug port reaches every page in the process (it does); whether a tab a CDP client opens reaches the app (no: it gets an engine window); whether a session cookie survives a restart with the engine's own setting (yes); Playwright MCP attached and driving (yes, except opening a tab); the page-host round trip (0.2–0.3 ms median); and size, banner, codecs and licence | `docs/2026-09-28-chromium-embedding-evidence.md`, 2026-09-28 |
-| **CHR2** | The main and secondary windows move to `Shenora.Windows.Chromium` once it is released (§3). Daoris's part is the move: the package, the page transport, the splash and the trouble message on the new host, and a page process with no port | the web suite on the page transport, the deployment rehearsal, and a look at the window |
+| **CHR2** ✓ | The main and secondary windows on `ChromiumView` (Shenora 0.17, §4a, D92): the page on `https://daoris.localhost/`, told its host's loopback address (CHR2a); the shell on `UseChromiumEngine`, the bundle found as the host finds it, and the dev loop's instruments on the development DevTools port (CHR2b, CHR2c) | a look at the main window, the monitor and a detached session in both themes; caption buttons answering `HTMINBUTTON`/`HTMAXBUTTON`/`HTCLOSE` from the rectangles the page reported; the deployment rehearsal (§5a) |
 | **CHR3** ✓ | `daoris-browser`: the engine's own window, in a process of its own with its global request context and `PersistSessionCookies`, CDP on that process only, started by the shell behind `IInAppBrowser` and carried by the install under `app/daoris-browser/`. Supersedes BRW11 | the deployment rehearsal: the deployed shell's driver brings up the install's own browser for a session's server, and it goes with the shell; a look on the scratch shell (evidence §11–§15) |
-| **CHR4** | The install carries it: `publish:desktop` places the runtime, and the deployment rehearsal starts the published shell on it and asserts which engine answered. The WebView2 path and its refusal go | `npm run rehearse:deploy` |
+| **CHR4** ✓ | The install carries it (D93): `Daoris.exe`, a launcher, at the root, and the application beside its Chromium in `app/`, recorded in `app/shell-files.txt` so a republish removes the last engine's files; the gate starts the install through the launcher and asserts the engine off the process tree. The WebView2 path goes | `npm run rehearse:deploy` |
+
+### 5a. What the move found
+
+- **The bundle a host serves is not always beside it.** In development ASP.NET serves the project's
+  `wwwroot` to a host started from `bin/`, through its static assets manifest, so the first Chromium run
+  said the bundle was missing. `DesktopPage.BundleOf` walks up from the host as the host effectively does.
+- **Chromium's processes run from the application's executable** (`--type=renderer`, `gpu-process`,
+  `utility`). Every tool that stopped or counted "what runs from this path" had to learn to tell the
+  application apart: walked blindly, a stop waited fifteen seconds on each and then crashed a page.
+- **A copied launcher wears CEF's icon.** The build stamps Daoris's onto it after the layout.
+- **The kit anchors its data area at the executable's folder** unless told, so an application in
+  `app/` hands it the install's root; otherwise its profile lands in a second `data/` inside `app/`.
+- **Radix menus ignore a scripted `.click()`**: looking at a menu over CDP needs real pointer input
+  (`Input.dispatchMouseEvent`). And the native caption buttons take no page input at all; their
+  hit-test is read with `WM_NCHITTEST` against the window.

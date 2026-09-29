@@ -24,6 +24,9 @@
          with no desktop present. Both move together: they are one release. -->
     <PackageVersion Include="Shenora.Windows" Version="0.17.0" />
     <PackageVersion Include="Shenora" Version="0.17.0" />
+    <!-- The engine the shell's windows render on (D92): the kit's own CEF binding, and its build's
+         fetch of the pinned CEF (154). One release with the two above. -->
+    <PackageVersion Include="Shenora.Chromium" Version="0.17.0" />
   </ItemGroup>
 
   <ItemGroup>

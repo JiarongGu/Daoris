@@ -10,7 +10,8 @@ using Shenora.Windows;
 // (D22); the runtime's single-instance guard also keeps two shells from fighting over the port.
 //
 //   DAORIS_HOME            where every machine-local file lives (D63)          (an install: `data/` beside this exe, set here)
-//   DAORIS_SERVICE_URL     where the service is, and what the WebView shows   (default: http://localhost:5177)
+//   DAORIS_SERVICE_URL     where the service is, which the page calls         (default: http://localhost:5177)
+//   DAORIS_DEVTOOLS_PORT   the engine's DevTools port, in development only     (absent: none)
 //   DAORIS_SERVICE_KEY     sent as a bearer token when set                     (absent: local trust, D21)
 //   DAORIS_DRIVER_CONFIG   the person's standing choices                       (default: $DAORIS_HOME/driver.json)
 //   DAORIS_HTTP_HOST       the host executable, when it lives somewhere unusual
@@ -20,6 +21,9 @@ using Shenora.Windows;
 //   DAORIS_REMOTE_CONFIG   where the map is                                    (default: $DAORIS_HOME/remotes.json)
 internal static class Program
 {
+    /// <summary>The DevTools port a development run opens on its engine (D92) — the dev loop's instruments attach there.</summary>
+    private const string DevToolsVariable = "DAORIS_DEVTOOLS_PORT";
+
     [STAThread]
     private static void Main(string[] args)
     {
@@ -48,27 +52,43 @@ internal static class Program
         var serviceUrl = Environment.GetEnvironmentVariable(Daoris.Driver.ServiceClient.UrlVariable)
             ?? "http://localhost:5177";
 
+        // 🔴 The kit anchors its data area (the engine's profile, the window's geometry) at the bundle's
+        // root, which it takes to be the executable's folder unless told. An install's application runs
+        // from `app/` (D93), so it is told the install's root, and its data lands in the install's
+        // `data/` rather than a second one inside `app/`. A `--app-root` given still wins.
+        var installRoot = InstallHome.RootOf(AppContext.BaseDirectory);
+        var inInstallApp = !string.Equals(
+            installRoot, Path.TrimEndingDirectorySeparator(AppContext.BaseDirectory), StringComparison.OrdinalIgnoreCase);
+
         var builder = ShenoraApplication.CreateBuilder(new ShenoraApplicationOptions
         {
             Args = args,
             ApplicationName = "Daoris",
+            Paths = inInstallApp
+                ? new ShenoraPathsOptions { ExplicitRoot = AppRootArgument.Resolve(args, installRoot) }
+                : new ShenoraPathsOptions(),
         });
 
-        builder.Services.AddSingleton(sp => new WebViewEnvironmentOptions
+        // The engine every window renders on (D92, CHR2): the Chromium the install ships. The pages are
+        // the HTTP host's own bundle, the same bytes a browser gets (D38's one UI), served from the
+        // `wwwroot` beside the host this shell would start, on the engine's app origin — and each page
+        // reaches the host at its loopback address, which a local host allows (`DesktopPage`).
+        var located = Daoris.Driver.ServiceHostLocator.Locate(
+            Environment.GetEnvironmentVariable(Daoris.Driver.ServiceHostLocator.PathVariable),
+            Daoris.Driver.DaorisHome.Resolve(),
+            AppContext.BaseDirectory);
+        var bundle = new PlatformBundle(located is null ? null : DesktopPage.BundleOf(located));
+        builder.Services.AddSingleton(bundle);
+        builder.UseChromiumEngine(new Shenora.Chromium.ChromiumEngineOptions
         {
-            UserDataFolder = sp.GetRequiredService<ShenoraPaths>().DataArea("webview2"),
-            IsDevelopment = sp.GetRequiredService<ShenoraEnvironment>().IsDevelopment,
-        });
-
-        builder.Services.AddSingleton(sp => new WebViewHostOptions
-        {
-            Environment = sp.GetRequiredService<WebViewEnvironmentOptions>(),
-            // The server-backed profile: the platform is the HTTP host's own bundle, the same bytes a
-            // browser gets — one UI, two shells (D38). The same URL serves dev mode, because the dev
-            // loop's server IS the host.
-            ProductionUrl = serviceUrl,
-            DevUrl = serviceUrl,
-            BackgroundColor = Color.FromArgb(30, 30, 30),
+            // A folder that exists either way: a missing bundle is the window's sentence, not an engine
+            // that refused to start and left nothing to say it in.
+            ContentRoot = bundle.Folder is { } folder && Directory.Exists(folder) ? folder : AppContext.BaseDirectory,
+            VirtualHost = DesktopPage.VirtualHost,
+            // The instruments' port (`npm run desktop`), honoured in development only: a published app
+            // has none, so the page that holds the bridge is out of CDP's reach (D78 §3.1).
+            DevToolsPort = int.TryParse(Environment.GetEnvironmentVariable(DevToolsVariable), out var port) ? port : 0,
+            Shell = new Shenora.Core.Ipc.ShellInfo { Name = "daoris-desktop", Capabilities = [] },
         });
 
         builder.Services.AddSingleton(new HostSupervisor(serviceUrl));
