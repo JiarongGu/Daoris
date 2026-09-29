@@ -301,6 +301,13 @@ you*, and its record says who answered it.
   take come last. The band and the Sessions badge share `needsAPerson`, so the badge counts these
   asks too, as it already counted the quests nobody can take.
 
+*As built (USE1c, 2026-09-30; D65 as amended):* an ask whose work is finished is **done**. It became
+at least one quest, and none of the quests asked by it, chain steps included, is open or taken. The
+service derives it on every read and stores nothing, so a quest closed on another machine and synced
+in counts at once. The default list hides a done ask as it hides a closed one, and *include closed*
+shows it with a *done* pill, ordered with the closed ones. A driver ends a parked intake whose ask is
+done as answered, the same as one whose ask is published.
+
 *As built (INT4g, 2026-09-24):* a parked intake in Sessions leads to its ask.
 
 - **The answer is on the ask.** A parked session's three moves (finish, decline, stop) each ended

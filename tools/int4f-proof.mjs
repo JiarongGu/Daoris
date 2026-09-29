@@ -209,7 +209,8 @@ async function intakeRun() {
   const after = await ask(`/api/asks/${askId}`);
   const quests = ((await ask('/api/quests?includeClosed=true')) ?? []).filter((q) => q.from === `ask #${askId}`);
 
-  const publishedEnding = after?.state === 'Published';
+  // Done is published with every quest already closed (USE1c): the service derives it from the quests.
+  const publishedEnding = after?.state === 'Published' || after?.state === 'Done';
   if (publishedEnding) {
     // THE EXPECTED ENDING: the MCP host published as the ask, under the harness's own environment.
     check('ENDING — published: the ask is Published, and its tier says the INTAKE answered it',

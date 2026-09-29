@@ -93,12 +93,26 @@ adopted repositories by the words their summary, `owns` and `accepts` share with
 proposes, with the matched words as evidence, and **publishes nothing**; a person turns a proposal
 into a quest. Naming the receiver publishes at once. An ask's quests are asked *by the ask*
 (`ask #<id>`), in the ask's own circle. The same words in the same circle are the same ask. Asks
-are machine-local: a local host's door, and `daoris-driver ask` from a terminal.
+are machine-local: a local host's door, and `daoris-driver ask` from a terminal. An ask is **done**
+(USE1c) once it became a quest and every quest asked by it, chain steps included, has closed. That is
+worked out from the quests on every read and never stored, so a quest closed on another machine
+counts when it syncs in. The default list hides a done ask as it hides a closed one.
 
 The judgement behind those — who may be addressed, what a refusal says, what declining requires —
 lives in one place, `QuestExchange`, shared by the MCP and HTTP hosts. Written per host it would
 drift, and the same ask would be deliverable through one door and refused at the other, which for a
 quest system is the worst available bug: it looks like the sibling ignoring you.
+
+**A quest or an ask made by mistake can be deleted** (D95), from a person's doors only: a local host's
+`DELETE /api/quests/{id}` and `DELETE /api/asks/{id}`, which the page and `daoris-driver quest delete`
+/ `ask --delete` call. There is no MCP tool for it. Only a quest nobody has started on goes: it must
+be open, no session record may name it, and no taken quest may wait on it. Anything else is refused
+naming what to do instead, which is to decline it or leave it closed. An ask goes with every quest
+asked by it, or not at all. A quest that may have left the machine is **tombstoned**, a `deleted`
+operation the sync carries so no fetch brings it back, and on a shared quest the delete is pushed
+before the answer returns. A quest that never left simply goes. The `deletable` field on the quests and
+asks a local host lists (and on a quest a publish, a response or a dismissal answers with) is the same
+judgement, so a page offers the verb only where the door would take it.
 
 Four states, because anything finer is status for its own sake. A quest is **taken**, not assigned,
 which is the property that keeps declining a real answer. **An adopted repository, or one registered

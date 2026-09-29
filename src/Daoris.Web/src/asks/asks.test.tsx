@@ -10,7 +10,7 @@ import { AskComposer, type AskDraft } from './AskComposer';
 import { AskRecord } from './AskRecord';
 import { asksInOrder } from './AsksSection';
 import {
-  BY_INTAKE, CLOSED, INTAKE_ASKED, INTAKE_PARKED, INTAKE_SESSION, NAMED, PROPOSED, PUBLISHED, REFUSED, UNKNOWN_TIER,
+  BY_INTAKE, CLOSED, DONE, INTAKE_ASKED, INTAKE_PARKED, INTAKE_SESSION, NAMED, PROPOSED, PUBLISHED, REFUSED, UNKNOWN_TIER,
   UNMATCHED,
 } from './fixtures';
 
@@ -344,5 +344,75 @@ describe('the asks, in the order they are read', () => {
     const closedEarliest = { ...CLOSED, id: 'c3', asked: '2026-09-01T09:00:00Z' };
 
     expect(asksInOrder([newer, closedEarliest, older]).map((ask) => ask.id)).toEqual(['a1', 'b2', 'c3']);
+  });
+
+  /** USE1c: an ask whose work is finished is read with the closed ones — it is not waiting on anyone. */
+  it('puts a done ask with the closed ones, after every live one', () => {
+    const live = { ...PUBLISHED, id: 'b2', asked: '2026-09-24T09:00:00Z' };
+    const doneEarliest = { ...DONE, id: 'd4', asked: '2026-09-01T09:00:00Z' };
+    const closed = { ...CLOSED, id: 'c3', asked: '2026-09-02T09:00:00Z' };
+
+    expect(asksInOrder([closed, doneEarliest, live]).map((ask) => ask.id)).toEqual(['b2', 'd4', 'c3']);
+  });
+});
+
+/**
+ * QUEST1 (D95): an ask made by mistake is deleted with every quest asked by it — offered only where the
+ * service says the ask may go, and asked once, because it cannot be undone.
+ */
+describe('deleting an ask', () => {
+  it('offers no delete on an ask the service does not say may go', () => {
+    const { drawer } = record(PUBLISHED, { onDelete: vi.fn() });
+    expect(within(drawer).queryByRole('button', { name: 'delete…' })).toBeNull();
+  });
+
+  it('asks once, saying its quests go with it, then deletes', async () => {
+    const { drawer, onDelete } = record({ ...PUBLISHED, deletable: true }, { onDelete: vi.fn() });
+
+    await userEvent.click(within(drawer).getByRole('button', { name: 'delete…' }));
+    const confirm = within(drawer).getByRole('group', { name: 'delete this ask' });
+    expect(within(confirm).getByText(/every quest it became goes with it/)).toBeInTheDocument();
+    expect(onDelete).not.toHaveBeenCalled();
+
+    await userEvent.click(within(confirm).getByRole('button', { name: 'delete it' }));
+    expect(onDelete).toHaveBeenCalledTimes(1);
+  });
+
+  it('never mind puts the verbs back and deletes nothing', async () => {
+    const { drawer, onDelete } = record({ ...PROPOSED, deletable: true }, { onDelete: vi.fn() });
+
+    await userEvent.click(within(drawer).getByRole('button', { name: 'delete…' }));
+    await userEvent.click(within(drawer).getByRole('button', { name: 'never mind' }));
+
+    expect(within(drawer).getByRole('button', { name: 'close the ask' })).toBeInTheDocument();
+    expect(onDelete).not.toHaveBeenCalled();
+  });
+
+  /** A closed ask becomes nothing more — but one made by mistake can still go, when the service says so. */
+  it('offers delete on a closed ask the service says may go, and nothing else', () => {
+    const { drawer } = record({ ...CLOSED, deletable: true }, { onDelete: vi.fn() });
+
+    expect(within(drawer).getByRole('button', { name: 'delete…' })).toBeInTheDocument();
+    expect(within(drawer).queryByRole('button', { name: 'close the ask' })).toBeNull();
+  });
+});
+
+/**
+ * USE1c: an ask the service reports DONE — it became quests and every one of them closed. It says so in
+ * a pill of its own, reads as finished on the card, and names what it became.
+ */
+describe('a done ask', () => {
+  it('wears a done pill and reads as finished on its card, naming what it became', () => {
+    render(<AskCard ask={DONE} onOpen={() => {}} />);
+
+    expect(screen.getByText('done')).toBeInTheDocument();
+    expect(screen.getByText(/became #9a8b7c, #1f2e3d/)).toBeInTheDocument();
+    // Read as finished, the way a closed record is: the card's dimmed face.
+    expect(screen.getByRole('button').closest('.opacity-75')).not.toBeNull();
+  });
+
+  it('says it is done on its record', () => {
+    const { drawer } = record(DONE);
+    expect(within(drawer).getByText('done')).toBeInTheDocument();
   });
 });

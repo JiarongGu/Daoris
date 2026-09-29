@@ -901,9 +901,11 @@ check(
 const settled = (await api('GET', `/api/asks/${settledAskId}`)).json;
 const newcomerQuests = (await api('GET', '/api/quests?repository=newcomer&includeClosed=true')).json ?? [];
 const intakeQuest = newcomerQuests.find((q) => q.from === `ask #${settledAskId}` && !q.parent);
+// DONE, not published (USE1c): the loop drove its whole chain in the same run, so every quest asked by
+// the ask has closed, and the service derives that the ask's work is finished.
 check(
   '…it published onto the ask — asked BY the ask, in its words — and the ask says the intake answered it',
-  settled?.state === 'Published' && settled.tier === 'intake' && settled.intake === intakeSession?.id
+  settled?.state === 'Done' && settled.tier === 'intake' && settled.intake === intakeSession?.id
     && intakeQuest?.title === 'Say hello, as the intake decided' && settled.quests?.includes(intakeQuest.id),
   JSON.stringify({ settled, intakeQuest }),
 );
@@ -953,6 +955,41 @@ check(
     (q) => q.id === (declineAsk.json?.quest?.id ?? '') && q.status === 'Declined' && /declines/.test(q.note ?? ''),
   ),
   declinedQuest.text,
+);
+
+// DELETING WHAT WAS MADE BY MISTAKE (QUEST1, D95), over the real host's doors and from a terminal. A
+// quest nobody has started on goes, and the host said so on the list beforehand; nothing here has a
+// remote, so it simply goes. A declined one keeps its record, refused in the service's words. An ask
+// goes with the quest it became. Nothing is driven in between, so no session starts on either.
+const mistaken = await api('POST', '/api/quests', {
+  body: { from: 'game', to: 'engine', title: 'Published by mistake', body: 'A test that should never have been asked.' },
+});
+const mistakenId = mistaken.json?.quest?.id ?? '';
+const offeredDelete = ((await api('GET', '/api/quests?repository=engine')).json ?? []).find((q) => q.id === mistakenId)?.deletable;
+const deletedQuest = driver({ serviceUrl: BASE, config: driverConfig, mode: `quest delete ${mistakenId}` });
+check(
+  'a quest nobody has started on is deleted from a terminal, as the host’s list said it could be',
+  offeredDelete === true && deletedQuest.code === 0 && /Deleted quest `#/.test(deletedQuest.out)
+    && !((await api('GET', '/api/quests?includeClosed=true')).json ?? []).some((q) => q.id === mistakenId),
+  `${deletedQuest.out}\n${mistaken.text}`,
+);
+const keptDeclined = await api('DELETE', `/api/quests/${declineAsk.json?.quest?.id ?? ''}`);
+check(
+  '…while a declined quest keeps its record, refused in the service’s words, naming what to do instead',
+  keptDeclined.status === 409 && /is Declined/.test(keptDeclined.json?.error ?? '')
+    && /leaves the list/.test(keptDeclined.json?.error ?? ''),
+  keptDeclined.text,
+);
+const mistakenAsk = askVerb('--workspace default --to newcomer "an ask made by mistake, to be deleted"');
+const mistakenAskId = /ask\s+#([0-9a-f]{6})/.exec(mistakenAsk.out)?.[1] ?? '';
+const mistakenAskQuest = /quest\s+#([0-9a-f]{12})/.exec(mistakenAsk.out)?.[1] ?? '';
+const deletedAsk = askVerb(`--delete ${mistakenAskId}`);
+check(
+  'an ask made by mistake is deleted from a terminal, with the quest it became',
+  mistakenAskQuest !== '' && deletedAsk.code === 0 && /Deleted ask `#/.test(deletedAsk.out)
+    && (await api('GET', `/api/asks/${mistakenAskId}`)).status === 404
+    && !((await api('GET', '/api/quests?includeClosed=true')).json ?? []).some((q) => q.id === mistakenAskQuest),
+  `${mistakenAsk.out}\n${deletedAsk.out}`,
 );
 
 // 🔴 DRV6 — a quest that keeps failing is PARKED, and parking is what stops an unattended loop
@@ -1040,6 +1077,13 @@ check(
 check(
   '…and so is what a quest waited on',
   (after.json ?? []).some((q) => q.id === needingId && q.awaits === questionId),
+  after.text,
+);
+// A deleted quest stays deleted (D95): its row and its history went together, so the open that gives
+// a row the log never saw its history has nothing to give one back from.
+check(
+  'a quest deleted before the restart is still gone',
+  !(after.json ?? []).some((q) => q.id === mistakenId),
   after.text,
 );
 const registryAfter = await api('GET', '/api/registry');

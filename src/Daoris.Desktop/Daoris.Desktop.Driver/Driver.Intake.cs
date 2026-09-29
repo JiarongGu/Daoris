@@ -272,7 +272,7 @@ public sealed partial class Driver
     }
 
     /// <summary>
-    /// End every parked intake whose ask the person has since answered — published or closed. A
+    /// End every parked intake whose ask the person has since answered — published, closed or deleted. A
     /// parked intake has no process left: it asked and ended, so the answer to its question is the
     /// only thing that can close its record. The person's own act, so nothing interrupts them for it.
     /// </summary>
@@ -291,7 +291,9 @@ public sealed partial class Driver
                 continue; // The host did not answer; the next tick asks again.
             }
 
-            if (ask is null || IntakeObservation.Answered(ask) is not { } answered) continue;
+            // An ask the service no longer has was deleted by the person (D95), which settles it too.
+            var answered = ask is null ? IntakeObservation.Deleted(parked.Ask!) : IntakeObservation.Answered(ask);
+            if (answered is null) continue;
 
             try
             {
@@ -303,7 +305,7 @@ public sealed partial class Driver
                 continue;
             }
 
-            events.Add($"{answered.State}  intake {parked.Id} (ask #{ask.Id} in {ask.Workspace}): {answered.Note}");
+            events.Add($"{answered.State}  intake {parked.Id} (ask #{parked.Ask}{(ask is null ? "" : $" in {ask.Workspace}")}): {answered.Note}");
             concluded.Add(new SessionEnded(parked.Id, parked.Repository, answered.State, ByPerson: true, answered.Note));
         }
     }

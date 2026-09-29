@@ -630,6 +630,214 @@ public sealed class QuestSyncTests : IAsyncLifetime
         Assert.Null(QuestWire.ReadPush("""{ "base": 1, "operations": [{ "machine": "m1", "sequence": 1, "quest": "q", "kind": "dismissed", "at": "2026-09-24T10:00:00Z" }] }"""));
     }
 
+    // ——— A delete (QUEST1, D95): a tombstone in the quest's history, pushed and fetched like any
+    // operation, so no sync — from any cursor — brings the quest back.
+
+    /// <summary>
+    /// 🔴 The owner's condition: a delete must reach the remote and not be resurrected by the next sync.
+    /// It is an operation, so the remote keeps it, the other machine drops the quest when it fetches, and
+    /// a machine syncing from cursor zero never sees the quest at all.
+    /// </summary>
+    [Fact]
+    public async Task A_delete_travels_and_no_later_sync_brings_the_quest_back()
+    {
+        var quest = await Publish(_a);
+        await SyncAsync(_a);
+        await SyncAsync(_b);
+        Assert.NotNull(await _b.FindAsync(quest.Id));
+
+        var deleted = await _a.DeleteAsync(quest.Id, Now.AddHours(1), travels: true);
+        await SyncAsync(_a);
+        await SyncAsync(_b);
+        await SyncAsync(_a);
+
+        Assert.True(deleted.Deleted);
+        foreach (var store in new[] { _a, _b, _remote })
+        {
+            Assert.Null(await store.FindAsync(quest.Id));
+            Assert.Empty(await store.ListAsync(includeClosed: true));
+        }
+
+        Assert.Empty(await _a.PendingAsync(Workspaces.Default, _ => true));
+        Assert.Equal(QuestOperationKind.Deleted, (await _remote.HistoryAsync(quest.Id))[^1].Kind);
+
+        var newcomer = await OpenAsync();
+        await SyncAsync(newcomer);
+        Assert.Null(await newcomer.FindAsync(quest.Id));
+    }
+
+    /// <summary>
+    /// A take that reached the remote first means somebody is working the quest: a delete made
+    /// meanwhile on another machine is dropped by the rebase — its condition, nobody has taken it, no
+    /// longer held — and the quest stands taken everywhere, with nothing for a person to reconcile.
+    /// </summary>
+    [Fact]
+    public async Task A_delete_that_lost_to_a_take_is_dropped_and_the_quest_stays_taken()
+    {
+        var quest = await Publish(_a);
+        await SyncAsync(_a);
+        await SyncAsync(_b);
+
+        await _b.MoveAsync(quest.Id, QuestStatus.Taken, null, Now.AddHours(1));
+        Assert.True((await _a.DeleteAsync(quest.Id, Now.AddHours(2), travels: true)).Deleted);
+        await SyncAsync(_b);
+        var lost = await SyncAsync(_a);
+
+        Assert.Empty(lost.Refused);
+        Assert.Empty(lost.Conflicts);
+        foreach (var store in new[] { _a, _b, _remote })
+        {
+            var held = (await store.FindAsync(quest.Id))!;
+            Assert.Equal(QuestStatus.Taken, held.Status);
+            Assert.Empty(held.Conflicts);
+        }
+
+        Assert.Empty(await _a.PendingAsync(Workspaces.Default, _ => true));
+        Assert.DoesNotContain(await _a.HistoryAsync(quest.Id), o => o.Kind == QuestOperationKind.Deleted);
+    }
+
+    /// <summary>
+    /// A take that reaches the remote after a delete lost, as a take that reaches it after another take
+    /// does: it becomes a conflict, so its machine's claim reads lost and that machine's driver stops the
+    /// session. The quest stays gone, and the conflict is kept in the log on every side.
+    /// </summary>
+    [Fact]
+    public async Task A_take_that_lost_to_a_delete_is_a_conflict_and_the_quest_stays_gone()
+    {
+        var quest = await Publish(_a);
+        await SyncAsync(_a);
+        await SyncAsync(_b);
+
+        await _a.DeleteAsync(quest.Id, Now.AddHours(1), travels: true);
+        await _b.MoveAsync(quest.Id, QuestStatus.Taken, "B's session.", Now.AddHours(2));
+        await SyncAsync(_a);
+        var lost = await SyncAsync(_b);
+
+        Assert.Empty(lost.Refused);
+        Assert.Equal(QuestStatus.Taken, Assert.Single(lost.Conflicts).Attempted);
+        Assert.Equal(QuestClaim.Lost, await _b.ClaimAsync(quest.Id));
+        Assert.Empty(await _b.PendingAsync(Workspaces.Default, _ => true));
+        foreach (var store in new[] { _a, _b, _remote })
+        {
+            Assert.Null(await store.FindAsync(quest.Id));
+        }
+
+        Assert.Contains(await _remote.HistoryAsync(quest.Id), o => o is { Kind: QuestOperationKind.Conflict, Attempted: QuestStatus.Taken });
+    }
+
+    /// <summary>Two people deleting one quest make one delete — never a refusal, and never a conflict.</summary>
+    [Fact]
+    public async Task Two_deletes_of_one_quest_are_one()
+    {
+        var quest = await Publish(_a);
+        await SyncAsync(_a);
+        await SyncAsync(_b);
+
+        await _a.DeleteAsync(quest.Id, Now.AddHours(1), travels: true);
+        await _b.DeleteAsync(quest.Id, Now.AddHours(2), travels: true);
+        await SyncAsync(_a);
+        var second = await SyncAsync(_b);
+
+        Assert.Empty(second.Refused);
+        Assert.Empty(second.Conflicts);
+        Assert.Empty(await _b.PendingAsync(Workspaces.Default, _ => true));
+        Assert.Single(await _remote.HistoryAsync(quest.Id), o => o.Kind == QuestOperationKind.Deleted);
+    }
+
+    /// <summary>
+    /// A quest published and deleted before any push travels as both — the remote cannot be sure it
+    /// never took the publish, so the history goes whole, and it ends in no quest there too.
+    /// </summary>
+    [Fact]
+    public async Task A_quest_published_and_deleted_before_a_push_goes_up_whole_and_stays_gone()
+    {
+        var quest = await Publish(_a);
+        await _a.DeleteAsync(quest.Id, Now.AddHours(1), travels: true);
+
+        var pass = await SyncAsync(_a);
+        await SyncAsync(_b);
+
+        Assert.Empty(pass.Refused);
+        Assert.Equal(2, pass.Pushed);
+        Assert.Null(await _remote.FindAsync(quest.Id));
+        Assert.Null(await _b.FindAsync(quest.Id));
+    }
+
+    /// <summary>The same words asked after a delete are a quest again — on every machine.</summary>
+    [Fact]
+    public async Task The_same_ask_published_after_a_delete_is_a_quest_again()
+    {
+        var quest = await Publish(_a);
+        await SyncAsync(_a);
+        await _a.DeleteAsync(quest.Id, Now.AddHours(1), travels: true);
+        await SyncAsync(_a);
+
+        var again = await Publish(_a, body: "Asked properly this time.");
+        await SyncAsync(_a);
+        await SyncAsync(_b);
+
+        Assert.Equal(quest.Id, again.Id);
+        Assert.Equal("Asked properly this time.", (await _b.FindAsync(quest.Id))!.Body);
+        Assert.Equal(QuestStatus.Open, (await _remote.FindAsync(quest.Id))!.Status);
+    }
+
+    /// <summary>
+    /// A quest that never left the machine simply goes: its receiver is not shared and nothing of it was
+    /// numbered, so nothing anywhere holds a copy, and its history is removed rather than tombstoned.
+    /// </summary>
+    [Fact]
+    public async Task A_quest_that_never_left_the_machine_simply_goes()
+    {
+        var quest = await Publish(_a);
+
+        var deleted = await _a.DeleteAsync(quest.Id, Now.AddHours(1), travels: false);
+
+        Assert.True(deleted.Deleted);
+        Assert.Null(await _a.FindAsync(quest.Id));
+        Assert.Empty(await _a.HistoryAsync(quest.Id));
+        Assert.Empty(await _a.PendingAsync(Workspaces.Default, _ => true));
+    }
+
+    /// <summary>A quest the remote numbered is tombstoned even where it is no longer shared: a copy is out there.</summary>
+    [Fact]
+    public async Task A_quest_a_remote_holds_is_tombstoned_even_when_asked_to_simply_go()
+    {
+        var quest = await Publish(_a);
+        await SyncAsync(_a);
+
+        await _a.DeleteAsync(quest.Id, Now.AddHours(1), travels: false);
+
+        Assert.Equal(QuestOperationKind.Deleted, (await _a.HistoryAsync(quest.Id))[^1].Kind);
+        Assert.Single(await _a.PendingAsync(Workspaces.Default, _ => true));
+    }
+
+    /// <summary>Only an open quest is deleted — the store judges it inside the write, as it judges every move.</summary>
+    [Fact]
+    public async Task The_store_refuses_to_delete_a_quest_somebody_moved()
+    {
+        var quest = await Publish(_a);
+        await _a.MoveAsync(quest.Id, QuestStatus.Taken, null, Now.AddHours(1));
+
+        var refused = await _a.DeleteAsync(quest.Id, Now.AddHours(2), travels: false);
+
+        Assert.False(refused.Deleted);
+        Assert.Equal(QuestStatus.Taken, refused.Quest!.Status);
+        Assert.NotNull(await _a.FindAsync(quest.Id));
+        Assert.Null((await _a.DeleteAsync("nosuchquest", Now, travels: false)).Quest);
+    }
+
+    /// <summary>A delete crosses the wire as its kind alone: it carries nothing else.</summary>
+    [Fact]
+    public void A_delete_crosses_the_wire()
+    {
+        var page = new QuestFetch(
+            [new QuestOperation("abcdefabcdef", QuestOperationKind.Deleted, "m1", 6, Now, Number: 10)], 10, More: false);
+
+        var back = Assert.Single(QuestWire.ReadPage(QuestWire.Page(page))!.Operations);
+
+        Assert.Equal((QuestOperationKind.Deleted, "m1", 6L, 10L), (back.Kind, back.Machine, back.Sequence, back.Number!.Value));
+    }
+
     [Fact]
     public async Task A_fetch_pages_through_what_the_remote_accepted()
     {

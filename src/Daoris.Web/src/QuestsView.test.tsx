@@ -165,6 +165,91 @@ describe('QuestsView', () => {
       'Dismissed one conflict on quest `#abc123`; every machine drops it on its next sync.'));
   });
 
+  // ——— Deleting a quest made by mistake (QUEST1, D95): offered only where the service says it may go,
+  // asked once, and answered in the service's own words.
+
+  describe('deleting a quest', () => {
+    const DELETABLE = [{ ...QUESTS[0], deletable: true }];
+    let deleted: string[] = [];
+
+    function stub(answer: () => Response) {
+      deleted = [];
+      vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+        const url = String(input);
+        if (init?.method === 'DELETE') {
+          deleted.push(url);
+          return answer();
+        }
+        return url.startsWith('/api/quests') ? Response.json(DELETABLE) : respond(url);
+      }));
+    }
+
+    function held(notify = vi.fn()) {
+      const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+      render(
+        <QueryClientProvider client={client}>
+          <Tooltip.Provider><QuestsView notify={notify} /></Tooltip.Provider>
+        </QueryClientProvider>,
+      );
+      return notify;
+    }
+
+    it('offers no delete on a quest the service does not say may go', async () => {
+      view();
+      await userEvent.click(await screen.findByText('Expose a streaming budget'));
+      const dialog = await screen.findByRole('dialog');
+
+      expect(within(dialog).queryByRole('button', { name: 'delete…' })).toBeNull();
+    });
+
+    it('asks once, then deletes, and says what the service answered, verbatim', async () => {
+      stub(() => Response.json({ id: 'abc123', message: 'Deleted quest `#abc123` — it never left this machine, so nothing else holds a copy.' }));
+      const notify = held();
+      await userEvent.click(await screen.findByText('Expose a streaming budget'));
+      const dialog = await screen.findByRole('dialog');
+
+      await userEvent.click(within(dialog).getByRole('button', { name: 'delete…' }));
+      const confirm = within(dialog).getByRole('group', { name: 'delete this quest' });
+      expect(within(confirm).getByText(/cannot be undone/)).toBeInTheDocument();
+      expect(deleted).toEqual([]);
+
+      await userEvent.click(within(confirm).getByRole('button', { name: 'delete it' }));
+
+      await waitFor(() => expect(deleted).toEqual(['/api/quests/abc123']));
+      await waitFor(() => expect(notify).toHaveBeenCalledWith(
+        'Deleted quest `#abc123` — it never left this machine, so nothing else holds a copy.'));
+      await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+    });
+
+    it('a refusal reaches the person in the service\'s words, and the quest stays open in the drawer', async () => {
+      const refusal = 'Quest `#abc123` is open, but session `s1a2b3c4` was started for it and its record names the quest, so it stays. Decline it instead, with the reason, and the asker hears why.';
+      stub(() => Response.json({ error: refusal }, { status: 409 }));
+      const notify = held();
+      await userEvent.click(await screen.findByText('Expose a streaming budget'));
+      const dialog = await screen.findByRole('dialog');
+
+      await userEvent.click(within(dialog).getByRole('button', { name: 'delete…' }));
+      await userEvent.click(within(dialog).getByRole('button', { name: 'delete it' }));
+
+      await waitFor(() => expect(notify).toHaveBeenCalledWith(refusal, 'error'));
+      expect(screen.getByRole('dialog')).toBeInTheDocument();
+    });
+
+    it('never mind leaves the quest where it was, and asks nothing of the service', async () => {
+      stub(() => Response.json({ id: 'abc123', message: 'Deleted.' }));
+      held();
+      await userEvent.click(await screen.findByText('Expose a streaming budget'));
+      const dialog = await screen.findByRole('dialog');
+
+      await userEvent.click(within(dialog).getByRole('button', { name: 'delete…' }));
+      await userEvent.click(within(dialog).getByRole('button', { name: 'never mind' }));
+
+      expect(within(dialog).queryByRole('group', { name: 'delete this quest' })).toBeNull();
+      expect(within(dialog).getByRole('button', { name: 'delete…' })).toBeInTheDocument();
+      expect(deleted).toEqual([]);
+    });
+  });
+
   /** The sync item's conflict list names a quest; Quests opens it, and the holder is told, once. */
   it('a quest a door names opens in the drawer, once', async () => {
     const onFocused = vi.fn();
@@ -593,6 +678,32 @@ describe('QuestsView', () => {
     expect(within(dialog).getByRole('button', { name: 'done' }).className).not.toContain('bg-accent');
     // U35: taking wore a check mark, the sign of done, beside a done that wore none.
     expect(within(dialog).getByRole('button', { name: 'take' }).querySelector('svg')).toBeNull();
+  });
+
+  /**
+   * USE1c: closing the last quest an ask became makes the ask done, which the service derives on each
+   * read — so a quest's move asks the asks again, or the list would say "published" until something
+   * else refreshed it.
+   */
+  it('closing a quest asks the asks again, since the ask it came from may now be done', async () => {
+    const asked: string[] = [];
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url.startsWith('/api/asks')) asked.push(url);
+      if (init?.method === 'POST' && url === '/api/quests/abc123/respond') {
+        return Response.json({ quest: { ...QUESTS[0], status: 'Done' }, message: 'Quest `#abc123` is now Done.' });
+      }
+      return respond(url);
+    }));
+    view();
+    await userEvent.click(await screen.findByText('Expose a streaming budget'));
+    const dialog = await screen.findByRole('dialog');
+    await waitFor(() => expect(asked.length).toBeGreaterThan(0));
+    const before = asked.length;
+
+    await userEvent.click(within(dialog).getByRole('button', { name: 'done' }));
+
+    await waitFor(() => expect(asked.length).toBeGreaterThan(before));
   });
 
   it("makes closing a taken quest the drawer's one loud control", async () => {

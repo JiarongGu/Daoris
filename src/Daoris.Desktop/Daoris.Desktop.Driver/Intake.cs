@@ -373,7 +373,8 @@ public static class IntakeObservation
         var exit = exitCode == 0 ? "" : $" (exit {exitCode})";
         if (after is null)
         {
-            return new("failed", $"the ask it answered is gone{exit}.");
+            // Only a person's delete takes an ask away (D95): the ask was settled under it, as a close is.
+            return new("stood-down", $"the ask it answered was deleted while it ran{exit}.");
         }
 
         var gained = after.Quests.Skip(before).ToList();
@@ -421,10 +422,19 @@ public static class IntakeObservation
     /// </summary>
     public static SessionConclusion? Answered(AskView ask) => ask.State switch
     {
-        "Published" => new("completed", $"the person answered ask `#{ask.Id}` — it became {Quests(ask.Quests)}."),
+        // Done is published with every quest closed (USE1c) — the service derives it, and a quest can
+        // close between two ticks.
+        "Published" or "Done" => new("completed", $"the person answered ask `#{ask.Id}` — it became {Quests(ask.Quests)}."),
         "Closed" => new("stopped", $"the person closed ask `#{ask.Id}`: {ask.Note}"),
         _ => null,
     };
+
+    /// <summary>
+    /// A PARKED intake whose ask the person deleted (D95): there is nothing left to answer, so its record
+    /// ends — the person's own act, as a close is.
+    /// </summary>
+    public static SessionConclusion Deleted(string ask) =>
+        new("stopped", $"the person deleted ask `#{ask}`, so there is nothing left for it to wait on.");
 
     /// <summary>The ask's own tier word for an intake's publish — the service's spelling.</summary>
     public const string ByIntake = "intake";

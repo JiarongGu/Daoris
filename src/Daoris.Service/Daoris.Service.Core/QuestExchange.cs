@@ -109,6 +109,33 @@ public enum QuestRespondRefusal
 /// <param name="Quest">The quest as it now stands, when the status moved.</param>
 public sealed record QuestRespondOutcome(QuestRespondRefusal Refusal, string Message, Quest? Quest);
 
+/// <summary>Why a delete did not delete — or <see cref="None"/> when it did (D95).</summary>
+public enum QuestDeleteRefusal
+{
+    None,
+
+    /// <summary>No quest under that id.</summary>
+    NotFound,
+
+    /// <summary>
+    /// Something stands on it — taken, done or declined, a session started for it, or a taken quest
+    /// waiting on it — so its record stays.
+    /// </summary>
+    Kept,
+
+    /// <summary>Another machine's take reached the remote first: the delete lost, and the quest stays, taken.</summary>
+    TakenElsewhere,
+}
+
+/// <param name="Refusal"><see cref="QuestDeleteRefusal.None"/> when the quest was deleted.</param>
+/// <param name="Message">The full answer, phrased once here for every door.</param>
+/// <param name="Quest">The quest as it stood before the delete, when there was one.</param>
+public sealed record QuestDeleteOutcome(QuestDeleteRefusal Refusal, string Message, Quest? Quest)
+{
+    /// <summary>Deleted here, and its remote has not taken the delete yet — the next pass carries it.</summary>
+    public bool Unconfirmed { get; init; }
+}
+
 /// <summary>
 /// The judgement half of the quest system: who may be addressed, what a refusal says, what a response
 /// requires. The stores hold state; this decides.
@@ -132,8 +159,13 @@ public sealed record QuestRespondOutcome(QuestRespondRefusal Refusal, string Mes
 /// because a chain's steps must all be shared or all be local. Null on a machine with none, and on a
 /// remote itself.
 /// </param>
+/// <param name="sessions">
+/// The session records — what a delete asks whether any session was started for a quest (D95). Null
+/// where none are kept, where no session can stand in a delete's way.
+/// </param>
 public sealed class QuestExchange(
-    KnowledgeService service, QuestStore quests, IRemotes? remotes = null, QuestFiles? files = null)
+    KnowledgeService service, QuestStore quests, IRemotes? remotes = null, QuestFiles? files = null,
+    SessionStore? sessions = null)
 {
     /// <summary>How many links a quest carries — a ticket and its neighbours, not a bibliography.</summary>
     public const int MaxLinks = 20;
@@ -155,6 +187,12 @@ public sealed class QuestExchange(
     /// chain is a plan, and a plan belongs to whoever composes it, step by step.
     /// </summary>
     public const int MaxChain = 5;
+
+    /// <summary>
+    /// The store this exchange judges over — for the ask desk, which reads an ask's standing from the
+    /// quests asked by it (USE1c) and judges nothing of its own about them.
+    /// </summary>
+    internal QuestStore Store => quests;
 
     /// <summary>A quest that carries nothing but its words — every caller before D65.</summary>
     public Task<QuestPublishOutcome> PublishAsync(
@@ -336,16 +374,9 @@ public sealed class QuestExchange(
     /// </returns>
     private async Task<QuestRespondOutcome?> ClaimByPushAsync(Quest quest, CancellationToken ct)
     {
-        if (remotes?.For(quest.Workspace) is not { } remote) return null;
-
         // Only a quest whose receiver is joined in its circle ever leaves this machine (design §8); a
         // take on any other is complete the moment it commits.
-        var registered = await service.RegistryAsync(ct: ct).ConfigureAwait(false);
-        if (!registered.Any(r => r.Joined && Workspaces.Same(r.InWorkspace, quest.Workspace)
-                                 && string.Equals(r.Repository, quest.To, StringComparison.OrdinalIgnoreCase)))
-        {
-            return null;
-        }
+        if (await SharedAtAsync(quest, ct).ConfigureAwait(false) is not { } remote) return null;
 
         var pass = await QuestSync.RunAsync(quests, service, remote, quest.Workspace, ct).ConfigureAwait(false);
         return await quests.ClaimAsync(quest.Id, ct).ConfigureAwait(false) switch
@@ -368,6 +399,22 @@ public sealed class QuestExchange(
                 + "another machine's take reached it first, this session will be stopped.",
                 await quests.FindAsync(quest.Id, ct).ConfigureAwait(false)),
         };
+    }
+
+    /// <summary>
+    /// The remote a quest leaves this machine for — its circle's, when its receiver is joined there
+    /// (design §8) — or null for a quest that never leaves: no remote for its circle, or a receiver
+    /// nobody shares.
+    /// </summary>
+    private async Task<IRemote?> SharedAtAsync(Quest quest, CancellationToken ct)
+    {
+        if (remotes?.For(quest.Workspace) is not { } remote) return null;
+
+        var registered = await service.RegistryAsync(ct: ct).ConfigureAwait(false);
+        return registered.Any(r => r.Joined && Workspaces.Same(r.InWorkspace, quest.Workspace)
+                                   && string.Equals(r.Repository, quest.To, StringComparison.OrdinalIgnoreCase))
+            ? remote
+            : null;
     }
 
     /// <summary>
@@ -684,5 +731,128 @@ public sealed class QuestExchange(
             $"Quest `#{id}` waits on `#{on}` (`{question.To}`). It stays taken by `{move.Quest.To}`; end your turn "
             + "now. The driver starts it again in the same tree once `#" + on + "` is answered, with the answer "
             + "in the instruction.", move.Quest);
+    }
+
+    // ——— Deleting a quest made by mistake (D95).
+
+    /// <summary>
+    /// Delete a quest nobody has started on (D95): open, no session record naming it, and no taken quest
+    /// waiting on it. One that may have left this machine is tombstoned, and deleted by push when its
+    /// circle's remote answers, as a take claims by push (D69); any other simply goes. The files this
+    /// machine kept for it go with it.
+    /// </summary>
+    public async Task<QuestDeleteOutcome> DeleteAsync(string id, DateTimeOffset now, CancellationToken ct = default)
+    {
+        var quest = await quests.FindAsync(id.TrimStart('#'), ct).ConfigureAwait(false);
+        if (quest is null)
+        {
+            return new(QuestDeleteRefusal.NotFound, $"No quest `#{id.TrimStart('#')}`. Ids come from `quest_list`.", Quest: null);
+        }
+
+        if (await KeptAsync(quest, ct).ConfigureAwait(false) is { } kept)
+        {
+            return new(QuestDeleteRefusal.Kept, $"Quest `#{quest.Id}` {kept.Stands}, so it stays. {kept.Instead}", quest);
+        }
+
+        var remote = await SharedAtAsync(quest, ct).ConfigureAwait(false);
+        var deletion = await quests.DeleteAsync(quest.Id, now, travels: remote is not null, ct).ConfigureAwait(false);
+        if (!deletion.Deleted)
+        {
+            // It moved between the look and the write: the store judged it again, inside the write.
+            return deletion.Quest is { } moved && await KeptAsync(moved, ct).ConfigureAwait(false) is { } since
+                ? new(QuestDeleteRefusal.Kept, $"Quest `#{quest.Id}` {since.Stands}, so it stays. {since.Instead}", moved)
+                : new(QuestDeleteRefusal.NotFound, $"No quest `#{quest.Id}`. Ids come from `quest_list`.", Quest: null);
+        }
+
+        if (remote is null)
+        {
+            files?.Forget(quest.Id);
+            return new(
+                QuestDeleteRefusal.None,
+                deletion.Tombstoned
+                    ? $"Deleted quest `#{quest.Id}`. It had reached a remote, so the delete stays in its history, where a sync can carry it."
+                    : $"Deleted quest `#{quest.Id}` — it never left this machine, so nothing else holds a copy.",
+                quest);
+        }
+
+        // Deleted by push (D69's shape): the pass runs before the answer returns, so a delete that lost to
+        // another machine's take is known now, not at a tick nobody watches.
+        var pass = await QuestSync.RunAsync(quests, service, remote, quest.Workspace, ct).ConfigureAwait(false);
+        if (await quests.FindAsync(quest.Id, ct).ConfigureAwait(false) is { } back)
+        {
+            return new(
+                QuestDeleteRefusal.TakenElsewhere,
+                $"Quest `#{quest.Id}` was taken on another machine first — its take reached the remote before this "
+                + $"delete, so the quest stays, {back.Status}. Decline it instead, with the reason, if it should not be done.",
+                back);
+        }
+
+        files?.Forget(quest.Id);
+        var confirmed = (await quests.HistoryAsync(quest.Id, ct).ConfigureAwait(false))
+            .LastOrDefault(operation => operation.Kind == QuestOperationKind.Deleted && operation.Machine == quests.Machine)
+            ?.Number is not null;
+        return new(
+            QuestDeleteRefusal.None,
+            confirmed
+                ? $"Deleted quest `#{quest.Id}` — the remote confirmed it, and every machine drops it on its next sync."
+                : $"Deleted quest `#{quest.Id}` here, UNCONFIRMED: "
+                  + (pass.Problem ?? pass.Refused.FirstOrDefault(r => r.Quest == quest.Id)?.Reason
+                      ?? "the remote has not taken the delete yet")
+                  + ". It travels on the next sync — and if another machine takes the quest first, it comes back, taken.",
+            quest)
+        {
+            Unconfirmed = !confirmed,
+        };
+    }
+
+    /// <summary>
+    /// Which of <paramref name="candidates"/> may be deleted (D95) — the judgement <see cref="DeleteAsync"/>
+    /// runs, answered for a list so a page offers the verb only where the service would take it.
+    /// </summary>
+    public async Task<IReadOnlySet<string>> DeletableAsync(IEnumerable<Quest> candidates, CancellationToken ct = default)
+    {
+        var open = candidates.Where(quest => quest.Status == QuestStatus.Open).ToList();
+        if (open.Count == 0) return new HashSet<string>();
+
+        var started = sessions is null
+            ? new HashSet<string>()
+            : await sessions.QuestsNamedAsync(ct).ConfigureAwait(false);
+        var awaited = await quests.AwaitedAsync(ct).ConfigureAwait(false);
+        return open.Select(quest => quest.Id)
+            .Where(id => !started.Contains(id) && !awaited.Contains(id))
+            .ToHashSet(StringComparer.Ordinal);
+    }
+
+    /// <summary>
+    /// Why a quest's record must stay (D95), in a phrase that follows its name, with what to do instead
+    /// — null when nothing stands on it and it may go.
+    /// </summary>
+    internal async Task<(string Stands, string Instead)?> KeptAsync(Quest quest, CancellationToken ct)
+    {
+        const string Decline = "Decline it instead, with the reason, and the asker hears why.";
+        const string AlreadyGone = "A closed quest already leaves the list, and shows again only with closed ones included.";
+
+        switch (quest.Status)
+        {
+            case QuestStatus.Taken:
+                return ("is Taken — someone is working it", Decline);
+            case QuestStatus.Done:
+                return ("is Done — it is the record of work that was answered", AlreadyGone);
+            case QuestStatus.Declined:
+                return ("is Declined — the decline is the trace of a decision, and its reason is the asker's to read", AlreadyGone);
+        }
+
+        if (sessions is not null && await sessions.AnyForQuestAsync(quest.Id, ct).ConfigureAwait(false) is { } session)
+        {
+            return ($"is open, but session `{session.Id}` was started for it and its record names the quest", Decline);
+        }
+
+        if ((await quests.WaitingOnAsync(quest.Id, ct).ConfigureAwait(false)).FirstOrDefault() is { } waiting)
+        {
+            return ($"is the question quest `#{waiting.Id}` waits on, and deleted, that quest would wait on nothing",
+                "Decline it instead, with the reason, and its taker is resumed with it.");
+        }
+
+        return null;
     }
 }

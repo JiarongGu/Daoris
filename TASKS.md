@@ -21,8 +21,8 @@ lists.
 
 ## State
 
-**Counts, and this is their one home:** sixteen commands, **523 CLI tests, 561 service, 936 driver,
-308 desktop modules, 80 devkit, 1419 web unit, 21 Playwright**, 66/66 release rehearsal, **297/297
+**Counts, and this is their one home:** sixteen commands, **535 CLI tests, 602 service, 994 driver,
+329 desktop modules, 80 devkit, 1447 web unit, 21 Playwright**, 66/66 release rehearsal, **301/301
 family rehearsal** (it names its own phases when you run it), **57/57 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge
 documents, 5 skills, 7 packs. The always-loaded core is **22,492 of 26,000 bytes** — a span in
@@ -144,7 +144,7 @@ rather than designed.
 
 ## Backlog
 
-**Thirty-four rows are open**: the owner's seven of 2026-09-30 (USE1, AGT6, HELP6, QUEST1, LOG1,
+**Thirty-three rows are open**: the owner's six of 2026-09-30 (USE1, AGT6, HELP6, LOG1,
 CONSOLE4, SETUP1), first; WSR4
 from the first real workspace (its other WSR, HELP, SESS, DOCK
 and MAP rows are in the archive); the four REV3 left (DIST1, BUDGET1 and HOME1 the owner's, and HTTP1);
@@ -184,7 +184,7 @@ TASK.md and complete one by one"*).
   bar's size breaks after Ask Daoris is moved to the panel and back** (*"after dock "ask daoris" from
   right to bottom and back to right the sizing of right panel is broken"*) — reproduced on the scratch
   window before it is fixed; (b)'s frame overflow is the first suspect. *(b), (d) and (e) landed
-  2026-09-30 (one defect for (b) and (e)), then (a) and (f), all in the archive; (c) remains (with QUEST1), and (g) is to confirm.* (f) *Found the same
+  2026-09-30 (one defect for (b) and (e)), then (a), (f) and (c), all in the archive; (g) is to confirm.* (f) *Found the same
   day, holding the ticket's verify step:* **the desktop does not find an npm-installed agent on
   `PATH`.** The owner updated `claude-code-acp` with npm (0.84.0, `claude-agent-acp.cmd` in the Node
   folder) and unpinned it; the CLI's `agent list` found it, and the desktop's driver held every start
@@ -217,12 +217,6 @@ TASK.md and complete one by one"*).
   guide at a step (SETUP1), and taking the person to any screen (*go*, which the panel already
   carries). Each is the screen's own door, judged by the route that serves it, never a second path.
   After those rows land.
-- [ ] **QUEST1 — clear or delete a quest** (owner, 2026-09-30: *"and we do need way to clear or
-  delete quest"*). Clearing is USE1(c) for asks, and closed quests already leave the default list.
-  Deleting is new: a quest or an ask made by mistake (a duplicate, a test) removed from the ledger, on
-  both doors (D50). The rule to decide and record: what a delete may reach once a session has taken the
-  quest (its session record names it), and how a delete travels to a remote (D68) rather than being
-  resurrected by the next sync.
 - [ ] **LOG1 — a log of what happens on this machine, to improve Daoris from.** Today nothing is
   written outside the session transcripts: the shell's, the driver loop's and the host's own lines go
   to a console nobody has once the application is installed, and an unhandled exception leaves no
@@ -514,6 +508,9 @@ TDD, looked at on the window, and the ones that touch a real session use one (au
   the record `failed` where `stopped` was expected after the person's stop, during LOG1a with the
   rest of the chain queued behind it; ten runs alone passed. Unconfirmed reading: the stop lands while
   the stub's process is already ending, and the record takes the exit's word over the person's.
+  **And a fourth class the same day**: `CanonicalLineTests.A_session_tree_grows_from_the_line_set_for_its_repository`
+  failed once (*"the tree grew from main, not develop"*, 993/994) while five subagents built in
+  parallel; its class passed three runs alone. Load is the common factor in every sighting.
 
 - [ ] **DEPLOY5 — the artefact gate holds a chat open at close.** The fix for a chat left `working`
   when the shell closes (FIX-LOG, 2026-09-25) is held by driver tests at the runner. But the defect

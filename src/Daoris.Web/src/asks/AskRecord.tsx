@@ -20,7 +20,11 @@ import { ASK_TONE, firstLine, tierWords } from './AskCard';
  * it, if one did. On the desktop that session is a door into Sessions, where its question is on its
  * transcript. A browser has no Sessions, so there it is named and nothing pretends to open it.
  *
- * **A closed ask becomes nothing more** — its reason stays and no verb is offered.
+ * **A closed ask becomes nothing more** — its reason stays and no verb is offered but *delete*.
+ *
+ * **An ask made by mistake can be deleted** (D95), with every quest asked by it — offered only where
+ * the service says it may go (`deletable`), and asked once, because nothing gives the record back.
+ * `daoris-driver ask --delete <id>` is the terminal's twin.
  *
  * The ask's files are named and never located: the host answers their path to this machine only, and a
  * page does not show a machine path (D47 §4, D65 §2).
@@ -28,7 +32,7 @@ import { ASK_TONE, firstLine, tierWords } from './AskCard';
  * Props only, no hook from the query layer or the shell (components §2).
  */
 export function AskRecord({
-  ask, receivers, questTitles, intake = null, onAttend, busy = false, onPublish, onClose, onOpenQuest, onDismiss,
+  ask, receivers, questTitles, intake = null, onAttend, busy = false, onPublish, onClose, onDelete, onOpenQuest, onDismiss,
 }: {
   ask: Ask;
   /** Whom the ask can be published to: the repositories the host says can be asked, in its circle (D70). */
@@ -42,14 +46,18 @@ export function AskRecord({
   busy?: boolean;
   onPublish: (to: string) => void;
   onClose: (reason: string) => void;
+  /** Delete the ask with every quest asked by it (D95) — absent where there is no door to do it. */
+  onDelete?: () => void;
   onOpenQuest: (id: string) => void;
   onDismiss: () => void;
 }) {
   const { t } = useTranslation();
   const [another, setAnother] = useState('');
   const [closing, setClosing] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [reason, setReason] = useState('');
   const live = ask.state !== 'Closed';
+  const deletable = ask.deletable === true && onDelete !== undefined;
   const rest = ask.sentence.split('\n').slice(1).join('\n').trim();
 
   return (
@@ -62,8 +70,18 @@ export function AskRecord({
           <span className="font-mono text-meta text-ink-faint">#{ask.id}</span>
         </>
       }
-      footer={live && (
-        closing ? (
+      footer={
+        deleting && deletable ? (
+          /* 🔴 Nothing gives a deleted record back (D95): the first press only asks, and says the quests
+             go too, the way removing an account says what it deletes. */
+          <div role="group" aria-label={t('asks.record.deleteTitle')} className="flex flex-wrap items-center gap-2">
+            <span className="min-w-0 flex-1 basis-64 text-small text-ink-soft">{t('asks.record.deleteConfirm')}</span>
+            <Button variant="danger" disabled={busy} onClick={() => { setDeleting(false); onDelete!(); }}>
+              {t('asks.record.deleteMeanIt')}
+            </Button>
+            <Button variant="ghost" disabled={busy} onClick={() => setDeleting(false)}>{t('common.cancel')}</Button>
+          </div>
+        ) : live && closing ? (
           <div className="grid gap-2">
             <textarea
               aria-label={t('asks.record.closeWhy')}
@@ -81,10 +99,20 @@ export function AskRecord({
               </Button>
             </div>
           </div>
-        ) : (
-          <Button variant="ghost" disabled={busy} onClick={() => setClosing(true)}>{t('asks.record.close')}</Button>
+        ) : (live || deletable) && (
+          <div className="flex flex-wrap gap-2">
+            {live && (
+              <Button variant="ghost" disabled={busy} onClick={() => setClosing(true)}>{t('asks.record.close')}</Button>
+            )}
+            {deletable && (
+              <Button variant="ghost" disabled={busy} onClick={() => setDeleting(true)}>
+                <Icon name="remove" size={13} />
+                {t('asks.record.delete')}
+              </Button>
+            )}
+          </div>
         )
-      )}
+      }
     >
       {/* The first line is the drawer's title, so the body is what follows it — a one-line ask was
           its title and then its body, word for word (POLISH4). The title wraps, so nothing is lost. */}

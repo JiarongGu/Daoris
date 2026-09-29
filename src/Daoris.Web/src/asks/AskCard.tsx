@@ -6,15 +6,19 @@ import { CarriedCount } from '../compose/carry';
 
 /**
  * An ask's state as a pill tone: waiting on a person while it is asked or proposed — a proposal is a
- * person's to accept (INT4a) — done once it became quests, quiet once closed. Exhaustive at compile
- * time, as `QUEST_TONE` is.
+ * person's to accept (INT4a) — done once it became quests and once their work finished (USE1c), quiet
+ * once closed. Exhaustive at compile time, as `QUEST_TONE` is.
  */
 export const ASK_TONE: Record<AskState, 'open' | 'done' | 'neutral'> = {
   Open: 'open',
   Proposed: 'open',
   Published: 'done',
+  Done: 'done',
   Closed: 'neutral',
 };
+
+/** Whether an ask is finished with — closed by the person, or done with every quest it became (USE1c). */
+export const askEnded = (ask: Ask) => ask.state === 'Closed' || ask.state === 'Done';
 
 /** The ask's first line — what a card and a drawer's title show; the whole sentence is the record's. */
 export const firstLine = (sentence: string) => sentence.split('\n', 1)[0].trim();
@@ -59,7 +63,7 @@ export function AskCard({ ask, intake = null, onOpen }: {
   const askedYou = live && intake === 'awaiting-person';
 
   return (
-    <RecordCard closed={ask.state === 'Closed'} onOpen={() => onOpen(ask)}>
+    <RecordCard closed={askEnded(ask)} onOpen={() => onOpen(ask)}>
       <header className="flex items-baseline gap-2">
         <Pill tone={ASK_TONE[ask.state]}>{t(`asks.state.${ask.state}`)}</Pill>
         <span className="min-w-0 flex-1 truncate text-body font-semibold">{firstLine(ask.sentence)}</span>
@@ -70,7 +74,7 @@ export function AskCard({ ask, intake = null, onOpen }: {
         <span className="font-mono text-meta text-ink-faint">
           {' '}· {tierWords(t, ask.tier, 'short')} · {t('asks.card.asked', { ago: ago(ask.asked) })}
           {became && <> · {t('asks.card.became', { quests: became })}</>}
-          {!became && proposed && ask.state !== 'Closed' && <> · {t('asks.card.proposed', { repositories: proposed })}</>}
+          {!became && proposed && !askEnded(ask) && <> · {t('asks.card.proposed', { repositories: proposed })}</>}
           {reading && <> · {t('asks.card.intakeReading')}</>}
         </span>
       </p>

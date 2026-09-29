@@ -27,11 +27,19 @@ using Daoris.Driver;
 //   ask [--workspace <name>] [--to <repo>] [--file <path>]… [--url <address>]… "…"
 //                 ask at a WORKSPACE (D65 §1a): the service answers with the tier that answered —
 //                 by declarations only (proposes, publishes nothing), or the receiver --to names.
-//   ask --publish <id> --to <repo> · ask --close <id> --reason "…"
-//                 turn an ask into a quest, or close it with the reason. Where driver.json names an
+//   ask --publish <id> --to <repo> · ask --close <id> --reason "…" · ask --delete <id>
+//                 turn an ask into a quest, close it with the reason, or delete one made by mistake with
+//                 every quest asked by it (D95) — refused whole if any of them must stay. Where driver.json names an
 //                 `intakeAdapter` (`daoris driver intake <adapter>`), the loop answers an ask the
 //                 declarations left open with an INTAKE session (D65 §1b) in <home>/intake/<workspace>/:
 //                 it publishes onto the ask, or parks asking you — and ends when you answer the ask.
+//
+//   quest delete <id>
+//                 delete a quest made by mistake (D95): only one nobody has started on — open, with no
+//                 session record naming it — goes, and the service's refusal says what to do instead.
+//                 A shared quest's delete travels to its remote as an operation. The drawer's Delete is
+//                 the other door; there is no other quest verb here, since a quest is answered by the
+//                 session that takes it.
 //
 //   answer <session> ["…"]
 //                 answer a driven session that parked to ask you (STANDDOWN2): its record ends with your
@@ -79,6 +87,22 @@ try
     if (args is ["ask", .. var askArgs])
     {
         return await Daoris.Driver.Host.AskConsole.RunAsync(askArgs);
+    }
+
+    // Deleting a quest made by mistake (D95, D50): the quest drawer's Delete is the other door.
+    if (args is ["quest", .. var questArgs])
+    {
+        if (questArgs is not ["delete", var questId])
+        {
+            Console.Error.WriteLine("usage: daoris-driver quest delete <id>");
+            return 2;
+        }
+
+        using var client = ServiceClient.FromEnvironment();
+        var (ok, message) = await client.DeleteQuestAsync(questId);
+        Console.WriteLine($"daoris-driver: {message}");
+        // A refusal — something stands on the quest — is an answer, not a tool error.
+        return ok ? 0 : 1;
     }
 
     // Answering a session that parked to ask the person (STANDDOWN2, D50): the page's box is the other door.

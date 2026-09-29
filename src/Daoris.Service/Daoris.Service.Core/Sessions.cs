@@ -524,6 +524,31 @@ public sealed class SessionStore
     }
 
     /// <summary>
+    /// A record of a session started for <paramref name="quest"/> — this machine's or a teammate's, in
+    /// any state — or null (D95). A quest a record names is not deleted: the record would name nothing.
+    /// </summary>
+    public async Task<Session?> AnyForQuestAsync(string quest, CancellationToken ct = default)
+    {
+        await using var command = _connection.CreateCommand();
+        command.CommandText = "SELECT * FROM sessions WHERE quest = $quest ORDER BY created, rowid LIMIT 1";
+        command.Parameters.AddWithValue("$quest", quest);
+        await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
+        return await reader.ReadAsync(ct).ConfigureAwait(false) ? Read(reader) : null;
+    }
+
+    /// <summary>Every quest a session record names — <see cref="AnyForQuestAsync"/> for a whole list at once (D95).</summary>
+    public async Task<IReadOnlySet<string>> QuestsNamedAsync(CancellationToken ct = default)
+    {
+        await using var command = _connection.CreateCommand();
+        command.CommandText = "SELECT DISTINCT quest FROM sessions WHERE quest IS NOT NULL";
+
+        var named = new HashSet<string>(StringComparer.Ordinal);
+        await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
+        while (await reader.ReadAsync(ct).ConfigureAwait(false)) named.Add(reader.GetString(0));
+        return named;
+    }
+
+    /// <summary>
     /// The session holding a working tree, if any — the one-session-per-TREE question (D51).
     /// </summary>
     /// <param name="tree">

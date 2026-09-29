@@ -8,7 +8,10 @@ namespace Daoris.Driver.Host;
 /// daoris-driver ask [--workspace &lt;name&gt;] [--to &lt;repo&gt;] [--file &lt;path&gt;]… [--url &lt;address&gt;]… "…"
 /// daoris-driver ask --publish &lt;id&gt; --to &lt;repo&gt;
 /// daoris-driver ask --close &lt;id&gt; --reason "…"
+/// daoris-driver ask --delete &lt;id&gt;
 /// </code>
+/// <para><c>--delete</c> removes an ask made by mistake with every quest asked by it, or refuses whole
+/// when one of them must stay (D95) — the ask's record's <i>Delete</i> is the other door.</para>
 /// <para>The service answers with the tier that answered — by declarations only, with no intake
 /// harness, which proposes and publishes nothing; or the receiver named with <c>--to</c>, published
 /// at once. The answer is printed verbatim: it is the contract, and a rewording here would be a second
@@ -21,7 +24,7 @@ internal static class AskConsole
 {
     public static async Task<int> RunAsync(string[] args)
     {
-        string? workspace = null, to = null, publish = null, close = null, reason = null;
+        string? workspace = null, to = null, publish = null, close = null, reason = null, delete = null;
         var files = new List<string>();
         var links = new List<string>();
         var words = new List<string>();
@@ -38,6 +41,7 @@ internal static class AskConsole
                 case "--url": links.Add(Value()); break;
                 case "--publish": publish = Value(); break;
                 case "--close": close = Value(); break;
+                case "--delete": delete = Value(); break;
                 case "--reason": reason = Value(); break;
                 default: words.Add(args[i]); break;
             }
@@ -56,6 +60,13 @@ internal static class AskConsole
             if (close is not null)
             {
                 return Report(await service.CloseAskAsync(close, reason ?? "").ConfigureAwait(false));
+            }
+
+            if (delete is not null)
+            {
+                var (ok, message) = await service.DeleteAskAsync(delete).ConfigureAwait(false);
+                Console.WriteLine(message);
+                return ok ? 0 : 1;
             }
 
             var sentence = string.Join(' ', words).Trim();
@@ -99,6 +110,7 @@ internal static class AskConsole
         Console.Error.WriteLine("usage: daoris-driver ask [--workspace <name>] [--to <repo>] [--file <path>]… [--url <address>]… \"…\"");
         Console.Error.WriteLine("       daoris-driver ask --publish <id> --to <repo>");
         Console.Error.WriteLine("       daoris-driver ask --close <id> --reason \"…\"");
+        Console.Error.WriteLine("       daoris-driver ask --delete <id>");
         return 2;
     }
 }

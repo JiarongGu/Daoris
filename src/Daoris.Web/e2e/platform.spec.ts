@@ -275,20 +275,16 @@ test('an ask is proposed by declarations, published by a person, and closed with
   await expect(quest.getByRole('link', { name: /tickets\.example\/T-8/ })).toBeVisible();
   await expect(quest.getByRole('link', { name: /trace\.log/ })).toBeVisible();
 
-  // Leave the family as it was found: the quest done, and the ask closed with what became of it.
+  // Its only quest done, the ask's work is finished (USE1c): it is DONE, and leaves the list by itself,
+  // as a closed ask and a closed quest do. Nobody has to close it, and the family is left as found.
   await quest.getByRole('button', { name: 'done', exact: true }).click();
   await expect(page.getByText(/is now Done/).first()).toBeVisible();
-
-  // The ask's card: the one button left that carries its words, now its quest has left the open list.
-  await page.getByRole('button', { name: new RegExp(sentence) }).click();
-  await record.getByRole('button', { name: 'close the ask' }).click();
-  await record.getByLabel('why — what became of it').fill('It became the engine quest, now done.');
-  await record.getByRole('button', { name: 'close with this reason' }).click();
-  await expect(page.getByText(/Ask #[0-9a-f]{6} is closed: It became the engine quest, now done\./).first()).toBeVisible();
-
-  // Closed asks leave the list, as closed quests do.
-  await record.getByRole('button', { name: 'close', exact: true }).click();
   await expect(page.getByText(/^Asks \(/)).toHaveCount(0);
+
+  // With closed ones included it comes back, wearing its done pill.
+  await page.getByText('include closed').click();
+  await expect(page.getByText(/^Asks \(/)).toBeVisible();
+  await expect(page.getByText('done', { exact: true }).first()).toBeVisible();
 });
 
 /**

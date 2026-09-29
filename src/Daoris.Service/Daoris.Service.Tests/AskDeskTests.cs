@@ -17,6 +17,7 @@ public sealed class AskDeskTests : IAsyncLifetime
 
     private SqliteConnection _connection = null!;
     private QuestStore _quests = null!;
+    private QuestExchange _exchange = null!;
     private AskDesk _desk = null!;
     private QuestFiles _files = null!;
     private static readonly DateTimeOffset Now = DateTimeOffset.Parse("2026-09-23T10:00:00Z");
@@ -42,7 +43,8 @@ public sealed class AskDeskTests : IAsyncLifetime
         }
 
         _files = new QuestFiles(Path.Combine(_root, "home"));
-        _desk = new AskDesk(service, asks, new QuestExchange(service, _quests, files: _files), _files);
+        _exchange = new QuestExchange(service, _quests, files: _files);
+        _desk = new AskDesk(service, asks, _exchange, _files);
     }
 
     public async Task DisposeAsync()
@@ -248,5 +250,141 @@ public sealed class AskDeskTests : IAsyncLifetime
         Assert.Equal(["q-intake", "q-person", "q-late"], held.Quests);
         Assert.Equal(AskState.Closed, held.State);
         Assert.Equal("Handled.", held.Note);
+    }
+
+    // ——— USE1c: an ask whose work is finished is DONE, derived from its quests rather than stored.
+
+    /// <summary>An ask that became no quest has no work to finish — it stays what it was.</summary>
+    [Fact]
+    public async Task An_ask_that_became_no_quest_is_never_done()
+    {
+        var asked = (await _desk.AskAsync(new AskRequest("work", Sentence), Now)).Ask!;
+
+        Assert.Equal(AskState.Proposed, (await _desk.FindAsync(asked.Id))!.State);
+        Assert.Single(await _desk.ListAsync("work"));
+    }
+
+    /// <summary>One quest still open is work in flight: the ask stays published, and listed.</summary>
+    [Fact]
+    public async Task An_ask_with_a_quest_still_open_stays_published_and_listed()
+    {
+        var asked = (await _desk.AskAsync(new AskRequest("work", Sentence) { To = "media-api" }, Now)).Ask!;
+        var second = await _desk.PublishAsync(asked.Id, "storefront", Now.AddMinutes(1));
+        await _quests.MoveAsync(asked.Quests[0], QuestStatus.Done, "Landed.", Now.AddMinutes(2));
+
+        Assert.Equal(AskState.Published, (await _desk.FindAsync(asked.Id))!.State);
+        Assert.Equal(QuestStatus.Open, second.Quest!.Status);
+        Assert.Single(await _desk.ListAsync("work"));
+    }
+
+    /// <summary>
+    /// 🔴 USE1c, the owner's list: every quest from the ask closed — done or declined, a decline is an
+    /// answer too — makes the ask DONE, and the default list hides it as it hides a closed one. With
+    /// closed ones included it is there, done.
+    /// </summary>
+    [Fact]
+    public async Task An_ask_whose_quests_all_closed_is_done_and_leaves_the_default_list()
+    {
+        var asked = (await _desk.AskAsync(new AskRequest("work", Sentence) { To = "media-api" }, Now)).Ask!;
+        var second = (await _desk.PublishAsync(asked.Id, "storefront", Now.AddMinutes(1))).Quest!;
+        await _quests.MoveAsync(asked.Quests[0], QuestStatus.Taken, null, Now.AddMinutes(2));
+        await _quests.MoveAsync(asked.Quests[0], QuestStatus.Done, "Landed.", Now.AddMinutes(3));
+        await _quests.MoveAsync(second.Id, QuestStatus.Declined, "Not ours.", Now.AddMinutes(4));
+
+        Assert.Equal(AskState.Done, (await _desk.FindAsync(asked.Id))!.State);
+        Assert.Empty(await _desk.ListAsync("work"));
+        Assert.Equal(AskState.Done, Assert.Single(await _desk.ListAsync("work", includeClosed: true)).State);
+    }
+
+    /// <summary>
+    /// A chain's next step is published in the same move that closes the step before it, asked BY the
+    /// ask (D65 §4) — so the ask is not done while a step is still to come.
+    /// </summary>
+    [Fact]
+    public async Task An_ask_whose_chain_has_a_step_still_open_is_not_done()
+    {
+        var asked = (await _desk.AskAsync(new AskRequest("work", Sentence), Now)).Ask!;
+        var first = (await _desk.PublishAsync(
+            asked.Id, "media-api", Now.AddMinutes(1),
+            draft: new AskDraft("Read names from the media config", null)
+            {
+                Then = [new QuestStep("storefront", "Verify {parent} in the browser", "The fields read their names.")],
+            })).Quest!;
+
+        var closed = await _quests.MoveAsync(first.Id, QuestStatus.Done, "Landed.", Now.AddMinutes(2));
+
+        Assert.Equal($"ask #{asked.Id}", closed.FollowUp!.From);
+        Assert.Equal(AskState.Published, (await _desk.FindAsync(asked.Id))!.State);
+
+        await _quests.MoveAsync(closed.FollowUp.Id, QuestStatus.Done, "Verified.", Now.AddMinutes(3));
+        Assert.Equal(AskState.Done, (await _desk.FindAsync(asked.Id))!.State);
+    }
+
+    /// <summary>
+    /// A step waiting on another repository (D79) is taken, and its work is in its taker's tree — so
+    /// the ask is not done, even once the question it waits on is answered.
+    /// </summary>
+    [Fact]
+    public async Task An_ask_whose_quest_waits_on_another_repository_is_not_done()
+    {
+        var asked = (await _desk.AskAsync(new AskRequest("work", Sentence) { To = "media-api" }, Now)).Ask!;
+        var work = asked.Quests[0];
+        await _exchange.RespondAsync(work, "take", null, Now.AddMinutes(1));
+        var question = (await _exchange.PublishAsync("media-api", "storefront", "Which field names?", "why", Now.AddMinutes(2))).Quest!;
+        var waited = await _exchange.RespondAsync(work, "wait", null, Now.AddMinutes(3), on: question.Id);
+        await _exchange.RespondAsync(question.Id, "done", "These ones.", Now.AddMinutes(4));
+
+        Assert.Equal(QuestRespondRefusal.None, waited.Refusal);
+        Assert.Equal(AskState.Published, (await _desk.FindAsync(asked.Id))!.State);
+        Assert.Single(await _desk.ListAsync("work"));
+    }
+
+    /// <summary>A person's close stands whatever its quests do — it is their word on the ask.</summary>
+    [Fact]
+    public async Task A_closed_ask_stays_closed_when_its_quests_close()
+    {
+        var asked = (await _desk.AskAsync(new AskRequest("work", Sentence) { To = "media-api" }, Now)).Ask!;
+        await _desk.CloseAsync(asked.Id, "Handled on a call.", Now.AddMinutes(1));
+        await _quests.MoveAsync(asked.Quests[0], QuestStatus.Done, "Landed.", Now.AddMinutes(2));
+
+        Assert.Equal(AskState.Closed, (await _desk.FindAsync(asked.Id))!.State);
+    }
+
+    /// <summary>
+    /// Derived, not stored: a quest closed on ANOTHER machine and synced in is reflected with no write
+    /// to the ask — the sync knows nothing of asks, which stay on this machine (D68 §2).
+    /// </summary>
+    [Fact]
+    public async Task A_quest_closed_on_another_machine_and_synced_in_makes_the_ask_done()
+    {
+        var asked = (await _desk.AskAsync(new AskRequest("work", Sentence) { To = "media-api" }, Now)).Ask!;
+        var quest = asked.Quests[0];
+        var published = Assert.Single(await _quests.HistoryAsync(quest));
+
+        await _quests.IntegrateAsync(
+            "work",
+            [
+                published with { Number = 1 },
+                new QuestOperation(quest, QuestOperationKind.Done, "another-machine", 1, Now.AddHours(1), "Landed there.", Number: 2),
+            ],
+            through: 2);
+
+        Assert.Equal(AskState.Done, (await _desk.FindAsync(asked.Id))!.State);
+    }
+
+    /// <summary>
+    /// A finished ask ended as surely as a closed one (ASKAGAIN1's reason): the same words afterwards
+    /// ask anew, rather than answering with a record the default list no longer shows.
+    /// </summary>
+    [Fact]
+    public async Task The_same_sentence_after_its_work_is_done_asks_anew()
+    {
+        var first = (await _desk.AskAsync(new AskRequest("work", Sentence) { To = "media-api" }, Now)).Ask!;
+        await _quests.MoveAsync(first.Quests[0], QuestStatus.Done, "Landed.", Now.AddMinutes(1));
+
+        var again = await _desk.AskAsync(new AskRequest("work", Sentence), Now.AddMinutes(2));
+
+        Assert.NotEqual(first.Id, again.Ask!.Id);
+        Assert.DoesNotContain("already asked", again.Message);
     }
 }

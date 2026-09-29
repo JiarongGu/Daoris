@@ -614,6 +614,18 @@ The first version: doctrine that installs, is checked, and flows back.
   the next tick, without a reload. The record names who answered: the `intake` tier in words, and
   the intake session, which is a door into Sessions on the desktop. A band row with nowhere to go (a
   parked session, in a browser) is no longer a button.
+- **An ask whose work is finished leaves the list** (USE1c). An ask that became quests, every one of
+  which has closed (chain steps included), is **done**. The Asks list hides it as it hides a closed
+  one, and *include closed* shows it with a *done* pill, after every live ask. Done is worked out from
+  the quests each time the ask is read, so a quest closed on another machine counts as soon as it
+  syncs in. The same words asked again after an ask is done make a new ask.
+- **Delete a quest or an ask made by mistake** (QUEST1, D95). A duplicate or a test can go. Use the
+  quest drawer's *Delete* or the ask record's, each asking once, or run `daoris-driver quest delete
+  <id>` or `daoris-driver ask --delete <id>`. Only a quest nobody has started on goes: it is open, no
+  session was started for it, and no taken quest waits on it. Anything else stays, and the refusal says
+  to decline it or leave it closed. An ask goes with every quest it became, or not at all. A shared
+  quest's delete travels to the remote as an operation, so no later sync brings it back. It is pushed
+  before the answer returns, and if another machine's take got there first, the quest stays, taken.
 - **A repository registered without adopting can be asked, and driven over the protocol door**
   (INT3, D70). Registered is addressable; adopted is disciplined. A repository registered on this
   machine with a root takes quests, and a session the driver starts in it on a protocol agent is

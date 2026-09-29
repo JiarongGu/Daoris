@@ -7871,3 +7871,39 @@ empty PATH or a no-op updater and cannot start a real one.
 
 **Not covered:** the real `npm view` and the real channel pointers are stand-ins in every test.
 **Proven by:** driver 991, modules 329, vitest 1433, CLI 535, on main after the merge.
+
+## USE1c — an ask whose work is finished leaves the list (2026-09-30)
+
+> - [ ] **USE1** … (c) **A completed quest is not cleared** from the view. … *Read:* an ask stays
+>   *published* after every quest it became has closed, so the list never empties.
+
+**Outcome** (built by a subagent in its own worktree, merged and re-tested on main). An ask is done when
+it became at least one quest and none of the quests asked by it, chain steps included (a step waiting
+on another repository is taken, so open), is open or taken. It is derived on every read, never stored,
+so a quest closed on another machine counts the moment the sync brings it in, and the terminal, the
+MCP host and the page give one answer. The default list hides a done ask as it hides a closed one;
+*include closed* shows it with a *done* pill after the live ones. A closed ask stays closed, the same
+words asked after an ask is done make a new ask, and a parked intake whose ask is done ends answered.
+D65 is amended with the rule and why storing it was rejected.
+**Proven by:** eight desk tests, a driver test and vitest, then service 602 and vitest 1447 on main.
+
+## QUEST1 — delete a quest or an ask made by mistake (2026-09-30, D95)
+
+> - [ ] **QUEST1 — clear or delete a quest** (owner, 2026-09-30: *"and we do need way to clear or
+>   delete quest"*). … Deleting is new: a quest or an ask made by mistake … removed from the ledger, on
+>   both doors (D50). …
+
+**Outcome** (built by a subagent in its own worktree, merged and re-tested on main). A quest goes only
+while it is open, no session record names it, and no taken quest waits on it; a taken, done or
+declined quest keeps its record, and the refusal says to decline it or leave it closed. An ask goes
+with every quest it became, or the whole delete is refused. A delete is a `deleted` operation in the
+quest's history: the remote keeps it, so no later sync (a new machine syncing from zero included)
+brings the quest back, and a quest that never left the machine is simply removed. A shared quest is
+deleted by push: confirmed, lost to a take that got there first, or unconfirmed while offline. Doors:
+*Delete* in the quest drawer and on the ask's record, each confirmed once and shown only where the
+service's `deletable` allows; `daoris-driver quest delete <id>` and `daoris-driver ask --delete
+<id>`; `DELETE` routes on a local host only, and no MCP delete (deleting a record is a person's act).
+
+**Known gap:** when a take loses to a delete, the driver's sentence still says another machine's
+take won. **Proven by:** the quest log, sync (including no resurrection), exchange and desk tests,
+service 602, vitest 1447, driver, and the family rehearsal's new delete checks.

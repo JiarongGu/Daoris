@@ -4,25 +4,25 @@ import { type Ask, canBeAsked } from '../api';
 import { linksOf, toUpload } from '../attachments';
 import { NO_CARRY } from '../compose/carry';
 import { sentence } from '../format';
-import { useAsk, useAsks, useCloseAsk, usePublishAsk, useQuests, useRegistry, useSessions } from '../queries';
+import { useAsk, useAsks, useCloseAsk, useDeleteAsk, usePublishAsk, useQuests, useRegistry, useSessions } from '../queries';
 import { useScope } from '../scope';
 import { useDriver, useNudge } from '../shell';
 import { workspaceOf, workspacesOf } from '../workspaces';
 import { failure, type Notify, SectionTitle, useErrorNotify } from '../ui';
-import { AskCard } from './AskCard';
+import { AskCard, askEnded } from './AskCard';
 import { AskComposer, type AskDraft } from './AskComposer';
 import { AskRecord } from './AskRecord';
 
 const EMPTY_DRAFT: AskDraft = { circle: '', sentence: '', to: '', ...NO_CARRY };
 
 /**
- * The asks as the group reads them (UX5 U32): what has waited longest first, and a closed ask after
- * every live one, as a closed quest comes after the open ones. The service lists newest first, which
- * is its terminal door's order; the group ran in it, under quests that run oldest first.
+ * The asks as the group reads them (UX5 U32): what has waited longest first, and a closed or done ask
+ * (USE1c) after every live one, as a closed quest comes after the open ones. The service lists newest
+ * first, which is its terminal door's order; the group ran in it, under quests that run oldest first.
  */
 export function asksInOrder(asks: readonly Ask[]): Ask[] {
-  const closed = (ask: Ask) => (ask.state === 'Closed' ? 1 : 0);
-  return [...asks].sort((a, b) => closed(a) - closed(b) || a.asked.localeCompare(b.asked));
+  const ended = (ask: Ask) => (askEnded(ask) ? 1 : 0);
+  return [...asks].sort((a, b) => ended(a) - ended(b) || a.asked.localeCompare(b.asked));
 }
 
 /**
@@ -71,6 +71,7 @@ export function AsksSection({
   const nudge = useNudge();
   const publish = usePublishAsk();
   const close = useCloseAsk();
+  const remove = useDeleteAsk();
   useErrorNotify(asks.error, notify);
 
   const [draft, setDraft] = useState<AskDraft>(EMPTY_DRAFT);
@@ -106,7 +107,7 @@ export function AsksSection({
     .map((row) => row.repository)
     .sort();
   const questTitles = Object.fromEntries((everything.data ?? []).map((quest) => [quest.id, quest.title]));
-  const busy = ask.isPending || publish.isPending || close.isPending || reading;
+  const busy = ask.isPending || publish.isPending || close.isPending || remove.isPending || reading;
 
   const onAsk = async () => {
     // Read whole only now — a file chosen and then removed was never read at all.
@@ -152,6 +153,13 @@ export function AsksSection({
     onError: failure(notify),
   });
 
+  // Deleted with every quest asked by it (D95): the record is gone, so it closes on the service's
+  // sentence. A refusal is the service's sentence too, and the record stays open on the ask as it was.
+  const onDelete = (id: string) => remove.mutate(id, {
+    onSuccess: (result) => { notify(result.message); setHeld(null); },
+    onError: failure(notify),
+  });
+
   return (
     <>
       {(asks.data?.length ?? 0) > 0 && (
@@ -192,6 +200,7 @@ export function AsksSection({
           busy={busy}
           onPublish={(to) => onPublish(shown.id, to)}
           onClose={(reason) => onClose(shown.id, reason)}
+          onDelete={() => onDelete(shown.id)}
           onOpenQuest={(id) => { setHeld(null); onOpenQuest(id); }}
           onDismiss={() => setHeld(null)}
         />

@@ -47,7 +47,10 @@ public sealed record QuestResponse(
     // The question its taker waits on (D79), or null.
     string? Awaits = null,
     // The session whose connector published it (SESS1), or null: a person's publish, or a chain step.
-    string? PublishedBy = null);
+    string? PublishedBy = null,
+    // Whether this host would delete it (D95): the exchange's own judgement, so no page re-derives it.
+    // Always false at a shared deployment, which has no delete door.
+    bool Deletable = false);
 // An attachment arrives with its CONTENT at a local host — base64 on the wire, which is what a byte
 // array is in JSON — and by NAME at a shared one, which keeps names and never bytes (D65 §2). The door
 // decides which shape its mode takes and refuses the other; the exchange never sees the wrong one.
@@ -75,13 +78,18 @@ public sealed record AskCloseRequest(string? Reason);
 public sealed record DeclarationMatchResponse(string Repository, int Score, IReadOnlyList<string> Matched);
 // `Tier` is said on every record (model-decoupling): which tier answered, never implied. `Intake` is
 // the session that served it (D65 §1b), once one opened — the record a reader follows to its question.
+// `State` is the desk's reading of it, `Done` included (USE1c); `Deletable` whether the desk would delete
+// it with every quest asked by it (D95).
 public sealed record AskResponse(
     string Id, string Workspace, string Sentence, string State, string Tier, DateTimeOffset Asked,
     DateTimeOffset Updated, string? Asker, string? Note, IReadOnlyList<string> Links,
     IReadOnlyList<QuestAttachmentResponse> Attachments, IReadOnlyList<DeclarationMatchResponse> Proposal,
-    IReadOnlyList<string> Quests, string? Intake = null);
+    IReadOnlyList<string> Quests, string? Intake = null, bool Deletable = false);
 public sealed record AskActionResponse(AskResponse Ask, string Message, QuestResponse? Quest);
 public sealed record QuestActionResponse(QuestResponse Quest, string Message);
+// What a delete did (D95): the record it removed, and the service's sentence, verbatim — which says
+// whether the delete travels, and whether the remote has taken it yet.
+public sealed record DeletedResponse(string Id, string Message);
 public sealed record RefreshResponse(
     int Entries, int Repositories, int Withheld, string? SemanticError, IReadOnlyList<string> Absent);
 // `Uses` is what the repository says it depends on (D91); absent is nothing declared.
@@ -230,6 +238,7 @@ public sealed record FeedRefusalResponse(string Error, bool Information);
 [JsonSerializable(typeof(AskResponse))]
 [JsonSerializable(typeof(IEnumerable<AskResponse>))]
 [JsonSerializable(typeof(QuestActionResponse))]
+[JsonSerializable(typeof(DeletedResponse))]
 [JsonSerializable(typeof(RefreshResponse))]
 [JsonSerializable(typeof(RegisterRequest))]
 [JsonSerializable(typeof(RegisteredResponse))]
