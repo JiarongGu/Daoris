@@ -9,7 +9,7 @@ import {
 } from '../../../tools/deployment-rehearsal.mjs';
 // The install's layout, from the script that makes it: the gate reads the same constants.
 // @ts-expect-error — untyped workspace tooling; the same seam desktop-tool.test.ts documents
-import { BROWSER_EXE, BROWSER_HOME, HOST_EXE, HOST_HOME } from '../../../tools/desktop-publish.mjs';
+import { HOST_EXE, HOST_HOME } from '../../../tools/desktop-publish.mjs';
 
 /**
  * The deployment gate (`tools/deployment-rehearsal.mjs`) is workspace tooling, tested from here for
@@ -113,21 +113,6 @@ test('the host’s home in an install is a path the locator actually looks in', 
   assert.ok(
     locator.includes(`Path.Combine("${HOST_HOME[0]}", "${HOST_HOME[1]}")`),
     `the publish puts the host in ${HOST_HOME.join('/')} and ServiceHostLocator does not look there`);
-});
-
-/**
- * The same counterpart set for Daoris's own browser (CHR3): the publish puts `daoris-browser` in one
- * folder of an install, and the shell's `EngineBrowser.Candidates` looks for it first in another
- * only if the two disagree — which, on a deployed machine with no workspace below, is no browser.
- */
-test('the browser’s home in an install is the one the shell looks in first', () => {
-  const engine = readText(join(
-    repoRoot, 'src', 'Daoris.Desktop', 'Daoris.Desktop.Modules', 'EngineBrowser.cs'));
-  assert.ok(
-    engine.includes(`InstallHome = ["${BROWSER_HOME[0]}", "${BROWSER_HOME[1]}"]`),
-    `the publish puts the browser in ${BROWSER_HOME.join('/')} and EngineBrowser does not look there`);
-  assert.ok(engine.includes(`ExecutableName = "${BROWSER_EXE}"`),
-    `the publish names the browser ${BROWSER_EXE} and EngineBrowser looks for another name`);
 });
 
 /**

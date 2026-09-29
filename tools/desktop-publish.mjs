@@ -20,9 +20,10 @@
  *
  * **The layout is a regular application's** (D93): `Daoris.exe` at the root is a small launcher and
  * the one thing to run; the application is `app/Daoris.Desktop.exe`, CEF's launcher, beside its
- * Chromium and its libraries, with the browser and the HTTP host in folders of their own under
- * `app/`; `data/` is the home. The names the shell's publish put in `app/` are listed in
- * `app/shell-files.txt`, so the next publish removes exactly those and nothing else.
+ * Chromium and its libraries, with the HTTP host in a folder of its own under `app/`; `data/` is the
+ * home. Daoris's browser is the application itself since CHR8 (D99), started with the browser's
+ * argument, so the install carries one Chromium. The names the shell's publish put in `app/` are
+ * listed in `app/shell-files.txt`, so the next publish removes exactly those and nothing else.
  *
  * **What a deployed shell finds.** Nothing is wired into it: with no `DAORIS_*` overrides it makes
  * the install's `data/` the Daoris home (D63) — the machine's registry, quests, drivable set and profiles
@@ -46,9 +47,9 @@ export const MARKER = 'INSTALLED.md';
 export const MARKER_HEADER = '# Daoris — installed desktop';
 
 /**
- * The install's layout, stated once (REV3 CLEAN1): one launcher at the root, the application, the
- * host and the browser under `app/`, the home in `data/` (D63, D93). The deployment gate, the dev
- * loop and the testbed read these rather than spelling the names again, which four of them did.
+ * The install's layout, stated once (REV3 CLEAN1): one launcher at the root, the application and the
+ * host under `app/`, the home in `data/` (D63, D93). The deployment gate, the dev loop and the testbed
+ * read these rather than spelling the names again, which four of them did.
  *
  * `Daoris.exe` since D93: the one thing to run is named for the application, as a regular one is.
  */
@@ -69,6 +70,30 @@ export const SHELL_EXE = 'Daoris.Desktop.exe';
 export const RETIRED_LAUNCHERS = Object.freeze(['daoris-desktop.exe']);
 
 /**
+ * Folders an earlier publish wrote under `app/` and this one no longer does: Daoris's browser before
+ * CHR8, an executable of its own (`daoris-browser.exe`) with a second Chromium beside it. The
+ * application is the browser now (D99). A publish into its own install removes them by name, as it
+ * removes {@link RETIRED_LAUNCHERS}: exactly what it once wrote, never a folder it did not.
+ */
+export const RETIRED_IN_APP = Object.freeze(['daoris-browser']);
+
+/** The retired browser's executable inside its folder: a running one holds the folder a republish removes. */
+export const RETIRED_BROWSER_EXE = 'daoris-browser.exe';
+
+/**
+ * What a publish into `install` removes before it writes, because an earlier publish wrote it and
+ * this one does not: {@link RETIRED_LAUNCHERS} at the root and {@link RETIRED_IN_APP} under `app/`.
+ * None in a folder this script never published, which holds nothing of its to remove.
+ */
+export function retiredPaths(install) {
+  if (!isInstall(install)) return [];
+  return [
+    ...RETIRED_LAUNCHERS.map((name) => join(install, name)),
+    ...RETIRED_IN_APP.map((name) => join(install, ...SHELL_HOME, name)),
+  ];
+}
+
+/**
  * The names the shell's last publish put in `app/`, one per line (D93). What makes a republish
  * remove the previous engine's files and nothing it did not write.
  */
@@ -87,19 +112,11 @@ export const HOST_HOME = Object.freeze(['app', 'daoris-knowledge-http']);
 export const HOST_EXE = 'daoris-knowledge-http.exe';
 
 /**
- * Where Daoris's own browser goes (D85, CHR3): a process of its own, carrying the engine's runtime
- * beside it. The other half of this counterpart set is `EngineBrowser.InstallHome`, which the shell
- * looks in first; `deployment-rehearsal.test.ts` reads both.
- */
-export const BROWSER_HOME = Object.freeze(['app', 'daoris-browser']);
-
-/** The browser's file name inside {@link BROWSER_HOME}. */
-export const BROWSER_EXE = 'daoris-browser.exe';
-
-/**
- * The engine's locale files an install keeps, for the browser and for the shell alike: the two
- * languages Daoris speaks, and the two `EngineBrowser.Locale` ever asks for. The other 218 are 48 MB
- * nobody reads, and there are two engines to carry them (D92).
+ * The engine's locale files an install keeps, for the window and the browser alike, which share one
+ * Chromium since CHR8: the two languages Daoris speaks, and the two `EngineBrowser.Locale` ever asks
+ * for. The kit lays out only these languages (`ShenoraChromiumLocales` names zh-CN; en-US is its
+ * fallback), with grammatical-gender stubs beside each that the publish leaves out; the deployment
+ * gate reads the two back off the install.
  */
 export const KEPT_LOCALES = Object.freeze(['en-US.pak', 'zh-CN.pak']);
 
@@ -190,7 +207,6 @@ function main() {
 
   const APP = 'src/Daoris.Desktop/Daoris.Desktop.App';
   const LAUNCHER_PROJECT = 'src/Daoris.Desktop/Daoris.Desktop.Launcher';
-  const BROWSER = 'src/Daoris.Desktop/Daoris.Desktop.Browser';
   const HTTP = 'src/Daoris.Service/Daoris.Service.Http';
   const WEB = 'src/Daoris.Web';
 
@@ -215,10 +231,13 @@ function main() {
   const shells = [join(to, ...SHELL_HOME, SHELL_EXE), ...RETIRED_LAUNCHERS.map((name) => join(to, name))]
     .filter(existsSync);
   if (process.platform === 'win32' && shells.length > 0) {
-    // The browser follows the shell out, so a running one is a shell still running, or just gone.
+    // Everything from the application's executable, its browser (CHR8) and its engine's processes
+    // included; and the browser an install from before CHR8 still runs from its own folder, which
+    // this publish removes. The browser follows the shell out, so a running one is a shell still
+    // running, or just gone.
     const held = [
       ...shells.flatMap((shell) => running(shell)),
-      ...running(join(to, ...BROWSER_HOME, BROWSER_EXE)),
+      ...RETIRED_IN_APP.flatMap((name) => running(join(to, ...SHELL_HOME, name, RETIRED_BROWSER_EXE))),
     ];
     if (held.length > 0) {
       console.error(`desktop-publish: the install at \`${to}\` is running (pid ${held.join(', ')}).`);
@@ -248,48 +267,41 @@ function main() {
     + `-p:AllowedReferenceRelatedFileExtensions=none -o "${launcherStage}" --nologo`);
 
   // The application on its own Chromium (D92, D93): CEF's launcher beside the engine and the app's
-  // libraries. `AllowedReferenceRelatedFileExtensions=none` is what stops the package doc files; they
-  // come from the WebView2 package rather than from this compile, so `GenerateDocumentationFile` does
-  // not reach them. `DebugType=none` drops the symbols an installed app has no use for.
+  // libraries, and Daoris's browser too since CHR8 (D99), which is the same executable started with
+  // the browser's argument — so there is one engine's `locales/` to keep, where there were two.
+  // `AllowedReferenceRelatedFileExtensions=none` is what stops the package doc files; they come from
+  // the WebView2 package rather than from this compile, so `GenerateDocumentationFile` does not reach
+  // them. `DebugType=none` drops the symbols an installed app has no use for.
   console.log('desktop-publish: publishing the application…');
   const shellStage = join(stages, 'shell');
   run(`dotnet publish "${APP}" -c Release -r win-x64 --self-contained false `
     + `-p:DebugType=none -p:AllowedReferenceRelatedFileExtensions=none -o "${shellStage}" --nologo`);
-  const locales = (folder) => {
-    const at = join(folder, 'locales');
-    if (!KEPT_LOCALES.every((file) => existsSync(join(at, file)))) {
-      console.error(`desktop-publish: ${folder} carries no ${KEPT_LOCALES.join(' or ')} — `
-        + 'the engine would start with no language it is asked for.');
-      process.exit(1);
-    }
-    for (const file of readdirSync(at)) {
-      if (!KEPT_LOCALES.includes(file)) rmSync(join(at, file));
-    }
-  };
-  locales(shellStage);
+  // The kit lays out only the languages the app project names (SHEN1), each with three 18-byte
+  // grammatical-gender stubs beside it (`zh-CN_FEMININE.pak`, …); the install keeps the two plain
+  // files, and refuses to ship without them.
+  const locales = join(shellStage, 'locales');
+  if (!KEPT_LOCALES.every((file) => existsSync(join(locales, file)))) {
+    console.error(`desktop-publish: the application carries no ${KEPT_LOCALES.join(' or ')} — `
+      + 'the engine would start with no language it is asked for.');
+    process.exit(1);
+  }
+  for (const file of readdirSync(locales)) {
+    if (!KEPT_LOCALES.includes(file)) rmSync(join(locales, file));
+  }
 
   // What the last publish put in `app/` goes first, so an engine upgrade leaves none of its files
-  // behind — only the recorded names, never the host or the browser beside them. And the single-file
-  // shell an install from before D93 has at its root, which the launcher replaces.
+  // behind — only the recorded names, never the host beside them. Then what an earlier publish wrote
+  // and this one no longer does, by name (D93): the single-file shell's launcher at the root, which
+  // the launcher replaces, and the browser's own folder with its second engine (CHR8).
   const app = join(to, ...SHELL_HOME);
   for (const name of recordedShellFiles(to)) rmSync(join(app, name), { recursive: true, force: true });
-  if (isInstall(to)) for (const name of RETIRED_LAUNCHERS) rmSync(join(to, name), { force: true });
+  for (const path of retiredPaths(to)) rmSync(path, { recursive: true, force: true });
   mkdirSync(app, { recursive: true });
   const staged = readdirSync(shellStage);
   for (const name of staged) cpSync(join(shellStage, name), join(app, name), { recursive: true });
   writeFileSync(join(to, ...SHELL_FILES), `${staged.sort().join('\n')}\n`);
   cpSync(join(launcherStage, LAUNCHER), join(to, LAUNCHER));
   rmSync(stages, { recursive: true, force: true });
-
-  // Daoris's own browser (D85, CHR3), always: the shell starts it, so a shell without it has a
-  // browser menu that does nothing. Replaced rather than published over, as the host is below, so
-  // an engine upgrade leaves no file of the last one beside it.
-  console.log(`desktop-publish: publishing Daoris's browser under ${BROWSER_HOME.join('/')}/…`);
-  const browser = join(to, ...BROWSER_HOME);
-  rmSync(browser, { recursive: true, force: true });
-  run(`dotnet publish "${BROWSER}" -c Release -r win-x64 --self-contained false `
-    + `-p:DebugType=none -p:AllowedReferenceRelatedFileExtensions=none -o "${browser}" --nologo`);
-  locales(browser);
 
   if (flag('--service')) {
     // Supporting binaries go under `app/`, which is the shape the neighbouring applications on this
@@ -329,7 +341,7 @@ Published from a Daoris workspace by \`tools/desktop-publish.mjs\`.
 | | |
 |---|---|
 | \`${LAUNCHER}\` | **the application** — the only thing to run. A small launcher that starts \`${[...SHELL_HOME, SHELL_EXE].join('/')}\`. |
-| \`${SHELL_HOME[0]}/\` | the application itself, on the Chromium it carries (its files are listed in \`${SHELL_FILES.join('/')}\`); Daoris's own browser in \`${BROWSER_HOME.slice(1).join('/')}/\`; and the HTTP host in \`${HOST_HOME.slice(1).join('/')}/\` when published with \`--service\`. Nothing to open. |
+| \`${SHELL_HOME[0]}/\` | the application itself, on the Chromium it carries (its files are listed in \`${SHELL_FILES.join('/')}\`), which is also Daoris's own browser; and the HTTP host in \`${HOST_HOME.slice(1).join('/')}/\` when published with \`--service\`. Nothing to open. |
 | \`${HOME}/\` | **the Daoris home**: the registry, the quests, the drivable set, the harness profiles, the installed service binaries — and the window's engine profile (\`chromium/\`) and its geometry. |
 
 Anything else in this folder is not the application's — repositories it drives, typically — and a

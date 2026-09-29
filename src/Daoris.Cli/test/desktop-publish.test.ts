@@ -6,7 +6,8 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 // Untyped workspace tooling, suppressed at the one site — see desktop-tool.test.ts for why.
 import {
-  LAUNCHER, MARKER, MARKER_HEADER, OWN, RETIRED_LAUNCHERS, SHELL_EXE, SHELL_FILES, SHELL_HOME, isInstall, recordedShellFiles, refusal,
+  KEPT_LOCALES, LAUNCHER, MARKER, MARKER_HEADER, OWN, RETIRED_IN_APP, RETIRED_LAUNCHERS, SHELL_EXE, SHELL_FILES, SHELL_HOME,
+  isInstall, recordedShellFiles, refusal, retiredPaths,
   // @ts-expect-error — untyped workspace tooling; see above
 } from '../../../tools/desktop-publish.mjs';
 
@@ -106,7 +107,39 @@ test('the launcher starts the application the publish lays out, by the name its 
   const app = readFileSync(join(desktop, 'Daoris.Desktop.App', 'Daoris.Desktop.App.csproj'), 'utf8');
   const assembly = /<AssemblyName>([^<]+)</.exec(app)?.[1] ?? '';
   assert.equal(`${assembly.replace(/\.App$/, '')}.exe`, SHELL_EXE);
+});
+
+/**
+ * D93's rule, for what an earlier publish wrote and this one no longer does: a republish into its own
+ * install removes exactly those names — the single-file shell's launcher at the root, and since CHR8
+ * (D99) the browser's own folder under `app/`, with its executable and its second engine — and a folder
+ * it never published is never asked to lose anything.
+ */
+test('a republish removes what an earlier publish wrote and this one no longer does, by name', () => {
   assert.deepEqual(RETIRED_LAUNCHERS, ['daoris-desktop.exe']);
+  assert.deepEqual(RETIRED_IN_APP, ['daoris-browser']);
+
+  const at = folder();
+  mkdirSync(join(at, ...SHELL_HOME, 'daoris-browser'), { recursive: true });
+  writeFileSync(join(at, 'daoris-desktop.exe'), '');
+  assert.deepEqual(retiredPaths(at), [], 'not an install: nothing of it is this script’s to remove');
+
+  markInstalled(at);
+  assert.deepEqual(retiredPaths(at),
+    [join(at, 'daoris-desktop.exe'), join(at, ...SHELL_HOME, 'daoris-browser')]);
+  assert.ok(!retiredPaths(at).some((path: string) => path === join(at, ...SHELL_HOME)), 'never the application’s folder');
+});
+
+/**
+ * The install's languages are the kit's to lay out since SHEN1, and there is one engine to lay them out
+ * for since CHR8: the engine's fallback, `en-US`, and what the app project names
+ * (`ShenoraChromiumLocales`). The publish keeps `KEPT_LOCALES` of them and the deployment gate reads
+ * them back off the install, so the list and the project must agree.
+ */
+test('the locales an install keeps are the kit’s fallback and the ones the app project names', () => {
+  const app = readFileSync(join(here, '..', '..', 'Daoris.Desktop', 'Daoris.Desktop.App', 'Daoris.Desktop.App.csproj'), 'utf8');
+  const named = (/<ShenoraChromiumLocales>([^<]*)</.exec(app)?.[1] ?? '').split(';').map((name) => name.trim()).filter(Boolean);
+  assert.deepEqual([...KEPT_LOCALES].sort(), ['en-US', ...named].map((name) => `${name}.pak`).sort());
 });
 
 test('the last publish’s record is read from inside app/, and no record is no names', () => {

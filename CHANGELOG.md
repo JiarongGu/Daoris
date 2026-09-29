@@ -296,7 +296,8 @@ The first version: doctrine that installs, is checked, and flows back.
   per repository, stop a running session, all through the platform's own session-control surface.
   The window renders on the Chromium the install carries, so the machine needs no WebView2 (D92), and
   an install is a small `Daoris.exe` launcher, the application under `app/`, and the home in `data/`
-  (D93).
+  (D93). Daoris's own browser runs on that same Chromium, as the application started as a browser, so
+  an install carries one engine rather than two (D99).
 - **A plugin is a folder that declares, and may speak** (D64). Under the home's `plugins/<id>/`, a
   `plugin.json` names what a plugin declares — configurations of the ACP door, so a fifth harness
   arrives as a file — and what it speaks. The catalogue reads the API version before anything else,

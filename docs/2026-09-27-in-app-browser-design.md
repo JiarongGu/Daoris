@@ -40,6 +40,13 @@
 >   recorded so a restarted shell adopts it, and it needs no relay. Its sign-in survives Edge
 >   restarting (BRW13): Daoris reads its session cookies over CDP while it runs, seals them to the
 >   account in `<home>/browser/edge-session-cookies.bin`, and puts them back when it starts Edge again.
+>
+> **Amended by CHR8 (2026-09-30, D99): one Chromium.** `daoris-browser` is the application's own
+> executable started with `--daoris-browser`, on Shenora 0.18's `ChromiumBrowserProcess`, instead of an
+> executable on CefSharp with a Chromium of its own. What the reader sees does not change: the same
+> window, profile (`<home>/browser/engine`), favorites folder, extensions setting and closing with the
+> shell. §3.4 stands with one difference: the relay behind the port is the kit's now, and announces a new
+> tab as a `page` as Daoris's did.
 
 ## 0. Why the first answer is not enough
 

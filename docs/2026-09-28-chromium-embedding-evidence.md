@@ -124,6 +124,9 @@ its own port (`src/Daoris.Desktop/Daoris.Desktop.Browser`), started by the shell
 announces as `other` whose address is a tab (a web page, a blank tab, the new-tab page), which it calls
 a `page`.
 
+*Since CHR8 (D99, 2026-09-30) the relay is Shenora's, behind `ChromiumBrowserProcess`'s debug port,
+and Daoris's `CdpRelay` and its tests are gone. What follows is what Daoris's relay measured.*
+
 17. **Playwright MCP 0.0.82 opens a tab through it**: `browser_tabs new` made tab 1 and made it
     current, and `browser_navigate` went to that tab, shown in front in the person's window.
 18. **Chrome DevTools MCP opens one too**: `new_page` listed the new page and selected it.

@@ -45,29 +45,64 @@ export const running = (exe) => {
 export const isEngineProcess = (commandLine) => /(?:^|\s)--type=/.test(commandLine ?? '');
 
 /**
- * The applications running from `exe`, the engine's own processes left out, from `pid|command line`
- * rows. Exported for its test: the query is PowerShell's, the judgement is this.
+ * The argument that makes the application's executable Daoris's browser (CHR8, D99), first on its
+ * command line. A twin of `EngineBrowser.Argument` (`Daoris.Desktop.Modules`), which the application
+ * routes on and the shell starts the browser with; `desktop-tool.test.ts` reads both.
+ */
+export const BROWSER_ARGUMENT = '--daoris-browser';
+
+/** A command line's arguments, its executable left out: quoted as Windows quotes one, or up to the first space. */
+const argumentsOf = (commandLine) => {
+  const line = (commandLine ?? '').trimStart();
+  const end = line.startsWith('"') ? line.indexOf('"', 1) + 1 : line.search(/\s|$/);
+  return end <= 0 ? '' : line.slice(end).trim();
+};
+
+/**
+ * Whether a command line is Daoris's browser (CHR8, D99): the application's own executable, started
+ * with {@link BROWSER_ARGUMENT} first — the rule the application routes on — and not one of the
+ * engine's processes. A fourth kind from the same path: not the application, whose stop it follows on
+ * its own, and not an engine process, because it holds windows of its own.
+ */
+export const isBrowserProcess = (commandLine) =>
+  !isEngineProcess(commandLine) && argumentsOf(commandLine).split(/\s+/)[0] === BROWSER_ARGUMENT;
+
+/** `pid|command line` rows as pids and command lines, the malformed ones left out. */
+const rowsOf = (rows) => rows.split('\n')
+  .map((line) => line.trim())
+  .filter(Boolean)
+  .map((line) => {
+    const bar = line.indexOf('|');
+    return { pid: Number(line.slice(0, bar)), commandLine: line.slice(bar + 1) };
+  })
+  .filter(({ pid }) => Number.isInteger(pid) && pid > 0);
+
+/**
+ * The applications running from `exe`, the engine's own processes and the browser left out, from
+ * `pid|command line` rows. Exported for its test: the query is PowerShell's, the judgement is this.
  */
 export function applicationsIn(rows) {
-  return rows.split('\n')
-    .map((line) => line.trim())
-    .filter(Boolean)
-    .map((line) => {
-      const bar = line.indexOf('|');
-      return { pid: Number(line.slice(0, bar)), commandLine: line.slice(bar + 1) };
-    })
-    .filter(({ pid, commandLine }) => Number.isInteger(pid) && pid > 0 && !isEngineProcess(commandLine))
+  return rowsOf(rows)
+    .filter(({ commandLine }) => !isEngineProcess(commandLine) && !isBrowserProcess(commandLine))
     .map(({ pid }) => pid);
 }
 
-/** The pids of the applications running from `exe`: {@link running}, without the engine's own. */
-export const applicationsAt = (exe) => {
-  if (!exe) return [];
-  return applicationsIn(powershell(
-    'Get-CimInstance Win32_Process -ErrorAction SilentlyContinue | '
-    + `Where-Object { $_.ExecutablePath -eq ${psQuote(exe)} } | `
-    + 'ForEach-Object { "$($_.ProcessId)|$($_.CommandLine)" }'));
-};
+/** The browsers among `pid|command line` rows (CHR8): {@link isBrowserProcess}, as pids. */
+export function browsersIn(rows) {
+  return rowsOf(rows).filter(({ commandLine }) => isBrowserProcess(commandLine)).map(({ pid }) => pid);
+}
+
+/** Every process running from `exe`, as `pid|command line` rows: what the judgements above read. */
+const commandLinesAt = (exe) => powershell(
+  'Get-CimInstance Win32_Process -ErrorAction SilentlyContinue | '
+  + `Where-Object { $_.ExecutablePath -eq ${psQuote(exe)} } | `
+  + 'ForEach-Object { "$($_.ProcessId)|$($_.CommandLine)" }');
+
+/** The pids of the applications running from `exe`: {@link running}, without the engine's own or the browser. */
+export const applicationsAt = (exe) => (exe ? applicationsIn(commandLinesAt(exe)) : []);
+
+/** The pids of Daoris's browsers running from `exe`, the application's own executable since CHR8. */
+export const browsersAt = (exe) => (exe ? browsersIn(commandLinesAt(exe)) : []);
 
 /** {@link processesAt} for the applications only: `each` runs for every one {@link applicationsAt} finds. */
 export const eachApplicationAt = (exe, each) => {
@@ -94,7 +129,9 @@ export const eachApplicationAt = (exe, each) => {
  *
  * 🔴 The applications only (CHR4): on Chromium the engine's renderer, GPU and utility processes run
  * from the same executable with no window. Walked like the rest, each cost fifteen seconds of
- * waiting and then a forced kill that crashed a page; they exit with the application.
+ * waiting and then a forced kill that crashed a page; they exit with the application. The browser
+ * runs from it too since CHR8, and is left alone for the same reason from the other side: it has
+ * windows, and closing them is the person's; it closes itself once the application has gone.
  */
 export const stopAll = (exe) => stopProcesses(applicationsAt(exe));
 

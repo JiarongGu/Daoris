@@ -1,5 +1,7 @@
+using System.ComponentModel;
 using System.Diagnostics;
 using Daoris.Driver;
+using Shenora.Chromium;
 
 namespace Daoris.Desktop;
 
@@ -13,6 +15,12 @@ namespace Daoris.Desktop;
 /// <para><b>A process of its own, by measurement.</b> The engine's debug port reaches every page in
 /// its process (`docs/2026-09-28-chromium-embedding-evidence.md` §1), so the port lives in that
 /// process and this one, which holds the bridge, has none.</para>
+///
+/// <para><b>This executable, started through the kit</b> (CHR8, D99). The browser is the application
+/// started with <see cref="EngineBrowser.Argument"/>, so every build carries it, and it is started with
+/// <see cref="ChromiumBrowserProcess.Start"/>, never <c>Process.Start</c>: the latter hands the child every
+/// handle inheritable at that moment, a pipe end of Chromium's among them, and a browser that outlives
+/// the app by design then kept the app from finishing its exit.</para>
 ///
 /// <para><b>It lives and dies with the shell.</b> The browser is started with this process's id and
 /// closes its windows when this process ends, as the shell's own window did. One port for the shell's
@@ -66,8 +74,7 @@ public sealed class EngineBrowserHost(string home) : IInAppBrowser
             return InAppBrowser.Endpoint(await BringUpEdgeAsync(activate: false, ct).ConfigureAwait(false));
         }
 
-        // A build that carries no browser has none to hand: the driver withholds the server and says so.
-        if (EngineBrowser.Locate(AppContext.BaseDirectory) is null) return null;
+        // Every build carries Daoris's own, being this executable (CHR8).
         await BringUpAsync(background: true, activate: false, ct).ConfigureAwait(false);
         return InAppBrowser.Endpoint(_port);
     }
@@ -91,19 +98,15 @@ public sealed class EngineBrowserHost(string home) : IInAppBrowser
                 await running.WaitForExitAsync(ct).WaitAsync(Going, ct).ConfigureAwait(false);
             }
 
-            var executable = EngineBrowser.Locate(AppContext.BaseDirectory)
-                ?? throw new InvalidOperationException(
-                    "Daoris's browser is not in this build. It looked for "
-                    + string.Join(", ", EngineBrowser.Candidates(AppContext.BaseDirectory)) + ".");
             var options = new EngineBrowserOptions(EngineBrowser.ProfileFolder(home), _port, Environment.ProcessId, background);
-            var start = new ProcessStartInfo(executable)
+            try
             {
-                UseShellExecute = false,
-                CreateNoWindow = true,
-                WorkingDirectory = Path.GetDirectoryName(executable)!,
-            };
-            foreach (var argument in options.ToArguments()) start.ArgumentList.Add(argument);
-            _process = Process.Start(start) ?? throw new InvalidOperationException("Daoris's browser did not start.");
+                _process = ChromiumBrowserProcess.Start(options.ToArguments());
+            }
+            catch (Win32Exception error)
+            {
+                throw new InvalidOperationException($"Daoris's browser did not start: {error.Message}", error);
+            }
 
             var deadline = DateTime.UtcNow + BringUpLimit;
             while (DateTime.UtcNow < deadline)
@@ -112,7 +115,7 @@ public sealed class EngineBrowserHost(string home) : IInAppBrowser
                 {
                     throw new InvalidOperationException(
                         $"Daoris's browser stopped as it started (exit {_process.ExitCode}). "
-                        + $"Its log is engine.log in {options.Profile}.");
+                        + $"Its log is {EngineBrowser.LogName} in {options.Profile}.");
                 }
 
                 if (await engine.PagesAsync(ct).ConfigureAwait(false) is { Count: > 0 }) return;

@@ -13,8 +13,10 @@ import {
   CLEARED, REDIRECTED, SHELL_ORIGIN, assemblyExe, installedExe, isShell, prune, scratchEnvironment, startedHere,
   // @ts-expect-error — untyped workspace tooling; see above
 } from '../../../tools/desktop.mjs';
-// @ts-expect-error — untyped workspace tooling; see above
-import { applicationsIn, isEngineProcess, psQuote, running } from '../../../tools/processes.mjs';
+import {
+  BROWSER_ARGUMENT, applicationsIn, browsersIn, isBrowserProcess, isEngineProcess, psQuote, running,
+  // @ts-expect-error — untyped workspace tooling; see above
+} from '../../../tools/processes.mjs';
 // @ts-expect-error — untyped workspace tooling; see above
 import { SHELL_EXE } from '../../../tools/desktop-publish.mjs';
 
@@ -204,11 +206,13 @@ test('the capture script and the tool agree with the project on the process name
   assert.ok(readText(join(repoRoot, 'tools', 'desktop.mjs')).includes("'-ProcessName', basename(exe, '.exe')"));
   assert.equal(`${process}.exe`, SHELL_EXE, 'the build names the application as the install does');
 
-  // Daoris's own browser is another process since CHR3, and `shot --window browser` photographs it.
-  const browser = /<AssemblyName>([^<]+)<\/AssemblyName>/.exec(readText(join(
-    repoRoot, 'src', 'Daoris.Desktop', 'Daoris.Desktop.Browser', 'Daoris.Desktop.Browser.csproj')))?.[1];
-  assert.ok(browser, 'the browser declares an assembly name');
-  assert.ok(readText(join(repoRoot, 'tools', 'desktop.mjs')).includes(`'-ProcessName', '${browser}'`));
+  // Daoris's own browser is the application's executable started with its argument since CHR8 (D99),
+  // so `shot --window browser` photographs that process by its id, found by its argument; a name of
+  // its own no longer tells it apart.
+  const tool = readText(join(repoRoot, 'tools', 'desktop.mjs'));
+  assert.ok(tool.includes('browsersAt('), 'the capture finds the browser among the application’s processes');
+  assert.ok(!tool.includes('daoris-browser.exe') && !tool.includes('Daoris.Desktop.Browser'),
+    'the capture still looks for the retired browser executable');
 });
 
 test('a prune keeps the newest captures and drops the rest', () => {
@@ -352,6 +356,47 @@ test('the application is told from the engine processes started from its own exe
     'garbage',
   ].join('\n');
   assert.deepEqual(applicationsIn(rows), [4200]);
+});
+
+/**
+ * CHR8 (D99): Daoris's browser is a fourth kind of process from the same executable, the application
+ * started with the browser's argument first. It is not the application — a stop that closed it would
+ * close the person's browser, and it follows the application out on its own — and it is not one of the
+ * engine's processes either: it holds windows of its own. Told apart by its FIRST argument, the rule the
+ * application routes on, so a folder or an engine switch that happens to contain it never counts.
+ */
+test('the browser is told from the application and from the engine processes', () => {
+  const browser = '"D:\\app\\Daoris.Desktop.exe" --daoris-browser "--daoris-profile=D:\\h\\browser\\engine" '
+    + '--daoris-port=9422 --daoris-parent=4200';
+  assert.equal(isBrowserProcess(browser), true);
+  assert.equal(isBrowserProcess('D:\\app\\Daoris.Desktop.exe --daoris-browser --daoris-port=9422'), true, 'an unquoted executable');
+  assert.equal(isBrowserProcess('"D:\\app\\Daoris.Desktop.exe"'), false, 'the application');
+  assert.equal(isBrowserProcess('"D:\\app\\Daoris.Desktop.exe" --type=renderer --daoris-browser'), false, 'an engine process');
+  assert.equal(isBrowserProcess('"D:\\app\\Daoris.Desktop.exe" --app-root D:\\x --daoris-browser'), false, 'not first');
+  assert.equal(isBrowserProcess('"D:\\my --daoris-browser\\Daoris.Desktop.exe"'), false, 'a path is not an argument');
+  assert.equal(isBrowserProcess('"D:\\app\\Daoris.Desktop.exe" --daoris-browser-x'), false);
+  assert.equal(isBrowserProcess(null), false);
+
+  const rows = [
+    `4100|"D:\\app\\Daoris.Desktop.exe" --type=gpu-process --no-sandbox`,
+    '4200|"D:\\app\\Daoris.Desktop.exe" ',
+    `4400|${browser}`,
+    `4500|"D:\\app\\Daoris.Desktop.exe" --type=renderer --user-data-dir="D:\\h\\browser\\engine"`,
+    '',
+  ].join('\n');
+  assert.deepEqual(applicationsIn(rows), [4200], 'a stop of the application never walks the browser');
+  assert.deepEqual(browsersIn(rows), [4400]);
+});
+
+/**
+ * The browser's argument is a twin (`twins.md`): the application routes on it and the shell starts the
+ * browser with it (`EngineBrowser.Argument`), and the tools tell the browser apart by it. Spelled twice,
+ * in two languages, and held together only here.
+ */
+test('the tools and the application spell the browser’s argument the same', () => {
+  const engine = readText(join(repoRoot, 'src', 'Daoris.Desktop', 'Daoris.Desktop.Modules', 'EngineBrowser.cs'));
+  assert.ok(engine.includes(`const string Argument = "${BROWSER_ARGUMENT}";`),
+    `the tools look for ${BROWSER_ARGUMENT} and EngineBrowser routes on another`);
 });
 
 /**
