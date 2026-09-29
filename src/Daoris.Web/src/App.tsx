@@ -6,6 +6,7 @@ import {
 } from './queries';
 import { useScope } from './scope';
 import { AskDaoris } from './help/AskDaoris';
+import { QuickAsk } from './help/QuickAsk';
 import { useFrameClosings } from './work/closings';
 import { usePlacements } from './work/placements';
 import { LAYOUT_KEYS, type LayoutRegion, LayoutToggles } from './work/LayoutToggles';
@@ -158,7 +159,23 @@ export function App() {
       setHelpOpen((was) => !was);
     }
   }, []);
+  // Open it, never close it: the palette's command and Quick Ask's *Open in the side bar*. On Sessions
+  // that is its region opened on it, which `setHelpOpen` alone did not do there.
+  const openHelp = () => {
+    setHelpOpen(true);
+    if (onSessions.current) setHelpFocus((was) => was + 1);
+  };
   const onSessions = useRef(false);
+  // Quick Ask (DOCK1d): open or not, and the question the palette handed it, one id per question.
+  const [quick, setQuick] = useState(false);
+  const [quickOpening, setQuickOpening] = useState<{ text: string; id: number } | null>(null);
+  const askQuickly = (question?: string) => {
+    if (question) setQuickOpening((was) => ({ text: question, id: (was?.id ?? 0) + 1 }));
+    // 🔴 A beat after the palette closes, never with it: closing, the palette hands focus back to where
+    // it was, which pulled it out of a box opened in the same step, and the box's trap caught it on its
+    // frame instead of its message box (found looking at DOCK1d).
+    window.setTimeout(() => setQuick(true), 0);
+  };
   // The status bar's other two facts. Both share caches the frames already fill, so neither is a
   // second fetch — and both are absent in a browser, which is what the bar then says.
   const running = useSessions(null, false);
@@ -332,6 +349,13 @@ export function App() {
   // everywhere, a field included, since it types nothing (HELP1).
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
+      // Quick Ask (DOCK1d) on `Ctrl+Shift+Alt+L`, VS Code's Quick Chat key; by the key's place, since
+      // what `key` says under Shift and Alt differs by layout.
+      if (attached && event.ctrlKey && event.shiftKey && event.altKey && event.code === 'KeyL') {
+        event.preventDefault();
+        setQuick(true);
+        return;
+      }
       // `Ctrl+Alt+I` too, the key VS Code gives its chat, so a hand that knows one knows the other.
       const chatKey = event.key.toLowerCase() === 'i' && event.ctrlKey && event.altKey;
       if ((event.key === 'F1' || chatKey) && attached) {
@@ -754,9 +778,29 @@ export function App() {
             : undefined,
           // Asking lives at the head of Quests (INT4c); the palette goes there and opens the composer.
           ask: () => { setView('quests'); setAsking(true); },
-          help: () => setHelpOpen(true),
+          help: openHelp,
+          quickAsk: () => askQuickly(),
         })}
+        // The command center's one question (DOCK1d): what was typed, asked in Quick Ask.
+        onAsk={attached ? (question) => askQuickly(question) : undefined}
       />
+
+      {attached && (
+        <QuickAsk
+          open={quick}
+          onClose={() => setQuick(false)}
+          onExpand={() => { setQuick(false); openHelp(); }}
+        >
+          <AskDaoris
+            {...askProps}
+            framed={false}
+            opening={quickOpening}
+            // A starter's door leads away from the box, so the box goes with it.
+            onGo={(door) => { setQuick(false); askProps.onGo(door); }}
+            onClose={() => setQuick(false)}
+          />
+        </QuickAsk>
+      )}
 
       {reading.data && <Reader entry={reading.data} onClose={() => setReadingId(null)} />}
       {trusting && (

@@ -123,6 +123,37 @@ describe('the command palette', () => {
     expect(input.getAttribute('aria-activedescendant')).toBe('palette-go.overview');
   });
 
+  // DOCK1d: the command center's one question — what is typed can be asked of Ask Daoris.
+  it('offers to ask Ask Daoris what was typed, last and set apart, and asks on Enter', async () => {
+    const onAsk = vi.fn();
+    const onClose = vi.fn();
+    render(<CommandPalette open commands={LIST} onClose={onClose} onAsk={onAsk} />);
+    const input = screen.getByRole('combobox', { name: 'Commands' });
+    // Nothing typed, nothing to ask.
+    expect(screen.getAllByRole('option')).toHaveLength(3);
+
+    await userEvent.type(input, 'why is engine held?');
+    // Nothing matched, so it says so, and the question is still one Enter away.
+    expect(screen.getByText(/Nothing matches/)).toBeTruthy();
+    expect(screen.getByRole('option', { name: /Ask Daoris: “why is engine held\?”/ })).toHaveAttribute('aria-selected', 'true');
+
+    await userEvent.type(input, '{Enter}');
+    expect(onClose).toHaveBeenCalled();
+    expect(onAsk).toHaveBeenCalledWith('why is engine held?');
+  });
+
+  it('keeps the commands first when they match, with the question after them', async () => {
+    const onAsk = vi.fn();
+    render(<CommandPalette open commands={LIST} onClose={() => {}} onAsk={onAsk} />);
+    await userEvent.type(screen.getByRole('combobox', { name: 'Commands' }), 'quests');
+
+    const options = screen.getAllByRole('option');
+    expect(options.map((option) => option.textContent)).toEqual(['Questsgo to', 'Ask Daoris: “quests”Ask Daoris']);
+    expect(options[0]).toHaveAttribute('aria-selected', 'true');
+    await userEvent.type(screen.getByRole('combobox', { name: 'Commands' }), '{ArrowDown}{Enter}');
+    expect(onAsk).toHaveBeenCalledWith('quests');
+  });
+
   it('starts fresh every time it opens — a palette you must clear is one you avoid', async () => {
     const { rerender } = render(<CommandPalette open commands={LIST} onClose={() => {}} />);
     await userEvent.type(screen.getByRole('combobox', { name: 'Commands' }), 'quests');

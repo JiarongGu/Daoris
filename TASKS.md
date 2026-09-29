@@ -22,7 +22,7 @@ lists.
 ## State
 
 **Counts, and this is their one home:** sixteen commands, **514 CLI tests, 545 service, 900 driver,
-291 desktop modules, 80 devkit, 1335 web unit, 21 Playwright**, 66/66 release rehearsal, **292/292
+291 desktop modules, 80 devkit, 1344 web unit, 21 Playwright**, 66/66 release rehearsal, **292/292
 family rehearsal** (it names its own phases when you run it), **45/45 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge
 documents, 5 skills, 7 packs. The always-loaded core is **22,492 of 26,000 bytes** — a span in
@@ -144,8 +144,8 @@ rather than designed.
 
 ## Backlog
 
-**Thirty-four rows are open**: the four the first real workspace showed (WSR4, SESS1, MAP4, and
-DOCK1 from 2026-09-29; WSR2, WSR1 and WSR3 landed as D86, D87 and D88, HELP1 as D89); D85's two (CHR2, CHR4); the in-app browser's three (BRW3, BRW7, BRW8); the first goal's three (FG5,
+**Thirty-five rows are open**: the five the first real workspace showed (WSR4, SESS1, MAP4, and
+DOCK1 and HELP2 from 2026-09-29; WSR2, WSR1 and WSR3 landed as D86, D87 and D88, HELP1 as D89); D85's two (CHR2, CHR4); the in-app browser's three (BRW3, BRW7, BRW8); the first goal's three (FG5,
 READACROSS1 the owner's, and SEM2 on a trigger); D76's held file tools;
 the eight REV3 left, WINDOW2 among them; five leftovers (RAIL2, CONSOLE3, FLAKE1, DEPLOY5, TEST1); two on the owner
 (TRUST2, AGT2c); and six on a trigger (see *Handover*). Every closed one is in `docs/task-archive.md`, and this file holds no
@@ -192,7 +192,15 @@ requirements, and the owner's calls. Its recommended order is the order below.
   side bar and the panel from each region's tab list or a tab's right-click, remembered, with *Reset
   view locations*; the tab list names every tab whole, however narrow the region. **DOCK1e landed**:
   a tab dragged to the other region moves there, and an emptied region is drawn while a view is
-  dragged. DOCK1a and d are open.
+  dragged. **DOCK1d landed**: Quick Ask, Ask Daoris's conversation in a box at the palette's place,
+  on `Ctrl+Shift+Alt+L`, the palette's *Quick Ask*, and its last row, which asks what was typed.
+  DOCK1a, the hoist, is open.
+- [ ] **HELP2 — Ask Daoris's room knows the window** (found by DOCK1d's look, 2026-09-29). Asked what
+  the panel held, the helper guessed that the View menu names each view's region, which it does not:
+  its room describes the machine and its setting doors, and nothing of the window. The room could say
+  the regions, how a view moves (the tab list, a drag, *Reset view locations*) and the layout keys,
+  and the preface could carry where the views stand now, so a question about the screen is answered
+  rather than guessed (`Help.cs` `HelpRoom.Render`, `help/where.ts`).
 
 ### What REV3 left (2026-09-25)
 

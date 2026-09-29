@@ -1,7 +1,7 @@
 # Panels that dock — the layout as the person's (DOCK1)
 
 **Carried by:** DOCK1 in `TASKS.md` (SURF11 is archived). **Status:** design, written before the
-build; DOCK1c, DOCK1b and DOCK1e built, §4 says how. The
+build; DOCK1c, DOCK1b, DOCK1e and DOCK1d built, §4 says how; DOCK1a is what remains. The
 owner, 2026-09-29: *"we should be able to dock panels like vscode did"*, said beside *"there is no easy
 way to open the daoris chat"* and followed by *"the ask daoris need to be a better location please
 refer to a better ui/ux design"*. The first step, Ask Daoris as one right region, landed as `b21b60f`
@@ -51,7 +51,7 @@ choice (the dock's share, the rail's width), and *Reset layout* puts the default
 ## 4. Build order
 
 *Reordered 2026-09-29, before any of it was built, and again after DOCK1c:* the toggles come first,
-then the moves, by menu and then by drag. The hoist is structural and
+then the moves, by menu and then by drag, then Quick Ask; the hoist, which shows nothing new, last. The hoist is structural and
 shows nothing new (`b21b60f` already gives the eye one right region), while it splits the Work frame's
 layout rules (cramped, full, the narrow window's takeover) across two components on the busiest view.
 The toggles are what a person sees, use the strip's new trailing slot, and need only the three
@@ -103,9 +103,22 @@ closings lifted out of the Work frame.
      picture rather than left a blank column at the window's edge. The frame learns of the drag a
      beat after it starts, since Chromium drops a drag whose page changes in the same task.
    - Not built: reordering tabs within a region, and splitting a region; neither was asked for.
-4. **DOCK1a**: the right region hoisted out of the Work frame into the application, one component on
+4. **DOCK1d**: Quick Ask. *Built 2026-09-29*, VS Code's Quick Chat (`help/QuickAsk.tsx`):
+   - **The same conversation in a box at the palette's place**: the box holds the organism the side
+     bar holds, so what is asked there is read on here, and *Open in the side bar* carries on in the
+     region with nothing lost.
+   - **Three doors**: VS Code's key (`Ctrl+Shift+Alt+L`), the palette's *Quick Ask*, and the palette's
+     last row, *Ask Daoris: "…"*, which asks whatever was typed, matched or not; its placeholder says
+     so. A question handed in is sent once per id, as a typed one is (`useAskConversation`'s
+     `opening`).
+   - **What the look found.** The palette closing handed focus back to where it had been, out of a box
+     opened in the same step, and the box's trap caught it on its frame: the box opens a beat later
+     now, with the keys in its message box. The palette's *Ask Daoris* had only set the region open,
+     which on Sessions did not bring the side bar up on it; it opens it on it now, as `F1` does.
+   - **And what the answer showed**: asked what the panel held, the helper guessed that the View menu
+     names each view's region, which it does not. Its room says nothing of the window (HELP2).
+5. **DOCK1a**: the right region hoisted out of the Work frame into the application, one component on
    every view; Ask Daoris no longer has two hosts.
-5. **DOCK1d**: Quick Ask.
 
 ## 5. Not chosen, for now
 

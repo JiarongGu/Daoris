@@ -81,6 +81,8 @@ export function commands(world: {
   ask: () => void;
   /** Open Ask Daoris (HELP1): its panel beside whatever is in front of the person. Shell-only. */
   help: () => void;
+  /** Open Quick Ask (DOCK1d): Ask Daoris's conversation in a box at the palette's place. Shell-only. */
+  quickAsk: () => void;
   /**
    * Detach the attended session into a window of its own (SURF8) — absent when nothing is attended,
    * for the reason every other absence here is: a palette is a promise that what it lists can be
@@ -143,6 +145,14 @@ export function commands(world: {
         title: world.label('work.help'),
         keywords: 'help ask daoris setup configure how f1 问道衍 帮助',
         run: world.help,
+      },
+      {
+        id: 'work.quickAsk',
+        icon: 'help',
+        group: world.group('work'),
+        title: world.label('work.quickAsk'),
+        keywords: 'quick ask chat question daoris 快速 提问 问道衍',
+        run: world.quickAsk,
       },
     );
 

@@ -24,11 +24,17 @@ import { cn } from '../lib/cn';
  * D41 §6 throughout: `role="dialog"` with `aria-modal` and ESC via Radix, focus moved to the input on
  * open, the active option tracked with `aria-activedescendant` so a screen reader follows the arrow
  * keys, and every row a real hit target.
+ *
+ * **What is typed can be asked** (DOCK1d): where Ask Daoris is here, the last row asks it the words
+ * typed, whether or not a command matched — the command center's one question, as VS Code's palette
+ * offers its chat the words it could not match.
  */
-export function CommandPalette({ open, commands, onClose }: {
+export function CommandPalette({ open, commands, onClose, onAsk }: {
   open: boolean;
   commands: Command[];
   onClose: () => void;
+  /** Asks Ask Daoris the words typed (DOCK1d); absent where there is no Ask Daoris. */
+  onAsk?: (question: string) => void;
 }) {
   const { t } = useTranslation();
   const [typed, setTyped] = useState('');
@@ -45,14 +51,20 @@ export function CommandPalette({ open, commands, onClose }: {
   }, [open]);
 
   const hits = matching(commands, typed);
+  const question = typed.trim();
+  // The asking row, last, as a command of its own so the arrows and Enter treat it like any other.
+  const ask: Command | null = onAsk && question
+    ? { id: 'ask', title: t('palette.ask', { typed: question }), group: t('help.title'), icon: 'help', run: () => onAsk(question) }
+    : null;
+  const rows = ask ? [...hits, ask] : hits;
   // The selection follows the list rather than the other way round: typing narrows it, and an index
   // left pointing past the end would run the wrong thing on Enter.
-  const chosen = Math.min(active, Math.max(0, hits.length - 1));
+  const chosen = Math.min(active, Math.max(0, rows.length - 1));
 
   const move = (by: number) => {
-    if (hits.length === 0) return;
+    if (rows.length === 0) return;
     // Wraps, because a list you can leave by the bottom is one you have to scroll back up.
-    setActive(((chosen + by) % hits.length + hits.length) % hits.length);
+    setActive(((chosen + by) % rows.length + rows.length) % rows.length);
   };
 
   const run = (command: Command | undefined) => {
@@ -90,28 +102,27 @@ export function CommandPalette({ open, commands, onClose }: {
             onKeyDown={(event) => {
               if (event.key === 'ArrowDown') { event.preventDefault(); move(1); }
               else if (event.key === 'ArrowUp') { event.preventDefault(); move(-1); }
-              else if (event.key === 'Enter') { event.preventDefault(); run(hits[chosen]); }
+              else if (event.key === 'Enter') { event.preventDefault(); run(rows[chosen]); }
             }}
-            placeholder={t('palette.placeholder')}
+            placeholder={t(onAsk ? 'palette.placeholderAsk' : 'palette.placeholder')}
             aria-label={t('palette.title')}
             // The combobox pattern: an input that filters a listbox, with the active option
             // announced. Without the role this input, the list and the dialog title all answer to
             // the same accessible name and none of them is findable.
             role="combobox"
-            aria-expanded={hits.length > 0}
+            aria-expanded={rows.length > 0}
             aria-autocomplete="list"
             aria-controls="palette-list"
-            aria-activedescendant={hits[chosen] ? `palette-${hits[chosen].id}` : undefined}
+            aria-activedescendant={rows[chosen] ? `palette-${rows[chosen].id}` : undefined}
             className="shrink-0 border-b border-line bg-transparent px-3.5 py-2.5 text-body text-ink outline-none placeholder:text-ink-faint"
           />
 
-          {hits.length === 0
-            ? (
-              <p className="m-0 px-3.5 py-4 text-small text-ink-faint">
-                {t('palette.nothing', { typed: typed.trim() })}
-              </p>
-            )
-            : (
+          {hits.length === 0 && (
+            <p className="m-0 px-3.5 pb-1 pt-4 text-small text-ink-faint">
+              {t('palette.nothing', { typed: question })}
+            </p>
+          )}
+          {rows.length > 0 && (
               <ul
                 id="palette-list"
                 ref={listRef}
@@ -119,8 +130,9 @@ export function CommandPalette({ open, commands, onClose }: {
                 aria-label={t('palette.title')}
                 className="m-0 min-h-0 flex-1 list-none overflow-y-auto p-1"
               >
-                {hits.map((command, index) => (
-                  <li key={command.id}>
+                {rows.map((command, index) => (
+                  // The asking row is set apart from the commands: it is a question, not something done.
+                  <li key={command.id} className={command === ask && hits.length > 0 ? 'mt-1 border-t border-line pt-1' : undefined}>
                     <button
                       type="button"
                       id={`palette-${command.id}`}

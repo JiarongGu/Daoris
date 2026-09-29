@@ -1,4 +1,4 @@
-import { type RefObject, useRef, useState } from 'react';
+import { type RefObject, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { HELP_REPOSITORY } from '../api';
 import { sentence } from '../format';
@@ -31,8 +31,16 @@ import { type HelpWhere, prefaceOf } from './where';
  *
  * Its words reach nothing but the harness, as every conversation's do (D24): the driver makes no model
  * call. Desktop-only for the console's reason (D47 §4): the record arrives over the bridge.
+ *
+ * **A question can arrive already asked** (DOCK1d): the palette's *Ask Daoris: "…"* row hands its words
+ * in as `opening`, sent once per `id` exactly as a typed message is, so Quick Ask opens on the question
+ * rather than on a box the person must type it into again.
  */
-export function useAskConversation(scroller: RefObject<HTMLElement | null>, where?: HelpWhere) {
+export function useAskConversation(
+  scroller: RefObject<HTMLElement | null>,
+  where?: HelpWhere,
+  opening?: { text: string; id: number } | null,
+) {
   const { t } = useTranslation();
   const sessions = useHelpSessions();
   // The session the person started again from: shown no longer, whatever the list still says.
@@ -96,6 +104,15 @@ export function useAskConversation(scroller: RefObject<HTMLElement | null>, wher
       onError: (error) => giveBack(text, sentence(error)),
     });
   };
+
+  // Each opening once: a re-render, or React mounting an effect twice in development, must not ask twice.
+  const opened = useRef<number | null>(null);
+  useEffect(() => {
+    if (!opening || opened.current === opening.id) return;
+    opened.current = opening.id;
+    onSend(opening.text, []);
+    // Only a new opening asks; `onSend` reads this render's session and is not a reason to ask again.
+  }, [opening?.id]);
 
   const onNew = () => {
     if (!shown) return;

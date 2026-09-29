@@ -104,6 +104,29 @@ describe('Ask Daoris, with an agent named', () => {
     expect(asked.some((url) => url.includes('repository=daoris%3Ahelp') && !url.includes('workspace='))).toBe(true);
   });
 
+  /**
+   * DOCK1d: a question asked from the palette arrives already asked — sent once, as a typed one is,
+   * and not again when the frame draws it again; a new question is a new id.
+   */
+  it('sends a question it is handed once, as if typed, and a new one when handed another', async () => {
+    bridge();
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const view = (opening: { text: string; id: number }) => (
+      <QueryClientProvider client={client}>
+        <Tooltip.Provider>
+          <AskDaoris opening={opening} onGo={vi.fn()} onClose={vi.fn()} />
+        </Tooltip.Provider>
+      </QueryClientProvider>
+    );
+    const sent = () => invoke.mock.calls.filter(([, type]) => type === 'SESSION_INPUT').map(([, , request]) => request.payload.text);
+
+    const { rerender } = render(view({ text: 'why is engine held?', id: 1 }));
+    await waitFor(() => expect(sent()).toEqual(['why is engine held?']));
+    rerender(view({ text: 'why is engine held?', id: 1 }));
+    rerender(view({ text: 'and how do I drive it?', id: 2 }));
+    await waitFor(() => expect(sent()).toEqual(['why is engine held?', 'and how do I drive it?']));
+  });
+
   /** HELP1b: where the person is goes ahead of their words, and an unchanged screen is not said twice. */
   it('hands the conversation where the person is, once for as long as the screen is the same', async () => {
     // The attended session has ENDED — what the person reads is named all the same (found looking at HELP1b).

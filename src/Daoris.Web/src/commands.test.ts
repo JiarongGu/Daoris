@@ -18,6 +18,7 @@ const world = (over: Partial<Parameters<typeof commands>[0]> = {}): Parameters<t
   monitor: vi.fn(),
   browser: vi.fn(),
   help: vi.fn(),
+  quickAsk: vi.fn(),
   ask: vi.fn(),
   ...over,
 });
@@ -77,6 +78,9 @@ describe('the command registry', () => {
     expect(list).toContain('work.monitor');
     // Daoris's own browser (D78) — a window of the shell, by the same rule.
     expect(list).toContain('work.browser');
+    // Ask Daoris, in its region and in the palette's box (DOCK1d): the machine's, so the shell's.
+    expect(list).toContain('work.help');
+    expect(list).toContain('work.quickAsk');
   });
 
   /**

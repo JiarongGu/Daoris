@@ -660,6 +660,11 @@ The first version: doctrine that installs, is checked, and flows back.
   and the side bar *the panel*. **Or drag a tab to the other region** (DOCK1e): the region lights up
   while it is over, and a region with nothing in it appears for the drag, so there is always
   somewhere to drop.
+- **Quick Ask** (DOCK1d), as VS Code's Quick Chat: Ask Daoris's conversation in a box where the
+  palette opens, for one question without opening the side bar. `Ctrl+Shift+Alt+L` opens it, and so
+  does the palette's *Quick Ask*; and whatever you type in the palette can be asked from its last row,
+  *Ask Daoris: "…"*, which sends it straight in. *Open in the side bar* carries the same conversation
+  on there. The palette's *Ask Daoris* now opens the side bar on it on Sessions, as `F1` does.
 - **A parked session is answered where you read its question, and your answer shows as yours.** A
   driven session parked to ask you gets a box at its foot, since its old door was a button at the top
   of a long record; your answer is kept in its record beneath the question and opens the session that

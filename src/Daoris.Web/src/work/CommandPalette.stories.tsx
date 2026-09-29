@@ -38,6 +38,7 @@ const world = (over: Partial<Parameters<typeof commands>[0]> = {}) => commands({
   monitor: () => {},
   browser: () => {},
   help: () => {},
+  quickAsk: () => {},
   detach: () => {},
   ask: () => {},
   ...over,
@@ -66,3 +67,9 @@ export const InABrowser: Story = { args: { commands: world({ attached: false }) 
 
 /** Nothing matches. It says so — an empty panel reads as broken where a sentence reads as an answer. */
 export const NothingMatches: Story = { args: { commands: [] } };
+
+/**
+ * Where Ask Daoris is here (DOCK1d): the placeholder says anything can be asked, and once something is
+ * typed the last row asks it. Type into the story to see the row.
+ */
+export const WithAsking: Story = { args: { commands: world(), onAsk: () => {} } };
