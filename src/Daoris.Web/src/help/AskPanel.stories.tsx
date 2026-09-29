@@ -17,6 +17,8 @@ type Story = StoryObj<typeof meta>;
 
 export const LacksEverything: Story = {
   args: {
+    // The setup guide's standing (SETUP1a): the starters lead to it while it is not done.
+    setup: { done: 0, of: 5 },
     starters: starters({
       repositories: [], drivable: [], waiting: 2, unnamedLines: [], helper: null,
       tools: [{

@@ -20,6 +20,7 @@ const world = (over: Partial<Parameters<typeof commands>[0]> = {}): Parameters<t
   help: vi.fn(),
   quickAsk: vi.fn(),
   ask: vi.fn(),
+  setup: vi.fn(),
   ...over,
 });
 
@@ -115,6 +116,23 @@ describe('the command registry', () => {
     list.find((command) => command.id === 'go.quests')!.run();
     list.find((command) => command.id === 'go.sessions')!.run();
     expect(go.mock.calls).toEqual([['quests'], ['sessions']]);
+  });
+
+  /**
+   * SETUP1a (D97): *Set up Daoris* opens the guide from anywhere, a browser included, since Get started
+   * is a browser's too (holding the one step it can know) — and found by the words a person would type.
+   */
+  it('offers setting Daoris up everywhere, found by its words', () => {
+    const setup = vi.fn();
+    const browser = commands(world({ attached: false, setup }));
+
+    const row = browser.find((command) => command.id === 'do.setup');
+    expect(row).toBeDefined();
+    row!.run();
+    expect(setup).toHaveBeenCalledOnce();
+    expect(ids(commands(world()))).toContain('do.setup');
+    expect(ids(matching(browser, 'get started'))[0]).toBe('do.setup');
+    expect(ids(matching(browser, '入门'))).toContain('do.setup');
   });
 
   it('gives every command a stable id and a distinct one', () => {

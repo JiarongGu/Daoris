@@ -49,6 +49,9 @@ const ORGANISMS = new Set<string>([
   './help/AskDaoris.tsx',
   // Ask Daoris's conversation (HELP1a): the newest help session's record and its composer.
   './help/AskConversation.tsx',
+  // The machine as the queries answer it (SETUP1a, D97): one reading for the starters and the setup
+  // guide, so the panel, the guide and the steps below them hold no query.
+  './help/useMachine.ts',
 ]);
 
 /**

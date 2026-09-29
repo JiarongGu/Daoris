@@ -46,7 +46,25 @@ the palette (*Set up Daoris*) and Ask Daoris's starters all lead to it. The stat
 
 1. **SETUP1a**: the facts shared with the starters, the Get started domain, its steps with their
    doors and commands, the menu and palette entries, both catalogues; looked at on the window with a
-   fresh home (the scratch machine emptied), in both themes.
+   fresh home (the scratch machine emptied), in both themes. *Built 2026-09-30*, with what building it
+   settled:
+   - **One reading, two consumers.** `help/machine.ts`'s `readMachine` turns the queries' answers into
+     the machine; `starters` (unchanged in behaviour) and `help/setup.ts`'s `setupSteps` both read it,
+     and `help/useMachine.ts` is the one organism that asks. A table test holds a step and a starter to
+     the same answer on every machine it names.
+   - **What each state reads.** Step 1 counts a sign-in as the roster does (SES3): only a definite
+     `out` with no account signed in is *to do*, so an `unknown` never opens the guide on a tool that
+     works. Step 5 is *done* only once something is driven and every driven repository has a line and a
+     landing rule of its own or its workspace's; its door opens the lines card when a line is missing,
+     the landing card otherwise (a new `landing` anchor). **Step 6 is optional and never done**: nothing
+     on the machine records the rules being looked at.
+   - **Nothing is drawn until the machine is read**: a step drawn before the roster answered would say
+     *to do* of a machine that has it done, so the guide says it is reading until every answer is in.
+   - **In a browser** only step 3 is listed, with its commands and no door (Add and Import are the
+     desktop's), and a sentence says the rest is the desktop's; there is no count there.
+   - **The doors**: the Daoris menu's first item, *Set up Daoris*, and the palette's *Set up Daoris*,
+     both a browser's too; and Ask Daoris's starters end with *set up Daoris step by step: n of 5 done*
+     while the required steps are not all done.
 2. **SETUP1b**: opening at start, *Don't open at start*, the status bar's count, and *Set up with Ask
    Daoris*.
 

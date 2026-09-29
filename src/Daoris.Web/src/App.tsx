@@ -384,6 +384,17 @@ export function App() {
   // session opens in Sessions, which only a shell has. An ask opens its record, where it is answered
   // (INT4d), and a quest nobody can take opens its own drawer. Both of those a browser has too.
   const openAsk = (id: string) => { setAskFocus(id); setView('quests'); };
+  // Where a starter's or a setup step's door leads (HELP1d, SETUP1a): a domain of Settings at the part it
+  // names, a view, or one of the Workspace menu's drawers, opened on Projects as the menu opens them.
+  const go = (door: StarterDoor) => {
+    if (door.view === 'settings' && door.section) {
+      openSettings(door.section, door.anchor);
+      return;
+    }
+    if (door.drawer === 'add') setAddRequested(true);
+    if (door.drawer === 'import') setImportRequested(true);
+    setView(door.view);
+  };
   // What Ask Daoris is handed wherever it stands: what is on the screen (HELP1b) — the view, the scope,
   // the settings domain on Settings, and the attended session on Sessions — and its two ways out.
   const askProps = {
@@ -400,10 +411,7 @@ export function App() {
     attending,
     // Unframed in the side bar, whose own close is the region's; nothing here closes on its own.
     onClose: () => closings.setDock(true),
-    onGo: (door: StarterDoor) => {
-      if (door.view === 'settings' && door.section) openSettings(door.section, door.anchor);
-      else setView(door.view);
-    },
+    onGo: go,
   };
 
   const attentionDoors: AttentionDoors = {
@@ -484,6 +492,7 @@ export function App() {
             onSection={chooseSettings}
             anchor={settingsAnchor}
             onAnchored={() => setSettingsAnchor(null)}
+            onGo={go}
           />
         )}
       </div>
@@ -774,6 +783,7 @@ export function App() {
           ask: () => { setView('quests'); setAsking(true); },
           help: openHelp,
           quickAsk: () => askQuickly(),
+          setup: () => openSettings('start'),
         }).map(counted)}
         // The command center's one question (DOCK1d): what was typed, asked in Quick Ask.
         onAsk={attached ? (question) => { logEvent('command.run', { command: 'ask' }); askQuickly(question); } : undefined}

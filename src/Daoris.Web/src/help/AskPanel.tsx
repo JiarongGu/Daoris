@@ -29,11 +29,16 @@ export type AskConversationSlot = {
  * conversation scrolls in is handed back to the organism that follows its tail.
  */
 export function AskPanel({
-  starters, helper, conversation, scroller, framed = true, width, range, onResize, onResetWidth, onGo, onClose,
+  starters, helper, setup, conversation, scroller, framed = true, width, range, onResize, onResetWidth, onGo, onClose,
 }: {
   starters: Starter[];
   /** The agent Ask Daoris runs on, or null. */
   helper: string | null;
+  /**
+   * How far the setup guide's required steps are done (SETUP1a, D97), which the starters lead to while
+   * any is left — or absent where that is not known yet.
+   */
+  setup?: { done: number; of: number };
   /** The conversation, where an agent is named. */
   conversation?: AskConversationSlot;
   /** The region the conversation scrolls in. */
@@ -95,6 +100,18 @@ export function AskPanel({
                   ))}
                 </ul>
               )}
+
+            {/* What is missing now, above; what is missing in the order a setup goes, one press away. */}
+            {setup && setup.done < setup.of && (
+              <Button
+                variant="ghost"
+                className="mt-2 px-0 text-small text-accent"
+                onClick={() => onGo({ view: 'settings', section: 'start' })}
+              >
+                <Icon name="plan" size={13} />
+                {t('help.setup', setup)}
+              </Button>
+            )}
           </>
         )}
       </div>

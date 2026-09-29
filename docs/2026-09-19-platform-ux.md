@@ -354,9 +354,14 @@ controls are in the frame design's §3.
     own lets it start beside it, and says a refused start in the form (U68).
   - **The monitor is the present tense**, its rail as its tiles, at the main rail's width (U69, U70).
 - **Settings** (D66, as amended by **D75**) — one page with its **domains in a list at its left**,
-  one shown at a time and reachable by name: *Appearance*, *Daoris's own AI*, *Workspace*, *Driver*,
-  *Agents & accounts*, *Permissions*, *Plugins*. Every way in opens the domain its fact is set in, at
-  the part it names, and a browser is offered only the first two. What the domains hold:
+  one shown at a time and reachable by name: *Get started*, *Appearance*, *Daoris's own AI*,
+  *Workspace*, *Driver*, *Agents & accounts*, *Permissions*, *Plugins*. Every way in opens the domain
+  its fact is set in, at the part it names, and a browser is offered only the first four. What the
+  domains hold:
+  - **Get started** (D97): the six setup steps in order, each a row with its state pill (done's hue,
+    open's for *to do*, neutral for optional), what done means, its commands with a copy each, and the
+    doors to the screens that do it at the right; a done step's doors are quiet, a step to do's are
+    buttons. A browser lists the one step it can know and says the rest is the desktop's.
   - *Appearance*: the theme and the language, each a segmented choice.
   - **Daoris's own AI** (AGT6), for everyone, because which tier answers search is the service's
     answer and given to every browser: search and convergence with the service's tier and note
