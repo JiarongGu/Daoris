@@ -7459,3 +7459,23 @@ Nothing is recorded, so nothing syncs.
 (`lastTurn` null, nothing claimed), `useChatTurns` carrying it from the answer and each change, and
 `SessionRow.test.tsx` (the later of the two, in words). Not looked at on the window: neither machine
 held a live chat mid-conversation during the work.
+
+## SIGNIN1 — a sign-in outlives leaving the Agents domain (2026-09-30)
+
+The row as filed: *(web-rest F4). The running action is the domain component's state, and
+`HARNESS_ENDED` is heard only while it is mounted. Leaving mid-login loses the code panel and the end
+notice. Lift the running action above the domain.*
+
+**Outcome.** As filed. `HarnessRuns` (`src/harnessRuns.tsx`) holds a tool's running action — which
+action, whether it is still in flight, which account a sign-in is for — with the mutation that starts
+it and the one listener for its end, and says the ending sentence. The application mounts it above
+every view; the Agents domain reads it through `useHarnessRun`. Coming back mid-sign-in finds the code
+panel on its row, and the end is said wherever the person is. Settings rendered alone wraps itself in
+its own (`WithHarnessRuns`), never a second one beside the application's. The mutation moved too:
+a callback passed to `mutate` does not fire after its component unmounts, so *in flight* would never
+have been set.
+
+**Proven by:** `shell.test.tsx` — a sign-in started, the domain left and re-entered with its panel
+still there, and its end said while away — beside the existing sign-in tests, and the web's 1404. The
+presentational boundary test placed the provider at the root, beside `shell.ts`, rather than under
+`settings/`.

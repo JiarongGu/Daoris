@@ -44,6 +44,7 @@ import { CommandCenter } from './work/CommandCenter';
 import { AppMenu, AppMenuBar } from './work/AppMenu';
 import { store, stored } from './lib/stored';
 import { figure } from './format';
+import { HarnessRuns } from './harnessRuns';
 
 /** The views are `commands.ts`'s one list (D66); the activity bar and the palette read the same. */
 type Tab = View;
@@ -475,9 +476,11 @@ export function App() {
   );
 
   return (
-    // A window, not a page (D55): the viewport IS the frame, every region scrolls inside it, and
-    // the status bar is therefore always where it was. Page scrolling would put the output panel
-    // below the fold exactly when a session is producing output.
+    // A tool's running action — a sign-in above all — outlives the view it started on (SIGNIN1).
+    <HarnessRuns notify={notify}>
+    {/* A window, not a page (D55): the viewport IS the frame, every region scrolls inside it, and
+        the status bar is therefore always where it was. Page scrolling would put the output panel
+        below the fold exactly when a session is producing output. */}
     <div className="flex h-screen flex-col overflow-hidden">
       {/* The application's one global row (D56). It holds what is true everywhere, which is exactly
           why none of it belongs in a sidebar owned by one view. Since SURF7 it is the window's own
@@ -808,5 +811,6 @@ export function App() {
           rather than on whatever was last open. */}
       <ShellSignals notify={notify} onAttend={openInWork} />
     </div>
+    </HarnessRuns>
   );
 }

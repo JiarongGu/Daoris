@@ -525,6 +525,9 @@ The first version: doctrine that installs, is checked, and flows back.
   session is on one of a line's quests, the line's count wears the same dashed ring a repository with
   a session does, in the session's colour, and a repository with several sessions says how many
   (MAP4d).
+- **A sign-in survives leaving the Agents page** (SIGNIN1). Signing in to an account and going
+  elsewhere while the browser waits no longer loses the code panel or the sentence saying how it
+  ended: the panel is on its row when you come back, and the end is said wherever you are.
 - **A live chat says it moved when its last turn ended** (RAIL2). Seconds after an answer, a
   conversation's row and head no longer read *moved 4m ago*: the driver says when each turn ended on
   this machine, and the page shows the later of that and the record. Nothing new is recorded or

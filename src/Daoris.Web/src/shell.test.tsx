@@ -29,6 +29,7 @@ import { OverviewView } from './OverviewView';
 import { ProjectsView } from './ProjectsView';
 import { QuestsView } from './QuestsView';
 import { SettingsView } from './SettingsView';
+import { HarnessRuns } from './harnessRuns';
 import { ShellSignals } from './ShellSignals';
 import { keys } from './queries';
 import { useNudge, useSyncNow } from './shell';
@@ -1204,6 +1205,46 @@ describe('the harness roster', () => {
 
     expect(notify).toHaveBeenCalledWith('work is signed in — sessions can run as it.');
     await waitFor(() => expect(screen.queryByText('Signing in to work')).toBeNull());
+  });
+
+  /**
+   * SIGNIN1: a sign-in outlives leaving the Agents domain. Its running action was that domain's own
+   * state, and its end was heard only while it was on screen: leaving mid-login lost the code panel
+   * and the sentence saying how it ended. The application holds it above every view now.
+   */
+  it('a sign-in outlives leaving the Agents domain: its panel is there on the way back, and its end is said away from it', async () => {
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'HARNESS_ACTION') return { harness: 'claude-code', action: 'login', started: true };
+      return type === 'HARNESSES' ? ROSTER : WIRING;
+    });
+    const notify = vi.fn();
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const page = (section: 'agents' | 'appearance') => (
+      <QueryClientProvider client={client}>
+        <Tooltip.Provider>
+          <HarnessRuns notify={notify}><SettingsView notify={notify} section={section} /></HarnessRuns>
+        </Tooltip.Provider>
+      </QueryClientProvider>
+    );
+    const { rerender } = render(page('agents'));
+
+    await userEvent.click((await screen.findAllByRole('button', { name: /^Log in/ }))[1]!);
+    expect(await screen.findByText('Signing in to work')).toBeTruthy();
+
+    // Away, and back: the sign-in is still running, so its panel is still on its row.
+    rerender(page('appearance'));
+    expect(screen.queryByText('Signing in to work')).toBeNull();
+    rerender(page('agents'));
+    expect(await screen.findByText('Signing in to work')).toBeTruthy();
+
+    // Away again when it ends: the person is told wherever they are.
+    rerender(page('appearance'));
+    await act(async () => {
+      eventHandlers.get('DAORIS.HARNESS_ENDED')!({
+        harness: 'claude-code', action: 'login', profile: 'work', exitCode: 0, problem: null,
+      });
+    });
+    expect(notify).toHaveBeenCalledWith('work is signed in — sessions can run as it.');
   });
 
   it('each profile shows its login state, and logging in names the profile', async () => {

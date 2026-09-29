@@ -22,7 +22,7 @@ lists.
 ## State
 
 **Counts, and this is their one home:** sixteen commands, **516 CLI tests, 553 service, 912 driver,
-293 desktop modules, 80 devkit, 1403 web unit, 21 Playwright**, 66/66 release rehearsal, **294/294
+293 desktop modules, 80 devkit, 1404 web unit, 21 Playwright**, 66/66 release rehearsal, **294/294
 family rehearsal** (it names its own phases when you run it), **45/45 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge
 documents, 5 skills, 7 packs. The always-loaded core is **22,492 of 26,000 bytes** — a span in
@@ -144,11 +144,11 @@ rather than designed.
 
 ## Backlog
 
-**Thirty rows are open**: the one the first real workspace showed still open (WSR4; WSR2, WSR1
+**Twenty-nine rows are open**: the one the first real workspace showed still open (WSR4; WSR2, WSR1
 and WSR3 landed as D86, D87 and D88, HELP1 as D89, SESS3 as D90, MAP4 with D91, and SESS1, SESS2
 and DOCK1 are in the archive); D85's two (CHR2, CHR4); the in-app browser's three (BRW3, BRW7, BRW8); the first goal's three (FG5,
 READACROSS1 the owner's, and SEM2 on a trigger); D76's held file tools;
-the eight REV3 left, WINDOW2 among them; four leftovers (CONSOLE3, FLAKE1, DEPLOY5, TEST1); two on the owner
+the seven REV3 left, WINDOW2 among them; four leftovers (CONSOLE3, FLAKE1, DEPLOY5, TEST1); two on the owner
 (TRUST2, AGT2c); and six on a trigger (see *Handover*). Every closed one is in `docs/task-archive.md`, and this file holds no
 ticked rows, by the `task-lifecycle` rule it also ships. A heading below holds open rows only.
 
@@ -194,9 +194,6 @@ found that is not session-sized, or is the owner's call. Each one was confirmed 
 - [ ] **HTTP1 — the HTTP host under test** (service F19). The service suite references Core and the
   MCP host only, so the shared gate, the key check and path stripping are exercised by one
   rehearsal route each. The fix is a `WebApplicationFactory` suite over shared mode's doors.
-- [ ] **SIGNIN1 — a sign-in outlives leaving the Agents domain** (web-rest F4). The running action
-  is the domain component's state, and `HARNESS_ENDED` is heard only while it is mounted. Leaving
-  mid-login loses the code panel and the end notice. Lift the running action above the domain.
 - [ ] **WINDOW2 — a secondary window's caption follows the chosen theme** (found closing WINDOW1,
   2026-09-27). Since WINDOW1 the page inside a monitor or a detached session follows the viewer's
   choice live, and its native title bar stays on the OS theme, so a dark choice on a light OS shows a

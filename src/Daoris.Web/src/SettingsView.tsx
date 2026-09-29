@@ -1,11 +1,12 @@
 import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { figure, sentence } from './format';
+import { figure } from './format';
 import { cn } from './lib/cn';
 import { useRegistry, useStatus, useWorkspaceHoldings } from './queries';
 import { useScope } from './scope';
+import { useHarnessRun, WithHarnessRuns } from './harnessRuns';
 import {
-  useAddFavorite, useBrowserSettings, useDriver, useHarnessAction, useHarnessEnded, useHarnesses, useLines,
+  useAddFavorite, useBrowserSettings, useDriver, useHarnessAction, useHarnesses, useLines,
   usePluginAction, usePlugins, useRefreshHarnesses, useRemotes, useRemoveFavorite, useRuleAction, useRuleProposal, useRules,
   useSetBrowser, useSetExtensions, useSetHelper, useSetIntake, useSetLanding, useSetLine, useSetNotify, useSweep, useSweepPlan, useSetStrikes, useStarts, useUnwireRemote, useUsage,
   useWireRemote,
@@ -110,6 +111,9 @@ export function SettingsView({ notify, section = 'appearance', onSection, anchor
   const shown = offered.some((domain) => domain.id === section) ? section : 'appearance';
 
   return (
+    // The application holds a tool's running action above every view (SIGNIN1); rendered alone, this
+    // page holds its own, so it still works where nothing above does.
+    <WithHarnessRuns notify={notify}>
     <section>
       <PageHeader
         title={t('settings.title')}
@@ -160,6 +164,7 @@ export function SettingsView({ notify, section = 'appearance', onSection, anchor
         </div>
       </div>
     </section>
+    </WithHarnessRuns>
   );
 }
 
@@ -1103,22 +1108,13 @@ function HarnessRoster({ notify }: { notify: Notify }) {
   const workspaces = workspacesOf(registry.data ?? []);
   useErrorNotify(roster.error, notify);
 
-  // Which action is running, so its console can be shown under the harness that is doing it. One at
-  // a time by construction: two installers racing over one PATH is not a thing to make easy.
-  const [running, setRunning] = useState<string | null>(null);
-  // 🔴 …and "running" lasts until the END, not the request (REV3). A process action answers `started`
-  // at once, so gating on the request re-enabled every button while a login still waited on a browser;
-  // a second press overwrote which action this roster was following, and the first's end closed the
-  // second's panel. The host refuses a second one too.
-  const [inFlight, setInFlight] = useState<string | null>(null);
-  const busy = act.isPending || inFlight !== null;
-  // Which ACCOUNT a login is for, while it runs — so the sign-in lands on that row, not under the
-  // door a card below it (2026-09-23). Cleared when the login ends either way; the result is the
-  // row's own pill and a sentence, not a panel left open.
-  const [runningProfile, setRunningProfile] = useState<string | null>(null);
-  // Which tool a sign-in to ANOTHER account is running for (D66 §3) — there is no row for it yet, so
-  // it sits under the list, and it goes when the sign-in ends either way.
-  const [signingInNew, setSigningInNew] = useState<string | null>(null);
+  // Which action is running, so its console can be shown under the harness that is doing it — one at
+  // a time by construction, two installers racing over one PATH being nothing to make easy. Which
+  // ACCOUNT a sign-in is for, so it lands on that row (2026-09-23), and which tool a sign-in to
+  // another account runs for (D66 §3). Held above every view (SIGNIN1), so a sign-in outlives
+  // leaving this domain: its panel is here on the way back, and its end is said wherever you are.
+  const { running, runningProfile, signingInNew, busy: acting, run } = useHarnessRun();
+  const busy = acting || act.isPending;
   // Which tool has its API-key field open, and what is typed in it (AGT3, D67 §1). The draft lives
   // here only until it is sent, and is dropped the moment it is — sent or taken back.
   const [keying, setKeying] = useState<string | null>(null);
@@ -1139,55 +1135,6 @@ function HarnessRoster({ notify }: { notify: Notify }) {
       onError: failure(notify),
     });
   };
-  // The same key, readable from the event handler below without re-subscribing on every render.
-  const runningRef = useRef<string | null>(null);
-
-  /**
-   * What an action's end means to the person — said once, whether it ended inside the request (a
-   * file edit) or later as news (a process). The harness's own exit code decides which it was:
-   * Daoris ran somebody else's tool and reports what it did, rather than deciding on its behalf
-   * that it went well. A login's sentence names the account and what a person can now do with it,
-   * because that is what they came for.
-   */
-  const ended = (
-    action: string, profile: string | undefined, exitCode: number, problem: string | null,
-    account?: string | null, kept?: boolean | null,
-  ) => {
-    setRunningProfile(null);
-    setSigningInNew(null);
-    if (problem) {
-      notify(problem, 'error');
-      return;
-    }
-    // Another account (D66 §3): kept only when the sign-in finished, and named by who signed in.
-    if (action === 'login-new') {
-      if (exitCode !== 0) notify(t('harness.loginNew.failed', { code: exitCode }), 'error');
-      else if (!kept) notify(t('harness.loginNew.nobody'), 'error');
-      else if (account) notify(t('harness.loginNew.done', { account }));
-      else notify(t('harness.loginNew.unnamed', { profile }));
-      return;
-    }
-    if (action === 'login') {
-      if (exitCode === 0) notify(t('harness.login.done', { profile: account ?? profile }));
-      else notify(t('harness.login.failed', { code: exitCode }), 'error');
-      return;
-    }
-    if (exitCode === 0) notify(t('harness.done', { harness: runningRef.current?.split(':')[0], action: t(`harness.${action}`) }));
-    else {
-      notify(
-        t('harness.failed', { harness: runningRef.current?.split(':')[0], action: t(`harness.${action}`), code: exitCode }),
-        'error');
-    }
-  };
-
-  // 🔴 A process action ends as NEWS (2026-09-23): a login waits on a person in a browser, longer
-  // than a request may take on the bridge, and a request that waited with it timed out — the panel
-  // closed on a login that was still running. Only the action this roster started is this roster's.
-  useHarnessEnded((news) => {
-    if (runningRef.current !== `${news.harness}:${news.action}`) return;
-    setInFlight(null);
-    ended(news.action, news.profile ?? undefined, news.exitCode, news.problem, news.account, news.kept);
-  });
   // The version being typed per harness (TOOL2). Local to the form: a pin only exists once the
   // install behind it succeeded, so there is nothing to remember until then.
   const [pinning, setPinning] = useState<Record<string, string>>({});
@@ -1204,38 +1151,6 @@ function HarnessRoster({ notify }: { notify: Notify }) {
   const [opened, setOpened] = useState<Record<string, 'pin' | null>>({});
   const open = (harness: string, which: 'pin') =>
     setOpened((held) => ({ ...held, [harness]: held[harness] === which ? null : which }));
-
-  const run = (
-    harness: string,
-    action: 'install' | 'update' | 'login' | 'login-new' | 'pin' | 'unpin'
-      | 'profile-remove' | 'profile-default',
-    profile?: string,
-    version?: string,
-    workspace?: string,
-  ) => {
-    // Never over one still running: whose end the news belongs to is the one thing this must not lose.
-    if (inFlight !== null) return;
-    setRunning(`${harness}:${action}`);
-    runningRef.current = `${harness}:${action}`;
-    setRunningProfile(action === 'login' ? profile ?? null : null);
-    setSigningInNew(action === 'login-new' ? harness : null);
-    act.mutate({ harness, action, profile, version, workspace }, {
-      // A file edit ends inside the request; a process answers `started` and ends as news, heard
-      // below. Either way the end is said once, by the same sentence.
-      onSuccess: (result) => {
-        if (result.started) {
-          setInFlight(`${harness}:${action}`);
-          return;
-        }
-        ended(action, profile, result.exitCode ?? 0, null);
-      },
-      onError: (error: unknown) => {
-        setRunningProfile(null);
-        setSigningInNew(null);
-        notify(sentence(error), 'error');
-      },
-    });
-  };
 
   // Defensive about the shape, deliberately, and for the reason SES1 wrote down: a shell older than
   // this surface answers something else entirely to a request it has never heard of. A machine's
