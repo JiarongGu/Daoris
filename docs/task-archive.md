@@ -7757,3 +7757,23 @@ The duplicate quest was declined naming the one kept, the repository's hold was 
 **Not done, and why:** deleting the two landed feature branches (`git branch -D`, since a squash merge
 makes `-d` refuse) was refused by the session's permission policy as destructive, so they are the
 owner's to delete; the private notes name them and their tips. Nothing was pushed.
+
+## SHEN1 — the kit's 0.18.0 (2026-09-30)
+
+> - [ ] **SHEN1 — the kit's 0.18.0** (owner, 2026-09-30: *"shenora is updated to 0.18.0"*). Move every
+>   Shenora package from 0.17 to 0.18.0, read its changelog for what the shell relies on (the Chromium
+>   engine, the frame, the IPC modules, the window state), and run the deployment gate on the result.
+
+**Outcome.** `Shenora`, `Shenora.Windows`, `Shenora.Chromium` and `@shenora/react` are at 0.18.0, and
+nothing in the shell had to change to build or run on it. Two of Daoris's own workarounds became the
+kit's: 0.18 lays CEF's launcher out wearing the app assembly's icon, title, product and version, so
+`StampIdentity.targets` (270 lines of an inline MSBuild task) is gone and the app project names
+`Daoris` as its title and product; and `ShenoraChromiumLocales` lays out only the engine's zh-CN and
+en-US, which the publish script still trims for the browser's own engine until CHR8. The kit's
+`ChromiumBrowserProcess` is the browser-only engine CHR8 waited for, so CHR8 is unblocked; its CEF
+154.0.32 fixes a browser-process crash when a debugging client opened a tab in an existing window.
+Proven on a clean build: the executable read `Daoris` / `Daoris` with Daoris's icon after the old one
+was deleted.
+
+**Proven by:** driver 936, modules 308, web 1419, verify, deployment rehearsal 57/57 (the launcher,
+the engine, the identity), Playwright 21, and the family rehearsal (see the commit for its run).

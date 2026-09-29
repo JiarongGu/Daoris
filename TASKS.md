@@ -144,7 +144,7 @@ rather than designed.
 
 ## Backlog
 
-**Thirty-three rows are open**: the owner's six of 2026-09-30 (SHEN1, USE1, HELP5, LOG1,
+**Thirty-four rows are open**: the owner's seven of 2026-09-30 (USE1, AGT6, QUEST1, HELP5, LOG1,
 CONSOLE4, SETUP1), first; WSR4
 from the first real workspace (its other WSR, HELP, SESS, DOCK
 and MAP rows are in the archive); the four REV3 left (DIST1, BUDGET1 and HOME1 the owner's, and HTTP1);
@@ -164,12 +164,9 @@ ships. A heading below holds open rows only.
 > system by this way"*
 
 Logging went first (LOG1a landed); then the owner's later asks the same day came before the rest of
-it: their own workspace's work (WORK1, archived), then the kit, then what they met on the window.
+it: their own workspace's work (WORK1), then the kit (SHEN1), both archived; then what they met on the window.
 Each row's parts land and are archived one by one (*"for all my request you can set them into
 TASK.md and complete one by one"*).
-- [ ] **SHEN1 — the kit's 0.18.0** (owner, 2026-09-30: *"shenora is updated to 0.18.0"*). Move every
-  Shenora package from 0.17 to 0.18.0, read its changelog for what the shell relies on (the Chromium
-  engine, the frame, the IPC modules, the window state), and run the deployment gate on the result.
 - [ ] **USE1 — what the owner met on the installed window, 2026-09-30** (*"since I tried to use update
   but got error message no updater"*; *"委托 screen box is overflowing the window, also completed quest
   not been cleared, also new request is not auto firing"*). (a) **Update on a door with no updater**:
@@ -178,7 +175,32 @@ TASK.md and complete one by one"*).
   the tool's own updater where it has one, the pin moved to the newest release where Daoris pins it,
   and no button where neither applies. (b) **The Quests view overflows the window.** (c) **A completed
   quest is not cleared** from the view. (d) **A new request does not start on its own.** Each is read
-  off the install before it is fixed.
+  off the install before it is fixed. *Read, 2026-09-30:* (b) is the desktop only: every view other
+  than Sessions is drawn inside the work frame, whose root is a flex item with no `min-w-0`, so a long
+  title that should truncate widens the frame past the window; a browser draws the view outside the
+  frame and fits. (c) is the asks: an ask stays *published* after every quest it became has closed,
+  so the list never empties. (d) is a hold: both quests were addressed to a held repository, and
+  nothing on the quest's card says so (the drawer does). (e) *Added the same day:* **the right side
+  bar's size breaks after Ask Daoris is moved to the panel and back** (*"after dock "ask daoris" from
+  right to bottom and back to right the sizing of right panel is broken"*) — reproduced on the scratch
+  window before it is fixed; (b)'s frame overflow is the first suspect.
+- [ ] **AGT6 — the agent's own settings, from Daoris: model, effort and the rest** (owner, 2026-09-30:
+  *"we also need way to adjust the claude setup (since we have command to setup model effort or
+  other setting in console but no way in daoris rn)"*). Claude Code sets its model, its effort and
+  its other settings from its own console (`/model`, `/config`), and Daoris offers no door onto
+  either, so an account's settings are changed only by opening the tool by hand under that account's
+  folder. Two levels: **an account's defaults**, in the tool's own settings file under the account's
+  profile (read the tool's settings schema, never guessed), with a Settings door and a terminal door
+  (D50); and **one conversation's model**, which the protocol door can switch mid-session
+  (`session/set_model`, and the models `session/new` answers with), as the console's `/model` does.
+  This reverses D49 §7 (*no model selection UI*) on the owner's word, so a decision records it and
+  how D24/model-decoupling still hold: the deployment still chooses, and the deployment is the person.
+- [ ] **QUEST1 — clear or delete a quest** (owner, 2026-09-30: *"and we do need way to clear or
+  delete quest"*). Clearing is USE1(c) for asks, and closed quests already leave the default list.
+  Deleting is new: a quest or an ask made by mistake (a duplicate, a test) removed from the ledger, on
+  both doors (D50). The rule to decide and record: what a delete may reach once a session has taken the
+  quest (its session record names it), and how a delete travels to a remote (D68) rather than being
+  resurrected by the next sync.
 - [ ] **HELP5 — Ask Daoris answers sooner** (owner, 2026-09-30: *"and why there is a really long
   wait for "ask daoris""*). Read off the installed window's session of 21:42: the words reached the
   agent 3.2s after the conversation was made (spawn and the protocol session opening), its first
@@ -379,7 +401,11 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 - [ ] **CHR8 — the browser onto the kit's engine, for one Chromium** (D92). Filed in Shenora's backlog
   (2026-09-30, the owner's say-so, uncommitted there): a browser-only engine with Chrome-style windows
   made over CDP, a production debug port for a process that holds no bridge, the engine settings
-  `daoris-browser` sets, and one CEF layout on disk. **Waits on Shenora.**
+  `daoris-browser` sets, and one CEF layout on disk. ~~Waits on Shenora.~~ **Unblocked by Shenora
+  0.18.0 (SHEN1)**: `ChromiumBrowserProcess` is that engine, a second process of the app's own
+  executable with Chromium's own windows, a debug port open in production behind a relay that
+  announces new tabs as pages, `PersistSessionCookies` and `Locale`. Moving `daoris-browser` onto it
+  drops CefSharp and the install's second CEF.
 
 ### The first goal — a real workspace, a ticket, a task started (owner, 2026-09-27 → D77)
 

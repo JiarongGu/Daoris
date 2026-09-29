@@ -23,6 +23,14 @@
          taskbar, the Alt-Tab list. Drawn by `tools/make-icon.py` and COMMITTED, so no consumer needs
          that script to build this. -->
     <ApplicationIcon>daoris.ico</ApplicationIcon>
+    <!-- The name CEF's launcher wears once the kit lays it out (Shenora 0.18, SHEN1): it copies this
+         assembly's icon, title, product and version onto `Daoris.Desktop.exe`, which Task Manager and
+         a pinned taskbar button otherwise named "CEF Bootstrap Application". -->
+    <AssemblyTitle>Daoris</AssemblyTitle>
+    <Product>Daoris</Product>
+    <!-- The engine's UI languages the page speaks, laid out by the kit (en-US, its fallback, always):
+         the other 218 locale files are 47 MB an install never reads. -->
+    <ShenoraChromiumLocales>zh-CN</ShenoraChromiumLocales>
   </PropertyGroup>
 
   <ItemGroup>
@@ -33,12 +41,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- The window's own icon, read from here: the exe is CEF's launcher, whose own face and name are
-         CEF's until `StampIdentity.targets` gives it Daoris's. -->
+    <!-- The window's own icon, read from here at run time; the executable's is the kit's copy of
+         `ApplicationIcon` above. -->
     <Content Include="daoris.ico" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
-
-  <Import Project="StampIdentity.targets" />
 
   <ItemGroup>
     <!-- The window's head: the loop, the supervisor and every IPC module the page talks to. Separated

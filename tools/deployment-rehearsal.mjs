@@ -335,7 +335,7 @@ async function main() {
     [SHELL_EXE, 'libcef.dll', 'icudtl.dat', 'resources.pak', 'Daoris.Desktop.App.dll'].every((name) => inApp.includes(name)),
     `app holds: ${inApp.join(', ')}`);
   // What Task Manager and the taskbar call the window: a copied CEF launcher said "CEF Bootstrap
-  // Application" until the build stamped Daoris's name onto it (D93, `StampIdentity.targets`).
+  // Application" until Daoris's name was stamped onto it (D93; by the kit since Shenora 0.18, SHEN1).
   const described = existsSync(shellExe)
     ? powershell(`(Get-Item -LiteralPath ${psQuote(shellExe)}).VersionInfo.FileDescription`).trim()
     : '';

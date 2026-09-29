@@ -3940,6 +3940,12 @@ the install the way a person does, through the launcher, and asserts that the la
   required .NET since D46 and has never offered to install it; that is a separate question.
 - **Keeping `daoris-desktop.exe`.** The application is named for itself.
 
+*Amended by SHEN1 (2026-09-30): Shenora 0.18 lays the launcher out wearing the app assembly's icon,
+title, product and version, so `StampIdentity.targets` is gone and the app project names `Daoris` as
+its title and product. The kit also lays out only the locales the project names
+(`ShenoraChromiumLocales`), which the publish script had trimmed by hand; the script still trims the
+browser's own engine until CHR8.*
+
 ## D94 — The machine keeps a log of what happens on it, without anyone's words, and nothing sends it anywhere (2026-09-30)
 
 **Decision (LOG1).** Every Daoris process writes what happens to it into the home's `logs/`: one JSON
