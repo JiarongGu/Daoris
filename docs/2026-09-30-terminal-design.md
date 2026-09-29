@@ -40,7 +40,8 @@ no terminal at all.
 
 | Bridge | Carries |
 |---|---|
-| `DAORIS.TERMINAL` · `OPEN` {shell?, cwd?} | a new terminal: its id, the shell and where it started |
+| `DAORIS.TERMINAL` · `SHELLS` | the shells this machine has, and the default (added building CONSOLE4a, for 4c's choice) |
+| `DAORIS.TERMINAL` · `OPEN` {shell?, cwd?, cols?, rows?} | a new terminal: its id, the shell and where it started |
 | `DAORIS.TERMINAL` · `INPUT` {id, data} | what the person typed, as the renderer encodes it |
 | `DAORIS.TERMINAL` · `RESIZE` {id, cols, rows} | the view's size in cells |
 | `DAORIS.TERMINAL` · `CLOSE` {id} | the tab closed: the process tree ends with it |
@@ -54,7 +55,31 @@ into the machine log (D94).
 
 1. **CONSOLE4a**: the pseudo-console in the driver library (P/Invoke to `CreatePseudoConsole`, the
    process started attached to it, output pumped, resize, the process tree ended on close), tested
-   against `cmd /c echo` and a script that reads a line; the `DAORIS.TERMINAL` module.
+   against `cmd /c echo` and a script that reads a line; the `DAORIS.TERMINAL` module. *Built
+   2026-09-30* (`PseudoConsole`, `TerminalShells`, `TerminalModule`). What building it settled:
+   - **The shell is started suspended and joined to the session processes' job** (`ProcessJob`)
+     before it runs, so a child it starts detached is in the job from its first instruction and ends
+     with the tab; a test starts one from `cmd` and watches its heartbeat stop.
+   - 🔴 **The standard handles are named, as none.** Started from a process whose own handles are
+     redirected (the test runner; a service would be the same), the shell wrote to *those* and the
+     console showed only its first frame. Measured: `cmd /c echo` printed nothing until
+     `STARTF_USESTDHANDLES` was set with no handles.
+   - **An end is told once, after the last output.** The console host outlives its shell and holds
+     the output pipe open, so the shell's exit closes the pseudo-console, which flushes its last
+     frame and breaks the pipe; `TERMINAL_EXITED` goes out once the reader has read to the end. A tab
+     the page closed tells no exit: the page already knows.
+   - **Output is batched on 16ms, not the console's 120ms**: here the output is a keystroke's echo,
+     and a tenth of a second between a key and its letter reads as a slow terminal.
+   - **Where it starts is the page's to say** (`cwd`), since the attended session and the workspace in
+     scope are the viewer's; the module opens in the home when the folder is not on this machine, and
+     answers where it did open, so a tab never names a place it is not.
+   - **The shells**: `pwsh`, else `powershell`, then `cmd` and Git Bash, each found by the plugin
+     door's resolver (`CommandPresence`); Git Bash is the `bash.exe` beside `git`, never the first
+     `bash` on PATH, which on Windows is usually WSL's launcher.
+   - **Refusals**: a shell nobody offers, one this machine lacks, none at all, and one the system would
+     not start, each a code in `Refusals` with the system's own reason carried for the last. A
+     keystroke or a resize for a terminal that has gone is answered quietly: a toast per key would be
+     noise, and the page already knows it ended.
 2. **CONSOLE4b**: the terminal view in the page on a terminal renderer (`@xterm/xterm` and its fit
    addon), one tab first, in the panel; looked at on the window in both themes.
 3. **CONSOLE4c**: more than one, the shell's choice, where it starts, and its tab's name.

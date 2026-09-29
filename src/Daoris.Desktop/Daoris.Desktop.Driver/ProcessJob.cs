@@ -27,7 +27,15 @@ public sealed class ProcessJob : IDisposable
     private ProcessJob(IntPtr handle) => _handle = handle;
 
     /// <summary>Put <paramref name="process"/> and everything it will start into one job that ends on close.</summary>
-    public static ProcessJob Hold(Process process)
+    public static ProcessJob Hold(Process process) => Hold(() => process.Handle);
+
+    /// <summary>
+    /// The same, for a process this library started itself and holds the handle of: a terminal's shell,
+    /// started suspended under its pseudo-console (CONSOLE4a) and joined before it can start anything.
+    /// </summary>
+    internal static ProcessJob Hold(IntPtr processHandle) => Hold(() => processHandle);
+
+    private static ProcessJob Hold(Func<IntPtr> processHandle)
     {
         if (!OperatingSystem.IsWindows()) return new ProcessJob(IntPtr.Zero);
 
@@ -43,7 +51,7 @@ public sealed class ProcessJob : IDisposable
         try
         {
             joined = SetInformationJobObject(job, ExtendedLimitInformation, ref limits, (uint)size)
-                     && AssignProcessToJobObject(job, process.Handle);
+                     && AssignProcessToJobObject(job, processHandle());
         }
         catch (Exception error) when (error is InvalidOperationException or System.ComponentModel.Win32Exception)
         {

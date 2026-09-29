@@ -144,6 +144,11 @@ internal static class Program
         // The page's own report into the machine log (LOG1b, D94): what is used and what fails on the
         // screen, taken only as the catalogue names it — the module is where no word gets through.
         builder.Services.AddIpcModule<LogModule>();
+        // The person's own shells for the terminal view (CONSOLE4a, D96): each under a pseudo-console, typed at
+        // and read over the bridge alone. The container disposes the module as the app ends, and every
+        // terminal with it; each shell's job object ends with this process besides.
+        builder.Services.AddSingleton<Daoris.Driver.ITerminalFactory, Daoris.Driver.PseudoConsoleTerminals>();
+        builder.Services.AddIpcModule<TerminalModule>();
         // And every refusal the bridge answers, by its code: a middleware in the kit's application slot,
         // so every module's answer passes it. Registered before Build, whose own call is a TryAdd.
         builder.Services.UseMessageDispatcher((_, dispatcher) => dispatcher.Use(RefusalLog.Middleware(log)));
