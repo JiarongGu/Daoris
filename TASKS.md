@@ -300,9 +300,18 @@ CHR1, CHR3, CHR5, CHR6 and CHR7 are in the archive: **the browser is `daoris-bro
 own window in a process of its own**. Agents open tabs in it through a relay, and Daoris's favorites
 and the extensions setting are in Settings → Browser and `daoris browser`
 (`docs/2026-09-28-chromium-embedding-evidence.md`).
-- [ ] **CHR2 — move onto Shenora's Chromium host** (`Shenora.Windows.Chromium`, which the kit builds:
-  the contract's §3). **Waits on its release.**
-- [ ] **CHR4 — the install carries it**, and the WebView2 path goes.
+- [ ] **CHR2 — the main and secondary windows on `ChromiumView`** (Shenora 0.17, D92; the contract's
+  §4a). **CHR2a:** the page on the app origin, reaching its host at a loopback address the shell
+  gives it, which the host allows in local mode (a browser keeps its own origin). **CHR2b:** the shell
+  on `UseChromiumEngine` and `ChromiumView`, the app assembly renamed so `daoris-desktop.exe` is CEF's
+  launcher, the splash and the trouble message on the new host. **CHR2c:** the tools: the dev loop's
+  instruments on the development DevTools port, and `run --install` starting the install as development.
+- [ ] **CHR4 — the install carries it**, and the WebView2 path goes: `publish:desktop` lays out CEF, and
+  the deployment rehearsal starts the published shell on it and asserts which engine answered.
+- [ ] **CHR8 — the browser onto the kit's engine, for one Chromium** (D92). Filed in Shenora's backlog
+  (2026-09-30, the owner's say-so, uncommitted there): a browser-only engine with Chrome-style windows
+  made over CDP, a production debug port for a process that holds no bridge, the engine settings
+  `daoris-browser` sets, and one CEF layout on disk. **Waits on Shenora.**
 
 ### The first goal — a real workspace, a ticket, a task started (owner, 2026-09-27 → D77)
 

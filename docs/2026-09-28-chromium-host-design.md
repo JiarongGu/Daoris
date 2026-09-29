@@ -83,6 +83,14 @@ adopter takes it *instead of writing its own host*, and a cross-platform desktop
 Daoris does not build the host: CHR2 waits on that package. Shenora's entry says to read CHR1's
 evidence rather than repeat it, which leaves the kit's own probe to what depends on the kit's frame.
 
+**The second request (2026-09-30, D92).** 0.17 shipped the page's host as `ChromiumView` on the kit's own
+binding (§4a), and nothing yet for a browser. At the owner's say-so (*"whats the limitation can you file
+this to shenoras TASKS.md?"*), one entry was filed in Shenora's backlog, uncommitted, with nothing else
+touched: a browser-only engine whose windows are Chrome style and made over CDP, a production debug port
+for a process that holds no bridge, the engine settings `daoris-browser` sets today (persisted session
+cookies, cache paths under the home, log, locale, first-run switches), and one CEF layout on disk. Until
+it lands the install carries two engines (CHR8).
+
 ## 4. Open
 
 - **The browser's form: decided, the engine's own window** (the owner, 2026-09-28: *"lets do it now
@@ -98,6 +106,31 @@ evidence rather than repeat it, which leaves the kit's own probe to what depends
 - **Size.** 352 MB on disk with two locales, 166 MB compressed. That is over the owner's 150–250 MB on
   disk, and within it as a download.
 - **Codecs.** Confirmed without the proprietary ones: no H.264, AAC or HEVC.
+
+## 4a. What Shenora 0.17 shipped (read 2026-09-30)
+
+Shenora 0.17.0 (released 2026-09-29) carries the host CHR2 waited on, in a different shape than §3
+expected: **`Shenora.Chromium`, the kit's own CEF binding** (not CefSharp), pinned to **CEF 154.0.28 /
+Chromium 154.0.8037.58**, hosted in WinForms as **`ChromiumView`** beside `OptimizedForm`, the window
+commands and `SecondaryWindows` (its ADOPTION.md, *Stage 2 on Chromium*). What that means here:
+
+- **Adopting it:** the app project references `Shenora.Chromium` with a runtime identifier, and its
+  assembly is named `<App>.App`; the build fetches the pinned CEF and makes `<App>.exe` CEF's launcher,
+  so `daoris-desktop.exe` can keep its name. `UseChromiumEngine(...)` sits beside `UseWindows`, and a
+  `ChromiumView` takes the WebView2 control's place, serving its page and bridging its IPC itself. A
+  secondary window's page commands its own window.
+- **Where the page comes from changes.** A view serves the bundle from a content folder at
+  `https://{VirtualHost}/` (or a dev server, in development only), where WebView2 showed the host's URL.
+  The page reaches its host at the loopback address instead, cross-origin, which the kit supports as its
+  *server-backed profile* (0.17 made that fetch work in Chromium). So the host allows that one origin in
+  local mode, and the page calls the host by an absolute address the shell gives it; in a browser the
+  page keeps calling its own origin.
+- **The instruments:** a DevTools port opens only in development (`IsDevelopment`, `DevToolsPort`), so a
+  published app has none (D78 §3.1 holds by construction), and looking at the install means starting it
+  as development.
+- **The browser cannot share it yet.** The kit's pages are Alloy style, and it has no Chrome-style
+  window, which is the form CHR3 chose for `daoris-browser` on CefSharp 152. Moving the page alone ships
+  **two engines**: CEF 154 is a 173 MB download (about 350–400 MB on disk) beside CefSharp's 352 MB.
 
 ## 5. Build order
 
