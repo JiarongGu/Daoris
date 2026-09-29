@@ -58,6 +58,21 @@ describe('a session row', () => {
     expect(screen.getByText(/moved 4m ago/)).toBeInTheDocument();
   });
 
+  /**
+   * RAIL2: a live chat's last move is its last turn. The record moves on state changes only, so
+   * seconds after an answer a chat read "moved 4m ago"; the driver's last turn, when later, is what
+   * the row says — written with an offset where the record writes Z, so compared as times.
+   */
+  it('says a live chat moved when its last turn ended, when that is later than its record', () => {
+    const chat = session({ kind: 'chat' });
+    const { rerender } = render(<SessionRow session={chat} lastTurn="2026-09-21T11:59:30+00:00" />);
+    expect(screen.getByText(/moved just now/)).toBeInTheDocument();
+
+    // An earlier turn says nothing the record does not already say better.
+    rerender(<SessionRow session={chat} lastTurn="2026-09-21T11:00:00+00:00" />);
+    expect(screen.getByText(/moved 4m ago/)).toBeInTheDocument();
+  });
+
   it('wears every one of the nine states, mark and word together', () => {
     for (const state of STATES) {
       const { container, unmount } = render(<SessionRow session={session({ state })} />);

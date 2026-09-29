@@ -18,7 +18,12 @@ public sealed record TurnStop(bool Cancelled, IReadOnlyList<ChatMessage> Withdra
 /// <summary>Where a conversation's turns stand, as the page is told it (CONV4a, CONV4b).</summary>
 /// <param name="Taking">A turn is on its way to the harness or running there — what a stop would act on.</param>
 /// <param name="Queued">What the person sent that has not reached the harness, in the order sent.</param>
-public sealed record ChatQueue(bool Taking, IReadOnlyList<ChatMessage> Queued)
+/// <param name="LastTurnEnded">
+/// When this machine last saw one of its turns end (RAIL2), or null before any has. A live chat's last
+/// move: its record moves on state changes only, and writing it every turn would carry a chat's activity
+/// to a teammate's machine (D47 §4), so it is told here, machine-local, and never recorded.
+/// </param>
+public sealed record ChatQueue(bool Taking, IReadOnlyList<ChatMessage> Queued, DateTimeOffset? LastTurnEnded = null)
 {
     /// <summary>Nothing running and nothing waiting — a conversation between turns, or none at all.</summary>
     public static readonly ChatQueue Idle = new(false, []);
@@ -72,13 +77,14 @@ internal sealed class ChatTurns(
     private bool _gone;
     private ChatQueue _published = ChatQueue.Idle;
     private TaskCompletionSource _drained = Completed();
+    private DateTimeOffset? _lastEnded;
 
     /// <summary>Where the turns stand now — what a page that just opened the conversation is told.</summary>
     public ChatQueue State
     {
         get
         {
-            lock (_gate) return new ChatQueue(_pumping, Snapshot());
+            lock (_gate) return new ChatQueue(_pumping, Snapshot(), _lastEnded);
         }
     }
 
@@ -239,6 +245,15 @@ internal sealed class ChatTurns(
             {
                 lock (_gate)
                 {
+                    // The end of a turn that reached the harness is the chat's last move (RAIL2), told
+                    // at once: the next message may start straight away and leave nothing else changed
+                    // for the page to hear. One that never went out moved nothing.
+                    if (_sent)
+                    {
+                        _lastEnded = DateTimeOffset.UtcNow;
+                        Publish();
+                    }
+
                     _inFlight = false;
                     _sent = false;
                     _stopPending = false;
@@ -271,8 +286,9 @@ internal sealed class ChatTurns(
     /// <summary>Tell where the turns stand when it differs from what was last told. Called under the gate, so told in order.</summary>
     private void Publish()
     {
-        var now = new ChatQueue(_pumping, Snapshot());
-        if (now.Taking == _published.Taking && now.Queued.SequenceEqual(_published.Queued)) return;
+        var now = new ChatQueue(_pumping, Snapshot(), _lastEnded);
+        if (now.Taking == _published.Taking && now.Queued.SequenceEqual(_published.Queued)
+            && now.LastTurnEnded == _published.LastTurnEnded) return;
         _published = now;
         try
         {

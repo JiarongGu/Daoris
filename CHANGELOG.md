@@ -525,6 +525,10 @@ The first version: doctrine that installs, is checked, and flows back.
   session is on one of a line's quests, the line's count wears the same dashed ring a repository with
   a session does, in the session's colour, and a repository with several sessions says how many
   (MAP4d).
+- **A live chat says it moved when its last turn ended** (RAIL2). Seconds after an answer, a
+  conversation's row and head no longer read *moved 4m ago*: the driver says when each turn ended on
+  this machine, and the page shows the later of that and the record. Nothing new is recorded or
+  synced.
 - **A repository can say what it depends on** (MAP4e, D91). `domain.uses` in `daoris.json` names the
   repositories it uses. `connect` sends it, the service keeps it, and the desktop carries it to the
   team's deployment and keeps it when Projects edits the declaration. The map draws it as a line of its

@@ -5,6 +5,7 @@ import { ago, elapsed } from '../format';
 import { Dot, DotMark, Icon, type IconName, SESSION_ACTIVE, SESSION_DOT, shownState, Tip } from '../ui';
 import { cn } from '../lib/cn';
 import { isIntake, ownTree, sessionOrigin, sessionTitle } from './identity';
+import { movedAt } from './rail';
 
 /**
  * One session in the rail — the working surface's smallest unit of attention (design §3).
@@ -65,7 +66,7 @@ export function SessionStripRow({ session, quest, opening, taking, selected = fa
 }
 
 export function SessionRow({
-  session, quest, opening, root, taking, selected = false, onSelect, onDetach, onReview, onCopy,
+  session, quest, opening, root, taking, lastTurn, selected = false, onSelect, onDetach, onReview, onCopy,
 }: {
   session: Session;
   /**
@@ -73,6 +74,8 @@ export function SessionRow({
    * mark and the word (UX5 U17); absent, the record's word stands.
    */
   taking?: boolean;
+  /** When its last turn ended here, as the driver says (RAIL2): *moved* reads the later of it and the record. */
+  lastTurn?: string | null;
   /** The quest it serves, where the caller has it — absent is a state, not a gap (D49 §3). */
   quest?: Quest | null;
   /** What the person first said in it, where this machine holds its record — a conversation's name (RAIL1). */
@@ -107,7 +110,7 @@ export function SessionRow({
     t(isIntake(session) ? 'work.intake.kind' : session.kind === 'chat' ? 'work.kind.chat' : 'work.kind.driven'),
     tree ? t('work.rail.inTree', { tree }) : null,
     origin ? t('work.rail.on', { origin }) : null,
-    t('work.rail.moved', { ago: ago(session.updated) }),
+    t('work.rail.moved', { ago: ago(movedAt(session, lastTurn)) }),
   ].filter(Boolean).join(' · ');
 
   // Only the two unusual facts explain themselves: a tip that appeared on every row would be one

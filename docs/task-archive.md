@@ -7439,3 +7439,23 @@ the desktop's payload and form tests, and the family rehearsal's two new checks 
 the real twenty-nine (dark) and a scratch circle of twenty-three (both themes). The one mark not seen
 on the window is a live ring on a line: no session was on a quest during the looks.
 
+
+## RAIL2 — a live chat's last move is its last turn (2026-09-30)
+
+The row as filed: *(UX5 U62). The rail and the head say *moved* from the session record, which moves
+on state changes only, so seconds after an answer a chat read *idle · moved 4m ago*. A per-turn record
+write is the wrong fix: records sync, and it would carry a chat's activity to a teammate's machine
+(D47 §4). The driver already knows when each chat's turn ended (`ChatRunner`); its `SESSION_QUEUE`
+answer and `SESSION_QUEUED` event could carry it, machine-local, and the page could show the later of
+the two. The driver, the bridge and the page change together, each with its test.*
+
+**Outcome.** As filed. `ChatQueue` carries `LastTurnEnded`, stamped when a turn that reached the
+harness ends and published even when a waiting message starts the next at once (which leaves `taking`
+unchanged). The queue answer and event carry it as `lastTurn`. The rail row and the head say *moved*
+from the later of it and the record, compared as times (the driver writes an offset, the record Z).
+Nothing is recorded, so nothing syncs.
+
+**Proven by:** `TurnStopTests` (two turns, two stamps, each told), the module's empty-queue answer
+(`lastTurn` null, nothing claimed), `useChatTurns` carrying it from the answer and each change, and
+`SessionRow.test.tsx` (the later of the two, in words). Not looked at on the window: neither machine
+held a live chat mid-conversation during the work.

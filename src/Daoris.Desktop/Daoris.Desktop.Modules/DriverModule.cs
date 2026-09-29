@@ -479,7 +479,12 @@ public sealed class DriverModule : ModuleBase
                 // page offers it a box: never to one on the pipe door, where nothing could hear it.
                 var inbox = _loop.Processes.InboxOf(id);
                 var queue = inbox?.State ?? _loop.Chat?.Queue(id) ?? ChatQueue.Idle;
-                return new { Session = id, Queued = queue.Queued.Select(Said).ToArray(), queue.Taking, Listening = inbox is not null };
+                return new
+                {
+                    Session = id, Queued = queue.Queued.Select(Said).ToArray(), queue.Taking, Listening = inbox is not null,
+                    // When its last turn ended here (RAIL2), the page's "moved" for a live chat.
+                    LastTurn = queue.LastTurnEnded,
+                };
             }
 
             case "STOP_SESSION":

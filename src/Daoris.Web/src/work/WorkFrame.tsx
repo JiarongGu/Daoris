@@ -309,6 +309,8 @@ export function WorkFrame({
   const held = steerable ? chatTurns[attended!.id] : undefined;
   const steering = held?.listening === true;
   const taking = Object.fromEntries(Object.entries(chatTurns).map(([id, held]) => [id, held.taking]));
+  // When each live chat's last turn ended here (RAIL2): its *moved*, which its record never says.
+  const lastTurns = Object.fromEntries(Object.entries(chatTurns).flatMap(([id, held]) => (held.lastTurn ? [[id, held.lastTurn]] : [])));
   // The tree's files for `@` (CONV4d), asked for only while the person is writing a mention.
   const [mentioning, setMentioning] = useState(false);
   const treeFiles = useTreeFiles(talking ? attended!.id : null, mentioning);
@@ -707,6 +709,7 @@ export function WorkFrame({
             notify={notify}
             compact={layout.rail.strip}
             taking={taking}
+            lastTurns={lastTurns}
             // A row's menu reviews that session: attended, with the dock open on its work.
             onReview={(id) => {
               attend(id);
@@ -764,6 +767,7 @@ export function WorkFrame({
             quest={quest}
             opening={attended ? openings[attended.id] : null}
             taking={attended ? taking[attended.id] : undefined}
+            lastTurn={attended ? lastTurns[attended.id] : undefined}
             resolving={resolve.isPending || answer.isPending}
             stopping={stop.isPending}
             onResolve={here ? onResolve : undefined}

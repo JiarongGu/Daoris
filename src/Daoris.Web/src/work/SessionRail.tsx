@@ -29,7 +29,7 @@ import { sessionWindowName } from './window';
  * A session that finished while its person was reading it must not vanish out from under them, and
  * reviewing finished work is a surface of its own (SURF6), not a growing list here.
  */
-export function SessionRail({ selected = null, onSelect, notify, compact = false, onReview, taking = {}, live = false }: {
+export function SessionRail({ selected = null, onSelect, notify, compact = false, onReview, taking = {}, lastTurns = {}, live = false }: {
   /** The attended session's id, held by the frame. */
   selected?: string | null;
   onSelect?: (id: string) => void;
@@ -47,6 +47,8 @@ export function SessionRail({ selected = null, onSelect, notify, compact = false
    * keeps its record's word.
    */
   taking?: Record<string, boolean>;
+  /** When each live conversation's last turn ended here (RAIL2): a row's *moved* reads the later of it and the record. */
+  lastTurns?: Record<string, string>;
   /**
    * The present tense only: no ended section, and a search that finds only what is running. The
    * monitor's, whose tiles are the running sessions a press scrolls to; an ended row there scrolled
@@ -84,6 +86,7 @@ export function SessionRail({ selected = null, onSelect, notify, compact = false
       quest={session.quest ? questFor.get(session.quest) : null}
       opening={openings[session.id]}
       taking={taking[session.id]}
+      lastTurn={lastTurns[session.id]}
       root={registered.get(session.repository)?.root}
       selected={session.id === selected}
       onSelect={onSelect}

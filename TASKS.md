@@ -21,8 +21,8 @@ lists.
 
 ## State
 
-**Counts, and this is their one home:** sixteen commands, **516 CLI tests, 553 service, 911 driver,
-293 desktop modules, 80 devkit, 1401 web unit, 21 Playwright**, 66/66 release rehearsal, **294/294
+**Counts, and this is their one home:** sixteen commands, **516 CLI tests, 553 service, 912 driver,
+293 desktop modules, 80 devkit, 1403 web unit, 21 Playwright**, 66/66 release rehearsal, **294/294
 family rehearsal** (it names its own phases when you run it), **45/45 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge
 documents, 5 skills, 7 packs. The always-loaded core is **22,492 of 26,000 bytes** — a span in
@@ -71,7 +71,7 @@ the verify step's camera-GUID defect, sent to the front end as a quest before an
 saved; whether the daily view gains a note chip; the single-select answer said back on the ticket;
 merging four docs commits left on session branches, in both repositories; and READACROSS1. The
 private notes name the branches and ids.
-D76's round is done, and its leftovers (RAIL2, SURF11) stand behind these. Nothing is pushed or
+D76's round is done, and so are its two leftovers (SURF11 as DOCK1c, and RAIL2). Nothing is pushed or
 published, and a release is still blocked on REH1.
 - **Landed:** CONV1 (the record), CONV2 (the view), CONV3a (Claude Code's `stream-json`), CONV3b
   (chats on the protocol door), CONV4a (stopping a turn, one queue on both doors), CONV4b (the
@@ -144,11 +144,11 @@ rather than designed.
 
 ## Backlog
 
-**Thirty-one rows are open**: the one the first real workspace showed still open (WSR4; WSR2, WSR1
+**Thirty rows are open**: the one the first real workspace showed still open (WSR4; WSR2, WSR1
 and WSR3 landed as D86, D87 and D88, HELP1 as D89, SESS3 as D90, MAP4 with D91, and SESS1, SESS2
 and DOCK1 are in the archive); D85's two (CHR2, CHR4); the in-app browser's three (BRW3, BRW7, BRW8); the first goal's three (FG5,
 READACROSS1 the owner's, and SEM2 on a trigger); D76's held file tools;
-the eight REV3 left, WINDOW2 among them; five leftovers (RAIL2, CONSOLE3, FLAKE1, DEPLOY5, TEST1); two on the owner
+the eight REV3 left, WINDOW2 among them; four leftovers (CONSOLE3, FLAKE1, DEPLOY5, TEST1); two on the owner
 (TRUST2, AGT2c); and six on a trigger (see *Handover*). Every closed one is in `docs/task-archive.md`, and this file holds no
 ticked rows, by the `task-lifecycle` rule it also ships. A heading below holds open rows only.
 
@@ -376,14 +376,6 @@ TDD, looked at on the window, and the ones that touch a real session use one (au
 
 ### Open — the arc's leftovers, in the order they are worth doing
 
-
-- [ ] **RAIL2 — a live chat's last move is its last turn** (UX5 U62). The rail and the head say
-  *moved* from the session record, which moves on state changes only, so seconds after an answer a
-  chat read *idle · moved 4m ago*. A per-turn record write is the wrong fix: records sync, and it
-  would carry a chat's activity to a teammate's machine (D47 §4). The driver already knows when each
-  chat's turn ended (`ChatRunner`); its `SESSION_QUEUE` answer and `SESSION_QUEUED` event could carry
-  it, machine-local, and the page could show the later of the two. The driver, the bridge and the
-  page change together, each with its test.
 
 - [ ] **CONSOLE3 — what the console's tabs left** (CONSOLE2, 2026-09-28; the evidence is
   `docs/2026-09-28-console2-streams-evidence.md`). Four, each its own landing: **stop a background

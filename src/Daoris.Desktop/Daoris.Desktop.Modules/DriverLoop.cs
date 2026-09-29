@@ -262,6 +262,9 @@ public sealed class DriverLoop(
                 // The words and the names of their files — never where the files are kept.
                 Queued = queue.Queued.Select(message => new { message.Text, Files = message.Files.Select(file => file.Name).ToArray() }).ToArray(),
                 queue.Taking,
+                // When its last turn ended here (RAIL2): the chat's last move, which its record never
+                // says. Machine-local, like everything this event carries.
+                LastTurn = queue.LastTurnEnded,
             });
         // What a person told a driven session, waiting for its turn to end (SESS3), told the same way —
         // and `Listening` false once it stops taking any, so the page takes its box away.

@@ -58,6 +58,8 @@ export function MonitorWindow({ notify }: { notify: Notify }) {
   // reads idle, on its tile and in the rail, as in the main window (UX5 U17).
   const chatTurns = useChatTurns(live.filter((session) => session.kind === 'chat').map((session) => session.id));
   const taking = Object.fromEntries(Object.entries(chatTurns).map(([id, held]) => [id, held.taking]));
+  // …and when each one's last turn ended here, for the rail's *moved* (RAIL2).
+  const lastTurns = Object.fromEntries(Object.entries(chatTurns).flatMap(([id, held]) => (held.lastTurn ? [[id, held.lastTurn]] : [])));
 
   // What needs a person first — the rail's rule (components plan §3a), which matters more here
   // because this window is read from across a desk — then the longest-running.
@@ -93,6 +95,7 @@ export function MonitorWindow({ notify }: { notify: Notify }) {
             <SessionRail
               notify={notify}
               taking={taking}
+              lastTurns={lastTurns}
               live
               onSelect={(id) => document.getElementById(tileId(id))
                 ?.scrollIntoView({ behavior: 'smooth', block: 'start' })}

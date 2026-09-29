@@ -727,6 +727,8 @@ public sealed class DriverModuleTests : Bridge
         Assert.Equal("nothing-here", queue.GetProperty("session").GetString());
         Assert.Empty(queue.GetProperty("queued").EnumerateArray());
         Assert.False(queue.GetProperty("taking").GetBoolean());
+        // RAIL2: no turn ended here, so no last move is claimed — the page keeps the record's.
+        Assert.Equal(JsonValueKind.Null, queue.GetProperty("lastTurn").ValueKind);
     }
 
     /// <summary>

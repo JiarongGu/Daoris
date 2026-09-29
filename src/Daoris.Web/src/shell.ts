@@ -770,6 +770,11 @@ export type SessionTurns = {
    * Absent for a conversation, which always does, and false for a driven session nothing could hear.
    */
   listening?: boolean;
+  /**
+   * When its last turn ended on this machine (RAIL2): a live chat's last move, which its record — moved
+   * on state changes only — never says. Absent before any turn has ended here.
+   */
+  lastTurn?: string;
 };
 
 /** Nothing known: nothing waiting and nothing to stop — what the composer offers until the driver answers. */
@@ -788,10 +793,11 @@ const messagesOf = (list: unknown): ChatMessage[] =>
 
 /** The driver's answer, read defensively: anything that is not a queue is nothing waiting and nothing running. */
 const turnsOf = (answer: unknown): SessionTurns => {
-  const held = answer as { queued?: unknown; taking?: unknown; listening?: unknown } | null | undefined;
+  const held = answer as { queued?: unknown; taking?: unknown; listening?: unknown; lastTurn?: unknown } | null | undefined;
   return {
     queued: messagesOf(held?.queued), taking: held?.taking === true,
     ...(typeof held?.listening === 'boolean' ? { listening: held.listening } : {}),
+    ...(typeof held?.lastTurn === 'string' && held.lastTurn ? { lastTurn: held.lastTurn } : {}),
   };
 };
 

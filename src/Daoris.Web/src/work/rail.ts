@@ -31,6 +31,16 @@ export const waitingFirst = (a: Pick<Session, 'state'>, b: Pick<Session, 'state'
  * already here, kept exactly: a session that ends while you are reading it must not jump down the
  * rail out from under you.
  */
+/**
+ * When a session last moved (RAIL2): its record's time, or a live chat's last turn on this machine
+ * when that is later. The record moves on state changes only, so seconds after an answer a chat read
+ * *moved 4m ago*. Compared as times, not strings: the driver writes an offset where the record writes Z.
+ */
+export function movedAt(session: Session, lastTurn?: string | null): string {
+  if (!lastTurn || Number.isNaN(Date.parse(lastTurn))) return session.updated;
+  return Date.parse(lastTurn) > Date.parse(session.updated) ? lastTurn : session.updated;
+}
+
 export function partition(
   sessions: readonly Session[],
   selected: string | null | undefined,

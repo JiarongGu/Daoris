@@ -45,7 +45,7 @@ export const noteIsInTheHead = (session: Session, answerableHere: boolean) =>
 const CHAIN_WHOLE = 'daoris.chainWhole';
 
 export function AttendedSession({
-  session, quest, opening, taking, resolving, stopping, onResolve, onAnswerAsk, onStop, onAnswerSession,
+  session, quest, opening, taking, lastTurn, resolving, stopping, onResolve, onAnswerAsk, onStop, onAnswerSession,
   chain = [], onSession, onQuest, onReview, relations, timeline = 'dock', branch,
 }: {
   /** Open its review — the move beside work it left that no branch of the person's holds (SESS2 H4). */
@@ -63,6 +63,8 @@ export function AttendedSession({
   opening?: string | null;
   /** Whether a turn is in flight, as the driver says — the head reads a chat between turns as idle (UX5 U17). */
   taking?: boolean;
+  /** When its last turn ended here (RAIL2), for the head's *moved*. */
+  lastTurn?: string | null;
   resolving?: boolean;
   stopping?: boolean;
   /** Passed straight through to the head, where a parked session's three moves live (design §4). */
@@ -113,6 +115,7 @@ export function AttendedSession({
         quest={quest}
         opening={opening}
         taking={taking}
+        lastTurn={lastTurn}
         resolving={resolving}
         stopping={stopping}
         onResolve={onResolve}

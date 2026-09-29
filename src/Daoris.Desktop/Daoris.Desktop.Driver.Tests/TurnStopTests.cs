@@ -64,6 +64,32 @@ public sealed class TurnStopTests : IDisposable
     }
 
     /// <summary>
+    /// RAIL2: a live chat's last move is its last turn. Its record moves on state changes only, so the
+    /// rail read "moved 4m ago" seconds after an answer; the queue says when this machine last saw a
+    /// turn end, and says so each time one does — even when a waiting message starts the next at once,
+    /// which leaves <c>Taking</c> unchanged.
+    /// </summary>
+    [Fact]
+    public async Task A_chats_queue_says_when_its_last_turn_ended_each_time_one_does()
+    {
+        var before = DateTimeOffset.UtcNow;
+        await using var session = await Chat("claude-code");
+        Assert.Null(session.Runner.Queue(session.Id).LastTurnEnded);
+
+        Assert.True(session.Runner.Say(session.Id, "first"));
+        Assert.True(session.Runner.Say(session.Id, "second"));
+        await Until(() => Turns(session) == 2 && !session.Runner.Queue(session.Id).Taking, () => session.Seen());
+
+        var ended = session.Runner.Queue(session.Id).LastTurnEnded;
+        Assert.NotNull(ended);
+        Assert.True(ended >= before);
+        // Told twice, once per turn: the first ending changed nothing else the page is told.
+        List<DateTimeOffset> told;
+        lock (session.Queues) told = [.. session.Queues.Select(queue => queue.LastTurnEnded).OfType<DateTimeOffset>().Distinct()];
+        Assert.Equal(2, told.Count);
+    }
+
+    /// <summary>
     /// Stop the turn on the native door: the harness's own interrupt, the turn ending as the protocol
     /// door calls it, what was waiting withdrawn and handed back, and the session kept for the next
     /// message.

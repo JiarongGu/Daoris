@@ -456,6 +456,18 @@ describe('useChatTurns', () => {
     expect(result.current).toEqual({ s1: { queued: [], taking: false }, s2: { queued: [], taking: false } });
   });
 
+  /** RAIL2: when the last turn ended here, as the driver says it — and nothing claimed where it says none. */
+  it('carries when the last turn ended, from the answer and from each change', async () => {
+    invoke.mockResolvedValue({ session: 's1', queued: [], taking: false, lastTurn: null });
+    const { result } = renderHook(() => useChatTurns(['s1']));
+    await waitFor(() => expect(result.current).toEqual({ s1: { queued: [], taking: false } }));
+
+    act(() => {
+      eventHandlers.get('DAORIS.SESSION_QUEUED')!({ session: 's1', queued: [], taking: false, lastTurn: '2026-09-30T01:02:03+00:00' });
+    });
+    expect(result.current.s1!.lastTurn).toBe('2026-09-30T01:02:03+00:00');
+  });
+
   /** Nothing known is no claim: an answer that says nothing of a turn leaves the conversation absent. */
   it('records nothing for an answer that is not a queue', async () => {
     invoke.mockResolvedValue({ drivable: [] });

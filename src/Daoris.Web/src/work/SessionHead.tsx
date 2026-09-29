@@ -8,6 +8,7 @@ import { Button, MetaLine, Pill, SESSION_ACTIVE, SESSION_TONE, shownState, Waiti
 import { AwaitingIntake } from './AwaitingIntake';
 import { AwaitingPerson, type Resolution } from './AwaitingPerson';
 import { isIntake, sessionOrigin, sessionTitle } from './identity';
+import { movedAt } from './rail';
 import { RunningIntake } from './RunningIntake';
 
 /**
@@ -40,9 +41,11 @@ import { RunningIntake } from './RunningIntake';
  * can be passed unconditionally.
  */
 export function SessionHead({
-  session, quest, opening, taking, resolving = false, stopping = false, onResolve, onAnswerAsk, onStop,
+  session, quest, opening, taking, lastTurn, resolving = false, stopping = false, onResolve, onAnswerAsk, onStop,
   onAnswerSession, branch, onReview,
 }: {
+  /** When its last turn ended here, as the driver says (RAIL2): *moved* reads the later of it and the record. */
+  lastTurn?: string | null;
   /** Open its review (the side bar's, or the panel's where it was moved) — what work left unlanded asks for. */
   onReview?: () => void;
   session: Session;
@@ -162,7 +165,7 @@ export function SessionHead({
             value: elapsed(session.created, running ? null : session.updated),
           },
           // Only while it runs: an ended session's last move is its end, which *ran* already says.
-          { label: t('work.head.moved'), value: running ? ago(session.updated) : null },
+          { label: t('work.head.moved'), value: running ? ago(movedAt(session, lastTurn)) : null },
         ]}
       />
 
