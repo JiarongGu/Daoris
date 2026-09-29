@@ -22,7 +22,7 @@ lists.
 ## State
 
 **Counts, and this is their one home:** sixteen commands, **514 CLI tests, 546 service, 910 driver,
-292 desktop modules, 80 devkit, 1367 web unit, 21 Playwright**, 66/66 release rehearsal, **292/292
+292 desktop modules, 80 devkit, 1383 web unit, 21 Playwright**, 66/66 release rehearsal, **292/292
 family rehearsal** (it names its own phases when you run it), **45/45 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge
 documents, 5 skills, 7 packs. The always-loaded core is **22,492 of 26,000 bytes** — a span in
@@ -163,10 +163,13 @@ requirements, and the owner's calls. Its recommended order is the order below.
   plugin, and the plugin, for its platform, pushes the branch and opens the pull request over its
   wire (D64). Off by default, and configurable per workspace. WSR1's branch form is what it starts
   from: `LandingRules.Problem` refuses any other form today, and says so.
-- [ ] **MAP4 — the map, finished** (study §6). A layered layout, pan, zoom and search for a big
-  circle (the real one has twenty-nine repositories). Asks, chains and what depends on what, each its
-  own kind of line, from a declared source and never guessed. Open-only or a time window. Sessions
-  live on their nodes. Looked at with twenty-nine nodes in both themes.
+- [ ] **MAP4 — the map, finished** (study §6). MAP4a is built (the layers, pan, zoom, search and the
+  sizing menu; map design §1a). Still open: **b** asks and chains as their own kinds of line,
+  switchable; **c** open-only or a time window; **d** sessions live on their nodes, a quest's line
+  lit while it is worked; **e** what depends on what, from a declared source and never guessed (a
+  new declaration, so the CLI and the service change as twins). Look again at the real
+  twenty-nine in both themes on the next install republish: MAP4a's last round was judged on a
+  scratch circle of twenty-three.
 ### What REV3 left (2026-09-25)
 
 REV3 is in the archive, and `docs/2026-09-25-rev3-review.md` is its ledger. These rows are what it

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Convergence, Quest, Registration, Session } from '../api';
-import { fitRadius, frameMap, placeLabel, textWidth } from './MapCanvas';
+import { fitRadius, frameMap, placeLabel } from './MapCanvas';
+import { textWidth } from './measure';
 import { buildTopology, layoutRing } from './topology';
 
 // MAP2 (D67 §3, `docs/2026-09-23-map-design.md` §1): the workspace's repositories and what actually

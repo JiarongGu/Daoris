@@ -510,6 +510,15 @@ The first version: doctrine that installs, is checked, and flows back.
   repositories, the quests that went between them (one arrow per direction, counted, solid while
   any is open), and where two repositories learned the same thing. Choose a repository or a line to
   see what it holds. It reads only what the service already serves, so it works in a browser too.
+- **A big workspace's map, in layers** (MAP4a). Past twelve repositories the map lays them out in
+  columns by who asks whom instead of a ring, so every name stays readable. A line that skips a
+  column threads between the cards it passes, and two repositories that ask each other get two
+  lines apart. What nothing connects waits below, by name. Drag or scroll to move about, Ctrl+wheel
+  to zoom, and type to find a repository. The size is a menu behind the percentage: zoom in and out,
+  the whole map, or a size by number.
+- **Menus look like menus, and scrollbars have no arrows.** The button that lists a region's views
+  and moves them is now "⋯", as VS Code's is, rather than a down arrow. Scrollbars throughout are a
+  thin bar with no ▲ and ▼ at its ends.
 - **An account its provider refused is not spent again** (AGT3b). A session that fails with the
   tool's own "API Error: 401" ends saying which account was refused and what fixes it. Further
   starts on that account are held, instead of each sitting through the tool's minutes of silent

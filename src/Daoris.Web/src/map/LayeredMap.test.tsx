@@ -1,0 +1,111 @@
+import { describe, expect, it, vi } from 'vitest';
+import { fireEvent, render as rtlRender, screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+import type { ReactElement } from 'react';
+import * as Tooltip from '@radix-ui/react-tooltip';
+import type { MapNode, Topology } from './topology';
+import { LayeredMap } from './LayeredMap';
+
+// MAP4: a circle too big for a ring — cards in layers, a viewport that pans and zooms, and a search.
+
+const render = (node: ReactElement) => rtlRender(<Tooltip.Provider>{node}</Tooltip.Provider>);
+
+const node = (id: string, extra: Partial<MapNode> = {}): MapNode => ({ id, owns: [], accepts: [], open: 0, working: false, parked: false, ...extra });
+
+const IDS = Array.from({ length: 20 }, (_, index) => `repo-${String(index).padStart(2, '0')}`);
+const TOPOLOGY: Topology = {
+  nodes: [...IDS.map((id) => node(id)), node('report-ui', { open: 2, working: true }), node('reports-db')],
+  quests: [{ from: 'report-ui', to: 'reports-db', quests: [], open: 1 }],
+  knowledge: [{ a: 'reports-db', b: 'repo-03', groups: 2 }],
+  outside: 0,
+  circles: 1,
+};
+
+describe('the layered map', () => {
+  it('draws every repository as a card a keyboard reaches, named for what it holds', () => {
+    render(<LayeredMap topology={TOPOLOGY} selected={null} onSelect={vi.fn()} />);
+    expect(screen.getByRole('button', { name: /^report-ui, / })).toHaveAttribute('tabindex', '0');
+    expect(screen.getAllByRole('button', { name: /^repo-\d\d/ })).toHaveLength(20);
+    expect(screen.getByRole('button', { name: /from report-ui to reports-db/ })).toBeInTheDocument();
+    // What nothing connects is set apart, and says so.
+    expect(screen.getByText('No quests or shared findings yet')).toBeInTheDocument();
+  });
+
+  it('finds a repository as it is typed, and chooses the first on Enter', () => {
+    const onSelect = vi.fn();
+    render(<LayeredMap topology={TOPOLOGY} selected={null} onSelect={onSelect} />);
+    const find = screen.getByRole('textbox', { name: 'find a repository' });
+
+    fireEvent.change(find, { target: { value: 'report' } });
+    expect(screen.getByText('2 matches')).toBeInTheDocument();
+    // The rest step back, so the matches stand out.
+    expect(screen.getByRole('button', { name: /^repo-00/ }).getAttribute('class')).toContain('opacity-25');
+    fireEvent.keyDown(find, { key: 'Enter' });
+    expect(onSelect).toHaveBeenCalledWith({ kind: 'node', id: 'report-ui' });
+  });
+
+  it('sizes from a menu behind the size itself, with no arrow standing for a size', async () => {
+    render(<LayeredMap topology={TOPOLOGY} selected={null} onSelect={vi.fn()} />);
+    const svg = screen.getByRole('group', { name: 'the workspace map' });
+    const width = () => Number(svg.getAttribute('viewBox')!.split(' ')[2]);
+    const start = width();
+    const sizing = async (item: string) => {
+      screen.getByRole('button', { name: /^Sizing: \d+%$/ }).focus();
+      await userEvent.keyboard('{Enter}');
+      await userEvent.click(screen.getByRole('menuitem', { name: new RegExp(`^${item}`) }));
+    };
+
+    await sizing('Zoom in');
+    expect(width()).toBeLessThan(start);
+    await sizing('Zoom out');
+    await sizing('Zoom out');
+    expect(width()).toBeGreaterThan(start);
+    // A size by name, ticked in the menu once it is the size, and said on the button.
+    await sizing('100%');
+    expect(screen.getByRole('button', { name: 'Sizing: 100%' })).toHaveTextContent('100%');
+    screen.getByRole('button', { name: 'Sizing: 100%' }).focus();
+    await userEvent.keyboard('{Enter}');
+    expect(screen.getByRole('menuitem', { name: '100%' }).querySelector('svg')).not.toBeNull();
+    // Each keyed way says its key.
+    expect(screen.getByRole('menuitem', { name: /^Show the whole map/ })).toHaveTextContent('0');
+    await userEvent.keyboard('{Escape}');
+  });
+
+  it('zooms from its keys, and shows the whole on 0', () => {
+    render(<LayeredMap topology={TOPOLOGY} selected={null} onSelect={vi.fn()} />);
+    const svg = screen.getByRole('group', { name: 'the workspace map' });
+    const width = () => Number(svg.getAttribute('viewBox')!.split(' ')[2]);
+    const start = width();
+    const region = screen.getByRole('region', { name: 'the workspace map' });
+    fireEvent.keyDown(region, { key: '+' });
+    expect(width()).toBeLessThan(start);
+    fireEvent.keyDown(region, { key: '0' });
+    // Fit shows it all: the viewBox holds the whole frame.
+    expect(width()).toBeGreaterThanOrEqual(start);
+  });
+
+  it('draws a pair asked both ways as two lines apart, each with its own count in view', () => {
+    const both: Topology = {
+      ...TOPOLOGY,
+      quests: [...TOPOLOGY.quests, { from: 'reports-db', to: 'report-ui', quests: [], open: 1 }],
+    };
+    render(<LayeredMap topology={both} selected={null} onSelect={vi.fn()} />);
+    const there = screen.getByRole('button', { name: /from report-ui to reports-db/ });
+    const back = screen.getByRole('button', { name: /from reports-db to report-ui/ });
+    expect(there.querySelector('path')!.getAttribute('d')).not.toBe(back.querySelector('path')!.getAttribute('d'));
+    // The counts stand apart by more than a bubble's width, so neither hides the other.
+    const y = (line: HTMLElement) => Number(line.querySelector('circle')!.getAttribute('cy'));
+    expect(Math.abs(y(there) - y(back))).toBeGreaterThan(22);
+  });
+
+  it('chooses and releases as the ring does: a second press, or Escape', () => {
+    const onSelect = vi.fn();
+    const { rerender } = render(<LayeredMap topology={TOPOLOGY} selected={null} onSelect={onSelect} />);
+    fireEvent.click(screen.getByRole('button', { name: /^report-ui, / }));
+    expect(onSelect).toHaveBeenLastCalledWith({ kind: 'node', id: 'report-ui' });
+
+    rerender(<Tooltip.Provider><LayeredMap topology={TOPOLOGY} selected={{ kind: 'node', id: 'report-ui' }} onSelect={onSelect} /></Tooltip.Provider>);
+    fireEvent.keyDown(screen.getByRole('region', { name: 'the workspace map' }), { key: 'Escape' });
+    expect(onSelect).toHaveBeenLastCalledWith(null);
+  });
+});

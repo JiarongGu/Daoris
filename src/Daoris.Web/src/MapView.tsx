@@ -2,6 +2,8 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { CodeMapCanvas, CodeMapDetail } from './map/CodeMap';
 import { MapCanvas, type MapSelection } from './map/MapCanvas';
+import { LayeredMap } from './map/LayeredMap';
+import { RING_MAX } from './map/layers';
 import { MapDetail } from './map/MapDetail';
 import { buildTopology } from './map/topology';
 import { useCodeMap, useConvergence, useQuests, useRegistry, useSessions } from './queries';
@@ -137,11 +139,10 @@ export function MapView({ notify, onOpenConvergence, onOpenQuest }: {
       {header}
       <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_20rem]">
         <Card>
-          <MapCanvas
-            topology={topology}
-            selected={selected}
-            onSelect={(next) => setSelected(next)}
-          />
+          {/* A ring holds a handful; a bigger circle is laid out in layers, which pan and zoom (MAP4). */}
+          {topology.nodes.length > RING_MAX
+            ? <LayeredMap topology={topology} selected={selected} onSelect={(next) => setSelected(next)} />
+            : <MapCanvas topology={topology} selected={selected} onSelect={(next) => setSelected(next)} />}
           {/* The key, in words: each line's meaning is its shape as well as its hue (D41) — and the
               number in a node, which no key named until the window showed it (POLISH4). */}
           <ul className="m-0 mt-2 flex list-none flex-wrap gap-x-4 gap-y-1 p-0 text-meta text-ink-faint">

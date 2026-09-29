@@ -43,7 +43,8 @@ than two rings and a gap; past that, the drawing shrinks as the last resort. A w
 larger ring, as far as the height the window leaves below the drawing (`useTall`), so the map
 follows the window (UX5 U59). The code map keeps the same rule by its width (`codeWidth`), spreading
 its columns to its card.
-Layers by quest flow are for a circle too big for a ring to read, and wait until one exists. Drawn
+Layers by quest flow are for a circle too big for a ring to read: the first real workspace has
+twenty-nine repositories, and they are built (MAP4a, §1a). Drawn
 as SVG on the design tokens (D41): status never by colour alone, and both themes. **No graph
 library**: a family is a handful to a few dozen repositories, and a layout engine would cost more in
 bundle and in look than it buys. MAP3 may need one; that is MAP3's decision.
@@ -74,6 +75,41 @@ machine-local and appear only on the desktop, where they already do.
 **Where it lives — decided (owner, 2026-09-23): a view of its own, *Map*, on the activity bar.**
 Rejected: the top of Overview (the map would be a summary of itself), and inside Projects (the
 cards are what a node's detail already shows).
+
+### 1a. MAP4a — a big circle, in layers (built 2026-09-30)
+
+**Past twelve repositories the ring gives way to layers** (`RING_MAX`). On a ring of twenty-nine every
+name shrank to about 7px for the drawing to fit its card. Layers read at any size, because the
+drawing grows and the viewport pans and zooms over it, so a name stays the type scale's. Two pure
+functions again: `layoutLayers` in `map/layers.ts`, drawn by `LayeredMap`. The ring's rules carry
+over unchanged: status never by colour alone, every card and line a button, a choice a toggle.
+
+- **Quests decide the columns.** An asker stands left of whom it asks, one column a step (longest
+  path). A loop of asks is broken where a depth-first walk meets it, so its closing quest runs back.
+  A shared finding has no direction, so a repository known only by one stands in its pair's column.
+  A few barycentre sweeps order each column toward its neighbours' rows.
+- **A line that skips a column takes a slot in every column it crosses**: a waypoint, ordered with
+  the cards, so the line threads between them. Seen on the window: a loop of three drew its closing
+  quest straight across the card between.
+- **A pair asked both ways is two lines in two lanes**, each off the middle by more than a count
+  bubble's width. Seen on the window: the second count was hidden under the first.
+- **A shared finding within one column bows round the left**, where no quest runs, and the frame
+  keeps room for the bow so *fit* shows it. Seen on the first real workspace: five such lines round
+  the right braided through the quests between two columns.
+- **What nothing connects is set apart below**, in a grid read by name with each card its own
+  width. It wraps inside what the viewport shows at the opening scale, so it reads downward. Seen on
+  the first real workspace: equal cells in window-wide rows ran past a map half the window wide.
+- **Moving about.** Drag the ground or use the wheel to pan; Ctrl+wheel zooms about the pointer.
+  `+`, `-`, `0` and the arrow keys work on the viewport. It opens at a readable size (never below
+  80%), and *fit* shows the whole. A search dims what does not match, and Enter chooses and centres
+  the first match.
+- **The size is its own menu** (the owner, 2026-09-30: *"instead of using the up down arrow ... use
+  more '...' or options for sizing"*). The percentage is the button. Its menu holds zoom in and out,
+  the whole map and three sizes by number, each keyed way showing its key. An arrow stood for a
+  direction the zoom does not have.
+
+**What MAP4 still owes** (TASKS): asks and chains as lines of their own (b), open-only or a time
+window (c), live sessions on their nodes (d), and *depends on* from a declared source (e).
 
 ## 2. MAP1 — the workflow (second)
 

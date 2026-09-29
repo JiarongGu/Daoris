@@ -76,7 +76,8 @@ export function ViewsMenu({
               'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent',
             )}
           >
-            <Icon name="chevronDown" size={13} />
+            {/* VS Code's *Views and More Actions*: a menu, not a direction, so not an arrow (the owner, 2026-09-29). */}
+            <Icon name="more" size={14} />
           </button>
         </Menu.Trigger>
       </Tip>

@@ -2,6 +2,7 @@ import { type KeyboardEvent, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { cn } from '../lib/cn';
 import { type Topology, layoutRing } from './topology';
+import { type Frame, textWidth } from './measure';
 import { useTall, useWidth } from './useWidth';
 
 /** What a person has chosen on the map: a repository, the quests one way, or a shared finding. */
@@ -31,19 +32,6 @@ const SPACING = 2 * RADIUS + 30;
 const NAME_PX = 12;
 const WORD_PX = 11;
 
-/** A rectangle in the map's units: what the drawing's `viewBox` frames. */
-export type Frame = { x: number; y: number; width: number; height: number };
-
-/**
- * How wide a line of text is drawn, estimated before it is drawn: a Chinese character is a whole em,
- * anything else about two thirds of one, which is a semibold Latin name's width with room to spare
- * (*game* measured 7.62 units a letter at 12px on the window). The frame holds what this says.
- */
-export function textWidth(text: string, px: number): number {
-  let width = 0;
-  for (const char of text) width += /[⺀-鿿豈-﫿＀-￯　-〿]/.test(char) ? px : px * 0.64;
-  return width;
-}
 
 /** A line from one node's edge to the other's, bent so the two directions never overlap. */
 function questCurve(a: { x: number; y: number }, b: { x: number; y: number }) {

@@ -186,6 +186,13 @@ controls are in the frame design's §3.
   nothing typed) gets no composer, and the line the box would have taken says why.
 - **A move offered where the answer is not is a dead end**, and a move that stays says what it does
   not do. A move that lived on a removed control moves with it.
+- **An arrow is a direction, never a menu** (the owner, 2026-09-30: *"instead of using the up down
+  arrow all over the entire design we can use more '...' or options"*). A region's own menu is "⋯",
+  as VS Code's *Views and More Actions* is. A setting with a value, such as a size, is a menu behind
+  that value. A chevron stays only where it opens and closes something (a tool card, a file in the
+  review) or moves one way (a find's previous and next). Scrollbars have no arrows at their ends,
+  since they are drawn in `tokens.css`: Chromium on Windows keeps its ▲ and ▼ on any bar it draws
+  itself, even a thin one.
 - **An account reads as who is signed in, with one name on every card** (D66 §3, U53): who signed in,
   a key's handle, the directory, and the tool's own home as *this machine's own* when nobody is known,
   from the roster's one namer. A name that repeats says which it is. A way in is named by its tool and
@@ -273,7 +280,8 @@ controls are in the frame design's §3.
   as it is written**, unrendered, in a drawer wide enough for a line of the source (U43). A note keeps
   a measure: 🔴 `max-w-prose` on a flex item caps its `basis-full`, so the measure goes on a child of
   the full-width item, or the note stops breaking to its own line.
-- **Map** (MAP2) — the circle's repositories on a ring, the quests between them as directed arrows
+- **Map** (MAP2; MAP4a past twelve repositories: columns by who asks whom, which pan and zoom, a
+  search, and a sizing menu behind the percentage) — the circle's repositories on a ring, the quests between them as directed arrows
   with a count on each, and a shared finding as a dashed line; a detail panel beside the map says what
   the chosen node or line holds, and a legend says every mark in words, the number in a node
   included. It adds no actions: a quest in a detail opens its drawer (U46). What the window taught it
