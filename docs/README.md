@@ -41,6 +41,7 @@ what was measured, and it stays a record of that moment. A *record* is append-on
 | `2026-09-29-dock-design.md` | contract | Panels that dock as VS Code's do: views that move between regions, the region toggles, Quick Ask (DOCK1, SURF11) | Built (DOCK1a–e, §4); the frame is on every view |
 | `2026-09-30-machine-log-design.md` | contract | The machine log: what happens on this machine, without anyone's words, to improve Daoris from (LOG1, D94) | Current; LOG1a–d in its §7 order |
 | `2026-09-30-terminal-design.md` | contract | The terminal: a real shell of the person's own in the console panel (CONSOLE4, D96) | Current; CONSOLE4a–c in its §4 order |
+| `2026-09-30-setup-guide-design.md` | contract | The setup guide: what a first start walks through, on the facts Ask Daoris's starters read (SETUP1, D97) | Current; SETUP1a–b in its §3 order |
 
 ## Studies and evidence
 

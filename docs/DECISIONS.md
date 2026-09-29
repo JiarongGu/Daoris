@@ -4005,3 +4005,22 @@ terminal's words never reach the machine log (D94).
   break, and *just like a console window* is the requirement.
 - **A native terminal package**: the pseudo-console is a few Win32 calls the driver library can make.
 - **Typing into a session's console**: the composer is that door.
+
+## D97 — A first start opens on a setup guide built from the facts Ask Daoris's starters read (2026-09-30)
+
+**Decision (SETUP1).** *Get started* is the first domain in Settings: the steps a machine needs, in
+order — an agent with an account signed in, Daoris's own agent, a workspace and its repositories, what
+is driven, how work lands, and (optionally) what agents may do — each with its state read off the
+machine, the screen that does it and the terminal command that does the same (D50). A machine missing
+any of the first three opens on it at start until they are done or the person turns that off; the
+Daoris menu, the palette and Ask Daoris's starters lead to it after. Its head offers *Set up with Ask
+Daoris*, whose proposals are confirmed like every other (HELP1c). The owner's asks: *"we also will
+need a setup guide for first use daoris, so setup agent and agent for "daoris" … and other rules"*
+and *"we need to have a good ui/ux or easy access for everything use ask daoris"*. The contract is
+`docs/2026-09-30-setup-guide-design.md`.
+
+**Why this shape.** Every step already has a screen; the guide orders them and says which is done. One
+pure reading of the machine serves the guide and the starters, so the two cannot disagree.
+
+**Rejected.** A wizard of modal screens (a second copy of every setting, drifting from the first), and
+doing the setup for the person (signing in and choosing what is driven are theirs).
