@@ -1,4 +1,4 @@
-import { type KeyboardEvent, type PointerEvent, useEffect, useMemo, useRef, useState } from 'react';
+import { type KeyboardEvent, type PointerEvent, type SetStateAction, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import * as Menu from '@radix-ui/react-dropdown-menu';
 import { cn } from '../lib/cn';
@@ -126,11 +126,27 @@ export function LayeredMap({ topology, selected, onSelect }: {
     };
   };
   const [view, setView] = useState<View>(() => fitted(false));
+  // Whether the person has moved the view: until they do, it follows the drawing.
+  const moved = useRef(false);
+  const move = (next: SetStateAction<View>) => {
+    moved.current = true;
+    setView(next);
+  };
   // A new circle, or a card that measured itself: open again at the readable size.
   const measured = `${viewport.width}x${viewport.height}:${topology.nodes.length}`;
-  useEffect(() => { setView(fitted(false)); }, [measured]);
+  useEffect(() => {
+    moved.current = false;
+    setView(fitted(false));
+  }, [measured]);
+  // 🔴 The data arrives in parts, the shared findings after the repositories and quests, and each part
+  // can move the frame. Fitted once, the view kept the first frame, and a shared finding's bow round
+  // the left ran off the edge on the first real workspace. It follows the frame until the person moves it.
+  const framed = [layout.frame.x, layout.frame.y, layout.frame.width, layout.frame.height].join(',');
+  useEffect(() => {
+    if (!moved.current) setView(fitted(false));
+  }, [framed]);
 
-  const zoomBy = (next: (scale: number) => number, at?: { x: number; y: number }) => setView((was) => {
+  const zoomBy = (next: (scale: number) => number, at?: { x: number; y: number }) => move((was) => {
     const scale = Math.min(ZOOM.max, Math.max(ZOOM.min, next(was.scale)));
     const [w0, h0] = [viewport.width / was.scale, viewport.height / was.scale];
     const [w1, h1] = [viewport.width / scale, viewport.height / scale];
@@ -140,7 +156,7 @@ export function LayeredMap({ topology, selected, onSelect }: {
   });
   const zoomAt = (factor: number, at?: { x: number; y: number }) => zoomBy((scale) => scale * factor, at);
   const zoomTo = (scale: number) => zoomBy(() => scale);
-  const pan =(dx: number, dy: number) => setView((was) => ({ ...was, x: was.x + dx / was.scale, y: was.y + dy / was.scale }));
+  const pan = (dx: number, dy: number) => move((was) => ({ ...was, x: was.x + dx / was.scale, y: was.y + dy / was.scale }));
 
   // The wheel: pan, and zoom with Ctrl — a listener of its own, since a passive React one cannot stop the page scrolling.
   useEffect(() => {
@@ -176,7 +192,7 @@ export function LayeredMap({ topology, selected, onSelect }: {
   const centreOn = (id: string) => {
     const card = layout.at[id];
     if (!card) return;
-    setView((was) => ({ ...was, x: card.x - viewport.width / was.scale / 2, y: card.y - viewport.height / was.scale / 2 }));
+    move((was) => ({ ...was, x: card.x - viewport.width / was.scale / 2, y: card.y - viewport.height / was.scale / 2 }));
   };
 
   const [hovered, setHovered] = useState<string | null>(null);
@@ -194,14 +210,14 @@ export function LayeredMap({ topology, selected, onSelect }: {
     if (event.target !== event.currentTarget && event.key !== 'Escape') return;
     const moves: Record<string, () => void> = {
       '+': () => zoomAt(ZOOM.step), '=': () => zoomAt(ZOOM.step), '-': () => zoomAt(1 / ZOOM.step),
-      0: () => setView(fitted(true)),
+      0: () => move(fitted(true)),
       ArrowLeft: () => pan(-60, 0), ArrowRight: () => pan(60, 0), ArrowUp: () => pan(0, -60), ArrowDown: () => pan(0, 60),
       Escape: () => { if (selected !== null) onSelect(null); },
     };
-    const move = moves[event.key];
-    if (!move) return;
+    const key = moves[event.key];
+    if (!key) return;
     event.preventDefault();
-    move();
+    key();
   };
 
   const viewBox = `${view.x} ${view.y} ${viewport.width / view.scale} ${viewport.height / view.scale}`;
@@ -257,7 +273,7 @@ export function LayeredMap({ topology, selected, onSelect }: {
               <SizeItem label={t('map.zoomIn')} keys="+" onSelect={() => zoomAt(ZOOM.step)} />
               <SizeItem label={t('map.zoomOut')} keys="-" onSelect={() => zoomAt(1 / ZOOM.step)} />
               <Menu.Separator className="my-1 h-px bg-line" />
-              <SizeItem label={t('map.fit')} keys="0" onSelect={() => setView(fitted(true))} />
+              <SizeItem label={t('map.fit')} keys="0" onSelect={() => move(fitted(true))} />
               {PRESETS.map((scale) => (
                 <SizeItem
                   key={scale}

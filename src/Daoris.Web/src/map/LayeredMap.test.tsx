@@ -98,6 +98,32 @@ describe('the layered map', () => {
     expect(Math.abs(y(there) - y(back))).toBeGreaterThan(22);
   });
 
+  it('follows the drawing as its data arrives, until the person moves the view', () => {
+    // The shared findings arrive after the rest. One between two askers of one repository bows round
+    // the left, and the view must take in the room it needs rather than keep the first frame.
+    const asked: Topology = {
+      ...TOPOLOGY,
+      quests: [...TOPOLOGY.quests, { from: 'repo-00', to: 'reports-db', quests: [], open: 1 }],
+      knowledge: [],
+    };
+    const later: Topology = { ...asked, knowledge: [{ a: 'report-ui', b: 'repo-00', groups: 1 }] };
+    const x = () => Number(screen.getByRole('group', { name: 'the workspace map' }).getAttribute('viewBox')!.split(' ')[0]);
+    const view = (topology: Topology) => <Tooltip.Provider><LayeredMap topology={topology} selected={null} onSelect={vi.fn()} /></Tooltip.Provider>;
+
+    const { rerender } = rtlRender(view(asked));
+    const before = x();
+    rerender(view(later));
+    expect(x()).toBeLessThan(before);
+
+    // Once the person has moved it, new data leaves the view where they put it.
+    rerender(view(asked));
+    const region = screen.getByRole('region', { name: 'the workspace map' });
+    fireEvent.keyDown(region, { key: 'ArrowRight' });
+    const theirs = x();
+    rerender(view(later));
+    expect(x()).toBe(theirs);
+  });
+
   it('chooses and releases as the ring does: a second press, or Escape', () => {
     const onSelect = vi.fn();
     const { rerender } = render(<LayeredMap topology={TOPOLOGY} selected={null} onSelect={onSelect} />);

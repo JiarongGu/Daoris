@@ -99,6 +99,9 @@ over unchanged: status never by colour alone, every card and line a button, a ch
 - **What nothing connects is set apart below**, in a grid read by name with each card its own
   width. It wraps inside what the viewport shows at the opening scale, so it reads downward. Seen on
   the first real workspace: equal cells in window-wide rows ran past a map half the window wide.
+- **The view follows the drawing until the person moves it.** The data arrives in parts, the shared
+  findings after the rest, and each part can move the frame. Seen on the real workspace: fitted
+  once, the view kept the first frame, and the bows round the left ran off its edge.
 - **Moving about.** Drag the ground or use the wheel to pan; Ctrl+wheel zooms about the pointer.
   `+`, `-`, `0` and the arrow keys work on the viewport. It opens at a readable size (never below
   80%), and *fit* shows the whole. A search dims what does not match, and Enter chooses and centres
