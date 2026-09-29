@@ -1063,6 +1063,15 @@ public static class HarnessProbe
             }
         }
 
+        // 🔴 USE1f: what Windows can START, by the resolver installers already use. A bare name from
+        // PATH starts only as an `.exe`, so an agent npm installed globally (a `.cmd` shim, with a
+        // POSIX script beside it) probed absent and every start on it was held, though the CLI found
+        // it. Here because the probe and both doors' spawns all come through here, as the pin does;
+        // and a shim is held to the same rule about its arguments that a pinned `.cmd` now is.
+        info.FileName = HarnessActions.WindowsShim(
+            info.FileName, info.ArgumentList,
+            info.Environment.TryGetValue("PATH", out var path) ? path : null);
+
         // The ACP adapter runs the Agent SDK, which finds its CLI through its own seam (ACP2, §1a).
         // Applied here for the reason everything else here is: one line, both doors, no adapter that
         // can forget it. Null leaves it unset, so the SDK looks where it always did.
@@ -1861,8 +1870,8 @@ public static class HarnessActions
             StandardErrorEncoding = Encoding.UTF8,
         };
         foreach (var part in command.Skip(1)) info.ArgumentList.Add(part);
+        // Resolves the file Windows can start too (WindowsShim, USE1f): one line for every spawn.
         HarnessProbe.Apply(info, toolchain, profileHome);
-        info.FileName = WindowsShim(info.FileName, command.Skip(1), info.Environment["PATH"]);
 
         write($"$ {string.Join(' ', command)}");
 
@@ -1895,9 +1904,11 @@ public static class HarnessActions
     /// <remarks>
     /// 🔴 Every declared installer is `npm …`, and on Windows `npm` is `npm.cmd`: started by its bare
     /// name with no shell, Windows appends only `.exe` and finds nothing (REV3; the CLI's `spawnable` is
-    /// the twin, fixed 2026-09-22). A shim is then run by `cmd.exe`, which parses its arguments again —
-    /// so an argument it would reinterpret is refused rather than escaped: every one here is a path or
-    /// a `package@version`, and none legitimately carries one.
+    /// the twin, fixed 2026-09-22). An agent npm installed globally is the same shape (USE1f), so every
+    /// spawn of a harness comes through here, by <see cref="HarnessProbe.Apply"/>. A shim is then run by
+    /// `cmd.exe`, which parses its arguments again and stops at a line break — so an argument it would
+    /// reinterpret is refused rather than escaped. An installer's are paths and `package@version`s, and
+    /// never carry one; the pipe door's prompt does, and is refused on a shim rather than cut short.
     /// </remarks>
     internal static string WindowsShim(string command, IEnumerable<string> arguments, string? path)
     {
@@ -1914,9 +1925,13 @@ public static class HarnessActions
         {
             if (argument.IndexOfAny(['"', '%', '&', '|', '<', '>', '^', '\r', '\n']) >= 0)
             {
+                // Named by its first line, short: a whole prompt in a refusal is a page, not a sentence.
+                var line = argument.Split('\n')[0].TrimEnd('\r');
+                var shown = line.Length > 60 || line.Length < argument.Length ? $"{line[..Math.Min(line.Length, 60)]}…" : line;
                 throw new DriverException(
-                    $"`{argument}` cannot be passed to a Windows command shim safely. Run the agent's own "
-                    + "tooling from a terminal instead.");
+                    $"`{shown}` cannot be passed to a Windows command shim safely ({Path.GetFileName(file)} is one), "
+                    + "so it was not started. Run the agent's own tooling from a terminal, or point Daoris at the "
+                    + "tool's own executable: a pin, or its path in driver.json's `commands`.");
             }
         }
 

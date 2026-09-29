@@ -580,6 +580,11 @@ The first version: doctrine that installs, is checked, and flows back.
   nothing was fetched. npm answers for a package, and the maker's channel for Claude Code and Codex.
   Unpinned, the agent's own updater runs, as before. An agent with neither offers no Update button,
   and the button's tip says which of the two it does.
+- **The desktop finds an agent npm installed globally** (USE1f). On Windows such an agent is a `.cmd`
+  on PATH, which `daoris agent list` found and the desktop reported as not installed, holding every
+  start on it. The desktop now asks PATH for what Windows can start, as the terminal does, and a
+  session over a `.cmd` whose prompt the command shell would reinterpret is refused in a sentence
+  naming what to do instead.
 - **Ask at a workspace, not a repository** (D65 §1a). `daoris-driver ask [--workspace <name>]
   [--to <repo>] [--file <path>]… [--url <address>]… "…"` records an ask: the sentence, its links
   and files, who asked, and what became of it, naming the tier that answered on every record. With

@@ -71,7 +71,9 @@ seam. Building them together would mean one change that cannot be reviewed.
   The managed pin is the standing choice. `PATH` is what happens when nobody has asked for any of
   this — which is **today's behaviour byte for byte**, and is the point: this is additive, like
   session trees and credential profiles before it (D48 §2a — a machine that installed `claude` itself
-  keeps working, and so does a contributor who never ran Daoris).
+  keeps working, and so does a contributor who never ran Daoris). On Windows `PATH` is asked for what
+  can be started, by PATHEXT, so an agent npm installed globally (a `.cmd`) is found by the desktop as
+  the CLI finds it (USE1f, FIX-LOG 2026-09-30).
 - **A pinned binary runs with the tool's own no-update switch** (AGT2), on every spawn Daoris makes
   of it: a session over either door, and the probe. Claude Code updates itself by default, npm copy
   included; a pinned copy under this directory reported its auto-updates enabled until it ran with

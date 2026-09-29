@@ -5,6 +5,34 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## The desktop did not find an agent npm put on PATH (2026-09-30)
+
+**Symptom.** `claude-code-acp`, installed globally with npm, was listed by `daoris agent list`, and
+the desktop held every driven start on it: *not installed on this machine, so there is nothing to
+spawn*.
+
+**Root cause.** npm puts `claude-agent-acp.cmd` in the Node folder, with an extensionless POSIX script
+beside it. The desktop's probe and both doors' spawns started the bare name, and a process started
+without a shell on Windows is found only as an `.exe`; the script found first is no program at all.
+So the probe said absent and the selector held. The CLI's `spawnable` and the driver's installer path
+(`WindowsShim`, REV3) already resolved the shim; the harness door never asked.
+
+**Fix.** `HarnessProbe.Apply`, the one line the probe and both doors' spawns take (where the pin is
+applied too), resolves the file through `WindowsShim`, which uses the plugin door's
+`CommandPresence.Resolve` by PATHEXT: an `.exe` wins where both exist, and a name found nowhere is
+left as it was, so it is still absent. A shim is held to the rule `cmd.exe` imposes: an argument it
+would reinterpret is refused in a sentence. That is the pipe door's prompt, whose line breaks `cmd.exe`
+parses as the end of a command; a pinned `.cmd` used to be started with it unchecked. What a real
+shim does with such a prompt was not measured: the refusal is the rule `WindowsShim` already kept.
+
+**Verify.** `CommandShimTests` (a `.cmd` beside a script resolves to the `.cmd`; an `.exe` beside it
+wins; nowhere stays absent; both doors spawn the shim; the probe finds it; a prompt on a shim is
+refused), with `HarnessRunTests` still green.
+
+**The trap.** "Is it on PATH" has three answers on Windows: the name, the name with PATHEXT, and what
+can be started. A check that asks one question and a spawn that asks another disagree about the same
+file.
+
 ## A finished session's console still said live (2026-09-30)
 
 **Symptom.** A chat watched to its end showed `completed` in its head and **live** above its console;
