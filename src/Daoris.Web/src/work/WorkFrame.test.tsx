@@ -597,6 +597,47 @@ describe('the Work frame', () => {
     expect(screen.getByText(/listening on 4200/)).toBeInTheDocument();
   });
 
+  /**
+   * A session watched to its end stops being called live: its console asks again when the driver says
+   * it ended. Found looking at CONSOLE3c: a completed chat's console still said live beside its
+   * `completed` badge.
+   */
+  it('stops calling a session live once the driver says it ended', async () => {
+    let live = true;
+    invoke.mockImplementation(async (_module: string, type: string) => (type === 'TAIL_SESSION'
+      ? { session: 's1a2b3c4', lines: [{ sequence: 1, text: 'DONE' }], sequence: 1, live, dropped: 0 }
+      : DRIVER_STATE));
+
+    show('s1a2b3c4');
+    await screen.findByText(/DONE/);
+    expect(screen.getByText('live')).toBeInTheDocument();
+
+    live = false;
+    await act(async () => { eventHandlers.get('DAORIS.SESSION_ENDED')!({ session: 's1a2b3c4', state: 'completed' }); });
+
+    await waitFor(() => expect(screen.queryByText('live')).toBeNull());
+  });
+
+  /** A session's last words arrive after it closed, and their batch says so: they do not make it live. */
+  it('takes a batch that says the console ended as ended', async () => {
+    invoke.mockImplementation(async (_module: string, type: string) => (type === 'TAIL_SESSION'
+      ? { session: 's1a2b3c4', lines: [{ sequence: 1, text: 'working' }], sequence: 1, live: true, dropped: 0 }
+      : DRIVER_STATE));
+
+    show('s1a2b3c4');
+    await screen.findByText(/working/);
+    expect(screen.getByText('live')).toBeInTheDocument();
+
+    await act(async () => {
+      eventHandlers.get('DAORIS.SESSION_OUTPUT')!({
+        session: 's1a2b3c4', lines: [{ sequence: 2, text: '— the conversation ended' }], live: false,
+      });
+    });
+
+    await screen.findByText(/the conversation ended/);
+    expect(screen.queryByText('live')).toBeNull();
+  });
+
   /** Another session's output is not this panel's — the event carries whose it is. */
   it('ignores a batch for a different session', async () => {
     invoke.mockImplementation(async (_module: string, type: string) => (type === 'TAIL_SESSION'

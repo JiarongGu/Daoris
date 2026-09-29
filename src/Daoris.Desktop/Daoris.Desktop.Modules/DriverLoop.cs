@@ -147,11 +147,16 @@ public sealed class DriverLoop(
     /// A session's console lines, as the page's one event for them. The shape is the page's contract,
     /// so one writer builds it: the relay's batches and a harness action's lines alike (REV3 CLEAN1).
     /// </summary>
-    internal static Task EmitOutput(IEventBus bus, string session, IEnumerable<ConsoleLine> lines) =>
+    /// <param name="live">
+    /// Whether the console still runs as the batch goes out: a session's last words are written after it
+    /// closed, and a batch the page read as live re-marked a finished session so (CONSOLE3c).
+    /// </param>
+    internal static Task EmitOutput(IEventBus bus, string session, IEnumerable<ConsoleLine> lines, bool live = true) =>
         bus.EmitAsync("DAORIS", "SESSION_OUTPUT", new
         {
             Session = session,
             Lines = lines.Select(line => new { line.Sequence, line.Text }).ToArray(),
+            Live = live,
         });
 
     /// <summary>
@@ -235,7 +240,7 @@ public sealed class DriverLoop(
         // Live console lines become IPC events, BATCHED by the library's relay (D49 §2). The shell's
         // half is only what a batch becomes: the page asks for the backlog once over `TAIL_SESSION`
         // and takes everything after it from here.
-        using var console = new ConsoleRelay(Output, (session, lines) => EmitOutput(eventBus, session, lines));
+        using var console = new ConsoleRelay(Output, (session, lines) => EmitOutput(eventBus, session, lines, Output.IsLive(session)));
 
         // The conversation's events, the same way (D76, CONV1): the page reads the history once over
         // `SESSION_HISTORY` and takes everything after it from here, asking for a gap it notices.

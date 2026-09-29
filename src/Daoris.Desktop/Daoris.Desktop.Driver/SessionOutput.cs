@@ -238,6 +238,15 @@ public sealed class SessionOutput
     /// session produced no console here" is a real answer for a record fed from another machine, and a
     /// caller should not have to tell that apart from a failure.
     /// </remarks>
+    /// <summary>
+    /// Whether a session's console, or a stream's, still runs — what a batch of its lines says beside
+    /// them, so a line written after it closed never reads as it running again.
+    /// </summary>
+    public bool IsLive(string sessionId)
+    {
+        lock (_gate) return _sessions.TryGetValue(sessionId, out var buffer) && buffer.Live;
+    }
+
     public ConsoleTail Tail(string sessionId, long after = 0)
     {
         lock (_gate)

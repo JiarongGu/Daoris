@@ -5,6 +5,26 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## A finished session's console still said live (2026-09-30)
+
+**Symptom.** A chat watched to its end showed `completed` in its head and **live** above its console;
+earlier the same day, a stopped task's console did the same beside a tab saying `stopped`.
+
+**Root cause.** An end is never a line, and the page learned liveness only from lines: every batch of
+output the relay sent was taken as live. The relay sends a window after the lines were written, so a
+session's last lines went out after its console had closed and re-marked it live; a stream's end
+reached the page only as its session's streams changing, which refreshed the tabs and not the console.
+
+**Fix.** A batch says whether its console still runs (`SessionOutput.IsLive`, read as the batch goes
+out), and the page honours it. A console asks again when its session's ending is told
+(`SESSION_ENDED`) or, for a stream, when its session's streams change.
+
+**Verify.** `SessionOutputTests`, `ProtocolChatTests` (the console has ended when the end is told),
+`WorkFrame.test.tsx` (a batch that says ended, a session's ending, a stream's), and the scratch window.
+
+**The trap.** A flag set by every message is a flag nothing can clear. Liveness has to travel with the
+lines, or the last line always wins.
+
 ## The dev loop's `kill` could close the owner's own window (2026-09-30)
 
 **Symptom.** None seen, found reading the path: after `desktop -- run --install`, the loop's record

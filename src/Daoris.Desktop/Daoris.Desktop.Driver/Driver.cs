@@ -1277,8 +1277,12 @@ public sealed partial class Driver(
         }
 
         var errors = PumpAsync(stderr, file, sessionId, output, ct);
+        // What it runs beside itself, each its own console stream (CONSOLE3c), kept wherever the
+        // session's own console is; a line that is a stream's never reaches the session's reader.
+        var beside = output is null ? null : mapper.Beside(new SessionStreams(output, sessionId), Line);
         while (await stdout.ReadLineAsync(ct).ConfigureAwait(false) is { } line)
         {
+            if (beside?.Take(line) == true) continue;
             var mapped = mapper.Read(line);
             foreach (var text in mapped.Lines) Line(text);
             foreach (var e in mapped.Events)
@@ -1288,6 +1292,8 @@ public sealed partial class Driver(
             }
         }
 
+        // Said while the transcript is still open: what it left running ended with it.
+        if (beside is not null) await beside.EndAllAsync().ConfigureAwait(false);
         await errors.ConfigureAwait(false);
         return mapper.Usage;
     }

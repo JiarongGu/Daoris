@@ -23,6 +23,27 @@ public interface IStreamMapper
 
     /// <summary>Context at its high-water mark, as the harness reported it (TOOL3) — null when it reported none.</summary>
     AcpUsage? Usage { get; }
+
+    /// <summary>
+    /// What reads the session's subagents and background work off this wire (CONSOLE3c), each a console
+    /// stream of its own, or null for a wire that carries none. Asked once, where a console is kept.
+    /// </summary>
+    /// <param name="streams">The session's streams.</param>
+    /// <param name="say">The session's own console, for a line saying one started or ended.</param>
+    IStreamsReader? Beside(SessionStreams streams, Action<string> say) => null;
+}
+
+/// <summary>
+/// A wire's streams beside the session (CONSOLE3c): offered each stdout line before the session's own
+/// reader, and ended when the output ends.
+/// </summary>
+public interface IStreamsReader
+{
+    /// <summary>True when the line was a stream's, so the session's reader never sees it.</summary>
+    bool Take(string line);
+
+    /// <summary>End every stream still open, because the session's output has: each says so.</summary>
+    Task EndAllAsync();
 }
 
 /// <summary>
@@ -51,6 +72,9 @@ public sealed class ClaudeStreamJson : IStreamMapper
     private AcpUsage? _usage;
 
     public AcpUsage? Usage => _usage;
+
+    /// <summary>A subagent's lines by <c>parent_tool_use_id</c>, and tasks on <c>system</c> lines (CONSOLE3c).</summary>
+    public IStreamsReader? Beside(SessionStreams streams, Action<string> say) => new ClaudeStreams(streams, say);
 
     public StreamMapped Read(string line)
     {

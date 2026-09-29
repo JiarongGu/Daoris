@@ -624,19 +624,29 @@ export function useSessionConsole(sessionId: string | null) {
       return;
     }
 
-    take({ ...batch, live: true });
+    // Live unless the batch says otherwise: a session's last words are written after it closed, and a
+    // shell older than the flag says nothing (CONSOLE3c).
+    take({ ...batch, live: batch.live !== false });
   });
 
-  // A stream's end is told as its session's streams changing (CONSOLE2c), never as a line, so a
-  // console tailing one of them asks again and the answer says whether it still runs. Found stopping
-  // a task on the window (CONSOLE3a): its tab said stopped while its console still said live.
-  useShenoraEvent('DAORIS', 'SESSION_STREAMS', (payload) => {
-    const session = (payload as { session?: string } | undefined)?.session;
-    if (!sessionId || !session || !sessionId.startsWith(`${session}/`)) return;
+  // An end is never a line, so a console asks again when one is told, and the answer says whether it
+  // still runs: a stream's end as its session's streams changing (CONSOLE2c), and a session's own as
+  // its ending. Found on the window twice (CONSOLE3a, 3c): a stopped task's console and a completed
+  // chat's both still said live.
+  const askAgain = () => {
+    if (!sessionId) return;
     void getBridge()
       .invoke<SessionTail>('DAORIS.DRIVER', 'TAIL_SESSION', { payload: { id: sessionId, after: seen.current } })
       .then((tail) => { if (attended.current === sessionId && tail?.session === sessionId) take(tail); })
       .catch(() => {});
+  };
+  useShenoraEvent('DAORIS', 'SESSION_STREAMS', (payload) => {
+    const session = (payload as { session?: string } | undefined)?.session;
+    if (sessionId && session && sessionId.startsWith(`${session}/`)) askAgain();
+  });
+  useShenoraEvent('DAORIS', 'SESSION_ENDED', (payload) => {
+    const session = (payload as { session?: string } | undefined)?.session;
+    if (sessionId && session && (sessionId === session || sessionId.startsWith(`${session}/`))) askAgain();
   });
 
   return { lines, live, dropped };

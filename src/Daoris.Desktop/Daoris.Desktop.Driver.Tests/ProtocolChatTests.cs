@@ -85,6 +85,40 @@ public sealed class ProtocolChatTests : IDisposable
     }
 
     /// <summary>
+    /// When a conversation's end is told, its console has already ended: a page that asks again on
+    /// hearing it reads the console as ended. Found looking at CONSOLE3c: the ending was told first and
+    /// the console closed after, so a page asking at once still read it as live, beside `completed`.
+    /// </summary>
+    [Fact]
+    public async Task A_conversations_console_has_ended_by_the_time_its_end_is_told()
+    {
+        await using var service = StandInService.Start(Path.Combine(_home, "engine"));
+        var config = DriverConfig.Empty with
+        {
+            Commands = new Dictionary<string, IReadOnlyList<string>> { ["acp-stub"] = ["node", Agent(), Heard] },
+        };
+        var adapters = AdapterSet.Built();
+        var output = new SessionOutput();
+        using var client = new ServiceClient(service.Url, null);
+        using var runner = new ChatRunner(
+            client, adapters, _home, new SessionProcesses(Path.Combine(_home, "sessions")), output,
+            harnesses: new HarnessRoster(adapters, Path.Combine(_home, "harnesses.json")));
+
+        bool? liveWhenTold = null;
+        var id = (await runner.StartAsync("engine", "acp-stub", config, onEnded: (session, _) =>
+        {
+            liveWhenTold = output.Tail(session).Live;
+            return Task.CompletedTask;
+        })).SessionId!;
+        await Until(() => service.State(id) == "working", () => $"state {service.State(id)}");
+
+        Assert.True(runner.Finish(id));
+        await Until(() => liveWhenTold is not null, () => $"state {service.State(id)}");
+
+        Assert.False(liveWhenTold);
+    }
+
+    /// <summary>
     /// USAGE1: a conversation counts toward the account it ran as, at its high-water mark — what each
     /// account has carried was driven sessions and intakes only, so every conversation was missing.
     /// </summary>

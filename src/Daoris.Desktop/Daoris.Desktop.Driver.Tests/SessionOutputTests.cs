@@ -13,6 +13,27 @@ namespace Daoris.Desktop.Driver.Tests;
 /// </remarks>
 public sealed class SessionOutputTests
 {
+    /// <summary>
+    /// Whether a session's console still runs, told beside a batch of its lines (found looking at
+    /// CONSOLE3c): the relay sends lines a window after they were written, so a session's last lines
+    /// went out after it closed and the page read them as it running. Speaking again is still living
+    /// again, as it always was.
+    /// </summary>
+    [Fact]
+    public void Whether_a_console_runs_is_told_as_its_batch_goes_out()
+    {
+        var output = new SessionOutput();
+        output.Append("s1", "the last words");
+        Assert.True(output.IsLive("s1"));
+
+        output.Close("s1");
+        Assert.False(output.IsLive("s1"));
+        Assert.False(output.IsLive("never-heard"));
+
+        output.Append("s1", "speaking again");
+        Assert.True(output.IsLive("s1"));
+    }
+
     [Fact]
     public void A_session_that_has_said_nothing_answers_an_empty_tail_rather_than_nothing()
     {

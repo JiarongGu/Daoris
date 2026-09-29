@@ -7606,3 +7606,29 @@ same command by keyboard opened the window.
 **Proven by:** `DetachedSession.test.tsx` (the tabs, a picked stream, no stop; the head by the opening,
 idle between turns), and the scratch window: a stub agent's dev server ticking in the detached window's
 own tab, headed as in the main window.
+
+## CONSOLE3c — the native door's streams (2026-09-30)
+
+> **the native door's streams**, since only the protocol door asks for them and no probe has read
+> `stream-json`'s `parent_tool_use_id` or its task messages — the third of CONSOLE3's four.
+
+**Outcome.** Probed first (`tools/console3-probe.mjs`, one small real turn,
+`docs/2026-09-30-console3-native-streams-evidence.md`): a subagent's lines carry the `parent_tool_use_id`
+of the call that spawned it; background work is announced on `system` lines (`task_started`,
+`task_updated`, `task_notification`); a backgrounded command's file is named only in its result's words
+while it runs; and the binary kills its background work when its turn ends. Then built: the mapper
+offers a `Beside` reader (`IStreamsReader`), and `ClaudeStreams` takes the lines that are a stream's
+before the session's reader sees them: a subagent's lines to its own stream, a `local_bash` task to a
+stream that reads its file, each ended in the wire's word and said on the session's console. No stream
+here is `CanStop`: this door has no request for it. Both the driven and the chat capture use it.
+
+**Found by looking**: a chat watched to its end kept saying *live*. The relay sends lines a window after
+they are written, so a session's last lines went out after it closed, and the page read every batch as
+live. A batch now says whether its console still runs (`SessionOutput.IsLive`), and a console asks again
+when its session's ending is told.
+
+**Proven by:** `NativeStreamsTests` (a task and a subagent as their own streams, ending in the wire's
+word; one open at the end ends with the session; without a console, the lines are the session's), the
+console's tests (`SessionOutputTests`, `ProtocolChatTests`, `WorkFrame.test.tsx`), and the scratch
+window with a stand-in `claude` replaying the probe's frames: a tab for the command reading its file,
+one for the subagent with its `Read` and its reply, and a finished chat no longer called live.
