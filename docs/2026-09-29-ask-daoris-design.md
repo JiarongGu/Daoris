@@ -47,6 +47,9 @@ a `SessionTree`:
   the host's own answers: the workspaces and their repositories, what is drivable and held, each
   repository's line and landing rule, the agents and accounts with their sign-in state, and what
   waits on the person. Names and states, never a key.
+- **The window** (HELP2, 2026-09-29): how it is laid out, how a view moves between the side bar and
+  the panel, the layout keys, and that the helper cannot see the window and asks rather than guesses.
+  Added after it guessed at a menu that does not exist.
 - **`CLAUDE.md`** carrying `@AGENTS.md`, and **`.claude/settings.json`** allowing the family's read
   tools, the connector's `setting_propose` and `ask_propose`, and nothing else. Over the protocol door
   a request for anything unlisted is refused by construction (D52), which is the point: it reads, and
@@ -57,7 +60,8 @@ a `SessionTree`:
 The page hands the conversation what is on the screen, as a short preface to the person's message
 whenever it has changed since the last one: the view, the workspace in scope, the attended session or
 repository, and a sentence the screen is showing (a refusal, a parked card's question). It is chrome
-the page already renders, so nothing new leaves the machine (D47 §4).
+the page already renders, so nothing new leaves the machine (D47 §4). On Sessions it also says which
+views each region holds and whether it is showing (HELP2).
 
 ## 5. What it may propose
 

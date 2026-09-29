@@ -43,6 +43,26 @@ describe('where the person is', () => {
     expect(attendedOf(null, sessions)).toBeNull();
   });
 
+  /**
+   * HELP2: the helper cannot see the window, and asked what the panel held it guessed (DOCK1d's look).
+   * On Sessions it is told where the views stand and which region is showing.
+   */
+  it('says on Sessions which views each region holds, and whether it is showing', () => {
+    expect(prefaceOf({
+      view: 'sessions', workspace: null,
+      layout: { right: ['timeline', 'ask'], panel: ['console', 'review'], rightShown: true, panelShown: false },
+    })).toBe('Where the person is now: the Sessions view, every workspace. The right side bar holds the timeline and Ask Daoris, '
+      + 'and is open; the panel holds the console and the review, and is hidden.');
+    expect(prefaceOf({
+      view: 'sessions', workspace: null,
+      layout: { right: ['timeline', 'review', 'ask', 'console'], panel: [], rightShown: false, panelShown: true },
+    })).toBe('Where the person is now: the Sessions view, every workspace. The right side bar holds the timeline, the review, '
+      + 'Ask Daoris and the console, and is closed; the panel holds nothing.');
+    // Away from Sessions there is no panel to speak of.
+    expect(prefaceOf({ view: 'quests', workspace: null, layout: { right: ['ask'], panel: [], rightShown: true, panelShown: true } }))
+      .toBe('Where the person is now: the Quests view, every workspace.');
+  });
+
   it('names a working session by its state, and one that asked nothing by no quote', () => {
     expect(prefaceOf({ view: 'sessions', workspace: null, session: { id: 's1', repository: 'engine', state: 'working' } }))
       .toBe('Where the person is now: the Sessions view, every workspace, attending session `s1` in `engine`, which is working.');

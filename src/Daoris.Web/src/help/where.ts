@@ -1,6 +1,7 @@
 import type { Session } from '../api';
 import type { View } from '../commands';
 import type { SettingsSection } from '../SettingsView';
+import type { ViewId } from '../work/placements';
 
 /**
  * What is on the screen, as Ask Daoris is told it (HELP1b, D89): the view, the workspace in scope, the
@@ -12,7 +13,20 @@ export type HelpWhere = {
   workspace: string | null;
   settings?: SettingsSection | null;
   session?: { id: string; repository: string; state: string; note?: string | null } | null;
+  /** Where Sessions' views stand and which region is showing (HELP2): the helper cannot see the window. */
+  layout?: { right: readonly ViewId[]; panel: readonly ViewId[]; rightShown: boolean; panelShown: boolean } | null;
 };
+
+const VIEW_NAMES: Record<ViewId, string> = {
+  timeline: 'the timeline', review: 'the review', ask: 'Ask Daoris', console: 'the console',
+};
+
+/** "the timeline, the review and Ask Daoris", or "nothing". */
+function listed(views: readonly ViewId[]): string {
+  const names = views.map((view) => VIEW_NAMES[view]);
+  if (names.length === 0) return 'nothing';
+  return names.length === 1 ? names[0]! : `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`;
+}
 
 const VIEWS: Record<View, string> = {
   overview: 'Overview', sessions: 'Sessions', quests: 'Quests', projects: 'Projects',
@@ -56,5 +70,14 @@ export function prefaceOf(where: HelpWhere): string {
   let said = `Where the person is now: ${parts.join(', ')}.`;
   const note = session?.note?.replace(/\s+/g, ' ').trim();
   if (note) said += ` It says: "${note.length > SAYS ? `${note.slice(0, SAYS).trimEnd()}…` : note}".`;
+
+  // Only Sessions has a panel, so only there is where the views stand a fact about the screen (HELP2).
+  const layout = where.view === 'sessions' ? where.layout : null;
+  if (layout) {
+    const region = (views: readonly ViewId[], shown: boolean, open: string, shut: string) =>
+      views.length === 0 ? listed(views) : `${listed(views)}, and is ${shown ? open : shut}`;
+    said += ` The right side bar holds ${region(layout.right, layout.rightShown, 'open', 'closed')};`
+      + ` the panel holds ${region(layout.panel, layout.panelShown, 'showing', 'hidden')}.`;
+  }
   return said;
 }

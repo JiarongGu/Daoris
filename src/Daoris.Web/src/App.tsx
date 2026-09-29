@@ -8,7 +8,7 @@ import { useScope } from './scope';
 import { AskDaoris } from './help/AskDaoris';
 import { QuickAsk } from './help/QuickAsk';
 import { useFrameClosings } from './work/closings';
-import { usePlacements } from './work/placements';
+import { usePlacements, viewsIn } from './work/placements';
 import { LAYOUT_KEYS, type LayoutRegion, LayoutToggles } from './work/LayoutToggles';
 import type { StarterDoor } from './help/starters';
 import { WorkspaceSwitcher } from './WorkspaceSwitcher';
@@ -403,7 +403,16 @@ export function App() {
   // What Ask Daoris is handed wherever it stands: what is on the screen (HELP1b) — the view, the scope,
   // the settings domain on Settings, and the attended session on Sessions — and its two ways out.
   const askProps = {
-    where: { view, workspace: scope.workspace ?? null, settings: settingsSection },
+    where: {
+      view, workspace: scope.workspace ?? null, settings: settingsSection,
+      // Where Sessions' views stand (HELP2): the helper cannot see the window, and guessed without it.
+      layout: {
+        right: viewsIn(placements.places, 'right'),
+        panel: viewsIn(placements.places, 'panel'),
+        rightShown: !closings.dock,
+        panelShown: !closings.panel,
+      },
+    },
     attending,
     onClose: () => setHelpOpen(false),
     onGo: (door: StarterDoor) => {

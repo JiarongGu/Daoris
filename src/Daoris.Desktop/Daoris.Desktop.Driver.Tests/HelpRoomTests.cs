@@ -113,6 +113,32 @@ public sealed class HelpRoomTests : IDisposable
         Assert.Contains("push, merge, discard, sign in", agents);
     }
 
+    /// <summary>
+    /// HELP2: asked what the panel held, the helper guessed that the View menu names each view's region,
+    /// which it does not — its room said nothing of the window. The room says how the window is laid out
+    /// and how a view moves, by the names the window uses, and that where the views stand now arrives with
+    /// the person's message.
+    /// </summary>
+    [Fact]
+    public void The_room_says_how_the_window_is_laid_out_and_how_a_view_moves()
+    {
+        var agents = HelpRoom.Render(Machine);
+
+        Assert.Contains("## The window", agents);
+        foreach (var said in new[]
+        {
+            "the right side bar", "the panel", "the timeline, the review, Ask Daoris and the console",
+            "tab list", "right-click", "drag", "Reset view locations",
+            "`Ctrl+B`", "`Ctrl+J`", "`Ctrl+Alt+B`", "`F1`", "`Ctrl+Alt+I`", "`Ctrl+Shift+Alt+L`", "`Ctrl+K`",
+        })
+        {
+            Assert.Contains(said, agents);
+        }
+
+        // It cannot see the window: what it is told of it comes with the message, and otherwise it asks.
+        Assert.Contains("You cannot see the window", agents);
+    }
+
     [Fact]
     public void A_machine_with_nothing_registered_says_so_and_where_to_begin()
     {

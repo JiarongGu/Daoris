@@ -116,7 +116,8 @@ closings lifted out of the Work frame.
      now, with the keys in its message box. The palette's *Ask Daoris* had only set the region open,
      which on Sessions did not bring the side bar up on it; it opens it on it now, as `F1` does.
    - **And what the answer showed**: asked what the panel held, the helper guessed that the View menu
-     names each view's region, which it does not. Its room says nothing of the window (HELP2).
+     names each view's region, which it does not. Its room said nothing of the window; it does now,
+     and the preface says where the views stand (HELP2, archived).
 5. **DOCK1a**: the right region hoisted out of the Work frame into the application, one component on
    every view; Ask Daoris no longer has two hosts.
 

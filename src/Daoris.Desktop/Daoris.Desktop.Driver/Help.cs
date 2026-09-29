@@ -219,6 +219,23 @@ public static class HelpRoom
         text.Append("`{repository}`. It needs `{quest}` or `{session}`, or every session's work would land on one branch,\n");
         text.Append("and git must take what it comes out as: `feature/{quest}-{slug}` is a pattern that works.\n\n");
 
+        // How the window is laid out (HELP2): asked what the panel held, the helper guessed at a menu that
+        // does not exist. Said by the names the window's own labels use (DOCK1b), keys as its menus show them.
+        text.Append("## The window\n\n");
+        text.Append("The desktop is laid out as VS Code is. The activity bar at the left holds the views: Overview,\n");
+        text.Append("Sessions, Quests, Projects, Map, Convergence and Search, with Settings at its foot; `Ctrl+K` opens\n");
+        text.Append("the command palette. On Sessions the session list is at the left, the attended session in the\n");
+        text.Append("centre, the panel beneath it, and the right side bar beside it. Four views stand in those two\n");
+        text.Append("regions and move between them: the timeline, the review, Ask Daoris and the console. A view moves\n");
+        text.Append("from its region's tab list (the button at the end of the tab row), by a right-click on its tab, or\n");
+        text.Append("by dragging its tab to the other region; View → Reset view locations puts every view back. The\n");
+        text.Append("three toggles beside the window controls, and the View menu, show or hide the session list\n");
+        text.Append("(`Ctrl+B`), the panel (`Ctrl+J`) and the right side bar (`Ctrl+Alt+B`). Away from Sessions the right\n");
+        text.Append("side bar is Ask Daoris alone. You open on `F1` or `Ctrl+Alt+I`, and Quick Ask, a box where the\n");
+        text.Append("palette opens, on `Ctrl+Shift+Alt+L`.\n\n");
+        text.Append("You cannot see the window. Where the person is, and on Sessions where the views stand, comes with\n");
+        text.Append("their message when it changed; for anything else on the screen, ask them rather than guess.\n\n");
+
         text.Append("## This machine, now\n\n");
         text.Append(machine.Adapter is { Length: > 0 } adapter
             ? $"- The driver: quests run on `{adapter}`, up to {machine.Cap} sessions at once.\n"

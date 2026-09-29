@@ -665,6 +665,9 @@ The first version: doctrine that installs, is checked, and flows back.
   does the palette's *Quick Ask*; and whatever you type in the palette can be asked from its last row,
   *Ask Daoris: "…"*, which sends it straight in. *Open in the side bar* carries the same conversation
   on there. The palette's *Ask Daoris* now opens the side bar on it on Sessions, as `F1` does.
+- **Ask Daoris knows the window** (HELP2): its room says how the window is laid out, how a view moves
+  and the layout keys, and on Sessions it is told where the views stand, so a question about the
+  screen is answered rather than guessed.
 - **A parked session is answered where you read its question, and your answer shows as yours.** A
   driven session parked to ask you gets a box at its foot, since its old door was a button at the top
   of a long record; your answer is kept in its record beneath the question and opens the session that

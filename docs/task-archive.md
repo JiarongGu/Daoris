@@ -7272,5 +7272,24 @@ word, and the dock's tabs shrink as a browser's do.
 
 **Proven by:** `LayoutToggles.test.tsx`, the strip's trailing-slot test, the frame's suite unchanged
 over the lifted state (527), and the scratch window: `Ctrl+B` closed the rail and its toggle followed,
-the dock's close stayed inside its edge at its 300px floor. Looked at in light theme only.
+the dock's close stayed inside its edge at its 300px floor. Looked at in light theme only; dark was
+looked at with DOCK1b the same day, and reads.
+
+## HELP2 — Ask Daoris's room knows the window (2026-09-29)
+
+The row as filed: *(found by DOCK1d's look, 2026-09-29). Asked what the panel held, the helper guessed
+that the View menu names each view's region, which it does not: its room describes the machine and its
+setting doors, and nothing of the window. The room could say the regions, how a view moves (the tab
+list, a drag, Reset view locations) and the layout keys, and the preface could carry where the views
+stand now, so a question about the screen is answered rather than guessed (`Help.cs`
+`HelpRoom.Render`, `help/where.ts`).*
+
+**Outcome.** Both. The room gains *The window*: the activity bar's views, Sessions' four regions, the
+four views that move and the three ways they move, *Reset view locations*, the toggles and every
+layout key, Ask Daoris's and Quick Ask's keys, and that it cannot see the window and should ask rather
+than guess. Each sentence was checked against the code that does it. On Sessions the preface now says
+which views each region holds and whether it is showing, so a move is told with the next message.
+
+**Proven by:** `HelpRoomTests.The_room_says_how_the_window_is_laid_out_and_how_a_view_moves`,
+`where.test.ts`'s layout case, the driver's 901 and the web's 1345.
 
