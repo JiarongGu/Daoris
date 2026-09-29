@@ -144,8 +144,9 @@ rather than designed.
 
 ## Backlog
 
-**Thirty-three rows are open**: the three the first real workspace showed (WSR4, MAP4, and DOCK1
-from 2026-09-29; WSR2, WSR1 and WSR3 landed as D86, D87 and D88, HELP1 as D89, SESS1 in the archive); D85's two (CHR2, CHR4); the in-app browser's three (BRW3, BRW7, BRW8); the first goal's three (FG5,
+**Thirty-five rows are open**: the five the first real workspace showed (WSR4, SESS2, SESS3, MAP4,
+and DOCK1 from 2026-09-29; WSR2, WSR1 and WSR3 landed as D86, D87 and D88, HELP1 as D89, SESS1 in the
+archive); D85's two (CHR2, CHR4); the in-app browser's three (BRW3, BRW7, BRW8); the first goal's three (FG5,
 READACROSS1 the owner's, and SEM2 on a trigger); D76's held file tools;
 the eight REV3 left, WINDOW2 among them; five leftovers (RAIL2, CONSOLE3, FLAKE1, DEPLOY5, TEST1); two on the owner
 (TRUST2, AGT2c); and six on a trigger (see *Handover*). Every closed one is in `docs/task-archive.md`, and this file holds no
@@ -162,6 +163,26 @@ requirements, and the owner's calls. Its recommended order is the order below.
   plugin, and the plugin, for its platform, pushes the branch and opens the pull request over its
   wire (D64). Off by default, and configurable per workspace. WSR1's branch form is what it starts
   from: `LandingRules.Problem` refuses any other form today, and says so.
+- [ ] **SESS2 — the session's top section, again** (owner, 2026-09-29: *"we still need to improve
+  the session ui/ux (currently the top section still not good enough)"*). The head today: title and
+  state, the id, the repository, the tree's path, the tool, started, running and moved; a parked
+  session's card with its three moves; then *How this work ran* and *Who it worked with* above the
+  conversation. **Look before changing**: read the owner's real sessions' heads read-only with SESS1's
+  instruments (`shot --page`, a real record seeded into the scratch window), write what is wrong as
+  numbered findings in a ledger as SESS1's was, and fix by what was found. To judge, not decided: the
+  tree's whole machine path in the head, the chain and the relations pushing the conversation down,
+  where the parked card sits, and what is primary (what it is doing, what it needs from the person)
+  against what is reference (ids, paths, tool, times).
+- [ ] **SESS3 — tell a running session something** (owner, 2026-09-29: *"there is no way to send
+  additional info in middle of the session"*). A driven session takes no person's line (INT4i,
+  `docs/2026-09-19-driver-design.md`): it is handed its whole quest in one turn, the pipe door gives it
+  no stdin, and on the protocol door its stdin carries the driver's own frames. Only a session parked
+  on the person is answered (STANDDOWN2). **A design note first, amending INT4i**: a message box on a
+  running driven session whose words are held and handed over where the door allows. On the protocol
+  door, as the next prompt of the same session when its turn ends, instead of the driver closing it,
+  or by stopping the turn and prompting again with them (the conversation's stop, CONV4a). On the pipe
+  door, as the opening of a carry-on session, the parked answer's path. Kept on the record as the
+  person's words. Nothing is ever written into a stdin that carries frames.
 - [ ] **MAP4 — the map, finished** (study §6). A layered layout, pan, zoom and search for a big
   circle (the real one has twenty-nine repositories). Asks, chains and what depends on what, each its
   own kind of line, from a declared source and never guessed. Open-only or a time window. Sessions
