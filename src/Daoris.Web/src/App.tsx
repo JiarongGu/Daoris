@@ -26,7 +26,7 @@ import { type SettingsAnchor, type SettingsSection, SettingsView } from './Setti
 import { Reader } from './Reader';
 import { ShellSignals } from './ShellSignals';
 import {
-  useDriver, useOpenBrowser, useOpenWindow, useRemotes, useRules, useSyncNow, useTrustFolder, useUntrusted,
+  logEvent, useDriver, useOpenBrowser, useOpenWindow, useRemotes, useRules, useSyncNow, useTrustFolder, useUntrusted,
 } from './shell';
 import { appMenus, menuAction } from './work/appMenus';
 import type { TrustHold } from './signals';
@@ -38,7 +38,7 @@ import type { AttentionDoors } from './work/AttentionBand';
 import { needsAPerson, waitingInSessions } from './work/attention';
 import { ActivityBar, AppStrip, type DriverPresence, StatusBar } from './work/frame';
 import { useWindowChrome } from './windowChrome';
-import { commands, type View, VIEWS } from './commands';
+import { type Command, commands, type View, VIEWS } from './commands';
 import { CommandPalette } from './work/CommandPalette';
 import { CommandCenter } from './work/CommandCenter';
 import { AppMenu, AppMenuBar } from './work/AppMenu';
@@ -79,6 +79,15 @@ function rememberedView(): Tab {
 // The activity bar: every view but Settings, which has its own gear. Sessions — what the Work frame
 // was (D66) — is absent in a browser rather than disabled.
 const NAV = VIEWS.filter(({ view }) => view !== 'settings');
+
+/** A palette command that says it ran, into the machine log (LOG1b): by its id, never what was typed. */
+const counted = (command: Command): Command => ({
+  ...command,
+  run: () => {
+    logEvent('command.run', { command: command.id });
+    command.run();
+  },
+});
 
 /**
  * The platform: the person's window over the family (D38), landing on management (D40), wearing the
@@ -173,6 +182,13 @@ export function App() {
   // remembered `sessions` where no shell answers falls back rather than rendering an empty view.
   const view: Tab = tab === 'sessions' && !attached ? 'overview' : tab;
   onSessions.current = view === 'sessions';
+
+  // What is used, and what never is (LOG1b): each view the person lands on, into the machine log — once
+  // the shell has answered, so a relaunch into Sessions is not first logged as the Overview it stands in for.
+  const settling = driver.isLoading;
+  useEffect(() => {
+    if (!settling) logEvent('view.opened', { view });
+  }, [view, settling]);
 
   // A region toggled (DOCK1c): the side bar and the panel are the frame's on every view since DOCK1a, and
   // the rail is Sessions' own list, so elsewhere its key does nothing. True when it did. In a browser
@@ -758,9 +774,9 @@ export function App() {
           ask: () => { setView('quests'); setAsking(true); },
           help: openHelp,
           quickAsk: () => askQuickly(),
-        })}
+        }).map(counted)}
         // The command center's one question (DOCK1d): what was typed, asked in Quick Ask.
-        onAsk={attached ? (question) => askQuickly(question) : undefined}
+        onAsk={attached ? (question) => { logEvent('command.run', { command: 'ask' }); askQuickly(question); } : undefined}
       />
 
       {attached && (

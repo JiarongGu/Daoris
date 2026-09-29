@@ -7,6 +7,7 @@ import { SecondaryWindowRoot } from './SecondaryWindowRoot';
 import { WorkspaceScopeProvider } from './scope';
 import { secondaryWindow } from './work/window';
 import { applyTheme } from './theme';
+import { installPageErrors } from './shell';
 import './tokens.css';
 import './i18n';
 
@@ -14,6 +15,10 @@ import './i18n';
 // every launch with a chosen theme would flash the OS's one first. A secondary window runs this
 // too: same origin, same remembered choice.
 applyTheme();
+
+// The page's own failures into the machine log (LOG1b), from before anything can fail. A browser has
+// no bridge and reports nothing.
+installPageErrors();
 
 const client = new QueryClient({
   defaultOptions: {

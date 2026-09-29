@@ -14,6 +14,7 @@ import { SessionConversation } from '../work/SessionConversation';
 import type { AskConversationSlot } from './AskPanel';
 import { ProposalCard } from './ProposalCard';
 import { type HelpWhere, prefaceOf } from './where';
+import { logEvent } from '../shell';
 
 /**
  * Ask Daoris's conversation (HELP1a, D89): the organism that holds the newest help session's record
@@ -104,6 +105,7 @@ export function useAskConversation(
   };
 
   const onSend = (text: string, files: File[]) => {
+    logEvent('message.sent', { kind: 'help', length: text.length, files: files.length, ...(shown && live ? { session: shown.id } : {}) });
     setRefusal(null);
     if (shown && live) {
       deliver(shown.id, text, files);

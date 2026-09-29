@@ -72,6 +72,37 @@ only the page's events above with only their fields: anything else is dropped. T
 list of what is never logged is enforced, since the page is the one writer that could pass a word
 through by mistake.
 
+**As built (LOG1b)**, measured against the code and its tests:
+
+- **Where the session lines come from.** The service client says when a session record opens and moves
+  (every session on the machine is opened through it), and the conversation record says when each event
+  lands, with its stamp; `SessionLog` in the driver library turns the two into lines. The shell's driver
+  loop writes them to `desktop`, the headless driver's watch, `--once` and `--until-idle` to `driver`;
+  `daoris-driver chat` writes none yet.
+- **`session.started`**'s `kind` is the door's: `driven`, `chat`, `intake` or `help` (the record calls the
+  last two chats); `adapter` and `repository` are the record's.
+- **`session.opened`**'s `openMs` is the open to the session's first prompt in its record. Where the
+  first words wait for the protocol door to open (Ask Daoris, a message sent while a chat opens), that
+  is the wait to ready.
+  Where the person types only after the chat opened, it includes their pause. A driven session's target
+  is recorded as its process starts, before the protocol is ready, so its `openMs` is the wait to spawn
+  and its first `turn.answered` carries the handshake.
+- **`turn.answered`** is a prompt to the first message, thought or tool call after it; **`turn.ended`** is
+  a prompt to its turn's end, a turn opened by two prompts (a target and the person's answer) timed from
+  the first. **`session.ended`** is written on a closed state (completed, declined, stood-down, failed,
+  stopped), `seconds` from the open this process saw. A time that cannot be known (an open never seen, a
+  turn's end with no prompt before it) is null, never zero.
+- **`refused`** comes from a middleware in the dispatcher's application slot, so every module's answer
+  passes it: `code`, and `request` as `MODULE.TYPE`. A Daoris refusal is `info`; the kit's own codes (an
+  unexpected exception, a type or a module the shell does not have) are `warn`; a cancelled request is
+  not written. The refusal's parameters and sentence never are.
+- **The page's fields** each have a kind: a name (`view`, `command`, `region`, `session`, `kind`,
+  `where`: an identifier, never a sentence), a text (`message`), a count (`length`, `files`) or a flag
+  (`applied`). A value of another kind is dropped, and a string is cut at 120 characters with an
+  ellipsis. `message.sent`'s `kind` is `chat`, `steer` (a word to a driven session) or `help`, and a help
+  message that opens a conversation has no `session` yet. `proposal.settled` is the person's Apply or Not
+  now once it landed. `page.error` is `error`-level, `where` `window` or `promise`.
+
 ## 5. What is never logged
 
 **Anyone's words**: a message, a prompt, what an agent said, a tool call's input or output, a quest's
@@ -100,7 +131,10 @@ the transcript beside it.
    `error` from every unhandled exception, and `log` from each logging framework's warnings and
    errors. Retention and the size cap.
 2. **LOG1b**: what the person does: the driver's session events and their timings, refusals, and the
-   page's events over the bridge, with the module's filter.
+   page's events over the bridge, with the module's filter. **Landed** (2026-09-30): `SessionLog` over
+   the service client's new `Opened`/`Moved` seam and the conversation record's events, `RefusalLog` in
+   the dispatcher's pipeline, `LogModule` with its typed filter, and the page's `logEvent`; §4's
+   *As built* says what each line measures.
 3. **LOG1c**: the two doors to read it.
 4. **LOG1d**: the report.
 

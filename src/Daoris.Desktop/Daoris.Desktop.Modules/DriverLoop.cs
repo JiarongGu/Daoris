@@ -17,7 +17,9 @@ namespace Daoris.Desktop;
 public sealed class DriverLoop(
     IEventBus eventBus, HostSupervisor supervisor, string serviceUrl, HomeEstablished? home = null,
     // Daoris's own browser (D78): the shell's window, asked for by a plugin server that drives it.
-    IInAppBrowser? browser = null) : IDisposable
+    IInAppBrowser? browser = null,
+    // The shell's machine log (LOG1b, D94): what the person runs and how long it takes. Null writes none.
+    MachineLog? log = null) : IDisposable
 {
     private readonly CancellationTokenSource _stopping = new();
     private readonly TaskCompletionSource<bool> _hostReady = new();
@@ -231,6 +233,11 @@ public sealed class DriverLoop(
         var homeDirectory = Home;
         var key = Environment.GetEnvironmentVariable(ServiceClient.KeyVariable);
         using var service = new ServiceClient(serviceUrl, key);
+
+        // Every session this loop and its conversations open, move and hear, timed into the machine log
+        // (LOG1b) — declared after the client and before the chat runner, so it hears the runner's
+        // closing moves and lets go before the client does.
+        using var sessionLog = log is null ? null : new SessionLog(log, service, Events);
 
         // The machine's remotes — one per workspace that has one (D47 §9, D48 §5). The syncs ride the
         // tick, in the shell exactly as in the headless host. Absence is silent and local.

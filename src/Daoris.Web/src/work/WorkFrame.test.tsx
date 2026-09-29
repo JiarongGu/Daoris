@@ -295,6 +295,10 @@ describe('the Work frame', () => {
       .toBeInTheDocument();
     expect(screen.getByText('the ask panel')).toBeInTheDocument();
     expect(JSON.parse(window.localStorage.getItem('daoris.viewPlaces')!)).toEqual({ ask: 'panel' });
+    // And the machine log hears where it went (LOG1b): which view, which region.
+    expect(invoke).toHaveBeenCalledWith('DAORIS.LOG', 'EVENT', {
+      payload: { event: 'panel.moved', data: { view: 'ask', region: 'panel' } },
+    });
   });
 
   it('draws an emptied side bar while a view is dragged, so it can be dropped on', async () => {
@@ -872,6 +876,28 @@ describe('starting and holding a conversation', () => {
       payload: { id: 'c0ffee11', text: 'what is this repository for?' },
     });
     expect((box as HTMLTextAreaElement).value).toBe('');
+  });
+
+  /**
+   * LOG1b (D94): a message sent is counted in the machine log, its length and how many files it
+   * carried, and its words go only where they always went.
+   */
+  it('counts a message it sends in the machine log, and never its words', async () => {
+    SESSIONS = [CHAT];
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'SESSION_INPUT') return { sent: true };
+      return DRIVER_STATE;
+    });
+
+    show('c0ffee11');
+    await userEvent.type(await screen.findByLabelText('message'), 'what is this repository for?');
+    await userEvent.click(screen.getByRole('button', { name: 'send' }));
+
+    const logged = invoke.mock.calls.filter(([module]) => module === 'DAORIS.LOG');
+    expect(logged).toEqual([['DAORIS.LOG', 'EVENT', {
+      payload: { event: 'message.sent', data: { session: 'c0ffee11', kind: 'chat', length: 28, files: 0 } },
+    }]]);
+    expect(JSON.stringify(logged)).not.toContain('repository for');
   });
 
   /**

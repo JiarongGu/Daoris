@@ -73,6 +73,53 @@ export type DriverState = {
 const call = <TData,>(type: string, payload?: Record<string, unknown>): Promise<TData> =>
   getBridge().invoke<TData>('DAORIS.DRIVER', type, payload ? { payload } : {});
 
+/** The longest string the page reports: the machine log keeps a clue, never a paragraph (D94). */
+export const LOG_TEXT = 120;
+
+const clipped = (text: string) => (text.length <= LOG_TEXT ? text : `${text.slice(0, LOG_TEXT)}…`);
+
+/**
+ * What the person did on the screen, into the machine log (LOG1b, D94): a view opened, a command run, a
+ * view moved, a message counted, a proposal settled, a failure the page caught.
+ *
+ * @remarks
+ * **Fire and forget, and never a throw**: the log is evidence, never a reason for the page to fail, so a
+ * report the bridge refuses — or a bridge that breaks — is dropped here. **Nothing in a browser**, which
+ * has no bridge: the log is the machine's, and a browser over a remote is not on it (D47 §4).
+ *
+ * **Counts and names, never words.** The shell's `DAORIS.LOG` module keeps only the catalogue's events and
+ * fields and drops the rest, but a caller hands it a message's LENGTH, never its text. Called from
+ * organisms and the application only: a molecule imports no hook, and this is the bridge.
+ */
+export function logEvent(event: string, data: Record<string, string | number | boolean>): void {
+  try {
+    const bridge = getBridge();
+    if (!bridge.isAvailable) return;
+    void Promise.resolve(bridge.invoke('DAORIS.LOG', 'EVENT', { payload: { event, data } })).catch(() => {});
+  } catch {
+    // Dropped: the report is never the page's problem.
+  }
+}
+
+let pageErrorsHeard = false;
+
+/**
+ * The page's own failures into the machine log (LOG1b): an error nothing caught, and a promise nobody
+ * handled — the message only, cut short, never a stack or what was on the screen. Installed once, at the
+ * page's start, however often it is asked.
+ */
+export function installPageErrors(): void {
+  if (pageErrorsHeard || typeof window === 'undefined') return;
+  pageErrorsHeard = true;
+  window.addEventListener('error', (event: ErrorEvent) => {
+    logEvent('page.error', { where: 'window', message: clipped(event.message || String(event.error ?? 'an error')) });
+  });
+  window.addEventListener('unhandledrejection', (event: PromiseRejectionEvent) => {
+    const reason: unknown = event.reason;
+    logEvent('page.error', { where: 'promise', message: clipped(reason instanceof Error ? reason.message : String(reason)) });
+  });
+}
+
 export const useDriver = () => {
   // The same detection path ShellSignals uses — one answer to "is a shell here", not two that can
   // drift. (The kit reads the bridge per render; in the desktop the bridge exists before the page.)
@@ -1003,7 +1050,9 @@ export const useSettleHelp = () => {
   return useMutation({
     mutationFn: (settle: { id: string; apply: boolean }) =>
       call<{ message: string; applied?: boolean }>(settle.apply ? 'HELP_APPLY' : 'HELP_DISMISS', { id: settle.id }),
-    onSuccess: () => {
+    onSuccess: (_answer, settle) => {
+      // Whether Ask Daoris's proposals help (LOG1b): the person's Apply or Not now, once it landed.
+      logEvent('proposal.settled', { applied: settle.apply });
       void client.invalidateQueries({ queryKey: ['help-proposals'] });
       // What an Apply changed: the driver's file, and an ask it made.
       void client.invalidateQueries({ queryKey: keys.driver });

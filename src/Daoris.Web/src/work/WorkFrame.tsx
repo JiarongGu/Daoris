@@ -7,6 +7,7 @@ import { useAnswerSession, useQuests, useRegistry, useSessions } from '../querie
 import {
   stopNotice, type TurnStop, useCancelTurn, useEndChat, useHarnesses, useResolveSession, useSendMessage,
   NO_TURNS, useChatTurns, useSessionOpenings, useSessionStreams, useStartChat, useStopSession, useStopTask, useSweepPlan, useTreeFiles,
+  logEvent,
 } from '../shell';
 import { Button, Drawer, failure, Icon, type Notify, SESSION_ACTIVE, Tip, useErrorNotify } from '../ui';
 import { AttendedSession, noteIsInTheHead } from './AttendedSession';
@@ -360,6 +361,8 @@ export function WorkFrame({
   const onSend = (text: string, files: File[] = []) => {
     if (!attended) return;
     const session = attended.id;
+    // Counted into the machine log, never its words (LOG1b): its length, and how many files it carried.
+    logEvent('message.sent', { session, kind: 'chat', length: text.length, files: files.length });
     // 🔴 The composer lets go of the words when it sends; a send that did not arrive hands them back,
     // into THIS session's draft (the setter is bound to it), and names the files — the page no longer
     // holds their bytes. Losing a paragraph to a refusal is the failure the composer exists to prevent (REV3).
@@ -392,6 +395,7 @@ export function WorkFrame({
   const onSteer = (text: string) => {
     if (!attended || !text) return;
     const session = attended.id;
+    logEvent('message.sent', { session, kind: 'steer', length: text.length, files: 0 });
     send.mutate({ id: session, text, files: [] }, {
       onSuccess: (result) => {
         if (result.sent) {
@@ -531,6 +535,7 @@ export function WorkFrame({
     setDragging(null);
     if (from === to) return;
     placed.move(view, to);
+    logEvent('panel.moved', { view, region: to });
     // Not `openView`: this render's places still say where the view was.
     if (to === 'panel') {
       setPanelPick(view);
