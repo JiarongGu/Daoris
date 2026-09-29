@@ -108,7 +108,9 @@ internal static class Program
             serviceUrl,
             home,
             // Daoris's own browser (D78), for a plugin server that drives it.
-            sp.GetRequiredService<EngineBrowserHost>()));
+            sp.GetRequiredService<EngineBrowserHost>(),
+            // What the person runs, and how long it takes, into the same log (LOG1b).
+            log));
         builder.Services.AddSingleton<MainForm>();
         // The session-control surface's host half: the page's driver controls land here (D46 §6).
         builder.Services.AddIpcModule<DriverModule>();
@@ -139,6 +141,12 @@ internal static class Program
         builder.Services.AddIpcModule<BrowserModule>();
         builder.Services.AddSingleton(new PlatformAddress(serviceUrl));
         builder.Services.AddIpcModule<WindowsModule>();
+        // The page's own report into the machine log (LOG1b, D94): what is used and what fails on the
+        // screen, taken only as the catalogue names it — the module is where no word gets through.
+        builder.Services.AddIpcModule<LogModule>();
+        // And every refusal the bridge answers, by its code: a middleware in the kit's application slot,
+        // so every module's answer passes it. Registered before Build, whose own call is a TryAdd.
+        builder.Services.UseMessageDispatcher((_, dispatcher) => dispatcher.Use(RefusalLog.Middleware(log)));
 
         // The loop starts with the app, not with the window: the driver watches whether or not the
         // person is looking, which is the whole point of a driver.

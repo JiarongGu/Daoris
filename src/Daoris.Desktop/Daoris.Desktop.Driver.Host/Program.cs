@@ -127,6 +127,11 @@ try
 
     using var service = ServiceClient.FromEnvironment();
 
+    // What this host runs and how long each part takes, into its log (LOG1b): the watcher hears the
+    // client's opens and moves and the record's events, so the record is handed to every driver below.
+    var events = new SessionEvents(Path.Combine(home, "sessions"));
+    using var sessionLog = new SessionLog(log, service, events);
+
     // The machine's remotes, one per workspace that has one ($DAORIS_HOME/remotes.json, environment
     // overriding — D47 §9, D48 §5): the syncs ride the tick, so a headless driver on a server machine
     // feeds and mirrors exactly as the desktop does. Absence is silent and local, and the map is
@@ -150,11 +155,11 @@ try
 
     if (once)
     {
-        Print(await new Driver(service, config, AdapterSet.Built(), home, processes, sync, hooks: hooks).TickAsync(closing.Token));
+        Print(await new Driver(service, config, AdapterSet.Built(), home, processes, sync, hooks: hooks, events: events).TickAsync(closing.Token));
     }
     else if (untilIdle)
     {
-        foreach (var report in await new Driver(service, config, AdapterSet.Built(), home, processes, sync, hooks: hooks).RunUntilIdleAsync(closing.Token))
+        foreach (var report in await new Driver(service, config, AdapterSet.Built(), home, processes, sync, hooks: hooks, events: events).RunUntilIdleAsync(closing.Token))
         {
             Print(report);
         }
@@ -171,7 +176,7 @@ try
         // The loop itself — re-read the config, tick, wait — is the library's (DriverWatch); this host
         // keeps only its reporting half. A null onError lets a failed tick propagate to the catch
         // below, which is this door's exit-2 contract.
-        await new DriverWatch(service, configPath, home, processes, sync, hooks: hooks).RunAsync(
+        await new DriverWatch(service, configPath, home, processes, sync, hooks: hooks, events: events).RunAsync(
             (report, ticked) =>
             {
                 Print(report, quietWhenIdle: true);

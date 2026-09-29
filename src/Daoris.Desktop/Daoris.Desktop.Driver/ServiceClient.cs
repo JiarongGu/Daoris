@@ -28,6 +28,16 @@ public sealed class ServiceClient : IDisposable
     public const string UrlVariable = "DAORIS_SERVICE_URL";
     public const string KeyVariable = "DAORIS_SERVICE_KEY";
 
+    /// <summary>
+    /// A session record this client opened, raised once the ledger said yes (LOG1b): every session on
+    /// this machine is opened through one of these doors, so a watcher here sees what the person runs
+    /// without a second door onto the ledger. A refusal raises nothing, because nothing opened.
+    /// </summary>
+    public event Action<SessionOpened>? Opened;
+
+    /// <summary>A session record this client moved, raised once the ledger said yes (LOG1b).</summary>
+    public event Action<SessionMoved>? Moved;
+
     /// <summary>Where the service is — handed to sessions so they can claim their own quests there.</summary>
     public string BaseUrl => _base;
 
@@ -119,7 +129,11 @@ public sealed class ServiceClient : IDisposable
         var (ok, status, payload, root) = await PostJsonAsync($"/api/sessions/{Uri.EscapeDataString(id)}/answer", body, ct)
             .ConfigureAwait(false);
         if (root is not { } answered) return (false, $"the service at {_base} has no answer door ({status}) — is it older than this driver?");
-        return ok ? (true, Text(answered, "message") ?? "") : (false, Text(answered, "error") ?? payload);
+        if (!ok) return (false, Text(answered, "error") ?? payload);
+
+        // An answer ends the parked record `completed` (STANDDOWN2), which is a move like any other.
+        Raise(Moved, new SessionMoved(id, StateOf(answered) ?? "completed"));
+        return (true, Text(answered, "message") ?? "");
     }
 
     /// <summary>
@@ -152,7 +166,7 @@ public sealed class ServiceClient : IDisposable
             writer.WriteEndObject();
         });
 
-        return await OpenRecordAsync("/api/sessions", body, ct).ConfigureAwait(false);
+        return await OpenRecordAsync("/api/sessions", body, SessionOpened.Driven, adapter, repository: null, ct).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -176,7 +190,7 @@ public sealed class ServiceClient : IDisposable
             writer.WriteEndObject();
         });
 
-        return await OpenRecordAsync("/api/sessions/chat", body, ct).ConfigureAwait(false);
+        return await OpenRecordAsync("/api/sessions/chat", body, SessionOpened.Chat, adapter, repository, ct).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -225,7 +239,7 @@ public sealed class ServiceClient : IDisposable
             writer.WriteEndObject();
         });
 
-        return await OpenRecordAsync("/api/sessions/intake", body, ct).ConfigureAwait(false);
+        return await OpenRecordAsync("/api/sessions/intake", body, SessionOpened.Intake, adapter, repository: null, ct).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -246,7 +260,7 @@ public sealed class ServiceClient : IDisposable
             writer.WriteEndObject();
         });
 
-        return await OpenRecordAsync("/api/sessions/help", body, ct).ConfigureAwait(false);
+        return await OpenRecordAsync("/api/sessions/help", body, SessionOpened.Help, adapter, repository: null, ct).ConfigureAwait(false);
     }
 
     /// <summary>This machine's asks that are not closed, newest first — what the loop finds intakes in.</summary>
@@ -381,7 +395,28 @@ public sealed class ServiceClient : IDisposable
                 + ((root is { } refused ? Text(refused, "error") : null) ?? payload));
         }
 
+        Raise(Moved, new SessionMoved(id, (root is { } moved ? StateOf(moved) : null) ?? state));
         return root is { } answer ? Text(answer, "message") ?? "" : "";
+    }
+
+    /// <summary>The state an answer's session record is in now, or null when it carries none.</summary>
+    private static string? StateOf(JsonElement answer) =>
+        answer.ValueKind == JsonValueKind.Object && answer.TryGetProperty("session", out var session) ? Text(session, "state") : null;
+
+    /// <summary>
+    /// Tell the watchers. A watcher that fails costs its own view, never the call: the ledger has already
+    /// moved, and the caller is owed its answer (LOG1b).
+    /// </summary>
+    private static void Raise<T>(Action<T>? watchers, T what)
+    {
+        try
+        {
+            watchers?.Invoke(what);
+        }
+        catch (Exception)
+        {
+            // The watcher's failure is its own; the record already says what happened.
+        }
     }
 
     // Through DriverHttp, so a refused read carries the service's own sentence — a bare
@@ -610,7 +645,11 @@ public sealed class ServiceClient : IDisposable
     /// Open a session record — a quest's, a chat's or an intake's, which the ledger answers alike. A
     /// refusal is an answer, not an exception, and so is a door that did not answer in JSON.
     /// </summary>
-    private async Task<(string? SessionId, string Message)> OpenRecordAsync(string path, string body, CancellationToken ct)
+    /// <param name="kind">Which door this is, for the watchers (<see cref="SessionOpened"/>).</param>
+    /// <param name="adapter">The adapter asked for — the record's own, when the answer carries one, wins.</param>
+    /// <param name="repository">The repository asked for, where the door names one — the record's own wins.</param>
+    private async Task<(string? SessionId, string Message)> OpenRecordAsync(
+        string path, string body, string kind, string adapter, string? repository, CancellationToken ct)
     {
         var (ok, status, payload, root) = await PostJsonAsync(path, body, ct).ConfigureAwait(false);
         if (root is not { } answer)
@@ -619,7 +658,16 @@ public sealed class ServiceClient : IDisposable
         }
 
         if (!ok) return (null, Text(answer, "error") ?? payload);
-        return (answer.TryGetProperty("session", out var session) ? Text(session, "id") : null, Text(answer, "message") ?? "");
+        var session = answer.ValueKind == JsonValueKind.Object && answer.TryGetProperty("session", out var record) ? record : default;
+        var id = Text(session, "id");
+        if (id is not null)
+        {
+            // What the ledger recorded rather than what was asked: a driven session names its quest, and
+            // the record answers with the quest's receiver; a blank adapter takes the ledger's default.
+            Raise(Opened, new SessionOpened(id, kind, Text(session, "adapter") ?? adapter, Text(session, "repository") ?? repository));
+        }
+
+        return (id, Text(answer, "message") ?? "");
     }
 
     // An element that is not an object has no fields — asked as one, TryGetProperty would throw.
@@ -640,6 +688,23 @@ public sealed class ServiceClient : IDisposable
         return Encoding.UTF8.GetString(stream.ToArray());
     }
 }
+
+/// <summary>A session record the ledger opened for this client (LOG1b).</summary>
+/// <param name="Kind">
+/// Which door opened it — <see cref="Driven"/>, <see cref="Chat"/>, <see cref="Intake"/> or
+/// <see cref="Help"/>. The door's, not the record's: the record calls an intake and Ask Daoris chats.
+/// </param>
+/// <param name="Repository">The repository the record runs in, as the ledger recorded it; a name, never a path.</param>
+public sealed record SessionOpened(string Session, string Kind, string Adapter, string? Repository)
+{
+    public const string Driven = "driven";
+    public const string Chat = "chat";
+    public const string Intake = "intake";
+    public const string Help = "help";
+}
+
+/// <summary>A session record the ledger moved for this client (LOG1b), in the state's public spelling.</summary>
+public sealed record SessionMoved(string Session, string State);
 
 /// <summary>What the service said to an ask, a publish or a close (D65 §1a).</summary>
 /// <param name="Ok">Whether it did what was asked — false is a refusal, said in <paramref name="Message"/>.</param>

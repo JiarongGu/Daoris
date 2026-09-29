@@ -228,7 +228,7 @@ TASK.md and complete one by one"*).
 - [ ] **LOG1 — a log of what happens on this machine, to improve Daoris from.** Today nothing is
   written outside the session transcripts: the shell's, the driver loop's and the host's own lines go
   to a console nobody has once the application is installed, and an unhandled exception leaves no
-  trace. (a) *Landed 2026-09-30, in the archive.* **One log, machine-local**: JSON lines under the home's `logs/`, one file a day, kept
+  trace. (a) and (b) *landed 2026-09-30, in the archive.* **One log, machine-local**: JSON lines under the home's `logs/`, one file a day, kept
   for a bounded number of days, written by every process (the shell, the driver loop, the host, the
   browser), each line naming its source, its event and its fields. Unhandled exceptions from every
   process land there. (b) **What the person does, without their words**: the page reports views

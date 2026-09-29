@@ -7799,3 +7799,26 @@ not. The card now carries the driver's reason for any quest it leaves waiting an
 **Proven by:** vitest 1421 (a structural test walks every flexible box between a framed view and the
 frame's root, and fails naming the root without the fix; a held quest's card says why and resumes
 without opening the drawer), Playwright 21, verify, and the scratch window's measurements above.
+
+## LOG1b — what the person does, in the machine log without their words (2026-09-30, D94)
+
+> - [ ] **LOG1** … (b) **What the person does, without their words**: the page reports views opened,
+>   commands run, sessions started, stopped and finished with their durations, messages sent (their
+>   length, never their text), proposals applied or dismissed, refusals shown by code, errors caught;
+>   the driver reports each start's cost …
+
+**Outcome** (built by a subagent in its own worktree, merged and re-tested on main). The service client
+grew an `Opened`/`Moved` seam raised only once the ledger says yes, and `SessionLog` turns it and the
+conversation record's stamped events into `session.started`, `session.opened`, `session.ended`,
+`turn.answered` and `turn.ended`, for the shell's loop (`desktop`) and the headless tick (`driver`);
+anything it cannot time is null, never zero. Every refusal the bridge answers is written by code and
+request through `RefusalLog`, a middleware in the kit's dispatcher; its sentence never is. The page
+reports over `DAORIS.LOG` · `EVENT` with a fire-and-forget `logEvent` (silent in a browser), and
+`LogModule` enforces D94: only the catalogue's events and fields, each of its declared kind, a
+message kept only as its length and file count, text cut at 120 characters. The design's §4 says what
+each line measures, including that a driven session's `openMs` is the wait to spawn (its target is
+recorded as capture starts).
+
+**Not covered:** the terminal conversation (`daoris-driver chat`) writes no session lines yet.
+**Proven by:** driver 949, modules 327 (the filter broken three ways turned its tests red each time),
+vitest 1426, on main after the merge.
