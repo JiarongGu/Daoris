@@ -183,7 +183,8 @@ TASK.md and complete one by one"*).
   nothing on the quest's card says so (the drawer does). (e) *Added the same day:* **the right side
   bar's size breaks after Ask Daoris is moved to the panel and back** (*"after dock "ask daoris" from
   right to bottom and back to right the sizing of right panel is broken"*) — reproduced on the scratch
-  window before it is fixed; (b)'s frame overflow is the first suspect.
+  window before it is fixed; (b)'s frame overflow is the first suspect. *(b), (d) and (e) landed
+  2026-09-30 (one defect for (b) and (e)), in the archive; (a) and (c) remain.*
 - [ ] **AGT6 — the agent's own settings, from Daoris: model, effort and the rest** (owner, 2026-09-30:
   *"we also need way to adjust the claude setup (since we have command to setup model effort or
   other setting in console but no way in daoris rn)"*). Claude Code sets its model, its effort and

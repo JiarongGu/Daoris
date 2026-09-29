@@ -637,6 +637,8 @@
   "quests.card.files": "{{count}} 个文件",
   "quests.card.files_other": "{{count}} 个文件",
   "quests.card.follows": "承接 #{{id}}",
+  "quests.card.resume": "恢复 {{repository}}",
+  "quests.card.resumeTip": "{{repository}} 在本机已暂停，它的委托会一直等待。恢复后驱动会开始它们；在项目里也能暂停和恢复。",
   "quests.card.waits": "等待 #{{id}}",
   "quests.card.waitsHint": "承接方已向另一个仓库提问，正在等待答复。那个委托得到答复后，会在同一工作树中继续。",
   "quests.empty.headlineAll": "各处均无待接委托",

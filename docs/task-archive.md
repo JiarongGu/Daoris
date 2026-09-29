@@ -7777,3 +7777,25 @@ was deleted.
 
 **Proven by:** driver 936, modules 308, web 1419, verify, deployment rehearsal 57/57 (the launcher,
 the engine, the identity), Playwright 21, and the family rehearsal (see the commit for its run).
+
+## USE1b, USE1d, USE1e — the Quests view fits the window, a held quest says so, and the side bar keeps its size (2026-09-30)
+
+> - [ ] **USE1 — what the owner met on the installed window, 2026-09-30** … (b) **The Quests view
+>   overflows the window.** … (d) **A new request does not start on its own.** … (e) **the right side
+>   bar's size breaks after Ask Daoris is moved to the panel and back** …
+
+**Outcome.** (b) and (e) were one defect. Every view but Sessions is drawn inside the work frame, and
+the frame's root was a flex item with no `min-w-0`, so it could be no narrower than its content: a
+long quest title that should have truncated widened the frame past the window, and the right side
+bar was placed against that wider frame. Measured on the scratch window with a long title: without
+the fix the side bar sat at 1687–2224px in a 1193px window, and where it landed after moving Ask
+Daoris to the panel and back depended on what the centre held; with it, the page is the window's
+width, the title truncates (449px of 1481), and the side bar stays at 537px through the round trip.
+A browser draws the view outside the frame, which is why it fitted there. (d) was a hold: both of the
+ticket's quests were addressed to a held repository, which the quest's drawer said and its card did
+not. The card now carries the driver's reason for any quest it leaves waiting and, for a hold, a
+*resume* that lifts it where it is read, without opening the quest.
+
+**Proven by:** vitest 1421 (a structural test walks every flexible box between a framed view and the
+frame's root, and fails naming the root without the fix; a held quest's card says why and resumes
+without opening the drawer), Playwright 21, verify, and the scratch window's measurements above.

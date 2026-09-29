@@ -272,6 +272,34 @@ describe('the Work frame', () => {
     expect(screen.getByRole('tab', { name: 'Timeline' })).toBeInTheDocument();
   });
 
+  /**
+   * 🔴 USE1: every flexible box between a framed view and the frame's own root may shrink below its
+   * content. A flex item is otherwise no narrower than what it holds, and the frame's root had no
+   * `min-w-0`: a long title that should truncate widened every view but Sessions past the window on the
+   * install. jsdom has no layout, so the rule is held on the boxes themselves.
+   */
+  it('lets every flexible box around a framed view shrink below its content', async () => {
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const { container } = render(
+      <QueryClientProvider client={client}>
+        <Tooltip.Provider>
+          <WorkFrame
+            selected="s1a2b3c4" onSelect={vi.fn()} notify={() => {}}
+            ask={<p>the ask panel</p>}
+            content={<main><h1>Quests</h1></main>}
+          />
+        </Tooltip.Provider>
+      </QueryClientProvider>,
+    );
+
+    const heading = await screen.findByRole('heading', { level: 1, name: 'Quests' });
+    const unshrinkable: string[] = [];
+    for (let box = heading.closest('main')!.parentElement; box && box !== container; box = box.parentElement) {
+      if (box.classList.contains('flex-1') && !box.classList.contains('min-w-0')) unshrinkable.push(box.className);
+    }
+    expect(unshrinkable).toEqual([]);
+  });
+
   /** DOCK1e: dragging a tab to the other region is the same move as the menu's, by the pointer. */
   it('moves a view dragged by its tab to the panel', async () => {
     window.localStorage.setItem('daoris.dockClosed', '0');

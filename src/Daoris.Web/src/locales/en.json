@@ -637,6 +637,8 @@
   "quests.card.files": "{{count}} file",
   "quests.card.files_other": "{{count}} files",
   "quests.card.follows": "follows #{{id}}",
+  "quests.card.resume": "resume {{repository}}",
+  "quests.card.resumeTip": "{{repository}} is held on this machine, so its quests wait. Resuming lets the driver start them; Projects holds and resumes it too.",
   "quests.card.waits": "waits on #{{id}}",
   "quests.card.waitsHint": "Its taker asked another repository and is waiting for the answer. It resumes, in the same tree, once that quest is answered.",
   "quests.empty.headlineAll": "No open quests anywhere",

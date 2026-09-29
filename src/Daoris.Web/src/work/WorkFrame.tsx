@@ -648,7 +648,10 @@ export function WorkFrame({
 
   return (
     // Positioned, so a dock filling the frame (FRAME6) lies over exactly this and nothing more.
-    <div ref={root} className="relative flex min-h-0 flex-1">
+    // 🔴 `min-w-0` (USE1): a flex item is otherwise no narrower than its content, and every view but
+    // Sessions is drawn in here, so a long title that should truncate widened the frame past the
+    // window (seen on the install's Quests view; a browser draws the view outside the frame).
+    <div ref={root} className="relative flex min-h-0 min-w-0 flex-1">
       {!elsewhere && (
       <aside className="relative flex shrink-0 flex-col border-r border-line" style={{ width: layout.rail.width }}>
         {/* The rail is a list of sessions, and NEW is one control (D56). It used to be a permanent

@@ -4,7 +4,9 @@ import { api, canBeAsked, type Quest, type QuestStep, type Session } from './api
 import {
   useDismissConflict, usePublishQuest, useQuests, useRegistry, useRespondQuest, useSessions,
 } from './queries';
-import { stopNotice, useConsidered, useDriver, useNudge, useRetryQuest, useStopSession, useTrustFolder, useUntrusted } from './shell';
+import {
+  stopNotice, useConsidered, useDriver, useNudge, useRetryQuest, useSetHold, useStopSession, useTrustFolder, useUntrusted,
+} from './shell';
 import { TrustAsk } from './work/TrustAsk';
 import { ago, sentence, sessionTool, sittingDays, size, stamp } from './format';
 import { isImage, linksOf, toUpload } from './attachments';
@@ -143,6 +145,7 @@ export function QuestsView({
   // A quest just published is looked at now, not at the driver's next poll.
   const nudge = useNudge();
   const considered = useConsidered().data ?? [];
+  const setHold = useSetHold();
   const stop = useStopSession();
   // A start the driver is holding for the agent's trust (D73), and the person's grant of it. The
   // question opens inline, for the quest it was asked about, and only on the press.
@@ -257,6 +260,9 @@ export function QuestsView({
     const tone = QUEST_TONE[quest.status];
     const session = sessionFor.get(quest.id);
     const question = questionOf(quest);
+    // Why this machine's driver leaves it waiting (USE1): the drawer said so, the card did not, and a
+    // quest to a held repository read as a request that would not start.
+    const sitting = quest.status === 'Open' ? sittingBecause(considered, quest.id) : null;
     return (
       <RecordCard
         key={quest.id}
@@ -298,6 +304,28 @@ export function QuestsView({
             {quest.parent && <> · {t('quests.card.follows', { id: quest.parent })}</>}
           </span>
         </p>
+        {sitting && (
+          <p className="mt-1 mb-0 flex items-center gap-2 text-small text-ink-soft">
+            <span className="min-w-0 flex-1 truncate"><Inline text={sittingSentence(sitting)} /></span>
+            {/* The hold is the person's own and one press lifts it, here where it is read. Inside the
+                card's own press, so it keeps its click and its keys to itself. */}
+            {sitting.verdict === 'Held' && (
+              <Button
+                variant="ghost"
+                className="shrink-0"
+                title={t('quests.card.resumeTip', { repository: quest.to })}
+                disabled={setHold.isPending}
+                onKeyDown={(event) => event.stopPropagation()}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  setHold.mutate({ repository: quest.to, held: false }, { onError: failure(notify) });
+                }}
+              >
+                {t('quests.card.resume', { repository: quest.to })}
+              </Button>
+            )}
+          </p>
+        )}
         <p className="mt-1.5 line-clamp-2 text-body text-ink-soft">{quest.body}</p>
       </RecordCard>
     );
