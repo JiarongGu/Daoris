@@ -143,6 +143,68 @@ public sealed class HelpChatTests : IDisposable
         Assert.Contains(first, second.Message);
     }
 
+    /// <summary>
+    /// HELP5: Claude Code defers every MCP tool behind a search step unless its environment says otherwise,
+    /// so the helper paid a model round trip to find its own tools. The switch is the adapter's to name,
+    /// since it is a fact about that harness; both Claude Code doors name it, and nothing else does.
+    /// </summary>
+    [Theory]
+    [InlineData("claude-code", true)]
+    [InlineData("claude-code-acp", true)]
+    [InlineData("stub", false)]
+    [InlineData("acp-stub", false)]
+    [InlineData("dsh", false)]
+    [InlineData("codex-acp", false)]
+    public void Only_the_claude_code_doors_say_how_their_tools_load_up_front(string adapter, bool says)
+    {
+        var upFront = AdapterSet.Built().Resolve(adapter).ToolsUpFront;
+
+        if (says) Assert.Equal(new Dictionary<string, string> { ["ENABLE_TOOL_SEARCH"] = "false" }, upFront);
+        else Assert.Empty(upFront);
+    }
+
+    /// <summary>
+    /// HELP5: the help room's spawn carries the adapter's switch on both doors, so its knowledge tools come
+    /// with the first request. A repository's conversation keeps the harness's own default, and an adapter
+    /// that declares no switch has nothing added.
+    /// </summary>
+    /// <remarks>The harness behind each door is a script that writes down what its environment said.</remarks>
+    [Theory]
+    [InlineData("claude-code", true, true)]
+    [InlineData("claude-code-acp", true, true)]
+    [InlineData("claude-code", false, false)]
+    [InlineData("claude-code-acp", false, false)]
+    [InlineData("stub", true, false)]
+    [InlineData("acp-stub", true, false)]
+    public async Task Only_Ask_Daoris_loads_its_tools_up_front_and_only_where_the_harness_says_how(
+        string adapter, bool help, bool upFront)
+    {
+        await using var service = StandInService.Start(Path.Combine(_home, "engine"));
+        var seen = Path.Combine(_home, "environment.txt");
+        var config = DriverConfig.Empty with
+        {
+            Commands = new Dictionary<string, IReadOnlyList<string>> { [adapter] = ["node", EnvironmentAgent(), seen] },
+        };
+        var adapters = AdapterSet.Built();
+        using var client = new ServiceClient(service.Url, null);
+        using var runner = new ChatRunner(
+            client, adapters, _home, new SessionProcesses(Path.Combine(_home, "sessions")),
+            harnesses: new HarnessRoster(adapters, Path.Combine(_home, "harnesses.json")));
+
+        var start = help
+            ? await runner.StartHelpAsync(adapter, config, Machine)
+            : await runner.StartAsync("engine", adapter, config);
+        var id = start.SessionId ?? throw new InvalidOperationException(start.Message);
+        await Until(() => File.Exists(seen), () => $"state {service.State(id)}");
+
+        // What the machine running the test already carries is the harness's default here, not Daoris's.
+        var ambient = Environment.GetEnvironmentVariable("ENABLE_TOOL_SEARCH") ?? "(unset)";
+        Assert.Equal(upFront ? "false" : ambient, File.ReadAllText(seen));
+
+        Assert.True(runner.Finish(id));
+        await Until(() => service.State(id) is "completed" or "stopped", () => $"state {service.State(id)}");
+    }
+
     [Fact]
     public async Task An_agent_that_names_no_harness_this_machine_knows_is_refused_before_any_record()
     {
@@ -164,6 +226,40 @@ public sealed class HelpChatTests : IDisposable
             if (DateTime.UtcNow > deadline) throw new TimeoutException(seen());
             await Task.Delay(50);
         }
+    }
+
+    /// <summary>
+    /// A harness for either door that writes down what its environment says of <c>ENABLE_TOOL_SEARCH</c>,
+    /// then answers the protocol door's requests plainly and ignores the native door's lines until input ends.
+    /// </summary>
+    private string EnvironmentAgent()
+    {
+        var script = Path.Combine(_home, "environment-agent.mjs");
+        File.WriteAllText(script, """
+            import { renameSync, writeFileSync } from 'node:fs';
+            import { createInterface } from 'node:readline';
+            const argv = process.argv.slice(2);
+            if (argv.includes('--version')) { console.log('2.1.281 (Claude Code)'); process.exit(0); }
+            if (argv.includes('auth')) { console.log('{"loggedIn": true}'); process.exit(0); }
+            if (argv.includes('--login-state')) { console.log('logged-in'); process.exit(0); }
+            // Written beside, then renamed, so the test never reads it half-written.
+            writeFileSync(argv[0] + '.part', process.env.ENABLE_TOOL_SEARCH ?? '(unset)');
+            renameSync(argv[0] + '.part', argv[0]);
+            const send = (frame) => process.stdout.write(JSON.stringify(frame) + '\n');
+            for await (const line of createInterface({ input: process.stdin })) {
+              let frame;
+              try { frame = JSON.parse(line); } catch { continue; }
+              if (frame.id === undefined || !frame.method) continue;
+              if (frame.method === 'initialize') {
+                send({ jsonrpc: '2.0', id: frame.id, result: { protocolVersion: 1, agentCapabilities: {} } });
+              } else if (frame.method === 'session/new') {
+                send({ jsonrpc: '2.0', id: frame.id, result: { sessionId: 'up-front' } });
+              } else {
+                send({ jsonrpc: '2.0', id: frame.id, result: {} });
+              }
+            }
+            """);
+        return script;
     }
 
     /// <summary>A protocol-door agent that writes down where its session opened and which servers it was handed.</summary>

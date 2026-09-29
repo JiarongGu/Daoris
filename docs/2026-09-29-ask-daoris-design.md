@@ -162,6 +162,25 @@ line git can name. With an agent named, a starter is also a first message.
    registered or driven, a tool no account is signed in to, a repository with no line, and Ask Daoris
    with no agent, each with its door and its terminal command; the strip's button, the palette's
    *Ask Daoris* and F1 open the panel. Its agent choice (D89) is Settings → *Daoris's own AI*.
+5. **HELP5**: answering sooner (2026-09-30). Measured on the owner's install, a first word came 40 s
+   after the conversation was made, over five model round trips, three of them Daoris's to remove:
+   - **Its tools load with the first request.** Claude Code defers every MCP tool behind a search step
+     unless `ENABLE_TOOL_SEARCH` reads false, so the helper paid a round trip to find its own tools. The
+     switch is the adapter's to name (`ISessionAdapter.ToolsUpFront`, empty by default; both Claude Code
+     doors name it), and only the room's conversation asks for it: a repository's keeps the harness's
+     default.
+   - **The room says it has no web either**, in the sentence that says it has no shell: its fourth move
+     was a fetch of a ticket's URL, refused before it ran.
+   - **The conversation opens as the panel shows**, so the spawn and `session/new` (3.2 s measured) are
+     done before the person types: once per showing, again after *New conversation* once the one it
+     finished has gone, never while one runs. One that is refused says nothing and is not asked again;
+     the send asks for itself and says why, as before. **Nobody has spoken in it, so it is not shown**:
+     the starters, or the conversation that ended, stay in front until the first words go to it, and
+     words sent while it is still opening wait for it (HELP4's holding). Which conversation that is lives
+     in the page's query cache, so the side bar and Quick Ask agree on it and a tab drawn again still
+     hides it. *Not settled:* a conversation opened ahead is a record whether or not anyone speaks in it,
+     so after a restart the newest help record can be an empty one, shown ended in place of the last real
+     conversation.
 
 ## 10. Not chosen
 

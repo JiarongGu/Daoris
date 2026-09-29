@@ -114,24 +114,21 @@ public sealed class HelpRoomTests : IDisposable
     }
 
     /// <summary>
-    /// HELP2: asked what the panel held, the helper guessed that the View menu names each view's region,
-    /// which it does not — its room said nothing of the window. The room says how the window is laid out
-    /// and how a view moves, by the names the window uses, and that where the views stand now arrives with
-    /// the person's message.
-    /// </summary>
-    /// <summary>
     /// HELP4: asked to tidy a repository's branches, the helper's first move was a shell command, refused
     /// before it ran, and it then rebuilt the repository's branches from its quests and presented the
     /// guess as the tree. The room says it has no shell and reads no checkout; that a repository's own
     /// work is routed there, as an ask or a conversation in that repository; that what it could not see
     /// is said as such; and it points at the cleanup the person wanted, which is a door of Daoris's own.
+    /// HELP5: its fourth move on a real conversation was a fetch of a ticket's URL, refused the same way,
+    /// so the same sentence says it has no web either.
     /// </summary>
     [Fact]
-    public void The_room_says_it_has_no_shell_and_routes_a_repositorys_own_work_there()
+    public void The_room_says_it_has_no_shell_nor_web_and_routes_a_repositorys_own_work_there()
     {
         var agents = HelpRoom.Render(Machine);
 
         Assert.Contains("You have no shell", agents);
+        Assert.Contains("no web fetch or search", agents);
         Assert.Contains("never try one", agents);
         Assert.Contains("a repository's own work", agents);
         Assert.Contains("`ask_propose`", agents);
@@ -140,6 +137,12 @@ public sealed class HelpRoomTests : IDisposable
         Assert.Contains("Session branches", agents);
     }
 
+    /// <summary>
+    /// HELP2: asked what the panel held, the helper guessed that the View menu names each view's region,
+    /// which it does not — its room said nothing of the window. The room says how the window is laid out
+    /// and how a view moves, by the names the window uses, and that where the views stand now arrives with
+    /// the person's message.
+    /// </summary>
     [Fact]
     public void The_room_says_how_the_window_is_laid_out_and_how_a_view_moves()
     {

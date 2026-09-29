@@ -979,6 +979,42 @@ export const useStartHelp = () => {
   });
 };
 
+/** Which Ask Daoris conversation waits unseen for the person's first words, and which have had theirs. */
+type HelpReadied = { readied: string | null; spoken: string[] };
+const NOTHING_READIED: HelpReadied = { readied: null, spoken: [] };
+
+/**
+ * Ask Daoris's conversation opened as its panel showed (HELP5), until the person speaks in it: its id, or
+ * null. Kept by the page and never fetched, like `useConsidered`, so the panel's two hosts (the side bar
+ * and Quick Ask) read one answer, and a host drawn again finds it still there. A refetch answers what is
+ * already kept, so a refresh of every query does not forget it.
+ *
+ * @remarks
+ * A conversation spoken in is never readied again: an opening that answers late, from the other host,
+ * must not hide the conversation the person is talking in.
+ */
+export const useHelpReadied = () => {
+  const client = useQueryClient();
+  const { data } = useQuery({
+    queryKey: keys.helpReadied,
+    queryFn: () => client.getQueryData<HelpReadied>(keys.helpReadied) ?? NOTHING_READIED,
+    staleTime: Infinity,
+    gcTime: Infinity,
+  });
+  const change = (next: (was: HelpReadied) => HelpReadied) =>
+    client.setQueryData<HelpReadied>(keys.helpReadied, (was) => next(was ?? NOTHING_READIED));
+  return {
+    readied: data?.readied ?? null,
+    /** Opened ahead: kept unseen until spoken in, unless it has been already. */
+    ready: (id: string) => change((was) => (was.spoken.includes(id) ? was : { ...was, readied: id })),
+    /** The person's words went to it: seen from now on. */
+    spoke: (id: string) => change((was) => ({
+      readied: was.readied === id ? null : was.readied,
+      spoken: was.spoken.includes(id) ? was.spoken : [...was.spoken, id],
+    })),
+  };
+};
+
 /**
  * What one conversation of Ask Daoris's proposed that waits for the person (HELP1c, D89), each already
  * judged with the route's own code: one the route would refuse never arrives here, and its agent is told

@@ -39,10 +39,11 @@ export function AskDaoris({
   const scroller = useRef<HTMLDivElement>(null);
   // Every session, ended ones included: the same query Sessions makes, so it is asked once.
   const everything = useSessions(null, true);
-  const conversation = useAskConversation(
-    scroller, where ? { ...where, session: attendedOf(attending, everything.data ?? []) } : undefined, opening);
-
   const helper = driver.data?.helperAdapter || null;
+  const conversation = useAskConversation(
+    scroller, where ? { ...where, session: attendedOf(attending, everything.data ?? []) } : undefined, opening,
+    helper);
+
   const found = starters({
     repositories: (registry.data ?? []).map((row) => row.repository),
     drivable: driver.data?.drivable ?? [],
