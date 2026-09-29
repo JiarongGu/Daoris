@@ -33,8 +33,9 @@ bars. The references agree on one right region:
 - **JetBrains** AI Chat is a tool window on the **right toolbar**.
 
 So: **one right region.** On Sessions, Ask Daoris is a tab of the right dock beside *timeline* and
-*review*, sharing its resize, its close and its full; the strip's button and `Ctrl+Alt+I` open the
-dock on it. On every other view it is that region with Ask Daoris alone, resizable by its edge and
+*review*, sharing its resize, its close and its full; `F1` and `Ctrl+Alt+I` open the dock on it. It has
+no button of its own on the strip (the owner: *"no ask daoris at top border bar"*, DOCK1c): the right
+side bar's toggle is its door, named for it where it is the whole region. On every other view it is that region with Ask Daoris alone, resizable by its edge and
 remembered. Quick Ask (a palette-like box for one question) and moving the region are DOCK1's.
 
 ## 3. The room

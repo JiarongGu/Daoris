@@ -7253,3 +7253,24 @@ before this, under its verify step's name.
 quest, a parent the service no longer answers for, a chat); the family rehearsal's `trees land --plan`
 check; the real chain's verify step reads `parent: 34a9d57b8fd5` on the owner's install.
 
+## SURF11 — the layout toggles, reachable from the strip (2026-09-29, as DOCK1c)
+
+The row as filed: *Filed on 2026-09-22 in a sentence of `platform-ux.md` §4 and never made a row,
+which UX5 found (U23). VS Code's title bar holds the toggles that show and hide the panel, the sidebar
+and the secondary bar, left of the window controls. Daoris has the three regions in Sessions (the rail,
+the output panel, the dock), and each is toggled only inside it. Since D66, Sessions is one view among
+seven, so the question is where the toggles belong before how they look: the strip, which is every
+view's, or the View menu, which VS Code also carries them in. The state lives in `WorkFrame` and needs
+hoisting either way.*
+
+**Outcome** (DOCK1c, `docs/2026-09-29-dock-design.md`): both. The closings are the application's
+(`work/closings.ts`, the same stored keys, so nothing reopens on the upgrade); `LayoutToggles` puts VS
+Code's three pictures at the strip's right, pressed while shown, and only the right one away from
+Sessions, where it is Ask Daoris's region; the View menu carries them ticked, with `Ctrl+B`, `Ctrl+J`
+and `Ctrl+Alt+B`, and menu items gained a shortcut. Ask Daoris lost its own strip button at the owner's
+word, and the dock's tabs shrink as a browser's do.
+
+**Proven by:** `LayoutToggles.test.tsx`, the strip's trailing-slot test, the frame's suite unchanged
+over the lifted state (527), and the scratch window: `Ctrl+B` closed the rail and its toggle followed,
+the dock's close stayed inside its edge at its 300px floor. Looked at in light theme only.
+

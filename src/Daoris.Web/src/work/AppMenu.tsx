@@ -16,6 +16,8 @@ export interface MenuItem {
   checked?: boolean;
   /** Said, and not choosable: "no workspace yet" is a fact in a menu, not an act. */
   disabled?: boolean;
+  /** Its key, shown at the right as VS Code's menus show one (DOCK1c). */
+  shortcut?: string;
 }
 
 /**
@@ -99,6 +101,9 @@ export function AppMenu({
                   <span className="ml-auto shrink-0 font-mono text-meta tabular-nums text-ink-faint">
                     {item.badge}
                   </span>
+                )}
+                {item.shortcut && (
+                  <kbd className="ml-auto shrink-0 pl-4 font-mono text-meta text-ink-faint">{item.shortcut}</kbd>
                 )}
               </Menu.Item>
             </div>

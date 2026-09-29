@@ -109,31 +109,39 @@ export function RightDock({
         />
       )}
 
+      {/* 🔴 The tabs give way before the dock's own buttons do (found looking at DOCK1c): with a third
+          tab, Ask Daoris, the close was clipped off a dock at its floor, and then a scrollbar ran under the
+          names. So they shrink as a browser's tabs and VS Code's do (the owner: "take design from vscode or
+          browser tab design"): the selected tab keeps its whole name, as a browser's active tab keeps its
+          width, and the others give way, each cut with an ellipsis down to its icon; only then do they
+          scroll. Every full name is its tab's own and its tip's. */}
       <div className="flex shrink-0 items-center border-b border-line pr-1">
-        <div role="tablist" aria-label={t('work.dock.label')} className="flex">
+        <div role="tablist" aria-label={t('work.dock.label')} className="flex min-w-0 flex-1 overflow-x-auto [scrollbar-width:none]">
           {tabs.map(({ id, label, icon }) => (
-            <button
-              key={id}
-              id={tabId(id)}
-              type="button"
-              role="tab"
-              aria-selected={tab === id}
-              onClick={() => onTab(id)}
-              className={cn(
-                // One line: a tab's name that wraps reads as two tabs (Ask Daoris, found looking at it).
-                'flex items-center gap-1.5 whitespace-nowrap border-b-2 px-3 py-1.5 text-small transition-colors duration-(--speed)',
-                tab === id
-                  ? 'border-b-accent text-ink'
-                  : 'border-b-transparent text-ink-faint hover:text-ink',
-              )}
-            >
-              <Icon name={icon} size={14} />
-              {label}
-            </button>
+            <Tip key={id} content={label}>
+              <button
+                id={tabId(id)}
+                type="button"
+                role="tab"
+                aria-label={label}
+                aria-selected={tab === id}
+                onClick={() => onTab(id)}
+                className={cn(
+                  // One line: a tab's name that wraps reads as two tabs (Ask Daoris, found looking at it).
+                  'flex max-w-44 items-center gap-1.5 whitespace-nowrap border-b-2 px-3 py-1.5 text-small transition-colors duration-(--speed)',
+                  tab === id
+                    ? 'shrink-0 border-b-accent text-ink'
+                    : 'min-w-9 shrink border-b-transparent text-ink-faint hover:text-ink',
+                )}
+              >
+                <Icon name={icon} size={14} className="shrink-0" />
+                <span className="min-w-0 truncate">{label}</span>
+              </button>
+            </Tip>
           ))}
         </div>
 
-        <div className="ml-auto flex items-center gap-0.5">
+        <div className="ml-auto flex shrink-0 items-center gap-0.5">
           {onFull && !autoFull && (
             <Tip content={t(full ? 'work.dock.unfull' : 'work.dock.full')}>
               <Button

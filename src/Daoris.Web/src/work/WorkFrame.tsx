@@ -25,21 +25,19 @@ import { StartSession, type StartChoice } from './StartSession';
 import { OutputPanel, PANEL_MIN, Splitter } from './frame';
 import { panelTabs } from './streams';
 import { DOCK, dockRange, frameLayout, RAIL } from './layout';
+import { type FrameClosings, useFrameClosings } from './closings';
 import { store, stored } from '../lib/stored';
 
 // Per-viewer conveniences, like the language and the workspace scope (D42): a remembered layout is
 // a preference, never machine wiring and never a tracked file.
 const PANEL_HEIGHT = 'daoris.panelHeight';
-const PANEL_CLOSED = 'daoris.panelClosed';
 // The frame's columns (FRAME6): the widths the person dragged, and what they closed.
 const RAIL_WIDTH = 'daoris.railWidth';
-const RAIL_CLOSED = 'daoris.railClosed';
 // The dock's dragged width, as a SHARE of the window (LAYOUT1). `daoris.dockWidth` held pixels, and a
 // dock kept in pixels stayed the same while the window grew; one held there is read once, as its share
 // of the window it is read in, and then forgotten.
 const DOCK_SHARE = 'daoris.dockShare';
 const DOCK_WIDTH_PIXELS = 'daoris.dockWidth';
-const DOCK_CLOSED = 'daoris.dockClosed';
 
 /** The dock's share of the window the person dragged it to, or null where they never did. */
 function rememberedShare(): number | null {
@@ -117,7 +115,9 @@ const door = (structured?: boolean): 'structured' | 'text' | undefined =>
  * timeline and the review (components plan §3a); the console is the panel below, the
  * conversation's raw view.
  */
-export function WorkFrame({ selected, onSelect, notify, onSendBack, onAnswerAsk, intent, onIntentTaken, ask, askFocus = 0 }: {
+export function WorkFrame({
+  selected, onSelect, notify, onSendBack, onAnswerAsk, intent, onIntentTaken, ask, askFocus = 0, closings,
+}: {
   /**
    * The attended session, held by the application — because a door into Work from somewhere else
    * (a quest's record) has to be able to say WHICH session, and a selection this frame kept to
@@ -151,6 +151,8 @@ export function WorkFrame({ selected, onSelect, notify, onSendBack, onAnswerAsk,
   ask?: ReactNode;
   /** Bumped each time the person asks for Ask Daoris (its door, `F1`), which opens the dock on it. */
   askFocus?: number;
+  /** What the person closed, held by the application so the strip reaches it (DOCK1c). */
+  closings?: FrameClosings;
 }) {
   const { t } = useTranslation();
   // A refusal belongs to the session that gave it: attending another by any door (a notification, the
@@ -165,18 +167,19 @@ export function WorkFrame({ selected, onSelect, notify, onSendBack, onAnswerAsk,
   // unlike the attended session, this one is answered by what the person is doing in the next ten seconds.
   const [docked, setDocked] = useState<Record<string, DockTab>>({});
   const [height, setHeight] = useState(() => remembered(PANEL_HEIGHT, 200));
-  const [collapsed, setCollapsed] = useState(() => stored(PANEL_CLOSED) === '1');
 
   // The frame's columns (FRAME6): what the person chose, and what the window leaves room for.
   const root = useRef<HTMLDivElement>(null);
   const width = useFrameWidth(root);
   const [railWidth, setRailWidth] = useState(() => rememberedWidth(RAIL_WIDTH));
-  const [railClosed, setRailClosed] = useState(() => stored(RAIL_CLOSED) === '1');
   const [dockShare, setDockShare] = useState(rememberedShare);
-  // 🔴 Closed until the person opens it (UX5 U7), as the reference's dock opens on demand: open by
-  // default at 45%, it left a 1400px window's conversation 442px. So an absent choice is closed, and
-  // opening is remembered as `0` beside closing's `1`.
-  const [dockClosed, setDockClosed] = useState(() => stored(DOCK_CLOSED) !== '0');
+  // What the person closed (DOCK1c): the application's where it holds them, so the strip's toggles and
+  // the View menu reach them from every view; this frame's own where it is rendered alone.
+  const own = useFrameClosings();
+  const closed = closings ?? own;
+  const collapsed = closed.panel;
+  const railClosed = closed.rail;
+  const dockClosed = closed.dock;
   const [dockFull, setDockFull] = useState(false);
   const layout = frameLayout(width.viewport, width.frame, {
     rail: railWidth, railClosed, dockShare, dockClosed, dockFull,
@@ -186,20 +189,16 @@ export function WorkFrame({ selected, onSelect, notify, onSendBack, onAnswerAsk,
     setRailWidth(next);
     store(RAIL_WIDTH, next === null ? null : String(next));
   };
-  const closeRail = (closed: boolean) => {
-    setRailClosed(closed);
-    store(RAIL_CLOSED, closed ? '1' : null);
-  };
+  const closeRail = (shut: boolean) => closed.setRail(shut);
   /** A drag lands as the dock's share of the window it was dragged in; null is the default again. */
   const resizeDock = (next: number | null) => {
     const share = next === null || width.viewport <= 0 ? null : next / width.viewport;
     setDockShare(share);
     store(DOCK_SHARE, share === null ? null : String(share));
   };
-  const closeDock = (closed: boolean) => {
-    setDockClosed(closed);
-    store(DOCK_CLOSED, closed ? '1' : '0');
-    if (closed) setDockFull(false);
+  const closeDock = (shut: boolean) => {
+    closed.setDock(shut);
+    if (shut) setDockFull(false);
   };
 
   const sessions = useSessions(null, true);
@@ -307,10 +306,7 @@ export function WorkFrame({ selected, onSelect, notify, onSendBack, onAnswerAsk,
     store(PANEL_HEIGHT, String(next));
   };
 
-  const toggle = () => setCollapsed((was) => {
-    store(PANEL_CLOSED, was ? '0' : '1');
-    return !was;
-  });
+  const toggle = () => closed.setPanel(!collapsed);
 
   const onStart = (choice: StartChoice) => {
     setRefusal(null);
@@ -445,8 +441,8 @@ export function WorkFrame({ selected, onSelect, notify, onSendBack, onAnswerAsk,
   useEffect(() => {
     if (askFocus <= 0) return;
     setAsking(true);
-    setDockClosed(false);
-    store(DOCK_CLOSED, '0');
+    closed.setDock(false);
+    // Only a new ask for it; the closings are read, not watched.
   }, [askFocus]);
 
   const [taken, setTaken] = useState<typeof intent>(null);

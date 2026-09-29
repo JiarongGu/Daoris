@@ -6,6 +6,8 @@ import {
 } from './queries';
 import { useScope } from './scope';
 import { AskDaoris } from './help/AskDaoris';
+import { useFrameClosings } from './work/closings';
+import { LAYOUT_KEYS, type LayoutRegion, LayoutToggles } from './work/LayoutToggles';
 import type { StarterDoor } from './help/starters';
 import { WorkspaceSwitcher } from './WorkspaceSwitcher';
 import {
@@ -141,6 +143,9 @@ export function App() {
   };
   // Bumped each time the person asks for it on Sessions, where the dock opens on its tab.
   const [helpFocus, setHelpFocus] = useState(0);
+  // What the person closed in the Work frame (DOCK1c): held here, so the strip's toggles, the View menu
+  // and the keys reach them from every view.
+  const closings = useFrameClosings();
   // On Sessions its door opens the dock on it (the dock has its own close); elsewhere it toggles.
   const toggleHelp = useCallback(() => {
     if (onSessions.current) {
@@ -172,6 +177,23 @@ export function App() {
   // remembered `sessions` where no shell answers falls back rather than rendering an empty view.
   const view: Tab = tab === 'sessions' && !attached ? 'overview' : tab;
   onSessions.current = view === 'sessions';
+
+  // A region toggled (DOCK1c): the rail and the panel are Sessions', so elsewhere their keys do nothing;
+  // the right side bar is the dock on Sessions and Ask Daoris's region everywhere else. True when it did.
+  const toggleRegion = (region: LayoutRegion): boolean => {
+    if (region === 'right') {
+      if (view === 'sessions') closings.setDock(!closings.dock);
+      else if (attached) setHelpOpen((was) => !was);
+      else return false;
+      return true;
+    }
+    if (view !== 'sessions') return false;
+    if (region === 'rail') closings.setRail(!closings.rail);
+    else closings.setPanel(!closings.panel);
+    return true;
+  };
+  const toggleRegionRef = useRef(toggleRegion);
+  toggleRegionRef.current = toggleRegion;
   // Open on another view and carried to Sessions, it lands on the dock's tab rather than vanishing.
   useEffect(() => {
     // Only the move onto Sessions, so `helpOpen` is read and not watched.
@@ -314,6 +336,14 @@ export function App() {
         toggleHelp();
         return;
       }
+      // The region toggles (DOCK1c), VS Code's keys: Ctrl+B the rail, Ctrl+J the panel, Ctrl+Alt+B the
+      // right side bar. Anywhere, a field included: none of them types anything there.
+      const letter = event.key.toLowerCase();
+      if (event.ctrlKey && !event.shiftKey && !event.metaKey && (letter === 'b' || (letter === 'j' && !event.altKey))) {
+        const region: LayoutRegion = letter === 'j' ? 'panel' : event.altKey ? 'right' : 'rail';
+        if (toggleRegionRef.current(region)) event.preventDefault();
+        return;
+      }
       if (event.key !== 'k' || !(event.ctrlKey || event.metaKey)) return;
       const inside = event.target as HTMLElement | null;
       if (inside?.tagName === 'INPUT' || inside?.tagName === 'TEXTAREA') return;
@@ -402,9 +432,19 @@ export function App() {
                   // Daoris's own browser (D78): where the person signs in, and watches a session use it.
                   { id: 'browser', label: t('work.menu.browser'), icon: 'browser' as const },
                 ] : []),
+                // The region toggles' second door (DOCK1c, SURF11), with their keys, ticked while shown.
+                ...(view === 'sessions' ? [
+                  { id: 'layout:rail', label: t('layout.menu.rail'), icon: LAYOUT_KEYS.rail.icon, shortcut: LAYOUT_KEYS.rail.keys, checked: !closings.rail, separated: true },
+                  { id: 'layout:panel', label: t('layout.menu.panel'), icon: LAYOUT_KEYS.panel.icon, shortcut: LAYOUT_KEYS.panel.keys, checked: !closings.panel },
+                ] : []),
+                ...(attached ? [{
+                  id: 'layout:right', label: t('layout.menu.right'), icon: LAYOUT_KEYS.right.icon, shortcut: LAYOUT_KEYS.right.keys,
+                  checked: view === 'sessions' ? !closings.dock : helpOpen, separated: view !== 'sessions',
+                }] : []),
               ]}
               onChoose={(_, item) => {
                 if (item === 'palette') { setPalette(true); return; }
+                if (item.startsWith('layout:')) { toggleRegion(item.slice('layout:'.length) as LayoutRegion); return; }
                 if (item === 'monitor' && attached) openWindow.mutate(MONITOR_WINDOW);
                 if (item === 'browser' && attached) openBrowser.mutate();
               }}
@@ -425,19 +465,18 @@ export function App() {
         // right region: the owner, 2026-09-29, "since we moved ask daoris to the right so you should move
         // the icon to it too". Named, not a bare glyph ("there is no easy way to open the daoris chat");
         // the name gives way at a narrow window, where the strip is one line by rule.
+        // The region toggles (DOCK1c, SURF11) at the strip's right, beside the window controls, as VS
+        // Code's sit: Sessions' three, since the rail and the panel are its own, and the right side bar on
+        // every view. Ask Daoris has no button of its own up here (the owner: "no ask daoris at top border
+        // bar"): it is a tab of the right side bar on Sessions and the whole of it elsewhere, so the right
+        // toggle, F1 and Ctrl+Alt+I are its doors.
         trailing={attached ? (
-          <Tip content={t('help.open')}>
-            <Button
-              variant="ghost"
-              aria-label={t('help.open')}
-              aria-pressed={helpOpen}
-              onClick={toggleHelp}
-              className="h-7 shrink-0 gap-1.5 whitespace-nowrap px-2 text-small"
-            >
-              <Icon name="help" size={15} />
-              <span className="max-md:hidden">{t('help.title')}</span>
-            </Button>
-          </Tip>
+          <LayoutToggles
+            regions={view === 'sessions' ? ['rail', 'panel', 'right'] : ['right']}
+            closed={{ rail: closings.rail, panel: closings.panel, right: view === 'sessions' ? closings.dock : !helpOpen }}
+            names={view === 'sessions' ? {} : { right: t('help.title') }}
+            onToggle={toggleRegion}
+          />
         ) : undefined}
       />
 
@@ -507,6 +546,7 @@ export function App() {
               // Ask Daoris as a tab of the right dock: one right region, never a second column.
               ask={attached ? <AskDaoris {...askProps} framed={false} /> : undefined}
               askFocus={helpFocus}
+              closings={closings}
             />
           )
           : (

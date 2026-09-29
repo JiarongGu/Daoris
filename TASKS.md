@@ -22,7 +22,7 @@ lists.
 ## State
 
 **Counts, and this is their one home:** sixteen commands, **514 CLI tests, 545 service, 900 driver,
-291 desktop modules, 80 devkit, 1310 web unit, 21 Playwright**, 66/66 release rehearsal, **292/292
+291 desktop modules, 80 devkit, 1312 web unit, 21 Playwright**, 66/66 release rehearsal, **292/292
 family rehearsal** (it names its own phases when you run it), **45/45 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge
 documents, 5 skills, 7 packs. The always-loaded core is **22,492 of 26,000 bytes** — a span in
@@ -144,10 +144,10 @@ rather than designed.
 
 ## Backlog
 
-**Thirty-five rows are open**: the four the first real workspace showed (WSR4, SESS1, MAP4, and
+**Thirty-four rows are open**: the four the first real workspace showed (WSR4, SESS1, MAP4, and
 DOCK1 from 2026-09-29; WSR2, WSR1 and WSR3 landed as D86, D87 and D88, HELP1 as D89); D85's two (CHR2, CHR4); the in-app browser's three (BRW3, BRW7, BRW8); the first goal's three (FG5,
 READACROSS1 the owner's, and SEM2 on a trigger); D76's held file tools;
-the eight REV3 left, WINDOW2 among them; six leftovers (RAIL2, SURF11, CONSOLE3, FLAKE1, DEPLOY5, TEST1); two on the owner
+the eight REV3 left, WINDOW2 among them; five leftovers (RAIL2, CONSOLE3, FLAKE1, DEPLOY5, TEST1); two on the owner
 (TRUST2, AGT2c); and six on a trigger (see *Handover*). Every closed one is in `docs/task-archive.md`, and this file holds no
 ticked rows, by the `task-lifecycle` rule it also ships. A heading below holds open rows only.
 
@@ -185,7 +185,10 @@ requirements, and the owner's calls. Its recommended order is the order below.
   design note is `docs/2026-09-29-dock-design.md`**: move before drag, the right region the
   application's, DOCK1a–e in order; its first step, Ask Daoris as one right region, is `b21b60f`,
   and its door moved to the strip's right beside the window controls (the owner: *"since we moved ask
-  daoris to the right so you should move the icon to it too"*).
+  daoris to the right so you should move the icon to it too"*). **DOCK1c landed** (SURF11, into the
+  archive): the region toggles on the strip and in the View menu with VS Code's keys, Ask Daoris's own
+  button gone from the strip (the owner: *"no ask daoris at top border bar"*), and the dock's tabs
+  shrinking as a browser's do. DOCK1a, b, d and e are open.
 
 ### What REV3 left (2026-09-25)
 
@@ -407,14 +410,6 @@ TDD, looked at on the window, and the ones that touch a real session use one (au
   chat's turn ended (`ChatRunner`); its `SESSION_QUEUE` answer and `SESSION_QUEUED` event could carry
   it, machine-local, and the page could show the later of the two. The driver, the bridge and the
   page change together, each with its test.
-
-- [ ] **SURF11 — the layout toggles, reachable from the strip.** Filed on 2026-09-22 in a sentence
-  of `platform-ux.md` §4 and never made a row, which UX5 found (U23). VS Code's title bar holds the
-  toggles that show and hide the panel, the sidebar and the secondary bar, left of the window
-  controls. Daoris has the three regions in Sessions (the rail, the output panel, the dock), and each
-  is toggled only inside it. Since D66, Sessions is one view among seven, so the question is where the
-  toggles belong before how they look: the strip, which is every view's, or the View menu, which
-  VS Code also carries them in. The state lives in `WorkFrame` and needs hoisting either way.
 
 - [ ] **CONSOLE3 — what the console's tabs left** (CONSOLE2, 2026-09-28; the evidence is
   `docs/2026-09-28-console2-streams-evidence.md`). Four, each its own landing: **stop a background

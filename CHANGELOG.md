@@ -645,6 +645,11 @@ The first version: doctrine that installs, is checked, and flows back.
   first; nothing changes until you press **apply**. It is the one right region: a tab of the right dock
   on Sessions, resizable on its own elsewhere, opened by its button at the strip's right, `F1` or
   `Ctrl+Alt+I`.
+- **The layout toggles are on the strip** (DOCK1c, SURF11). The session list, the console and the
+  right side bar each have a toggle beside the window controls, pressed while shown, and an item in
+  the View menu with VS Code's keys: `Ctrl+B`, `Ctrl+J`, `Ctrl+Alt+B`. Away from Sessions the right
+  side bar is Ask Daoris, so its toggle is Ask Daoris's door there. The dock's tabs shrink as a
+  browser's do, the selected one whole.
 - **A parked session is answered where you read its question, and your answer shows as yours.** A
   driven session parked to ask you gets a box at its foot, since its old door was a button at the top
   of a long record; your answer is kept in its record beneath the question and opens the session that

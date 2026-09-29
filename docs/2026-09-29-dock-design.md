@@ -49,11 +49,25 @@ choice (the dock's share, the rail's width), and *Reset layout* puts the default
 
 ## 4. Build order
 
-1. **DOCK1a**: the right region hoisted out of the Work frame into the application, one component on
+*Reordered 2026-09-29, before any of it was built:* the toggles come first. The hoist is structural and
+shows nothing new (`b21b60f` already gives the eye one right region), while it splits the Work frame's
+layout rules (cramped, full, the narrow window's takeover) across two components on the busiest view.
+The toggles are what a person sees, use the strip's new trailing slot, and need only the three
+closings lifted out of the Work frame.
+
+1. **DOCK1c** (SURF11): the region toggles on the strip and in the View menu, with VS Code's keys
+   (`Ctrl+B` the rail, `Ctrl+J` the panel, `Ctrl+Alt+B` the right region). *Built 2026-09-29:* the
+   closings lifted into the application (`work/closings.ts`); VS Code's three pictures at the strip's
+   right, pressed while shown, the right one alone away from Sessions and named for Ask Daoris there;
+   the View menu's items ticked, with their keys. What the look found, and the owner said: Ask Daoris
+   lost its own strip button, since its region's toggle, `F1` and `Ctrl+Alt+I` open it; and the dock's
+   tabs shrink as a browser's do, the selected one whole and the rest cut to their icons, since a third
+   tab clipped the dock's close at its floor. An overflow list for more tabs than fit comes with the
+   tabs DOCK1b adds.
+2. **DOCK1a**: the right region hoisted out of the Work frame into the application, one component on
    every view; Ask Daoris no longer has two hosts.
-2. **DOCK1b**: *Move to* for Ask Daoris and the console, between the right region and the panel;
+3. **DOCK1b**: *Move to* for Ask Daoris and the console, between the right region and the panel;
    remembered; *Reset layout*.
-3. **DOCK1c** (SURF11): the region toggles on the strip and in the View menu, with keys.
 4. **DOCK1d**: Quick Ask.
 5. **DOCK1e**: dragging a tab between regions.
 

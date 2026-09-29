@@ -9,7 +9,7 @@ import {
   ArrowDown, ArrowDownToLine, ArrowLeftRight, ArrowUp, Brain, Check, ChevronDown, ChevronRight, ChevronUp, CircleHelp, Cloud,
   CloudOff, Compass, Copy, Ellipsis, FileDiff, FilePen, FileText, Gauge, GitMerge, Globe, Inbox, Info, KeyRound, Languages,
   LayoutDashboard, LayoutGrid, Layers, Link, ListTodo, LogIn, Maximize2, Minimize2, Monitor, Network,
-  PanelLeftClose, PanelLeftOpen, PanelRightClose, Paperclip, Plug, Plus,
+  PanelBottom, PanelLeft, PanelLeftClose, PanelLeftOpen, PanelRight, PanelRightClose, Paperclip, Plug, Plus,
   RotateCw, Search, Settings, Shield, SquareArrowOutUpRight, SquareTerminal, Trash2, TriangleAlert,
   Wrench, X,
 } from 'lucide-react';
@@ -100,6 +100,10 @@ const ICONS = {
   railClose: PanelLeftClose,
   railOpen: PanelLeftOpen,
   dockClose: PanelRightClose,
+  // The layout toggles on the strip (DOCK1c, SURF11) — VS Code's pictures for the same three regions.
+  layoutRail: PanelLeft,
+  layoutPanel: PanelBottom,
+  layoutRight: PanelRight,
   full: Maximize2,
   unfull: Minimize2,
   // A row's own menu (RAIL1).
