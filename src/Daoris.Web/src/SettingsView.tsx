@@ -33,8 +33,7 @@ import { workspacesOf } from './workspaces';
  * desktop, everything that is true about THIS machine beneath them.
  *
  * @remarks
- * 🔴 Written from the owner's *"we dont really have a setting page, so there is no way to change
- * theme"* (2026-09-23). The machine's page was the only settings there were, reachable from a sliders
+ * 🔴 There was no settings page, so no way to change the theme. The machine's page was the only settings there were, reachable from a sliders
  * icon labelled *Machine*, and the theme was the OS's alone. Appearance leads because it is the part
  * everyone has; a browser shows only that part, because a browser may learn nothing of a machine
  * (D47 §4) — the machine's half is absent there, never disabled.
@@ -340,8 +339,7 @@ function DriverSettings({ notify }: { notify: Notify }) {
 
   return (
     <>
-      {/* 🔴 A setting is a ROW (owner, 2026-09-23: *"you have this really long list of setup (this
-          machine), which probably can be improved ui/ux"*). Every card here used to open with a
+      {/* 🔴 A setting is a ROW. Every card here used to open with a
           paragraph and put its one control beneath it, so the first checkbox sat 580px below the
           title and the next dial a screen further down. `SettingRow` carries the shape now — the
           label leads, the hint is one line, the control is at the right, the paragraph is on the
@@ -1143,8 +1141,7 @@ function HarnessRoster({ notify }: { notify: Notify }) {
    * Whether a harness has its version form open.
    *
    * @remarks
-   * 🔴 Written from the owner's *"the crediental managment / account login still not really looking
-   * nice and easy to understand"* (2026-09-22), and the screenshot said why: **the rare forms were
+   * 🔴 Accounts were hard to read, and the screenshot said why: **the rare forms were
    * always open, on every harness** — five harnesses meant five empty boxes and five copies of the
    * same paragraph, and the accounts, the thing a person came for, were a thin row between them.
    */
@@ -1174,9 +1171,9 @@ function HarnessRoster({ notify }: { notify: Notify }) {
         control={<PathText path={answered.settingsPath} className="text-small text-ink-faint" />}
       />
 
-      {/* 🔴 A card per TOOL, and the adapters are its ways in (owner, 2026-09-22: *"'harness
-          account'? and `*-acp` really confusing of the scope of this project"*, with the correction
-          that the reference project is a reference — take its design and its logic, not its words).
+      {/* 🔴 A card per TOOL, and the adapters are its ways in: "harness account" and `*-acp` hid
+          what the page was for. The reference project is a reference — take its design and its
+          logic, not its words.
 
           The surface had been listing four adapters as four things to have opinions about. A person
           has one Claude Code and one account for it; whether Daoris holds the session over a pipe or
@@ -1386,8 +1383,7 @@ function HarnessRoster({ notify }: { notify: Notify }) {
               ))}
             </ul>
 
-          {/* 🔴 An account is made by SIGNING IN (D66 §3; the owner: *"we probably should just allow
-              to login and create account based on login"*). There was a name box first — a name
+          {/* 🔴 An account is made by SIGNING IN (D66 §3). There was a name box first — a name
               typed before anyone knew whose account it was — then a login as a second step. Now
               one press runs the tool's own sign-in into a fresh account, which is kept only if the
               sign-in finishes and is listed by who signed in. */}
@@ -1400,7 +1396,7 @@ function HarnessRoster({ notify }: { notify: Notify }) {
             />
           )}
 
-          {/* 🔴 An account that is an API key (AGT3, D67 §1: *"daoris can keep the key"*). One field,
+          {/* 🔴 An account that is an API key (AGT3, D67 §1). One field,
               behind a press, only on an agent that takes a key. The draft is dropped the moment it
               is sent, and the page is told back only the key's last four characters. */}
           {keying === tool.name && (

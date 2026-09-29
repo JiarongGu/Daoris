@@ -55,7 +55,7 @@ describe('the code map drawing', () => {
     expect(svg.getAttribute('class')).toContain('max-w-full');
   });
 
-  /** And a wide one (UX5 U59, the owner: content follows the window): it was capped at 640. */
+  /** And a wide one (UX5 U59: content follows the window): it was capped at 640. */
   it('meets its card with the card’s width, narrow or wide, not with other-sized names', () => {
     expect(codeWidth(1, undefined)).toBe(640);
     expect(codeWidth(1, 2000)).toBe(2000);

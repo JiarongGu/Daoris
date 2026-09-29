@@ -529,8 +529,8 @@ export function PageHeader({ title, description, action }: {
  *
  * @remarks
  * **The column follows the window and prose does not.** Cards, tiles and tables take the column's
- * whole width (UX5 U59, the owner: it was capped at 72rem, and a maximized window left every view a
- * third empty) — but a paragraph inheriting it ran to about **190 characters a line** even under
+ * whole width (UX5 U59: it was capped at 72rem, and a maximized window left every view a third
+ * empty) — but a paragraph inheriting it ran to about **190 characters a line** even under
  * the old cap, roughly triple the 45–75 the eye tracks without losing its place. Measured in the
  * real window before this existed: every sentence on the Machine view was one of those lines.
  *
@@ -663,8 +663,7 @@ export function SelectField({ value, onChange, options, placeholder, ariaLabel, 
   ariaLabel?: string;
   required?: boolean;
   /**
-   * 🔴 The status bar's shape rather than a form's (owner, 2026-09-22: *"workspace can also have
-   * its switch on the bottom bar"*). It was already there and looked wrong: a 30px bordered control
+   * 🔴 The status bar's shape rather than a form's. It was already there and looked wrong: a 30px bordered control
    * parked in a 24px bar, which reads as a form that fell out of a dialog. A bar item is
    * borderless, full-height, and lights on hover like every other item beside it — the chooser is
    * the same chooser, and only its trigger belongs to the bar.
@@ -782,8 +781,7 @@ export function Segmented<T extends string>({ label, value, options, onChange }:
 }
 
 /**
- * A count on an icon — a CIRCLE for one digit, a pill beyond (owner, 2026-09-23: *"the notification
- * number is not even circle border"*).
+ * A count on an icon — a CIRCLE for one digit, a pill beyond.
  *
  * @remarks
  * 🔴 Measured before it was fixed: 14px wide and 17.2px tall, because the width came from `min-w-3.5`
@@ -820,8 +818,7 @@ export function CountBadge({ count, tone = 'accent' }: {
  * reason it exists one hover away, on the glyph, instead of in a paragraph above it.
  *
  * @remarks
- * 🔴 Written from the owner's *"you have this really long list of setup (this machine), which
- * probably can be improved ui/ux"* (2026-09-23), and the screenshot said what "long" meant: five
+ * 🔴 The machine's settings were a long list, and the screenshot said what "long" meant: five
  * cards, each opening with a four-line paragraph, the first control 580px below the title at the
  * D56 scale and the second a full screen down — a settings page laid out as an essay, with the
  * right 60% of every card empty because the prose measure is 65ch and the column was 72rem. A setting
@@ -881,8 +878,7 @@ export function SettingRow({ label, hint, why, control, children }: {
  * A tooltip that carries a sentence — the tier pill's note, the adopted dot's meaning.
  *
  * @remarks
- * **Where it sits and when it goes are the editor's rules** (owner, 2026-09-23: *"the tooltip not
- * disappearing properly, the tooltip position — for those we can follow vscode"*). It opens below
+ * **Where it sits and when it goes are the editor's rules**, VS Code's. It opens below
  * the control, aligned to its leading edge, and flips only when there is no room; a rail's tips
  * open beside the rail (`side`). And it goes on **any** scroll, key, click, or loss of the window's
  * focus, and the moment the pointer is off its trigger — Radix alone closes on the trigger's own

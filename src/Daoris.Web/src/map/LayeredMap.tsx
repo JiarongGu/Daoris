@@ -254,8 +254,7 @@ export function LayeredMap({ topology, selected, onSelect, tools }: {
           {wanted && <span className="shrink-0 text-meta text-ink-faint">{t('map.matches', { count: matches.length })}</span>}
         </label>
         {/* The size, and every way to change it, behind the size itself — a map tool's zoom menu, where
-            there were an arrow down, an arrow up and a corner that meant *fit* (the owner, 2026-09-29:
-            "instead of using the up down arrow ... use more '...' or options for sizing"). */}
+            there were an arrow down, an arrow up and a corner that meant *fit*. */}
         {tools}
         <Menu.Root modal={false}>
           <Tip content={t('map.sizing')}>

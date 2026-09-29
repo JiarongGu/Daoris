@@ -233,8 +233,8 @@ public sealed class PlannerTests
 
     // ── parallel sessions, one per tree (PAR1) ────────────────────────────────────────────────────
     //
-    // The owner: separate repositories and sessions exist "to have clean domain separation and parallel
-    // running for sessions". D51 made the TREE the lock; a repository whose sessions each open their
+    // Separate repositories and sessions exist for clean domain separation and parallel running
+    // (PAR1). D51 made the TREE the lock; a repository whose sessions each open their
     // own tree has no reason to run one at a time, and the ledger already locks per tree.
 
     [Fact]

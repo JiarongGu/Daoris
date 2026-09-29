@@ -272,7 +272,7 @@ describe('the drawing\'s frame (UX5 U44)', () => {
   });
 
   /**
-   * UX5 U59, the owner: content follows the window. A wide, tall card draws a larger ring, up to
+   * UX5 U59: content follows the window. A wide, tall card draws a larger ring, up to
    * what the window's height leaves it, with names still at their size. It stayed at the old
    * square's ring, 531px in a card three times as wide.
    */

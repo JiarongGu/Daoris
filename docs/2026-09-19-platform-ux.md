@@ -156,7 +156,10 @@ controls are in the frame design's §3.
   gave a 570px box to the word "default". A completion list is sized to its rows (U64).
 - **The platform draws its own controls**: no native select, checkbox or radio outside `ui.tsx`
   (`tokens.test.ts`, U5); no native search clear, which WebView2 paints in the system's accent; and a
-  scrollbar that follows the theme, through `color-scheme: light dark` and `--line-strong`.
+  scrollbar that follows the theme, through `color-scheme: light dark` and `--ink-faint`. **The
+  scrollbar is a current OS's** (the owner, 2026-09-30: *"match this to regular app like"*): no
+  arrows, no track, a fully rounded knob four pixels wide at rest that widens to six and darkens
+  under the pointer, in a ten-pixel lane that takes a grab across its whole width.
 - **A setting is a row** (`SettingRow`, the owner: *"this really long list of setup … can be
   improved"*): the label, a one-line hint that is its terminal twin, written as code (U55), the
   control at the right, and the paragraph that motivated it on an info glyph. **The label keeps its

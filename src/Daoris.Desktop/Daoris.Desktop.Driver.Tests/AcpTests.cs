@@ -300,7 +300,7 @@ public sealed class AcpTests
     }
 
     /// <summary>
-    /// 🔴 The owner, 2026-09-27: "we have a lot '?' display in the console". Measured in FG5's
+    /// 🔴 A console full of <c>?</c>. Measured in FG5's
     /// transcripts: every tool call was followed by five to eight updates that carry no status (its
     /// input and output arriving in pieces), each printed as <c>toolu_… → ?</c>, and its end printed
     /// its id, which says nothing to a person. An update with no status says nothing to the console,
@@ -997,8 +997,7 @@ public sealed class AcpTests
     /// `default`, `acceptEdits`, `plan`, `auto`, `bypassPermissions`).
     /// </summary>
     /// <remarks>
-    /// <b>D81</b> (the owner, 2026-09-27: a session "should be able to do as much as it can just like
-    /// regular claude code or codex"): Claude Code drives in <c>auto</c>, its own mode where the
+    /// <b>D81</b> (a session does as much as the harness would on its own): Claude Code drives in <c>auto</c>, its own mode where the
     /// harness judges each action, rather than <c>acceptEdits</c> with every command refused. Still
     /// never <c>bypassPermissions</c>, which judges nothing, however available the wire makes it.
     /// </remarks>

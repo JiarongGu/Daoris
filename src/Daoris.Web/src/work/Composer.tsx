@@ -214,7 +214,7 @@ export function Composer({
 
   return (
     <form
-      // The box follows the centre's width, as the conversation above it does (UX5 U16, the owner:
+      // The box follows the centre's width, as the conversation above it does (UX5 U16:
       // capped, it was half a maximized window).
       className="grid gap-2 border-t border-line px-4 py-3"
       onSubmit={(event) => { event.preventDefault(); say(); }}

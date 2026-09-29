@@ -3,8 +3,7 @@ using Daoris.Driver;
 namespace Daoris.Driver.Tests;
 
 /// <summary>
-/// SESS3 (the owner, 2026-09-29: "there is no way to send additional info in middle of the session"):
-/// what a person tells a driven session while it works is held, and handed over where the protocol door
+/// SESS3: what a person tells a driven session while it works is held, and handed over where the protocol door
 /// allows — the next prompt of the same session when the turn ends, or at once by stopping the turn.
 /// </summary>
 public sealed class DrivenInboxTests

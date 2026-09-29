@@ -8,8 +8,7 @@ namespace Daoris.Desktop.Modules.Tests;
 /// **Credential profiles, from a screen** (DEPLOY3).
 /// </summary>
 /// <remarks>
-/// <para>🔴 <b>Written from the owner looking at the application and saying so</b>: *"there is no
-/// credential management location"*. Literally true — the Machine view could LIST a harness's
+/// <para>🔴 <b>There was nowhere to manage credentials.</b> The Machine view could LIST a harness's
 /// profiles and log into one, and there was no way to make, un-point or choose one. Those three
 /// verbs existed only as `daoris agent profile add|remove|default` (then `daoris harness`).</para>
 ///
@@ -134,8 +133,7 @@ public sealed class HarnessProfileTests : Bridge
     }
 
     /// <summary>
-    /// 🔴 <b>An account is made by signing in</b> (D66 §3). The owner: *"we probably should just
-    /// allow to login and create account based on login"*. One press opens a fresh account, runs the
+    /// 🔴 <b>An account is made by signing in</b> (D66 §3). One press opens a fresh account, runs the
     /// tool's own sign-in into it, and keeps it — under a neutral name, because nobody knows whose it
     /// is until the tool says — and the end names who signed in, by the tool's own answer.
     /// </summary>
@@ -186,7 +184,7 @@ public sealed class HarnessProfileTests : Bridge
     }
 
     /// <summary>
-    /// 🔴 <b>An account that is an API key</b> (AGT3, D67 §1: *"daoris can keep the key"*). The key
+    /// 🔴 <b>An account that is an API key</b> (AGT3, D67 §1). The key
     /// crosses the bridge once, inward: the answer, the roster and every event name it only by its
     /// last four characters.
     /// </summary>

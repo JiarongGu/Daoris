@@ -29,8 +29,7 @@ export const sweepKey = (branch: SweepBranch) => `${branch.repository}:${branch.
  * with their trees.
  *
  * @remarks
- * Written from the owner's *"after merge to master or feature branch we should cleanup daoris
- * branches"*: the first real workspace left sixteen empty ones in one repository. **The list comes
+ * Daoris's branches go once their work has merged: the first real workspace left sixteen empty ones in one repository. **The list comes
  * first, and the press removes only what it listed to go** — the driver judges each again right before
  * it goes. Work no branch of the person's holds, uncommitted work, and a tree a session still uses are
  * kept and named, never removed from here. `daoris-driver trees clean` is the terminal's door (D50).

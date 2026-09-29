@@ -46,7 +46,7 @@ describe('the dock', () => {
   });
 
   /**
-   * LAYOUT1 (the owner, 2026-09-28): a dragged dock was kept in pixels, so it stayed 389px while the
+   * LAYOUT1: a dragged dock was kept in pixels, so it stayed 389px while the
    * window grew from 1518 to 1923 (measured on the shell). A share grows and shrinks with the window.
    */
   it('keeps a dragged width as a share, so it follows the window as it grows and shrinks', () => {

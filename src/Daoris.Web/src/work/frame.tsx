@@ -50,7 +50,7 @@ export function AppStrip({
   menus?: ReactNode;
   /**
    * What toggles a region, at the strip's right beside the window's controls, as VS Code's layout
-   * toggles sit — Ask Daoris's door, since it opens the right region (the owner, 2026-09-29).
+   * toggles sit — Ask Daoris's door, since it opens the right region.
    */
   trailing?: ReactNode;
   captionRoom?: boolean;
@@ -98,7 +98,7 @@ export function AppStrip({
           the mark's own: the sides share the free space by their CONTENT boxes, so padding on the
           strip or on a group puts the middle that far off centre (12px, measured on the window). */}
       <div {...{ [STRIP_SPACE]: 'start' }} className="flex h-full flex-1 basis-0 items-center gap-3">
-        {/* 🔴 The MARK alone (owner, 2026-09-22). The name was 20px of serif in every window
+        {/* 🔴 The MARK alone. The name was 20px of serif in every window
             forever, and a title bar is where an IDE puts what you can DO — the application's name
             belongs in its About, which the menu beside this now carries. D41 §1 gave the serif one
             appearance; this is it not being spent on saying the name of the thing you are already
@@ -155,8 +155,8 @@ export type ActivityItem<T extends string> = {
  * since D66 the only one).
  *
  * @remarks
- * 🔴 **One list, not two frames** (owner, 2026-09-23: *"since its all tab based so there probably no
- * need for manage/work?"*). The bar carried two frame icons above a rule and the views below them —
+ * 🔴 **One list, not two frames**: every view is a tab, so there is nothing for two to divide. The
+ * bar carried two frame icons above a rule and the views below them —
  * a second navigation stacked on the first, and a click between every reading and every working.
  * Sessions is a view now, one of the list, and nothing is gated behind a mode.
  *
@@ -317,8 +317,7 @@ export function StatusBar({
         <span className="tabular-nums text-ink">{t('work.status.sessions', { count: sessions })}</span>
       </StatusItem>
 
-      {/* 🔴 The scope, and it is a CONTROL here (owner: *"this workspace switch can also in a better
-          location and design too"*). It had a dropdown in the app strip AND a read-only copy here,
+      {/* 🔴 The scope, and it is a CONTROL here. It had a dropdown in the app strip AND a read-only copy here,
           which is one fact in two places — and the strip is for what you can do while this bar is
           for what is true, which is exactly what a scope is. Clickable status items are also the
           reference console's own pattern: its remote indicator opens a menu from this bar.
@@ -393,9 +392,8 @@ export const STATUS_PRESSABLE = cn(
  * One item in the status bar — a full-height box that lights on hover when it leads somewhere.
  *
  * @remarks
- * Written from the owner's *"the bottom styling still not really close to vscode which have better
- * design with display and action (on click or on hover)"* (2026-09-22), and the two halves need
- * different answers.
+ * Brought to VS Code's status bar — what it displays, and what it does on click or hover — and the
+ * two halves need different answers.
  *
  * 🔴 **A button when it leads somewhere, plain text when it does not.** A bar where everything looks
  * alike and half of it responds is worse than one where nothing does, because the half that does

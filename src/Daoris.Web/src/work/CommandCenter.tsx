@@ -5,8 +5,7 @@ import { cn } from '../lib/cn';
  * The command center: the strip's middle, and the way into everything the application can do.
  *
  * @remarks
- * **Taken from the shape VS Code settled on** (owner, 2026-09-22: *"the application topbar you can
- * take more example from application like vscode"*), and it answers two measured problems in the
+ * **Taken from the shape VS Code settled on**, and it answers two measured problems in the
  * strip it joins.
  *
  * 🔴 **The strip had ~1,400px of nothing in it.** Wordmark and mode switch sat left, a lone 14px

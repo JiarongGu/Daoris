@@ -47,7 +47,7 @@ const SETTINGS = [{ tab: 'settings' as const, label: 'Settings', icon: 'settings
 
 describe('AppStrip', () => {
   /**
-   * 🔴 The strip carries the MARK and no name (owner, 2026-09-22). The wordmark was 20px of serif in
+   * 🔴 The strip carries the MARK and no name. The wordmark was 20px of serif in
    * every window forever, saying the name of the thing you are already looking at; a title bar in an
    * IDE says what you can DO, and the name moved to About.
    *
@@ -88,8 +88,7 @@ describe('AppStrip', () => {
   });
 
   /**
-   * The owner (2026-09-29): *"since we moved ask daoris to the right so you should move the icon to it
-   * too instead of in the top mid"*. What toggles the right region sits at the strip's right, beside
+   * Ask Daoris lives on the right, so its toggle does too. What toggles the right region sits at the strip's right, beside
    * the window's controls, as VS Code's layout toggles do — after the scope, before the caption room.
    */
   it('holds what toggles the right region at its right edge, before the window controls', () => {
@@ -215,10 +214,9 @@ describe('ActivityBar', () => {
 });
 
 /**
- * The status bar, after the owner's *"the bottom styling still not really close to vscode which have
- * better design with display and action (on click or on hover)"* (2026-09-22).
+ * The status bar, brought to VS Code's: what it displays, and what it does on click or hover.
  *
- * The complaint has two halves and only one of them is visual. **Display** is the part a screenshot
+ * That has two halves and only one of them is visual. **Display** is the part a screenshot
  * settles, and it did: an 11px run of `·`-joined prose on a 2px-tall strip reads as a caption on the
  * window, not as a bar. **Action** is what these assertions are for — the reference console's status
  * items are *targets*: each is a full-height box that lights on hover and does something on click,

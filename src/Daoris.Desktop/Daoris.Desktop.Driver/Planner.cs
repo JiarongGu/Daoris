@@ -405,8 +405,7 @@ public static class Planner
             }
 
             // 🔴 The TREE is the lock (D51), and where every session here opens its own there is no
-            // reason to run one at a time (PAR1, the owner: "clean domain separation and parallel
-            // running"). What still holds is the one tree a resume or a carry-on goes back into.
+            // reason to run one at a time (PAR1). What still holds is the one tree a resume or a carry-on goes back into.
             if (config.OpensOwnTree(quest.To))
             {
                 if (into is { Tree: { Length: > 0 } tree }

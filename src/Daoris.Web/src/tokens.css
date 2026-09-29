@@ -11,9 +11,8 @@
 :root {
   /* 🔴 Native chrome follows the theme (2026-09-23). A scrollbar is painted by the browser, not by
      the page, and with no `color-scheme` it is painted light whatever the tokens say — seen as a pale
-     OS bar down a dark drawer the first time a composer grew long enough to scroll. The bar wears the
-     line token rather than the OS grey, like every other border here (the base layer, below, since
-     it lost its arrows). */
+     OS bar down a dark drawer the first time a composer grew long enough to scroll. The knob wears the
+     faint ink token rather than the OS grey (the base layer, below, since it lost its arrows). */
   color-scheme: light dark;
 
   --ink: #1a1a18;
@@ -133,8 +132,8 @@
   --font-serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, serif;
   --font-mono: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, monospace;
 
-  /* One step flatter (the owner, 2026-09-30: "I think we should move into more flatten design"):
-     a corner says "this is a surface", and at 6/8/10 it said it louder than the content. */
+  /* One step flatter: a corner says "this is a surface", and at 6/8/10 it said it louder than the
+     content. */
   --radius-control: 4px;
   --radius-card: 6px;
   --radius-overlay: 8px;
@@ -200,25 +199,32 @@
     appearance: none;
   }
 
-  /* 🔴 A scrollbar with no arrows (the owner, 2026-09-29: "instead of using the up down arrow all over
-     the entire design"). Chromium on Windows draws the classic bar, a ▲ and a ▼ at the ends of every
-     scrolling region, and keeps them on a thin one; only these pseudo-elements drop them — and
-     Chromium ignores them wherever `scrollbar-color` or `scrollbar-width` is set, so the colour moved
-     here from the root, and a browser without them keeps the standard colour below. A thumb in the
-     line token, rounded and inset, on no track: VS Code's bar. */
+  /* 🔴 A scrollbar with no arrows. Chromium on Windows draws the classic bar, a ▲ and a ▼ at the
+     ends of every scrolling region, and keeps them on a thin one; only these pseudo-elements drop
+     them — and Chromium ignores them wherever `scrollbar-color` or `scrollbar-width` is set, so the
+     colour moved here from the root, and a browser without them keeps the standard colour below.
+
+     The knob is the one a current OS draws: a pill on no track, thin at rest and fuller under the
+     pointer, as Windows 11's and macOS's are. The transparent border is the lane it sits in, so
+     the whole ten pixels still take a grab while four of them show; under the pointer the border
+     narrows and the pill widens to six. */
   ::-webkit-scrollbar { width: 10px; height: 10px; }
   ::-webkit-scrollbar-track,
   ::-webkit-scrollbar-corner { background: transparent; }
   ::-webkit-scrollbar-thumb {
-    background-color: var(--line-strong);
-    background-clip: content-box;
-    border: 2px solid transparent;
-    border-radius: 2px;
+    background-color: color-mix(in srgb, var(--ink-faint) 55%, transparent);
+    background-clip: padding-box;
+    border: 3px solid transparent;
+    border-radius: 999px;
   }
-  ::-webkit-scrollbar-thumb:hover { background-color: var(--ink-faint); }
+  ::-webkit-scrollbar-thumb:hover,
+  ::-webkit-scrollbar-thumb:active {
+    background-color: var(--ink-faint);
+    border-width: 2px;
+  }
   ::-webkit-scrollbar-button { display: none; }
 }
 
 @supports not selector(::-webkit-scrollbar) {
-  html { scrollbar-color: var(--line-strong) transparent; }
+  html { scrollbar-color: var(--ink-faint) transparent; }
 }

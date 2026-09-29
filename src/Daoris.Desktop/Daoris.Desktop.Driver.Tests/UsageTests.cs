@@ -69,8 +69,7 @@ public sealed class UsageTests : IDisposable
     }
 
     /// <summary>
-    /// The per-account answer is the question the owner actually asked — "which of my accounts is
-    /// carrying the load". It is a derivation over the sessions, so the two can never disagree.
+    /// The per-account answer is the question that matters — which account is carrying the load. It is a derivation over the sessions, so the two can never disagree.
     /// </summary>
     [Fact]
     public void Accounts_are_totalled_from_the_sessions_rather_than_counted_separately()

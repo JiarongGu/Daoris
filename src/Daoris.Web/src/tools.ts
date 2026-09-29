@@ -2,9 +2,8 @@
  * The agent tools a person has, assembled from the doors Daoris can reach them over.
  *
  * @remarks
- * 🔴 **Written from the owner's reading of the roster** (2026-09-22): *"'harness account'? and
- * `*-acp` really confusing of the scope of this project"*, with the correction that the reference
- * project is a *reference* — its design and its logic are worth taking, its vocabulary is not.
+ * 🔴 **"Harness account" and `*-acp` hid what the roster was for.** The reference project is a
+ * *reference* — its design and its logic are worth taking, its vocabulary is not.
  *
  * The surface had been listing what the driver calls adapters: `claude-code`, `claude-code-acp`,
  * `codex-acp`, `dsh` — four rows, four install buttons, four version pins, and, read by a person,

@@ -125,8 +125,7 @@ export function WorkFrame({
   /** Go to Sessions, where the attended session is read whole — the door its line offers off Sessions. */
   onOpenSessions?: () => void;
   /**
-   * Another view's content in the frame's centre (DOCK1a, the owner: "the design language we using in
-   * session screen … should be apply to all screens"): Overview, Quests and the rest keep the right side
+   * Another view's content in the frame's centre (DOCK1a): Overview, Quests and the rest keep the right side
    * bar and the panel, with every view that stands in them, as VS Code's workbench is one frame whatever
    * its editor shows. No rail then: the session list is Sessions' own. Absent, the centre is Sessions'.
    */
@@ -162,8 +161,7 @@ export function WorkFrame({
   intent?: 'start' | 'review' | null;
   onIntentTaken?: () => void;
   /**
-   * Ask Daoris, as a tab of the right dock (the owner, 2026-09-29: "the ask daoris need to be a better
-   * location"): one right region, as VS Code's chat is a view of its secondary side bar, never a
+   * Ask Daoris, as a tab of the right dock: one right region, as VS Code's chat is a view of its secondary side bar, never a
    * second column beside the dock. Absent where no shell is attached.
    */
   ask?: ReactNode;
@@ -282,14 +280,13 @@ export function WorkFrame({
   const intake = attended ? isIntake(attended) : false;
   const talking = Boolean(attended && conversation && here && !intake);
   // 🔴 A driven session parked to ask the person is answered from the box at the foot, where a chat's
-  // is (the owner, 2026-09-29: "there is no way I can input the answer" — the door was a button at the
-  // top of a record of 1,800 events, and the question is read at its foot). The card above keeps the
+  // is: the door was a button at the top of a record of 1,800 events, and the question is read at its
+  // foot. The card above keeps the
   // endings and says the box carries it on: one owner for the answer (D56).
   const answering = Boolean(attended && here && !intake && !conversation && attended.quest
     && attended.state === 'awaiting-person');
   const [answerDraft, setAnswerDraft] = useState('');
-  // A driven session still working may be told something (SESS3, the owner: "there is no way to send
-  // additional info in middle of the session"): its words are held and are its next prompt. Offered only
+  // A driven session still working may be told something (SESS3): its words are held and are its next prompt. Offered only
   // where the driver says it listens, which is the protocol door; the pipe door has nothing to hear it.
   const steerable = Boolean(attended && here && !intake && !conversation && attended.quest
     && SESSION_ACTIVE.has(attended.state) && attended.state !== 'awaiting-person');

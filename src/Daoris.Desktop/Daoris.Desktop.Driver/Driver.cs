@@ -970,8 +970,7 @@ public sealed partial class Driver(
     /// answered (STANDDOWN2) — their answer, as theirs.
     /// </summary>
     /// <remarks>
-    /// 🔴 The owner, having answered a parked session (2026-09-29): *"it does not display my input"*. The
-    /// words travelled only inside the target, which the conversation folds, so the one thing the person
+    /// 🔴 An answer to a parked session was nowhere on the page after it was sent. The words travelled only inside the target, which the conversation folds, so the one thing the person
     /// said was nowhere they would look.
     /// </remarks>
     internal static IReadOnlyList<SessionEvent> Opening(string prompt, string? personSaid) =>

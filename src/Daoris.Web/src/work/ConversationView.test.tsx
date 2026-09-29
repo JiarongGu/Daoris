@@ -203,7 +203,7 @@ describe('ConversationView', () => {
    * a newline is a newline, so a line it ended stays ended. A blank line is still a paragraph, and a
    * fenced block keeps its own lines.
    */
-  // UX5 U16 (the owner): a maximized window showed the conversation at half its width.
+  // UX5 U16: a maximized window showed the conversation at half its width.
   it('follows the width it is given, as the head and the composer do', () => {
     view(FINISHED());
     expect(screen.getByRole('region', { name: 'conversation' }).className).not.toMatch(/max-w-/);

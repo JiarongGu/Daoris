@@ -148,14 +148,13 @@ describe('the Work frame', () => {
   });
 
   /**
-   * UX5 U16, the owner (2026-09-26): *"when window is maxed, the inner content still only half the
-   * size, and this also appears in the chat box"*. U10 had held the head, the conversation and the
+   * UX5 U16: a maximized window showed the content, and the chat box, at half its width. U10 had held the head, the conversation and the
    * composer to a 768px measure, and on a maximized window that is half of it. They follow the
    * centre's width, as content does everywhere (platform language §4: content is shown as it is).
    * jsdom lays nothing out, so this holds the absence of a cap and the window holds the look.
    */
   /**
-   * One right region (the owner, 2026-09-29: *"the ask daoris need to be a better location"*): on
+   * One right region: on
    * Sessions, Ask Daoris is a tab of the right dock beside the timeline and the review, as VS Code's
    * chat is a view of its one right side bar — never a second column beside the dock.
    */
@@ -184,7 +183,7 @@ describe('the Work frame', () => {
   });
 
   /**
-   * DOCK1b (the owner, 2026-09-29: *"we should be able to dock panels like vscode did"*): a view moves
+   * DOCK1b: a view moves
    * between the right side bar and the panel from its tab's menu, as VS Code's *Move to Panel* does,
    * is shown where it went, and stays there for this viewer.
    */
@@ -219,8 +218,7 @@ describe('the Work frame', () => {
   });
 
   /**
-   * DOCK1a (the owner: *"the design language we using in session screen … should be apply to all
-   * screens (for example overview)"*): another view in the centre keeps the side bar and the panel,
+   * DOCK1a: another view in the centre keeps the side bar and the panel,
    * with their views, and has no session rail — the list is Sessions' own.
    */
   it('frames another view: its content in the centre, the side bar and the panel beside it, no rail', async () => {
@@ -1096,7 +1094,7 @@ describe('starting and holding a conversation', () => {
   });
 
   /**
-   * SESS3 (the owner: *"there is no way to send additional info in middle of the session"*): a driven
+   * SESS3: a driven
    * session the driver says listens — the protocol door — has a box; what is sent waits for its turn to
    * end, and *send now* stops the turn so it goes at once. One the driver says does not listen keeps none.
    */
@@ -1165,9 +1163,8 @@ describe('clearing a parked session', () => {
   });
 
   /**
-   * 🔴 The owner, on the first real parked session (2026-09-29): *"there is no way I can input the
-   * answer"*. The door was a button in the card at the top of a record of 1,800 events, and they read
-   * the question at its foot. A parked driven session is answered from the box at the foot, where a
+   * 🔴 On the first real parked session there was nowhere to type the answer: the door was a button in
+   * the card at the top of a record of 1,800 events, and the question is read at its foot. A parked driven session is answered from the box at the foot, where a
    * chat is, and the card says so — one owner for the answer (D56).
    */
   it('answers a parked driven session from the box at the foot, and the card says the box carries it on', async () => {
@@ -1829,8 +1826,7 @@ describe('the frame\'s geometry (FRAME6)', () => {
   });
 
   /**
-   * LAYOUT1 (the owner: *"box content does not auto resize with the outer window so it always stay as
-   * a small width"*): a dragged dock was remembered in pixels and stayed 389px while the window grew
+   * LAYOUT1: a dragged dock was remembered in pixels and stayed 389px while the window grew
    * from 1518 to 1923 (measured on the shell). It is remembered as its share of the window now.
    */
   it('remembers a dragged dock as its share of the window, so it grows when the window does', async () => {

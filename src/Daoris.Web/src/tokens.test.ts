@@ -25,8 +25,7 @@ export function rawSizes(files: [path: string, source: string][]): string[] {
 }
 
 /**
- * 🔴 **A scrim never covers the app strip** (owner, 2026-09-22: *"the backdrop should not cover the
- * topbar? because we do have the hole for the 3 buttons"*).
+ * 🔴 **A scrim never covers the app strip**, where the window's three buttons are.
  *
  * The strip reserves three 44px slots that the **window** paints natively (SURF7/D56). A page-level
  * backdrop dims everything the page draws and cannot touch what the window draws — so opening the

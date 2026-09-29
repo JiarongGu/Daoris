@@ -275,6 +275,8 @@ Run every command from the **workspace root**, not from a package directory.
   `deployment-rehearsal.mjs` published a folder and opened a window during a unit test before it
   learned the same thing. A plain string comparison is false through a junction, and a gate then runs
   nothing and exits 0.
+- **A code comment gives the reason, never the owner's words.** Name the task or decision it came
+  from (`DOCK1a`, `D81`) and say why; a quotation belongs in the decision or design document.
 - **TDD** — failing test first. **Commit per task, automatically, once gates are green** (D37 as
   amended) — the landed history is the reviewable record. **Push, publish, release and history
   rewrites stay the owner's call.**

@@ -17,7 +17,7 @@ export type LineChange = { repository?: string; workspace?: string; branch?: str
  * gives the repositories in it that set none of their own.
  *
  * @remarks
- * Written from the owner's *"this can be configured"* (2026-09-28): the line was only ever git's own
+ * A line a person sets: it was only ever git's own
  * guess, so a repository whose work lands on `develop` had sessions grown from, and merged into,
  * `main`. **What each row shows is the driver's own resolution**, read rather than recomputed — so
  * the page cannot name a line a session would not take. A row's control is the screen's half of

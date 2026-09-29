@@ -615,8 +615,7 @@ internal static class Spawning
 
             // 🔴 The shell is a window, not a console. A console child of a GUI process is given a
             // console of its own unless this says otherwise — and nothing said otherwise, so every
-            // git, every probe and every session flashed a terminal onto the desktop (owner,
-            // 2026-09-23: *"a console window keep popup up"*). Held by a source scan over every
+            // git, every probe and every session flashed a terminal onto the desktop. Held by a source scan over every
             // spawn the desktop makes, because the next spawn site will forget it too.
             CreateNoWindow = true,
 
@@ -759,8 +758,7 @@ public sealed class ClaudeAcpAdapter : ISessionAdapter
     /// <summary>
     /// <c>auto</c> where the adapter offers it — Claude Code's own mode, in which the harness judges
     /// each action — and <c>acceptEdits</c>, the posture observed in the evaluation's §1a, from one that
-    /// does not (D81: the owner asked that a session "be able to do as much as it can just like regular
-    /// claude code"). Never <c>bypassPermissions</c>, which judges nothing, however available the wire
+    /// does not (D81: a session does as much as the harness would on its own). Never <c>bypassPermissions</c>, which judges nothing, however available the wire
     /// makes it. The pipe door still passes <c>--permission-mode acceptEdits</c>: <c>auto</c> is measured
     /// on this wire and not yet on that one.
     /// </summary>

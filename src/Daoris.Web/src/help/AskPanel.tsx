@@ -25,8 +25,7 @@ export type AskConversationSlot = {
  * (HELP1a) takes the panel, and the starters show until there is a conversation to read.
  *
  * @remarks
- * Written from the owner's *"we will need some chat agent to support configure for workspace"*. A
- * molecule: the starters and the conversation arrive made, a door press goes out, and the region the
+ * A chat agent to help configure a workspace. A molecule: the starters and the conversation arrive made, a door press goes out, and the region the
  * conversation scrolls in is handed back to the organism that follows its tail.
  */
 export function AskPanel({

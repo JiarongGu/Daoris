@@ -91,8 +91,8 @@ describe('opening one', () => {
   });
 
   /**
-   * 🔴 The owner, on the first real parked session (2026-09-29): *"it says waiting for me … but no
-   * where to reply"*. The row was the door, and nothing on it said so: it read as a notice. A door row
+   * 🔴 On the first real parked session the row said the session waited and not where to reply. The
+   * row was the door, and nothing on it said so: it read as a notice. A door row
    * names where it goes.
    */
   it('says where its door goes', () => {

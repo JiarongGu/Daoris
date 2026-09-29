@@ -7,8 +7,8 @@ import { Button, Dot, Icon, MonoWell } from './ui';
  * Signing an account in, on the row that asked for it (2026-09-23).
  *
  * @remarks
- * 🔴 Written from the owner's *"the ui for login claude, during and after include the entire login
- * workflow itself need better ui/ux"*, and from measuring the real flow with no console attached.
+ * 🔴 The whole sign-in, before, during and after, written from measuring the real flow with no
+ * console attached.
  * The harness prints a sign-in link wrapped in a terminal hyperlink escape, then `Paste code here
  * if prompted >` with no newline, and waits on stdin. Before this the output streamed under the
  * DOOR, a card and a half below the button pressed; the link arrived twice around a scatter of

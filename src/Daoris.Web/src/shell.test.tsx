@@ -1299,8 +1299,7 @@ describe('the harness roster', () => {
   });
 
   /**
-   * 🔴 An account is made by SIGNING IN (D66 §3; the owner: *"we probably should just allow to login
-   * and create account based on login"*). One press, no name typed first; the sign-in shows where
+   * 🔴 An account is made by SIGNING IN (D66 §3). One press, no name typed first; the sign-in shows where
    * the new account will be, and the end names who signed in.
    */
   it('an account is made by signing in, and the end names who signed in', async () => {
@@ -1513,7 +1512,7 @@ describe('the harness roster', () => {
   });
 
   /**
-   * 🔴 An account that is an API key (AGT3, D67 §1: *"daoris can keep the key"*). One password field,
+   * 🔴 An account that is an API key (AGT3, D67 §1). One password field,
    * behind a press, only on an agent that takes a key; saving sends the key once and the page is
    * told back only its last four characters.
    */

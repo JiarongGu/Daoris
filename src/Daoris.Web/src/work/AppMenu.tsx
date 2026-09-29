@@ -24,8 +24,7 @@ export interface MenuItem {
  * One menu in the application's menu bar — the title bar's left, as every IDE has it.
  *
  * @remarks
- * **What it is for** (owner, 2026-09-22: *"the manage/work menu should follow the vscode or other
- * IDE design so a lot setting config can be there, and this is not manage/work menu"*). A title-bar
+ * **What it is for**, as an IDE's is. A title-bar
  * menu bar holds what the **application** can do and be configured to do — settings, the machine's
  * wiring, the accounts it runs as, help. It is not where you switch what you are looking at: that
  * went to the activity rail, which is what a rail is for.

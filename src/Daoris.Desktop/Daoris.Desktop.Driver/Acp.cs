@@ -669,8 +669,8 @@ public sealed class AcpSession(
     /// The permission posture Daoris drives under, expressed as this wire's own mode (ACP2).
     /// </summary>
     /// <remarks>
-    /// <para><b>D81 widened it, by decision</b>: the owner asked that a session "be able to do as much
-    /// as it can just like regular claude code or codex", so an adapter may name <c>auto</c>, the mode
+    /// <para><b>D81 widened it, by decision</b>: a session does as much as the harness would on its
+    /// own, so an adapter may name <c>auto</c>, the mode
     /// in which the harness judges each action itself, ahead of <c>acceptEdits</c>. What the doctrine
     /// keeps is kept by the rules handed at spawn (no push, the tree guard), which hold in every mode.
     /// This door sets a mode, which is what the evaluation observed Claude Code offering on
@@ -764,8 +764,7 @@ public sealed class AcpSession(
     /// <para>The agent's words are not rendered here: they arrive in chunks, and
     /// <see cref="AcpConsole"/> joins them into lines from the event <see cref="Map"/> made (UX5 U3).</para>
     ///
-    /// <para>🔴 <b>A tool is named by its title, and only its end is a line</b> (the owner: "we have a
-    /// lot '?' display in the console"). A call streams its input and output as updates that carry no
+    /// <para>🔴 <b>A tool is named by its title, and only its end is a line</b>. A call streams its input and output as updates that carry no
     /// status, five to eight per call in FG5's transcripts, and each printed as <c>toolu_… → ?</c>. The
     /// record keeps every one of them as an event. The console says the call, then how it ended, by
     /// the name the call gave it, which <paramref name="titles"/> remembers per session.</para>

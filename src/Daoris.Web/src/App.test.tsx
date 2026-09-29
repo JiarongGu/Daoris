@@ -334,8 +334,7 @@ describe('the views, in a browser', () => {
   });
 
   /**
-   * UX5 U59, the owner (2026-09-26): *"inner content size does not relative to the window size"*.
-   * The column was capped at 72rem, so a maximized window left every view but Sessions a third
+   * UX5 U59: content did not follow the window. The column was capped at 72rem, so a maximized window left every view but Sessions a third
    * empty. Content follows the window; prose keeps its own measure (`Prose`), a form its own size.
    */
   it('lets every view follow the window, capping no content column', async () => {

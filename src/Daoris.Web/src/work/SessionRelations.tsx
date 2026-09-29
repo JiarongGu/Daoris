@@ -9,7 +9,7 @@ const SAYS = 280;
 const DOOR = 'min-w-0 cursor-pointer truncate border-0 bg-transparent p-0 text-left underline decoration-line-strong underline-offset-2 hover:text-accent hover:decoration-accent';
 
 /**
- * Who a session worked with (SESS1, the owner: *"working relationship"*): the session that asked for its
+ * Who a session worked with (SESS1): the session that asked for its
  * quest, the answer it carried on after, and what it asked of other repositories with their answers.
  *
  * @remarks

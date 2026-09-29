@@ -188,8 +188,8 @@ export function OverviewView({ onNavigate, onOpenQuest, doors, notify }: {
                     )}
                     <span className="truncate">{repository.name}</span>
                   </span>
-                  {/* Flat: thin, square-ended, on a track that shows the whole scale (the owner,
-                      2026-09-30). A 12px bar with a rounded end made a short one a blob, not a share. */}
+                  {/* Flat: thin, square-ended, on a track that shows the whole scale. A 12px bar
+                      with a rounded end made a short one a blob, not a share. */}
                   <span className="block h-1.5 bg-line">
                     <span
                       className="block h-full min-w-[2px] bg-accent"

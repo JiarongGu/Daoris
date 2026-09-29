@@ -160,7 +160,7 @@ public sealed class ClaudeStreamJsonTests
         Assert.Equal(("toolu_1", "completed"), (result.Id, result.Status));
         Assert.Equal("The file src/chunk.rs has been updated.", Assert.Single(result.Content!).Text);
 
-        // The ending is said by the call's name, never its id (the owner's "?"s in the console).
+        // The ending is said by the call's name, never its id (the "?"s the console printed).
         Assert.Equal(["→ Edit src/chunk.rs", "  ✓ Edit src/chunk.rs"], lines);
     }
 

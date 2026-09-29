@@ -32,9 +32,8 @@ const ITEM = cn(
  * selected one can go.
  *
  * @remarks
- * **Chrome's tab list, for tabs that do not fit** (the owner, 2026-09-29: *"for long tabs you can see
- * take design from vscode or browser tab design"*, and then *"display only icon does not fix the
- * limitation"*). The tabs shrink as a browser's do, and however narrow the region gets, this lists
+ * **Chrome's tab list, for tabs that do not fit**: tabs cut to their icons still leave some out of
+ * reach. The tabs shrink as a browser's do, and however narrow the region gets, this lists
  * every one by its whole name, so none is ever out of reach.
  *
  * **VS Code's *Move to*, on the same button**, and on a right-click of a tab, which selects the tab
@@ -76,7 +75,7 @@ export function ViewsMenu({
               'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-accent',
             )}
           >
-            {/* VS Code's *Views and More Actions*: a menu, not a direction, so not an arrow (the owner, 2026-09-29). */}
+            {/* VS Code's *Views and More Actions*: a menu, not a direction, so not an arrow. */}
             <Icon name="more" size={14} />
           </button>
         </Menu.Trigger>

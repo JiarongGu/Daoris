@@ -81,7 +81,7 @@ public sealed class DrivenSessionInputTests : IDisposable
     }
 
     /// <summary>
-    /// SESS3 (the owner: "there is no way to send additional info in middle of the session"): on the
+    /// SESS3 (a working session can be told more): on the
     /// protocol door a driven session's inbox holds what the person says, and the words are the next
     /// prompt of the SAME session — when its turn ends, or at once by stopping the turn — kept in the
     /// record as the person's. Still nothing is written into the stream (INT4i's line holds).

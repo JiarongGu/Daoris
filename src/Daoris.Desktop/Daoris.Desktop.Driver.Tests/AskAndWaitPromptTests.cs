@@ -126,7 +126,7 @@ public sealed class AskAndWaitPromptTests
     }
 
     /// <summary>
-    /// 🔴 The owner, having answered a parked session: *"it does not display my input"*. The carry-on's
+    /// 🔴 An answer to a parked session was nowhere on the page after it was sent. The carry-on's
     /// record opens with the target and then the person's answer, as theirs, so the conversation shows
     /// what they said rather than folding it inside the target.
     /// </summary>

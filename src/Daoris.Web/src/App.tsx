@@ -130,9 +130,8 @@ export function App() {
   // The same "is a shell here" answer every control uses — one detection path, not two that drift.
   const driver = useDriver();
   const attached = driver.data !== undefined;
-  // Ask Daoris (HELP1) is a view of the frame's regions on every view since DOCK1a (the owner: "the design
-  // language we using in session screen … should be apply to all screens"): bumped each time the person
-  // asks for it, and the frame opens whichever region holds it, on it.
+  // Ask Daoris (HELP1) is a view of the frame's regions on every view since DOCK1a: bumped each time the
+  // person asks for it, and the frame opens whichever region holds it, on it.
   const [helpFocus, setHelpFocus] = useState(0);
   // What the person closed in the frame (DOCK1c): held here, so the strip's toggles, the View menu and
   // the keys reach them from every view.
@@ -550,8 +549,8 @@ export function App() {
         )}
         // The region toggles (DOCK1c, SURF11) at the strip's right, beside the window controls, as VS
         // Code's sit: the panel and the right side bar on every view since DOCK1a, and the rail on Sessions,
-        // whose list it is. Ask Daoris has no button of its own up here (the owner: "no ask daoris at top
-        // border bar"): it is a tab of the side bar, so the right toggle, F1 and Ctrl+Alt+I are its doors.
+        // whose list it is. Ask Daoris has no button of its own up here: it is a tab of the side bar, so
+        // the right toggle, F1 and Ctrl+Alt+I are its doors.
         trailing={attached ? (
           <LayoutToggles
             regions={view === 'sessions' ? ['rail', 'panel', 'right'] : ['panel', 'right']}
@@ -606,10 +605,8 @@ export function App() {
           )}
         />
 
-        {/* 🔴 ONE frame on every view (DOCK1a, the owner: "the design language we using in session screen
-            (dockable, right tool bar, top layout setup) should be apply to all screens (for example
-            overview)"): the right side bar and the panel stay whatever the centre shows, as VS Code's
-            workbench does. One element in one place, so what is open, selected and sized survives a change
+        {/* 🔴 ONE frame on every view (DOCK1a): the right side bar and the panel stay whatever the
+            centre shows, as VS Code's workbench does. One element in one place, so what is open, selected and sized survives a change
             of view. Sessions' centre is its own; every other view is handed in. A browser has no frame:
             its regions hold this machine's sessions (D47 §4), so it shows the view alone. */}
         {attached
@@ -687,8 +684,7 @@ export function App() {
           )
           : undefined}
         /* Where each fact leads, and the rule is that a status item goes where the fact is SET
-           rather than where it is merely repeated (owner, 2026-09-22: *"better design with display
-           and action (on click or on hover)"*). The driver and the remote are both machine wiring,
+           rather than where it is merely repeated. The driver and the remote are both machine wiring,
            so both land on Settings; sessions land on Sessions; the index count leads to the
            repositories it was built from.
 

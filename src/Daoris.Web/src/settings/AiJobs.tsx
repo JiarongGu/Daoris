@@ -40,8 +40,7 @@ const OFF = 'off';
  * to change it.
  *
  * @remarks
- * Written from the owner's *"whats the mean 'ai' setup for daoris itself (so some task we can use ai
- * to support)"* (2026-09-23). The answer is two jobs, and each is stated the way `model-decoupling`
+ * What Daoris itself uses a model for. The answer is two jobs, and each is stated the way `model-decoupling`
  * asks: what it does with no model, which tier is answering, and where the choice is made.
  *
  * **The search tier is the service's sentence, never a claim of this page's** (D24): the pill and the

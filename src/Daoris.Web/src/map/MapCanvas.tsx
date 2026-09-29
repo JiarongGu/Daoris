@@ -315,7 +315,7 @@ const BELOW = 140;
  * The ring's radius for a card this wide and a window this tall. A narrow card gets a smaller ring,
  * so the names stay at their size (UX5 U44: at 500 the whole square shrank, and every name to about
  * 8px); a wide one gets a larger ring, as far as the height the window leaves it, so the map
- * follows the window (U59, the owner: it stayed 531px in a card three times as wide). Never below
+ * follows the window (U59: it stayed 531px in a card three times as wide). Never below
  * what keeps neighbours apart, so a large family keeps its spacing and the drawing shrinks as the
  * last resort. Where nothing measures the card, the full ring; where nothing measures the height,
  * no larger than that.

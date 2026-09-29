@@ -45,8 +45,7 @@ export function RightDock({
   tab?: DockTab;
   /**
    * The views standing here: the session's timeline and review, Ask Daoris beside them — the one
-   * right region, as VS Code's chat is a view of its secondary side bar (the owner, 2026-09-29: "the
-   * ask daoris need to be a better location") — and whatever the person moved in.
+   * right region, as VS Code's chat is a view of its secondary side bar — and whatever the person moved in.
    */
   views?: readonly DockTab[];
   /** Sends a view to the other region (DOCK1b). */
@@ -136,8 +135,7 @@ export function RightDock({
 
       {/* 🔴 The tabs give way before the dock's own buttons do (found looking at DOCK1c): with a third
           tab, Ask Daoris, the close was clipped off a dock at its floor, and then a scrollbar ran under the
-          names. So they shrink as a browser's tabs and VS Code's do (the owner: "take design from vscode or
-          browser tab design"): the selected tab keeps its whole name, as a browser's active tab keeps its
+          names. So they shrink as a browser's tabs and VS Code's do: the selected tab keeps its whole name, as a browser's active tab keeps its
           width, and the others give way, each cut with an ellipsis down to its icon; only then do they
           scroll. Every full name is its tab's own and its tip's, and the list at the row's end (DOCK1b)
           names them all, as Chrome's does, so a tab cut to its icon is never the only way to one. */}

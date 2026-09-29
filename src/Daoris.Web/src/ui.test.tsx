@@ -371,7 +371,7 @@ describe('a tip', () => {
 });
 
 /**
- * 🔴 A count is a circle (owner, 2026-09-23: *"the notification number is not even circle border"*).
+ * 🔴 A count is a circle.
  * jsdom has no layout, so what can be held here is the cause: the box's height and its minimum width
  * are ONE size. The oval was two sizes nothing kept equal — a min-width, and a line-height plus a
  * border. The window's own measurement is the other half, taken on the desktop.

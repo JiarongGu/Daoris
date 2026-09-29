@@ -1508,7 +1508,7 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
 /// <summary>
 /// A harness action while it runs (D49 §4): the one thing a screen may send it, and the way it is
 /// stopped. A login prints a prompt and waits — <i>paste the code</i> — and a process nobody can
-/// answer or stop is a page with every control disabled until the window closes (owner, 2026-09-23).
+/// answer or stop is a page with every control disabled until the window closes.
 /// </summary>
 public sealed class HarnessRun
 {

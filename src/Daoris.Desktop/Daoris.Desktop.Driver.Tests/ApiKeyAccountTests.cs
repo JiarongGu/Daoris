@@ -4,7 +4,7 @@ using Daoris.Driver;
 namespace Daoris.Desktop.Driver.Tests;
 
 /// <summary>
-/// 🔴 <b>An account that is an API key</b> (AGT3, D67 §1: the owner, *"daoris can keep the key"*).
+/// 🔴 <b>An account that is an API key</b> (AGT3, D67 §1: Daoris keeps the key).
 /// </summary>
 /// <remarks>
 /// <para>Measured on Claude Code 2.1.280 with an invalid key and nothing spent: the key in
