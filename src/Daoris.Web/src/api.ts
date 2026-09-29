@@ -232,6 +232,7 @@ export type Retired = { repository: string; retired: boolean; message: string };
  * default, and neither does this).
  */
 import { PAGE_SHOWN } from './results';
+import { onHost } from './host';
 
 function qs(params: Record<string, string | number | boolean | null | undefined>): string {
   const pairs = Object.entries(params)
@@ -251,7 +252,8 @@ function qs(params: Record<string, string | number | boolean | null | undefined>
  */
 async function reach(path: string, init?: RequestInit): Promise<Response> {
   try {
-    return await fetch(path, init);
+    // At the host's loopback address when the page is on the desktop engine's app origin (D92).
+    return await fetch(onHost(path), init);
   } catch (error) {
     if ((error as { name?: unknown } | null)?.name === 'AbortError') throw error;
     throw Object.assign(new Error('the service is not answering'), { code: 'SERVICE_UNREACHABLE' });
@@ -359,7 +361,7 @@ export const api = {
   }) => post<QuestAction>('/api/quests', quest),
   /** Where a kept file is opened — the local host's own route, which answers this machine only. */
   attachmentUrl: (quest: string, sha256: string) =>
-    `/api/quests/${encodeURIComponent(quest)}/attachments/${encodeURIComponent(sha256)}`,
+    onHost(`/api/quests/${encodeURIComponent(quest)}/attachments/${encodeURIComponent(sha256)}`),
   respondQuest: (id: string, action: 'take' | 'done' | 'decline', reason: string | null) =>
     post<QuestAction>(`/api/quests/${encodeURIComponent(id)}/respond`, { action, reason }),
   // A person dismissing one conflict (SYNC6c), by the name every machine knows it by.

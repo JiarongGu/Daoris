@@ -173,6 +173,21 @@ async function startServer(env, base) {
   return null;
 }
 
+/**
+ * The desktop page's origin on the Chromium the shell ships (D92) — the host's `DesktopPage.Origin`
+ * and the shell's `DesktopPage.VirtualHost`, spelled a third time here so the rehearsal holds them.
+ */
+const DESKTOP_ORIGIN = 'https://daoris.localhost';
+
+/** What a host's CORS answers a browser's preflight from this origin: the allowed origin, or null. */
+async function preflight(base, origin) {
+  const response = await fetch(`${base}/api/registry`, {
+    method: 'OPTIONS',
+    headers: { Origin: origin, 'Access-Control-Request-Method': 'POST', 'Access-Control-Request-Headers': 'content-type' },
+  });
+  return response.headers.get('access-control-allow-origin');
+}
+
 async function startHost(extraEnv = {}) {
   host = await startServer({
     DAORIS_KNOWLEDGE_ROOT: family,
@@ -238,6 +253,10 @@ for (const name of EXAMPLES) copyTree(join(examplesRoot, name), join(family, nam
 const build = run(`dotnet build "${httpProject}"`, repoRoot);
 check('the HTTP host builds', build.code === 0, build.out.split('\n').slice(-4).join('\n'));
 check('the host answers /api/status', await startHost());
+// D92: on the Chromium it ships, the desktop's page lives on its engine's app origin and reaches this
+// host at the loopback address, cross-origin. A local host allows exactly that origin, and no other.
+check('a local host allows the desktop page’s origin', await preflight(BASE, DESKTOP_ORIGIN) === DESKTOP_ORIGIN);
+check('…and no other origin', await preflight(BASE, 'https://elsewhere.example') === null);
 
 const registry = await api('GET', '/api/registry');
 const adopted = (registry.json ?? []).filter((r) => r.adopted).map((r) => r.repository);
@@ -1311,6 +1330,9 @@ const withKey = await api('GET', '/api/quests', { base: REMOTE_BASE, key: keyA }
 check('a minted key opens the door', withKey.status === 200, withKey.text);
 const page = await api('GET', '/', { base: REMOTE_BASE });
 check('the shared host serves no page — an API until person-auth exists', page.status === 404, String(page.status));
+// D92: the desktop's own page is a LOCAL host's caller only; a shared host allows it no origin.
+const sharedAllows = await preflight(REMOTE_BASE, DESKTOP_ORIGIN);
+check('a shared host allows the desktop page’s origin nothing', sharedAllows === null, String(sharedAllows));
 
 // The read above was the shared host's first — exactly when index-on-first-use would have scanned.
 const decoySearch = await api(

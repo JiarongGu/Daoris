@@ -144,17 +144,22 @@ builder.Services.ConfigureHttpJsonOptions(json =>
 });
 
 var origin = Environment.GetEnvironmentVariable("DAORIS_WEB_ORIGIN");
-if (!string.IsNullOrWhiteSpace(origin))
+// Who may call this host from another origin: named, never wildcarded, since a wildcard would quietly
+// make a local-only index readable by any page the browser happens to have open. The development UI
+// on another port, when that variable names it; and, on a LOCAL host only, the desktop's own page
+// (D92), which lives on its engine's app origin and reaches this host at the loopback address. No
+// website can present that origin: only the shell's engine serves it.
+var origins = new List<string>();
+if (!string.IsNullOrWhiteSpace(origin)) origins.Add(origin);
+if (mode == ServiceMode.Local) origins.Add(DesktopPage.Origin);
+if (origins.Count > 0)
 {
-    // Named, never wildcarded. The UI is served from this host in a real deployment; the variable
-    // exists for the development server on another port, and a wildcard would quietly make a
-    // local-only index readable by any page the browser happens to have open.
     builder.Services.AddCors(cors => cors.AddDefaultPolicy(p =>
-        p.WithOrigins(origin).AllowAnyHeader().AllowAnyMethod()));
+        p.WithOrigins([.. origins]).AllowAnyHeader().AllowAnyMethod()));
 }
 
 var app = builder.Build();
-if (!string.IsNullOrWhiteSpace(origin)) app.UseCors();
+if (origins.Count > 0) app.UseCors();
 
 // The built UI, when there is one — in local mode. A shared deployment serves the API and nothing
 // else: the platform in a browser arrives with person-auth, not before (D47 §7), so until then there
