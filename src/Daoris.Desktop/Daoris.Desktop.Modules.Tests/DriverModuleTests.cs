@@ -609,6 +609,58 @@ public sealed class DriverModuleTests : Bridge
         }
     }
 
+    /// <summary>
+    /// SESS3: a driven session on the protocol door hears what the person adds — its inbox holds the
+    /// words ahead of INT4i's refusal, the queue says it is listening and what waits, and the stop sends
+    /// what is held now, withdrawing nothing. A finish is still refused: its stream is the driver's.
+    /// </summary>
+    [Fact]
+    public async Task A_driven_session_that_listens_holds_what_the_person_adds_and_sends_it_on_a_stop()
+    {
+        var loop = Loop();
+        var module = new DriverModule(Bus, loop);
+        using var process = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+        {
+            FileName = "node",
+            ArgumentList = { "-e", "setTimeout(() => {}, 60000)" },
+            RedirectStandardInput = true,
+            UseShellExecute = false,
+            CreateNoWindow = true,
+        })!;
+        using var tracked = loop.Processes.Track("s1", process, refusesInput: "the session on quest #q1 takes no line in its stream.");
+        var inbox = loop.Processes.OpenInbox("s1");
+        var stops = 0;
+        inbox.Attach(() => { stops++; return Task.CompletedTask; });
+
+        try
+        {
+            var sent = await AnswerAsync(module, "SESSION_INPUT", new { id = "s1", text = "the level file moved" });
+            Assert.True(sent.GetProperty("sent").GetBoolean());
+
+            var queue = await AnswerAsync(module, "SESSION_QUEUE", new { id = "s1" });
+            Assert.True(queue.GetProperty("listening").GetBoolean());
+            Assert.True(queue.GetProperty("taking").GetBoolean());
+            Assert.Equal("the level file moved", Assert.Single(queue.GetProperty("queued").EnumerateArray()).GetProperty("text").GetString());
+
+            var stop = await AnswerAsync(module, "CANCEL_TURN", new { id = "s1" });
+            Assert.True(stop.GetProperty("cancelled").GetBoolean());
+            Assert.Empty(stop.GetProperty("withdrawn").EnumerateArray());
+            Assert.Equal(1, stops);
+            Assert.Equal("the level file moved", inbox.TakeOrClose()?.Text);
+
+            Assert.Contains(Refusals.DriverRefused, await RefusalAsync(module, "END_CHAT", new { id = "s1" }));
+
+            // Closed, it hears nothing more — and the page is told it is not listening.
+            inbox.TakeOrClose();
+            var closed = await AnswerAsync(module, "SESSION_QUEUE", new { id = "s1" });
+            Assert.False(closed.GetProperty("listening").GetBoolean());
+        }
+        finally
+        {
+            loop.Processes.Stop("s1");
+        }
+    }
+
     [Fact]
     public async Task Sending_to_a_session_that_is_not_listening_answers_false()
     {

@@ -119,7 +119,12 @@ closings lifted out of the Work frame.
      names each view's region, which it does not. Its room said nothing of the window; it does now,
      and the preface says where the views stand (HELP2, archived).
 5. **DOCK1a**: the right region hoisted out of the Work frame into the application, one component on
-   every view; Ask Daoris no longer has two hosts.
+   every view; Ask Daoris no longer has two hosts. *Widened by the owner, 2026-09-29:* "the design
+   language we using in session screen (dockable, right tool bar, top layout setup) should be apply to
+   all screens (for example overview)". So not the right region alone: Sessions' frame on every view,
+   the side bar and the panel with their tab lists, moves and toggles, as VS Code's workbench is one
+   frame whatever its editor shows. The question to settle first is what the regions hold away from
+   Sessions.
 
 ## 5. Not chosen, for now
 

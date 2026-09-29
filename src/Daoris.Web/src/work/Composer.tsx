@@ -65,8 +65,14 @@ export type MentionSource = { files: string[] | null; unlisted: number; refusal:
 export function Composer({
   live, sending = false, refusal, endings = true, draft, onDraft,
   queued = [], taking = false, stoppable = false, stopping = false, mentions, onMentioning, context, placeholder,
-  attachments = true, sendLabel, onSend, onFinish, onStop, onStopTurn,
+  attachments = true, sendLabel, stopTurnLabel, stopTurnTip, onSend, onFinish, onStop, onStopTurn,
 }: {
+  /**
+   * What stopping the turn says, where it does something else (SESS3): on a driven session it stops the
+   * turn so what waits goes now, rather than handing it back.
+   */
+  stopTurnLabel?: string;
+  stopTurnTip?: string;
   /** Whether anything is listening. False is an ending, not a disabled state. */
   live: boolean;
   sending?: boolean;
@@ -346,8 +352,8 @@ export function Composer({
           </>
         )}
         {live && taking && stoppable && onStopTurn && (
-          <Tip content={t('work.composer.stopTurnTip')}>
-            <Button type="button" disabled={stopping} onClick={onStopTurn}>{t('work.composer.stopTurn')}</Button>
+          <Tip content={stopTurnTip ?? t('work.composer.stopTurnTip')}>
+            <Button type="button" disabled={stopping} onClick={onStopTurn}>{stopTurnLabel ?? t('work.composer.stopTurn')}</Button>
           </Tip>
         )}
         {live && endings && (

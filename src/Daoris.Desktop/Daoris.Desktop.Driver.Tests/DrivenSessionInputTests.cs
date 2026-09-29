@@ -81,6 +81,51 @@ public sealed class DrivenSessionInputTests : IDisposable
     }
 
     /// <summary>
+    /// SESS3 (the owner: "there is no way to send additional info in middle of the session"): on the
+    /// protocol door a driven session's inbox holds what the person says, and the words are the next
+    /// prompt of the SAME session — when its turn ends, or at once by stopping the turn — kept in the
+    /// record as the person's. Still nothing is written into the stream (INT4i's line holds).
+    /// </summary>
+    [Theory]
+    [InlineData("after-the-turn")]
+    [InlineData("send-now")]
+    public async Task A_driven_protocol_session_hears_what_the_person_adds_as_its_next_prompt(string when)
+    {
+        await using var service = StandInService.Start(_repository);
+        var processes = new SessionProcesses();
+        var prompts = Path.Combine(_home, "prompts.txt");
+        var driver = Driver("acp-turns", prompts, service, processes, turns: when == "send-now" ? "hold" : "quick");
+
+        var tick = driver.TickAsync();
+        await Poll.Until(() => processes.InboxOf("s1") is not null && File.Exists(prompts), () => "the first turn never began", TimeSpan.FromSeconds(60));
+        var inbox = processes.InboxOf("s1")!;
+        Assert.True(inbox.Hold(new ChatMessage("the budget is in level.json, not config.json", [])));
+        // Still refused as a line written into the stream: the frames are the driver's (INT4i).
+        Assert.False(processes.Send("s1", "are you there?"));
+
+        if (when == "send-now")
+        {
+            var stop = await inbox.SendNowAsync();
+            Assert.True(stop.Cancelled);
+            Assert.Empty(stop.Withdrawn);
+        }
+
+        await tick.WaitAsync(TimeSpan.FromSeconds(60));
+
+        var heard = File.ReadAllLines(prompts).Select(line => System.Text.Json.JsonSerializer.Deserialize<string>(line)).ToList();
+        Assert.Equal(2, heard.Count);
+        Assert.Contains("#q1", heard[0]);
+        Assert.Equal("the budget is in level.json, not config.json", heard[1]);
+        // The same session, not a second one: the agent was asked for one session only.
+        Assert.Single(File.ReadAllLines(prompts + ".sessions"));
+        // And the record keeps the words as the person's, where the conversation is read.
+        var record = Directory.GetFiles(_home, "s1.events.jsonl", SearchOption.AllDirectories).Single();
+        Assert.Contains(File.ReadAllLines(record), line =>
+            line.Contains("\"origin\":\"person\"") && line.Contains("the budget is in level.json, not config.json"));
+        Assert.Null(processes.InboxOf("s1"));
+    }
+
+    /// <summary>
     /// 🔴 REV3: a failure between the spawn and the wait — here the record refusing to move to
     /// `working`, which is what a stop pressed during `starting` makes it do — concluded the record and
     /// left the harness running: untracked, unmarked, and holding a tree whose lock had just been freed.
@@ -150,18 +195,19 @@ public sealed class DrivenSessionInputTests : IDisposable
     }
 
     private Daoris.Driver.Driver Driver(
-        string adapter, string heard, StandInService service, SessionProcesses processes, RemoteSyncSet? sync = null)
+        string adapter, string heard, StandInService service, SessionProcesses processes, RemoteSyncSet? sync = null,
+        string turns = "quick")
     {
         var config = DriverConfig.Empty with
         {
             Drivable = ["engine"],
-            Adapter = adapter,
+            Adapter = adapter == "acp-turns" ? "acp-stub" : adapter,
             TimeoutMinutes = 1,
             PollSeconds = 1,
             Commands = new Dictionary<string, IReadOnlyList<string>>
             {
                 ["stub"] = ["node", PipeAgent()],
-                ["acp-stub"] = ["node", ProtocolAgent(), heard],
+                ["acp-stub"] = adapter == "acp-turns" ? ["node", TurnsAgent(), heard, turns] : ["node", ProtocolAgent(), heard],
             },
         };
         var adapters = AdapterSet.Built();
@@ -209,6 +255,46 @@ public sealed class DrivenSessionInputTests : IDisposable
                 send({ jsonrpc: '2.0', id: frame.id, result: { sessionId: 'acp-1' } });
               } else if (frame.method === 'session/prompt') {
                 // The turn is held: answered only by the process ending.
+              } else if (frame.id !== undefined && frame.method) {
+                send({ jsonrpc: '2.0', id: frame.id, result: {} });
+              }
+            }
+            """);
+        return script;
+    }
+
+    /// <summary>
+    /// SESS3's stand-in: it writes down every prompt it is given (as a JSON string a line) and every
+    /// session it is asked for. Its first turn ends by itself after a beat (<c>quick</c>), or only when
+    /// the turn is stopped (<c>hold</c>); every later turn ends at once. It exits when its input ends.
+    /// </summary>
+    private string TurnsAgent()
+    {
+        var script = Path.Combine(_home, "acp-turns-agent.mjs");
+        File.WriteAllText(script, """
+            import { appendFileSync } from 'node:fs';
+            import { createInterface } from 'node:readline';
+            const [prompts, mode] = process.argv.slice(2);
+            const send = (frame) => process.stdout.write(JSON.stringify(frame) + '\n');
+            let turns = 0;
+            let held = null;
+            for await (const line of createInterface({ input: process.stdin })) {
+              const frame = JSON.parse(line);
+              if (frame.method === 'initialize') {
+                send({ jsonrpc: '2.0', id: frame.id, result: { protocolVersion: 1, agentCapabilities: {} } });
+              } else if (frame.method === 'session/new') {
+                appendFileSync(prompts + '.sessions', 'acp-1\n');
+                send({ jsonrpc: '2.0', id: frame.id, result: { sessionId: 'acp-1' } });
+              } else if (frame.method === 'session/prompt') {
+                const text = (frame.params?.prompt ?? []).map((block) => block.text ?? '').join('');
+                appendFileSync(prompts, JSON.stringify(text) + '\n');
+                turns += 1;
+                if (turns === 1 && mode === 'hold') held = frame.id;
+                else if (turns === 1) setTimeout(() => send({ jsonrpc: '2.0', id: frame.id, result: { stopReason: 'end_turn' } }), 1500);
+                else send({ jsonrpc: '2.0', id: frame.id, result: { stopReason: 'end_turn' } });
+              } else if (frame.method === 'session/cancel') {
+                if (held !== null) send({ jsonrpc: '2.0', id: held, result: { stopReason: 'cancelled' } });
+                held = null;
               } else if (frame.id !== undefined && frame.method) {
                 send({ jsonrpc: '2.0', id: frame.id, result: {} });
               }

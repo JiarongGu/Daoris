@@ -21,8 +21,8 @@ lists.
 
 ## State
 
-**Counts, and this is their one home:** sixteen commands, **514 CLI tests, 546 service, 902 driver,
-291 desktop modules, 80 devkit, 1357 web unit, 21 Playwright**, 66/66 release rehearsal, **292/292
+**Counts, and this is their one home:** sixteen commands, **514 CLI tests, 546 service, 910 driver,
+292 desktop modules, 80 devkit, 1359 web unit, 21 Playwright**, 66/66 release rehearsal, **292/292
 family rehearsal** (it names its own phases when you run it), **45/45 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge
 documents, 5 skills, 7 packs. The always-loaded core is **22,492 of 26,000 bytes** — a span in
@@ -144,9 +144,9 @@ rather than designed.
 
 ## Backlog
 
-**Thirty-five rows are open**: the five the first real workspace showed (WSR4, SESS2, SESS3, MAP4,
-and DOCK1 from 2026-09-29; WSR2, WSR1 and WSR3 landed as D86, D87 and D88, HELP1 as D89, SESS1 in the
-archive); D85's two (CHR2, CHR4); the in-app browser's three (BRW3, BRW7, BRW8); the first goal's three (FG5,
+**Thirty-four rows are open**: the four the first real workspace showed (WSR4, SESS2, MAP4, and DOCK1
+from 2026-09-29; WSR2, WSR1 and WSR3 landed as D86, D87 and D88, HELP1 as D89, SESS1 in the archive,
+SESS3 as D90); D85's two (CHR2, CHR4); the in-app browser's three (BRW3, BRW7, BRW8); the first goal's three (FG5,
 READACROSS1 the owner's, and SEM2 on a trigger); D76's held file tools;
 the eight REV3 left, WINDOW2 among them; five leftovers (RAIL2, CONSOLE3, FLAKE1, DEPLOY5, TEST1); two on the owner
 (TRUST2, AGT2c); and six on a trigger (see *Handover*). Every closed one is in `docs/task-archive.md`, and this file holds no
@@ -173,16 +173,6 @@ requirements, and the owner's calls. Its recommended order is the order below.
   tree's whole machine path in the head, the chain and the relations pushing the conversation down,
   where the parked card sits, and what is primary (what it is doing, what it needs from the person)
   against what is reference (ids, paths, tool, times).
-- [ ] **SESS3 — tell a running session something** (owner, 2026-09-29: *"there is no way to send
-  additional info in middle of the session"*). A driven session takes no person's line (INT4i,
-  `docs/2026-09-19-driver-design.md`): it is handed its whole quest in one turn, the pipe door gives it
-  no stdin, and on the protocol door its stdin carries the driver's own frames. Only a session parked
-  on the person is answered (STANDDOWN2). **A design note first, amending INT4i**: a message box on a
-  running driven session whose words are held and handed over where the door allows. On the protocol
-  door, as the next prompt of the same session when its turn ends, instead of the driver closing it,
-  or by stopping the turn and prompting again with them (the conversation's stop, CONV4a). On the pipe
-  door, as the opening of a carry-on session, the parked answer's path. Kept on the record as the
-  person's words. Nothing is ever written into a stdin that carries frames.
 - [ ] **MAP4 — the map, finished** (study §6). A layered layout, pan, zoom and search for a big
   circle (the real one has twenty-nine repositories). Asks, chains and what depends on what, each its
   own kind of line, from a declared source and never guessed. Open-only or a time window. Sessions
@@ -207,8 +197,15 @@ requirements, and the owner's calls. Its recommended order is the order below.
   a tab dragged to the other region moves there, and an emptied region is drawn while a view is
   dragged. **DOCK1d landed**: Quick Ask, Ask Daoris's conversation in a box at the palette's place,
   on `Ctrl+Shift+Alt+L`, the palette's *Quick Ask*, and its last row, which asks what was typed.
-  DOCK1a, the hoist, is open. (Its look found HELP2, Ask Daoris's room knowing the window: landed,
-  in the archive.)
+  (Its look found HELP2, Ask Daoris's room knowing the window: landed, in the archive.)
+  **DOCK1a is open, widened by the owner** (2026-09-29: *"the design language we using in session
+  screen (dockable, right tool bar, top layout setup) should be apply to all screens (for example
+  overview) so this is more like the design language of vscode"*): not only the right side bar hoisted
+  into the application, but Sessions' frame on every view, as VS Code's workbench is one frame
+  whatever the editor shows. The right side bar and the bottom panel exist on Overview, Quests and
+  the rest, with their tab lists, moves, drags and toggles, and the strip's three toggles on every
+  view; what each region holds off Sessions (Ask Daoris, the console, a view's own detail) is the
+  design question to answer first, in `docs/2026-09-29-dock-design.md`.
 
 ### What REV3 left (2026-09-25)
 

@@ -427,6 +427,10 @@ public sealed class DriverModule : ModuleBase
             {
                 var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
                 var text = PayloadHelper.GetRequiredValue<string>(request.Payload, "text");
+                // A driven session on the protocol door hears what the person adds (SESS3): held, and the
+                // next prompt of its own session — never a line in its stream, which INT4i still refuses.
+                // False once it has stopped taking any: it is ending, and its record will say so.
+                if (_loop.Processes.InboxOf(id) is { } inbox) return new { Sent = inbox.Hold(new ChatMessage(text, [])) };
                 if (_loop.Processes.RefusesInput(id) is { } why) throw new DriverException(why);
                 // What the person attached, kept for this conversation before the message goes (CONV4c).
                 var files = request.Payload is { } payload ? FilesOf(payload) : [];
@@ -453,6 +457,14 @@ public sealed class DriverModule : ModuleBase
             case "CANCEL_TURN":
             {
                 var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
+                // A driven session's stop sends what is held NOW (SESS3): the turn stops, nothing is
+                // withdrawn, and the person's words are its next prompt. With nothing held it stops nothing.
+                if (_loop.Processes.InboxOf(id) is { } inbox)
+                {
+                    var now = await inbox.SendNowAsync().ConfigureAwait(false);
+                    return new { now.Cancelled, Withdrawn = Array.Empty<object>() };
+                }
+
                 if (_loop.Processes.RefusesInput(id) is { } why) throw new DriverException(why);
                 var stop = _loop.Chat is { } chat ? await chat.CancelTurnAsync(id).ConfigureAwait(false) : TurnStop.Nothing;
                 return new { stop.Cancelled, Withdrawn = stop.Withdrawn.Select(Said).ToArray() };
@@ -463,8 +475,11 @@ public sealed class DriverModule : ModuleBase
             case "SESSION_QUEUE":
             {
                 var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
-                var queue = _loop.Chat?.Queue(id) ?? ChatQueue.Idle;
-                return new { Session = id, Queued = queue.Queued.Select(Said).ToArray(), queue.Taking };
+                // `Listening` says a driven session hears what the person adds (SESS3), which is when the
+                // page offers it a box: never to one on the pipe door, where nothing could hear it.
+                var inbox = _loop.Processes.InboxOf(id);
+                var queue = inbox?.State ?? _loop.Chat?.Queue(id) ?? ChatQueue.Idle;
+                return new { Session = id, Queued = queue.Queued.Select(Said).ToArray(), queue.Taking, Listening = inbox is not null };
             }
 
             case "STOP_SESSION":

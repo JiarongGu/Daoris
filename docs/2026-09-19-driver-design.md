@@ -114,6 +114,14 @@ sentence, so `Send` and `CloseInput` refuse before anything is written, and the 
 with a person**, and its tracking is unchanged. The page never offered a driven session a box; this
 closes the door a caller naming its id could still use.
 
+*Amended by D90 (SESS3, 2026-09-29).* On the protocol door a driven session also has an **inbox**
+(`DrivenInbox`, held in the process registry because a session outlives the tick that started it).
+`SESSION_INPUT` holds the person's words there ahead of the refusal above, and when the turn ends
+`AcpSession.RunAsync` prompts each one in the same session before closing it; `CANCEL_TURN` stops the
+turn so what is held goes now, and `SESSION_QUEUE` says whether the session is listening, which is when
+the page shows a box. The refusal still guards everything written into the stream and a finish, and
+an intake and a pipe-door session keep it whole.
+
 **Session records live in the service, beside the quests.** A `sessions` table in the same store
 (`~/.daoris/knowledge.db`), for the same reason quests do: every client benefits — the platform renders
 them, the record survives a driver restart, and part 3 later syncs records where it could never sync

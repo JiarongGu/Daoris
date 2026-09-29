@@ -890,10 +890,14 @@ public sealed partial class Driver(
         // (D76, CONV3). All of them end the same way: the record is concluded from the exit code and
         // what the session was for, never from what the session said about itself (D46 §4).
         var prompt = TargetPrompt.Compose(target);
+        // What the person tells a quest's session while it works (SESS3), held for the protocol door to
+        // hand over between turns. Never an intake's: it is one turn framed as one prompt (INT4h).
+        var inbox = adapter.Wire == SessionWire.Acp && target.Ask is null ? _processes.OpenInbox(sessionId) : null;
+        using var unheld = new Disposer(() => inbox?.Close());
         var acp = adapter.Wire == SessionWire.Acp
             // The posture rides with it, because it is the ADAPTER's (ACP3): three harnesses name the
             // same D37 boundary three different ways, and one of them does not name it on the wire.
-            ? CaptureAcpAsync(process, transcript, sessionId, cwd, prompt, adapter.AcpPosture, harnessNotice, ct, scope, rules.Meta, handedServers ?? _servers, target.PersonSaid)
+            ? CaptureAcpAsync(process, transcript, sessionId, cwd, prompt, adapter.AcpPosture, harnessNotice, ct, scope, rules.Meta, handedServers ?? _servers, target.PersonSaid, inbox)
             : null;
         var structured = acp is null ? Structured(adapter, process, transcript, sessionId, prompt, ct, preamble, target.PersonSaid) : null;
         Task capture = acp ?? structured ?? CaptureAsync(process, transcript, sessionId, ct, preamble);
@@ -1005,7 +1009,7 @@ public sealed partial class Driver(
         Process process, string transcript, string sessionId, string cwd, string prompt,
         string? posture, string? harnessNotice, CancellationToken ct,
         IReadOnlyDictionary<string, string>? scope = null, object? meta = null,
-        IReadOnlyList<AcpMcpServer>? servers = null, string? personSaid = null)
+        IReadOnlyList<AcpMcpServer>? servers = null, string? personSaid = null, DrivenInbox? inbox = null)
     {
         await using var file = new StreamWriter(transcript, append: false);
 
@@ -1063,7 +1067,22 @@ public sealed partial class Driver(
             var outcome = await new AcpSession(
                     process.StandardOutput, process.StandardInput, Line, closeTimeout: null, posture, meta, Event,
                     streams: output is null ? null : new SessionStreams(output, sessionId))
-                .RunAsync(cwd, prompt, ct, offered).ConfigureAwait(false);
+                .RunAsync(
+                    cwd, prompt, ct, offered, inbox,
+                    // The person's words as theirs in the record, the moment they are handed over (SESS3):
+                    // recorded before the prompt, so the answer never sits above the question.
+                    asked: message =>
+                    {
+                        Line($"— the person added: {message.Text}");
+                        Event(new SessionEvent
+                        {
+                            Kind = SessionEventKind.User,
+                            Origin = "person",
+                            Text = message.Text,
+                            Files = message.Files.Count > 0 ? [.. message.Files.Select(kept => kept.Name)] : null,
+                        });
+                    })
+                .ConfigureAwait(false);
 
             Line($"— the turn ended: {outcome.StopReason}, after {outcome.Updates} update(s). The "
                  + "session record is concluded from the exit code and the quest's own state, not "
@@ -1083,6 +1102,12 @@ public sealed partial class Driver(
         }
         finally
         {
+            // What the person said that never reached it (SESS3): said, never dropped without a trace.
+            if (inbox?.Close() is { Count: > 0 } left)
+            {
+                Said($"— {left.Count} message(s) the person sent never reached the session: it ended first.");
+            }
+
             try
             {
                 process.StandardInput.Close();

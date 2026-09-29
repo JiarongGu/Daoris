@@ -665,6 +665,11 @@ The first version: doctrine that installs, is checked, and flows back.
   does the palette's *Quick Ask*; and whatever you type in the palette can be asked from its last row,
   *Ask Daoris: "…"*, which sends it straight in. *Open in the side bar* carries the same conversation
   on there. The palette's *Ask Daoris* now opens the side bar on it on Sessions, as `F1` does.
+- **Tell a working session something** (SESS3, D90). A driven session running on the protocol door
+  now has a message box. What you send waits for its current turn to end and is then its next prompt,
+  in the same session with everything it already knows; *send now* stops the turn so it goes at once.
+  Your words are kept in its record as yours. A session on a door that could not hear them offers no
+  box.
 - **A session says who it worked with** (SESS1). Its head, under the chain, names the session that
   asked for its quest, the answer it carried on after, and what it asked of other repositories, each
   with how it stands and its answer; every one is a door, and so are the chain's quests now. A quest

@@ -3812,3 +3812,27 @@ checkout to research its answer, which showed the room's allow-list is no gate i
 its own actions — and a helper able to run a command could run `daoris driver …`, the change nobody
 confirmed that this decision forbids. In `default` every tool off the allow-list asks, and over the
 protocol door every ask is refused by construction (D52).
+
+## D90 — A working driven session hears what the person adds, as its next prompt (2026-09-29)
+
+**Decision (SESS3, amending INT4i).** On the protocol door, a driven quest session has an inbox. What
+the person tells it while it works is held there, and when its turn ends the driver prompts it with
+each held message in the same session, instead of closing it. *Send now* stops the running turn
+(`session/cancel`, which keeps the session), so a held message goes at once; with nothing held it
+stops nothing. The words are recorded as the person's when they are handed over. An inbox that is
+closing refuses a late message and the person is told, and a session that fails says how many
+messages never reached it. **What INT4i protects stands**: nothing is ever written into a stream that
+carries the driver's frames, a finish is still refused, and an intake still takes nothing (INT4h).
+The pipe door is unchanged: its process has no stdin, so the page offers it no box.
+
+**Why.** The owner, 2026-09-29: *"there is no way to send additional info in middle of the session"*.
+A prompt between turns is the protocol's own way of adding words, so the session keeps its context and
+its tree, which a carry-on session would have to rebuild.
+
+**Rejected.**
+- **Writing the words into the running turn.** No harness guarantees what it does with a line
+  mid-turn, and on this door the stream is the driver's (D53, INT4i).
+- **A carry-on session for every message.** It loses the running session's context for a sentence.
+  It stays the parked answer's path (STANDDOWN2) and the pipe door's only possible one, not built.
+- **A conversation's stop semantics**, which hand queued words back (CONV4a): here the person stops
+  the turn so their words go, so nothing is withdrawn.

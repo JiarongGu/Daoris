@@ -1055,6 +1055,54 @@ describe('starting and holding a conversation', () => {
     await screen.findByRole('heading', { level: 2, name: 'Expose a streaming budget' });
     expect(screen.queryByLabelText('message')).toBeNull();
   });
+
+  /**
+   * SESS3 (the owner: *"there is no way to send additional info in middle of the session"*): a driven
+   * session the driver says listens — the protocol door — has a box; what is sent waits for its turn to
+   * end, and *send now* stops the turn so it goes at once. One the driver says does not listen keeps none.
+   */
+  it('lets the person tell a working driven session something, held for its turn\'s end or sent now', async () => {
+    let queue: object = { session: 's1a2b3c4', queued: [], taking: true, listening: true };
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'SESSION_QUEUE') return queue;
+      if (type === 'SESSION_INPUT') return { sent: true };
+      if (type === 'CANCEL_TURN') return { cancelled: true, withdrawn: [] };
+      return DRIVER_STATE;
+    });
+    const notify = vi.fn();
+    show('s1a2b3c4', notify);
+
+    const box = await screen.findByLabelText('message');
+    expect(box).toHaveAttribute('placeholder', expect.stringMatching(/tell it something while it works/));
+    await userEvent.type(box, 'the budget is in level.json');
+    await userEvent.click(screen.getByRole('button', { name: 'queue' }));
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_INPUT', { payload: { id: 's1a2b3c4', text: 'the budget is in level.json' } });
+
+    // What the driver holds shows as waiting, and only then can it be sent now.
+    expect(screen.queryByRole('button', { name: 'send now' })).toBeNull();
+    queue = { session: 's1a2b3c4', queued: [{ text: 'the budget is in level.json', files: [] }], taking: true, listening: true };
+    await act(async () => { eventHandlers.get('DAORIS.SESSION_QUEUED')!(queue); });
+    expect(screen.getByText('the budget is in level.json')).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: 'send now' }));
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'CANCEL_TURN', { payload: { id: 's1a2b3c4' } });
+    await waitFor(() => expect(notify).toHaveBeenCalledWith('Stopping its turn: what you added goes next.'));
+
+    // It stops listening as it ends: the box goes.
+    await act(async () => { eventHandlers.get('DAORIS.SESSION_QUEUED')!({ session: 's1a2b3c4', queued: [], taking: false, listening: false }); });
+    expect(screen.queryByLabelText('message')).toBeNull();
+  });
+
+  it('offers no box to a driven session the driver says nothing could hear', async () => {
+    invoke.mockImplementation(async (_module: string, type: string) => (type === 'SESSION_QUEUE'
+      ? { session: 's1a2b3c4', queued: [], taking: false, listening: false }
+      : DRIVER_STATE));
+    show('s1a2b3c4');
+
+    await screen.findByRole('heading', { level: 2, name: 'Expose a streaming budget' });
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_QUEUE', { payload: { id: 's1a2b3c4' } }));
+    expect(screen.queryByLabelText('message')).toBeNull();
+  });
 });
 
 /**

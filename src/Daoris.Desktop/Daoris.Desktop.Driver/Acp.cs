@@ -169,13 +169,29 @@ public sealed class AcpSession(
     /// which is what makes the composed target's "respond to `#id` with `take`" a thing the session
     /// can actually do.
     /// </param>
+    /// <param name="inbox">
+    /// What the person tells the session while it works (SESS3): each word held when a turn ends is the
+    /// next prompt of this same session, before it closes, and a stop of the turn in hand lets one go at
+    /// once. Null for a session nobody may tell anything — an intake (INT4h).
+    /// </param>
+    /// <param name="asked">Told each held word as it is handed over, so the record keeps it as the person's.</param>
     public async Task<AcpOutcome> RunAsync(
-        string cwd, string prompt, CancellationToken ct, IReadOnlyList<AcpMcpServer>? servers = null)
+        string cwd, string prompt, CancellationToken ct, IReadOnlyList<AcpMcpServer>? servers = null,
+        DrivenInbox? inbox = null, Action<ChatMessage>? asked = null)
     {
         try
         {
             await OpenAsync(cwd, ct, servers).ConfigureAwait(false);
+            inbox?.Attach(CancelTurnAsync);
             var stopReason = await PromptAsync(prompt, ct).ConfigureAwait(false);
+            // The person's words, one prompt each, in the order said — the session keeps its context,
+            // and a turn stopped to send one ends `cancelled` before it goes.
+            while (inbox?.TakeOrClose() is { } message)
+            {
+                asked?.Invoke(message);
+                stopReason = await PromptAsync(message.Prompt, ct, sent: null, message.Files).ConfigureAwait(false);
+            }
+
             await CloseAsync(ct).ConfigureAwait(false);
             lock (_measured) return new AcpOutcome(stopReason, _sessionId!, _updates, _usage);
         }

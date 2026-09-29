@@ -7324,3 +7324,35 @@ test's `publishedBy` across two machines, `IntakeTests.A_quests_spawn_names_its_
 on the scratch window, a quest published through the machine's real connector came back over HTTP
 naming its session, and that session's head showed it in both themes. Not seen on a real session yet:
 *Asked by* and *Carried on*, since nothing had published with the field before this.
+
+## SESS3 — tell a running session something (2026-09-29 → D90)
+
+The row as filed: *(owner, 2026-09-29: "there is no way to send additional info in middle of the
+session"). A driven session takes no person's line (INT4i, `docs/2026-09-19-driver-design.md`): it is
+handed its whole quest in one turn, the pipe door gives it no stdin, and on the protocol door its stdin
+carries the driver's own frames. Only a session parked on the person is answered (STANDDOWN2). A design
+note first, amending INT4i: a message box on a running driven session whose words are held and handed
+over where the door allows. On the protocol door, as the next prompt of the same session when its turn
+ends, instead of the driver closing it, or by stopping the turn and prompting again with them (the
+conversation's stop, CONV4a). On the pipe door, as the opening of a carry-on session, the parked
+answer's path. Kept on the record as the person's words. Nothing is ever written into a stdin that
+carries frames.*
+
+**Outcome** (D90, the driver design's INT4i paragraph amended). On the protocol door a driven quest
+session has an inbox (`DrivenInbox`, in the process registry, since a session outlives its tick).
+`SESSION_INPUT` holds the words; when the turn ends, `AcpSession.RunAsync` prompts each one in the same
+session before closing it, recording it as the person's; `CANCEL_TURN` becomes *send now*, stopping the
+turn and withdrawing nothing; `SESSION_QUEUE` says whether the session listens, and the page offers a
+box only then, with the queue and *send now* as a conversation's composer has them. A late word is
+refused and the person told; a failed session says how many never reached it. INT4i still refuses
+anything written into the stream and a finish; an intake and a pipe-door session keep no box. The pipe
+door's carry-on path was not built: its process has no stdin, and a carry-on per sentence loses the
+session's context.
+
+**Proven by:** `DrivenInboxTests` (six), `DrivenSessionInputTests.A_driven_protocol_session_hears_what_the_person_adds_as_its_next_prompt`
+both ways against a stand-in agent that logs every prompt (the second prompt, one session, the record's
+person event), INT4i's own test unchanged, the module's route test, the frame's two cases, the family
+rehearsal's protocol phase. On the scratch window, a stand-in agent held its turn: the box queued a
+message, *send now* stopped the turn, and the conversation read the stop, the person's words, and the
+agent's reply to them in the same session.
+

@@ -275,6 +275,12 @@ export function WorkFrame({
   const answering = Boolean(attended && here && !intake && !conversation && attended.quest
     && attended.state === 'awaiting-person');
   const [answerDraft, setAnswerDraft] = useState('');
+  // A driven session still working may be told something (SESS3, the owner: "there is no way to send
+  // additional info in middle of the session"): its words are held and are its next prompt. Offered only
+  // where the driver says it listens, which is the protocol door; the pipe door has nothing to hear it.
+  const steerable = Boolean(attended && here && !intake && !conversation && attended.quest
+    && SESSION_ACTIVE.has(attended.state) && attended.state !== 'awaiting-person');
+  const [steerDraft, setSteerDraft] = useState('');
 
   // What the person was typing to this conversation, kept per session and across a reload (CONV4b).
   const [draft, setDraft] = useDraft(talking ? attended!.id : null);
@@ -284,8 +290,11 @@ export function WorkFrame({
   const liveChats = (sessions.data ?? [])
     .filter((session) => session.kind === 'chat' && SESSION_ACTIVE.has(session.state))
     .map((session) => session.id);
-  const chatTurns = useChatTurns(talking ? [...liveChats, attended!.id] : liveChats);
+  const chatTurns = useChatTurns(talking || steerable ? [...liveChats, attended!.id] : liveChats);
   const turns = (talking && chatTurns[attended!.id]) || NO_TURNS;
+  // What the driver holds for the attended driven session, and whether it hears anything at all.
+  const held = steerable ? chatTurns[attended!.id] : undefined;
+  const steering = held?.listening === true;
   const taking = Object.fromEntries(Object.entries(chatTurns).map(([id, held]) => [id, held.taking]));
   // The tree's files for `@` (CONV4d), asked for only while the person is writing a mention.
   const [mentioning, setMentioning] = useState(false);
@@ -363,6 +372,35 @@ export function WorkFrame({
         giveBack();
         notify(sentence(error), 'error');
       },
+    });
+  };
+
+  // What the person adds to a driven session while it works (SESS3): held by the driver for its turn's
+  // end. A send that did not arrive gives the words back to the box, as a message does (REV3).
+  const onSteer = (text: string) => {
+    if (!attended || !text) return;
+    const session = attended.id;
+    send.mutate({ id: session, text, files: [] }, {
+      onSuccess: (result) => {
+        if (result.sent) {
+          setRefusal(null);
+          return;
+        }
+        setSteerDraft((was) => [text, was.trim()].filter(Boolean).join('\n\n'));
+        setRefusal({ session, text: t('work.steer.gone') });
+      },
+      onError: (error: unknown) => {
+        setSteerDraft((was) => [text, was.trim()].filter(Boolean).join('\n\n'));
+        notify(sentence(error), 'error');
+      },
+    });
+  };
+  // Its stop sends what is held now: the turn stops, and the words are its next prompt.
+  const onSteerNow = () => {
+    if (!attended) return;
+    cancelTurn.mutate(attended.id, {
+      onSuccess: ({ cancelled }: TurnStop) => { if (cancelled) notify(t('work.steer.sending')); },
+      onError: failure(notify),
     });
   };
 
@@ -755,6 +793,31 @@ export function WorkFrame({
               onError: failure(notify),
             })}
             onStop={onStop}
+          />
+        )}
+
+        {steering && attended && held && (
+          <Composer
+            key={`steer:${attended.id}`}
+            live
+            endings={false}
+            attachments={false}
+            sending={send.isPending}
+            refusal={refusal?.session === attended.id ? refusal.text : null}
+            placeholder={t('work.steer.placeholder')}
+            draft={steerDraft}
+            onDraft={setSteerDraft}
+            queued={held.queued}
+            taking={held.taking}
+            // Only something held can be sent now; with nothing held, stopping the turn would end the work.
+            stoppable={held.queued.length > 0}
+            stopping={cancelTurn.isPending}
+            stopTurnLabel={t('work.steer.now')}
+            stopTurnTip={t('work.steer.nowTip')}
+            onStopTurn={onSteerNow}
+            onSend={(text) => onSteer(text.trim())}
+            onFinish={() => {}}
+            onStop={() => {}}
           />
         )}
 
