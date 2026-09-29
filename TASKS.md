@@ -302,6 +302,13 @@ an install that is a `Daoris.exe` launcher, the application under `app/` and the
 (CHR4, D93). Agents open tabs in it through a relay, and Daoris's favorites
 and the extensions setting are in Settings → Browser and `daoris browser`
 (`docs/2026-09-28-chromium-embedding-evidence.md`).
+- [ ] **TASKBAR1 — one taskbar button for a pinned Daoris** (D93). The window belongs to
+  `app/Daoris.Desktop.exe` and a person pins `Daoris.exe`, the launcher, and Windows groups a button by
+  its process's executable unless the window names an application id. Expected, not yet seen: a pinned
+  launcher beside a second button for the running window, and pinning the running window pins the app
+  in `app/`, which the next publish moves under it. The window's property store can name the id and
+  the relaunch command (`System.AppUserModel.ID`, `RelaunchCommand` pointing at the root launcher, its
+  display name and icon); look on the owner's machine before and after.
 - [ ] **CHR8 — the browser onto the kit's engine, for one Chromium** (D92). Filed in Shenora's backlog
   (2026-09-30, the owner's say-so, uncommitted there): a browser-only engine with Chrome-style windows
   made over CDP, a production debug port for a process that holds no bridge, the engine settings
