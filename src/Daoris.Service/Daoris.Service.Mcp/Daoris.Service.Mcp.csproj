@@ -15,6 +15,8 @@
     <!-- Host-side composition both hosts share as SOURCE: it builds providers, so it cannot live in
          Core (D22, D24) — and it must not be written twice. -->
     <Compile Include="..\Daoris.Service.Shared\HostComposition.cs" Link="HostComposition.cs" />
+    <!-- The machine log's framework half (LOG1a): it needs the logging framework, which Core does not carry. -->
+    <Compile Include="..\Daoris.Service.Shared\MachineLogProvider.cs" Link="MachineLogProvider.cs" />
   </ItemGroup>
 
   <ItemGroup>

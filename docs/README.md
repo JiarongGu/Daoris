@@ -39,6 +39,7 @@ what was measured, and it stays a record of that moment. A *record* is append-on
 | `2026-09-28-chromium-host-design.md` | contract | Daoris's page and its browser on an embedded Chromium it ships, under Shenora's frame (D85) | Current. CHR1 and CHR3 landed (the browser is `daoris-browser`, a process of its own); CHR2 waits on Shenora's host |
 | `2026-09-29-ask-daoris-design.md` | contract | Ask Daoris: a conversation about Daoris itself, which proposes and the person confirms (HELP1) | Built (HELP1a–d, D89); §2 records where it lives, one right region |
 | `2026-09-29-dock-design.md` | contract | Panels that dock as VS Code's do: views that move between regions, the region toggles, Quick Ask (DOCK1, SURF11) | Built (DOCK1a–e, §4); the frame is on every view |
+| `2026-09-30-machine-log-design.md` | contract | The machine log: what happens on this machine, without anyone's words, to improve Daoris from (LOG1, D94) | Current; LOG1a–d in its §7 order |
 
 ## Studies and evidence
 

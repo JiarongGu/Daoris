@@ -3939,3 +3939,40 @@ the install the way a person does, through the launcher, and asserts that the la
 - **A native launcher that installs .NET when it is missing**, as the sibling's does. Daoris has
   required .NET since D46 and has never offered to install it; that is a separate question.
 - **Keeping `daoris-desktop.exe`.** The application is named for itself.
+
+## D94 — The machine keeps a log of what happens on it, without anyone's words, and nothing sends it anywhere (2026-09-30)
+
+**Decision (LOG1).** Every Daoris process writes what happens to it into the home's `logs/`: one JSON
+line per event, one file per process kind per day (`<date>.<source>.jsonl`, sources `desktop`,
+`host`, `mcp`, `browser`, `driver`), kept thirty days and capped at 20 MB a file. The events are a catalogue:
+the lifecycle, every unhandled exception, the logging frameworks' warnings and errors, what the person
+runs and how long each part of it takes (a session opening, a turn's first answer, its end), the
+refusals they meet by code, and the page's own report of views, commands and messages sent. Two doors
+read it (`daoris-driver logs`, a Settings domain), and `tools/usage-report.mjs` summarises an install's
+log for a development session. The owner's ask: *"setup proper logging system to moniter my use in
+local daoris and we can improve the system by this way"*. The contract is
+`docs/2026-09-30-machine-log-design.md`.
+
+**Why.** Nothing but the session transcripts outlived a process: the shell's, the host's and the
+driver loop's own lines went to consoles nobody has once the application is installed, and an
+unhandled exception left no trace. HELP4's six-second wait to open a conversation was found by a person
+noticing; the log times it every time.
+
+**What is never logged**: anyone's words (a message, a prompt, an agent's answer, a tool's input or
+output, a quest's title or body, a search), a file's contents, any secret, a URL's query or a visited
+page. The words already live in the session's record and transcript; a log holding them would be a
+second copy under none of the record's rules. The page is the one writer that could pass a word by
+mistake, so the module that takes its events keeps only the catalogue's names and fields.
+
+**Where it stays.** On the machine, like the transcript beside it (D47 §4): no HTTP route serves it,
+a browser and a remote see none of it, and there is no telemetry. A process with no home writes no log
+and runs anyway; a write that fails is dropped, never thrown.
+
+**Rejected.**
+- **One file for every process.** Appending from several processes can overwrite lines without a lock,
+  and the artefacts share no code to hold one; the format is the contract between them (the twins
+  rule).
+- **The words, for a richer report.** The report counts and times; the words are one click away in the
+  session, under the record's rules.
+- **A logging library.** A file a day and a catalogue are each artefact's own few lines, and a library's
+  configuration is one more thing an install carries.

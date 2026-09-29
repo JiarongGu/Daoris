@@ -83,6 +83,13 @@ if (args is ["keys", .. var keyArgs])
     return await KeysConsole.RunAsync(keyArgs, options);
 }
 
+// The machine log (LOG1, D94): this host's start and stop, the framework's warnings and errors, every
+// exception nothing caught, and each request that failed or was slow — by route and status, never its
+// query or body. In a file of its own beside the desktop's; with no home it writes nothing.
+using var log = MachineLog.Open("host");
+log.WatchUnhandled();
+var started = DateTimeOffset.UtcNow;
+
 // The bundle travels beside the executable. In development the SDK serves wwwroot from the project
 // directory — the default content root — but a PUBLISHED host is launched from anywhere, so when the
 // working directory has no bundle and the binary's directory does, the binary's wins. Without this
@@ -95,6 +102,7 @@ var contentRoot = Directory.Exists(Path.Combine(Directory.GetCurrentDirectory(),
         : Directory.GetCurrentDirectory();
 
 var builder = WebApplication.CreateBuilder(new WebApplicationOptions { Args = args, ContentRootPath = contentRoot });
+builder.Logging.AddProvider(new MachineLogProvider(log));
 
 // The documented address, made true by construction: with nothing configured, Kestrel binds its own
 // default and the README's port is a lie. An explicit `--urls` or ASPNETCORE_URLS still wins — and
@@ -159,6 +167,36 @@ if (origins.Count > 0)
 }
 
 var app = builder.Build();
+
+// A request that failed or took over two seconds, into the log (LOG1a). By its route's pattern, so an
+// id in the path and a search in the query never reach the file.
+app.Use(async (context, next) =>
+{
+    var clock = System.Diagnostics.Stopwatch.StartNew();
+    var status = 0;
+    try
+    {
+        await next();
+        status = context.Response.StatusCode;
+    }
+    catch
+    {
+        status = StatusCodes.Status500InternalServerError;
+        throw;
+    }
+    finally
+    {
+        if (status >= 500 || clock.ElapsedMilliseconds > MachineLogProvider.SlowRequestMs)
+        {
+            log.Warn("request.failed",
+                ("method", context.Request.Method),
+                ("route", (context.GetEndpoint() as RouteEndpoint)?.RoutePattern.RawText ?? "(no route)"),
+                ("status", status),
+                ("ms", clock.ElapsedMilliseconds));
+        }
+    }
+});
+
 if (origins.Count > 0) app.UseCors();
 
 // The built UI, when there is one — in local mode. A shared deployment serves the API and nothing
@@ -1121,6 +1159,13 @@ else
     });
 }
 
+log.Info("app.started",
+    ("version", typeof(MachineLogProvider).Assembly
+        .GetCustomAttributes(typeof(System.Reflection.AssemblyInformationalVersionAttribute), false)
+        .OfType<System.Reflection.AssemblyInformationalVersionAttribute>().FirstOrDefault()?.InformationalVersion),
+    ("mode", mode.ToString().ToLowerInvariant()));
+app.Lifetime.ApplicationStopping.Register(() =>
+    log.Info("app.stopped", ("uptimeSeconds", (long)(DateTimeOffset.UtcNow - started).TotalSeconds)));
 app.Run();
 return 0;
 

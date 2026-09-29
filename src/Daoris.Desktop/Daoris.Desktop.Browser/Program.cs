@@ -31,6 +31,11 @@ internal static class Program
     [STAThread]
     private static int Main(string[] args)
     {
+        // The machine log (LOG1, D94): this process's start, stop and every exception nothing caught, in
+        // a file of its own beside the shell's. The home is the shell's, handed down in the environment.
+        using var log = Daoris.Driver.MachineLog.Open("browser");
+        log.WatchUnhandled();
+
         var options = EngineBrowserOptions.Parse(args, out var problem);
         if (options is null)
         {
@@ -61,9 +66,12 @@ internal static class Program
         if (!Cef.Initialize(settings, performDependencyCheck: true, browserProcessHandler: null))
         {
             Console.Error.WriteLine("daoris-browser: the engine did not start. Its log is engine.log in the profile.");
+            log.Error("error", ("where", "the browser's engine"), ("message", "the engine did not start; its log is engine.log in the profile"));
             return 2;
         }
 
+        var started = DateTimeOffset.UtcNow;
+        log.Info("app.started");
         try
         {
             return RunAsync(options, enginePort).GetAwaiter().GetResult();
@@ -71,6 +79,7 @@ internal static class Program
         finally
         {
             Cef.Shutdown();
+            log.Info("app.stopped", ("uptimeSeconds", (long)(DateTimeOffset.UtcNow - started).TotalSeconds));
         }
     }
 

@@ -59,6 +59,11 @@ if (OperatingSystem.IsWindows())
     Console.OutputEncoding = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false);
 }
 
+// The machine log (LOG1, D94): this host's watch and every exception nothing caught, in a file of its
+// own beside the desktop's. With no home it writes nothing, and the sentence below still says why.
+using var log = MachineLog.Open("driver");
+log.WatchUnhandled();
+
 // Every door inside the one catch, so a missing home or service is exit 2 and a sentence, never a
 // stack trace (REV3: `trees` with no home was an unhandled exception).
 try
@@ -115,6 +120,8 @@ try
     var configPath = DriverConfig.ResolvePath();
     var config = DriverConfig.Load(configPath);
     var home = DriverConfig.HomeOf(configPath);
+    var started = DateTimeOffset.UtcNow;
+    log.Info("app.started", ("mode", once ? "once" : untilIdle ? "until-idle" : "watch"));
     // Marked under the home, so the desktop sharing it can tell this host's sessions from orphans.
     var processes = new SessionProcesses(Path.Combine(home, "sessions"));
 
@@ -179,22 +186,26 @@ try
         Console.WriteLine("driver: stopped — every session it ran was ended and recorded.");
     }
 
+    log.Info("app.stopped", ("uptimeSeconds", (long)(DateTimeOffset.UtcNow - started).TotalSeconds));
     return 0;
 }
 catch (OperationCanceledException)
 {
     // Ctrl+C during --once or --until-idle: the tick ended its sessions before it let go.
     Console.WriteLine("driver: stopped.");
+    log.Info("app.stopped");
     return 0;
 }
 catch (DriverException error)
 {
     Console.Error.WriteLine($"driver: {error.Message}");
+    log.Failed("the headless driver", error);
     return 2;
 }
 catch (HttpRequestException error)
 {
     Console.Error.WriteLine($"driver: could not reach the service — {error.Message}");
+    log.Failed("the headless driver, reaching the service", error);
     return 2;
 }
 

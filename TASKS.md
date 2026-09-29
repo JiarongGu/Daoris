@@ -21,8 +21,8 @@ lists.
 
 ## State
 
-**Counts, and this is their one home:** sixteen commands, **523 CLI tests, 553 service, 925 driver,
-306 desktop modules, 80 devkit, 1419 web unit, 21 Playwright**, 66/66 release rehearsal, **297/297
+**Counts, and this is their one home:** sixteen commands, **523 CLI tests, 561 service, 936 driver,
+308 desktop modules, 80 devkit, 1419 web unit, 21 Playwright**, 66/66 release rehearsal, **297/297
 family rehearsal** (it names its own phases when you run it), **57/57 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge
 documents, 5 skills, 7 packs. The always-loaded core is **22,492 of 26,000 bytes** — a span in
@@ -144,7 +144,8 @@ rather than designed.
 
 ## Backlog
 
-**Thirty rows are open**: the owner's three of 2026-09-30 (LOG1, CONSOLE4, SETUP1), first; WSR4
+**Thirty-four rows are open**: the owner's seven of 2026-09-30 (WORK1, SHEN1, USE1, HELP5, LOG1,
+CONSOLE4, SETUP1), first; WSR4
 from the first real workspace (its other WSR, HELP, SESS, DOCK
 and MAP rows are in the archive); the four REV3 left (DIST1, BUDGET1 and HOME1 the owner's, and HTTP1);
 the in-app browser's three (BRW3, BRW7, BRW8); D85's two (TASKBAR1, CHR8); the first goal's four
@@ -162,12 +163,45 @@ ships. A heading below holds open rows only.
 > … also setup proper logging system to moniter my use in local daoris and we can improve the
 > system by this way"*
 
-Logging goes first: every day it is not there is a day of use nobody can read back, and the other
-two are the first things it should watch. Each row's parts land and are archived one by one.
+Logging went first (LOG1a landed); then the owner's later asks the same day came before the rest of
+it, in this order: their own workspace's work, then what they met on the window, then the kit.
+Each row's parts land and are archived one by one (*"for all my request you can set them into
+TASK.md and complete one by one"*).
+- [ ] **WORK1 — the first real workspace's landed ticket, cleaned up; then its next ticket started**
+  (owner, 2026-09-30). The landed ticket's two tasks left their work across session branches in the
+  repository that owns it; the owner wants one clean branch to open a pull request from and merge,
+  and then the next ticket, already a quest there (twice: two asks made the same quest), started by
+  the local Daoris. Done through Daoris, as its doctrine says: that repository's own agent does the
+  cleanup in a conversation there, with nothing pushed (the pull request is the owner's). Then the
+  duplicate quest is declined, the repository's hold released, and the quest left to start. The
+  private notes name the repository, the tickets and the branches.
+- [ ] **SHEN1 — the kit's 0.18.0** (owner, 2026-09-30: *"shenora is updated to 0.18.0"*). Move every
+  Shenora package from 0.17 to 0.18.0, read its changelog for what the shell relies on (the Chromium
+  engine, the frame, the IPC modules, the window state), and run the deployment gate on the result.
+- [ ] **USE1 — what the owner met on the installed window, 2026-09-30** (*"since I tried to use update
+  but got error message no updater"*; *"委托 screen box is overflowing the window, also completed quest
+  not been cleared, also new request is not auto firing"*). (a) **Update on a door with no updater**:
+  the Agents surface offers *Update* on every present door, and `claude-code-acp` (an npm package
+  Daoris pins) declares none, so the only outcome was the refusal. Update should do what it says:
+  the tool's own updater where it has one, the pin moved to the newest release where Daoris pins it,
+  and no button where neither applies. (b) **The Quests view overflows the window.** (c) **A completed
+  quest is not cleared** from the view. (d) **A new request does not start on its own.** Each is read
+  off the install before it is fixed.
+- [ ] **HELP5 — Ask Daoris answers sooner** (owner, 2026-09-30: *"and why there is a really long
+  wait for "ask daoris""*). Read off the installed window's session of 21:42: the words reached the
+  agent 3.2s after the conversation was made (spawn and the protocol session opening), its first
+  visible move came 10.6s after that, and its first word 26.4s after that — five model round trips
+  on a 1M-context model, three of them avoidable. (a) **The knowledge tools in the first request**:
+  Claude Code defers every MCP tool behind `ToolSearch` unless `ENABLE_TOOL_SEARCH` says otherwise
+  (read in the managed binary, 0.79.0: unset is always search, `false` is none), so the helper paid a
+  round trip to find its own tools. (b) **The room says it has no web either**: its fourth move was a
+  fetch of the ticket's URL, refused by construction. (c) **Open the conversation when the panel
+  opens**, so the spawn and the session are done before the person sends. The model itself is the
+  owner's to choose, in that account's own settings (D49 §7): the round trips are its latency.
 - [ ] **LOG1 — a log of what happens on this machine, to improve Daoris from.** Today nothing is
   written outside the session transcripts: the shell's, the driver loop's and the host's own lines go
   to a console nobody has once the application is installed, and an unhandled exception leaves no
-  trace. (a) **One log, machine-local**: JSON lines under the home's `logs/`, one file a day, kept
+  trace. (a) *Landed 2026-09-30, in the archive.* **One log, machine-local**: JSON lines under the home's `logs/`, one file a day, kept
   for a bounded number of days, written by every process (the shell, the driver loop, the host, the
   browser), each line naming its source, its event and its fields. Unhandled exceptions from every
   process land there. (b) **What the person does, without their words**: the page reports views
@@ -447,6 +481,10 @@ TDD, looked at on the window, and the ones that touch a real session use one (au
   passed 862/862. The cleanup deletes before the process has let go. **Seen again 2026-09-29**: one
   failure in a full run of 898 during HELP1c, not named because only the summary line was kept; the
   next three full runs passed 898/898. Keep a full run's whole output, so the next one names itself.
+  **Seen again 2026-09-30**, the output kept: `DrivenSessionInputTests`' `acp-stub` case, 935/936,
+  the record `failed` where `stopped` was expected after the person's stop, during LOG1a with the
+  rest of the chain queued behind it; ten runs alone passed. Unconfirmed reading: the stop lands while
+  the stub's process is already ending, and the record takes the exit's word over the person's.
 
 - [ ] **DEPLOY5 — the artefact gate holds a chat open at close.** The fix for a chat left `working`
   when the shell closes (FIX-LOG, 2026-09-25) is held by driver tests at the runner. But the defect

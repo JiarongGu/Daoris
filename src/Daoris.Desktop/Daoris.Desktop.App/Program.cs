@@ -33,6 +33,12 @@ internal static class Program
         // scratch home stays the dev loop's.
         var home = InstallHome.Establish(AppContext.BaseDirectory);
 
+        // The machine log (LOG1, D94), opened as soon as there is a home to put it in, so an exception
+        // nothing else catches is written before the process ends; with no home it writes nothing.
+        using var log = Daoris.Driver.MachineLog.Open("desktop");
+        log.WatchUnhandled();
+        var started = DateTimeOffset.UtcNow;
+
         // 🔴 No home is a sentence, not a silent exit (REV3). A workspace build started with no
         // DAORIS_HOME threw from the loop's construction, before any window existed, and a windowed
         // program has no console to say it on — so nothing appeared and nothing said why.
@@ -91,6 +97,10 @@ internal static class Program
             Shell = new Shenora.Core.Ipc.ShellInfo { Name = "daoris-desktop", Capabilities = [] },
         });
 
+        // The kit's, the engine's and the modules' warnings and errors, into the same log.
+        builder.Services.AddSingleton(log);
+        builder.Services.AddSingleton<Microsoft.Extensions.Logging.ILoggerProvider>(new MachineLogProvider(log));
+
         builder.Services.AddSingleton(new HostSupervisor(serviceUrl));
         builder.Services.AddSingleton(sp => new DriverLoop(
             sp.GetRequiredService<Shenora.Core.Events.IEventBus>(),
@@ -132,9 +142,18 @@ internal static class Program
 
         // The loop starts with the app, not with the window: the driver watches whether or not the
         // person is looking, which is the whole point of a driver.
-        builder.OnStarting(app => app.Services.GetRequiredService<DriverLoop>().Start());
+        builder.OnStarting(app =>
+        {
+            log.Info("app.started",
+                ("version", typeof(Program).Assembly
+                    .GetCustomAttributes(typeof(System.Reflection.AssemblyInformationalVersionAttribute), false)
+                    .OfType<System.Reflection.AssemblyInformationalVersionAttribute>().FirstOrDefault()?.InformationalVersion),
+                ("installed", inInstallApp));
+            app.Services.GetRequiredService<DriverLoop>().Start();
+        });
         builder.OnStopping(app =>
         {
+            log.Info("app.stopped", ("uptimeSeconds", (long)(DateTimeOffset.UtcNow - started).TotalSeconds));
             // The secondary windows first, and disposed rather than abandoned: their threads are
             // BACKGROUND, so an unwaited exit kills them before the geometry saves their own
             // FormClosed handlers run. Bounded, so a wedged window cannot hang shutdown.

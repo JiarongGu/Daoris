@@ -54,6 +54,14 @@ builder.Logging.AddConsole(options => options.LogToStandardErrorThreshold = LogL
 // logs bury the one line that matters when something is actually wrong.
 builder.Logging.SetMinimumLevel(LogLevel.Warning);
 
+// The machine log (LOG1, D94): this host's start and stop and its warnings and errors, in a file of its
+// own beside the desktop's, since this standard error belongs to the agent that started it and nobody
+// keeps it. With no home it writes nothing.
+using var log = MachineLog.Open("mcp");
+log.WatchUnhandled();
+builder.Logging.AddProvider(new MachineLogProvider(log));
+var started = DateTimeOffset.UtcNow;
+
 // The index lives under the Daoris home (D63) unless named directly. No home and no name is a
 // refusal on stderr, not a default: an index written somewhere nobody pointed this host is the
 // thing removed.
@@ -112,8 +120,10 @@ builder.Services
     .WithStdioServerTransport()
     .WithTools<KnowledgeTools>();
 
+log.Info("app.started", ("repository", Path.GetFileName(Directory.GetCurrentDirectory())));
 await builder.Build().RunAsync().ConfigureAwait(false);
 await composed.DisposeAsync().ConfigureAwait(false);
+log.Info("app.stopped", ("uptimeSeconds", (long)(DateTimeOffset.UtcNow - started).TotalSeconds));
 
 return 0;
 

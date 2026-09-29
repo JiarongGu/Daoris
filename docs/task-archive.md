@@ -7709,3 +7709,31 @@ while the door opens are told as waiting for it), `DriverModuleTests` (the queue
 follows `opening`; `AskDaoris`: the first words show at once and stay through the list's gap, shown
 once), and a look at the window with a slow stand-in agent: the words under *opening Ask Daoris…*,
 then in the conversation as *you*.
+
+## LOG1a — the machine log's writers and lifecycle (2026-09-30, D94)
+
+> - [ ] **LOG1 — a log of what happens on this machine, to improve Daoris from.** … (a) **One log,
+>   machine-local**: JSON lines under the home's `logs/`, one file a day, kept for a bounded number
+>   of days, written by every process (the shell, the driver loop, the host, the browser), each line
+>   naming its source, its event and its fields. Unhandled exceptions from every process land there.
+
+**Outcome.** Every Daoris process now writes `logs/<date>.<source>.jsonl` under the home: the shell
+(`desktop`), the headless driver (`driver`), Daoris's browser (`browser`), the HTTP host (`host`) and,
+beyond the row, the knowledge host each session starts (`mcp`), whose standard error belongs to the
+agent that started it. Two writers share the format and no code: the driver library's `MachineLog`
+(the shell, the headless driver and the browser) and the service's (both hosts), each with the same
+line table in its tests. Each process writes `app.started` (with its version and mode) and
+`app.stopped` when it ends itself, every unhandled exception as `error`, and the logging frameworks'
+warnings and errors as `log`; the HTTP host adds `request.failed` for a 5xx or a request over two
+seconds, by route pattern and never its query. Thirty days are kept, a file stops at 20 MB saying so
+once, and no home or a failing folder writes nothing and throws nothing. Seen on the scratch window:
+the desktop's start and stop and the host's start, one file each.
+
+**Not covered:** the HTTP host is ended by force when the shell closes, so its `app.stopped` is not
+written; the desktop's stands for both. The events of what the person does are LOG1b.
+
+**Proven by:** `MachineLogTests` (driver, 11: the shared line table, a file per source per day,
+retention, the cap, no home, a failing folder, many threads, a reader beside the writer), the
+service's `MachineLogTests` (8, the same table), `MachineLogProviderTests` (2: warnings and errors
+from any category, nothing below), and every gate: driver 935/936 with FLAKE1's known case passing
+ten runs alone, modules 308, service 561, verify, family 297/297, deploy 57/57, web 21 Playwright.
