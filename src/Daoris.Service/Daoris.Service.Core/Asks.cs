@@ -62,6 +62,13 @@ public sealed record Ask(
     /// to what the intake read, decided and asked. Null for an ask no intake has served.
     /// </summary>
     public string? Intake { get; init; }
+
+    /// <summary>
+    /// Whether it may be deleted (D95): nothing stands on any quest asked by it. Answered by the desk's
+    /// reads, so a page offers the verb only where the service would take it; false on a record read
+    /// straight from the store, which judges nothing.
+    /// </summary>
+    public bool Deletable { get; init; }
 }
 
 /// <summary>Asks, held by the service beside the quests they become — machine-local, like the intake.</summary>
@@ -195,6 +202,15 @@ public sealed class AskStore
         await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
     }
 
+    /// <summary>Remove the ask's row — the desk deleted it, and every quest asked by it first (D95).</summary>
+    public async Task DeleteAsync(string id, CancellationToken ct = default)
+    {
+        await using var command = _connection.CreateCommand();
+        command.CommandText = "DELETE FROM asks WHERE id = $id";
+        command.Parameters.AddWithValue("$id", id.TrimStart('#'));
+        await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+    }
+
     /// <summary>Record the intake session serving the ask — that column alone, for the same reason (REV3).</summary>
     public async Task RecordIntakeAsync(string id, string session, DateTimeOffset now, CancellationToken ct = default)
     {
@@ -325,6 +341,12 @@ public enum AskRefusal
 
     /// <summary>The quest it was to become was refused by the exchange — the ask itself is kept.</summary>
     QuestRefused,
+
+    /// <summary>
+    /// A delete that would remove a record something stands on — a quest asked by it that somebody took
+    /// or answered, or that a session was started for — so the ask stays whole (D95).
+    /// </summary>
+    Kept,
 }
 
 /// <param name="Refusal"><see cref="AskRefusal.None"/> when it did what was asked.</param>
@@ -376,17 +398,24 @@ public sealed class AskDesk(KnowledgeService service, AskStore asks, QuestExchan
     {
         var stored = await asks.ListAsync(workspace, includeClosed, ct).ConfigureAwait(false);
         // One read for every ask's quests: a sender that is an ask always begins the same way.
-        var asked = (await exchange.Store.FromAsync(SenderOf(""), startingWith: true, ct).ConfigureAwait(false))
-            .ToLookup(quest => quest.From, StringComparer.Ordinal);
-        var standing = stored.Select(ask => Standing(ask, [.. asked[SenderOf(ask.Id)]]));
+        var everyAsked = await exchange.Store.FromAsync(SenderOf(""), startingWith: true, ct).ConfigureAwait(false);
+        var deletable = await exchange.DeletableAsync(everyAsked, ct).ConfigureAwait(false);
+        var asked = everyAsked.ToLookup(quest => quest.From, StringComparer.Ordinal);
+        var standing = stored.Select(ask => Stood(ask, [.. asked[SenderOf(ask.Id)]], deletable));
         return [.. includeClosed ? standing : standing.Where(ask => ask.State != AskState.Done)];
     }
 
     /// <summary>One ask as it stands (USE1c), or null when there is none.</summary>
-    public async Task<Ask?> FindAsync(string id, CancellationToken ct = default) =>
-        await asks.FindAsync(id, ct).ConfigureAwait(false) is { } ask
-            ? Standing(ask, await exchange.Store.FromAsync(SenderOf(ask.Id), ct: ct).ConfigureAwait(false))
-            : null;
+    public async Task<Ask?> FindAsync(string id, CancellationToken ct = default)
+    {
+        if (await asks.FindAsync(id, ct).ConfigureAwait(false) is not { } ask) return null;
+        var asked = await exchange.Store.FromAsync(SenderOf(ask.Id), ct: ct).ConfigureAwait(false);
+        return Stood(ask, asked, await exchange.DeletableAsync(asked, ct).ConfigureAwait(false));
+    }
+
+    /// <summary>An ask as a reader is given it: as it stands, and whether it may be deleted (D95).</summary>
+    private static Ask Stood(Ask ask, IReadOnlyList<Quest> asked, IReadOnlySet<string> deletable) =>
+        Standing(ask, asked) with { Deletable = asked.All(quest => deletable.Contains(quest.Id)) };
 
     /// <summary>
     /// What an ask is, read against the quests asked by it (USE1c): a published ask whose every quest
@@ -394,12 +423,72 @@ public sealed class AskDesk(KnowledgeService service, AskStore asks, QuestExchan
     /// quests can move on another machine, and the sync that brings the move here knows nothing of
     /// asks (D68 §2). One judgement, for every reader of an ask's state.
     /// </summary>
+    /// <remarks>
+    /// A quest deleted (D95), here or on another machine, leaves the record as if the ask had never
+    /// become it; a published ask left with none is a proposal again, for a person to publish or close.
+    /// </remarks>
     /// <param name="asked">Every quest asked by this ask — chain steps included, closed ones included.</param>
-    public static Ask Standing(Ask ask, IReadOnlyList<Quest> asked) =>
-        ask.State == AskState.Published && asked.Count > 0
-        && asked.All(quest => quest.Status is QuestStatus.Done or QuestStatus.Declined)
-            ? ask with { State = AskState.Done }
-            : ask;
+    public static Ask Standing(Ask ask, IReadOnlyList<Quest> asked)
+    {
+        var held = asked.Select(quest => quest.Id).ToHashSet(StringComparer.Ordinal);
+        var standing = ask.Quests.All(held.Contains) ? ask : ask with { Quests = [.. ask.Quests.Where(held.Contains)] };
+        if (standing.State != AskState.Published) return standing;
+        if (asked.Count == 0) return standing with { State = AskState.Proposed };
+        return asked.All(quest => quest.Status is QuestStatus.Done or QuestStatus.Declined)
+            ? standing with { State = AskState.Done }
+            : standing;
+    }
+
+    /// <summary>
+    /// Delete an ask made by mistake (D95), with every quest asked by it — or none of it, when any of
+    /// those quests must stay. An ask that became nothing goes alone. The files it kept go with it.
+    /// </summary>
+    public async Task<AskOutcome> DeleteAsync(string id, DateTimeOffset now, CancellationToken ct = default)
+    {
+        var ask = await asks.FindAsync(id, ct).ConfigureAwait(false);
+        if (ask is null) return new(AskRefusal.NotFound, $"No ask `#{id.TrimStart('#')}`.", Ask: null);
+
+        const string Instead =
+            "An ask is deleted only with every quest asked by it — close the ask instead, with the reason, and it leaves the list.";
+        var asked = await exchange.Store.FromAsync(SenderOf(ask.Id), ct: ct).ConfigureAwait(false);
+        foreach (var quest in asked)
+        {
+            if (await exchange.KeptAsync(quest, ct).ConfigureAwait(false) is { } kept)
+            {
+                return new(
+                    AskRefusal.Kept,
+                    $"Ask `#{ask.Id}` stays, with its quests: quest `#{quest.Id}` {kept.Stands}. {Instead}",
+                    await FindAsync(ask.Id, ct).ConfigureAwait(false));
+            }
+        }
+
+        var deleted = new List<string>();
+        var notes = new List<string>();
+        foreach (var quest in asked)
+        {
+            var outcome = await exchange.DeleteAsync(quest.Id, now, ct).ConfigureAwait(false);
+            if (outcome.Refusal == QuestDeleteRefusal.None)
+            {
+                deleted.Add($"`#{quest.Id}`");
+                if (outcome.Unconfirmed) notes.Add(outcome.Message);
+                continue;
+            }
+
+            // It moved while the ask was being deleted — taken on another machine first, most likely.
+            // The ask stays, with whatever is left of it, and the answer says what did go.
+            return new(
+                AskRefusal.Kept,
+                $"Ask `#{ask.Id}` stays: {outcome.Message}"
+                + (deleted.Count > 0 ? $" Deleted before it: {string.Join(", ", deleted)}." : ""),
+                await FindAsync(ask.Id, ct).ConfigureAwait(false));
+        }
+
+        await asks.DeleteAsync(ask.Id, ct).ConfigureAwait(false);
+        _askFiles?.Forget(ask.Id);
+        var message = $"Deleted ask `#{ask.Id}`"
+                      + (deleted.Count == 0 ? "." : $", and the quests asked by it with it: {string.Join(", ", deleted)}.");
+        return new(AskRefusal.None, string.Join("\n\n", [message, .. notes]), Ask: null);
+    }
 
     /// <summary>
     /// Record an ask, and answer it: a named receiver is published to at once; otherwise the

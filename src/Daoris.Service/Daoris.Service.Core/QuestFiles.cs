@@ -56,6 +56,24 @@ public sealed class QuestFiles(string home, string folder = QuestFiles.Folder)
     public static string FileName(QuestAttachment attachment) =>
         $"{attachment.Sha256[..Math.Min(HashInName, attachment.Sha256.Length)]}-{attachment.Name}";
 
+    /// <summary>
+    /// Remove everything kept for one record — its quest or ask was deleted (D95). Best effort: a file
+    /// the disk will not let go of stays where it was, and the record is gone either way.
+    /// </summary>
+    /// <param name="id">The record's own id, as its store holds it — never a caller's words.</param>
+    public void Forget(string id)
+    {
+        var directory = Path.Combine(home, folder, id);
+        try
+        {
+            if (Directory.Exists(directory)) Directory.Delete(directory, recursive: true);
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            // Held open by another process, or refused by the disk: nothing names these bytes any more.
+        }
+    }
+
     /// <summary>Whether this machine has the bytes — false for a file of a quest published elsewhere, honestly.</summary>
     public bool Has(string questId, QuestAttachment attachment) => File.Exists(PathOf(questId, attachment));
 

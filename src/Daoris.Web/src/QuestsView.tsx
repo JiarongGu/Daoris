@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api, canBeAsked, type Quest, type QuestStep, type Session } from './api';
 import {
-  useDismissConflict, usePublishQuest, useQuests, useRegistry, useRespondQuest, useSessions,
+  useDeleteQuest, useDismissConflict, usePublishQuest, useQuests, useRegistry, useRespondQuest, useSessions,
 } from './queries';
 import { stopNotice, useConsidered, useDriver, useNudge, useRetryQuest, useStopSession, useTrustFolder, useUntrusted } from './shell';
 import { TrustAsk } from './work/TrustAsk';
@@ -84,6 +84,8 @@ export function QuestsView({
   const [detail, setDetail] = useState<Quest | null>(null);
   const [composing, setComposing] = useState(false);
   const [declining, setDeclining] = useState(false);
+  // A delete asks once (D95): the first press arms it, and only the second removes the record.
+  const [deleting, setDeleting] = useState(false);
   const [reason, setReason] = useState('');
   const [draft, setDraft] = useState<Draft>(EMPTY_DRAFT);
   const [reading, setReading] = useState(false);
@@ -154,6 +156,7 @@ export function QuestsView({
   const publish = usePublishQuest();
   const respond = useRespondQuest();
   const dismiss = useDismissConflict();
+  const remove = useDeleteQuest();
   // Every query this view renders from, the arc's new ones included — a session surface or driver
   // bridge that fails silently is indistinguishable from a family with no driver attached.
   useErrorNotify(quests.error ?? registry.error ?? sessions.error ?? driver.error, notify);
@@ -177,7 +180,7 @@ export function QuestsView({
   // Known to be nobody, not merely not loaded yet: a composer that flashed "nobody" would be a lie.
   const nobody = registry.data !== undefined && adopters.length === 0;
   const target = (registry.data ?? []).find((r) => r.repository === draft.to);
-  const busy = publish.isPending || respond.isPending || reading;
+  const busy = publish.isPending || respond.isPending || remove.isPending || reading;
 
   const onPublish = async () => {
     // Read whole only now — a file chosen and then removed was never read at all.
@@ -228,9 +231,25 @@ export function QuestsView({
       onError: failure(notify),
     });
 
+  // A quest made by mistake, deleted (D95). The drawer closes on the service's sentence; a refusal is
+  // its sentence too, and the quest stays in the drawer, because nothing happened to it.
+  const onDelete = (quest: Quest) =>
+    remove.mutate(quest.id, {
+      onSuccess: (result) => {
+        notify(result.message);
+        setDetail(null);
+        setDeleting(false);
+      },
+      onError: (error) => {
+        setDeleting(false);
+        failure(notify)(error);
+      },
+    });
+
   const openDetail = (quest: Quest) => {
     setDetail(quest);
     setDeclining(false);
+    setDeleting(false);
     setReason('');
   };
 
@@ -390,7 +409,21 @@ export function QuestsView({
             </>
           }
           footer={
-            (detail.status === 'Open' || detail.status === 'Taken') && (
+            deleting && detail.deletable ? (
+              /* 🔴 A delete removes the record, which nothing gives back (D95) — so the first press only
+                 asks, the way removing an account does, and the second is the one that deletes. */
+              <div
+                role="group"
+                aria-label={t('quests.detail.deleteTitle')}
+                className="flex w-full flex-wrap items-center gap-2"
+              >
+                <span className="min-w-0 flex-1 basis-64 text-small text-ink-soft">{t('quests.detail.deleteConfirm')}</span>
+                <Button variant="danger" disabled={busy} onClick={() => onDelete(detail)}>
+                  {t('quests.detail.deleteMeanIt')}
+                </Button>
+                <Button variant="ghost" disabled={busy} onClick={() => setDeleting(false)}>{t('common.cancel')}</Button>
+              </div>
+            ) : (detail.status === 'Open' || detail.status === 'Taken') && (
               <div className="flex w-full flex-wrap items-center gap-2">
                 {/* The one loud control is the quest's next step (UX5 U31): taking it while it is
                     open, closing it once it is taken. Done led an open quest too, with taking it
@@ -428,6 +461,13 @@ export function QuestsView({
                 ) : (
                   <Button variant="ghost" disabled={busy} onClick={() => setDeclining(true)}>
                     {t('quests.detail.decline')}
+                  </Button>
+                )}
+                {/* Only where the service says it may go (D95): open, and nobody has started on it. */}
+                {detail.deletable && (
+                  <Button variant="ghost" disabled={busy} onClick={() => setDeleting(true)}>
+                    <Icon name="remove" size={13} />
+                    {t('quests.detail.delete')}
                   </Button>
                 )}
               </div>

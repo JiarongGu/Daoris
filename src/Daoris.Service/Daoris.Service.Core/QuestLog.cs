@@ -33,6 +33,13 @@ public enum QuestOperationKind
     /// taker's tree, and nothing moves back to open.
     /// </summary>
     Waited,
+
+    /// <summary>
+    /// A person deleted a quest nobody had started on (D95). It applies only to an open quest and
+    /// replays to no quest, so the quest is gone from every machine the operation reaches, and the
+    /// remote keeping it is what stops a later fetch bringing the quest back. It carries nothing else.
+    /// </summary>
+    Deleted,
 }
 
 /// <summary>
@@ -165,9 +172,10 @@ public static class QuestLog
     /// <summary>
     /// Fold a history, in order, through the transition table. An operation that does not apply is
     /// not a move and changes nothing — so no order of operations, from whichever machines, can reach
-    /// a state the table forbids. The first publish is the quest; a later one is the same ask again.
+    /// a state the table forbids. The first publish is the quest; a later one is the same ask again —
+    /// unless a delete came between, after which a publish begins the quest anew (D95).
     /// </summary>
-    /// <returns>The quest as it stands, or null when nothing in the history published it.</returns>
+    /// <returns>The quest as it stands, or null when nothing in the history published it, or a delete ended it.</returns>
     public static Quest? Replay(IEnumerable<QuestOperation> history) =>
         history.Aggregate((Quest?)null, (quest, operation) => Applies(quest, operation) ? Step(quest, operation) : quest);
 
@@ -175,7 +183,8 @@ public static class QuestLog
     /// Whether an operation moves a quest standing at <paramref name="quest"/>: a publish only begins
     /// one, a move goes only where the table allows, and a conflict is recorded on any quest there is.
     /// A dismissal applies to any quest there is, whether or not its conflict is still there: two
-    /// people dismissing one conflict is one dismissal, never a refusal or a new conflict.
+    /// people dismissing one conflict is one dismissal, never a refusal or a new conflict. A delete
+    /// applies only to an open quest: taken, somebody's work stands on it (D95).
     /// </summary>
     public static bool Applies(Quest? quest, QuestOperation operation) => operation.Kind switch
     {
@@ -183,13 +192,15 @@ public static class QuestLog
         QuestOperationKind.Conflict or QuestOperationKind.Dismissed => quest is not null,
         // Only a taken quest waits: an open one has nobody's work in it, and a closed one has none left.
         QuestOperationKind.Waited => quest is { Status: QuestStatus.Taken } && !string.IsNullOrEmpty(operation.Note),
+        QuestOperationKind.Deleted => quest is { Status: QuestStatus.Open },
         _ => quest is not null && QuestTransitions.Target(operation.Kind) is { } target
              && QuestTransitions.Allows(quest.Status, target),
     };
 
-    /// <summary>The quest after an operation that <see cref="Applies"/>.</summary>
-    public static Quest Step(Quest? quest, QuestOperation operation) => operation.Kind switch
+    /// <summary>The quest after an operation that <see cref="Applies"/> — none after a delete.</summary>
+    public static Quest? Step(Quest? quest, QuestOperation operation) => operation.Kind switch
     {
+        QuestOperationKind.Deleted => null,
         QuestOperationKind.Published => operation.Published! with
         {
             Status = QuestStatus.Open, Note = null, Filed = operation.At, Updated = operation.At, Conflicts = [],

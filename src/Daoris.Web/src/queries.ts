@@ -171,6 +171,27 @@ function useAskChange<TVariables>(fn: (variables: TVariables) => Promise<AskActi
   });
 }
 
+/**
+ * Deleting a record made by mistake (D95): the quests, the asks and where each circle stands all move
+ * with it — a delete of an ask takes its quests, and a shared quest's delete is one more thing ahead.
+ * Asked again whatever the door said, since a refused delete may still have found the record moved.
+ */
+function useDelete(fn: (id: string) => ReturnType<typeof api.deleteQuest>) {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: fn,
+    onSettled: () => {
+      void client.invalidateQueries({ queryKey: keys.allQuests });
+      void client.invalidateQueries({ queryKey: keys.allAsks });
+      void client.invalidateQueries({ queryKey: keys.allRegistry });
+      void client.invalidateQueries({ queryKey: keys.allSync });
+    },
+  });
+}
+
+export const useDeleteQuest = () => useDelete((id) => api.deleteQuest(id));
+export const useDeleteAsk = () => useDelete((id) => api.deleteAsk(id));
+
 export const useAsk = () => useAskChange((body: Parameters<typeof api.ask>[0]) => api.ask(body));
 export const usePublishAsk = () =>
   useAskChange(({ id, to }: { id: string; to: string }) => api.publishAsk(id, to));
@@ -229,12 +250,17 @@ export const useSearch = (q: string, localOnly: boolean) => {
   });
 };
 
-/** Everything a quest mutation can change: every quests query, and the registry's counts. */
+/**
+ * Everything a quest mutation can change: every quests query, the registry's counts, and the asks — an
+ * ask is done once every quest it became has closed (USE1c), which the service derives on each read, so
+ * closing the last one changes what the asks list says.
+ */
 function useInvalidateQuestWork() {
   const client = useQueryClient();
   return () => {
     void client.invalidateQueries({ queryKey: keys.allQuests });
     void client.invalidateQueries({ queryKey: keys.allRegistry });
+    void client.invalidateQueries({ queryKey: keys.allAsks });
   };
 }
 

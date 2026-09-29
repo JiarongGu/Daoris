@@ -216,7 +216,9 @@ public static class ServiceFactory
             }
         }
 
-        var exchange = new QuestExchange(service, quests, remotes, files);
+        // The session records ride along for one question only: whether a session was started for a
+        // quest someone wants to delete (D95).
+        var exchange = new QuestExchange(service, quests, remotes, files, sessions);
         return new ComposedService(
             service, quests, exchange,
             // The ledger reads the registry for the one thing a chat cannot inherit from a quest: which

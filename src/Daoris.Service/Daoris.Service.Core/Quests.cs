@@ -127,6 +127,11 @@ public sealed record QuestMove(Quest? Quest, bool Moved, Quest? FollowUp = null)
 /// <summary>What a dismissal did: the quest as it now stands (null when there is no such quest), and how many conflicts went.</summary>
 public sealed record QuestDismissal(Quest? Quest, int Dismissed);
 
+/// <param name="Quest">The quest as it stood when the delete was judged — null when there is no such quest.</param>
+/// <param name="Deleted">Whether THIS call deleted it. False with a quest is the table refusing: it is not open.</param>
+/// <param name="Tombstoned">Whether the delete is an operation that travels, rather than the quest simply going (D95).</param>
+public sealed record QuestDeletion(Quest? Quest, bool Deleted, bool Tombstoned = false);
+
 /// <summary>
 /// Quests, held by the service rather than written into anyone's repository.
 /// </summary>
@@ -757,7 +762,7 @@ public sealed class QuestStore
 
             var operation = await AppendAsync(
                 id, QuestOperationKind.Waited, now, on, null, transaction, inside).ConfigureAwait(false);
-            var waiting = QuestLog.Step(quest, operation);
+            var waiting = QuestLog.Step(quest, operation)!;
             await WriteCacheAsync(waiting, transaction, inside).ConfigureAwait(false);
             return new QuestMove(waiting, Moved: true);
         }, ct);
@@ -798,6 +803,77 @@ public sealed class QuestStore
             if (named.Count > 0) await WriteCacheAsync(standing, transaction, inside).ConfigureAwait(false);
             return new QuestDismissal(standing, named.Count);
         }, ct);
+
+    /// <summary>
+    /// Delete an open quest (D95), judged against the replayed history inside the write, as every move
+    /// is: only an open quest goes. Whether anything outside this store stands on it — a session, a
+    /// waiting quest — is the exchange's judgement, made before this is asked.
+    /// </summary>
+    /// <param name="travels">
+    /// Whether the quest may have left this machine: its circle has a remote and its receiver is joined.
+    /// A quest that may have, or whose history a remote numbered, is tombstoned — a <see cref="QuestOperationKind.Deleted"/>
+    /// operation the next pass carries, because a copy elsewhere would otherwise come back on the next
+    /// fetch. Any other quest simply goes, its history with it, since nothing anywhere holds a copy.
+    /// </param>
+    public Task<QuestDeletion> DeleteAsync(string id, DateTimeOffset now, bool travels, CancellationToken ct = default) =>
+        InTransactionAsync(async (transaction, inside) =>
+        {
+            var history = await HistoryAsync(id, transaction, inside).ConfigureAwait(false);
+            var quest = history.Count > 0
+                ? QuestLog.Replay(history)
+                // A row the log never saw has never been pushed: what it says is all there is of it.
+                : await FindAsync(id, transaction, inside).ConfigureAwait(false);
+            if (quest is null) return new QuestDeletion(null, Deleted: false);
+            if (quest.Status != QuestStatus.Open) return new QuestDeletion(quest, Deleted: false);
+
+            // A push reads the log, so a quest with no history was never pushed, and goes like a local one.
+            var tombstoned = history.Count > 0 && (travels || history.Any(operation => operation.Number is not null));
+            await using (var command = _connection.CreateCommand())
+            {
+                command.Transaction = transaction;
+                command.CommandText = tombstoned
+                    ? "DELETE FROM quests WHERE id = $id"
+                    : "DELETE FROM quest_log WHERE quest = $id; DELETE FROM quests WHERE id = $id";
+                command.Parameters.AddWithValue("$id", id);
+                await command.ExecuteNonQueryAsync(inside).ConfigureAwait(false);
+            }
+
+            if (tombstoned)
+            {
+                await AppendAsync(id, QuestOperationKind.Deleted, now, note: null, published: null, transaction, inside)
+                    .ConfigureAwait(false);
+            }
+
+            return new QuestDeletion(quest, Deleted: true, tombstoned);
+        }, ct);
+
+    /// <summary>
+    /// The taken quests waiting on <paramref name="question"/> (D79) — what keeps a question from being
+    /// deleted: deleted, the quests waiting on it would wait on nothing for good.
+    /// </summary>
+    public async Task<IReadOnlyList<Quest>> WaitingOnAsync(string question, CancellationToken ct = default)
+    {
+        await using var command = _connection.CreateCommand();
+        command.CommandText = "SELECT * FROM quests WHERE awaits = $question AND status = 'Taken' ORDER BY filed";
+        command.Parameters.AddWithValue("$question", question);
+
+        var quests = new List<Quest>();
+        await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
+        while (await reader.ReadAsync(ct).ConfigureAwait(false)) quests.Add(Read(reader));
+        return quests;
+    }
+
+    /// <summary>Every question a taken quest waits on (D79) — what <see cref="WaitingOnAsync"/> answers, for a whole list at once.</summary>
+    public async Task<IReadOnlySet<string>> AwaitedAsync(CancellationToken ct = default)
+    {
+        await using var command = _connection.CreateCommand();
+        command.CommandText = "SELECT DISTINCT awaits FROM quests WHERE awaits IS NOT NULL AND status = 'Taken'";
+
+        var awaited = new HashSet<string>(StringComparer.Ordinal);
+        await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
+        while (await reader.ReadAsync(ct).ConfigureAwait(false)) awaited.Add(reader.GetString(0));
+        return awaited;
+    }
 
     // ——— A machine's half of the sync (D68 §3, design §8).
 
@@ -910,12 +986,35 @@ public sealed class QuestStore
                 continue;
             }
 
+            if (operation.Kind == QuestOperationKind.Deleted)
+            {
+                // A delete that lost to a take, or that another machine's delete already made (D95):
+                // its condition, that nobody has taken the quest, no longer holds, and it carries no
+                // work for a person to reconcile. The third thing a rebase drops.
+                await ForgetAsync(position, transaction, ct).ConfigureAwait(false);
+                continue;
+            }
+
+            if (quest is null)
+            {
+                // Another machine deleted the quest first (D95). A move made meanwhile is kept as a
+                // conflict on a quest no list shows, so this machine's claim reads lost and its driver
+                // stops the session, and a conflict already made stays as it was. A wait or a dismissal
+                // has nothing left to say about a quest that is gone.
+                if (operation.Kind == QuestOperationKind.Conflict) continue;
+                if (QuestTransitions.Target(operation.Kind) is null)
+                {
+                    await ForgetAsync(position, transaction, ct).ConfigureAwait(false);
+                    continue;
+                }
+            }
+
             var lost = operation with
             {
                 Kind = QuestOperationKind.Conflict, Attempted = QuestTransitions.Target(operation.Kind),
             };
             await RewriteAsync(position, lost, transaction, ct).ConfigureAwait(false);
-            quest = QuestLog.Step(quest, lost);
+            quest = quest is null ? null : QuestLog.Step(quest, lost);
             conflicts.Add(lost);
             claimLost |= operation.Kind == QuestOperationKind.Taken;
 
@@ -925,8 +1024,20 @@ public sealed class QuestStore
             }
         }
 
+        // A quest a fetched delete ended leaves the cache, as it left every other machine's (D95).
         if (quest is not null) await WriteCacheAsync(quest, transaction, ct).ConfigureAwait(false);
+        else await DropCacheAsync(id, transaction, ct).ConfigureAwait(false);
         return conflicts;
+    }
+
+    /// <summary>Take a quest's row out of the cache — the replay says there is no quest (D95).</summary>
+    private async Task DropCacheAsync(string id, SqliteTransaction transaction, CancellationToken ct)
+    {
+        await using var command = _connection.CreateCommand();
+        command.Transaction = transaction;
+        command.CommandText = "DELETE FROM quests WHERE id = $id";
+        command.Parameters.AddWithValue("$id", id);
+        await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -1004,15 +1115,23 @@ public sealed class QuestStore
     /// Whether a receiver is joined in this workspace — here or on a teammate's machine. Silence means
     /// local: a quest to anything else never appears here, however long it waits.
     /// </param>
+    /// <remarks>
+    /// The receiver and the circle are read from the quest's own first publish in the log, not from the
+    /// cache: a deleted quest has no row, and its tombstone must travel all the same (D95). The two
+    /// agree for every quest that has one, since the row is the publish replayed.
+    /// </remarks>
     public Task<IReadOnlyList<QuestOperation>> PendingAsync(
         string workspace, Func<string, bool> shared, CancellationToken ct = default) =>
         InGateAsync<IReadOnlyList<QuestOperation>>(async () =>
         {
             await using var command = _connection.CreateCommand();
             command.CommandText = $"""
-                SELECT {OperationColumns}, quests.receiver FROM quest_log
-                JOIN quests ON quests.id = quest_log.quest
-                WHERE quest_log.remote IS NULL AND quests.workspace = $workspace COLLATE NOCASE
+                SELECT {OperationColumns}, json_extract(asked.payload, '$.to') FROM quest_log
+                JOIN quest_log AS asked ON asked.position = (
+                  SELECT MIN(first.position) FROM quest_log AS first
+                  WHERE first.quest = quest_log.quest AND first.kind = 'published')
+                WHERE quest_log.remote IS NULL
+                  AND json_extract(asked.payload, '$.workspace') = $workspace COLLATE NOCASE
                 ORDER BY quest_log.position
                 """;
             command.Parameters.AddWithValue("$workspace", Workspaces.Normalize(workspace));
@@ -1215,7 +1334,10 @@ public sealed class QuestStore
                     continue;
                 }
 
-                var quest = QuestLog.Replay(await HistoryAsync(group.Key, transaction, inside).ConfigureAwait(false));
+                var history = await HistoryAsync(group.Key, transaction, inside).ConfigureAwait(false);
+                var quest = QuestLog.Replay(history);
+                // Whether this deployment has held the quest at all — a delete leaves a history and no quest.
+                var known = history.Count > 0;
                 string? why = null;
                 var staged = new List<QuestOperation>();
                 foreach (var operation in fresh)
@@ -1224,15 +1346,22 @@ public sealed class QuestStore
                         ? operation
                         : operation with { Published = operation.Published with { Workspace = workspaceOf(operation.Published) } };
                     why = filed.Published is { } asked ? judge(asked) : null;
-                    if (why is null && !QuestLog.Applies(quest, filed))
+
+                    // A take that lost to a delete arrives as a conflict on a quest that is gone (D95), and
+                    // is kept like any conflict, so its machine's claim reads lost on every side.
+                    var onDeleted = quest is null && known && filed.Kind == QuestOperationKind.Conflict;
+                    if (why is null && !onDeleted && !QuestLog.Applies(quest, filed))
                     {
                         why = quest is null
-                            ? $"`{KindText(filed.Kind)}` on quest `#{group.Key}`, which this deployment has never had published."
+                            ? known
+                                ? $"`{KindText(filed.Kind)}` on quest `#{group.Key}`, which was deleted here."
+                                : $"`{KindText(filed.Kind)}` on quest `#{group.Key}`, which this deployment has never had published."
                             : $"`{KindText(filed.Kind)}` does not apply to quest `#{group.Key}`, which is {quest.Status}.";
                     }
 
                     if (why is not null) break;
-                    quest = QuestLog.Step(quest, filed);
+                    if (!onDeleted) quest = QuestLog.Step(quest, filed);
+                    known = true;
                     staged.Add(filed);
                 }
 
@@ -1248,7 +1377,8 @@ public sealed class QuestStore
                     accepted.Add(new(operation.Machine, operation.Sequence, number));
                 }
 
-                await WriteCacheAsync(quest!, transaction, inside).ConfigureAwait(false);
+                if (quest is not null) await WriteCacheAsync(quest, transaction, inside).ConfigureAwait(false);
+                else await DropCacheAsync(group.Key, transaction, inside).ConfigureAwait(false);
             }
 
             return new QuestPush(accepted, behind, refused);

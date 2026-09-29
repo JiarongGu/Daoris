@@ -103,6 +103,17 @@ lives in one place, `QuestExchange`, shared by the MCP and HTTP hosts. Written p
 drift, and the same ask would be deliverable through one door and refused at the other, which for a
 quest system is the worst available bug: it looks like the sibling ignoring you.
 
+**A quest or an ask made by mistake can be deleted** (D95), from a person's doors only: a local host's
+`DELETE /api/quests/{id}` and `DELETE /api/asks/{id}`, which the page and `daoris-driver quest delete`
+/ `ask --delete` call. There is no MCP tool for it. Only a quest nobody has started on goes: it must
+be open, no session record may name it, and no taken quest may wait on it. Anything else is refused
+naming what to do instead, which is to decline it or leave it closed. An ask goes with every quest
+asked by it, or not at all. A quest that may have left the machine is **tombstoned**, a `deleted`
+operation the sync carries so no fetch brings it back, and on a shared quest the delete is pushed
+before the answer returns. A quest that never left simply goes. The `deletable` field on the quests and
+asks a local host lists (and on a quest a publish, a response or a dismissal answers with) is the same
+judgement, so a page offers the verb only where the door would take it.
+
 Four states, because anything finer is status for its own sake. A quest is **taken**, not assigned,
 which is the property that keeps declining a real answer. **An adopted repository, or one registered
 here with a root, can be addressed** (D70): registered is addressable, adopted is disciplined. Anything

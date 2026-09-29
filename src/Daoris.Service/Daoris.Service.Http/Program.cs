@@ -368,8 +368,11 @@ app.MapGet("/api/convergence", async (
 app.MapGet("/api/quests", async (
     ComposedService s, HttpContext http, string? repository, bool? includeClosed, string? workspace,
     CancellationToken ct) =>
-    (await s.Quests.ListAsync(repository, includeClosed ?? false, workspace, ct))
-        .Select(q => ToQuest(q, s.Files, MachineLocal(http))));
+{
+    var quests = await s.Quests.ListAsync(repository, includeClosed ?? false, workspace, ct);
+    var deletable = await DeletableAsync(s, quests, ct);
+    return quests.Select(q => ToQuest(q, s.Files, MachineLocal(http), deletable.Contains(q.Id)));
+});
 
 // Publish and respond go through the same exchange the MCP host uses, so the two doors cannot drift
 // on who may be addressed or what declining requires. This pair is what makes a REMOTE deployment a
@@ -441,7 +444,7 @@ app.MapPost("/api/quests", async (
     return outcome.Refusal switch
     {
         QuestPublishRefusal.None => Results.Ok(
-            new QuestActionResponse(ToQuest(outcome.Quest!, s.Files, MachineLocal(http)), outcome.Message)),
+            new QuestActionResponse(await QuestAnswerAsync(s, http, outcome.Quest!, ct), outcome.Message)),
         // Two circles that were never joined is a state conflict, not a malformed ask — the same 409
         // shape the quest lock teaches. The sentence names both sides (D48 §4).
         QuestPublishRefusal.CrossWorkspace => Results.Conflict(new ErrorResponse(outcome.Message)),
@@ -458,7 +461,7 @@ app.MapPost("/api/quests/{id}/respond", async (
     return outcome.Refusal switch
     {
         QuestRespondRefusal.None => Results.Ok(
-            new QuestActionResponse(ToQuest(outcome.Quest!, s.Files, MachineLocal(http)), outcome.Message)),
+            new QuestActionResponse(await QuestAnswerAsync(s, http, outcome.Quest!, ct), outcome.Message)),
         QuestRespondRefusal.NotFound => Results.NotFound(new ErrorResponse(outcome.Message)),
         // The refused transition is a state conflict, not a bad request: the losing side of the
         // cross-machine race reads 409 as "someone got there first" and stands down (D47 §5).
@@ -482,7 +485,7 @@ app.MapPost("/api/quests/{id}/conflicts/dismiss", async (
     }
 
     return Results.Ok(new QuestActionResponse(
-        ToQuest(dismissal.Quest, s.Files, MachineLocal(http)),
+        await QuestAnswerAsync(s, http, dismissal.Quest, ct),
         dismissal.Dismissed switch
         {
             0 => $"quest `#{quest}` carries no such conflict — nothing to dismiss.",
@@ -490,6 +493,24 @@ app.MapPost("/api/quests/{id}/conflicts/dismiss", async (
             var count => $"Dismissed {count} conflicts on quest `#{quest}`; every machine drops them on its next sync.",
         }));
 });
+
+// Deleting a quest made by mistake (D95): the exchange's judgement and sentence, verbatim. LOCAL mode
+// only — a person deletes on their own machine, and a shared quest's tombstone travels from there; a
+// deployment answering the network has no door that removes a record.
+if (mode == ServiceMode.Local)
+{
+    app.MapDelete("/api/quests/{id}", async (ComposedService s, string id, CancellationToken ct) =>
+    {
+        var outcome = await s.Exchange.DeleteAsync(id, DateTimeOffset.UtcNow, ct);
+        return outcome.Refusal switch
+        {
+            QuestDeleteRefusal.None => Results.Ok(new DeletedResponse(outcome.Quest!.Id, outcome.Message)),
+            QuestDeleteRefusal.NotFound => Results.NotFound(new ErrorResponse(outcome.Message)),
+            // Something stands on it, or a take won the race: a state conflict, the lock's own shape.
+            _ => Results.Conflict(new ErrorResponse(outcome.Message)),
+        };
+    });
+}
 
 // A quest's file, whole — so a person reading the drawer can open the screenshot the quest carries.
 // LOCAL mode only and to a caller on this machine only: the bytes never left it (D65 §2), and a shared
@@ -608,6 +629,18 @@ if (mode == ServiceMode.Local)
     app.MapPost("/api/asks/{id}/close", async (
         ComposedService s, HttpContext http, string id, AskCloseRequest body, CancellationToken ct) =>
         AskAnswer(await s.Asks.CloseAsync(id, body.Reason ?? "", DateTimeOffset.UtcNow, ct), s, http));
+
+    // Deleting an ask made by mistake, with every quest asked by it, or none of it (D95).
+    app.MapDelete("/api/asks/{id}", async (ComposedService s, string id, CancellationToken ct) =>
+    {
+        var outcome = await s.Asks.DeleteAsync(id, DateTimeOffset.UtcNow, ct);
+        return outcome.Refusal switch
+        {
+            AskRefusal.None => Results.Ok(new DeletedResponse(id.TrimStart('#'), outcome.Message)),
+            AskRefusal.NotFound => Results.NotFound(new ErrorResponse(outcome.Message)),
+            _ => Results.Conflict(new ErrorResponse(outcome.Message)),
+        };
+    });
 
     // An intake (D65 §1b): the record of a conversation the driver opens for an ask, in a room under
     // its home. Local like the asks it answers; the process is the driver's, as ever.
@@ -1226,9 +1259,18 @@ static string SuggestionFor(ConvergenceCandidate candidate) => candidate.Method 
         + "share may be canonical, and what differs is usually each repository's own and must stay local.",
 };
 
+// Which quests this host would delete (D95) — the exchange's judgement, so the page offers the verb only
+// where the door would take it. None at a shared deployment, which has no delete door.
+async Task<IReadOnlySet<string>> DeletableAsync(ComposedService s, IEnumerable<Quest> quests, CancellationToken ct) =>
+    mode == ServiceMode.Local ? await s.Exchange.DeletableAsync(quests, ct) : new HashSet<string>();
+
+// One quest as a door answers it, with whether it may be deleted (D95).
+async Task<QuestResponse> QuestAnswerAsync(ComposedService s, HttpContext http, Quest quest, CancellationToken ct) =>
+    ToQuest(quest, s.Files, MachineLocal(http), (await DeletableAsync(s, [quest], ct)).Contains(quest.Id));
+
 // Links and attachment names travel with every read; a kept file's PATH answers only to a caller on
 // this machine, and only when the bytes are here (D47 §4, D65 §2) — so null says "named, not held".
-static QuestResponse ToQuest(Quest q, QuestFiles? files, bool machineLocal) => new(
+static QuestResponse ToQuest(Quest q, QuestFiles? files, bool machineLocal, bool deletable = false) => new(
     q.Id, q.From, q.To, q.Title, q.Body, q.Status.ToString(), q.Note, q.Filed, q.Updated, q.Workspace,
     q.Links,
     q.Attachments.Select(a => new QuestAttachmentResponse(
@@ -1238,7 +1280,8 @@ static QuestResponse ToQuest(Quest q, QuestFiles? files, bool machineLocal) => n
     q.Parent,
     q.Conflicts.Select(c => new QuestConflictResponse(c.Machine, c.Attempted.ToString(), c.Note, c.At, c.Sequence)).ToList(),
     q.Awaits,
-    q.PublishedBy);
+    q.PublishedBy,
+    deletable);
 
 // An ask's answer. A refusal is the desk's sentence, whole — including a named receiver the exchange
 // refused, whose message already says the ask was kept and where it was proposed instead.
@@ -1262,7 +1305,7 @@ static AskResponse ToAsk(Ask a, QuestFiles? files, bool machineLocal)
             f.Name, f.Sha256, f.Bytes,
             Path: machineLocal && kept is not null && kept.Has(a.Id, f) ? kept.PathOf(a.Id, f) : null)).ToList(),
         a.Proposal.Select(m => new DeclarationMatchResponse(m.Repository, m.Score, m.Matched)).ToList(),
-        a.Quests, a.Intake);
+        a.Quests, a.Intake, a.Deletable);
 }
 
 static EntryResponse ToEntry(KnowledgeEntry entry) => new(

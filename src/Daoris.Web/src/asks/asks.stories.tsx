@@ -48,7 +48,7 @@ const record = (ask: Ask, intake: Session | null = null, attend = false) => () =
   <Provided>
     <AskRecord
       ask={ask} receivers={RECEIVERS} questTitles={TITLES} intake={intake} onAttend={attend ? noop : undefined}
-      onPublish={noop} onClose={noop} onOpenQuest={noop} onDismiss={noop}
+      onPublish={noop} onClose={noop} onDelete={noop} onOpenQuest={noop} onDismiss={noop}
     />
   </Provided>
 );
@@ -59,6 +59,8 @@ export const RecordPublished: StoryObj = { render: record(PUBLISHED) };
 export const RecordNamed: StoryObj = { render: record(NAMED) };
 export const RecordRefusedReceiver: StoryObj = { render: record(REFUSED) };
 export const RecordDone: StoryObj = { render: record(DONE) };
+/** Nothing stands on its quests, so the service says it may go (D95): *delete…* beside *close*. */
+export const RecordDeletable: StoryObj = { render: record({ ...PUBLISHED, deletable: true }) };
 export const RecordClosed: StoryObj = { render: record(CLOSED) };
 export const RecordUnknownTier: StoryObj = { render: record(UNKNOWN_TIER) };
 export const RecordLongCjk: StoryObj = { render: record(LONG_CJK) };

@@ -417,7 +417,33 @@ public sealed class IntakeTests : IDisposable
     public void An_intake_that_died_before_publishing_failed()
     {
         Assert.Equal("failed", IntakeObservation.Conclude(1, before: 0, Ask()).State);
-        Assert.Equal("failed", IntakeObservation.Conclude(0, before: 0, after: null).State);
+    }
+
+    /// <summary>
+    /// D95: an ask is gone only because the person deleted it, which is the person settling it while the
+    /// intake ran — so the intake stands down, as it does when the ask is closed under it.
+    /// </summary>
+    [Fact]
+    public void An_intake_whose_ask_was_deleted_while_it_ran_stood_down()
+    {
+        var concluded = IntakeObservation.Conclude(0, before: 0, after: null);
+
+        Assert.Equal("stood-down", concluded.State);
+        Assert.Contains("deleted", concluded.Note);
+    }
+
+    /// <summary>
+    /// D95: a parked intake whose ask the person deleted has nothing left to wait for — its record ends,
+    /// stopped, rather than asking the person about an ask that no longer exists.
+    /// </summary>
+    [Fact]
+    public void A_parked_intake_whose_ask_was_deleted_ends_stopped()
+    {
+        var ended = IntakeObservation.Deleted("a1b2c3");
+
+        Assert.Equal("stopped", ended.State);
+        Assert.Contains("ask `#a1b2c3`", ended.Note);
+        Assert.Contains("deleted", ended.Note);
     }
 
     /// <summary>

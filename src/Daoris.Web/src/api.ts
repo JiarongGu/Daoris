@@ -78,6 +78,12 @@ export type Quest = {
    * and a host older than the field, which all say the same: no session asked.
    */
   publishedBy?: string | null;
+  /**
+   * Whether the host would delete it (D95): open, and nobody has started on it. The service's own
+   * judgement, so the page offers *Delete* only where the door would take it. Absent from a host older
+   * than the field, and false at a shared deployment, which has no delete door.
+   */
+  deletable?: boolean;
 };
 /**
  * A move that lost the race to the remote. `attempted` is the status it tried to reach; `note` is its
@@ -145,8 +151,15 @@ export type Ask = {
   quests: string[];
   /** The intake session that served it (D65 §1b), once one opened — absent for every other ask. */
   intake?: string | null;
+  /**
+   * Whether the host would delete it, with every quest asked by it (D95): nothing stands on any of
+   * them. The service's judgement, like a quest's; absent from a host older than the field.
+   */
+  deletable?: boolean;
 };
 export type AskAction = { ask: Ask; message: string; quest?: Quest | null };
+/** What a delete did (D95): the record it removed, and the service's sentence, shown as said. */
+export type Deleted = { id: string; message: string };
 export type Registration = {
   repository: string; adopted: boolean; registered: boolean; summary?: string;
   owns: string[]; accepts: string[]; packs: string[]; entries: number; workspace?: string;
@@ -328,6 +341,10 @@ export const api = {
     post<AskAction>(`/api/asks/${encodeURIComponent(id)}/publish`, { to }),
   closeAsk: (id: string, reason: string) =>
     post<AskAction>(`/api/asks/${encodeURIComponent(id)}/close`, { reason }),
+  // Deleting a record made by mistake (D95) — `daoris-driver ask --delete` and `quest delete` are the
+  // terminal's twins. A refusal is the service's sentence, verbatim, like every other write's.
+  deleteAsk: (id: string) => post<Deleted>(`/api/asks/${encodeURIComponent(id)}`, undefined, 'DELETE'),
+  deleteQuest: (id: string) => post<Deleted>(`/api/quests/${encodeURIComponent(id)}`, undefined, 'DELETE'),
   registry: (workspace: string | null, signal?: AbortSignal) =>
     get<Registration[]>(`/api/registry${qs({ workspace })}`, signal),
   // A repository's own code map (MAP3a), read from its committed file — never written to (D32).

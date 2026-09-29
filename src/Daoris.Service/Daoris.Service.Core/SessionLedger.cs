@@ -104,17 +104,22 @@ public sealed class SessionLedger(
         string askId, string adapter, string room, DateTimeOffset now,
         string? harnessVersion = null, string? profile = null, CancellationToken ct = default)
     {
-        var ask = asks is null ? null : await asks.FindAsync(askId, ct).ConfigureAwait(false);
-        if (ask is null)
+        var stored = asks is null ? null : await asks.FindAsync(askId, ct).ConfigureAwait(false);
+        if (stored is null)
         {
             return new(SessionOpenRefusal.AskNotFound, $"No ask `#{askId.TrimStart('#')}`.", Session: null);
         }
+
+        // As it stands, the way the desk reads it (USE1c, D95): an ask whose every quest was deleted is a
+        // proposal again, and the loop, which reads the desk, would otherwise ask for it on every tick.
+        var ask = AskDesk.Standing(
+            stored, await quests.FromAsync(AskDesk.SenderOf(stored.Id), ct: ct).ConfigureAwait(false));
 
         var served = ask.Intake is { } earlier
             ? $"intake session `{earlier}` already served it"
             : ask.State switch
             {
-                AskState.Published => $"it already became {string.Join(", ", ask.Quests.Select(q => $"`#{q}`"))}",
+                AskState.Published or AskState.Done => $"it already became {string.Join(", ", ask.Quests.Select(q => $"`#{q}`"))}",
                 AskState.Closed => $"it is closed ({ask.Note})",
                 _ => null,
             };

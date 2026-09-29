@@ -44,7 +44,7 @@ went up only, all of them, every tick. Five defects, none covered by a test:
 
 | Record | Its history | Push is accepted when |
 |---|---|---|
-| **Quest** | Operations: `published`, `taken`, `done`, `declined`, `conflict`, `dismissed` (§5). Each has the machine that made it (a stable machine id under the home, not the key, which rotates), a per-machine sequence, the time, and its payload (note, reason, session) | Per quest, a fast-forward: nothing new has reached that quest at the remote since the push was rebased (§3) |
+| **Quest** | Operations: `published`, `taken`, `done`, `declined`, `conflict`, `dismissed` (§5), `waited` (D79), `deleted` (D95). Each has the machine that made it (a stable machine id under the home, not the key, which rotates), a per-machine sequence, the time, and its payload (note, reason, session) | Per quest, a fast-forward: nothing new has reached that quest at the remote since the push was rebased (§3) |
 | **Knowledge, code map** | The repository's own git — Daoris keeps no second history | The pushed commit descends from the one the remote holds (`git merge-base --is-ancestor`, asked on the machine with the checkout). The same commit is a no-op only if its content digest matches |
 | **Registration** | The manifest at a commit; a retire is a tombstone that travels | Same ancestry rule as knowledge. The machine holding the checkout owns the row; others pull it, updated and removed |
 | **Session record** | Owned by the machine that ran it; append-only | Always, by origin + id: two machines cannot write the same record |
@@ -190,6 +190,17 @@ sync it came through (SYNC0a).
 Two things are dropped, because neither was ever anyone's decision. One is a pending publish of an
 ask the remote already holds, since the first publish wins, as it always has. The other is a
 follow-up that was published only by a close that has now lost, when nothing else has happened to it.
+
+*Amended by D95 (QUEST1, 2026-09-30): a delete is an operation too, `deleted`, and a rebase drops a
+third thing.* A delete applies only to an open quest and replays to no quest, so the remote keeps the
+tombstone and no fetch from any cursor brings the quest back. A pending delete that no longer
+applies is dropped: a take reached the remote first, or another machine's delete already did the
+same. Its condition, that nobody has taken the quest, no longer holds, and it carries no work for a
+person to reconcile. A pending take on a quest another machine deleted first becomes a conflict as
+usual, which the remote keeps on a quest no list shows, so that machine's claim reads lost. What is
+pushed is read from each quest's own first publish in the log rather than from its row, because a
+deleted quest has none. A quest that never left the machine and was never numbered is removed
+outright rather than tombstoned.
 
 **The mirror is gone.** Its rows are dropped when the store opens, and so is the `home` column. The
 first fetch runs from cursor zero, so it brings every row back as history. A tick syncs before it

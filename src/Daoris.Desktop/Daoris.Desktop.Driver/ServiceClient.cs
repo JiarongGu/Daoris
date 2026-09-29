@@ -329,6 +329,36 @@ public sealed class ServiceClient : IDisposable
     public Task<AskAnswer> CloseAskAsync(string id, string reason, CancellationToken ct = default) =>
         PostAskAsync($"/api/asks/{Uri.EscapeDataString(id.TrimStart('#'))}/close", w => w.WriteString("reason", reason), ct);
 
+    /// <summary>
+    /// A person deletes an ask made by mistake, with every quest asked by it (D95). The service's
+    /// sentence comes back verbatim, and a refusal is an answer too.
+    /// </summary>
+    public Task<(bool Ok, string Message)> DeleteAskAsync(string id, CancellationToken ct = default) =>
+        DeleteRecordAsync($"/api/asks/{Uri.EscapeDataString(id.TrimStart('#'))}", ct);
+
+    /// <summary>A person deletes a quest made by mistake (D95) — refused, in the service's words, for one anything stands on.</summary>
+    public Task<(bool Ok, string Message)> DeleteQuestAsync(string id, CancellationToken ct = default) =>
+        DeleteRecordAsync($"/api/quests/{Uri.EscapeDataString(id.TrimStart('#'))}", ct);
+
+    private async Task<(bool Ok, string Message)> DeleteRecordAsync(string path, CancellationToken ct)
+    {
+        using var response = await _http.DeleteAsync($"{_base}{path}", ct).ConfigureAwait(false);
+        var payload = await response.Content.ReadAsStringAsync(ct).ConfigureAwait(false);
+        try
+        {
+            using var document = JsonDocument.Parse(payload);
+            var root = document.RootElement;
+            return response.IsSuccessStatusCode
+                ? (true, Text(root, "message") ?? "")
+                : (false, Text(root, "error") ?? payload);
+        }
+        catch (JsonException)
+        {
+            // A host older than the delete door answers a bare 404 or 405 — said plainly, not parsed as nothing.
+            return (false, $"the service at {_base} has no delete door ({(int)response.StatusCode}) — is it older than this driver?");
+        }
+    }
+
     private async Task<AskAnswer> PostAskAsync(string path, Action<Utf8JsonWriter> write, CancellationToken ct)
     {
         var body = WriteJson(writer =>

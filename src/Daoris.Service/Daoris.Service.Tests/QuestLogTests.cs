@@ -275,6 +275,54 @@ public sealed class QuestLogTests : IAsyncLifetime
         Assert.Equal(Shape(once), Shape(twice));
     }
 
+    // ——— A delete (QUEST1, D95): an operation, so it travels; it ends an open quest and nothing else.
+
+    /// <summary>
+    /// A delete ends an open quest — the history replays to no quest — and the same words published
+    /// after it begin the quest anew, because a publish applies wherever there is no quest.
+    /// </summary>
+    [Fact]
+    public void A_delete_ends_an_open_quest_and_a_publish_after_it_asks_again()
+    {
+        var gone = QuestLog.Replay(
+        [
+            Op(0, QuestOperationKind.Published, published: Asked),
+            Op(1, QuestOperationKind.Deleted),
+        ]);
+        var again = QuestLog.Replay(
+        [
+            Op(0, QuestOperationKind.Published, published: Asked),
+            Op(1, QuestOperationKind.Deleted),
+            Op(2, QuestOperationKind.Published, published: Asked),
+        ])!;
+
+        Assert.Null(gone);
+        Assert.Equal(QuestStatus.Open, again.Status);
+        Assert.Equal(Now.AddHours(2), again.Filed);
+    }
+
+    /// <summary>
+    /// Somebody's work, or the record of it, is never deleted: a delete does not apply to a quest that
+    /// was taken, done or declined — whichever machine's history it came from.
+    /// </summary>
+    [Theory]
+    [InlineData(QuestOperationKind.Taken)]
+    [InlineData(QuestOperationKind.Done)]
+    [InlineData(QuestOperationKind.Declined)]
+    public void A_delete_does_not_apply_to_a_quest_somebody_moved(QuestOperationKind moved)
+    {
+        var replayed = QuestLog.Replay(
+        [
+            Op(0, QuestOperationKind.Published, published: Asked),
+            Op(1, moved, "a note"),
+            Op(2, QuestOperationKind.Deleted),
+        ])!;
+
+        Assert.Equal(QuestTransitions.Target(moved), replayed.Status);
+        Assert.False(QuestLog.Applies(replayed, Op(3, QuestOperationKind.Deleted)));
+        Assert.False(QuestLog.Applies(null, Op(3, QuestOperationKind.Deleted)));
+    }
+
     /// <summary>The ask is the quest: a history with nothing published is no quest at all.</summary>
     [Fact]
     public void A_history_with_nothing_published_is_no_quest()
