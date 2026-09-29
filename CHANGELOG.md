@@ -525,6 +525,9 @@ The first version: doctrine that installs, is checked, and flows back.
   session is on one of a line's quests, the line's count wears the same dashed ring a repository with
   a session does, in the session's colour, and a repository with several sessions says how many
   (MAP4d).
+- **A flatter look.** Corners are one step smaller everywhere (controls, cards, drawers and menus),
+  the scrollbar's thumb is squared, and Overview's knowledge bars are thin and square-ended on a
+  track, so a short one reads as a share of the longest rather than a blob.
 - **Menus look like menus, and scrollbars have no arrows.** The button that lists a region's views
   and moves them is now "⋯", as VS Code's is, rather than a down arrow. Scrollbars throughout are a
   thin bar with no ▲ and ▼ at its ends.

@@ -188,9 +188,11 @@ export function OverviewView({ onNavigate, onOpenQuest, doors, notify }: {
                     )}
                     <span className="truncate">{repository.name}</span>
                   </span>
-                  <span className="h-3">
+                  {/* Flat: thin, square-ended, on a track that shows the whole scale (the owner,
+                      2026-09-30). A 12px bar with a rounded end made a short one a blob, not a share. */}
+                  <span className="block h-1.5 bg-line">
                     <span
-                      className="block h-full min-w-[2px] rounded-r-[4px] bg-accent"
+                      className="block h-full min-w-[2px] bg-accent"
                       style={{ width: `${(repository.total / most) * 100}%` }}
                     />
                   </span>

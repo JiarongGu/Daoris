@@ -50,7 +50,10 @@ D75), where its own rules live; this is what a view may assume of it.
   Tile values wear proportional figures; columns of numbers wear `tabular-nums`. **An ideograph is
   never slanted**: `font-synthesis-style: none` keeps Chinese upright, since its system face has no
   italic, and keeps the Latin face's true italic.
-- **Spacing** on a 4px scale: 4 · 8 · 12 · 16 · 24 · 32. **Radii**: 6 controls · 8 cards · 10 overlays.
+- **Spacing** on a 4px scale: 4 · 8 · 12 · 16 · 24 · 32. **Radii**: 4 controls · 6 cards · 8 overlays,
+  one step flatter than the first language's 6 · 8 · 10 (the owner, 2026-09-30: *"I think we should
+  move into more flatten design"*). **A bar is flat**: thin, square-ended, on a track that shows the
+  whole scale, since a thick bar with a rounded end made a short one a blob rather than a share.
 - **Surfaces**: `--page`, `--raised` (cards, controls), `--overlay` (drawers, toasts — one step above
   raised), `--line` and `--line-strong`. **Ink**: `--ink`, `--ink-soft`, `--ink-faint`. **A field is
   outlined with `--line-strong`, a container with `--line`**: a `--line` field on a `--raised` card is
