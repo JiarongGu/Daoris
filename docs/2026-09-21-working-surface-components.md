@@ -102,7 +102,11 @@ reference did not make for us:
   repository and the state as its name and tip. The strip has no room for the words, and a mark is
   never hue alone (D41 §6).
 - **A strip the window drew offers no "open"**: only widening undoes it, so the button would do
-  nothing.
+  nothing. *Amended by D118 (FRAME1a; to be built as FRAME1b):* a strip the window drew opens its list
+  over the main area. The rail becomes a strip when the main area has no room beside it, rather than below
+  1024 px. Without an open, below 1024 px the rail left an ended session and its search out of reach, and
+  a view whose list is its only way in would leave the whole view out of reach
+  (`2026-10-01-frame-model-design.md` §3a).
 - **Each session's dock tab is kept in memory, not across launches**, as the one dock tab was.
 - **Widths and closings are remembered** per viewer, like the panel's height; fullscreen is not.
 

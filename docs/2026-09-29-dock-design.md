@@ -48,6 +48,13 @@ choice (the dock's share, the rail's width), and *Reset layout* puts the default
 - **Quick Ask**: a palette-like box from the command center for one question, which lands in Ask
   Daoris's conversation. VS Code's Quick Chat.
 
+*Amended by D118 (FRAME1a, 2026-10-01; to be built as FRAME1b–i).* The side bar and the panel hold only
+what is the same on every view: Ask Daoris, the attended session's views and the terminal. A view's own
+detail never goes there, since a region that changed with the view would lose what DOCK1a hoisted it to
+keep. Beside them, every view but Overview and Map gains a list pane and a main area of its own, and a
+record opens in that main area rather than in a drawer over this side bar.
+`2026-10-01-frame-model-design.md` is the contract.
+
 ## 4. Build order
 
 *Reordered 2026-09-29, before any of it was built, and again after DOCK1c:* the toggles come first,

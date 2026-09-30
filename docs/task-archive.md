@@ -8737,3 +8737,55 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > The contract starts from `docs/2026-09-30-parallel-development-design.md`.
 
 **Outcome** (designed by a subagent, merged with `tools/merge-branch.mjs`, every gate; **D115**): Designed (D115, `docs/2026-10-01-self-development-design.md`): Daoris's own development runs through Daoris's driver, as a family feature an adopter with lanes also gets. **Lanes:** a repository declares its lanes in `daoris.lanes.json`, which replaces `tools/lanes.json`; a quest addresses one as `repository:lane`. **Side by side:** sessions run beside each other once a session outlives its tick (today a tick waits for every session it started, up to 30 minutes); work in flight holds its lanes; `laneCap` defaults to 3 with the queue counted, and a `quiet` gate starts nothing new while it runs. **The queue:** a third landing form that gates a branch the session readied, serially, in a detached tree of its own outside the trees home (D88's proof would read a queue branch as the person's), and lands it by fast-forwarding the line; failures go back through the answer door (D83) with the log, nothing is ever forced, and done means landed. **The steward:** a steward lane splits work into lane quests, reserves decision numbers and keeps the backlog. **The person** keeps the target, the landed history, the republish, the look, and everything irreversible. **Rejected** (§10): one repository per lane, lanes in `daoris.json`, the lane as part of `to`, permission-rule enforcement, a lock in the ledger, gating in the person's checkout, rebasing, a queue branch, the queue closing quests, the driver writing records. §9 separates what the family rehearsal can prove from what only DEV10's real run can. The driver design's §9 now notes PAR1 (several sessions per repository with trees on). Documents only; `verify` passed, CLI 667/667. The build is DEV2–DEV11, filed as rows.
+
+
+## LAYOUT1 — one repository, every agent: the design (2026-10-01)
+
+> - [ ] **LAYOUT1 — one repository, every agent (the design half building: D117): the `.agents/` layout, here and in every repository Daoris
+> manages** (owner, 2026-10-01: *"the agent/claude file/folder we should follow [deepseek-harness] which
+> make repo compatible to different agents we should apply this to current repo also find a way to apply
+> this to daoris managed repo too … we should have a way to initallize the set setup"*). The reference is
+> dsh's own repository (public; D53 adopted dsh as a protocol). Its layout: `AGENTS.md` is the one
+> instruction file, at the root and nested per package; `CLAUDE.md` is a symlink to it; skills live in
+> `.agents/skills/` with `.claude/skills` a symlink to them; decision notes live in `.agents/notes/` by
+> lifecycle, in both languages. **What that leaves Daoris short of:** D59 moved only the always-loaded rules
+> into `AGENTS.md`; knowledge and skills still live under `.claude/`, which codex and dsh do not read; and this
+> repository's own `CLAUDE.md` carries the project's whole brief, which only Claude reads. **A trap measured
+> on this machine:** `core.symlinks` is false here, and dsh's checkout has `CLAUDE.md` as a 9-byte file that
+> reads `AGENTS.md`, so on Windows a symlink layout silently hands Claude the literal path. Design first,
+> as a contract extending `docs/2026-09-22-instruction-file-design.md` and D59, with its decision:
+> - (a) **The layout**: what is canonical under `.agents/` (skills, knowledge, and whether decision notes
+> move there), what each agent's entry point is (`CLAUDE.md`'s one-line `@AGENTS.md`, a `.claude/skills`
+> mirror, others as measured), and nested `AGENTS.md` per package or lane (which DEV1's lanes can be told).
+> Everything must work without symlinks: a mirror Daoris materializes and tracks in the lock, measured
+> against the lock as D13 says, never a symlink a Windows checkout turns into text.
+> - (b) **This repository first**: move the project brief from `CLAUDE.md` into `AGENTS.md` outside
+> Daoris's region, the canon's skills and knowledge to `.agents/`, and a nested `AGENTS.md` per artefact.
+> - (c) **The canon's materialization** (`sync`, `init`, `upstream`, `check`, `inspect`): the new locations,
+> the mirrors, and the move of every adopted repository's existing files. Read D19 first, since the state
+> space is lock × disk × canon, and a move is new territory in it; the rehearsals must carry an upgrade
+> from today's layout.
+> - (d) **Setting up a repository Daoris manages**: never by writing into it (D32). A repository in a
+> workspace gets *Set up for agents* on the screen, a terminal verb and an Ask Daoris proposal. Each
+> publishes a quest to that repository, whose own session runs `daoris init`/`sync` on a branch and lands
+> it by the workspace's rule. The adoption knowledge document says the adopter's agent runs the flow;
+> this is that flow, driven.
+> HARNESS1 (a second harness layout) is absorbed here: its trigger has arrived.
+
+**Outcome** (designed by a subagent, merged with `tools/merge-branch.mjs`, every gate; **D117**): Designed (D117, `docs/2026-10-01-agent-layout-design.md`): knowledge and skills move under `.agents/`, and the always-loaded region stays in `AGENTS.md` (D59). Where the reference layout uses links, which a checkout with `core.symlinks=false` holds as text, Daoris writes files: a `CLAUDE.md` import at the root and in each declared room (a nested `AGENTS.md`), and a mirror of every skill in `.claude/skills/`, recorded in the lock and measured against it (D13); editing a mirror is refused, naming its source. The move's cells are enumerated as D19's, including refusals for the repository's own documents left behind and for links. Decision records stay in `docs/`. A repository Daoris manages is set up by its own session through one quest from three doors (the screen, `daoris-driver setup`, an Ask Daoris kind), and the screen shows each repository's layout and the agents it serves from measured cells only. The reading turned up three things: the union-merge attribute on `twins.md` is path-bound and must move with the file; the service's scanner hardcodes `.claude`; and nobody has measured whether the ACP adapters load `CLAUDE.md` at all (if not, every driven session over the protocol door runs without the doctrine), which LAYOUT2 measures first. Documents only; `verify` green (671).
+
+
+## FRAME1a — every view gets the frame Sessions has: the audit and the model (2026-10-01)
+
+> - [ ] **FRAME1 — every view gets the frame Sessions has.** (FRAME1a, the audit and the model, building: D118.) Sessions has the full layout: a list that
+> collapses and resizes, the main area, the right side bar with its movable views, the panel, the strip's
+> toggles, and each remembered. Other views have part of it (DOCK1a put the side bar and panel on every
+> view; the rest differs). (a) **An audit**, measured on the window as UX5's was: for each view (Overview,
+> Sessions, Quests, Projects, Knowledge, the Plugins screen to come, Settings, and the rest), which layout
+> affordances it has, how each behaves, and where they disagree. (b) **One layout model**: which regions
+> every view has, what each view puts in them, the same toggles, resizing, collapsing, keyboard and
+> persistence everywhere, and what a narrow window does. (c) **The build**, view by view. The contracts are
+> `docs/2026-09-21-desktop-frame-design.md` (D56), `docs/2026-09-29-dock-design.md` and
+> `docs/2026-09-19-platform-ux.md`; the model is written into them, or into a document they point to.
+
+**Outcome** (designed by a subagent, merged with `tools/merge-branch.mjs`, every gate; **D118**): The frame is audited and a layout model designed (D118). `docs/2026-10-01-frame-audit.md` reads every view's layout from the code (the monitor, a detached session's window and a browser too): for each of 11 affordances the deciding file and line, a verdict (same, choice, drift, gap), and twelve looks only the window can settle. Its findings: only Sessions has a list pane; a record opens in a modal drawer over the side bar and panel on four views; only Sessions remembers its selection; viewport breakpoints lay out columns the side bar narrows; Settings stacks its list when narrow; some regions draw blank while loading; no list moves by arrow keys; the secondary windows' regions are fixed. `docs/2026-10-01-frame-model-design.md` is the contract: every view has a list pane and a main area of its own beside the frame's side bar and panel, which hold only what is the same on every view; a record opens in the main area and a form stays a drawer, every door naming its item through one opener; one `ListPane` collapses, resizes, answers the same keys, is remembered per view, and becomes a strip by room rather than at a fixed width (amending FRAME6); the main area lays out by its own width; Overview and Map have no list, and a browser keeps the list and main area but not the side bar or panel. The build is FRAME1b–i, and PLUGUI1 takes its list pane, main area, memory and opener. Nothing built; nothing looked at on the window.
