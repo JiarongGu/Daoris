@@ -6238,3 +6238,90 @@ measured on the window: the names' counts are D116's estimates. The health state
 plugin, and the tests' runner has not met a real plugins repository or the PATH an install hands the application
 (USE1g). No landing plugin has pushed to a real platform, so Activity's pushes have not been seen. Each build row
 names its own proof, and the design's §9 says what only the window and a real plugin can prove.
+## D122 — The development documents are a standard the canon ships, and a repository declares its safe work once for the person's yes (2026-10-01)
+
+**Decision (DOC1 and UNBLOCK1, the owner's: *"research a good development doc pattern for code generation and use it as
+standard for all repo setup so its good for sessions, and the goal is to unblock the repo as far as possible so less
+ask human permission during development"*).** The contract is `docs/2026-10-01-development-documents-design.md`: the
+study (§1), the standard (§2), fewer asks (§3) and the build (§6). It extends D117's layout and D72–D74's scopes.
+
+1. **Documents have roles, and the canon speaks in roles.** Brief, room, knowledge, skill, router, decisions,
+   backlog, archive, fixes, changelog, glossary, gates, each with one job and one way it is read: always (the
+   brief, beside the doctrine region in the root file every agent reads), on demand (rooms, knowledge, skills, the
+   router), or by lookup (the records).
+2. **The standard is core canon, as knowledge and a skill.** `development-documents` (core knowledge) states the
+   roles, the reading tiers, the brief's content test (*what nearly every task needs and a reader could not
+   derive*) and the ceilings' principle. `set-up-documents` (core skill) carries the procedure and the templates
+   beside it. Not a rule: the part every task needs, where the records are, is carried as generated data.
+3. **A repository binds roles to paths in its manifest** (`documents`). `sync` renders a *Where things are* table
+   into the region. `check` fails on a fact (a declared path missing, escaping, a link, or the table stale) and
+   reports a judgement (a document over its ceiling in words, the root file over the smallest harness limit in
+   bytes, no backlog or decisions declared). A repository that declares nothing sees no change.
+4. **Safe work is declared in the gates file** (`safe` beside `gates`): the gates that are not the queue's
+   (`kind` check or suite, not `quiet`), the build and test commands, the lockfile install. Git on a repository's
+   own branch is Daoris's default, and `commit` gains `git mv`.
+5. **The declaration is read from the repository's line, judged, and waits for the person once.** A judge refuses
+   the carve-outs (a push, a publish, a release, a history rewrite, a discard, a recursive delete, a path outside,
+   an operator, a runner with arguments, an install that adds a package). The rest is one `declare` proposal per
+   repository and per widening, D74's rule unchanged: a narrowing applies at the tick, a widening waits. Accepted,
+   it is a layer of its own in the repository's scope.
+6. **Each harness is handed it in its own words, or nothing.** Claude Code on both doors gets exact rules (and
+   `PowerShell(…)` once measured). codex and dsh are handed nothing until measured, and the surfaces say so.
+7. **The carve-outs are held harder where auto mode would allow them.** While `no-push` is on, the composed spawn
+   settings carry an `autoMode.hard_deny` entry against a push in any form, a publish and a release, always after
+   `"$defaults"`.
+8. **Asks are counted.** `permission.refused` joins the machine log from both doors, and `session.read` records
+   which role each read resolved to, never a path or a word. The usage report gives asks per session, before and
+   after.
+
+**Why.** The canon already depends on records it never places (§0.1), so every session in every adopter searches
+before it works. The makers converge on the same file, the same content test, exact commands, detail on demand and
+a ceiling on what is read whole (§1.3), which is the bar this project believes. Asks fall only if what a session may
+run is declared where a tool reads it: an instruction file shapes what an agent tries, not what its harness allows.
+The person's yes stays because a declaration is a checked-in repository's allowances. D74 forbids an agent widening
+itself, and the harness's maker reached the same rule: a repository's allow rules wait for trust, and `autoMode` is
+never read from project settings. One yes per repository replaces one proposal per refused command, which is the
+growth D81 rejected.
+
+**Findings the study turned up** (design §1.6), each carried by a row or an owner's call: the CLI's default core
+budget, 30,000 bytes, leaves at most 2,768 bytes of brief under codex's 32,768-byte cut (BUDGET1); a push written as
+`git -C . push` passes `no-push` and is allowed by auto mode's defaults (UNBLOCK4); a project skill's
+`allowed-tools` is honoured untrusted, so no canonical skill may carry it (DOC3's test); package-manager wildcard
+rules are dropped in auto mode (exact rules); four of this repository's gates are not a session's to run (`kind`
+and `quiet`).
+
+**Rejected** (the design's §8 has the full list):
+- **Allowances applied from the declaration without the person**: D74, the maker's own trust rule, and a session
+  could edit the declaration.
+- **A skill whose `allowed-tools` names the gates**: honoured untrusted, for one turn, on one harness, unreviewed.
+- **Writing the repository's `.claude/settings.json`**: the repository's file, and trust-gated (D72).
+- **Translating into codex's `.rules`**: per account, and an execpolicy `allow` runs outside the sandbox. Measured
+  first (UNBLOCK7).
+- **One proposal per command** (D81), **runner prefixes** (`Bash(npm run *)`), **the declaration in the manifest**
+  (D26), **reading it from the session's tree**, and **every declared gate offered**.
+- **The standard as an always-loaded rule, a pack, or in the adoption playbook**: the budget; a dependency of core
+  cannot be opt-in; the playbook cannot be read from another repository.
+- **Ceilings that fail** (D54), **notes by lifecycle folder as the standard** (D117 §2.4), **a glossary required
+  everywhere**, **a command-reading push hook** (held behind the canary), and **`dontAsk` or `bypassPermissions`**
+  (D81).
+
+**What it amends, when built.**
+- D72: a fourth layer per repository, `declared`; `commit` gains `git mv`; the composed file gains the
+  `autoMode.hard_deny` entry.
+- D74: a proposal whose author is a repository's declaration at a commit, with a `declare` action.
+- D81: the carve-outs are held in the classifier as well as by the textual deny.
+- D94: three lines, `permission.refused`, `session.read` and `session.skill`.
+- D115: the gates file gains `safe`, and DEV5's `kind` and `quiet` decide what a session is offered.
+- D117: the set-up quest carries the standard's three steps and the declaration; its press's rule loses `git mv`;
+  the root file's bytes report is one line with DOC3's.
+- The adoption playbook (local): the same three steps.
+
+Each row that builds a piece notes the amendment where it lands.
+
+**What the gates do not cover.** This change is documents only, and nothing is built. Its statements about this
+repository were read from its files: the canon's rules and skills, `Acp.cs`, `Adapters.cs`, `Permissions.cs`,
+`RuleProposals.cs`, `SessionLog.cs`, `SessionEvents.cs`, `GateDeclaration.cs`, `RepositoryScanner.cs`,
+`canon.ts`, `config.ts` and `drift.ts`. Its statements about the harnesses are their makers' documentation, read
+2026-10-01 and cited in design §9, or LAYOUT2's reading of their shipped code; none was measured on a turn. The
+account of what AR-2201's sessions read is the parent's, recorded in no tracked document. `verify` checks this
+entry's shape and the design's links and budget, and none of their words.
