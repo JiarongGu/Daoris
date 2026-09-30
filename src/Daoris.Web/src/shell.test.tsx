@@ -747,6 +747,77 @@ describe('the plugins card', () => {
     expect(await screen.findByText(/daoris plugin add/)).toBeTruthy();
     expect(screen.getByText('C:/somewhere/data/plugins')).toBeTruthy();
   });
+
+  /** PLUG8 (D101): the kit a plugin is made with, and a Try beside every plugin that speaks. */
+  const KIT = {
+    points: [
+      { name: 'quest/consider', kind: 'decision' },
+      { name: 'session/ended', kind: 'observation' },
+      { name: 'work/land', kind: 'act' },
+    ],
+  };
+  const TRIAL = {
+    plugin: 'acme.gate', folder: 'C:/somewhere/data/plugins/acme.gate', command: ['node', 'plugin.mjs'],
+    passed: true, summary: '`acme.gate` answered as the driver reads it.', said: [],
+    steps: [{ name: 'handshake', ok: true, sentence: 'speaks hook wire 1 and listens on quest/consider.' }],
+  };
+
+  it('an older shell\'s catalogue carries no kit, and gets no kit card and no Try', async () => {
+    show(<SettingsView notify={() => {}} section="plugins" />);
+
+    expect(await screen.findByText('Acme gate')).toBeTruthy();
+    expect(screen.queryByText('Make a plugin')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Try acme.gate' })).toBeNull();
+  });
+
+  it('a plugin that speaks is tried where it stands, and the report sits under its row', async () => {
+    invoke.mockImplementation(async (_module: string, type: string) =>
+      (type === 'PLUGINS' ? { ...PLUGINS, kit: KIT } : type === 'PLUGIN_TRY' ? TRIAL : WIRING));
+    show(<SettingsView notify={() => {}} section="plugins" />);
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Try acme.gate' }));
+
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'PLUGIN_TRY', { payload: { id: 'acme.gate' } });
+    expect(await screen.findByText(/answered as the driver reads it/)).toBeTruthy();
+    // A refused plugin speaks nowhere, so there is nothing of it to try.
+    expect(screen.queryByRole('button', { name: 'Try future' })).toBeNull();
+    expect(serviceCalls()).toEqual([]);
+  });
+
+  it('the kit makes a plugin in the folder picked, and offers that folder to Try', async () => {
+    const notify = vi.fn();
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'PLUGINS') return { ...PLUGINS, kit: KIT };
+      if (type === 'PICK_FOLDER') {
+        return {
+          path: 'C:/work/plugins', name: 'plugins', exists: true, adopted: false, git: true,
+          owns: [], accepts: [], packs: [], join: false, shareKnowledge: false,
+        };
+      }
+      if (type === 'PLUGIN_NEW') {
+        return { id: 'acme.new', folder: 'C:/work/plugins/acme.new', points: ['work/land'], files: ['plugin.json'] };
+      }
+      if (type === 'PLUGIN_TRY') return { ...TRIAL, plugin: 'acme.new', folder: 'C:/work/plugins/acme.new' };
+      return WIRING;
+    });
+    show(<SettingsView notify={notify} section="plugins" />);
+    const kit = await screen.findByRole('group', { name: 'New' });
+
+    await userEvent.type(within(kit).getByRole('textbox', { name: 'Plugin id' }), 'acme.new');
+    await userEvent.click(within(kit).getByRole('checkbox', { name: /work\/land/ }));
+    await userEvent.click(within(kit).getByRole('button', { name: 'Choose…' }));
+    expect(await within(kit).findByDisplayValue('C:/work/plugins')).toBeTruthy();
+    await userEvent.click(within(kit).getByRole('button', { name: 'New' }));
+
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'PLUGIN_NEW',
+      { payload: { id: 'acme.new', points: ['work/land'], folder: 'C:/work/plugins' } });
+    await waitFor(() => expect(notify).toHaveBeenCalledWith(expect.stringContaining('Made acme.new in C:/work/plugins/acme.new')));
+    expect(screen.getByRole('textbox', { name: 'Folder to try' })).toHaveValue('C:/work/plugins/acme.new');
+
+    await userEvent.click(within(screen.getByRole('group', { name: 'Try a folder' })).getByRole('button', { name: 'Try' }));
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'PLUGIN_TRY', { payload: { folder: 'C:/work/plugins/acme.new' } });
+    expect(await screen.findByRole('region', { name: 'What try found' })).toBeTruthy();
+  });
 });
 
 /**
