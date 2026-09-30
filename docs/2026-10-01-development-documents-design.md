@@ -648,6 +648,9 @@ this lands, the repository's declaration will wait for your yes*.
 - **After**: the same count, per repository, from the day its declaration is accepted.
 - **The target is not zero.** A session refused a push is working as designed. What should reach
   zero is a refusal of **declared** work, and what should fall is asks per session overall.
+- **As built (UNBLOCK5, 2026-10-01)**: the line and the report, with a fifth field, `by`, from the pipe
+  door's `decision_reason_type`, null on the protocol door. The machine-log design's §4 and §6 say what
+  each reads and what is not counted; D122's note says why.
 
 ## 4. The canon text, outlined for DOC2
 
