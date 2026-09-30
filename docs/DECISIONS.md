@@ -4600,3 +4600,35 @@ request. The npm package is already built, published with provenance, and gated 
 answered 404 for `daoris`: the name was unclaimed, and nothing yet proves the first publish will get
 it. `npm run rehearse` installs the packed tarball through its `bin` locally, which is the nearest
 proof of the install lines; it did not run in this change.
+
+### 3. CONSOLE3 — a driven session's background work ends with the session
+
+The owner's call: **today's behaviour is the rule**. A driven session does not wait for background
+work it started (a backgrounded command, an async subagent, a dev server) before it closes. That work
+ends with the session, on both doors, and no code changed.
+
+- **The protocol door.** The session closes after its prompt's response. The adapter's process tree,
+  the background command among it, ends with the session's job object (ORPHAN1), and a stream still
+  open is closed and says so (`session-ended`, CONSOLE2). What the agent says after its turn, woken by
+  that work finishing, is cut off with it (`docs/2026-09-28-console2-streams-evidence.md`).
+- **The native door.** The binary ends its own background work when its turn ends. In the CONSOLE3c
+  probe the command was `killed` five seconds after the `result`, and nothing of it ran after the
+  binary exited (`docs/2026-09-30-console3-native-streams-evidence.md`). The job object holds the
+  same line behind it.
+- **A conversation** keeps its process between turns, so what it starts may outlive a turn. It ends
+  with the conversation at the latest, under the same job object.
+
+**Why.** A driven session holds its tree and its quest while it runs. Waiting on its background work
+would hold both for as long as that work chose to run, with nobody watching: ORPHAN1 was written
+after a session's dev servers held two ports and a finished tree for an hour. Work whose result the
+session needs belongs in its turn, in the foreground, which both harnesses offer.
+
+**Rejected.** **A bounded wait after the turn**: a dev server never finishes, so the wait is always
+its timeout, and the timeout is the time the session holds its tree. The words the agent says after
+its turn would also belong to no turn in the record.
+
+**What the gates do not cover.** The job object is Windows-only, a no-op elsewhere, and best effort: a
+process that exits before it can join is not held. `ProcessJobTests` holds a child that outlives its
+parent ending when the session is untracked. The native door's own kill is the harness's behaviour,
+seen once at one binary version, and could change with a later one. Neither door's stop has been seen
+against a real session with background work still running.
