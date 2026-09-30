@@ -5778,3 +5778,78 @@ and counts its repository as holding Daoris's branches (D112), and the hand-off 
 reached any of them would delete, move or push the person's line. Building it is a change to what a landing record
 is: an entry of its own kind that `All()` never returns, the review reading the merge's own range (its first parent
 up to the merge commit) and the preview reading at that commit rather than at the line's tip, each with its test.*
+
+## D118 — Every view has the same frame: its own list pane and main area, beside the frame's side bar and panel (2026-10-01)
+
+**Decision (FRAME1a).** The owner, 2026-10-01: *"why only session has more layout option we do need to make
+everything consitant"*. `docs/2026-10-01-frame-audit.md` reads each view's layout from the code, and found
+that only Sessions has a list that collapses, resizes and is remembered. On four views a record opens in a
+modal drawer over the side bar and the panel. Only Sessions remembers what was open in it.
+`docs/2026-10-01-frame-model-design.md` is the contract. It settles:
+
+1. **The same regions on every view, with two owners.** The list pane and the main area are the view's:
+   they change with it, and each view remembers its own. The activity bar, the strip, the status bar, the
+   right side bar and the panel are the frame's: they are the same on every view, as DOCK1a made the side
+   bar and the panel. **The frame's regions hold only what is the same on every view**, so a view's own
+   detail never goes to the side bar.
+2. **What each view puts there** is the design's §2 table:
+   - Quests' asks and quests, Projects' repositories, Search's hits, Convergence's findings and Settings'
+     domains become list panes;
+   - the quest, the repository, the entry, the finding and the domain become the main area;
+   - Overview and Map have no list, for §4's reasons;
+   - Plugins, PLUGUI1's view, is built on the frame.
+3. **A record is the main area and a form is a drawer.** A record opens in the main area of the view whose
+   list holds it, and every door into a view names the item it opens, through one opener. A form stays a
+   drawer, and every overlay opens above a full side bar.
+4. **One list pane everywhere.** A header with `＋` and ⋯; a resize within per-view bounds; a person's
+   closing that leaves a 56 px strip; four doors that toggle it (the strip, the View menu, Ctrl+B, and a
+   press on the current place); ↑, ↓, Home, End and Enter inside it.
+   - **A list becomes a strip by room, not below a fixed width.** That happens when the main area would
+     fall below its 400 px floor with the side bar as it stands.
+   - **A strip the window drew opens the list over the main area.**
+5. **Remembered per view:** the list's closing, its width, the chosen item and the list's filters.
+   Sessions' and Settings' existing keys are kept. What the frame remembers stays for every view, as now.
+6. **The main area lays out by its own width**, never the viewport's, and shows skeleton rows while its
+   item loads, never the empty state.
+7. **A browser keeps the list and the main area**, and never the side bar or the panel. The monitor's rail
+   and a detached window's console take the same `ListPane` and `OutputPanel`.
+
+**Why.** The owner asked for one product rather than a set of screens. The audit showed the frame DOCK1a
+put on every view stopped at the frame's own regions. Every view kept its own arrangement inside the
+centre, and none of them had Sessions' list. Two things follow from DOCK1a itself:
+- **the drawer**, the platform's detail surface since D41, now lies over the regions that hold Ask Daoris
+  and the attended session;
+- **a view's detail in the side bar** would make the side bar change with the view, which is what DOCK1a
+  made it the frame's to prevent.
+
+So a record moves to the main area, and the side bar keeps only what is the same everywhere.
+
+This **amends**, each marked where it is amended:
+- **D41 §4** (platform language §4 *Drawer*): a record leaves the drawer once its view has a list;
+- **FRAME6** (components plan §3a): a strip the window drew offered no open, and the rail was a strip below
+  a fixed 1024 px;
+- **DOCK1a** (dock design §4): a browser keeps the view alone;
+- **D56 §3**: the rail as Sessions' alone.
+
+D40's landing, D55's session as the organising object, and D47 §4 are unchanged.
+
+**Rejected.**
+- **A shared main area with tabs across views** (VS Code's editor groups): a second navigation beside the
+  list, and the file model D55 declined for a session.
+- **A view's own detail as a side bar view**: the side bar would change with the view.
+- **Keeping a record in the drawer**: it is modal over the side bar and the panel.
+- **One list state for every view** (VS Code's): each list differs in kind and width, and closing Sessions'
+  rail for room is not asking to lose Quests' list. VS Code shares one side bar because it shares one
+  editor.
+- **One viewport threshold for every list** (1024 px, Sessions' today): it strips Settings' 176 px list
+  where it fits, and it keeps Sessions' rail a strip with 540 px free beside it.
+- **A list on Overview or on Map**: a second copy of *What needs you*, and Projects twice.
+- **Stacking a list above the main area when narrow** (Settings' today): the arrangement D56 rejected for
+  the activity bar.
+- **Hiding a list when narrow** (the monitor's today): it leaves no way back.
+
+**What the gates do not cover.** This is a design, and nothing is built. The audit was read from the source
+at `7a3fb5f`, and its rows marked *to look at* wait for the window (its §5 lists twelve looks). None of the
+widths, the room rule's numbers, or the F6 key has been tried on the window: FRAME1b measures F6 first, and
+drops it if the engine keeps F6 for itself. The build rows are the design's §6, and each carries its own
+proof.
