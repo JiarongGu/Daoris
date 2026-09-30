@@ -1,0 +1,19 @@
+{
+  "work.terminal.opening": "Starting a terminal…",
+  "work.terminal.none": "No terminal is open.",
+  "work.terminal.open": "Open a terminal",
+  "work.terminal.ended": "{{shell}} ended with code {{code}}.",
+  "work.terminal.again": "Start again",
+  "work.terminal.shell.pwsh": "PowerShell",
+  "work.terminal.shell.powershell": "Windows PowerShell",
+  "work.terminal.shell.cmd": "Command Prompt",
+  "work.terminal.shell.bash": "Git Bash",
+  "work.terminal.tabs": "open terminals",
+  "work.terminal.tab": "{{shell}} · {{folder}}",
+  "work.terminal.tabNth": "{{name}} ({{n}})",
+  "work.terminal.tabTip": "{{shell}}, started in {{cwd}}",
+  "work.terminal.endedMark": "ended",
+  "work.terminal.new": "New terminal",
+  "work.terminal.default": "default",
+  "work.terminal.close": "Close {{name}}"
+}

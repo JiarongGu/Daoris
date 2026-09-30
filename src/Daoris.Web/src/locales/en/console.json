@@ -1,0 +1,6 @@
+{
+  "console.label": "console",
+  "console.live": "live",
+  "console.dropped": "{{count}} earlier line fell outside the window — the transcript on the driving machine has them all",
+  "console.dropped_other": "{{count}} earlier lines fell outside the window — the transcript on the driving machine has them all"
+}

@@ -1,7 +1,46 @@
 import { describe, expect, it } from 'vitest';
 import i18n from './i18n';
-import en from './locales/en.json';
-import zh from './locales/zh.json';
+import { areas, en, homeOf, zh } from './locales';
+
+/**
+ * One file per area (MOD2): the build gate (`scripts/i18n-check.mjs`) holds these too, and this holds
+ * them for anyone running the tests without it.
+ */
+describe('the catalogues by area', () => {
+  it('are areas at all: every language is read from files, not one file', () => {
+    expect(Object.keys(areas.en).length).toBeGreaterThan(1);
+    expect(Object.keys(areas.zh).sort()).toEqual(Object.keys(areas.en).sort());
+  });
+
+  it('hold the same keys in each area, both directions', () => {
+    for (const [area, keys] of Object.entries(areas.en)) {
+      expect(Object.keys(areas.zh[area] ?? {}).sort(), area).toEqual(Object.keys(keys).sort());
+    }
+  });
+
+  it('lose no key to the merge: no key is in two areas', () => {
+    for (const language of [areas.en, areas.zh]) {
+      const counted = Object.values(language).reduce((sum, keys) => sum + Object.keys(keys).length, 0);
+      expect(counted).toBe(Object.keys(language === areas.en ? en : zh).length);
+    }
+  });
+
+  it('keep each key in the area its prefix names, so a new key has one home', () => {
+    const names = Object.keys(areas.en);
+    const misplaced = Object.entries(areas.en).flatMap(([area, keys]) =>
+      Object.keys(keys).filter((key) => homeOf(key, names) !== area).map((key) => `${key} in ${area}`));
+    expect(misplaced).toEqual([]);
+  });
+
+  it('find the home by the longest prefix with a file, and none where no file starts it', () => {
+    const names = ['settings', 'settings.rules', 'work', 'work.intake'];
+    expect(homeOf('settings.rules.add', names)).toBe('settings.rules');
+    expect(homeOf('settings.rulesBook', names)).toBe('settings');
+    expect(homeOf('settings.rules', names)).toBe('settings.rules');
+    expect(homeOf('work.intakeRunning.title', names)).toBe('work');
+    expect(homeOf('nav.quests', names)).toBeNull();
+  });
+});
 
 describe('the catalogs', () => {
   it('agree on their key sets at runtime, not only in the build gate', () => {
@@ -43,7 +82,7 @@ describe('the catalogs', () => {
    */
   it('call a quest 委托 in 中文, never 任务', () => {
     const aboutQuests = Object.entries(en).filter(([, value]) => /\bquests?\b/i.test(value)).map(([key]) => key);
-    expect(aboutQuests.filter((key) => (zh as Record<string, string>)[key]!.includes('任务'))).toEqual([]);
+    expect(aboutQuests.filter((key) => zh[key]!.includes('任务'))).toEqual([]);
   });
 
   /**

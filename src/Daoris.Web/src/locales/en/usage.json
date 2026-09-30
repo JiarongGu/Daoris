@@ -1,0 +1,9 @@
+{
+  "usage.title": "What each account has carried",
+  "usage.body": "Context reported by the sessions and conversations this machine ran, per account, each at its highest. A door that carries only text reports none, so a session run on one is an absence here, not a zero. No price is attached.",
+  "usage.context": "{{used}} context",
+  "usage.sessions": "{{count}} session",
+  "usage.sessions_other": "{{count}} sessions",
+  "usage.contextTip": "context held, summed across that account's sessions, each at its own high-water mark. The agent's own units, as it reported them.",
+  "usage.note": "Measured, not billed — and never sent anywhere. These numbers stay on this machine, like the transcripts and the account names they belong to."
+}

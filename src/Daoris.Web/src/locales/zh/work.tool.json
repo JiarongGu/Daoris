@@ -1,0 +1,18 @@
+{
+  "work.tool.untitled": "一次工具调用",
+  "work.tool.lines": "{{count}} 行",
+  "work.tool.lines_other": "{{count}} 行",
+  "work.tool.continued": "一次更早开始的调用",
+  "work.tool.status.pending": "等待",
+  "work.tool.status.in_progress": "运行中",
+  "work.tool.status.completed": "完成",
+  "work.tool.status.failed": "失败",
+  "work.tool.status.refused": "此处不允许",
+  "work.tool.status.stopped": "已停止",
+  "work.tool.status.cancelled": "已取消",
+  "work.tool.status.disconnected": "已断开",
+  "work.tool.status.session-ended": "随会话结束",
+  "work.tool.input": "输入",
+  "work.tool.output": "输出",
+  "work.tool.terminal": "终端 {{id}}"
+}

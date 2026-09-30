@@ -1,0 +1,19 @@
+{
+  "work.terminal.opening": "正在启动终端…",
+  "work.terminal.none": "没有打开的终端。",
+  "work.terminal.open": "打开终端",
+  "work.terminal.ended": "{{shell}} 已结束，退出码 {{code}}。",
+  "work.terminal.again": "重新启动",
+  "work.terminal.shell.pwsh": "PowerShell",
+  "work.terminal.shell.powershell": "Windows PowerShell",
+  "work.terminal.shell.cmd": "命令提示符",
+  "work.terminal.shell.bash": "Git Bash",
+  "work.terminal.tabs": "打开的终端",
+  "work.terminal.tab": "{{shell}} · {{folder}}",
+  "work.terminal.tabNth": "{{name}}（{{n}}）",
+  "work.terminal.tabTip": "{{shell}}，启动于 {{cwd}}",
+  "work.terminal.endedMark": "已结束",
+  "work.terminal.new": "新建终端",
+  "work.terminal.default": "默认",
+  "work.terminal.close": "关闭{{name}}"
+}

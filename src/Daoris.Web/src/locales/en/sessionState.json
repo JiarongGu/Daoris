@@ -1,0 +1,12 @@
+{
+  "sessionState.queued": "queued",
+  "sessionState.starting": "starting",
+  "sessionState.working": "working",
+  "sessionState.awaiting-person": "awaiting person",
+  "sessionState.completed": "completed",
+  "sessionState.declined": "declined",
+  "sessionState.stood-down": "stood down",
+  "sessionState.failed": "failed",
+  "sessionState.stopped": "stopped",
+  "sessionState.idle": "idle"
+}

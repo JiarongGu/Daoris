@@ -1,0 +1,6 @@
+{
+  "time.justNow": "just now",
+  "time.minutes": "{{count}}m ago",
+  "time.hours": "{{count}}h ago",
+  "time.days": "{{count}}d ago"
+}

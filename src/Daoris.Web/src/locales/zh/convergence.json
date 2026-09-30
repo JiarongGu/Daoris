@@ -1,0 +1,21 @@
+{
+  "convergence.title": "同归",
+  "convergence.description": "两个仓库各自独立得出同一结论的地方——读过再定。知识这一半的主视图。",
+  "convergence.threshold": "相似度 ≥",
+  "convergence.hintSemantic": "调低即可看到更弱的重合。值得来回扫一遍，而不是只信一个数——合适的取值取决于语料。",
+  "convergence.hintLexical": "没有嵌入端点时，这里只能找到复制与转述。两个仓库若以不同措辞得出同一结论，将不会出现。",
+  "convergence.comparing": "比对中…",
+  "convergence.empty": "相似度 {{value}} 及以上未见同归",
+  "convergence.emptyBody": "调低相似度能找到更弱的相似——再低一些，就只剩措辞碰巧相同的文档。",
+  "convergence.emptyFloor": "{{value}} 已是最低：再低，两份文档就只剩措辞碰巧相同。这里没有同归。",
+  "convergence.lower": "调低到 {{value}}",
+  "convergence.methods.Convergent.label": "同一教训，不同措辞",
+  "convergence.methods.Convergent.hint": "文本比对无从得出的发现——也正是语义层存在的理由。",
+  "convergence.methods.Restatement.label": "措辞大体相同",
+  "convergence.methods.Restatement.hint": "多半是一份后来漂移了的副本。",
+  "convergence.methods.Identical.label": "同一份文档，原样粘贴",
+  "convergence.methods.Identical.hint": "是复制，不是巧合。",
+  "convergence.count": "{{count}} 组",
+  "convergence.count_other": "{{count}} 组",
+  "convergence.cappedAt": "前 {{count}} 组——还有更多，请调高相似度"
+}

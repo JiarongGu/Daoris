@@ -72,6 +72,13 @@ value outside it, the two diverge and only a reader notices — eventually.
 - **Keys are structural, not English-as-key**: `nav.quests`, `overview.tiles.openQuests.label`,
   `quests.compose.publish`. English is a catalog like any other, so a missing key is visible instead of
   silently "working" in English only.
+- **One file per area, and a key's home is its prefix** (MOD2, 2026-09-30). Each language is
+  `src/locales/<language>/<area>.json`, merged at load into the one flat catalogue i18next is given. A key
+  lives in the file named by its longest dotted prefix that has a file (`settings.rules.add` in
+  `settings.rules.json`, `settings.theme.label` in `settings.json`); a new first segment is a new file,
+  and an area past about a hundred keys splits its second segments of ten or more into files of their
+  own. One file held every string and eleven of eighteen branches edited it; the gate holds each area's
+  parity both ways, no key in two files, and every key in its home.
 - **`zh` is 简体**, in the professional register of a console — terse, no exclamation marks; the
   family's own nouns keep their English forms where they are identifiers (`daoris.json`, command
   names), and "quest" translates consistently everywhere it appears.

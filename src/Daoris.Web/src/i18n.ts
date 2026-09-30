@@ -1,8 +1,8 @@
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 import LanguageDetector from 'i18next-browser-languagedetector';
-import en from './locales/en.json';
-import zh from './locales/zh.json';
+// One file per area, merged into one catalogue per language before i18next sees it (MOD2).
+import { en, zh } from './locales';
 
 // UI chrome is translated; DATA is not (D42). Quest content, registry declarations, knowledge bodies
 // and the service's own sentences render verbatim — machine-translating a refusal would break the

@@ -1,0 +1,6 @@
+{
+  "statusHint.Open": "已发布——尚无人接下",
+  "statusHint.Taken": "已由某个仓库的智能体接下",
+  "statusHint.Done": "已了结",
+  "statusHint.Declined": "已谢绝——所附说明才是委托方能据以行动的部分"
+}

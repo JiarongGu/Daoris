@@ -1,0 +1,23 @@
+{
+  "menu.about": "About Daoris",
+  "menu.app": "Daoris",
+  "menu.view": "View",
+  "menu.settings": "Settings",
+  "menu.setup": "Set up Daoris",
+  "menu.workspace": "Workspace",
+  "menu.agents": "Agents",
+  "menu.driver": "Driver",
+  "menu.plugins": "Plugins",
+  "menu.workspace.none": "No workspace yet",
+  "menu.workspace.add": "Add repository…",
+  "menu.workspace.import": "Import a folder…",
+  "menu.workspace.wire": "Wire to a remote…",
+  "menu.workspace.settings": "Workspace settings",
+  "menu.agents.tools": "Tools & accounts",
+  "menu.agents.rules": "What agents may do",
+  "menu.agents.proposals": "Proposals",
+  "menu.agents.usage": "Usage",
+  "menu.agents.ai": "Daoris's own AI",
+  "menu.refresh": "Refresh the index",
+  "menu.language": "Switch language"
+}

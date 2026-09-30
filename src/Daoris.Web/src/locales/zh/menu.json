@@ -1,0 +1,23 @@
+{
+  "menu.about": "关于 道衍",
+  "menu.app": "道衍",
+  "menu.view": "视图",
+  "menu.settings": "设置",
+  "menu.setup": "配置 Daoris",
+  "menu.workspace": "工作区",
+  "menu.agents": "智能体",
+  "menu.driver": "驱动",
+  "menu.plugins": "插件",
+  "menu.workspace.none": "还没有工作区",
+  "menu.workspace.add": "添加仓库…",
+  "menu.workspace.import": "导入一个文件夹…",
+  "menu.workspace.wire": "接线到远端部署…",
+  "menu.workspace.settings": "工作区设置",
+  "menu.agents.tools": "工具与账户",
+  "menu.agents.rules": "智能体可以做什么",
+  "menu.agents.proposals": "提议的更改",
+  "menu.agents.usage": "用量",
+  "menu.agents.ai": "Daoris 自身的 AI",
+  "menu.refresh": "刷新索引",
+  "menu.language": "切换语言"
+}

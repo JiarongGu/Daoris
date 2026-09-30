@@ -1,0 +1,13 @@
+{
+  "work.relations.title": "Who it worked with",
+  "work.relations.askedBy": "Asked by",
+  "work.relations.session": "session {{id}} in {{repository}}",
+  "work.relations.elsewhere": "session {{id}}, whose record this machine does not hold",
+  "work.relations.resumed": "Carried on once #{{id}} was answered",
+  "work.relations.asked": "Asked of another repository",
+  "work.relations.asked_other": "Asked of other repositories ({{count}})",
+  "work.relations.question": "its question: its quest waited on this",
+  "work.relations.answer": "Answered: {{note}}",
+  "work.relations.declined": "Declined: {{note}}",
+  "work.relations.waiting": "Not answered yet."
+}

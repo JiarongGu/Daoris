@@ -1,0 +1,21 @@
+{
+  "command.go.overview": "总览",
+  "command.go.quests": "委托",
+  "command.go.projects": "项目",
+  "command.go.convergence": "汇聚",
+  "command.go.map": "地图",
+  "command.go.search": "搜索",
+  "command.go.settings": "设置",
+  "command.go.sessions": "会话",
+  "command.work.start": "开启会话…",
+  "command.work.review": "查看该会话落地的改动",
+  "command.work.monitor": "打开监视窗口",
+  "command.work.browser": "打开 Daoris 的浏览器——在会话会看的地方登录",
+  "command.work.help": "问道衍——本机缺什么，以及如何设置",
+  "command.work.quickAsk": "快速提问——向问道衍问一个问题，不必打开侧栏",
+  "command.work.detach": "在单独的窗口中打开该会话",
+  "command.do.setup": "配置 Daoris——本机需要的步骤，按先后排列",
+  "command.do.ask": "向工作区提出请求…",
+  "command.do.refresh": "刷新索引",
+  "command.do.language": "切换语言"
+}

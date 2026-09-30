@@ -8359,4 +8359,24 @@ dispatcher, and the offline-boundary walk covers every doctrine row read from th
 split surfaced, fixed in their own commits: a D75 "circle" in `import`'s usage that the line-by-line
 one-word test could not see inside a template literal, and prototype-named verbs (`toString`,
 `constructor`) that crashed with exit 1; both now get *unknown command*, exit 2.
-**Proven by:** CLI 629; the release and family rehearsals run with the next merge (MOD2–4).
+**Proven by:** CLI 629, and the batch with MOD2–4: release 66/66, family 301/301, Playwright 21, deployment 70/70.
+
+
+## MOD2, MOD3, MOD4 — the web lane: catalogues, bridge and Settings by area (2026-09-30)
+
+> - [ ] **MOD2 — catalogues by area**: `locales/{en,zh}.json` → one file per area, merged at load, parity
+> held per file. **MOD3 — the bridge by domain**: `shell.ts` → `bridge/<domain>.ts`, `shell.ts` the
+> barrel. **MOD4 — Settings by domain**: one file per domain, the domain list the registry. One web
+> lane, one branch, in that order.
+
+**Outcome** (built by a subagent in its own worktree, merged, then rehearsed on main). **MOD2:** the two
+1,558-key catalogues became 63 area files per language under `locales/<language>/`, merged at load; a key's
+home is its longest dotted prefix that has a file, and an area past about a hundred keys splits its second
+segments of ten or more. The gate checks each area both ways, duplicates, and home placement. **MOD3:** the
+2,026-line `shell.ts` became sixteen `bridge/<domain>.ts` files and a private call helper, with `shell.ts` a
+24-line barrel, so no import changed; `bridge.test.ts` holds the barrel's shape, and the presentational
+boundary now covers `bridge/`. **MOD4:** the 1,925-line `SettingsView.tsx` became a 148-line frame, the
+`settings/domains.ts` list (the one place a domain is added) and nine domain files; `shell.test.tsx` was
+split beside its code and deleted. Nothing a person sees changed; seventeen structural tests hold the shape.
+**Proven by:** vitest 1700 (from 1683), `tsc`, the catalogue check, CLI 629, release 66/66, family 301/301,
+Playwright 21, deployment 70/70 (the same batch proved MOD7's merge).

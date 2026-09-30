@@ -1,0 +1,10 @@
+{
+  "trust.title": "让智能体信任这个文件夹？",
+  "trust.what": "这正是智能体第一次在某个文件夹里运行时会问的问题。你信任之后，这个文件夹自己的设置和 permissions.allow 就会生效，驱动也能启动它扣住的工作。",
+  "trust.holding.quest": "驱动为此扣住了委托 #{{id}}。",
+  "trust.holding.ask": "驱动为此扣住了请求 #{{id}} 的受理会话。",
+  "trust.file": "Daoris 只在智能体自己的文件里写入这一项，别的一概不动：",
+  "trust.grant": "信任这个文件夹",
+  "trust.cancel": "暂不",
+  "trust.open": "信任这个文件夹…"
+}

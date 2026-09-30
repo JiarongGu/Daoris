@@ -1,0 +1,9 @@
+{
+  "layout.rail": "会话列表",
+  "layout.panel": "面板",
+  "layout.right": "右侧栏",
+  "layout.toggle": "显示或隐藏{{region}}（{{keys}}）",
+  "layout.menu.rail": "会话列表",
+  "layout.menu.panel": "面板",
+  "layout.menu.right": "右侧栏"
+}

@@ -16,6 +16,9 @@ import { describe, expect, it } from 'vitest';
 const FORBIDDEN: { what: string; pattern: RegExp }[] = [
   { what: "the query layer ('./queries')", pattern: /\bfrom\s+'(?:\.\.?\/)+queries'/ },
   { what: "the shell bridge ('./shell')", pattern: /\bfrom\s+'(?:\.\.?\/)+shell'/ },
+  // Its domains, which `./shell` only re-exports since MOD3: without this row the rule is side-stepped
+  // by importing the file the barrel names.
+  { what: "a bridge domain ('./bridge/…')", pattern: /\bfrom\s+'(?:\.\.?\/)+bridge\// },
   { what: 'react-query directly', pattern: /\bfrom\s+'@tanstack\/react-query'/ },
   // The bridge ITSELF, not just this repository's wrapper around it (SURF7). Without this row the
   // rule is trivially side-stepped by importing the library `./shell` is built on.
@@ -65,7 +68,20 @@ const organismRules = [...ORGANISMS].map((path) => {
     what: `the organism ${name}`,
     pattern: new RegExp(`^import\\s+(?!type\\s)[^;]*?from\\s+'(?:\\.\\.?\\/)+(?:[\\w-]+\\/)*${name}'`, 'm'),
   };
-});
+}).concat([
+  // Settings' domains, organisms by their name (below), and the list that imports every one of them.
+  { what: 'a Settings domain', pattern: /^import\s+(?!type\s)[^;]*?from\s+'(?:\.\.?\/)+(?:[\w-]+\/)*\w+Domain'/m },
+  { what: "the Settings domains' list", pattern: /^import\s+(?!type\s)[^;]*?from\s+'(?:\.\.?\/)+(?:settings\/)?domains'/m },
+]);
+
+/**
+ * **A Settings domain is an organism by its name** (MOD4): `settings/<Name>Domain.tsx` holds its
+ * domain's queries, as SettingsView did before each domain had a file, so the molecules beside it hold
+ * none; and `settings/domains.ts`, the list, imports every one. By name rather than listed here, so a new
+ * domain is added in the list alone — and `settings/domains.test.ts` holds that every file so named IS a
+ * registered domain, so the name cannot carry a molecule past this boundary.
+ */
+const SETTINGS_ORGANISM = /^\.\/settings\/(?:\w+Domain\.tsx|domains\.ts)$/;
 
 export function offenders(files: [path: string, source: string][]): string[] {
   return files.flatMap(([path, source]) =>
@@ -76,7 +92,8 @@ export function offenders(files: [path: string, source: string][]): string[] {
 
 // `map/` since MAP2: the map's drawing and detail are molecules, and MapView above them is the view.
 // `asks/` and `compose/` since INT4c: the ask's molecules, and the carry fields both composers share.
-// `settings/` since AGT6: Daoris's own AI, drawn from props — SettingsView above it holds the queries.
+// `settings/` since AGT6: Daoris's own AI, drawn from props — SettingsView above it holds the queries,
+// and since MOD4 each domain's own `<Name>Domain.tsx` does.
 // `projects/` since INT3c: the driver's row, drawn from props — ProjectsView above it holds the driver.
 // `help/` since HELP1: Ask Daoris's panel and its starters, drawn from props — AskDaoris holds the machine.
 // `links.tsx` since BRW7: the one place a link opens, told where by a context the application provides.
@@ -85,7 +102,7 @@ const sources = import.meta.glob('./{ui.tsx,links.tsx,work/**/*.{ts,tsx},map/**/
 }) as Record<string, string>;
 
 const presentational = Object.entries(sources)
-  .filter(([path]) => !ORGANISMS.has(path) && !/\.(test|stories)\.tsx?$/.test(path));
+  .filter(([path]) => !ORGANISMS.has(path) && !SETTINGS_ORGANISM.test(path) && !/\.(test|stories)\.tsx?$/.test(path));
 
 describe('the presentational boundary', () => {
   it('catches an import it is meant to catch — the check itself, sabotaged', () => {
@@ -93,6 +110,9 @@ describe('the presentational boundary', () => {
       .toEqual(["./work/SessionRow.tsx imports the query layer ('./queries')"]);
     expect(offenders([['./work/SessionRow.tsx', "import { useDriver } from '../shell';\n"]]))
       .toHaveLength(1);
+    // The road around the barrel: the domain file it re-exports.
+    expect(offenders([['./work/SessionRow.tsx', "import { useDriver } from '../bridge/driver';\n"]]))
+      .toEqual(["./work/SessionRow.tsx imports a bridge domain ('./bridge/…')"]);
     // The road around the wrapper: the library `./shell` is itself built on.
     expect(offenders([['./work/SessionRow.tsx', "import { useShenora } from '@shenora/react';\n"]]))
       .toEqual(["./work/SessionRow.tsx imports the bridge library ('@shenora/react')"]);
@@ -103,6 +123,15 @@ describe('the presentational boundary', () => {
       .toEqual(['./work/frame.tsx imports the organism SessionConsole']);
     expect(offenders([['./work/Row.tsx', "import type { AttentionDoors } from './AttentionBand';\n"]]))
       .toEqual([]);
+    // A Settings domain is an organism by its name, and so is the list of them.
+    expect(offenders([['./settings/Lines.tsx', "import { PluginsDomain } from './PluginsDomain';\n"]]))
+      .toEqual(['./settings/Lines.tsx imports a Settings domain']);
+    expect(offenders([['./settings/Lines.tsx', "import { SETTINGS_DOMAINS } from './domains';\n"]]))
+      .toEqual(["./settings/Lines.tsx imports the Settings domains' list"]);
+    expect(offenders([['./settings/Lines.tsx', "import type { SettingsDomainProps } from './domains';\n"]]))
+      .toEqual([]);
+    expect(SETTINGS_ORGANISM.test('./settings/PluginsDomain.tsx')).toBe(true);
+    expect(SETTINGS_ORGANISM.test('./settings/Lines.tsx')).toBe(false);
   });
 
   it('is looking at files at all — a vacuous boundary is a boundary that has stopped working', () => {

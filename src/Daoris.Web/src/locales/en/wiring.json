@@ -1,0 +1,23 @@
+{
+  "wiring.title": "What a start runs on",
+  "wiring.body": "For each workspace: the agent, account and version a driven session would start with — and an intake, once an agent is named for it — and which setting chose each. The driver reads this same answer.",
+  "wiring.row": "a start in {{workspace}}",
+  "wiring.rowIntake": "an intake in {{workspace}}",
+  "wiring.job.work": "sessions",
+  "wiring.job.intake": "intake",
+  "wiring.ready": "ready",
+  "wiring.held": "held",
+  "wiring.agent": "agent",
+  "wiring.account": "account",
+  "wiring.version": "version",
+  "wiring.versionUnknown": "not known",
+  "wiring.accountFrom.picked": "picked for the session",
+  "wiring.accountFrom.workspace": "this workspace's default",
+  "wiring.accountFrom.machine": "this machine's default",
+  "wiring.accountFrom.unset": "no default set",
+  "wiring.versionFrom.picked": "picked for the session",
+  "wiring.versionFrom.workspace": "pinned for this workspace",
+  "wiring.versionFrom.machine": "pinned on this machine",
+  "wiring.versionFrom.unset": "from PATH",
+  "wiring.versionFrom.commanded": "the command driver.json names"
+}

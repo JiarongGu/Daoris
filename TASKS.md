@@ -22,7 +22,7 @@ lists.
 ## State
 
 **Counts, and this is their one home:** sixteen commands, **629 CLI tests, 652 service and 46 HTTP host, 1416 driver,
-399 desktop modules, 80 devkit, 1683 web unit, 21 Playwright**, 66/66 release rehearsal, **301/301
+399 desktop modules, 80 devkit, 1700 web unit, 21 Playwright**, 66/66 release rehearsal, **301/301
 family rehearsal** (it names its own phases when you run it), **70/70 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge
 documents, 5 skills, 7 packs. The always-loaded core is **22,492 of 26,000 bytes** — a span in
@@ -112,9 +112,9 @@ rather than designed.
 
 ## Backlog
 
-**Twenty-three rows are open, in three kinds** (triaged 2026-09-30, when the owner asked to go faster):
-- **Workable now, by the parent or subagents (nine):** the parallel-development arc's five
-  (MOD2–MOD9, the owner's newest; MOD2–4 merging, MOD5 and MOD6 in flight), READ1, TASKBAR1, TEST1, and FLAKE1 (which MOD8
+**Twenty-two rows are open, in three kinds** (triaged 2026-09-30, when the owner asked to go faster):
+- **Workable now, by the parent or subagents (eight):** the parallel-development arc's four
+  (MOD5, MOD6, MOD8, MOD9, the owner's newest; MOD5 in flight, MOD6 merging), READ1, TASKBAR1, TEST1, and FLAKE1 (which MOD8
   absorbs).
 - **Waiting on the owner (six):** BUDGET1 and PLUGREPO1 (their calls), TRUST2 and AGT2c (a grant, two
   downloads), FG5 and BRW3 (the owner present).
@@ -132,10 +132,6 @@ rule it also ships. A heading below holds open rows only.
 `docs/2026-09-30-parallel-development-design.md` is the contract: what eighteen merges collided on,
 the two kinds of collision (a shared record, a god file), the rules, the splits, the lane map and the
 order. Every split is behaviour-preserving and proven by the gates as they stand.
-- [ ] **MOD2 — catalogues by area**: `locales/{en,zh}.json` → one file per area, merged at load, parity
-  held per file. **MOD3 — the bridge by domain**: `shell.ts` → `bridge/<domain>.ts`, `shell.ts` the
-  barrel. **MOD4 — Settings by domain**: one file per domain, the domain list the registry. One web
-  lane, one branch, in that order.
 - [ ] **MOD5 — the driver module by domain**: `DriverModule.cs` → a partial per domain and a route
   table each adds to.
 - [ ] **MOD6 — the room and the proposals by feature**: a room section or door row per file, a judge per

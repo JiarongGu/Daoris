@@ -1,0 +1,8 @@
+{
+  "duration.seconds": "{{seconds}}s",
+  "duration.minuteSeconds": "{{minutes}}m {{seconds}}s",
+  "duration.under": "under a minute",
+  "duration.minutes": "{{count}}m",
+  "duration.hours": "{{hours}}h {{minutes}}m",
+  "duration.days": "{{days}}d {{hours}}h"
+}

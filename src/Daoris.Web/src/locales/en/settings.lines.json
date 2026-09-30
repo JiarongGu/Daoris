@@ -1,0 +1,18 @@
+{
+  "settings.lines.title": "Lines",
+  "settings.lines.body": "The branch each repository's work grows from and lands on: a session's own tree starts there, a merge lands there, and sync feeds the index from it. Unset, git's own guess stands — origin/HEAD, else main, else master.",
+  "settings.lines.none": "No repository on this machine to set a line for.",
+  "settings.lines.workspaceHint": "The default for each repository in this workspace that sets none of its own.",
+  "settings.lines.workspaceField": "The line for {{workspace}}",
+  "settings.lines.repositoryField": "The line for {{repository}}",
+  "settings.lines.eachCheckout": "each checkout's own",
+  "settings.lines.unnamed": "none named",
+  "settings.lines.from.repository": "`{{branch}}`, set for this repository.",
+  "settings.lines.from.workspace": "`{{branch}}`, set for the workspace {{workspace}}.",
+  "settings.lines.from.checkout": "`{{branch}}`, the checkout's own.",
+  "settings.lines.from.none": "No line: none is set, and git names none here.",
+  "settings.lines.set": "Set",
+  "settings.lines.clear": "Clear",
+  "settings.lines.saved": "In {{name}}, work grows from `{{branch}}` and lands on it now. A session already running keeps its own.",
+  "settings.lines.cleared": "{{name}} takes its line from what stands above it again."
+}

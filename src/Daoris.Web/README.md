@@ -21,7 +21,9 @@ One activity bar (D66), landing on management (D40). The views that read the fam
 time (D55, `docs/2026-09-21-working-surface-design.md`) — and exists only in the desktop, because a
 stream never leaves its machine. **Map** is how a workspace's repositories are wired (MAP2).
 **Settings** is everywhere: appearance in a browser, and in the desktop this machine's wiring,
-driver and agents too.
+driver and agents too. Each domain is `src/settings/<Name>Domain.tsx`, with its tests beside it, and
+`src/settings/domains.ts` lists them: the one place a domain is added, since the frame
+(`SettingsView.tsx`) renders whichever one is chosen and names none itself (MOD4).
 
 **The design language is written down** — `docs/2026-09-19-platform-ux.md` (D41): the console shell
 (an activity bar, page headers, one primary action per view), the token system, the drawer as the single
@@ -37,8 +39,8 @@ status pill never appears without its text label.
 | Primitives | **Radix UI** — dialog (the drawer), toast, select, tooltip, checkbox: behaviour without a look |
 | Icons | **lucide-react**, tree-shaken |
 | Server state | **TanStack Query** — deduped fetches, refetch-on-focus, invalidation after every mutation |
-| i18n | **react-i18next**, `en` + `zh`, flat dotted keys; `scripts/i18n-check.mjs` fails the build when the catalogs diverge |
-| Shell bridge | **@shenora/react** — in the desktop, `DAORIS.DRIVER` carries the person's controls and `DRIVER_TICK` pushes the loop's reports into toasts and refetches (`shell.ts`, `ShellSignals.tsx`); in a browser none of it mounts, by design |
+| i18n | **react-i18next**, `en` + `zh`, flat dotted keys, **one file per area** (`src/locales/<language>/<area>.json`, merged at load by `src/locales/index.ts`): a key lives in the file named by its longest dotted prefix that has one, so `settings.rules.add` is in `settings.rules.json` and `nav.quests` in `nav.json`. `scripts/i18n-check.mjs` fails the build when an area's two files diverge, a key is in two files, or a key is not in its home (MOD2) |
+| Shell bridge | **@shenora/react** — in the desktop, `DAORIS.DRIVER` carries the person's controls and `DRIVER_TICK` pushes the loop's reports into toasts and refetches (`ShellSignals.tsx`); in a browser none of it mounts, by design. **One file per domain** (MOD3): each domain's types and calls are `src/bridge/<domain>.ts` (driver, sessions, conversation, console, terminal, trees, lines, agents, plugins, rules, help, browser, windows, remotes, registry, log), `src/shell.ts` is only the barrel re-exporting them, and `bridge/bridge.test.ts` holds that it stays one |
 | Design tool | **Storybook** (`npm run storybook`) — the component states and the token gallery, on the shipped code |
 | Test loop | **Vitest + Testing Library** as the millisecond inner loop (view logic, primitives, catalogs — with the sibling's proven jsdom shims), **Playwright** as the outer loop — the real host over `examples/`, driving the shipped bundle. `npm run test:web` at the workspace root runs the whole pyramid |
 
