@@ -43,6 +43,7 @@ what was measured, and it stays a record of that moment. A *record* is append-on
 | `2026-09-30-terminal-design.md` | contract | The terminal: a real shell of the person's own in the console panel (CONSOLE4, D96) | Built (CONSOLE4a–c, §4); the look on the window in both themes is still to take |
 | `2026-09-30-setup-guide-design.md` | contract | The setup guide: what a first start walks through, on the facts Ask Daoris's starters read (SETUP1, D97) | Current; SETUP1a–b in its §3 order |
 | `2026-09-30-parallel-development-design.md` | contract | Parallel development: what eighteen merges collided on, the rules, the splits and the lane map (MOD1–MOD9) | Built (MOD1–MOD9, D106); §3 rule 5 says how a desktop suite's `Process` half runs; LEFT1 re-runs a rehearsal that died (§3) and gives every tracked file a place in the lane map (§5) |
+| `2026-10-01-naming-design.md` | contract | Names: a name is a UI element, designed in each language; the kinds, their rules and budgets, the glossary and the check (NAME1, D116) | Current. NAME1a wrote it with the glossary and the check in report mode; the renames are NAME1b's |
 
 ## Studies and evidence
 
