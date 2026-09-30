@@ -48,13 +48,19 @@ effort, D98), CHR8 (one Chromium, D99), BRW7–8 (the browser's door, link routi
 (Ask Daoris proposes every new door, tried with a real helper), WORK1, DEPLOY5 and HTTP1 — most built
 by subagents in their own worktrees and merged, rehearsed and looked at on main. Then HELP7, LOG2
 (the host writes its stop), WSR4 (D100: a landing plugin pushes and opens the pull request, two inert
-examples), HELP8 (Ask Daoris proposes one), and a narrow Settings row that now stacks. **Next:**
-PLUG8 and PLUG9, the owner's *Daoris makes plugins* (building), then the owner's calls. The kit's own
-relay (Shenora.Chromium 0.18.0) leaves a pump unobserved as Daoris's did: a request for the kit's
-owner, not Daoris's to change (LOG2b).
-- **The owner's ticket AR-2201 is landed** on its feature branch in the repository that owns it, not
-  pushed; the pull request is theirs, and so are two calls the verify step raised (a rounding change
-  in a shared helper, and a production config update). Two landed branches of the ticket before it
+examples), HELP8 (Ask Daoris proposes one), a narrow Settings row that stacks, PLUG8–9 (Daoris makes
+and installs plugins, D101, D103), WSR5 (landed branches cleaned and handed to a plugin, D102), DRV8
+(one driver loop per home, cut-off takes carried on, D104), the owner's calls (D105, READ1 D107), the
+**parallel-development arc whole** (MOD1–MOD9: union-merged records D106, every god file split into
+registries, a `Process` test category, `tools/merge-branch.mjs` and the `dispatch-subagent` skill), and
+TASKBAR1 (D108). **Next:** nothing workable is left without the owner — the rows below are theirs or
+parked. Dispatch through the `dispatch-subagent` skill and merge with `tools/merge-branch.mjs`. The
+kit's own relay (Shenora.Chromium 0.18.0) leaves a pump unobserved as Daoris's did: a request for the
+kit's owner, not Daoris's to change (LOG2b).
+- **The owner's ticket AR-2201 is landed with its follow-up** (the "vs Yesterday" rounding fixed and checked
+  through prod-link) on one branch in the repository that owns it, not pushed; the pull request is theirs,
+  and so are the production config update and a question the follow-up raised (a "vs Last 7 Days Avg"
+  total subtracted as if an average). Two landed branches of the ticket before it
   wait for the owner to delete (the permission policy refused a forced branch delete). The private
   notes name them.
 - **The install** runs main at TASKBAR1 (`34f8602`, republished 2026-09-30 night: the splits, READ1, MOD8, TASKBAR1; the taskbar is the owner's to look at); republishing is the session's own call, never while a session
@@ -117,13 +123,12 @@ rather than designed.
 
 ## Backlog
 
-**Sixteen rows are open, in three kinds** (triaged 2026-09-30, when the owner asked to go faster):
-- **Workable now, by the parent or subagents (two):** READ1, TASKBAR1, TEST1, and FLAKE1 (which MOD8
-  absorbs).
+**Sixteen rows are open, in two kinds** (triaged 2026-09-30, when the owner asked to go faster):
 - **Waiting on the owner (six):** BUDGET1 and PLUGREPO1 (their calls), TRUST2 and AGT2c (a grant, two
   downloads), FG5 and BRW3 (the owner present).
-- **Parked on a trigger (eight):** TOOL4, TOOL5, PLUG7, SEM2, CANON9, HARNESS1, REH1, and D76's held file
-  tools. None is work until its trigger arrives.
+- **Parked on a trigger (ten):** TOOL4, TOOL5, PLUG7, SEM2, CANON9, HARNESS1, REH1, D76's held file tools,
+  and FLAKE1 and TEST1, which wait for their next sighting (the Process category runs serially since MOD8,
+  and the final serial run was clean). None is work until its trigger arrives.
 
 Every closed row is in `docs/task-archive.md`, and this file holds no ticked rows, by the `task-lifecycle`
 rule it also ships. A heading below holds open rows only.
