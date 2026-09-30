@@ -41,7 +41,7 @@ describe('the shell-attached platform', () => {
   it('projects grow the per-machine driver controls, landing on DAORIS.DRIVER', async () => {
     show(<ProjectsView notify={() => {}} />);
 
-    const drive = await screen.findByLabelText('drive on this machine');
+    const drive = await screen.findByLabelText('Drive on this machine');
     await userEvent.click(drive);
 
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SET_DRIVABLE', {
@@ -64,21 +64,21 @@ describe('the shell-attached platform', () => {
     expect(await screen.findByText('No repository is registered yet')).toBeInTheDocument();
     expect(screen.getByText(/daoris import/).tagName).toBe('CODE');
     // The page header's and the empty state's: the second is where the eye already is.
-    expect(screen.getAllByRole('button', { name: 'add repository' })).toHaveLength(2);
+    expect(screen.getAllByRole('button', { name: 'Add repository' })).toHaveLength(2);
   });
 
   it('hold appears only once a repository is drivable — a hold on nothing is noise', async () => {
     show(<ProjectsView notify={() => {}} />);
 
-    await screen.findByLabelText('drive on this machine');
-    expect(screen.queryByLabelText('hold')).not.toBeInTheDocument();
+    await screen.findByLabelText('Drive on this machine');
+    expect(screen.queryByLabelText('Hold')).not.toBeInTheDocument();
   });
 
   it('holding a drivable repository lands on DAORIS.DRIVER with its own payload key', async () => {
     invoke.mockImplementation(async () => ({ ...DRIVER_STATE, drivable: ['engine'] }));
     show(<ProjectsView notify={() => {}} />);
 
-    await userEvent.click(await screen.findByLabelText('hold'));
+    await userEvent.click(await screen.findByLabelText('Hold'));
 
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SET_HOLD', {
       payload: { repository: 'engine', held: true },
@@ -131,14 +131,14 @@ describe('the shell-attached registry management', () => {
     const notify = vi.fn();
     show(<ProjectsView notify={notify} />);
 
-    await userEvent.click(await screen.findByRole('button', { name: 'add repository' }));
-    await userEvent.click(await screen.findByRole('button', { name: 'choose a folder…' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Add repository' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Choose a folder…' }));
 
     expect(invoke).toHaveBeenCalledWith('DAORIS.REGISTRY', 'PICK_FOLDER', {});
     expect(await screen.findByText('D:/repos/borealis')).toBeInTheDocument();
 
     // UX5 U38: the move leads and *never mind* follows, as in every other drawer; this one was reversed.
-    const register = screen.getByRole('button', { name: 'register it' });
+    const register = screen.getByRole('button', { name: 'Register' });
     expect(register.compareDocumentPosition(screen.getByRole('button', { name: 'Never mind' })))
       .toBe(Node.DOCUMENT_POSITION_FOLLOWING);
     await userEvent.click(register);
@@ -162,9 +162,9 @@ describe('the shell-attached registry management', () => {
         : DRIVER_STATE);
     show(<ProjectsView notify={() => {}} />);
 
-    await userEvent.click(await screen.findByRole('button', { name: 'add repository' }));
-    await userEvent.click(await screen.findByRole('button', { name: 'choose a folder…' }));
-    await userEvent.click(await screen.findByRole('button', { name: 'register it' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Add repository' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Choose a folder…' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Register' }));
 
     const posted = vi.mocked(fetch).mock.calls
       .find(([url, init]) => String(url) === '/api/registry' && init?.method === 'POST');
@@ -184,12 +184,12 @@ describe('the shell-attached registry management', () => {
     show(<ProjectsView notify={notify} importRequested onImportOpened={() => {}} />);
 
     const drawer = await screen.findByRole('dialog');
-    await userEvent.click(within(drawer).getByRole('button', { name: 'choose a folder…' }));
+    await userEvent.click(within(drawer).getByRole('button', { name: 'Choose a folder…' }));
     expect(await within(drawer).findByText('D:/repos/borealis')).toBeInTheDocument();
-    expect(within(drawer).getByLabelText('workspace')).toHaveValue('borealis');
+    expect(within(drawer).getByLabelText('Workspace')).toHaveValue('borealis');
 
     // The move leads and *never mind* follows, as in every drawer (UX5 U38).
-    const importIt = within(drawer).getByRole('button', { name: 'import them' });
+    const importIt = within(drawer).getByRole('button', { name: 'Import' });
     expect(importIt.compareDocumentPosition(within(drawer).getByRole('button', { name: 'Never mind' })))
       .toBe(Node.DOCUMENT_POSITION_FOLLOWING);
     await userEvent.click(importIt);
@@ -205,9 +205,9 @@ describe('the shell-attached registry management', () => {
     show(<ProjectsView notify={() => {}} importRequested onImportOpened={() => {}} />);
 
     const drawer = await screen.findByRole('dialog');
-    await userEvent.click(within(drawer).getByRole('button', { name: 'choose a folder…' }));
-    await userEvent.clear(await within(drawer).findByLabelText('workspace'));
-    await userEvent.click(within(drawer).getByRole('button', { name: 'import them' }));
+    await userEvent.click(within(drawer).getByRole('button', { name: 'Choose a folder…' }));
+    await userEvent.clear(await within(drawer).findByLabelText('Workspace'));
+    await userEvent.click(within(drawer).getByRole('button', { name: 'Import' }));
 
     const posted = vi.mocked(fetch).mock.calls
       .find(([url, init]) => String(url) === '/api/registry/import' && init?.method === 'POST');
@@ -222,14 +222,14 @@ describe('the shell-attached registry management', () => {
     const notify = vi.fn();
     show(<ProjectsView notify={notify} />);
 
-    await userEvent.click(await screen.findByRole('button', { name: 'manage' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Manage' }));
     const drawer = await screen.findByRole('dialog');
     expect(within(drawer).getByText(/Nothing is deleted/)).toBeInTheDocument();
 
     // Two clicks, deliberately: the first is not the destructive one.
-    await userEvent.click(within(drawer).getByRole('button', { name: 'retire' }));
+    await userEvent.click(within(drawer).getByRole('button', { name: 'Retire' }));
     // UX5 U38: the move, then *never mind*, as every other drawer puts them; this pair was reversed.
-    const confirm = within(drawer).getByRole('button', { name: 'yes, retire it' });
+    const confirm = within(drawer).getByRole('button', { name: 'Retire repository' });
     expect(confirm.compareDocumentPosition(within(drawer).getByRole('button', { name: 'Never mind' })))
       .toBe(Node.DOCUMENT_POSITION_FOLLOWING);
     await userEvent.click(confirm);
@@ -251,10 +251,10 @@ describe('the shell-attached registry management', () => {
     }));
     show(<ProjectsView notify={() => {}} />);
 
-    await userEvent.click(await screen.findByRole('button', { name: 'manage' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Manage' }));
     const drawer = await screen.findByRole('dialog');
 
-    for (const field of ['summary', 'owns', 'accepts']) {
+    for (const field of ['Summary', 'Owns', 'Accepts']) {
       expect(within(drawer).getByLabelText(field)).not.toHaveClass('font-mono');
     }
   });
@@ -330,7 +330,7 @@ describe('the shell-attached registry management', () => {
     }));
     show(<ProjectsView notify={() => {}} />);
 
-    const owns = await screen.findByText('owns');
+    const owns = await screen.findByText('Owns');
     expect(owns.tagName).toBe('DT');
     expect(owns.nextElementSibling?.tagName).toBe('DD');
     expect(within(owns.nextElementSibling as HTMLElement).getByText('the public API')).toBeTruthy();
@@ -357,11 +357,11 @@ describe('the shell-attached registry management', () => {
   it('re-wiring edits one row and writes no file', async () => {
     show(<ProjectsView notify={() => {}} />);
 
-    await userEvent.click(await screen.findByRole('button', { name: 'manage' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Manage' }));
     const drawer = await screen.findByRole('dialog');
-    await userEvent.clear(within(drawer).getByLabelText('workspace'));
-    await userEvent.type(within(drawer).getByLabelText('workspace'), 'tools');
-    await userEvent.click(within(drawer).getByRole('button', { name: 're-wire' }));
+    await userEvent.clear(within(drawer).getByLabelText('Workspace'));
+    await userEvent.type(within(drawer).getByLabelText('Workspace'), 'tools');
+    await userEvent.click(within(drawer).getByRole('button', { name: 'Move to workspace' }));
 
     expect(vi.mocked(fetch)).toHaveBeenCalledWith(
       '/api/registry/engine/workspace',
@@ -418,7 +418,7 @@ describe('an unadopted repository on this machine (INT3c)', () => {
     show(<ProjectsView notify={() => {}} />);
 
     const row = await screen.findByRole('listitem', { name: 'newbie' });
-    await userEvent.click(await within(row).findByLabelText('drive on this machine'));
+    await userEvent.click(await within(row).findByLabelText('Drive on this machine'));
 
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SET_DRIVABLE', {
       payload: { repository: 'newbie', drivable: true },
@@ -433,7 +433,7 @@ describe('an unadopted repository on this machine (INT3c)', () => {
 
     const row = await screen.findByRole('listitem', { name: 'newbie' });
     expect(await within(row).findByText(DIRECT_NOTE)).toBeInTheDocument();
-    expect(within(row).getByLabelText('drive on this machine')).toBeInTheDocument();
+    expect(within(row).getByLabelText('Drive on this machine')).toBeInTheDocument();
   });
 
   /**
@@ -456,7 +456,7 @@ describe('an unadopted repository on this machine (INT3c)', () => {
     show(<ProjectsView notify={() => {}} />);
 
     const row = await screen.findByRole('listitem', { name: 'elsewhere' });
-    await screen.findAllByLabelText('drive on this machine');
-    expect(within(row).queryByLabelText('drive on this machine')).toBeNull();
+    await screen.findAllByLabelText('Drive on this machine');
+    expect(within(row).queryByLabelText('Drive on this machine')).toBeNull();
   });
 });
