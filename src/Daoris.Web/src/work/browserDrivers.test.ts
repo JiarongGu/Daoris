@@ -28,7 +28,7 @@ describe('browserDrivers', () => {
   it('names a conversation by its kind, and each of two in the order the driver gave', () => {
     const chat = session({ id: 'c0ffee00', repository: 'game', kind: 'chat' });
     expect(browserDrivers(['c0ffee00', 's1a2b3c4'], [session({ quest: 'q1' }), chat], [QUEST]).map((d) => d.name))
-      .toEqual(['game · conversation', 'engine · Read the ticket']);
+      .toEqual(['game · Chat', 'engine · Read the ticket']);
   });
 
   it('names a session the page has no record of yet by its id, rather than leaving it out', () => {

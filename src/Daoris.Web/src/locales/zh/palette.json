@@ -8,5 +8,5 @@
   "palette.open": "命令（Ctrl+K）",
   "palette.group.go": "前往",
   "palette.group.do": "操作",
-  "palette.group.work": "工作"
+  "palette.group.work": "会话"
 }

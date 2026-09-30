@@ -8,11 +8,12 @@ import { MANIFEST_FILE, lockIndex, readLock, readManifest, writeManifest } from 
 import { planChanges } from './materialize.ts';
 import { notesBetween } from './notes.ts';
 import { inspect } from './drift.ts';
-import { HARNESSES, DEFAULT_HARNESS } from './harness.ts';
+import { HARNESSES, DEFAULT_HARNESS, resolveHarness } from './harness.ts';
+import { formerDocuments, lockLayout } from './layout.ts';
+import { describeLink, linkProblems } from './links.ts';
+import { flagValue } from './args.ts';
 import { readRemotes, redactKey } from './remotemap.ts';
 import { DaorisError } from './errors.ts';
-
-const DEFAULT_TARGET = HARNESSES[DEFAULT_HARNESS]!.defaultTarget;
 
 /**
  * Everything under the target dir that the lock does not claim is this repo's
@@ -49,11 +50,18 @@ function localDocs(root: string, target: string, harness: Harness = HARNESSES[DE
  * core, which is the one thing that is expensive on every future session.
  */
 export function commandInit(
-  { root, write, packageRoot }: Pick<CommandArgs, 'root' | 'write' | 'packageRoot'>,
+  { root, argv = [], write, packageRoot }:
+    Pick<CommandArgs, 'root' | 'write' | 'packageRoot'> & { argv?: CommandArgs['argv'] },
 ): ExitCode {
   if (existsSync(join(root, MANIFEST_FILE))) {
     throw new DaorisError(`${MANIFEST_FILE} already exists — edit it, or delete it to start over`);
   }
+  // A new adopter may choose the agents layout (D117). Resolved before anything is written, so an
+  // unknown name is a tool error naming what exists and leaves no manifest behind. The older layout
+  // stays the default: the family's newcomers write `.claude/knowledge/` after `init`, and the service
+  // reads `.claude` until it reads the lock's root (LAYOUT4).
+  const harness = resolveHarness(flagValue(argv, '--harness') ?? DEFAULT_HARNESS);
+  const older = harness.id === DEFAULT_HARNESS;
   const canon = readCanon(resolveCanonRoot(packageRoot));
 
   writeManifest(root, {
@@ -62,7 +70,10 @@ export function commandInit(
     // package is a private workspace with no `bin`.
     source: `daoris@${canon.version}`,
     packs: [],
-    target: DEFAULT_TARGET,
+    ...(older ? {} : { harness: harness.id }),
+    target: harness.defaultTarget,
+    // Declared, never found (D117 §2.2): a folder with an AGENTS.md of its own is named here.
+    ...(older ? {} : { rooms: [] }),
     coreBudgetBytes: 30000,
     // Scaffolded empty and deliberately so. Filling it in is how a repository registers what it is and
     // what it can be asked for; a guess written by the tool would be worse than a blank someone
@@ -85,11 +96,25 @@ export function commandInit(
     }
   }
 
-  const local = localDocs(root, DEFAULT_TARGET);
+  const local = localDocs(root, harness.defaultTarget, harness);
   if (local.length) {
     write('');
     write("  this repo's own docs (never synced, never touched):");
     for (const file of local) write(`    ${file}`);
+  }
+  // Under the root the older layout used, its index lists nothing (D117 §5.2): each is named with the
+  // move that brings it under the target, which is the repository's own act (D5).
+  const former = formerDocuments({ root, harness, target: harness.defaultTarget });
+  if (former.length) {
+    write('');
+    write(`  this repo's own docs where the ${harness.id} layout's index will not list them:`);
+    for (const doc of former) write(`    ${doc.path} — ${doc.move}`);
+  }
+  // Said now, because `sync` will refuse it (D117 §5.4): the choice of what replaces it is the repository's.
+  const links = linkProblems(root, { pairs: ['AGENTS.md', 'CLAUDE.md'] });
+  if (links.length) {
+    write('');
+    for (const problem of links) write(`  ${describeLink(problem)}`);
   }
   write('');
   write('  then: daoris sync');
@@ -108,7 +133,9 @@ export function commandStatus(
   // separately are two paths that can disagree about whether an update exists — the same reasoning
   // that gave the service one QuestExchange for its two hosts.
   const inspection = lock ? inspect({ root, manifest, lock }) : null;
-  const local = localDocs(root, manifest.target, manifest.harnessDescriptor);
+  // Where the files are is the lock's answer (D117 §5.1), so a pending move lists them where they stand.
+  const was = lockLayout(root, lock, manifest);
+  const local = localDocs(root, was.target, was.harness);
   const canonAvailable = existsSync(canonRoot);
 
   let update: {
@@ -185,9 +212,13 @@ export function commandStatus(
   if (argv.includes('--json')) {
     write(JSON.stringify({
       harness: manifest.harnessDescriptor.name,
+      // The descriptor by its manifest name, its rooms, and how many mirror files it keeps (D117).
+      layout: manifest.harnessDescriptor.id,
       source: manifest.source,
       packs: ['core', ...manifest.packs],
       target: manifest.target,
+      rooms: manifest.rooms,
+      mirrors: lock?.mirrors?.length ?? 0,
       synced: lock !== null,
       canonVersion: lock?.canonVersion ?? null,
       files: lock?.entries.length ?? 0,
@@ -199,6 +230,13 @@ export function commandStatus(
       // Everything `check` fails on, so "why is check red?" is answered here too (REV3 CLI F11).
       staleSwitches: inspection?.staleSwitches ?? [],
       indexStale: inspection?.indexStale ?? false,
+      staleLayout: inspection?.staleLayout ?? null,
+      mirrorsDrifted: inspection?.mirrorsDrifted ?? [],
+      mirrorsMissing: inspection?.mirrorsMissing ?? [],
+      mirrorsBehind: inspection?.mirrorsBehind ?? [],
+      roomsWithoutInstructions: inspection?.roomsWithoutInstructions ?? [],
+      roomPointersMissing: inspection?.roomPointersMissing ?? [],
+      links: inspection?.links ?? [],
       switchedOff,
       offers,
       selectionProblem,
@@ -219,6 +257,10 @@ export function commandStatus(
   write(`  source        ${manifest.source}`);
   write(`  packs         ${['core', ...manifest.packs].join(', ')}`);
   write(`  canon         ${lock ? `${lock.canonVersion} (${lock.entries.length} files)` : 'never synced'}`);
+  if (manifest.rooms.length) write(`  rooms         ${manifest.rooms.join(', ')}`);
+  if (lock?.mirrors?.length) {
+    write(`  mirrors       ${lock.mirrors.length} in ${was.harness.mirror?.root ?? 'a mirror root'}`);
+  }
   if (manifest.remote) {
     write(`  remote        join${manifest.remote.knowledge ? ' + knowledge' : ''} (declared in daoris.json)`);
   }
@@ -244,6 +286,12 @@ export function commandStatus(
     if (inspection.indexStale) {
       write("  roster        the doctrine region's on-demand tables are out of date — run 'daoris sync'");
     }
+    if (inspection.staleLayout) write(`  layout        ${inspection.staleLayout} — run 'daoris sync'`);
+    const mirrorFacts = [...inspection.mirrorsDrifted.map((m) => m.path), ...inspection.mirrorsMissing, ...inspection.mirrorsBehind];
+    if (mirrorFacts.length) write(`  mirror        ${mirrorFacts.join(', ')} — 'daoris check' says which`);
+    const roomFacts = [...inspection.roomsWithoutInstructions, ...inspection.roomPointersMissing];
+    if (roomFacts.length) write(`  room          ${roomFacts.join(', ')} — 'daoris check' says which`);
+    for (const problem of inspection.links) write(`  link          ${problem.path} — 'daoris check' says what it is`);
   }
 
   if (selectionProblem) write(`  selection     ${selectionProblem}`);

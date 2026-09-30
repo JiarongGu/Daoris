@@ -12,7 +12,7 @@ const VIEWS = [
   { tab: 'overview' as const, label: 'Overview', icon: 'overview' as const },
   { tab: 'sessions' as const, label: 'Sessions', icon: 'frameWork' as const, badge: 2, tone: 'open' as const },
   { tab: 'quests' as const, label: 'Quests', icon: 'quests' as const, badge: 1 },
-  { tab: 'projects' as const, label: 'Projects', icon: 'projects' as const },
+  { tab: 'projects' as const, label: 'Repositories', icon: 'projects' as const },
   { tab: 'convergence' as const, label: 'Convergence', icon: 'convergence' as const },
   { tab: 'search' as const, label: 'Search', icon: 'search' as const },
 ];

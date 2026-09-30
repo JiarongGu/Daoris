@@ -1,5 +1,5 @@
 {
-  "common.close": "close",
-  "common.dismiss": "dismiss",
-  "common.cancel": "never mind"
+  "common.close": "Close",
+  "common.dismiss": "Dismiss",
+  "common.cancel": "Never mind"
 }

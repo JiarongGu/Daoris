@@ -48,3 +48,4 @@ export function measure(text: string, language: Language, rules: Glossary['measu
 export function validate(glossary: Glossary, en: Catalogue, zh: Catalogue): string[];
 export function check(glossary: Glossary, en: Catalogue, zh: Catalogue, options?: { all?: boolean }): Finding[];
 export function report(findings: Finding[], options?: { labels?: number }): string;
+export function verdict(findings: Finding[], options: { strict: boolean }): 0 | 1;

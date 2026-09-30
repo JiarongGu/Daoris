@@ -178,6 +178,28 @@ export function writeRegion(text: string, name: string, body: string): string {
 }
 
 /**
+ * The file with the region taken out, or null when the region was all of it (D117 §5.4: a room taken
+ * out of the manifest loses its pointer).
+ *
+ * @remarks
+ * The inverse of `writeRegion`'s append: the marker lines and the body go, and so does the blank line
+ * the append put before them, so a file that had text of its own reads as it did before. Everything
+ * else is kept as it stands, in the file's own line ending.
+ *
+ * @throws DaorisError on damaged markers, through the same `findRegion`: removing half a region is a
+ * guess about where somebody else's text begins.
+ */
+export function removeRegion(text: string, name: string): string | null {
+  const found = findRegion(text, name);
+  if (found.kind === 'absent') return text;
+  const eol = lineEnding(text);
+  const lines = text.split('\n').map((line) => line.replace(/\r$/, ''));
+  const kept = [...lines.slice(0, found.open - 1), ...lines.slice(found.close)];
+  while (kept.length && kept[kept.length - 1]!.trim() === '') kept.pop();
+  return kept.length ? `${kept.join(eol)}${eol}` : null;
+}
+
+/**
  * The pointer file's content, or null when it already points where it should.
  *
  * @param text The file as it stands, or null when there is none.

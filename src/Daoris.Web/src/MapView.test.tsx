@@ -84,7 +84,7 @@ describe('the workspace map', () => {
       show();
       expect(await screen.findByRole('button', { name: 'engine, 1 open, a session waiting on you' })).toBeTruthy();
       const word = screen.getByText('waiting on you');
-      expect(screen.queryByText('working now')).toBeNull();
+      expect(screen.queryByText('working')).toBeNull();
       // UX5 U1: the hue the rail's dot and the band's card give the same fact, not the notice tone.
       expect(word.getAttribute('class')).toContain('fill-st-open');
       expect(word.closest('g')!.querySelector('circle[stroke-dasharray]')!.getAttribute('class'))
@@ -104,7 +104,7 @@ describe('the workspace map', () => {
     expect(within(detail).getByText('bugs')).toBeTruthy();
     expect(within(detail).getByText('Expose a streaming budget')).toBeTruthy();
     expect(within(detail).getByText('Fix the loader')).toBeTruthy();
-    expect(within(detail).getByText('working now')).toBeTruthy();
+    expect(within(detail).getByText('working')).toBeTruthy();
   });
 
   /**
@@ -115,7 +115,7 @@ describe('the workspace map', () => {
     show();
     await userEvent.click(await screen.findByRole('button', { name: /^engine, 1 open/ }));
     const detail = screen.getByText('quests to it').closest('div')!.parentElement!;
-    expect(within(detail).getByText('working now').getAttribute('class')).toContain('text-st-taken');
+    expect(within(detail).getByText('working').getAttribute('class')).toContain('text-st-taken');
 
     SESSIONS[0] = { ...SESSIONS[0]!, state: 'awaiting-person' };
     try {
@@ -155,13 +155,13 @@ describe('the workspace map', () => {
 
     expect(screen.getByText('game → engine')).toBeTruthy();
     expect(screen.getByText('Expose a streaming budget')).toBeTruthy();
-    expect(screen.getByText('Done')).toBeTruthy();
+    expect(screen.getByText('done')).toBeTruthy();
   });
 
   // ——— MAP4b: asks and chains, each its own kind of line, and a person chooses which are drawn.
 
   const lines = async () => {
-    const button = await screen.findByRole('button', { name: /^Lines: / });
+    const button = await screen.findByRole('button', { name: /^Connections: / });
     button.focus();
     await userEvent.keyboard('{Enter}');
   };
@@ -185,7 +185,7 @@ describe('the workspace map', () => {
 
     expect(screen.queryByRole('button', { name: 'engine and game learned the same thing once' })).toBeNull();
     expect(screen.queryByText(/dashed line: the same thing learned in both/)).toBeNull();
-    expect(screen.getByRole('button', { name: 'Lines: 4 of 5 kinds drawn' })).toHaveTextContent('4/5');
+    expect(screen.getByRole('button', { name: 'Connections: 4 of 5 kinds drawn' })).toHaveTextContent('4/5');
     // Every repository stays: a kind of line out of sight hides what moved, not who is in the circle.
     expect(screen.getByRole('button', { name: /^engine, 1 open/ })).toBeTruthy();
   });
@@ -194,12 +194,12 @@ describe('the workspace map', () => {
     show();
     await screen.findByRole('button', { name: '2 quests from game to engine' });
     await lines();
-    await userEvent.click(screen.getByRole('menuitemradio', { name: 'Open only' }));
+    await userEvent.click(screen.getByRole('menuitemradio', { name: 'Not closed' }));
     await userEvent.keyboard('{Escape}');
 
     // The done one leaves the line; the open one stays, and a repository's open count does not move.
     expect(screen.getByRole('button', { name: '1 quest from game to engine' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: /^Lines: / })).toHaveTextContent('· open');
+    expect(screen.getByRole('button', { name: /^Connections: / })).toHaveTextContent('· not closed');
     expect(screen.getByRole('button', { name: /^engine, 1 open/ })).toBeTruthy();
     expect(localStorage.getItem('daoris.mapWhen')).toBe('open');
   });
@@ -402,7 +402,7 @@ describe('the workspace map', () => {
 
   const openCode = async (repository: 'engine' | 'game') => {
     await userEvent.click(await screen.findByRole('button', { name: new RegExp(`^${repository}, 1 open`) }));
-    await userEvent.click(screen.getByRole('button', { name: 'Open its code map' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Open code map' }));
   };
 
   it('opens a repository\'s code map from its node, and goes back', async () => {
@@ -419,7 +419,7 @@ describe('the workspace map', () => {
     show();
     await openCode('engine');
 
-    expect(await screen.findByRole('heading', { name: 'engine: its code' })).toBeTruthy();
+    expect(await screen.findByRole('heading', { name: 'engine: code map' })).toBeTruthy();
     await userEvent.click(screen.getByRole('button', { name: 'chunks, depends on 0' }));
     expect(screen.getByText('streams the world')).toBeTruthy();
     expect(screen.getByRole('button', { name: 'renderer' })).toBeTruthy();

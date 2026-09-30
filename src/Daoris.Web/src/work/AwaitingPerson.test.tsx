@@ -19,13 +19,13 @@ describe('a session parked at a checkpoint', () => {
     const resolve = vi.fn();
     show({ onResolve: resolve });
 
-    expect(screen.getByRole('button', { name: 'finish it' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'decline…' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'stop it' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Finish' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Decline…' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Stop session' })).toBeInTheDocument();
     // `working` is the driver observing a session that carried on — a message, not a button.
     expect(screen.queryByRole('button', { name: /resume|continue|working/i })).toBeNull();
 
-    await userEvent.click(screen.getByRole('button', { name: 'finish it' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Finish' }));
     expect(resolve).toHaveBeenCalledWith('completed', null);
   });
 
@@ -38,9 +38,9 @@ describe('a session parked at a checkpoint', () => {
     const answer = vi.fn();
     show({ onAnswer: answer });
 
-    await userEvent.click(screen.getByRole('button', { name: 'answer and carry on…' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Answer and carry on…' }));
     await userEvent.type(screen.getByLabelText(/your answer/), 'Signed in; apply it to dev.');
-    await userEvent.click(screen.getByRole('button', { name: 'carry on with this answer' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Carry on with this answer' }));
 
     expect(answer).toHaveBeenCalledWith('Signed in; apply it to dev.');
     // Its process is gone, so "answer it in the box below" would send the person nowhere.
@@ -51,8 +51,8 @@ describe('a session parked at a checkpoint', () => {
     const answer = vi.fn();
     show({ onAnswer: answer });
 
-    await userEvent.click(screen.getByRole('button', { name: 'answer and carry on…' }));
-    await userEvent.click(screen.getByRole('button', { name: 'carry on with this answer' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Answer and carry on…' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Carry on with this answer' }));
 
     expect(answer).toHaveBeenCalledWith(null);
   });
@@ -61,7 +61,7 @@ describe('a session parked at a checkpoint', () => {
     const resolve = vi.fn();
     show({ onResolve: resolve });
 
-    await userEvent.click(screen.getByRole('button', { name: 'stop it' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Stop session' }));
     expect(resolve).toHaveBeenCalledWith('stopped', null);
   });
 
@@ -73,13 +73,13 @@ describe('a session parked at a checkpoint', () => {
     const resolve = vi.fn();
     show({ onResolve: resolve });
 
-    await userEvent.click(screen.getByRole('button', { name: 'decline…' }));
-    const confirm = screen.getByRole('button', { name: 'decline with this reason' });
+    await userEvent.click(screen.getByRole('button', { name: 'Decline…' }));
+    const confirm = screen.getByRole('button', { name: 'Decline with this reason' });
     expect(confirm).toBeDisabled();
     expect(resolve).not.toHaveBeenCalled();
 
     await userEvent.type(screen.getByLabelText(/the reason/), 'the chunk API is being replaced');
-    await userEvent.click(screen.getByRole('button', { name: 'decline with this reason' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Decline with this reason' }));
     expect(resolve).toHaveBeenCalledWith('declined', 'the chunk API is being replaced');
   });
 
@@ -87,23 +87,23 @@ describe('a session parked at a checkpoint', () => {
     const resolve = vi.fn();
     show({ onResolve: resolve });
 
-    await userEvent.click(screen.getByRole('button', { name: 'decline…' }));
-    await userEvent.click(screen.getByRole('button', { name: 'never mind' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Decline…' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Never mind' }));
 
-    expect(screen.getByRole('button', { name: 'finish it' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Finish' })).toBeInTheDocument();
     expect(resolve).not.toHaveBeenCalled();
   });
 
   it('holds every move while one is in flight', () => {
     show({ pending: true });
-    for (const name of ['finish it', 'decline…', 'stop it']) {
+    for (const name of ['Finish', 'Decline…', 'Stop session']) {
       expect(screen.getByRole('button', { name })).toBeDisabled();
     }
   });
 
   it('renders with no analysis at all — a park with nothing said is still a park', () => {
     show({ note: null });
-    expect(screen.getByRole('button', { name: 'finish it' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Finish' })).toBeInTheDocument();
   });
 
   /** The fourth move exists and is reachable — by answering, which the surface says out loud. */
@@ -115,7 +115,7 @@ describe('a session parked at a checkpoint', () => {
   it('speaks the active catalog', async () => {
     await i18n.changeLanguage('zh');
     show();
-    expect(screen.getByRole('button', { name: '就此完成' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '完成' })).toBeInTheDocument();
     await i18n.changeLanguage('en');
   });
 });

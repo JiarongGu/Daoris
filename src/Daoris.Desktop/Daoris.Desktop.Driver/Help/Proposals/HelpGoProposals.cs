@@ -89,29 +89,29 @@ public static class HelpPlaces
 {
     public static readonly IReadOnlyList<(string Id, string Name)> Views =
     [
-        ("overview", "Overview"), ("sessions", "Sessions"), ("quests", "Quests"), ("projects", "Projects"),
+        ("overview", "Overview"), ("sessions", "Sessions"), ("quests", "Quests"), ("projects", "Repositories"),
         ("map", "Map"), ("convergence", "Convergence"), ("search", "Search"), ("settings", "Settings"),
     ];
 
     public static readonly IReadOnlyList<(string Id, string Name)> Domains =
     [
-        ("start", "Get started"), ("appearance", "Appearance"), ("ai", "Daoris's own AI"), ("workspace", "Workspace"),
-        ("driver", "Driver"), ("agents", "Agents & accounts"), ("permissions", "Permissions"), ("plugins", "Plugins"),
-        ("browser", "Browser"), ("logs", "Logs"),
+        ("start", "Setup"), ("appearance", "Appearance"), ("ai", "AI features"), ("workspace", "Workspace"),
+        ("driver", "Driver"), ("agents", "Agents"), ("permissions", "Permissions"), ("plugins", "Plugins"),
+        ("browser", "Browser"), ("logs", "Machine log"),
     ];
 
     /// <summary>The parts, each within a view (Projects) or a Settings domain.</summary>
     public static readonly IReadOnlyList<(string Within, string Id, string Name)> Parts =
     [
         ("projects", "add", "Add repository"), ("projects", "import", "Import a folder"),
-        ("start", "agent", "step 1, an agent"), ("start", "helper", "step 2, Daoris's own agent"),
+        ("start", "agent", "step 1, an agent"), ("start", "helper", "step 2, Ask Daoris's agent"),
         ("start", "repositories", "step 3, a workspace and its repositories"), ("start", "driven", "step 4, what is driven"),
         ("start", "landing", "step 5, how work lands"), ("start", "rules", "step 6, what agents may do"),
         ("workspace", "wiring", "Wiring"), ("workspace", "lines", "Lines"), ("workspace", "landing", "How work lands"),
         ("workspace", "sweep", "Session branches"),
-        ("agents", "usage", "Usage"), ("permissions", "proposals", "Proposed by agents"),
+        ("agents", "usage", "Usage"), ("permissions", "proposals", "Proposals"),
         // HELP10: the card READ1 built (D107), which the page finds by its own `settings-across`.
-        ("permissions", "across", "Reading and writing across"),
+        ("permissions", "across", "Across repositories"),
     ];
 }
 

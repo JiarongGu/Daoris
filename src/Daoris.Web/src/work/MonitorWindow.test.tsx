@@ -102,10 +102,10 @@ describe('the monitor window', () => {
    */
   it('lists only what is running in its rail too, at the main rail’s width', async () => {
     show();
-    const rail = await screen.findByRole('navigation', { name: 'sessions' });
+    const rail = await screen.findByRole('navigation', { name: 'Sessions' });
 
     await waitFor(() => expect(within(rail).getAllByRole('listitem').length).toBeGreaterThan(0));
-    expect(within(rail).queryByRole('region', { name: 'ended' })).toBeNull();
+    expect(within(rail).queryByRole('region', { name: 'Ended' })).toBeNull();
     expect(rail.closest('aside')!.className).toContain('w-[17.5rem]');
   });
 
@@ -114,8 +114,8 @@ describe('the monitor window', () => {
     show();
 
     await screen.findByText('Expose a streaming budget on the chunk API');
-    const headings = screen.getAllByTitle(/conversation|Expose a streaming budget/);
-    expect(headings[0]!.textContent).toBe('conversation');
+    const headings = screen.getAllByTitle(/Chat|Expose a streaming budget/);
+    expect(headings[0]!.textContent).toBe('Chat');
   });
 
   /**

@@ -46,7 +46,7 @@ describe('one timeline entry', () => {
 
   it('names the state reached, in the catalog\'s words', () => {
     render(<TimelineEntry event={{ kind: 'state', at: '2026-09-21T11:00:00Z', state: 'awaiting-person' }} />);
-    expect(screen.getByText('reached awaiting person')).toBeInTheDocument();
+    expect(screen.getByText('reached waiting on you')).toBeInTheDocument();
   });
 
   it('carries the driver\'s observation verbatim beside it', () => {
@@ -58,7 +58,7 @@ describe('one timeline entry', () => {
 
   it('names a quest transition by its status word', () => {
     render(<TimelineEntry event={{ kind: 'quest', at: '2026-09-21T10:30:00Z', status: 'Done' }} />);
-    expect(screen.getByText('quest → Done')).toBeInTheDocument();
+    expect(screen.getByText('quest → done')).toBeInTheDocument();
   });
 
   it('renders the evidence sentence verbatim and the commits as rows', () => {
@@ -129,7 +129,7 @@ describe('the timeline', () => {
 
     const entries = entriesOf();
     expect(entries[0]).toHaveTextContent('session opened');
-    expect(entries[1]).toHaveTextContent('quest → Done');
+    expect(entries[1]).toHaveTextContent('quest → done');
     expect(entries[2]).toHaveTextContent('reached completed');
     expect(entries[3]).toHaveTextContent('what came out');
   });

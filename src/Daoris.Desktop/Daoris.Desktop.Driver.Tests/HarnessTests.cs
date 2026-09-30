@@ -986,7 +986,7 @@ public sealed class HarnessSelectionTests : IDisposable
         var selection = await roster.SelectAsync("fake", Config(), null, null);
 
         Assert.False(selection.Allowed);
-        Assert.Contains("not logged in", selection.Refusal);
+        Assert.Contains("not signed in", selection.Refusal);
         Assert.Contains("daoris agent login fake --profile fresh", selection.Refusal);
         // And it says where the credential lives, because the obvious worry is that Daoris took it.
         Assert.Contains("agent's own store", selection.Refusal);

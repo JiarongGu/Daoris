@@ -144,7 +144,7 @@ public sealed partial class DriverModule
         {
             return Refusals.Because(
                 Refusals.SessionTreeGone,
-                "this session's tree is gone from this machine — a tidy after its landing, or a discard, removed it — so "
+                "this session's tree is gone from this machine — a clean-up after its landing, or a discard, removed it — so "
                 + "there is nothing here to diff, and no tree to land or discard.",
                 ("session", session));
         }

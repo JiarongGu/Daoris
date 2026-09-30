@@ -57,7 +57,7 @@ describe('the attended session', () => {
     render(<AttendedSession session={session()} timeline="always" />);
 
     const head = screen.getByRole('heading', { level: 2 });
-    expect(head).toHaveTextContent('conversation');
+    expect(head).toHaveTextContent('Chat');
     expect(screen.getByText('Timeline')).toBeInTheDocument();
     expect(head.compareDocumentPosition(screen.getByText('Timeline')))
       .toBe(Node.DOCUMENT_POSITION_FOLLOWING);

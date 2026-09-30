@@ -4,7 +4,8 @@
 > cross darois development … daoris itself need to have a proper develpment cycle too, this also need
 > to be designed properly"*. Other repositories will rely on Daoris to make their development smooth,
 > so Daoris's own cycle is the first thing it has to run. This is the contract for the DEV rows in
-> `TASKS.md`, and its decision is **D115**. Status: **designed; nothing is built.** It starts from
+> `TASKS.md`, and its decision is **D115**. Status: **designed; DEV2 built §2.1's file, DEV3 §3.1 and DEV4
+> §2.2's addresses** (2026-10-01); the rest is not. It starts from
 > `docs/2026-09-30-parallel-development-design.md` (MOD1–MOD9, D106).
 
 ## 0. What exists today, read from the code
@@ -27,6 +28,9 @@ subagents into git worktrees and merges them with a tool. Daoris's driver runs n
 | The exchange | `QuestExchange.cs` | Refuses a self-addressed quest: *"That is the repository you are in … Use its own backlog."* Takes, closes and declines carry no identity. Quest ids are content-derived, and D65 widened them with the parent only when there is one (`Quests.MakeId`). |
 | One loop | D104 | `<home>/driver.lock`: one live driver loop per home. |
 
+*The tick's row is as DEV1 read it. DEV3 changed it (§3.1): a look now returns once each start has opened its
+record, and the watch keeps the running sessions.*
+
 Two premises in the ask need correcting before anything is designed on them:
 
 1. **"One session per repository" is only the rule for a repository without trees.** With trees on,
@@ -34,7 +38,7 @@ Two premises in the ask need correcting before anything is designed on them:
    may run beside which. Two sessions on the same files are free to start, and they collide at merge.
 2. **Sessions do not yet run side by side over time.** Because a tick waits for its sessions, a quest
    published while one runs waits for it to finish. Lanes that run continuously need a session to
-   outlive the tick that started it (§3.1). This is the first thing to build.
+   outlive the tick that started it (§3.1). This is the first thing to build. *Built by DEV3.*
 
 ## 1. The shape
 
@@ -117,6 +121,11 @@ For Daoris the file carries today's seven lanes under ids (`web-shell`, `web-set
 `modules`, `service`, `cli`, `tools`) and an eighth, the steward's `records`. *Tools and records*
 becomes *Tools*, since the records now have their own lane.
 
+*Built by DEV2: the file is at the root with those eight lanes, and `tools/merge-branch.mjs` reads it,
+by §2.1's rules, for its lane report. The docs' laneless group carves the steward's archive out
+(`!docs/task-archive.md`), so no tracked file has two places. Nothing else reads it yet: the registry
+is DEV4's, the driver's reader DEV6's, and `gates` waits for the queue (DEV5).*
+
 ### 2.2 A quest addresses a lane
 
 - **Spelled `repository:lane`, or `repository:lane+lane`** for work that must cross lanes, at every
@@ -144,6 +153,13 @@ becomes *Tools*, since the records now have their own lane.
   which is every machine one person drives.
 - **The intake's room lists each repository's lanes** (D65 §1b), and says that a quest to the
   repository alone goes to its steward to split.
+
+*Built by DEV4: every bullet above but two words of the last. The room lists each lane by the address
+that asks it and marks the steward's, but says a quest to the repository alone is for the whole of it,
+since nothing routes one to the steward until DEV9. A registration silent about lanes keeps the row's
+(connect always says, `[]` for none), because the page's add, an import and an older client re-register
+without reading the file. The import reads no lanes; a `then` step takes no lane address until DEV9; the
+page shows a quest's lanes and its composer offers none yet. The twins are in `.claude/knowledge/twins.md`.*
 
 ### 2.3 What a lane owns, and staying in it
 
@@ -208,6 +224,13 @@ deterministic mode, becomes *until nothing runs and a tick starts nothing*.
 This changes every repository's behaviour, not only a laned one's: a quest published while a session
 runs starts at the next look rather than after it. It is still bounded by the caps, the holds and the
 tree rule. That is what the cap always said it meant (*"concurrent sessions across all repositories"*).
+
+*Built by DEV3 (2026-10-01), as written here. The watch keeps the sessions in `RunningSessions`. A look
+returns once each start has opened its record or come to nothing, so a hold or a refusal is still its own to
+report. An ending wakes the watch. `RunOnceAsync` is one look and every session it started to its end, which the
+headless `--once` uses. Building it added three things this section did not say, recorded under D115: a quest an
+active session serves is held (with trees on, nothing else stopped a second session starting on a quest still
+open), a nudge during a look is kept, and a failed look waits out its pace.*
 
 ### 3.2 The lane lock
 

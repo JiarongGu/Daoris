@@ -30,7 +30,7 @@ public sealed class LandedReviewTests : LandedFixture
         Tidies();
         var trees = new SessionTrees(Home);
         var landed = await LandAsync(trees, root, "shared.txt", "one\ntwo\n", Subject, extra: ("added.txt", "new\n"));
-        Assert.Contains("Tidied", landed.Message);
+        Assert.Contains("Cleaned up", landed.Message);
         // The person's checkout, mid-work on a branch of their own.
         await GitAsync(root, "checkout", "-q", "-b", "person/elsewhere");
         await File.WriteAllTextAsync(Path.Combine(root, "in-flight.txt"), "mine\n");

@@ -8,13 +8,13 @@
   "signin.waiting": "Waiting for the tool to open the page…",
   "signin.opened": "The tool opened your browser — finish signing in there, and this row will say so.",
   "signin.copy": "Copy link",
-  "signin.copied": "Copied",
+  "signin.copied": "copied",
   "signin.step.code": "If the page shows you a code, paste it here.",
   "signin.codeLater": "The box appears when the tool asks for one — most sign-ins finish in the browser.",
   "signin.codeLabel": "sign-in code",
   "signin.codePlaceholder": "code from the page",
   "signin.continue": "Continue",
   "signin.sent": "Code sent — the tool is finishing.",
-  "signin.ready": "The account is ready when the row reads logged in.",
+  "signin.ready": "The account is ready when the row reads signed in.",
   "signin.output": "The tool's own output"
 }

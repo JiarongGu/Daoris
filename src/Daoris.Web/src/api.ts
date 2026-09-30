@@ -84,7 +84,14 @@ export type Quest = {
    * than the field, and false at a shared deployment, which has no delete door.
    */
   deletable?: boolean;
+  /**
+   * The lanes of `to` it addresses (D115 §2.2), sorted — asked as `repository:lane+lane`. `to` stays the
+   * repository. Absent or empty is a quest to the whole repository, which every older quest is.
+   */
+  lanes?: string[];
 };
+/** One lane a repository declares (D115 §2.2), as the registry answers it: its words, never its paths. */
+export type Lane = { id: string; title: string; summary: string; steward: boolean };
 /**
  * A move that lost the race to the remote. `attempted` is the status it tried to reach; `note` is its
  * own words, verbatim. `machine` and `sequence` name it on every machine — what a dismissal names.
@@ -176,6 +183,11 @@ export type Registration = {
    * Absent from a host older than the field, which says the same as empty: nothing declared.
    */
   uses?: string[];
+  /**
+   * The lanes it declares (D115 §2.2), each addressed as `repository:id`. Absent from a host older than
+   * the field, which says the same as empty: a quest asks the whole repository.
+   */
+  lanes?: Lane[];
   /**
    * Whether a quest can be addressed to it — the exchange's own judgement, answered by the host so no
    * page re-derives it (D70): an adopter, or a repository registered on that machine with a root, which

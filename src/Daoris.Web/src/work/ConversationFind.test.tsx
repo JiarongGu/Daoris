@@ -27,8 +27,8 @@ describe('the way through a long run', () => {
   it('jumps to the first failure and to the last words', async () => {
     const calls = draw();
 
-    await userEvent.click(screen.getByRole('button', { name: 'first failure' }));
-    await userEvent.click(screen.getByRole('button', { name: 'last words' }));
+    await userEvent.click(screen.getByRole('button', { name: 'First failure' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Last words' }));
 
     expect(calls.failure).toHaveBeenCalledOnce();
     expect(calls.words).toHaveBeenCalledOnce();
@@ -37,16 +37,16 @@ describe('the way through a long run', () => {
   it('offers no jump to a failure a run never had, nor to words it never said', () => {
     draw({ hasFailure: false, hasWords: false });
 
-    expect(screen.queryByRole('button', { name: 'first failure' })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'last words' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'First failure' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Last words' })).toBeNull();
   });
 
   it('says where it is among the places found, and steps through them, Enter included', async () => {
     const calls = draw({ query: 'gates', hits: 12, at: 2 });
 
     expect(screen.getByText('3 of 12')).toBeInTheDocument();
-    await userEvent.click(screen.getByRole('button', { name: 'next match' }));
-    await userEvent.click(screen.getByRole('button', { name: 'previous match' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Next match' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Previous match' }));
     await userEvent.type(screen.getByRole('searchbox', { name: 'find in this session' }), '{Enter}');
     await userEvent.type(screen.getByRole('searchbox', { name: 'find in this session' }), '{Shift>}{Enter}{/Shift}');
 
@@ -59,7 +59,7 @@ describe('the way through a long run', () => {
         query="nowhere" onQuery={() => {}} hits={0} onStep={() => {}} />,
     );
     expect(screen.getByText('nothing found')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'next match' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Next match' })).toBeDisabled();
     unmount();
 
     draw({ query: 'gates', hits: 100, at: 0, cut: true });

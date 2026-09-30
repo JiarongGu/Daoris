@@ -250,6 +250,45 @@ public sealed class RepositoryScannerTests : IDisposable
         Assert.Equal(Provenance.Canonical, rule.Provenance);
     }
 
+    /// <summary>
+    /// LAYOUT4: a repository on the older layout indexes exactly as before the service learned the
+    /// agents layout — the same entries, in the same order, with the same provenance, read at the
+    /// manifest's root alone. Written against the scanner before LAYOUT4 and run against both.
+    /// </summary>
+    [Fact]
+    public void A_repository_on_the_older_layout_indexes_exactly_as_before()
+    {
+        WriteRegion(("sensitive-info", "# Sensitive info\n\nNo machine paths."));
+        var withFiles = File.ReadAllText(Path.Combine(_root, "daoris.lock")).Replace(
+            "]}", """,{"pack":"core","source":"core/knowledge/storage.md","target":"knowledge/storage.md","sha256":"x"},{"pack":"core","source":"core/skills/finder/SKILL.md","target":"skills/finder/SKILL.md","sha256":"x"}]}""");
+        Write("daoris.lock", withFiles);
+        Write(".claude/rules/house.md", "# House\n\nOur own rule.");
+        Write(".claude/knowledge/storage.md", "# Storage\n\nCanonical.");
+        Write(".claude/knowledge/ours.md", "# Ours\n\nLocal.");
+        Write(".claude/skills/finder/SKILL.md", "---\nname: finder\n---\n\nSteps.");
+        Write(".claude/skills/house/SKILL.md", "---\nname: house\n---\n\nOur steps.");
+        Write("docs/DECISIONS.md", "## D1 — one\n\nA.\n");
+        // Nothing on the older layout names these, and before LAYOUT4 nothing read them.
+        Write(".agents/knowledge/elsewhere.md", "# Elsewhere\n\nNot this layout's.");
+        Write("pkg/AGENTS.md", "# A package\n\nUndeclared.");
+
+        var entries = new RepositoryScanner().Scan(_root)
+            .Select(e => $"{e.Kind} {e.Provenance} {e.Title} {e.RelativePath}")
+            .ToList();
+
+        Assert.Equal(
+            [
+                "Rule Local house .claude/rules/house.md",
+                "Rule Canonical sensitive-info AGENTS.md",
+                "Knowledge Local ours .claude/knowledge/ours.md",
+                "Knowledge Canonical storage .claude/knowledge/storage.md",
+                "Skill Canonical finder .claude/skills/finder/SKILL.md",
+                "Skill Local house .claude/skills/house/SKILL.md",
+                "Decision Local D1 — one docs/DECISIONS.md",
+            ],
+            entries);
+    }
+
     private static KnowledgeEntry Single(IReadOnlyList<KnowledgeEntry> entries, string title) =>
         entries.Single(e => e.Title == title);
 }

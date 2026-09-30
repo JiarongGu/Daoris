@@ -8837,3 +8837,72 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > as). The screen's wording promises more than it does: say what it falls back to, or offer both.
 
 **Outcome** (built by a subagent, merged with `tools/merge-branch.mjs`, every gate; no decision, notes under D46, D110 and D113): **(a)** The empty Line and landing cards after a start were the page's: it asked `LINES` before the loop handed over its service, was refused `DRIVER_NOT_READY`, rendered the refusal as no repository, and only a tick asked again. The loop now emits `DRIVER_READY` once its service is up, and the page asks again for the driver's answers and every query refused as not ready; `STATE` carries `ready`, and the status bar says *starting* / 启动中 until it is true (D46 amended). **(b)** The rail asks `SESSION_WHERE` once for the rows it shows, answered from `landings.json` and whether the tree is still there (no git, no service). By D113's rule a row says *landed on `<branch>`* (*gone since* for a trace), keeps naming a tree still in use, and names no tree that is gone (D113 amended). **(c)** On the Agents screen, the tool's own row's *use for a workspace* says before the press that the workspace falls back to the machine's default while one is set, and every default's press says what sessions there run as, from `profile-default`'s new `default` answer, the fact the terminal's `--clear --workspace` prints (D110's LEFT3 note amended). The twin table is unchanged.
+
+
+## DEV2 — the lanes are the repository's declaration (2026-10-01)
+
+> - [ ] **DEV2 — the lanes are the repository's declaration** (§2.1): `tools/lanes.json` becomes
+> `daoris.lanes.json` with ids, summaries and a steward lane `records`; the merge tool and the skill follow.
+
+**Outcome** (built by a subagent, merged with `tools/merge-branch.mjs`, every gate): `tools/lanes.json` is now the root `daoris.lanes.json`, the repository's own declaration (D115 §2.1): eight lanes, each with an `id`, a title and a one-line summary (`web-shell`, `web-settings`, `driver`, `modules`, `service`, `cli`, `tools`, formerly *Tools and records*, and the steward's `records`, which holds `TASKS.md`, the archive and the map itself with `gates: [universal, cli]` and replaces the `parent` list). `tools/merge-branch.mjs` reads the file by §2.1's rules and refuses an unreadable one naming each problem; its lane report names lanes by id and title and names the steward's records where it named the parent's; the commit check, the laneless report and the gates are unchanged. The parallel design's §5 table and the dispatch skill name lanes by id, held together by the lanes test. All 1,444 tracked files classify as before. A branch that adds a path outside every lane must place it in the steward's file, which the skill allows as its one exception, named in the hand-back; DEV9's steward needs its own answer. Notes under D115 and D106.
+
+
+## DEV3 — sessions outlive their tick (2026-10-01)
+
+> - [ ] **DEV3 — sessions outlive their tick** (building; §3.1): today a tick awaits every session it started, so nothing
+> new starts until the last ends. Changes behaviour for every repository; the family phases must pass unchanged.
+
+**Outcome** (built by a subagent, merged with `tools/merge-branch.mjs`, every gate; notes under D104 and D115): Sessions outlive their tick (D115 §3.1). A look begins every start and returns once each has opened its record; the watch keeps the running sessions in `RunningSessions`, and each ending joins the next look's report and wakes the watch at once. `RunUntilIdleAsync` looks until nothing runs and a look starts nothing; `RunOnceAsync` is one look with everything it started run to its end (the headless `--once` and the `Process` tests that read a start whole). A quest published while a long session runs now starts at the next look (at once from the window) instead of after that session. Building it found three things, recorded under D115: a quest an active session serves is not started again (with trees on, nothing else held it); a nudge during a look is kept; a failed look waits out its pace. D104 now covers every running session, whichever look started it; sync, the lost-claim stop, the sweep, the cap, PAR1 and `driver.lock` are unchanged. The fast half holds the scheduling with an in-process ledger and a stand-in for each start's run; the real-stub cases are in the `Process` half, run at the merge.
+
+
+## DEV4 — lanes in the registry and on the quest (2026-10-01)
+
+> - [ ] **DEV4 — lanes in the registry and on the quest** (§2.2): `repository:lane[+lane]`, a self-addressed quest
+> allowed only when it names a lane; a family check over an example with two lanes.
+
+**Outcome** (built by a subagent, merged with `tools/merge-branch.mjs`, every gate; notes under D115, D32 and D47): Lanes are in the registry and on the quest (D115 §2.2). `connect` reads `daoris.lanes.json` with the CLI's own `lanes.ts` and sends each lane's words (id, title, summary, steward), never its globs, always as a list, refusing an unreadable file and naming each problem; the registration keeps them by `Declared.Lanes`, the twin of the CLI's `laneWords` with one table on both sides, and a registration that says nothing about lanes keeps the row's. The exchange splits `repository:lane[+lane]` once (`QuestAddress`): the quest keeps `to` and gains `lanes`, its id widens only when it has lanes (every existing id stands), an unknown lane or a lane on a repository that declares none is refused naming the lanes there are, and a repository may now ask its own lane while a quest to itself whole is still refused. The log, the cache, the wire, both doors, the remote sync and the intake room carry lanes; the Quests card and drawer show them in both languages (泳道). The example engine declares `core` and `media`, and family phase 4b addresses them. Left out: the import reads no lanes, a `then` step takes no lane address (DEV9), and the composer offers no lane.
+
+
+## LAYOUT3 — the agents layout in the CLI (2026-10-01)
+
+> - [ ] **LAYOUT3 — the `agents` layout in the CLI** (building; §2, §3, §5.1–§5.4): the descriptor, mirrors, `rooms`,
+> the lock's new fields, `sync`'s move cells (each a failing test first), and the release rehearsal's move.
+
+**Outcome** (built by a subagent, merged with `tools/merge-branch.mjs`, every gate; notes under D117, D19 and D59): The `agents` layout is built in the CLI (D117 §2, §3, §5.1–§5.4). `agents` is a second descriptor beside `claude-code` in `src/harness.ts`: knowledge and skills under `.agents/`, the region still in `AGENTS.md`, and for Claude Code a `CLAUDE.md` import and a skills mirror in `.claude/skills/` instead of links. The lock gains `harness`, `target`, `mirrors` and `rooms` additively (every older lock is byte-identical), and the lock, not the manifest, says where the files are. `sync` does every cell of §5.4: the move, the repository's own documents left in an old tier (refused with their `git mv`), the mirror measured against the lock, room pointers, and links or links held as text (refused, never written through; `--force` overrides none of these). `check`, `upstream`, `doctor`, `init --harness agents` and `status` follow; `check` reports an `AGENTS.md` over codex's 32,768 bytes (LAYOUT2); containment (D18) covers every declared root. Each cell is a `node --test` case written first and seen failing (80 new, 753 in all). The release rehearsal gained a "move the layout" phase (30 checks), run at the merge. `init` keeps `claude-code` as its default until LAYOUT4 and LAYOUT5, because the rehearsals' newcomers and the service still read `.claude`.
+
+
+## LAYOUT4 — the service reads the layout (2026-10-01)
+
+> - [ ] **LAYOUT4 — the service reads the layout** (§5.5): the lock's root first, mirrors skipped, rooms indexed;
+> fixes the scanner's hardcoded `.claude`.
+
+**Outcome** (built by a subagent, merged with `tools/merge-branch.mjs`, every gate; a note under D117): The service reads the agents layout (D117 §5.5), and `RepositoryScanner` no longer assumes `.claude`. `DaorisLock` reads the lock's `harness`, `target` and `mirrors` and finds its root by the CLI's `lockLayout`, row for row; `RepositoryLayout` reads at the lock's root plus the root a layout moved from, or, with no lock, at the manifest's root and both `.agents` and `.claude`. The lock's mirrors are never indexed, so a skill is found once, at its source; each declared room's `AGENTS.md` is a local knowledge entry named by its folder; `RepositoryLinks` skips a link, a junction or a link held as text, never following one. Where the CLI refuses (a lock target or room that leaves the repository, an unknown descriptor), the service reads no lock or no room. `RepositoryLayoutTests` holds the CLI's layout and link rows in its order, and the twin has its row in `twins.md`. A golden test shows a repository on the older layout indexing exactly as before, run against the old scanner and the new. Service 697 → 752.
+
+
+## NAME1b — the renames, and the names check strict (2026-10-01)
+
+> - [ ] **NAME1b — the renames, and the names check strict** (building; D116). The owner approved the audit's
+> names on 2026-10-01, with Projects → Repositories (项目 → 仓库) and an ask named 需求. Apply
+> `docs/2026-10-01-naming-audit.md` in both catalogues (keys stay), the sentences with a forbidden word,
+> and `names:check --strict` in the gate for glossary, form and doors (budgets report only, D54); then every
+> screen looked at in both languages.
+
+**Outcome** (built by a subagent, merged with `tools/merge-branch.mjs`, every gate; notes under D116): NAME1a's audit applied after the owner approved it on 2026-10-01, with the owner's two calls: Projects is Repositories (项目 → 仓库), and an ask is 需求. All 406 label renames landed in both catalogues, one commit per area, Settings first, with their plural form; so did the sentences the audit's §5 marked, the driver's pass-through Chinese, the host's own sentences, and Ask Daoris's room, go cards and goldens. A name said inside a sentence took a fragment of its own (three keys); the Machine log card lost its title; *Wiring…* opens at Wiring; one act has one name. The names check went from 519 findings to 107, all budgets; `--strict` runs in the web's build beside the parity check and fails on any glossary, form or door finding, while the budgets report (D54). The owner's calls are a note under D116. Web vitest 1,886 → 1,893; the Playwright spec was edited to the new names.
+
+
+## PLUGREPO1 — where the plugins Daoris makes live (answered, 2026-10-01)
+
+> - [ ] **PLUGREPO1 — where the plugins Daoris makes live** (the owner's call). A plugins repository is
+> the natural home: versioned, reviewed, shareable with a team, owned by its own agent, and connected
+> like any repository. It is not a registry (D64), and Daoris's own examples stay here as the wire's
+> contract. Whether to make one, and where, is the owner's; Ask Daoris asks rather than picks until then.
+
+**Outcome** Answered by the owner on 2026-10-01: they created **Daoris.Plugins**, a repository of its own beside Daoris, for the default plugins' development, to be published later to a public catalogue. Its set-up and the move of Daoris's own plugins are PLUGREPO2; the catalogue is PLUGDIST1.
+
+
+## LAYOUT2 — the entry-point probe, its keyless half (2026-10-01)
+
+> - [ ] **LAYOUT2 — the entry-point probe** (§1): per harness at its pinned version, measure every "not
+> measured" cell … Keyless first; one canary turn per harness is the owner's to allow.
+
+**Outcome** (measured by a subagent, merged with `tools/merge-branch.mjs`, every gate; no decision): The keyless half landed as `docs/2026-10-01-entry-point-evidence.md`: every cell D117 §1 left unmeasured, for Claude Code on both doors (2.1.285 native; 2.1.284 under the ACP adapter 0.84.0), codex 0.154.0, codex-acp 1.12.0 and dsh 0.1.6-alpha.2, each cell labelled source, doc or not measured and citing the harness's shipped code; no turn, no login, no model. **The ACP adapter loads project instructions**: `claude-agent-acp` 0.84.0 passes `settingSources: ["user","project","local"]` on every session, so driven Claude Code sessions have been getting `CLAUDE.md` and, through `@AGENTS.md`, the doctrine; D117's held row (hand instructions over at `session/new`) stays held. A maker-side flag, off by default, would drop them; only the canary turn shows it is off for the account. codex cuts project docs at 32,768 bytes, root first, and loads none in an untrusted folder (codex-acp marks every root trusted); dsh caps the chain at 65,536 bytes and lists a skill found in two roots once; Claude Code never reads `.agents/skills`, and since 2.1.277 reads `AGENTS.md` only where no `CLAUDE.md` exists, so room pointers are still needed. A `CLAUDE.md` in any folder above the Daoris home reaches every driven Claude Code session, since trees live under the home. The canary turn (§6: fixtures, prompt, commands, predicted answers) is the owner's to authorise, and stays open on the row.

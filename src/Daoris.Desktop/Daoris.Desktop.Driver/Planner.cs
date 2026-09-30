@@ -29,6 +29,15 @@ public sealed record QuestView(string Id, string From, string To, string Title, 
     /// Absent is false — a host from before the delete door offers none.
     /// </summary>
     public bool Deletable { get; init; }
+
+    /// <summary>
+    /// The lanes of <see cref="To"/> it addresses (D115 §2.2), as the service answered them; empty for a
+    /// quest to the whole repository. Carried, and not yet planned on: the lane locks are DEV6's.
+    /// </summary>
+    public IReadOnlyList<string> Lanes { get; init; } = [];
+
+    /// <summary>Whom it asks as a person reads it: `repository`, or `repository:lane+lane` (the service's `QuestAddress.Spell`).</summary>
+    public string Address => Lanes.Count == 0 ? To : $"{To}:{string.Join('+', Lanes)}";
 }
 
 /// <summary>The session this machine last ran on a quest, and the tree it ran in (D79, D80).</summary>
@@ -105,6 +114,12 @@ public sealed record SessionView(
     /// tree is the lock the planner asks about (PAR1).
     /// </summary>
     public string? Tree { get; init; }
+
+    /// <summary>
+    /// The quest it serves, or null for a conversation's or an intake's. A session outlives the look that
+    /// started it (DEV3), so the next look can find its quest still open, and must not start it again.
+    /// </summary>
+    public string? Quest { get; init; }
 }
 
 public static class ActiveSessions
@@ -167,7 +182,7 @@ public enum StartVerdict
     /// <summary>No filesystem root is known — nowhere to spawn. `connect` from the repository fixes it.</summary>
     NoRoot,
 
-    /// <summary>An active session (or an older quest this tick) holds the repository.</summary>
+    /// <summary>An active session (or an older quest this tick) holds the repository, or the quest itself (DEV3).</summary>
     RepositoryBusy,
 
     /// <summary>The concurrency cap is spent.</summary>
@@ -416,6 +431,16 @@ public static class Planner
                     $"{strikes} session(s) have failed on `#{quest.Id}` without landing anything — "
                     + $"parked, because trying again spends an account rather than making progress. "
                     + $"`daoris driver retry {quest.Id}` starts it again once you know why.");
+            }
+
+            // 🔴 A session outlives the look that started it (DEV3), so its quest can still be open while it
+            // works — before it takes it, or when it never will. That session holds the quest: a second one
+            // would double its work, and in a tree of its own nothing below would stop it.
+            if (snapshot.Active.FirstOrDefault(s => string.Equals(s.Quest, quest.Id, StringComparison.OrdinalIgnoreCase))
+                is { } serving)
+            {
+                return new(quest, StartVerdict.RepositoryBusy,
+                    $"session `{serving.Id}` is already working on `#{quest.Id}`.");
             }
 
             // 🔴 The TREE is the lock (D51), and where every session here opens its own there is no

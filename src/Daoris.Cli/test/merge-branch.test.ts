@@ -18,8 +18,8 @@ import { makeFixture } from './_fixture.ts';
  */
 
 interface Gate { name: string; run: string; kind: string; before: string[]; cwd?: string }
-interface Lane { title: string; paths: string[] }
-interface Classified { lanes: { title: string; files: string[] }[]; parent: string[]; shared: string[]; laneless: string[]; outside: string[] }
+interface Lane { id: string; title: string; summary: string; steward: boolean; paths: string[]; gates?: string[] }
+interface Classified { lanes: { id: string; title: string; files: string[] }[]; steward: string[]; shared: string[]; laneless: string[]; outside: string[] }
 interface Options { branches: string[]; keepGoing: boolean; commitCheck: boolean; resume: boolean; dropBatch: boolean; plan: boolean }
 interface GateResult { gate: Gate; code: number; log: string; verdict: string; note: string; ms: number }
 type Step = (command: string, cwd: string, fd: number) => Promise<number>;
@@ -44,8 +44,10 @@ const tool = await import(
   rehearsalDecision: (log: string, code: number, command?: string) => { rerun: boolean; reason: string };
   globToRegExp: (glob: string) => RegExp;
   laneMatcher: (paths: string[]) => (path: string) => boolean;
-  classify: (paths: string[], map: { lanes?: Lane[]; parent?: string[]; union?: string[]; laneless?: string[] }) => Classified;
-  readLanes: (root: string) => { lanes: Lane[]; parent: string[]; laneless: string[] } | null;
+  classify: (paths: string[], map: { lanes?: Lane[]; union?: string[]; laneless?: string[] }) => Classified;
+  LANES_FILE: string;
+  lanesProblems: (parsed: unknown, gateNames: string[]) => string[];
+  readLanes: (root: string) => { lanes: Lane[]; laneless: string[] } | null;
   unionRecords: (root: string) => string[];
   parseStatus: (text: string) => { branch: string; changed: { code: string; path: string }[] };
   startRefusal: (facts: { branch: string; merging: boolean; changed: { code: string; path: string }[]; ignored: boolean }) => string | null;
@@ -329,7 +331,7 @@ test("a lane's `!` path carves a narrower lane's paths out of a wider one (LEFT1
   assert.ok(!tool.laneMatcher(['!src/**'])('README.md'));
 });
 
-test("a branch's files are placed in lanes, the shared records, the parent's records, no lane, or outside every lane", () => {
+test("a branch's files are placed in lanes, the steward's lane, the shared records, no lane, or outside every lane", () => {
   const map = tool.readLanes(repoRoot)!;
   const placed = tool.classify([
     'src/Daoris.Web/src/settings/PluginsDomain.tsx',
@@ -342,35 +344,103 @@ test("a branch's files are placed in lanes, the shared records, the parent's rec
     'src/Daoris.Devkit/Daoris.Devkit.Core/Gates.cs',
     'TASKS.md',
     'docs/task-archive.md',
+    'daoris.lanes.json',
     'CHANGELOG.md',
     'docs/2026-09-30-parallel-development-design.md',
     'src/Daoris.Somewhere/Program.cs',
   ], { ...map, union: tool.unionRecords(repoRoot) });
 
   assert.deepEqual(placed.lanes, [
-    { title: 'Web shell', files: ['src/Daoris.Web/src/locales/en/work.panel.json', 'src/Daoris.Web/src/queries.ts'] },
-    { title: 'Web settings', files: ['src/Daoris.Web/src/settings/PluginsDomain.tsx', 'src/Daoris.Web/src/locales/zh/settings.ai.json'] },
-    { title: 'Driver library', files: ['src/Daoris.Desktop/Daoris.Desktop.Driver/Help/HelpRoom.cs'] },
-    { title: 'Desktop modules', files: ['src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.cs', 'src/Daoris.Desktop/Daoris.Desktop.Launcher/Program.cs'] },
-    { title: 'Tools and records', files: ['src/Daoris.Devkit/Daoris.Devkit.Core/Gates.cs'] },
+    { id: 'web-shell', title: 'Web shell', files: ['src/Daoris.Web/src/locales/en/work.panel.json', 'src/Daoris.Web/src/queries.ts'] },
+    { id: 'web-settings', title: 'Web settings', files: ['src/Daoris.Web/src/settings/PluginsDomain.tsx', 'src/Daoris.Web/src/locales/zh/settings.ai.json'] },
+    { id: 'driver', title: 'Driver library', files: ['src/Daoris.Desktop/Daoris.Desktop.Driver/Help/HelpRoom.cs'] },
+    { id: 'modules', title: 'Desktop modules', files: ['src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.cs', 'src/Daoris.Desktop/Daoris.Desktop.Launcher/Program.cs'] },
+    { id: 'tools', title: 'Tools', files: ['src/Daoris.Devkit/Daoris.Devkit.Core/Gates.cs'] },
   ]);
-  // The archive merges by union too, but it is the parent's: that is what the parent needs to hear.
-  assert.deepEqual(placed.parent, ['TASKS.md', 'docs/task-archive.md']);
+  // DEV2: the steward's lane holds what the parent's list held, and the map itself. The archive merges
+  // by union too, but it is the steward's, and that is what the parent needs to hear.
+  assert.deepEqual(placed.steward, ['TASKS.md', 'docs/task-archive.md', 'daoris.lanes.json']);
   assert.deepEqual(placed.shared, ['CHANGELOG.md']);
   // A document belongs to no lane on purpose; a new source tree is a path nothing placed.
   assert.deepEqual(placed.laneless, ['docs/2026-09-30-parallel-development-design.md']);
   assert.deepEqual(placed.outside, ['src/Daoris.Somewhere/Program.cs']);
 });
 
-test("the lane map's lanes are the design's §5 lanes, by title", () => {
+test("the lane map's lanes are the design's §5 lanes, by id and title", () => {
   const design = readFileSync(join(repoRoot, 'docs', '2026-09-30-parallel-development-design.md'), 'utf8').replace(/\r\n/g, '\n');
   const section = design.slice(design.indexOf('## 5. The lane map'), design.indexOf('## 6.'));
-  const titles = section.split('\n')
+  const rows = section.split('\n')
     .filter((line) => line.startsWith('|') && !/^\|\s*-/.test(line))
-    .map((line) => line.split('|')[1]!.trim())
-    .filter((title) => title !== 'Lane');
-  assert.ok(titles.length >= 7, `the design's lane table was not found: ${titles.join(', ')}`);
-  assert.deepEqual(tool.readLanes(repoRoot)!.lanes.map((lane) => lane.title), titles);
+    .map((line) => line.split('|').slice(1, 3).map((cell) => cell.trim().replace(/^`|`$/g, '')))
+    .filter(([id]) => id !== 'Lane');
+  assert.ok(rows.length >= 8, `the design's lane table was not found: ${rows.map(([id]) => id).join(', ')}`);
+  assert.deepEqual(tool.readLanes(repoRoot)!.lanes.map((lane) => [lane.id, lane.title]), rows);
+});
+
+/**
+ * DEV2 (`docs/2026-10-01-self-development-design.md` §2.1): the map is the repository's declaration,
+ * and what makes it unreadable is a rule, so the driver's reader (DEV6) can hold the same table.
+ */
+test('the lanes file is unreadable for a bad or repeated id, a lane with no paths, two stewards, or an undeclared gate', () => {
+  const lane = (id: string, more: Record<string, unknown> = {}) => ({ id, title: id, summary: `the ${id} lane`, paths: [`${id}/**`], ...more });
+  assert.deepEqual(tool.lanesProblems({ lanes: [lane('web-shell'), lane('records', { steward: true, gates: ['cli'] })] }, ['cli']), []);
+  assert.deepEqual(tool.lanesProblems({ lanes: [] }, []), [], 'an empty list is no lanes, not a fault');
+  assert.deepEqual(tool.lanesProblems({ laneless: [] }, []), [], 'no list is no lanes, not a fault');
+
+  const cases: [unknown, RegExp][] = [
+    [[], /not a JSON object/],
+    [{ lanes: {} }, /'lanes' is not a list/],
+    [{ lanes: [lane('Web')] }, /lane 'Web': its id must be lower-case letters, digits and dashes, starting with a letter/],
+    [{ lanes: [lane('2d')] }, /lane '2d': its id must/],
+    [{ lanes: [{ title: 'No id', paths: ['x/**'] }] }, /lane 1: its id must/],
+    [{ lanes: [lane('cli'), lane('cli')] }, /lane 'cli': the id is used twice/],
+    [{ lanes: [lane('cli', { paths: [] })] }, /lane 'cli': it has no paths/],
+    [{ lanes: [lane('cli', { paths: ['!src/**'] })] }, /lane 'cli': it has no paths/],
+    [{ lanes: [lane('a', { steward: true }), lane('b', { steward: true })] }, /two stewards \(a, b\)/],
+    [{ lanes: [lane('records', { gates: ['cli', 'nope'] })] }, /lane 'records': its gate 'nope' is not declared in daoris\.gates\.json/],
+    [{ lanes: [lane('records', { gates: 'cli' })] }, /lane 'records': 'gates' is not a list/],
+    [{ lanes: [lane('cli')], laneless: {} }, /'laneless' is not a list/],
+  ];
+  for (const [parsed, expected] of cases) {
+    const problems = tool.lanesProblems(parsed, ['cli']);
+    assert.ok(problems.some((problem) => expected.test(problem)), `${JSON.stringify(parsed)}: ${problems.join('; ') || 'no problem found'}`);
+  }
+});
+
+test('no lanes file is no lanes; an unreadable one is refused with exit 2, naming each problem', () => {
+  const fx = makeFixture('merge-branch-lanes-file');
+  assert.equal(tool.readLanes(fx.root), null);
+  fx.write('daoris.gates.json', JSON.stringify({ gates: [{ name: 'cli', run: 'npm test' }] }));
+  fx.write(tool.LANES_FILE, JSON.stringify({ lanes: [] }));
+  assert.deepEqual(tool.readLanes(fx.root), { lanes: [], laneless: [] });
+
+  fx.write(tool.LANES_FILE, '{ "lanes": [');
+  let refused = refusal(() => tool.readLanes(fx.root));
+  assert.equal(refused.exitCode, 2);
+  assert.match(refused.message, /daoris\.lanes\.json is not valid JSON/);
+
+  fx.write(tool.LANES_FILE, JSON.stringify({ lanes: [
+    { id: 'cli', title: 'CLI', summary: 's', paths: [] },
+    { id: 'records', title: 'Records', summary: 's', steward: true, paths: ['TASKS.md'], gates: ['cli', 'web'] },
+  ] }));
+  refused = refusal(() => tool.readLanes(fx.root));
+  assert.equal(refused.exitCode, 2);
+  assert.match(refused.message, /daoris\.lanes\.json cannot be read:\n\s+lane 'cli': it has no paths\n\s+lane 'records': its gate 'web' is not declared/);
+  fx.cleanup();
+});
+
+test("this repository's lanes each carry an id, a title and a one-line summary, and one steward keeps the records", () => {
+  const { lanes } = tool.readLanes(repoRoot)!;
+  for (const lane of lanes) {
+    assert.ok(lane.title.trim(), `${lane.id}: no title`);
+    assert.ok(lane.summary.trim() && !lane.summary.includes('\n'), `${lane.id}: its summary is one line, for the people and agents that address the lane`);
+  }
+  assert.deepEqual(lanes.map((lane) => lane.id), ['web-shell', 'web-settings', 'driver', 'modules', 'service', 'cli', 'tools', 'records']);
+  const stewards = lanes.filter((lane) => lane.steward);
+  assert.deepEqual(stewards.map((lane) => [lane.id, lane.paths, lane.gates]),
+    [['records', ['TASKS.md', 'docs/task-archive.md', 'daoris.lanes.json'], ['universal', 'cli']]]);
+  // A code lane never narrows its gates: MOD9's "web only" batch skipped the .NET suites.
+  assert.deepEqual(lanes.filter((lane) => lane.gates !== undefined).map((lane) => lane.id), ['records']);
 });
 
 const trackedFiles = (): string[] => {
@@ -384,16 +454,18 @@ test('every lane path and every laneless path matches a tracked file, and no tra
   const { lanes, laneless } = tool.readLanes(repoRoot)!;
 
   // A carve-out (`!`) that matches nothing carves nothing, and is as stale as a path that points at nothing.
-  for (const [title, globs] of [...lanes.map((lane) => [lane.title, lane.paths] as const), ['laneless', laneless] as const]) {
+  for (const [id, globs] of [...lanes.map((lane) => [lane.id, lane.paths] as const), ['laneless', laneless] as const]) {
     for (const glob of globs) {
       const pattern = tool.globToRegExp(glob.replace(/^!/, ''));
-      assert.ok(files.some((file) => pattern.test(file)), `${title}: '${glob}' matches no tracked file — the map points at nothing`);
+      assert.ok(files.some((file) => pattern.test(file)), `${id}: '${glob}' matches no tracked file — the map points at nothing`);
     }
   }
-  const owns = lanes.map((lane) => ({ title: lane.title, owns: tool.laneMatcher(lane.paths) }));
+  // The steward's lane is a lane like the rest here: its records are carved out of the docs, never
+  // left to the classification order to settle.
+  const owns = lanes.map((lane) => ({ id: lane.id, owns: tool.laneMatcher(lane.paths) }));
   const declared = tool.laneMatcher(laneless);
   for (const file of files) {
-    const owners = owns.filter((lane) => lane.owns(file)).map((lane) => lane.title);
+    const owners = owns.filter((lane) => lane.owns(file)).map((lane) => lane.id);
     assert.ok(owners.length <= 1, `${file} is in two lanes: ${owners.join(', ')}`);
     assert.ok(!(owners.length && declared(file)), `${file} is in ${owners[0]} and declared laneless`);
   }
@@ -401,16 +473,16 @@ test('every lane path and every laneless path matches a tracked file, and no tra
 
 /**
  * LEFT1: `queries.ts` and a few paths sat outside every lane unremarked, and a new source tree would
- * have too. Every tracked file now has a place: a lane, the parent's records, a record that merges by
- * union, or the map's `laneless` list (the docs and records, the doctrine, the harness's settings). A
- * new top-level path fails here until the map places it on purpose.
+ * have too. Every tracked file now has a place: a lane (the steward's among them, DEV2), a record that
+ * merges by union, or the map's `laneless` list (the docs, the doctrine, the harness's settings). A new
+ * top-level path fails here until the map places it on purpose.
  */
 test('every tracked file has a place, so a new path is placed on purpose, never left outside silently', () => {
   const map = tool.readLanes(repoRoot)!;
   const placed = tool.classify(trackedFiles(), { ...map, union: tool.unionRecords(repoRoot) });
   assert.deepEqual(placed.outside, [],
     `outside every lane: ${placed.outside.slice(0, 12).join(', ')}${placed.outside.length > 12 ? ', …' : ''}\n`
-    + '  Give each a lane in tools/lanes.json, or list it under "laneless" with the reason no lane owns it.');
+    + '  Give each a lane in daoris.lanes.json, or list it under "laneless" with the reason no lane owns it.');
   // The laneless list names files, never a source tree: a `src/**` there would place everything and
   // guard nothing.
   for (const glob of map.laneless.filter((path) => /^(src|tools)\//.test(path))) {
@@ -770,20 +842,33 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
     const repo = scratch('clean', [
       { name: 'first', run: 'node gate.mjs first' },
       { name: 'second', run: 'node gate.mjs second' },
-    ], { 'tools/lanes.json': JSON.stringify({ lanes: [{ title: 'Work', paths: ['work/**'] }], parent: ['TASKS.md'] }) });
-    branch(repo.root, 'feature/one', { 'work/a.txt': 'x\n', 'notes.txt': 'y\n' });
+    ], {
+      'daoris.lanes.json': JSON.stringify({ lanes: [
+        { id: 'work', title: 'Work', summary: 'The work.', paths: ['work/**'] },
+        { id: 'records', title: 'Records', summary: 'The backlog and this map.', steward: true, paths: ['TASKS.md', 'daoris.lanes.json'], gates: ['first'] },
+      ] }),
+      'TASKS.md': '# Tasks\n',
+    });
+    branch(repo.root, 'feature/one', { 'work/a.txt': 'x\n', 'notes.txt': 'y\n', 'TASKS.md': '# Tasks\n\n- a row\n' });
 
     const head = git(repo.root, 'rev-parse', 'HEAD');
     const plan = await repo.run(['--plan', 'feature/one']);
     assert.equal(plan.status, 0, plan.out);
+    assert.match(plan.out, /work\s+Work\s+1 file/);
     assert.match(plan.out, /1\.\s+first\s+suite\s+node gate\.mjs first/);
     assert.match(plan.out, /2\.\s+second/);
     assert.equal(merging(repo.root), false, '--plan merges nothing');
 
     const result = await repo.run(['feature/one']);
     assert.equal(result.status, 0, result.out);
-    assert.match(result.out, /Work\s+1 file/);
+    // Lanes by id and title; the steward's lane is named, and so is what a subagent never edits.
+    assert.match(result.out, /work\s+Work\s+1 file/);
+    assert.match(result.out, /records\s+Records\s+1 file/);
+    assert.match(result.out, /note: it edits the steward's records \(TASKS\.md\); a subagent never does/);
+    assert.doesNotMatch(result.out, /crosses/, "the steward's lane is not a crossing: it is named on its own");
     assert.match(result.out, /outside every lane\s+1 file: notes\.txt/);
+    // The steward's `gates` is for a landing of its lane alone (the queue's, D115): this tool runs every
+    // gate whatever a branch touched.
     assert.deepEqual(repo.ran(), ['first', 'second']);
     assert.match(result.out, /PASS\s+first\s.*local\/scratch\/merge-feature-one\/first\.log/);
     assert.match(result.out, /PASS\s+second\s.*local\/scratch\/merge-feature-one\/second\.log/);

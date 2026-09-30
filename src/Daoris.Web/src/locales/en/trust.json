@@ -4,7 +4,7 @@
   "trust.holding.quest": "The driver is holding quest #{{id}} for it.",
   "trust.holding.ask": "The driver is holding the intake for ask #{{id}} for it.",
   "trust.file": "Daoris writes one flag in the agent's own file, and nothing else in it:",
-  "trust.grant": "trust this folder",
-  "trust.cancel": "not now",
-  "trust.open": "trust this folder…"
+  "trust.grant": "Trust this folder",
+  "trust.cancel": "Not now",
+  "trust.open": "Trust this folder…"
 }

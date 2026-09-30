@@ -6,7 +6,7 @@
   "description": "The platform: knowledge, quests and projects over the service. Doctrine read-only; Overview first (D40), sessions a view (D66). Built into the HTTP host's wwwroot.",
   "scripts": {
     "dev": "vite",
-    "build": "node scripts/i18n-check.mjs && tsc --noEmit && vite build",
+    "build": "node scripts/i18n-check.mjs && node scripts/names-check.mjs --strict && tsc --noEmit && vite build",
     "typecheck": "tsc --noEmit",
     "i18n:check": "node scripts/i18n-check.mjs",
     "names:check": "node scripts/names-check.mjs",

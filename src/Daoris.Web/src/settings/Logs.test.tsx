@@ -34,6 +34,17 @@ const draw = (props: Partial<Parameters<typeof LogList>[0]> = {}) => {
 const rows = () => within(screen.getByRole('list', { name: 'log lines' })).getAllByRole('listitem');
 
 describe('the logs domain', () => {
+  /**
+   * NAME1b (UX5 U57): the card is alone in its domain and the list names it *Machine log*, so it carries
+   * no title of its own, as every card alone in its domain leaves it; it opens on what the log is.
+   */
+  it('carries no title of its own, and opens on what the log is', () => {
+    draw();
+
+    expect(screen.queryByRole('heading')).toBeNull();
+    expect(screen.queryByText('Machine log')).toBeNull();
+  });
+
   it('lists the lines newest first, each with its source, level, event and data', () => {
     draw();
 
@@ -57,10 +68,10 @@ describe('the logs domain', () => {
   it('changes a filter by handing the whole set back, as the terminal takes its flags', async () => {
     const { onFilters, onRefresh } = draw();
 
-    await userEvent.click(screen.getByRole('radio', { name: 'last hour' }));
+    await userEvent.click(screen.getByRole('radio', { name: 'Last hour' }));
     expect(onFilters).toHaveBeenLastCalledWith({ ...LOG_FILTERS, since: '1h' } satisfies LogFilters);
 
-    await userEvent.click(screen.getByRole('radio', { name: 'errors' }));
+    await userEvent.click(screen.getByRole('radio', { name: 'Errors' }));
     expect(onFilters).toHaveBeenLastCalledWith({ ...LOG_FILTERS, level: 'error' } satisfies LogFilters);
 
     await userEvent.click(screen.getByRole('button', { name: 'Read again' }));
@@ -73,25 +84,25 @@ describe('the logs domain', () => {
     // earlier test in the file left the next select shut.
     const user = userEvent.setup();
 
-    screen.getByRole('combobox', { name: 'source' }).focus();
+    screen.getByRole('combobox', { name: 'Source' }).focus();
     await user.keyboard('{Enter}');
     expect((await screen.findAllByRole('option')).map((option) => option.textContent))
-      .toEqual(['every source', 'desktop', 'host', 'mcp', 'browser', 'driver']);
+      .toEqual(['Every source', 'desktop', 'host', 'mcp', 'browser', 'driver']);
     await user.click(screen.getByRole('option', { name: 'host' }));
     expect(onFilters).toHaveBeenLastCalledWith({ ...LOG_FILTERS, source: 'host' } satisfies LogFilters);
 
-    screen.getByRole('combobox', { name: 'event' }).focus();
+    screen.getByRole('combobox', { name: 'Event' }).focus();
     await user.keyboard('{Enter}');
     expect((await screen.findAllByRole('option')).map((option) => option.textContent))
-      .toEqual(['every event', 'page.error', 'request.failed', 'session.opened']);
+      .toEqual(['Every event', 'page.error', 'request.failed', 'session.opened']);
   });
 
   it('keeps an event chosen earlier among the choices when the period no longer holds it', async () => {
     draw({ filters: { ...LOG_FILTERS, event: 'turn.ended' } });
     const user = userEvent.setup();
 
-    expect(screen.getByRole('combobox', { name: 'event' })).toHaveTextContent('turn.ended');
-    screen.getByRole('combobox', { name: 'event' }).focus();
+    expect(screen.getByRole('combobox', { name: 'Event' })).toHaveTextContent('turn.ended');
+    screen.getByRole('combobox', { name: 'Event' }).focus();
     await user.keyboard('{Enter}');
     expect(await screen.findByRole('option', { name: 'turn.ended' })).toBeInTheDocument();
   });

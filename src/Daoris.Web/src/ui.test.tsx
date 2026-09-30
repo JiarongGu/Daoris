@@ -30,10 +30,10 @@ describe('the primitives', () => {
         icon="inbox"
         headline="No open quests anywhere"
         body="The family owes itself nothing right now."
-        action={<Button>ask for something</Button>}
+        action={<Button>Ask for something</Button>}
       />,
     );
-    expect(screen.getByRole('button', { name: 'ask for something' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Ask for something' })).toBeInTheDocument();
     // Its lines are set to leave no word alone on the last one (seen on Search's, UX5 U41).
     expect(screen.getByText('The family owes itself nothing right now.').closest('p')).toHaveClass('text-pretty');
   });
@@ -50,8 +50,8 @@ describe('the primitives', () => {
   });
 
   it('a disabled primary stays announced as disabled', () => {
-    render(<Button variant="primary" disabled>publish quest</Button>);
-    expect(screen.getByRole('button', { name: 'publish quest' })).toBeDisabled();
+    render(<Button variant="primary" disabled>Publish quest</Button>);
+    expect(screen.getByRole('button', { name: 'Publish quest' })).toBeDisabled();
   });
 });
 

@@ -276,7 +276,7 @@ describe('the plugins card', () => {
     show(<SettingsView notify={notify} section="plugins" />);
     const kit = await screen.findByRole('group', { name: 'New' });
 
-    await userEvent.type(within(kit).getByRole('textbox', { name: 'Plugin id' }), 'acme.new');
+    await userEvent.type(within(kit).getByRole('textbox', { name: 'Plugin ID' }), 'acme.new');
     await userEvent.click(within(kit).getByRole('checkbox', { name: /work\/land/ }));
     await userEvent.click(within(kit).getByRole('button', { name: 'Choose…' }));
     expect(await within(kit).findByDisplayValue('C:/work/plugins')).toBeTruthy();

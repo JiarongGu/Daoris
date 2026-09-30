@@ -130,7 +130,7 @@ describe('What agents may do', () => {
     const props = show();
     // Not "This machine": that is the section this card sits under.
     expect(screen.getByRole('heading', { name: 'Every session on this machine' })).toBeTruthy();
-    const engine = screen.getByRole('list', { name: 'repository engine' });
+    const engine = screen.getByRole('list', { name: 'Repository engine' });
     expect(within(engine).getByText('Bash(rm -rf:*)')).toBeTruthy();
 
     await userEvent.click(within(engine).getByRole('button', { name: 'remove Bash(rm -rf:*)' }));
@@ -143,7 +143,7 @@ describe('What agents may do', () => {
     expect(screen.queryByRole('textbox', { name: 'the rule' })).toBeNull();
 
     await userEvent.click(screen.getByRole('button', { name: 'Add a rule' }));
-    const add = screen.getByRole('button', { name: 'add' });
+    const add = screen.getByRole('button', { name: 'Add rule' });
     expect(add).toHaveProperty('disabled', true);
 
     await userEvent.type(screen.getByRole('textbox', { name: 'the rule' }), 'Bash(make:*)');
@@ -163,7 +163,7 @@ describe('What agents may do', () => {
     await userEvent.click(screen.getByRole('button', { name: 'Add a rule' }));
     const box = screen.getByRole('textbox', { name: 'the rule' });
     await userEvent.type(box, 'Bash(make:*');
-    await userEvent.click(screen.getByRole('button', { name: 'add' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Add rule' }));
 
     expect(props.onAdd).toHaveBeenCalled();
     expect((box as HTMLInputElement).value).toBe('Bash(make:*');
@@ -215,9 +215,9 @@ describe('what agents proposed', () => {
     // Said where the person decides: why this one is theirs.
     expect(within(waiting).getByText(/widens what agents may do/)).toBeTruthy();
 
-    await userEvent.click(within(waiting).getByRole('button', { name: 'accept' }));
+    await userEvent.click(within(waiting).getByRole('button', { name: 'Accept' }));
     expect(onAnswer).toHaveBeenCalledWith('p0000002', true);
-    await userEvent.click(within(waiting).getByRole('button', { name: 'decline' }));
+    await userEvent.click(within(waiting).getByRole('button', { name: 'Decline' }));
     expect(onAnswer).toHaveBeenCalledWith('p0000002', false);
   });
 
@@ -232,7 +232,7 @@ describe('what agents proposed', () => {
     expect(within(applied).getByText('remove Bash(make:*) from repository engine')).toBeTruthy();
     expect(within(applied).getByText(/a session the driver did not start/)).toBeTruthy();
     expect(within(applied).getByText('applied')).toBeTruthy();
-    expect(within(applied).queryByRole('button', { name: 'accept' })).toBeNull();
+    expect(within(applied).queryByRole('button', { name: 'Accept' })).toBeNull();
 
     const declined = screen.getByRole('listitem', { name: 'proposal #p0000000' });
     expect(within(declined).getByText('switch the default tree-guard off')).toBeTruthy();
@@ -241,12 +241,12 @@ describe('what agents proposed', () => {
 
   it('is absent when no agent has proposed anything, and from an older shell that never sends proposals', () => {
     show({ onAnswer: vi.fn() });
-    expect(screen.queryByRole('heading', { name: 'Proposed by agents' })).toBeNull();
+    expect(screen.queryByRole('heading', { name: 'Proposals' })).toBeNull();
   });
 
   it('holds its answers while a change is in flight', () => {
     show({ rules: { ...RULES, proposals: PROPOSALS }, onAnswer: vi.fn(), busy: true });
     const waiting = screen.getByRole('listitem', { name: 'proposal #p0000002' });
-    expect(within(waiting).getByRole('button', { name: 'accept' })).toHaveProperty('disabled', true);
+    expect(within(waiting).getByRole('button', { name: 'Accept' })).toHaveProperty('disabled', true);
   });
 });

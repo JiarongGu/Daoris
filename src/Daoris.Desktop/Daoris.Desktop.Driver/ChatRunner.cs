@@ -129,7 +129,7 @@ public sealed class ChatRunner(
             return new(
                 null,
                 $"`{repository}` has no checkout on this machine — a conversation runs IN a working "
-                + "tree. `daoris connect` from inside it, or add it from Projects.");
+                + "tree. `daoris connect` from inside it, or add it from Repositories.");
         }
 
         // The harness and the account (D49 §4), asked before the record exists — the same place the
@@ -240,7 +240,7 @@ public sealed class ChatRunner(
             return new(
                 null,
                 $"the `{resolved.Name}` adapter does not hold conversations — it spawns an agent that "
-                + "takes its target once and runs to completion. Name another under Settings → Daoris's own AI, "
+                + "takes its target once and runs to completion. Name another under Settings → AI features, "
                 + "or `daoris driver helper <agent>`.");
         }
 
@@ -527,7 +527,7 @@ public sealed class ChatRunner(
         if (_talking.TryGetValue(sessionId, out var adapter))
         {
             throw new DriverException(
-                $"the `{adapter.Name}` harness carries only text, so the driver cannot tell where one turn ends "
+                $"the `{adapter.Name}` agent carries only text, so the driver cannot tell where one turn ends "
                 + "and the next begins — there is no turn to stop. Finish the conversation, or stop it.");
         }
 
@@ -954,7 +954,7 @@ public sealed class ChatRunner(
                     if (!processes.Send(sessionId, adapter.FrameMessage(message.Prompt + ChatFiles.PathLines(message.Files))))
                     {
                         // Nothing is listening: the process is going, and its watch concludes the record.
-                        record(new SessionEvent { Kind = SessionEventKind.Note, Text = "the message could not be sent: the harness had gone." });
+                        record(new SessionEvent { Kind = SessionEventKind.Note, Text = "the message could not be sent: the agent had gone." });
                         Gone();
                         return Task.CompletedTask;
                     }

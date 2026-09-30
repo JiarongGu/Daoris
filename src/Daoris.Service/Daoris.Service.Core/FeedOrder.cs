@@ -114,6 +114,15 @@ public static class FeedDigest
         // What it says it uses (D91), only when it says something: a declaration of none hashes as it
         // did before the field existed, so every row a deployment already holds keeps its digest.
         if (registration.DependsOn.Count > 0) List(text, registration.DependsOn);
+        // Its lanes (D115 §2.2), on the same terms: a declaration of none hashes as it always did.
+        if (registration.DeclaredLanes.Count > 0)
+        {
+            Field(text, "lanes");
+            List(text, registration.DeclaredLanes
+                .Select(lane => $"{lane.Id}\u001f{lane.Title}\u001f{lane.Summary}\u001f{(lane.Steward ? "steward" : "")}")
+                .ToList());
+        }
+
         return Of(text.ToString());
     }
 

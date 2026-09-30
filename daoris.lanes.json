@@ -1,0 +1,109 @@
+{
+  "_why": "This repository's lanes: the domains inside it that work is dispatched to, each owning its paths (D115, docs/2026-10-01-self-development-design.md §2.1; the map of docs/2026-09-30-parallel-development-design.md §5, which a test holds to this file by id and title). Today tools/merge-branch.mjs reads it, prints which lanes a branch touched, and never refuses a merge on it; the driver, its queue and `connect` are to read it as DEV4 to DEV6 land. `id` is how work addresses a lane: lower-case letters, digits and dashes, starting with a letter, unique here. `title` and `summary` are for the people and agents that address it. A path belongs to the first lane that owns it, the steward's before the rest. `steward` marks the one lane that keeps the records, which a lane session never edits. `gates` names the declared gates a landing of that lane alone needs; absent is every gate, only the steward's narrows, and the merge tool runs every gate whatever a branch touched. `laneless` lists what belongs to no lane on purpose, each group with its reason; a test refuses a tracked file that is in no lane and not listed there, so a new path is placed when it is added, never left outside silently (LEFT1). A repeated or malformed id, a lane with no paths, two stewards, or a gate nobody declared makes the file unreadable. Globs: `*` stays inside one folder, `**` crosses folders, `{a,b}` is either, and a path starting `!` carves a narrower lane's files out of a wider one.",
+
+  "lanes": [
+    {
+      "id": "web-shell",
+      "title": "Web shell",
+      "summary": "The page but its Settings: the frame, the bridge, the atoms, the work frame, every other screen, the modules they share, the catalogues outside Settings' areas, and the page's build and end-to-end suite.",
+      "paths": [
+        "src/Daoris.Web/**",
+        "!src/Daoris.Web/src/SettingsView*.tsx",
+        "!src/Daoris.Web/src/settings/**",
+        "!src/Daoris.Web/src/locales/*/settings.json",
+        "!src/Daoris.Web/src/locales/*/settings.*.json"
+      ]
+    },
+    {
+      "id": "web-settings",
+      "title": "Web settings",
+      "summary": "The Settings screen: its frame, one file per domain, and its catalogue areas.",
+      "paths": [
+        "src/Daoris.Web/src/SettingsView*.tsx",
+        "src/Daoris.Web/src/settings/**",
+        "src/Daoris.Web/src/locales/*/settings.json",
+        "src/Daoris.Web/src/locales/*/settings.*.json"
+      ]
+    },
+    {
+      "id": "driver",
+      "title": "Driver library",
+      "summary": "The driver library, its headless host and their tests: the loop and planner, trees and landing, plugins and hooks, help, the toolchain.",
+      "paths": [
+        "src/Daoris.Desktop/Daoris.Desktop.Driver/**",
+        "src/Daoris.Desktop/Daoris.Desktop.Driver.Host/**",
+        "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/**"
+      ]
+    },
+    {
+      "id": "modules",
+      "title": "Desktop modules",
+      "summary": "The modules the page talks to, the application, the launcher that starts it, and the desktop tree's package versions.",
+      "_why": "The launcher (D93) is a twin of the modules' taskbar identity (D108). The desktop tree's package versions are the kit the application and the modules run on; the driver has no package of its own.",
+      "paths": [
+        "src/Daoris.Desktop/Daoris.Desktop.Modules/**",
+        "src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/**",
+        "src/Daoris.Desktop/Daoris.Desktop.App/**",
+        "src/Daoris.Desktop/Daoris.Desktop.Launcher/**",
+        "src/Daoris.Desktop/Directory.Packages.props"
+      ]
+    },
+    {
+      "id": "service",
+      "title": "Service",
+      "summary": "The cross-repository knowledge service, whole: its core, its hosts and its tests.",
+      "paths": ["src/Daoris.Service/**"]
+    },
+    {
+      "id": "cli",
+      "title": "CLI",
+      "summary": "The npm package daoris, whole: its sources, its entry point and its tests.",
+      "paths": ["src/Daoris.Cli/**"]
+    },
+    {
+      "id": "tools",
+      "title": "Tools",
+      "summary": "This repository's own tooling and gates: tools/, the devkit, the gates' declaration and the release workflow that runs them, and the workspace's scripts and ignore rules.",
+      "_why": "The desktop suites' Process settings are here because the gates name them (MOD8). The records were this lane's until DEV2 gave them a lane of their own.",
+      "paths": [
+        "tools/**",
+        ".gitattributes",
+        ".gitignore",
+        ".github/**",
+        "daoris.gates.json",
+        "package.json",
+        "package-lock.json",
+        "src/Daoris.Devkit/**",
+        "src/Daoris.Desktop/process.runsettings"
+      ]
+    },
+    {
+      "id": "records",
+      "title": "Records",
+      "steward": true,
+      "summary": "The backlog, its archive, and this map: the steward's records, which a lane session never edits.",
+      "_why": "The steward's lane (D115 §5), holding what the parent's list held and the map itself. The parent keeps them as the steward until a steward session does (DEV9). A landing of this lane alone needs the universal gates, which scan and link-check its files, and the cli gate, whose verify reads them: the budgets, the duplicate check and the lanes test.",
+      "paths": ["TASKS.md", "docs/task-archive.md", "daoris.lanes.json"],
+      "gates": ["universal", "cli"]
+    }
+  ],
+
+  "laneless": [
+    {
+      "what": "The docs: read by every lane and written by the change that makes them stale. The steward's archive is carved out: it is the records lane's.",
+      "paths": ["docs/**", "!docs/task-archive.md", "README.md", "CLAUDE.md", "ROADMAP.md", "LICENSE", "src/Daoris.Desktop/README.md"]
+    },
+    {
+      "what": "The doctrine and what it is synced into: a canon change re-syncs this repository's own copy and the example family in the same commit, whichever lane asked for it.",
+      "paths": ["canon/**", "AGENTS.md", "daoris.json", "daoris.lock", ".claude/**", "examples/**"]
+    },
+    {
+      "what": "The harness's settings for working in this repository.",
+      "paths": [".mcp.json"]
+    },
+    {
+      "what": "Build settings every desktop project shares, the driver's and the modules' alike.",
+      "paths": ["src/Daoris.Desktop/Directory.Build.props"]
+    }
+  ]
+}

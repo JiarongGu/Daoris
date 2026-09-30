@@ -63,8 +63,8 @@ internal sealed class HelpRoomMachineNow : IHelpRoomSection
             : "- Plugins: none installed.\n");
         // WSR5b: by name and session, so a hand-off names one the record holds.
         text.Append(machine.Landed.Count > 0
-            ? $"- Branches landings made: {string.Join(", ", machine.Landed.Select(LandedLine))}.\n\n"
-            : "- Branches landings made: none recorded.\n\n");
+            ? $"- Landed branches: {string.Join(", ", machine.Landed.Select(LandedLine))}.\n\n"
+            : "- Landed branches: none recorded.\n\n");
         return text.ToString();
     }
 

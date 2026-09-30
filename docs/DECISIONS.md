@@ -552,6 +552,16 @@ for it:
 A switched-off row is never paired as a rename with the pack's replacement, however alike they read.
 A switch is a decision the manifest names, not a move, and reporting it as one would hide the decision.
 
+*Amended by D117 (LAYOUT3, 2026-10-01): a move, and three things `sync` writes that are not canon files.* The
+table above is lock × disk × canon at ONE root. A **move** is a manifest naming a root its lock was not written
+under, and **the lock, not the manifest, says where the files are**: every row above is read and deleted at the
+lock's root and written at the manifest's. The cells a move adds — a canonical document under the old root, the
+repository's own documents in an old tier, a skills mirror, a room's pointer, a link or a link held as text — are
+enumerated in `docs/2026-10-01-agent-layout-design.md` §5.4, one `node --test` case each (`layout-move`,
+`layout-mirror`, `layout-rooms`, `layout-links`). Two readings carry over unchanged: an old file whose body is the
+canon's now is untouched (the state after `upstream`), and a mirror, too, is drift only when it differs from the
+lock.
+
 ## D18 — Every path daoris touches must resolve inside the target directory (2026-08-05)
 
 **Decision.** `sync` resolves every write and delete against the target directory and **refuses** any
@@ -944,6 +954,11 @@ one agent to work everywhere.
 **Exceptions, narrow:** initializing a repository that has no owner yet, and a change so coupled that
 splitting it would leave neither side working. A change that merely *touches* two repositories is not
 that — it is two changes and one quest.
+
+*Amended by D115 (DEV4, 2026-10-01): the exchange's self-address refusal is narrowed to a quest that
+names no lane. A repository may address one of its own lanes (`repository:lane`), because work for
+another lane is work for another session, which is what the refusal protects. A quest to itself with
+no lane is still refused, with the same sentence, at every door, since `QuestExchange` judges them all.*
 
 ## D33 — The CLI is TypeScript; the dev loop stays buildless and the package stays dependency-free
 
@@ -1483,6 +1498,14 @@ deployment is a minted key. The mid-build finding that forced a second small ame
 across machines needs the remote's **registry** mirrored down beside its quests — foreign rows only,
 because the machine holding a checkout is the authority on its own registration and its root must
 survive the sync untouched.
+
+*Noted by D115 (DEV4, 2026-10-01): the remote carries lanes both ways. A quest's `lanes` ride its
+publish on the quest wire, written only when there are some, so an older build reads such a quest as
+one to the whole repository. The remote keeps them as the publishing machine's exchange judged them,
+since its own copy of the registration may lag, and refuses only a lane no registration could declare.
+A joined repository's lanes travel with its registration as words, always as a list (`[]` for none),
+because a deployment keeps a row's lanes when a registration says nothing of them. A teammate's copy
+brings them down, and a change to its lanes alone re-files it.*
 
 ## D48 — The workspace is the unit of sharing; a server serves one; the registry is managed (2026-09-20)
 
@@ -2174,6 +2197,16 @@ and keeps meaning the same thing.
 **refused, never guessed at** — the file on the other side of that guess is the adopter's own
 doctrine, and `file-tool-discipline` already states why computed boundaries take the rest of a file
 with them when they are wrong.
+
+*Amended by D117 (LAYOUT3, 2026-10-01): the region stays, and what surrounds it moves.* Under the `agents`
+descriptor, knowledge and skills live under `.agents/` rather than `.claude/`; the region, its per-rule
+provenance and the root pointer are unchanged. Three things join the file-and-region states of the
+instruction-file design's §4: each declared room gets the same pointer, `<room>/CLAUDE.md` holding the import
+region (removed, and the file with it when the region was all of it, once the room is undeclared); the roster
+gains the mirror sentence and a *Rooms* table, each only when there is a mirror or a room, so a region without
+them is byte for byte what it was; and an `AGENTS.md` or `CLAUDE.md` that is a link, or a link held as text, is
+refused and never written through, on both descriptors. That last refusal is this decision's *never guess at a
+boundary* in another shape.
 
 ## D60 — The deployed artefact gets a gate, and it names the host it found rather than pinning it (2026-09-22)
 
@@ -4721,6 +4754,12 @@ planner and the ledger need.
 - **The desktop refusing to come up beside a headless loop.** Its host, page and conversations race
   nobody for a quest; only its loop waits.
 
+**Amended 2026-10-01 (DEV3, D115): the shutdown reaches every running session, whichever look started it.** A
+session now outlives the look that started it, so the watch keeps the running sessions, and a close ends each
+on the loop's own token. The loop lets go only once every record says `stopped` and interrupted. A failure that
+ends a headless loop (exit 2) ends its running sessions the same way first, so none is left working with
+nothing watching it, and each is carried on at the next start.
+
 **What the gates do not cover.** The window between reading a stale lock and removing it is not closed:
 two loops starting inside it could both run, and the quest lock still decides the race. A `--share` loop
 that outlives the driver it shared with leaves the home unlocked until the next loop starts. The remote
@@ -4887,6 +4926,10 @@ parallelism with it; changing the insertion point removes only the conflict.
 - **Union for the module READMEs.** One long row there lists a module's whole surface and every feature
   edits it. Union would keep every branch's version of that row, so those files stay as they are until
   the splits (MOD3–MOD5) give each feature its own row.
+
+*Amended by DEV2 (D115, 2026-10-01): the parent's records, the backlog and the archive, are the steward's lane
+`records` in `daoris.lanes.json`, with the lane map itself. The parent keeps them as the steward until a steward
+session does (DEV9). Union still serves the archive and never the backlog.*
 
 ## D107 — Agents read the workspace's checkouts by default, and write into another only where the person declared it (2026-09-30)
 
@@ -5715,11 +5758,75 @@ split the domain*.
 
 Each row that builds a piece notes the amendment where it lands.
 
+**Built 2026-10-01 (DEV3): a session outlives the look that started it** (§3.1, point 4 above).
+- The watch keeps the running sessions (`RunningSessions`) and hands them to the driver it builds for each
+  look. A look syncs, stops a lost claim, plans and begins every start. It waits for each start only until the
+  session's record is open or the start came to nothing, then returns. A hold, a refusal or an error before the
+  spawn is still that look's to report, and every session it opened is in the ledger before the next look plans.
+- Each ending joins the next look's report, and wakes the watch at once, so its slot is used and the ending is
+  said without waiting out the poll.
+- `RunUntilIdleAsync` looks until nothing runs, a look starts nothing and no ending is left unreported. Between
+  looks it waits for the next ending or the poll. `RunOnceAsync` is one look and then every session it started
+  to its end, with the sync beside them; the headless `--once` uses it, so what it prints is what it printed.
+- Unchanged: the sync at every look with the lost-claim stop after it (D68 §5, §6), the orphan sweep, the
+  shutdown's interrupted record (D104, amended there), the machine's cap, PAR1 and `driver.lock`.
+- Building it found three things the design did not say:
+  1. With trees on, a look could find a quest still open while its own session works, before that session
+     takes it or when it never does. Nothing held that quest, so a second session would start on it in a
+     second tree. The planner now holds a quest an active session serves (`RepositoryBusy`, naming the
+     session), from the quest each active record carries.
+  2. A nudge that arrived during a look was lost until the next poll. Looks are short now and the person's
+     controls nudge often, so the watch counts nudges and looks again at once.
+  3. A failed look leaves its endings unreported. After one the watch waits out its pace rather than wake on
+     them again and again against a service that is down.
+- **What a person sees.** A quest published while a long session runs starts at the next look instead of
+  after that session, which could take up to its 30-minute timeout: at once when it is published on the
+  window, whose publish nudges the loop, and within the poll (15 seconds by default) when it arrives any other
+  way. Every control that nudges the loop is heard while sessions run, where before it waited for them. Each
+  session's ending is said as it happens, not when the last session of its tick ends, and the window hears a
+  look when a session starts, not only when it ends.
+- **What the gates do not cover.** The fast half holds the scheduling with an in-process stand-in for each
+  start's run. The same cases over a real stub harness, and the shutdown marking two sessions interrupted, are
+  in the `Process` half, which this branch did not run, and neither did it run the family rehearsal.
+
 **What the gates do not cover.** This change is documents only, and nothing is built. Its statements about
 today's code were read from the files the design's §0 names: the planner, the tick and the watch, the trees, the
 tree lock, the landing rules, the ledger, the exchange, the merge tool, the lane map, the gates and the skill.
 `verify` checks the records' shape and the budgets, and none of those words. Its statements about the future
 are design. The design's §9 says which of them a rehearsal can prove, and which wait for DEV10's real run.
+
+*Built in part by DEV2 (2026-10-01): point 1's file. `tools/lanes.json` is now `daoris.lanes.json` at the root,
+with eight lanes by id: `web-shell`, `web-settings`, `driver`, `modules`, `service`, `cli`, `tools` and the
+steward's `records`. Each has a title and a one-line summary. `records` holds what the parent's list held and the
+map itself, with `gates: ["universal", "cli"]`, and *Tools and records* is now *Tools*. The docs' laneless group
+carves the archive out (`!docs/task-archive.md`), so no tracked file has two places. `tools/merge-branch.mjs`
+reads the file. Its lane report names lanes by id and title, and names the steward's records where it named the
+parent's. It refuses an unreadable file by §2.1's rules, naming each problem. The commit check, the laneless report
+and the gates are unchanged: the tool still runs every gate whatever a branch touched, so it reads `gates` only to
+check each names a declared gate, until the queue (DEV5). Every tracked file classifies as before, with the
+steward's paths where the parent's were. Held by `merge-branch.test.ts`, which also holds the parallel design's
+§5 table to the file by id and title. One consequence for a later row: a branch that adds a path no lane owns must
+place it in the steward's file, or the lanes test fails. The dispatch skill names that as the one exception and
+the merge tool reports it; in the driven cycle §2.3's check would send such a branch back, so DEV9's steward
+instruction needs an answer for it. §11's twin waits for the driver's reader (DEV6).*
+
+*Built in part by DEV4 (2026-10-01): point 2. `connect` reads `daoris.lanes.json` with the CLI's own code
+(`lanes.ts`: the file's rules in the merge tool's sentences, all but `gates`, which the queue judges, and the
+words rule) and sends each lane's `id`, `title`, `summary` and `steward`, never its globs, always as a list. It
+refuses an unreadable file, naming each problem. The registration keeps the words by `Declared.Lanes`, the
+CLI's `laneWords` twin with the same table. Unlike `uses`, a registration silent about lanes keeps the row's:
+the page's add, an import and an older client re-register without reading the file. The registry's HTTP and
+MCP answers list them. The exchange splits the address once (`QuestAddress`). It refuses a lane the
+registration does not declare, and any lane of a repository that declares none, naming the lanes there are,
+and it allows a self-addressed quest only when it names a lane. The quest keeps `to` and gains `lanes`, sorted,
+in the declared spelling, and `MakeId` appends `@<lanes>` only when there are some. The log, the cache, the
+wire, both doors, the remote sync (D47's note) and the intake's room carry them, and the page shows them on
+the Quests card and drawer. Left out: the import reads no lanes, since the service stores what `connect`
+sends; a `then` step takes no lane address yet (the steward's record steps, DEV9); and the page's composer
+offers no lane, while the terminal's `--to` and `quest_publish` take one. Held by `lanes.test.ts`,
+`connect.test.ts`, `RegistrationStoreTests`, `QuestLaneTests`, `McpToolsTests`, `LocalHostTests`, the driver's
+`LaneReadingTests` and `RemoteSyncTests`, `QuestsView.test.tsx`, and the family rehearsal's phase 4b, which the
+parent's serial run at merge proves.*
 
 ## D117 — One repository, every agent: knowledge and skills under `.agents/`, a mirror for the agent that reads `.claude/`, rooms, and a set-up the repository's own session does (2026-10-01)
 
@@ -5791,20 +5898,44 @@ staging. Its statements about the reference are the parent's measurement on the 
 design did not read. Three cells of its §1 are observations from its own session, one build of one harness; the
 rest are marked *not measured*, for LAYOUT2. `verify` checks the records' shape and budgets, and none of those
 words.
-*Amended by LEFT3 (2026-10-01): the traces are bounded. Each repository keeps its newest 50
-(`LandedBranches.TracesKept`), by when each went, dropped at the record's next write; a standing entry is never
-dropped. A count per repository rather than a span: the file grows with landings, not with the clock, and a person
-back after a month away still reviews last month's sessions, while a busy repository cannot push a quiet one's
-traces out. A session whose trace was dropped reads `SESSION_TREE_GONE` once its tree is gone, as one merged does.
-Held by `LandedTracesTests` in the fast half.*
 
-*A merge's own record was considered again (LEFT3) and is still not built, for §5's reason and one found looking:
-a merge's "branch" is the line itself, and every reader of the record treats an entry as a branch Daoris made. The
-clean-up deletes a recorded branch whose work reads on the line (`git branch -D`), bringing up to date replays one
-and counts its repository as holding Daoris's branches (D112), and the hand-off pushes one. A merge entry that
-reached any of them would delete, move or push the person's line. Building it is a change to what a landing record
-is: an entry of its own kind that `All()` never returns, the review reading the merge's own range (its first parent
-up to the merge commit) and the preview reading at that commit rather than at the line's tip, each with its test.*
+*Built by LAYOUT3 (2026-10-01): the agents layout in the CLI, the design's §2, §3 and §5.1–§5.4. `agents` is a second
+descriptor in `src/harness.ts` carrying its mirror (`skills` to `.claude/skills` for Claude Code, each skill's
+`agents/` folder left out) and the root it moves from (`formerly`). The lock gains `harness`, `target`, `mirrors` and
+`rooms`, each only when there is one, so a lock on the older layout is unchanged byte for byte; `layout.ts` answers
+where the files are from the lock. Every cell of §5.4 is a `node --test` case, written first and watched failing.
+Five choices the design left open, each held by a test: (1) `init` keeps writing `claude-code` and takes
+`--harness agents`, since the family and deployment rehearsals' newcomers write `.claude/knowledge/` after `init`
+and the service reads `.claude` until LAYOUT4; flipping the default belongs with LAYOUT4/LAYOUT5. (2) Rooms and the
+link refusals apply on both descriptors, since both write `AGENTS.md` and a `CLAUDE.md` pointer. (3) A mirror's
+`SKILL.md` carries the mirror header in place of the source's provenance line, one instruction rather than two;
+any other file is copied as its bytes, hashed as text unless it holds a NUL. (4) A link held as text is a file
+whose whole content is one token naming its partner (`AGENTS.md` for `CLAUDE.md`), starting `./` or `../`, or
+resolving beside it; a file where a folder must go refuses either way. (5) The repository's own documents left
+in an old tier refuse even `--force`, as links and a room with no instructions do: `--force` discards an edit, and
+none of those is one. The index names a room by its first heading. `check` reports `AGENTS.md` against codex's
+32,768 bytes, LAYOUT2's smallest measured limit, and never fails on it (D54). Not built here: `analyze` and
+`status` naming what reaches each harness (LAYOUT7's table and its twin), the service's half (LAYOUT4), the
+lanes' rooms (LAYOUT9). The release rehearsal's move phase is written and was not run in the branch.*
+
+*Built by LAYOUT4 (2026-10-01): the service reads the layout, the design's §5.5, and the scanner no longer assumes
+`.claude`. `DaorisLock` reads the lock's `harness`, `target` and `mirrors` and resolves its root by the CLI's
+`lockLayout`, row for row: the lock's target, else the manifest's while both are on the older layout, else the
+descriptor's. `RepositoryLayout` says where the scanner reads: at the lock's root and, for a layout that moved, the
+root it moved from, where a skill kept for one agent sits beside the mirrors; with no lock, at the manifest's root
+and both `.agents` and `.claude`. The lock's mirrors are never indexed, so a skill is found once, at its source.
+Each declared room's `AGENTS.md` is a local knowledge entry named by its folder. `RepositoryLinks` skips a link, a
+junction or a link held as text, by the CLI's `heldAsText` cases, and never follows one. Four choices, each held by
+a test: (1) the reader's answer where the CLI refuses: a lock whose target leaves the repository, or whose
+descriptor it does not know, reads as no lock, everything local; a room the CLI refuses is not read, and the good
+rooms beside it still are. Never outside the repository, and never the whole corpus for one repository's file.
+(2) Rooms are the manifest's, not the lock's: a room's `AGENTS.md` is the repository's own file, and the lock's
+`rooms` record pointers, one import line each. (3) The link rule covers every file the scanner reads, the logs and
+the region's file included, and a region file the lock names outside the repository is not read (D18). (4) A room
+whose file a tier already yielded is one entry. A repository on the older layout indexes exactly as before: a golden
+test was run against the scanner before this change and after it. The CLI still writes `claude-code` from `init`;
+the service no longer holds that default back (LAYOUT3's choice 1). Not run in the branch: the family rehearsal's
+*each document indexed once* (§5.6), the parent's at merge.*
 
 ## D118 — Every view has the same frame: its own list pane and main area, beside the frame's side bar and panel (2026-10-01)
 
@@ -5959,3 +6090,39 @@ does not hold placeholders, which the parity gate does, and cannot see a sentenc
 `{{why}}`); the audit lists those it read by hand. That the budgets match the rooms is a claim about the window,
 derived from the tokens and the frame's constants in design §4 and **not measured here**: nothing looked at the
 window in this branch.
+
+### NAME1b: the owner's calls, and what applying them settled (2026-10-01)
+
+**The owner approved the audit on 2026-10-01**, with the two calls it left to them: the view that lists repositories
+is named for them, *Projects* → *Repositories* (项目 → 仓库), on the activity bar, as the view's title and on the
+Overview's tile; and an ask is 需求, not 请求, wherever Chinese names one. NAME1b applied every row of the audit and
+its one plural form, the sentences its §5 lists (leaving the eight it found to be another thing's word), the
+driver's pass-through sentences in 中文, the host's own sentences a person reads (a refusal shown verbatim, a
+start's reason, a plugin's problem, a proposal's plan) and Ask Daoris's room, which it names places back from. The
+check went from 519 findings (glossary 84, form 288, door 16, budget 131) to 107, all budgets; under `--all`, from
+649 to 115, the eight sentences and the budgets.
+
+- **`--strict` gates the web's build**, beside the parity check and before the type check and the bundle, on the
+  facts' half; the budgets report (D54), as §3 above says. Its exit is a function, `verdict`, held rule by rule.
+- **A name said inside a sentence takes a fragment of its own**, never a name lower-cased in code: the account's
+  summary line (`harness.settings.summary.default`), a proposal's and a toast's scope (`settings.rules.where.*`), an
+  update's changed field, which now leads its line (*Servers: was → now*). Rejected: lower-casing a sentence-case
+  name at the call site, which is one language's rule written into a component.
+- **One act, one name, even where two presses do it**: the parked band's *Finish* and the composer's are one name
+  now, so the tests that told them apart by name ask the composer's form instead.
+- **A door named for a part opens at the part**: the sync menu's *Wiring…* opens the Workspace domain at Wiring, as
+  *Wire to a remote…* does (UX5 U72); the Machine log's card, alone in its domain, carries no title (U57).
+- **An accessible name moves with the name it begins with**: the map's *Connections* menu kept *Lines:* in its
+  accessible name and tip, which would have broken label-in-name.
+- **The check sets aside every name the English names**, not only the term's own: *like a git remote* says 远程仓库,
+  whose 远程 the workspace's remote must not be called; and *hold* is recognised in *held repositories* and *is
+  held*. A short form is never set aside.
+- **Kept on purpose**: the CLI's verbs and flags (`daoris agent login`, `--profile`), the MCP tools' descriptions a
+  session's agent reads (not the window), the headless host's console text and the driver loop's log lines say the
+  code's words; a browser's, Windows' and dsh's own *profile* and git's credential *helper* are theirs. The palette
+  keeps *projects*, 项目, *get started* and 请求 as words that still find the renamed places.
+
+**What the gates do not cover.** `--strict` holds the facts over every label, and the parity gate the keys and
+placeholders. The Playwright specs were edited to the new names and **not run** in the branch (the parent runs
+`test:web`); what they pin was read against Playwright's matching (case-insensitive substrings unless `exact`). The
+107 budgets are the window's to judge, and nothing looked at the window in this branch either.

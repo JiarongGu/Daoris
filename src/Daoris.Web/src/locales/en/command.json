@@ -1,7 +1,7 @@
 {
   "command.go.overview": "Overview",
   "command.go.quests": "Quests",
-  "command.go.projects": "Projects",
+  "command.go.projects": "Repositories",
   "command.go.convergence": "Convergence",
   "command.go.map": "Map",
   "command.go.search": "Search",
@@ -14,7 +14,7 @@
   "command.work.help": "Ask Daoris — what this machine lacks, and how to set it up",
   "command.work.quickAsk": "Quick Ask — one question to Ask Daoris, without opening its side bar",
   "command.work.detach": "Open this session in its own window",
-  "command.do.setup": "Set up Daoris — the steps this machine needs, in order",
+  "command.do.setup": "Setup — the steps this machine needs, in order",
   "command.do.ask": "Ask the workspace…",
   "command.do.refresh": "Refresh the index",
   "command.do.language": "Switch language"

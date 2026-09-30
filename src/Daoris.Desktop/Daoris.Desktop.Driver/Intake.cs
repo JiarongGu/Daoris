@@ -49,7 +49,18 @@ public static class Asks
 /// <param name="Root">Where it is on this machine, answered only to this machine; null elsewhere.</param>
 public sealed record DeclarationView(
     string Repository, bool Adopted, bool Registered, string? Summary,
-    IReadOnlyList<string> Owns, IReadOnlyList<string> Accepts, string? Root);
+    IReadOnlyList<string> Owns, IReadOnlyList<string> Accepts, string? Root)
+{
+    /// <summary>
+    /// The lanes it declares (D115 §2.2), as the registry answers them — their words, never their paths.
+    /// Absent is none: a host from before lanes answers without them.
+    /// </summary>
+    public IReadOnlyList<LaneView> Lanes { get; init; } = [];
+}
+
+/// <summary>One lane of a repository, as the registry answered it (D115 §2.2): what a quest addresses as `repository:id`.</summary>
+/// <param name="Steward">The one lane that keeps the repository's records.</param>
+public sealed record LaneView(string Id, string Title, string Summary, bool Steward);
 
 /// <summary>
 /// The intake's room (D65 §1b): a directory under Daoris's home, one per circle, seeded with the
@@ -169,6 +180,19 @@ public static class IntakeRoom
             if (repository.Owns.Count > 0) text.Append($"- **owns:** {string.Join("; ", repository.Owns)}\n");
             if (repository.Accepts.Count > 0) text.Append($"- **accepts:** {string.Join("; ", repository.Accepts)}\n");
             if (repository.Root is { Length: > 0 } root) text.Append($"- **where:** {root}\n");
+            if (repository.Lanes.Count > 0)
+            {
+                // Its lanes (D115 §2.2), each by the address that asks it, so an intake can send work
+                // that is plainly one lane's to that lane.
+                text.Append("- **lanes** — a quest to one is work for that lane's session; to the repository alone, for the whole of it:\n");
+                foreach (var lane in repository.Lanes)
+                {
+                    var words = lane.Summary.Length > 0 ? $"{lane.Title}: {lane.Summary}" : lane.Title;
+                    text.Append($"  - `{repository.Repository}:{lane.Id}`{(words.Length > 0 ? $" — {words}" : "")}"
+                                + $"{(lane.Steward ? " (the steward's: it keeps the records)" : "")}\n");
+                }
+            }
+
             text.Append('\n');
         }
 
@@ -348,7 +372,9 @@ public static class IntakePrompt
         text.Append("you would make. Its agent may decline work that is not its own, and that answer comes back.\n");
         text.Append("The quest is asked by the ask itself and carries its links and files. Work that needs two\n");
         text.Append("repositories is a quest to each; a check that should follow the work — in a browser, say — is\n");
-        text.Append("a `then` step on the quest it follows.\n\n");
+        text.Append("a `then` step on the quest it follows. Where the room lists a repository's lanes and the work is\n");
+        text.Append("plainly one lane's, address that lane as `repository:lane` (several as `repository:lane+lane`);\n");
+        text.Append("otherwise address the repository.\n\n");
 
         text.Append("When they do not settle it — nothing points at one repository, or more than one could —\n");
         text.Append("do not guess, and publish nothing. End by saying plainly what you would need to know; the\n");

@@ -626,7 +626,7 @@ public sealed class TickErrors
     public TickError? Failed(Exception error)
     {
         var said = error is HttpRequestException { StatusCode: null }
-            ? new TickError("SERVICE_UNREACHABLE", "the service is not answering — the driver looks again on its next tick.")
+            ? new TickError("SERVICE_UNREACHABLE", "the service is not answering — the driver looks again in a few seconds.")
             : new TickError(null, error.Message);
         if (said.Message == _last) return null;
         _last = said.Message;

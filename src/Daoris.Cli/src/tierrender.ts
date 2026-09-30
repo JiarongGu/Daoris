@@ -43,11 +43,16 @@ export interface TierInput {
   target?: string;
   /** The core rows this repository switched off, and the pack that offered each (D71). */
   off?: readonly { target: string; by: string }[];
+  /** Where the skills live and the root that mirrors them, for the one sentence that says so (D117 §5.3). */
+  mirror?: { source: string; root: string };
+  /** Each declared room and its first heading (D117 §2.2). */
+  rooms?: readonly { path: string; heading: string | null }[];
 }
 
 const RULE_HEAD = '| Rule | Applies when | Enforces |\n|---|---|---|';
 const KNOWLEDGE_HEAD = '| Knowledge | Applies when | Enforces |\n|---|---|---|';
 const SKILL_HEAD = '| Skill | Use when |\n|---|---|';
+const ROOM_HEAD = '| Room | About |\n|---|---|';
 
 /** A document's name — the filename, which is what every rule's frontmatter `name` must match. */
 function nameOf(file: CanonFile): string {
@@ -145,13 +150,31 @@ export function renderRoster(input: TierInput): string {
       : `| ${link} | ⚠ needs frontmatter | ⚠ needs frontmatter |`);
   }
 
-  lines.push('', '## Invoke by name', '', SKILL_HEAD);
+  lines.push('', '## Invoke by name', '');
+  // Said once, where the skills are listed: the copy exists for the agent that reads only there, and
+  // an edit made to it is refused (D117 §3.3), so the reader learns which file to open before editing.
+  if (input.mirror) {
+    lines.push(`Skills live in \`${input.mirror.source}/\`; \`${input.mirror.root}/\` mirrors them for the agent `
+      + 'that reads only there — edit the source.', '');
+  }
+  lines.push(SKILL_HEAD);
   for (const document of input.skills) {
     const meta = parseFrontmatter(document.text, SKILL_FIELDS).meta;
     // A skill is a DIRECTORY; `SKILL.md` is an implementation detail no roster should show.
     const dir = document.file.target.replace(/\/[^/]+$/, '');
     lines.push(`| [${dir.replace(/^.*\//, '')}](${target}/${dir})${mark(document)} | ${
       meta?.description ? summarize(meta.description) : '⚠ needs frontmatter'} |`);
+  }
+
+  // 🔴 Telling, not loading (D117 §2.2). D59 rejected telling for the RULES, which every task needs; a
+  // room is on-demand material like knowledge, and no harness is measured loading a nested file for a
+  // session started at the root (LAYOUT2), so the roster is what makes each one reachable. Only when a
+  // room is declared, so a region without rooms is byte for byte what it was.
+  if (input.rooms?.length) {
+    lines.push('', '## Rooms', '', "Read a folder's room before changing anything in it.", '', ROOM_HEAD);
+    for (const room of input.rooms) {
+      lines.push(`| [${room.path}](${room.path}/AGENTS.md) | ${room.heading ?? '⚠ no heading'} |`);
+    }
   }
 
   return lines.join('\n');

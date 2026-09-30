@@ -1,0 +1,249 @@
+using System.Net;
+using System.Text;
+using System.Text.Json.Nodes;
+using Daoris.Driver;
+
+namespace Daoris.Desktop.Driver.Tests;
+
+/// <summary>
+/// The service's doors a look crosses, standing in: the open quests, the registry, the session ledger and
+/// where this machine's claim on a quest stands (DEV3). In-process, reached through the real client over a
+/// handler, so a look is driven with no port and no process, and the suite's fast half can hold it.
+/// </summary>
+/// <remarks>
+/// It answers as the service does, and only as far as a look reads: active means queued, starting, working
+/// or parked; a quest list holds the open and the taken; a session names its quest, its repository and when
+/// it was made, which is how the driver reads its last run on a quest.
+/// </remarks>
+internal sealed class StandInLedger : HttpMessageHandler
+{
+    public const string Url = "http://ledger.test";
+
+    private readonly object _gate = new();
+    private readonly List<JsonObject> _quests = [];
+    private readonly List<JsonObject> _registry = [];
+    private readonly List<JsonObject> _sessions = [];
+    private readonly Dictionary<string, int> _claims = new(StringComparer.Ordinal);
+    private DateTimeOffset _clock = new(2026, 10, 1, 9, 0, 0, TimeSpan.Zero);
+
+    /// <summary>What <c>/api/quests/{id}/claim</c> answers for every quest (D68 §4).</summary>
+    public string Claim { get; set; } = "held";
+
+    /// <summary>While true the quest list does not answer, as a service that went away does.</summary>
+    public bool Down { get; set; }
+
+    /// <summary>A client over this ledger, as a driver is handed one.</summary>
+    public ServiceClient Client() => new(Url, null, new HttpClient(this, disposeHandler: false));
+
+    /// <summary>A repository registered and adopted here, at <paramref name="root"/>.</summary>
+    public StandInLedger Register(string repository, string root)
+    {
+        lock (_gate)
+        {
+            _registry.Add(new JsonObject
+            {
+                ["repository"] = repository, ["adopted"] = true, ["registered"] = true, ["root"] = root, ["workspace"] = "default",
+            });
+        }
+
+        return this;
+    }
+
+    /// <summary>An open quest to <paramref name="to"/>, the newest: the service answers oldest first.</summary>
+    public void Publish(string id, string to, string? title = null)
+    {
+        lock (_gate)
+        {
+            _quests.Add(new JsonObject
+            {
+                ["id"] = id, ["from"] = "game", ["to"] = to, ["title"] = title ?? $"The work of #{id}",
+                ["body"] = "Stand-in work.", ["status"] = "Open",
+            });
+        }
+    }
+
+    /// <summary>Move a quest, as its session's own connector would.</summary>
+    public void Move(string id, string status)
+    {
+        lock (_gate) _quests.Single(q => q["id"]!.GetValue<string>() == id)["status"] = status;
+    }
+
+    public JsonObject Session(string id)
+    {
+        lock (_gate) return (JsonObject)_sessions.Single(s => s["id"]!.GetValue<string>() == id).DeepClone();
+    }
+
+    /// <summary>Every record, oldest first.</summary>
+    public IReadOnlyList<JsonObject> Sessions
+    {
+        get { lock (_gate) return [.. _sessions.Select(s => (JsonObject)s.DeepClone())]; }
+    }
+
+    /// <summary>The records opened for one quest, oldest first.</summary>
+    public IReadOnlyList<JsonObject> SessionsFor(string quest) =>
+        [.. Sessions.Where(s => s["quest"]?.GetValue<string>() == quest)];
+
+    /// <summary>How often a driver asked where this machine's claim on <paramref name="quest"/> stands.</summary>
+    public int ClaimsAsked(string quest)
+    {
+        lock (_gate) return _claims.GetValueOrDefault(quest);
+    }
+
+    protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
+    {
+        var path = request.RequestUri!.AbsolutePath;
+        var all = request.RequestUri.Query.Contains("includeClosed=true", StringComparison.Ordinal);
+        var body = request.Content is null ? null : JsonNode.Parse(await request.Content.ReadAsStringAsync(ct))?.AsObject();
+
+        lock (_gate)
+        {
+            if (Down && path == "/api/quests")
+            {
+                return Answer(HttpStatusCode.ServiceUnavailable, new JsonObject { ["error"] = "the stand-in is down" });
+            }
+
+            switch (request.Method.Method, path)
+            {
+                case ("GET", "/api/quests"):
+                    return Answer(HttpStatusCode.OK, new JsonArray([.. _quests
+                        .Where(q => all || q["status"]!.GetValue<string>() is "Open" or "Taken")
+                        .Select(q => q.DeepClone())]));
+
+                case ("GET", "/api/registry"):
+                    return Answer(HttpStatusCode.OK, new JsonArray([.. _registry.Select(r => r.DeepClone())]));
+
+                case ("GET", "/api/sessions"):
+                    return Answer(HttpStatusCode.OK, new JsonArray([.. _sessions
+                        .Where(s => all || s["state"]!.GetValue<string>() is "queued" or "starting" or "working" or "awaiting-person")
+                        .Select(s => s.DeepClone())]));
+
+                case ("POST", "/api/sessions"):
+                {
+                    var quest = body!["quest"]!.GetValue<string>();
+                    var to = _quests.Single(q => q["id"]!.GetValue<string>() == quest)["to"]!.GetValue<string>();
+                    _clock = _clock.AddSeconds(1);
+                    var session = new JsonObject
+                    {
+                        ["id"] = $"s{_sessions.Count + 1}", ["quest"] = quest, ["repository"] = to,
+                        ["state"] = "queued", ["kind"] = "driven", ["adapter"] = body["adapter"]?.GetValue<string>(),
+                        ["tree"] = body["tree"]?.GetValue<string>(), ["created"] = _clock.ToString("O"),
+                    };
+                    _sessions.Add(session);
+                    return Answer(HttpStatusCode.OK, new JsonObject { ["session"] = session.DeepClone(), ["message"] = "queued" });
+                }
+
+                case ("POST", _) when path.StartsWith("/api/sessions/", StringComparison.Ordinal) && path.EndsWith("/state", StringComparison.Ordinal):
+                {
+                    var id = path["/api/sessions/".Length..^"/state".Length];
+                    var session = _sessions.Single(s => s["id"]!.GetValue<string>() == id);
+                    session["state"] = body!["state"]!.GetValue<string>();
+                    if (body["note"] is { } note) session["note"] = note.GetValue<string>();
+                    if (body["interrupted"] is { } interrupted) session["interrupted"] = interrupted.GetValue<bool>();
+                    return Answer(HttpStatusCode.OK, new JsonObject { ["session"] = session.DeepClone(), ["message"] = "moved" });
+                }
+
+                case ("GET", _) when path.StartsWith("/api/quests/", StringComparison.Ordinal) && path.EndsWith("/claim", StringComparison.Ordinal):
+                {
+                    var quest = path["/api/quests/".Length..^"/claim".Length];
+                    _claims[quest] = _claims.GetValueOrDefault(quest) + 1;
+                    return Answer(HttpStatusCode.OK, new JsonObject { ["claim"] = Claim });
+                }
+
+                default:
+                    return Answer(HttpStatusCode.NotFound, new JsonObject { ["error"] = $"the stand-in has no {request.Method} {path}" });
+            }
+        }
+    }
+
+    private static HttpResponseMessage Answer(HttpStatusCode status, JsonNode payload) => new(status)
+    {
+        Content = new StringContent(payload.ToJsonString(), Encoding.UTF8, "application/json"),
+    };
+}
+
+/// <summary>
+/// A start's run, standing in (DEV3): it opens its record through the real client, moves it to working,
+/// says it opened, and holds its session until the test ends it. When the look's token is cancelled it
+/// ends as the driver's shutdown ends a session: <c>stopped</c>, interrupted (D104).
+/// </summary>
+internal sealed class StandInRuns(ServiceClient service, StandInLedger ledger)
+{
+    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, TaskCompletionSource<string>> _endings =
+        new(StringComparer.Ordinal);
+
+    private readonly List<string> _started = [];
+
+    /// <summary>Run by the run the moment its record is open, before the look is told — a test's hook into that instant.</summary>
+    public Action<string>? OnOpen { get; set; }
+
+    /// <summary>Whether a session takes its quest as it opens, as a real one does first. Off, the quest stays open while it works.</summary>
+    public bool Takes { get; set; } = true;
+
+    /// <summary>
+    /// The driver's running set, where a run says which quest it holds while it works, as the real run does —
+    /// what the lost-claim stop asks about (D68 §5).
+    /// </summary>
+    public RunningSessions? Keeping { get; set; }
+
+    /// <summary>The quests a session was opened for, in the order they opened.</summary>
+    public IReadOnlyList<string> Started
+    {
+        get { lock (_started) return [.. _started]; }
+    }
+
+    /// <summary>The runner a driver is handed.</summary>
+    public Func<Consideration, Action, CancellationToken, Task<StartRun>> Runner => RunAsync;
+
+    /// <summary>End the session working on <paramref name="quest"/>: its quest closes done, and its record completes.</summary>
+    public void End(string quest)
+    {
+        ledger.Move(quest, "Done");
+        Ending(quest).TrySetResult("completed");
+    }
+
+    private TaskCompletionSource<string> Ending(string quest) =>
+        _endings.GetOrAdd(quest, _ => new TaskCompletionSource<string>(TaskCreationOptions.RunContinuationsAsynchronously));
+
+    private async Task<StartRun> RunAsync(Consideration start, Action opened, CancellationToken ct)
+    {
+        var quest = start.Quest;
+        var (id, message) = await service.OpenSessionAsync(quest.Id, "stub", ct: ct);
+        if (id is null) return new StartRun($"refused  #{quest.Id} → {quest.To}: {message}", false);
+
+        await service.AdvanceAsync(id, "working", ct: ct);
+        if (Takes) ledger.Move(quest.Id, "Taken");
+        lock (_started) _started.Add(quest.Id);
+        OnOpen?.Invoke(quest.Id);
+        opened();
+
+        Keeping?.Live.TryAdd(quest.Id, id);
+        try
+        {
+            string state;
+            try
+            {
+                state = await Ending(quest.Id).Task.WaitAsync(ct);
+            }
+            catch (OperationCanceledException) when (ct.IsCancellationRequested)
+            {
+                // A moment before the record is written, as ending a real process takes one: a caller that let go
+                // without waiting for it would find the record still working.
+                await Task.Delay(200, CancellationToken.None);
+                await service.AdvanceAsync(
+                    id, "stopped", note: "the driver was stopped while this ran.", ct: CancellationToken.None, interrupted: true);
+                return new StartRun(
+                    $"stopped  session {id} (#{quest.Id} → {quest.To}): the driver was stopped.", true,
+                    new SessionEnded(id, quest.To, "stopped", ByPerson: true, Quest: quest.Id));
+            }
+
+            await service.AdvanceAsync(id, state, note: "the stand-in's work is done.", ct: CancellationToken.None);
+            return new StartRun(
+                $"{state}  session {id} (#{quest.Id} → {quest.To}): the stand-in's work is done.", true,
+                new SessionEnded(id, quest.To, state, ByPerson: false, Quest: quest.Id));
+        }
+        finally
+        {
+            Keeping?.Live.TryRemove(quest.Id, out _);
+        }
+    }
+}

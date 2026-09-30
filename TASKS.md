@@ -21,8 +21,8 @@ lists.
 
 ## State
 
-**Counts, and this is their one home:** sixteen commands, **680 CLI tests, 697 service and 46 HTTP host, 1695 driver,
-466 desktop modules, 80 devkit, 1895 web unit, 21 Playwright**, 66/66 release rehearsal, **305/305
+**Counts, and this is their one home:** sixteen commands, **774 CLI tests, 778 service and 47 HTTP host, 1724 driver,
+466 desktop modules, 80 devkit, 1905 web unit, 21 Playwright**, 92/92 release rehearsal, **312/312
 family rehearsal** (it names its own phases when you run it), **70/70 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge
 documents, 5 skills, 7 packs. The always-loaded core is **22,672 of 26,000 bytes** — a span in
@@ -132,11 +132,11 @@ rather than designed.
 
 ## Backlog
 
-**Forty-four rows are open** (most of them the three designed builds below) (triaged 2026-09-30, when the owner asked to go faster; 2026-10-01 after the night's merges, the look, and the owner's round):
-- **Merging next:** one integration of LAYOUT2, DEV2, DEV3, DEV4, LAYOUT3, LAYOUT4 and NAME1b. **Building:** PLUGUI1a.
+**Forty-five rows are open** (most of them the three designed builds below) (triaged 2026-09-30, when the owner asked to go faster; 2026-10-01 after the night's merges, the look, and the owner's round):
+- **Merging next:** the designs of PLUGUI1a, D120, D121 and D122 (DOC1, TOOLS1, PLUGREPO2/PLUGDIST1), with their build rows.
 - **Designed, to build in order:** DEV2–DEV11 (D115); FRAME1b–i (D118) after NAME1b; PLUGUI1 after FRAME1c;
   LAYOUT3–LAYOUT10 (D117) after LAYOUT2's evidence.
-- **Waiting on the owner (six):** BUDGET1 and PLUGREPO1 (their calls), TRUST2 and AGT2c (a grant, two
+- **Waiting on the owner (five):** BUDGET1 (their call), TRUST2 and AGT2c (a grant, two
   downloads), FG5 and BRW3 (the owner present).
 - **Parked on a trigger (nine):** TOOL4, TOOL5, PLUG7, SEM2, CANON9, REH1, D76's held file tree,
   and FLAKE1 and TEST1, which wait for their next sighting (the Process category runs serially since MOD8,
@@ -168,11 +168,13 @@ then FRAME1's audit and model, then PLUGUI1 on that frame. DEV1 is a design docu
 them. Each starts with its contract document, is built in parts by subagents, and is looked at on the
 install in both themes and both languages.
 
-- [ ] **NAME1b — the renames, and the names check strict** (building; D116). The owner approved the audit's
-  names on 2026-10-01, with Projects → Repositories (项目 → 仓库) and an ask named 需求. Apply
-  `docs/2026-10-01-naming-audit.md` in both catalogues (keys stay), the sentences with a forbidden word,
-  and `names:check --strict` in the gate for glossary, form and doors (budgets report only, D54); then every
-  screen looked at in both languages.
+- [ ] **MANAGE1 — saving a declaration erases `uses`** (found by DEV4). Repositories → Manage → Save
+  declaration re-registers with a `domain` that carries no `uses`, which erases the repository's `uses` from
+  the registry until its next `connect`. Lanes avoid it by DEV4's preserve rule; `uses` needs the same, with a
+  test that fails first.
+- [ ] **NAME2 — the names after NAME1b, on the window**: the glossary gains *lane* / 泳道 (DEV4 named it; NAME1
+  had no term); the 107 budget judgements `names:check` reports are looked at on the window at 888 px, both
+  languages, and each is renamed or accepted.
 - [ ] **FRAME1b — the list pane, Sessions' first** (D118, model §6): `ListPane`, `StripMark`, `listKeys`,
   per-view bounds, strip by room, the laid-over mode; Sessions' rail moves onto it. Look: 1280, 900, 680 px.
 - [ ] **FRAME1c — the main area and the view contract**: `ViewMain`, per-view memory, `open(view, item?)`,
@@ -200,18 +202,68 @@ install in both themes and both languages.
   Settings keeps only what is a setting. Ask Daoris's plugin kind gains go anchors into the screen. The
   contract is a design document written first, extending `docs/2026-09-23-plugin-design.md`.
 
+### Doctrine, plugins and tools (owner, 2026-10-01)
+
+> *"remember daoris still have role for doctrine (and we do need to research a good development doc pattern
+> for code generation and use it as standard for all repo setup so its good for sessions, and the goal is to
+> unblock the repo as far as possible so less ask human permission during development) and I also created
+> folder for plugins [Daoris.Plugins] … this repo will for our default plugin development and later will be
+> release to nuget so we can use nuget as plugin site and we need to find a way to filter on nuget for daoris
+> plugin (or we can use npm, you can decide …) … all tools that daoris using like git, [terminal] should all
+> have a self managed option (and can be setup in settings) which can be download from locations … I perfer
+> provide default download location and built into the app with a resouce json file that can be updated if
+> need other resouce location"*
+
+- [ ] **DOC1 — the development-document standard for code generation** (research, then a canon change). What a
+  repository's documents must hold so a code-generating session does good work unasked: the brief, how to
+  build, test and verify, the lanes and rooms, the conventions, the decisions, the open work. Study the
+  patterns in use (dsh's `AGENTS.md` and notes, the public `AGENTS.md` convention, skills, this canon), measure
+  what sessions actually read (LAYOUT2's evidence), and propose one standard, project-agnostic, as canon: a
+  template every set-up quest carries (LAYOUT7) and `check` can hold. Doctrine is still Daoris's first role.
+- [ ] **UNBLOCK1 — fewer asks: a repository declares what is safe, and its sessions may do it.** Today a
+  session asks the person for every command its harness does not already allow. A repository declares its
+  safe work (its gates, build and test commands, git on its own branch, installs from its lockfile), and
+  Daoris turns that into each harness's allowances for that repository's sessions (the permission scopes,
+  D72–D74; the set-up press's rule, LAYOUT7), while destructive, irreversible, publishing and
+  cross-repository acts still ask (`autonomous-development`). Measure: asks per session, from the machine log,
+  before and after. Design first, with a decision.
+- [ ] **PLUGREPO2 — Daoris.Plugins, the default plugins' home** (the owner created it on 2026-10-01, answering
+  PLUGREPO1). Initialize it (it is empty and has no owner yet, so this is set-up, not reaching in), give it its
+  own gates (each plugin's `node --test`, as the kit makes them), move Daoris's own plugins there (the landing
+  plugins in `examples/plugins/`, the in-app browser's), and keep only what the rehearsals need in `examples/`.
+  First, a survey of how the family's sibling plugin repositories are laid out and packaged (read only).
+  **Built by Daoris itself** (owner, 2026-10-01: *"you can let daoris to develop plugin so we also test this
+  feature too"*): the parent only initializes the empty folder as a repository and registers it in a
+  workspace; every plugin in it is then asked for through Ask Daoris or the intake (PLUG9), taken by that
+  repository's own driven session with the kit (PLUG8), and landed by the workspace's rule, so the whole path
+  is proven on a real repository.
+- [ ] **PLUGDEV1 — Daoris develops plugins where you choose** (owner, 2026-10-01, answering where a plugin
+  Daoris develops lives). A desktop feature: when a person needs a new capability (an MCP server, access
+  management), Daoris develops a plugin for it. By default it is developed and kept **in Daoris's own home**,
+  needing no repository, **or in a location the person configures**; Daoris.Plugins is the default location
+  for our own plugins and the published, searchable source. Daoris develops in whichever location is set up,
+  or in the home and then copies the plugin over, through that repository's own door. This changes PLUG9's
+  premise (D103: a plugin made as an ask at the repository that holds plugins); PLUGDIST1's design (D120)
+  carries the model, and the build follows it.
+- [ ] **PLUGDIST1 — plugins from a public catalogue.** The recommendation, to be recorded as a decision:
+  **NuGet**, each plugin a package of a custom package type (`DaorisPlugin`) that the search API filters by
+  exactly (`packageType=DaorisPlugin`), downloaded from the flat container over HTTP with no NuGet client,
+  its hash checked. npm's keywords are free-form and filter less precisely; both are free and open to other
+  publishers. The Plugins view gains *Find plugins* (search, versions, install, update); publishing from
+  Daoris.Plugins stays the owner's call.
+- [ ] **TOOLS1 — self-managed tools** (design first, extending D57's toolchain from agents to tools). Every tool
+  Daoris runs (git, the terminal's shell, Node, the landing plugins' `gh` and `az`) can be *the system's*,
+  *managed by Daoris* (downloaded into the home) or *a path you name*, set in Settings → Tools and by a terminal
+  verb. A `resources.json` built into the app lists each tool's default download location, version and hash; it
+  can be updated, and more resource locations added, without a new release. A managed git can carry the
+  settings Daoris's own fetch needs (the SSH finding, WSR7).
+
 ### Daoris develops Daoris (D115) — the build
 
 The contract is `docs/2026-10-01-self-development-design.md`; each row names its sections, which carry the
 detail and the proof. Order: DEV2 ∥ DEV3 ∥ DEV4, then DEV5 → DEV6 → DEV7 (one lane, in sequence), then
 DEV8 ∥ DEV9, then DEV10 and DEV11.
 
-- [ ] **DEV2 — the lanes are the repository's declaration** (§2.1): `tools/lanes.json` becomes
-  `daoris.lanes.json` with ids, summaries and a steward lane `records`; the merge tool and the skill follow.
-- [ ] **DEV3 — sessions outlive their tick** (building; §3.1): today a tick awaits every session it started, so nothing
-  new starts until the last ends. Changes behaviour for every repository; the family phases must pass unchanged.
-- [ ] **DEV4 — lanes in the registry and on the quest** (§2.2): `repository:lane[+lane]`, a self-addressed quest
-  allowed only when it names a lane; a family check over an example with two lanes.
 - [ ] **DEV5 — the queue lands a branch from outside** (§4.2–§4.8): the `queue` form in a detached tree under
   the home, gates by declared `kind` with the `quiet` re-run, the fast-forward under TreeLock,
   `daoris-driver queue …`, `tools/commit-check.mjs`.
@@ -221,7 +273,9 @@ DEV8 ∥ DEV9, then DEV10 and DEV11.
   verdict through the answer door (D83), three failures to the person, done means landed.
 - [ ] **DEV8 — the queue on the window** (§4.9), with Ask Daoris's doors for every new verb (D110).
 - [ ] **DEV9 — the steward** (§5): the split into lane quests, decision numbers, record steps; the dispatch
-  skill rewritten for the steward and the lane session.
+  skill rewritten for the steward and the lane session. Two answers it owes, found merging: `docs/README.md`'s
+  index rows (every branch edited them, and the union merge kept both versions each time), and a lane session
+  that adds a path no lane owns (it must place it in the steward's `daoris.lanes.json`, DEV2).
 - [ ] **DEV10 — the first user** (the owner present): a real row through steward → lane → queue → record, then
   one crossing two lanes; the cap and the strikes rule revisited from its evidence.
 - [ ] **DEV11 — the second user, and the tools retire**: a canon knowledge document on lanes, a laned example,
@@ -232,16 +286,13 @@ DEV8 ∥ DEV9, then DEV10 and DEV11.
 The contract is `docs/2026-10-01-agent-layout-design.md`; §7 carries each row's full text and proof.
 LAYOUT2 first: until it measures, the layout's entry points are the design's reading, not the harnesses'.
 
-- [ ] **LAYOUT2 — the entry-point probe** (§1): per harness at its pinned version, measure every "not
-  measured" cell: instruction files above and below the working directory, `@path` in a nested file, skill
-  roots, a link held as text, the byte limit and what is cut, **whether an ACP adapter loads project
-  instructions at all**, a duplicate skill. Keyless first; one canary turn per harness is the owner's to allow.
-- [ ] **LAYOUT3 — the `agents` layout in the CLI** (building; §2, §3, §5.1–§5.4): the descriptor, mirrors, `rooms`,
-  the lock's new fields, `sync`'s move cells (each a failing test first), and the release rehearsal's move.
-- [ ] **LAYOUT4 — the service reads the layout** (§5.5): the lock's root first, mirrors skipped, rooms indexed;
-  fixes the scanner's hardcoded `.claude`.
+- [ ] **LAYOUT2 — the canary turn** (the owner's to allow). The keyless half is done and archived
+  (`docs/2026-10-01-entry-point-evidence.md`: the ACP adapter loads project instructions). One turn per
+  harness, by §6's fixtures and prompt, shows a maker-side flag is off for the account and confirms the
+  predicted cells.
 - [ ] **LAYOUT5 — this repository's doctrine moves** (§4.1, §4.3, §4.4), run alone: `git mv`, the manifest,
-  `sync`; `.gitattributes`' union line moves in the same commit; `examples/engine` moves.
+  `sync`; `.gitattributes`' union line moves in the same commit; `examples/engine` moves. The lane map is
+  `records`' (DEV2), so the branch touches the steward's records.
 - [ ] **LAYOUT6 — the brief moves** (§4.2): `CLAUDE.md` into the root `AGENTS.md` (about 1,300 words, under
   codex's documented 32 KiB) and eight rooms; `CLAUDE.md` keeps the import alone.
 - [ ] **LAYOUT7 — the layout facts and the set-up quest** (§6.1–§6.3): read from the line, `daoris-driver
@@ -259,10 +310,6 @@ LAYOUT2 first: until it measures, the layout's entry points are the design's rea
 
 PLUG8 and PLUG9 built the reading recorded here (in the archive): making a plugin is work done in a
 repository with tests, and installing one is the person's press.
-- [ ] **PLUGREPO1 — where the plugins Daoris makes live** (the owner's call). A plugins repository is
-  the natural home: versioned, reviewed, shareable with a team, owned by its own agent, and connected
-  like any repository. It is not a registry (D64), and Daoris's own examples stay here as the wire's
-  contract. Whether to make one, and where, is the owner's; Ask Daoris asks rather than picks until then.
 
 ### What REV3 left (2026-09-25)
 

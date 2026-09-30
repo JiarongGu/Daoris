@@ -121,7 +121,7 @@ public sealed class RuleProposalBox(string? home)
 
         return (id,
             $"Proposed `#{id}`: {Describe(change)}. If it narrows what agents may do, the driver applies it at "
-            + "its next tick; if it widens it, it waits for the person's yes. Either way the record says this "
+            + "its next look; if it widens it, it waits for the person's yes. Either way the record says this "
             + "session proposed it, and why.");
     }
 

@@ -42,14 +42,14 @@ describe('SearchView', () => {
   it('offers to clear the query only once there is one, and clears it', async () => {
     view();
     const box = screen.getByRole('searchbox');
-    expect(screen.queryByRole('button', { name: 'clear the query' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Clear search' })).not.toBeInTheDocument();
 
     await userEvent.type(box, 'encoding');
     expect(box).toHaveValue('encoding');
-    await userEvent.click(screen.getByRole('button', { name: 'clear the query' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Clear search' }));
 
     expect(box).toHaveValue('');
-    expect(screen.queryByRole('button', { name: 'clear the query' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Clear search' })).not.toBeInTheDocument();
   });
 
   it('marks the matched term in each excerpt', async () => {
@@ -76,7 +76,7 @@ describe('SearchView', () => {
     await userEvent.type(screen.getByRole('searchbox'), 'zebra quartz');
     expect(await screen.findByText('No matches')).toBeInTheDocument();
     expect(screen.getByText(/matches words, so a repository that reached the same conclusion/)).toBeInTheDocument();
-    await userEvent.click(screen.getByRole('button', { name: 'look for convergence' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Look in Convergence' }));
     expect(onConverge).toHaveBeenCalledOnce();
     unmount();
 

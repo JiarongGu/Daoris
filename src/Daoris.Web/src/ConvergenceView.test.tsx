@@ -68,7 +68,7 @@ describe('ConvergenceView, looked at on the window (POLISH4)', () => {
     view();
 
     expect(await screen.findByText('Nothing converges at 0.75 or above')).toBeInTheDocument();
-    await userEvent.click(screen.getByRole('button', { name: 'lower it to 0.65' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Lower to 0.65' }));
     expect(await screen.findByText('Nothing converges at 0.65 or above')).toBeInTheDocument();
   });
 
@@ -81,7 +81,7 @@ describe('ConvergenceView, looked at on the window (POLISH4)', () => {
     view();
 
     for (const step of ['0.65', '0.55', '0.50']) {
-      await userEvent.click(await screen.findByRole('button', { name: `lower it to ${step}` }));
+      await userEvent.click(await screen.findByRole('button', { name: `Lower to ${step}` }));
     }
     expect(await screen.findByText('Nothing converges at 0.50 or above')).toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /lower it/ })).toBeNull();

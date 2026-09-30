@@ -99,9 +99,9 @@ describe('Ask Daoris, with an agent named', () => {
     bridge();
     show();
 
-    const box = await screen.findByLabelText('message');
+    const box = await screen.findByLabelText('Message');
     await userEvent.type(box, 'how do I drive a repository?');
-    await userEvent.click(screen.getByRole('button', { name: 'send' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Send' }));
 
     await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_INPUT', {
       payload: { id: HELP.id, text: 'how do I drive a repository?' },
@@ -141,10 +141,10 @@ describe('Ask Daoris, with an agent named', () => {
     }));
     show();
 
-    const box = await screen.findByLabelText('message');
+    const box = await screen.findByLabelText('Message');
     await waitFor(() => expect(starts()).toBe(1));
     await userEvent.type(box, words);
-    await userEvent.click(screen.getByRole('button', { name: 'send' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Send' }));
 
     expect(await screen.findByText(words)).toBeInTheDocument();
     expect(screen.getByText('opening Ask Daoris…')).toBeInTheDocument();
@@ -202,21 +202,21 @@ describe('Ask Daoris, with an agent named', () => {
     await waitFor(() => expect(listings()).toBeGreaterThanOrEqual(2));
     await act(async () => {});
     expect(screen.getByText(/Ask below about Daoris on this machine/)).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'new conversation' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'New conversation' })).toBeNull();
     // Asking every query again does not forget which one it is.
     await act(() => client.invalidateQueries());
     expect(screen.getByText(/Ask below about Daoris on this machine/)).toBeInTheDocument();
 
-    const box = await screen.findByLabelText('message');
+    const box = await screen.findByLabelText('Message');
     await userEvent.type(box, 'how do I drive a repository?');
-    await userEvent.click(screen.getByRole('button', { name: 'send' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Send' }));
 
     await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_INPUT', {
       payload: { id: HELP.id, text: 'how do I drive a repository?' },
     }));
     expect(starts()).toBe(1);
     // Spoken in, it is the conversation the panel shows.
-    expect(await screen.findByRole('button', { name: 'new conversation' })).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: 'New conversation' })).toBeInTheDocument();
   });
 
   /**
@@ -236,9 +236,9 @@ describe('Ask Daoris, with an agent named', () => {
 
     // Opening before a word is typed.
     await waitFor(() => expect(starts()).toBe(1));
-    const box = await screen.findByLabelText('message');
+    const box = await screen.findByLabelText('Message');
     await userEvent.type(box, words);
-    await userEvent.click(screen.getByRole('button', { name: 'send' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Send' }));
 
     expect(await screen.findByText(words)).toBeInTheDocument();
     expect(screen.getByText('opening Ask Daoris…')).toBeInTheDocument();
@@ -284,19 +284,19 @@ describe('Ask Daoris, with an agent named', () => {
     rerender(hosts(2));
     await waitFor(() => expect(starts()).toBe(2));
 
-    await userEvent.type(screen.getAllByLabelText('message')[1], 'why is engine held?');
-    await userEvent.click(screen.getAllByRole('button', { name: 'send' })[1]);
+    await userEvent.type(screen.getAllByLabelText('Message')[1], 'why is engine held?');
+    await userEvent.click(screen.getAllByRole('button', { name: 'Send' })[1]);
     await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_INPUT', {
       payload: { id: HELP.id, text: 'why is engine held?' },
     }));
-    await waitFor(() => expect(screen.getAllByRole('button', { name: 'new conversation' })).toHaveLength(2));
+    await waitFor(() => expect(screen.getAllByRole('button', { name: 'New conversation' })).toHaveLength(2));
 
     // Settled all the way, its answer invalidating the list included, before the panels are read again.
     const listings = asked.length;
     await act(async () => { late({ sessionId: HELP.id, message: 'opened' }); });
     await waitFor(() => expect(asked.length).toBeGreaterThan(listings));
     await act(() => new Promise((settled) => { setTimeout(settled, 50); }));
-    expect(screen.getAllByRole('button', { name: 'new conversation' })).toHaveLength(2);
+    expect(screen.getAllByRole('button', { name: 'New conversation' })).toHaveLength(2);
   });
 
   /**
@@ -308,13 +308,13 @@ describe('Ask Daoris, with an agent named', () => {
     bridge({ sessionId: 'n3xt0000', message: 'opened' });
     show();
 
-    await screen.findByRole('button', { name: 'new conversation' });
+    await screen.findByRole('button', { name: 'New conversation' });
     await act(async () => {});
     expect(starts()).toBe(0);
 
     // Finishing it ends it, and the list says so when it is asked again.
     SESSIONS = [{ ...HELP, state: 'completed' }];
-    await userEvent.click(screen.getByRole('button', { name: 'new conversation' }));
+    await userEvent.click(screen.getByRole('button', { name: 'New conversation' }));
 
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'END_CHAT', { payload: { id: HELP.id } });
     await waitFor(() => expect(starts()).toBe(1));
@@ -381,9 +381,9 @@ describe('Ask Daoris, with an agent named', () => {
     bridge();
     show({ view: 'sessions', workspace: 'aurora' }, 'p4rk3d00');
 
-    const box = await screen.findByLabelText('message');
+    const box = await screen.findByLabelText('Message');
     await userEvent.type(box, 'what is it asking?');
-    await userEvent.click(screen.getByRole('button', { name: 'send' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Send' }));
     await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_INPUT', {
       payload: {
         id: HELP.id, text: 'what is it asking?',
@@ -392,7 +392,7 @@ describe('Ask Daoris, with an agent named', () => {
     }));
 
     await userEvent.type(box, 'and then?');
-    await userEvent.click(screen.getByRole('button', { name: 'send' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Send' }));
     await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_INPUT', {
       payload: { id: HELP.id, text: 'and then?' },
     }));
@@ -406,12 +406,12 @@ describe('Ask Daoris, with an agent named', () => {
     bridge({ sessionId: null, message: 'Claude Code has no account signed in.' });
     show();
 
-    const box = await screen.findByLabelText('message');
+    const box = await screen.findByLabelText('Message');
     await waitFor(() => expect(starts()).toBe(1));
     await userEvent.type(box, 'hello');
     expect(screen.queryByText('Claude Code has no account signed in.')).toBeNull();
     expect(starts()).toBe(1);
-    await userEvent.click(screen.getByRole('button', { name: 'send' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Send' }));
 
     expect(await screen.findByText('Claude Code has no account signed in.')).toBeInTheDocument();
     expect((box as HTMLTextAreaElement).value).toBe('hello');
@@ -424,15 +424,15 @@ describe('Ask Daoris, with an agent named', () => {
     bridge();
     show();
 
-    const box = await screen.findByLabelText('message');
+    const box = await screen.findByLabelText('Message');
     await userEvent.type(box, 'and the line?');
-    await userEvent.click(screen.getByRole('button', { name: 'send' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Send' }));
     await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_INPUT', {
       payload: { id: HELP.id, text: 'and the line?' },
     }));
     expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'START_HELP', expect.anything());
 
-    await userEvent.click(screen.getByRole('button', { name: 'new conversation' }));
+    await userEvent.click(screen.getByRole('button', { name: 'New conversation' }));
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'END_CHAT', { payload: { id: HELP.id } });
     // Cleared: the starters are back, and the next message opens the next conversation.
     expect(await screen.findByText(/Ask below about Daoris on this machine/)).toBeInTheDocument();
@@ -452,9 +452,9 @@ describe('Ask Daoris, with an agent named', () => {
     expect(within(cards).getByText('daoris driver drive engine', { selector: 'code' })).toBeInTheDocument();
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HELP_PROPOSALS', { payload: { session: HELP.id } });
 
-    await userEvent.click(within(cards).getByRole('button', { name: 'apply' }));
+    await userEvent.click(within(cards).getByRole('button', { name: 'Apply' }));
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HELP_APPLY', { payload: { id: 'p1a2b3c4' } });
-    await userEvent.click(within(cards).getByRole('button', { name: 'not now' }));
+    await userEvent.click(within(cards).getByRole('button', { name: 'Not now' }));
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HELP_DISMISS', { payload: { id: 'p1a2b3c4' } });
     PROPOSALS = [];
   });
@@ -466,11 +466,11 @@ describe('Ask Daoris, with an agent named', () => {
   it('takes the person to the place a go names once they press go there', async () => {
     SESSIONS = [HELP];
     PROPOSALS = [{
-      id: 'g1o2t3o4', kind: 'go', describe: 'Open Settings → Get started at step 2, Daoris\'s own agent.', terminal: '',
+      id: 'g1o2t3o4', kind: 'go', describe: 'Open Settings → Setup at step 2, Ask Daoris\'s agent.', terminal: '',
       why: 'the person asked where to name its agent',
     }];
     APPLIED = {
-      message: 'Applied: `#g1o2t3o4` — Open Settings → Get started at step 2, Daoris\'s own agent. Nothing else changed.',
+      message: 'Applied: `#g1o2t3o4` — Open Settings → Setup at step 2, Ask Daoris\'s agent. Nothing else changed.',
       applied: true, go: { view: 'settings', domain: 'start', part: 'helper' },
     };
     bridge();
@@ -478,7 +478,7 @@ describe('Ask Daoris, with an agent named', () => {
     show(undefined, null, onGo);
 
     const cards = await screen.findByRole('list', { name: 'what Ask Daoris proposes' });
-    await userEvent.click(within(cards).getByRole('button', { name: 'go there' }));
+    await userEvent.click(within(cards).getByRole('button', { name: 'Go there' }));
 
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HELP_APPLY', { payload: { id: 'g1o2t3o4' } });
     await waitFor(() => expect(onGo).toHaveBeenCalledWith({ view: 'settings', section: 'start', anchor: 'step-helper' }));
@@ -500,7 +500,7 @@ describe('Ask Daoris, with an agent named', () => {
 
     const cards = await screen.findByRole('list', { name: 'what Ask Daoris proposes' });
     expect(within(cards).getByText(/cannot be undone/)).toBeInTheDocument();
-    await userEvent.click(within(cards).getByRole('button', { name: 'delete' }));
+    await userEvent.click(within(cards).getByRole('button', { name: 'Delete' }));
 
     await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HELP_APPLY', { payload: { id: 'd1e2l3e4' } }));
     expect(onGo).not.toHaveBeenCalled();
@@ -526,7 +526,7 @@ describe('Ask Daoris, with an agent named', () => {
     show();
 
     const cards = await screen.findByRole('list', { name: 'what Ask Daoris proposes' });
-    await userEvent.click(within(cards).getByRole('button', { name: 'apply' }));
+    await userEvent.click(within(cards).getByRole('button', { name: 'Apply' }));
 
     await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HELP_APPLY', { payload: { id: 'u1p2d3a4' } }));
     PROPOSALS = [];
@@ -562,8 +562,8 @@ describe('Ask Daoris, with no agent named', () => {
     bridge();
     show();
 
-    expect(await screen.findByText(/Name an agent under Daoris's own AI/)).toBeInTheDocument();
-    expect(screen.queryByLabelText('message')).toBeNull();
+    expect(await screen.findByText(/Name an agent under AI features/)).toBeInTheDocument();
+    expect(screen.queryByLabelText('Message')).toBeNull();
     await act(async () => {});
     expect(starts()).toBe(0);
   });

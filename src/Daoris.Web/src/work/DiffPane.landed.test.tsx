@@ -76,9 +76,9 @@ describe('the review of a landed session (REVIEW2)', () => {
     expect(note.textContent).toMatch(/read from that branch in engine's own checkout/);
     expect(screen.getByText(/since 01234567/)).toBeTruthy();
     await waitFor(() => expect(asked('HANDOFF_PLAN')).toHaveLength(1));
-    expect(screen.queryByRole('button', { name: 'accept' })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'send it back…' })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'discard the tree' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Accept' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Send back…' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Discard tree' })).toBeNull();
     expect(asked('LANDING')).toHaveLength(0);
   });
 
@@ -87,9 +87,9 @@ describe('the review of a landed session (REVIEW2)', () => {
     answer(FROM_BRANCH, { session: 's1a2b3c4', branch: LANDED.branch, repository: 'engine', plugin: 'example.lands', problem: null, commits: 1 });
     pane();
 
-    expect(await screen.findByRole('button', { name: 'hand it to example.lands' })).toBeEnabled();
-    expect(screen.queryByRole('button', { name: 'accept' })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'discard the tree' })).toBeNull();
+    expect(await screen.findByRole('button', { name: 'Hand to example.lands' })).toBeEnabled();
+    expect(screen.queryByRole('button', { name: 'Accept' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Discard tree' })).toBeNull();
   });
 
   /** The pull request a plugin opened is one press away, in the note. */
@@ -97,7 +97,7 @@ describe('the review of a landed session (REVIEW2)', () => {
     answer({ ...FROM_BRANCH, landed: { ...LANDED, plugin: 'example.lands', pushed: true, pullRequest: 'https://example.test/org/engine/pull/7' } });
     pane();
 
-    expect(await screen.findByRole('link', { name: 'open the pull request' })).toHaveAttribute('href', 'https://example.test/org/engine/pull/7');
+    expect(await screen.findByRole('link', { name: 'Open the pull request' })).toHaveAttribute('href', 'https://example.test/org/engine/pull/7');
   });
 
   /** A branch gone since: said plainly, with whether its work reads on the line — never "nothing landed". */
@@ -123,10 +123,10 @@ describe('the review of a landed session (REVIEW2)', () => {
     answer({ ...FROM_BRANCH, base: 'abc1234567890', source: 'tree' });
     pane();
 
-    expect(await screen.findByRole('button', { name: 'discard the tree' })).toBeTruthy();
+    expect(await screen.findByRole('button', { name: 'Discard tree' })).toBeTruthy();
     expect(screen.getByRole('region', { name: 'where this work landed' }).textContent).toMatch(/not accepted again/);
-    expect(screen.queryByRole('button', { name: 'accept' })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'send it back…' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Accept' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Send back…' })).toBeNull();
     expect(asked('LANDING')).toHaveLength(0);
   });
 
@@ -138,9 +138,9 @@ describe('the review of a landed session (REVIEW2)', () => {
     answer({ ...FROM_BRANCH, base: 'abc1234567890', source: 'tree', landed: { ...LANDED, state: 'gone', asLanded: false } });
     const onSendBack = pane();
 
-    expect(await screen.findByRole('button', { name: 'accept' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'discard the tree' })).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'send it back…' })).toBeTruthy();
+    expect(await screen.findByRole('button', { name: 'Accept' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Discard tree' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Send back…' })).toBeTruthy();
     expect(screen.getByRole('region', { name: 'where this work landed' }).textContent).toMatch(/That branch is gone from engine now/);
     await waitFor(() => expect(asked('LANDING')).toHaveLength(1));
     expect(onSendBack).not.toHaveBeenCalled();
@@ -152,10 +152,10 @@ describe('the review of a landed session (REVIEW2)', () => {
     pane();
 
     expect(await screen.findByText(/This session's tree is gone from this machine/)).toBeTruthy();
-    expect(screen.queryByRole('button', { name: 'accept' })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'discard the tree' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Accept' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Discard tree' })).toBeNull();
     // The work was not landed here, so sending it back is still a door.
-    expect(screen.getByRole('button', { name: 'send it back…' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Send back…' })).toBeTruthy();
     expect(asked('LANDING')).toHaveLength(0);
   });
 });

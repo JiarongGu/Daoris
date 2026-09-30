@@ -1,4 +1,4 @@
 {
-  "provenance.Local": "Local",
-  "provenance.Canonical": "Canonical"
+  "provenance.Local": "local",
+  "provenance.Canonical": "canonical"
 }

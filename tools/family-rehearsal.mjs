@@ -288,6 +288,13 @@ for (const name of EXAMPLES) {
 // …and the real client carries it through the real door, the twin's other half (D91).
 const connected = await api('GET', '/api/registry');
 check('after connect, the host still keeps what the game says it uses', usesOf(connected.json, 'game') === '["engine"]', connected.text);
+// D115 §2.2 (DEV4): connect reads the engine's daoris.lanes.json and sends each lane's words; the
+// registry answers them, so an asker can see what it may address. The import read no lanes.
+const laneIdsOf = (rows, name) =>
+  JSON.stringify(((rows ?? []).find((r) => r.repository === name)?.lanes ?? []).map((lane) => lane.id));
+check('before connect the engine declared no lanes here; the import reads none', laneIdsOf(registry.json, 'engine') === '[]', registry.text);
+check('after connect, the registry lists the engine’s two lanes, read from its daoris.lanes.json', laneIdsOf(connected.json, 'engine') === '["core","media"]', connected.text);
+check('…as words alone: no lane’s paths reach the registry', !connected.text.includes('src/runtime'), connected.text);
 
 // -------------------------------------------------- 4. work routes as quests
 
@@ -428,6 +435,50 @@ const afterAnswer = await api('POST', '/api/sessions', { body: { quest: askingQu
 check('…and its taken quest is carried on — a session opens on it', afterAnswer.status === 200, afterAnswer.text);
 await api('POST', `/api/sessions/${afterAnswer.json?.session?.id}/state`, { body: { state: 'stopped' } });
 await api('POST', `/api/quests/${askingQuestId}/respond`, { body: { action: 'done', reason: 'Checked.' } });
+
+// -------------------------------------------------- 4b. a quest addresses a lane
+
+section('4b. A quest addresses a lane — `repository:lane`, judged by the registration (D115 §2.2)');
+
+// The engine declares two lanes (`examples/engine/daoris.lanes.json`), sent by the real connect above.
+// The quest keeps `to` as the repository and gains `lanes`; the exchange refuses a lane nobody declared,
+// and lets a repository ask one of its OWN lanes, since that is work for another session.
+const laneAsk = (from, to) => api('POST', '/api/quests', {
+  body: {
+    from, to, title: `Cap the chunks hydrated per frame (${from} → ${to})`,
+    body: 'The frame stalls whenever more than three chunks hydrate at once; the trace is attached to the ticket.',
+  },
+});
+const toLane = await laneAsk('game', 'engine:core');
+check(
+  'engine:core publishes — a quest to the engine, for its core lane',
+  toLane.status === 200 && toLane.json?.quest?.to === 'engine' && JSON.stringify(toLane.json?.quest?.lanes) === '["core"]',
+  toLane.text,
+);
+const toNope = await laneAsk('game', 'engine:nope');
+check(
+  'engine:nope is refused, naming both of the engine’s lanes',
+  toNope.status === 400 && /`core`/.test(toNope.json?.error ?? '') && /`media`/.test(toNope.json?.error ?? ''),
+  toNope.text,
+);
+const toItself = await laneAsk('engine', 'engine');
+check(
+  'engine publishing to itself with no lane is refused, with the sentence it always had',
+  toItself.status === 400 && /That is the repository you are in/.test(toItself.json?.error ?? ''),
+  toItself.text,
+);
+const toOwnLane = await laneAsk('engine', 'engine:core');
+check(
+  'engine:core from engine is allowed — a repository may ask its own lane',
+  toOwnLane.status === 200 && toOwnLane.json?.quest?.from === 'engine' && toOwnLane.json?.quest?.to === 'engine'
+    && JSON.stringify(toOwnLane.json?.quest?.lanes) === '["core"]',
+  toOwnLane.text,
+);
+// Declined at once: they exist to be addressed, and the driver phases below drive what is open.
+for (const laned of [toLane, toOwnLane]) {
+  const id = laned.json?.quest?.id;
+  if (id) await api('POST', `/api/quests/${id}/respond`, { body: { action: 'decline', reason: 'The rehearsal only addresses lanes.' } });
+}
 
 // -------------------------------------------------- 5. knowledge crosses
 
@@ -830,7 +881,7 @@ const questsBeforeAsk = await questCount();
 const proposedAsk = askVerb('--workspace default "the rendering of the asset pipeline stalls whenever the simulation runs"');
 check(
   'an ask with no intake harness is answered by declarations only, and says so, proposing the engine',
-  proposedAsk.code === 0 && /by declarations only; no intake harness ran/.test(proposedAsk.out)
+  proposedAsk.code === 0 && /by declarations only; no intake agent ran/.test(proposedAsk.out)
     && /proposed, best first: `engine`/.test(proposedAsk.out),
   proposedAsk.out,
 );
@@ -2823,7 +2874,7 @@ const loggedOutRun = driver({ serviceUrl: BASE, config: driverConfig, harness: H
 check(
   'a logged-out profile holds the start, naming the login action rather than failing bare',
   loggedOutRun.code === 0
-    && /not logged in/.test(loggedOutRun.out)
+    && /not signed in/.test(loggedOutRun.out)
     && /daoris agent login stub --profile fresh/.test(loggedOutRun.out),
   loggedOutRun.out,
 );

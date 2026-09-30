@@ -17,8 +17,18 @@ public sealed record SessionEnded(
     string Session, string Repository, string State, bool ByPerson, string? Note = null,
     string? Quest = null, string? Adapter = null, string? Account = null);
 
+/// <summary>What one start came to (DEV3): a quest's session, or an ask's intake.</summary>
+/// <param name="Line">The console line a person reads, which the report carries.</param>
+/// <param name="Opened">Whether a session record was opened for it — what a look counts as progress.</param>
+/// <param name="Ended">What it ended as and whose decision that was, when it ended here; null for a hold, a refusal or a park.</param>
+/// <param name="Held">The hold's own sentence when it was held before a record opened, which the report carries as the quest's verdict.</param>
+internal sealed record StartRun(string Line, bool Opened, SessionEnded? Ended = null, string? Held = null);
+
 /// <param name="Considerations">Every open quest, with its verdict and reason — the plan, printable.</param>
-/// <param name="Events">What actually happened this tick: sessions concluded, held, or refused.</param>
+/// <param name="Events">
+/// What actually happened: sessions that ended since the last look (DEV3), and this look's holds, refusals
+/// and stops.
+/// </param>
 /// <param name="Progressed">
 /// Whether any session was actually OPENED this tick. A planned start that held (dirty tree) or was
 /// refused (raced) is not progress — and treating it as progress is an infinite loop: the same quest
@@ -30,7 +40,8 @@ public sealed record SessionEnded(
 /// view is the only place it shows up.
 /// </param>
 /// <param name="Concluded">
-/// What this tick ended, structurally. <paramref name="Events"/> already says so in English and
+/// What ended since the last look, structurally: a session outlives the look that started it, so its
+/// ending joins the next look's report (DEV3). <paramref name="Events"/> already says so in English and
 /// nothing can parse that — deliberately, since those sentences are written for a person (D24).
 /// </param>
 public sealed record TickReport(
@@ -57,9 +68,11 @@ public sealed record TickReport(
 }
 
 /// <summary>
-/// The loop D45 exists for: watch → plan → spawn → observe. One tick fetches a snapshot, plans it
-/// (pure), and runs every planned start to its conclusion — sessions in different repositories run
-/// together, which is the point of the whole direction.
+/// The loop D45 exists for: watch → plan → spawn → observe. One tick — a look — fetches a snapshot,
+/// plans it (pure), starts every planned start, and returns once each has opened its record or come to
+/// nothing. The sessions run on beside the looks that follow, and each one's ending joins the next
+/// look's report (DEV3, D115 §3.1): a quest published while a long session runs starts at the next look,
+/// not after that session.
 /// </summary>
 /// <remarks>
 /// <para><b>The driver never writes quest state.</b> It opens and advances SESSION records through the
@@ -87,8 +100,20 @@ public sealed partial class Driver(
     SessionEvents? events = null,
     // Daoris's own browser (D78), asked for by a plugin server that drives it. Null where no shell
     // carries one — the headless host, every gate — and such a server is then not handed.
-    IInAppBrowser? browser = null)
+    IInAppBrowser? browser = null,
+    // The sessions still running (DEV3), shared by the watch across the driver it builds for each look,
+    // since a session outlives the look that started it. Null keeps this driver's own, which is what a
+    // one-look run and a gate's run-until-idle want.
+    RunningSessions? running = null)
 {
+    /// <summary>
+    /// How one quest's start is run, from its holds to its record's conclusion: <see cref="RunAsync"/>, unless a
+    /// test hands in an in-process stand-in (DEV3). Every real run spawns git and a harness, which the suite's fast
+    /// half may not, and what a look does with its starts is the scheduling that half has to hold. The action is
+    /// the run's to call once its session record is open.
+    /// </summary>
+    internal Func<Consideration, Action, CancellationToken, Task<StartRun>>? Runner { get; init; }
+
     /// <summary>What a session whose take lost is told, in its record (D68 §5).</summary>
     public const string LostClaim =
         "stopped by this machine's driver: another machine's take on the quest reached the remote first, so this "
@@ -116,9 +141,12 @@ public sealed partial class Driver(
     // a session no longer holds the sync back for its whole run, and one choice sets both.
     private readonly TimeSpan _syncBeside = TimeSpan.FromSeconds(Math.Max(1, config.PollSeconds));
 
-    // Which quest each session this driver is running holds — what the sync beside the sessions checks
-    // this machine's claim on. A session's entry lives exactly as long as its process.
-    private readonly System.Collections.Concurrent.ConcurrentDictionary<string, string> _live = new(StringComparer.Ordinal);
+    // The sessions this driver started and has not yet reported ending — and which quest each holds, which
+    // is what the lost-claim stop checks this machine's claim on (D68 §5).
+    private readonly RunningSessions _runs = running ?? new RunningSessions();
+
+    /// <summary>The sessions still running, which outlive the look that started them (DEV3).</summary>
+    public RunningSessions Running => _runs;
 
     // Shared across the per-tick instances a watch loop constructs, so a control surface can reach
     // what is actually running; per-instance when nobody passes one, which no test has to care about.
@@ -163,36 +191,22 @@ public sealed partial class Driver(
         }
     }
 
-    /// <summary>One decision-and-execution round. Returns what happened, for whoever is watching.</summary>
+    /// <summary>
+    /// One look: the sync, the plan, and every planned start begun. Returns once each start has opened its
+    /// session record or come to nothing, never waiting for a session to end (DEV3, D115 §3.1): the sessions
+    /// run on, and what ended since the last look joins this one's report.
+    /// </summary>
     public async Task<TickReport> TickAsync(CancellationToken ct = default)
     {
         var events = new List<string>();
 
-        // The sync runs before the snapshot, so this tick plans over what the team has done (D68). Its
-        // failure is an event, never a dead tick: the next tick retries, and every verb has already
-        // committed here — but a sync dying quietly looks exactly like a family with nothing to say,
-        // so the wall is named.
-        async Task SyncAsync()
-        {
-            if (sync is null) return;
-            var synced = await sync.RunOnceAsync(ct).ConfigureAwait(false);
+        await SyncAsync(events, ct).ConfigureAwait(false);
 
-            // Locked: beside running sessions this writes while their runs write too (D68 §6).
-            lock (events)
-            {
-                if (synced.Problem is not null)
-                {
-                    events.Add($"sync  {synced.Problem}");
-                }
-
-                // What the remote understood and deliberately did not take (D48 §6) — a stale or
-                // branch feed, a quest it would not keep, a move that lost to another machine's.
-                // Reported as its own kind of line: each is news about the family, not a fault here.
-                foreach (var note in synced.Notes) events.Add($"held  {note}");
-            }
-        }
-
-        await SyncAsync().ConfigureAwait(false);
+        // The sync runs BESIDE the sessions, not only around them (D68 §6): every look syncs, and a look comes
+        // round at the watch's pace while sessions work. After it, every session this driver runs whose take came
+        // back LOST is stopped, because its quest is another machine's and its work would double theirs (D68 §5).
+        // An unconfirmed take keeps working.
+        if (sync is not null) await StopLostClaimsAsync(events, ct).ConfigureAwait(false);
 
         // The plugins, read fresh each tick like the config (D64): a harness declared since the
         // last look is spawnable now, a server declared since is handed now, a hook process
@@ -223,7 +237,8 @@ public sealed partial class Driver(
         var plan = Planner.Plan(snapshot, config, Door());
         var progressed = false;
 
-        // What this tick ended, structurally — the half of the report a watcher can act on (SURF5b).
+        // What ended, structurally — the half of the report a watcher can act on (SURF5b): a parked intake
+        // this look ends, and every session that ended since the last look (DEV3).
         var concluded = new List<SessionEnded>();
 
         // What held at spawn, by quest — the plan said Start and the spawn said no. Folded back into
@@ -269,52 +284,85 @@ public sealed partial class Driver(
         var intakes = await IntakesDueAsync(config.Cap - snapshot.Active.Count - starts.Count, events, ct)
             .ConfigureAwait(false);
 
-        var runs = starts.Select(async start =>
+        // Every start begun at once, as before: sessions in different repositories, or in trees of their own, run
+        // together. The look waits for each only until it has opened its record or come to nothing (DEV3), so a
+        // hold, a refusal and an error before the spawn are still this look's to say, and every session it opened
+        // is in the ledger before the next look plans. The rest of each run is the running set's.
+        var run = Runner ?? ((start, opened, token) => RunAsync(start, snapshot.Repositories, untrusted, opened, token));
+        var begun = await Task.WhenAll(
+                starts.Select(start => BeginAsync(start.Quest.Id, opened => run(start, opened, ct)))
+                    .Concat(intakes.Select(ask => BeginAsync(null, opened => RunIntakeAsync(ask, untrusted, opened, ct)))))
+            .ConfigureAwait(false);
+        foreach (var (quest, came) in begun)
         {
-            var (line, opened, ended, held) = await RunAsync(start, snapshot.Repositories, untrusted, ct).ConfigureAwait(false);
-            lock (events)
+            // Null is a session opened, and running on: its ending joins a later look's report.
+            if (came is null)
             {
-                events.Add(line);
-                progressed |= opened;
-                if (ended is not null) concluded.Add(ended);
-                if (held is not null) heldAt[start.Quest.Id] = held;
+                progressed = true;
+                continue;
             }
-        });
-        var intakeRuns = intakes.Select(async ask =>
-        {
-            var (line, opened, ended) = await RunIntakeAsync(ask, untrusted, ct).ConfigureAwait(false);
-            lock (events)
-            {
-                events.Add(line);
-                progressed |= opened;
-                if (ended is not null) concluded.Add(ended);
-            }
-        });
-        // The sync runs BESIDE the sessions, not only around them (D68 §6): a session no longer holds
-        // it back for its whole run. Each pass is followed by a look at every session this driver is
-        // running — one whose take came back LOST is stopped, because its quest is another machine's
-        // and its work would double theirs (D68 §5). An unconfirmed take keeps working.
-        var all = Task.WhenAll(runs.Concat(intakeRuns));
-        while (sync is not null && !all.IsCompleted && !ct.IsCancellationRequested)
-        {
-            if (await Task.WhenAny(all, Task.Delay(_syncBeside, ct)).ConfigureAwait(false) == all) break;
-            try
-            {
-                await SyncAsync().ConfigureAwait(false);
-                await StopLostClaimsAsync(events, ct).ConfigureAwait(false);
-            }
-            catch (OperationCanceledException) when (ct.IsCancellationRequested)
-            {
-                // 🔴 Closing (REV3): the sessions below are ending on this same token, and each writes
-                // how it ended. Leaving here left them unrecorded when the process exited.
-                break;
-            }
+
+            events.Add(came.Line);
+            progressed |= came.Opened;
+            if (came.Ended is not null) concluded.Add(came.Ended);
+            if (quest is not null && came.Held is not null) heldAt[quest] = came.Held;
         }
 
-        await all.ConfigureAwait(false);
+        await EndingsAsync(events, concluded, ct).ConfigureAwait(false);
 
-        // What ended, told to whoever listens — contained: nothing a plugin says here changes the
-        // record, which moved on the exit code and the quest before this line ran (D46 §4).
+        return new TickReport(Considerations.Blocked(plan, heldAt), events, progressed, snapshot.Active, concluded)
+        {
+            Untrusted = untrusted,
+        };
+
+        async Task<(string? Quest, StartRun? Came)> BeginAsync(string? quest, Func<Action, Task<StartRun>> start) =>
+            (quest, await _runs.StartAsync(start).ConfigureAwait(false));
+    }
+
+    /// <summary>
+    /// The sync, once, with what it said added to <paramref name="events"/>. It runs before a look's snapshot,
+    /// so the look plans over what the team has done (D68). Its failure is an event, never a dead look: the
+    /// next retries, and every verb has already committed here — but a sync dying quietly looks exactly like
+    /// a family with nothing to say, so the wall is named.
+    /// </summary>
+    private async Task SyncAsync(List<string> events, CancellationToken ct)
+    {
+        if (sync is null) return;
+        var synced = await sync.RunOnceAsync(ct).ConfigureAwait(false);
+
+        lock (events)
+        {
+            if (synced.Problem is not null)
+            {
+                events.Add($"sync  {synced.Problem}");
+            }
+
+            // What the remote understood and deliberately did not take (D48 §6) — a stale or
+            // branch feed, a quest it would not keep, a move that lost to another machine's.
+            // Reported as its own kind of line: each is news about the family, not a fault here.
+            foreach (var note in synced.Notes) events.Add($"held  {note}");
+        }
+    }
+
+    /// <summary>
+    /// What ended since the last look, into the report (DEV3): each run's line and what it ended as, then
+    /// everything that ended told to the plugins that listen, then one more sync.
+    /// </summary>
+    /// <remarks>
+    /// Taken last, so an ending is never lost with a look that failed before its report. The sync carries what
+    /// those sessions did — a take, a close, a chain's next step — in the look that reports them, rather than a
+    /// look later (sync design §8). Nothing concluded, nothing new to carry.
+    /// </remarks>
+    private async Task EndingsAsync(List<string> events, List<SessionEnded> concluded, CancellationToken ct)
+    {
+        foreach (var ended in _runs.Drain())
+        {
+            events.Add(ended.Line);
+            if (ended.Ended is not null) concluded.Add(ended.Ended);
+        }
+
+        // Contained: nothing a plugin says here changes the record, which moved on the exit code and the
+        // quest before this line ran (D46 §4).
         if (hooks is not null)
         {
             foreach (var ended in concluded)
@@ -323,15 +371,7 @@ public sealed partial class Driver(
             }
         }
 
-        // What a session did — its take, its close, the next step of a chain — committed here as it
-        // happened; syncing again now carries it within the tick that made it, rather than a tick later
-        // (sync design §8). Nothing concluded, nothing new to carry.
-        if (concluded.Count > 0) await SyncAsync().ConfigureAwait(false);
-
-        return new TickReport(Considerations.Blocked(plan, heldAt), events, progressed, snapshot.Active, concluded)
-        {
-            Untrusted = untrusted,
-        };
+        if (concluded.Count > 0) await SyncAsync(events, ct).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -341,7 +381,7 @@ public sealed partial class Driver(
     /// </summary>
     private async Task StopLostClaimsAsync(List<string> events, CancellationToken ct)
     {
-        foreach (var (quest, session) in _live)
+        foreach (var (quest, session) in _runs.Live)
         {
             string claim;
             try
@@ -361,37 +401,117 @@ public sealed partial class Driver(
     }
 
     /// <summary>
-    /// Tick until nothing progresses — the deterministic mode a gate drives. Sessions run inside
-    /// their tick, so "no progress" means "nothing left that this driver may begin": a queue that is
-    /// empty, held, or waiting on the person.
+    /// Look until nothing runs and a look starts nothing — the deterministic mode a gate drives (D115 §3.1):
+    /// a queue that is empty, held, or waiting on the person, with no session of this driver's still working
+    /// and no ending left unreported.
     /// </summary>
+    /// <remarks>
+    /// A look no longer waits for its sessions, so between looks this waits for the next ending or the
+    /// watch's pace, whichever is first — the sync beside the sessions and the lost-claim stop ride every
+    /// look, as they ride the watch's (D68 §5, §6). A failure or a close lets go only once every session has
+    /// written how it ended, as a look that waited for its sessions did (REV3).
+    /// </remarks>
     public async Task<IReadOnlyList<TickReport>> RunUntilIdleAsync(CancellationToken ct = default)
     {
         var reports = new List<TickReport>();
-        while (true)
+        try
         {
-            var report = await TickAsync(ct).ConfigureAwait(false);
-            reports.Add(report);
-            if (!report.Progressed) return reports;
-            await Task.Delay(TimeSpan.FromMilliseconds(250), ct).ConfigureAwait(false);
+            while (true)
+            {
+                var report = await TickAsync(ct).ConfigureAwait(false);
+                reports.Add(report);
+                if (!report.Progressed && _runs.Idle) return reports;
+
+                await _runs.NextAsync(_syncBeside, ct).ConfigureAwait(false);
+                ct.ThrowIfCancellationRequested();
+            }
         }
+        catch
+        {
+            await _runs.SettledAsync().ConfigureAwait(false);
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// One look, then every session it started to its end — the headless host's <c>--once</c>, and a test that
+    /// reads one start whole. The endings join the look's own report, as they did when a look waited for its
+    /// sessions.
+    /// </summary>
+    public async Task<TickReport> RunOnceAsync(CancellationToken ct = default)
+    {
+        TickReport look;
+        try
+        {
+            look = await TickAsync(ct).ConfigureAwait(false);
+        }
+        catch
+        {
+            // A look that failed after opening a session still waits for it, as a look always did: its record
+            // is written before the failure is said.
+            await _runs.SettledAsync().ConfigureAwait(false);
+            throw;
+        }
+
+        var settled = await SettleAsync(ct).ConfigureAwait(false);
+        return look with
+        {
+            Events = [.. look.Events, .. settled.Events],
+            Concluded = [.. look.Concluded, .. settled.Concluded],
+        };
+    }
+
+    /// <summary>
+    /// Wait until nothing this driver started runs, then report what ended. While they work, the sync runs
+    /// beside them at the watch's pace, each pass followed by the lost-claim stop (D68 §5, §6).
+    /// </summary>
+    private async Task<TickReport> SettleAsync(CancellationToken ct)
+    {
+        var events = new List<string>();
+        var settled = _runs.SettledAsync();
+        while (sync is not null && !settled.IsCompleted && !ct.IsCancellationRequested)
+        {
+            using var pace = CancellationTokenSource.CreateLinkedTokenSource(ct);
+            var first = await Task.WhenAny(settled, Task.Delay(_syncBeside, pace.Token)).ConfigureAwait(false);
+            await pace.CancelAsync().ConfigureAwait(false);
+            if (first == settled || ct.IsCancellationRequested) break;
+
+            try
+            {
+                await SyncAsync(events, ct).ConfigureAwait(false);
+                await StopLostClaimsAsync(events, ct).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException) when (ct.IsCancellationRequested)
+            {
+                // 🔴 Closing (REV3): the sessions are ending on this same token, and each writes how it ended.
+                // Leaving before them left them unrecorded when the process exited.
+                break;
+            }
+        }
+
+        await settled.ConfigureAwait(false);
+
+        var concluded = new List<SessionEnded>();
+        await EndingsAsync(events, concluded, ct).ConfigureAwait(false);
+        return new TickReport([], events, Progressed: false, Concluded: concluded);
     }
 
     /// <returns>
     /// The console line, whether a session actually opened, — when one ended here — what it ended
     /// as and whose decision that was (SURF5b), and — when the start was HELD at spawn — the hold's
     /// own sentence, which the report carries as the quest's verdict. A hold or a refusal ends
-    /// nothing, so the third value is null: there is no session to have ended. A refusal is not a
+    /// nothing, so what ended is null: there is no session to have ended. A refusal is not a
     /// hold either: somebody else got there first, and the quest is theirs rather than sitting.
     /// </returns>
     /// <param name="registry">The registry as this tick's snapshot answered it: what the session may reach across (D107).</param>
-    private async Task<(string Line, bool Opened, SessionEnded? Ended, string? Held)> RunAsync(
-        Consideration start, IReadOnlyList<RepoView> registry, List<TrustHold> untrusted, CancellationToken ct)
+    /// <param name="onOpened">Called once the session's record is open, and never for a start that held or was refused (DEV3).</param>
+    private async Task<StartRun> RunAsync(
+        Consideration start, IReadOnlyList<RepoView> registry, List<TrustHold> untrusted, Action onOpened, CancellationToken ct)
     {
         var quest = start.Quest;
         var root = start.Root!;
         var isolated = config.OpensOwnTree(quest.To);
-        (string, bool, SessionEnded?, string?) Hold(string why) => ($"held  #{quest.Id} → {quest.To}: {why}", false, null, why);
+        StartRun Hold(string why) => new($"held  #{quest.Id} → {quest.To}: {why}", false, null, why);
 
         // Clean tree, or nothing: uncommitted changes are somebody's work in flight (D46 §3). No
         // session record exists yet, so a hold here costs nothing and destroys nothing. VACUOUS for a
@@ -543,11 +663,12 @@ public sealed partial class Driver(
                 await _trees.RemoveAsync(opened.Path, ct: ct).ConfigureAwait(false);
             }
 
-            return ($"refused  #{quest.Id} → {quest.To}: {message}", false, null, null);
+            return new StartRun($"refused  #{quest.Id} → {quest.To}: {message}", false);
         }
 
         // The record is open, so the ledger holds the tree and a replay's own look sees it in use (LEFT2).
         starting?.Dispose();
+        onOpened();
 
         try
         {
@@ -616,8 +737,8 @@ public sealed partial class Driver(
             // handed over as the harness's own settings tier.
             var rules = HandRules(adapter, info, sessionId, start.Workspace, quest.To, workTree, target.AttachmentsDirectory, across: across);
 
-            _live[quest.Id] = sessionId;
-            using var live = new Disposer(() => _live.TryRemove(quest.Id, out var _));
+            _runs.Live[quest.Id] = sessionId;
+            using var live = new Disposer(() => _runs.Live.TryRemove(quest.Id, out var _));
 
             return await HoldAsync(
                 adapter, info, target, sessionId, transcript, workTree, JoinNotices(harnessNotice, browserNotice), rules, handed,
@@ -672,7 +793,7 @@ public sealed partial class Driver(
                     var where = opened is not null ? $" [own tree: {opened.Path}]"
                         : resumedIn is not null ? $" [own tree, resumed: {resumedIn}]"
                         : "";
-                    return (
+                    return new StartRun(
                         $"{conclusion.State}  session {sessionId} (#{quest.Id} → {quest.To}){where}: {conclusion.Note}",
                         true,
                         // 🔴 The stop flag IS the "whose decision was this" answer (SURF5b) — the same
@@ -681,11 +802,10 @@ public sealed partial class Driver(
                         // watch says so from the active list, as it does for a parked intake.
                         SessionStates.IsParked(conclusion.State)
                             ? null
-                            : (SessionEnded?)new SessionEnded(
+                            : new SessionEnded(
                                 sessionId, quest.To, conclusion.State,
                                 ByPerson: stoppedFor is null && _processes.WasStopRequested(sessionId), conclusion.Note,
-                                Quest: quest.Id, Adapter: adapter.Name, Account: selection.Profile),
-                        (string?)null);
+                                Quest: quest.Id, Adapter: adapter.Name, Account: selection.Profile));
                 }).ConfigureAwait(false);
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
@@ -709,11 +829,10 @@ public sealed partial class Driver(
 
             // The person is closing the driver, so this ending is theirs — no interruption is owed
             // for something they are in the middle of doing (design §4).
-            return (
+            return new StartRun(
                 $"stopped  session {sessionId} (#{quest.Id} → {quest.To}): the driver was stopped.",
                 true,
-                new SessionEnded(sessionId, quest.To, "stopped", ByPerson: true, Quest: quest.Id, Adapter: config.Adapter),
-                null);
+                new SessionEnded(sessionId, quest.To, "stopped", ByPerson: true, Quest: quest.Id, Adapter: config.Adapter));
         }
         catch (Exception error)
         {
@@ -733,11 +852,10 @@ public sealed partial class Driver(
                 // and a host that is gone or slow here must not turn that report into a second throw.
             }
 
-            return (
+            return new StartRun(
                 $"failed  session {sessionId} (#{quest.Id} → {quest.To}): {error.Message}",
                 true,
-                new SessionEnded(sessionId, quest.To, "failed", ByPerson: false, error.Message, Quest: quest.Id, Adapter: config.Adapter),
-                null);
+                new SessionEnded(sessionId, quest.To, "failed", ByPerson: false, error.Message, Quest: quest.Id, Adapter: config.Adapter));
         }
         finally
         {

@@ -41,7 +41,7 @@ public sealed class AcpTurnFailureTickTests : IDisposable
         await using var service = AskAndWaitTickTests.StandIn.Start(_repository);
         var driver = Driver(service);
 
-        await driver.TickAsync().WaitAsync(TimeSpan.FromSeconds(60));
+        await driver.RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(60));
 
         var record = service.Session("s1");
         Assert.Equal("Taken", service.Status("q1"));
@@ -59,11 +59,11 @@ public sealed class AcpTurnFailureTickTests : IDisposable
         await using var service = AskAndWaitTickTests.StandIn.Start(_repository);
         var driver = Driver(service, trees: true);
 
-        await driver.TickAsync().WaitAsync(TimeSpan.FromSeconds(60));
+        await driver.RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(60));
         var cutOff = service.Session("s1");
         Assert.Equal("failed", cutOff["state"]!.GetValue<string>());
 
-        await driver.TickAsync().WaitAsync(TimeSpan.FromSeconds(60));
+        await driver.RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(60));
 
         var carried = service.Session("s2");
         Assert.Equal("completed", carried["state"]!.GetValue<string>());

@@ -16,7 +16,7 @@ describe('the menus by domain', () => {
     expect(ids(menus.daoris)).toEqual([
       'settings:start', 'settings:appearance', 'settings:driver', 'settings:plugins', 'refresh', 'language', 'about',
     ]);
-    expect(menus.daoris[0]).toMatchObject({ label: 'Set up Daoris' });
+    expect(menus.daoris[0]).toMatchObject({ label: 'Setup' });
     expect(ids(menus.agents)).toEqual([
       'settings:agents', 'settings:permissions', 'proposals', 'usage', 'settings:ai',
     ]);

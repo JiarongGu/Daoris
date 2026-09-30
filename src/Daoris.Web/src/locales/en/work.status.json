@@ -22,5 +22,5 @@
   "work.status.sessions_other": "{{count}} sessions",
   "work.status.setup": "setup: {{done}} of {{of}}",
   "work.status.setupLabel": "setup",
-  "work.status.setupTip": "how many of the steps this machine needs are done. Opens Get started."
+  "work.status.setupTip": "how many of the steps this machine needs are done. Opens Setup."
 }

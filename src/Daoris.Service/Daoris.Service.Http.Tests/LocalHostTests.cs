@@ -77,6 +77,58 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
         Assert.DoesNotContain(JsonEncodedText.Encode(host.Repositories).ToString(), registry.Body, StringComparison.OrdinalIgnoreCase);
     }
 
+    /// <summary>
+    /// D115 §2.2 (DEV4), through the HTTP doors: a registration's lanes arrive as words and are listed
+    /// by the registry's answer; a registration silent about them keeps them; a quest to one of them is
+    /// published to the repository with its lanes, and one to a lane nobody declared is refused, naming
+    /// the lanes there are.
+    /// </summary>
+    [Fact]
+    public async Task Lanes_are_registered_listed_kept_and_addressed_through_the_doors()
+    {
+        var lanes = new[]
+        {
+            new { id = "core", title = "Core", summary = "The runtime.", steward = false },
+            new { id = "assets", title = "Assets", summary = "The pipeline.", steward = false },
+        };
+        Assert.Equal(200, (await host.PostAsync("/api/registry", new
+        {
+            repository = "Laned", root = host.RootOf("Laned"), packs = Array.Empty<string>(),
+            domain = new { summary = "Has lanes.", owns = new[] { "its runtime" }, accepts = new[] { "a quest" } },
+            lanes,
+        })).Status);
+
+        var listed = Row(await host.GetAsync("/api/registry"), "Laned").GetProperty("lanes");
+        Assert.Equal(["core", "assets"], listed.EnumerateArray().Select(lane => lane.GetProperty("id").GetString()));
+        Assert.Equal("The runtime.", listed[0].GetProperty("summary").GetString());
+
+        // The page's own add says nothing of lanes, and a row keeps what it had.
+        Assert.Equal(200, (await host.PostAsync("/api/registry", new
+        {
+            repository = "Laned", root = host.RootOf("Laned"),
+            domain = new { summary = "Has lanes, said again.", owns = new[] { "its runtime" }, accepts = new[] { "a quest" } },
+        })).Status);
+        Assert.Equal(2, Row(await host.GetAsync("/api/registry"), "Laned").GetProperty("lanes").GetArrayLength());
+
+        var published = await host.PostAsync("/api/quests", new
+        {
+            from = "Asker", to = "Laned:core", title = "Cap the frame's work", body = "It runs unbounded.",
+        });
+        Assert.Equal(200, published.Status);
+        var quest = published.Json.GetProperty("quest");
+        Assert.Equal("Laned", quest.GetProperty("to").GetString());
+        Assert.Equal(["core"], quest.GetProperty("lanes").EnumerateArray().Select(lane => lane.GetString()));
+
+        var refused = await host.PostAsync("/api/quests", new
+        {
+            from = "Asker", to = "Laned:nope", title = "Cap the frame's work", body = "It runs unbounded.",
+        });
+        Assert.Equal(400, refused.Status);
+        var said = refused.Json.GetProperty("error").GetString()!;
+        Assert.Contains("`core`", said);
+        Assert.Contains("`assets`", said);
+    }
+
     /// <summary>A quest nobody took goes, and the answer is the exchange's sentence (D95).</summary>
     [Fact]
     public async Task A_quest_nobody_took_is_deleted()

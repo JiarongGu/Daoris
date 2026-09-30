@@ -100,7 +100,7 @@ describe('the driver domain', () => {
   it('says nothing about the home on a shell that has never heard of one', async () => {
     invoke.mockImplementation(async (module: string) => (module === 'DAORIS.DRIVER' ? DRIVER_STATE : WIRING));
     show(<SettingsView notify={() => {}} section="driver" />);
-    await screen.findByLabelText('Park a quest after this many failed sessions');
+    await screen.findByLabelText('Failures before a quest parks');
 
     // What is absent is the path a newer shell answers.
     expect(screen.queryByText(/somewhere\/Daoris\/data/)).toBeNull();
@@ -119,7 +119,7 @@ describe('the driver domain', () => {
     await screen.findByRole('checkbox', { checked: true });
 
     // The number dial is reachable by its label, and the why is a note, not a paragraph.
-    expect(screen.getByLabelText('Park a quest after this many failed sessions')).toBeTruthy();
+    expect(screen.getByLabelText('Failures before a quest parks')).toBeTruthy();
     expect(screen.getByRole('note', { name: /Nobody should have to watch a driver/ })).toBeTruthy();
     expect(screen.queryByText(/Nobody should have to watch a driver/)).toBeNull();
   });
@@ -133,7 +133,7 @@ describe('the driver domain', () => {
     invoke.mockImplementation(async (module: string) => (
       module === 'DAORIS.DRIVER' ? { ...DRIVER_STATE, strikes: 3 } : WIRING));
     show(<SettingsView notify={() => {}} section="driver" />);
-    const field = await screen.findByLabelText('Park a quest after this many failed sessions');
+    const field = await screen.findByLabelText('Failures before a quest parks');
 
     await userEvent.click(field);
     await userEvent.tab();

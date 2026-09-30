@@ -30,10 +30,10 @@ describe('CarryFields', () => {
   it('takes a chosen file and lists it, and removes it again', async () => {
     render(<Composer />);
 
-    await userEvent.upload(screen.getByLabelText('choose files…'), file('before.png'));
+    await userEvent.upload(screen.getByLabelText('Choose files…'), file('before.png'));
     expect(screen.getByText('before.png')).toBeInTheDocument();
 
-    await userEvent.click(screen.getByRole('button', { name: 'remove before.png' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Remove before.png' }));
     expect(screen.queryByText('before.png')).toBeNull();
   });
 
@@ -61,10 +61,10 @@ describe('CarryFields', () => {
   it('says what a drop left off, while the person is still choosing', async () => {
     render(<Composer />);
 
-    await userEvent.upload(screen.getByLabelText('choose files…'), Array.from({ length: 11 }, (_, i) => file(`f${i}.txt`)));
+    await userEvent.upload(screen.getByLabelText('Choose files…'), Array.from({ length: 11 }, (_, i) => file(`f${i}.txt`)));
 
     expect(screen.getByRole('status')).toHaveTextContent('At most 10 files travel together.');
-    expect(screen.getAllByRole('button', { name: /^remove / })).toHaveLength(10);
+    expect(screen.getAllByRole('button', { name: /^Remove / })).toHaveLength(10);
   });
 
   /**

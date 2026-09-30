@@ -78,7 +78,7 @@ public sealed class HelpPluginProposalsTests : HelpProposalsFixture
         Assert.Contains("copied into Daoris's home under its id", plan.Describe);
         // What it runs, as its manifest writes it: `${plugin}` stays, and no machine path is in the sentence.
         Assert.Contains("It runs `node ${plugin}/hooks.mjs`, speaking on `quest/consider`, `session/ended`.", plan.Describe);
-        Assert.Contains("It declares harness `acme-agent` (`acme-agent --acp`).", plan.Describe);
+        Assert.Contains("It declares agent `acme-agent` (`acme-agent --acp`).", plan.Describe);
         Assert.Contains("It hands every session server `browser` (`npx -y @playwright/mcp@latest`).", plan.Describe);
         Assert.DoesNotContain(Checkouts, plan.Describe);
         var shown = plan.Plugin!;

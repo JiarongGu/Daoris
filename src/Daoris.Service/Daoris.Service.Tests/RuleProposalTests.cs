@@ -99,7 +99,7 @@ public sealed class RuleProposalTests : IAsyncLifetime
         var answer = Tools(new RuleProposalBox(Home)).ProposePermission(
             "add", "machine", "It needs to run the tests.", list: "allow", rule: "Bash(npm test:*)");
 
-        Assert.Contains("next tick", answer);
+        Assert.Contains("next look", answer);
         Assert.Contains("person", answer);
     }
 

@@ -6,6 +6,7 @@ import { parseFrontmatter, stripHeader } from './document.ts';
 import { lockIndex, readLock, readManifest } from './config.ts';
 import { spanBody } from './tierrender.ts';
 import { DEFAULT_HARNESS, HARNESSES, tierNames } from './harness.ts';
+import { lockLayout } from './layout.ts';
 
 // The pre-D59 generated roster. A repository that adopted before the tier moved still has one on
 // disk, and a generated file is never a twin of a canonical one.
@@ -71,15 +72,20 @@ export function findTwins(
   { root, manifest, lock }: { root: string; manifest: Manifest; lock: Lock | null },
 ): Twin[] {
   const locked = lockIndex(lock);
+  // Where the files are is the lock's answer (D117 §5.1).
+  const { target: base } = lockLayout(root, lock, manifest);
+  // 🔴 A mirror is a copy of its source, so it would score as a perfect twin of it (D117 §5.2). Skipped
+  // by what the lock records, wherever the mirror root happens to sit relative to the one scanned.
+  const mirrors = new Set((lock?.mirrors ?? []).map((entry) => entry.path));
 
   interface Candidate { tier: string; target: string; tokens: Set<string> }
   const canonical: Candidate[] = [];
   const local: Candidate[] = [];
   for (const tier of TIERS) {
-    for (const file of listMarkdown(join(root, manifest.target, tier))) {
-      if (file === INDEX_FILE) continue;
+    for (const file of listMarkdown(join(root, base, tier))) {
+      if (file === INDEX_FILE || mirrors.has(`${base}/${tier}/${file}`)) continue;
       const target = `${tier}/${file}`;
-      const tokens = significantTokens(readText(join(root, manifest.target, tier, file)));
+      const tokens = significantTokens(readText(join(root, base, tier, file)));
       (locked.has(target) ? canonical : local).push({ tier, target, tokens });
     }
   }

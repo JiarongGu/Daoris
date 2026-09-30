@@ -111,7 +111,7 @@ describe('a file\'s preview', () => {
   it('offers the file\'s changes where the review holds a patch for it, and draws that patch', async () => {
     wrap(<FilePreview path={FILE.path} file={FILE} patch={'@@ -1 +1 @@\n-export const a = 0;\n+export const a = 1;'} />);
 
-    const show = screen.getByRole('radiogroup', { name: 'show' });
+    const show = screen.getByRole('radiogroup', { name: 'Show' });
     expect(within(show).getByRole('radio', { name: 'File' })).toHaveAttribute('aria-checked', 'true');
 
     await userEvent.click(within(show).getByRole('radio', { name: 'Changes' }));
@@ -126,14 +126,14 @@ describe('a file\'s preview', () => {
   it('offers no changes where the review holds none', () => {
     wrap(<FilePreview path={FILE.path} file={FILE} />);
 
-    expect(screen.queryByRole('radiogroup', { name: 'show' })).toBeNull();
+    expect(screen.queryByRole('radiogroup', { name: 'Show' })).toBeNull();
   });
 
   it('reads the file again when asked', async () => {
     const onReload = vi.fn();
     wrap(<FilePreview path={FILE.path} file={FILE} onReload={onReload} />);
 
-    await userEvent.click(screen.getByRole('button', { name: 'read it again' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Read again' }));
     expect(onReload).toHaveBeenCalledTimes(1);
   });
 

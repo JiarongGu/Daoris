@@ -315,7 +315,17 @@ public sealed class ServiceClient : IDisposable
                 Text(repo, "summary"),
                 Strings(repo, "owns"),
                 Strings(repo, "accepts"),
-                Text(repo, "root"))),
+                Text(repo, "root"))
+            {
+                // Its lanes' words (D115 §2.2). Absent is none: a host from before lanes answers without them.
+                Lanes = repo.TryGetProperty("lanes", out var lanes) && lanes.ValueKind == JsonValueKind.Array
+                    ? lanes.EnumerateArray()
+                        .Where(lane => lane.ValueKind == JsonValueKind.Object && Text(lane, "id") is { Length: > 0 })
+                        .Select(lane => new LaneView(
+                            Text(lane, "id")!, Text(lane, "title") ?? "", Text(lane, "summary") ?? "", Flag(lane, "steward")))
+                        .ToList()
+                    : [],
+            }),
         ];
     }
 
@@ -510,6 +520,10 @@ public sealed class ServiceClient : IDisposable
                 Awaits = Text(quest, "awaits"),
                 Note = Text(quest, "note"),
                 Deletable = Flag(quest, "deletable"),
+                // The lanes of `to` it addresses (D115 §2.2). Absent is none: the whole repository.
+                Lanes = quest.TryGetProperty("lanes", out var lanes) && lanes.ValueKind == JsonValueKind.Array
+                    ? lanes.EnumerateArray().Select(l => l.ValueKind == JsonValueKind.String ? l.GetString() : null).OfType<string>().ToList()
+                    : [],
             });
         }
 
@@ -603,6 +617,8 @@ public sealed class ServiceClient : IDisposable
                 Ask = Text(session, "ask"),
                 // The tree it holds — the lock where a repository opens a tree per session (PAR1).
                 Tree = Text(session, "tree"),
+                // The quest it serves, which it holds while it works (DEV3).
+                Quest = Text(session, "quest"),
             });
         }
 

@@ -1,14 +1,14 @@
 {
   "work.awaiting.hint": "Only a person can clear this. What you choose is written on the record, and the note is what whoever reads it later has to go on.",
-  "work.awaiting.finish": "finish it",
-  "work.awaiting.decline": "decline…",
-  "work.awaiting.declineConfirm": "decline with this reason",
+  "work.awaiting.finish": "Finish",
+  "work.awaiting.decline": "Decline…",
+  "work.awaiting.declineConfirm": "Decline with this reason",
   "work.awaiting.declinePlaceholder": "the reason — the part whoever reads this record can act on",
-  "work.awaiting.stop": "stop it",
+  "work.awaiting.stop": "Stop session",
   "work.awaiting.resolved": "session {{id}} is now {{state}}.",
   "work.awaiting.answer": "Answering it in the box below lets it carry on — that is a message, not one of these.",
-  "work.awaiting.carryOn": "answer and carry on…",
+  "work.awaiting.carryOn": "Answer and carry on…",
   "work.awaiting.answerPlaceholder": "your answer — the session that carries the quest on is handed these words",
-  "work.awaiting.answerConfirm": "carry on with this answer",
-  "work.awaiting.answered": "Answered — its quest is carried on in the same tree at the next tick."
+  "work.awaiting.answerConfirm": "Carry on with this answer",
+  "work.awaiting.answered": "Answered — its quest is carried on in the same tree at the driver's next look."
 }

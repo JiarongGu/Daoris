@@ -22,9 +22,9 @@ test('the overview shows the example family', async ({ page }) => {
   await expect(page.getByText('game').first()).toBeVisible();
 });
 
-test('projects lists both members with their declarations', async ({ page }) => {
+test('repositories lists both members with their declarations', async ({ page }) => {
   await page.goto('/');
-  await nav(page, 'Projects').click();
+  await nav(page, 'Repositories').click();
   await expect(page.getByText('the engine runtime — simulation, rendering, assets')).toBeVisible();
   await expect(page.getByText('a playtest finding, with the reproduction')).toBeVisible();
 });
@@ -43,19 +43,19 @@ test('a quest carries a link and files: kept here, opened here, never run as the
 
   await page.goto('/');
   await nav(page, 'Quests').click();
-  await page.getByRole('button', { name: 'new quest' }).click();
-  await page.getByLabel('from', { exact: true }).click();
+  await page.getByRole('button', { name: 'New quest' }).click();
+  await page.getByLabel('From', { exact: true }).click();
   await page.getByRole('option', { name: 'game' }).click();
-  await page.getByLabel('to', { exact: true }).click();
+  await page.getByLabel('To', { exact: true }).click();
   await page.getByRole('option', { name: 'engine' }).click();
   await page.getByLabel('what is wanted, in one line').fill(title);
   await page.getByLabel('why, and the evidence').fill('The video and image field names are hard-coded; the ticket and a screenshot say where.');
-  await page.getByLabel(/^links/).fill('https://tickets.example/T-7');
+  await page.getByLabel(/^Links/).fill('https://tickets.example/T-7');
   await page.getByLabel('choose files…').setInputFiles([
     { name: 'before.png', mimeType: 'image/png', buffer: png },
     { name: 'page.html', mimeType: 'text/html', buffer: Buffer.from('<script>parent.document.title = "owned"</script>') },
   ]);
-  await page.getByRole('button', { name: 'publish quest' }).click();
+  await page.getByRole('button', { name: 'Publish quest' }).click();
   // The service's sentence, as it reads: a toast sets its backticked names as code, so the words
   // are the service's and the backticks are gone (`Inline`).
   await expect(page.getByText(/Published quest #[0-9a-f]{12} to engine/).first()).toBeVisible();
@@ -87,7 +87,7 @@ test('a quest carries a link and files: kept here, opened here, never run as the
   expect(served.headers()['content-disposition']).toContain('attachment');
 
   // Leave the family as it was found: the suite is serial, and the next test expects nothing open.
-  await dialog.getByRole('button', { name: 'done', exact: true }).click();
+  await dialog.getByRole('button', { name: 'Mark done', exact: true }).click();
   await expect(page.getByText(/is now Done/).first()).toBeVisible();
 });
 
@@ -110,7 +110,7 @@ test('a chain moves on when its quest closes done', async ({ page, request }) =>
   await page.getByText('Develop the streaming cap').first().click();
   const dialog = page.getByRole('dialog');
   await expect(dialog.getByText(/Verify \{parent\} in a playtest/)).toBeVisible();
-  await dialog.getByRole('button', { name: 'done', exact: true }).click();
+  await dialog.getByRole('button', { name: 'Mark done', exact: true }).click();
   await expect(page.getByText(/Then: published #[0-9a-f]{12} to engine/).first()).toBeVisible();
 
   // The step is an ordinary open quest, named with the id of the one it follows.
@@ -128,7 +128,7 @@ test('a chain moves on when its quest closes done', async ({ page, request }) =>
   await chain().getByRole('button', { name: `Verify #${parent} in a playtest` }).click();
 
   // Leave the family as it was found: the suite is serial, and a later test expects nothing open.
-  await page.getByRole('dialog').getByRole('button', { name: 'done', exact: true }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Mark done', exact: true }).click();
   await expect(page.getByText(/is now Done/).first()).toBeVisible();
 });
 
@@ -157,9 +157,9 @@ test('a repository opens its own code map, and one without says where it would g
   await page.goto('/');
   await nav(page, 'Map').click();
   await page.getByRole('button', { name: /^engine, \d+ open/ }).click();
-  await page.getByRole('button', { name: 'Open its code map' }).click();
+  await page.getByRole('button', { name: 'Open code map' }).click();
 
-  await expect(page.getByRole('heading', { name: 'engine: its code' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'engine: code map' })).toBeVisible();
   await page.getByRole('button', { name: 'chunks, depends on 1' }).click();
   await expect(page.getByText('streams the world in chunks, within a per-frame budget')).toBeVisible();
   // Its neighbours are doors: what uses it, and what it uses.
@@ -168,24 +168,24 @@ test('a repository opens its own code map, and one without says where it would g
 
   await page.getByRole('button', { name: 'Back to the workspace' }).click();
   await page.getByRole('button', { name: /^game, \d+ open/ }).click();
-  await page.getByRole('button', { name: 'Open its code map' }).click();
+  await page.getByRole('button', { name: 'Open code map' }).click();
   await expect(page.getByText('game keeps no code map')).toBeVisible();
 });
 
 test('a quest travels: composed, published, taken, finished', async ({ page }) => {
   await page.goto('/');
   await nav(page, 'Quests').click();
-  await page.getByRole('button', { name: 'new quest' }).click();
+  await page.getByRole('button', { name: 'New quest' }).click();
 
-  await page.getByLabel('from', { exact: true }).click();
+  await page.getByLabel('From', { exact: true }).click();
   await page.getByRole('option', { name: 'game' }).click();
-  await page.getByLabel('to', { exact: true }).click();
+  await page.getByLabel('To', { exact: true }).click();
   await page.getByRole('option', { name: 'engine' }).click();
   await page.getByLabel('what is wanted, in one line').fill('Expose a streaming budget on the chunk API');
   await page.getByLabel('why, and the evidence').fill(
     'World streaming needs a per-frame cap; today hydration is unbounded. Evidence: seams whenever more than three chunks hydrate in one frame.',
   );
-  await page.getByRole('button', { name: 'publish quest' }).click();
+  await page.getByRole('button', { name: 'Publish quest' }).click();
 
   // The toast carries the service's sentence verbatim — that text IS the contract. (.first(): Radix
   // renders each toast twice — the visible element and its aria-live announcer.)
@@ -193,32 +193,32 @@ test('a quest travels: composed, published, taken, finished', async ({ page }) =
 
   // It sits in Open; its card is a door to the detail drawer, where the acting happens.
   await page.getByText('Expose a streaming budget on the chunk API').first().click();
-  await page.getByRole('button', { name: 'take', exact: true }).click();
+  await page.getByRole('button', { name: 'Take', exact: true }).click();
   await expect(page.getByText(/is now Taken/).first()).toBeVisible();
 
   await page.getByText('Expose a streaming budget on the chunk API').first().click();
-  await page.getByRole('button', { name: 'done', exact: true }).click();
+  await page.getByRole('button', { name: 'Mark done', exact: true }).click();
   await expect(page.getByText(/is now Done/).first()).toBeVisible();
 
   // Closed work leaves the default list and returns on request.
   await expect(page.getByText('No open quests anywhere')).toBeVisible();
-  await page.getByText('include closed').click();
+  await page.getByText('Include closed').click();
   await expect(page.getByText('Expose a streaming budget on the chunk API')).toBeVisible();
 });
 
 test('a refusal reaches the person verbatim', async ({ page }) => {
   await page.goto('/');
   await nav(page, 'Quests').click();
-  await page.getByRole('button', { name: 'new quest' }).click();
+  await page.getByRole('button', { name: 'New quest' }).click();
 
   // Self-addressed: the one refusal the form cannot prevent, because the judgement is the service's.
-  await page.getByLabel('from', { exact: true }).click();
+  await page.getByLabel('From', { exact: true }).click();
   await page.getByRole('option', { name: 'engine' }).click();
-  await page.getByLabel('to', { exact: true }).click();
+  await page.getByLabel('To', { exact: true }).click();
   await page.getByRole('option', { name: 'engine' }).click();
   await page.getByLabel('what is wanted, in one line').fill('x');
   await page.getByLabel('why, and the evidence').fill('y');
-  await page.getByRole('button', { name: 'publish quest' }).click();
+  await page.getByRole('button', { name: 'Publish quest' }).click();
 
   await expect(page.getByText('a quest is work for someone else', { exact: false }).first()).toBeVisible();
 });
@@ -246,20 +246,20 @@ test('an ask is proposed by declarations, published by a person, and closed with
   await expect(composer.getByText('Asked in workspace default')).toBeVisible();
   await expect(composer.getByRole('combobox', { name: 'workspace' })).toHaveCount(0);
   await composer.getByLabel('what is wanted, and why').fill(sentence);
-  await composer.getByLabel(/^links/).fill('https://tickets.example/T-8');
+  await composer.getByLabel(/^Links/).fill('https://tickets.example/T-8');
   await composer.getByLabel('choose files…').setInputFiles([
     { name: 'trace.log', mimeType: 'text/plain', buffer: Buffer.from('frame 212: hydrate stalls 38ms\n') },
   ]);
-  await composer.getByRole('button', { name: 'ask', exact: true }).click();
+  await composer.getByRole('button', { name: 'Ask', exact: true }).click();
 
   // The service's sentence, verbatim: which tier answered, what it proposed, and that nothing went out.
-  await expect(page.getByText(/Asked as #[0-9a-f]{6} in default — by declarations only; no intake harness ran — proposed, best first: engine/).first()).toBeVisible();
+  await expect(page.getByText(/Asked as #[0-9a-f]{6} in default — by declarations only; no intake agent ran — proposed, best first: engine/).first()).toBeVisible();
 
   // The record opens on the answer: the tier in words, the proposal as a verb, the file by name only.
   // (The quest it becomes takes the same words for its title, so each drawer is told apart by what it holds.)
   const record = page.getByRole('dialog', { name: sentence });
   await expect(record.getByRole('region', { name: 'Where it belongs' })).toBeVisible();
-  await expect(record.getByText('by declarations only; no intake harness ran')).toBeVisible();
+  await expect(record.getByText('by declarations only; no intake agent ran')).toBeVisible();
   await expect(record.getByText('trace.log')).toBeVisible();
   await expect(record).not.toContainText('_fixtures');
 
@@ -277,12 +277,12 @@ test('an ask is proposed by declarations, published by a person, and closed with
 
   // Its only quest done, the ask's work is finished (USE1c): it is DONE, and leaves the list by itself,
   // as a closed ask and a closed quest do. Nobody has to close it, and the family is left as found.
-  await quest.getByRole('button', { name: 'done', exact: true }).click();
+  await quest.getByRole('button', { name: 'Mark done', exact: true }).click();
   await expect(page.getByText(/is now Done/).first()).toBeVisible();
   await expect(page.getByText(/^Asks \(/)).toHaveCount(0);
 
   // With closed ones included it comes back, wearing its done pill.
-  await page.getByText('include closed').click();
+  await page.getByText('Include closed').click();
   await expect(page.getByText(/^Asks \(/)).toBeVisible();
   await expect(page.getByText('done', { exact: true }).first()).toBeVisible();
 });
@@ -331,8 +331,8 @@ test('an ask waiting on a person is in What needs you, and its record names its 
   await expect(page.getByRole('region', { name: 'What needs you' }).getByText('parked at a checkpoint')).toHaveCount(0);
 
   await asking.click();
-  const intake = page.getByRole('dialog', { name: sentence }).getByRole('region', { name: 'intake session' });
-  await expect(intake.getByText('awaiting person')).toBeVisible();
+  const intake = page.getByRole('dialog', { name: sentence }).getByRole('region', { name: 'Intake session' });
+  await expect(intake.getByText('waiting on you')).toBeVisible();
   await expect(intake.getByText('stub', { exact: true })).toBeVisible();
   await expect(intake.getByRole('button')).toHaveCount(0);
 
@@ -373,18 +373,18 @@ test('a project created mid-run joins, and the platform shows it (D44)', async (
   });
 
   await page.goto('/');
-  await nav(page, 'Projects').click();
+  await nav(page, 'Repositories').click();
   await expect(page.getByText('Born during the test run.')).toBeVisible();
 
   await nav(page, 'Quests').click();
-  await page.getByRole('button', { name: 'new quest' }).click();
-  await page.getByLabel('from', { exact: true }).click();
+  await page.getByRole('button', { name: 'New quest' }).click();
+  await page.getByLabel('From', { exact: true }).click();
   await page.getByRole('option', { name: 'game' }).click();
-  await page.getByLabel('to', { exact: true }).click();
+  await page.getByLabel('To', { exact: true }).click();
   await page.getByRole('option', { name: 'newcomer' }).click();
   await page.getByLabel('what is wanted, in one line').fill('A first quest for the newcomer');
   await page.getByLabel('why, and the evidence').fill('Joining means being askable — prove it.');
-  await page.getByRole('button', { name: 'publish quest' }).click();
+  await page.getByRole('button', { name: 'Publish quest' }).click();
   await expect(page.getByText(/Published quest #[0-9a-f]{12} to newcomer/).first()).toBeVisible();
 });
 
@@ -408,14 +408,14 @@ test('the console scopes by workspace once the family holds two (WSP5)', async (
 
   await page.goto('/');
   const scope = page.getByRole('combobox', { name: 'workspace' });
-  await expect(scope).toHaveText(/every workspace · 2/);
+  await expect(scope).toHaveText(/Every workspace · 2/);
   await expect(page.getByText('of 3 in the family')).toBeVisible();
 
   await scope.click();
   await page.getByRole('option', { name: 'studio' }).click();
   await expect(scope).toHaveText('studio');
   await expect(page.getByText('of 1 in the family')).toBeVisible();
-  await nav(page, 'Projects').click();
+  await nav(page, 'Repositories').click();
   await expect(page.getByText('Born during the test run.')).toBeVisible();
   await expect(page.getByText('the engine runtime — simulation, rendering, assets')).toHaveCount(0);
 
@@ -424,8 +424,8 @@ test('the console scopes by workspace once the family holds two (WSP5)', async (
   await expect(page.getByRole('combobox', { name: 'workspace' })).toHaveText('studio');
 
   await page.getByRole('combobox', { name: 'workspace' }).click();
-  await page.getByRole('option', { name: /every workspace/ }).click();
-  await nav(page, 'Projects').click();
+  await page.getByRole('option', { name: /Every workspace/ }).click();
+  await nav(page, 'Repositories').click();
   await expect(page.getByText('the engine runtime — simulation, rendering, assets')).toBeVisible();
 
   const back = await request.post('/api/registry/newcomer/workspace', { data: { workspace: 'default' } });
@@ -467,7 +467,7 @@ test("a driven session's record reaches the drawer (D46)", async ({ page, reques
 
   // Read-only is the arc's central claim: the record renders, the control does not — stop reaches a
   // PROCESS, and a browser has none to reach (D46 §6).
-  await expect(dialog.getByRole('button', { name: 'stop session' })).toHaveCount(0);
+  await expect(dialog.getByRole('button', { name: 'Stop session' })).toHaveCount(0);
 });
 
 /**
@@ -534,8 +534,8 @@ test('a browser learns nothing about this machine’s harnesses (D49 §4)', asyn
   // passed whatever a browser was shown. The domain list is what a browser is OFFERED, so it is
   // asserted whole: a machine domain appearing here fails this line.
   const domains = page.getByRole('navigation', { name: 'Settings domains' }).getByRole('button');
-  // Get started leads (SETUP1a, D97), holding in a browser only the registry's step.
-  await expect(domains).toHaveText([/Get started/, /Appearance/, /Daoris.s own AI/, /Workspace/]);
+  // Setup leads (SETUP1a, D97; named so by NAME1b), holding in a browser only the registry's step.
+  await expect(domains).toHaveText([/Setup/, /Appearance/, /AI features/, /Workspace/]);
 
   // Workspace is the one domain with a machine half (its wiring), so it is opened and that half's
   // absence asserted where it would render, after its browser half is seen.
@@ -543,7 +543,7 @@ test('a browser learns nothing about this machine’s harnesses (D49 §4)', asyn
   await expect(page.getByText('default').first()).toBeVisible();
   await expect(page.getByText(/remotes\.json|harnesses\.json|driver\.json/)).toHaveCount(0);
 
-  await nav(page, 'Projects').click();
+  await nav(page, 'Repositories').click();
   await expect(page.getByText('the engine runtime — simulation, rendering, assets')).toBeVisible();
   // Nothing that would name a configuration home: a registration's root is a machine path, and a
   // browser on the host's own machine is still not told another's (D47 §4).
@@ -562,7 +562,7 @@ test('a browser is told which tier answers search, and nothing of the intake (AG
 
   await page.getByLabel('state of this machine').getByRole('button', { name: 'recall' }).click();
   await expect(page.getByRole('heading', { name: 'Settings', exact: true })).toBeVisible();
-  await expect(page.getByText('Daoris\'s own AI')).toBeVisible();
+  await expect(page.getByText('AI features')).toBeVisible();
   await expect(page.getByText('Search and convergence')).toBeVisible();
   await expect(page.getByText(status.tier, { exact: true }).first()).toBeVisible();
   if (status.note) await expect(page.getByText(status.note, { exact: true })).toBeVisible();

@@ -1,15 +1,15 @@
 {
   "work.start.title": "开启会话",
   "work.start.repository": "仓库",
-  "work.start.harness": "智能体工具",
+  "work.start.harness": "智能体",
   "work.start.harnessDefault": "本机默认",
   "work.start.harnessDefaultNamed": "本机默认：{{name}}",
   "work.start.busyOption": "{{repository}} · 占用中",
   "work.start.busy": "{{repository}} 的检出里已有进行中的会话。使用它自己的工作树，这个会话就能在旁边同时开启。",
   "work.start.profile": "账户",
-  "work.start.profileDefault": "沿用本机既有的选择",
-  "work.start.ownTree": "使用它自己的工作树",
+  "work.start.profileDefault": "沿用已有设置",
+  "work.start.ownTree": "使用独立工作树",
   "work.start.ownTreeTip": "新开的工作树里只有 git 跟踪的内容——没有已安装的依赖、没有构建产物、没有未跟踪的本地配置。这份代价按工作树计算，取决于这个仓库自身的准备成本。",
   "work.start.go": "开启",
-  "work.start.none": "本机没有可供对话的检出仓库。请先在「项目」中添加。"
+  "work.start.none": "本机没有可供对话的检出仓库。请先在「仓库」中添加。"
 }

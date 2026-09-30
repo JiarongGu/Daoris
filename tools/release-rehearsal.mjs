@@ -17,7 +17,9 @@
  * Exit 0 = the release would work. Exit 1 = it would not.
  */
 import { execSync } from 'node:child_process';
-import { copyFileSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import {
+  copyFileSync, existsSync, mkdirSync, readFileSync, renameSync, rmSync, symlinkSync, unlinkSync, writeFileSync,
+} from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { copyTree } from './fsx.mjs';
@@ -321,9 +323,128 @@ check('withdrawing the confirmation brings the core row back', withdrawn.code ==
   withdrawn.out);
 check('`check` is clean after the withdrawal', withV2('check').code === 0);
 
-// ----------------------------------------------------------------- 6. report
+// --------------------------------------------------------- 6. move the layout
 
-section('6. Result');
+// LAYOUT3 (D117 §5.6): the upgrade an adopter on the older layout makes by flipping its own manifest,
+// through the packed bin. Every cell is a unit test already; this proves the ARTEFACT carries them —
+// the move, the refusals, the mirror and its return path, a room, and a link held as text.
+section('6. Moving the layout to agents (D117)');
+
+// The consumer keeps a skill of its own under .claude/ since phase 2; it gains a knowledge document too.
+writeFileSync(
+  join(consumer, '.claude/knowledge/house-notes.md'),
+  '---\nname: house-notes\napplies_when: working on this repo\nenforces: its own notes\n---\n\n# House notes\n',
+);
+check('the local knowledge document is listed before the move', withV2('sync').code === 0
+  && /house-notes.*\(local\)/.test(read('AGENTS.md')));
+
+writeManifest((m) => { m.harness = 'agents'; m.target = '.agents'; });
+const staleLayout = withV2('check');
+check('`check` fails on the flipped manifest, naming both layouts', staleLayout.code === 1
+  && /agents/.test(staleLayout.out) && /claude-code/.test(staleLayout.out), staleLayout.out);
+
+const planned = withV2('sync --dry-run');
+check('`sync --dry-run` lists the moves and exits 1', planned.code === 1
+  && /moved\s+\.claude\/knowledge\/reaching-in\.md -> \.agents\/knowledge\/reaching-in\.md/.test(planned.out), planned.out);
+check('...and names the two documents it would leave behind',
+  /LEFT BEHIND \.claude\/knowledge\/house-notes\.md/.test(planned.out)
+  && /LEFT BEHIND \.claude\/skills\/house-deploy/.test(planned.out), planned.out);
+
+const leftBehind = withV2('sync');
+check('`sync` refuses the move, naming each git mv', leftBehind.code === 1
+  && /git mv \.claude\/knowledge\/house-notes\.md \.agents\/knowledge\/house-notes\.md/.test(leftBehind.out)
+  && /git mv \.claude\/skills\/house-deploy \.agents\/skills\/house-deploy/.test(leftBehind.out), leftBehind.out);
+check('...and writes nothing', !has('.agents') && has('.claude/knowledge/reaching-in.md'));
+
+// The repository's own act (D5): the consumer is not a git repository, so a rename plays the git mv.
+mkdirSync(join(consumer, '.agents', 'knowledge'), { recursive: true });
+mkdirSync(join(consumer, '.agents', 'skills'), { recursive: true });
+renameSync(join(consumer, '.claude/knowledge/house-notes.md'), join(consumer, '.agents/knowledge/house-notes.md'));
+renameSync(join(consumer, '.claude/skills/house-deploy'), join(consumer, '.agents/skills/house-deploy'));
+
+const moved = withV2('sync');
+check('`sync` moves the canonical files once the repository has moved its own', moved.code === 0
+  && has('.agents/knowledge/reaching-in.md') && has('.agents/skills/doc-loader/SKILL.md'), moved.out);
+check('...removes the folder the move emptied', !has('.claude/knowledge'));
+check('...writes a mirror of every skill for Claude Code, its frontmatter still first',
+  read('.claude/skills/doc-loader/SKILL.md').startsWith('---\n')
+  && /mirror of \.agents\/skills\/doc-loader\/SKILL\.md/.test(read('.claude/skills/doc-loader/SKILL.md'))
+  && /mirror of \.agents\/skills\/house-deploy\/SKILL\.md/.test(read('.claude/skills/house-deploy/SKILL.md')));
+check('...re-roots the lock and records the mirrors',
+  /"harness": "agents"/.test(read('daoris.lock')) && /"target": "\.agents"/.test(read('daoris.lock'))
+  && /"mirrors"/.test(read('daoris.lock')));
+check('...and the roster points at .agents and says the mirror sentence',
+  /\[doc-loader\]\(\.agents\/skills\/doc-loader\)/.test(read('AGENTS.md')) && /mirrors them/.test(read('AGENTS.md')));
+const movedCheck = withV2('check');
+check('`check` is clean after the move', movedCheck.code === 0, movedCheck.out);
+
+// A mirror edited: named with its source, refused, promoted from the copy, and closed by the next sync.
+const mirrorFile = join(consumer, '.claude/skills/doc-loader/SKILL.md');
+writeFileSync(mirrorFile, `${readFileSync(mirrorFile, 'utf8')}\nA local improvement, made in the mirror.\n`);
+const mirrorDrift = withV2('check');
+check('`check` fails on an edited mirror, naming its source', mirrorDrift.code === 1
+  && /a mirror of \.agents\/skills\/doc-loader\/SKILL\.md, edited here/.test(mirrorDrift.out), mirrorDrift.out);
+const mirrorRefused = withV2('sync');
+check('`sync` refuses, pointing at upstream from the mirror', mirrorRefused.code === 1
+  && /daoris upstream \.claude\/skills\/doc-loader\/SKILL\.md/.test(mirrorRefused.out), mirrorRefused.out);
+const mirrorUp = withV2('upstream .claude/skills/doc-loader/SKILL.md');
+check('`upstream` takes the mirror\'s path', mirrorUp.code === 0, mirrorUp.out);
+check('...and the canon carries the edit without either header', (() => {
+  const promoted = readFileSync(join(canonV2, 'core/skills/doc-loader/SKILL.md'), 'utf8');
+  return promoted.includes('made in the mirror') && !promoted.includes('<!-- daoris:') && promoted.startsWith('---\n');
+})());
+const mirrorClosed = withV2('sync');
+check('the next `sync` is clean, and the source carries the edit', mirrorClosed.code === 0
+  && read('.agents/skills/doc-loader/SKILL.md').includes('made in the mirror'), mirrorClosed.out);
+check('`check` is clean again', withV2('check').code === 0);
+
+// A room: declared, it gains its pointer and a row; undeclared, it loses the pointer and keeps its words.
+mkdirSync(join(consumer, 'tools'), { recursive: true });
+writeFileSync(join(consumer, 'tools/AGENTS.md'), '# Tools\n\nHow this repository\'s scripts are run.\n');
+writeManifest((m) => { m.rooms = ['tools']; });
+const roomed = withV2('sync');
+check('a declared room gains its pointer', roomed.code === 0 && /@AGENTS\.md/.test(read('tools/CLAUDE.md')), roomed.out);
+check('...and a row in the roster, with its heading', /\| \[tools\]\(tools\/AGENTS\.md\) \| Tools \|/.test(read('AGENTS.md')));
+check('`check` is clean with the room', withV2('check').code === 0);
+writeManifest((m) => { m.rooms = []; });
+const unroomed = withV2('sync');
+check('an undeclared room loses its pointer, and keeps its own words', unroomed.code === 0
+  && !has('tools/CLAUDE.md') && read('tools/AGENTS.md').startsWith('# Tools'), unroomed.out);
+
+// A link held as text: the reference's CLAUDE.md, checked out where links are not.
+const claudeFile = join(consumer, 'CLAUDE.md');
+const claudeText = readFileSync(claudeFile, 'utf8');
+writeFileSync(claudeFile, 'AGENTS.md');
+const heldAsText = withV2('sync');
+check('a CLAUDE.md held as the 9 bytes `AGENTS.md` is refused with the link sentence', heldAsText.code === 1
+  && /looks like a link checked out as text/.test(heldAsText.out), heldAsText.out);
+check('...and never written through', readFileSync(claudeFile, 'utf8') === 'AGENTS.md');
+writeFileSync(claudeFile, claudeText);
+
+// A real link, where this runner can make one: a file link first, else a folder junction, which Windows
+// grants without a privilege.
+let realLink = null;
+try {
+  rmSync(claudeFile);
+  symlinkSync('AGENTS.md', claudeFile, 'file');
+  realLink = { path: 'CLAUDE.md', undo: () => { unlinkSync(claudeFile); writeFileSync(claudeFile, claudeText); } };
+} catch {
+  if (!existsSync(claudeFile)) writeFileSync(claudeFile, claudeText);
+  const skills = join(consumer, '.claude', 'skills');
+  const aside = join(consumer, '.claude', 'skills-aside');
+  renameSync(skills, aside);
+  symlinkSync(join(consumer, '.agents', 'skills'), skills, 'junction');
+  realLink = { path: '.claude/skills', undo: () => { unlinkSync(skills); renameSync(aside, skills); } };
+}
+const linked = withV2('sync');
+realLink.undo();
+check(`a real link at ${realLink.path} is refused too`, linked.code === 1
+  && new RegExp(`${realLink.path.replace(/\./g, '\\.')} is a link`).test(linked.out), linked.out);
+check('`check` is clean once the link is gone', withV2('check').code === 0);
+
+// ----------------------------------------------------------------- 7. report
+
+section('7. Result');
 console.log(`\n  ${totals.checks - totals.failures}/${totals.checks} checks passed`);
 if (totals.failures) {
   console.log(`  ${totals.failures} FAILED — do not tag a release until these pass.`);
@@ -333,6 +454,6 @@ if (totals.failures) {
   process.exitCode = 1;
 } else {
   console.log('  The packaged tool installs into a clean repo and drives the full lifecycle:');
-  console.log('  adopt, collide, sync, drift, promote, upgrade, rename, switch off, and check.\n');
+  console.log('  adopt, collide, sync, drift, promote, upgrade, rename, switch off, move the layout, and check.\n');
   rmSync(scratch, { recursive: true, force: true });
 }

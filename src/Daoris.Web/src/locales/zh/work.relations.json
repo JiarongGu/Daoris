@@ -1,5 +1,5 @@
 {
-  "work.relations.title": "它与谁协作",
+  "work.relations.title": "协作关系",
   "work.relations.askedBy": "发起者",
   "work.relations.session": "{{repository}} 中的会话 {{id}}",
   "work.relations.elsewhere": "会话 {{id}}，本机没有它的记录",
@@ -8,6 +8,6 @@
   "work.relations.asked_other": "向其他仓库提出（{{count}}）",
   "work.relations.question": "它的问题：它的委托在等这个答复",
   "work.relations.answer": "答复：{{note}}",
-  "work.relations.declined": "已拒绝：{{note}}",
+  "work.relations.declined": "已谢绝：{{note}}",
   "work.relations.waiting": "尚未答复。"
 }

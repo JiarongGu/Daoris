@@ -74,7 +74,7 @@ public sealed class LandingPluginTests : IDisposable
         // The person is not told to push what the plugin pushed.
         Assert.DoesNotContain("git push", landed.Message);
         // Branch, then plugin, then the tidy the rule asked for.
-        Assert.Contains("Tidied", landed.Message);
+        Assert.Contains("Cleaned up", landed.Message);
         Assert.False(Directory.Exists(opened.Path));
 
         // What the plugin was told, and that the branch was already there when it was.

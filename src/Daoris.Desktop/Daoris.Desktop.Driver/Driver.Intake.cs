@@ -83,12 +83,13 @@ public sealed partial class Driver
     /// as. A park is not an ending: the record waits for the person, and the tick that finds it parked
     /// is what tells them (SURF5b), once, from the one place parks are seen.
     /// </returns>
-    private async Task<(string Line, bool Opened, SessionEnded? Ended)> RunIntakeAsync(
-        AskView ask, List<TrustHold> untrusted, CancellationToken ct)
+    /// <param name="onOpened">Called once the intake's record is open, and never for one that held or was refused (DEV3).</param>
+    private async Task<StartRun> RunIntakeAsync(
+        AskView ask, List<TrustHold> untrusted, Action onOpened, CancellationToken ct)
     {
         var adapterName = config.IntakeAdapter!;
         var named = $"ask #{ask.Id} in {ask.Workspace}";
-        (string, bool, SessionEnded?) Hold(string why) => ($"held  intake for {named}: {why}", false, null);
+        StartRun Hold(string why) => new($"held  intake for {named}: {why}", false);
 
         // Asked BEFORE the record, like every hold a driven spawn asks: a record for a spawn that could
         // never happen would mark the ask served and explain nothing.
@@ -142,8 +143,10 @@ public sealed partial class Driver
             .ConfigureAwait(false);
         if (sessionId is null)
         {
-            return ($"refused  intake for {named}: {message}", false, null);
+            return new StartRun($"refused  intake for {named}: {message}", false);
         }
+
+        onOpened();
 
         try
         {
@@ -218,7 +221,7 @@ public sealed partial class Driver
 
                     await service.AdvanceAsync(sessionId, conclusion.State, note: conclusion.Note, ct: ct).ConfigureAwait(false);
 
-                    return (
+                    return new StartRun(
                         $"{conclusion.State}  intake {sessionId} ({named}): {conclusion.Note}",
                         true,
                         SessionStates.IsParked(conclusion.State)
@@ -243,7 +246,7 @@ public sealed partial class Driver
                 // Best-effort by construction: the host may already be gone on the same shutdown.
             }
 
-            return (
+            return new StartRun(
                 $"stopped  intake {sessionId} ({named}): the driver was stopped.",
                 true,
                 new SessionEnded(sessionId, $"ask #{ask.Id}", "stopped", ByPerson: true, Adapter: adapterName));
@@ -261,7 +264,7 @@ public sealed partial class Driver
                 // The terminal write is best-effort by construction: the first failure is the report.
             }
 
-            return (
+            return new StartRun(
                 $"failed  intake {sessionId} ({named}): {error.Message}",
                 true,
                 new SessionEnded(sessionId, $"ask #{ask.Id}", "failed", ByPerson: false, error.Message, Adapter: adapterName));

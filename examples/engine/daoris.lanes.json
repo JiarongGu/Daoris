@@ -1,0 +1,25 @@
+{
+  "_why": "The engine's lanes: the domains inside it that work is addressed to, as `engine:core` or `engine:media` (or both, `engine:core+media`). `daoris connect` sends each lane's id, title and summary to the registry, never its paths; the paths are for the repository's own tools. A path belongs to the first lane that owns it, and `laneless` lists what belongs to no lane on purpose.",
+
+  "lanes": [
+    {
+      "id": "core",
+      "title": "Core",
+      "summary": "The frame loop, the renderer and the chunk streaming the game drives.",
+      "paths": ["src/runtime/**", "src/renderer/**", "src/chunks/**"]
+    },
+    {
+      "id": "media",
+      "title": "Media",
+      "summary": "Loading the video and image fields the media config names.",
+      "paths": ["src/media/**"]
+    }
+  ],
+
+  "laneless": [
+    {
+      "what": "The declaration, the doctrine and the docs: read by every lane.",
+      "paths": ["daoris.json", "daoris.lock", "daoris.lanes.json", "AGENTS.md", "CLAUDE.md", "README.md", "docs/**", ".claude/**"]
+    }
+  ]
+}

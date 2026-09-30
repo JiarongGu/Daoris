@@ -15,7 +15,7 @@ what was measured, and it stays a record of that moment. A *record* is append-on
 |---|---|---|---|
 | `2026-08-04-daoris-design.md` | contract | the CLI | Current. Its notes carry D54, D59 and D105 where they changed it |
 | `2026-08-05-knowledge-service-design.md` | contract | the service | Built. Its banner names what later decisions answered; §3–§4, the disclosure classes, still bind |
-| `2026-09-19-driver-design.md` | contract | the driver (D45, D46) | Current, with D72's permission change, D104's interrupted stop, and PAR1's sessions side by side in trees (§9) noted |
+| `2026-09-19-driver-design.md` | contract | the driver (D45, D46) | Current, with D72's permission change, D104's interrupted stop, PAR1's sessions side by side in trees, and DEV3's sessions outliving their tick (§9) noted |
 | `2026-09-19-platform-design.md` | contract | the platform (D38) | Current in shape; the views it names have moved since (D55, D66, D75) |
 | `2026-09-19-platform-ux.md` | contract | the design language (D41, D56) | Current. §4 records what each looking pass settled; read it before changing anything a person looks at |
 | `2026-09-19-frontend-architecture.md` | method | the platform's stack and tests (D42) | Current |
@@ -24,7 +24,7 @@ what was measured, and it stays a record of that moment. A *record* is append-on
 | `2026-09-20-remote-design.md` | contract | the remote (D47) | Current; its superseded list names what D68 replaced |
 | `2026-09-21-working-surface-design.md` | contract | the working surface (D51, D52) | Current, with D66 and D113 (a landed session's review reads its landed branch) noted |
 | `2026-09-21-working-surface-components.md` | method | how a screen is built | Current: a story first, and a molecule imports no hook |
-| `2026-09-22-instruction-file-design.md` | contract | the always-loaded tier in `AGENTS.md` (D59) | Current. D117 designs its extension to the on-demand tiers, not yet built |
+| `2026-09-22-instruction-file-design.md` | contract | the always-loaded tier in `AGENTS.md` (D59) | Current. D117 extends it to the on-demand tiers; the CLI's half is built (LAYOUT3) |
 | `2026-09-21-desktop-frame-design.md` | contract | the desktop's frame (D56) | Current, with D66, D75, BRW7–BRW8 (the browser's door on the strip, and who is driving it) and D118 (every view's own list pane and main area, to be built) noted |
 | `2026-09-22-toolchain-design.md` | contract | binaries, pins, accounts, usage (D57) | Current, with D63, D67 and D98 noted. The home of the resolution rule |
 | `2026-09-23-api-key-accounts.md` | contract | an account that is an API key (D67 §1) | Current |
@@ -42,11 +42,11 @@ what was measured, and it stays a record of that moment. A *record* is append-on
 | `2026-09-30-machine-log-design.md` | contract | The machine log: what happens on this machine, without anyone's words, to improve Daoris from (LOG1, D94) | Built (LOG1a–d, §7); §4 and §6 say, as built, what each line measures and what each door reads |
 | `2026-09-30-terminal-design.md` | contract | The terminal: a real shell of the person's own in the console panel (CONSOLE4, D96) | Built (CONSOLE4a–c, §4); the look on the window in both themes is still to take |
 | `2026-09-30-setup-guide-design.md` | contract | The setup guide: what a first start walks through, on the facts Ask Daoris's starters read (SETUP1, D97) | Current; SETUP1a–b in its §3 order |
-| `2026-09-30-parallel-development-design.md` | contract | Parallel development: what eighteen merges collided on, the rules, the splits and the lane map (MOD1–MOD9) | Built (MOD1–MOD9, D106); §3 rule 5 says how a desktop suite's `Process` half runs; LEFT1 re-runs a rehearsal that died (§3) and gives every tracked file a place in the lane map (§5); D115 designs its successor, the driver's own cycle |
-| `2026-10-01-self-development-design.md` | contract | Daoris develops Daoris: lanes a repository declares, sessions side by side, a merge queue as a landing form, a steward that keeps the records (DEV1) | Designed (D115); nothing built. §0 is what the code does today, §7 the phased build DEV2–DEV11, §9 what only a real run can prove |
-| `2026-10-01-agent-layout-design.md` | contract | One repository, every agent: knowledge and skills under `.agents/`, a skills mirror and imports instead of links, rooms, and a repository set up by its own session (LAYOUT1) | Designed (D117); nothing built. §1 is what each agent reads, measured and not, §5.4 the move's cells, §7 the phased build LAYOUT2–LAYOUT10, §8 what only a real adopter can prove |
+| `2026-09-30-parallel-development-design.md` | contract | Parallel development: what eighteen merges collided on, the rules, the splits and the lane map (MOD1–MOD9) | Built (MOD1–MOD9, D106); §3 rule 5 says how a desktop suite's `Process` half runs; LEFT1 re-runs a rehearsal that died (§3) and gives every tracked file a place in the lane map (§5); D115 designs its successor, the driver's own cycle, and DEV2 moved §5's map to `daoris.lanes.json`, by id, with the steward's `records` lane |
+| `2026-10-01-self-development-design.md` | contract | Daoris develops Daoris: lanes a repository declares, sessions side by side, a merge queue as a landing form, a steward that keeps the records (DEV1) | Designed (D115); DEV2 built §2.1's file, `daoris.lanes.json`, which the merge tool reads, DEV3 §3.1, sessions outlive their tick, and DEV4 §2.2's lane addresses; the rest not. §0 is what the code did when it was designed, §7 the phased build DEV2–DEV11, §9 what only a real run can prove |
+| `2026-10-01-naming-design.md` | contract | Names: a name is a UI element, designed in each language; the kinds, their rules and budgets, the glossary and the check (NAME1, D116) | Current. NAME1a wrote it with the glossary and the check in report mode; NAME1b applied the audit with the owner's two calls and put `--strict` in the web's build (§6) |
+| `2026-10-01-agent-layout-design.md` | contract | One repository, every agent: knowledge and skills under `.agents/`, a skills mirror and imports instead of links, rooms, and a repository set up by its own session (LAYOUT1) | Designed (D117); the CLI's half built (LAYOUT3), the service's (LAYOUT4). §1 is what each agent reads, measured and not, §5.4 the move's cells, §7 the phased build LAYOUT2–LAYOUT10, §8 what only a real adopter can prove |
 | `2026-10-01-frame-model-design.md` | contract | One frame for every view: the list pane and the main area each view owns, what each view puts in them, and the build (FRAME1, D118) | Designed (FRAME1a); built as FRAME1b–i, and PLUGUI1's screen on it |
-| `2026-10-01-naming-design.md` | contract | Names: a name is a UI element, designed in each language; the kinds, their rules and budgets, the glossary and the check (NAME1, D116) | Current. NAME1a wrote it with the glossary and the check in report mode; the renames are NAME1b's |
 
 ## Studies and evidence
 
@@ -69,6 +69,7 @@ what was measured, and it stays a record of that moment. A *record* is append-on
 | `2026-09-28-after-the-first-workspace.md` | study | WSR1–WSR3, SESS1, MAP4, HELP1: what the first real workspace showed Daoris lacks. §3 is decided by D86 (WSR2 landed), §1 by D87 (WSR1 landed), D100 (WSR4 landed) and D102 (WSR5b landed), §2 by D88 (WSR3 landed) and D102 (WSR5a landed) |
 | `2026-09-28-managed-edge-evidence.md` | evidence | D84: a real browser started by Daoris, its tabs, its sign-ins, and the account a fresh Edge profile brings |
 | `2026-09-28-chromium-embedding-evidence.md` | evidence | D85, CHR1: an embedded Chromium's debug port, an agent's tab, a sign-in across a restart, the round trip, size, codecs and licences |
+| `2026-10-01-entry-point-evidence.md` | evidence | D117, LAYOUT2: what Claude Code (both doors), codex, codex-acp and dsh read, from their shipped code, keylessly. The Claude Code ACP adapter loads project instructions; codex cuts its project docs at 32,768 bytes; dsh lists a mirrored skill once. §6 is the canary turn, the owner's to run |
 
 ## Records
 
@@ -81,7 +82,7 @@ what was measured, and it stays a record of that moment. A *record* is append-on
 | `2026-09-26-ux5-screen-audit.md` | UX5's ledger: every surface and state looked at, and what each finding became |
 | `2026-09-28-sess1-session-view.md` | SESS1's ledger: the session view against the first real workspace's sessions, and what each finding became |
 | `2026-09-29-sess2-session-head.md` | SESS2's ledger: the session's top section against the real heads, and what each finding became |
+| `2026-10-01-naming-audit.md` | NAME1a's audit: every label key, its kind, the names in both languages before and after, with why; NAME1b applied every row (2026-10-01) |
 | `2026-10-01-frame-audit.md` | FRAME1a's audit: every view's layout affordances read from the code, with the file and line that decides each, and what each finding became |
-| `2026-10-01-naming-audit.md` | NAME1a's audit: every label key, its kind, today's names in both languages and the proposed ones, with why; the renames are NAME1b's |
 | `adoption/` | A local mechanics draft prepared for an adoption that has not run |
 | `code-map.json` | Generated by the devkit's `map`, and gated by `map --check`; never edited by hand |

@@ -1,5 +1,5 @@
 {
-  "browser.door.open": "open Daoris's browser",
+  "browser.door.open": "Open Daoris's browser",
   "browser.driving.one": "driven by {{name}}",
   "browser.driving.several": "driven by {{count}} sessions",
   "browser.driving.oneLabel": "Daoris's browser is driven by {{name}} — open the session",

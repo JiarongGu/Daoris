@@ -12,7 +12,8 @@ export const OPEN_STATES: ReadonlySet<RuleProposal['state']> = new Set(['propose
 export function proposalChange(proposal: RuleProposal): string {
   const where = proposal.scope === 'machine'
     ? i18n.t('settings.rules.proposals.everywhere')
-    : i18n.t(proposal.scope === 'workspace' ? 'settings.rules.scopeWorkspace' : 'settings.rules.scopeRepository', {
+    // NAME1b: a scope's section title is sentence case; inside a sentence it is a fragment of its own.
+    : i18n.t(proposal.scope === 'workspace' ? 'settings.rules.where.workspace' : 'settings.rules.where.repository', {
       name: proposal.name ?? '',
     });
   switch (proposal.action) {

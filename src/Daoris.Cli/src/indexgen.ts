@@ -1,12 +1,13 @@
 import type { CommandArgs, Harness, LockLike } from './types.ts';
 import type { ExitCode } from './errors.ts';
-import type { TierDocument } from './tierrender.ts';
+import type { TierDocument, TierInput } from './tierrender.ts';
 import { join } from 'node:path';
 import { listMarkdown, readText } from './fsx.ts';
 import { stripHeader } from './document.ts';
 import { lockIndex, readManifest } from './config.ts';
 import { renderRoster } from './tierrender.ts';
 import { DEFAULT_HARNESS, HARNESSES } from './harness.ts';
+import { roomRows } from './rooms.ts';
 
 /**
  * The on-demand tiers, as they actually are on disk.
@@ -51,8 +52,8 @@ export function readTier(
  * region never re-synced.
  */
 export function rosterFromDisk(
-  { root, target, lock, harness = HARNESSES[DEFAULT_HARNESS]! }:
-  { root: string; target: string; lock: LockLike | null; harness?: Harness },
+  { root, target, lock, harness = HARNESSES[DEFAULT_HARNESS]!, rooms = [] }:
+  { root: string; target: string; lock: LockLike | null; harness?: Harness; rooms?: readonly string[] },
 ): string {
   const knowledge = harness.tiers.knowledge;
   const skills = harness.tiers.skills;
@@ -67,7 +68,24 @@ export function rosterFromDisk(
       : [],
     version: '',
     target,
+    ...rosterExtras(root, harness, target, rooms),
   });
+}
+
+/**
+ * The two things the roster says about the layout (D117 §5.3): where the skills live and what mirrors
+ * them, and each declared room with its heading. One function for `sync`'s render and `check`'s rebuild,
+ * so the two cannot disagree about a region neither changed.
+ */
+export function rosterExtras(
+  root: string, harness: Harness, target: string, rooms: readonly string[],
+): Pick<TierInput, 'mirror' | 'rooms'> {
+  const mirror = harness.mirror;
+  const dir = mirror ? harness.tiers[mirror.tier]?.dir : undefined;
+  return {
+    ...(mirror && dir ? { mirror: { source: `${target}/${dir}`, root: mirror.root } } : {}),
+    ...(rooms.length ? { rooms: roomRows(root, rooms, harness) } : {}),
+  };
 }
 
 /**

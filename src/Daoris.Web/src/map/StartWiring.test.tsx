@@ -54,7 +54,7 @@ describe('what a start runs on', () => {
     const refusal = '`claude-code` is pinned to 9.9.9 on this machine, and nothing is installed at that version.';
     render(<StartWiringList starts={[start({ refusal })]} nameOf={nameOf} />);
 
-    expect(screen.getByText('held')).toBeInTheDocument();
+    expect(screen.getByText('blocked')).toBeInTheDocument();
     expect(screen.queryByText('ready')).toBeNull();
     expect(screen.getByText(refusal)).toBeInTheDocument();
   });

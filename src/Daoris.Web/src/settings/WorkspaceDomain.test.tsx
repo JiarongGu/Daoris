@@ -56,7 +56,7 @@ describe("the workspace domain: the machine's wiring", () => {
     show(<SettingsView notify={() => {}} section="workspace" />);
 
     await userEvent.click(await screen.findByRole('button', { name: 'Wire a workspace' }));
-    expect(screen.getByLabelText('deployment')).toBeTruthy();
+    expect(screen.getByLabelText('Deployment')).toBeTruthy();
   });
 
   it('wiring a workspace edits the map and clears the key out of the form', async () => {
@@ -64,19 +64,19 @@ describe("the workspace domain: the machine's wiring", () => {
     await screen.findByText('aurora');
 
     await userEvent.click(screen.getByRole('button', { name: 'Wire a workspace' }));
-    await userEvent.type(screen.getByLabelText('workspace'), 'tools');
-    await userEvent.type(screen.getByLabelText('deployment'), 'https://tools.example.com');
-    await userEvent.type(screen.getByLabelText('key'), 'dk_toolskey0000');
-    await userEvent.click(screen.getByRole('button', { name: 'wire it' }));
+    await userEvent.type(screen.getByLabelText('Workspace'), 'tools');
+    await userEvent.type(screen.getByLabelText('Deployment'), 'https://tools.example.com');
+    await userEvent.type(screen.getByLabelText('Key'), 'dk_toolskey0000');
+    await userEvent.click(screen.getByRole('button', { name: 'Wire' }));
 
     expect(invoke).toHaveBeenCalledWith('DAORIS.REMOTES', 'SET', {
       payload: { workspace: 'tools', url: 'https://tools.example.com', key: 'dk_toolskey0000' },
     });
     // The form closes on success, and the key does not linger in it once it has landed in the file:
     // opened again, it is empty.
-    expect(screen.queryByLabelText('key')).toBeNull();
+    expect(screen.queryByLabelText('Key')).toBeNull();
     await userEvent.click(screen.getByRole('button', { name: 'Wire a workspace' }));
-    expect((screen.getByLabelText('key') as HTMLInputElement).value).toBe('');
+    expect((screen.getByLabelText('Key') as HTMLInputElement).value).toBe('');
   });
 
   /** A key goes in and never comes out: what is rendered is the prefix the module chose to answer. */
@@ -93,7 +93,7 @@ describe("the workspace domain: the machine's wiring", () => {
     show(<SettingsView notify={notify} section="workspace" />);
     await screen.findByText('aurora');
 
-    await userEvent.click(screen.getByRole('button', { name: 'unwire' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Unwire' }));
 
     expect(invoke).toHaveBeenCalledWith('DAORIS.REMOTES', 'REMOVE', { payload: { workspace: 'aurora' } });
     expect(notify).toHaveBeenCalledWith(expect.stringContaining('Nothing at the deployment changed'));
@@ -125,7 +125,7 @@ describe("the workspace domain: the machine's wiring", () => {
     const button = await screen.findByRole('button', { name: 'Look for updates' });
     expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'TREES_SYNC_PLAN', expect.anything());
     await userEvent.click(button);
-    await userEvent.click(await screen.findByRole('button', { name: 'Bring up to date: 2 changes' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Bring up to date (2)' }));
 
     // Each waits as long as the host may work (WSR7): a look a workspace's worth of fetches, the press two replays.
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'TREES_SYNC_PLAN', { timeoutMs: 18 * 60_000 });
@@ -156,7 +156,7 @@ describe("the workspace domain: the machine's wiring", () => {
     await screen.findByText(/A look fetches the 5 repositories/);
     await userEvent.click(screen.getByRole('button', { name: 'Look for updates' }));
 
-    const section = within(screen.getByRole('region', { name: 'Bring up to date' }));
+    const section = within(screen.getByRole('region', { name: 'Updates' }));
     expect((await section.findByRole('alert')).textContent).toMatch(/stopped waiting before the look answered/);
     // Five repositories, four at a time: two rounds of a fetch's two minutes, and two to spare.
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'TREES_SYNC_PLAN', { timeoutMs: 6 * 60_000 });
@@ -187,7 +187,7 @@ describe("the workspace domain: the machine's wiring", () => {
 
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'TREES_SYNC_PLAN', expect.objectContaining({ payload: { also: ['game'] } }));
     invoke.mockClear();
-    const section = within(screen.getByRole('region', { name: 'Bring up to date' }));
+    const section = within(screen.getByRole('region', { name: 'Updates' }));
     await userEvent.click(await section.findByRole('button', { name: 'Look again' }));
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'TREES_SYNC_PLAN', expect.objectContaining({ payload: { also: ['game'] } }));
   });

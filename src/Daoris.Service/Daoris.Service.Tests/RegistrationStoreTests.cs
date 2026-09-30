@@ -75,6 +75,82 @@ public sealed class RegistrationStoreTests : IAsyncLifetime
         Assert.Equal(expected, string.Join(',', Knowledge.Declared.Uses(declared, "game")));
     }
 
+    /// <summary>
+    /// D115 §2.2 (DEV4): a repository's lanes are kept as their words. A registration that says
+    /// nothing of them (null: the page's add, an import, an older client) keeps what the row holds —
+    /// only `connect` reads the file, and it always says, `[]` for none — and the row comes back as the
+    /// store decided, so the registry in memory never disagrees with the one on disk.
+    /// </summary>
+    [Fact]
+    public async Task Lanes_round_trip_are_kept_when_unstated_and_cleared_by_an_empty_list()
+    {
+        DeclaredLane[] lanes = [new("core", "Core", "The runtime."), new("records", "Records", "The backlog.", Steward: true)];
+
+        var first = await _store.UpsertAsync(Declared() with { Lanes = lanes }, Now);
+        Assert.Equal(lanes, first.DeclaredLanes);
+        Assert.Equal(lanes, Assert.Single(await _store.AllAsync()).DeclaredLanes);
+
+        var silent = await _store.UpsertAsync(Declared() with { Summary = "Said again." }, Now.AddDays(1));
+        Assert.Equal(lanes, silent.DeclaredLanes);
+        Assert.Equal(lanes, Assert.Single(await _store.AllAsync()).DeclaredLanes);
+
+        var none = await _store.UpsertAsync(Declared() with { Lanes = [] }, Now.AddDays(2));
+        Assert.Empty(none.DeclaredLanes);
+        Assert.Empty(Assert.Single(await _store.AllAsync()).DeclaredLanes);
+    }
+
+    /// <summary>
+    /// A shared deployment orders declarations by their digest (SYNC5b): one with no lanes hashes as it
+    /// did before the field existed, so every row a deployment holds keeps its digest, and lanes are
+    /// part of what a declaration says.
+    /// </summary>
+    [Fact]
+    public void A_declaration_with_no_lanes_keeps_its_digest_and_lanes_change_it()
+    {
+        Assert.Equal(FeedDigest.Of(Declared()), FeedDigest.Of(Declared() with { Lanes = [] }));
+        Assert.NotEqual(FeedDigest.Of(Declared()), FeedDigest.Of(Declared() with { Lanes = [new("core", "Core", "")] }));
+    }
+
+    /// <summary>A row nobody ever said lanes for reads as none.</summary>
+    [Fact]
+    public async Task A_registration_that_never_named_lanes_has_none()
+    {
+        await _store.UpsertAsync(Declared(), Now);
+        Assert.Empty(Assert.Single(await _store.AllAsync()).DeclaredLanes);
+    }
+
+    /// <summary>
+    /// The rule a lane's words are kept by (D115 §2.2), as a table the CLI's `laneWords` keeps row for
+    /// row (twins, `lanes.test.ts`): absent and empty are none; trimmed; an id that is not lower-case
+    /// letters, digits and dashes starting with a letter names no lane and is dropped; a repeated id is
+    /// dropped, the first kept; only the first lane marked steward keeps the mark; a missing title or
+    /// summary is empty. Paths and gates never reach this side at all.
+    /// </summary>
+    [Theory]
+    [MemberData(nameof(LaneWords))]
+    public void Lanes_read_by_one_rule(string row, DeclaredLane?[]? lanes, string expected)
+    {
+        var said = string.Join(';', Knowledge.Declared.Lanes(lanes)
+            .Select(lane => $"{lane.Id}|{lane.Title}|{lane.Summary}|{(lane.Steward ? "steward" : "")}"));
+        Assert.True(expected == said, $"{row}: expected `{expected}`, got `{said}`");
+    }
+
+    public static TheoryData<string, DeclaredLane?[]?, string> LaneWords() => new()
+    {
+        { "absent", null, "" },
+        { "empty", [], "" },
+        { "one lane", [new("core", "Core", "The runtime.")], "core|Core|The runtime.|" },
+        { "trimmed", [new(" core ", " Core ", " The runtime. ")], "core|Core|The runtime.|" },
+        { "upper case names no lane", [new("Core", "Core", "")], "" },
+        { "a digit first names no lane", [new("1st", "", "")], "" },
+        { "an underscore names no lane", [new("a_b", "", "")], "" },
+        { "a blank id names no lane", [new("", "", "")], "" },
+        { "a missing entry names no lane", [null], "" },
+        { "a repeat keeps the first", [new("core", "First", ""), new("core", "Again", "")], "core|First||" },
+        { "one steward", [new("records", "", "", Steward: true), new("core", "", "", Steward: true)], "records|||steward;core|||" },
+        { "words only", [new("core", "Core", "S"), new("docs-2", "Docs", "")], "core|Core|S|;docs-2|Docs||" },
+    };
+
     /// <summary>Re-registering is an update, not a duplicate: the repository is the identity.</summary>
     [Fact]
     public async Task Registering_again_replaces_the_declaration()

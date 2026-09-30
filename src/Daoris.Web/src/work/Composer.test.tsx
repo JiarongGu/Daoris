@@ -11,7 +11,7 @@ const show = (props: Partial<Parameters<typeof Composer>[0]> = {}) => render(
   </Tooltip.Provider>,
 );
 
-const box = () => screen.getByLabelText('message');
+const box = () => screen.getByLabelText('Message');
 
 describe('the composer', () => {
   it('sends what was typed and clears the box', async () => {
@@ -19,7 +19,7 @@ describe('the composer', () => {
     show({ onSend: send });
 
     await userEvent.type(box(), 'cap hydration per frame');
-    await userEvent.click(screen.getByRole('button', { name: 'send' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Send' }));
 
     // Once: the button is the form's submit, and a click that also called `say` sent every message
     // twice — seen as two "you" blocks once the record kept what was sent (CONV3).
@@ -43,7 +43,7 @@ describe('the composer', () => {
     const send = vi.fn();
     const { rerender } = show({ onSend: send });
 
-    await userEvent.click(screen.getByRole('button', { name: 'send' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Send' }));
     expect(send).not.toHaveBeenCalled();
 
     await userEvent.type(box(), 'something');
@@ -52,7 +52,7 @@ describe('the composer', () => {
         <Composer live sending onSend={send} onFinish={() => {}} onStop={() => {}} />
       </Tooltip.Provider>,
     );
-    expect(screen.getByRole('button', { name: 'send' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Send' })).toBeDisabled();
   });
 
   /**
@@ -65,8 +65,8 @@ describe('the composer', () => {
     const stop = vi.fn();
     const { rerender } = show({ onFinish: finish, onStop: stop });
 
-    await userEvent.click(screen.getByRole('button', { name: 'finish' }));
-    await userEvent.click(screen.getByRole('button', { name: 'stop' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Finish' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Stop' }));
     expect(finish).toHaveBeenCalledOnce();
     expect(stop).toHaveBeenCalledOnce();
 
@@ -75,8 +75,8 @@ describe('the composer', () => {
         <Composer live={false} onSend={() => {}} onFinish={finish} onStop={stop} />
       </Tooltip.Provider>,
     );
-    expect(screen.queryByRole('button', { name: 'finish' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'stop' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Finish' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Stop' })).not.toBeInTheDocument();
   });
 
   it('keeps a draft the session ended underneath, and says nothing is listening', async () => {
@@ -95,7 +95,7 @@ describe('the composer', () => {
     // copy out. And no send, which could only ever be a dead press (UX5 U9).
     expect(box()).toHaveAttribute('readonly');
     expect(box()).not.toBeDisabled();
-    expect(screen.queryByRole('button', { name: 'send' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Send' })).toBeNull();
   });
 
   /**
@@ -106,8 +106,8 @@ describe('the composer', () => {
   it('offers no box to an ended session nobody was writing in, and keeps the meter', () => {
     show({ live: false, context: { door: 'structured' } });
 
-    expect(screen.queryByLabelText('message')).toBeNull();
-    expect(screen.queryByRole('button', { name: 'send' })).toBeNull();
+    expect(screen.queryByLabelText('Message')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Send' })).toBeNull();
     expect(screen.getByText('This session has ended; nothing is listening for a message.')).toBeInTheDocument();
     expect(screen.queryByText(/What you typed/)).toBeNull();
     expect(screen.getByLabelText(/^context/)).toBeInTheDocument();
@@ -122,11 +122,11 @@ describe('the composer', () => {
     const stopTurn = vi.fn();
     const { rerender } = show({ taking: true, stoppable: true, onStopTurn: stopTurn });
 
-    await userEvent.click(screen.getByRole('button', { name: 'stop turn' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Stop turn' }));
     expect(stopTurn).toHaveBeenCalledOnce();
     // Beside the endings, never instead of them.
-    expect(screen.getByRole('button', { name: 'finish' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'stop' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Finish' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Stop' })).toBeInTheDocument();
 
     const again = (props: Partial<Parameters<typeof Composer>[0]>) => rerender(
       <Tooltip.Provider>
@@ -134,11 +134,11 @@ describe('the composer', () => {
       </Tooltip.Provider>,
     );
     again({ taking: true, stoppable: true, stopping: true });
-    expect(screen.getByRole('button', { name: 'stop turn' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Stop turn' })).toBeDisabled();
     again({ taking: true, stoppable: false });
-    expect(screen.queryByRole('button', { name: 'stop turn' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Stop turn' })).not.toBeInTheDocument();
     again({ taking: false, stoppable: true });
-    expect(screen.queryByRole('button', { name: 'stop turn' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Stop turn' })).not.toBeInTheDocument();
   });
 
   /**
@@ -184,7 +184,7 @@ describe('the composer', () => {
     expect(within(items[1]!).getByText('plan.md')).toBeInTheDocument();
 
     await userEvent.type(box(), 'and push nothing');
-    await userEvent.click(screen.getByRole('button', { name: 'queue' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Queue' }));
     expect(send).toHaveBeenCalledWith('and push nothing', []);
   });
 
@@ -199,14 +199,14 @@ describe('the composer', () => {
     const log = new File(['exit 3'], 'run.log', { type: 'text/plain' });
     const shot = new File(['png'], 'shot.png', { type: 'image/png' });
 
-    await userEvent.upload(screen.getByLabelText('choose files…'), [log, shot]);
+    await userEvent.upload(screen.getByLabelText('Choose files…'), [log, shot]);
     const attached = screen.getByRole('list', { name: 'attached' });
     expect(within(attached).getAllByRole('listitem').map((item) => item.textContent)).toEqual(
       [expect.stringContaining('run.log'), expect.stringContaining('shot.png')]);
 
-    await userEvent.click(screen.getByRole('button', { name: 'remove shot.png' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Remove shot.png' }));
     await userEvent.type(box(), 'what does this say?');
-    await userEvent.click(screen.getByRole('button', { name: 'send' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Send' }));
 
     expect(send).toHaveBeenCalledWith('what does this say?', [log]);
     expect(screen.queryByRole('list', { name: 'attached' })).not.toBeInTheDocument();
@@ -217,9 +217,9 @@ describe('the composer', () => {
     show({ onSend: send });
     const shot = new File(['png'], 'shot.png', { type: 'image/png' });
 
-    expect(screen.getByRole('button', { name: 'send' })).toBeDisabled();
-    await userEvent.upload(screen.getByLabelText('choose files…'), shot);
-    await userEvent.click(screen.getByRole('button', { name: 'send' }));
+    expect(screen.getByRole('button', { name: 'Send' })).toBeDisabled();
+    await userEvent.upload(screen.getByLabelText('Choose files…'), shot);
+    await userEvent.click(screen.getByRole('button', { name: 'Send' }));
 
     expect(send).toHaveBeenCalledWith('', [shot]);
   });
@@ -228,7 +228,7 @@ describe('the composer', () => {
     show();
     const files = Array.from({ length: 11 }, (_, i) => new File([`${i}`], `f${i}.txt`));
 
-    await userEvent.upload(screen.getByLabelText('choose files…'), files);
+    await userEvent.upload(screen.getByLabelText('Choose files…'), files);
 
     expect(within(screen.getByRole('list', { name: 'attached' })).getAllByRole('listitem')).toHaveLength(10);
     expect(screen.getByRole('status')).toHaveTextContent('At most 10 files travel together.');
@@ -237,7 +237,7 @@ describe('the composer', () => {
   it('shows nothing waiting when nothing is', () => {
     show({ taking: true, stoppable: true, queued: [] });
     expect(screen.queryByRole('list', { name: 'waiting for this turn to end' })).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'queue' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Queue' })).toBeInTheDocument();
   });
 
   /**
@@ -253,7 +253,7 @@ describe('the composer', () => {
     await userEvent.type(box(), '!');
     expect(draft).toHaveBeenLastCalledWith('half a thought!');
 
-    await userEvent.click(screen.getByRole('button', { name: 'send' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Send' }));
     expect(send).toHaveBeenCalledWith('half a thought', []);
     expect(draft).toHaveBeenLastCalledWith('');
   });

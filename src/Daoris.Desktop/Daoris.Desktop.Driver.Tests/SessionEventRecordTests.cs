@@ -45,7 +45,7 @@ public sealed class SessionEventRecordTests : IDisposable
         var live = new List<SessionEvent>();
         events.Evented += (_, e) => { lock (live) live.Add(e); };
 
-        await Driver(service, events).TickAsync();
+        await Driver(service, events).RunOnceAsync();
 
         // Read back by a NEW instance, the way a page opened after a restart reads it.
         var page = new SessionEvents(Path.Combine(_home, "sessions")).Page("s1");

@@ -1,5 +1,5 @@
 {
-  "usage.title": "What each account has carried",
+  "usage.title": "Usage",
   "usage.body": "Context reported by the sessions and conversations this machine ran, per account, each at its highest. A door that carries only text reports none, so a session run on one is an absence here, not a zero. No price is attached.",
   "usage.context": "{{used}} context",
   "usage.sessions": "{{count}} session",
