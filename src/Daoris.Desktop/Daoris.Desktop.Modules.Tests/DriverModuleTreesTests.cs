@@ -139,19 +139,25 @@ public sealed class DriverModuleTreesTests : DriverModuleBridge
         Assert.Contains(Refusals.DriverNotReady, await RefusalAsync(Module(), "HANDOFF", new { id = "s1a2b3c4", plugin = "example.lands" }));
     }
 
-    /// <summary>
-    /// Merge and discard read the session's record first, so before the driver is up each is the cold-start
-    /// sentence. The page lands through `LAND_SESSION_TREE` since WSR1 and no longer sends
-    /// `MERGE_SESSION_TREE`, which stays the merge alone; held here so the route is still asked (MOD5).
-    /// </summary>
-    [Theory]
-    [InlineData("MERGE_SESSION_TREE")]
-    [InlineData("DISCARD_SESSION_TREE")]
-    public async Task Merging_or_discarding_a_tree_before_the_driver_is_up_is_a_sentence(string type)
+    /// <summary>Discard reads the session's record first, so before the driver is up it is the cold-start sentence.</summary>
+    [Fact]
+    public async Task Discarding_a_tree_before_the_driver_is_up_is_a_sentence()
     {
-        var refusal = await RefusalAsync(Module(), type, new { id = "s1a2b3c4" });
+        var refusal = await RefusalAsync(Module(), "DISCARD_SESSION_TREE", new { id = "s1a2b3c4" });
 
         Assert.Contains(Refusals.DriverNotReady, refusal);
         Assert.Contains("still coming up", refusal);
+    }
+
+    /// <summary>
+    /// The merge alone is retired (LEFT2): the page lands through `LAND_SESSION_TREE` since WSR1, which merges
+    /// where the repository's rule says merge, and a door that merged whatever the rule said was a door past it
+    /// (D87). Nothing called it, and the terminal never had its twin.
+    /// </summary>
+    [Fact]
+    public async Task The_merge_alone_is_no_route()
+    {
+        Assert.DoesNotContain("MERGE_SESSION_TREE", DriverModule.Routes);
+        Assert.Contains("NO_ROUTE", await RefusalAsync(Module(), "MERGE_SESSION_TREE", new { id = "s1a2b3c4" }));
     }
 }

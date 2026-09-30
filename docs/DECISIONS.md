@@ -3806,6 +3806,11 @@ request, and a plugin that fails leaves the branch. Daoris itself still never pu
 session's commits as they were made. After the line moves, the person's press may replay a session branch
 or a landed branch nobody pushed onto it, only its own commits.*
 
+*Amended by LEFT2 (2026-09-30): the merge alone, the shell's `MERGE_SESSION_TREE`, is retired. Since WSR1
+the page lands through `LAND_SESSION_TREE`, which merges only where the repository's rule says merge, and
+nothing had called the merge alone since; kept, it was a door that merged into the line whatever the rule
+said, and the terminal never had its twin (D50). The review's two acts are landing and discarding.*
+
 ## D88 — A session's branch goes once git proves its work is on a branch of the person's (2026-09-28)
 
 **Decision (WSR3, from the owner's *"after merge to master or feature branch we should cleanup daoris
