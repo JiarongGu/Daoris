@@ -21,7 +21,7 @@
   "settings.ai.intake.choice": "{{product}} — {{door}} ({{agent}})",
   "settings.ai.intake.tierOff": "Asks are answered from the workspace's declarations; what they leave is proposed to you.",
   "settings.ai.intake.tierOn": "Declarations first; an ask they leave opens a session on {{agent}} — a login each.",
-  "settings.ai.intake.runsAs": "runs as",
+  "settings.ai.intake.runsAs": "Runs as",
   "settings.ai.intake.named": "An ask the declarations leave now opens an intake session on {{agent}}.",
   "settings.ai.intake.cleared": "Asks on this machine are answered by declarations only now."
 }
