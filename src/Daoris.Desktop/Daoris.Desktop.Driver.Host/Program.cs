@@ -243,7 +243,9 @@ try
 
     if (once)
     {
-        Print(await new Driver(service, config, AdapterSet.Built(), home, processes, sync, hooks: hooks, events: events).TickAsync(closing.Token));
+        // One look, then what it started to its end (DEV3): a look no longer waits for its sessions, and a
+        // single run that let go of them would leave them working with nothing watching.
+        Print(await new Driver(service, config, AdapterSet.Built(), home, processes, sync, hooks: hooks, events: events).RunOnceAsync(closing.Token));
     }
     else if (untilIdle)
     {

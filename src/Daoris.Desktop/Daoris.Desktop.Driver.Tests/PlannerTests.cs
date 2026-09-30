@@ -314,6 +314,26 @@ public sealed class PlannerTests
     }
 
     /// <summary>
+    /// 🔴 DEV3: a session outlives the look that started it, so the next look can find its quest still open —
+    /// before the session has taken it, or when it never will. Where every session opens its own tree, nothing
+    /// else held that quest, and a second session would start on it in a second tree. The session serving a
+    /// quest holds it, named, and the rest of the repository stays free (PAR1).
+    /// </summary>
+    [Fact]
+    public void A_quest_whose_own_session_still_works_is_not_started_again()
+    {
+        var plan = Plan(
+            [Quest("q1"), Quest("q2")],
+            active: [new SessionView("s1", "Game", "working") { Quest = "q1" }],
+            config: Config(cap: 3) with { Trees = ["Game"] });
+
+        Assert.Equal(StartVerdict.RepositoryBusy, plan[0].Verdict);
+        Assert.Contains("`s1`", plan[0].Reason);
+        Assert.Contains("#q1", plan[0].Reason);
+        Assert.Equal(StartVerdict.Start, plan[1].Verdict);
+    }
+
+    /// <summary>
     /// 🔴 A resume or a carry-on goes back into its earlier session's tree, so a live session IN that
     /// tree still holds it — the tree is the lock, and one tree takes one session.
     /// </summary>

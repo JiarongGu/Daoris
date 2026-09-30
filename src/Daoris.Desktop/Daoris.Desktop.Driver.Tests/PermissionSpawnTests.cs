@@ -54,7 +54,7 @@ public sealed class PermissionSpawnTests : IDisposable
         var adapter = new RecordingPipeAdapter();
         var driver = Driver(adapter, ["node", Agent("pipe-agent.mjs", "console.log('done'); process.exit(0);")], service);
 
-        await driver.TickAsync();
+        await driver.RunOnceAsync();
 
         Assert.NotNull(adapter.Handed);
         using var handed = JsonDocument.Parse(adapter.HandedText!);
@@ -81,7 +81,7 @@ public sealed class PermissionSpawnTests : IDisposable
         var adapter = new RecordingPipeAdapter();
         var driver = Driver(adapter, ["node", Agent("pipe-agent.mjs", "console.log('done'); process.exit(0);")], service);
 
-        await driver.TickAsync();
+        await driver.RunOnceAsync();
 
         using var handed = JsonDocument.Parse(adapter.HandedText!);
         var hook = handed.RootElement.GetProperty("hooks").GetProperty("PreToolUse")[0].GetProperty("hooks")[0];
@@ -105,7 +105,7 @@ public sealed class PermissionSpawnTests : IDisposable
         var adapter = new RecordingPipeAdapter();
         var driver = Driver(adapter, ["node", Agent("pipe-agent.mjs", "console.log('done'); process.exit(0);")], service);
 
-        await driver.TickAsync();
+        await driver.RunOnceAsync();
 
         using var handed = JsonDocument.Parse(adapter.HandedText!);
         var reads = handed.RootElement.GetProperty("permissions").GetProperty("allow").EnumerateArray()
@@ -121,7 +121,7 @@ public sealed class PermissionSpawnTests : IDisposable
         var adapter = new RecordingPipeAdapter();
         var driver = Driver(adapter, ["node", Agent("pipe-agent.mjs", "console.log('done'); process.exit(0);")], service);
 
-        await driver.TickAsync();
+        await driver.RunOnceAsync();
 
         using var handed = JsonDocument.Parse(adapter.HandedText!);
         Assert.DoesNotContain(
@@ -144,7 +144,7 @@ public sealed class PermissionSpawnTests : IDisposable
         var adapter = new RecordingPipeAdapter();
         var driver = Driver(adapter, ["node", Agent("pipe-agent.mjs", "console.log('done'); process.exit(0);")], service);
 
-        await driver.TickAsync();
+        await driver.RunOnceAsync();
 
         var (allow, deny, args) = Handed(adapter);
         Assert.Contains(PermissionRules.ReadRule(game), allow);
@@ -177,7 +177,7 @@ public sealed class PermissionSpawnTests : IDisposable
             adapter, ["node", Agent("pipe-agent.mjs", "console.log('done'); process.exit(0);")], service,
             config => config.WithWriteAcross("engine", "game", allow: true).WithReadAcross("secret", false));
 
-        await driver.TickAsync();
+        await driver.RunOnceAsync();
 
         var (allow, deny, args) = Handed(adapter);
         Assert.Contains(PermissionRules.EditRule(game), allow);
@@ -213,7 +213,7 @@ public sealed class PermissionSpawnTests : IDisposable
         var adapter = new RecordingPipeAdapter();
         var driver = Driver(adapter, ["node", Agent("pipe-agent.mjs", "console.log('done'); process.exit(0);")], service);
 
-        var report = await driver.TickAsync();
+        var report = await driver.RunOnceAsync();
 
         using var handed = JsonDocument.Parse(adapter.HandedText!);
         Assert.DoesNotContain(
@@ -252,7 +252,7 @@ public sealed class PermissionSpawnTests : IDisposable
         var adapter = new RecordingAcpAdapter();
         var driver = Driver(adapter, ["node", ProtocolAgent(), heard], service);
 
-        await driver.TickAsync();
+        await driver.RunOnceAsync();
 
         Assert.True(File.Exists(heard), "the agent was never given a session/new");
         using var meta = JsonDocument.Parse(File.ReadAllText(heard));

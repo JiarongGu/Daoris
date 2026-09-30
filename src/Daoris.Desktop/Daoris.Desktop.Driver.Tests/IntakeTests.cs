@@ -451,7 +451,7 @@ public sealed class IntakeTests : IDisposable
         await using var service = StandInService.Start(Circle, Ask());
         var driver = Driver(IntakeOn(), service);
 
-        var report = await driver.TickAsync();
+        var report = await driver.RunOnceAsync();
 
         var opened = Assert.Single(service.Intakes);
         Assert.Equal("a1b2c3", opened["ask"]!.GetValue<string>());
@@ -493,7 +493,7 @@ public sealed class IntakeTests : IDisposable
         await using var service = StandInService.Start(Circle, Ask("an unsettled widget is broken somewhere"));
         var driver = Driver(IntakeOn(), service);
 
-        var first = await driver.TickAsync();
+        var first = await driver.RunOnceAsync();
 
         Assert.Empty(service.Published);
         Assert.Equal("awaiting-person", service.Session("i1")["state"]!.GetValue<string>());
@@ -502,7 +502,7 @@ public sealed class IntakeTests : IDisposable
 
         // The person answers — publishing it themselves — and the next tick ends the parked intake.
         service.Answer("a1b2c3", "q9");
-        var second = await driver.TickAsync();
+        var second = await driver.RunOnceAsync();
 
         Assert.Equal("completed", service.Session("i1")["state"]!.GetValue<string>());
         Assert.Contains(second.Concluded, ended => ended.Session == "i1" && ended.State == "completed");
@@ -523,12 +523,12 @@ public sealed class IntakeTests : IDisposable
         await using var service = StandInService.Start(Circle, newer, older, elsewhere);
         var driver = Driver(IntakeOn(), service);
 
-        await driver.TickAsync();
+        await driver.RunOnceAsync();
 
         Assert.Equal(["aaaaaa", "cccccc"], service.Intakes.Select(i => i["ask"]!.GetValue<string>()).Order());
         Assert.True(Directory.Exists(Path.Combine(_home, IntakeRoom.Folder, "other")));
 
-        await driver.TickAsync();
+        await driver.RunOnceAsync();
 
         Assert.Equal("bbbbbb", service.Intakes[^1]["ask"]!.GetValue<string>());
         Assert.Equal(3, service.Intakes.Count);
@@ -541,7 +541,7 @@ public sealed class IntakeTests : IDisposable
         await using var service = StandInService.Start(
             Circle, Ask("one ask") with { Id = "aaaaaa" }, Ask("another circle's") with { Id = "cccccc", Workspace = "other" });
 
-        await Driver(IntakeOn() with { Cap = 1 }, service).TickAsync();
+        await Driver(IntakeOn() with { Cap = 1 }, service).RunOnceAsync();
 
         Assert.Single(service.Intakes);
     }
@@ -559,7 +559,7 @@ public sealed class IntakeTests : IDisposable
         var processes = new SessionProcesses();
         var driver = Driver(IntakeOn(), service, processes);
 
-        var tick = driver.TickAsync();
+        var tick = driver.RunOnceAsync();
         await Until(() => processes.Running.Contains("i1"));
 
         var why = processes.RefusesInput("i1");
@@ -582,7 +582,7 @@ public sealed class IntakeTests : IDisposable
     {
         await using var service = StandInService.Start(Circle, Ask());
 
-        var report = await Driver(Config(), service).TickAsync();
+        var report = await Driver(Config(), service).RunOnceAsync();
 
         Assert.Empty(service.Intakes);
         Assert.False(report.Progressed);
@@ -619,7 +619,7 @@ public sealed class IntakeTests : IDisposable
             Commands = new Dictionary<string, IReadOnlyList<string>> { ["claude-code"] = ["node", claude] },
         }).WithIntake("claude-code");
 
-        var report = await Driver(config, service).TickAsync();
+        var report = await Driver(config, service).RunOnceAsync();
 
         Assert.Empty(service.Intakes);
         var hold = Assert.Single(report.Untrusted);
@@ -631,7 +631,7 @@ public sealed class IntakeTests : IDisposable
         // With the connector default on, the rules handed over at spawn let it publish untrusted
         // (measured, D73): nothing is held, and the intake opens.
         File.Delete(Path.Combine(_home, PermissionRules.FileName));
-        var open = await Driver(config, service).TickAsync();
+        var open = await Driver(config, service).RunOnceAsync();
 
         Assert.Empty(open.Untrusted);
         Assert.Single(service.Intakes);
@@ -656,7 +656,7 @@ public sealed class IntakeTests : IDisposable
             new ServiceClient(service.Url, null), config, adapters, _home,
             harnesses: new HarnessRoster(adapters, Path.Combine(_home, "harnesses.json")));
 
-        await driver.TickAsync();
+        await driver.RunOnceAsync();
 
         Assert.NotNull(recording.HandedText);
         using var handed = JsonDocument.Parse(recording.HandedText!);
@@ -685,7 +685,7 @@ public sealed class IntakeTests : IDisposable
             new ServiceClient(service.Url, null), config, adapters, _home,
             harnesses: new HarnessRoster(adapters, Path.Combine(_home, "harnesses.json")));
 
-        await driver.TickAsync();
+        await driver.RunOnceAsync();
 
         using var handed = JsonDocument.Parse(recording.HandedText!);
         var allowed = handed.RootElement.GetProperty("permissions").GetProperty("allow").EnumerateArray()
