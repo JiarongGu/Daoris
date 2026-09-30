@@ -117,7 +117,7 @@ describe('the harness roster', () => {
     expect(await screen.findAllByText('not installed')).not.toHaveLength(0);
     expect(screen.getByText(/is not on this machine's PATH/)).toBeTruthy();
 
-    await userEvent.click(screen.getByRole('button', { name: 'install' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Install' }));
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HARNESS_ACTION', {
       payload: { harness: 'codex', action: 'install' },
     });
@@ -136,7 +136,7 @@ describe('the harness roster', () => {
     const notify = vi.fn();
     show(<SettingsView notify={notify} section="agents" />);
 
-    const logins = await screen.findAllByRole('button', { name: /^Log in/ });
+    const logins = await screen.findAllByRole('button', { name: /^Sign in( again)?$/ });
     await userEvent.click(logins[1]!);
 
     expect(await screen.findByText('Signing in to work')).toBeTruthy();
@@ -173,7 +173,7 @@ describe('the harness roster', () => {
     );
     const { rerender } = render(page('agents'));
 
-    await userEvent.click((await screen.findAllByRole('button', { name: /^Log in/ }))[1]!);
+    await userEvent.click((await screen.findAllByRole('button', { name: /^Sign in( again)?$/ }))[1]!);
     expect(await screen.findByText('Signing in to work')).toBeTruthy();
 
     // Away, and back: the sign-in is still running, so its panel is still on its row.
@@ -196,11 +196,11 @@ describe('the harness roster', () => {
     show(<SettingsView notify={() => {}} section="agents" />);
 
     // The tool's own home and `personal` are both logged in; `work` is the one that is not.
-    expect(await screen.findAllByText('logged in')).toHaveLength(2);
-    expect(screen.getByText('not logged in')).toBeTruthy();
+    expect(await screen.findAllByText('signed in')).toHaveLength(2);
+    expect(screen.getByText('not signed in')).toBeTruthy();
 
     // Two profiles, two buttons — the second one is `work`, which is the logged-out one.
-    const logins = screen.getAllByRole('button', { name: /^Log in/ });
+    const logins = screen.getAllByRole('button', { name: /^Sign in( again)?$/ });
     await userEvent.click(logins[1]!);
 
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HARNESS_ACTION', {
@@ -220,10 +220,10 @@ describe('the harness roster', () => {
 
     // Two tools, two own rows; claude-code's is first, in the roster's order.
     const own = (await screen.findAllByText("this machine's own"))[0]!.closest('li')!;
-    expect(within(own).getByText('logged in')).toBeTruthy();
-    expect(within(own).queryByRole('button', { name: /^Log in/ })).toBeNull();
+    expect(within(own).getByText('signed in')).toBeTruthy();
+    expect(within(own).queryByRole('button', { name: /^Sign in( again)?$/ })).toBeNull();
     // `personal` is the machine's default, so the own home is not what sessions use — yet.
-    expect(within(own).queryByText('sessions use this')).toBeNull();
+    expect(within(own).queryByText('used by sessions')).toBeNull();
     // Choosing it again names no profile: the default is CLEARED, not pointed somewhere.
     await userEvent.click(within(own).getByRole('button', { name: 'Make default' }));
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HARNESS_ACTION', {
@@ -238,7 +238,7 @@ describe('the harness roster', () => {
     show(<SettingsView notify={() => {}} section="agents" />);
 
     const own = (await screen.findAllByText("this machine's own"))[0]!.closest('li')!;
-    expect(within(own).getByText('sessions use this')).toBeTruthy();
+    expect(within(own).getByText('used by sessions')).toBeTruthy();
     expect(screen.queryByText(/^No accounts/)).toBeNull();
   });
 
@@ -367,7 +367,7 @@ describe('the harness roster', () => {
     expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'HARNESS_ACTION', expect.anything());
     expect(within(work).getByText(/deletes the account from this machine, sign-in included/)).toBeTruthy();
 
-    await userEvent.click(within(work).getByRole('button', { name: 'Remove it' }));
+    await userEvent.click(within(work).getByRole('button', { name: 'Remove account' }));
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HARNESS_ACTION', {
       payload: { harness: 'claude-code', action: 'profile-remove', profile: 'work' },
     });
@@ -384,7 +384,7 @@ describe('the harness roster', () => {
     await userEvent.click(within(work).getByRole('button', { name: 'Remove' }));
     await userEvent.click(within(work).getByRole('button', { name: 'never mind' }));
 
-    expect(within(work).queryByRole('button', { name: 'Remove it' })).toBeNull();
+    expect(within(work).queryByRole('button', { name: 'Remove account' })).toBeNull();
     expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'HARNESS_ACTION', expect.anything());
   });
 
@@ -397,7 +397,7 @@ describe('the harness roster', () => {
 
     await screen.findByText('claude 9.9.9');
     expect(screen.queryByRole('button', { name: 'Sign in to another account' })).toBeNull();
-    expect(screen.queryByRole('button', { name: /^Log in/ })).toBeNull();
+    expect(screen.queryByRole('button', { name: /^Sign in( again)?$/ })).toBeNull();
   });
 
   /**
@@ -408,7 +408,7 @@ describe('the harness roster', () => {
     show(<SettingsView notify={() => {}} section="agents" />);
 
     await screen.findByText('claude 9.9.9');
-    expect(screen.queryByRole('button', { name: 'update' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Update' })).toBeNull();
   });
 
   it('offers update on a pinned door, and says it moves the pin to the newest release', async () => {
@@ -423,7 +423,7 @@ describe('the harness roster', () => {
       : WIRING));
     show(<SettingsView notify={() => {}} section="agents" />);
 
-    const update = await screen.findByRole('button', { name: 'update' });
+    const update = await screen.findByRole('button', { name: 'Update' });
     await userEvent.hover(update);
     expect(await screen.findByRole('tooltip')).toHaveTextContent(/newest release/);
     await userEvent.click(update);
@@ -438,12 +438,12 @@ describe('the harness roster', () => {
       : WIRING));
     show(<SettingsView notify={() => {}} section="agents" />);
 
-    await userEvent.hover(await screen.findByRole('button', { name: 'update' }));
+    await userEvent.hover(await screen.findByRole('button', { name: 'Update' }));
     expect(await screen.findByRole('tooltip')).toHaveTextContent(/own updater/);
   });
 
   /** After "Add", the next step and what it does were nowhere: the logged-out row says both. */
-  it('a logged-out account says what Log in will do', async () => {
+  it('a signed-out account says what Sign in will do', async () => {
     show(<SettingsView notify={() => {}} section="agents" />);
 
     const work = (await screen.findByText('work')).closest('li')!;
@@ -470,7 +470,7 @@ describe('the harness roster', () => {
     show(<SettingsView notify={() => {}} section="agents" />);
 
     const work = (await screen.findByText('work')).closest('li')!;
-    expect(within(work).getByText('sessions in orbit use this')).toBeTruthy();
+    expect(within(work).getByText('used in orbit')).toBeTruthy();
 
     // Opened from the keyboard: in this suite a pointer click leaves the Radix trigger closed, where
     // the App suite's does not, and Enter is a door the person has too.
@@ -492,7 +492,7 @@ describe('the harness roster', () => {
     const { container } = show(<SettingsView notify={() => {}} section="agents" />);
     await screen.findByText('claude 9.9.9');
 
-    const card = screen.getByText('Agent tools').closest('section, div')!;
+    const card = screen.getByText('Agents on this machine').closest('section, div')!;
     expect(within(card as HTMLElement).queryByLabelText(/token|password|credential|API key/i)).toBeNull();
     expect(container.textContent).toContain('the tool stores itself');
   });
@@ -523,7 +523,7 @@ describe('the harness roster', () => {
     expect(field.getAttribute('type')).toBe('password');
 
     fireEvent.change(field, { target: { value: key } });
-    await userEvent.click(screen.getByRole('button', { name: 'Save the key' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Save key' }));
 
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HARNESS_ACTION', {
       payload: { harness: 'claude-code', action: 'key-add', key },
@@ -625,10 +625,10 @@ describe('the harness roster', () => {
     show(<SettingsView notify={() => {}} section="agents" />);
 
     const row = (await screen.findByText('API key …wxyz')).closest('li')!;
-    expect(within(row).queryByRole('button', { name: /^Log in/ })).toBeNull();
+    expect(within(row).queryByRole('button', { name: /^Sign in( again)?$/ })).toBeNull();
     // 🔴 Never "logged in": the tool says so for any key, a wrong one included (measured, AGT3).
     expect(within(row).getByText('unchecked')).toBeTruthy();
-    expect(within(row).queryByText('logged in')).toBeNull();
+    expect(within(row).queryByText('signed in')).toBeNull();
     expect(within(row).getByRole('button', { name: 'Remove' })).toBeTruthy();
   });
 
@@ -659,7 +659,7 @@ describe('the harness roster', () => {
     show(<SettingsView notify={() => {}} section="agents" />);
 
     expect(await screen.findByRole('navigation', { name: 'Settings domains' })).toBeTruthy();
-    expect(screen.queryByText('Agent tools')).toBeNull();
+    expect(screen.queryByText('Agents on this machine')).toBeNull();
   });
 
   /**
@@ -671,7 +671,7 @@ describe('the harness roster', () => {
     show(<SettingsView notify={() => {}} section="agents" />);
 
     await screen.findByText('claude 9.9.9');
-    expect(screen.queryByText('What each account has carried')).toBeNull();
+    expect(screen.queryByText('Usage')).toBeNull();
   });
 
   /**
@@ -692,7 +692,7 @@ describe('the harness roster', () => {
     try {
       show(<SettingsView notify={() => {}} section="agents" anchor="usage" onAnchored={anchored} />);
 
-      await screen.findByText('What each account has carried');
+      await screen.findByText('Usage');
       await waitFor(() => expect(scrolled).toHaveBeenCalledWith('settings-usage'));
       expect(anchored).toHaveBeenCalled();
     } finally {
@@ -717,14 +717,14 @@ describe('the harness roster', () => {
 
     show(<SettingsView notify={() => {}} section="agents" />);
 
-    expect(await screen.findByText('What each account has carried')).toBeTruthy();
+    expect(await screen.findByText('Usage')).toBeTruthy();
     // The unit is named beside the figure: a bare number in a column says nothing, and "context"
     // is the honest word — calling them tokens would be a claim Daoris cannot make.
     expect(screen.getByText('60,000 context')).toBeTruthy();
     // A session on the harness's own configuration home is still somebody's usage, and each
     // account is named as the list above names it (UX5 U53): it said "its own home", and a named
     // account by its directory in the accent.
-    const usage = screen.getByText('What each account has carried').parentElement!;
+    const usage = screen.getByText('Usage').parentElement!;
     expect(within(usage).getByText("this machine's own")).toBeTruthy();
     expect(within(usage).getByText('work').getAttribute('class')).not.toContain('accent');
     // Its note keeps a reading measure once the column follows the window (UX5 U59: 142 a line).
@@ -743,7 +743,7 @@ describe('the harness roster', () => {
 
     // Said on the door itself, where the pin control is — the roster's body no longer restates it.
     expect(await screen.findAllByText(/from PATH/)).not.toHaveLength(0);
-    expect(screen.queryByText(/Daoris runs/)).toBeNull();
+    expect(screen.queryByText(/^pinned /)).toBeNull();
   });
 
   /**
@@ -756,7 +756,7 @@ describe('the harness roster', () => {
       : WIRING));
     show(<SettingsView notify={() => {}} section="agents" />);
 
-    expect(await screen.findByText('runs from PATH once it is there')).toBeTruthy();
+    expect(await screen.findByText('not on PATH yet')).toBeTruthy();
     // The installed way in still runs from PATH, and says so plainly.
     expect(screen.getByText('runs from PATH')).toBeTruthy();
   });
@@ -769,7 +769,7 @@ describe('the harness roster', () => {
     await userEvent.click((await screen.findAllByRole('button', { name: 'Pin a version' }))[0]!);
     const version = await screen.findByLabelText('version of claude-code to pin');
     await userEvent.type(version, '1.2.3');
-    await userEvent.click(screen.getAllByRole('button', { name: 'pin it' })[0]!);
+    await userEvent.click(screen.getAllByRole('button', { name: 'Pin' })[0]!);
 
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HARNESS_ACTION', {
       payload: { harness: 'claude-code', action: 'pin', profile: undefined, version: '1.2.3' },
@@ -780,7 +780,7 @@ describe('the harness roster', () => {
     show(<SettingsView notify={() => {}} section="agents" />);
 
     await userEvent.click((await screen.findAllByRole('button', { name: 'Pin a version' }))[0]!);
-    const [pin] = await screen.findAllByRole('button', { name: 'pin it' });
+    const [pin] = await screen.findAllByRole('button', { name: 'Pin' });
     expect(pin).toBeDisabled();
   });
 
@@ -815,7 +815,7 @@ describe('the harness roster', () => {
 
     expect(await screen.findByText(/pinned 9\.9\.9 — not installed/)).toBeTruthy();
     // And the way back is offered, because a refusing pin is exactly when somebody wants it.
-    expect(screen.getByRole('button', { name: 'use PATH again' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Unpin' })).toBeTruthy();
   });
 
   it('a pin that is in force names the binary sessions actually run', async () => {
@@ -832,7 +832,7 @@ describe('the harness roster', () => {
 
     show(<SettingsView notify={() => {}} section="agents" />);
 
-    expect(await screen.findByText('Daoris runs 1.2.3')).toBeTruthy();
+    expect(await screen.findByText('pinned 1.2.3')).toBeTruthy();
     expect(screen.getByText(/toolchain[\\/]claude-code[\\/]1\.2\.3/)).toBeTruthy();
   });
 

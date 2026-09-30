@@ -21,7 +21,8 @@ export function AccountSettingsSummary({ settings }: { settings: AccountSettings
   const { t } = useTranslation();
   if (settings.problem) return <span className="text-meta text-st-declined">{settings.problem}</span>;
 
-  const unset = t('harness.settings.toolDefault');
+  // NAME1b: the choice's name is sentence case; inside this line the value is a fragment of its own.
+  const unset = t('harness.settings.summary.default');
   const said = settings.model === null && settings.effort === null && settings.perModel.length === 0
     ? t('harness.settings.summary.own')
     : [
