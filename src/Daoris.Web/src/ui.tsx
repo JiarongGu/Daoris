@@ -658,13 +658,15 @@ export function Drawer({ title, meta, onClose, footer, wide = false, children }:
 
 /* ---------------------------------------------------------------- form controls */
 
-export function SelectField({ value, onChange, options, placeholder, ariaLabel, required, bar }: {
+export function SelectField({ value, onChange, options, placeholder, ariaLabel, required, disabled, bar }: {
   value: string;
   onChange: (value: string) => void;
   options: { value: string; label: string }[];
   placeholder?: string;
   ariaLabel?: string;
   required?: boolean;
+  /** Nothing can be chosen while it is set: a change already on its way (AGT6b). */
+  disabled?: boolean;
   /**
    * 🔴 The status bar's shape rather than a form's. It was already there and looked wrong: a 30px bordered control
    * parked in a 24px bar, which reads as a form that fell out of a dialog. A bar item is
@@ -674,12 +676,12 @@ export function SelectField({ value, onChange, options, placeholder, ariaLabel, 
   bar?: boolean;
 }) {
   return (
-    <RadixSelect.Root value={value || undefined} onValueChange={onChange} required={required}>
+    <RadixSelect.Root value={value || undefined} onValueChange={onChange} required={required} disabled={disabled}>
       <RadixSelect.Trigger
         aria-label={ariaLabel}
         className={bar
           ? 'flex h-full items-center gap-1.5 px-2 text-meta text-ink transition-colors duration-[var(--speed)] hover:bg-accent-soft focus-visible:bg-accent-soft focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-accent'
-          : 'inline-flex min-h-[1.9rem] items-center justify-between gap-2 rounded-control border border-line-strong bg-raised px-2.5 py-1.5 text-body text-ink data-[placeholder]:text-ink-faint'}
+          : 'inline-flex min-h-[1.9rem] items-center justify-between gap-2 rounded-control border border-line-strong bg-raised px-2.5 py-1.5 text-body text-ink data-[placeholder]:text-ink-faint data-[disabled]:opacity-60'}
       >
         {bar && <Layers size={12} aria-hidden className="shrink-0 text-ink-soft" />}
         <RadixSelect.Value placeholder={placeholder} />

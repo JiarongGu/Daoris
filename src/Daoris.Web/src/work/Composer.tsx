@@ -9,6 +9,7 @@ import { ContextRing } from './ContextRing';
 import type { ChatMessage, Usage } from './conversation';
 import { MentionList } from './MentionList';
 import { mentionAt, rankMentions, withMention } from './mentions';
+import { type SessionOption, SessionOptions } from './SessionOptions';
 
 /**
  * What the frame knows of the session's tree, for `@` (CONV4d): its files, or null while they are
@@ -61,12 +62,22 @@ export type MentionSource = { files: string[] | null; unlisted: number; refusal:
  * while a session is `awaiting-person` the band owns the endings and this form keeps `send` alone,
  * under the band's own sentence saying that answering is a message rather than one of those moves.
  * No capability is lost; every move stays reachable wherever it is legal, from exactly one place.
+ *
+ * **The conversation's model and effort sit on its row** (AGT6b, D98), where the agent offered them on
+ * the protocol door — the console's `/model`, which typed as a message cut a turn short. The options
+ * are handed in: this form sends nothing itself.
  */
 export function Composer({
   live, sending = false, refusal, endings = true, draft, onDraft,
   queued = [], queuedLabel, taking = false, opening = false, stoppable = false, stopping = false, mentions, onMentioning, context, placeholder,
-  attachments = true, sendLabel, stopTurnLabel, stopTurnTip, onSend, onFinish, onStop, onStopTurn,
+  attachments = true, sendLabel, stopTurnLabel, stopTurnTip, offered, optionsBusy = false, onOption, onSend, onFinish, onStop, onStopTurn,
 }: {
+  /** The conversation's model and effort as its agent offered them (AGT6b). Absent or empty, none is offered. */
+  offered?: SessionOption[];
+  /** A change to one is on its way to the agent. */
+  optionsBusy?: boolean;
+  /** The person chose a value for one of them. */
+  onOption?: (option: string, value: string) => void;
   /**
    * What stopping the turn says, where it does something else (SESS3): on a driven session it stops the
    * turn so what waits goes now, rather than handing it back.
@@ -370,8 +381,14 @@ export function Composer({
             </Tip>
           </>
         )}
-        {/* How full the context is (CONV5), at the row's far end, where the reference keeps it. */}
-        {context && <span className="ml-auto"><ContextRing usage={context.usage} door={context.door} /></span>}
+        {/* The conversation's model and effort (AGT6b), and how full its context is (CONV5), at the
+            row's far end, where the reference keeps them. */}
+        {(context || (live && offered && offered.length > 0 && onOption)) && (
+          <span className="ml-auto flex flex-wrap items-center gap-2">
+            {live && offered && onOption && <SessionOptions options={offered} busy={optionsBusy} onChange={onOption} />}
+            {context && <ContextRing usage={context.usage} door={context.door} />}
+          </span>
+        )}
       </div>
     </form>
   );

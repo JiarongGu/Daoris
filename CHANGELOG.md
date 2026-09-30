@@ -587,6 +587,11 @@ The first version: doctrine that installs, is checked, and flows back.
   <v> [--for <model>]]` is the same from a terminal, and prints the values given none. Only those keys
   move; every other key the tool keeps there stays. The tool's own configuration home is never touched,
   and a tool whose settings Daoris does not know (Codex, dsh) is offered nothing, and says so.
+- **One conversation's model and effort, beside its composer** (AGT6b, D98). A conversation on the
+  protocol door offers the model and the effort its agent offered when the session opened, in the
+  agent's own words, and changing one changes it for that conversation, as the tool's own `/model`
+  would. The record notes that the person made the change. The session's mode is never offered, and
+  the driver refuses it. A door that offers none shows nothing.
 - **The desktop finds an agent npm installed globally** (USE1f). On Windows such an agent is a `.cmd`
   on PATH, which `daoris agent list` found and the desktop reported as not installed, holding every
   start on it. The desktop now asks PATH for what Windows can start, as the terminal does, and a

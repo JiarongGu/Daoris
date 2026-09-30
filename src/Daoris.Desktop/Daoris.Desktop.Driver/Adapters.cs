@@ -859,8 +859,8 @@ public sealed class ClaudeAcpAdapter : ISessionAdapter
 ///
 /// <para>🔴 <b>Its wire carries no posture.</b> Observed at 0.1.6-alpha.2: <c>session/new</c> answers
 /// with <c>sessionId</c> and <c>configOptions</c> and no <c>modes</c> key — and the one config option
-/// is the model catalogue, which D24 forbids Daoris to touch. So this door offers exactly one knob
-/// and it is the one that must not be turned. The posture is set in the environment instead, below.</para>
+/// is the model catalogue, which Daoris never turns itself (D24; since D98 a person may, for one
+/// conversation). So the wire carries no posture to set. It is set in the environment instead, below.</para>
 ///
 /// <para><b>No login question</b> (SES3): dsh has no account to be logged out of, and only a definite
 /// *out* refuses — so `unknown` is permissive and a session starts.</para>

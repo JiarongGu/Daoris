@@ -4044,7 +4044,11 @@ mechanism:
   the four efforts its settings keep.
 - **One conversation's model and effort** use the protocol door. The agent offers config options on
   `session/new`; the ones in the `model` and `thought_level` categories are offered beside that
-  conversation's composer and changed with `session/set_config_option`.
+  conversation's composer and changed with `session/set_config_option`. The driver keeps each
+  session's options as the agent last said them: on `session/new`, in its answer to a change, and in
+  its own `config_option_update`. The page asks with `SESSION_OPTIONS`, follows
+  `SESSION_OPTIONS_CHANGED`, and changes one with `SET_SESSION_OPTION`. Each change is a note in the
+  conversation's record, saying the person made it.
 
 **How D24 and `model-decoupling` still hold.** Daoris names no model and chooses none. Every alias,
 effort and option is the tool's own word, read from its artefacts or its wire, and a person picks

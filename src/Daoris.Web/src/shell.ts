@@ -7,6 +7,7 @@ import type { AccountSettings, AccountSettingsChange, ToolDoor } from './tools';
 // The shape lives beside the components that render it, so a molecule can name it without
 // importing this module (SURF6).
 import type { SessionDiff } from './work/diff';
+import type { SessionOption } from './work/SessionOptions';
 import type { HelpProposal } from './help/ProposalCard';
 import { type ChatMessage, type EventPage, mergeEvents, type SessionEvent } from './work/conversation';
 import { toUpload } from './attachments';
@@ -964,6 +965,63 @@ export function useChatTurns(ids: readonly string[]): Record<string, SessionTurn
 
   return turns;
 }
+
+/** A conversation's options as the driver told them, read defensively: anything that is not one is left out. */
+const optionsOf = (answer: unknown): SessionOption[] => {
+  const list = (answer as { options?: unknown } | null | undefined)?.options;
+  return (Array.isArray(list) ? list : []).flatMap((item) => {
+    const option = item as Partial<SessionOption> | null;
+    if (typeof option?.id !== 'string' || typeof option.name !== 'string' || typeof option.current !== 'string') return [];
+    return [{
+      id: option.id,
+      name: option.name,
+      category: typeof option.category === 'string' ? option.category : null,
+      current: option.current,
+      choices: (Array.isArray(option.choices) ? option.choices : []).flatMap((choice) =>
+        (typeof choice?.value === 'string' && typeof choice.name === 'string'
+          ? [{ value: choice.value, name: choice.name, description: choice.description ?? null }]
+          : [])),
+    }];
+  });
+};
+
+/**
+ * One conversation's model and effort, as its agent offered them on the protocol door (AGT6b, D98): asked
+ * of the driver once, then followed as `SESSION_OPTIONS_CHANGED` — after a change, and when the agent
+ * changed them itself. None offered, or a conversation the driver does not hold, is an empty list.
+ * Desktop-only: it is a live process on this machine.
+ */
+export function useSessionOptions(session: string | null): SessionOption[] {
+  const { isAvailable } = useShenora();
+  const client = useQueryClient();
+  const query = useQuery({
+    queryKey: keys.sessionOptions(session ?? ''),
+    queryFn: async () => optionsOf(await call<unknown>('SESSION_OPTIONS', { id: session })),
+    enabled: isAvailable && session !== null,
+  });
+
+  useShenoraEvent('DAORIS', 'SESSION_OPTIONS_CHANGED', (payload) => {
+    const told = payload as { session?: unknown } | undefined;
+    if (typeof told?.session !== 'string') return;
+    client.setQueryData(keys.sessionOptions(told.session), optionsOf(told));
+  });
+
+  return session !== null ? query.data ?? [] : [];
+}
+
+/**
+ * Change one of a conversation's options (AGT6b, D98): `session/set_config_option` on its session, through
+ * the driver, which refuses the mode and anything the agent never offered. The answer is the options after
+ * the change, which is what the composer shows from then on.
+ */
+export const useSetSessionOption = () => {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: async (change: { id: string; option: string; value: string }) =>
+      optionsOf(await call<unknown>('SET_SESSION_OPTION', change)),
+    onSuccess: (options, change) => client.setQueryData(keys.sessionOptions(change.id), options),
+  });
+};
 
 /** What stopping a turn did (CONV4a): whether a turn was asked to stop, and what came back unsent. */
 export type TurnStop = { cancelled: boolean; withdrawn: ChatMessage[] };

@@ -280,6 +280,10 @@ public sealed class DriverLoop(
                 // says. Machine-local, like everything this event carries.
                 LastTurn = queue.LastTurnEnded,
             });
+        // A conversation's model and effort each time they change (AGT6b, D98), in the shape `SESSION_OPTIONS`
+        // answers with, so a page that asked once follows them. Machine-local, like the queue.
+        chat.OptionsChanged += (session, options) =>
+            _ = eventBus.EmitAsync("DAORIS", "SESSION_OPTIONS_CHANGED", DriverModule.OptionsAnswer(session, options));
         // What a person told a driven session, waiting for its turn to end (SESS3), told the same way —
         // and `Listening` false once it stops taking any, so the page takes its box away.
         Processes.HeldChanged += (session, queue) =>

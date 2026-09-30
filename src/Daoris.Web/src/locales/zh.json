@@ -1089,6 +1089,8 @@
   "work.detached.gone.headline": "没有这个会话的记录",
   "work.detached.gone.body": "它不在当前工作区的账本里——可能属于另一个工作区，也可能这个窗口比它活得久。",
   "work.composer.label": "消息",
+  "work.options.group": "本次对话的模型与推理强度，按其智能体提供的选项",
+  "work.options.label": "本次对话的 {{name}}",
   "work.composer.placeholder": "你想让这个仓库的智能体做什么？回车发送，Shift+回车换行，@ 引用文件。",
   "work.composer.send": "发送",
   "work.composer.finish": "结束",

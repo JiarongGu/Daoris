@@ -1089,6 +1089,8 @@
   "work.detached.gone.headline": "No record of that session",
   "work.detached.gone.body": "It is not in this workspace's ledger — it may have been in another workspace, or this window outlived it.",
   "work.composer.label": "message",
+  "work.options.group": "this conversation's model and effort, as its agent offers them",
+  "work.options.label": "this conversation's {{name}}",
   "work.composer.placeholder": "what are you asking of this repository's agent? Enter sends, Shift+Enter makes a newline, @ names a file.",
   "work.composer.send": "send",
   "work.composer.finish": "finish",
