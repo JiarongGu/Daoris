@@ -151,8 +151,9 @@ export function SyncSection({ plan, busy, onLook, onSync }: {
 
       {plan && acting.length === 0 && <Prose className="mt-2">{t('settings.sync.nothing')}</Prose>}
 
+      {/* A group, not a region, per repository: the session branches below draw a region of the same name. */}
       {plan && repositories.map((repository) => (
-        <section key={repository} aria-label={repository} className="mt-2">
+        <div key={repository} role="group" aria-label={repository} className="mt-2">
           <div className="text-small font-medium text-ink-soft">{repository}</div>
           <ul className="m-0 mt-1 list-none p-0">
             {plan.lines.filter((pull) => pull.repository === repository).map((pull) => (
@@ -183,7 +184,7 @@ export function SyncSection({ plan, busy, onLook, onSync }: {
               </Row>
             ))}
           </ul>
-        </section>
+        </div>
       ))}
 
       <div className="mt-3 flex flex-wrap items-center gap-2">

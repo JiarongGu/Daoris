@@ -63,10 +63,10 @@ describe('bringing repositories up to date', () => {
     draw();
 
     const row = (name: string) => screen.getByRole('listitem', { name });
-    const engine = within(screen.getByRole('region', { name: 'engine' }));
+    const engine = within(screen.getByRole('group', { name: 'engine' }));
     expect(within(engine.getByRole('listitem', { name: 'main' })).getByText('moves')).toBeInTheDocument();
     expect(within(engine.getByRole('listitem', { name: 'main' })).getByText(/Fast-forwards 1 commit to/)).toBeInTheDocument();
-    expect(within(screen.getByRole('region', { name: 'game' })).getByText(/uncommitted work, so it stays/)).toBeInTheDocument();
+    expect(within(screen.getByRole('group', { name: 'game' })).getByText(/uncommitted work, so it stays/)).toBeInTheDocument();
     expect(within(row('daoris/s-step')).getByText(/Replays 1 commit of its own onto/)).toBeInTheDocument();
     expect(within(row('daoris/s-step')).getByText('daoris/s-parent', { selector: 'code' })).toBeInTheDocument();
     expect(within(row('feature/q2-second')).getByText("a landing's")).toBeInTheDocument();
