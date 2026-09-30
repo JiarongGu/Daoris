@@ -63,7 +63,9 @@ if form 3 is kept.
 
 ## 2. Session branches cleaned up after they land (WSR3)
 
-> **Decided and built: D88** (2026-09-28). What follows is the study as written.
+> **Decided and built: D88** (2026-09-28). **WSR5a built: D102** (2026-09-30): a branch a landing made
+> is recorded, and the same press removes it once its work reads on the line by content, which a squash
+> merge's pull request leaves git calling unmerged. What follows is the study as written.
 
 **Today.** Removing a session tree deletes its branch, with `-d` when git proves the work is on the
 canonical line and `-D` only when the person forces it. A merge leaves the tree and branch in place,

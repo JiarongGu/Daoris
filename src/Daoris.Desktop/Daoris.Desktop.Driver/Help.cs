@@ -260,7 +260,8 @@ public static class HelpRoom
         text.Append("(its branches, its uncommitted work, what is ready to push) is a repository's own work, so route it\n");
         text.Append("there. Propose an ask for it with `ask_propose`, so that repository's agent does it with its own\n");
         text.Append("tools, or tell the person to open a conversation in that repository (Sessions → Start a session).\n");
-        text.Append("Where Daoris itself has a door for what they want, name it first: session branches whose work landed\n");
+        text.Append("Where Daoris itself has a door for what they want, name it first: session branches whose work landed,\n");
+        text.Append("and branches a landing made whose pull request's work reached the line (a squash merge included),\n");
         text.Append("are cleaned up under Settings → Workspace → Session branches. When the family's knowledge and quests\n");
         text.Append("are all you can see, say what you could not see: never build a repository's state from its quests and\n");
         text.Append("present it as the tree.\n\n");
@@ -439,7 +440,8 @@ public static class HelpRoom
         ("set how accepted work lands", "Settings → Workspace → How work lands",
             "`daoris driver landing <repository> merge|branch <pattern>|--clear` (`--workspace <name>`, `--tidy`, "
             + "and on a branch `--plugin <id>`: an installed plugin that pushes it and opens the pull request)"),
-        ("clean up session branches whose work landed", "Settings → Workspace → Session branches", "`daoris-driver trees clean`"),
+        ("clean up session branches whose work landed, and branches a landing made whose work reached the line",
+            "Settings → Workspace → Session branches", "`daoris-driver trees clean`"),
         ("choose the agent that answers asks", "Settings → Daoris's own AI", "`daoris driver intake <agent>|off`"),
         ("choose the agent Ask Daoris runs on", "Settings → Daoris's own AI", "`daoris driver helper <agent>|off`"),
         ("park a quest after failed sessions", "Settings → Driver", "`daoris driver strikes <n>`"),

@@ -3815,6 +3815,11 @@ work unlanded forever, and a person forcing removals by hand is the risk the pro
   branch landed on a feature branch would stay, and one merged into whatever the checkout happens to
   be on would go.
 
+*Amended by D102 (WSR5a, 2026-09-30): the clean-up also lists the branches landings made and recorded,
+in a group of their own, and the same press removes those whose work reads on the line by content, or
+that are inside another that does. The session branches go first, since this proof may count a landed
+branch as holding their commits.*
+
 ## D89 — Ask Daoris is a session that proposes, on an agent of its own choosing, and every change is confirmed (2026-09-29)
 
 **Decision (HELP1, the owner's calls on `docs/2026-09-29-ask-daoris-design.md` §8).** Ask Daoris is a
@@ -4325,3 +4330,63 @@ refuse one holding a double quote, a percent sign or a line break, and respell t
 this is enough for `az.cmd`'s own `%*` was reasoned from how cmd parses, not measured against a real
 `az`. Ask Daoris cannot yet propose a rule naming a plugin: its parser takes `branch <pattern>` and
 `--tidy`, and refuses the rest as a pattern.
+
+## D102 — A branch a landing made is recorded, and goes once its work reads on the line (2026-09-30)
+
+**Decision (WSR5a, amending D88).** The first real ticket's pull request was completed as a squash merge,
+and it left the two branches its landings had made. Git calls both unmerged, since no commit of theirs is
+on the line, and D88 never looked at them, since they are not `daoris/`. So:
+
+- **A landing records the branch it makes**, the moment it exists: `<home>/landings.json` holds the
+  repository, workspace, branch, the line it grew from, the commit it was made at, and the session, quest
+  and title it was made for; and, once a plugin answers that it pushed the branch, the plugin, its pull
+  request and the commit it pushed. Machine-local under the home (D63), never in the repository. An entry
+  is forgotten once its branch is gone, or no longer holds the commit the landing made it at. A file that
+  does not read is no record, and the landing still lands.
+- **Only a recorded branch is judged.** Landings before the record are left out. Recognising them by the
+  pattern would judge people's own branches, since `feature/{quest}-{slug}` is how people name them, and
+  the one trace such a landing left is the note in the conversation, a sentence, which D48 §6 refuses to
+  classify by. Those are the person's to delete once, by hand. A branch that took a recorded name since,
+  whose history does not hold the recorded commit, is the person's and is never judged.
+- **The proof, by content.** The line is the repository's line (D86) in both forms: its local branch and
+  `origin/<line>`. A branch whose every commit is on the line is merged. Otherwise every file it changed
+  since it left the line must read on the line as the branch left it, in one form of the line: the paths
+  are `git diff --no-renames --name-only` from its merge-base with that form, so a deletion is a path the
+  line must not hold and a rename is both its paths, and they are compared as blobs, by `git diff` between
+  the branch and the line. A branch whose commits change no file is not proven. **Inside another:** a
+  branch whose history is inside another recorded branch that passed is proven through it, judged over
+  the whole set before anything goes.
+- **What keeps one**, whatever its files say, each named: checked out in any working tree, the
+  repository's own checkout included; commits its remote-tracking branch (its upstream, else
+  `origin/<branch>`) does not have, pushed and then moved, unless every commit is on the line; a session
+  branch that stays and shares commits with it that the line does not hold, since D88's proof for that
+  session counts this branch as holding them; and anything git could not answer.
+- **The same list and the same press as D88.** Settings → Workspace → Session branches lists them in a
+  group of their own, *Branches landings made*, and `daoris-driver trees clean` after the session
+  branches. One press removes both. The session branches go first, since their proof may count a landed
+  branch as holding their commits; then the landed ones, those inside another before the one they are
+  inside. Each is judged again over the whole set right before it goes, and removed only while its tip is
+  still the commit it was judged at: `git branch -D` of that one branch in the repository's own checkout.
+  No working tree, no other ref, and never a remote branch.
+
+This amends **D88**: its proof is unchanged for session branches, and a second one, by content, serves the
+branches landings made.
+
+**Why.** D88's proof is ancestry: every commit on a branch of the person's. A squash merge makes one new
+commit on the line from the branch's content, so ancestry calls the branch unmerged forever and `git
+branch -d` refuses it. What reached the line is the content, so the content is what is compared. The
+first real workspace's owner, after the ticket: *"we still have so many branch need to clean up"*.
+
+**Rejected.**
+- **A branch whose remote branch is gone** (`git fetch --prune`, then `[gone]`). A platform deletes a
+  branch when a pull request completes, when it is abandoned, and when a person deletes it by hand: gone
+  says nothing about where the work went.
+- **Asking the platform whether the pull request completed.** A network call and a platform's API in
+  core, which D87 left to plugins.
+- **Patch equivalence** (`git cherry`). A squash of several commits matches none of them.
+- **Judging by the pattern.** As above: it judges the person's own branches.
+
+**What the gates do not cover.** The real case's two branches predate the record, so this build never
+judges them. Every squash in the tests is `git merge --squash` in a scratch repository, on the local
+line or on a clone of a local bare `origin`; no platform's squash was run. A branch rebased before its
+pull request no longer holds the recorded commit, so it is never judged: the safe side.

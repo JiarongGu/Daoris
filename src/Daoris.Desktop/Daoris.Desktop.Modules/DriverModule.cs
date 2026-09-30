@@ -1320,7 +1320,8 @@ public sealed class DriverModule : ModuleBase
 
     /// <summary>
     /// The clean-up's list, or its press (WSR3, D88), over every repository with a checkout here. A tree a
-    /// session still running or waiting names is kept whatever it holds.
+    /// session still running or waiting names is kept whatever it holds. Beside the session branches, the
+    /// branches landings made (WSR5): each goes where its work reached the line, by the same press.
     /// </summary>
     private async Task<object?> SweepAsync(IpcRequest request, CancellationToken cancellationToken)
     {
@@ -1341,9 +1342,17 @@ public sealed class DriverModule : ModuleBase
             item.Kind, item.Commits, item.Where, item.Detail, item.Removable,
         };
 
+        // A landed branch's row: what the proof found, and the files that keep it where some do.
+        object Landed(LandedItem item) => new
+        {
+            item.Repository, item.Workspace, item.Branch, item.Kind, item.Where, item.Files, item.Detail,
+            item.PullRequest, item.Commits, item.Removable,
+        };
+
         if (request.Type == "SWEEP_PLAN")
         {
-            return new { Branches = (await trees.SweepPlanAsync(repositories, inUse, cancellationToken)).Select(Row).ToArray() };
+            var plan = await trees.CleanPlanAsync(repositories, inUse, cancellationToken);
+            return new { Branches = plan.Sessions.Select(Row).ToArray(), Landed = plan.Landed.Select(Landed).ToArray() };
         }
 
         HashSet<string>? only = null;
@@ -1352,12 +1361,13 @@ public sealed class DriverModule : ModuleBase
             only = named.EnumerateArray().Where(e => e.ValueKind == JsonValueKind.String).Select(e => e.GetString()!).ToHashSet(StringComparer.Ordinal);
         }
 
-        var results = await trees.SweepAsync(repositories, inUse, only, cancellationToken);
+        var done = await trees.CleanAsync(repositories, inUse, only, cancellationToken);
         _loop.Nudge();
         return new
         {
-            Results = results.Select(result => new { Branch = Row(result.Item), result.Removed, result.Message }).ToArray(),
-            Removed = results.Count(result => result.Removed),
+            Results = done.Sessions.Select(result => new { Branch = Row(result.Item), result.Removed, result.Message }).ToArray(),
+            Landed = done.Landed.Select(result => new { Branch = Landed(result.Item), result.Removed, result.Message }).ToArray(),
+            Removed = done.Sessions.Count(result => result.Removed) + done.Landed.Count(result => result.Removed),
         };
     }
 

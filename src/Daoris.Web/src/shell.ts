@@ -18,7 +18,7 @@ import type { WiringAnswer } from './map/wiring';
 import type { AgentRulesState, RuleListName, RuleScopeName } from './settings/AgentRules';
 import type { LineChange, RepositoryLine } from './settings/Lines';
 import type { LandingChange, LandingRule, RepositoryLanding } from './settings/Landings';
-import type { SweepBranch } from './settings/Sweep';
+import type { LandedBranch, SweepBranch } from './settings/Sweep';
 import type { LogFilters, LogReading } from './settings/Logs';
 import type { OpenTerminal, TerminalOpening, TerminalShellChoice, Terminals } from './work/terminals';
 
@@ -377,14 +377,15 @@ export const useSetLanding = () => {
 };
 
 /**
- * Every session branch here with what it holds (WSR3, D88) — the clean-up's list. Desktop-only: it is
- * read off this machine's checkouts.
+ * Every session branch here with what it holds (WSR3, D88) — the clean-up's list — and every branch a
+ * landing made, judged against the line (WSR5). Desktop-only: it is read off this machine's checkouts.
+ * A shell older than WSR5 answers no `landed`.
  */
 export const useSweepPlan = () => {
   const { isAvailable } = useShenora();
   return useQuery({
     queryKey: keys.sweep,
-    queryFn: () => call<{ branches: SweepBranch[] }>('SWEEP_PLAN'),
+    queryFn: () => call<{ branches: SweepBranch[]; landed?: LandedBranch[] }>('SWEEP_PLAN'),
     enabled: isAvailable,
     // It asks git in every repository with a checkout here: a minute is fresh enough to read a session by.
     staleTime: 60_000,
@@ -396,7 +397,11 @@ export const useSweep = () => {
   const client = useQueryClient();
   return useMutation({
     mutationFn: (only: string[]) =>
-      call<{ results: { branch: SweepBranch; removed: boolean; message: string }[]; removed: number }>('SWEEP', { only }),
+      call<{
+        results: { branch: SweepBranch; removed: boolean; message: string }[];
+        landed?: { branch: LandedBranch; removed: boolean; message: string }[];
+        removed: number;
+      }>('SWEEP', { only }),
     onSuccess: () => {
       void client.invalidateQueries({ queryKey: keys.sweep });
       void client.invalidateQueries({ queryKey: keys.allSessions });

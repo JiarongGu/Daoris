@@ -89,29 +89,39 @@ internal static class TreesConsole
 
                 if (!args.Contains("--yes"))
                 {
-                    var plan = await trees.SweepPlanAsync(repositories, inUse).ConfigureAwait(false);
-                    if (plan.Count == 0)
+                    var plan = await trees.CleanPlanAsync(repositories, inUse).ConfigureAwait(false);
+                    if (plan.Sessions.Count == 0 && plan.Landed.Count == 0)
                     {
-                        Console.WriteLine("trees: no session branches in any repository with a checkout here.");
+                        Console.WriteLine("trees: no session branches, and no branch a landing made, in any repository with a checkout here.");
                         return 0;
                     }
 
-                    foreach (var item in plan) Console.WriteLine($"  {(item.Removable ? "goes " : "kept ")} {Describe(item)}");
-                    var going = plan.Count(item => item.Removable);
+                    foreach (var item in plan.Sessions) Console.WriteLine($"  {(item.Removable ? "goes " : "kept ")} {Describe(item)}");
+                    // The branches landings made (WSR5), in a group of their own: each goes where its work reached the line.
+                    if (plan.Landed.Count > 0) Console.WriteLine("  landed branches — each goes once its work reads on the line:");
+                    foreach (var item in plan.Landed) Console.WriteLine($"  {(item.Removable ? "goes " : "kept ")} {LandedWords.Describe(item)}");
+                    var going = plan.Sessions.Count(item => item.Removable) + plan.Landed.Count(item => item.Removable);
                     Console.WriteLine(going == 0
                         ? "trees: nothing to clean — every branch listed holds something of its own."
-                        : $"trees: {going} branch(es) would go, with their trees. `daoris-driver trees clean --yes` removes them.");
+                        : $"trees: {going} branch(es) would go, a session's with its tree. `daoris-driver trees clean --yes` removes them.");
                     return 0;
                 }
 
-                var results = await trees.SweepAsync(repositories, inUse).ConfigureAwait(false);
-                foreach (var result in results)
+                var done = await trees.CleanAsync(repositories, inUse).ConfigureAwait(false);
+                foreach (var result in done.Sessions)
                 {
                     Console.WriteLine($"  {(result.Removed ? "removed" : "kept   ")} {Describe(result.Item)}"
                         + (result.Removed || result.Message == "kept" ? "" : $" — {result.Message}"));
                 }
 
-                Console.WriteLine($"trees: removed {results.Count(result => result.Removed)} of {results.Count}.");
+                foreach (var result in done.Landed)
+                {
+                    Console.WriteLine($"  {(result.Removed ? "removed" : "kept   ")} {LandedWords.Describe(result.Item)}"
+                        + (result.Removed || result.Message == "kept" ? "" : $" — {result.Message}"));
+                }
+
+                var total = done.Sessions.Count + done.Landed.Count;
+                Console.WriteLine($"trees: removed {done.Sessions.Count(result => result.Removed) + done.Landed.Count(result => result.Removed)} of {total}.");
                 return 0;
             }
 
@@ -158,7 +168,8 @@ internal static class TreesConsole
                 Console.Error.WriteLine("  A session's worktree (D51). Removal refuses while the tree holds");
                 Console.Error.WriteLine("  uncommitted changes or work no branch of yours holds; --force means it.");
                 Console.Error.WriteLine("  clean lists every session branch with what it holds; --yes removes those");
-                Console.Error.WriteLine("  whose work is on a branch of yours, or that hold nothing (D88).");
+                Console.Error.WriteLine("  whose work is on a branch of yours, or that hold nothing (D88), and every");
+                Console.Error.WriteLine("  branch a landing made whose files read on the line as it left them (WSR5).");
                 Console.Error.WriteLine("  land accepts a session's work as the review's Accept does, by the workspace's");
                 Console.Error.WriteLine("  rule; --plan says where it would go and does nothing (D87). A rule naming a");
                 Console.Error.WriteLine("  plugin hands the branch to it to push and open the pull request (D100).");

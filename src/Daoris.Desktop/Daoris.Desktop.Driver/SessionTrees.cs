@@ -48,9 +48,12 @@ public sealed record SessionTree(string Path, string Workspace, string Repositor
 /// The plugin wire a branch rule's landing speaks (WSR4, D100) — the home's own plugins by default; the
 /// shell and the terminal hand one that says the plugin's lines where each says things.
 /// </param>
-public sealed class SessionTrees(string home, LandingPlugins? plugins = null)
+public sealed partial class SessionTrees(string home, LandingPlugins? plugins = null)
 {
     private readonly LandingPlugins _plugins = plugins ?? new LandingPlugins(home);
+
+    /// <summary>The branches this machine's landings made (WSR5) — the only ones the clean-up and the hand-off act on.</summary>
+    public LandedBranches Recorded => new(home);
 
     /// <summary>Every tree this machine's Daoris has opened lives under here, and only here.</summary>
     public string TreesRoot => Path.Combine(home, "trees");
@@ -342,6 +345,16 @@ public sealed class SessionTrees(string home, LandingPlugins? plugins = null)
             var branched = await BranchAsync(full, workspace, repository,
                 LandingRules.Expand(landing.Rule.Pattern!, NamesOf(subject, repository)), handedOn: plugin is not null, ct).ConfigureAwait(false);
             landed = branched.Landing;
+            // Recorded the moment it exists (WSR5): the branch is Daoris's to judge and to hand on only
+            // because this line wrote it down, at the commit it was made at.
+            var tip = branched.Commits.Count > 0 ? branched.Commits[^1].Sha : null;
+            if (landed.Landed && tip is not null)
+            {
+                landed = Remember(landed, () => Recorded.Record(new LandedBranch(
+                    repository, workspace, landed.Branch!, branched.Base, tip, subject.Session, subject.Quest, subject.Title,
+                    DateTimeOffset.UtcNow)));
+            }
+
             if (landed.Landed && plugin is not null)
             {
                 var said = await _plugins.LandAsync(plugin, new LandingFrame(
@@ -353,6 +366,10 @@ public sealed class SessionTrees(string home, LandingPlugins? plugins = null)
                     // The plugin's word goes before the sentence about the tree, which a tidy may take out.
                     Message = landed.Message.Replace(TreeStays, "", StringComparison.Ordinal) + " " + Said(said, landed.Branch!) + TreeStays,
                 };
+                if (said is { Pushed: true, Failed: false } && tip is not null)
+                {
+                    landed = Remember(landed, () => Recorded.Pushed(repository, landed.Branch!, said, tip));
+                }
             }
         }
 

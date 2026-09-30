@@ -822,6 +822,15 @@ The first version: doctrine that installs, is checked, and flows back.
   of a long record; your answer is kept in its record beneath the question and opens the session that
   carries on. Overview's *what needs you* rows say where each goes (*open it to answer*) and keep an
   analysis to two lines.
+- **A branch a landing made goes once its pull request's work is on the line** (WSR5, D102). A squash
+  merge puts none of the branch's commits on the line, so git calls it unmerged and the session-branch
+  clean-up never looked at it. A landing now records the branch it makes, under the Daoris home, and
+  Settings → Workspace → *Session branches* and `daoris-driver trees clean` list those branches in a
+  group of their own. The same press removes each whose changed files all read on the line (or on
+  `origin/<line>`) as it left them, and each inside another that does. One checked out anywhere, one with
+  commits its remote lacks, one a kept session branch still needs, and one whose files differ are kept,
+  with the files named. Only branches a landing made here are judged; landings from before the record,
+  and your own branches, are never touched.
 - **A plugin can push the branch and open the pull request** (WSR4, D100). A branch landing rule may
   name an installed plugin (`daoris driver landing … branch <pattern> --plugin <id>`, or the *who
   pushes it* chooser in Settings → Workspace → *How work lands*). Once accepting has made the branch,
