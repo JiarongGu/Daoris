@@ -29,7 +29,7 @@ below are cut along that line.
 | **tokens** | `tokens.css` | — | D41's computed palette; unchanged by this work |
 | **atoms** | `Button`, `Pill`, `Dot`, `MonoWell` | tokens, `cn` | a story per state · `ui.test.tsx` |
 | **molecules** | `SessionRow`, `SessionHead`, `TimelineEntry`, `Composer` | atoms, i18n, `format.ts` | props-only vitest · a story per state |
-| **organisms** | `SessionRail`, `AttendedSession`, `DiffPane` | molecules + hooks (`queries.ts`, `shell.ts`) | vitest over the mocked bridge |
+| **organisms** | `SessionRail`, `AttendedSession`, `DiffPane` | molecules + hooks (`queries.ts`, `shell.ts` and the `bridge/` domains it re-exports) | vitest over the mocked bridge |
 | **page** | `WorkView` | organisms | the existing `shell.test.tsx` shape |
 | **shell** | `App.tsx` nav, the badges | pages | Playwright (the record half) · `npm run desktop` (the real window) |
 

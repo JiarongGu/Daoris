@@ -16,6 +16,9 @@ import { describe, expect, it } from 'vitest';
 const FORBIDDEN: { what: string; pattern: RegExp }[] = [
   { what: "the query layer ('./queries')", pattern: /\bfrom\s+'(?:\.\.?\/)+queries'/ },
   { what: "the shell bridge ('./shell')", pattern: /\bfrom\s+'(?:\.\.?\/)+shell'/ },
+  // Its domains, which `./shell` only re-exports since MOD3: without this row the rule is side-stepped
+  // by importing the file the barrel names.
+  { what: "a bridge domain ('./bridge/…')", pattern: /\bfrom\s+'(?:\.\.?\/)+bridge\// },
   { what: 'react-query directly', pattern: /\bfrom\s+'@tanstack\/react-query'/ },
   // The bridge ITSELF, not just this repository's wrapper around it (SURF7). Without this row the
   // rule is trivially side-stepped by importing the library `./shell` is built on.
@@ -93,6 +96,9 @@ describe('the presentational boundary', () => {
       .toEqual(["./work/SessionRow.tsx imports the query layer ('./queries')"]);
     expect(offenders([['./work/SessionRow.tsx', "import { useDriver } from '../shell';\n"]]))
       .toHaveLength(1);
+    // The road around the barrel: the domain file it re-exports.
+    expect(offenders([['./work/SessionRow.tsx', "import { useDriver } from '../bridge/driver';\n"]]))
+      .toEqual(["./work/SessionRow.tsx imports a bridge domain ('./bridge/…')"]);
     // The road around the wrapper: the library `./shell` is itself built on.
     expect(offenders([['./work/SessionRow.tsx', "import { useShenora } from '@shenora/react';\n"]]))
       .toEqual(["./work/SessionRow.tsx imports the bridge library ('@shenora/react')"]);

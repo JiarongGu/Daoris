@@ -88,7 +88,7 @@ into the machine log (D94).
    - **A view like the others** (`placements.ts`): `terminal`, in the panel after the console, moved
      and dragged as they are, and absent where no shell handed it in (`WorkFrame`'s `terminal`, as
      `ask` is).
-   - **The terminals are held by the Work frame, not by their view** (`useTerminals` in `shell.ts`):
+   - **The terminals are held by the Work frame, not by their view** (`useTerminals` in `bridge/terminal.ts`):
      the view unmounts whenever it moves or another view of its region is shown, and a shell must
      outlive that. Output that comes while no screen listens is held, bounded, and handed to the next
      that does; each screen is kept beside the view and moved, not reopened, into wherever it is shown
