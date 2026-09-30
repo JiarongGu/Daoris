@@ -5371,6 +5371,8 @@ was run, and no fetch reached a real remote or its credentials; an SSH passphras
 the two minutes. A driver resuming a session in a tree between the list's check and the replay is not closed.
 The screen's section is held by the vitest loop over a mocked bridge, not looked at on the window. A landing
 branch rebased by hand keeps a record it no longer matches, and no door re-records it. An Ask Daoris proposal
+for this press was not built: it would reach into the service's proposal kinds and the page's cards. *(HELP10
+built it since: the `sync` kind, a card whose first press is the look; see D110.)*
 for this press was not built: it would reach into the service's proposal kinds and the page's cards.
 
 *Amended by LEFT2 (2026-10-01): the window between the list and the replay is closed. A repository's trees

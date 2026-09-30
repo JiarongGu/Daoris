@@ -21,8 +21,8 @@ lists.
 
 ## State
 
-**Counts, and this is their one home:** sixteen commands, **667 CLI tests, 697 service and 46 HTTP host, 1616 driver,
-433 desktop modules, 80 devkit, 1778 web unit, 21 Playwright**, 66/66 release rehearsal, **301/301
+**Counts, and this is their one home:** sixteen commands, **667 CLI tests, 697 service and 46 HTTP host, 1630 driver,
+436 desktop modules, 80 devkit, 1778 web unit, 21 Playwright**, 66/66 release rehearsal, **301/301
 family rehearsal** (it names its own phases when you run it), **70/70 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge
 documents, 5 skills, 7 packs. The always-loaded core is **22,672 of 26,000 bytes** — a span in
@@ -144,14 +144,6 @@ rule it also ships. A heading below holds open rows only.
 ### Keep going (owner, 2026-09-30: *"lets continue the development … you probabbly should start with subagents"*)
 
 
-- [ ] **LEFT2 — the leftovers of PREVIEW1, WSR6 and LEFT1** (building, D113), each a "left out" in a hand-back:
-  `MERGE_SESSION_TREE` is called by neither the page nor a test since WSR1 (retire it or give it a caller,
-  now that the trees branches have merged); the page reads the home's override from the host's English
-  sentence ("left as it is"), where the driver's state could carry a `homeOverrode` field, and a start whose
-  `DAORIS_HOME` was set for that start alone still reads as a terminal's folder; the family rehearsal has
-  no check for `trees sync`; opening a preview is not a machine-log event; a read's line from ACP's
-  `locations[].line` is dropped by the driver (carrying it changes the event shape on both doors); and a
-  driver resuming a session in a tree between *Bring up to date*'s list and its replay is a window not closed.
 
 **Found looking at the republished install (2026-10-01)**, each on the owner's real workspace of 29
 repositories, which no fixture has:
