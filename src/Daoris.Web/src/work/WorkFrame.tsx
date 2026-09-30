@@ -6,7 +6,8 @@ import { buildChain } from '../map/chain';
 import { useAnswerSession, useQuests, useRegistry, useSessions } from '../queries';
 import {
   stopNotice, type TurnStop, useCancelTurn, useEndChat, useHarnesses, useResolveSession, useSendMessage,
-  NO_TURNS, useChatTurns, useSessionOpenings, useSessionStreams, useStartChat, useStopSession, useStopTask, useSweepPlan, useTreeFiles,
+  NO_TURNS, useChatTurns, useSessionOpenings, useSessionOptions, useSessionStreams, useSetSessionOption, useStartChat,
+  useStopSession, useStopTask, useSweepPlan, useTreeFiles,
   logEvent, useTerminals,
 } from '../shell';
 import { TerminalView } from './TerminalView';
@@ -319,6 +320,10 @@ export function WorkFrame({
   const taking = Object.fromEntries(Object.entries(chatTurns).map(([id, held]) => [id, held.taking]));
   // When each live chat's last turn ended here (RAIL2): its *moved*, which its record never says.
   const lastTurns = Object.fromEntries(Object.entries(chatTurns).flatMap(([id, held]) => (held.lastTurn ? [[id, held.lastTurn]] : [])));
+  // The conversation's model and effort as its agent offered them (AGT6b, D98) — asked of a live
+  // conversation only, since only a live process has options to change.
+  const offered = useSessionOptions(talking && live ? attended!.id : null);
+  const setOption = useSetSessionOption();
   // The tree's files for `@` (CONV4d), asked for only while the person is writing a mention.
   const [mentioning, setMentioning] = useState(false);
   const treeFiles = useTreeFiles(talking ? attended!.id : null, mentioning);
@@ -869,6 +874,10 @@ export function WorkFrame({
               usage: reading?.session === attended.id ? reading.usage : undefined,
               door: door(roster.find((row) => row.harness === attended.adapter)?.structured),
             }}
+            offered={offered}
+            optionsBusy={setOption.isPending}
+            // The driver's refusal, or the agent's, reaches the person in its own words.
+            onOption={(option, value) => setOption.mutate({ id: attended.id, option, value }, { onError: failure(notify) })}
             onSend={onSend}
             onFinish={() => end.mutate(attended.id, {
               onSuccess: () => notify(t('work.composer.ending', { id: attended.id })),

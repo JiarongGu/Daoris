@@ -859,8 +859,8 @@ public sealed class ClaudeAcpAdapter : ISessionAdapter
 ///
 /// <para>🔴 <b>Its wire carries no posture.</b> Observed at 0.1.6-alpha.2: <c>session/new</c> answers
 /// with <c>sessionId</c> and <c>configOptions</c> and no <c>modes</c> key — and the one config option
-/// is the model catalogue, which D24 forbids Daoris to touch. So this door offers exactly one knob
-/// and it is the one that must not be turned. The posture is set in the environment instead, below.</para>
+/// is the model catalogue, which Daoris never turns itself (D24; since D98 a person may, for one
+/// conversation). So the wire carries no posture to set. It is set in the environment instead, below.</para>
 ///
 /// <para><b>No login question</b> (SES3): dsh has no account to be logged out of, and only a definite
 /// *out* refuses — so `unknown` is permissive and a session starts.</para>
@@ -1188,6 +1188,9 @@ public sealed class ClaudeCodeAdapter : ISessionAdapter
         // the session cannot then take or close its quest — nine minutes and a real login, three
         // times over, before this was measured rather than assumed.
         TrustFile: ClaudeTrust.FileName,
+        // Its user-tier settings, `model` and `effortLevel` among them (AGT6): read from its ACP adapter's
+        // own settings reader and its SDK's settings schema, never guessed. The ACP door's are this one's.
+        SettingsFile: AgentSettings.FileName,
         PinnedEnvironment: StayPinned,
         // An account that is an API key (AGT3). Measured on 2.1.280 with an invalid key: `auth
         // status` reads it (api_key, no email) and a `-p` run takes it with no prompt.

@@ -8,9 +8,10 @@ import { useHarnessRun, WithHarnessRuns } from './harnessRuns';
 import {
   useAddFavorite, useBrowserSettings, useDriver, useHarnessAction, useHarnesses, useLines,
   usePluginAction, usePlugins, useRefreshHarnesses, useRemotes, useRemoveFavorite, useRuleAction, useRuleProposal, useRules,
-  useSetBrowser, useSetExtensions, useSetHelper, useSetIntake, useSetLanding, useSetLine, useSetNotify, useSweep, useSweepPlan, useSetStrikes, useStarts, useUnwireRemote, useUsage,
+  useSetAgentSettings, useSetBrowser, useSetExtensions, useSetHelper, useSetIntake, useSetLanding, useSetLine, useSetNotify, useSweep, useSweepPlan, useSetStrikes, useStarts, useUnwireRemote, useUsage,
   useWireRemote,
 } from './shell';
+import { AccountSettingsForm, AccountSettingsSummary } from './settings/AccountSettings';
 import { AgentRules } from './settings/AgentRules';
 import { proposalChange } from './settings/proposals';
 import { StartWiringList } from './map/StartWiring';
@@ -1104,10 +1105,14 @@ function HarnessRoster({ notify }: { notify: Notify }) {
   // The account a Remove has been pressed on once, by its directory — the second press is what
   // deletes it (D66 §3), and only on the row that asked.
   const [removing, setRemoving] = useState<string | null>(null);
+  // The account whose own model and effort are open to change (AGT6), by its directory — one at a
+  // time, closed until asked for, like every rare form here.
+  const [tuning, setTuning] = useState<string | null>(null);
   const { t } = useTranslation();
   const roster = useHarnesses();
   const refresh = useRefreshHarnesses();
   const act = useHarnessAction();
+  const tune = useSetAgentSettings();
   // What each account has carried (TOOL3). Beside the roster because it is about the same accounts.
   const usage = useUsage();
   // The circles this machine has, so an account can be chosen for one (D49 §4) — the terminal
@@ -1241,7 +1246,7 @@ function HarnessRoster({ notify }: { notify: Notify }) {
                 </span>
                 <span className="text-meta text-ink-faint">{t('harness.ownHome')}</span>
               </span>
-              <div className="ml-auto flex shrink-0 items-center gap-1">
+              <div className="ml-auto flex min-w-0 flex-wrap items-center justify-end gap-1">
                 {/* Naming NO profile clears the default — "use the tool's own home again". */}
                 {tool.machineDefault !== null && (
                   <Button
@@ -1307,6 +1312,9 @@ function HarnessRoster({ notify }: { notify: Notify }) {
                     <Tip content={t('harness.homeTip')}>
                       <span className="truncate font-mono text-meta text-ink-faint">{profile.home}</span>
                     </Tip>
+                    {/* What the account runs on, by the tool's own file under it (AGT6), where Daoris
+                        knows that file. The owner could see a session's model only inside the session. */}
+                    {profile.settings && <AccountSettingsSummary settings={profile.settings} />}
                     {/* 🔴 What the next step IS and what it will do, on the row that needs it. After
                         "Add" there was a name, a "not logged in" pill and a button, and nothing
                         about the browser window about to open or where the output would go. */}
@@ -1314,7 +1322,7 @@ function HarnessRoster({ notify }: { notify: Notify }) {
                       <span className="text-meta text-ink-faint">{t('harness.login.hint')}</span>
                     )}
                   </span>
-                  <div className="ml-auto flex shrink-0 items-center gap-1">
+                  <div className="ml-auto flex min-w-0 flex-wrap items-center justify-end gap-1">
                     {/* Logging in is the one thing here that is a step in a task rather than a
                         preference, so it is the one that looks like a button. It runs against the
                         account-owning door, because that is the tool that HAS the login flow. */}
@@ -1335,6 +1343,13 @@ function HarnessRoster({ notify }: { notify: Notify }) {
                         onClick={() => run(tool.doors[0]!.harness, 'profile-default', profile.name)}
                       >
                         {t('harness.profile.use')}
+                      </Button>
+                    )}
+                    {/* The account's own model and effort (AGT6, D98) — offered only where the tool's
+                        settings are known, which is the rule every control on this row follows. */}
+                    {tool.settingsChoices && profile.settings && tuning !== profile.home && (
+                      <Button variant="ghost" disabled={busy} onClick={() => setTuning(profile.home)}>
+                        {t('harness.settings.open')}
                       </Button>
                     )}
                     {/* 🔴 Remove REMOVES (D66 §3). "Forget" un-pointed the account and kept any
@@ -1386,6 +1401,24 @@ function HarnessRoster({ notify }: { notify: Notify }) {
                       </Button>
                     </div>
                   )}
+                  {tuning === profile.home && tool.settingsChoices && profile.settings && (
+                    <AccountSettingsForm
+                      harness={tool.doors[0]!.harness}
+                      account={profile.name}
+                      accountLabel={named(profile)}
+                      settings={profile.settings}
+                      choices={tool.settingsChoices}
+                      busy={tune.isPending}
+                      onSave={(change) => tune.mutate({ harness: tool.doors[0]!.harness, profile: profile.name, ...change }, {
+                        onSuccess: () => {
+                          setTuning(null);
+                          notify(t('harness.settings.saved', { account: named(profile) }));
+                        },
+                        onError: failure(notify),
+                      })}
+                      onCancel={() => setTuning(null)}
+                    />
+                  )}
                   {/* Signing in happens HERE, on the account it is for. */}
                   {running === `${tool.doors[0]!.harness}:login` && runningProfile === profile.name && (
                     <SignIn id={running} harness={tool.doors[0]!.harness} profile={named(profile)} />
@@ -1393,6 +1426,13 @@ function HarnessRoster({ notify }: { notify: Notify }) {
                 </li>
               ))}
             </ul>
+          {/* A tool whose own settings Daoris does not know is offered none, and says so once (AGT6):
+              inventing its keys would be a guess written into somebody else's file. */}
+          {tool.settingsChoices === null && (
+            <p className="m-0 mt-1 text-meta text-ink-faint">
+              {t('harness.settings.unknown', { tool: tool.product ?? tool.name })}
+            </p>
+          )}
 
           {/* 🔴 An account is made by SIGNING IN (D66 §3). There was a name box first — a name
               typed before anyone knew whose account it was — then a login as a second step. Now

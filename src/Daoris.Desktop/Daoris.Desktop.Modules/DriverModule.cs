@@ -489,6 +489,29 @@ public sealed class DriverModule : ModuleBase
                 return new { stop.Cancelled, Withdrawn = stop.Withdrawn.Select(Said).ToArray() };
             }
 
+            // A conversation's model and effort, as its agent offers them on the protocol door (AGT6b, D98):
+            // the page asks once, and takes every change after that as `SESSION_OPTIONS_CHANGED`. Nothing here
+            // holding it, or a door that carries none, is an empty list — never a refusal, since a composer
+            // asks of every conversation it shows.
+            case "SESSION_OPTIONS":
+            {
+                var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
+                return OptionsAnswer(id, _loop.Chat?.Options(id) ?? []);
+            }
+
+            // The person's change to one of them (AGT6b): `session/set_config_option` on the conversation's
+            // session. The driver refuses the mode, an option never offered and a conversation it does not
+            // hold, in its own words; the agent refuses a value it does not take, in its.
+            case "SET_SESSION_OPTION":
+            {
+                var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
+                var option = PayloadHelper.GetRequiredValue<string>(request.Payload, "option");
+                var value = PayloadHelper.GetRequiredValue<string>(request.Payload, "value");
+                var chat = _loop.Chat ?? throw NotReady();
+                var after = await chat.SetOptionAsync(id, option, value, cancellationToken).ConfigureAwait(false);
+                return OptionsAnswer(id, after);
+            }
+
             // Where a conversation's turns stand (CONV4a): whether one is in flight, and what is waiting.
             // A page that just opened it asks once, and takes every change after that as `SESSION_QUEUED`.
             case "SESSION_QUEUE":
@@ -638,6 +661,9 @@ public sealed class DriverModule : ModuleBase
                         // Asked once per harness: every field below reads the same two answers.
                         var toolchain = _loop.Harnesses.Toolchain(report.Adapter);
                         var pinned = settings.ResolveVersion(report.Adapter, null, null);
+                        // The tool's own settings file under an account (AGT6, D98), where this build
+                        // knows it: a door's is its owner's (AGT7), and null offers nothing.
+                        var settingsFile = _loop.Harnesses.AccountToolchain(report.Adapter)?.SettingsFile;
                         return new
                         {
                             Harness = report.Adapter,
@@ -697,7 +723,18 @@ public sealed class DriverModule : ModuleBase
                                 profile.Account,
                                 // An account that is a key, by its handle only (AGT3). Never the key.
                                 profile.Key,
+                                // The account's own model and effort, read fresh from the tool's file
+                                // each time (AGT6): the file is the truth, and the terminal edits it too.
+                                Settings = settingsFile is null
+                                    ? null
+                                    : AccountSettings(AgentSettings.Read(Path.Combine(profile.Home, settingsFile))),
                             }).ToArray(),
+                            // What the tool itself offers for those two keys (AGT6, D98): its aliases and
+                            // the efforts its settings keep. Null where Daoris does not know its settings,
+                            // and the page then offers nothing and says so.
+                            SettingsChoices = settingsFile is null
+                                ? null
+                                : new { AgentSettings.Models, AgentSettings.Efforts },
                             // Whether this agent takes an API key at all — the control is absent where
                             // it does not, by the rule `Pinnable` and `SignsIn` follow.
                             TakesKey = _loop.Harnesses.AccountToolchain(report.Adapter)?.KeyVariable is { Length: > 0 },
@@ -942,6 +979,39 @@ public sealed class DriverModule : ModuleBase
             {
                 Running(request).Cancel();
                 return new { Cancelled = true };
+            }
+
+            // An account's own model and effort (AGT6, D98): keys in the tool's own settings file under
+            // that account, the same file `daoris agent settings` edits (D50). A key sent as null is
+            // cleared and one left out is untouched. Never the tool's own configuration home, which the
+            // roster says Daoris never touches, and never an account a setting would bring into being.
+            case "SET_AGENT_SETTINGS":
+            {
+                var harness = PayloadHelper.GetRequiredValue<string>(request.Payload, "harness");
+                var toolchain = _loop.Harnesses.Toolchain(harness)
+                    ?? throw new DriverException(
+                        $"Daoris manages no toolchain for `{harness}` — its accounts are its own tooling's.");
+                var owner = toolchain.Owner(harness);
+                var file = _loop.Harnesses.AccountToolchain(harness)?.SettingsFile
+                    ?? throw new DriverException(
+                        $"`{owner}` keeps its settings in files of its own that Daoris does not know the shape of, "
+                        + "so Daoris offers none — set its model with the tool itself.");
+                var profile = Optional(request, "profile")
+                    ?? throw new DriverException(
+                        $"name the account these settings are for — `{owner}`'s own configuration home is the tool's, "
+                        + "and Daoris never touches it.");
+                var accounts = HarnessSettings.Profiles(_loop.Harnesses.Home, owner);
+                if (!accounts.Contains(profile, StringComparer.Ordinal))
+                {
+                    throw new DriverException(
+                        $"`{owner}` has no account `{profile}` on this machine — accounts that exist: "
+                        + (accounts.Count > 0 ? string.Join(", ", accounts) : "(none)"));
+                }
+
+                var read = AgentSettings.Write(
+                    Path.Combine(HarnessSettings.ProfileHome(_loop.Harnesses.Home, owner, profile), file),
+                    Edit(request, "model"), Edit(request, "effort"), PerModel(request));
+                return new { Harness = owner, Profile = profile, read.Model, read.Effort, PerModel = PerModelOf(read), read.Problem };
             }
 
             // This machine's plugins (D64): the catalogue as the driver reads it, each with what it
@@ -1521,6 +1591,65 @@ public sealed class DriverModule : ModuleBase
         && value.GetString() is { Length: > 0 } text
             ? text
             : null;
+
+    /// <summary>
+    /// One setting's change as the page sent it (AGT6): a text sets it, null clears it, and a key left out
+    /// is no change at all — the three a person can mean, kept apart.
+    /// </summary>
+    private static AgentSettingEdit? Edit(IpcRequest request, string name) =>
+        request.Payload is { } payload && payload.TryGetProperty(name, out var value)
+            ? value.ValueKind switch
+            {
+                JsonValueKind.Null => new AgentSettingEdit(null),
+                JsonValueKind.String => new AgentSettingEdit(value.GetString()),
+                _ => throw new DriverException($"`{name}` is set with a name, or cleared with null."),
+            }
+            : null;
+
+    /// <summary>An effort per model as the page sent it: the model's name, then a value or null.</summary>
+    private static IReadOnlyDictionary<string, AgentSettingEdit>? PerModel(IpcRequest request)
+    {
+        if (request.Payload is not { } payload || !payload.TryGetProperty("perModel", out var models)
+            || models.ValueKind != JsonValueKind.Object)
+        {
+            return null;
+        }
+
+        return models.EnumerateObject().ToDictionary(
+            model => model.Name,
+            model => model.Value.ValueKind switch
+            {
+                JsonValueKind.Null => new AgentSettingEdit(null),
+                JsonValueKind.String => new AgentSettingEdit(model.Value.GetString()),
+                _ => throw new DriverException($"the effort for `{model.Name}` is set with a name, or cleared with null."),
+            },
+            StringComparer.Ordinal);
+    }
+
+    /// <summary>
+    /// A conversation's options as the page reads them (AGT6b), the answer and the live event alike: each
+    /// option's id, the agent's name for it, its category, its value now, and the values it takes — the
+    /// agent's words, carried as they were given.
+    /// </summary>
+    public static object OptionsAnswer(string session, IReadOnlyList<AcpConfigOption> options) => new
+    {
+        Session = session,
+        Options = options.Select(option => new
+        {
+            option.Id,
+            option.Name,
+            option.Category,
+            option.Current,
+            Choices = option.Choices.Select(choice => new { choice.Value, choice.Name, choice.Description }).ToArray(),
+        }).ToArray(),
+    };
+
+    /// <summary>An account's settings as the page reads them (AGT6): the two keys, each model's own effort, and why not.</summary>
+    private static object AccountSettings(AgentSettingsRead read) =>
+        new { read.Model, read.Effort, PerModel = PerModelOf(read), read.Problem };
+
+    private static object[] PerModelOf(AgentSettingsRead read) =>
+        [.. read.PerModel.Select(entry => (object)new { entry.Model, entry.Effort })];
 
     /// <summary>A flag the page may send: true only when it says true.</summary>
     private static bool Flag(IpcRequest request, string name) =>

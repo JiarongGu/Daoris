@@ -82,6 +82,11 @@ const USAGE = `daoris <command> [options]
                                                    time it runs in a folder, granted
                                                    in its own file; without --yes,
                                                    the question and nothing written
+                         settings <agent> [--account A] [model M] [effort E [--for M]]
+                                                   an account's own model and
+                                                   effort, in the tool's own
+                                                   settings file; unset clears,
+                                                   and given neither, it prints them
                          rules [allow|ask|deny|remove <rule>]
                                [--workspace W | --repository R]
                                                    what a session Daoris starts may

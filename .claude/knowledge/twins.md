@@ -51,6 +51,7 @@ map found this first (WSP3), and every twin since was built the same way for the
 | Permission rules (D72) | `permissions.ts` | `Permissions.cs` | — |
 | Rule proposals (D74) | `ruleproposals.ts` | `RuleProposals.cs` | `RuleProposals.cs` |
 | A folder's trust (D73) | `trust.ts` | `ClaudeTrust.cs` | — |
+| An account's own model and effort, in the tool's `settings.json` (D98) | `agentsettings.ts` | `AgentSettings.cs` | — |
 | Plugins (D64) | `plugins.ts` | `Plugins.cs` | — |
 | The in-app browser's favorites and settings (BRW5, CHR7) | `browser.ts` | `BrowserFavorites.cs`, `BrowserSettings.cs` (the desktop modules, read by `daoris-browser` at each start) | — |
 | The code map (MAP3) | — | `CodeMapFile.cs` | `CodeMap.cs` (the devkit produces it) |

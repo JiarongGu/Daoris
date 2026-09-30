@@ -168,6 +168,43 @@ describe('byTool', () => {
  * offers to drive one says so on a machine whose door is direct — and says nothing when it cannot
  * tell, rather than guess.
  */
+/**
+ * AGT6: an account's own settings are one file whichever door reads it, so the tool offers the choices
+ * the first door says — the protocol door answers for Claude Code as its pipe does — and a tool no door
+ * offers them for offers none.
+ */
+describe('byTool and an account\'s own settings', () => {
+  const choices = { models: ['default', 'opus'], efforts: ['low', 'high'] };
+
+  it('takes the choices from the first door that offers them', () => {
+    const tools = byTool([
+      door({ harness: 'claude-code-acp', accountOf: 'claude-code', settingsChoices: choices }),
+      door({ harness: 'claude-code', settingsChoices: null }),
+    ]);
+
+    expect(tools[0]!.settingsChoices).toEqual(choices);
+  });
+
+  /**
+   * 🔴 Seen on the window: the bridge leaves a null field out, so an account whose file sets nothing
+   * arrived as `settings: { perModel: [] }`, and the form read the missing model as a model id and
+   * crashed the page on `.trim()`. The tests had sent explicit nulls, which the wire never does.
+   */
+  it('reads an account whose settings arrive with their null fields left out as unset', () => {
+    const account = {
+      name: 'probe', home: 'H:/probe', login: 'unknown' as const,
+      settings: { perModel: [] } as unknown as Account['settings'],
+    };
+    const [tool] = byTool([door({ harness: 'claude-code', profiles: [account] })]);
+    expect(tool!.accounts[0]!.settings).toEqual({ model: null, effort: null, perModel: [], problem: null });
+  });
+
+  it('offers none where the doors say none, and claims nothing for a shell that never said', () => {
+    expect(byTool([door({ harness: 'dsh', settingsChoices: null })])[0]!.settingsChoices).toBeNull();
+    expect(byTool([door({ harness: 'codex-acp', accountOf: 'codex' })])[0]!.settingsChoices).toBeUndefined();
+  });
+});
+
 describe('doorOf', () => {
   const roster = [
     door({ harness: 'claude-code', present: true, wire: 'pipe' }),

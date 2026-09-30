@@ -20,13 +20,13 @@ what was measured, and it stays a record of that moment. A *record* is append-on
 | `2026-09-19-platform-ux.md` | contract | the design language (D41, D56) | Current. §4 records what each looking pass settled; read it before changing anything a person looks at |
 | `2026-09-19-frontend-architecture.md` | method | the platform's stack and tests (D42) | Current |
 | `2026-09-20-workspace-design.md` | contract | workspaces (D48, WSP) | Current |
-| `2026-09-20-interactive-design.md` | contract | chat, console, managed harnesses (D49, SES) | Current, with D67 and CONSOLE2's streams noted |
+| `2026-09-20-interactive-design.md` | contract | chat, console, managed harnesses (D49, SES) | Current, with D67, CONSOLE2's streams and D98 (§7 reversed) noted |
 | `2026-09-20-remote-design.md` | contract | the remote (D47) | Current; its superseded list names what D68 replaced |
 | `2026-09-21-working-surface-design.md` | contract | the working surface (D51, D52) | Current, with D66 noted |
 | `2026-09-21-working-surface-components.md` | method | how a screen is built | Current: a story first, and a molecule imports no hook |
 | `2026-09-21-desktop-frame-design.md` | contract | the desktop's frame (D56) | Current, with D66 and D75 noted |
 | `2026-09-22-instruction-file-design.md` | contract | the always-loaded tier in `AGENTS.md` (D59) | Current |
-| `2026-09-22-toolchain-design.md` | contract | binaries, pins, accounts, usage (D57) | Current, with D63 and D67 noted. The home of the resolution rule |
+| `2026-09-22-toolchain-design.md` | contract | binaries, pins, accounts, usage (D57) | Current, with D63, D67 and D98 noted. The home of the resolution rule |
 | `2026-09-23-api-key-accounts.md` | contract | an account that is an API key (D67 §1) | Current |
 | `2026-09-23-intake-design.md` | contract | an ask becomes quests (D65) | Current, with D70, D72 and D77 noted, and USE1c's done ask |
 | `2026-09-23-map-design.md` | contract | the maps (D67 §3, MAP) | Current |

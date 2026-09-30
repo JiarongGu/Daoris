@@ -1020,6 +1020,85 @@ describe('starting and holding a conversation', () => {
       'Asked the agent to stop this turn; the conversation stays open. 1 waiting message came back to the box, unsent.');
   });
 
+  // AGT6b (D98): one conversation's model and effort, as its agent offered them on the protocol door —
+  // asked of the driver once, followed as news, and changed over it. The console's `/model`, typed as a
+  // message, cut a turn short; this is its door.
+  const MODEL = {
+    id: 'model', name: 'Model', category: 'model', current: 'default',
+    choices: [{ value: 'default', name: 'Default (recommended)' }, { value: 'sonnet', name: 'Sonnet' }],
+  };
+  const EFFORT = {
+    id: 'effort', name: 'Effort', category: 'thought_level', current: 'high',
+    choices: [{ value: 'low', name: 'Low' }, { value: 'high', name: 'High' }],
+  };
+
+  it("offers a conversation's model and effort as its agent offered them, and sets one over the driver", async () => {
+    SESSIONS = [CHAT];
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'HARNESSES') return STRUCTURED_ROSTER;
+      if (type === 'SESSION_QUEUE') return { session: 'c0ffee11', queued: [], taking: false };
+      if (type === 'SESSION_OPTIONS') return { session: 'c0ffee11', options: [MODEL, EFFORT] };
+      if (type === 'SET_SESSION_OPTION') return { session: 'c0ffee11', options: [{ ...MODEL, current: 'sonnet' }, EFFORT] };
+      return DRIVER_STATE;
+    });
+
+    show('c0ffee11');
+    const model = await screen.findByRole('combobox', { name: "this conversation's Model" });
+    expect(model).toHaveTextContent('Default (recommended)');
+    expect(screen.getByRole('combobox', { name: "this conversation's Effort" })).toHaveTextContent('High');
+
+    model.focus();
+    await userEvent.keyboard('{Enter}');
+    await userEvent.click(await screen.findByRole('option', { name: 'Sonnet' }));
+
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SET_SESSION_OPTION', {
+      payload: { id: 'c0ffee11', option: 'model', value: 'sonnet' },
+    });
+    await waitFor(() => expect(screen.getByRole('combobox', { name: "this conversation's Model" })).toHaveTextContent('Sonnet'));
+  });
+
+  it("follows the agent's own change to its options as news", async () => {
+    SESSIONS = [CHAT];
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'HARNESSES') return STRUCTURED_ROSTER;
+      if (type === 'SESSION_QUEUE') return { session: 'c0ffee11', queued: [], taking: false };
+      if (type === 'SESSION_OPTIONS') return { session: 'c0ffee11', options: [MODEL] };
+      return DRIVER_STATE;
+    });
+
+    show('c0ffee11');
+    await screen.findByRole('combobox', { name: "this conversation's Model" });
+    await waitFor(() => expect(eventHandlers.has('DAORIS.SESSION_OPTIONS_CHANGED')).toBe(true));
+    act(() => eventHandlers.get('DAORIS.SESSION_OPTIONS_CHANGED')!({
+      session: 'c0ffee11',
+      options: [{ ...MODEL, current: 'haiku', choices: [...MODEL.choices, { value: 'haiku', name: 'Haiku' }] }],
+    }));
+
+    await waitFor(() => expect(screen.getByRole('combobox', { name: "this conversation's Model" })).toHaveTextContent('Haiku'));
+  });
+
+  it('offers nothing where the agent offered nothing, and asks nothing of a driven session', async () => {
+    SESSIONS = [CHAT];
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'HARNESSES') return STRUCTURED_ROSTER;
+      if (type === 'SESSION_QUEUE') return { session: 'c0ffee11', queued: [], taking: false };
+      if (type === 'SESSION_OPTIONS') return { session: 'c0ffee11', options: [] };
+      return DRIVER_STATE;
+    });
+
+    const { unmount } = show('c0ffee11');
+    await screen.findByLabelText('message');
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_OPTIONS', { payload: { id: 'c0ffee11' } }));
+    expect(screen.queryByRole('combobox', { name: "this conversation's Model" })).not.toBeInTheDocument();
+    unmount();
+
+    invoke.mockClear();
+    SESSIONS = [DRIVEN];
+    show('s1a2b3c4');
+    await screen.findAllByText(/Expose a streaming budget/);
+    expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_OPTIONS', expect.anything());
+  });
+
   /** Seen on the window (CONV4b): two sentences joined by a space read wrong after a Chinese full stop. */
   it('joins the stop\'s two sentences the way the language does', async () => {
     SESSIONS = [CHAT];

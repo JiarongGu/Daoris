@@ -436,4 +436,36 @@ describe('a mention', () => {
     await userEvent.type(box(), 'mail me@README');
     expect(screen.queryByRole('listbox')).not.toBeInTheDocument();
   });
+
+  // AGT6b (D98): one conversation's model and effort, as its agent offered them on the protocol door.
+  // The names are the agent's own words; the control only says whose they are.
+  const OPTIONS = [
+    { id: 'model', name: 'Model', category: 'model', current: 'default',
+      choices: [{ value: 'default', name: 'Default (recommended)' }, { value: 'sonnet', name: 'Sonnet' }] },
+    { id: 'effort', name: 'Effort', category: 'thought_level', current: 'high',
+      choices: [{ value: 'low', name: 'Low' }, { value: 'high', name: 'High' }, { value: 'max', name: 'Max' }] },
+  ];
+
+  it("offers the conversation's model and effort as its agent names them, and says which was chosen", async () => {
+    const onOption = vi.fn();
+    show({ offered: OPTIONS, onOption });
+
+    expect(screen.getByRole('combobox', { name: "this conversation's Model" })).toHaveTextContent('Default (recommended)');
+    expect(screen.getByRole('combobox', { name: "this conversation's Effort" })).toHaveTextContent('High');
+
+    screen.getByRole('combobox', { name: "this conversation's Model" }).focus();
+    await userEvent.keyboard('{Enter}');
+    await userEvent.click(await screen.findByRole('option', { name: 'Sonnet' }));
+
+    expect(onOption).toHaveBeenCalledWith('model', 'sonnet');
+  });
+
+  it('offers nothing where the agent offered nothing, or where nothing listens', () => {
+    const { unmount } = show({ offered: [], onOption: () => {} });
+    expect(screen.queryByRole('combobox')).not.toBeInTheDocument();
+    unmount();
+
+    show({ live: false, offered: OPTIONS, onOption: () => {} });
+    expect(screen.queryByRole('combobox')).not.toBeInTheDocument();
+  });
 });

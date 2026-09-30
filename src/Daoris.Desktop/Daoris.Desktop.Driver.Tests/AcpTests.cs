@@ -1639,6 +1639,148 @@ public sealed class AcpTests
         Assert.Contains("→ Read README.md", lines);
     }
 
+    // ——— One conversation's model and effort (AGT6b, D98): the options the agent offers, kept and changed.
+
+    /// <summary>
+    /// What <c>claude-agent-acp</c> 0.84.0 answers <c>session/new</c> with (<c>acp-agent.js</c>,
+    /// <c>buildConfigOptions</c>): the mode, the model, the effort as a thought level — here in the
+    /// protocol's grouped form, which the schema allows — and fast mode as a boolean.
+    /// </summary>
+    private const string Offered = """
+        [{"id":"mode","name":"Mode","category":"mode","type":"select","currentValue":"acceptEdits","options":[{"value":"default","name":"Default"},{"value":"acceptEdits","name":"Accept Edits"}]},
+         {"id":"model","name":"Model","description":"AI model to use","category":"model","type":"select","currentValue":"default","options":[{"value":"default","name":"Default (recommended)","description":"the tool's default"},{"value":"sonnet","name":"Sonnet"}]},
+         {"id":"effort","name":"Effort","category":"thought_level","type":"select","currentValue":"high","options":[{"group":"levels","name":"Levels","options":[{"value":"low","name":"Low"},{"value":"high","name":"High"},{"value":"max","name":"Max"}]}]},
+         {"id":"fast","name":"Fast mode","category":"model_config","type":"boolean","currentValue":false}]
+        """;
+
+    /// <summary>An agent that offers <see cref="Offered"/>, and answers everything else with <paramref name="more"/>.</summary>
+    private static FakeAgent Offering(Func<JsonElement, FakeAgent, string?>? more = null) => new((frame, self) =>
+        frame.GetProperty("method").GetString() switch
+        {
+            "initialize" => Ok(frame, """{"protocolVersion":1,"agentCapabilities":{}}"""),
+            "session/new" => Ok(frame, $$"""{"sessionId":"s-1","configOptions":{{Offered}}}"""),
+            _ => more?.Invoke(frame, self) ?? (frame.TryGetProperty("id", out _) ? Ok(frame, "{}") : null),
+        });
+
+    /// <summary>
+    /// The options are kept as the agent offered them: every select, its current value, and its choices —
+    /// a grouped list flattened, since a group is a heading and not a value. A boolean is not a choice of
+    /// values, and is left out.
+    /// </summary>
+    [Fact]
+    public async Task The_options_an_agent_offers_on_session_new_are_kept_as_it_offered_them()
+    {
+        var agent = Offering();
+        var session = new AcpSession(agent.Incoming, agent.Outgoing, _ => { });
+        await session.OpenAsync("D:/fam/Game", CancellationToken.None);
+
+        Assert.Equal(["mode", "model", "effort"], session.ConfigOptions.Select(option => option.Id));
+        var model = session.ConfigOptions.Single(option => option.Id == "model");
+        Assert.Equal(("Model", "model", "default"), (model.Name, model.Category, model.Current));
+        Assert.Equal(["default", "sonnet"], model.Choices.Select(choice => choice.Value));
+        Assert.Equal("the tool's default", model.Choices[0].Description);
+        var effort = session.ConfigOptions.Single(option => option.Id == "effort");
+        Assert.Equal("thought_level", effort.Category);
+        Assert.Equal(["low", "high", "max"], effort.Choices.Select(choice => choice.Value));
+        session.Release();
+    }
+
+    [Fact]
+    public async Task An_agent_that_offers_no_options_has_none()
+    {
+        var agent = Simple();
+        var session = new AcpSession(agent.Incoming, agent.Outgoing, _ => { });
+        await session.OpenAsync("D:/fam/Game", CancellationToken.None);
+
+        Assert.Empty(session.ConfigOptions);
+        session.Release();
+    }
+
+    /// <summary>
+    /// A change is <c>session/set_config_option</c> with the session, the option and the value, and the
+    /// agent's answer is the whole list after it — the effort's levels follow the model — which replaces
+    /// what was kept, and is told.
+    /// </summary>
+    [Fact]
+    public async Task Setting_an_option_sends_set_config_option_and_keeps_the_agents_answer()
+    {
+        var told = new List<IReadOnlyList<AcpConfigOption>>();
+        var agent = Offering((frame, self) => frame.GetProperty("method").GetString() == "session/set_config_option"
+            ? Ok(frame, """
+                {"configOptions":[{"id":"model","name":"Model","category":"model","type":"select","currentValue":"sonnet","options":[{"value":"default","name":"Default"},{"value":"sonnet","name":"Sonnet"}]}]}
+                """)
+            : null);
+        var session = new AcpSession(agent.Incoming, agent.Outgoing, _ => { }, onOptions: told.Add);
+        await session.OpenAsync("D:/fam/Game", CancellationToken.None);
+
+        var after = await session.SetConfigOptionAsync("model", "sonnet", CancellationToken.None);
+
+        var sent = agent.Frame(agent.Sent.Count - 1);
+        Assert.Equal("session/set_config_option", sent.GetProperty("method").GetString());
+        Assert.Equal("""{"sessionId":"s-1","configId":"model","value":"sonnet"}""", sent.GetProperty("params").GetRawText());
+        Assert.Equal("sonnet", Assert.Single(after).Current);
+        Assert.Equal(after, session.ConfigOptions);
+        // Told once when the session opened, and once for the change.
+        Assert.Equal(2, told.Count);
+        Assert.Equal(after, told[^1]);
+        session.Release();
+    }
+
+    /// <summary>
+    /// The agent may change the options itself — a model it fell back to, a switch it made — and says so in
+    /// a <c>config_option_update</c>, which replaces what was kept exactly as an answer does.
+    /// </summary>
+    [Fact]
+    public async Task An_update_the_agent_sends_replaces_the_options()
+    {
+        var told = new ConcurrentQueue<IReadOnlyList<AcpConfigOption>>();
+        var agent = Offering((frame, self) =>
+        {
+            if (frame.GetProperty("method").GetString() != "session/prompt") return null;
+            self.Push(Update("s-1", """
+                {"sessionUpdate":"config_option_update","configOptions":[{"id":"model","name":"Model","category":"model","type":"select","currentValue":"haiku","options":[{"value":"haiku","name":"Haiku"}]}]}
+                """));
+            return Ok(frame, """{"stopReason":"end_turn"}""");
+        });
+        var session = new AcpSession(agent.Incoming, agent.Outgoing, _ => { }, onOptions: told.Enqueue);
+        await session.OpenAsync("D:/fam/Game", CancellationToken.None);
+
+        await session.PromptAsync("go on", CancellationToken.None);
+        await Poll.Until(() => session.ConfigOptions.Count == 1);
+
+        Assert.Equal("haiku", session.ConfigOptions[0].Current);
+        Assert.Equal("haiku", told.Last()[0].Current);
+        session.Release();
+    }
+
+    /// <summary>A change the agent refuses is its refusal, in its words, and what was kept stays as it was.</summary>
+    [Fact]
+    public async Task A_setting_the_agent_refuses_is_its_words_and_changes_nothing()
+    {
+        var agent = Offering((frame, self) => frame.GetProperty("method").GetString() == "session/set_config_option"
+            ? $$$"""{"jsonrpc":"2.0","id":{{{frame.GetProperty("id").GetRawText()}}},"error":{"code":-32603,"message":"Invalid value for config option model: nonsense"}}"""
+            : null);
+        var session = new AcpSession(agent.Incoming, agent.Outgoing, _ => { });
+        await session.OpenAsync("D:/fam/Game", CancellationToken.None);
+
+        var refused = await Assert.ThrowsAsync<DriverException>(() => session.SetConfigOptionAsync("model", "nonsense", CancellationToken.None));
+
+        Assert.Contains("Invalid value for config option model: nonsense", refused.Message);
+        Assert.Equal("default", session.ConfigOptions.Single(option => option.Id == "model").Current);
+        session.Release();
+    }
+
+    /// <summary>Nothing can be set on a session that is not open: there is no session id to name.</summary>
+    [Fact]
+    public async Task An_option_cannot_be_set_before_the_session_opens()
+    {
+        var agent = Offering();
+        var session = new AcpSession(agent.Incoming, agent.Outgoing, _ => { });
+
+        await Assert.ThrowsAsync<DriverException>(() => session.SetConfigOptionAsync("model", "sonnet", CancellationToken.None));
+        Assert.Empty(agent.Sent);
+    }
+
     /// <summary>An agent that answers the three calls and nothing else — the shape most tests need.</summary>
     // 🔴 The parameter is `self`, not `_`. A lambda parameter named `_` SHADOWS the discard in
     // `TryGetProperty("id", out _)` below, and the error it produces names neither.

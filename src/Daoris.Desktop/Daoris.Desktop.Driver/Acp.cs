@@ -54,6 +54,86 @@ public sealed record AcpMcpServer(
     IReadOnlyList<string> Arguments,
     IReadOnlyDictionary<string, string> Environment);
 
+/// <summary>One value a config option offers, in the agent's own words.</summary>
+public sealed record AcpConfigChoice(string Value, string Name, string? Description = null);
+
+/// <summary>
+/// One of a session's config options as the agent offers it (AGT6b, D98): what it is called, what kind
+/// it is, what it is set to, and what it may be set to. Only a choice among values is kept.
+/// </summary>
+/// <param name="Id">What <c>session/set_config_option</c> names it by.</param>
+/// <param name="Name">What the agent calls it — content, never translated.</param>
+/// <param name="Category">
+/// The protocol's word for what it is — <c>mode</c>, <c>model</c>, <c>thought_level</c>, or another —
+/// or null where the agent said none.
+/// </param>
+/// <param name="Current">What it is set to now.</param>
+/// <param name="Choices">What it may be set to, a grouped list flattened: a group is a heading, not a value.</param>
+public sealed record AcpConfigOption(
+    string Id, string Name, string? Category, string Current, IReadOnlyList<AcpConfigChoice> Choices,
+    string? Description = null)
+{
+    /// <summary>
+    /// Whether this is one the person may set from Daoris (D98): the model, and the effort the protocol
+    /// calls a thought level. 🔴 Never the mode — that is the posture Daoris runs a session under
+    /// (D37, D81), and a person widening it from a menu is what D52 refuses. An option with no category
+    /// is not offered: nothing says what it is.
+    /// </summary>
+    public bool ThePersons => Category is "model" or "thought_level";
+
+    /// <summary>
+    /// The options a <c>configOptions</c> list holds, read without trusting its shape: an entry that is not
+    /// a choice among values — a boolean, a malformed one — is left out, never a throw.
+    /// </summary>
+    public static IReadOnlyList<AcpConfigOption> Read(JsonElement list)
+    {
+        if (list.ValueKind != JsonValueKind.Array) return [];
+
+        var read = new List<AcpConfigOption>();
+        foreach (var option in list.EnumerateArray())
+        {
+            if (option.ValueKind != JsonValueKind.Object
+                || Text(option, "type") != "select"
+                || Text(option, "id") is not { Length: > 0 } id
+                || Text(option, "currentValue") is not { } current
+                || !option.TryGetProperty("options", out var values) || values.ValueKind != JsonValueKind.Array)
+            {
+                continue;
+            }
+
+            var choices = new List<AcpConfigChoice>();
+            foreach (var entry in values.EnumerateArray())
+            {
+                if (entry.ValueKind != JsonValueKind.Object) continue;
+                if (entry.TryGetProperty("options", out var grouped) && grouped.ValueKind == JsonValueKind.Array)
+                {
+                    foreach (var inner in grouped.EnumerateArray()) Choice(inner, choices);
+                }
+                else
+                {
+                    Choice(entry, choices);
+                }
+            }
+
+            read.Add(new AcpConfigOption(
+                id, Text(option, "name") ?? id, Text(option, "category"), current, choices, Text(option, "description")));
+        }
+
+        return read;
+    }
+
+    private static void Choice(JsonElement entry, List<AcpConfigChoice> into)
+    {
+        if (entry.ValueKind == JsonValueKind.Object && Text(entry, "value") is { Length: > 0 } value)
+        {
+            into.Add(new AcpConfigChoice(value, Text(entry, "name") ?? value, Text(entry, "description")));
+        }
+    }
+
+    private static string? Text(JsonElement element, string name) =>
+        element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() : null;
+}
+
 /// <param name="Usage">
 /// The context pressure the agent reported, or <b>null when it reported none</b> — absent, never
 /// zero. "Nothing was measured" and "it used nothing" are different claims (TOOL3).
@@ -113,6 +193,11 @@ public sealed record AcpOutcome(
 /// task as a console stream of its own (<see cref="AcpStreams"/>). Null asks the agent for none, and
 /// every update is the session's, as before.
 /// </param>
+/// <param name="onOptions">
+/// Told the session's config options each time they change (AGT6b, D98): as <c>session/new</c> offered
+/// them, as an answer to a change, and as the agent's own <c>config_option_update</c>. Null where nobody
+/// asks.
+/// </param>
 public sealed class AcpSession(
     TextReader incoming,
     TextWriter outgoing,
@@ -122,7 +207,8 @@ public sealed class AcpSession(
     object? meta = null,
     Action<SessionEvent>? onEvent = null,
     TimeSpan? quiet = null,
-    SessionStreams? streams = null)
+    SessionStreams? streams = null,
+    Action<IReadOnlyList<AcpConfigOption>>? onOptions = null)
 {
     /// <summary>The protocol version this client speaks. Stated, never negotiated downward silently.</summary>
     private const int ProtocolVersion = 1;
@@ -156,6 +242,61 @@ public sealed class AcpSession(
     public AcpUsage? Usage
     {
         get { lock (_measured) return _usage; }
+    }
+
+    /// <summary>The config options as the agent last said them (AGT6b), and the lock that guards them.</summary>
+    private readonly object _optionsGate = new();
+    private IReadOnlyList<AcpConfigOption> _options = [];
+
+    /// <summary>
+    /// The session's config options, as the agent last said them (AGT6b, D98) — empty before it opens, or
+    /// where the agent offers none. Every one of them, the mode included: which of them a person may set
+    /// is the caller's to judge (<see cref="AcpConfigOption.ThePersons"/>).
+    /// </summary>
+    public IReadOnlyList<AcpConfigOption> ConfigOptions
+    {
+        get { lock (_optionsGate) return _options; }
+    }
+
+    /// <summary>Keep what the agent said its options are now, and tell whoever asked.</summary>
+    private void KeepOptions(IReadOnlyList<AcpConfigOption> options)
+    {
+        lock (_optionsGate) _options = options;
+        try
+        {
+            onOptions?.Invoke(options);
+        }
+        catch (Exception error) when (error is not OperationCanceledException)
+        {
+            // A listener's failure is its own: the options are kept, and the turn goes on.
+            onLine($"[the session's options could not be told: {error.Message}]");
+        }
+    }
+
+    /// <summary>
+    /// Change one of the session's config options (AGT6b, D98): <c>session/set_config_option</c> with the
+    /// session, the option and the value — a model, or an effort, mid-conversation, as the tool's own
+    /// console would. The agent's answer is its whole list after the change (an effort's levels follow the
+    /// model), and that is what is kept and returned.
+    /// </summary>
+    /// <remarks>
+    /// This sends what it is asked to; which options a person may set is the caller's judgement, made
+    /// before it gets here. An answer that carries no list leaves the others as they were and the one set
+    /// at the value asked for, since the agent accepted it.
+    /// </remarks>
+    /// <exception cref="DriverException">The session is not open, or the agent refused the change — in its words.</exception>
+    public async Task<IReadOnlyList<AcpConfigOption>> SetConfigOptionAsync(string configId, string value, CancellationToken ct)
+    {
+        if (_sessionId is null) throw new DriverException("this ACP session is not open — nothing can be set on it.");
+
+        var answer = await RequestAsync("session/set_config_option", new { sessionId = _sessionId, configId, value }, ct)
+            .ConfigureAwait(false);
+        var after = answer.ValueKind == JsonValueKind.Object && answer.TryGetProperty("configOptions", out var list)
+                    && list.ValueKind == JsonValueKind.Array
+            ? AcpConfigOption.Read(list)
+            : [.. ConfigOptions.Select(option => option.Id == configId ? option with { Current = value } : option)];
+        KeepOptions(after);
+        return after;
     }
 
     /// <summary>
@@ -274,6 +415,12 @@ public sealed class AcpSession(
         {
             throw new DriverException("the ACP agent created a session without an id — nothing can be sent to it.");
         }
+
+        // What the agent offers to change about this session — its mode, its model, its effort (AGT6b):
+        // kept as it said them, so a person may be offered the ones that are theirs.
+        KeepOptions(created.TryGetProperty("configOptions", out var offeredOptions)
+            ? AcpConfigOption.Read(offeredOptions)
+            : []);
 
         await SetPostureAsync(created, ct).ConfigureAwait(false);
     }
@@ -544,6 +691,14 @@ public sealed class AcpSession(
             if (_beside is not null && _beside.Take(StringField(p, "sessionId"), _sessionId, update)) return;
 
             Measure(update);
+            // The agent changed its own options — a model it fell back to, a switch it made (AGT6b): what
+            // it says now replaces what was kept, as an answer to a change does.
+            if (Kind(update) == "config_option_update" && update.TryGetProperty("configOptions", out var changed)
+                && changed.ValueKind == JsonValueKind.Array)
+            {
+                KeepOptions(AcpConfigOption.Read(changed));
+            }
+
             var structured = Refused(Map(update));
             _console.Update(update, structured);
             if (structured is not null) Emit(structured);
@@ -897,9 +1052,10 @@ public sealed class AcpSession(
                 Kind = SessionEventKind.Usage, Used = Number(update, "used"), Size = Number(update, "size"),
             },
             // Known, and deliberately not the conversation: the session's own settings — the commands it
-            // offers, its mode, its config options (the model catalogue among them, which D24 keeps Daoris
-            // out of). The console shows them; in the record they were rows over a chat nobody had spoken
-            // in yet (CONV3b), as the native door's `system` frames would have been (CONV3a).
+            // offers, its mode, its config options. The options are kept by the session itself (AGT6b), and
+            // a person's change to one is the record's note, not the update. The console shows them; in the
+            // record they were rows over a chat nobody had spoken in yet (CONV3b), as the native door's
+            // `system` frames would have been (CONV3a).
             "available_commands_update" or "current_mode_update" or "config_option_update" or "session_info_update" => null,
             _ => new SessionEvent { Kind = SessionEventKind.Raw, Title = kind ?? "update", Raw = Compact(update) },
         };

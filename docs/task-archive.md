@@ -7980,3 +7980,29 @@ session's repository; `git status` and `Get-ChildItem` ran with PowerShell's own
 light and in dark. **Not covered:** a page reload leaves shells running until the app exits (no
 re-adoption yet), and xterm is not lazy-loaded (the bundle grew about 350 KB).
 **Proven by:** driver (pseudo-console, shells), modules 336, vitest 1529, and the window.
+
+## AGT6 — the agent's own settings, from Daoris: model, effort and the rest (2026-09-30, D98)
+
+> - [ ] **AGT6 — the agent's own settings, from Daoris: model, effort and the rest** (owner, 2026-09-30:
+>   *"we also need way to adjust the claude setup (since we have command to setup model effort or other
+>   setting in console but no way in daoris rn)"*). …
+
+**Outcome** (built by a subagent in its own worktree, merged, then looked at and fixed on main). **6a:**
+an account's `model`, `effortLevel` and per-model `modelSettings.<model>.effortLevel`, in Claude Code's
+own `settings.json` in the account's folder (read from the ACP adapter's settings reader and the Agent
+SDK's schema; `max` is session-only there, so it is refused as a default). Two doors, twins sharing no
+code: *Model & effort* on each account in Settings → Agents & accounts, and `daoris agent settings
+<agent> [--account] [model] [effort [--for]]`. A write moves only the keys named and keeps every other
+key; a malformed file is refused; the tool's own configuration home is never written; Codex and dsh
+are offered nothing. **6b:** a conversation on the protocol door offers its model and effort beside the
+composer, as its agent offered them on `session/new`, changed with `session/set_config_option` and
+followed through the agent's own `config_option_update`; the mode stays the posture's (D37, D81), and
+each change is a note in the record. D98 records the reversal of D49 §7.
+
+**Looked at, and fixed:** opening *Model & effort* on an account whose file sets nothing blanked the
+whole page. The bridge leaves a null field out, so `model` arrived missing, the form read it as a model
+id and called `.trim()` on nothing; the machine log's new `page.error` (LOG1b) named it. Settings are
+now read defensively where the roster is read, with a test that sends them as the wire does. The
+account row's actions also ran past the card with the new button; they wrap now.
+**Not seen:** the composer's controls in a live conversation (a real account); covered by the test agent.
+**Proven by:** driver 1040, modules 345, vitest 1556, CLI 558, and the window.

@@ -73,6 +73,13 @@ public sealed class ChatRunner(
     /// </summary>
     public event Action<string, ChatQueue>? QueueChanged;
 
+    /// <summary>
+    /// A conversation's model and effort, as its agent offers them, each time they change (AGT6b, D98): as
+    /// its session opened, after a change, and when the agent changed them itself. Only the options that
+    /// are the person's (<see cref="AcpConfigOption.ThePersons"/>).
+    /// </summary>
+    public event Action<string, IReadOnlyList<AcpConfigOption>>? OptionsChanged;
+
     /// <summary>The note a conversation's record takes when the driver holding it closes.</summary>
     public const string ClosedNote =
         "the application closed while this conversation ran; its process was ended with it.";
@@ -502,6 +509,64 @@ public sealed class ChatRunner(
     }
 
     /// <summary>
+    /// A conversation's model and effort, as its agent offered them (AGT6b, D98) — empty for one on a door
+    /// that carries none, one whose agent offered none, one still opening, and one nothing here holds.
+    /// </summary>
+    public IReadOnlyList<AcpConfigOption> Options(string sessionId) =>
+        _turned.TryGetValue(sessionId, out var turned) && turned is ProtocolChat { Session: { } session }
+            ? ThePersons(session.ConfigOptions)
+            : [];
+
+    /// <summary>
+    /// Change a conversation's model or effort (AGT6b, D98): <c>session/set_config_option</c> on its
+    /// session, as the tool's own console's <c>/model</c> would — and the record says the person did.
+    /// </summary>
+    /// <remarks>
+    /// 🔴 <b>Only the options that are the person's</b>: the model and the thought level. The mode is the
+    /// posture Daoris runs a session under (D37, D81), and a menu that widened it is the approval surface
+    /// D52 refuses, so it is refused here before anything reaches the agent — the page never offers it,
+    /// and this holds whatever a page sends. A value is the agent's to judge: it refuses one it does not
+    /// take, in its own words.
+    /// </remarks>
+    /// <returns>The conversation's options after the change, the person's only.</returns>
+    /// <exception cref="DriverException">Nothing here holds it, its door carries no options, or the option is not the person's.</exception>
+    public async Task<IReadOnlyList<AcpConfigOption>> SetOptionAsync(
+        string sessionId, string configId, string value, CancellationToken ct)
+    {
+        if (!_turned.TryGetValue(sessionId, out var turned) || turned is not ProtocolChat chat)
+        {
+            throw new DriverException(turned is not null || _talking.ContainsKey(sessionId)
+                ? $"conversation `{sessionId}` runs on a door that carries no options to change — only the protocol "
+                  + "door carries the model and effort an agent offers."
+                : $"nothing on this machine holds conversation `{sessionId}` — it has ended, or runs elsewhere.");
+        }
+
+        var session = chat.Session
+            ?? throw new DriverException($"conversation `{sessionId}` is still opening — its options are not known yet.");
+        var option = session.ConfigOptions.FirstOrDefault(offered => offered.Id == configId)
+            ?? throw new DriverException($"the agent offered no option `{configId}` for conversation `{sessionId}`.");
+        if (!option.ThePersons)
+        {
+            throw new DriverException(
+                $"the conversation's `{configId}` is the posture Daoris runs it under (D81), not the person's to change "
+                + "here — its model and its effort are.");
+        }
+
+        var after = await session.SetConfigOptionAsync(configId, value, ct).ConfigureAwait(false);
+        // Said as the agent names them, so a reader later knows what ran the turns after this one.
+        var chosen = option.Choices.FirstOrDefault(choice => choice.Value == value)?.Name ?? value;
+        Record(sessionId, new SessionEvent
+        {
+            Kind = SessionEventKind.Note, Text = $"the person set {option.Name} to {chosen} for this conversation.",
+        });
+        return ThePersons(after);
+    }
+
+    /// <summary>The options a person may set (<see cref="AcpConfigOption.ThePersons"/>), in the agent's order.</summary>
+    private static IReadOnlyList<AcpConfigOption> ThePersons(IReadOnlyList<AcpConfigOption> options) =>
+        [.. options.Where(option => option.ThePersons)];
+
+    /// <summary>
     /// The person's message as the record keeps it (CONV4c): their words and the names of what they
     /// attached — never the kept paths, nor the lines or links a door added to reach them.
     /// </summary>
@@ -659,7 +724,9 @@ public sealed class ChatRunner(
         var errors = Driver.PumpAsync(process.StandardError, file, sessionId, output, CancellationToken.None);
         var session = new AcpSession(
             process.StandardOutput, process.StandardInput, Line, closeTimeout: null, chat.Posture, chat.Meta, Record,
-            streams: output is null ? null : new SessionStreams(output, sessionId));
+            streams: output is null ? null : new SessionStreams(output, sessionId),
+            // Its model and effort, told each time they change, so the page offers what the agent does (AGT6b).
+            onOptions: options => OptionsChanged?.Invoke(sessionId, ThePersons(options)));
         // Its background work stoppable from its tab for as long as the conversation lasts (CONSOLE3a).
         using var stops = output is null ? null : processes.OpenTaskStops(sessionId, session.StopTaskAsync);
 
@@ -751,6 +818,9 @@ public sealed class ChatRunner(
         public IReadOnlyList<AcpMcpServer> Servers { get; }
 
         public ChatTurns Turns { get; }
+
+        /// <summary>The session, once it opened; null while it opens, or when it could not.</summary>
+        public AcpSession? Session => _open.Task.IsCompletedSuccessfully ? _open.Task.Result : null;
 
         /// <summary>The session is open — or could not be, and then every turn asked for is dropped.</summary>
         public void Opened(AcpSession? session, Action<string> line, Action<SessionEvent> record)

@@ -141,7 +141,11 @@ public sealed record HarnessToolchain(
     // The maker's OWN release channel a pin fetches from (AGT2b), verified end to end — never npm.
     // A toolchain declares this or `Package`, never both: which source a pin came from is not left
     // for anyone to work out. The CLI's `channel` is the twin.
-    string? Channel = null)
+    string? Channel = null,
+    // The tool's own settings file in an account's configuration home, where the account's model and
+    // effort live (AGT6, D98) — declared only where its keys were read from the tool itself. Null means
+    // Daoris does not know this tool's settings and offers none. The CLI's `settingsFile` is the twin.
+    string? SettingsFile = null)
 {
     /// <summary>The command this harness actually runs as: the machine's configured one, or the declared one.</summary>
     public IReadOnlyList<string> Command(IReadOnlyList<string>? configured) =>

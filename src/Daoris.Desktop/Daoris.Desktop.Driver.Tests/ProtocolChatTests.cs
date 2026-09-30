@@ -291,11 +291,136 @@ public sealed class ProtocolChatTests : IDisposable
         Assert.Contains("heard hello", File.ReadAllText(Path.Combine(_home, "sessions", $"{id}.log")));
     }
 
+    // ——— One conversation's model and effort (AGT6b, D98), over the stand-in's config options.
+
+    /// <summary>
+    /// A conversation on the protocol door offers the person its model and its effort, as the agent
+    /// offered them on <c>session/new</c> — and never its mode, which is the posture Daoris runs it under.
+    /// </summary>
+    [Fact]
+    public async Task A_conversation_offers_its_model_and_effort_as_the_agent_offered_them_and_never_its_mode()
+    {
+        await using var service = StandInService.Start(Path.Combine(_home, "engine"));
+        using var talking = await TalkAsync(service);
+        var (runner, id) = (talking.Runner, talking.Id);
+
+        await Until(() => runner.Options(id).Count > 0, () => $"heard [{string.Join(" | ", HeardLines())}]");
+
+        var options = runner.Options(id);
+        Assert.Equal(["model", "effort"], options.Select(option => option.Id));
+        Assert.Equal("default", options[0].Current);
+        Assert.Equal(["default", "sonnet", "haiku"], options[0].Choices.Select(choice => choice.Value));
+        Assert.Equal(["low", "high", "max"], options[1].Choices.Select(choice => choice.Value));
+        Assert.True(runner.Finish(id));
+    }
+
+    /// <summary>
+    /// A change goes over the wire as <c>session/set_config_option</c>, the options the agent answers
+    /// with are the conversation's from then on — an effort a model does not take goes with it — the
+    /// change is told, and the record says the person made it.
+    /// </summary>
+    [Fact]
+    public async Task Setting_a_conversations_model_goes_over_the_wire_and_the_record_says_the_person_did()
+    {
+        await using var service = StandInService.Start(Path.Combine(_home, "engine"));
+        using var talking = await TalkAsync(service);
+        var (runner, events, id) = (talking.Runner, talking.Events, talking.Id);
+        var told = new System.Collections.Concurrent.ConcurrentQueue<(string Session, IReadOnlyList<AcpConfigOption> Options)>();
+        runner.OptionsChanged += (session, options) => told.Enqueue((session, options));
+        await Until(() => runner.Options(id).Count > 0, () => $"heard [{string.Join(" | ", HeardLines())}]");
+
+        var after = await runner.SetOptionAsync(id, "model", "haiku", CancellationToken.None);
+
+        Assert.Contains("set: model=haiku", HeardLines());
+        Assert.Equal(["model"], after.Select(option => option.Id));
+        Assert.Equal("haiku", after[0].Current);
+        Assert.Equal("haiku", runner.Options(id)[0].Current);
+        Assert.Contains(told, entry => entry.Session == id && entry.Options.Count == 1);
+        Assert.Contains(events.Page(id).Events,
+            e => e.Kind == SessionEventKind.Note && e.Text == "the person set Model to Haiku for this conversation.");
+        Assert.True(runner.Finish(id));
+    }
+
+    /// <summary>
+    /// 🔴 The mode is not the person's to set here: it is the posture D37 and D81 set, and a menu that
+    /// widened it would be the approval surface D52 refuses. Refused before anything reaches the agent.
+    /// So is an option the agent never offered, and a conversation nothing here holds.
+    /// </summary>
+    [Fact]
+    public async Task The_mode_an_option_never_offered_and_a_conversation_nothing_holds_are_refused()
+    {
+        await using var service = StandInService.Start(Path.Combine(_home, "engine"));
+        using var talking = await TalkAsync(service);
+        var (runner, id) = (talking.Runner, talking.Id);
+        await Until(() => runner.Options(id).Count > 0, () => $"heard [{string.Join(" | ", HeardLines())}]");
+
+        var mode = await Assert.ThrowsAsync<DriverException>(() => runner.SetOptionAsync(id, "mode", "bypassPermissions", CancellationToken.None));
+        Assert.Contains("mode", mode.Message);
+        Assert.Contains("posture", mode.Message);
+        await Assert.ThrowsAsync<DriverException>(() => runner.SetOptionAsync(id, "temperature", "hot", CancellationToken.None));
+        Assert.DoesNotContain(HeardLines(), line => line.StartsWith("set:", StringComparison.Ordinal));
+
+        var nothing = await Assert.ThrowsAsync<DriverException>(() => runner.SetOptionAsync("nothing-here", "model", "haiku", CancellationToken.None));
+        Assert.Contains("nothing-here", nothing.Message);
+        Assert.Empty(runner.Options("nothing-here"));
+        Assert.True(runner.Finish(id));
+    }
+
+    /// <summary>A conversation whose agent offers no options offers the person none.</summary>
+    [Fact]
+    public async Task A_conversation_whose_agent_offers_no_options_offers_none()
+    {
+        await using var service = StandInService.Start(Path.Combine(_home, "engine"));
+        using var talking = await TalkAsync(service, "bare");
+        var (runner, id) = (talking.Runner, talking.Id);
+        await Until(() => HeardLines().Contains("session/new"), () => $"heard [{string.Join(" | ", HeardLines())}]");
+
+        Assert.Empty(runner.Options(id));
+        Assert.True(runner.Finish(id));
+    }
+
+    /// <summary>One conversation started on the stand-in agent and working, with the record it keeps.</summary>
+    private sealed record Talking(ServiceClient Client, ChatRunner Runner, SessionEvents Events, string Id) : IDisposable
+    {
+        // The runner first: its conclusions go through the client (ChatRunner.Dispose).
+        public void Dispose()
+        {
+            Runner.Dispose();
+            Client.Dispose();
+        }
+    }
+
+    private async Task<Talking> TalkAsync(StandInService service, string? mode = null)
+    {
+        var config = DriverConfig.Empty with
+        {
+            Commands = new Dictionary<string, IReadOnlyList<string>>
+            {
+                ["acp-stub"] = mode is null ? ["node", Agent(), Heard] : ["node", Agent(), Heard, mode],
+            },
+        };
+        var adapters = AdapterSet.Built();
+        var events = new SessionEvents(Path.Combine(_home, "sessions"));
+        var client = new ServiceClient(service.Url, null);
+        var runner = new ChatRunner(
+            client, adapters, _home, new SessionProcesses(Path.Combine(_home, "sessions")), events: events,
+            harnesses: new HarnessRoster(adapters, Path.Combine(_home, "harnesses.json")));
+        var id = (await runner.StartAsync("engine", "acp-stub", config)).SessionId!;
+        await Until(() => service.State(id) == "working", () => $"state {service.State(id)}");
+        return new Talking(client, runner, events, id);
+    }
+
     /// <summary>
     /// A stand-in ACP agent: it writes down every method it is called with and every prompt's words,
     /// answers each prompt a moment later so a second message arrives mid-turn, and writes down any
     /// line that is not a frame — the raw text the broken door used to send.
     /// </summary>
+    /// <remarks>
+    /// Its <c>session/new</c> offers config options in the shape <c>claude-agent-acp</c> 0.84.0 does — a
+    /// mode, a model, an effort as a thought level — unless it is started <c>bare</c>, and it takes
+    /// <c>session/set_config_option</c>, writing the change down and answering with the whole list: a
+    /// model that takes no effort drops the effort, as the adapter's own does.
+    /// </remarks>
     private string Agent()
     {
         var script = Path.Combine(_home, "acp-chat-agent.mjs");
@@ -306,6 +431,15 @@ public sealed class ProtocolChatTests : IDisposable
             const heard = process.argv[2];
             const note = (text) => appendFileSync(heard, text + '\n');
             const send = (frame) => process.stdout.write(JSON.stringify(frame) + '\n');
+            let model = 'default';
+            const options = () => [
+              { id: 'mode', name: 'Mode', category: 'mode', type: 'select', currentValue: 'acceptEdits',
+                options: [{ value: 'acceptEdits', name: 'Accept Edits' }, { value: 'bypassPermissions', name: 'Bypass' }] },
+              { id: 'model', name: 'Model', category: 'model', type: 'select', currentValue: model,
+                options: [{ value: 'default', name: 'Default' }, { value: 'sonnet', name: 'Sonnet' }, { value: 'haiku', name: 'Haiku' }] },
+              ...(model === 'haiku' ? [] : [{ id: 'effort', name: 'Effort', category: 'thought_level', type: 'select', currentValue: 'high',
+                options: [{ value: 'low', name: 'Low' }, { value: 'high', name: 'High' }, { value: 'max', name: 'Max' }] }]),
+            ];
             for await (const line of createInterface({ input: process.stdin })) {
               let frame;
               try { frame = JSON.parse(line); } catch { note('RAW: ' + line); continue; }
@@ -315,7 +449,12 @@ public sealed class ProtocolChatTests : IDisposable
               } else if (frame.method === 'session/new') {
                 note('session/new');
                 // A session id of the wrong kind: an agent this client cannot open a session on.
-                send({ jsonrpc: '2.0', id: frame.id, result: { sessionId: process.argv[3] === 'numeric' ? 5 : 'acp-chat' } });
+                const sessionId = process.argv[3] === 'numeric' ? 5 : 'acp-chat';
+                send({ jsonrpc: '2.0', id: frame.id, result: process.argv[3] === 'bare' ? { sessionId } : { sessionId, configOptions: options() } });
+              } else if (frame.method === 'session/set_config_option') {
+                note(`set: ${frame.params.configId}=${frame.params.value}`);
+                if (frame.params.configId === 'model') model = frame.params.value;
+                send({ jsonrpc: '2.0', id: frame.id, result: { configOptions: options() } });
               } else if (frame.method === 'session/prompt') {
                 const said = frame.params.prompt[0].text;
                 note('prompt: ' + said);

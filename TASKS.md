@@ -144,7 +144,7 @@ rather than designed.
 
 ## Backlog
 
-**Thirty rows are open**: the owner's four of 2026-09-30 (USE1, AGT6, HELP6, LOG1),
+**Twenty-nine rows are open**: the owner's three of 2026-09-30 (USE1, HELP6, LOG1),
 first; WSR4
 from the first real workspace (its other WSR, HELP, SESS, DOCK
 and MAP rows are in the archive); the four REV3 left (DIST1, BUDGET1 and HOME1 the owner's, and HTTP1);
@@ -197,17 +197,6 @@ TASK.md and complete one by one"*).
   folders in each command. The session before it, on 0.79.0 and a normal start, committed with git.
   Check on a normal start before anything else, then decide whether the shell's environment or the
   adapter's release is the cause.
-- [ ] **AGT6 — the agent's own settings, from Daoris: model, effort and the rest** (owner, 2026-09-30:
-  *"we also need way to adjust the claude setup (since we have command to setup model effort or
-  other setting in console but no way in daoris rn)"*). Claude Code sets its model, its effort and
-  its other settings from its own console (`/model`, `/config`), and Daoris offers no door onto
-  either, so an account's settings are changed only by opening the tool by hand under that account's
-  folder. Two levels: **an account's defaults**, in the tool's own settings file under the account's
-  profile (read the tool's settings schema, never guessed), with a Settings door and a terminal door
-  (D50); and **one conversation's model**, which the protocol door can switch mid-session
-  (`session/set_model`, and the models `session/new` answers with), as the console's `/model` does.
-  This reverses D49 §7 (*no model selection UI*) on the owner's word, so a decision (D98) records it and
-  how D24/model-decoupling still hold: the deployment still chooses, and the deployment is the person.
 - [ ] **HELP6 — Ask Daoris reaches everything** (owner, 2026-09-30: *"we need to have a good ui/ux or
   easy access for everything use ask daoris"*). Ask Daoris proposes what the person confirms (HELP1c,
   D89), but only for the doors it was built with: settings (drive, hold, landing, intake, helper,
