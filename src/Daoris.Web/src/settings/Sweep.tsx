@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button, Card, Chip, Inline, Prose, SectionTitle } from '../ui';
 
@@ -60,7 +61,7 @@ export const sweepKey = (branch: { repository: string; branch: string }) => `${b
  * unmerged, so each is proven by content — every file it changed reads on the line as it left it, or it is
  * inside another that does — and goes by the same press. Only branches a landing made here are listed.
  */
-export function SweepList({ branches, landed, busy, onLook, onClean }: {
+export function SweepList({ branches, landed, busy, onLook, onClean, sync }: {
   /** Undefined while the driver is asked; empty when there is no session branch at all. */
   branches?: SweepBranch[];
   /** The branches landings made; the group is drawn only where there is one. */
@@ -68,6 +69,8 @@ export function SweepList({ branches, landed, busy, onLook, onClean }: {
   busy?: boolean;
   onLook: () => void;
   onClean: (only: string[]) => void;
+  /** Bringing repositories up to date after a pull request merged (WSR6), drawn first: it runs before a clean-up. */
+  sync?: ReactNode;
 }) {
   const { t } = useTranslation();
   const going = [...(branches ?? []).filter((branch) => branch.removable), ...(landed ?? []).filter((branch) => branch.removable)];
@@ -109,6 +112,8 @@ export function SweepList({ branches, landed, busy, onLook, onClean }: {
     <Card id="settings-sweep" className="mt-3.5 scroll-mt-3">
       <SectionTitle>{t('settings.sweep.title')}</SectionTitle>
       <Prose className="mt-1 text-small text-ink-soft">{t('settings.sweep.body')}</Prose>
+
+      {sync}
 
       {branches?.length === 0 && <Prose className="mt-3">{t('settings.sweep.none')}</Prose>}
 

@@ -82,6 +82,10 @@ public sealed partial class HelpCoverageTests
 
         ("workspace", "useSetLine", null, new Door("setting", "line")),
         ("workspace", "useSetLanding", null, new Door("setting", "landing")),
+        ("workspace", "useTreesSync", null, new Owed(
+            "bringing a repository up to date after its pull request merges (WSR6, D109) is a press Ask Daoris could "
+            + "propose, its card showing the plan `TREES_SYNC_PLAN` lists before Apply acts on those rows only; the kind "
+            + "is HELP10's, and until then the room names Settings → Workspace → Session branches → Bring up to date.")),
         ("workspace", "useSweep", null, new Exempt(
             "it removes session trees and branches whose work landed, a discard, which stays the person's own press "
             + "(D89); the room names Settings → Workspace → Session branches.")),

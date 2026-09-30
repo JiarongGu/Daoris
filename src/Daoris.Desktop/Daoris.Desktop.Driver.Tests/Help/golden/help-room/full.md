@@ -113,6 +113,7 @@ plugin, see whether one of these does the job: propose installing it with `plugi
 | give its sessions their own tree | Projects | `daoris driver trees <repository> on|off` |
 | set the line its work grows from and lands on | Settings → Workspace → Lines | `daoris driver line <repository> <branch>|--clear` (`--workspace <name>` for a whole workspace) |
 | set how accepted work lands | Settings → Workspace → How work lands | `daoris driver landing <repository> merge|branch <pattern>|--clear` (`--workspace <name>`, `--tidy`, and on a branch `--plugin <id>`: an installed plugin that pushes it and opens the pull request) |
+| bring a repository up to date after its pull request merged: fetch and fast-forward the line, delete the branches whose work reached it, replay the branches still at work onto it (Daoris fetches, never pushes) | Settings → Workspace → Session branches → Bring up to date | `daoris-driver trees sync [--repository <name>] [--yes]` |
 | clean up session branches whose work landed, and branches a landing made whose work reached the line | Settings → Workspace → Session branches | `daoris-driver trees clean` |
 | hand a branch a landing made to a landing plugin, to push it and open the pull request | Sessions → the session's review → hand it to <plugin> | `daoris-driver trees hand <session|branch> [--plugin <id>]` |
 | choose the agent that answers asks | Settings → Daoris's own AI | `daoris driver intake <agent>|off` |

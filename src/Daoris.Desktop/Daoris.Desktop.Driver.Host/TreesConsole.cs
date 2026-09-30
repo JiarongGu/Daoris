@@ -1,7 +1,7 @@
 namespace Daoris.Driver.Host;
 
 /// <summary>
-/// The session trees, from a terminal: `daoris-driver trees [list | remove &lt;path&gt; [--force]]`.
+/// The session trees, from a terminal: `daoris-driver trees [list | remove &lt;path&gt; [--force] | clean | land | hand | sync]`.
 /// </summary>
 /// <remarks>
 /// <para><b>Why here and not in the `daoris` CLI.</b> The tree lifecycle is git spawned against real
@@ -120,9 +120,68 @@ internal static class TreesConsole
                         + (result.Removed || result.Message == "kept" ? "" : $" — {result.Message}"));
                 }
 
+                // Folders trees left behind where something held them open, tried again.
+                foreach (var folder in done.Folders ?? []) Console.WriteLine($"  {folder}");
                 var total = done.Sessions.Count + done.Landed.Count;
                 Console.WriteLine($"trees: removed {done.Sessions.Count(result => result.Removed) + done.Landed.Count(result => result.Removed)} of {total}.");
                 return 0;
+            }
+
+            // Bringing repositories up to date after a pull request merged (WSR6, D109): the list first — it fetches
+            // each line, which moves only origin's refs — and with --yes the press. Settings → Workspace → Session
+            // branches is the other door (D50). The checkouts and the sessions in use are the service's.
+            case ["sync", ..]:
+            {
+                var named = Option(args, "--repository");
+                using var service = ServiceClient.FromEnvironment();
+                var repositories = (await service.RegistryAsync().ConfigureAwait(false))
+                    .Where(row => !string.IsNullOrWhiteSpace(row.Root))
+                    .Where(row => named is null || string.Equals(row.Repository, named, StringComparison.OrdinalIgnoreCase))
+                    .OrderBy(row => row.Repository, StringComparer.Ordinal)
+                    .Select(row => (row.Repository, (string?)row.Workspace, row.Root))
+                    .ToList();
+                if (repositories.Count == 0)
+                {
+                    Console.Error.WriteLine(named is null
+                        ? "trees: no repository has a checkout here, so there is nothing to bring up to date."
+                        : $"trees: `{named}` has no checkout here, so there is nothing to bring up to date.");
+                    return 1;
+                }
+
+                var inUse = (await service.ActiveSessionsAsync().ConfigureAwait(false))
+                    .Select(session => session.Tree).OfType<string>().Where(tree => tree.Length > 0)
+                    .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
+                if (!args.Contains("--yes"))
+                {
+                    var plan = await trees.SyncPlanAsync(repositories, inUse, fetch: true).ConfigureAwait(false);
+                    foreach (var pull in plan.Lines) Console.WriteLine($"  {(pull.Moves ? "moves" : "stays")}  {SyncWords.Describe(pull)}");
+                    foreach (var item in plan.Rebases) Console.WriteLine($"  {(item.Replays ? "moves" : "stays")}  {SyncWords.Describe(item)}");
+                    if (plan.Deletes.Count > 0) Console.WriteLine("  landed branches whose work reached the line:");
+                    foreach (var item in plan.Deletes) Console.WriteLine($"  {(item.Removable ? "goes " : "kept ")}  {LandedWords.Describe(item)}");
+                    var acts = plan.Lines.Count(pull => pull.Moves) + plan.Rebases.Count(item => item.Replays) + plan.Deletes.Count(item => item.Removable);
+                    Console.WriteLine(acts == 0
+                        ? "trees: everything here is up to date."
+                        : $"trees: {acts} thing(s) would change. `daoris-driver trees sync --yes` does them — Daoris fetches, and never pushes.");
+                    return 0;
+                }
+
+                var done = await trees.SyncAsync(repositories, inUse, only: null, fetch: true).ConfigureAwait(false);
+                foreach (var result in done.Lines) Console.WriteLine($"  {(result.Moved ? "moved " : "stayed")}  {result.Pull.Repository}  {result.Message}");
+                foreach (var result in done.Rebases) Console.WriteLine($"  {(result.Replayed ? "moved " : "stayed")}  {result.Item.Repository}  {result.Message}");
+                foreach (var result in done.Deletes)
+                {
+                    Console.WriteLine($"  {(result.Removed ? "removed" : "kept   ")} {LandedWords.Describe(result.Item)}"
+                        + (result.Removed || result.Message == "kept" ? "" : $" — {result.Message}"));
+                }
+
+                // 1 where something the proofs cleared did not happen: a conflict, or a branch or line that moved since.
+                var missed = done.Lines.Count(result => result.Pull.Moves && !result.Moved)
+                             + done.Rebases.Count(result => result.Item.Replays && !result.Replayed)
+                             + done.Deletes.Count(result => result.Item.Removable && !result.Removed);
+                Console.WriteLine($"trees: {done.Lines.Count(r => r.Moved)} line(s) moved, {done.Rebases.Count(r => r.Replayed)} branch(es) replayed, "
+                    + $"{done.Deletes.Count(r => r.Removed)} removed." + (missed > 0 ? $" {missed} did not happen, each said above." : ""));
+                return missed > 0 ? 1 : 0;
             }
 
             // Accepting a session's work (WSR1, D87): the review's Accept, from a terminal — D50's second
@@ -220,7 +279,8 @@ internal static class TreesConsole
 
             default:
                 Console.Error.WriteLine("usage: daoris-driver trees [list | remove <path> [--force] | clean [--yes] | land <session> [--plan]");
-                Console.Error.WriteLine("                           | hand <session|branch> [--repository <name>] [--plugin <id>] [--plan]]");
+                Console.Error.WriteLine("                           | hand <session|branch> [--repository <name>] [--plugin <id>] [--plan]");
+                Console.Error.WriteLine("                           | sync [--repository <name>] [--yes]]");
                 Console.Error.WriteLine("  A session's worktree (D51). Removal refuses while the tree holds");
                 Console.Error.WriteLine("  uncommitted changes or work no branch of yours holds; --force means it.");
                 Console.Error.WriteLine("  clean lists every session branch with what it holds; --yes removes those");
@@ -231,6 +291,10 @@ internal static class TreesConsole
                 Console.Error.WriteLine("  plugin hands the branch to it to push and open the pull request (D100).");
                 Console.Error.WriteLine("  hand gives a branch a landing made to a landing plugin afterwards — the one");
                 Console.Error.WriteLine("  --plugin names, else the rule's — to push and open the pull request (WSR5).");
+                Console.Error.WriteLine("  sync brings each repository up to date after a pull request merged: it fetches");
+                Console.Error.WriteLine("  the line and fast-forwards it, replays the branches still at work onto it (only");
+                Console.Error.WriteLine("  their own commits), and deletes the landed branches whose work reached it. It");
+                Console.Error.WriteLine("  lists first; --yes does it. Daoris fetches, and never pushes (WSR6).");
                 return 2;
         }
     }

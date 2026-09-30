@@ -892,6 +892,14 @@ The first version: doctrine that installs, is checked, and flows back.
   numbered, highlighted lines, the lines a read named marked and scrolled to, and a *File · Changes*
   switch where the review holds a patch. It reads the session's own tree as it is now, up to 256 KiB, and
   refuses a path outside that tree, a link leading out of it, and `.git`, each with its own sentence.
+- **One press brings a repository up to date after its pull request merges** (WSR6, D109). Settings →
+  Workspace → Session branches → *Bring up to date*, or `daoris-driver trees sync [--repository <name>]
+  [--yes]`, lists first and then: fetches the line and fast-forwards it only (a clean checkout on it, or a
+  ref nothing has checked out; never a merge commit, a force or a push); replays the session branches not
+  in use and the landed branches not yet on the line onto it, cut where each grew from, so a squash-merged
+  parent's commits drop, in a tree of Daoris's own, kept only once the branch's own work is proven intact;
+  and deletes the landed branches whose work reached the line. A conflict aborts and is named; a pushed
+  branch is left.
 - **A plugin can push the branch and open the pull request** (WSR4, D100). A branch landing rule may
   name an installed plugin (`daoris driver landing … branch <pattern> --plugin <id>`, or the *who
   pushes it* chooser in Settings → Workspace → *How work lands*). Once accepting has made the branch,

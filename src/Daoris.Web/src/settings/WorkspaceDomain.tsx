@@ -5,7 +5,7 @@ import { useRegistry, useWorkspaceHoldings } from '../queries';
 import { useScope } from '../scope';
 import {
   useDriver, useHarnesses, useLines, usePlugins, useRemotes, useSetLanding, useSetLine, useStarts, useSweep,
-  useSweepPlan, useUnwireRemote, useWireRemote,
+  useSweepPlan, useTreesSync, useTreesSyncPlan, useUnwireRemote, useWireRemote,
 } from '../shell';
 import {
   Button, Card, Chip, failure, Icon, type Notify, PathText, Prose, SectionTitle, SettingRow, Tip, useErrorNotify,
@@ -15,6 +15,7 @@ import { LandingList } from './Landings';
 import { LineList } from './Lines';
 import { namer } from './namer';
 import { SweepList } from './Sweep';
+import { SyncSection } from './Sync';
 
 /**
  * The Workspace domain (D75 §3): every workspace and what it holds, which is for everyone, and on a
@@ -332,7 +333,12 @@ function SweepSettings({ notify }: { notify: Notify }) {
   const { t } = useTranslation();
   const plan = useSweepPlan();
   const sweep = useSweep();
+  // Bringing up to date (WSR6): asked for by its own press, since looking fetches.
+  const syncPlan = useTreesSyncPlan();
+  const sync = useTreesSync();
   useErrorNotify(plan.error, notify);
+  useErrorNotify(syncPlan.error, notify);
+  const looked = syncPlan.data;
 
   return (
     <SweepList
@@ -344,6 +350,21 @@ function SweepSettings({ notify }: { notify: Notify }) {
         onSuccess: (done) => notify(t('settings.sweep.done', { removed: done.removed, count: only.length })),
         onError: failure(notify),
       })}
+      sync={(
+        <SyncSection
+          plan={looked && Array.isArray(looked.lines) && Array.isArray(looked.rebases) && Array.isArray(looked.deletes) ? looked : undefined}
+          busy={sync.isPending || syncPlan.isFetching}
+          onLook={() => void syncPlan.refetch()}
+          onSync={(only) => sync.mutate(only, {
+            onSuccess: (done) => {
+              notify(t('settings.sync.done', { changed: done.changed, count: only.length }));
+              // Look again, so the list shows what is left, with why.
+              void syncPlan.refetch();
+            },
+            onError: failure(notify),
+          })}
+        />
+      )}
     />
   );
 }
