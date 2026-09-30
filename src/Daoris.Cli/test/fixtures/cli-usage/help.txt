@@ -45,7 +45,10 @@ daoris <command> [options]
                          profile list|add|remove <agent> <profile>
                                                    remove deletes the account,
                                                    sign-in and all
-                         profile default <agent> <profile> [--workspace W]
+                         profile default <agent> <profile>|--clear [--workspace W]
+                                                   --clear names none again: the
+                                                   agent's own home, or for a
+                                                   workspace the machine's default
                          pin <agent> <version> [--workspace W]
                                                    install that version somewhere
                                                    Daoris owns, and run it. Claude

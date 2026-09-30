@@ -8687,3 +8687,29 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > finished session is usually a landed one, today's preview of it is always empty.
 
 **Outcome** (built by a subagent, merged with `tools/merge-branch.mjs`, every gate; **D113**): A landed session reads as landed (D113). Once its landing tidied its tree away, the review reads the landed branch in the repository's own checkout, from the recorded `from` or the merge-base, reading refs and objects only. It says where the work landed: the branch, when, and the pull request a plugin opened. A branch gone since is said plainly, with what the clean-up proved and whether its work reads on the line. While the landed branch stands or the tree is gone, there is no Accept and no Send back; Discard is offered only where a tree is still there, and the hand-off where one applies. A tree gone with no landing is `SESSION_TREE_GONE`. The preview reads a file from the landed branch once the tree is gone, and says so; a path the branch lacks is `PREVIEW_NOT_ON_BRANCH`. `landings.json` keeps a trace of a gone branch instead of forgetting it (amends D102). `daoris-driver trees land <session> [--plan]` says a session already landed, as the review does. The git sequences were run by hand in scratch by the subagent; `LandedReviewTests` (Process) were written in the branch and run at the merge.
+
+
+## HARNESS1 — a second harness layout (absorbed, 2026-10-01)
+
+> - [ ] **HARNESS1 — a second harness layout.** `src/harness.ts` holds the signals and contract checks; a
+> second implementation slots in beside the Claude one. Do not start until a repository actually wants
+> it — the layout, always-loaded semantics and trigger mechanism all differ, and guessing produces
+> doctrine nobody chose in a format nobody verified.
+
+**Outcome** Absorbed into **LAYOUT1** (2026-10-01): its trigger arrived when the owner asked for a layout every agent reads, following dsh's own repository, in this repository and every one Daoris manages. LAYOUT1 designs it (the `.agents/` layout, mirrors that work without symlinks, the canon's materialization, and a driven set-up for a managed repository), so this row closes rather than waits.
+
+
+## LEFT3 — the leftovers of HELP10, LEFT2, WSR7 and REVIEW2 (2026-10-01)
+
+> - [ ] **LEFT3 — the leftovers of HELP10, LEFT2, WSR7 and REVIEW2** (building, D114), each a "left out" in a hand-back:
+> `HANDOFF` and `LAND_SESSION_TREE` still wait the bridge's default 30 s, though a plugin that pushes and
+> opens a pull request may take minutes (pass WSR7's `pluginBound`; two `WorkFrame.test.tsx` assertions pin
+> the calls' shape); Ask Daoris's sync card says what was not fetched, and the repositories left apart, only
+> in its message, not on the card (`help/ProposalCard.tsx`); the page logs `proposal.settled` for a sync
+> card's look, which settles nothing; HELP10's guard that an applied default starts no agent action has no
+> test; clearing an account's default back to the tool's own has a screen control and no terminal verb (D50);
+> `tools/usage-report.mjs` does not summarise `preview.opened`; and a merged session records no landing, so
+> once tidied its review reads `SESSION_TREE_GONE` with nothing to show, while `landings.json`'s traces of
+> gone branches are never pruned.
+
+**Outcome** (built by a subagent, merged with `tools/merge-branch.mjs`, every gate; no decision): LEFT3 closed the leftovers of HELP10, LEFT2, WSR7 and REVIEW2, one commit each; no decision was taken, and notes went under D94, D110, D112 and D113. A landing and a hand-off now wait as long as their plugin may (`pluginBound`). Ask Daoris's sync card says on the card, as the screen does, which lines it could not fetch and which repositories it left out; the look keeps both in the proposal file. A sync card's look no longer writes `proposal.settled`: its answer says the card still stands. HELP10's guard, that an applied default names no agent action, now has a fast test that fails without it. `daoris agent profile default <agent> --clear [--workspace <name>]` gives the screen's clear its terminal door (D50), as a twin of `profile-default` held by a table on each side; Ask Daoris proposing a clear is recorded as owed in `HelpCoverageTests`, and the room names the command. The usage report counts `preview.opened` by session and file extension. `landings.json` keeps each repository's newest 50 traces. A merge's own landing record was decided against, because its branch is the line and every reader of the record acts on recorded branches (the clean-up deletes, bringing up to date moves, the hand-off pushes).

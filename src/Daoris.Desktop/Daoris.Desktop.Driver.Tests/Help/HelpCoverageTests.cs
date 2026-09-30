@@ -157,6 +157,20 @@ public sealed partial class HelpCoverageTests
             "a viewer's own language, kept by this window and never the machine's (D66); Ask Daoris proposes what the machine does.")),
     ];
 
+    /// <summary>
+    /// A form of a control answered for above that its door does not take yet: the same hook and action, another use
+    /// of it, owed with what it waits on, and the terminal's spelling of it, which the room names meanwhile.
+    /// </summary>
+    private static readonly (string Control, string Form, string Terminal, Answer Answer)[] Forms =
+    [
+        // LEFT3: the terminal's `--clear` made this the screen's and the terminal's both (D50), and Ask Daoris's next.
+        ("agents: useHarnessAction profile-default", "clearing an account's default back to the tool's own home",
+            "daoris agent profile default <agent> <profile>|--clear", new Owed(
+                "a cleared default is a setting that undoes itself, so Ask Daoris should propose it; the `agent` kind's "
+                + "`default` door takes an account and no clear yet, which waits on the service's `agent_propose` taking "
+                + "one and the driver's judge applying it through `IHelpDoors.SetDefaultAccountAsync` with none.")),
+    ];
+
     private static string Page => Path.Combine(HelpProposalKindsTests.RepositoryRoot(), "src", "Daoris.Web", "src");
 
     [Fact]
@@ -218,6 +232,7 @@ public sealed partial class HelpCoverageTests
     public void Every_exemption_and_every_door_owed_says_why()
     {
         var reasons = Verbs.Select(row => row.Answer).Concat(Controls.Select(row => row.Answer)).Concat(Local.Select(row => row.Answer))
+            .Concat(Forms.Select(row => row.Answer))
             .Append(Share)
             .Select(answer => answer switch { Exempt exempt => exempt.Reason, Owed owed => owed.Reason, _ => null })
             .OfType<string>();
@@ -237,6 +252,26 @@ public sealed partial class HelpCoverageTests
     {
         Assert.Contains("sync [--repository <name>] [--all] [--yes]", DriverCommand.Usage);
         Assert.Contains("sync", HelpProposalKinds.Find("sync")!.Doors);
+    }
+
+    /// <summary>
+    /// LEFT3: a form of a control is owed only while its control is answered for, as a door its kind takes, the CLI's
+    /// usage still spells its terminal door, and the room names that door so the helper can point at it meanwhile.
+    /// </summary>
+    [Fact]
+    public void Every_form_owed_is_of_a_door_answered_for_and_named_in_the_room()
+    {
+        var usage = File.ReadAllText(Path.Combine(HelpProposalKindsTests.RepositoryRoot(), "src", "Daoris.Cli", "src", "cli", "agent.ts"));
+        var room = string.Join("\n", HelpRoomDoors.Doors.Select(door => door.Terminal));
+
+        foreach (var (control, form, terminal, answer) in Forms)
+        {
+            Assert.IsType<Owed>(answer);
+            Assert.IsType<Door>(Controls.Single(row => Control(row.Domain, row.Hook, row.Action) == control).Answer);
+            var spelled = terminal.Replace("daoris agent ", "", StringComparison.Ordinal);
+            Assert.True(usage.Contains(spelled, StringComparison.Ordinal), $"the CLI no longer spells `{terminal}` ({form}).");
+            Assert.True(room.Contains(terminal, StringComparison.Ordinal), $"the room's doors do not name `{terminal}` ({form}).");
+        }
     }
 
     /// <summary>DRV8's <c>--share</c>, decided (D110): exempt, while the headless loop's usage still names it.</summary>

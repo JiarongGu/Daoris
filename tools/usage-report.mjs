@@ -10,8 +10,9 @@
  * The machine log (`docs/2026-09-30-machine-log-design.md`) exists so Daoris can be improved from real
  * use rather than from a guess. Reading thirty days of JSON lines is not how anyone starts a session, so
  * this reads them for the period and says, in a terminal's width: what was used most (views opened,
- * commands run, panels moved), how the conversations and sessions went (how many, by kind and adapter,
- * the median and slowest open and first answer, how long turns took and how they ended), what was
+ * commands run, panels moved, files previewed by kind), how the conversations and sessions went (how
+ * many, by kind and adapter, the median and slowest open and first answer, how long turns took and how
+ * they ended), what was
  * refused (by code, most first), what failed (exceptions, the page's errors, error-level log lines,
  * failed or slow requests, grouped) and the lifecycle (starts, stops, uptime, versions). `--json` is the
  * same as data.
@@ -237,6 +238,16 @@ function failures(lines) {
   return [...groups.values()].sort((a, b) => b.count - a.count);
 }
 
+/**
+ * A previewed file's kind (LEFT3 f): its extension, lower case, or `(none)`. The kind is what the report says, never the
+ * path: whether the side bar's reading room is used, and for what, is the question (LEFT2).
+ */
+function kindOf(path) {
+  const name = named(path)?.split('/').pop() ?? '';
+  const dot = name.lastIndexOf('.');
+  return dot > 0 ? name.slice(dot).toLowerCase() : '(none)';
+}
+
 /** The period's lines, summarised. Counts and times only: no line's words are carried. */
 export function summarise(lines, { from, to, skipped = 0 }) {
   const of = (event) => lines.filter((line) => line.event === event);
@@ -268,6 +279,7 @@ export function summarise(lines, { from, to, skipped = 0 }) {
 
   const turns = of('turn.ended');
   const settled = of('proposal.settled');
+  const previews = of('preview.opened');
   return {
     period: { from: from.toISOString(), to: to.toISOString(), days: Math.round((to - from) / DAY_MS) },
     lines: lines.length,
@@ -277,6 +289,12 @@ export function summarise(lines, { from, to, skipped = 0 }) {
       views: counted(field('view.opened', 'view')),
       commands: counted(field('command.run', 'command')),
       panels: counted(of('panel.moved').map((line) => `${named(line.data.view) ?? '?'} → ${named(line.data.region) ?? '?'}`)),
+      // The side bar's file previews (LEFT2, D111): how many, in how many sessions, and of what kind (LEFT3 f).
+      previews: {
+        opened: previews.length,
+        sessions: new Set(field('preview.opened', 'session')).size,
+        byKind: counted(previews.map((line) => kindOf(line.data.path))),
+      },
     },
     sessions: {
       started: of('session.started').length,
@@ -350,12 +368,15 @@ export function render(report, folder) {
 
   const { used, sessions } = report;
   out.push('', 'Used most');
-  if (used.views.length + used.commands.length + used.panels.length === 0) {
+  if (used.views.length + used.commands.length + used.panels.length + used.previews.opened === 0) {
     out.push('  none');
   } else {
     out.push(`  views      ${listed(used.views) || 'none'}`);
     out.push(`  commands   ${listed(used.commands) || 'none'}`);
     out.push(`  panels     ${listed(used.panels) || 'none'}`);
+    const { previews } = used;
+    out.push(`  previews   ${previews.opened === 0 ? 'none'
+      : `${previews.opened} opened in ${plural(previews.sessions, 'session', 'sessions')} — ${listed(previews.byKind)}`}`);
   }
 
   out.push('', 'Conversations and sessions');

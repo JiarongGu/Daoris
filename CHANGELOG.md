@@ -922,6 +922,12 @@ The first version: doctrine that installs, is checked, and flows back.
   changes from the landed branch in the repository's own checkout, says where and when it landed (and the
   pull request, if a plugin opened one), and offers no Accept or Send back; the hand-off where one applies.
   Its file preview reads from that branch, saying so. `trees land` says a session already landed.
+- **A plugin's landing waits as long as the plugin may, and the rest of the night's leftovers** (LEFT3).
+  Accepting into a plugin's pull request, and handing a branch to one, wait up to six minutes rather than
+  thirty seconds. Ask Daoris's *Bring up to date* card says on the card what it could not fetch and what it
+  left apart. `daoris agent profile default <agent> --clear [--workspace <name>]` clears a default from a
+  terminal, as the screen does. The usage report counts previews opened, and the landing record keeps
+  each repository's newest fifty traces of gone branches.
 - **A plugin can push the branch and open the pull request** (WSR4, D100). A branch landing rule may
   name an installed plugin (`daoris driver landing … branch <pattern> --plugin <id>`, or the *who
   pushes it* chooser in Settings → Workspace → *How work lands*). Once accepting has made the branch,

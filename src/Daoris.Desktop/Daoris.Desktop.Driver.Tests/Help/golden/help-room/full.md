@@ -134,7 +134,7 @@ plugin, see whether one of these does the job: propose installing it with `plugi
 | allow, ask or deny what an agent may do | Settings → Permissions | `daoris agent rules …` |
 | let agents read a repository's checkout, or not; let one repository's sessions write into another | Settings → Permissions → Reading and writing across | `daoris driver across <repository> read on|off|--clear` (`--workspace <name>` for a whole workspace), `daoris driver across <repository> write-to <other> [--clear]` |
 | sign an agent in, or add an account | Settings → Agents & accounts | `daoris agent login <agent>` |
-| choose which account an agent's sessions use, for the machine or a workspace | Settings → Agents & accounts → Make default, use for a workspace | `daoris agent profile default <agent> <profile> [--workspace <name>]` |
+| choose which account an agent's sessions use, for the machine or a workspace | Settings → Agents & accounts → Make default, use for a workspace | `daoris agent profile default <agent> <profile>|--clear [--workspace <name>]` (`--clear` names none again: the tool's own home, or for a workspace the machine's default) |
 | update an agent, or pin it to one version | Settings → Agents & accounts → Update, Pin a version | `daoris agent update <agent>`, `daoris agent pin <agent> <version>` |
 | set an account's own model and effort | Settings → Agents & accounts → Model & effort | `daoris agent settings <agent> --account <name> model <model> effort <effort>` |
 | delete a quest or an ask made by mistake | Quests → the quest's drawer, or the ask's record → delete | `daoris-driver quest delete <id>`, `daoris-driver ask --delete <id>` |

@@ -108,7 +108,9 @@ through by mistake.
   (`applied`). A value of another kind is dropped, and a string is cut at 120 characters with an
   ellipsis. `message.sent`'s `kind` is `chat`, `steer` (a word to a driven session) or `help`, and a help
   message that opens a conversation has no `session` yet. `proposal.settled` is the person's Apply or Not
-  now once it landed. `page.error` is `error`-level, `where` `window` or `promise`.
+  now once it landed and settled the proposal. A sync card's look (HELP10) settles nothing: its answer says the
+  card `stands` for the press that does, and it writes no line (LEFT3); a look that found nothing to do settled
+  the card, and is written as any Apply is. `page.error` is `error`-level, `where` `window` or `promise`.
 
 ## 5. What is never logged
 
@@ -127,7 +129,8 @@ the transcript beside it.
   filters, and opens the folder.
 - **For improving Daoris**: `tools/usage-report.mjs --install <dir> [--days 7]` reads an install's
   logs and prints what was used most, what was refused, what failed and what was slow. A development
-  session starts from it instead of from a guess.
+  session starts from it instead of from a guess. Since LEFT3 what was used most includes the side bar's
+  previews (`preview.opened`): how many, in how many sessions, and of what kind by extension, never the path.
 - **Never over HTTP.** A browser, and a remote, see none of it (D47 §4). The host writes its file and
   serves no route onto any of them.
 
