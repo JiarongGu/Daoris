@@ -5,7 +5,8 @@
 > MOD rows in `TASKS.md`. Status: **MOD1–MOD9 built** (D106 for MOD1). *D115 (DEV1,
 > `docs/2026-10-01-self-development-design.md`) designs what the driver makes of this: §5's map moves to
 > `daoris.lanes.json` as the repository's own declaration, and §3's rules 6 and 7 become the driver's queue
-> and a steward's lane. Until those rows land, everything here stands as written.*
+> and a steward's lane. DEV2 has moved the map, with ids and the steward's `records` lane (§5). Until the
+> other rows land, everything else here stands as written.*
 
 ## 1. What was measured
 
@@ -82,9 +83,9 @@ that hold today's behaviour are what prove it.
 plus the `npm run` steps the release workflow adds (the release and family rehearsals), so there is no
 second list. It orders gates by kind: the devkit's checks, then the suites, then the rehearsals. The
 deployment rehearsal runs last, after `dotnet build-server shutdown`. `--plan` shows the order and
-merges nothing. Before merging, the tool prints which lanes of `tools/lanes.json` (§5, held to this
-table by a test) the branch touched, and never refuses on a lane. A commit check refuses a commit
-without its `Co-Authored-By:` line and work left uncommitted in the branch's worktree. When a
+merges nothing. Before merging, the tool prints which lanes of `daoris.lanes.json` (§5, held to this
+table by a test) the branch touched, by id and title, and never refuses on a lane. A commit check
+refuses a commit without its `Co-Authored-By:` line and work left uncommitted in the branch's worktree. When a
 `dotnet test` gate of the `Process` half fails and names every failure, each failed test is re-run
 alone once; if all pass, the gate reads FLAKE and the summary counts it. A rehearsal that died is run
 again once, whole (LEFT1): one whose exit is a process ending (a shell's 127, a signal, a Windows crash
@@ -116,24 +117,27 @@ touched them. Split one when two branches next meet in it.
 
 ## 5. The lane map
 
-| Lane | Owns |
-|---|---|
-| Web shell | `src/Daoris.Web/` but its Settings: `shell.ts`, `bridge/`, `App.tsx`, `ui.tsx`, the work frame, the other screens and the modules they share, and the page's build |
-| Web settings | `SettingsView.tsx`, `settings/`, and their catalogue areas |
-| Driver library | `Daoris.Desktop.Driver/` by feature folder: loop and planner, trees and landing, plugins and hooks, help, toolchain |
-| Desktop modules | `Daoris.Desktop.Modules/` by partial, `Daoris.Desktop.App/`, the launcher, and the desktop tree's package versions |
-| Service | `src/Daoris.Service/` |
-| CLI | `src/Daoris.Cli/` |
-| Tools and records | `tools/`, `.gitattributes`, the docs gates, the devkit, the gates' declaration and the release workflow |
+| Lane | Title | Owns |
+|---|---|---|
+| `web-shell` | Web shell | `src/Daoris.Web/` but its Settings: `shell.ts`, `bridge/`, `App.tsx`, `ui.tsx`, the work frame, the other screens and the modules they share, and the page's build |
+| `web-settings` | Web settings | `SettingsView.tsx`, `settings/`, and their catalogue areas |
+| `driver` | Driver library | `Daoris.Desktop.Driver/` by feature folder: loop and planner, trees and landing, plugins and hooks, help, toolchain |
+| `modules` | Desktop modules | `Daoris.Desktop.Modules/` by partial, `Daoris.Desktop.App/`, the launcher, and the desktop tree's package versions |
+| `service` | Service | `src/Daoris.Service/` |
+| `cli` | CLI | `src/Daoris.Cli/` |
+| `tools` | Tools | `tools/`, `.gitattributes`, the docs gates, the devkit, the gates' declaration and the release workflow |
+| `records` | Records | The steward's lane: `TASKS.md`, `docs/task-archive.md` and the lane map itself. A subagent never edits it; the parent keeps it as the steward |
 
 A feature usually crosses two or three lanes (a driver door, its module route, its screen). After the
 splits, crossing a lane means adding a file in it, not editing that lane's god file, so two features
 can cross the same lanes at once.
 
-What belongs to no lane is declared too, as `laneless` in `tools/lanes.json`: the docs and records, the
-doctrine and the example family it is synced into, and the harness's settings. The merge tool reports
-those as *no lane*. A test refuses a tracked file that is in no lane and not declared, so a new path is
-placed when it is added, never left outside silently (LEFT1).
+The map is the repository's own declaration, `daoris.lanes.json` at its root (DEV2, D115 §2.1): each
+lane has the id this table names it by, a title and a one-line summary, and a test holds the two
+tables together. What belongs to no lane is declared too, as `laneless` there: the docs, the doctrine
+and the example family it is synced into, and the harness's settings. The merge tool reports those as
+*no lane*. A test refuses a tracked file that is in no lane and not declared, so a new path is placed
+when it is added, never left outside silently (LEFT1).
 
 ## 6. Order of work
 
