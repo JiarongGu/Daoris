@@ -6,6 +6,7 @@ import { store, stored } from '../lib/stored';
 import { useDiscardSessionTree, useHandOff, useHandOffPress, useLandSessionTree, useLanding, useSessionDiff } from '../shell';
 import { Button, EmptyState, Inline, Segmented, SkeletonRows } from '../ui';
 import { DiffFileRow } from './DiffFileRow';
+import { LandedNote } from './LandedNote';
 import type { DiffLayout } from './PatchView';
 
 /** How a reader likes the changes laid out (REVIEW2) — a per-viewer convenience, like the frame's widths. */
@@ -36,6 +37,12 @@ const LAYOUT = 'daoris.reviewLayout';
  * **A refusal renders verbatim** — "no tree here", "no range recorded" and "the checkout is not
  * clean" are different facts with different next moves, and only the host knows which.
  *
+ * **A landed session reads as landed** (REVIEW2, D113). Where this machine's landing record holds the
+ * session's landing, the review says where the work landed, above what it reads; once a tidy took the
+ * tree, what it reads is the landed branch, in the repository's own checkout. While the review reads as
+ * landed — the branch stands, or the tree is gone — accepting and sending back are not offered, and
+ * discarding only where a tree is still here; the hand-off stays where one applies.
+ *
  * Desktop-only, structurally: the hook is gated on the bridge, so in a browser this never asks.
  */
 export function DiffPane({ session, hasTree = false, onSendBack, onPreview }: {
@@ -55,9 +62,20 @@ export function DiffPane({ session, hasTree = false, onSendBack, onPreview }: {
 }) {
   const { t } = useTranslation();
   const diff = useSessionDiff(session);
+  // Where this session's work landed, where this machine's landing record holds it (REVIEW2, D113).
+  const landed = diff.data?.landed ?? null;
+  // The host decides whether the review reads as landed — its landed branch stands, or its tree is gone — and
+  // the acts follow it: no second landing (refused while the branch stands, D87), no sending back.
+  const asLanded = Boolean(landed?.asLanded);
+  // A tree the host could not read, or says is gone: nothing to land or discard there (UX5 U66).
+  const treeGone = diff.data?.source === 'branch'
+    || (diff.error as { code?: unknown } | null)?.code === 'SESSION_TREE_GONE';
+  const treeHere = hasTree && !diff.isPending && !treeGone;
+  const canAccept = treeHere && !asLanded;
+  const sendBack = asLanded ? undefined : onSendBack;
   const land = useLandSessionTree();
-  // What a press would do, asked only where there is a tree to land.
-  const landing = useLanding(hasTree ? session : null);
+  // What a press would do, asked only where there is a tree to land and the review does not read as landed.
+  const landing = useLanding(canAccept ? session : null);
   const discard = useDiscardSessionTree();
   // The branch this session's landing made, handed to a landing plugin afterwards (WSR5b) — asked whether
   // or not a tree is still here, since a tidy removes it and the branch stands.
@@ -142,8 +160,9 @@ export function DiffPane({ session, hasTree = false, onSendBack, onPreview }: {
 
   // Gated on the TREE, not on the diff: a session whose range git cannot read may still hold a tree
   // worth discarding, and one whose record travelled here holds none at all. Sending the work back
-  // is about the work, not the tree, so it stands wherever there is a door for it (UX5 U66).
-  const acts = !hasTree && !onSendBack && !handable ? null : (
+  // is about the work, not the tree, so it stands wherever there is a door for it (UX5 U66) — but for
+  // work that already landed (REVIEW2), whose next move is its branch's, not the session's.
+  const acts = !treeHere && !sendBack && !handable ? null : (
     <footer className="grid shrink-0 gap-2 border-t border-line px-3 py-2">
       {said && <p className="m-0 text-small text-ink-soft">{said}</p>}
       {said && opened && (
@@ -155,19 +174,19 @@ export function DiffPane({ session, hasTree = false, onSendBack, onPreview }: {
       )}
       {/* Where a press sends the work, before it is pressed (D87) — and who pushes it where a plugin
           does (D100). A shell older than the rule answers no form, and the pane then claims nothing. */}
-      {!said && hasTree && landing.data?.form === 'branch' && landing.data.target && (
+      {!said && canAccept && landing.data?.form === 'branch' && landing.data.target && (
         <p className="m-0 text-small text-ink-faint">
           <Inline text={landing.data.plugin
             ? t('work.review.landsOnBranchPlugin', { branch: landing.data.target, plugin: landing.data.plugin })
             : t('work.review.landsOnBranch', { branch: landing.data.target })} />
         </p>
       )}
-      {!said && hasTree && landing.data?.problem && (
+      {!said && canAccept && landing.data?.problem && (
         <p className="m-0 border-l-[3px] border-warn pl-2 text-small text-ink-soft">
           {t('work.review.landingProblem', { problem: landing.data.problem })}
         </p>
       )}
-      {!said && hasTree && landing.data?.form === 'merge' && landing.data.target && (
+      {!said && canAccept && landing.data?.form === 'merge' && landing.data.target && (
         <p className="m-0 text-small text-ink-faint">
           <Inline text={t('work.review.landsOnLine', { line: landing.data.target })} />
         </p>
@@ -185,7 +204,7 @@ export function DiffPane({ session, hasTree = false, onSendBack, onPreview }: {
       )}
 
       <div className="flex flex-wrap items-center gap-2">
-        {hasTree && (
+        {canAccept && (
           <Button
             variant="primary"
             disabled={land.isPending}
@@ -205,9 +224,9 @@ export function DiffPane({ session, hasTree = false, onSendBack, onPreview }: {
           </Button>
         )}
 
-        {onSendBack && <Button onClick={onSendBack}>{t('work.review.sendBack')}</Button>}
+        {sendBack && <Button onClick={sendBack}>{t('work.review.sendBack')}</Button>}
 
-        {!hasTree ? null : confirmingDiscard
+        {!treeHere ? null : confirmingDiscard
           ? (
             <>
               <Button
@@ -256,11 +275,26 @@ export function DiffPane({ session, hasTree = false, onSendBack, onPreview }: {
     );
   }
 
+  // Where the work landed (REVIEW2), above whatever is read: the landed branch's changes, or the tree's.
+  const note = landed ? <LandedNote landed={landed} source={diff.data?.source ?? 'tree'} /> : null;
+
+  // A landed branch with nothing to read — gone since, rebased, no checkout here — is said in the note alone:
+  // "nothing landed" would be false, since it did.
+  if (landed && diff.data?.source === 'branch' && files.length === 0) {
+    return (
+      <section className="flex min-h-0 flex-col">
+        <div className="min-h-0 flex-1">{note}</div>
+        {acts}
+      </section>
+    );
+  }
+
   // The acts are about the TREE, not the diff — so a session that landed NOTHING still gets them.
   // Its tree is real, it is holding a slot, and discarding it is exactly what a person wants next.
   if (files.length === 0) {
     return (
       <section className="flex min-h-0 flex-col">
+        {note}
         <div className="min-h-0 flex-1">
           <EmptyState
             icon="check"
@@ -275,6 +309,7 @@ export function DiffPane({ session, hasTree = false, onSendBack, onPreview }: {
 
   return (
     <section className="flex min-h-0 flex-col">
+      {note}
       <header className="flex shrink-0 items-baseline gap-2 border-b border-line px-3 py-1.5">
         <span className="text-meta uppercase tracking-[0.06em] text-ink-faint">
           {t('work.review.files', { count: files.length })}

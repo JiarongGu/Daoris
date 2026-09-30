@@ -33,5 +33,20 @@
   "work.review.accepting": "merging…",
   "work.review.sendBack": "send it back…",
   "work.review.discard": "discard the tree",
-  "work.review.discardMeanIt": "discard it anyway"
+  "work.review.discardMeanIt": "discard it anyway",
+  "work.review.landed.label": "where this work landed",
+  "work.review.landed.on": "This session's work landed on `{{branch}}`.",
+  "work.review.landed.fromBranch": "Its tree is gone, so the changes below are read from that branch in `{{repository}}`'s own checkout.",
+  "work.review.landed.treeStays": "That branch still stands, so the work is not accepted again; its tree is still here.",
+  "work.review.landed.unreadable": "Its changes could not be read from that branch: {{detail}}",
+  "work.review.landed.gone": "That branch is gone from `{{repository}}` now.",
+  "work.review.landed.removed": "The clean-up removed it once its work read on `{{where}}`.",
+  "work.review.landed.removedInside": "The clean-up removed it inside `{{where}}`, whose work read on the line.",
+  "work.review.landed.readsOnLine": "Its work reads on `{{where}}`.",
+  "work.review.landed.differs": "{{count}} file it changed reads otherwise on `{{where}}`: {{files}}.",
+  "work.review.landed.differs_other": "{{count}} files it changed read otherwise on `{{where}}`: {{files}}.",
+  "work.review.landed.commitsGone": "Git no longer holds its commits here, so whether its work reads on the line cannot be said.",
+  "work.review.landed.unknown": "Git could not say whether its work reads on the line: {{detail}}",
+  "work.review.landed.notOurs": "That branch no longer holds the commit the landing made it at — it was rebased or replaced — so it is not shown as this session's work.",
+  "work.review.landed.noCheckout": "`{{repository}}` has no checkout on this machine, so that branch cannot be read here."
 }

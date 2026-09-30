@@ -33,5 +33,20 @@
   "work.review.accepting": "合并中…",
   "work.review.sendBack": "退回…",
   "work.review.discard": "丢弃工作树",
-  "work.review.discardMeanIt": "仍然丢弃"
+  "work.review.discardMeanIt": "仍然丢弃",
+  "work.review.landed.label": "这份工作落地在哪里",
+  "work.review.landed.on": "这个会话的工作落地在 `{{branch}}` 上。",
+  "work.review.landed.fromBranch": "它的工作树已不在，所以下面的改动读自 `{{repository}}` 自己检出里的那个分支。",
+  "work.review.landed.treeStays": "那个分支仍在，所以这份工作不会再次接受；它的工作树也还在。",
+  "work.review.landed.unreadable": "无法从那个分支读出它的改动：{{detail}}",
+  "work.review.landed.gone": "那个分支现在已不在 `{{repository}}` 中。",
+  "work.review.landed.removed": "清理在它的工作出现在 `{{where}}` 上之后移除了它。",
+  "work.review.landed.removedInside": "清理把它作为 `{{where}}` 的一部分移除了，那个分支的工作已出现在主线上。",
+  "work.review.landed.readsOnLine": "它的工作已出现在 `{{where}}` 上。",
+  "work.review.landed.differs": "它改动的 {{count}} 个文件在 `{{where}}` 上内容不同：{{files}}。",
+  "work.review.landed.differs_other": "它改动的 {{count}} 个文件在 `{{where}}` 上内容不同：{{files}}。",
+  "work.review.landed.commitsGone": "git 在这里已不再保有它的提交，所以无法说明它的工作是否出现在主线上。",
+  "work.review.landed.unknown": "git 无法说明它的工作是否出现在主线上：{{detail}}",
+  "work.review.landed.notOurs": "那个分支已不再包含落地时的那个提交——它被变基或替换过——所以不把它当作这个会话的工作显示。",
+  "work.review.landed.noCheckout": "`{{repository}}` 在这台机器上没有检出，所以这里读不到那个分支。"
 }

@@ -135,6 +135,7 @@ public sealed partial class SessionTrees
             var workspace = RemoteTarget.Workspace(space);
             var stale = new List<string>();
             var removed = new List<string>();
+            var proven = new List<LandedItem>();
             var first = await JudgeLandedAsync(
                 root, repository, workspace, EntriesOf(Recorded.All(), repository),
                 await SessionBranchesAsync(root, ct).ConfigureAwait(false), stale, ct).ConfigureAwait(false);
@@ -165,14 +166,21 @@ public sealed partial class SessionTrees
                 // -D, because the proof was made in this call; git's own -d asks only whether HEAD holds the
                 // commits, and a squash merge put none of them anywhere.
                 var (code, _, err) = await WorkingTree.GitAsync(root, ["branch", "-D", item.Branch], ct).ConfigureAwait(false);
-                if (code == 0) removed.Add(item.Branch);
+                if (code == 0)
+                {
+                    removed.Add(item.Branch);
+                    proven.Add(now.Item);
+                }
+
                 results.Add(code == 0
                     ? new(now.Item, true, "removed")
                     : new(now.Item, false, $"git would not delete the branch: {FirstLine(err)}"));
             }
 
-            // Gone, or no longer the landing's: the record forgets it — the name may be the person's now.
-            if (removed.Count + stale.Count > 0) Recorded.Forget(repository, [.. removed, .. stale]);
+            // Gone, or no longer the landing's: never judged again — the name may be the person's now — and kept as a
+            // trace with what the proof found, so the review of the session that landed it says where its work went (D113).
+            foreach (var item in proven) Recorded.Removed(repository, item.Branch, item.Kind, item.Where);
+            if (stale.Count > 0) Recorded.Gone(repository, stale);
         }
 
         return results;

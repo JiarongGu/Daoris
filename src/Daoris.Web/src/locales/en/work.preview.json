@@ -16,6 +16,9 @@
   "work.preview.binary": "{{name}} is a binary file ({{size}}), so there is no text here to show.",
   "work.preview.truncated": "This file is {{size}}; the preview shows its first line. The file on disk has the rest.",
   "work.preview.truncated_other": "This file is {{size}}; the preview shows its first {{count}} lines. The file on disk has the rest.",
+  "work.preview.truncatedBranch": "This file is {{size}}; the preview shows its first line. The branch has the rest.",
+  "work.preview.truncatedBranch_other": "This file is {{size}}; the preview shows its first {{count}} lines. The branch has the rest.",
+  "work.preview.fromBranch": "The session's tree is gone, so this is the file as the branch this session's work landed on holds it: `{{branch}}`.",
   "work.preview.empty": "This file is empty.",
   "work.preview.reading": "reading…"
 }

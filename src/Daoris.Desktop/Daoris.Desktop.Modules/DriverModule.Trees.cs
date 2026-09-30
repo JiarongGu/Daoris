@@ -26,6 +26,14 @@ public sealed partial class DriverModule
     /// from another machine names no tree here, a record made before the base commit was written has
     /// no range, and a tree that has been discarded is gone. None of those is a fault, and each has a
     /// different sentence, so the page can say which.</para>
+    ///
+    /// <para><b>A landed session reads as landed</b> (REVIEW2, D113). Where this machine's landing record holds
+    /// the session's landing, the answer says where its work landed — the branch, when, the pull request a
+    /// plugin opened — and where that branch stands now. The tree is read first while it is here, since it
+    /// holds what the session did and anything it did after its landing; once it is gone, the changes are
+    /// read from the landed branch in the repository's own checkout, from where its work grew from, and a
+    /// branch gone since is said with whether its work reads on the line. Every read there is of refs and
+    /// objects: the person's checkout is never touched.</para>
     /// </remarks>
     [DriverRoute("SESSION_DIFF")]
     private async Task<object?> DiffAsync(IpcRequest request, CancellationToken cancellationToken)
@@ -35,54 +43,127 @@ public sealed partial class DriverModule
         var service = _loop.Service ?? throw NotReady();
 
         var (tree, baseCommit) = await service.SessionGroundAsync(id, cancellationToken);
+        var trees = new SessionTrees(_loop.Home);
+        // This machine's landing of the session, standing or a trace (D113): where its work went.
+        var landing = trees.Recorded.Landing(id);
+        var gone = SessionTrees.TreeGone(tree);
 
+        if (!gone && !string.IsNullOrWhiteSpace(baseCommit))
+        {
+            // A tree brought up to date since (WSR6) no longer holds the commit its session began at: the review measures
+            // from where its branch now grows from, or it would show the line's own changes as the session's work.
+            var from = await trees.ReviewBaseAsync(tree!, baseCommit, cancellationToken);
+            var diff = await WorkingTree.DiffAsync(tree!, from, cancellationToken);
+            if (diff is not null)
+            {
+                var standing = landing is null
+                    ? null
+                    : await trees.LandedReviewAsync(await CheckoutOfAsync(service, landing.Repository, cancellationToken), landing, changes: false, cancellationToken);
+                return ReviewAnswer(id, diff, ReviewSource.Tree, standing, treeGone: false);
+            }
+        }
+
+        if (landing is not null)
+        {
+            var review = await trees.LandedReviewAsync(
+                await CheckoutOfAsync(service, landing.Repository, cancellationToken), landing, changes: true, cancellationToken);
+            return ReviewAnswer(id, review.Changes, ReviewSource.Branch, review, treeGone: gone);
+        }
+
+        throw Unreviewable(id, tree, baseCommit);
+    }
+
+    /// <summary>Where a review's files are read from (REVIEW2): the session's own tree, or its landed branch once the tree cannot be read.</summary>
+    public static class ReviewSource
+    {
+        public const string Tree = "tree";
+        public const string Branch = "branch";
+    }
+
+    /// <summary>
+    /// What a review becomes on the wire: the files and the range they are measured from, where they are read from,
+    /// and — for a landed session (REVIEW2, D113) — where its work landed, where that branch stands, and whether the
+    /// review reads as landed, which is what the page's acts follow. Public, as <see cref="FileAnswer"/> is, so the
+    /// shape is tested without a service.
+    /// </summary>
+    /// <remarks>Never a machine path: the checkout the branch was read in is the registry's, and the page has no use for it.</remarks>
+    public static object ReviewAnswer(string session, WorkingTree.TreeDiff? diff, string source, LandedReview? landed, bool treeGone) => new
+    {
+        Session = session,
+        Base = diff?.Base ?? "",
+        diff?.Truncated,
+        Files = (diff?.Files ?? []).Select(file => new
+        {
+            file.Path,
+            file.Status,
+            file.Added,
+            file.Removed,
+            file.Patch,
+        }).ToArray(),
+        Source = source,
+        Landed = landed is null ? null : new
+        {
+            landed.Entry.Branch,
+            landed.Entry.Repository,
+            landed.Entry.Line,
+            LandedAt = landed.Entry.LandedAt == DateTimeOffset.MinValue
+                ? null
+                : landed.Entry.LandedAt.ToString("O", System.Globalization.CultureInfo.InvariantCulture),
+            landed.Entry.Plugin,
+            landed.Entry.Pushed,
+            landed.Entry.PullRequest,
+            landed.State,
+            AsLanded = landed.ReadsAsLanded(treeGone),
+            Reads = landed.Reads is { } reads ? new { reads.Kind, reads.Where, reads.Files, reads.Detail } : null,
+            Removed = landed.Entry.RemovedAs is { } kind
+                ? new
+                {
+                    Kind = kind,
+                    Where = landed.Entry.RemovedOn,
+                    At = landed.Entry.GoneAt?.ToString("O", System.Globalization.CultureInfo.InvariantCulture),
+                }
+                : null,
+            landed.Detail,
+        },
+    };
+
+    /// <summary>Why a review with no landing to read instead has nothing to show, as the refusal the page renders — each its own code.</summary>
+    public static Shenora.Core.Ipc.ShenoraException Unreviewable(string session, string? tree, string? baseCommit)
+    {
         if (string.IsNullOrWhiteSpace(tree))
         {
-            throw Refusals.Because(
+            return Refusals.Because(
                 Refusals.SessionNotReviewable,
                 "this session's record names no working tree on this machine, so there is nothing "
                 + "here to diff. That is what a record looks like when it travelled from the machine "
                 + "that did the work.",
-                ("session", id));
+                ("session", session));
+        }
+
+        if (SessionTrees.TreeGone(tree))
+        {
+            return Refusals.Because(
+                Refusals.SessionTreeGone,
+                "this session's tree is gone from this machine — a tidy after its landing, or a discard, removed it — so "
+                + "there is nothing here to diff, and no tree to land or discard.",
+                ("session", session));
         }
 
         if (string.IsNullOrWhiteSpace(baseCommit))
         {
-            throw Refusals.Because(
+            return Refusals.Because(
                 Refusals.SessionNoBase,
                 "this session's record does not say which commit its tree stood at when it began, so "
                 + "there is no range to measure. Records made before Daoris started writing that down "
                 + "keep their evidence line and cannot gain a diff.",
-                ("session", id));
+                ("session", session));
         }
 
-        // A tree brought up to date since (WSR6) no longer holds the commit its session began at: the review measures
-        // from where its branch now grows from, or it would show the line's own changes as the session's work.
-        var from = await new SessionTrees(_loop.Home).ReviewBaseAsync(tree, baseCommit, cancellationToken);
-        var diff = await WorkingTree.DiffAsync(tree, from, cancellationToken);
-        if (diff is null)
-        {
-            throw Refusals.Because(
-                Refusals.SessionRangeUnreadable,
-                "git could not read that range where the session ran — the tree has moved, been "
-                + "discarded, or no longer holds the commit it started from.",
-                ("session", id));
-        }
-
-        return new
-        {
-            Session = id,
-            diff.Base,
-            diff.Truncated,
-            Files = diff.Files.Select(file => new
-            {
-                file.Path,
-                file.Status,
-                file.Added,
-                file.Removed,
-                file.Patch,
-            }).ToArray(),
-        };
+        return Refusals.Because(
+            Refusals.SessionRangeUnreadable,
+            "git could not read that range where the session ran — the tree has moved, been "
+            + "discarded, or no longer holds the commit it started from.",
+            ("session", session));
     }
 
     // What a person may `@` in a conversation (CONV4d): the files in the tree the record names.
@@ -131,6 +212,11 @@ public sealed partial class DriverModule
     ///
     /// <para><b>The answer names the file as the page asked for it</b>, relative to the tree, and never the
     /// tree's own path, which is machine-local material the page has no use for.</para>
+    ///
+    /// <para><b>Once the tree is gone, a landed session's file is read from its landed branch</b> (REVIEW2, D113):
+    /// a finished session is usually a landed one, and a tidy takes its tree, so its preview had nothing to read.
+    /// The answer names the branch, so the page says the file is as that branch holds it. The no-tree answer is
+    /// left for a session with neither its tree nor the landing's branch here.</para>
     /// </remarks>
     [DriverRoute("SESSION_FILE")]
     private async Task<object?> FileAsync(IpcRequest request, CancellationToken cancellationToken)
@@ -141,7 +227,31 @@ public sealed partial class DriverModule
         var service = _loop.Service ?? throw NotReady();
 
         var (tree, _) = await service.SessionGroundAsync(id, cancellationToken);
-        return await PreviewAsync(id, tree, path, cancellationToken, _loop.Log);
+        if (!SessionTrees.TreeGone(tree) || new SessionTrees(_loop.Home).Recorded.Landing(id) is not { } landing)
+        {
+            return await PreviewAsync(id, tree, path, cancellationToken, _loop.Log);
+        }
+
+        var root = await CheckoutOfAsync(service, landing.Repository, cancellationToken);
+        return await LandedPreviewAsync(id, root, landing, tree, path, cancellationToken, _loop.Log);
+    }
+
+    /// <summary>
+    /// A file read for its preview from a session's landed branch (REVIEW2, D113), in the repository's checkout
+    /// <paramref name="root"/>, answered as the page receives it or refused as a code. Public, as <see cref="PreviewAsync"/> is.
+    /// </summary>
+    /// <param name="tree">The session's tree as its record names it, gone now: a path the page sends inside it is the same path on the branch.</param>
+    /// <param name="log">As <see cref="PreviewAsync"/>'s: the session and the file relative to the repository, never the branch's name, which carries a title's words.</param>
+    public static async Task<object> LandedPreviewAsync(
+        string session, string? root, LandedBranch landing, string? tree, string path, CancellationToken cancellationToken, MachineLog? log = null)
+    {
+        var read = await FilePreview.ReadLandedAsync(root, landing, path, tree, cancellationToken);
+        if (read is { Refusal: FilePreviewRefusal.None, File: { } opened })
+        {
+            log?.Info("preview.opened", ("session", session), ("path", opened.Path));
+        }
+
+        return FileAnswer(session, path, read);
     }
 
     /// <summary>
@@ -172,10 +282,16 @@ public sealed partial class DriverModule
         (string, string)[] named = [("session", session), ("path", path)];
         return read switch
         {
+            // The landed branch it was read from, once the tree is gone (REVIEW2); null for the file on disk.
             { Refusal: FilePreviewRefusal.None, File: { } file } => new
             {
-                Session = session, file.Path, file.Size, file.Binary, file.Text, file.Truncated,
+                Session = session, file.Path, file.Size, file.Binary, file.Text, file.Truncated, file.Branch,
             },
+            { Refusal: FilePreviewRefusal.NotOnBranch } => throw Refusals.Because(
+                Refusals.PreviewNotOnBranch,
+                $"`{path}` is not a file on `{read.Branch}`, the branch this session's work landed on: it was deleted or moved "
+                + "there, or it is a folder or a link.",
+                [.. named, ("branch", read.Branch ?? "")]),
             { Refusal: FilePreviewRefusal.Outside } => throw Refusals.Because(
                 Refusals.PreviewOutsideTree,
                 $"`{path}` is outside this session's tree, so the preview does not read it.",
@@ -190,7 +306,8 @@ public sealed partial class DriverModule
                 named),
             { Refusal: FilePreviewRefusal.NoTree } => throw Refusals.Because(
                 Refusals.PreviewNoTree,
-                "this session's record names no tree on this machine, or the tree is gone, so there is no file here to show.",
+                "this session's record names no tree on this machine, or the tree is gone and no branch its landing made stands "
+                + "here to read instead, so there is no file here to show.",
                 named),
             _ => throw Refusals.Because(
                 Refusals.PreviewNotAFile,

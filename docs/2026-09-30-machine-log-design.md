@@ -100,7 +100,9 @@ through by mistake.
 - **`preview.opened`** (LEFT2) is written by the shell's `SESSION_FILE` route when a file was read for its
   preview, never by the page, so the module's filter below does not list it. `path` is the file relative
   to the session's tree, with forward slashes, as the preview names it: never the tree's own path, and
-  never the file's words. A preview that was refused writes nothing; its refusal is `refused`'s.
+  never the file's words. A preview that was refused writes nothing; its refusal is `refused`'s. A file
+  read from a landed branch once the tree is gone (D113) writes the same line, its path relative to the
+  repository, and never the branch's name, which carries a title's words.
 - **The page's fields** each have a kind: a name (`view`, `command`, `region`, `session`, `kind`,
   `where`: an identifier, never a sentence), a text (`message`), a count (`length`, `files`) or a flag
   (`applied`). A value of another kind is dropped, and a string is cut at 120 characters with an

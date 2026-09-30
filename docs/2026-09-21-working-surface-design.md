@@ -269,6 +269,12 @@ happened and nothing about what it was.
   repository's own history (`autonomous-development`); this exists so the person can *see* it without
   leaving, not so Daoris can become a code-review product.
 
+*Amended by D113 (REVIEW2, 2026-10-01): a landed session reads as landed. Its review says where the work landed
+(the branch, when, the pull request a plugin opened) and, once a tidy took its tree, reads the changes from the landed
+branch in the repository's own checkout, never touching it; a branch gone since is said, with whether its work reads
+on the line. While its landed branch stands or its tree is gone, accepting and sending back are not offered, discard
+only where a tree is still here, and the hand-off where one applies.*
+
 ## 6. How much terminal is actually wanted
 
 **A transcript with an input box — what SES2 built — and no PTY.** A real pseudo-terminal means

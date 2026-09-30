@@ -271,5 +271,29 @@ public sealed class FilePreviewTests : IDisposable
         Assert.Equal("", read.File!.Text);
         Assert.False(read.File.Binary);
         Assert.Equal(0, read.File.Size);
+        // A file on disk names no branch: only a landed branch's copy does (REVIEW2).
+        Assert.Null(read.File.Branch);
     }
+
+    // ——— a file as a landed branch holds it (REVIEW2, D113): git's listing, read without git
+
+    /// <summary>The one blob listed at exactly the path asked, with its object and its size, padded as git pads it.</summary>
+    [Fact]
+    public void A_listed_file_on_the_branch_is_its_object_and_its_size()
+    {
+        const string output = "100644 blob 3b18e512dba79e4c8300dd08aeb37f8e728b8dad      12\tsrc/chunk.ts\0";
+
+        Assert.Equal(("3b18e512dba79e4c8300dd08aeb37f8e728b8dad", 12L), FilePreview.Listed(output, "src/chunk.ts"));
+        Assert.Equal(("abcd", 7L), FilePreview.Listed("100755 blob abcd 7\trun.sh\0", "run.sh"));
+    }
+
+    /// <summary>A folder, a link, a submodule and a path git did not list are not a file the branch holds.</summary>
+    [Theory]
+    [InlineData("040000 tree 3b18e512dba79e4c8300dd08aeb37f8e728b8dad       -\tsrc\0", "src")]
+    [InlineData("120000 blob 3b18e512dba79e4c8300dd08aeb37f8e728b8dad      18\tlinked\0", "linked")]
+    [InlineData("160000 commit 3b18e512dba79e4c8300dd08aeb37f8e728b8dad       -\tvendor/lib\0", "vendor/lib")]
+    [InlineData("100644 blob 3b18e512dba79e4c8300dd08aeb37f8e728b8dad      12\tsrc/chunk.ts\0", "src/Chunk.ts")]
+    [InlineData("", "src/chunk.ts")]
+    public void A_folder_a_link_or_an_unlisted_path_is_not_a_file_on_the_branch(string output, string path) =>
+        Assert.Null(FilePreview.Listed(output, path));
 }

@@ -31,11 +31,24 @@ public sealed record LandedBranch(
     /// recorded, else null. Bringing it up to date cuts here, so only its own commits are replayed.
     /// </summary>
     public string? From { get; init; }
+
+    /// <summary>
+    /// When this machine found the branch gone, or no longer the landing's, or removed it (REVIEW2, D113); null while it
+    /// stands. A trace is never judged, handed on or moved again: it is kept so the review of the session that landed it
+    /// can still say where its work went.
+    /// </summary>
+    public DateTimeOffset? GoneAt { get; init; }
+
+    /// <summary>What the clean-up proved when it removed the branch (<see cref="LandedKind"/>: on the line, merged, inside another); null where Daoris did not remove it.</summary>
+    public string? RemovedAs { get; init; }
+
+    /// <summary>Where that proof held: the form of the line, or the landed branch it was inside.</summary>
+    public string? RemovedOn { get; init; }
 }
 
 /// <summary>
 /// The branches this machine's landings made (WSR5): <c>&lt;home&gt;/landings.json</c>. Written at the
-/// landing, read by the clean-up and the hand-off, and forgotten once the branch is gone.
+/// landing, read by the clean-up and the hand-off, and kept as a trace once the branch is gone (REVIEW2, D113).
 /// </summary>
 /// <remarks>
 /// <para><b>Machine-local, under the home (D63), never in the repository.</b> Which branches a landing on
@@ -60,8 +73,18 @@ public sealed class LandedBranches(string home)
 
     public string FilePath => Path.Combine(home, FileName);
 
-    /// <summary>Every branch recorded, in the order they landed.</summary>
-    public IReadOnlyList<LandedBranch> All()
+    /// <summary>Every branch recorded that still stands, in the order they landed: what the clean-up, the hand-off and Ask Daoris act on.</summary>
+    public IReadOnlyList<LandedBranch> All() => [.. Everything().Where(entry => entry.GoneAt is null)];
+
+    /// <summary>
+    /// The newest landing of one session, standing or a trace (REVIEW2, D113): what its review says of where its work
+    /// went, since a tidy took its tree and the clean-up may have taken the branch since.
+    /// </summary>
+    public LandedBranch? Landing(string session) =>
+        Everything().LastOrDefault(entry => string.Equals(entry.Session, session, StringComparison.OrdinalIgnoreCase));
+
+    /// <summary>Every entry, standing and traces, in the order they landed.</summary>
+    private IReadOnlyList<LandedBranch> Everything()
     {
         try
         {
@@ -91,12 +114,15 @@ public sealed class LandedBranches(string home)
                             || string.Equals(entry.Branch, sessionOrBranch, StringComparison.Ordinal))
             .Reverse()];
 
-    /// <summary>Record one, replacing any entry for the same branch in the same repository.</summary>
-    public void Record(LandedBranch entry) => Edit(all => [.. all.Where(each => !Same(each, entry.Repository, entry.Branch)), entry]);
+    /// <summary>
+    /// Record one, replacing any standing entry for the same branch in the same repository. An earlier session's trace
+    /// of that name stays, since its review still says where that session's work went.
+    /// </summary>
+    public void Record(LandedBranch entry) => Edit(all => [.. all.Where(each => !Standing(each, entry.Repository, entry.Branch)), entry]);
 
     /// <summary>What a plugin answered when it pushed the branch (D100), kept on its entry.</summary>
     public void Pushed(string repository, string branch, PluginLanding said, string tip) => Edit(all =>
-        [.. all.Select(each => Same(each, repository, branch)
+        [.. all.Select(each => Standing(each, repository, branch)
             ? each with { Plugin = said.Plugin, Pushed = said.Pushed, PullRequest = said.PullRequest, PushedTip = tip }
             : each)]);
 
@@ -105,25 +131,40 @@ public sealed class LandedBranches(string home)
     /// Daoris moved it, so it stays the landing's; a branch someone else rebased no longer holds its tip and is not.
     /// </summary>
     public void Moved(string repository, string branch, string tip, string from) => Edit(all =>
-        [.. all.Select(each => Same(each, repository, branch) ? each with { Tip = tip, From = from } : each)]);
+        [.. all.Select(each => Standing(each, repository, branch) ? each with { Tip = tip, From = from } : each)]);
 
-    /// <summary>Forget branches that are gone, or no longer the landing's.</summary>
-    public void Forget(string repository, IReadOnlyCollection<string> branches) => Edit(all =>
-        [.. all.Where(each => !(string.Equals(each.Repository, repository, StringComparison.OrdinalIgnoreCase)
-                                && branches.Contains(each.Branch, StringComparer.Ordinal)))]);
+    /// <summary>
+    /// Branches found gone, or no longer the landing's (a name that is the person's now): kept as traces, never judged
+    /// again (REVIEW2, D113). Until D113 they were forgotten, and the review of the session that landed one then had
+    /// nothing to say of where its work went.
+    /// </summary>
+    public void Gone(string repository, IReadOnlyCollection<string> branches) => Edit(all =>
+        [.. all.Select(each => string.Equals(each.Repository, repository, StringComparison.OrdinalIgnoreCase)
+                               && each.GoneAt is null && branches.Contains(each.Branch, StringComparer.Ordinal)
+            ? each with { GoneAt = DateTimeOffset.UtcNow }
+            : each)]);
+
+    /// <summary>A branch the clean-up removed once its work read on the line (WSR5): a trace, with what the proof found and where.</summary>
+    public void Removed(string repository, string branch, string kind, string? where) => Edit(all =>
+        [.. all.Select(each => Standing(each, repository, branch)
+            ? each with { GoneAt = DateTimeOffset.UtcNow, RemovedAs = kind, RemovedOn = where }
+            : each)]);
 
     private void Edit(Func<IReadOnlyList<LandedBranch>, IReadOnlyList<LandedBranch>> change)
     {
         lock (Gate)
         {
             Directory.CreateDirectory(home);
-            AtomicFile.WriteText(FilePath, ToJson(change(All())));
+            // Every entry, traces included: a write that read only the standing ones would drop every trace (D113).
+            AtomicFile.WriteText(FilePath, ToJson(change(Everything())));
         }
     }
 
     private static bool Same(LandedBranch entry, string repository, string branch) =>
         string.Equals(entry.Repository, repository, StringComparison.OrdinalIgnoreCase)
         && string.Equals(entry.Branch, branch, StringComparison.Ordinal);
+
+    private static bool Standing(LandedBranch entry, string repository, string branch) => entry.GoneAt is null && Same(entry, repository, branch);
 
     /// <summary>Written by hand, as the driver's other files are, for the AOT reason <see cref="DriverConfig"/> gives.</summary>
     private static string ToJson(IReadOnlyList<LandedBranch> entries)
@@ -150,6 +191,9 @@ public sealed class LandedBranches(string home)
                 if (entry.PullRequest is not null) writer.WriteString("pullRequest", entry.PullRequest);
                 if (entry.PushedTip is not null) writer.WriteString("pushedTip", entry.PushedTip);
                 if (entry.From is not null) writer.WriteString("from", entry.From);
+                if (entry.GoneAt is { } gone) writer.WriteString("goneAt", gone.ToString("O", CultureInfo.InvariantCulture));
+                if (entry.RemovedAs is not null) writer.WriteString("removedAs", entry.RemovedAs);
+                if (entry.RemovedOn is not null) writer.WriteString("removedOn", entry.RemovedOn);
                 writer.WriteEndObject();
             }
 
@@ -180,6 +224,11 @@ public sealed class LandedBranches(string home)
             PullRequest = Text(element, "pullRequest"),
             PushedTip = Text(element, "pushedTip"),
             From = Text(element, "from"),
+            GoneAt = DateTimeOffset.TryParse(Text(element, "goneAt"), CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var gone)
+                ? gone
+                : null,
+            RemovedAs = Text(element, "removedAs"),
+            RemovedOn = Text(element, "removedOn"),
         };
     }
 

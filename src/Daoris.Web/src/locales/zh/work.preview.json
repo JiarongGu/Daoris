@@ -16,6 +16,9 @@
   "work.preview.binary": "{{name}} 是二进制文件（{{size}}），这里没有可显示的文本。",
   "work.preview.truncated": "这个文件有 {{size}}；预览只显示第一行，其余部分在磁盘上的文件里。",
   "work.preview.truncated_other": "这个文件有 {{size}}；预览只显示前 {{count}} 行，其余部分在磁盘上的文件里。",
+  "work.preview.truncatedBranch": "这个文件有 {{size}}；预览只显示第一行，其余部分在那个分支里。",
+  "work.preview.truncatedBranch_other": "这个文件有 {{size}}；预览只显示前 {{count}} 行，其余部分在那个分支里。",
+  "work.preview.fromBranch": "这个会话的工作树已不在，所以这里显示的是它的工作落地所在分支中的这个文件：`{{branch}}`。",
   "work.preview.empty": "这个文件是空的。",
   "work.preview.reading": "读取中…"
 }

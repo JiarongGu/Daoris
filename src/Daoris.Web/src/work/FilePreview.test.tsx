@@ -66,6 +66,25 @@ describe('a file\'s preview', () => {
       .toBeInTheDocument();
   });
 
+  /**
+   * REVIEW2 (D113): once a landing tidied the tree away, the file is the landed branch's copy, and the preview says
+   * so in a sentence — and that the branch, not the disk, has the rest of a long one.
+   */
+  it('says a file read from the landed branch is as that branch holds it', () => {
+    wrap(<FilePreview path={FILE.path} file={{ ...FILE, branch: 'feature/0fda18-fix', size: 3 * 1024 * 1024, truncated: true }} />);
+
+    const said = screen.getByText(/as the branch this session's work landed on holds it/);
+    expect(said.textContent).toBe("The session's tree is gone, so this is the file as the branch this session's work landed on holds it: feature/0fda18-fix.");
+    expect(screen.getByText('feature/0fda18-fix', { selector: 'code' })).toBeInTheDocument();
+    expect(screen.getByText('This file is 3 MB; the preview shows its first 3 lines. The branch has the rest.')).toBeInTheDocument();
+  });
+
+  it('says nothing of a branch for a file on disk', () => {
+    wrap(<FilePreview path={FILE.path} file={FILE} />);
+
+    expect(screen.queryByText(/landed on holds it/)).toBeNull();
+  });
+
   it('says an empty file is empty, rather than drawing nothing', () => {
     wrap(<FilePreview path="src/empty.ts" file={{ ...FILE, path: 'src/empty.ts', text: '', size: 0 }} />);
 
