@@ -188,3 +188,75 @@ carries what ran, not where the declaration lived.
 | **PLUG5** | the hook wire: `initialize`, `quest/consider` as a fail-closed waterfall, `session/ended` contained, start/stop with the loop | a stub hook plugin in the family rehearsal that holds one quest with a sentence and observes an ending |
 | **PLUG6** | the Machine view's Plugins card and the roster's provenance chip | the vitest loop over the mocked bridge, and a screenshot |
 | **PLUG7** *(held)* | service-side points | asked for by a plugin somebody writes |
+| **PLUG8** | the kit a plugin is made with (§9, D101): `daoris-driver plugins new\|try` and Settings → Plugins | a fresh plugin passes its own `node --test` and `try`; the samples sent through the real loop and landing; the two checkers held by one answer table |
+
+## 9. Making a plugin: the kit (PLUG8, D101)
+
+A plugin is code that runs on a machine as its person, so **making one is work**: a folder in a
+repository (a plugins repository, typically), with its tests, reviewed as a diff and installed only by
+a person's `daoris plugin add`. The kit makes the middle of that checkable by a gate. It is the
+driver's, not the canon's: it knows this build's points and frames, which no other repository needs.
+
+| From a terminal | On Settings → Plugins |
+|---|---|
+| `daoris-driver plugins new <id> --point <p>… [--in <folder>]` | *Make a plugin*: an id, the points, a folder picked or typed, **New** |
+| `daoris-driver plugins try <folder\|id> [--point <p>] [--frame <file>]` | **Try** beside each installed plugin that speaks, and *Try a folder* |
+
+**`new`** writes `<folder>/<id>/`, refusing a name that is not an id, a point this build lacks, a
+folder that is not there and a folder that holds anything, and installs nothing. The folder holds:
+
+- `plugin.json`: the id, `apiVersion`, a name from the id, and `hooks` naming `node ${plugin}/plugin.mjs`
+  and the points;
+- `plugin.mjs`: the wire, answering the handshake with the declared points it listens on, one handler
+  per point that already answers in the right shape, a refusal (`-32603`) for a handler that throws,
+  `-32601` for a request it does not know, and `shutdown`. A landing plugin's also carries `run()`,
+  which starts a platform's tool without a shell, or through cmd with the quoting below;
+- `plugin.test.mjs`: the **wire test**, which imports nothing but Node. It starts the plugin as the driver
+  does, speaks the handshake, one frame at every declared point and the shutdown, and checks every
+  answer by the driver's rules. **`node --test` is a plugins repository's whole gate**, because a
+  session there has neither `daoris` nor `daoris-driver` on its PATH: the install carries neither, and
+  a driven session is handed no PATH of Daoris's;
+- `README.md`: the wire, the rules, and each declared point's frame and answer, for a session that has
+  only the folder.
+
+**`try`** starts the plugin with the driver's own start (`HookProcess.StartInfo`), speaks to it with the
+driver's own reader (`HookPeer`), and sends the driver's own frames (`HookFrames`), so an answer it
+accepts is one the driver reads. It says each check in its own sentence: the handshake, each point,
+the shutdown, stdout. It exits 0 when every answer is one the driver reads, 1 when the plugin failed a
+check (a wrong answer, a silent plugin, a crash, a line on stdout that is not a frame, a plugin that
+stays after `shutdown`), and 2 when it could not do what was asked. A folder's plugin is told a scratch
+home and keeps what it keeps in a scratch data folder, both removed after; an installed one is tried
+from its own folders.
+
+### The points
+
+| Point | Kind | Sent | Answers | The driver waits |
+|---|---|---|---|---|
+| `quest/consider` | decision, before a planned start | `quest { id, title, from, to }`, `repository`, `workspace`, `root` | `{ "kind": "allow" }`, or `{ "kind": "hold", "reason": "…" }` | 10 s; late or wrong holds the quest |
+| `session/ended` | observation, after a session | `session`, `quest`, `repository`, `state`, `adapter`, `account`, `byPerson`, `note` | anything; `{}` | 10 s; a failure is a console line |
+| `work/land` | act, once a landing made its branch | `repository`, `workspace`, `root`, `branch`, `base`, `title`, `quest { id, title }`, `session`, `commits [{ sha, subject }]` | `{ "pushed": bool, "pullRequest": "https://…"\|null, "message": "…"\|null }` | 2 min; a failure leaves the branch |
+
+The samples the kit writes are built by the functions the driver sends with, and a test sends them
+through the real waterfall, observation and landing. A frame's `root` in a sample is `{root}`, which the
+wire test and `try` replace with an empty scratch folder where git is pointed at a repository that is
+not there: git walks up, and a landing plugin that pushes first must push nothing. The kit is stricter
+than the driver in one place: a point the manifest declares and the process does not listen on fails.
+
+### The rules an author keeps
+
+1. **stdout is the wire.** Nothing but frames; everything else goes to stderr, shown under `plugin:<id>`.
+2. **What it keeps goes in its data folder**, `DAORIS_PLUGIN_DATA` or `${data}`. The install folder is
+   replaced whole by the next `add`.
+3. **Where it is, is told**: `DAORIS_PLUGIN_ID`, `DAORIS_PLUGIN_FOLDER`, `DAORIS_PLUGIN_DATA`,
+   `DAORIS_HOME`, and `${plugin}` in a command. Never a path worked out from the working directory.
+4. **Every request is answered, promptly**, in the point's shape; a handler that fails answers an error.
+5. **A platform's tool on Windows is often a `.cmd` script.** Node cannot start one without cmd, and cmd
+   reads the line a second time: quote every argument, and refuse one holding `"`, `%` or a line break
+   rather than pass it. The WSR4 examples and a landing scaffold's `run()` do exactly this.
+6. **Nothing runs until a person says so**: installed, then turned on, and a landing plugin only where a
+   workspace's rule names it. A plugin's own tests fake its platform's tool on the PATH and use a bare
+   repository as `origin`; nothing a test runs reaches a network.
+
+**Not in the kit: a harness or a server.** Each is a declaration, not code (§3): there is nothing to
+write but a manifest row, a scaffold would have to invent a command, and a harness's posture is its
+own word, never a guess. `try` cannot reach either, since the ACP door is a session, not a frame.

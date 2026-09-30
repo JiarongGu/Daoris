@@ -30,7 +30,7 @@ what was measured, and it stays a record of that moment. A *record* is append-on
 | `2026-09-23-api-key-accounts.md` | contract | an account that is an API key (D67 §1) | Current |
 | `2026-09-23-intake-design.md` | contract | an ask becomes quests (D65) | Current, with D70, D72 and D77 noted, and USE1c's done ask |
 | `2026-09-23-map-design.md` | contract | the maps (D67 §3, MAP) | Current |
-| `2026-09-23-plugin-design.md` | contract | plugins (D64) | Current, with D71, D77's `${data}`, D78's `${browser}` and D100's `work/land` noted |
+| `2026-09-23-plugin-design.md` | contract | plugins (D64), and making one with the kit (§9, D101) | Current, with D71, D77's `${data}`, D78's `${browser}` and D100's `work/land` noted |
 | `2026-09-23-sync-design.md` | contract | the remote as a git remote (D68) | Current, with D69 and D95 (a delete travels as `deleted`) noted |
 | `2026-09-24-menus-design.md` | contract | the menus as setup domains (D75) | Current |
 | `2026-09-24-permission-scopes-design.md` | contract | what an agent may do (D72, D74) | Current |
