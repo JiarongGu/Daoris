@@ -49,11 +49,30 @@ export const Closed: Story = { args: { mode: 'closed', width: 32 } };
 
 /**
  * Holding what the person moved in (DOCK1b): Ask Daoris beside the session's two, and the console from
- * the panel, at the end. At the floor the tabs give way to their icons, and the list at the row's end
- * names every one.
+ * the panel, at the end. At the floor the unselected tabs are their icons alone (TABS1), and the list at
+ * the row's end names every one.
  */
 export const HoldingMovedViews: Story = {
   args: { views: ['timeline', 'review', 'ask', 'console'], tab: 'console', width: 300, onMove: () => {}, onReset: () => {} },
+};
+
+/**
+ * The side bar the installed window showed (TABS1): 430px holding the timeline, the review, Ask Daoris
+ * and a file's preview, which in 中文 needed 367 of its 349px. Each unselected tab was cut to one character
+ * and an ellipsis; now each is its icon, its name in its tip, and the shown preview keeps its name. Widened
+ * past what the names need, every name is whole again. Storybook lays it out, so the measure is real
+ * here; the smoke render in vitest has no layout and draws the names.
+ */
+export const FourTabsAtANarrowSideBar: Story = {
+  args: {
+    views: ['timeline', 'review', 'ask'], tab: 'preview', width: 430, onMove: () => {},
+    preview: { name: 'budget-report.md', path: 'docs/streaming/budget-report.md', onClose: () => {} },
+  },
+};
+
+/** The same four with room for every name: each unselected tab keeps its whole name. */
+export const FourTabsWithRoom: Story = {
+  args: { ...FourTabsAtANarrowSideBar.args, width: 640 },
 };
 
 /** Every view moved out: it says how to fill it, as VS Code's empty container does. */
@@ -64,7 +83,10 @@ const PREVIEW = { name: 'chunk.rs', path: 'src/world/streaming/chunk.rs', onClos
 /** A file's preview (PREVIEW1): a tab after the views, named for the file, with its own ×. */
 export const WithAPreview: Story = { args: { tab: 'preview', preview: PREVIEW } };
 
-/** At the floor with Ask Daoris and a preview: the preview keeps its name while it is shown, the rest give way. */
+/**
+ * At the floor with Ask Daoris and a preview: the preview keeps its name while it is shown, cut at its cap
+ * when the name is longer, and the rest are their icons.
+ */
 export const APreviewAtTheFloor: Story = {
   args: { views: ['timeline', 'review', 'ask'], tab: 'preview', preview: PREVIEW, width: 300, onMove: () => {} },
 };

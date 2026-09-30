@@ -35,9 +35,9 @@ const ITEM = cn(
  * selected one can go.
  *
  * @remarks
- * **Chrome's tab list, for tabs that do not fit**: tabs cut to their icons still leave some out of
- * reach. The tabs shrink as a browser's do, and however narrow the region gets, this lists
- * every one by its whole name, so none is ever out of reach.
+ * **Chrome's tab list, for tabs that do not fit**: a tab drawn as its icon alone (TABS1) is named only by
+ * its tip, and once even the icons scroll some are out of sight. However narrow the region gets, this
+ * lists every one by its whole name, so none is ever out of reach.
  *
  * **VS Code's *Move to*, on the same button**, and on a right-click of a tab, which selects the tab
  * first so the move names it. The views move between the right side bar and the panel; *Reset view

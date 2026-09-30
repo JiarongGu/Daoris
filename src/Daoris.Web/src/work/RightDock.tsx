@@ -7,6 +7,7 @@ import type { DockMode } from './layout';
 import type { Place, ViewId } from './placements';
 import { DropMark, viewEntries, ViewsMenu } from './ViewsMenu';
 import { dragProps, useViewDrop } from './viewDrag';
+import { useTabFit } from './tabFit';
 
 // The frame's third column (components plan §3a). It was deliberately unbuilt until it had a SECOND
 // occupant — a dock holding one thing is a pane with extra chrome — and SURF6's diff is that
@@ -90,6 +91,11 @@ export function RightDock({
     : tabs.some((entry) => entry.id === tab) ? tab : tabs[0]?.id ?? (preview ? 'preview' : undefined);
   // A view dragged from the panel lands here, closed or open (DOCK1e).
   const drop = useViewDrop('right', onMove);
+  // Whether the unselected tabs are their icons (TABS1). What the names need changes with the names, the
+  // preview's name, whether the preview is shown (only then is it capped), and the buttons beside them.
+  const fit = useTabFit([
+    ...tabs.map((entry) => entry.label), preview?.name ?? '', shown === 'preview', Boolean(onFull) && !autoFull,
+  ].join('\n'));
 
   if (mode === 'closed') {
     return (
@@ -159,13 +165,16 @@ export function RightDock({
         />
       )}
 
-      {/* 🔴 The tabs give way before the dock's own buttons do (found looking at DOCK1c): with a third
-          tab, Ask Daoris, the close was clipped off a dock at its floor, and then a scrollbar ran under the
-          names. So they shrink as a browser's tabs and VS Code's do: the selected tab keeps its whole name, as a browser's active tab keeps its
-          width, and the others give way, each cut with an ellipsis down to its icon; only then do they
-          scroll. Every full name is its tab's own and its tip's, and the list at the row's end (DOCK1b)
-          names them all, as Chrome's does, so a tab cut to its icon is never the only way to one. */}
-      <div className="flex shrink-0 items-center border-b border-line pr-1">
+      {/* 🔴 A tab shows its whole name or its icon, never a name cut (TABS1). With a third tab, Ask
+          Daoris, the close was clipped off a dock at its floor and then a scrollbar ran under the names
+          (DOCK1c), so the tabs give way before the dock's own buttons do. They gave way by shrinking, each
+          cut with an ellipsis, until a 430px side bar showed 时间线 as 时…: cutting a short name buys
+          nothing. So the selected tab keeps its whole name, as a browser's active tab keeps its width, and
+          the others keep theirs while the row holds every one; when it does not, each is its icon alone
+          (`useTabFit`, measured). Only when the icons do not fit does the row scroll. Every name stays its
+          tab's label and its tip's, and the list at the row's end (DOCK1b) names them all, as Chrome's
+          does, so an icon is never the only way to a tab. */}
+      <div ref={fit.row} data-fit={fit.compact ? 'icons' : 'names'} className="flex shrink-0 items-center border-b border-line pr-1">
         <div role="tablist" aria-label={t('work.dock.label')} className="flex min-w-0 flex-1 overflow-x-auto [scrollbar-width:none]">
           {tabs.map(({ id, label, icon }) => (
             <Tip key={id} content={label}>
@@ -186,26 +195,23 @@ export function RightDock({
                 }}
                 className={cn(
                   // One line: a tab's name that wraps reads as two tabs (Ask Daoris, found looking at it).
-                  'flex max-w-44 items-center gap-1.5 whitespace-nowrap border-b-2 px-3 py-1.5 text-small transition-colors duration-(--speed)',
-                  shown === id
-                    ? 'shrink-0 border-b-accent text-ink'
-                    : 'min-w-9 shrink border-b-transparent text-ink-faint hover:text-ink',
+                  'flex shrink-0 items-center gap-1.5 whitespace-nowrap border-b-2 px-3 py-1.5 text-small transition-colors duration-(--speed)',
+                  shown === id ? 'border-b-accent text-ink' : 'border-b-transparent text-ink-faint hover:text-ink',
                 )}
               >
                 <Icon name={icon} size={14} className="shrink-0" />
-                <span className="min-w-0 truncate">{label}</span>
+                {(shown === id || !fit.compact) && <span>{label}</span>}
               </button>
             </Tip>
           ))}
-          {/* A file's preview (PREVIEW1): after the views, shrinking as they do, with its own × — a
-              sibling of the tab, since a button inside a button is neither. */}
+          {/* A file's preview (PREVIEW1): after the views and by the same rule, with its own × — a
+              sibling of the tab, since a button inside a button is neither. Shown, it is capped and its
+              name may be cut, because a file's name is long and the tip carries its path. */}
           {preview && (
             <div
               className={cn(
-                'flex max-w-52 items-center border-b-2 transition-colors duration-(--speed)',
-                shown === 'preview'
-                  ? 'shrink-0 border-b-accent text-ink'
-                  : 'min-w-9 shrink border-b-transparent text-ink-faint hover:text-ink',
+                'flex shrink-0 items-center border-b-2 transition-colors duration-(--speed)',
+                shown === 'preview' ? 'max-w-52 border-b-accent text-ink' : 'border-b-transparent text-ink-faint hover:text-ink',
               )}
             >
               <Tip content={t('work.preview.tab', { name: preview.path })}>
@@ -219,7 +225,9 @@ export function RightDock({
                   className="flex min-w-0 items-center gap-1.5 whitespace-nowrap py-1.5 pl-3 pr-1 text-small"
                 >
                   <Icon name="read" size={14} className="shrink-0" />
-                  <span className="min-w-0 truncate">{preview.name}</span>
+                  {shown === 'preview'
+                    ? <span className="min-w-0 truncate">{preview.name}</span>
+                    : !fit.compact && <span>{preview.name}</span>}
                 </button>
               </Tip>
               <Tip content={t('work.preview.close')}>

@@ -5,8 +5,8 @@ import * as Tooltip from '@radix-ui/react-tooltip';
 import '../i18n';
 import { ViewsMenu, viewEntries } from './ViewsMenu';
 
-// DOCK1b: the button at the end of a region's tab row. Chrome's tab list, so a tab cut to its icon is
-// never the only way to it, and VS Code's *Move to*, for the tab that is shown.
+// DOCK1b: the button at the end of a region's tab row. Chrome's tab list, so a tab drawn as its icon
+// (TABS1) is never the only way to it, and VS Code's *Move to*, for the tab that is shown.
 
 const t = (key: string) => ({
   'work.review.timelineTab': 'Timeline', 'work.review.tab': 'Review', 'help.title': 'Ask Daoris', 'work.views.console': 'Console',
