@@ -5172,6 +5172,15 @@ is a door owed: the `agent` kind's `default` door takes an account and no clear,
 service's `agent_propose` and the driver's judge. `HelpCoverageTests` holds it as a form owed, and the room names the
 command meanwhile.*
 
+*Amended by LOOK2c (2026-10-01): the screen says it too. *Use for a workspace* on the tool's own row clears that
+workspace's account, and with a machine default set its sessions then run as that default, not in the tool's own home
+the row names. No file can say "the tool's own home here" over a machine default, so offering that as a second choice
+would be a new value in both twins' file, and is not built. Instead each of that row's choices says where it leads
+while a machine default is set (*lab, which then runs as personal, this machine's default*), and every default's press
+says what sessions there run as now, the fact the terminal's verb prints: `HARNESS_ACTION`'s `profile-default` answers
+`default` (the workspace, the account or none, and whether it came from the workspace, the machine or the agent's own
+home), from the resolution a start takes (`DriverModule.DefaultStanding`). The twins' table of edits is unchanged.*
+
 **Why.** HELP6 and HELP8 each found a door built since the last pass that Ask Daoris could not reach, and
 READ1 left one the room already promised. A list kept by hand drifts; a list a test derives from the doors'
 own sources does not.
