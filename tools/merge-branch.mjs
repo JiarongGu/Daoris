@@ -41,6 +41,12 @@
  * failure outside those classes is never re-run, because a test that passes alone after failing in the
  * suite may be one test polluting another, and that is a defect.
  *
+ * A rehearsal that died is run again once, whole, with the steps before it (LEFT1): one whose exit is a
+ * process ending (a shell's 126 or 127, cmd's 9009, a signal, a Windows crash status), or that printed
+ * nothing of its own. The family rehearsal once exited 127 with no transcript while three worktrees
+ * built, and passed alone. If the second run passes, the gate reads FLAKE. A rehearsal that reported a
+ * failed check has failed whatever its exit, and so has one that said why it stopped; neither is run again.
+ *
  * ## A batch
  *
  * `--batch` names more branches. A merge left uncommitted blocks the next one (git refuses to merge over
@@ -273,6 +279,59 @@ export function rerunPassed(output) {
 }
 
 // ---------------------------------------------------------------------------------------------------
+// A rehearsal that died, rather than failed (LEFT1)
+
+/**
+ * An exit that says a process ended rather than that a gate judged: a POSIX shell that could not run the
+ * command (126, 127), cmd's for one it cannot find (9009), a signal (128 to 255; this tool reads one as
+ * 128), and a Windows crash status, which reaches this tool through cmd and npm unsigned (0xC0000142,
+ * a process that could not start under load, is 3221225794) and elsewhere in its signed form.
+ */
+export function processExit(code) {
+  return code === 126 || code === 127 || code === 9009 || (code >= 128 && code <= 255) || code >= 0xC0000000 || code < 0;
+}
+
+/**
+ * The lines of a gate's log that are the gate's own: after the steps before it (`command` names the
+ * gate's, and its output starts after the last `$ <command>` line), and without what this tool writes
+ * around a step (`$ …`, `(exited …)`, `could not start: …`), npm's lines around a script
+ * (`> pkg@version script`, `> command`, `npm error …`), and blank lines.
+ */
+export function ownOutput(log, command) {
+  const all = log.replace(/\r\n/g, '\n').split('\n');
+  const from = command === undefined ? -1 : all.lastIndexOf(`$ ${command}`);
+  return all.slice(from + 1).filter((line) => line.trim()
+    && !/^\$ /.test(line)
+    && !/^\(exited /.test(line)
+    && !/^could not start: /.test(line)
+    && !/^> /.test(line)
+    && !/^npm (?:error|ERR!|warn|WARN|notice)\b/.test(line));
+}
+
+/**
+ * A rehearsal's report of a failed check: the rehearsal kit's `FAIL` line (and vitest's for a failed
+ * file, inside `test:web`), vitest's summary, and Playwright's.
+ */
+const FAILED_CHECKS = [/^\s*FAIL\s/, /^\s*(?:Test Files|Tests)\s+\d+ failed\b/, /^\s*\d+ failed\s*$/];
+
+/**
+ * Whether a rehearsal that failed is run again, once. One that reported failed checks has failed,
+ * whatever exit follows the report. One whose process ended, or that printed nothing of its own, never
+ * reached a verdict: on 2026-09-30 the family rehearsal exited 127 straight after building the HTTP host,
+ * with no transcript, while three worktrees built beside it, and passed run alone (FLAKE1). Anything else
+ * said why it stopped, and has failed. `command` is the gate's, so a step before it is not its output.
+ */
+export function rehearsalDecision(log, code, command) {
+  const own = ownOutput(log, command);
+  if (own.some((line) => FAILED_CHECKS.some((pattern) => pattern.test(line)))) {
+    return { rerun: false, reason: 'it reported failed checks, so it is never run again' };
+  }
+  if (processExit(code)) return { rerun: true, reason: `exit ${code} ended its process before a verdict` };
+  if (own.length === 0) return { rerun: true, reason: 'it printed nothing of its own' };
+  return { rerun: false, reason: 'it said why it stopped and reported no failed check, so it is never run again' };
+}
+
+// ---------------------------------------------------------------------------------------------------
 // Lanes
 
 const escapeRegExp = (text) => text.replace(/[.+^${}()|[\]\\]/g, '\\$&');
@@ -300,7 +359,21 @@ export function globToRegExp(glob) {
   return new RegExp(`^${source}$`);
 }
 
-/** `tools/lanes.json`, or null where a repository has none. */
+/**
+ * A lane's paths as one test: a path is the lane's when one of its globs matches it and none of its `!`
+ * globs does. A `!` glob carves a narrower lane's paths out of a wider one: the web's shell owns the
+ * page but its Settings (LEFT1).
+ */
+export function laneMatcher(paths) {
+  const include = paths.filter((path) => !path.startsWith('!')).map(globToRegExp);
+  const exclude = paths.filter((path) => path.startsWith('!')).map((path) => globToRegExp(path.slice(1)));
+  return (path) => include.some((pattern) => pattern.test(path)) && !exclude.some((pattern) => pattern.test(path));
+}
+
+/**
+ * `tools/lanes.json`, or null where a repository has none. `laneless` is read flat: its groups are for
+ * the person reading the map, each saying why its paths have no lane.
+ */
 export function readLanes(root) {
   const file = join(root, 'tools', 'lanes.json');
   if (!existsSync(file)) return null;
@@ -308,6 +381,7 @@ export function readLanes(root) {
   return {
     lanes: (parsed.lanes ?? []).map((lane) => ({ title: lane.title, paths: lane.paths ?? [] })),
     parent: parsed.parent ?? [],
+    laneless: (parsed.laneless ?? []).flatMap((group) => group.paths ?? []),
   };
 }
 
@@ -327,20 +401,23 @@ const attributePattern = (pattern) => (pattern.includes('/')
 
 /**
  * Where each changed path belongs: the parent's records first (a subagent never edits them), then the
- * records that merge by union, then the first lane whose paths match, else outside every lane. Lanes
- * come back in the map's order, only those touched.
+ * records that merge by union, then the first lane that owns it, then the paths the map declares
+ * laneless (the docs and records, the doctrine), else outside every lane: a path the map does not
+ * place, which the lanes test refuses (LEFT1). Lanes come back in the map's order, only those touched.
  */
-export function classify(paths, { lanes = [], parent = [], union = [] } = {}) {
-  const lanePatterns = lanes.map((lane) => ({ title: lane.title, patterns: lane.paths.map(globToRegExp), files: [] }));
+export function classify(paths, { lanes = [], parent = [], union = [], laneless = [] } = {}) {
+  const lanePatterns = lanes.map((lane) => ({ title: lane.title, owns: laneMatcher(lane.paths), files: [] }));
   const parentPatterns = parent.map(globToRegExp);
   const unionPatterns = union.map(attributePattern);
-  const placed = { lanes: [], parent: [], shared: [], outside: [] };
+  const declared = laneMatcher(laneless);
+  const placed = { lanes: [], parent: [], shared: [], laneless: [], outside: [] };
   for (const path of paths) {
     if (parentPatterns.some((pattern) => pattern.test(path))) placed.parent.push(path);
     else if (unionPatterns.some((pattern) => pattern.test(path))) placed.shared.push(path);
     else {
-      const lane = lanePatterns.find((candidate) => candidate.patterns.some((pattern) => pattern.test(path)));
+      const lane = lanePatterns.find((candidate) => candidate.owns(path));
       if (lane) lane.files.push(path);
+      else if (declared(path)) placed.laneless.push(path);
       else placed.outside.push(path);
     }
   }
@@ -560,12 +637,10 @@ async function rerunAlone(root, gate, dir, tests, step) {
   return { passed, log };
 }
 
-/** One gate, its steps before it, and its flake re-run: a result with its verdict, note and log. */
-export async function runGate(root, gate, dir, { step = runStep } = {}) {
-  const log = join(dir, `${gate.name}.log`);
-  const started = Date.now();
+/** A gate's steps before it, then the gate, into one log: the gate's exit. */
+function runSteps(root, gate, log, step) {
   const cwd = gate.cwd ? join(root, gate.cwd) : root;
-  const code = await withLog(log, async (fd) => {
+  return withLog(log, async (fd) => {
     for (const before of gate.before) {
       const beforeCode = await step(before, root, fd);
       writeSync(fd, `\n(exited ${beforeCode}${beforeCode ? '; carried on: it only clears a server' : ''})\n\n`);
@@ -574,8 +649,29 @@ export async function runGate(root, gate, dir, { step = runStep } = {}) {
     writeSync(fd, `\n(exited ${exit})\n`);
     return exit;
   });
+}
+
+/** One gate, its steps before it, and its flake re-run: a result with its verdict, note and log. */
+export async function runGate(root, gate, dir, { step = runStep } = {}) {
+  const log = join(dir, `${gate.name}.log`);
+  const started = Date.now();
+  const code = await runSteps(root, gate, log, step);
   const result = { gate, code, log, verdict: code === 0 ? 'PASS' : 'FAIL', note: code === 0 ? '' : `exit ${code}` };
-  if (code !== 0 && /^dotnet test\b/.test(gate.run) && !isProcessGate(gate)) {
+  if (code !== 0 && gateKind(gate.run) === 'rehearsal') {
+    // A rehearsal that died is run again once, whole, into a log of its own beside the first (LEFT1).
+    const decision = rehearsalDecision(readFileSync(log, 'utf8'), code, gate.run);
+    if (!decision.rerun) {
+      result.note = `exit ${code}; ${decision.reason}`;
+    } else {
+      const again = join(dir, `${gate.name}.rerun.log`);
+      const second = await runSteps(root, gate, again, step);
+      if (second === 0) {
+        Object.assign(result, { verdict: 'FLAKE', flakes: [gate.name], note: `${decision.reason}, and it passed when run again; ${shown(root, again)}` });
+      } else {
+        result.note = `${decision.reason}; run again, it failed again (exit ${second}); ${shown(root, again)}`;
+      }
+    }
+  } else if (code !== 0 && /^dotnet test\b/.test(gate.run) && !isProcessGate(gate)) {
     result.note = `exit ${code}; outside the Process category, a failure is real and never re-run`;
   } else if (code !== 0 && /^dotnet test\b/.test(gate.run)) {
     const decision = flakeDecision(readFileSync(log, 'utf8'));
@@ -640,7 +736,8 @@ function laneReport(root, branch) {
   const list = (files, max = 6) => `${files.slice(0, max).join(', ')}${files.length > max ? `, … ${files.length - max} more` : ''}`;
   for (const lane of placed.lanes) out.push(`  ${pad(lane.title, 20)} ${count(lane.files.length, 'file')}`);
   if (placed.shared.length) out.push(`  ${pad('shared records', 20)} ${count(placed.shared.length, 'file')}: ${list(placed.shared)} (merge by union)`);
-  if (placed.outside.length) out.push(`  ${pad('outside every lane', 20)} ${count(placed.outside.length, 'file')}: ${list(placed.outside)}`);
+  if (placed.laneless.length) out.push(`  ${pad('no lane', 20)} ${count(placed.laneless.length, 'file')}: ${list(placed.laneless)} (the map declares them laneless)`);
+  if (placed.outside.length) out.push(`  ${pad('outside every lane', 20)} ${count(placed.outside.length, 'file')}: ${list(placed.outside)} (the map places no such path; the lanes test refuses it)`);
   if (placed.lanes.length > 1) out.push(`  note: it crosses ${placed.lanes.length} lanes`);
   if (placed.parent.length) out.push(`  note: it edits the parent's records (${placed.parent.join(', ')}); a subagent never does`);
   return out;

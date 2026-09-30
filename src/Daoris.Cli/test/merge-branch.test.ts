@@ -19,7 +19,7 @@ import { makeFixture } from './_fixture.ts';
 
 interface Gate { name: string; run: string; kind: string; before: string[]; cwd?: string }
 interface Lane { title: string; paths: string[] }
-interface Classified { lanes: { title: string; files: string[] }[]; parent: string[]; shared: string[]; outside: string[] }
+interface Classified { lanes: { title: string; files: string[] }[]; parent: string[]; shared: string[]; laneless: string[]; outside: string[] }
 interface Options { branches: string[]; keepGoing: boolean; commitCheck: boolean; resume: boolean; dropBatch: boolean; plan: boolean }
 interface GateResult { gate: Gate; code: number; log: string; verdict: string; note: string; ms: number }
 type Step = (command: string, cwd: string, fd: number) => Promise<number>;
@@ -40,9 +40,12 @@ const tool = await import(
   flakeDecision: (output: string, isProcess?: (test: string) => boolean) => { rerun: string[]; reason?: string };
   rerunCommand: (run: string, test: string) => string;
   rerunPassed: (output: string) => boolean;
+  processExit: (code: number) => boolean;
+  rehearsalDecision: (log: string, code: number, command?: string) => { rerun: boolean; reason: string };
   globToRegExp: (glob: string) => RegExp;
-  classify: (paths: string[], map: { lanes?: Lane[]; parent?: string[]; union?: string[] }) => Classified;
-  readLanes: (root: string) => { lanes: Lane[]; parent: string[] } | null;
+  laneMatcher: (paths: string[]) => (path: string) => boolean;
+  classify: (paths: string[], map: { lanes?: Lane[]; parent?: string[]; union?: string[]; laneless?: string[] }) => Classified;
+  readLanes: (root: string) => { lanes: Lane[]; parent: string[]; laneless: string[] } | null;
   unionRecords: (root: string) => string[];
   parseStatus: (text: string) => { branch: string; changed: { code: string; path: string }[] };
   startRefusal: (facts: { branch: string; merging: boolean; changed: { code: string; path: string }[]; ignored: boolean }) => string | null;
@@ -314,30 +317,49 @@ test('a lane path is a glob: * stays in a folder, ** crosses folders, {a,b} is e
   assert.ok(tool.globToRegExp('a.b').test('a.b') && !tool.globToRegExp('a.b').test('axb'), 'a dot is a dot');
 });
 
-test("a branch's files are placed in lanes, the shared records, the parent's records, or outside every lane", () => {
+test("a lane's `!` path carves a narrower lane's paths out of a wider one (LEFT1)", () => {
+  const shell = tool.laneMatcher(['src/Daoris.Web/**', '!src/Daoris.Web/src/settings/**', '!src/Daoris.Web/src/SettingsView*.tsx']);
+  assert.ok(shell('src/Daoris.Web/src/queries.ts'));
+  assert.ok(shell('src/Daoris.Web/vite.config.ts'));
+  assert.ok(shell('src/Daoris.Web/src/settingsX/y.ts'), 'a carve-out is its own glob, not a prefix');
+  assert.ok(!shell('src/Daoris.Web/src/settings/DriverDomain.tsx'));
+  assert.ok(!shell('src/Daoris.Web/src/SettingsView.tsx'));
+  assert.ok(!shell('src/Daoris.Cli/src/cli.ts'));
+  // A lane of carve-outs alone owns nothing.
+  assert.ok(!tool.laneMatcher(['!src/**'])('README.md'));
+});
+
+test("a branch's files are placed in lanes, the shared records, the parent's records, no lane, or outside every lane", () => {
   const map = tool.readLanes(repoRoot)!;
   const placed = tool.classify([
     'src/Daoris.Web/src/settings/PluginsDomain.tsx',
     'src/Daoris.Web/src/locales/zh/settings.ai.json',
     'src/Daoris.Web/src/locales/en/work.panel.json',
+    'src/Daoris.Web/src/queries.ts',
     'src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.cs',
+    'src/Daoris.Desktop/Daoris.Desktop.Launcher/Program.cs',
     'src/Daoris.Desktop/Daoris.Desktop.Driver/Help/HelpRoom.cs',
+    'src/Daoris.Devkit/Daoris.Devkit.Core/Gates.cs',
     'TASKS.md',
     'docs/task-archive.md',
     'CHANGELOG.md',
     'docs/2026-09-30-parallel-development-design.md',
+    'src/Daoris.Somewhere/Program.cs',
   ], { ...map, union: tool.unionRecords(repoRoot) });
 
   assert.deepEqual(placed.lanes, [
-    { title: 'Web shell', files: ['src/Daoris.Web/src/locales/en/work.panel.json'] },
+    { title: 'Web shell', files: ['src/Daoris.Web/src/locales/en/work.panel.json', 'src/Daoris.Web/src/queries.ts'] },
     { title: 'Web settings', files: ['src/Daoris.Web/src/settings/PluginsDomain.tsx', 'src/Daoris.Web/src/locales/zh/settings.ai.json'] },
     { title: 'Driver library', files: ['src/Daoris.Desktop/Daoris.Desktop.Driver/Help/HelpRoom.cs'] },
-    { title: 'Desktop modules', files: ['src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.cs'] },
+    { title: 'Desktop modules', files: ['src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.cs', 'src/Daoris.Desktop/Daoris.Desktop.Launcher/Program.cs'] },
+    { title: 'Tools and records', files: ['src/Daoris.Devkit/Daoris.Devkit.Core/Gates.cs'] },
   ]);
   // The archive merges by union too, but it is the parent's: that is what the parent needs to hear.
   assert.deepEqual(placed.parent, ['TASKS.md', 'docs/task-archive.md']);
   assert.deepEqual(placed.shared, ['CHANGELOG.md']);
-  assert.deepEqual(placed.outside, ['docs/2026-09-30-parallel-development-design.md']);
+  // A document belongs to no lane on purpose; a new source tree is a path nothing placed.
+  assert.deepEqual(placed.laneless, ['docs/2026-09-30-parallel-development-design.md']);
+  assert.deepEqual(placed.outside, ['src/Daoris.Somewhere/Program.cs']);
 });
 
 test("the lane map's lanes are the design's §5 lanes, by title", () => {
@@ -351,21 +373,48 @@ test("the lane map's lanes are the design's §5 lanes, by title", () => {
   assert.deepEqual(tool.readLanes(repoRoot)!.lanes.map((lane) => lane.title), titles);
 });
 
-test('every lane path matches a tracked file, and no tracked file is in two lanes', () => {
+const trackedFiles = (): string[] => {
   const listed = spawnSync('git', ['ls-files'], { cwd: repoRoot, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
   assert.equal(listed.status, 0, listed.stderr);
-  const files = listed.stdout.split('\n').filter(Boolean);
-  const { lanes } = tool.readLanes(repoRoot)!;
+  return listed.stdout.split('\n').filter(Boolean);
+};
 
-  for (const lane of lanes) {
-    for (const glob of lane.paths) {
-      const pattern = tool.globToRegExp(glob);
-      assert.ok(files.some((file) => pattern.test(file)), `${lane.title}: '${glob}' matches no tracked file — the map points at nothing`);
+test('every lane path and every laneless path matches a tracked file, and no tracked file has two places', () => {
+  const files = trackedFiles();
+  const { lanes, laneless } = tool.readLanes(repoRoot)!;
+
+  // A carve-out (`!`) that matches nothing carves nothing, and is as stale as a path that points at nothing.
+  for (const [title, globs] of [...lanes.map((lane) => [lane.title, lane.paths] as const), ['laneless', laneless] as const]) {
+    for (const glob of globs) {
+      const pattern = tool.globToRegExp(glob.replace(/^!/, ''));
+      assert.ok(files.some((file) => pattern.test(file)), `${title}: '${glob}' matches no tracked file — the map points at nothing`);
     }
   }
+  const owns = lanes.map((lane) => ({ title: lane.title, owns: tool.laneMatcher(lane.paths) }));
+  const declared = tool.laneMatcher(laneless);
   for (const file of files) {
-    const owners = lanes.filter((lane) => lane.paths.some((glob) => tool.globToRegExp(glob).test(file)));
-    assert.ok(owners.length <= 1, `${file} is in two lanes: ${owners.map((lane) => lane.title).join(', ')}`);
+    const owners = owns.filter((lane) => lane.owns(file)).map((lane) => lane.title);
+    assert.ok(owners.length <= 1, `${file} is in two lanes: ${owners.join(', ')}`);
+    assert.ok(!(owners.length && declared(file)), `${file} is in ${owners[0]} and declared laneless`);
+  }
+});
+
+/**
+ * LEFT1: `queries.ts` and a few paths sat outside every lane unremarked, and a new source tree would
+ * have too. Every tracked file now has a place: a lane, the parent's records, a record that merges by
+ * union, or the map's `laneless` list (the docs and records, the doctrine, the harness's settings). A
+ * new top-level path fails here until the map places it on purpose.
+ */
+test('every tracked file has a place, so a new path is placed on purpose, never left outside silently', () => {
+  const map = tool.readLanes(repoRoot)!;
+  const placed = tool.classify(trackedFiles(), { ...map, union: tool.unionRecords(repoRoot) });
+  assert.deepEqual(placed.outside, [],
+    `outside every lane: ${placed.outside.slice(0, 12).join(', ')}${placed.outside.length > 12 ? ', …' : ''}\n`
+    + '  Give each a lane in tools/lanes.json, or list it under "laneless" with the reason no lane owns it.');
+  // The laneless list names files, never a source tree: a `src/**` there would place everything and
+  // guard nothing.
+  for (const glob of map.laneless.filter((path) => /^(src|tools)\//.test(path))) {
+    assert.ok(!glob.includes('*'), `laneless: '${glob}' is a glob over a source tree; give that tree a lane`);
   }
 });
 
@@ -374,13 +423,16 @@ test('every lane path matches a tracked file, and no tracked file is in two lane
 
 const planned = (name: string, run: string, before: string[] = []): Gate => ({ name, run, kind: 'suite', before });
 
-/** A step that answers each command from a function and records what it was asked, in order. */
+/**
+ * A step that answers each command from a function and records what it was asked, in order. It heads
+ * its output with the command, as `runStep` does, since a rehearsal's own output is read from there.
+ */
 function fakeStep(answer: (command: string) => { out: string; code: number }): { asked: string[]; step: Step } {
   const asked: string[] = [];
   const step: Step = async (command, _cwd, fd) => {
     asked.push(command);
     const { out, code } = answer(command);
-    writeSync(fd, out);
+    writeSync(fd, `$ ${command}\n${out}`);
     return code;
   };
   return { asked, step };
@@ -454,9 +506,100 @@ test('a real-process failure is re-run alone once: a pass alone is a FLAKE, a se
   assert.deepEqual(fake.asked, [fast.run], 'a failure outside the Process category is never re-run');
   assert.match(result.note, /outside the Process category, a failure is real and never re-run/);
 
-  // Only a .NET suite is read for flakes: a rehearsal that fails has failed.
+  // A rehearsal is not read for tests: one that said why it stopped has failed, and is not run again.
   fake = fakeStep(() => ({ out: PROCESS_FAILURE, code: 1 }));
   result = await tool.runGate(fx.root, planned('family', 'npm run rehearse:family'), fx.root, { step: fake.step });
+  assert.equal(result.verdict, 'FAIL');
+  assert.equal(fake.asked.length, 1);
+  fx.cleanup();
+});
+
+// ---------------------------------------------------------------------------------------------------
+// A rehearsal that died, rather than failed, is run again once (LEFT1)
+
+// What the tool and npm write around a rehearsal's own lines: none of it is the rehearsal speaking.
+const NPM_BANNER = '$ npm run rehearse:family\n\n> daoris-workspace@0.0.1 rehearse:family\n> node tools/family-rehearsal.mjs\n\n';
+const OK_LINES = '\n1. The example family\n  ok    the HTTP host builds\n  ok    engine is current and clean\n';
+
+test('a process-level exit is the shell, a signal or a Windows crash status, never an ordinary failure', () => {
+  // 127 and 126 are a POSIX shell's, 9009 is cmd's for a command it cannot find; 128 up is a signal (this
+  // tool reads one as 128); a crash status comes through cmd and npm unsigned, and in its signed form elsewhere.
+  for (const code of [126, 127, 9009, 128, 134, 255, 0xC0000142, 0xC0000409, -1073741819]) {
+    assert.equal(tool.processExit(code), true, `exit ${code}`);
+  }
+  for (const code of [1, 2, 3, 100]) assert.equal(tool.processExit(code), false, `exit ${code}`);
+});
+
+test('a failed rehearsal is run again only when it reached no verdict: its process ended, or it said nothing', () => {
+  // 2026-09-30: the family rehearsal exited 127 straight after building the HTTP host, with no transcript.
+  const died = tool.rehearsalDecision(`${NPM_BANNER}${OK_LINES}\n(exited 127)\n`, 127);
+  assert.equal(died.rerun, true);
+  assert.match(died.reason, /exit 127/);
+  assert.equal(tool.rehearsalDecision(`${NPM_BANNER}(exited 3221225794)\n`, 0xC0000142).rerun, true);
+
+  const silent = tool.rehearsalDecision(`${NPM_BANNER}\n(exited 1)\n`, 1);
+  assert.equal(silent.rerun, true);
+  assert.match(silent.reason, /nothing of its own/);
+  // A step before the gate is not the gate speaking: the build servers' shutdown says "shut down".
+  const deploy = '$ dotnet build-server shutdown\nshut down\n\n(exited 0)\n\n$ npm run rehearse:deploy\n\n'
+    + '> daoris-workspace@0.0.1 rehearse:deploy\n> node tools/deployment-rehearsal.mjs\n\n\n(exited 1)\n';
+  assert.equal(tool.rehearsalDecision(deploy, 1, 'npm run rehearse:deploy').rerun, true);
+
+  // A report is a verdict, whatever the exit that follows it.
+  const kit = `${NPM_BANNER}${OK_LINES}  FAIL  a quest is refused where it should be\n          409\n\n  299/301 checks passed\n`;
+  for (const code of [1, 127]) {
+    const failed = tool.rehearsalDecision(kit, code);
+    assert.equal(failed.rerun, false, `exit ${code}`);
+    assert.match(failed.reason, /reported failed checks/);
+  }
+  // The platform's own suites inside `test:web`: vitest's summary and a failed file, and Playwright's.
+  assert.equal(tool.rehearsalDecision(`${NPM_BANNER} FAIL  src/App.test.tsx > the frame\n      Tests  1 failed | 1712 passed (1713)\n`, 1).rerun, false);
+  assert.equal(tool.rehearsalDecision(`${NPM_BANNER}  1 failed\n    [chromium] › e2e/platform.spec.ts:10:5 › a quest\n  20 passed (1.2m)\n`, 1).rerun, false);
+
+  // Anything else said why it stopped: a thrown error is a failure, not a flake.
+  const thrown = tool.rehearsalDecision(`${NPM_BANNER}${OK_LINES}Error: take failed: 500\n    at file:///x.mjs:630:9\n`, 1);
+  assert.equal(thrown.rerun, false);
+  assert.match(thrown.reason, /said why it stopped/);
+});
+
+test('a rehearsal that died is run again once, with its steps: a pass is a FLAKE, a second death a FAIL', async () => {
+  const fx = makeFixture('merge-branch-rehearsal-reruns');
+  const family = planned('family', 'npm run rehearse:family');
+  let runs = 0;
+  let fake = fakeStep(() => (++runs === 1
+    ? { out: OK_LINES, code: 127 }
+    : { out: `${OK_LINES}\n  301/301 checks passed\n`, code: 0 }));
+  let result = await tool.runGate(fx.root, family, fx.root, { step: fake.step });
+  assert.equal(result.verdict, 'FLAKE');
+  assert.deepEqual(fake.asked, [family.run, family.run]);
+  assert.match(result.note, /exit 127.*passed when run again.*family\.rerun\.log/);
+  assert.match(readFileSync(join(fx.root, 'family.rerun.log'), 'utf8'), /301\/301 checks passed/);
+  assert.match(readFileSync(join(fx.root, 'family.log'), 'utf8'), /\(exited 127\)/, 'the first run keeps its own log');
+
+  fake = fakeStep(() => ({ out: '', code: 127 }));
+  result = await tool.runGate(fx.root, family, fx.root, { step: fake.step });
+  assert.equal(result.verdict, 'FAIL');
+  assert.equal(fake.asked.length, 2, 'run again once, not until it passes');
+  assert.match(result.note, /exit 127.*failed again.*family\.rerun\.log/);
+
+  // The deployment rehearsal's re-run shuts the build servers down first, as its first run did.
+  const deployment = planned('deployment', 'npm run rehearse:deploy', ['dotnet build-server shutdown']);
+  runs = 0;
+  fake = fakeStep((command) => (command.startsWith('dotnet') ? { out: 'shut down\n', code: 0 } : (++runs === 1 ? { out: '', code: 1 } : { out: '  70/70 checks passed\n', code: 0 })));
+  result = await tool.runGate(fx.root, deployment, fx.root, { step: fake.step });
+  assert.equal(result.verdict, 'FLAKE');
+  assert.deepEqual(fake.asked, ['dotnet build-server shutdown', deployment.run, 'dotnet build-server shutdown', deployment.run]);
+
+  // A rehearsal that reported failed checks is never run again.
+  fake = fakeStep(() => ({ out: `${OK_LINES}  FAIL  a quest closes done\n`, code: 1 }));
+  result = await tool.runGate(fx.root, family, fx.root, { step: fake.step });
+  assert.equal(result.verdict, 'FAIL');
+  assert.equal(fake.asked.length, 1);
+  assert.match(result.note, /reported failed checks/);
+
+  // The rule is the rehearsals': a suite that dies is read as it always was.
+  fake = fakeStep(() => ({ out: '', code: 127 }));
+  result = await tool.runGate(fx.root, planned('cli', 'npm run verify'), fx.root, { step: fake.step });
   assert.equal(result.verdict, 'FAIL');
   assert.equal(fake.asked.length, 1);
   fx.cleanup();
@@ -483,12 +626,15 @@ function git(cwd: string, ...args: string[]): string {
 const TRAILER = '\n\nCo-Authored-By: Fixture <fixture@example.test>';
 
 // Every gate appends its name to local/ran.txt and prints a thousand lines, so a test can read the order
-// the gates ran in and whether a log kept the whole output.
+// the gates ran in and whether a log kept the whole output. Given `once`, it exits with its code the first
+// time only, as a rehearsal that died under load and passes run again.
 const GATE = [
-  "import { appendFileSync } from 'node:fs';",
-  "const [name, code = '0'] = process.argv.slice(2);",
+  "import { appendFileSync, existsSync, writeFileSync } from 'node:fs';",
+  "const [name, code = '0', once] = process.argv.slice(2);",
   "appendFileSync('local/ran.txt', name + '\\n');",
   'for (let i = 1; i <= 1000; i++) console.log(`${name} line ${i}`);',
+  'if (once && existsSync(`local/${name}.once`)) process.exit(0);',
+  "if (once) writeFileSync(`local/${name}.once`, '');",
   'process.exit(Number(code));',
   '',
 ].join('\n');
@@ -685,8 +831,9 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
       { name: 'driver', run: 'dotnet test fake/Driver.Tests --settings fake/process.runsettings' },
       { name: 'deployment', run: 'npm run rehearse:deploy' },
     ], {
+      // The release rehearsal dies the first time with the shell's 127, through npm, and passes run again.
       'package.json': `${JSON.stringify({ name: 'scratch', private: true, scripts: {
-        rehearse: 'node gate.mjs rehearse', 'rehearse:deploy': 'node gate.mjs deployment',
+        rehearse: 'node gate.mjs rehearse 127 once', 'rehearse:deploy': 'node gate.mjs deployment',
       } }, null, 2)}\n`,
       // `rehearse` is the workflow's alone, as the release and family rehearsals are this repository's.
       '.github/workflows/release.yml': 'jobs:\n  release:\n    steps:\n      - run: npm run rehearse:deploy\n      - run: npm run rehearse\n',
@@ -709,16 +856,18 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
     // However the parent lands it, what --continue asks is that the branch's tip is in main's history.
     git(repo.root, 'merge', '--quiet', '--no-ff', '--no-edit', 'one');
 
-    // The second merge meets a real-process test that fails in the suite and passes alone.
+    // The second merge meets a real-process test that fails in the suite and passes alone, and a
+    // rehearsal that dies once.
     result = await repo.run(['--continue'], { FAKE_DOTNET: 'flake' });
     assert.equal(result.status, 0, result.out);
     assert.deepEqual(repo.ran(), [
       'dotnet-run', 'cli', 'dotnet-test',
       'dotnet-run', 'cli', 'dotnet-test', 'dotnet-test-alone FullyQualifiedName=N.ProcessJobTests.A_child',
-      'rehearse', 'build-server-shutdown', 'deployment',
+      'rehearse', 'rehearse', 'build-server-shutdown', 'deployment',
     ]);
     assert.match(result.out, /FLAKE\s+driver\s.*ProcessJobTests\.A_child.*driver\.rerun\.log/);
-    assert.match(result.out, /with 1 flake \(driver\)/);
+    assert.match(result.out, /FLAKE\s+rehearse\s.*exit 127.*passed when run again.*rehearse\.rerun\.log/);
+    assert.match(result.out, /with 2 flakes \(driver, rehearse\)/);
     const merged = git(repo.root, 'show', ':CHANGELOG.md');
     assert.match(merged, /\*\*One\*\*/);
     assert.match(merged, /\*\*Two\*\*/);

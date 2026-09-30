@@ -179,6 +179,59 @@ export function recordedShellFiles(install) {
     : [];
 }
 
+/**
+ * What an install's `INSTALLED.md` says: what this folder is, for whoever opens it in six months. It is
+ * also the marker {@link isInstall} reads, so it opens with {@link MARKER_HEADER}. Written by the publish
+ * rather than tracked, because the file belongs to the install; it names no machine path.
+ *
+ * The pinning section is D108's §2 (LEFT1): the window names Daoris's taskbar id, so a pin made from
+ * it starts the launcher here, and a pin made on the launcher in Explorer carries no id and stays a
+ * button apart from the running window.
+ */
+export function installedNote() {
+  return `${MARKER_HEADER}
+
+Published from a Daoris workspace by \`tools/desktop-publish.mjs\`.
+
+## What is here
+
+| | |
+|---|---|
+| \`${LAUNCHER}\` | **the application** — the only thing to run. A small launcher that starts \`${[...SHELL_HOME, SHELL_EXE].join('/')}\`. |
+| \`${SHELL_HOME[0]}/\` | the application itself, on the Chromium it carries (its files are listed in \`${SHELL_FILES.join('/')}\`), which is also Daoris's own browser; the HTTP host in \`${HOST_HOME.slice(1).join('/')}/\` when published with \`--service\`; and Daoris's own example plugins in \`${PLUGIN_OFFERS.slice(1).join('/')}/\` (${OFFERED_PLUGINS.join(', ')}), offered in Settings → Plugins and by \`daoris plugin list\`, none installed until you install one. Nothing to open. |
+| \`${HOME}/\` | **the Daoris home**: the registry, the quests, the drivable set, the harness profiles, the installed service binaries — and the window's engine profile (\`chromium/\`) and its geometry. |
+
+Anything else in this folder is not the application's — repositories it drives, typically — and a
+re-publish never touches it.
+
+## Where everything lives
+
+In \`${HOME}/\`, and nowhere under your user profile. On first start the application sets
+\`DAORIS_HOME\` to that folder for itself and — once, if your account has none — for your account,
+which is how the \`daoris\` CLI on a terminal and the desktop are **two doors onto one machine**: what
+one sets the other sees. When your account's \`DAORIS_HOME\` already names another folder — another
+install's \`${HOME}/\`, or this one's before it moved — the application still runs on its own, leaves
+that variable as it is, and says so on Settings' home row (D105): a terminal reads the folder the
+variable names. A \`.daoris\` folder under your profile from an earlier version moves in on
+that first start (its \`bin/\` stays; re-run \`publish:service --install\` to land the hosts here).
+Deleting this folder removes the application and its machine — nothing else on the machine changes.
+
+Starting it starts the driver loop, so **a drivable repository with an open quest gets a real agent
+session.** \`daoris driver list\` shows what this machine will drive.
+
+## Pinning it to the taskbar
+
+Pin Daoris from its running window: right-click its button on the taskbar, then *Pin to taskbar*.
+The window names Daoris's taskbar id (D108), so that pin starts \`${LAUNCHER}\` here and every later
+Daoris window joins it as one button. A pin made on \`${LAUNCHER}\` itself, from Explorer, carries no id:
+the launcher starts \`${[...SHELL_HOME, SHELL_EXE].join('/')}\` and exits, and Windows cannot tell that
+the window belongs to that pin, so the running window shows as a second button beside it. If you have
+a pin of that kind, unpin it, start Daoris, and pin its running window once.
+
+Re-publish over this folder to update it; nothing here is edited by hand.
+`;
+}
+
 /** Whether this script published here before: the marker, with its header — a file with that name proves nothing. */
 export function isInstall(folder) {
   const marker = join(folder, MARKER);
@@ -376,41 +429,8 @@ function main() {
     }
   }
 
-  // What this folder is, for whoever opens it in six months. Written here rather than tracked, because
-  // it names a machine path — the file belongs to the install, not to the repository.
   mkdirSync(to, { recursive: true });
-  writeFileSync(join(to, MARKER), `${MARKER_HEADER}
-
-Published from a Daoris workspace by \`tools/desktop-publish.mjs\`.
-
-## What is here
-
-| | |
-|---|---|
-| \`${LAUNCHER}\` | **the application** — the only thing to run. A small launcher that starts \`${[...SHELL_HOME, SHELL_EXE].join('/')}\`. |
-| \`${SHELL_HOME[0]}/\` | the application itself, on the Chromium it carries (its files are listed in \`${SHELL_FILES.join('/')}\`), which is also Daoris's own browser; the HTTP host in \`${HOST_HOME.slice(1).join('/')}/\` when published with \`--service\`; and Daoris's own example plugins in \`${PLUGIN_OFFERS.slice(1).join('/')}/\` (${OFFERED_PLUGINS.join(', ')}), offered in Settings → Plugins and by \`daoris plugin list\`, none installed until you install one. Nothing to open. |
-| \`${HOME}/\` | **the Daoris home**: the registry, the quests, the drivable set, the harness profiles, the installed service binaries — and the window's engine profile (\`chromium/\`) and its geometry. |
-
-Anything else in this folder is not the application's — repositories it drives, typically — and a
-re-publish never touches it.
-
-## Where everything lives
-
-In \`${HOME}/\`, and nowhere under your user profile. On first start the application sets
-\`DAORIS_HOME\` to that folder for itself and — once, if your account has none — for your account,
-which is how the \`daoris\` CLI on a terminal and the desktop are **two doors onto one machine**: what
-one sets the other sees. When your account's \`DAORIS_HOME\` already names another folder — another
-install's \`${HOME}/\`, or this one's before it moved — the application still runs on its own, leaves
-that variable as it is, and says so on Settings' home row (D105): a terminal reads the folder the
-variable names. A \`.daoris\` folder under your profile from an earlier version moves in on
-that first start (its \`bin/\` stays; re-run \`publish:service --install\` to land the hosts here).
-Deleting this folder removes the application and its machine — nothing else on the machine changes.
-
-Starting it starts the driver loop, so **a drivable repository with an open quest gets a real agent
-session.** \`daoris driver list\` shows what this machine will drive.
-
-Re-publish over this folder to update it; nothing here is edited by hand.
-`);
+  writeFileSync(join(to, MARKER), installedNote());
 
   console.log(`\ndesktop-publish: installed to ${to}`);
   console.log(`  Its home is ${join(to, HOME)} (D63) — starting it starts the driver loop.`);

@@ -900,6 +900,9 @@ The first version: doctrine that installs, is checked, and flows back.
   parent's commits drop, in a tree of Daoris's own, kept only once the branch's own work is proven intact;
   and deletes the landed branches whose work reached the line. A conflict aborts and is named; a pushed
   branch is left.
+- **The Daoris home's hint tells the truth when an install overrode your account's folder** (LEFT1). It
+  says a terminal's `daoris` reads the same folder only when it does, and otherwise points at the
+  notice. `INSTALLED.md` now says how to pin Daoris to the taskbar: from the running window.
 - **A plugin can push the branch and open the pull request** (WSR4, D100). A branch landing rule may
   name an installed plugin (`daoris driver landing … branch <pattern> --plugin <id>`, or the *who
   pushes it* chooser in Settings → Workspace → *How work lands*). Once accepting has made the branch,

@@ -8563,3 +8563,59 @@ release, family, Playwright and deployment rehearsals.
 > left, since rebasing it would need a force push. Listed first, done by a press, on both doors.
 
 **Outcome** (built by a subagent, merged with `tools/merge-branch.mjs`; **D109**): after a pull request merges, one press brings a repository up to date, listed first. The line is fetched from origin (as the person; Daoris fetches and never pushes) and fast-forwarded only: in a clean checkout on the line, or as a ref nothing has checked out. The branches still at work — session branches not in use and landed branches not on the line — are replayed onto it with `rebase --onto`, cut at the commit each grew from, so a squash-merged parent's commits drop. Replays run detached in a tree of Daoris's own and are kept only once the branch's own work is proven intact; a conflict aborts and is named, and a pushed branch is left. The landed branches whose work reached the line are then deleted. Where each branch grew from is recorded under the home (`session-branches.json`, a landing's `from`), and a replay moves the records with it. Doors: `daoris-driver trees sync [--repository <name>] [--yes]` and Settings → Workspace → Session branches → *Bring up to date*. The first real hand-run's findings landed with it: a tree folder git let go of while something still held it is now said plainly, and the clean-up retries the empty folder (FIX-LOG). The ten `TreeSyncTests` Process tests were written in the branch and run at merge. **At merge:** the ten `TreeSyncTests` ran for the first time and passed (driver Process 560); HELP9's coverage test caught the new Settings control `useTreesSync` with no Ask Daoris door, recorded as owed to HELP10 in the merge, and the driver fast suite was run again by hand after it (998). **Not yet looked at on the window** when committed; the look is on the republished install.
+
+
+## LEFT1 — the day's leftovers (2026-09-30)
+
+> - [ ] **LEFT1 — the day's leftovers**, each small, each a "left out" in a hand-back: Settings' home hint
+> still says a terminal reads the same folder when an install overrode it (D105); `INSTALLED.md` says
+> nothing about pinning from the running button (D108); `tools/lanes.json` leaves `queries.ts` and a few
+> docs outside every lane; the merge tool never re-runs a failed rehearsal (the family rehearsal's
+> exit 127 was one); `MERGE_SESSION_TREE` is called by neither the page nor a test since WSR1 (retire it
+> or give it a caller).
+
+**Outcome** (built by a subagent in its own worktree). Four of the five parts; `MERGE_SESSION_TREE` stays open for after the trees branches merge.
+
+**The home's hint:** Settings → Driver's Daoris home says a terminal's daoris reads the same folder only while the host's notice reports no override. The page reads that from the host's own sentence ("left as it is", which `InstallHomeTests` checks is present exactly when a start overrode). Otherwise the hint points at the notice (`settings.home.hintOverridden`, in both catalogues).
+
+**`INSTALLED.md`:** it now says how to pin Daoris (D108 §2): from the running window, whose pin starts the launcher with Daoris's taskbar id. A pin made on `Daoris.exe` in Explorer has no id and shows as a second button. The note is `installedNote()`, held by a test.
+
+**The lane map:** every tracked file has a place. Web shell owns the page but its Settings, using a `!` carve-out. The launcher and the desktop's package versions are Desktop modules'. The devkit and the gate configuration are Tools and records'. What has no lane on purpose is declared under `laneless` with its reason, and the merge tool reports it as "no lane". A test refuses a tracked path in neither, so a new top-level path is placed when it is added.
+
+**The merge tool:** it runs a rehearsal again once when the rehearsal died, meaning a process-level exit (126, 127, 9009, a signal, a Windows crash status) or nothing printed of its own. If the second run passes, the gate reads FLAKE. A rehearsal that reported failed checks, or printed its own reason for stopping, has failed and is not run again. The design's §3 and §5 and the dispatch skill say the same.
+
+**Proven by:** CLI 667, vitest 1714, `verify`, the code map. The rehearsal re-run is proven with fake steps and a scratch repository whose rehearsal dies once through npm. No real rehearsal has died since. (Merged with `tools/merge-branch.mjs` as the second of a batch after WSR6: thirteen gates, the rehearsals over both, no flake.)
+
+
+## Two backlog sections closed, every row archived (2026-09-30)
+
+Both headings held no open row, so by the `task-lifecycle` rule they left the backlog; their words, kept
+here as they stood:
+
+**Watch it, type into it, set it up (owner, 2026-09-30) — in this order**
+
+> *"we also need to make input line for console too, so we can control console just like regular
+> console window (more into powershell style), and also we will need a setup guide for first use
+> daoris, so setup agent and agent for "daoris" (the main agent for daoris system) and other rules
+> … also setup proper logging system to moniter my use in local daoris and we can improve the
+> system by this way"*
+
+Logging went first (LOG1a landed); then the owner's later asks the same day came before the rest of
+it: their own workspace's work (WORK1), then the kit (SHEN1), both archived; then what they met on the window.
+Each row's parts land and are archived one by one (*"for all my request you can set them into
+TASK.md and complete one by one"*).
+
+**Chromium under the windows (owner, 2026-09-28 → D85)**
+
+> *"to shift to chromeiun, because we mostly build the ui itself in react and the only missing part
+> is the shenora currently dont support this … we can start the work here and also file the new task
+> to shenora for this"*
+
+`docs/2026-09-28-chromium-host-design.md` is the contract, and its §5 carries each row's detail.
+Shenora's backlog carries the request (filed 2026-09-28 at the owner's say-so, uncommitted there).
+CHR1–CHR7 are in the archive: **the browser is `daoris-browser`, the engine's own window in a
+process of its own**, and **the window renders on the Chromium the install carries** (CHR2, D92), in
+an install that is a `Daoris.exe` launcher, the application under `app/` and the home in `data/`
+(CHR4, D93). Agents open tabs in it through a relay, and Daoris's favorites
+and the extensions setting are in Settings → Browser and `daoris browser`
+(`docs/2026-09-28-chromium-embedding-evidence.md`).

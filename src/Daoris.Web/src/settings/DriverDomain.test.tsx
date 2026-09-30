@@ -56,6 +56,41 @@ describe('the driver domain', () => {
     expect(screen.getByText(/serves a different page/)).toBeTruthy();
   });
 
+  /**
+   * LEFT1 (D105): a terminal's daoris reads the folder the account's DAORIS_HOME names. The hint says
+   * that is this folder only while nothing says otherwise; an install that overrode an inherited home
+   * says which folder a terminal still reads in its notice, and the hint leaves that to the notice.
+   * The notice is the host's sentence, passed through untranslated, so the same test holds `zh`.
+   */
+  it('says a terminal reads the same folder only when the host has not said it reads another', async () => {
+    const home = 'D:/somewhere/second/data';
+    // Renders the row with the host's notice, and answers whether the hint claims a terminal reads it.
+    const claims = async (homeNotice: string | null) => {
+      invoke.mockImplementation(async (module: string) => (module === 'DAORIS.DRIVER'
+        ? { ...DRIVER_STATE, home, homeNotice }
+        : WIRING));
+      const shown = show(<SettingsView notify={() => {}} section="driver" />);
+      await screen.findByText(home);
+      if (homeNotice) expect(screen.getByText(homeNotice)).toBeTruthy();
+      // The rest of the hint is there either way.
+      expect(screen.getByRole('note', { name: /Every file on this page lives under it/ })).toBeTruthy();
+      const said = screen.queryByRole('note', { name: /a terminal's daoris reads the same folder/ }) !== null;
+      shown.unmount();
+      return said;
+    };
+
+    expect(await claims(null)).toBe(true);
+    // The host's own sentence for the override (`InstallHome.Establish`), whose "left as it is" its
+    // tests hold present exactly when a start overrode.
+    expect(await claims(`Daoris home: ${home} — this install's own data folder, not D:/somewhere/first/data, which `
+      + "DAORIS_HOME names for your account; that variable is left as it is, so a terminal's daoris still reads "
+      + 'D:/somewhere/first/data until you change it.')).toBe(false);
+    // Other news about the home leaves the hint whole: a move-in, and the variable set for the account.
+    expect(await claims(`Daoris home: ${home} — moved in from D:/somewhere/.daoris: driver.json.`)).toBe(true);
+    expect(await claims(`Daoris home: ${home} — DAORIS_HOME set for your account, so a terminal's daoris sees the `
+      + 'same machine.')).toBe(true);
+  });
+
   it('says nothing about the home on a shell that has never heard of one', async () => {
     invoke.mockImplementation(async (module: string) => (module === 'DAORIS.DRIVER' ? DRIVER_STATE : WIRING));
     show(<SettingsView notify={() => {}} section="driver" />);
