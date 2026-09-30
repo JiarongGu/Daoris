@@ -114,8 +114,8 @@ the transcript beside it.
 
 ## 6. Reading it — two doors, and a report
 
-- **At a terminal**: `daoris-driver logs [--since <1h|2d>] [--source <name>] [--event <name>]
-  [--json]` prints the lines across every source, merged by time.
+- **At a terminal**: `daoris-driver logs [--since <30m|2h|3d>] [--source <name>] [--event <name>]
+  [--level <warn|error>] [--json]` prints the lines across every source, merged by time.
 - **On the screen**: a *Logs* domain in Settings (desktop only) shows the recent lines with the same
   filters, and opens the folder.
 - **For improving Daoris**: `tools/usage-report.mjs --install <dir> [--days 7]` reads an install's
@@ -123,6 +123,33 @@ the transcript beside it.
   session starts from it instead of from a guess.
 - **Never over HTTP.** A browser, and a remote, see none of it (D47 §4). The host writes its file and
   serves no route onto any of them.
+
+**As built (LOG1c)**, measured against the code and its tests:
+
+- **One reader for both doors**: `MachineLogReader` in the driver library, which the headless driver's
+  `logs` and the shell's `DAORIS.LOG` · `LINES` both call, so a filter means the same at each. It reads
+  only the log's own files (`<date>.<source>.jsonl`), leaves a day's file older than `--since` unopened,
+  and merges every source's lines by time. **A line is kept** when it is a JSON object whose `time` is
+  UTC in the §3 shape (a time with no `Z` is skipped, because the report's JavaScript would read it as
+  local time) and whose `source`, `level` and `event` are strings; `data` that is absent or no object is
+  read as none, and a field nobody knows is ignored. **Anything else is skipped and counted**, a torn
+  last line included; a blank line is neither. The table of those cases is a twin's: the usage report
+  (LOG1d) reads the same lines with its own code, and its test holds the same rows.
+- **The filters**: `--since` is a span back from now in minutes, hours or days (`30m`, `2h`, `3d`);
+  `--source` one of the five; `--event` a name; `--level` a floor (`warn` is warnings and errors). A flag
+  the reader cannot use is a sentence and exit 2, never read as no filter; no home is the driver's usual
+  sentence. The terminal prints the lines oldest first, as `2026-09-30 07:10:00.123Z  host     warn
+  request.failed  method=GET status=500` (a value with a space, a quote, an `=` or a line break quoted),
+  or as written with `--json`; that nothing matched, and how many lines were skipped, go to standard
+  error, so standard output stays the lines.
+- **The screen**: Settings → Logs, a machine domain, so a browser is offered none. `LINES` answers the
+  newest lines first, 200 unless the page asks otherwise and never more than 1000, with the folder, how
+  many matched, a count per level (taken before the level filter, so a person narrowed to errors still
+  sees the warnings) and the period's events (before the event filter). The domain opens on the last
+  day of every source; its periods are the last hour, day, 7 days and 30 days. **Open the folder** is
+  `OPEN_FOLDER`: the shell opens the home's `logs/` through the window kit's shell launcher, making it
+  first if nothing has written there, and the page never names a path. A filter the reader cannot use
+  is refused as `LOG_FILTER_UNKNOWN`, a folder the system would not open as `LOG_FOLDER_NOT_OPENED`.
 
 ## 7. Build order
 
@@ -135,7 +162,9 @@ the transcript beside it.
    the service client's new `Opened`/`Moved` seam and the conversation record's events, `RefusalLog` in
    the dispatcher's pipeline, `LogModule` with its typed filter, and the page's `logEvent`; §4's
    *As built* says what each line measures.
-3. **LOG1c**: the two doors to read it.
+3. **LOG1c**: the two doors to read it. **Landed** (2026-09-30): `MachineLogReader` in the driver
+   library, `daoris-driver logs`, and Settings → Logs over `DAORIS.LOG` · `LINES` and `OPEN_FOLDER`;
+   §6's *As built* says what each reads and refuses.
 4. **LOG1d**: the report.
 
 ## 8. Not chosen

@@ -151,7 +151,11 @@ internal static class Program
         builder.Services.AddSingleton(new PlatformAddress(serviceUrl));
         builder.Services.AddIpcModule<WindowsModule>();
         // The page's own report into the machine log (LOG1b, D94): what is used and what fails on the
-        // screen, taken only as the catalogue names it — the module is where no word gets through.
+        // screen, taken only as the catalogue names it — the module is where no word gets through. And
+        // Settings → Logs reading it back (LOG1c), with the file manager for Open the folder: the kit's
+        // shell launcher, which `UseWindows` registers, opened only on the folder the module names.
+        builder.Services.AddSingleton<OpenFolder>(sp =>
+            folder => sp.GetRequiredService<Shenora.Windows.IShellLauncher>().OpenDirectory(folder));
         builder.Services.AddIpcModule<LogModule>();
         // The person's own shells for the terminal view (CONSOLE4a, D96): each under a pseudo-console, typed at
         // and read over the bridge alone. The container disposes the module as the app ends, and every

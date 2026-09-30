@@ -123,6 +123,16 @@ public static class Refusals
     public const string TerminalNotStarted = "TERMINAL_NOT_STARTED";
 
     /// <summary>
+    /// A filter the machine log's reader cannot use (LOG1c): a span that is not <c>30m</c>, <c>2h</c> or
+    /// <c>3d</c>, a source no process writes, a level that is not a floor. Refused rather than read as no
+    /// filter, which would show lines the person did not ask for as if they had.
+    /// </summary>
+    public const string LogFilterUnknown = "LOG_FILTER_UNKNOWN";
+
+    /// <summary>The system would not open the log's folder in the file manager; its own reason goes with it.</summary>
+    public const string LogFolderNotOpened = "LOG_FOLDER_NOT_OPENED";
+
+    /// <summary>
     /// Every code a module here can raise — what the catalogue test enumerates. Read off the
     /// declarations above (REFUSE1): a list kept by hand let a code left out of it escape the check.
     /// </summary>

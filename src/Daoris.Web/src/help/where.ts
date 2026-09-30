@@ -35,7 +35,7 @@ const VIEWS: Record<View, string> = {
 
 const DOMAINS: Record<SettingsSection, string> = {
   start: 'Get started', appearance: 'Appearance', ai: "Daoris's own AI", workspace: 'Workspace', driver: 'Driver',
-  agents: 'Agents & accounts', permissions: 'Permissions', plugins: 'Plugins', browser: 'Browser',
+  agents: 'Agents & accounts', permissions: 'Permissions', plugins: 'Plugins', browser: 'Browser', logs: 'Logs',
 };
 
 /** The attended session as the preface names it — or null when none is attended, or it is not in the list. */
