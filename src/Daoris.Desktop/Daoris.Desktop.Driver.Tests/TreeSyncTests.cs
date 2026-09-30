@@ -195,7 +195,8 @@ public sealed class TreeSyncTests : LandedFixture
 
     /// <summary>
     /// The line checked out nowhere moves as a ref, from the commit it was judged at; checked out in the repository's
-    /// own checkout with uncommitted work, it stays, and so does the work.
+    /// own checkout with uncommitted work, it stays, and so does the work. The repository holds nothing of Daoris's,
+    /// so it is included as `--all` includes it (D112).
     /// </summary>
     [Fact]
     public async Task The_line_moves_as_a_ref_where_nothing_has_it_checked_out_and_stays_under_uncommitted_work()
@@ -206,25 +207,28 @@ public sealed class TreeSyncTests : LandedFixture
 
         // On the line, with work in flight: nothing moves, and the work is untouched.
         await File.WriteAllTextAsync(Path.Combine(root, "shared.txt"), "in flight\n");
-        var plan = await trees.SyncPlanAsync(Repositories(root), Nobody);
+        var plan = await trees.SyncPlanAsync(Repositories(root), Nobody, scope: SyncScope.Everything);
         Assert.Equal(PullKind.Dirty, plan.Lines.Single().Kind);
         var before = await RevAsync(root, "main");
-        var held = await trees.SyncAsync(Repositories(root), Nobody);
+        var held = await trees.SyncAsync(Repositories(root), Nobody, scope: SyncScope.Everything);
         Assert.False(held.Lines.Single().Moved);
         Assert.Equal(before, await RevAsync(root, "main"));
         Assert.Equal("in flight\n", await File.ReadAllTextAsync(Path.Combine(root, "shared.txt")));
 
         // The person moves to a branch of their own: the line is checked out nowhere, and moves as a ref.
         await GitAsync(root, "checkout", "--quiet", "-b", "mine");
-        Assert.Equal(PullKind.FastForward, (await trees.SyncPlanAsync(Repositories(root), Nobody)).Lines.Single().Kind);
-        var moved = await trees.SyncAsync(Repositories(root), Nobody);
+        Assert.Equal(PullKind.FastForward, (await trees.SyncPlanAsync(Repositories(root), Nobody, scope: SyncScope.Everything)).Lines.Single().Kind);
+        var moved = await trees.SyncAsync(Repositories(root), Nobody, scope: SyncScope.Everything);
         Assert.True(moved.Lines.Single().Moved, moved.Lines.Single().Message);
         Assert.Equal(await RevAsync(root, "origin/main"), await RevAsync(root, "main"));
         Assert.Equal("mine", (await GitAsync(root, "rev-parse", "--abbrev-ref", "HEAD")).Trim());
         Assert.Equal("in flight\n", await File.ReadAllTextAsync(Path.Combine(root, "shared.txt")));
     }
 
-    /// <summary>A line with commits of its own that origin lacks, and origin with commits it lacks, is left: only a fast-forward is Daoris's.</summary>
+    /// <summary>
+    /// A line with commits of its own that origin lacks, and origin with commits it lacks, is left: only a fast-forward
+    /// is Daoris's. Included by name, as `--repository` includes it (D112).
+    /// </summary>
     [Fact]
     public async Task A_line_that_diverged_from_origin_is_left()
     {
@@ -234,9 +238,9 @@ public sealed class TreeSyncTests : LandedFixture
         await CommitAsync(root, "local.txt", "local\n", "not pushed");
         var before = await RevAsync(root, "main");
 
-        var plan = await trees.SyncPlanAsync(Repositories(root), Nobody);
+        var plan = await trees.SyncPlanAsync(Repositories(root), Nobody, scope: SyncScope.Named(["engine"]));
         Assert.Equal(PullKind.Diverged, plan.Lines.Single().Kind);
-        var done = await trees.SyncAsync(Repositories(root), Nobody);
+        var done = await trees.SyncAsync(Repositories(root), Nobody, scope: SyncScope.Named(["engine"]));
         Assert.False(done.Lines.Single().Moved);
         Assert.Equal(before, await RevAsync(root, "main"));
     }
@@ -400,6 +404,59 @@ public sealed class TreeSyncTests : LandedFixture
 
         var done = await trees.SyncAsync(Repositories(root), Nobody);
         Assert.True(done.Rebases.Single(result => result.Item.Branch == step.Branch).Replayed);
+    }
+
+    /// <summary>
+    /// WSR7 (D112): by default a look takes only the repositories holding a branch of Daoris's — a session branch, or
+    /// one a landing recorded that still stands — and lists every other with a checkout apart, unfetched and unmoved.
+    /// Every one is taken when asked for, and a press takes each repository a listed row names.
+    /// </summary>
+    [Fact]
+    public async Task By_default_only_the_repositories_holding_Daoris_branches_are_looked_at_and_the_rest_are_listed_apart()
+    {
+        var (engine, engineOrigin) = await RepositoryWithOriginAsync("engine");
+        var (game, gameOrigin) = await RepositoryWithOriginAsync("game");
+        var (tools, toolsOrigin) = await RepositoryWithOriginAsync("tools");
+        var trees = new SessionTrees(Home);
+        var tree = await trees.OpenAsync(engine, "engine", "aurora");
+        await CommitAsync(tree.Path, "work.txt", "work\n", "the session's");
+        // `tools` holds a branch a landing recorded, and nothing else of Daoris's.
+        await GitAsync(tools, "branch", "feature/q1-first");
+        trees.Recorded.Record(new LandedBranch(
+            "tools", "aurora", "feature/q1-first", "main", await RevAsync(tools, "feature/q1-first"), "s1", "q1", "First", DateTimeOffset.UtcNow));
+        // `game` has a record whose branch is gone: a record is not a branch.
+        trees.Recorded.Record(new LandedBranch(
+            "game", "aurora", "feature/q0-gone", "main", new string('0', 40), "s0", "q0", "Gone", DateTimeOffset.UtcNow));
+        foreach (var origin in new[] { engineOrigin, gameOrigin, toolsOrigin })
+        {
+            await PlatformCommitAsync(origin, "other.txt", "other\n", "Someone else's (#8)");
+        }
+
+        var gameTip = await RevAsync(game, "main");
+        var gameSeen = await RevAsync(game, "origin/main");
+        (string, string?, string?)[] all = [("engine", "aurora", engine), ("game", "aurora", game), ("tools", "aurora", tools)];
+
+        Assert.Equal(["engine", "tools"], (await trees.SyncScopeAsync(all)).Where(each => each.Holds).Select(each => each.Repository));
+
+        var plan = await trees.SyncPlanAsync(all, Nobody);
+        Assert.Equal(["engine", "tools"], plan.Lines.Select(pull => pull.Repository));
+        Assert.Equal(["engine", "tools"], plan.Looked.Select(each => each.Repository));
+        Assert.Equal("game", Assert.Single(plan.Apart).Repository);
+        // Apart is untouched: not even fetched.
+        Assert.Equal(gameSeen, await RevAsync(game, "origin/main"));
+
+        var done = await trees.SyncAsync(all, Nobody, fetch: true);
+        Assert.DoesNotContain(done.Lines, result => result.Pull.Repository == "game");
+        Assert.Equal(gameTip, await RevAsync(game, "main"));
+        Assert.Contains(done.Apart, each => each.Repository == "game");
+
+        // Included, every one or by the rows the person saw listed, it is looked at and moved like any other.
+        var everything = await trees.SyncPlanAsync(all, Nobody, scope: SyncScope.Everything);
+        Assert.Equal(PullKind.FastForward, everything.Lines.Single(pull => pull.Repository == "game").Kind);
+        Assert.Empty(everything.Apart);
+        var listed = await trees.SyncAsync(all, Nobody, only: new HashSet<string> { "game:main" });
+        Assert.True(listed.Lines.Single(result => result.Pull.Repository == "game").Moved);
+        Assert.Equal(await RevAsync(game, "origin/main"), await RevAsync(game, "main"));
     }
 
     private static (string, string?, string?)[] Repositories(string root) => [("engine", "aurora", root)];

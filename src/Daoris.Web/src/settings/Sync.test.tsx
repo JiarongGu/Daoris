@@ -2,7 +2,7 @@ import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import { describe, expect, it, vi } from 'vitest';
-import { SyncSection, type LinePull, type RebaseBranch, type SyncPlan } from './Sync';
+import { SyncSection, type LinePull, type RebaseBranch, type SyncPlan, type SyncRepository } from './Sync';
 import type { LandedBranch } from './Sweep';
 
 // WSR6 (D109): after a pull request merges — each line pulled by a fast-forward, the branches still at work
@@ -56,7 +56,60 @@ describe('bringing repositories up to date', () => {
     expect(screen.queryByRole('listitem')).toBeNull();
     expect(screen.getByText(/never pushes/)).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'Look for updates' }));
-    expect(onLook).toHaveBeenCalledOnce();
+    expect(onLook).toHaveBeenCalledWith([]);
+  });
+
+  describe('which repositories it takes (D112)', () => {
+    const SCOPE: SyncRepository[] = [
+      { repository: 'engine', workspace: 'aurora', holds: true },
+      { repository: 'alpha', workspace: 'aurora', holds: false },
+      { repository: 'beta', workspace: 'aurora', holds: false },
+    ];
+
+    it('says before a look how many repositories hold Daoris\'s branches, and lists the rest apart, collapsed', () => {
+      draw({ plan: undefined, scope: SCOPE });
+
+      expect(screen.getByText(/A look fetches the 1 repository that holds a branch of Daoris's/)).toBeInTheDocument();
+      const summary = screen.getByText("2 other repositories with a checkout here hold no branch of Daoris's");
+      expect(summary.closest('details')).not.toHaveAttribute('open');
+    });
+
+    it('looks at the ticked ones beside the default, and at every one when all are ticked', async () => {
+      const { onLook } = draw({ plan: undefined, scope: SCOPE });
+
+      await userEvent.click(screen.getByText("2 other repositories with a checkout here hold no branch of Daoris's"));
+      expect(screen.getByRole('button', { name: 'Include and look (0)' })).toBeDisabled();
+      await userEvent.click(screen.getByRole('checkbox', { name: 'beta' }));
+      await userEvent.click(screen.getByRole('button', { name: 'Include and look (1)' }));
+      expect(onLook).toHaveBeenLastCalledWith(['beta']);
+
+      await userEvent.click(screen.getByRole('checkbox', { name: 'All 2' }));
+      await userEvent.click(screen.getByRole('button', { name: 'Include and look (2)' }));
+      expect(onLook).toHaveBeenLastCalledWith('all');
+    });
+
+    it('keeps what was included when it looks again, and lists apart only what the look left', async () => {
+      const { onLook } = draw({
+        plan: { ...PLAN, looked: [SCOPE[0], SCOPE[2]], apart: [SCOPE[1]] }, scope: SCOPE, included: ['beta'],
+      });
+
+      expect(screen.getByText("1 other repository with a checkout here holds no branch of Daoris's")).toBeInTheDocument();
+      await userEvent.click(screen.getByRole('button', { name: 'Look again' }));
+      expect(onLook).toHaveBeenLastCalledWith(['beta']);
+
+      await userEvent.click(screen.getByText("1 other repository with a checkout here holds no branch of Daoris's"));
+      await userEvent.click(screen.getByRole('checkbox', { name: 'alpha' }));
+      await userEvent.click(screen.getByRole('button', { name: 'Include and look (1)' }));
+      // Ticking each by name asks for those by name: only the box for all of them asks for every one.
+      expect(onLook).toHaveBeenLastCalledWith(['beta', 'alpha']);
+    });
+
+    it('says so when no repository holds a branch of Daoris\'s', () => {
+      draw({ plan: { lines: [], rebases: [], deletes: [], looked: [], apart: [SCOPE[1]] } });
+
+      expect(screen.getByText(/No repository here holds a branch of Daoris's, so there was nothing/)).toBeInTheDocument();
+      expect(screen.queryByText('Everything here is up to date.')).toBeNull();
+    });
   });
 
   it('lists each line, each branch and each landed branch with what the press would do', () => {

@@ -88,14 +88,17 @@ public sealed class DriverCommandTests
 
     /// <summary>
     /// WSR6: bringing a repository up to date after its pull request merged is a `trees` verb, and the host's
-    /// terminal door says it in the usage — the list first, `--yes` the press.
+    /// terminal door says it in the usage — the list first, `--yes` the press. WSR7 (D112): `--all` takes every
+    /// repository with a checkout, beside those holding Daoris's branches, and the host reads it.
     /// </summary>
     [Fact]
     public void The_usage_names_bringing_a_repository_up_to_date()
     {
-        Assert.Contains("| sync [--repository <name>] [--yes]", DriverCommand.Usage);
+        Assert.Contains("| sync [--repository <name>] [--all] [--yes]", DriverCommand.Usage);
         var program = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host", "TreesConsole.cs"));
         Assert.Contains("case [\"sync\", ..]", program);
+        Assert.Contains("args.Contains(\"--all\") ? SyncScope.Everything", program);
+        Assert.Contains("| sync [--repository <name>] [--all] [--yes]]", program);
     }
 
     private static string SourceRoot()

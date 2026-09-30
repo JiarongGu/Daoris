@@ -100,8 +100,53 @@ public sealed record RebaseItem(
     public bool Replays => Kind == RebaseKind.Replay;
 }
 
+/// <summary>A repository with a checkout here, and whether it holds a branch of Daoris's (WSR7, D112).</summary>
+/// <param name="Holds">A session branch (`daoris/…`), or a branch a landing recorded that still stands.</param>
+public sealed record SyncRepository(string Repository, string Workspace, bool Holds);
+
+/// <summary>
+/// Which repositories bringing up to date takes (WSR7, D112): by default those holding a branch of Daoris's, and every
+/// other one only where the person includes it — all of them (`--all`), or by name (`--repository`, the screen's tick).
+/// </summary>
+public sealed record SyncScope
+{
+    /// <summary>The default: the repositories holding a branch of Daoris's, and no other.</summary>
+    public static SyncScope Held { get; } = new();
+
+    /// <summary>Every repository with a checkout here.</summary>
+    public static SyncScope Everything { get; } = new() { All = true };
+
+    /// <summary>The default and the repositories named, whatever their case.</summary>
+    public static SyncScope Named(IEnumerable<string> repositories) =>
+        new() { Also = repositories.ToHashSet(StringComparer.OrdinalIgnoreCase) };
+
+    public bool All { get; init; }
+
+    /// <summary>Repositories taken beyond the default, compared without case.</summary>
+    public IReadOnlySet<string> Also { get; init; } = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+    public bool Includes(SyncRepository repository) => repository.Holds || All || Also.Contains(repository.Repository);
+
+    /// <summary>
+    /// This scope and each repository a row the person saw listed names (`repository:branch`, the key a press takes): the
+    /// press acts on what it was shown, so a repository included at the look is included at the press.
+    /// </summary>
+    public SyncScope Listed(IReadOnlySet<string>? only) => only is null ? this : this with
+    {
+        Also = Also.Concat(only.Select(key => key.IndexOf(':') is var colon and > 0 ? key[..colon] : key))
+            .ToHashSet(StringComparer.OrdinalIgnoreCase),
+    };
+}
+
 /// <summary>Bringing repositories up to date (WSR6), listed first: each line's pull, each branch's replay, and the landed branches that go.</summary>
-public sealed record SyncPlan(IReadOnlyList<LinePull> Lines, IReadOnlyList<RebaseItem> Rebases, IReadOnlyList<LandedItem> Deletes);
+public sealed record SyncPlan(IReadOnlyList<LinePull> Lines, IReadOnlyList<RebaseItem> Rebases, IReadOnlyList<LandedItem> Deletes)
+{
+    /// <summary>The repositories the look took (WSR7, D112), each with whether it holds a branch of Daoris's.</summary>
+    public IReadOnlyList<SyncRepository> Looked { get; init; } = [];
+
+    /// <summary>Every other repository with a checkout here: not fetched, not judged, listed for the person to include.</summary>
+    public IReadOnlyList<SyncRepository> Apart { get; init; } = [];
+}
 
 /// <summary>What the press did with one repository's line.</summary>
 public sealed record PullResult(LinePull Pull, bool Moved, string Message);
@@ -110,7 +155,11 @@ public sealed record PullResult(LinePull Pull, bool Moved, string Message);
 public sealed record RebaseResult(RebaseItem Item, bool Replayed, string Message);
 
 /// <summary>What one press of bringing up to date did, all three steps.</summary>
-public sealed record SyncDone(IReadOnlyList<PullResult> Lines, IReadOnlyList<RebaseResult> Rebases, IReadOnlyList<LandedResult> Deletes);
+public sealed record SyncDone(IReadOnlyList<PullResult> Lines, IReadOnlyList<RebaseResult> Rebases, IReadOnlyList<LandedResult> Deletes)
+{
+    /// <summary>The repositories with a checkout here the press did not take (WSR7, D112): nothing of them was touched.</summary>
+    public IReadOnlyList<SyncRepository> Apart { get; init; } = [];
+}
 
 /// <summary>The rows in words — the terminal's lines, and the sentences the screen's rows say in their own catalogue.</summary>
 public static class SyncWords
@@ -147,6 +196,13 @@ public static class SyncWords
             + ", whose work has not reached the line yet",
         _ => $"git could not tell: {item.Detail}",
     };
+
+    /// <summary>The repositories a look or a press did not take (WSR7, D112), in one line, and how to include them; null for none.</summary>
+    public static string? Apart(IReadOnlyList<SyncRepository> apart) => apart.Count == 0
+        ? null
+        : $"trees: not looked at, since they hold no branch of Daoris's ({apart.Count}): "
+          + string.Join(", ", apart.Select(each => each.Repository))
+          + ". `--all` includes them, and `--repository <name>` one of them.";
 }
 
 public sealed partial class SessionTrees
@@ -172,17 +228,21 @@ public sealed partial class SessionTrees
     /// onto it, and each landed branch whose work reached it. No branch of the person's moves.
     /// </summary>
     /// <param name="fetch">Whether to fetch each line first. A fetch moves only origin's own refs here.</param>
+    /// <param name="scope">
+    /// Which repositories to take (WSR7, D112); null for the default, those holding a branch of Daoris's. Every other one
+    /// comes back in <see cref="SyncPlan.Apart"/>, not fetched and not judged.
+    /// </param>
     public async Task<SyncPlan> SyncPlanAsync(
         IEnumerable<(string Repository, string? Workspace, string? Root)> repositories, IReadOnlySet<string> inUse,
-        bool fetch = true, CancellationToken ct = default)
+        bool fetch = true, CancellationToken ct = default, SyncScope? scope = null)
     {
         var busy = new HashSet<string>(inUse.Select(Normal), StringComparer.OrdinalIgnoreCase);
         var lines = new List<LinePull>();
         var rebases = new List<RebaseItem>();
         var deletes = new List<LandedItem>();
-        foreach (var (repository, space, root) in repositories)
+        var (looked, apart) = await ScopedAsync(repositories, scope ?? SyncScope.Held, ct).ConfigureAwait(false);
+        foreach (var (repository, space, root, _) in looked)
         {
-            if (string.IsNullOrWhiteSpace(root) || !Directory.Exists(root)) continue;
             var workspace = RemoteTarget.Workspace(space);
             var line = (await LineAsync(root, repository, workspace, ct).ConfigureAwait(false)).Branch;
             var fetched = fetch ? await FetchAsync(root, line, ct).ConfigureAwait(false) : null;
@@ -196,7 +256,59 @@ public sealed partial class SessionTrees
             deletes.AddRange(gone);
         }
 
-        return new(lines, rebases, deletes);
+        return new(lines, rebases, deletes) { Looked = [.. looked.Select(each => each.Known)], Apart = apart };
+    }
+
+    /// <summary>
+    /// Every repository with a checkout here, and whether each holds a branch of Daoris's (WSR7, D112): what a look takes
+    /// by default, read on the machine and never over the network.
+    /// </summary>
+    public async Task<IReadOnlyList<SyncRepository>> SyncScopeAsync(
+        IEnumerable<(string Repository, string? Workspace, string? Root)> repositories, CancellationToken ct = default) =>
+        [.. (await CheckoutsAsync(repositories, ct).ConfigureAwait(false)).Select(each => each.Known)];
+
+    /// <summary>A repository with a checkout here, as a look or a press takes it: its root, and whether it holds Daoris's branches.</summary>
+    private sealed record Checkout(string Repository, string? Space, string Root, SyncRepository Known);
+
+    private async Task<List<Checkout>> CheckoutsAsync(
+        IEnumerable<(string Repository, string? Workspace, string? Root)> repositories, CancellationToken ct)
+    {
+        var record = Recorded.All();
+        var checkouts = new List<Checkout>();
+        foreach (var (repository, space, root) in repositories)
+        {
+            if (string.IsNullOrWhiteSpace(root) || !Directory.Exists(root)) continue;
+            var holds = await HoldsAsync(root, repository, record, ct).ConfigureAwait(false);
+            checkouts.Add(new Checkout(repository, space, root, new SyncRepository(repository, RemoteTarget.Workspace(space), holds)));
+        }
+
+        return checkouts;
+    }
+
+    /// <summary>The checkouts a scope takes, and every other one, listed apart (D112).</summary>
+    private async Task<(List<Checkout> Looked, List<SyncRepository> Apart)> ScopedAsync(
+        IEnumerable<(string Repository, string? Workspace, string? Root)> repositories, SyncScope scope, CancellationToken ct)
+    {
+        var checkouts = await CheckoutsAsync(repositories, ct).ConfigureAwait(false);
+        return ([.. checkouts.Where(each => scope.Includes(each.Known))],
+            [.. checkouts.Where(each => !scope.Includes(each.Known)).Select(each => each.Known)]);
+    }
+
+    /// <summary>
+    /// Whether a repository holds a branch of Daoris's (D112): a session branch, or a branch a landing recorded that still
+    /// stands — one list of its local branches, beside the landings record.
+    /// </summary>
+    private static async Task<bool> HoldsAsync(string root, string repository, IReadOnlyList<LandedBranch> record, CancellationToken ct)
+    {
+        var (code, refs, _) = await WorkingTree.GitAsync(root, ["for-each-ref", "--format=%(refname)", "refs/heads/"], ct).ConfigureAwait(false);
+        // 🔴 A list git could not give is not "nothing of Daoris's": the repository is looked at, and its row says git's words.
+        if (code != 0) return true;
+        var branches = refs.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Where(name => name.StartsWith("refs/heads/", StringComparison.Ordinal))
+            .Select(name => name["refs/heads/".Length..])
+            .ToHashSet(StringComparer.Ordinal);
+        return branches.Any(branch => branch.StartsWith("daoris/", StringComparison.Ordinal))
+               || EntriesOf(record, repository).Any(entry => branches.Contains(entry.Branch));
     }
 
     /// <summary>
@@ -233,20 +345,24 @@ public sealed partial class SessionTrees
     /// (<see cref="TreeLock"/>, LEFT2): a session a driver opened since <paramref name="inUse"/> was read is then seen.
     /// Every door with a service hands it; without it the replays judge by <paramref name="inUse"/> alone.
     /// </param>
+    /// <param name="scope">
+    /// Which repositories to take (WSR7, D112); null for the default, those holding a branch of Daoris's. Each repository
+    /// a row in <paramref name="only"/> names is taken too: the press acts on what the person was shown.
+    /// </param>
     public async Task<SyncDone> SyncAsync(
         IEnumerable<(string Repository, string? Workspace, string? Root)> repositories, IReadOnlySet<string> inUse,
         IReadOnlySet<string>? only = null, bool fetch = false, CancellationToken ct = default,
-        Func<CancellationToken, Task<IReadOnlySet<string>>>? inUseNow = null)
+        Func<CancellationToken, Task<IReadOnlySet<string>>>? inUseNow = null, SyncScope? scope = null)
     {
         var busy = new HashSet<string>(inUse.Select(Normal), StringComparer.OrdinalIgnoreCase);
         var pulls = new List<PullResult>();
         var rebases = new List<RebaseResult>();
         var deletes = new List<LandedResult>();
         bool Listed(string key) => only is null || only.Contains(key);
+        var (looked, apart) = await ScopedAsync(repositories, (scope ?? SyncScope.Held).Listed(only), ct).ConfigureAwait(false);
 
-        foreach (var (repository, space, root) in repositories)
+        foreach (var (repository, space, root, _) in looked)
         {
-            if (string.IsNullOrWhiteSpace(root) || !Directory.Exists(root)) continue;
             var workspace = RemoteTarget.Workspace(space);
             var line = (await LineAsync(root, repository, workspace, ct).ConfigureAwait(false)).Branch;
             var fetched = fetch ? await FetchAsync(root, line, ct).ConfigureAwait(false) : null;
@@ -302,7 +418,7 @@ public sealed partial class SessionTrees
             await ForgetGoneAsync(root, repository, ct).ConfigureAwait(false);
         }
 
-        return new(pulls, rebases, deletes);
+        return new(pulls, rebases, deletes) { Apart = apart };
     }
 
     /// <summary>

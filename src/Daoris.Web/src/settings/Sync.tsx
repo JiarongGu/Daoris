@@ -1,6 +1,6 @@
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button, Chip, Inline, Prose } from '../ui';
+import { Button, CheckField, Chip, Inline, Prose } from '../ui';
 import { sweepKey, type LandedBranch } from './Sweep';
 
 /** One row: what the press does to it, its name, and the sentence — the session branches card's own grid. */
@@ -60,8 +60,74 @@ export type RebaseBranch = {
   replays: boolean;
 };
 
-/** The driver's TREES_SYNC_PLAN answer: each line, each branch, and the landed branches whose work reached the line. */
-export type SyncPlan = { lines: LinePull[]; rebases: RebaseBranch[]; deletes: LandedBranch[] };
+/** A repository with a checkout here, and whether it holds a branch of Daoris's (TREES_SYNC_SCOPE, D112). */
+export type SyncRepository = { repository: string; workspace: string; holds: boolean };
+
+/** What a look takes beside the repositories holding Daoris's branches (D112): every one, or those named. */
+export type SyncInclude = 'all' | string[];
+
+/**
+ * The driver's TREES_SYNC_PLAN answer: each line, each branch, and the landed branches whose work reached the line;
+ * then what the look took, and every other repository with a checkout, listed apart (D112). A host older than WSR7
+ * answers neither of the last two.
+ */
+export type SyncPlan = {
+  lines: LinePull[];
+  rebases: RebaseBranch[];
+  deletes: LandedBranch[];
+  looked?: SyncRepository[];
+  apart?: SyncRepository[];
+};
+
+/** Whether `include` takes `repository` beside the default. */
+const includes = (include: SyncInclude | undefined, repository: string) =>
+  include === 'all' || (include ?? []).includes(repository);
+
+/** `was` and `more` together: every one stays every one. */
+const together = (was: SyncInclude | undefined, more: SyncInclude): SyncInclude =>
+  was === 'all' || more === 'all' ? 'all' : [...new Set([...(was ?? []), ...more])];
+
+/**
+ * The repositories with a checkout here that hold no branch of Daoris's (D112): listed apart, collapsed, and looked at
+ * only once the person ticks them — each, or all — and asks.
+ */
+function ApartList({ apart, busy, onInclude }: {
+  apart: SyncRepository[];
+  busy?: boolean;
+  onInclude: (include: SyncInclude) => void;
+}) {
+  const { t } = useTranslation();
+  const [ticked, setTicked] = useState<string[]>([]);
+  // The box for all of them asks for every one, a repository added later included; ticking each asks for those.
+  const [all, setAll] = useState(false);
+  const tick = (repository: string, on: boolean) => {
+    setAll(false);
+    setTicked((was) => (on ? [...was, repository] : was.filter((name) => name !== repository)));
+  };
+
+  return (
+    <details className="mt-3">
+      <summary className="cursor-pointer text-small text-ink-soft">{t('settings.sync.apart.summary', { count: apart.length })}</summary>
+      <div role="group" aria-label={t('settings.sync.apart.label')} className="mt-2 pl-4">
+        <Prose className="text-small text-ink-soft">{t('settings.sync.apart.body')}</Prose>
+        <CheckField className="mt-2" checked={ticked.length === apart.length} label={t('settings.sync.apart.all', { count: apart.length })}
+          onChange={(on) => { setAll(on); setTicked(on ? apart.map((each) => each.repository) : []); }} />
+        <ul className="m-0 mt-1 grid list-none grid-cols-[repeat(auto-fill,minmax(12rem,1fr))] gap-x-3 p-0">
+          {apart.map((each) => (
+            <li key={each.repository} className="py-0.5">
+              <CheckField className="font-mono text-small" checked={ticked.includes(each.repository)} label={each.repository}
+                onChange={(on) => tick(each.repository, on)} />
+            </li>
+          ))}
+        </ul>
+        <Button className="mt-2" disabled={busy || ticked.length === 0}
+          onClick={() => { onInclude(all ? 'all' : ticked); setTicked([]); setAll(false); }}>
+          {t('settings.sync.apart.include', { count: ticked.length })}
+        </Button>
+      </div>
+    </details>
+  );
+}
 
 /** The keys a press names what it acts on by — the driver's `repository:branch`, the line's by its branch. */
 export const syncKeys = (plan: SyncPlan) => [
@@ -81,12 +147,19 @@ export const syncKeys = (plan: SyncPlan) => [
  * right before it acts: a line only by a fast-forward, in a clean checkout on it or as a ref nothing has checked out;
  * a replay in a tree of Daoris's own, aborted on a conflict. Nothing is pushed, and a branch on its remote is left.
  * `daoris-driver trees sync` is the terminal's door (D50). A section of the session branches card, drawn above them.
+ *
+ * **It takes the repositories that hold Daoris's branches** (D112). Every other one with a checkout is listed apart,
+ * collapsed, and looked at only once the person ticks it — or all of them — and asks; looking again keeps it.
  */
-export function SyncSection({ plan, busy, onLook, onSync }: {
+export function SyncSection({ plan, scope, included, busy, onLook, onSync }: {
   /** Undefined until the person looks. */
   plan?: SyncPlan;
+  /** Every repository with a checkout here, and whether each holds a branch of Daoris's; undefined until known. */
+  scope?: SyncRepository[];
+  /** What the last look was asked to take beside the default. */
+  included?: SyncInclude;
   busy?: boolean;
-  onLook: () => void;
+  onLook: (include: SyncInclude) => void;
   onSync: (only: string[]) => void;
 }) {
   const { t } = useTranslation();
@@ -94,6 +167,10 @@ export function SyncSection({ plan, busy, onLook, onSync }: {
   const repositories = plan
     ? [...new Set([...plan.lines, ...plan.rebases, ...plan.deletes].map((row) => row.repository))].sort((a, b) => a.localeCompare(b))
     : [];
+  // What the look left apart; before one, what it would, from the machine's own reading.
+  const apart = plan?.apart ?? (scope ?? []).filter((each) => !each.holds && !includes(included, each.repository));
+  const holding = (scope ?? []).filter((each) => each.holds).length;
+  const lookedAtNone = plan !== undefined && Array.isArray(plan.looked) && plan.looked.length === 0;
 
   const pulls = (pull: LinePull) => {
     const line = pull.line ?? '';
@@ -148,8 +225,14 @@ export function SyncSection({ plan, busy, onLook, onSync }: {
     <section aria-label={t('settings.sync.title')} className="mt-3 border-t border-line pt-3">
       <div className="text-body font-medium text-ink">{t('settings.sync.title')}</div>
       <Prose className="mt-1 text-small text-ink-soft">{t('settings.sync.body')}</Prose>
+      {!plan && scope && (
+        <Prose className="mt-1 text-small text-ink-soft">
+          {holding === 0 ? t('settings.sync.scopeNone') : t('settings.sync.scope', { count: holding })}
+        </Prose>
+      )}
 
-      {plan && acting.length === 0 && <Prose className="mt-2">{t('settings.sync.nothing')}</Prose>}
+      {lookedAtNone && <Prose className="mt-2">{t('settings.sync.noneHeld')}</Prose>}
+      {plan && !lookedAtNone && acting.length === 0 && <Prose className="mt-2">{t('settings.sync.nothing')}</Prose>}
 
       {/* A group, not a region, per repository: the session branches below draw a region of the same name. */}
       {plan && repositories.map((repository) => (
@@ -193,10 +276,14 @@ export function SyncSection({ plan, busy, onLook, onSync }: {
             {t('settings.sync.apply', { count: acting.length })}
           </Button>
         )}
-        <Button variant={plan ? 'ghost' : 'primary'} disabled={busy} onClick={onLook}>
+        <Button variant={plan ? 'ghost' : 'primary'} disabled={busy} onClick={() => onLook(included ?? [])}>
           {t(plan ? 'settings.sync.lookAgain' : 'settings.sync.look')}
         </Button>
       </div>
+
+      {apart.length > 0 && (
+        <ApartList apart={apart} busy={busy} onInclude={(more) => onLook(together(included, more))} />
+      )}
     </section>
   );
 }

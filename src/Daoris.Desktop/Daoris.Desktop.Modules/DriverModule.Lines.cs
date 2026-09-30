@@ -151,8 +151,15 @@ public sealed partial class DriverModule
     [DriverRoute("TREES_SYNC")]
     private async Task<object?> TreesSyncAsync(IpcRequest request, CancellationToken cancellationToken)
     {
-        var (repositories, inUse) = await CheckoutsAndSessionsAsync(Optional(request, "repository"), cancellationToken);
+        var named = Optional(request, "repository");
+        var (repositories, inUse) = await CheckoutsAndSessionsAsync(named, cancellationToken);
         var trees = new SessionTrees(_loop.Home);
+        // Which repositories it takes (D112): those holding Daoris's branches, and the ones the person included — every
+        // one (`all`), the ones ticked (`also`), or the one named. The press takes each a listed row names besides.
+        var also = Names(request, "also");
+        if (named is not null) also.Add(named);
+        var scope = Flag(request, "all") ? SyncScope.Everything : SyncScope.Named(also);
+        static object Repository(SyncRepository each) => new { each.Repository, each.Workspace, each.Holds };
 
         static string? Short(string? commit) => commit is null ? null : commit[..Math.Min(8, commit.Length)];
         object Pull(LinePull pull) => new
@@ -168,26 +175,27 @@ public sealed partial class DriverModule
 
         if (request.Type == "TREES_SYNC_PLAN")
         {
-            var plan = await trees.SyncPlanAsync(repositories, inUse, fetch: true, cancellationToken);
+            var plan = await trees.SyncPlanAsync(repositories, inUse, fetch: true, cancellationToken, scope);
             return new
             {
                 Lines = plan.Lines.Select(Pull).ToArray(),
                 Rebases = plan.Rebases.Select(Rebase).ToArray(),
                 Deletes = plan.Deletes.Select(LandedRow).ToArray(),
+                // What the look took, and every other repository with a checkout, listed apart for the person to include (D112).
+                Looked = plan.Looked.Select(Repository).ToArray(),
+                Apart = plan.Apart.Select(Repository).ToArray(),
             };
         }
 
-        HashSet<string>? only = null;
-        if (request.Payload is { } payload && payload.TryGetProperty("only", out var named) && named.ValueKind == JsonValueKind.Array)
-        {
-            only = named.EnumerateArray().Where(e => e.ValueKind == JsonValueKind.String).Select(e => e.GetString()!).ToHashSet(StringComparer.Ordinal);
-        }
+        HashSet<string>? only = request.Payload is { } payload && payload.TryGetProperty("only", out var listed) && listed.ValueKind == JsonValueKind.Array
+            ? Names(request, "only").ToHashSet(StringComparer.Ordinal)
+            : null;
 
         // The sessions in use, asked again while each repository's trees are held for its replays (LEFT2): the
         // driver may have opened one in a listed tree between the list and this press.
         var service = _loop.Service ?? throw NotReady();
         var done = await trees.SyncAsync(repositories, inUse, only, fetch: false, cancellationToken,
-            inUseNow: async token => await InUseAsync(service, token));
+            inUseNow: async token => await InUseAsync(service, token), scope: scope);
         _loop.Nudge();
         return new
         {
@@ -197,6 +205,22 @@ public sealed partial class DriverModule
             Changed = done.Lines.Count(result => result.Moved) + done.Rebases.Count(result => result.Replayed) + done.Deletes.Count(result => result.Removed),
         };
     }
+
+    // Which repositories a look would take (WSR7, D112): every one with a checkout here, and whether it holds a branch
+    // of Daoris's. Read on the machine, never fetched, so the screen can say what a look will fetch before it is asked.
+    [DriverRoute("TREES_SYNC_SCOPE")]
+    private async Task<object?> TreesSyncScopeAsync(IpcRequest request, CancellationToken cancellationToken)
+    {
+        var (repositories, _) = await CheckoutsAndSessionsAsync(null, cancellationToken);
+        var known = await new SessionTrees(_loop.Home).SyncScopeAsync(repositories, cancellationToken);
+        return new { Repositories = known.Select(each => new { each.Repository, each.Workspace, each.Holds }).ToArray() };
+    }
+
+    /// <summary>The strings of a payload's array field, or none where it has no such array.</summary>
+    private static HashSet<string> Names(IpcRequest request, string field) =>
+        request.Payload is { } payload && payload.TryGetProperty(field, out var names) && names.ValueKind == JsonValueKind.Array
+            ? names.EnumerateArray().Where(e => e.ValueKind == JsonValueKind.String).Select(e => e.GetString()!).ToHashSet(StringComparer.Ordinal)
+            : new HashSet<string>(StringComparer.Ordinal);
 
     /// <summary>A landed branch's row: what the proof found, and the files that keep it where some do (WSR5).</summary>
     private static object LandedRow(LandedItem item) => new

@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { screen } from '@testing-library/react';
+import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 // The Workspace domain in SHELL mode: the machine's wiring, which only a desktop may render. Moved from
@@ -131,6 +131,35 @@ describe("the workspace domain: the machine's wiring", () => {
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'TREES_SYNC', { payload: { only: ['engine:main', 'engine:daoris/s-step'] } });
     expect(notify).toHaveBeenCalledWith('2 of 2 done. What did not happen is still listed, with why.');
     expect(serviceCalls()).toEqual([]);
+  });
+
+  /**
+   * WSR7 (D112): a look takes the repositories holding Daoris's branches, and the rest are listed apart. Ticking one
+   * and asking looks at it too, and looking again keeps it.
+   */
+  it('lists apart the repositories holding nothing of Daoris\'s, and looks at one once it is ticked', async () => {
+    const plan = { lines: [], rebases: [], deletes: [], looked: [], apart: [{ repository: 'game', workspace: 'aurora', holds: false }] };
+    invoke.mockImplementation(async (module: string, type: string) => {
+      if (module !== 'DAORIS.DRIVER') return WIRING;
+      if (type === 'TREES_SYNC_SCOPE') {
+        return { repositories: [{ repository: 'engine', workspace: 'aurora', holds: true }, { repository: 'game', workspace: 'aurora', holds: false }] };
+      }
+      if (type === 'TREES_SYNC_PLAN') return plan;
+      if (type === 'SWEEP_PLAN') return { branches: [], landed: [] };
+      return DRIVER_STATE;
+    });
+    show(<SettingsView notify={() => {}} section="workspace" />);
+
+    expect(await screen.findByText(/A look fetches the 1 repository that holds a branch of Daoris's/)).toBeTruthy();
+    await userEvent.click(screen.getByText("1 other repository with a checkout here holds no branch of Daoris's"));
+    await userEvent.click(screen.getByRole('checkbox', { name: 'game' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Include and look (1)' }));
+
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'TREES_SYNC_PLAN', expect.objectContaining({ payload: { also: ['game'] } }));
+    invoke.mockClear();
+    const section = within(screen.getByRole('region', { name: 'Bring up to date' }));
+    await userEvent.click(await section.findByRole('button', { name: 'Look again' }));
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'TREES_SYNC_PLAN', expect.objectContaining({ payload: { also: ['game'] } }));
   });
 
   /**

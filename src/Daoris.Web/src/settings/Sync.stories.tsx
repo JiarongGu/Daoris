@@ -65,6 +65,20 @@ export const EveryReasonToStay: Story = {
   },
 };
 
+/**
+ * The owner's workspace (WSR7, D112): three repositories hold Daoris's branches and the look fetches those; the rest
+ * are listed apart, collapsed, to be ticked and included.
+ */
+export const RepositoriesApart: Story = {
+  args: {
+    plan: undefined,
+    scope: [
+      ...['engine', 'game', 'tools'].map((repository) => ({ repository, workspace: 'aurora', holds: true })),
+      ...['atlas', 'beacon', 'cinder', 'delta', 'ember', 'fjord', 'grove'].map((repository) => ({ repository, workspace: 'aurora', holds: false })),
+    ],
+  },
+};
+
 export const UpToDate: Story = {
   args: { plan: { lines: [pull({ kind: 'up-to-date' })], rebases: [rebase({ branch: 'daoris/s-1f2e3d4c', kind: 'up-to-date' })], deletes: [] } },
 };

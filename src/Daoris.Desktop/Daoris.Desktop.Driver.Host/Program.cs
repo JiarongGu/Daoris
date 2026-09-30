@@ -52,7 +52,7 @@ using Daoris.Driver;
 //                 Nothing after the id is "carry on". The page's box on the parked quest is the other door.
 //
 //   trees [list | remove <path> [--force] | clean [--yes] | land <session> [--plan]
-//         | hand <session|branch> [...] | sync [--repository <name>] [--yes]]
+//         | hand <session|branch> [...] | sync [--repository <name>] [--all] [--yes]]
 //                 the session worktrees this machine has grown (D51): list them, or remove one —
 //                 refusing while it holds uncommitted changes or unmerged commits, unless forced —
 //                 or list every session branch and, with --yes, remove the empty and landed (D88),

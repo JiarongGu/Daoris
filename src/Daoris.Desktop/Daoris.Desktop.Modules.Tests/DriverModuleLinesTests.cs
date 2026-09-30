@@ -126,7 +126,11 @@ public sealed class DriverModuleLinesTests : DriverModuleBridge
     public async Task Bringing_up_to_date_before_the_driver_is_up_is_a_sentence()
     {
         Assert.Contains(Refusals.DriverNotReady, await RefusalAsync(Module(), "TREES_SYNC_PLAN"));
+        Assert.Contains(Refusals.DriverNotReady, await RefusalAsync(Module(), "TREES_SYNC_PLAN", new { also = new[] { "game" } }));
+        Assert.Contains(Refusals.DriverNotReady, await RefusalAsync(Module(), "TREES_SYNC_PLAN", new { all = true }));
         Assert.Contains(Refusals.DriverNotReady, await RefusalAsync(Module(), "TREES_SYNC", new { only = new[] { "engine:main" } }));
+        // Which repositories a look would take (WSR7, D112) is read off the registry's checkouts too.
+        Assert.Contains(Refusals.DriverNotReady, await RefusalAsync(Module(), "TREES_SYNC_SCOPE"));
     }
 
     /// <summary>What each repository's line is needs the registry's checkouts, so before the driver is up it is the cold-start sentence.</summary>

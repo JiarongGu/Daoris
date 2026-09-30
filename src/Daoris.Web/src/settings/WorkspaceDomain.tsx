@@ -5,7 +5,7 @@ import { useRegistry, useWorkspaceHoldings } from '../queries';
 import { useScope } from '../scope';
 import {
   useDriver, useHarnesses, useLines, usePlugins, useRemotes, useSetLanding, useSetLine, useStarts, useSweep,
-  useSweepPlan, useTreesSync, useTreesSyncPlan, useUnwireRemote, useWireRemote,
+  useSweepPlan, useTreesSync, useTreesSyncPlan, useTreesSyncScope, useUnwireRemote, useWireRemote,
 } from '../shell';
 import {
   Button, Card, Chip, failure, Icon, type Notify, PathText, Prose, SectionTitle, SettingRow, Tip, useErrorNotify,
@@ -333,12 +333,15 @@ function SweepSettings({ notify }: { notify: Notify }) {
   const { t } = useTranslation();
   const plan = useSweepPlan();
   const sweep = useSweep();
-  // Bringing up to date (WSR6): asked for by its own press, since looking fetches.
+  // Bringing up to date (WSR6): asked for by its own press, since looking fetches; it takes the repositories holding
+  // Daoris's branches, and the ones the person includes from the list apart (D112).
+  const syncScope = useTreesSyncScope();
   const syncPlan = useTreesSyncPlan();
   const sync = useTreesSync();
   useErrorNotify(plan.error, notify);
   useErrorNotify(syncPlan.error, notify);
   const looked = syncPlan.data;
+  const scope = syncScope.data?.repositories;
 
   return (
     <SweepList
@@ -353,13 +356,15 @@ function SweepSettings({ notify }: { notify: Notify }) {
       sync={(
         <SyncSection
           plan={looked && Array.isArray(looked.lines) && Array.isArray(looked.rebases) && Array.isArray(looked.deletes) ? looked : undefined}
+          scope={Array.isArray(scope) ? scope : undefined}
+          included={syncPlan.asked?.include}
           busy={sync.isPending || syncPlan.isFetching}
-          onLook={() => void syncPlan.refetch()}
+          onLook={(include) => void syncPlan.look(include)}
           onSync={(only) => sync.mutate(only, {
             onSuccess: (done) => {
               notify(t('settings.sync.done', { changed: done.changed, count: only.length }));
-              // Look again, so the list shows what is left, with why.
-              void syncPlan.refetch();
+              // Look again, so the list shows what is left, with why — taking what the person included.
+              void syncPlan.look(syncPlan.asked?.include ?? []);
             },
             onError: failure(notify),
           })}
