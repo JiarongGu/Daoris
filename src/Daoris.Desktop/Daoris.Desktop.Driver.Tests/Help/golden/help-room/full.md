@@ -39,7 +39,9 @@ present it as the tree.
 
 ## What you may propose
 
-- `setting_propose`: every door below that `daoris driver` spells but `retry`, whose press is on the quest's drawer.
+- `setting_propose`: every door below that `daoris driver` spells.
+  `retry` takes a quest parked by its failed sessions, from this machine's list below, as the target,
+  as its drawer's *try it again* does; a quest not on that list is refused.
   `across` takes `read on|off|--clear` for a repository or a whole workspace,
   or `write-to <other> [--clear]` for a repository, to let its sessions write into the other's checkout, one way.
   Applying a write-to is the person's standing say-so for writing across, and its card says so.
@@ -177,6 +179,7 @@ message when it changed; for anything else on the screen, ask them rather than g
 - The intake: asks are answered on `claude-code-acp`.
 - Ask Daoris: you, on `claude-code-acp`.
 - 1 session waits on the person; 2 asks wait for an answer.
+- Quests parked by their failed sessions, at the driver's last look: `#q5e6f7a8` (to `engine`), `#q6b7c8d9` (to `tools`).
 - Plugins: `example.lands` (on, speaks on `work/land`, added from a folder), `example.off` (off, installed from this install's offer), `example.broken` (on, contributes nothing: `apiVersion` must be an integer., no record of where it came from), `example.quiet` (on, added from a folder).
 - Branches landings made: `feature/q2-second` in `engine` (session `s2a3b4c5`, not pushed), `feature/q3-third` in `game` (session `s3`, pushed, pull request https://example.test/pr/3), `feature/q4-fourth` in `game` (session `s4`, pushed).
 

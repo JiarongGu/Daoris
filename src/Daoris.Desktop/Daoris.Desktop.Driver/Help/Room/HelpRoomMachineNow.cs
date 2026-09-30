@@ -4,8 +4,8 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// This machine, now (HELP1a): the agents quests, asks and the helper run on, what waits on the person, the
-/// plugins installed here (PLUG9) and the branches landings made (WSR5b) — each by name and state, so a
-/// proposal names one this machine holds.
+/// quests its strikes parked (HELP10), the plugins installed here (PLUG9) and the branches landings made
+/// (WSR5b) — each by name and state, so a proposal names one this machine holds.
 /// </summary>
 internal sealed class HelpRoomMachineNow : IHelpRoomSection
 {
@@ -25,6 +25,7 @@ internal sealed class HelpRoomMachineNow : IHelpRoomSection
                 Source = PluginSource.Read(entry.Folder).Source is { } source ? (source.Offer is not null ? "offer" : "folder") : null,
             })],
         Landed = [.. sources.Landed.Select(entry => new HelpLanded(entry.Repository, entry.Branch, entry.Session, entry.Pushed, entry.PullRequest))],
+        Parked = sources.Parked,
     };
 
     public string Render(HelpMachine machine)
@@ -40,6 +41,12 @@ internal sealed class HelpRoomMachineNow : IHelpRoomSection
         if (machine.Helper is { Length: > 0 } helper) text.Append($"- Ask Daoris: you, on `{helper}`.\n");
         text.Append($"- {Count(machine.Waiting, "session waits", "sessions wait")} on the person; "
             + $"{Count(machine.Asks, "ask waits", "asks wait")} for an answer.\n");
+        // HELP10: by id and repository, so a retry names one the quest's drawer would offer Retry on.
+        text.Append("- Quests parked by their failed sessions, at the driver's last look: "
+            + (machine.Parked.Count > 0
+                ? string.Join(", ", machine.Parked.Select(parked => $"`#{parked.Quest}` (to `{parked.Repository}`)"))
+                : "none")
+            + ".\n");
         // PLUG9: by id and state, so a switch names one the catalogue holds.
         text.Append(machine.Plugins.Count > 0
             ? $"- Plugins: {string.Join(", ", machine.Plugins.Select(PluginLine))}.\n"
@@ -112,4 +119,7 @@ public sealed partial record HelpMachine
 
     /// <summary>The branches this machine's landings made and recorded, in the order they landed (WSR5b).</summary>
     public IReadOnlyList<HelpLanded> Landed { get; init; } = [];
+
+    /// <summary>The quests the loop's last tick parked by their failed sessions, as the room was written (HELP10).</summary>
+    public IReadOnlyList<ParkedQuest> Parked { get; init; } = [];
 }

@@ -35,7 +35,11 @@ public abstract class HelpProposalsFixture : IDisposable
     }
 
     protected static readonly HelpMachineFacts Facts = new(
-        Repositories: ["engine", "game"], Workspaces: ["default", "work"], Agents: ["claude-code", "claude-code-acp"]);
+        Repositories: ["engine", "game"], Workspaces: ["default", "work"], Agents: ["claude-code", "claude-code-acp"])
+    {
+        // HELP10: what the loop's last tick parked by its strikes, the verdict the quest drawer shows Retry by.
+        Parked = [new ParkedQuest("q1a2b3c4", "engine")],
+    };
 
     /// <summary>A file as the service's `HelpProposalBox` writes it — the twin's shape.</summary>
     protected string File(string id, string kind, string door, string? target = null, string? workspace = null,

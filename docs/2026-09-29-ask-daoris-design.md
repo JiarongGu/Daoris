@@ -100,8 +100,8 @@ never a proposal of this kind: it is an ask at that repository's workspace, sinc
 person and is made with tests and reviewed like any other work.
 
 **Reading and writing across, a cap, an adapter** (HELP9, §9.9, D110): `across`, `cap` and `adapter` are
-setting doors, so every `daoris driver` verb but `list` and `retry` is one. A write-to's card says applying it
-is the person's standing say-so for writing across.
+setting doors, and since HELP10 (§9.10) `retry` of a quest the driver parked, so every `daoris driver` verb but
+`list` is one. A write-to's card says applying it is the person's standing say-so for writing across.
 
 **A hand-off** (WSR5b, §9.8, D102): a branch a landing made and recorded, handed to a landing plugin
 (`hand_propose`), applied through the review's own door. It is the one card whose press leads to a push:
@@ -324,6 +324,14 @@ line git can name. With an agent named, a starter is also a first message.
      that changes something is a row of its doors table.
    - **What the gates do not cover:** a real helper choosing `across`, `cap` or `adapter`, and the write-to card
      on the window in both themes.
+10. **HELP10**: the doors HELP9 left owed, and the ones built since (2026-09-30, D110 applied). *Built:*
+   - **Retry a parked quest.** `retry` is a setting door, its target the quest by id (`#` or not), so every
+     `daoris driver` verb but `list` is one. The loop keeps what each tick parked by its strikes
+     (`ParkedQuests`, beside the trust holds, replaced whole each tick), which is the verdict the quest's drawer
+     shows its Retry by; the facts carry it (`HelpMachineFacts.Parked`) and a quest not on it is refused, since a
+     helper can invent an id and forgiving one not parked lets it run past its strikes. Applied as `RETRY_QUEST`'s
+     own edit, forgiven at the strike limit standing at the press. The room lists the parked quests by id and
+     repository, none said as none.
 
 ## 10. Not chosen
 

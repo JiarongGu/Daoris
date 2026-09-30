@@ -91,4 +91,31 @@ public sealed class HelpRoomMachineNowTests
 
         Assert.Equal(new HelpLanded("engine", "feature/q2-second", "s2a3b4c5", true, "https://example.test/pr/9"), Assert.Single(machine.Landed));
     }
+
+    /// <summary>
+    /// HELP10: the quests the driver's last look parked by their failed sessions, by id and repository, so a retry
+    /// names one the drawer would offer Retry on; and none said as none, so the helper does not guess one parked.
+    /// </summary>
+    [Fact]
+    public void The_room_lists_the_quests_the_driver_parked_and_how_one_is_started_again()
+    {
+        var some = HelpRoom.Render(HelpRoomFixture.Machine with
+        {
+            Parked = [new ParkedQuest("q1a2b3c4", "engine"), new ParkedQuest("q5e6f7a8", "game")],
+        });
+
+        Assert.Contains("- Quests parked by their failed sessions, at the driver's last look: `#q1a2b3c4` (to `engine`), "
+            + "`#q5e6f7a8` (to `game`).", some);
+        Assert.Contains("- Quests parked by their failed sessions, at the driver's last look: none.", HelpRoom.Render(HelpRoomFixture.Machine));
+        Assert.Contains("`retry` takes a quest parked by its failed sessions, from this machine's list below", some);
+    }
+
+    [Fact]
+    public void The_parked_quests_are_described_from_the_loops_last_tick()
+    {
+        var machine = HelpRoom.Describe(
+            DriverConfig.Empty, new Snapshot([], [], []), [], [], _ => null, asks: 0, parked: [new ParkedQuest("q1a2b3c4", "engine")]);
+
+        Assert.Equal(new ParkedQuest("q1a2b3c4", "engine"), Assert.Single(machine.Parked));
+    }
 }

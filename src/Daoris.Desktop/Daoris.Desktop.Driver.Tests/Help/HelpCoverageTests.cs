@@ -69,10 +69,7 @@ public sealed partial class HelpCoverageTests
         ("intake", new Door("setting", "intake")),
         ("helper", new Door("setting", "helper")),
         ("strikes", new Door("setting", "strikes")),
-        ("retry", new Owed(
-            "its judge needs which quests are parked, the last tick's verdict the quest's drawer shows Retry by, and "
-            + "the facts a proposal is judged against carry none until the modules' `HelpFactsAsync` hands them; "
-            + "until then the room names the drawer's Retry.")),
+        ("retry", new Door("setting", "retry")),
         ("timeout", new Door("setting", "timeout")),
         ("cap", new Door("setting", "cap")),
         ("adapter", new Door("setting", "adapter")),

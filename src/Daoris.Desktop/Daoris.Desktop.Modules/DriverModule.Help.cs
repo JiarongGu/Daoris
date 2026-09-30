@@ -48,7 +48,9 @@ public sealed partial class DriverModule
             config, snapshot, lines, roster, adapter => _loop.Harnesses.Toolchain(adapter)?.Product, asks, standing,
             PluginCatalog.Load(_loop.Home, AdapterSet.Built().Names), new LandedBranches(_loop.Home).All(),
             // The install's own plugins (PLUG9 d), which the helper may propose installing by id.
-            PluginOffers.Load(OffersFolder, _loop.Home, AdapterSet.Built().Names));
+            PluginOffers.Load(OffersFolder, _loop.Home, AdapterSet.Built().Names),
+            // What the last tick parked by its strikes (HELP10), so a retry names a quest the drawer offers Retry on.
+            _loop.Parked.Latest);
 
         var start = await chat.StartHelpAsync(
             helper, config, machine,
@@ -236,7 +238,8 @@ public sealed partial class DriverModule
 
     /// <summary>
     /// What a proposal of Ask Daoris's is judged against (HELP1c): the driver's file, and the names the
-    /// machine holds — its registered repositories and their circles, and the agents it has. For the
+    /// machine holds — its registered repositories and their circles, the agents it has, and the quests the
+    /// last tick parked (HELP10). For the
     /// kinds that need them (HELP6), each door as the Agents screen's roster reads it, and every quest
     /// and ask with the service's own reading of whether it may be deleted — asked only then.
     /// </summary>
@@ -264,6 +267,8 @@ public sealed partial class DriverModule
             // The install's own plugins (PLUG9 d), which an add may name by id, and where an offer's update reads.
             OffersFolder = OffersFolder,
             Offers = PluginOffers.Load(OffersFolder, _loop.Home, AdapterSet.Built().Names),
+            // A retry names a quest the last tick parked by its strikes (HELP10), the verdict the drawer shows Retry by.
+            Parked = _loop.Parked.Latest,
         };
 
         if (proposals.Any(proposal => proposal.Kind is "agent" or "account"))

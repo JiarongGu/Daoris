@@ -71,6 +71,7 @@ public sealed class HelpRoomGoldenTests
             new HelpPlugin("example.broken", Enabled: true, []) { Problem = "`apiVersion` must be an integer." },
             new HelpPlugin("example.quiet", Enabled: true, []) { Source = "folder" },
         ],
+        Parked = [new ParkedQuest("q5e6f7a8", "engine"), new ParkedQuest("q6b7c8d9", "tools")],
         Landed =
         [
             new HelpLanded("engine", "feature/q2-second", "s2a3b4c5", Pushed: false, PullRequest: null),

@@ -56,15 +56,17 @@ public sealed class HelpRoomMayProposeTests
     }
 
     /// <summary>
-    /// HELP9: a setting's doors are every `daoris driver` verb but `retry`, reading and writing across among them
-    /// (D107), each form said as the terminal spells it, and a write-to named as the person's standing say-so.
+    /// HELP9: a setting's doors are every `daoris driver` verb, reading and writing across among them (D107), each
+    /// form said as the terminal spells it, and a write-to named as the person's standing say-so; since HELP10
+    /// `retry` too, of a quest the driver parked.
     /// </summary>
     [Fact]
     public void The_room_says_how_a_setting_proposes_reading_and_writing_across()
     {
         var proposes = new HelpRoomMayPropose().Render(HelpRoomFixture.Machine);
 
-        Assert.Contains("every door below that `daoris driver` spells but `retry`", proposes);
+        Assert.Contains("every door below that `daoris driver` spells.", proposes);
+        Assert.DoesNotContain("but `retry`", proposes);
         Assert.Contains("`across` takes `read on|off|--clear` for a repository or a whole workspace", proposes);
         Assert.Contains("`write-to <other> [--clear]` for a repository", proposes);
         Assert.Contains("the person's standing say-so for writing across", proposes);

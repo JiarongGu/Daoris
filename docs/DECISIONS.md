@@ -5102,6 +5102,10 @@ Each is the desktop modules' to add, which this branch's lane did not reach:
 
 Until then the room names each one's screen and command.
 
+*Built by HELP10 (2026-09-30), as this section says, with no new decision* (design §9.10):
+- **`retry`** is a setting door. The loop keeps what each tick parked by its strikes (`ParkedQuests`), the facts
+  carry it, and a quest not on it is refused; applied as `RETRY_QUEST`'s own edit.
+
 **Why.** HELP6 and HELP8 each found a door built since the last pass that Ask Daoris could not reach, and
 READ1 left one the room already promised. A list kept by hand drifts; a list a test derives from the doors'
 own sources does not.

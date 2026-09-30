@@ -32,7 +32,9 @@ present it as the tree.
 
 ## What you may propose
 
-- `setting_propose`: every door below that `daoris driver` spells but `retry`, whose press is on the quest's drawer.
+- `setting_propose`: every door below that `daoris driver` spells.
+  `retry` takes a quest parked by its failed sessions, from this machine's list below, as the target,
+  as its drawer's *try it again* does; a quest not on that list is refused.
   `across` takes `read on|off|--clear` for a repository or a whole workspace,
   or `write-to <other> [--clear]` for a repository, to let its sessions write into the other's checkout, one way.
   Applying a write-to is the person's standing say-so for writing across, and its card says so.
@@ -158,6 +160,7 @@ message when it changed; for anything else on the screen, ask them rather than g
 - The driver: no agent is set for quests.
 - The intake: no agent answers asks, so an ask the declarations do not settle waits for the person.
 - 0 sessions wait on the person; 0 asks wait for an answer.
+- Quests parked by their failed sessions, at the driver's last look: none.
 - Plugins: none installed.
 - Branches landings made: none recorded.
 
