@@ -39,6 +39,11 @@ CJK title, a stream that dropped 12,000 lines. That is the whole trick, and it i
 test asserts that no file in the presentational set imports `./queries` or `./shell`. Same shape as
 the gate-list and catalogue checks already here — a rule nobody can quietly stop following.
 
+**A door deep in a molecule is a context the frame provides** (BRW7's link opener in `links.tsx`,
+PREVIEW1's file opener in `work/preview.ts`): the molecule reads it with React's own `useContext`,
+which reaches no data, and rendered with no provider the door is plain text. Threading the callback
+instead would make every level between the frame and a tool card carry a prop it does not use.
+
 **Deliberately not adopted: the folder taxonomy.** `atoms/ molecules/ organisms/` scatters one feature
 across three directories and starts a taxonomy argument on every file ("is a composer a molecule?").
 The surface's own components live together in **`src/Daoris.Web/src/work/`**, colocated with their
@@ -192,9 +197,10 @@ Everything the design (§3–§5) needs, with the states its story must carry. N
 | `AwaitingIntake` | a parked intake's question, a door to its ask, and a stop that keeps the ask a proposal (INT4g) | asking · nothing can act |
 | `RunningIntake` | a running intake: why it takes no messages, a door to look at its ask, and the stop its composer used to carry (INT4h) | running · nothing can act |
 | `TrustAsk` | the agent's trust question for a folder the driver holds: the folder, what trusting means, what it holds, the one file written, and the grant on the press (D73) | asking · granting |
-| `DiffFileRow` | one file in the review pane | added, modified, deleted, renamed, binary, truncated |
+| `DiffFileRow` | one file in the review pane, and its door into the file's preview (PREVIEW1) | added, modified, deleted, renamed, binary, truncated, with its preview, deleted with no preview |
 | `PatchView` | a file's patch: numbered, highlighted a side at a time, unified or side by side (REVIEW2) | unified · side by side · unknown language · rename only · long line |
-| `RightDock` | the per-session surfaces beside the session, with its geometry handed in (FRAME6) | docked · cramped · full · full in a narrow window · closed |
+| `RightDock` | the per-session surfaces beside the session, with its geometry handed in (FRAME6), and a file's preview as a tab after them (PREVIEW1, D111) | docked · cramped · full · full in a narrow window · closed · with a preview · a preview at the floor · closed with a preview |
+| `FilePreview` | one file, read-only, from the session's tree: its path, numbered and highlighted lines, the lines a read named, and the review's patch for it where the review has one (PREVIEW1, D111) | read · marked lines · with its changes · bounded · binary · empty · refused · reading · a 中文 path at the floor |
 | `SessionStripRow` | one running session in the rail's 56px strip (FRAME6) | working · attended · awaiting person · a 中文 repository |
 | `Splitter` | the edge a column is resized by, keyboard-operable (FRAME6) | held by `chrome.test.tsx` |
 

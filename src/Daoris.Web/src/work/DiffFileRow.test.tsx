@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import * as Tooltip from '@radix-ui/react-tooltip';
 import '../i18n';
 import type { DiffFile } from './diff';
 import { DiffFileRow } from './DiffFileRow';
@@ -86,6 +87,39 @@ describe('DiffFileRow', () => {
   it('keeps a blank context line as a line', () => {
     show({ ...FILE, patch: '@@ -1,3 +1,3 @@\n a\n \n b' }, { open: true });
     expect(screen.getAllByRole('row')).toHaveLength(3);
+  });
+
+  /**
+   * PREVIEW1 (D111): the file itself, read in the side bar, one press from its row — beside the row's own
+   * disclosure, which still opens the patch in place.
+   */
+  it('opens the file\'s preview from its own button, leaving the patch where it was', async () => {
+    const onPreview = vi.fn();
+    const onToggle = vi.fn();
+    render(
+      <Tooltip.Provider>
+        <ul>
+          <DiffFileRow file={FILE} open={false} viewed={false} onToggle={onToggle} onViewed={() => {}} onPreview={onPreview} />
+        </ul>
+      </Tooltip.Provider>,
+    );
+
+    await userEvent.click(screen.getByRole('button', { name: 'preview src/world/chunk.ts' }));
+    expect(onPreview).toHaveBeenCalledTimes(1);
+    expect(onToggle).not.toHaveBeenCalled();
+  });
+
+  /** A door that could only refuse is not offered (UX5 U66): a deleted file is not in the tree any more. */
+  it('offers no preview of a file the session deleted', () => {
+    render(
+      <Tooltip.Provider>
+        <ul>
+          <DiffFileRow file={{ ...FILE, status: 'deleted' }} open={false} viewed={false} onToggle={() => {}} onViewed={() => {}} onPreview={vi.fn()} />
+        </ul>
+      </Tooltip.Provider>,
+    );
+
+    expect(screen.queryByRole('button', { name: /^preview / })).toBeNull();
   });
 
   /** REVIEW2: the layout the pane chose, side by side here — each removal across from what replaced it. */

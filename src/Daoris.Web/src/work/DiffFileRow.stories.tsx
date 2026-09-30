@@ -45,6 +45,14 @@ export const Open: Story = { args: { open: true } };
 /** Ticked off. It dims rather than disappearing — the count still has to add up. */
 export const Viewed: Story = { args: { viewed: true } };
 
+/** Where the side bar opens a file's preview (PREVIEW1): the file's own button, beside its counts. */
+export const WithItsPreview: Story = { args: { onPreview: () => {} } };
+
+/** A deleted file where previews open: no button, since the file is not in the tree any more. */
+export const DeletedWithNoPreview: Story = {
+  args: { onPreview: () => {}, file: { ...FILE, path: 'src/world/legacy/loader.ts', status: 'deleted', added: 0, removed: 214 } },
+};
+
 export const Added: Story = {
   args: { file: { ...FILE, path: 'src/world/streaming/budget.ts', status: 'added', added: 61, removed: 0 } },
 };

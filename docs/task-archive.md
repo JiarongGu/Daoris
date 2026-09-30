@@ -8532,3 +8532,15 @@ DRV8's `--share` is exempt (a loop's start flag, not a setting). Three doors are
 modules, now HELP10. Not proven: a real helper choosing the new doors, and the write-to card on the window.
 **Proven by:** driver 963 fast + 548 Process, modules 306 + 112, service 672 + 46, CLI 661, vitest 1713,
 release, family, Playwright and deployment rehearsals.
+
+
+## PREVIEW1 — a file's preview in the dock (2026-09-30)
+
+> - [ ] **PREVIEW1 — a file's preview in the dock** (building; D76's held file tools, its trigger met: the
+> conversation's tool cards and the review name files the person wants to read). Read-only, from the
+> session's own tree or the repository's checkout, opened from a tool card's path or the review's file
+> list, in the right dock beside the conversation. No editor (D55).
+
+**Outcome** (built by a subagent, merged with `tools/merge-branch.mjs`, every gate): PREVIEW1 (D111): a file named in the conversation or the review can be read without leaving the window. It opens read-only as a tab of the right side bar, after its views, keyed to the attended session, and its × returns to the tab it covered. There are two doors: a path in a tool card (a read's location or an edit's file), through a `FileOpener` context the Work frame provides, and a file button in the review's list. A path the page can see is outside the tree or under `.git`, or a deleted file, is not offered. `SESSION_FILE` (`DriverModule.Trees.cs`) reads through the driver library's new `FilePreview`: the disk as it is now, in the tree the record names (the checkout, for a conversation there), capped at 256 KiB at a line's end, with binary files reported by git's NUL test. A path outside the tree, a link leading out of it, and `.git` are refused as codes of their own, beside no-tree and not-a-file. `FilePreview` shows the path relative to the tree, numbered and highlighted lines, the lines a read's own `offset`/`limit` named (marked and scrolled to), the host's refusal verbatim, and the review's own patch for the file where the review holds one. It never asks git itself. Tests: web 1713 → 1761, driver fast half 934 → 960 (plus 2 `Process` link tests), modules fast half 306 → 314. How it looks in both themes, in 中文 and at the 300px floor has not been checked on the window yet.
+
+**Not yet looked at on the window** when committed: the look is taken on the republished install after WSR6 and LEFT1 merge, where real sessions carry tool cards.

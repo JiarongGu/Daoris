@@ -882,6 +882,16 @@ The first version: doctrine that installs, is checked, and flows back.
   relaunch `Daoris.exe` at the install's root, so a pin made from the running window survives a republish and
   later windows, a second one included, join it. Pin from the running button; a pin made on `Daoris.exe` in
   Explorer carries no id and still shows a second button.
+- **Ask Daoris can set what was terminal-only** (HELP9, D110). It proposes reading and writing across
+  repositories, a repository's cap and its adapter, each shown as the change it would make before you
+  apply it; a write-to says that applying it is your standing say-so. Every driver verb and Settings
+  control is now held, by a test, to a door Ask Daoris can propose, a door still owed, or a written
+  reason it has none.
+- **Read a file without leaving the window** (PREVIEW1, D111). A path in a conversation's tool card,
+  or the file button in the review's list, opens the file read-only as a tab of the right side bar:
+  numbered, highlighted lines, the lines a read named marked and scrolled to, and a *File · Changes*
+  switch where the review holds a patch. It reads the session's own tree as it is now, up to 256 KiB, and
+  refuses a path outside that tree, a link leading out of it, and `.git`, each with its own sentence.
 - **A plugin can push the branch and open the pull request** (WSR4, D100). A branch landing rule may
   name an installed plugin (`daoris driver landing … branch <pattern> --plugin <id>`, or the *who
   pushes it* chooser in Settings → Workspace → *How work lands*). Once accepting has made the branch,

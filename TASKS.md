@@ -21,8 +21,8 @@ lists.
 
 ## State
 
-**Counts, and this is their one home:** sixteen commands, **661 CLI tests, 672 service and 46 HTTP host, 1511 driver,
-418 desktop modules, 80 devkit, 1713 web unit, 21 Playwright**, 66/66 release rehearsal, **301/301
+**Counts, and this is their one home:** sixteen commands, **661 CLI tests, 672 service and 46 HTTP host, 1539 driver,
+426 desktop modules, 80 devkit, 1761 web unit, 21 Playwright**, 66/66 release rehearsal, **301/301
 family rehearsal** (it names its own phases when you run it), **70/70 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge
 documents, 5 skills, 7 packs. The always-loaded core is **22,672 of 26,000 bytes** — a span in
@@ -158,10 +158,6 @@ rule it also ships. A heading below holds open rows only.
   with the plan shown before Apply) and the room saying PREVIEW1's file preview exists; and a go to
   Permissions → *Reading and writing across* (a `settings-across` anchor). `HelpCoverageTests` moves each
   from owed to a door.
-- [ ] **PREVIEW1 — a file's preview in the dock** (building; D76's held file tools, its trigger met: the
-  conversation's tool cards and the review name files the person wants to read). Read-only, from the
-  session's own tree or the repository's checkout, opened from a tool card's path or the review's file
-  list, in the right dock beside the conversation. No editor (D55).
 - [ ] **LEFT1 — the day's leftovers**, each small, each a "left out" in a hand-back: Settings' home hint
   still says a terminal reads the same folder when an install overrode it (D105); `INSTALLED.md` says
   nothing about pinning from the running button (D108); `tools/lanes.json` leaves `queries.ts` and a few

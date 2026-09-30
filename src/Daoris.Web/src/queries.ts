@@ -60,6 +60,8 @@ export const keys = {
   diff: (session: string) => ['diff', session] as const,
   /** The files in one session's tree, for `@` (CONV4d) — shell-only for the same reason. */
   treeFiles: (session: string) => ['tree-files', session] as const,
+  /** One file in a session's tree, read for its preview (PREVIEW1) — shell-only for the same reason. */
+  treeFile: (session: string, path: string) => ['tree-file', session, path] as const,
   /** One conversation's model and effort as its agent offers them (AGT6b) — shell-only: it is a live process's. */
   sessionOptions: (session: string) => ['session-options', session] as const,
   /** What the person first said in each session, from this machine's record (RAIL1) — shell-only. */

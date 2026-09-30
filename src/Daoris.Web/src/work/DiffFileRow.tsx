@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import type { DiffFile } from './diff';
-import { CheckField, Icon, Inline } from '../ui';
+import { Button, CheckField, Icon, Inline, Tip } from '../ui';
 import { cn } from '../lib/cn';
 import { type DiffLayout, PatchView } from './PatchView';
 
@@ -34,7 +34,7 @@ const MARK: Record<string, { letter: string; tone: string }> = {
  * **Its patch is drawn by `PatchView`** (REVIEW2): numbered, highlighted in the file's language, and
  * in the layout the pane chose — unified, or the old side beside the new.
  */
-export function DiffFileRow({ file, open, viewed, layout = 'unified', onToggle, onViewed }: {
+export function DiffFileRow({ file, open, viewed, layout = 'unified', onToggle, onViewed, onPreview }: {
   file: DiffFile;
   open: boolean;
   viewed: boolean;
@@ -42,9 +42,15 @@ export function DiffFileRow({ file, open, viewed, layout = 'unified', onToggle, 
   layout?: DiffLayout;
   onToggle: () => void;
   onViewed: (viewed: boolean) => void;
+  /**
+   * Opens the file itself in the side bar's preview (PREVIEW1, D111). Absent where nothing opens one; and
+   * a deleted file offers none, since it is not in the tree any more (UX5 U66).
+   */
+  onPreview?: () => void;
 }) {
   const { t } = useTranslation();
   const mark = MARK[file.status] ?? { letter: '?', tone: 'text-ink-faint' };
+  const previewable = Boolean(onPreview) && file.status !== 'deleted';
 
   return (
     <li className={cn('border-b border-line last:border-b-0', viewed && 'opacity-55')}>
@@ -68,6 +74,19 @@ export function DiffFileRow({ file, open, viewed, layout = 'unified', onToggle, 
             {file.path}
           </span>
         </button>
+
+        {previewable && (
+          <Tip content={t('work.preview.open', { path: file.path })}>
+            <Button
+              variant="ghost"
+              aria-label={t('work.preview.open', { path: file.path })}
+              onClick={onPreview}
+              className="h-6 w-6 shrink-0 justify-center px-0"
+            >
+              <Icon name="read" size={13} />
+            </Button>
+          </Tip>
+        )}
 
         <span className="shrink-0 font-mono text-meta tabular-nums">
           {file.added === null || file.removed === null

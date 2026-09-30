@@ -116,6 +116,76 @@ public sealed partial class DriverModule
         return new { Session = id, files.Files, files.Unlisted };
     }
 
+    // A file the conversation or the review named, read for the person to look at in the side bar
+    // (PREVIEW1, D111). Desktop-only for the diff's reason, and read-only: there is no editor (D55).
+    /// <summary>
+    /// One file in a session's tree, for its preview (PREVIEW1, D111): the tree the record names, which for a
+    /// conversation in the repository's checkout is the checkout.
+    /// </summary>
+    /// <remarks>
+    /// <para><b>Only inside that tree</b> (<see cref="FilePreview"/>): a path outside it, a path through a link
+    /// that leads out of it, and a path under `.git` are each refused as a code of their own.</para>
+    ///
+    /// <para><b>The answer names the file as the page asked for it</b>, relative to the tree, and never the
+    /// tree's own path, which is machine-local material the page has no use for.</para>
+    /// </remarks>
+    [DriverRoute("SESSION_FILE")]
+    private async Task<object?> FileAsync(IpcRequest request, CancellationToken cancellationToken)
+    {
+        var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
+        var path = PayloadHelper.GetRequiredValue<string>(request.Payload, "path");
+
+        var service = _loop.Service ?? throw NotReady();
+
+        var (tree, _) = await service.SessionGroundAsync(id, cancellationToken);
+        return await PreviewAsync(id, tree, path, cancellationToken);
+    }
+
+    /// <summary>
+    /// A file read for its preview in <paramref name="tree"/>, answered as the page receives it or refused as
+    /// a code. Public, as <see cref="OptionsAnswer"/> is, so the route's answers are tested without a service.
+    /// </summary>
+    public static async Task<object> PreviewAsync(string session, string? tree, string path, CancellationToken cancellationToken)
+    {
+        var read = string.IsNullOrWhiteSpace(tree)
+            ? FilePreviewResult.Refused(FilePreviewRefusal.NoTree)
+            : await FilePreview.ReadAsync(tree, path, cancellationToken);
+        return FileAnswer(session, path, read);
+    }
+
+    /// <summary>What a preview's reading becomes on the wire: the file, or its refusal, each with its own code.</summary>
+    public static object FileAnswer(string session, string path, FilePreviewResult read)
+    {
+        (string, string)[] named = [("session", session), ("path", path)];
+        return read switch
+        {
+            { Refusal: FilePreviewRefusal.None, File: { } file } => new
+            {
+                Session = session, file.Path, file.Size, file.Binary, file.Text, file.Truncated,
+            },
+            { Refusal: FilePreviewRefusal.Outside } => throw Refusals.Because(
+                Refusals.PreviewOutsideTree,
+                $"`{path}` is outside this session's tree, so the preview does not read it.",
+                named),
+            { Refusal: FilePreviewRefusal.LinkLeaves } => throw Refusals.Because(
+                Refusals.PreviewLinkLeavesTree,
+                $"`{path}` goes through a link that leads out of this session's tree, so the preview does not read it.",
+                named),
+            { Refusal: FilePreviewRefusal.GitFolder } => throw Refusals.Because(
+                Refusals.PreviewGitFolder,
+                $"`{path}` is inside `.git`, which is git's own folder rather than the session's work.",
+                named),
+            { Refusal: FilePreviewRefusal.NoTree } => throw Refusals.Because(
+                Refusals.PreviewNoTree,
+                "this session's record names no tree on this machine, or the tree is gone, so there is no file here to show.",
+                named),
+            _ => throw Refusals.Because(
+                Refusals.PreviewNotAFile,
+                $"`{path}` is not a file in this session's tree now: it was deleted or moved, it is a folder, or it cannot be read.",
+                named),
+        };
+    }
+
     // The two acts on a reviewed session (SURF6b, D51 rules 6–7). Both are the PERSON's —
     // nothing merges itself and nothing deletes itself — so both are their own route rather
     // than anything the diff route could do as a side effect.

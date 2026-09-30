@@ -26,7 +26,7 @@ window controls. Cursor and JetBrains follow the same shape: AI chat in the righ
 | Session rail (primary side bar) | Sessions only | the sessions | resize, close |
 | Centre | every view | the view | — |
 | Output panel | Sessions only | the console and its streams | resize, hide |
-| Right dock (secondary side bar) | Sessions: Timeline, Review, Ask Daoris; elsewhere: Ask Daoris alone | per-session surfaces, and Ask Daoris | resize, close, full |
+| Right dock (secondary side bar) | Sessions: Timeline, Review, Ask Daoris; elsewhere: Ask Daoris alone | per-session surfaces, and Ask Daoris; since PREVIEW1 (D111), a file's preview as a tab after them, which is not a view and never moves | resize, close, full |
 
 So the regions are VS Code's, but each is fixed to what it holds, the toggles live inside Sessions
 (SURF11), and two of the three side regions exist on one view only.
