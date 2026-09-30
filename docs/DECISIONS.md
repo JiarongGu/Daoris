@@ -4560,6 +4560,11 @@ at on the window.
 made from started, and a replay Daoris makes moves the recorded tip with the branch, so it stays judged. A
 branch rebased by anyone else is still never judged.*
 
+*Amended by D113 (REVIEW2, 2026-10-01): an entry whose branch is gone, or no longer the landing's, is marked
+(`goneAt`, and what the clean-up proved where it removed it) rather than forgotten, so the review of the session that
+landed it still says where its work went. A trace is never judged, handed on or replayed: the clean-up, the hand-off
+and bringing up to date read standing entries only.*
+
 ## D103 — An installed plugin remembers where it came from, and the install offers Daoris's own (2026-09-30)
 
 **Decision (PLUG9 c and d).** The owner asked that Daoris make and install plugins easily, "easy access
@@ -5262,6 +5267,11 @@ it named, and only a read whose input the wire did not carry falls back to its l
 now opens at the place its change starts. A line under 1 marks nothing. Nothing has looked at an edit's
 marked line on the window.*
 
+*Amended by D113 (REVIEW2, 2026-10-01): once a session's tree is gone, its preview reads the file from its landed
+branch in the repository's checkout (`git cat-file blob`, the same bound and binary test), and says in a sentence that
+it shows the file as that branch holds it. A path the branch lacks, a folder or a link is `PREVIEW_NOT_ON_BRANCH`;
+`PREVIEW_NO_TREE` is left for neither the tree nor the landing's branch being here.*
+
 ## D109 — After a pull request merges, one press brings a repository up to date; Daoris fetches and never pushes (2026-09-30)
 
 **Decision (WSR6).** The owner, after their first real pull request merged: *"we also need a post merge and
@@ -5481,3 +5491,104 @@ apart on the card itself, not only in its look's words. The look keeps both in t
 by reason, with what the git on the path needs, and the repositories left apart collapsed, with how a proposal
 includes one. A file a look kept before LEFT3 holds neither, and its card says nothing more. Held by
 `HelpSyncProposalsTests`, `DriverModuleHelpTests` and the card's vitest cases; not looked at on the window.*
+## D113 — A landed session reads as landed: its review and preview read the landed branch once the tree is gone (2026-10-01)
+
+**Decision (REVIEW2, found by the parent looking at the installed window).** A session accepted under a branch rule
+that tidies (D87, D88) keeps no tree. Its review then said git could not read its range (`SESSION_RANGE_UNREADABLE`)
+and still offered Accept, which named the branch that already existed, Send back and Discard the tree; its preview
+answered `PREVIEW_NO_TREE`. A finished session is usually a landed one, so its review and preview were the ones that
+said nothing. So:
+
+### 1. What a landed session is
+
+- **The session's landing is the newest entry for it in `<home>/landings.json`** (D102), standing or a trace (§4).
+  A merge makes no entry, so a session merged into its line is not "landed" here; §5 says what its review does.
+- **Where that branch stands**, read in the repository's own checkout (the registry's root): *standing* (the branch is
+  there and still holds the commit the landing made it at), *gone* (no branch of the landing's is there, or the record
+  says it went), *not-ours* (a branch of that name that does not hold that commit: rebased or replaced by hand, so
+  never read as the session's work), or *no-checkout* (no root here, or a root that is not the top of a repository of
+  its own). **The checkout is proven before git is asked anything else**, since git walks UP (FIX-LOG): a root inside
+  another repository would otherwise answer for that one.
+- **The review reads as landed while its landed branch stands, or once its tree is gone.** A tree still here after its
+  branch went is a session that may have carried on after its landing (WSR6 replays its own commits), so its review is
+  the tree's again, with every act. The host decides it (`landed.asLanded`); the page follows it.
+
+### 2. The review (`SESSION_DIFF`)
+
+- **The tree first, while it is here**: it holds what the session did and anything it did after landing. A landed
+  session's answer then also carries where it landed.
+- **Once the tree cannot be read, the landed branch**: the changes from where its work grew from — the recorded `from`
+  (WSR6) while it is in the branch's history, else the branch's merge-base with the line — up to the branch, as
+  `git diff <from>..<branch>` in the checkout. Every question is a read of refs and objects (`rev-parse`,
+  `merge-base`, `cat-file`, a diff of two commits), so the person's checkout, its working tree and its index are never
+  touched, whatever state they are in. The bound is the review's, and its sentence names the checkout.
+- **A branch gone since is said plainly**, with what the clean-up proved when it removed it (§4) and whether its work
+  reads on the line now: WSR5's proof by content on the commit the landing made it at, while git still holds it
+  (on the line, merged, the files that differ, git's words where it could not say). Once git has pruned that commit,
+  it says so and does not guess. No files are shown for a gone branch.
+- **The answer carries** `source` (`tree` or `branch`) and `landed`: the branch, repository, line, when, the plugin,
+  whether it pushed, the pull request, the state, `asLanded`, `reads`, `removed`, and git's words where a standing
+  branch's changes could not be read. Never a machine path.
+- **A tree gone with no landing recorded** is its own information, `SESSION_TREE_GONE`, in the review's class, so the
+  page offers nothing that acts on a tree.
+
+### 3. The acts and the preview
+
+- **While the review reads as landed: no Accept and no Send back.** A second landing is refused while the branch
+  stands (D87 never moves a branch it did not make), and with the tree gone there is nothing to land; the work's next
+  move is its branch's. **Discard only where a tree is still here.** **The hand-off stays where one applies** (WSR5b,
+  `HANDOFF_PLAN`), and where none does, nothing is offered. The note at the top of the review says where the work
+  landed, when, and links the pull request a plugin opened.
+- **The preview (`SESSION_FILE`) reads the landed branch once the tree is gone**: what the branch's tree names at that
+  path (`ls-tree`, literal pathspecs), read as bytes with `cat-file blob`, with D111's bound (256 KiB at a line's end,
+  the whole size said) and binary test (a NUL in the first 8,000 bytes). `.git` and a path outside the repository are
+  refused as in the tree; a path the conversation named inside the tree that is gone is the same path on the branch.
+  Git does not follow a link inside a tree and neither does this: a link, a folder or a path the branch lacks is
+  `PREVIEW_NOT_ON_BRANCH`, naming the branch. The answer names the branch, and the page says in a sentence that the
+  file is as that branch holds it, and that the branch has the rest of a long one. **`PREVIEW_NO_TREE` is left for
+  neither**: no tree, and no standing branch of the landing's here.
+- **The terminal's twin** (D50): `daoris-driver trees land <session> --plan`, for a session whose review reads as
+  landed, prints what the review's note says (`LandedReviewWords`), and the press lands nothing again and says why,
+  exit 1, naming `trees hand` where the branch stands unpushed. For a session landed before whose branch went while its
+  tree stayed, `--plan` prints the plan and then the same sentence.
+
+### 4. The record keeps a trace
+
+D102 forgot an entry once its branch was gone, which left the review of a session whose branch the clean-up removed
+nothing to find. **An entry is now marked, not forgotten**: `goneAt`, and where the clean-up removed it, `removedAs`
+(on the line, merged, inside another) and `removedOn`. A trace is never judged, handed on, replayed or pushed:
+`All()`, which the clean-up, the hand-off, bringing up to date and Ask Daoris read, returns standing entries only, and
+a new landing of the same name replaces only a standing one, so an earlier session's trace stays its own. Traces
+accumulate one per landing, and nothing prunes them yet.
+
+This **amends D102** (an entry is marked gone rather than forgotten) and **D111** (the preview of a session whose tree
+is gone reads its landed branch). D87 stands: accepting is refused while the landed branch stands, and the review now
+says so before the press instead of offering it.
+
+### 5. Rejected
+
+- **Reading the person's checkout** (its working tree, or `git show` into it, or a worktree made for the review). The
+  checkout is theirs and may hold work in flight; a read of objects answers the question without touching it.
+- **The landed branch first, whenever a landing exists.** A tree still here holds the session's work after its
+  landing, which the branch does not; and it is the file on disk that D111 says a preview shows.
+- **Refusing a second landing always.** A session that carried on, whose landed branch WSR6 deleted after its pull
+  request merged, lands its new work as any other.
+- **Keeping Send back for a landed session.** The work has left the session; its follow-up is its branch's pull
+  request, or a quest the person writes from Quests.
+- **Following a link in the branch's tree, or showing a link's target as text.** The preview reads files; git itself
+  does not resolve a link inside a tree.
+- **Re-recognising a merged session as landed** (a merge records nothing, D102): its review after a tidy is
+  `SESSION_TREE_GONE`, which offers nothing that acts on a tree. A merge's own record is not built.
+
+### What the gates do not cover
+
+The record's traces, the sentences, the answer's shape and each refusal's code are in the fast halves
+(`LandedRecordTests`, `FilePreviewTests`' listing, `DriverModuleTreesTests`); the page's note, the acts and the
+preview's sentence are held by the vitest loop over a mocked bridge (`LandedNote`, `DiffPane.landed`, `FilePreview`).
+The review and the preview over real git — a tidied landing read from its branch with the checkout dirty and on
+another branch, a branch removed after a squash, one deleted by hand, one whose commits were pruned, one rebased by
+hand, a root inside another repository, and the preview's bound, binary test and refusals — are `LandedReviewTests`,
+in the `Process` half, written in the branch and not run there (MOD8). The same sequences were run by hand against
+this build's library in a scratch repository (a probe, not committed), and each answered as written. The terminal's
+twin was not run: it needs a service. **Nothing has looked at the window**: the note in both themes, at the side
+bar's 300px floor, and 中文.

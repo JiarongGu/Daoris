@@ -918,6 +918,10 @@ The first version: doctrine that installs, is checked, and flows back.
   name. It fetches four at a time, the window waits as long as the host may and says what it is looking at,
   and what could not be fetched is said once, first: how many, when each last heard from origin, and what
   your git needs to reach it. A failed fetch no longer empties your `FETCH_HEAD`.
+- **A landed session reads as landed** (REVIEW2, D113). Once a landing tidied its tree, the review shows the
+  changes from the landed branch in the repository's own checkout, says where and when it landed (and the
+  pull request, if a plugin opened one), and offers no Accept or Send back; the hand-off where one applies.
+  Its file preview reads from that branch, saying so. `trees land` says a session already landed.
 - **A plugin can push the branch and open the pull request** (WSR4, D100). A branch landing rule may
   name an installed plugin (`daoris driver landing … branch <pattern> --plugin <id>`, or the *who
   pushes it* chooser in Settings → Workspace → *How work lands*). Once accepting has made the branch,

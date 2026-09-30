@@ -22,6 +22,12 @@ public enum FilePreviewRefusal
 
     /// <summary>The path is not a file now: deleted, moved, a folder, or not readable.</summary>
     NotAFile,
+
+    /// <summary>
+    /// Read from a landed branch (REVIEW2, D113): the path is not a file that branch holds — deleted or moved there, a
+    /// folder, or a link, which git keeps as the link and the preview does not follow.
+    /// </summary>
+    NotOnBranch,
 }
 
 /// <summary>A file as its preview shows it.</summary>
@@ -30,12 +36,17 @@ public enum FilePreviewRefusal
 /// <param name="Binary">Whether git would call it binary; then <paramref name="Text"/> is null.</param>
 /// <param name="Text">The file's text, or its first <see cref="FilePreview.Budget"/> bytes cut at a line's end.</param>
 /// <param name="Truncated">Whether the file holds more than <paramref name="Text"/>.</param>
-public sealed record PreviewedFile(string Path, long Size, bool Binary, string? Text, bool Truncated);
+public sealed record PreviewedFile(string Path, long Size, bool Binary, string? Text, bool Truncated)
+{
+    /// <summary>The landed branch it was read from, once the session's tree is gone (REVIEW2, D113); null for the file on disk.</summary>
+    public string? Branch { get; init; }
+}
 
 /// <summary>What reading a file for its preview answered: the file, or why not.</summary>
-public sealed record FilePreviewResult(FilePreviewRefusal Refusal, PreviewedFile? File)
+/// <param name="Branch">The landed branch the reading asked, where it asked one (REVIEW2), so a refusal can name it.</param>
+public sealed record FilePreviewResult(FilePreviewRefusal Refusal, PreviewedFile? File, string? Branch = null)
 {
-    public static FilePreviewResult Refused(FilePreviewRefusal why) => new(why, null);
+    public static FilePreviewResult Refused(FilePreviewRefusal why, string? branch = null) => new(why, null, branch);
 }
 
 /// <summary>
@@ -136,6 +147,98 @@ public static class FilePreview
         }
 
         return await ReadFileAsync(current, string.Join('/', asked.Segments), ct).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// A file as a session's landed branch holds it (REVIEW2, D113), for the preview of a session whose landing tidied
+    /// its tree away: <c>git cat-file blob</c> of what the branch's tree names at that path, in the repository's own
+    /// checkout.
+    /// </summary>
+    /// <remarks>
+    /// <para><b>A read of objects, and nothing else</b>: the checkout's working tree and index are never asked, so what
+    /// the person has in flight there is neither shown nor touched. The same bound and binary test as a file on disk.</para>
+    ///
+    /// <para>🔴 <b>The checkout is proven first</b>, since git walks UP (FIX-LOG); and <b>only the landing's own
+    /// branch</b> is read: one standing and still holding the commit the landing made it at. Anything else — no
+    /// checkout, the branch gone, a branch of that name that is someone else's now — is <see cref="FilePreviewRefusal.NoTree"/>,
+    /// since then neither the tree nor the branch is here.</para>
+    ///
+    /// <para><b>The path is judged as a path in the tree was</b>: outside the repository, and under `.git`, are refused
+    /// before git is asked. A path the conversation named inside the tree that is gone is the same path on the branch.
+    /// Git does not follow a link inside a tree, and neither does this: a link, a folder, or a path the branch lacks is
+    /// <see cref="FilePreviewRefusal.NotOnBranch"/>.</para>
+    /// </remarks>
+    /// <param name="root">The repository's checkout on this machine, from the registry; null where it has none.</param>
+    /// <param name="tree">The session's tree as its record names it, where a path the page sends is inside it.</param>
+    public static async Task<FilePreviewResult> ReadLandedAsync(
+        string? root, LandedBranch entry, string path, string? tree = null, CancellationToken ct = default)
+    {
+        if (root is null || !await WorkingTree.IsTopLevelAsync(root, ct).ConfigureAwait(false)) return FilePreviewResult.Refused(FilePreviewRefusal.NoTree);
+        // The record's words become git's arguments; a trace names a branch that is gone.
+        if (entry.GoneAt is not null || !WorkingTree.IsCommitId(entry.Tip) || !BranchName.IsValid(entry.Branch))
+        {
+            return FilePreviewResult.Refused(FilePreviewRefusal.NoTree);
+        }
+
+        var (tipCode, tipOut, _) = await WorkingTree.GitAsync(
+            root, ["rev-parse", "--verify", "--quiet", $"refs/heads/{entry.Branch}^{{commit}}"], ct).ConfigureAwait(false);
+        if (tipCode != 0) return FilePreviewResult.Refused(FilePreviewRefusal.NoTree);
+        var tip = tipOut.Trim();
+        var (ours, _, _) = await WorkingTree.GitAsync(root, ["merge-base", "--is-ancestor", entry.Tip, tip], ct).ConfigureAwait(false);
+        if (ours != 0) return FilePreviewResult.Refused(FilePreviewRefusal.NoTree);
+
+        var checkout = Path.TrimEndingDirectorySeparator(Path.GetFullPath(root));
+        var asked = InsideTree(tree, path) is { } named ? Relative(named, path) : Relative(checkout, path);
+        if (asked.Refusal is not FilePreviewRefusal.None) return FilePreviewResult.Refused(asked.Refusal, entry.Branch);
+        var relative = string.Join('/', asked.Segments);
+
+        // Literal, so a `*` or a `:(` in a name is that name and not a pattern.
+        var (listCode, listed, _) = await WorkingTree.GitAsync(
+            root, ["--literal-pathspecs", "ls-tree", "-l", "-z", tip, "--", relative], ct).ConfigureAwait(false);
+        if (listCode != 0 || Listed(listed, relative) is not { } blob) return FilePreviewResult.Refused(FilePreviewRefusal.NotOnBranch, entry.Branch);
+
+        var read = await WorkingTree.GitBytesAsync(root, ["cat-file", "blob", blob.Object], (int)Math.Min(blob.Size, Budget), ct).ConfigureAwait(false);
+        if (read is not { } bytes) return FilePreviewResult.Refused(FilePreviewRefusal.NotOnBranch, entry.Branch);
+
+        return new(FilePreviewRefusal.None, Decode(bytes.Bytes, bytes.Count, blob.Size, relative) with { Branch = entry.Branch }, entry.Branch);
+    }
+
+    /// <summary>
+    /// The one file <c>git ls-tree -l -z</c> listed at exactly <paramref name="path"/> — a blob, not a link or a folder —
+    /// with its object and its size; null where it listed none.
+    /// </summary>
+    internal static (string Object, long Size)? Listed(string output, string path)
+    {
+        foreach (var record in output.Split('\0', StringSplitOptions.RemoveEmptyEntries))
+        {
+            // `<mode> SP <type> SP <object> SP+ <size> TAB <path>`: the size is padded, and a folder's is `-`.
+            var tab = record.IndexOf('\t');
+            if (tab < 0 || !string.Equals(record[(tab + 1)..], path, StringComparison.Ordinal)) continue;
+            var fields = record[..tab].Split(' ', StringSplitOptions.RemoveEmptyEntries);
+            if (fields.Length != 4 || fields[1] != "blob" || fields[0] is not ("100644" or "100755")) return null;
+            return long.TryParse(fields[3], System.Globalization.NumberStyles.None, System.Globalization.CultureInfo.InvariantCulture, out var size)
+                ? (fields[2], size)
+                : null;
+        }
+
+        return null;
+    }
+
+    /// <summary>The tree <paramref name="path"/> names a place inside, where it is a whole path into it; else null.</summary>
+    private static string? InsideTree(string? tree, string path)
+    {
+        if (string.IsNullOrWhiteSpace(tree) || string.IsNullOrWhiteSpace(path)) return null;
+        try
+        {
+            var spelled = OperatingSystem.IsWindows() ? path.Replace('\\', '/') : path;
+            if (!Path.IsPathRooted(spelled)) return null;
+            var named = Path.TrimEndingDirectorySeparator(Path.GetFullPath(tree));
+            return Inside(named, Path.GetFullPath(spelled)) ? named : null;
+        }
+        catch (Exception error) when (error is ArgumentException or NotSupportedException or PathTooLongException)
+        {
+            return null;
+        }
     }
 
     /// <summary>The asked-for path as segments under the tree, or why it is not under it.</summary>

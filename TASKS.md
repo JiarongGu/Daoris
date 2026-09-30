@@ -21,8 +21,8 @@ lists.
 
 ## State
 
-**Counts, and this is their one home:** sixteen commands, **667 CLI tests, 697 service and 46 HTTP host, 1660 driver,
-437 desktop modules, 80 devkit, 1803 web unit, 21 Playwright**, 66/66 release rehearsal, **305/305
+**Counts, and this is their one home:** sixteen commands, **667 CLI tests, 697 service and 46 HTTP host, 1690 driver,
+445 desktop modules, 80 devkit, 1856 web unit, 21 Playwright**, 66/66 release rehearsal, **305/305
 family rehearsal** (it names its own phases when you run it), **70/70 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge
 documents, 5 skills, 7 packs. The always-loaded core is **22,672 of 26,000 bytes** — a span in
@@ -58,9 +58,9 @@ test that caught WSR6's new control on its first merge), PREVIEW1 (D111: a file'
 bar), WSR6 (D109: one press brings a repository up to date after its pull request merges) and LEFT1,
 each merged with every gate; then HELP10 (Ask Daoris's owed doors, under D110). **The look at the
 republished install** (2026-10-01) found WSR7, REVIEW2 and TABS1 on the owner's real workspace. **In
-flight:** WSR7 (D112) and REVIEW2 (D113), built by subagents in their own worktrees, merging; LEFT2 and TABS1
-are in. **Next:** merge them and look again on the install; then nothing workable is left without the
-owner — the rows below are theirs or parked. Dispatch through the `dispatch-subagent` skill and merge with `tools/merge-branch.mjs`. The
+flight:** LEFT3 (D114); WSR7 (D112), REVIEW2 (D113), LEFT2 and TABS1 are in. **Next:** republish, run the
+owner's merged pull request through *Bring up to date* on the window, then the owner's round (NAME1, FRAME1,
+PLUGUI1, DEV1, LOOK1); the rest below is theirs or parked. Dispatch through the `dispatch-subagent` skill and merge with `tools/merge-branch.mjs`. The
 kit's own relay (Shenora.Chromium 0.18.0) leaves a pump unobserved as Daoris's did: a request for the
 kit's owner, not Daoris's to change (LOG2b).
 - **The owner's ticket AR-2201**: its first follow-up merged by the owner's pull request (squash). The
@@ -129,8 +129,9 @@ rather than designed.
 
 ## Backlog
 
-**Eighteen rows are open** (triaged 2026-09-30, when the owner asked to go faster; 2026-10-01 after the night's merges and the look):
-- **Merging or building (two):** REVIEW2 merging; LEFT3 building.
+**Twenty-two rows are open** (triaged 2026-09-30, when the owner asked to go faster; 2026-10-01 after the night's merges, the look, and the owner's round):
+- **Building (one):** LEFT3.
+- **Next, the owner's round (five):** NAME1, FRAME1, PLUGUI1, DEV1, LOOK1.
 - **Waiting on the owner (six):** BUDGET1 and PLUGREPO1 (their calls), TRUST2 and AGT2c (a grant, two
   downloads), FG5 and BRW3 (the owner present).
 - **Parked on a trigger (ten):** TOOL4, TOOL5, PLUG7, SEM2, CANON9, HARNESS1, REH1, D76's held file tree,
@@ -148,12 +149,6 @@ rule it also ships. A heading below holds open rows only.
 **Found looking at the republished install (2026-10-01)**, each on the owner's real workspace of 29
 repositories, which no fixture has:
 
-- [ ] **REVIEW2 — a landed session reads as landed.** The review of a session whose landing tidied its tree
-  says git cannot read its range (`SESSION_RANGE_UNREADABLE`), then still offers Accept, Send back and Discard.
-  It should say where the work landed (`landings.json`: the branch, when, and the pull request if a plugin
-  opened one), show the changes from the landed branch (`from..branch`), and offer the hand-off rather than
-  Accept. Its preview (`PREVIEW_NO_TREE` today) reads the file from the landed branch, saying so. Since a
-  finished session is usually a landed one, today's preview of it is always empty.
 - [ ] **LEFT3 — the leftovers of HELP10, LEFT2, WSR7 and REVIEW2** (building, D114), each a "left out" in a hand-back:
   `HANDOFF` and `LAND_SESSION_TREE` still wait the bridge's default 30 s, though a plugin that pushes and
   opens a pull request may take minutes (pass WSR7's `pluginBound`; two `WorkFrame.test.tsx` assertions pin
@@ -164,6 +159,77 @@ repositories, which no fixture has:
   `tools/usage-report.mjs` does not summarise `preview.opened`; and a merged session records no landing, so
   once tidied its review reads `SESSION_TREE_GONE` with nothing to show, while `landings.json`'s traces of
   gone branches are never pruned.
+
+### One product, not a set of screens (owner, 2026-10-01) — after the night's in-flight work
+
+> *"because plugin will be a big part of daoris so it need to have a panel/screen itself, and develop
+> proper ui/ux also why only session has more layout option we do need to make everything consitant and
+> also for naming (for example in settings) we do need to have properly named in both en/zh since this is
+> not just translation this is part of the ui element (this also apply to other display too) … also we
+> should be able to run sub-agents cross darois development … daoris itself need to have a proper
+> develpment cycle too, this also need to be designed properly"*
+
+Proposed order: NAME1's glossary first, since every screen's names follow it, the new one's included;
+then FRAME1's audit and model, then PLUGUI1 on that frame. DEV1 is a design document and can run beside
+them. Each starts with its contract document, is built in parts by subagents, and is looked at on the
+install in both themes and both languages.
+
+- [ ] **NAME1 — a name is a UI element, designed in both languages.** Today many Chinese names are
+  translations of the English, not names: Settings' own sections (*Daoris 自身的 AI*, *智能体与账户*),
+  a section's title against its button (*同步到最新* over *查看更新*), and one concept under two words
+  across screens. English has the same drift. (a) **A glossary, one term per concept in each language**,
+  chosen as names rather than translated (session, quest, line, landing, workspace, repository, agent,
+  account, plugin, harness, tree, branch, and the rest), kept as a file both catalogues are checked
+  against. (b) **Naming rules for each kind of element**: a navigation item, a tab, a section title, a
+  button (verb first, the object named as the glossary names it), a status word, and a sentence. Each gets
+  a length budget per language, measured on the window at the design's widths. (c) **An audit of every
+  catalogue key a person reads as a label** (navigation, headings, tabs, buttons, badges, the status
+  bar), with its proposed name in each language and why. (d) **The renames, and a check**: the i18n check
+  gains glossary conformance and the label budgets, so drift fails a gate. It extends
+  `.claude/knowledge/translation-parity.md` (*chrome translates and content does not*) and
+  `docs/2026-09-19-platform-ux.md`. The contract is a naming design document, written first.
+- [ ] **FRAME1 — every view gets the frame Sessions has.** Sessions has the full layout: a list that
+  collapses and resizes, the main area, the right side bar with its movable views, the panel, the strip's
+  toggles, and each remembered. Other views have part of it (DOCK1a put the side bar and panel on every
+  view; the rest differs). (a) **An audit**, measured on the window as UX5's was: for each view (Overview,
+  Sessions, Quests, Projects, Knowledge, the Plugins screen to come, Settings, and the rest), which layout
+  affordances it has, how each behaves, and where they disagree. (b) **One layout model**: which regions
+  every view has, what each view puts in them, the same toggles, resizing, collapsing, keyboard and
+  persistence everywhere, and what a narrow window does. (c) **The build**, view by view. The contracts are
+  `docs/2026-09-21-desktop-frame-design.md` (D56), `docs/2026-09-29-dock-design.md` and
+  `docs/2026-09-19-platform-ux.md`; the model is written into them, or into a document they point to.
+- [ ] **PLUGUI1 — plugins get a screen of their own.** Plugins will be a big part of Daoris, and today
+  they are one Settings domain (D64, D101, D103). An activity-bar view, on FRAME1's frame, holding:
+  - installed plugins, each with its state, the points it answers, the servers it hands sessions, the
+    harnesses it rides, where it came from and whether an update waits;
+  - a plugin's own page: its manifest read as a person reads it, what it said on its wire lately (calls,
+    answers, errors, from the machine log), its data folder, its trials and its own tests;
+  - the offers the install carries, to install;
+  - making and trying one (the kit, PLUG8), and asking for one (PLUG9), from the screen.
+  Settings keeps only what is a setting. Ask Daoris's plugin kind gains go anchors into the screen. The
+  contract is a design document written first, extending `docs/2026-09-23-plugin-design.md`.
+- [ ] **DEV1 — Daoris develops Daoris through Daoris.** The module and domain refactor is done (MOD1–MOD9:
+  registries, lanes in `tools/lanes.json`, a `Process` test category, `tools/merge-branch.mjs`, the
+  `dispatch-subagent` skill). But the cycle it enables is run by an assistant session acting as the
+  parent, not by Daoris's own driver. The family's model is one session per repository, and Daoris is one
+  repository with seven lanes, the shape a large adopter will have too. Design, as a contract document
+  with its decision:
+  - **lanes as domains within a repository**: declared by the repository, addressable by a quest, each
+    with the files it owns;
+  - **concurrent sessions in one repository**, one per lane in its own tree, and the load cap that keeps
+    real-process tests honest (FLAKE1);
+  - **a merge queue as Daoris's own landing**: each branch gated by the repository's declared gates,
+    serially, with the flake rule; the merge tool's steps as the driver's;
+  - **who keeps the records**: the backlog, the archive, decision numbers reserved at dispatch (D106), and
+    which session plays the parent that dispatches and merges;
+  - **where the person stands**: the target set, the final diff and the look on the window verified
+    (D37), and everything irreversible still theirs.
+  Then the phased build, Daoris's own development its first user, and any adopter with lanes the second.
+  The contract starts from `docs/2026-09-30-parallel-development-design.md`.
+- [ ] **LOOK1 — `shot --theme` says when it cannot take.** It emulates the system's colour scheme, which
+  the page follows only while the viewer's theme choice is *system*. On the install the choice was dark, so
+  `--theme light` silently photographed dark (`tools/desktop.mjs`, `theme.ts`'s `effectiveDark`). Set the
+  page's own choice for the capture and put it back, or refuse with the reason.
 
 ### Plugins Daoris makes (owner, 2026-09-30)
 

@@ -79,6 +79,14 @@ public static class Refusals
     public const string SessionRangeUnreadable = "SESSION_RANGE_UNREADABLE";
 
     /// <summary>
+    /// A review asked for where the session's tree is gone from this machine and no landing of it is recorded here
+    /// (REVIEW2, D113): a tidy after a merge, or a discard, took it. INFORMATION, in the review's class, and its own
+    /// code so the page offers nothing that acts on a tree: there is none to land or to discard. A session whose
+    /// landing made a branch is reviewed from that branch instead.
+    /// </summary>
+    public const string SessionTreeGone = "SESSION_TREE_GONE";
+
+    /// <summary>
     /// The files a person may `@` asked for where git cannot list them (CONV4d): the record names no
     /// tree here, or the tree is not a repository of its own. INFORMATION, like the review's: a path
     /// typed after `@` still reaches the agent, because both doors expand it as typed.
@@ -100,6 +108,13 @@ public static class Refusals
     /// </summary>
     public const string PreviewNoTree = "PREVIEW_NO_TREE";
     public const string PreviewNotAFile = "PREVIEW_NOT_A_FILE";
+
+    /// <summary>
+    /// A preview read from a session's landed branch, once its tree is gone (REVIEW2, D113), of a path that branch holds
+    /// no file at: deleted or moved there, a folder, or a link. INFORMATION, like <see cref="PreviewNotAFile"/>, whose
+    /// sentence speaks of the tree; this one names the branch.
+    /// </summary>
+    public const string PreviewNotOnBranch = "PREVIEW_NOT_ON_BRANCH";
 
     /// <summary>
     /// A window name this build does not open (SURF8). Refused rather than sanitised: the name
