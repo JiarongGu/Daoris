@@ -5569,3 +5569,92 @@ in the `Process` half, written in the branch and not run there (MOD8). The same 
 this build's library in a scratch repository (a probe, not committed), and each answered as written. The terminal's
 twin was not run: it needs a service. **Nothing has looked at the window**: the note in both themes, at the side
 bar's 300px floor, and 中文.
+
+## D115 — Daoris develops Daoris: a repository declares its lanes, a queue lands them, a steward keeps the records (2026-10-01)
+
+**Decision (DEV1, from the owner's *"we should be able to run sub-agents cross darois development … daoris
+itself need to have a proper develpment cycle too"*).** The contract is `docs/2026-10-01-self-development-design.md`.
+The parallel cycle MOD1–MOD9 built is run by an assistant session acting as the parent. Daoris's driver runs it
+instead, and every piece is a family feature, so an adopter with lanes gets the same cycle.
+
+1. **Lanes are domains a repository declares** in `daoris.lanes.json` at its root, which replaces
+   `tools/lanes.json`. Each lane has an `id`, a `title`, a `summary` and path globs in today's grammar. One lane
+   may be the `steward`'s, and its paths are the records `parent` listed. A lane may name the declared gates its
+   landing needs, and only the steward's narrows. No file means no lanes.
+2. **A quest addresses a lane as `repository:lane`, or `repository:lane+lane`.** The quest keeps `to` as the
+   repository and gains `lanes`. Its id widens only when there are lanes, so every existing id stands. `connect`
+   sends the lanes' words to the registry, never their globs. The exchange refuses a lane nobody declared. It
+   allows a quest from a repository to one of its own lanes, and still refuses one to itself with no lane.
+3. **Staying in a lane is told, then checked.** The session's target names its lanes and what they own. At landing
+   the branch's changed paths are classified against the **line's** copy of the file. Any path in another lane,
+   in the steward's lane, or outside every lane sends the branch back. The merge tool only reported this, since a
+   parent judged it; with no parent in the middle, the steward names every lane a piece of work needs when it
+   dispatches.
+4. **Sessions run beside each other in one repository.** A session outlives the tick that started it, in every
+   repository: today a tick waits for every session it started, so nothing new starts until the last one ends. Work in flight holds
+   its lanes, from a session's start until its quest closes, the wait in the queue included, and that lock is
+   the planner's, never the ledger's. The oldest waiting quest reserves its lanes. `laneCap` (default 3) counts
+   a repository's running sessions plus the queue's gate run. No new session starts while the queue runs a gate
+   declared `quiet`. Apart from outliving the tick, a repository that declares no lanes keeps today's behaviour.
+5. **The queue is a third landing form beside merge and branch.**
+   - A driven session calls `session_ready` and ends holding its quest. Its record parks `queued`, a field and not
+     a new state.
+   - The queue gates serially in a queue tree of its own: a detached linked worktree under `<home>/queue/`.
+   - Each entry is merged `--no-ff`, lane-checked, and run through the repository's declared gates by `kind`
+     (check, suite, rehearsal), with the rehearsals once per batch.
+   - A failed `quiet` gate is run once more, whole, and reads FLAKE if it passes.
+   - On green the queue fast-forwards the line in the root checkout under the merge door's guards and
+     `TreeLock`. What lands is exactly what was gated.
+   - A conflict or a failed gate is sent back through the answer door (D83) with the log's tail, and the session
+     carries on in its tree. It is never forced, never rebased, never pushed. A third failure is not sent
+     back: the record stays parked for the person.
+   - A landing is answered too, and the carry-on closes the quest `done`, so **done means landed**.
+   - `daoris-driver queue add` queues a branch from outside.
+6. **A steward session keeps the records.** A quest to a laned repository with no lane goes to the steward's
+   lane. The steward splits the work into lane quests, reserves their decision numbers, and gives each a `then`
+   step that records it. Its lane lock spans its time in the queue, so two stewards never reserve one number.
+   Lane sessions write their own decision, changelog line and other union records. The steward moves backlog
+   rows, the one record union cannot serve. The queue writes no record.
+7. **The person** sets the target, reads the landed history, republishes the install and looks at the window.
+   The queue never republishes, because the install is what runs it. Push, publish, release and history stay
+   the person's.
+
+**Why.** Each piece is the mechanical half of something the parent does by hand today. The judgement halves go
+to sessions: the split, the work, the words and the records. The queue is the merge tool made project-agnostic.
+Kinds and quiet are declared rather than read from Daoris's own command strings, and the trailer rule becomes a
+declared check. The lane is D46 §9's answer made concrete: *wanting parallelism within a domain is a reason to
+split the domain*.
+
+**Rejected** (the design's §10 has the full list):
+- **One repository per lane.** Twins change in one commit, and the collisions were inside files.
+- **Lanes in `daoris.json`.** The manifest is the doctrine tool's inert contract, and lane globs change with
+  every new folder.
+- **The lane inside `to`.** Every repository-keyed lookup and older builds would read a repository that does not
+  exist.
+- **Enforcing lanes by permission rules.** A deny cannot be carved back, and the protocol door refuses the ask.
+- **The lane lock in the ledger.** Pacing is not corruption (D51).
+- **Gating in the person's checkout.**
+- **Rebasing lane branches.**
+- **A queue branch instead of a detached `HEAD`.** D88's proof would read unlanded work as landed.
+- **The queue closing the quest.** D46.
+- **Closing `done` before landing.** Done would lie, and a chain would start on unlanded work.
+- **The queue or the intake keeping the records.**
+- **Choosing gates by what a branch touched.** MOD9's incident.
+
+**What it amends, when built.**
+- D51 rule 6 (*nothing merges itself*): a repository whose rule is `queue` lands on green, because the person set
+  that rule.
+- D82: a queue repository's next step grows from the line, where the step before has landed.
+- D87: a third form.
+- D106 and the dispatch skill: the parent's records become the steward's lane.
+- The exchange's self-address refusal: narrowed to a quest that names no lane.
+- The driver design §9 (*no parallel sessions within one repository*): PAR1 already relaxed it for trees, and
+  lanes are its *split the domain*.
+
+Each row that builds a piece notes the amendment where it lands.
+
+**What the gates do not cover.** This change is documents only, and nothing is built. Its statements about
+today's code were read from the files the design's §0 names: the planner, the tick and the watch, the trees, the
+tree lock, the landing rules, the ledger, the exchange, the merge tool, the lane map, the gates and the skill.
+`verify` checks the records' shape and the budgets, and none of those words. Its statements about the future
+are design. The design's §9 says which of them a rehearsal can prove, and which wait for DEV10's real run.

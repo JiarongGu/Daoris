@@ -2,7 +2,10 @@
 
 > The owner, 2026-09-30: *"since daoris is getting more and more complex we should modulize this
 > project properly so that paralle development with subagent can run smoothly"*. The contract for the
-> MOD rows in `TASKS.md`. Status: **MOD1–MOD9 built** (D106 for MOD1).
+> MOD rows in `TASKS.md`. Status: **MOD1–MOD9 built** (D106 for MOD1). *D115 (DEV1,
+> `docs/2026-10-01-self-development-design.md`) designs what the driver makes of this: §5's map moves to
+> `daoris.lanes.json` as the repository's own declaration, and §3's rules 6 and 7 become the driver's queue
+> and a steward's lane. Until those rows land, everything here stands as written.*
 
 ## 1. What was measured
 

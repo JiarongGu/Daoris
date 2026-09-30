@@ -227,6 +227,11 @@ tier, and says which tier ran.
 - **No doctrine writes** from driver, service, or platform — D31/D38's boundary is untouched.
 - **No parallel sessions within one repository** — the working tree is the unit of exclusion; wanting
   parallelism *within* a domain is a reason to split the domain, not the tree.
+  *Amended by D51 and PAR1 (2026-09-27): this line and §3's one active session per repository hold only
+  for a repository whose sessions run in its root. Where they open trees of their own, several run side
+  by side, up to the cap. D115 (DEV1, `docs/2026-10-01-self-development-design.md`) designs the split
+  this line asks for: lanes, domains a repository declares, and a queue that lands them. Nothing of it
+  is built yet.*
 - **No cross-machine driving** — DRV3's problem, fed local-first by this design's records.
 - **No per-caller identity** — local trust and the single write key, as today; identity folds into
   DRV3/SVC2 (OIDC and per-person keys), where it is needed to mean anything.
