@@ -4566,7 +4566,8 @@ notice, and that it is worth saying. The rest is held by existing tests, joined 
 state carries the notice of a record worth saying (`DriverModuleTests`), and the row renders whatever
 `homeNotice` holds (`shell.test.tsx`). No second install has been started on a real account, and the
 deployment rehearsal starts its install with a scratch home, the respected case, so it never shows
-the override.
+the override. The row's hint (`settings.home.hint`) still says a terminal reads the same folder; the
+notice under it says when one does not, and qualifying the hint in both catalogues is left open.
 
 ### 2. DIST1 — a consumer installs the CLI from npm, `daoris@<version>`
 
