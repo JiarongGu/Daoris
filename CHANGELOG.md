@@ -871,6 +871,13 @@ The first version: doctrine that installs, is checked, and flows back.
   nothing to move it. Such a stop is now recorded as interrupted, a field of its own on the record, and
   its take is carried on in its tree like a cut-off, counting as a strike, the third parking it. The
   person's own stop is theirs, and is never carried on.
+- **Agents read the workspace's other checkouts, and write only where you declare it** (READ1, D107).
+  Reading across repositories is on by default: a driven session, and a conversation in a repository,
+  may read another registered checkout in its workspace (its files, `git status`, the branch list) and
+  change nothing there; Ask Daoris may read every workspace's, still with no shell. Reading can be
+  switched off per repository or per workspace, and writing into another repository is allowed only
+  toward one you declare (`daoris driver across plugins write-to engine`), in one direction. Both doors:
+  `daoris driver across …` and Settings → Permissions → *Reading and writing across repositories*.
 - **A plugin can push the branch and open the pull request** (WSR4, D100). A branch landing rule may
   name an installed plugin (`daoris driver landing … branch <pattern> --plugin <id>`, or the *who
   pushes it* chooser in Settings → Workspace → *How work lands*). Once accepting has made the branch,

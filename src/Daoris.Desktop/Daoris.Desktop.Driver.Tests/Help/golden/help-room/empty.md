@@ -92,6 +92,7 @@ session named; never propose adding one that has not landed.
 | bound how long one session runs | (no screen yet) | `daoris driver timeout <minutes>` |
 | say so when a session parks | Settings → Driver | `daoris driver notify on|off` |
 | allow, ask or deny what an agent may do | Settings → Permissions | `daoris agent rules …` |
+| let agents read a repository's checkout, or not; let one repository's sessions write into another | Settings → Permissions → Reading and writing across | `daoris driver across <repository> read on|off|--clear` (`--workspace <name>` for a whole workspace), `daoris driver across <repository> write-to <other> [--clear]` |
 | sign an agent in, or add an account | Settings → Agents & accounts | `daoris agent login <agent>` |
 | update an agent, or pin it to one version | Settings → Agents & accounts → Update, Pin a version | `daoris agent update <agent>`, `daoris agent pin <agent> <version>` |
 | set an account's own model and effort | Settings → Agents & accounts → Model & effort | `daoris agent settings <agent> --account <name> model <model> effort <effort>` |

@@ -8442,3 +8442,26 @@ the files not to touch and the reserved decision number. Its index row grew the 
 bytes.
 **Proven by:** CLI 654 (four end-to-end scenarios in scratch repositories), `verify`, the code map; the
 rehearsals run with the next merge, the tool's first real use.
+
+
+## READ1 — reading across repositories, configurable (2026-09-30)
+
+> - [ ] **READ1 — reading across repositories, configurable** (the owner's call, 2026-09-30, closing
+> READACROSS1 and HELPREAD1: *"should be configuable and default to read yes write no (because some repo
+> have master/child relationship like plugin repos)"*). A driven session and Ask Daoris may read any …
+
+**Outcome** (built by a subagent in its own worktree, merged with `tools/merge-branch.mjs`, its first real
+run: eleven gates, all passing): **D107**. Reading across repositories is on by default and can be switched
+off per repository or per workspace; writing across is off unless the person declares a relationship. Both
+doors write the same three `driver.json` keys: `daoris driver across …` and Settings → Permissions →
+*Reading and writing across repositories*. Reading belongs to the checkout being read (its own value, then its
+workspace's, then on) and stays within one workspace (D48); Ask Daoris reads every workspace. A driven session,
+and a conversation in a repository, are handed `Read` plus `git status` and `git branch --list` for each
+readable checkout, `Edit` plus add and commit in each declared target (which the tree guard lets through), and
+refused edits and reads everywhere else; the instruction says what it may read and write, and where. Ask
+Daoris gets the reads and nothing that writes, and its room lists the checkouts with their paths, still with no
+shell. **Seen on the window:** the card's body showed raw backticks; fixed on main and held by a test.
+**Not proven:** how a real harness treats these rules (a `Read` rule over Grep and Glob, an `Edit` deny over
+Write, the `git -C` prefix rules as an agent types them).
+**Proven by:** driver 1480, modules 410, service 655 + 46, CLI 660, vitest 1713, release 66/66, family 301/301,
+Playwright 21, deployment 70/70.

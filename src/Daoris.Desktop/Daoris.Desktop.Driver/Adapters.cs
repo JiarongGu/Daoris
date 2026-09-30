@@ -95,6 +95,15 @@ public sealed record SessionTarget(
     public LandingPlan? LandsOn { get; init; }
 
     /// <summary>
+    /// The other checkouts this session may read (D107), the declared write targets among them. Empty — as
+    /// when reading across is off everywhere — and the instruction reads as it always has.
+    /// </summary>
+    public IReadOnlyList<AcrossCheckout> ReadsAcross { get; init; } = [];
+
+    /// <summary>The checkouts the person declared this repository may also write into (D107). Empty is none.</summary>
+    public IReadOnlyList<AcrossCheckout> WritesAcross { get; init; } = [];
+
+    /// <summary>
     /// The target a quest's session is handed: the quest as the service answered it, run in
     /// <paramref name="workTree"/> — the repository's own tree where it opted in (D51), its root
     /// otherwise — naming the code map that tree keeps.
@@ -152,12 +161,12 @@ public static class TargetPrompt
         repository under its own doctrine and gates, then close it: `done` when it has landed, or
         `decline` with the reason — the reason is the part the asker can act on. If the quest is already
         taken or closed, stand down and finish without changing anything.
-        {Mapped(target)}{Landing(target)}
+        {Mapped(target)}{Landing(target)}{Reading(target)}
         {Asking(target)}
 
         {Proposing}
 
-        {Boundary}
+        {Boundary(target)}
         """;
 
     /// <summary>
@@ -183,12 +192,12 @@ public static class TargetPrompt
         Carry on from there, inside this repository under its own doctrine and gates, then close
         `#{target.QuestId}`: `done` when it has landed, or `decline` with the reason — the reason is the part
         the asker can act on.
-        {Mapped(target)}{Landing(target)}
+        {Mapped(target)}{Landing(target)}{Reading(target)}
         {Asking(target)}
 
         {Proposing}
 
-        {Boundary}
+        {Boundary(target)}
         """;
 
     /// <summary>
@@ -213,12 +222,12 @@ public static class TargetPrompt
         Finish from there rather than starting again, inside this repository under its own doctrine and
         gates, then close `#{target.QuestId}`: `done` when it has landed, or `decline` with the reason —
         the reason is the part the asker can act on. Commit as you go, so a second cut-off loses less.
-        {Mapped(target)}{Landing(target)}
+        {Mapped(target)}{Landing(target)}{Reading(target)}
         {Asking(target)}
 
         {Proposing}
 
-        {Boundary}
+        {Boundary(target)}
         """;
 
     /// <summary>
@@ -248,14 +257,13 @@ public static class TargetPrompt
     }
 
     /// <summary>
-    /// Ask and wait (D79): what another repository knows is asked of it, never read out of it or
-    /// guessed. The session publishes, parks its quest on the question, and ends — the quest stays its
-    /// own, and the driver resumes it here once the question closes.
+    /// Ask and wait (D79): what another repository knows is asked of it, never guessed — and, where the
+    /// session may not read across (D107), never read out of it. The session publishes, parks its quest on
+    /// the question, and ends — the quest stays its own, and the driver resumes it here once it closes.
     /// </summary>
     private static string Asking(SessionTarget target) =>
         $"""
-        If the work needs something only another repository knows or can change — its contract, its data,
-        a change in its code — do not read into it and do not guess: ask it. Publish a quest to it saying
+        {Needs(target)} Publish a quest to it saying
         what you need and why, commit what you have so far, then respond to `#{target.QuestId}` with `wait`
         on that new quest's id, and end your turn. The quest stays yours, and you are started again here,
         in this tree, with its answer.
@@ -274,13 +282,70 @@ public static class TargetPrompt
         refused.
         """;
 
-    private const string Boundary =
-        """
-        Never write outside this repository. Work another repository needs is a quest published to it,
-        never an edit — that is the rule the whole arrangement rests on. Anything that cannot be taken
-        back or that leaves the repository — a push, a publish, a release — is not yours to do; surface
-        it and finish.
-        """;
+    /// <summary>
+    /// What to ask another repository for (D79). Where the session may read across (D107), reading is no
+    /// longer forbidden: what stays asked is a change, and what its code cannot tell.
+    /// </summary>
+    private static string Needs(SessionTarget target) => target.ReadsAcross.Count == 0
+        ? """
+          If the work needs something only another repository knows or can change — its contract, its data,
+          a change in its code — do not read into it and do not guess: ask it.
+          """
+        : """
+          If the work needs something another repository's code cannot tell you, or a change in it — what it
+          promises, why it is the way it is — do not guess: ask it.
+          """;
+
+    /// <summary>
+    /// The other checkouts this session may read and not write (D107), each by name and path, and how: their
+    /// files where they lie, and two read-only git commands. Empty when there are none, so the target reads
+    /// exactly as it did before.
+    /// </summary>
+    private static string Reading(SessionTarget target)
+    {
+        var readOnly = target.ReadsAcross
+            .Where(read => !target.WritesAcross.Any(write => string.Equals(write.Repository, read.Repository, StringComparison.OrdinalIgnoreCase)))
+            .ToList();
+        return readOnly.Count == 0
+            ? ""
+            : $"""
+
+              You may read these other repositories' checkouts on this machine, and change nothing in them:
+
+              {Listed(readOnly)}
+
+              Read their files where they lie, and see how each stands with `git -C <path> status` and
+              `git -C <path> branch --list`, the path written as above.
+
+              """;
+    }
+
+    /// <summary>
+    /// Never write outside this repository — except, where the person declared it (D107), in the checkouts
+    /// this repository may also change, which the boundary names with how to commit there.
+    /// </summary>
+    private static string Boundary(SessionTarget target) => target.WritesAcross.Count == 0
+        ? """
+          Never write outside this repository. Work another repository needs is a quest published to it,
+          never an edit — that is the rule the whole arrangement rests on. Anything that cannot be taken
+          back or that leaves the repository — a push, a publish, a release — is not yours to do; surface
+          it and finish.
+          """
+        : $"""
+          Never write outside this repository, except in these, which the person has declared this one may change:
+
+          {Listed(target.WritesAcross)}
+
+          There, change only what this quest needs, follow that repository's own doctrine, and commit what you
+          change in it with `git -C <path> add` and `git -C <path> commit`.
+          Any other work another repository needs is a quest published to it, never an edit — that is the rule
+          the whole arrangement rests on. Anything that cannot be taken back or that leaves the repository — a
+          push, a publish, a release — is not yours to do; surface it and finish.
+          """;
+
+    /// <summary>Each checkout on a line of its own, its path as git and its rule spell it.</summary>
+    private static string Listed(IEnumerable<AcrossCheckout> checkouts) =>
+        string.Join("\n", checkouts.Select(checkout => $"- `{checkout.Repository}` — `{AcrossRules.GitPath(checkout.Path)}`"));
 
     /// <summary>
     /// The agent producer (MAP3d): a repository that keeps a code map is asked to keep it moving with

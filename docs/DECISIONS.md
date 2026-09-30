@@ -3527,6 +3527,10 @@ behind a codebase does not travel, and a request does.
   work never resumed.
 - **Waiting inside the session.** A session is one turn on both doors, and its tree survives it.
 
+*Amended by D107 (READ1, 2026-09-30): the owner reversed the first rejection. A session reads its
+workspace's other checkouts by default. What stays of this decision is that a change, or what only the
+other repository knows, is asked of it and waited on.*
+
 ## D80 — A session cut off after its take is carried on in its tree, like a failed start is retried (2026-09-27)
 
 **Decision.** A taken quest, waiting on nothing, whose last session on this machine concluded
@@ -3861,6 +3865,10 @@ checkout to research its answer, which showed the room's allow-list is no gate i
 its own actions — and a helper able to run a command could run `daoris driver …`, the change nobody
 confirmed that this decision forbids. In `default` every tool off the allow-list asks, and over the
 protocol door every ask is refused by construction (D52).
+
+*Amended by D107 (READ1, 2026-09-30): what it is handed at spawn also reads each checkout reading across
+allows, by file and by two git commands on exact prefixes, and its room names those checkouts' paths. It
+still has no shell, and it still runs in `default`.*
 
 ## D90 — A working driven session hears what the person adds, as its next prompt (2026-09-29)
 
@@ -4828,3 +4836,125 @@ parallelism with it; changing the insertion point removes only the conflict.
 - **Union for the module READMEs.** One long row there lists a module's whole surface and every feature
   edits it. Union would keep every branch's version of that row, so those files stay as they are until
   the splits (MOD3–MOD5) give each feature its own row.
+
+## D107 — Agents read the workspace's checkouts by default, and write into another only where the person declared it (2026-09-30)
+
+**Decision (READ1, the owner's call closing READACROSS1 and HELPREAD1: *"should be configuable and
+default to read yes write no (because some repo have master/child relationship like plugin repos)"*).**
+A driven session and Ask Daoris may read registered checkouts (a file, `git status`, the branch list)
+and write none, by default. It is set per workspace and per repository on both doors, and a declared
+relationship lets one repository's sessions write into another.
+
+### 1. The setting: `driver.json`, the repository over its workspace
+
+- **Three keys, each written only when set.** `readAcross` {repository: bool}, `workspaceReadAcross`
+  {workspace: bool}, `writeAcross` {repository: [repository, …]}. A value of another type is not read,
+  names match without case, and a repository naming itself is refused on both doors.
+- **Reading belongs to the checkout that is read.** `readAcross.engine: false` means no agent outside
+  `engine` reads its checkout: no session in another repository and not Ask Daoris. The repository's own
+  value wins, then its workspace's, then **on**. It is the checkout's and not the reader's for two
+  reasons. The reason to switch reading off is a repository whose code should stay its own, so the
+  question is about what is read. And Ask Daoris belongs to no repository, so a switch on the reader
+  could not reach it.
+- **Within one workspace**, because D48 scopes everything that crosses repositories to one. A driven
+  session reads the readable checkouts of its own workspace. Ask Daoris belongs to none and its room
+  already describes every workspace, so it reads every readable checkout.
+- **Writing is a declared relationship.** `writeAcross.plugins: ["engine"]` means sessions in `plugins`
+  may also write into `engine`'s checkout. A declaration has one direction, so writing both ways takes
+  two. It applies within one workspace and where both have a checkout here. It includes reading its
+  target, whatever the target's reading says. It is the person's durable say-so that the canon's
+  `repository-owns-its-work` asks for, so the canon does not change.
+- **Why `driver.json` and not `permissions.json`.** The rules file unions its scopes and leaves the
+  precedence to the harness, and D72 rejected ranking Daoris's scopes there. This setting is ranked,
+  like a line and a landing rule, which live in `driver.json`. It also reaches past Claude Code's rules,
+  into every harness's instruction and Ask Daoris's room, and the rules file is Claude Code's alone.
+- **Two doors (D50).** At a terminal: `daoris driver across <repository> read on|off|--clear`,
+  `--workspace <name>` in place of the repository for a whole workspace, and
+  `daoris driver across <repository> write-to <other> [--clear]`. `daoris driver list` shows all three.
+  On the screen: Settings → Permissions → *Reading and writing across* (`ACROSS`, `SET_READ_ACROSS`,
+  `SET_WRITE_ACROSS`). It is on Permissions and not Workspace because the person's question is what an
+  agent may do, and the rules it becomes are listed on the same page. The twins are `driverconfig.ts`
+  and `DriverConfig.cs` for the file. Only the driver resolves it (`Across.cs`), as only the driver
+  chooses a landing.
+
+### 2. What a driven session is handed
+
+At spawn (PERM1), for every other registered checkout on this machine, in Claude Code's own forms:
+
+- **Readable to it**: `Read(//<checkout>/**)`, which the harness applies to its Grep and Glob too, and
+  `Bash(git -C <checkout> status:*)` and `Bash(git -C <checkout> branch --list:*)`.
+- **A declared write target**: also `Edit(//<checkout>/**)`, `Bash(git -C <checkout> add:*)` and
+  `Bash(git -C <checkout> commit:*)`. The tree guard takes each target as one more argument and lets a
+  write there through.
+- **Not a write target**: `deny` `Edit(//<checkout>/**)`. This refusal holds with the tree guard
+  switched off and over a person's own allow.
+- **Not readable to it** (reading off, or another workspace): `deny` `Read(//<checkout>/**)`, so *off*
+  holds in `auto` (D81), which would otherwise judge a read by itself.
+- **No deny on a checkout that holds the session's own tree, its kept files, or a checkout it may use.**
+  Deny beats allow, so such a deny would refuse the session its own work.
+
+A conversation in a repository gets the same rules, as it already gets the same union. An intake gets
+none: it serves no repository, and its room names its own tools.
+
+**The git form** is the path with forward slashes, which Git Bash, PowerShell and git all read,
+double-quoted when it holds anything but letters, digits and `_./:@+,=-~%`. The instruction writes the
+path the same way. `log`, `diff` and `show` are not handed, because each takes `--output=<file>`, which
+writes wherever it names, and a prefix rule cannot refuse a flag appended to it.
+
+### 3. The instruction
+
+The claiming, resuming and carrying-on instructions each gain what applies, and read as before when
+nothing does:
+
+- **A reading paragraph** lists each readable checkout by name and path: *You may read these other
+  repositories' checkouts on this machine, and change nothing in them*, with its files read where they
+  lie and `git -C <path> status` and `git -C <path> branch --list`.
+- **The asking paragraph** (D79) keeps its point that a change or the why behind a codebase is asked,
+  not guessed. With reading on, it no longer says *do not read into it*.
+- **The boundary** names the declared write targets as the one exception to *never write outside this
+  repository*. There the session keeps to what its quest needs, follows that repository's own doctrine,
+  and commits with `git -C <path> add` and `git -C <path> commit`.
+
+### 4. Ask Daoris
+
+- **Its handed rules** (`HelpRoom.Rules`) add, for each checkout it may read, the read and the two git
+  rules, and nothing that writes. The room's own `.claude/settings.json` stays D89's static allow-list.
+  That file is the project tier, which the harness ignores until the folder is trusted. The spawn tier
+  is the one measured to reach a session untrusted.
+- **The room** (`HelpRoomMayDo`) says which checkouts it may read, by name, workspace and path, and how.
+  It still says it has no shell and no web. Where checkouts exist and none may be read, the room says
+  reading is switched off and names both doors.
+- **HELP4's refusal of a shell stays.** Ask Daoris still runs in the agent's asking mode (D89), so
+  anything off its rules is asked and refused. Two git commands by exact prefix are not a shell.
+- **The room now carries paths**, the checkouts it may read and no others. HELP1a kept every root out,
+  and a read needs one. The room is a file on this machine for the helper alone, and it never crosses
+  the bridge. It still carries no profile home and no key.
+
+### What the gates do not cover
+
+The composition is proven keylessly: the setting on both twins, precedence, the rules for each
+combination, the hook's extra trees as a real process, the instruction, the room, and the handed file
+from a real tick. Nothing here has run against a real session. Five things are unproven until one does:
+that the harness applies a `Read` rule to Grep and Glob; that an `Edit` deny refuses a Write; that a
+`Bash(git -C … status:*)` prefix matches the command as the agent writes it, above all a quoted path;
+that `auto` takes an explicit allow before its own judgement; and that the command-line tier's
+`deny` beats a person's allow for these paths, as D72 says it does in general.
+
+### Amends
+
+- **D79's rejected "reading a sibling allowed by default"**: reversed by the owner's call. What stays of
+  D79 is that a change, or what only the other repository knows, is asked of it and waited on.
+- **D89 and HELP1a**: the helper reads checkouts, and its room names their paths.
+
+### Rejected
+
+- **Reading as a property of the reader.** It could not reach Ask Daoris, and it answers the wrong
+  question for a repository that should stay private.
+- **`permissions.json`**: it has no ranking, and it is Claude Code's alone (§1).
+- **A write allowed by a rule the person writes** (`Edit(//<path>/**)` in a repository's scope). The
+  tree guard would still refuse it, since a hook is not a rule, and the rule has no pair or direction
+  for the instruction to name.
+- **`additionalDirectories`**: it makes a checkout a working directory, which under `acceptEdits` lets
+  an edit there through unasked. That is D72's reason for the kept files (INT4j).
+- **Reading across workspaces**: D48 draws the boundary there.
+- **`git log`, `diff`, `show`**: `--output` (§2).

@@ -129,6 +129,66 @@ public sealed class PermissionSpawnTests : IDisposable
     }
 
     /// <summary>
+    /// D107, by default: a session may read its workspace's other checkouts — a read and two read-only git
+    /// commands — and write none of them, refused by rule as well as by the tree guard. Another workspace's
+    /// checkout is refused its read too. The instruction names what it may read, where.
+    /// </summary>
+    [Fact]
+    public async Task By_default_a_session_is_handed_a_read_of_its_workspaces_other_checkouts_and_no_write()
+    {
+        var game = Directory.CreateDirectory(Path.Combine(_home, "game")).FullName;
+        var personal = Directory.CreateDirectory(Path.Combine(_home, "personal")).FullName;
+        await using var service = DrivenSessionInputTests.StandInService.Start(
+            _repository, others: [("game", game, "default"), ("personal", personal, "home")]);
+        var adapter = new RecordingPipeAdapter();
+        var driver = Driver(adapter, ["node", Agent("pipe-agent.mjs", "console.log('done'); process.exit(0);")], service);
+
+        await driver.TickAsync();
+
+        var (allow, deny, args) = Handed(adapter);
+        Assert.Contains(PermissionRules.ReadRule(game), allow);
+        Assert.Contains($"Bash(git -C {AcrossRules.GitPath(game)} status:*)", allow);
+        Assert.Contains($"Bash(git -C {AcrossRules.GitPath(game)} branch --list:*)", allow);
+        Assert.Contains(PermissionRules.EditRule(game), deny);
+        Assert.Contains(PermissionRules.ReadRule(personal), deny);
+        Assert.DoesNotContain(allow, rule => rule.StartsWith("Edit(", StringComparison.Ordinal));
+        // Its own checkout is neither read across nor refused.
+        Assert.DoesNotContain(PermissionRules.ReadRule(_repository), allow.Concat(deny));
+        Assert.DoesNotContain(PermissionRules.EditRule(_repository), deny);
+        Assert.Equal(2, args.Count);
+        Assert.Contains($"- `game` — `{AcrossRules.GitPath(game)}`", adapter.Prompt);
+        Assert.DoesNotContain("`personal`", adapter.Prompt);
+    }
+
+    /// <summary>
+    /// D107: a checkout switched off is refused its read, and a declared relationship lets the session edit
+    /// and commit in its target — the tree guard naming the target after the tree — and says so.
+    /// </summary>
+    [Fact]
+    public async Task A_declared_target_is_handed_as_an_edit_and_the_guards_second_tree_and_a_checkout_switched_off_is_refused()
+    {
+        var game = Directory.CreateDirectory(Path.Combine(_home, "game")).FullName;
+        var secret = Directory.CreateDirectory(Path.Combine(_home, "secret")).FullName;
+        await using var service = DrivenSessionInputTests.StandInService.Start(
+            _repository, others: [("game", game, "default"), ("secret", secret, "default")]);
+        var adapter = new RecordingPipeAdapter();
+        var driver = Driver(
+            adapter, ["node", Agent("pipe-agent.mjs", "console.log('done'); process.exit(0);")], service,
+            config => config.WithWriteAcross("engine", "game", allow: true).WithReadAcross("secret", false));
+
+        await driver.TickAsync();
+
+        var (allow, deny, args) = Handed(adapter);
+        Assert.Contains(PermissionRules.EditRule(game), allow);
+        Assert.Contains($"Bash(git -C {AcrossRules.GitPath(game)} commit:*)", allow);
+        Assert.DoesNotContain(PermissionRules.EditRule(game), deny);
+        Assert.Contains(PermissionRules.ReadRule(secret), deny);
+        Assert.Equal(Path.GetFullPath(game), Path.GetFullPath(args[2]));
+        Assert.Contains("except in these, which the person has declared this one may change:", adapter.Prompt);
+        Assert.Contains($"- `game` — `{AcrossRules.GitPath(game)}`", adapter.Prompt);
+    }
+
+    /// <summary>
     /// An agent's narrowing (PERM2) is settled at the START of a tick, so the session that tick spawns
     /// is already handed the narrower rules — "applies at the next tick" means this one's spawns too.
     /// </summary>
@@ -201,8 +261,21 @@ public sealed class PermissionSpawnTests : IDisposable
         Assert.Contains("Bash(make:*)", handed.RootElement.GetProperty("permissions").GetProperty("allow").EnumerateArray().Select(e => e.GetString()));
     }
 
+    /// <summary>What the pipe door was handed: the allow and deny lists, and the tree guard's arguments.</summary>
+    private static (List<string> Allow, List<string> Deny, List<string> Args) Handed(RecordingPipeAdapter adapter)
+    {
+        using var handed = JsonDocument.Parse(adapter.HandedText!);
+        var permissions = handed.RootElement.GetProperty("permissions");
+        List<string> Strings(JsonElement array) => [.. array.EnumerateArray().Select(e => e.GetString()!)];
+        return (
+            Strings(permissions.GetProperty("allow")),
+            Strings(permissions.GetProperty("deny")),
+            Strings(handed.RootElement.GetProperty("hooks").GetProperty("PreToolUse")[0].GetProperty("hooks")[0].GetProperty("args")));
+    }
+
     private Daoris.Driver.Driver Driver(
-        ISessionAdapter adapter, IReadOnlyList<string> command, DrivenSessionInputTests.StandInService service)
+        ISessionAdapter adapter, IReadOnlyList<string> command, DrivenSessionInputTests.StandInService service,
+        Func<DriverConfig, DriverConfig>? configure = null)
     {
         var config = DriverConfig.Empty with
         {
@@ -211,6 +284,7 @@ public sealed class PermissionSpawnTests : IDisposable
             TimeoutMinutes = 1,
             Commands = new Dictionary<string, IReadOnlyList<string>> { [adapter.Name] = command },
         };
+        config = configure?.Invoke(config) ?? config;
         var adapters = new AdapterSet(new Dictionary<string, ISessionAdapter> { [adapter.Name] = adapter });
         return new Daoris.Driver.Driver(
             new ServiceClient(service.Url, null), config, adapters, _home, processes: new SessionProcesses(),
@@ -225,8 +299,14 @@ public sealed class PermissionSpawnTests : IDisposable
         public string? Handed { get; private set; }
         public string? HandedText { get; private set; }
 
-        public ProcessStartInfo Prepare(SessionTarget target, IReadOnlyList<string>? command) =>
-            new StubAdapter().Prepare(target, command);
+        /// <summary>The instruction the session was given, as every door composes it.</summary>
+        public string Prompt { get; private set; } = "";
+
+        public ProcessStartInfo Prepare(SessionTarget target, IReadOnlyList<string>? command)
+        {
+            Prompt = TargetPrompt.Compose(target);
+            return new StubAdapter().Prepare(target, command);
+        }
 
         public void HandSettings(ProcessStartInfo info, string settingsFile)
         {

@@ -438,7 +438,7 @@ test('an unknown verb names the ones that exist', () => {
 
   assert.match(error.message, /unknown driver verb 'frobnicate'/);
   assert.match(
-    error.message, /list, drive, undrive, hold, resume, trees, line, landing, notify, strikes, retry, timeout, cap, adapter, intake, helper/);
+    error.message, /list, drive, undrive, hold, resume, trees, line, landing, across, notify, strikes, retry, timeout, cap, adapter, intake, helper/);
   fx.cleanup();
 });
 
@@ -652,5 +652,106 @@ test('a verb that knows nothing of strikes preserves them', () => {
   assert.equal(held.forgiven['q1'], 2);
   assert.deepEqual(held.drivable, ['Game']);
 
+  fx.cleanup();
+});
+
+/**
+ * READ1 (D107): reading and writing across repositories. A checkout is read by agents outside it unless
+ * its repository, else its workspace, says off; a repository's sessions write into another only where
+ * the person declared it. The FILE is the twin: `AcrossTests.cs` holds these shape cases, answer for
+ * answer. Only the driver resolves the setting, so the precedence is held there alone.
+ */
+test('absent is reading on and no relationship, and nothing is written until something is set', () => {
+  const fx = makeFixture('driver-across-absent');
+  const choices = readDriverChoices(at(fx));
+  assert.deepEqual([choices.readAcross, choices.workspaceReadAcross, choices.writeAcross], [{}, {}, {}]);
+
+  run(['cap', '3'], at(fx));
+  const written = JSON.parse(readFileSync(at(fx), 'utf8'));
+  assert.equal('readAcross' in written || 'workspaceReadAcross' in written || 'writeAcross' in written, false);
+  fx.cleanup();
+});
+
+test('only a boolean is read as reading, and only other names as a relationship', () => {
+  const fx = makeFixture('driver-across-shape');
+  writeFileSync(at(fx), JSON.stringify({
+    readAcross: { engine: false, game: true, odd: 'no', none: null },
+    workspaceReadAcross: { aurora: false, forge: 1 },
+    writeAcross: { plugins: ['engine', 'Engine', 'plugins', 3, '', 'game'], bad: 'engine', empty: [] },
+  }));
+
+  const choices = readDriverChoices(at(fx));
+  assert.deepEqual(choices.readAcross, { engine: false, game: true });
+  assert.deepEqual(choices.workspaceReadAcross, { aurora: false });
+  // One entry per name in any case, never itself, in the order first written.
+  assert.deepEqual(choices.writeAcross, { plugins: ['engine', 'game'] });
+  fx.cleanup();
+});
+
+test('across sets a repository\'s reading, a workspace\'s, and clears either by name in any case', () => {
+  const fx = makeFixture('driver-across-read');
+
+  const off = run(['across', 'Engine', 'read', 'off'], at(fx));
+  assert.equal(off.code, 0);
+  assert.match(off.out, /`Engine`'s checkout is read by no agent outside it/);
+  run(['across', '--workspace', 'aurora', 'read', 'on'], at(fx));
+  assert.deepEqual(readDriverChoices(at(fx)).readAcross, { Engine: false });
+  assert.deepEqual(readDriverChoices(at(fx)).workspaceReadAcross, { aurora: true });
+  assert.match(run(['list'], at(fx)).out, /across\s+Engine\s+read off[\s\S]*across\s+workspace aurora\s+read on/);
+
+  run(['across', 'engine', 'read', '--clear'], at(fx));
+  run(['across', '--workspace', 'Aurora', 'read', '--clear'], at(fx));
+  const cleared = readDriverChoices(at(fx));
+  assert.deepEqual([cleared.readAcross, cleared.workspaceReadAcross], [{}, {}]);
+  assert.equal('readAcross' in JSON.parse(readFileSync(at(fx), 'utf8')), false);
+  fx.cleanup();
+});
+
+test('a relationship is declared once in any case, says whose say-so it is, and the last one cleared leaves no entry', () => {
+  const fx = makeFixture('driver-across-write');
+
+  const declared = run(['across', 'plugins', 'write-to', 'engine'], at(fx));
+  assert.match(declared.out, /sessions in `plugins` may also write into `engine`/);
+  run(['across', 'Plugins', 'write-to', 'ENGINE'], at(fx));
+  run(['across', 'plugins', 'write-to', 'game'], at(fx));
+  assert.deepEqual(readDriverChoices(at(fx)).writeAcross, { plugins: ['engine', 'game'] });
+  assert.match(run(['list'], at(fx)).out, /across\s+plugins\s+writes into engine, game/);
+
+  run(['across', 'plugins', 'write-to', 'Engine', '--clear'], at(fx));
+  assert.deepEqual(readDriverChoices(at(fx)).writeAcross, { plugins: ['game'] });
+  run(['across', 'plugins', 'write-to', 'game', '--clear'], at(fx));
+  assert.deepEqual(readDriverChoices(at(fx)).writeAcross, {});
+  assert.equal('writeAcross' in JSON.parse(readFileSync(at(fx), 'utf8')), false);
+  fx.cleanup();
+});
+
+test('a repository writing into itself or into no name is refused in the driver\'s sentences, and nothing is written', () => {
+  const fx = makeFixture('driver-across-refused');
+  assert.equal(
+    captureError(() => run(['across', 'plugins', 'write-to', 'Plugins'], at(fx))).message,
+    '`plugins` writes in its own tree already — a relationship names another repository.');
+  assert.equal(
+    captureError(() => run(['across', 'plugins', 'write-to'], at(fx))).message,
+    'a relationship names the repository it may write into.');
+  assert.match(captureError(() => run(['across', 'plugins', 'read'], at(fx))).message, /on\|off\|--clear/);
+  assert.match(captureError(() => run(['across'], at(fx))).message, /<repository>\|--workspace <name>/);
+  assert.match(captureError(() => run(['across', 'plugins', 'wander'], at(fx))).message, /read .*write-to/);
+  assert.throws(() => readFileSync(at(fx)));
+  fx.cleanup();
+});
+
+test('the setting survives edits by verbs that do not know it', () => {
+  const fx = makeFixture('driver-across-preserve');
+  run(['across', 'engine', 'read', 'off'], at(fx));
+  run(['across', '--workspace', 'aurora', 'read', 'off'], at(fx));
+  run(['across', 'plugins', 'write-to', 'engine'], at(fx));
+
+  run(['drive', 'engine'], at(fx));
+  run(['line', 'engine', 'develop'], at(fx));
+
+  const held = readDriverChoices(at(fx));
+  assert.deepEqual(held.readAcross, { engine: false });
+  assert.deepEqual(held.workspaceReadAcross, { aurora: false });
+  assert.deepEqual(held.writeAcross, { plugins: ['engine'] });
   fx.cleanup();
 });

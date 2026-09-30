@@ -27,6 +27,8 @@ internal static class HelpRoomFixture
             },
             new("engine", "default") { Checkout = false },
         ],
+        // Reading across on, the default (D107): every checkout here, one of them with a space in its path.
+        Reads = [new("console-ui", "work", "/work/console-ui"), new("reports-db", "work", "/work/reports db")],
         Agents =
         [
             new("claude-code")

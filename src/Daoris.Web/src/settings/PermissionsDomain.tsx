@@ -1,19 +1,75 @@
 import { useTranslation } from 'react-i18next';
 import { useRegistry } from '../queries';
-import { useRuleAction, useRuleProposal, useRules } from '../shell';
+import {
+  useAcross, useDriver, useRuleAction, useRuleProposal, useRules, useSetReadAcross, useSetWriteAcross,
+} from '../shell';
 import { failure, type Notify, useErrorNotify } from '../ui';
 import { workspacesOf } from '../workspaces';
+import { AcrossList } from './Across';
 import { AgentRules } from './AgentRules';
 import { proposalChange } from './proposals';
 
 /**
- * What an agent Daoris starts may do (PERM1, D72) — the machine's `permissions.json`, the file the
- * driver composes each spawn's rules from and `daoris agent rules` edits (D50).
- *
- * **The scopes a rule can reach are the registry's**: its circles and its repositories, by the names
- * the driver composes against. A refusal is the driver's sentence, verbatim.
+ * What an agent Daoris starts may do: whether it reads and writes across repositories (READ1, D107), then
+ * the machine's `permissions.json` (PERM1, D72), the file the driver composes each spawn's rules from and
+ * `daoris agent rules` edits (D50).
  */
 export function PermissionsDomain({ notify }: { notify: Notify }) {
+  return (
+    <>
+      <AcrossSettings notify={notify} />
+      <RulesSettings notify={notify} />
+    </>
+  );
+}
+
+/**
+ * Reading and writing across (D107): the driver's own resolution for each repository here, and the screen's
+ * half of `daoris driver across` (D50). Desktop-only, because the workspaces and the file are this machine's.
+ * First on the page, because it answers the question a person brings here first: may an agent look next door.
+ */
+function AcrossSettings({ notify }: { notify: Notify }) {
+  const { t } = useTranslation();
+  const answer = useAcross();
+  const driver = useDriver();
+  const setRead = useSetReadAcross();
+  const setWrite = useSetWriteAcross();
+  useErrorNotify(answer.error, notify);
+
+  // An older shell has never heard of the question: the card is absent rather than the page blank.
+  const repositories = Array.isArray(answer.data?.repositories) ? answer.data.repositories : null;
+  if (!repositories) return null;
+  const failed = failure(notify);
+
+  return (
+    <AcrossList
+      repositories={repositories}
+      workspaceReads={driver.data?.workspaceReadAcross ?? []}
+      busy={setRead.isPending || setWrite.isPending}
+      onRead={(change) => setRead.mutate(change, {
+        onSuccess: () => {
+          const name = change.repository ?? change.workspace ?? '';
+          notify(change.read === undefined
+            ? t('settings.across.cleared', { name })
+            : t(change.read ? 'settings.across.savedOn' : 'settings.across.savedOff', { name }));
+        },
+        onError: failed,
+      })}
+      onWrite={(change) => setWrite.mutate(change, {
+        onSuccess: () => notify(t(change.allow ? 'settings.across.declared' : 'settings.across.withdrawn', {
+          repository: change.repository, to: change.to,
+        })),
+        onError: failed,
+      })}
+    />
+  );
+}
+
+/**
+ * The rules (PERM1, D72). **The scopes a rule can reach are the registry's**: its circles and its
+ * repositories, by the names the driver composes against. A refusal is the driver's sentence, verbatim.
+ */
+function RulesSettings({ notify }: { notify: Notify }) {
   const { t } = useTranslation();
   const answer = useRules();
   const act = useRuleAction();
