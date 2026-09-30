@@ -132,8 +132,8 @@ rather than designed.
 
 ## Backlog
 
-**Forty-five rows are open** (most of them the three designed builds below) (triaged 2026-09-30, when the owner asked to go faster; 2026-10-01 after the night's merges, the look, and the owner's round):
-- **Merging next:** the designs of PLUGUI1a, D120, D121 and D122 (DOC1, TOOLS1, PLUGREPO2/PLUGDIST1), with their build rows.
+**Seventy rows are open** (most of them the builds of the designs below) (triaged 2026-09-30, when the owner asked to go faster; 2026-10-01 after the night's merges, the look, and the owner's round):
+- **Merging next:** PLUG10, UNBLOCK4 and UNBLOCK5. **Building:** FRAME1b, TOOLS2; Daoris.Plugins' own session on PLUGREPO2c.
 - **Designed, to build in order:** DEV2–DEV11 (D115); FRAME1b–i (D118) after NAME1b; PLUGUI1 after FRAME1c;
   LAYOUT3–LAYOUT10 (D117) after LAYOUT2's evidence.
 - **Waiting on the owner (five):** BUDGET1 (their call), TRUST2 and AGT2c (a grant, two
@@ -175,6 +175,22 @@ install in both themes and both languages.
 - [ ] **NAME2 — the names after NAME1b, on the window**: the glossary gains *lane* / 泳道 (DEV4 named it; NAME1
   had no term); the 107 budget judgements `names:check` reports are looked at on the window at 888 px, both
   languages, and each is renamed or accepted.
+- [ ] **PLUG10 — two defects in today's Plugins domain** (found by PLUGUI1a's reading, P8 and P9): *Remove*
+  removes on its first press, and the *running* pill wears done's green. Fix them now in Settings → Plugins;
+  PLUGUI1b carries the same rules into the view.
+- [ ] **PLUGUI1b — the Plugins view on the frame, on today's answers** (D119 §6; waits on FRAME1c): the view,
+  its list and pages, `＋` and ⋯, the offer's page, the kit drawer, the opener. Look: 1280 and 680 px, both
+  themes, both languages.
+- [ ] **PLUGUI1c — Settings keeps only what is a setting** (after b): the domain retires, its anchors repoint,
+  the folder row joins Settings → Driver; crosses five lanes on purpose.
+- [ ] **PLUGUI1d — the machine log's plugin events, health, and `plugins show|activity`** (beside b): seven
+  `plugin.*` events without words, `PluginHealth`, the two verbs.
+- [ ] **PLUGUI1e — the host answers the page** (after d): `PLUGINS` extended; `PLUGIN`, `PLUGIN_ACTIVITY`,
+  `PLUGIN_READ`, `PLUGIN_ADD`, `PLUGIN_OPEN_FOLDER`.
+- [ ] **PLUGUI1f — the page whole** (after c and e): health on the window, Points, Agents, Servers, Activity
+  live, Data folder, Source, *Install from a folder…*.
+- [ ] **PLUGUI1g — a plugin's checks** (after f): the last trial kept, its own tests run in a copy under the home.
+- [ ] **PLUGUI1h — Ask Daoris reaches the Plugins view** (after c and FRAME1i).
 - [ ] **FRAME1b — the list pane, Sessions' first** (D118, model §6): `ListPane`, `StripMark`, `listKeys`,
   per-view bounds, strip by room, the laid-over mode; Sessions' rail moves onto it. Look: 1280, 900, 680 px.
 - [ ] **FRAME1c — the main area and the view contract**: `ViewMain`, per-view memory, `open(view, item?)`,
@@ -191,16 +207,6 @@ install in both themes and both languages.
   `OutputPanel`, the monitor's title on a real token (`tokens.test.ts` fails on `text-h3` first).
 - [ ] **FRAME1i — Ask Daoris knows each view's list and item**: `where.ts`, `go` naming an item, the room.
   Order: b, c, then d–g (d, e, f one at a time; g beside one), then h and i. PLUGUI1 starts after FRAME1c.
-- [ ] **PLUGUI1 — plugins get a screen of their own.** Plugins will be a big part of Daoris, and today
-  they are one Settings domain (D64, D101, D103). An activity-bar view, on FRAME1's frame, holding:
-  - installed plugins, each with its state, the points it answers, the servers it hands sessions, the
-    harnesses it rides, where it came from and whether an update waits;
-  - a plugin's own page: its manifest read as a person reads it, what it said on its wire lately (calls,
-    answers, errors, from the machine log), its data folder, its trials and its own tests;
-  - the offers the install carries, to install;
-  - making and trying one (the kit, PLUG8), and asking for one (PLUG9), from the screen.
-  Settings keeps only what is a setting. Ask Daoris's plugin kind gains go anchors into the screen. The
-  contract is a design document written first, extending `docs/2026-09-23-plugin-design.md`.
 
 ### Doctrine, plugins and tools (owner, 2026-10-01)
 
@@ -214,49 +220,66 @@ install in both themes and both languages.
 > provide default download location and built into the app with a resouce json file that can be updated if
 > need other resouce location"*
 
-- [ ] **DOC1 — the development-document standard for code generation** (research, then a canon change). What a
-  repository's documents must hold so a code-generating session does good work unasked: the brief, how to
-  build, test and verify, the lanes and rooms, the conventions, the decisions, the open work. Study the
-  patterns in use (dsh's `AGENTS.md` and notes, the public `AGENTS.md` convention, skills, this canon), measure
-  what sessions actually read (LAYOUT2's evidence), and propose one standard, project-agnostic, as canon: a
-  template every set-up quest carries (LAYOUT7) and `check` can hold. Doctrine is still Daoris's first role.
-- [ ] **UNBLOCK1 — fewer asks: a repository declares what is safe, and its sessions may do it.** Today a
-  session asks the person for every command its harness does not already allow. A repository declares its
-  safe work (its gates, build and test commands, git on its own branch, installs from its lockfile), and
-  Daoris turns that into each harness's allowances for that repository's sessions (the permission scopes,
-  D72–D74; the set-up press's rule, LAYOUT7), while destructive, irreversible, publishing and
-  cross-repository acts still ask (`autonomous-development`). Measure: asks per session, from the machine log,
-  before and after. Design first, with a decision.
-- [ ] **PLUGREPO2 — Daoris.Plugins, the default plugins' home** (the owner created it on 2026-10-01, answering
-  PLUGREPO1). Initialize it (it is empty and has no owner yet, so this is set-up, not reaching in), give it its
-  own gates (each plugin's `node --test`, as the kit makes them), move Daoris's own plugins there (the landing
-  plugins in `examples/plugins/`, the in-app browser's), and keep only what the rehearsals need in `examples/`.
-  First, a survey of how the family's sibling plugin repositories are laid out and packaged (read only).
-  **Built by Daoris itself** (owner, 2026-10-01: *"you can let daoris to develop plugin so we also test this
-  feature too"*): the parent only initializes the empty folder as a repository and registers it in a
-  workspace; every plugin in it is then asked for through Ask Daoris or the intake (PLUG9), taken by that
-  repository's own driven session with the kit (PLUG8), and landed by the workspace's rule, so the whole path
-  is proven on a real repository.
-- [ ] **PLUGDEV1 — Daoris develops plugins where you choose** (owner, 2026-10-01, answering where a plugin
-  Daoris develops lives). A desktop feature: when a person needs a new capability (an MCP server, access
-  management), Daoris develops a plugin for it. By default it is developed and kept **in Daoris's own home**,
-  needing no repository, **or in a location the person configures**; Daoris.Plugins is the default location
-  for our own plugins and the published, searchable source. Daoris develops in whichever location is set up,
-  or in the home and then copies the plugin over, through that repository's own door. This changes PLUG9's
-  premise (D103: a plugin made as an ask at the repository that holds plugins); PLUGDIST1's design (D120)
-  carries the model, and the build follows it.
-- [ ] **PLUGDIST1 — plugins from a public catalogue.** The recommendation, to be recorded as a decision:
-  **NuGet**, each plugin a package of a custom package type (`DaorisPlugin`) that the search API filters by
-  exactly (`packageType=DaorisPlugin`), downloaded from the flat container over HTTP with no NuGet client,
-  its hash checked. npm's keywords are free-form and filter less precisely; both are free and open to other
-  publishers. The Plugins view gains *Find plugins* (search, versions, install, update); publishing from
-  Daoris.Plugins stays the owner's call.
-- [ ] **TOOLS1 — self-managed tools** (design first, extending D57's toolchain from agents to tools). Every tool
-  Daoris runs (git, the terminal's shell, Node, the landing plugins' `gh` and `az`) can be *the system's*,
-  *managed by Daoris* (downloaded into the home) or *a path you name*, set in Settings → Tools and by a terminal
-  verb. A `resources.json` built into the app lists each tool's default download location, version and hash; it
-  can be updated, and more resource locations added, without a new release. A managed git can carry the
-  settings Daoris's own fetch needs (the SSH finding, WSR7).
+
+### Plugins: the workshop, Daoris.Plugins and a catalogue (D120) — the build
+
+The contract is `docs/2026-10-01-plugin-distribution-design.md`; §7 carries each row's full text and proof.
+Every task in Daoris.Plugins is an ask to it, taken by its own session (the owner's wish: Daoris develops them).
+
+- [ ] **PLUGREPO2c — the two landing plugins** (asked: quest `#36351d45ac11`, its session working).
+- [ ] **PLUGREPO2d — in-app-browser** (an ask), then **PLUGREPO2e — this repository lets them go** (after PLUGDIST1g).
+- [ ] **WORKSHOP1a — the workshop setting** (§2.1): where Daoris develops a plugin, the home by default, both doors.
+- [ ] **WORKSHOP1b — the workshop and its sessions** (§2.2); **WORKSHOP1c — the workshop on the view; Ask Daoris
+  makes plugins there** (§2.3, §2.5); **WORKSHOP1d — hand-over and a named source** (§2.4).
+- [ ] **PLUGDIST1a — the package and its reader, offline** (§5.1, §5.7); **PLUGDIST1b — the pack and release
+  workflow** (an ask to Daoris.Plugins); **PLUGDIST1c — a package source over HTTP** (§5.3–§5.8);
+  **PLUGDIST1d — the host answers**; **PLUGDIST1e — Find plugins** (§6, after PLUGUI1f).
+- [ ] **PLUGDIST1f — the first publish** (the owner's: the nuget.org account, trusted publishing, the prefix), then
+  **PLUGDIST1g — the offers from packages**. ⏸ **PLUGDIST1h — the repository signature checked** (held).
+- [ ] **INIT1 — `init` writes line endings it can keep** (found setting up Daoris.Plugins): a `.gitattributes`
+  with `* text=auto eol=lf` when the repository has none, since Daoris measures its files byte for byte and a
+  machine with `core.autocrlf` would check them out as CRLF, as drift.
+
+### Development documents and fewer asks (D122) — the build
+
+The contract is `docs/2026-10-01-development-documents-design.md`; §6 carries each row's full text and proof.
+Order: UNBLOCK5 first (a week of *before*); then DOC2, DOC3 and UNBLOCK2 side by side; the driver lane runs
+UNBLOCK5 → UNBLOCK2 → UNBLOCK4 → UNBLOCK3 → DOC7. Only DOC2 changes the canon.
+
+- [ ] **UNBLOCK5 — asks, counted** (§3.10): `permission.refused` from both doors; asks per session in the usage report.
+- [ ] **UNBLOCK4 — the carve-outs held harder** (§3.6, §3.7): 🔴 a push written as `git -C . push` passes `no-push`
+  in auto mode today; an `autoMode.hard_deny` entry after `"$defaults"`; `git mv` in both defaults tables.
+- [ ] **DOC2 — the standard as canon** (§2.1–§2.6, §4): core knowledge `development-documents`, core skill
+  `set-up-documents` with templates; this repository and `examples/` re-synced in the same commit.
+- [ ] **DOC3 — roles bound to paths** (§2.7, §2.8): `documents` in the manifest, `sync`'s table, `check`'s facts;
+  no canonical skill carries `allowed-tools`.
+- [ ] **UNBLOCK2 — the declaration and its judge** (§3.1–§3.3, after DEV5): `safe` beside `gates`, read from the line.
+- [ ] **UNBLOCK3 — the person's one yes** (§3.4, §3.5, after UNBLOCK2 and a week of UNBLOCK5): the `declare`
+  proposal, exact rules on both Claude Code doors.
+- [ ] **DOC4 — this repository declares its documents**; **DOC5 — the service reads declared records**;
+  **DOC6 — the example family keeps the standard**; **DOC7 — what sessions read, measured** (§1.5).
+- [ ] **UNBLOCK6 — the screen and Ask Daoris for a declaration**, both languages; **UNBLOCK7 — codex and dsh
+  measured before anything is handed**; **UNBLOCK8 — the first real declaration** (the owner's: asks a week
+  before and after).
+
+### Self-managed tools (D121) — the build
+
+The contract is `docs/2026-10-01-tools-design.md`; §7 carries each row's full text and proof. Order: TOOLS2 →
+TOOLS3 → TOOLS4, then TOOLS5 ∥ TOOLS6, then TOOLS7 ∥ TOOLS8, then TOOLS9; TOOLS10 before any session runs a
+managed git; TOOLS11 last.
+
+- [ ] **TOOLS2 — `tools.json` and its resolution, twins** (§2.1–§2.3, §5): the three ways; `daoris tool list|path|use`.
+- [ ] **TOOLS3 — the resource list and its merge, twins** (§3.1–§3.5): `resources.json` built in; the first entries
+  read from the makers' own pages and sums into an evidence document.
+- [ ] **TOOLS4 — download, verify, unpack, lay out** (§3.6, §3.7): staging, hashes, `daoris tool download|update|…`.
+- [ ] **TOOLS5 — one answer for every child** (§2.4, §2.6, §2.7): git, hooks, npm, the tree guard's node, the terminal.
+- [ ] **TOOLS6 — what Daoris's git carries** (§2.5): the allow-list from `core.sshCommand`, `GIT_CONFIG_GLOBAL` with
+  includes, the version floors.
+- [ ] **TOOLS7 — Settings → Tools** (§4.1, §4.4) and **TOOLS8 — Ask Daoris's `tool` kind** (§4.3).
+- [ ] **TOOLS9 — the rehearsals** (§6): a loopback list server, stub tools, a tampered file refused.
+- [ ] **TOOLS10 — the probe before a managed git meets an agent** (the owner allows one start of each agent).
+- [ ] **TOOLS11 — the first real downloads, on the install** (the owner's run): a managed git bringing the owner's
+  workspace up to date over SSH, a managed node running a plugin, a managed pwsh in the terminal, `gh`/`az` landing.
 
 ### Daoris develops Daoris (D115) — the build
 
@@ -506,7 +529,8 @@ TDD, looked at on the window, and the ones that touch a real session use one (au
   (driver, 571/572) and `DriverModulePluginsTests.The_kit_makes_a_plugin_where_the_person_names_and_tries_it_or_an_installed_one`
   (modules, 113/114). Both spawn real processes; load is again the common factor. **And one at NAME1a's merge**:
   `PluginKitTests.A_silent_plugin_is_still_running_and_said_nothing_within_the_patience`, a timing test under
-  three subagents' builds (the driver's Process half took 37 minutes), green alone.
+  three subagents' builds (the driver's Process half took 37 minutes), green alone. **And `PseudoConsoleTests` again**
+  (its second sighting) at the designs integration's merge, under three builds, green alone.
 
 - [ ] **TEST1 — a Node process aborts with `0xC0000409`: seen three times now, once outside Playwright.** The
   second sighting was its trigger. Both runs died with `worker process exited unexpectedly

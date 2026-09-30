@@ -6126,3 +6126,452 @@ check went from 519 findings (glossary 84, form 288, door 16, budget 131) to 107
 placeholders. The Playwright specs were edited to the new names and **not run** in the branch (the parent runs
 `test:web`); what they pin was read against Playwright's matching (case-insensitive substrings unless `exact`). The
 107 budgets are the window's to judge, and nothing looked at the window in this branch either.
+## D119 — Plugins get a view of their own: a list by what they need, a page per plugin, and Settings keeps where they are looked for (2026-10-01)
+
+**Decision (PLUGUI1a).** The owner, 2026-10-01: *"because plugin will be a big part of daoris so it need to have a
+panel/screen itself, and develop proper ui/ux"*. Plugins were one domain of Settings (D64, D101, D103): a row each,
+a trial's report and an update's plan under the row while the domain was shown, and no page. Read from the code,
+a plugin's words reached a console ring no screen reads, the machine log held no plugin event, nobody kept a trial,
+and nothing said whether a plugin answers. `docs/2026-10-01-plugins-screen-design.md` is the contract, extending the
+plugin design and built on D118's frame. It settles:
+
+1. **Plugins is a view of the activity bar**, shell-only (D47 §4), after Search. Its list pane holds the installed
+   plugins in groups by what they need from the person: *Waiting on you* (failing or refused while on), *On*,
+   *Off*, then *Daoris's own plugins*, the offers not installed. Its main area holds a plugin's page, and an
+   offer's. This refines D118's §7 order (running, off, refused): the person acts on a plugin's state, and a
+   plugin may be of every kind at once.
+2. **Five states, one of them per plugin.** `running`, `ready` (on, with nothing to keep running), `failing`,
+   `refused` and `off`.
+   - **The loop's own record decides a state**: `PluginHealth`, fed by the hook set, the landing and the hand-off
+     in the process that runs the loop. A terminal reads the machine log's last word, and says so. One table of
+     cases holds both.
+   - **Failing and refused wear the waiting hue**, since both wait on the person's act, and the bar's Plugins
+     place counts them.
+   - **Running wears no live mark**, since a hook process is up between calls. This retires the done-green
+     *running* pill, against the platform language's §3.
+3. **A plugin's page** has a header with its switch, *Try*, *Update…* and *Remove…*, which now asks once. Then
+   its health line, then Points, Agents, Servers, Activity, Tests, Data folder and Source, each with its loading,
+   empty and error states.
+   - A server's environment is shown by name, never by value.
+   - A refused plugin's manifest is shown as written and marked *not taken*.
+   - *Make a plugin* and *Install from a folder* are drawers, since they are forms.
+   - *Ask Daoris for a plugin* opens Ask Daoris on a whole first message.
+4. **The side bar and the panel gain nothing from this view**, as D118 §3c holds. A plugin's live words stay in
+   its Activity, since the panel's console follows the attended session.
+5. **What a plugin did is kept without its words.** Seven `plugin.*` events join D94's catalogue: started,
+   stopped, called, failed, served, tried and tested. Each holds names, counts, flags and times, and never a
+   hold's reason, a message, an address, a command line, an environment value or what the plugin wrote to
+   stderr.
+   - A plugin's words stay in the console's ring for this run, and the page says so.
+   - The last trial and the last test run of an installed plugin are kept in `<home>/plugins/.checks/<id>.json`,
+     written by both doors and deleted by a removal or an update.
+   - A plugin's own tests run as `node --test` in a copy under `.trials/`, with its temporary folders inside the
+     run, bounded at five minutes.
+6. **The routes stay `DAORIS.DRIVER`'s** (MOD5), since the loop owns a plugin's process and the catalogue is the
+   driver's.
+   - `PLUGINS` gains servers, the hook, what the process listens on, health, and whether an update waits.
+   - The new routes are `PLUGIN`, `PLUGIN_ACTIVITY`, `PLUGIN_READ`, `PLUGIN_ADD`, `PLUGIN_TEST` and
+     `PLUGIN_OPEN_FOLDER`.
+   - Each reader is the driver library's, shared with its terminal twin: `daoris-driver plugins show`,
+     `activity` and `test`.
+   - The CLI's `daoris plugin` keeps the catalogue's edits. Every act on the view has its twin named in the
+     design's §4.4 (D50).
+7. **Every control on the view has its Ask Daoris answer** (D110). *Install from a folder* is the `plugin` kind's
+   `add`. *Read*, *Run tests*, *Open folder* and the Ask Daoris openers are exempt, each for its reason. No door
+   is owed. A go names a plugin (`open('plugins', id)`, through FRAME1i's `item`), and a go to Settings →
+   `plugins` is refused naming the view. `HelpCoverageTests` reads the view as a screen beside Settings' domains.
+8. **Settings keeps only what is a setting.** Nothing about a plugin is set there. The Plugins domain retires, and
+   the plugins folder, a fact of the home, becomes a read-only row under the Daoris home in Settings → Driver, with
+   a door to the view.
+   - Every other control moves to the view.
+   - Every old anchor points at it: the Daoris menu, Ask Daoris's places (twins), `where.ts`, the room's doors, the
+     service's hint and the CLI's kit refusal.
+   - Agents' *declared by plugin* chip and a landing rule's named plugin become doors to its page.
+9. **Names** follow D116, in the names NAME1b gives the catalogues, each within its kind's budget.
+   - The glossary gains four terms: *try* 试运行, *Daoris's own plugins* 「Daoris 自带的插件」 (`offer` its code
+     word), *held back* 拦下 (a plugin's hold, never the person's 暂停), and *data folder* 数据文件夹.
+   - The doors `command.go.plugins` and `menu.plugins` both open `nav.plugins`.
+
+The build is PLUGUI1b–h, the design's §6. The view comes first, on today's answers, once FRAME1c has landed. The
+host's events and readers can run beside it. Settings' half follows the view, and the page is made whole on the
+host's answers.
+
+**Why.** The owner asked for a screen, and D118 made one frame every view is built on. A plugin runs as the person
+and can hold every quest when it fails closed (D64 §4), so whether it answers is the fact a person most needs, and
+nothing said it. What a plugin did had to be kept to be shown. D94 already says what a log may hold, so the events
+are the calls without the words.
+
+**This amends:**
+- **D64 §6**: the screen is the Plugins view, not the Machine view's card or Settings → Plugins.
+- **D101**: the kit's screen half moves to the view, and a trial's report is kept.
+- **D103**: *Install* is on an offer's row and page.
+- **D118 §7**: the groups' order.
+- **D94 §4**: the plugin events, once PLUGUI1d builds them.
+
+**D64 §7 stands**: no plugin adds a view, and none of a plugin's code runs in the page.
+
+**Rejected.**
+- **Keeping plugins a Settings domain with a bigger row each.** A domain has no list, no main area and no memory,
+  and a record under a row lasts only while the domain is shown (frame audit PL4, PL9).
+- **Grouping by kind** (hooks, agents, servers). One plugin may be all three, and the person acts on state.
+- **A plugin's words in the panel's console, or its page in the side bar.** Either would make a frame region change
+  with the view (D118 §3c).
+- **A module of its own, as `BrowserModule` is.** That module stands apart because its files are not the driver's,
+  and a plugin's are.
+- **A plugin's words in the machine log.** D94 §5 holds, and a second copy of them would have none of the ring's
+  bounds.
+- **Health from the log alone.** A failed log write is dropped by design. The process that runs the loop knows
+  exactly.
+- **Aliases for the CLI's verbs under `daoris-driver plugins`.** They would be a second twin of `plugins.ts`.
+- **A toggle atom for the switch.** It would be a new control for one place, where a button named for its act reads
+  the same in both languages.
+- **The raw `plugin.json` on the page.** An environment value may be a key.
+- **Running a plugin's tests in place.** An update replaces the install folder whole, and a source checkout is
+  another repository's tree.
+- **A history of trials.** Activity counts them.
+- **A search in the list.** No machine holds a screen of plugins yet.
+- **A failing plugin in *What needs you*.** The bar's count says it once, and each quest it holds carries its reason.
+- **A marketplace.** D24, D57 and D64 §7 stand.
+
+**What the gates do not cover.** This is a design, and nothing is built. No width, threshold or budget has been
+measured on the window: the names' counts are D116's estimates. The health states have not met a real failing
+plugin, and the tests' runner has not met a real plugins repository or the PATH an install hands the application
+(USE1g). No landing plugin has pushed to a real platform, so Activity's pushes have not been seen. Each build row
+names its own proof, and the design's §9 says what only the window and a real plugin can prove.
+## D122 — The development documents are a standard the canon ships, and a repository declares its safe work once for the person's yes (2026-10-01)
+
+**Decision (DOC1 and UNBLOCK1, the owner's: *"research a good development doc pattern for code generation and use it as
+standard for all repo setup so its good for sessions, and the goal is to unblock the repo as far as possible so less
+ask human permission during development"*).** The contract is `docs/2026-10-01-development-documents-design.md`: the
+study (§1), the standard (§2), fewer asks (§3) and the build (§6). It extends D117's layout and D72–D74's scopes.
+
+1. **Documents have roles, and the canon speaks in roles.** Brief, room, knowledge, skill, router, decisions,
+   backlog, archive, fixes, changelog, glossary, gates, each with one job and one way it is read: always (the
+   brief, beside the doctrine region in the root file every agent reads), on demand (rooms, knowledge, skills, the
+   router), or by lookup (the records).
+2. **The standard is core canon, as knowledge and a skill.** `development-documents` (core knowledge) states the
+   roles, the reading tiers, the brief's content test (*what nearly every task needs and a reader could not
+   derive*) and the ceilings' principle. `set-up-documents` (core skill) carries the procedure and the templates
+   beside it. Not a rule: the part every task needs, where the records are, is carried as generated data.
+3. **A repository binds roles to paths in its manifest** (`documents`). `sync` renders a *Where things are* table
+   into the region. `check` fails on a fact (a declared path missing, escaping, a link, or the table stale) and
+   reports a judgement (a document over its ceiling in words, the root file over the smallest harness limit in
+   bytes, no backlog or decisions declared). A repository that declares nothing sees no change.
+4. **Safe work is declared in the gates file** (`safe` beside `gates`): the gates that are not the queue's
+   (`kind` check or suite, not `quiet`), the build and test commands, the lockfile install. Git on a repository's
+   own branch is Daoris's default, and `commit` gains `git mv`.
+5. **The declaration is read from the repository's line, judged, and waits for the person once.** A judge refuses
+   the carve-outs (a push, a publish, a release, a history rewrite, a discard, a recursive delete, a path outside,
+   an operator, a runner with arguments, an install that adds a package). The rest is one `declare` proposal per
+   repository and per widening, D74's rule unchanged: a narrowing applies at the tick, a widening waits. Accepted,
+   it is a layer of its own in the repository's scope.
+6. **Each harness is handed it in its own words, or nothing.** Claude Code on both doors gets exact rules (and
+   `PowerShell(…)` once measured). codex and dsh are handed nothing until measured, and the surfaces say so.
+7. **The carve-outs are held harder where auto mode would allow them.** While `no-push` is on, the composed spawn
+   settings carry an `autoMode.hard_deny` entry against a push in any form, a publish and a release, always after
+   `"$defaults"`.
+8. **Asks are counted.** `permission.refused` joins the machine log from both doors, and `session.read` records
+   which role each read resolved to, never a path or a word. The usage report gives asks per session, before and
+   after.
+
+**Why.** The canon already depends on records it never places (§0.1), so every session in every adopter searches
+before it works. The makers converge on the same file, the same content test, exact commands, detail on demand and
+a ceiling on what is read whole (§1.3), which is the bar this project believes. Asks fall only if what a session may
+run is declared where a tool reads it: an instruction file shapes what an agent tries, not what its harness allows.
+The person's yes stays because a declaration is a checked-in repository's allowances. D74 forbids an agent widening
+itself, and the harness's maker reached the same rule: a repository's allow rules wait for trust, and `autoMode` is
+never read from project settings. One yes per repository replaces one proposal per refused command, which is the
+growth D81 rejected.
+
+**Findings the study turned up** (design §1.6), each carried by a row or an owner's call: the CLI's default core
+budget, 30,000 bytes, leaves at most 2,768 bytes of brief under codex's 32,768-byte cut (BUDGET1); a push written as
+`git -C . push` passes `no-push` and is allowed by auto mode's defaults (UNBLOCK4); a project skill's
+`allowed-tools` is honoured untrusted, so no canonical skill may carry it (DOC3's test); package-manager wildcard
+rules are dropped in auto mode (exact rules); four of this repository's gates are not a session's to run (`kind`
+and `quiet`).
+
+**Rejected** (the design's §8 has the full list):
+- **Allowances applied from the declaration without the person**: D74, the maker's own trust rule, and a session
+  could edit the declaration.
+- **A skill whose `allowed-tools` names the gates**: honoured untrusted, for one turn, on one harness, unreviewed.
+- **Writing the repository's `.claude/settings.json`**: the repository's file, and trust-gated (D72).
+- **Translating into codex's `.rules`**: per account, and an execpolicy `allow` runs outside the sandbox. Measured
+  first (UNBLOCK7).
+- **One proposal per command** (D81), **runner prefixes** (`Bash(npm run *)`), **the declaration in the manifest**
+  (D26), **reading it from the session's tree**, and **every declared gate offered**.
+- **The standard as an always-loaded rule, a pack, or in the adoption playbook**: the budget; a dependency of core
+  cannot be opt-in; the playbook cannot be read from another repository.
+- **Ceilings that fail** (D54), **notes by lifecycle folder as the standard** (D117 §2.4), **a glossary required
+  everywhere**, **a command-reading push hook** (held behind the canary), and **`dontAsk` or `bypassPermissions`**
+  (D81).
+
+**What it amends, when built.**
+- D72: a fourth layer per repository, `declared`; `commit` gains `git mv`; the composed file gains the
+  `autoMode.hard_deny` entry.
+- D74: a proposal whose author is a repository's declaration at a commit, with a `declare` action.
+- D81: the carve-outs are held in the classifier as well as by the textual deny.
+- D94: three lines, `permission.refused`, `session.read` and `session.skill`.
+- D115: the gates file gains `safe`, and DEV5's `kind` and `quiet` decide what a session is offered.
+- D117: the set-up quest carries the standard's three steps and the declaration; its press's rule loses `git mv`;
+  the root file's bytes report is one line with DOC3's.
+- The adoption playbook (local): the same three steps.
+
+Each row that builds a piece notes the amendment where it lands.
+
+**What the gates do not cover.** This change is documents only, and nothing is built. Its statements about this
+repository were read from its files: the canon's rules and skills, `Acp.cs`, `Adapters.cs`, `Permissions.cs`,
+`RuleProposals.cs`, `SessionLog.cs`, `SessionEvents.cs`, `GateDeclaration.cs`, `RepositoryScanner.cs`,
+`canon.ts`, `config.ts` and `drift.ts`. Its statements about the harnesses are their makers' documentation, read
+2026-10-01 and cited in design §9, or LAYOUT2's reading of their shipped code; none was measured on a turn. The
+account of what AR-2201's sessions read is the parent's, recorded in no tracked document. `verify` checks this
+entry's shape and the design's links and budget, and none of their words.
+## D121 — Every tool Daoris runs is the system's, managed, or a file the person names; a list built in says where each version downloads, and more locations extend it without a release (2026-10-01)
+
+**Decision (TOOLS1).** The owner: *"all tools that daoris using like git, [terminal] should all have a self managed
+option (and can be setup in settings) which can be download from locations … I perfer provide default download
+location and built into the app with a resouce json file that can be updated if need other resouce location"*. The
+contract is `docs/2026-10-01-tools-design.md`, which extends D57 from agents to tools. So:
+
+1. **The tools are declared in code, in both artefacts**: Git, Node.js (with `npm` and `npx`), PowerShell, GitHub
+   CLI and Azure CLI. A list may offer versions of these. It can never make Daoris run a program its code does not
+   name. Windows PowerShell, Command Prompt and Daoris's own programs are not tools.
+2. **Each tool is run one of three ways, and holds exactly one**, in `$DAORIS_HOME/tools.json`, twins in the CLI
+   and the driver:
+   - **the system's**, from `PATH`. Absent means this, and it is today's behaviour byte for byte;
+   - **managed**: one exact version downloaded into `<home>/tools/<tool>/<version>/` and verified;
+   - **a file** the person names.
+
+   The way set decides every question about the tool. A managed version nobody downloaded refuses, and so does a
+   named file that is gone. Neither ever falls back to `PATH`, as D57's pin does not. Nothing switches to managed on
+   its own.
+3. **One answer for Daoris and every child.** Daoris's own starts use the resolved file by its path: git, a hook's
+   first word, npm in a pin, and the tree guard's node. Every child the driver and the modules start gets the tools'
+   environment:
+   - the folders of each tool that is managed or a file, first on its `PATH`;
+   - `GIT_CONFIG_GLOBAL`, when git carries a setting.
+
+   Nothing else changes, and the application's own environment is never rewritten. A source-reading test holds
+   every start, as `NoConsoleWindowTests` holds `CreateNoWindow`.
+4. **Git carries settings from an allow-list, and its first key is `core.sshCommand`**, which answers the failure
+   WSR7 measured. It travels in a global file Daoris writes under the home:
+   - it includes the person's own global configuration first, which is read and never written;
+   - Daoris's keys follow, between markers, and a child's own writes there are kept;
+   - a repository's own configuration still wins over both.
+
+   The resolved git's version is asked: below 2.32 a setting refuses, since that git would ignore it silently, and
+   below 2.29 the fetch says it cannot run as D109 needs.
+5. **`resources.json` is built into the install**, at `app/resources.json` beside the application.
+   - **Schema 1.** For each tool: its source and licence, then each version's files by platform, each with a URL,
+     a sha256 and a size, an archive kind (`zip` or `tar.gz`), the executable inside, and the folders for `PATH`.
+   - **Never rewritten in place.** A newer list is a **resource location**: the address of another list, `https://`
+     or loopback `http://`, set in Settings and in `tools.json`. It is fetched only on the person's press and kept
+     under the home.
+   - **The merge.** The person's locations are read in order, then the built-in list.
+     - One tool, version and platform is one download: lists that disagree on it refuse that version, naming both.
+     - Lists that agree under different addresses are mirrors, tried in order.
+     - A tool's versions are the union, and the newest is the highest by number.
+     - An unknown tool or schema is refused.
+   - **Every file is checked** against its list's hash and size, staged, and moved whole. Finding its record is the
+     proof.
+   - **Trust.** A list is trusted as its host until lists are signed, which waits for a release key Daoris does not
+     have.
+   - **No default location** is named until Daoris publishes one of its own.
+6. **Agents stay on their makers' channels** (D57 §3a). The two share:
+   - the staging and layout discipline;
+   - HTTPS only;
+   - nothing redistributed or patched;
+   - the CLI's fetcher seam;
+   - update resolving the newest to one exact version.
+
+   Node is the one crossing: a pin's `npm` is Tools' npm, and `agent install` keeps the system's.
+7. **The doors.**
+   - **Settings → Tools**: a machine domain after *Agents*.
+   - **The terminal**: `daoris tool list|path|use|download|update|delete|git ssh|locations|look`.
+   - **Ask Daoris**: an eleventh kind, `tool`. Its doors: *use* the system's or a managed version, *update*, the
+     SSH command as git's own or Windows', removing a location, and the go places.
+   - **Exempt, each with its reason**:
+     - a named file, a custom SSH command and a new location are the person's own press: a program, or a source of
+       programs;
+     - *Download* and *Look for updates* change nothing;
+     - deleting a version is a discard.
+   - **Names**: three glossary terms, *tool* 工具, *managed* 托管 and *resource location* 资源位置, within D116's
+     budgets, after NAME1b renames *Tools & accounts*.
+
+**Why.** Git is the program Daoris can least do without and the one it chooses least. It is a bare name that
+nothing resolves, its version is never asked, and nothing but the command line can hand it a setting. So WSR7 could
+only say what the git on the path needed; it could not give it. Five resolvers answer *which program is this*, and
+git and a hook's command use none of them. A session's tools are whatever `PATH` it inherited, as USE1g found from
+the other side. D57 already answered the same question for agents, and its answer carries: a way the person
+chooses, absent meaning today, a choice that cannot run refusing rather than guessing, and one resolution that both
+doors and every child share.
+
+**The alternative weighed, as the owner asked: a separately released resource package.** A sibling project in the
+family ships one (read, not changed).
+- **It bundles three parts**, and every other tool is a constant in its application's code.
+- **A new package still needs a new application**, since the application names the package's version, and the
+  sibling's own publish script warns of exactly that.
+- **The package is not hashed.** It is trusted as TLS and an immutable registry.
+- **Installed means marker files exist**, so a newer package is never noticed.
+- **The registry's size limit** trimmed what it could carry.
+- **Its version once drifted** across three places.
+
+The list built in, with more locations, needs no release for a newer version, redistributes nothing, hashes every
+file, knows each version by its folder, and moves each tool alone. Its cost is keeping the list's hashes current
+from the makers' published sums. From the sibling it keeps:
+- an HTTPS-or-loopback rule for an override address;
+- staging then moving;
+- asking the resolution again at each start;
+- meeting an agent's need for Git Bash from the machine before downloading one for it.
+
+**Rejected** (the design's §8 has the full list):
+- **The separately released package.**
+- **Rewriting the built-in list in place.** The install folder is the publish's.
+- **Agents under the list.** It is a weaker check for the same bytes, and a list that lags the makers.
+- **Layering the three ways as D57 layers an agent's.** A pin hidden under a file is invisible on a screen of one
+  choice.
+- **Managed by default.**
+- **A tool set a list can extend.**
+- **Rewriting the application's own `PATH`.**
+- **Carrying git's settings as `-c` on Daoris's calls alone.** The driver and a session would get two answers.
+- **`GIT_CONFIG_COUNT` or `GIT_SSH_COMMAND`.** Their command-line scope overrides a repository's own configuration.
+- **Writing the person's global configuration, or a checkout's.**
+- **Patching a managed git's own system configuration.**
+- **Git's full portable distribution, for its bash**, until TOOLS10 measures the need.
+- **A `file:` location.**
+- **Accounts for gh and az.**
+- **Per-workspace tools.**
+- **Ask Daoris proposing a named file, a custom SSH command, or a new location.**
+
+**What it amends, when built.**
+- D57 and the toolchain design: the resolution rule's home gains tools, held to one way rather than layers.
+- D96 and the terminal design: the shells come from the tools' `PATH`, and Git Bash is the bash beside the git
+  Tools resolves, else the system's.
+- D64 and D100: a hook's first word that a tool answers for is the resolved file, so a landing plugin's `git`, `gh`
+  and `az` are Tools'.
+- D109 as amended by WSR7: the fetch's git is Tools' git, and what was not fetched can name Settings → Tools.
+- D110: an eleventh kind.
+- D116: three terms.
+
+Each row that builds a piece notes the amendment where it lands.
+
+**What the gates do not cover.** This change is documents only, and nothing is built.
+- **Read from the code:** the statements about today's code, from the files the design's §1 names, at `d618cbb`.
+  The service starts no process, and no test holds that.
+- **Read from outside:** the sibling's package, from its folder, which was not changed.
+- **Not measured:**
+  - which of the makers publish an archive Daoris can unpack, which TOOLS3 confirms before a list line is written;
+  - which ssh reaches the owner's SSH remotes;
+  - how git reads an include whose file is gone;
+  - what a minimal git's configuration reads differently from Git for Windows';
+  - how Claude Code finds its Git Bash with a minimal git first on `PATH`;
+  - where a managed npm puts a global install;
+  - whether an agent passes its `PATH` on to the servers it starts;
+  - whether gh and az stay signed in when managed.
+
+`verify` checks the records' shape, budgets and duplicates, and none of these words. The design's §6 says what a
+rehearsal can prove and what waits for TOOLS11's real downloads.
+## D120 — Plugins leave the repository: a workshop in the home makes them, Daoris.Plugins keeps Daoris's own, and NuGet is where they are found (2026-10-01)
+
+**Decision (PLUGREPO2, PLUGDIST1).** The owner made an empty folder, Daoris.Plugins, beside this repository, for
+the default plugins' development, *"later will be release to nuget so we can use nuget as plugin site … (or we
+can use npm, you can decide …)"*. They then answered where a plugin Daoris makes should live: by default in the
+Daoris home, or in a place the person sets, with no repository needed. Daoris.Plugins is where Daoris's own
+plugins are developed and what is published, and a plugin made in the home may be handed over to it.
+`docs/2026-10-01-plugin-distribution-design.md` is the contract. It settles:
+
+1. **A machine has a plugin workshop**, where Daoris makes a plugin a person asks for.
+   - **Its kinds**: the home (the default, `<home>/plugins/.workshop/`), a folder outside any checkout, or a
+     registered repository.
+   - **It is stored in `<home>/plugin-sources.json`**, a new file with no older writer.
+   - **It has two doors and a setting door**: `daoris plugin workshop …`, Settings → Driver, and Ask Daoris's
+     `workshop`.
+   - **A workshop is a small git repository Daoris owns.** A workshop session works there on an ask addressed to
+     `workshop`: one session at a time, with its room rendered like the intake's. Its record is concluded from its
+     exit, then the plugin's own tests and the kit's trial, run by the driver.
+   - **Nothing in a workshop runs on the loop** until the person installs it. It installs from the workshop as a
+     folder source.
+2. **A plugin moves to a repository through that repository's own door.** *Send to a repository…* publishes a
+   quest with the plugin as one zip. That repository's session writes it and lands it by its rule. D103's update
+   gains a source the person names, `--from <folder>|package`, shown before the press.
+3. **Daoris.Plugins is a repository with an agent of its own**:
+   - one folder per plugin under `plugins/`, as the kit makes it;
+   - its own brief and gate (`node --test`, needing nothing of Daoris's);
+   - D117's `agents` layout with `windows-machine`;
+   - registered, drivable, with trees on and landing by `merge`.
+   The parent sets it up (§3.4 of the design, after LAYOUT3), and every plugin after that is an ask its own
+   session takes. The two landing plugins and `in-app-browser` move there. `hold-by-title` and `browser` stay in
+   `examples/` as the rehearsals' contract.
+4. **The package source is NuGet.**
+   - **The package**: a Daoris plugin is a package of the custom type `DaorisPlugin`, whose type version is the
+     wire's `apiVersion`, with the plugin folder under `plugin/` and no dependencies.
+   - **The reader** searches with `packageType=DaorisPlugin`, reads the `.nuspec` before a download, downloads
+     from the flat container over plain HTTPS, and checks the package's SHA-512 against the catalog leaf's
+     `packageHash`, with no NuGet client.
+   - **Where it lives**: in the driver, behind `daoris-driver plugins find|show|install|update`. Only `service.ts`
+     may reach a network in the CLI, and a package source is not a knowledge service.
+   - **The record**: a package source's record is `{ package, version, sha512, source }`.
+   - **Another publisher's plugin installs off.** *Daoris's own* is decided by the owner account, and by
+     `verified` once the prefix is reserved, never by a name.
+5. **The offers come from pinned packages** once the three are published. `plugin-offers.json` holds each
+   `{ package, version, sha512 }`, the publish checks each, and a republish works from a cache.
+6. **The Plugins view gains *Find plugins*** (D119): a *Find* mode in its list, a package's page with its trust,
+   what it runs, what it needs and its versions, and two doors and Ask Daoris's doors for every new act.
+7. **Publishing is the owner's.** The workflow is manual, a dry run by default, by trusted publishing. The account,
+   the prefix reservation and every push are the owner's press.
+
+**Why a workshop in the home.** The owner's answer, and PLUG9's gap: with no plugins repository, making a plugin
+had nowhere to go. A plugin a person asks for is often theirs alone, such as a server for their own tool or a
+rule for their own access, and needs no repository to be made, tested and installed. The workshop keeps every
+property that made making a plugin *work* (D101): a session, tests, a diff, and a press to install. Daoris owns
+the folder, so it reaches into nothing.
+
+**Why NuGet.**
+- **Its filter names what a package is.** A custom package type is a declaration of intended use, filtered
+  exactly by the server (observed on two types). Its version carries the wire's `apiVersion`, readable before a
+  download, and Visual Studio and nuget.exe will not put the package into a project.
+- **Its rules match a plugin's.** No dependencies, and no installer run.
+- **Its search result says who published**: `owners` are accounts, and `verified` is an identity-reviewed
+  prefix.
+- **Integrity takes HTTPS and SHA-512.** The catalog's hash matched a served package when checked.
+- **The owner leaned to it**, and the reader is .NET.
+
+**What it amends, when built**, each row noting it where it lands:
+- **D64 §7 and D119 §8**: *no registry, no marketplace, no catalogue of third-party plugins* becomes *Daoris runs
+  no registry and loads no code, and reads a public package source whose plugins land as folders by a person's
+  press*. D24's and D57's registry was one Daoris would keep, and this is someone else's index.
+- **PLUG9** (Ask Daoris design §9.7): a plugin is made at the machine's workshop, and at a repository only when
+  the workshop names one. An ask to a repository carries the kit's scaffold.
+- **D103**: an update may take a source the person names, and a package source is a source.
+- **D101's gap**: a real plugins repository exists.
+- **The offers' twins** (`OFFERED_PLUGINS`, `layOffers`, `PluginOfferTests`): from pinned packages.
+
+**Rejected.**
+- **npm.** Its `keywords:` qualifier filtered exactly when observed, so the backlog's *less precise* did not
+  survive checking. But a keyword has no version and no meaning, and a package on npm is an ordinary dependency
+  whose install-time machinery Daoris would not run. npm is stronger on integrity (inline SRI, ECDSA registry
+  signatures, provenance) and on namespaces (a free, immediate scope). D120 answers with the pinned hash, the
+  owner account, and a held signature check (PLUGDIST1h).
+- **Both npm and NuGet**: two readers, two records and two trust rules, for no plugin that needs the second.
+- **A release asset listing Daoris's own**, a sibling's way: one publisher, no search, and a trust by address
+  alone.
+- **An index Daoris runs**: a registry to operate (D24, D57).
+- **The workshop's setting in `driver.json` or `plugins.json`**: older writers drop a field they do not know.
+- **Installing another publisher's plugin on**: its code would run before the person read its page.
+- **The workshop writing into a repository**, or a button that copies into a checkout: D32.
+- **Trusting `Daoris.*` by name** before the prefix is reserved: anyone may publish under an unreserved prefix.
+- **Checking the repository signature in the first build**: it needs a CMS reader and NuGet's signed-content
+  rules, and is held as PLUGDIST1h.
+
+**What the gates do not cover.** This is a design, and nothing is built.
+- **Read from the code at `d618cbb`**: the examples, the offers, the tests that read them, and the source record.
+- **The two siblings' repositories were read, not run.** The design names them only as *the first* and *the
+  second*.
+- **NuGet's and npm's facts** are their makers' documents, cited in the design. The observations were live
+  queries on 2026-10-01:
+  - search counts for two types and an unknown one;
+  - a custom type on an unlisted package;
+  - one package's served SHA-512 equal to its catalog hash;
+  - npm's `keywords:` answers.
+- **No custom type with a listed package was queried.** The first publish is that proof.
+- **The workshop, the reader, *Find* and the pack** exist only as rows. `verify` checks this document's links
+  and the log's shape, and none of its words.
