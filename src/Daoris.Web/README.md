@@ -21,7 +21,9 @@ One activity bar (D66), landing on management (D40). The views that read the fam
 time (D55, `docs/2026-09-21-working-surface-design.md`) — and exists only in the desktop, because a
 stream never leaves its machine. **Map** is how a workspace's repositories are wired (MAP2).
 **Settings** is everywhere: appearance in a browser, and in the desktop this machine's wiring,
-driver and agents too.
+driver and agents too. Each domain is `src/settings/<Name>Domain.tsx`, with its tests beside it, and
+`src/settings/domains.ts` lists them: the one place a domain is added, since the frame
+(`SettingsView.tsx`) renders whichever one is chosen and names none itself (MOD4).
 
 **The design language is written down** — `docs/2026-09-19-platform-ux.md` (D41): the console shell
 (an activity bar, page headers, one primary action per view), the token system, the drawer as the single
