@@ -123,7 +123,7 @@ rather than designed.
 
 ## Backlog
 
-**Seventeen rows are open** (triaged 2026-09-30, when the owner asked to go faster):
+**Twenty rows are open** (triaged 2026-09-30, when the owner asked to go faster):
 - **Waiting on the owner (six):** BUDGET1 and PLUGREPO1 (their calls), TRUST2 and AGT2c (a grant, two
   downloads), FG5 and BRW3 (the owner present).
 - **Parked on a trigger (ten):** TOOL4, TOOL5, PLUG7, SEM2, CANON9, HARNESS1, REH1, D76's held file tools,
@@ -148,6 +148,24 @@ rule it also ships. A heading below holds open rows only.
   (`--onto`, cutting at the commit they grew from, so a squash-merged parent's commits drop), in a tree of
   Daoris's own, never the person's checkout; a conflict aborts and is named; a branch already pushed is
   left, since rebasing it would need a force push. Listed first, done by a press, on both doors.
+
+### Keep going (owner, 2026-09-30: *"lets continue the development … you probabbly should start with subagents"*)
+
+- [ ] **HELP9 — Ask Daoris reaches every door built since HELP8** (building). Its setting kind cannot yet
+  propose `daoris driver across` (READ1 left it out), and the doors built since (plugins by offer id,
+  a hand-off, the landing plugin) are to be checked one by one. A coverage test lists every `daoris driver`
+  verb and every Settings control against Ask Daoris's kinds, with an explicit, reasoned exemption list,
+  so the next door cannot be built without it.
+- [ ] **PREVIEW1 — a file's preview in the dock** (building; D76's held file tools, its trigger met: the
+  conversation's tool cards and the review name files the person wants to read). Read-only, from the
+  session's own tree or the repository's checkout, opened from a tool card's path or the review's file
+  list, in the right dock beside the conversation. No editor (D55).
+- [ ] **LEFT1 — the day's leftovers**, each small, each a "left out" in a hand-back: Settings' home hint
+  still says a terminal reads the same folder when an install overrode it (D105); `INSTALLED.md` says
+  nothing about pinning from the running button (D108); `tools/lanes.json` leaves `queries.ts` and a few
+  docs outside every lane; the merge tool never re-runs a failed rehearsal (the family rehearsal's
+  exit 127 was one); `MERGE_SESSION_TREE` is called by neither the page nor a test since WSR1 (retire it
+  or give it a caller).
 
 ### Watch it, type into it, set it up (owner, 2026-09-30) — in this order
 
