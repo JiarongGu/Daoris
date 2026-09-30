@@ -4011,6 +4011,9 @@ started with `--daoris-browser`, and a republish removes the old `app/daoris-bro
 script still trims the application's `locales/`, of the grammatical-gender stubs the kit lays out
 beside each language.*
 
+*Extended by D108 (TASKBAR1, 2026-09-30): an install's windows name Daoris's taskbar id and a relaunch
+command that starts `Daoris.exe` at the root, so a pin made from the running window is the launcher.*
+
 ## D94 — The machine keeps a log of what happens on it, without anyone's words, and nothing sends it anywhere (2026-09-30)
 
 **Decision (LOG1).** Every Daoris process writes what happens to it into the home's `logs/`: one JSON
@@ -4958,3 +4961,79 @@ that `auto` takes an explicit allow before its own judgement; and that the comma
   an edit there through unasked. That is D72's reason for the kept files (INT4j).
 - **Reading across workspaces**: D48 draws the boundary there.
 - **`git log`, `diff`, `show`**: `--output` (§2).
+
+## D108 — An install's windows name Daoris's taskbar id, and a pin made from one starts the launcher at the root (2026-09-30)
+
+**Decision (TASKBAR1, on D93's layout).** The window belongs to `app/Daoris.Desktop.exe`, and the one
+thing a person runs is `Daoris.exe` at the install's root, which starts it and exits (D93). Windows
+groups a taskbar button by its process's executable unless the window names an application id. So the
+running window was expected to be a button of its own beside a pinned launcher, and pinning the running
+window pinned `app/Daoris.Desktop.exe`, which a republish replaces. An install's windows now name one
+id, `Daoris.Desktop`, and carry the relaunch properties that a pin made from them is built from.
+
+### 1. What a window carries
+
+- **In its own property store** (`TaskbarWindow`, the application):
+  `System.AppUserModel.RelaunchCommand` is the root launcher, quoted; `RelaunchDisplayNameResource` is
+  `Daoris`; `RelaunchIconResource` is the launcher's own icon (`Daoris.exe,0`); then
+  `System.AppUserModel.ID` is `Daoris.Desktop`, set last. They are written as each handle is created,
+  because a recreated handle carries nothing of the old one. They are set to empty as it is destroyed,
+  which Windows requires of a window's properties. The main window wears them, and so does every
+  secondary window, which would otherwise be a second button grouped by the executable.
+- **Only an install.** `TaskbarIdentity.For` (the modules) answers from the root `InstallHome.RootOf`
+  finds: the marker there and the launcher there, or nothing. A workspace build wears nothing, so the
+  dev loop's window never joins the person's pinned Daoris. An install with no launcher wears nothing,
+  because nothing a pin could start would outlive the next publish.
+- **One id for every install, with no version**, so a pin made before an upgrade is still the button
+  after it. Windows' own guidance keeps a version in the id only to let two versions stand apart.
+- **The launcher carries the same id for its process** (`SetCurrentProcessExplicitAppUserModelID`,
+  first in `Main`), because Windows counts a launcher and the process it starts as one application. The
+  only visible effect is that its refusal sits with the pin.
+- **A twin.** The launcher's file name (its `AssemblyName`) and its `Launcher.AppId` against the
+  modules' `TaskbarIdentity.Launcher` and `Id`, which `TaskbarIdentityTests` reads from the launcher's
+  project and source.
+
+### 2. How the person gets one button
+
+Pin Daoris from its running button (right-click it, then *Pin to taskbar*). That pin is the root
+launcher with the id, and every later window joins it. 🔴 **A pin made on `Daoris.exe` itself, from
+Explorer, carries no id, and Windows cannot relate the window to it.** Windows' documentation says as
+much: a launcher that hands off to another process leaves the system unable to relate the running
+process to a shortcut that points at the launcher, unless the shortcut names the id. So after the
+republish, an existing pin of either kind is unpinned, and the running window is pinned once.
+
+### What the gates do not cover
+
+`TaskbarIdentityTests` holds, with no desktop session: the id, the command built from an install root,
+when nothing is worn, that the launcher is named and identified as the window says, and that both forms
+wear the identity from their handles. **Nothing here has looked at a taskbar.** Four things are proven
+only by looking on the owner's machine after a republish: that the window groups under a pin made from
+it; that the pin starts the root launcher and survives a republish; that the order the properties are
+set in does not matter or is the right one; and what a pin made from Explorer shows.
+
+### Left open
+
+- **Daoris's browser** (`--daoris-browser`, D99) is not labelled. Its windows are the engine's own, made
+  in the kit's browser process, and are not Daoris's window. With it open, it is expected to keep a
+  button of its own, grouped by the executable, and a pin made from that button would start
+  `app/Daoris.Desktop.exe`. Whether it should join Daoris's button, or refuse a pin, is for the look.
+- **The install's `INSTALLED.md`** could say how to pin. It is the publish script's to write.
+
+### Rejected
+
+- **One id for the whole process** (`SetCurrentProcessExplicitAppUserModelID` in the application). The
+  relaunch properties are read only beside a window-level id, so it adds nothing for the windows. It
+  would also relabel everything else the process shows, the tray icon's hidden window and its
+  notifications among them, which nothing here could look at.
+- **An id per install**, a hash of its root, as the kit scopes its single-instance guard. Two installs
+  would be two buttons, and the deployment gate's scratch install would not join the person's button
+  while it runs. Joining it is this decision's one cost: a pin made from that button while the gate
+  runs could name the scratch install. But the launcher would have to derive the same hash, a twin of
+  an algorithm where a constant is a string, and a person has one Daoris.
+- **Writing the id into the person's pin**: the launcher finding the shortcut it was started from and
+  labelling it. The pin is the person's file under their profile (D63), and it would be changed unasked.
+- **A shortcut of Daoris's own carrying the id.** In the Start menu it is under the profile (D63). At
+  the root it is a second thing to double-click (D60, D93).
+- **The launcher handing its shortcut on to the application** (`STARTF_TITLEISLINKNAME`), so the window
+  would take the pin's identity. That is undocumented as a way to group, and it would conflict with the
+  pin made from the window.
