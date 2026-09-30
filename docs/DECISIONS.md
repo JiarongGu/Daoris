@@ -4112,6 +4112,15 @@ still written, by its press or its Not now, and a look that found nothing to do 
 any Apply is. And `tools/usage-report.mjs` summarises LEFT2's `preview.opened` under what was used most: how many
 previews, in how many sessions, and of what kind by extension, never the path.*
 
+*Amended by UNBLOCK5 (2026-10-01, D122 §3.10): the catalogue gains `permission.refused` {session, adapter, tool,
+kind, by}, one line per call a session's record marks `refused`, the first time: on the protocol door a call whose
+permission request the driver refused (D52), on the native door a call the harness reported denied
+(`permission_denied`, and the result's `permission_denials`). `tool` and `by` are the wire's identifiers where it
+gives them (only the native door does) and null otherwise, and a value that is not an identifier is written as null,
+so the line carries no command. The usage report gains asks per session by adapter and repository, and the rule
+proposals under `proposals/` by the week they were made and their state, counted from the files and printing none of
+their words. The machine-log design's §4 and §6 say, as built, what each reads.*
+
 ## D95 — A quest nobody has started on can be deleted, and the delete travels as an operation (2026-09-30)
 
 **Decision (QUEST1).** The owner: *"we do need way to clear or delete quest"*. Clearing is what the
@@ -6325,6 +6334,16 @@ repository were read from its files: the canon's rules and skills, `Acp.cs`, `Ad
 2026-10-01 and cited in design §9, or LAYOUT2's reading of their shipped code; none was measured on a turn. The
 account of what AR-2201's sessions read is the parent's, recorded in no tracked document. `verify` checks this
 entry's shape and the design's links and budget, and none of their words.
+
+*UNBLOCK5 built point 8's `permission.refused` (2026-10-01), so asks are counted from here on, before any
+declaration lands. The line has a fifth field beside the design's four, `by`, what decided the refusal, because the
+pipe door's documented frame carries it (`decision_reason_type`: `rule`, `mode`, `classifier`, `asyncAgent`) and it
+separates a refusal working as designed (a deny rule) from one declared work should remove; the protocol door's is
+null, as its `tool` is, since its wire names neither. The pipe door's frames are written from the Agent SDK's
+TypeScript reference (`SDKPermissionDeniedMessage`, `SDKPermissionDenial`) and labelled so in the tests: no turn has
+shown them yet. A subagent's refusal is not counted on either door, since its calls run beside the session
+(CONSOLE3c). The usage report gives asks per session by adapter and repository, and the rule proposals by week and
+state. `session.read` and `session.skill` stay DOC7's. The machine-log design's §4 and §6 say what was built.*
 ## D121 — Every tool Daoris runs is the system's, managed, or a file the person names; a list built in says where each version downloads, and more locations extend it without a release (2026-10-01)
 
 **Decision (TOOLS1).** The owner: *"all tools that daoris using like git, [terminal] should all have a self managed

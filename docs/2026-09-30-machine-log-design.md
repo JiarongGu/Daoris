@@ -201,6 +201,21 @@ the transcript beside it.
 - **Nobody's words**: the one free text it shows, a caught error's message, is its first line cut at
   the log's own 120 characters. It writes nothing; a missing `logs/` is a sentence and exit 2.
 
+**As built (UNBLOCK5)**, measured against the code and its tests (`usage-report.test.ts`):
+
+- **Asks**: every session `session.started` names in the period, with how many `permission.refused` lines
+  it has, spread as the mean, the median (the two middles' mean), the 90th percentile (the nearest rank)
+  and the share with none: overall, by adapter and by repository. What was refused is counted over every
+  ask in the period, by kind, by tool and by what decided it (`(unsaid)` where the line has none). An ask
+  whose session did not start in the period is counted apart, as `unstarted`, and in no session's spread.
+  No session is no statistic: null, never zero.
+- **Rule proposals**: the home's `proposals/`, read by the rules the file's other readers keep
+  (`RuleProposals.cs`, `ruleproposals.ts`): a file with no id or no `change` object is none, a state they
+  do not know is `proposed`, a proposal with no readable time takes its file's. Only the id, the time and
+  the state are read, so the rule and the reason cannot be printed. It says how many wait for the person
+  now, whenever made, and those made in the period by the week they were made in (Monday, UTC) and the
+  state each stands in.
+
 ## 7. Build order
 
 1. **LOG1a**: the writers and the lifecycle events: the desktop's (`MachineLog` in the driver
