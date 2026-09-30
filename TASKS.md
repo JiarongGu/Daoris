@@ -57,7 +57,7 @@ owner, not Daoris's to change (LOG2b).
   in a shared helper, and a production config update). Two landed branches of the ticket before it
   wait for the owner to delete (the permission policy refused a forced branch delete). The private
   notes name them.
-- **The install** runs main at the narrow-row fix (republished 2026-09-30, host now logs its stop); republishing is the session's own call, never while a session
+- **The install** runs main at PLUG8 (republished 2026-09-30; its host logged its own stop on the close before); republishing is the session's own call, never while a session
   on it runs. Start it the normal way, not through the dev tool, unless the instruments are needed
   (USE1g is a session shell's PATH seen once under a dev-tool start).
 - **Load makes flakes**: FLAKE1's real-tick classes fail under parallel builds and pass alone. Run the
