@@ -5499,5 +5499,3 @@ in the `Process` half, written in the branch and not run there (MOD8). The same 
 this build's library in a scratch repository (a probe, not committed), and each answered as written. The terminal's
 twin was not run: it needs a service. **Nothing has looked at the window**: the note in both themes, at the side
 bar's 300px floor, and 中文.
-for this press was not built: it would reach into the service's proposal kinds and the page's cards. *(HELP10
-built it since: the `sync` kind, a card whose first press is the look; see D110.)*
