@@ -36,8 +36,12 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
             "Sessions → the session's review → hand it to <plugin>", "`daoris-driver trees hand <session|branch> [--plugin <id>]`"),
         ("choose the agent that answers asks", "Settings → Daoris's own AI", "`daoris driver intake <agent>|off`"),
         ("choose the agent Ask Daoris runs on", "Settings → Daoris's own AI", "`daoris driver helper <agent>|off`"),
+        // HELP9: every `daoris driver` verb that changes something is a row, the two a terminal alone set among them.
+        ("choose the agent driven sessions start on", "(no screen yet)", "`daoris driver adapter <agent>`"),
         ("park a quest after failed sessions", "Settings → Driver", "`daoris driver strikes <n>`"),
+        ("start a quest its failed sessions parked again", "Quests → the quest's drawer → try it again", "`daoris driver retry <quest>`"),
         ("bound how long one session runs", "(no screen yet)", "`daoris driver timeout <minutes>`"),
+        ("bound how many sessions run at once", "(no screen yet)", "`daoris driver cap <n>`"),
         ("say so when a session parks", "Settings → Driver", "`daoris driver notify on|off`"),
         ("allow, ask or deny what an agent may do", "Settings → Permissions", "`daoris agent rules …`"),
         // D107: reading other checkouts is on unless switched off; writing into one is a declared relationship.
@@ -46,6 +50,10 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
             "`daoris driver across <repository> read on|off|--clear` (`--workspace <name>` for a whole workspace), "
             + "`daoris driver across <repository> write-to <other> [--clear]`"),
         ("sign an agent in, or add an account", "Settings → Agents & accounts", "`daoris agent login <agent>`"),
+        // HELP9: doors Ask Daoris does not propose yet (D110), named so the person is sent to the right press.
+        ("choose which account an agent's sessions use, for the machine or a workspace",
+            "Settings → Agents & accounts → Make default, use for a workspace",
+            "`daoris agent profile default <agent> <profile> [--workspace <name>]`"),
         // HELP6: the doors built since, which the helper now proposes too.
         ("update an agent, or pin it to one version", "Settings → Agents & accounts → Update, Pin a version",
             "`daoris agent update <agent>`, `daoris agent pin <agent> <version>`"),
@@ -60,6 +68,10 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
         ("install one of Daoris's own plugins, or update one from where it came from",
             "Settings → Plugins (Install beside Daoris's own; Update on an installed one's row)",
             "`daoris plugin add --offer <id>`, `daoris plugin update <id>`"),
+        ("choose Daoris's browser, where the page's links open, whether extensions are offered, and its favorites",
+            "Settings → Browser",
+            "`daoris browser use daoris|edge`, `daoris browser links system|daoris`, `daoris browser extensions offer|refuse`, "
+            + "`daoris browser favorite add|remove <address>`"),
         ("start a task", "Quests → ask for something", "`daoris-driver ask --workspace <name> \"…\"`"),
         ("answer what waits on the person", "Sessions, and what needs you", "`daoris-driver answer`"),
     ];

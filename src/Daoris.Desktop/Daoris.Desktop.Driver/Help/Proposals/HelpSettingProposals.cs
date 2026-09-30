@@ -9,8 +9,12 @@ namespace Daoris.Driver;
 /// value what it is set to — judged by the config's own edits, which throw the route's refusal.
 /// </summary>
 /// <remarks>
-/// The names the routes do not check, and a helper can invent, are checked here first: a registered
-/// repository, a workspace, an agent. Applied as the <c>SET_*</c> routes make the same edit.
+/// <para>The names the routes do not check, and a helper can invent, are checked here first: a registered
+/// repository, a workspace, an agent. Applied as the <c>SET_*</c> routes make the same edit.</para>
+///
+/// <para>Since HELP9 (D110), every verb but <c>list</c>, which changes nothing, and <c>retry</c>, whose judge needs
+/// the parked quests the facts do not carry: reading and writing across (D107), as <c>SET_READ_ACROSS</c> and
+/// <c>SET_WRITE_ACROSS</c> make them, and <c>cap</c> and <c>adapter</c>, which only a terminal set before.</para>
 /// </remarks>
 internal sealed class HelpSettingProposals : IHelpProposalKind
 {
@@ -18,6 +22,14 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
 
     // It proposes, and the person applies (HELP1c, D89).
     public string Tool => "setting_propose";
+
+    /// <summary>The `daoris driver` verbs it takes, in the order the service's twin lists them (<c>HelpProposalBox.Doors</c>).</summary>
+    /// <remarks>HELP9 added <c>across</c> (D107), and <c>cap</c> and <c>adapter</c>, which only a terminal set before.</remarks>
+    public IReadOnlyList<string> Doors { get; } =
+    [
+        "drive", "undrive", "hold", "resume", "trees", "line", "landing", "across", "intake", "helper", "strikes", "timeout",
+        "notify", "cap", "adapter",
+    ];
 
     public HelpPlan Plan(HelpProposal proposal, DriverConfig config, HelpMachineFacts facts)
     {
@@ -112,6 +124,13 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
                     c => workspace is { Length: > 0 } ? c.WithWorkspaceLanding(workspace, rule) : c.WithLanding(target!, rule));
                 break;
             }
+            case "across":
+            {
+                var (refused, across) = Across(target, workspace, value, facts);
+                if (refused is not null) return Refused(refused, "", "");
+                planned = across;
+                break;
+            }
             case "intake" or "helper":
             {
                 var agent = value == "off" ? null : value;
@@ -139,6 +158,21 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
                 planned = (value == "on" ? "Say so when a session parks, or ends without being asked." : "Stop saying so when a session parks.",
                     $"daoris driver notify {value}", c => c.WithNotify(value == "on"));
                 break;
+            // HELP9: the two dials only a terminal set before, judged as `daoris driver cap|adapter` takes them.
+            case "cap" when int.TryParse(value, NumberStyles.None, CultureInfo.InvariantCulture, out var cap) && cap >= 1:
+                planned = (cap == 1 ? "Run one session at a time on this machine, across every repository."
+                        : $"Run at most {cap} sessions at once on this machine, across every repository.",
+                    $"daoris driver cap {cap}", c => c with { Cap = cap });
+                break;
+            case "adapter":
+                // The CLI leaves the name to the driver, which knows its adapters: the same names an intake is judged by.
+                if (!facts.Agents.Contains(value, StringComparer.Ordinal))
+                {
+                    return Refused($"there is no agent `{value}` on this machine — one of {Names(facts.Agents)}.", "", "");
+                }
+
+                planned = ($"Start this machine's driven sessions on `{value}`.", $"daoris driver adapter {value}", c => c with { Adapter = value });
+                break;
             default:
                 return Refused($"`{proposal.Door} {value}` is not a change the driver makes.", "", "");
         }
@@ -155,6 +189,81 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
         }
 
         return new HelpPlan(null, planned.Describe, planned.Terminal, planned.Edit);
+    }
+
+    /// <summary>
+    /// <c>across</c> (HELP9, D107), as <c>daoris driver across</c> reads its words: <c>read on|off|--clear</c> for a
+    /// repository or a whole workspace, or <c>write-to &lt;other&gt; [--clear]</c> from a repository, <c>--clear</c>
+    /// wherever it stands — said as the terminal says it, or refused in its words.
+    /// </summary>
+    /// <remarks>
+    /// A repository naming itself is the route's own refusal, which its edit throws. The other repository of a
+    /// write-to is a name a helper can invent, so it is checked here as the target is.
+    /// </remarks>
+    private static (string? Refusal, (string Describe, string Terminal, Func<DriverConfig, DriverConfig> Edit) Planned) Across(
+        string? target, string? workspace, string value, HelpMachineFacts facts)
+    {
+        var words = value.Split(' ', StringSplitOptions.RemoveEmptyEntries).ToList();
+        var clear = words.Remove("--clear");
+        var named = target is { Length: > 0 };
+        var circle = workspace is { Length: > 0 };
+        switch (words.FirstOrDefault())
+        {
+            case "read":
+            {
+                if (named == circle) return ("reading across is set for a repository or a workspace — name exactly one.", default);
+                bool? read = words.Count == 2 && !clear ? words[1] switch { "on" => true, "off" => false, _ => null } : null;
+                if (clear ? words.Count != 1 : read is null)
+                {
+                    return ("`across … read` is `read on|off|--clear` — e.g. `daoris driver across engine read off`.", default);
+                }
+
+                var scope = circle ? $"--workspace {workspace}" : target;
+                var subject = circle ? $"Each checkout in workspace `{workspace}` that sets none of its own" : $"`{target}`'s checkout";
+                var describe = read switch
+                {
+                    true => $"{subject} is read by sessions in its workspace's other repositories and by Ask Daoris: its files, "
+                        + "`git status` and the branch list, never a write.",
+                    false => $"{subject} is read by no agent outside it: no session in another repository, and not Ask Daoris.",
+                    null => circle
+                        ? $"Checkouts in workspace `{workspace}` are read across again, unless one says otherwise."
+                        : $"`{target}` takes its workspace's reading again, else on.",
+                };
+                if (circle && read is not null) describe += " A repository with a setting of its own keeps it.";
+                return (null, (describe, $"daoris driver across {scope} read {(clear ? "--clear" : words[1])}",
+                    c => circle ? c.WithWorkspaceReadAcross(workspace!, read) : c.WithReadAcross(target!, read)));
+            }
+            case "write-to":
+            {
+                if (circle || !named)
+                {
+                    return ("a relationship is declared from one repository — `daoris driver across <repository> write-to <other>`.", default);
+                }
+
+                if (words.Count > 2)
+                {
+                    return ("`across … write-to` names one repository — `write-to <other> [--clear]`.", default);
+                }
+
+                var other = words.Count == 2 ? words[1] : "";
+                if (other.Length > 0 && !string.Equals(other, target, StringComparison.OrdinalIgnoreCase)
+                    && !facts.Repositories.Contains(other, StringComparer.OrdinalIgnoreCase))
+                {
+                    return ($"`{other}` is not registered on this machine — use a repository's name as Projects lists it.", default);
+                }
+
+                var describe = clear
+                    ? $"Sessions in `{target}` no longer write into `{other}`; a change needed there is a quest again."
+                    : $"Sessions in `{target}` may also write into `{other}` — its files, and a commit there — where both are in one "
+                      + "workspace with a checkout here. Applying it is your standing say-so for writing across, one way: "
+                      + $"`{other}` writes nothing into `{target}` unless you declare that too.";
+                return (null, (describe, $"daoris driver across {target} write-to {other}{(clear ? " --clear" : "")}",
+                    c => c.WithWriteAcross(target!, other, !clear)));
+            }
+            default:
+                return ("`across` sets `read on|off|--clear` or `write-to <other> [--clear]` — e.g. `daoris driver across engine read off`, "
+                    + "`daoris driver across plugins write-to engine`.", default);
+        }
     }
 
     public Task<HelpApplied> ApplyAsync(HelpApplying applying, CancellationToken ct)

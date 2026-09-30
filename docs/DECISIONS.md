@@ -5037,3 +5037,86 @@ set in does not matter or is the right one; and what a pin made from Explorer sh
 - **The launcher handing its shortcut on to the application** (`STARTF_TITLEISLINKNAME`), so the window
   would take the pin's identity. That is undocumented as a way to group, and it would conflict with the
   pin made from the window.
+
+## D110 — Every door has an Ask Daoris answer: a proposal, a door owed, or a reason, held by a test (2026-09-30)
+
+**Decision (HELP9, the owner's standing direction: *"a good ui/ux or easy access for everything use ask
+daoris"*).** Every `daoris driver` verb and every control a Settings domain holds is one of three: a door a
+kind of Ask Daoris's proposal takes, a door owed with what it waits on, or exempt with its reason.
+`HelpCoverageTests` derives both lists from the sources the doors live in and fails on anything answered for
+nowhere, and on a row whose control is gone. A new door is built with its answer, or it does not pass.
+
+### 1. What is held, and how
+
+- **The verbs** are the CLI's command table (`src/Daoris.Cli/src/cli/driver.ts`): each verb its usage spells,
+  and `across` by its two forms.
+- **The controls** are read from the page's source: each Settings domain's component (`settings/domains.ts`)
+  and every file it imports, not type-only; the bridge hooks among them that change something (a mutation);
+  and each action a hook's payload names (`HARNESS_ACTION`'s ten, `RULE_ACTION`'s three, `PLUGIN_ACTION`'s
+  three). A control that presses no hook (the theme, the language, the setup guide's step doors) is a row
+  named by what its domain's source must still say.
+- **A door** names a kind and one of its doors. Each kind now names the doors it takes
+  (`IHelpProposalKind.Doors`), and the service's writer of that kind spells each, which the kinds' test reads.
+
+### 2. Built now
+
+- **`across`** is a setting door: `read on|off|--clear` for a repository or a whole workspace, and
+  `write-to <other> [--clear]` from a repository, judged by the edits `SET_READ_ACROSS` and `SET_WRITE_ACROSS`
+  make. The other repository of a write-to is a name a helper can invent, so it must be registered. READ1
+  built the verb and a room row saying `setting_propose` covered it, and the kind refused it.
+- **`cap` and `adapter`**, which only a terminal set, are setting doors, the adapter checked against this
+  machine's agents as an intake is.
+- **The room** names every `daoris driver` verb that changes something in its doors table, a door owed
+  included, and the owed doors' screens and commands.
+
+### 3. A write-to is proposable
+
+The canon's `repository-owns-its-work` treats writing across as needing the person's explicit say-so, and D107
+made a declared relationship that say-so. A card the person applies is that say-so given. The card says so in
+the terminal's own words (one way, and taken back with `--clear`), and nothing applies until Apply (D89).
+
+### 4. The exemptions, by principle
+
+- **The person's own press** (D89): a sign-in, typing into one or stopping it, a key, an account made or
+  removed, a remote wired (its key) or unwired (its key dropped).
+- **A discard** (D89): the session-branch sweep. A plugin's removal too, since switching it off undoes itself
+  and is proposable.
+- **Nothing changes**: `driver list`, reading the roster again, opening the log's folder, the folder picker,
+  and a plugin's trial, which runs its code as the person and leaves nothing to propose.
+- **A viewer's own look**: the theme and the language are this window's, never the machine's (D66).
+- **What an agent may do**: a rule is never proposed by an agent (HELP1c, PERM2), and accepting another
+  agent's proposed rule is the person's review of it.
+- **Install and unpin** (HELP6): an installer run on this machine; a binary nobody chose.
+- **Making a plugin with the kit**: a plugin is made as an ask at the repository that holds plugins (PLUG9).
+- **`--share`** (DRV8, D104): a flag on the start of a headless loop, `daoris-driver drive --share`, not a
+  setting. Nothing is stored to apply, Ask Daoris starts no loop, and the desktop's loop waits on the lock.
+
+### 5. Owed, and what each waits on
+
+Each is the desktop modules' to add, which this branch's lane did not reach:
+- **`retry`**: its judge needs the parked quests, the verdict the quest's drawer shows its Retry by, in the
+  facts a proposal is judged against (`HelpFactsAsync`).
+- **An account made default** (`profile-default`): its Apply is `HARNESS_ACTION`'s own, a door on `IHelpDoors`.
+- **The browser's settings** (which browser, where links open, extensions, favorites): their file is the
+  modules' (`BrowserSettings`), applied through `BrowserModule`.
+
+Until then the room names each one's screen and command.
+
+**Why.** HELP6 and HELP8 each found a door built since the last pass that Ask Daoris could not reach, and
+READ1 left one the room already promised. A list kept by hand drifts; a list a test derives from the doors'
+own sources does not.
+
+**Rejected.**
+- **A door for every control**, sign-ins and keys included: D89 keeps them the person's presses, and a helper
+  in the path of a key would be one more place a credential passes.
+- **Exemptions written in the design only**: nothing would stop the next control.
+- **Keying the controls by route**: one route carries several actions, and the hook is what a Settings
+  component presses, with its payload naming the actions.
+- **Building an owed door's driver half now**: a kind whose judge always refused, or a door with no
+  implementation behind it, would be a proposal the room teaches and the driver never takes.
+- **Proposing `retry` unjudged**, as its route takes any id: a helper can invent a quest id, and forgiving
+  one that is not parked lets it run past its strikes.
+
+**What the gates do not cover.** A real helper choosing `across`, `cap` or `adapter`; the write-to card on
+the window in both themes; and a control that reaches the bridge without a hook, which the reading would not
+see (none does today).

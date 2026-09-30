@@ -15,6 +15,8 @@ internal sealed class HelpDeleteProposals : IHelpProposalKind
 
     public string Tool => "delete_propose";
 
+    public IReadOnlyList<string> Doors { get; } = ["quest", "ask"];
+
     public HelpPlan Plan(HelpProposal proposal, DriverConfig config, HelpMachineFacts facts)
     {
         var id = proposal.Target?.Trim().TrimStart('#') ?? "";

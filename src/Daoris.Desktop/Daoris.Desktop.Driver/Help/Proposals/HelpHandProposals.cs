@@ -26,6 +26,8 @@ internal sealed class HelpHandProposals : IHelpProposalKind
     // WSR5b: a branch a landing made, handed to a landing plugin afterwards — the review's own press.
     public string Tool => "hand_propose";
 
+    public IReadOnlyList<string> Doors { get; } = ["hand"];
+
     public HelpPlan Plan(HelpProposal proposal, DriverConfig config, HelpMachineFacts facts)
     {
         static HelpPlan Refused(string why, string terminal = "") => new(why, "", terminal, null);

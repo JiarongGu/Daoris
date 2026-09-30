@@ -14,6 +14,8 @@ internal sealed class HelpGoProposals : IHelpProposalKind
 
     public string Tool => "go_propose";
 
+    public IReadOnlyList<string> Doors { get; } = ["go"];
+
     public HelpProposal Read(HelpProposal proposal, JsonElement file) => proposal with
     {
         Domain = Text(file, "domain"),

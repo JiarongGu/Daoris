@@ -75,10 +75,15 @@ module's own setting routes, named as a person would name them:
 | drive · hold · own tree | `SET_DRIVABLE` · `SET_HOLD` · `SET_TREES` | `daoris driver drive|hold|trees` |
 | line · landing | `SET_LINE` · `SET_LANDING` | `daoris driver line|landing` |
 | intake · strikes · timeout · notify | `SET_INTAKE` · `SET_STRIKES` · … | `daoris driver intake|strikes|timeout|notify` |
+| across (HELP9) | `SET_READ_ACROSS` · `SET_WRITE_ACROSS` | `daoris driver across <repository> read on|off|--clear`, `… write-to <other> [--clear]` |
+| cap · adapter (HELP9) | (no screen; the terminal's edit) | `daoris driver cap|adapter` |
 | a rule | `RULE_ACTION` | `daoris agent rules …` |
 
 The driver checks a proposal against the route's own validation before the person sees it, so a
 proposal the route would refuse is refused to the agent, in the route's words, and never shown.
+*As built (HELP1c):* a rule is not a door; the room is never handed `permission_propose`. *Since HELP9 (D110)*
+every `daoris driver` verb and every Settings control is a door, a door owed, or exempt with its reason, held
+by a test (§9.9).
 
 **Starting something.** `ask_propose {sentence, workspace}`: an ask, which the ordinary loop takes
 (D65). The helper never runs a session's work, and never publishes a quest itself.
@@ -93,6 +98,10 @@ repository that holds it (`plugin_propose`), or one installed here switched on o
 of the install's own by its id, or an update of one from where it came from. Making one is
 never a proposal of this kind: it is an ask at that repository's workspace, since a plugin runs as the
 person and is made with tests and reviewed like any other work.
+
+**Reading and writing across, a cap, an adapter** (HELP9, §9.9, D110): `across`, `cap` and `adapter` are
+setting doors, so every `daoris driver` verb but `list` and `retry` is one. A write-to's card says applying it
+is the person's standing say-so for writing across.
 
 **A hand-off** (WSR5b, §9.8, D102): a branch a landing made and recorded, handed to a landing plugin
 (`hand_propose`), applied through the review's own door. It is the one card whose press leads to a push:
@@ -290,6 +299,30 @@ line git can name. With an agent named, a starter is also a first message.
    - **The room** lists the branches landings made, by name, repository and session, and whether a plugin
      pushed each, with its pull request.
    - **What the gates do not cover:** a real helper choosing the tool, a real platform's push, and the card
+     on the window in both themes.
+9. **HELP9**: Ask Daoris reaches every door built since HELP8, and the next one cannot be built without an
+   answer (2026-09-30, D110). *Built:*
+   - **The doors built since, checked one by one.** HELP8's landing `--plugin`, PLUG9's install by offer id and
+     update, and WSR5b's hand-off were already proposals. `daoris driver across` was not: READ1 built it and its
+     room row, and the setting kind refused it. It is a setting door now, `read on|off|--clear` for a repository
+     or a workspace and `write-to <other> [--clear]` from a repository, judged by the same edits
+     `SET_READ_ACROSS` and `SET_WRITE_ACROSS` make; the other repository of a write-to is checked as a registered
+     name, and a repository naming itself is the route's own refusal. A write-to's card says that applying it is
+     the person's standing say-so for writing across, one way. `cap` and `adapter`, which only a terminal set,
+     are setting doors too.
+   - **Each kind names its doors** (`IHelpProposalKind.Doors`), and the service's writer of that kind spells each;
+     the setting's are one list on both sides, held line for line.
+   - **The coverage** (`HelpCoverageTests`): every verb in the CLI's command table, and every control a Settings
+     domain holds, is a door, a door owed with what it waits on, or exempt with its reason. The controls are read
+     from the page's source: each domain's component and everything it imports, the bridge hooks among them that
+     change something, and each action a hook's payload names; the theme, the language and the setup guide's step
+     doors, which press no hook, are named by what their source says. A control or verb on none fails, and so
+     does a row whose control is gone. D110 has the exemptions' principles and `--share`'s answer.
+   - **Owed** (the desktop modules' to add): `retry`, whose judge needs the parked quests in the facts; an
+     account made default, which needs `HARNESS_ACTION`'s own door; the browser's settings, which need
+     `BrowserModule`'s. The room names each one's screen and command meanwhile, and every `daoris driver` verb
+     that changes something is a row of its doors table.
+   - **What the gates do not cover:** a real helper choosing `across`, `cap` or `adapter`, and the write-to card
      on the window in both themes.
 
 ## 10. Not chosen
