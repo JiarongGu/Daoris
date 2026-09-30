@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__daoris-knowledge__registry",
+      "mcp__daoris-knowledge__knowledge_search",
+      "mcp__daoris-knowledge__knowledge_get",
+      "mcp__daoris-knowledge__knowledge_repositories",
+      "mcp__daoris-knowledge__quest_list",
+      "mcp__daoris-knowledge__setting_propose",
+      "mcp__daoris-knowledge__ask_propose",
+      "mcp__daoris-knowledge__agent_propose",
+      "mcp__daoris-knowledge__delete_propose",
+      "mcp__daoris-knowledge__agent_settings_propose",
+      "mcp__daoris-knowledge__go_propose",
+      "mcp__daoris-knowledge__plugin_propose",
+      "mcp__daoris-knowledge__hand_propose"
+    ]
+  }
+}
