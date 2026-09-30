@@ -332,6 +332,12 @@ line git can name. With an agent named, a starter is also a first message.
      helper can invent an id and forgiving one not parked lets it run past its strikes. Applied as `RETRY_QUEST`'s
      own edit, forgiven at the strike limit standing at the press. The room lists the parked quests by id and
      repository, none said as none.
+   - **Make an account the default.** `agent_propose` takes a third door, `default`: the account (as the file's
+     `value`) an agent runs as, for the machine or one workspace, judged as `daoris agent profile default` judges it
+     (an account that exists, a workspace this machine has). A door's default is its owner's (AGT7), so the card and
+     its command name the owner. Applied through `IHelpDoors.SetDefaultAccountAsync`, which is `HARNESS_ACTION`'s own
+     `profile-default` (one method the route and the door call) and asks the roster again, as the route does.
+     *Left out:* clearing a default back to the tool's own home, which the screen offers and no terminal verb does.
 
 ## 10. Not chosen
 

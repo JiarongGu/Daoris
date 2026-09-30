@@ -50,7 +50,7 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
             "`daoris driver across <repository> read on|off|--clear` (`--workspace <name>` for a whole workspace), "
             + "`daoris driver across <repository> write-to <other> [--clear]`"),
         ("sign an agent in, or add an account", "Settings → Agents & accounts", "`daoris agent login <agent>`"),
-        // HELP9: doors Ask Daoris does not propose yet (D110), named so the person is sent to the right press.
+        // HELP9 named it while Ask Daoris owed it (D110); HELP10 proposes it as an agent's `default`.
         ("choose which account an agent's sessions use, for the machine or a workspace",
             "Settings → Agents & accounts → Make default, use for a workspace",
             "`daoris agent profile default <agent> <profile> [--workspace <name>]`"),

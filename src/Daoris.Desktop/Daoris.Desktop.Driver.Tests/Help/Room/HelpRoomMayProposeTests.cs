@@ -72,6 +72,20 @@ public sealed class HelpRoomMayProposeTests
         Assert.Contains("the person's standing say-so for writing across", proposes);
     }
 
+    /// <summary>
+    /// HELP10: which account an agent runs as by default, for the machine or a workspace, is an agent proposal, named
+    /// with the rule it is judged by — an account the room lists — beside the command that does the same.
+    /// </summary>
+    [Fact]
+    public void The_room_says_an_agents_default_account_is_proposed()
+    {
+        var agents = HelpRoom.Render(HelpRoomFixture.Machine);
+
+        Assert.Contains("or which of its accounts it runs as by default, for the machine or one workspace", agents);
+        Assert.Contains("the account one the room lists under that agent", agents);
+        Assert.Contains("`daoris agent profile default <agent> <profile> [--workspace <name>]`", agents);
+    }
+
     /// <summary>MOD6: every kind registered is a tool the room teaches, so a kind cannot be added that the helper never hears of.</summary>
     [Fact]
     public void Every_kinds_tool_is_named_in_what_it_may_propose()

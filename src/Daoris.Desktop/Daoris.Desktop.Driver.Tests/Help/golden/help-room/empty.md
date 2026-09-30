@@ -39,7 +39,9 @@ present it as the tree.
   or `write-to <other> [--clear]` for a repository, to let its sessions write into the other's checkout, one way.
   Applying a write-to is the person's standing say-so for writing across, and its card says so.
 - `ask_propose`: something to start, as an ask at a workspace.
-- `agent_propose`: an agent's Update, or a pin to one version, as Settings → Agents & accounts offers them.
+- `agent_propose`: an agent's Update or a pin to one version, as Settings → Agents & accounts offers them,
+  or which of its accounts it runs as by default, for the machine or one workspace (`default`,
+  the account one the room lists under that agent).
   Update moves a pinned agent's pin to its newest release, or runs an unpinned one's own updater, and is
   offered only where that screen shows Update; a pin names one exact release, like 2.1.300, never `latest`.
 - `agent_settings_propose`: an account's own model and effort, as Settings → Agents & accounts → Model &

@@ -193,6 +193,17 @@ public sealed partial class DriverModule
                 module.Relay(harness, action), config, ended);
         }
 
+        // HARNESS_ACTION's own profile-default (HELP10): the door's owner (AGT7), the same write, and the roster asked
+        // again as the route asks it after every file edit, since its answer is cached with the default in it.
+        public async Task SetDefaultAccountAsync(string harness, string account, string? workspace, CancellationToken ct)
+        {
+            var config = DriverConfig.Load(module._loop.ConfigPath);
+            var toolchain = module._loop.Harnesses.Toolchain(harness)
+                ?? throw new DriverException($"Daoris manages no toolchain for `{harness}` — its accounts are its own tooling's.");
+            module.ProfileDefault(toolchain.Owner(harness), account, workspace);
+            await module._loop.Harnesses.RosterAsync(config, refresh: true, ct).ConfigureAwait(false);
+        }
+
         // SET_AGENT_SETTINGS's own write.
         public AgentSettingsRead SetAgentSettings(string harness, string account, AgentSettingEdit? model, AgentSettingEdit? effort) =>
             module.WriteAgentSettings(harness, account, () => (model, effort, null)).Read;

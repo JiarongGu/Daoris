@@ -108,9 +108,7 @@ public sealed partial class HelpCoverageTests
         ("agents", "useHarnessAction", "profile-add", new Exempt("an account is made by its own sign-in; " + SignIn)),
         ("agents", "useHarnessAction", "profile-remove", new Exempt(
             "it deletes an account with its sign-in, which only the person can make again (D89).")),
-        ("agents", "useHarnessAction", "profile-default", new Owed(
-            "which account a tool runs as, for the machine or a workspace, is a setting Ask Daoris could propose, but "
-            + "its Apply is `HARNESS_ACTION`'s own `profile-default`, a door on `IHelpDoors` the modules' screen doors must add.")),
+        ("agents", "useHarnessAction", "profile-default", new Door("agent", "default")),
         ("agents", "useSetAgentSettings", null, new Door("account", "settings")),
         ("agents", "useRefreshHarnesses", null, new Exempt("it reads the roster again and changes nothing.")),
         ("agents", "useHarnessInput", null, new Exempt("it types into a running sign-in, the person's own words to it; " + SignIn)),

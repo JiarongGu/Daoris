@@ -24,7 +24,10 @@ internal sealed class HelpRoomMayPropose : IHelpRoomSection
         text.Append("  or `write-to <other> [--clear]` for a repository, to let its sessions write into the other's checkout, one way.\n");
         text.Append("  Applying a write-to is the person's standing say-so for writing across, and its card says so.\n");
         text.Append("- `ask_propose`: something to start, as an ask at a workspace.\n");
-        text.Append("- `agent_propose`: an agent's Update, or a pin to one version, as Settings → Agents & accounts offers them.\n");
+        // HELP10: an agent's default account, which HELP9 left owed.
+        text.Append("- `agent_propose`: an agent's Update or a pin to one version, as Settings → Agents & accounts offers them,\n");
+        text.Append("  or which of its accounts it runs as by default, for the machine or one workspace (`default`,\n");
+        text.Append("  the account one the room lists under that agent).\n");
         text.Append("  Update moves a pinned agent's pin to its newest release, or runs an unpinned one's own updater, and is\n");
         text.Append("  offered only where that screen shows Update; a pin names one exact release, like 2.1.300, never `latest`.\n");
         text.Append("- `agent_settings_propose`: an account's own model and effort, as Settings → Agents & accounts → Model &\n");
