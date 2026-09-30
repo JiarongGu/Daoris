@@ -22,7 +22,8 @@ describe('the path a preview asks for', () => {
     expect(treePath('C:\\daoris\\data\\trees\\default\\game\\src\\a.ts', tree)).toBeNull();
     // 🔴 A prefix is not a folder: the tree's sibling whose name begins with the tree's.
     expect(treePath('C:\\daoris\\data\\trees\\default\\engine\\daoris-s10\\a.ts', tree)).toBeNull();
-    expect(treePath('/etc/passwd', '/home/me/engine')).toBeNull();
+    expect(treePath('/etc/passwd', '/srv/engine')).toBeNull();
+    expect(treePath('/srv/engine/src/chunk.ts', '/srv/engine')).toBe('src/chunk.ts');
     expect(treePath('../game/a.ts', tree)).toBeNull();
     // The tree itself is not a file.
     expect(treePath(tree, tree)).toBeNull();
