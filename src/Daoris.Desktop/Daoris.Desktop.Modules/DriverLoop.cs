@@ -304,6 +304,11 @@ public sealed class DriverLoop(
 
         // What is worth interrupting the person for (SURF5b). The judgement is the library's, so the
         // headless host reaches the same answer; the shell's half is only what an event BECOMES.
+        // One live driver per home (DRV8a, D104): the loop waits for the home's lock while a headless loop
+        // holds it, and everything above — the host, the page, the conversations — carries on meanwhile.
+        using var held = await HoldHomeAsync(ct).ConfigureAwait(false);
+        if (held is null) return;
+
         var attention = new AttentionWatch();
         string? lastConsidered = null;
         string? lastAsked = null;
@@ -412,6 +417,57 @@ public sealed class DriverLoop(
                 ? eventBus.EmitAsync("DAORIS", "DRIVER_ERROR", new { said.Code, said.Message })
                 : Task.CompletedTask,
             ct).ConfigureAwait(false);
+    }
+
+    /// <summary>How often a loop waiting on another driver's lock looks again (DRV8a).</summary>
+    public TimeSpan HoldRetry { get; init; } = TimeSpan.FromSeconds(5);
+
+    /// <summary>
+    /// This home's driver lock, taken for the desktop's loop (DRV8a, D104). While another live driver
+    /// holds it — a terminal's `daoris-driver drive` — the loop waits, and says so once, on the channel a
+    /// person acts on; it takes the lock the moment that one lets go. Null when the shell closes first.
+    /// </summary>
+    /// <remarks>
+    /// Waited for rather than refused, as a terminal's loop is: the desktop is where a person drives from,
+    /// and nothing else it carries races anyone for a quest.
+    /// </remarks>
+    public async Task<DriverLock?> HoldHomeAsync(CancellationToken ct)
+    {
+        var told = false;
+        while (true)
+        {
+            DriverLock? held;
+            string? said;
+            try
+            {
+                held = DriverLock.TryAcquire(Home, DriverKind.Desktop, out var holder);
+                said = holder is null
+                    ? null
+                    : $"The driver loop is waiting: this home is already driven by {holder.Named}. It starts "
+                      + "here the moment that one stops.";
+            }
+            catch (DriverException error)
+            {
+                held = null;
+                said = error.Message;
+            }
+
+            if (held is not null) return held;
+            if (!told && said is not null)
+            {
+                await eventBus.EmitAsync("DAORIS", "DRIVER_ERROR", new { Message = said }).ConfigureAwait(false);
+                told = true;
+            }
+
+            try
+            {
+                await Task.Delay(HoldRetry, ct).ConfigureAwait(false);
+            }
+            catch (OperationCanceledException)
+            {
+                return null;
+            }
+        }
     }
 
     /// <summary>What the asks say this tick, or null when the host could not answer — never a change.</summary>

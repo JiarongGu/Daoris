@@ -840,6 +840,14 @@ The first version: doctrine that installs, is checked, and flows back.
   and its answer is said and kept the same way. A branch no landing made, one moved away from what the
   landing made, one whose work is already on the line, and one already on its remote at this commit with a
   pull request are refused, and a hand-off whose plugin does not push changes nothing.
+- **`daoris-driver` drives only when asked to, and one loop drives a home** (DRV8, D104). Run with no
+  verb to read its usage, it used to start a headless loop beside the desktop, and that loop took a
+  quest first. With no verb, or a word it does not know, it now prints its usage and exits 2. The loop
+  is `daoris-driver drive [--once | --until-idle]` (a bare `--once` or `--until-idle` still works). A
+  loop takes the home's `driver.lock` first, and a home another live driver holds is refused, naming
+  it: the desktop or a headless loop, its process id, and since when. `--share` runs beside it on
+  purpose. A lock whose process is gone never blocks. The desktop's loop takes the same lock, and where
+  a headless loop holds it, says so once and starts when that one stops.
 - **A plugin can push the branch and open the pull request** (WSR4, D100). A branch landing rule may
   name an installed plugin (`daoris driver landing … branch <pattern> --plugin <id>`, or the *who
   pushes it* chooser in Settings → Workspace → *How work lands*). Once accepting has made the branch,

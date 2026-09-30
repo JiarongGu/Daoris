@@ -15,9 +15,14 @@ using Daoris.Driver;
 //   DAORIS_REMOTE_WORKSPACE  for the workspace named here — absent: `default`)
 //   DAORIS_REMOTE_CONFIG   where the map is                    (default: $DAORIS_HOME/remotes.json)
 //
-//   --once        one tick, then exit
-//   --until-idle  tick until nothing starts, then exit — the deterministic mode a gate drives
-//   (default)     watch: tick forever, pollSeconds apart
+//   drive [--once | --until-idle] [--share]
+//                 the loop, asked for by name (DRV8a, D104): watch, ticking pollSeconds apart until
+//                 Ctrl+C; --once ticks once; --until-idle ticks until nothing starts, the deterministic
+//                 mode a gate drives. A bare --once or --until-idle is the same ask. It takes the home's
+//                 driver lock first, and a home another live driver holds is refused, naming it (exit 1)
+//                 — unless --share, which runs beside it on purpose.
+//   (no verb)     the usage, exit 2 — never a loop: run to read its usage, a bare invocation used to
+//                 start one beside the desktop's.
 //
 //   chat --repository <name> [--adapter <name>] [--own-tree]
 //                 hold a conversation in a repository (D49 §3): stdin is the person, stdout is the
@@ -155,8 +160,18 @@ try
         return await PluginKitCommand.RunAsync(pluginsArgs, Console.Out, DaorisHome.Resolve());
     }
 
-    var once = args.Contains("--once");
-    var untilIdle = args.Contains("--until-idle");
+    // 🔴 The loop only by its verb (DRV8a, D104): a bare invocation, or a word nobody answers, is the
+    // usage and starts nothing — it used to fall through to the watch loop.
+    if (DriverCommand.Read(args, out var problem) is not { } loop)
+    {
+        var help = DriverCommand.AskedForHelp(args);
+        if (problem is not null) Console.Error.WriteLine($"daoris-driver: {problem}");
+        (help ? Console.Out : Console.Error).WriteLine(DriverCommand.Usage);
+        return help ? 0 : 2;
+    }
+
+    var once = loop.Mode == LoopMode.Once;
+    var untilIdle = loop.Mode == LoopMode.UntilIdle;
 
     // 🔴 Ctrl+C ends the loop, not the process (REV3): killed outright, this host left every session
     // it ran working in its record and its agent running on. Cancelled, each session is ended and says
@@ -171,6 +186,26 @@ try
     var configPath = DriverConfig.ResolvePath();
     var config = DriverConfig.Load(configPath);
     var home = DriverConfig.HomeOf(configPath);
+
+    // One live driver per home (DRV8a, D104), taken before anything reaches the service: a second loop
+    // races the first for the same quests, so it is refused naming the first — a refusal, exit 1, not a
+    // tool error — unless it was asked to share.
+    DriverHolder? holder = null;
+    using var held = loop.Share
+        ? DriverLock.Share(home, DriverKind.Headless)
+        : DriverLock.TryAcquire(home, DriverKind.Headless, out holder);
+    if (held is null)
+    {
+        Console.Error.WriteLine($"driver: {DriverLock.Refusal(home, holder!)}");
+        return 1;
+    }
+
+    if (held.Beside is { } beside)
+    {
+        Console.WriteLine(
+            $"driver: running beside {beside.Named}, as --share asked — the two loops race for the same quests, and the take decides.");
+    }
+
     var started = DateTimeOffset.UtcNow;
     log.Info("app.started", ("mode", once ? "once" : untilIdle ? "until-idle" : "watch"));
     // Marked under the home, so the desktop sharing it can tell this host's sessions from orphans.

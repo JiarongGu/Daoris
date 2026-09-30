@@ -285,7 +285,7 @@ export function openProof(name, { label, port }) {
     const configPath = join(scratch, 'driver.json');
     writeFileSync(configPath, `${JSON.stringify(config, null, 2)}\n`);
     console.log(`  ..    ${saying} — this is the step that spends the login`);
-    const run = capture(`dotnet "${driverDll}" --until-idle`, scratch, {
+    const run = capture(`dotnet "${driverDll}" drive --until-idle`, scratch, {
       env: { ...env, DAORIS_DRIVER_CONFIG: configPath },
       timeout: 15 * 60_000,
     });
