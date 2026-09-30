@@ -84,8 +84,8 @@ describe('a waiting quest says why on its card', () => {
     expect(await screen.findByText(/is held by the person/)).toBeInTheDocument();
     // Another reason is said too, with no resume: only a hold is the person's to lift here.
     expect(screen.getByText(/is not driven on this machine/)).toBeInTheDocument();
-    const resume = screen.getByRole('button', { name: 'resume engine' });
-    expect(screen.getAllByRole('button', { name: /^resume / })).toHaveLength(1);
+    const resume = screen.getByRole('button', { name: 'Resume engine' });
+    expect(screen.getAllByRole('button', { name: /^Resume / })).toHaveLength(1);
 
     await userEvent.click(resume);
 

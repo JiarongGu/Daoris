@@ -189,7 +189,7 @@ export function commands(world: {
       icon: 'plus',
       group: world.group('do'),
       title: world.label('do.ask'),
-      keywords: 'ask request ticket intake circle workspace new quest 请求',
+      keywords: 'ask request ticket intake circle workspace new quest 需求 请求',
       run: world.ask,
     },
     {

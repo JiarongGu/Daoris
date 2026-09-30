@@ -45,7 +45,7 @@ describe('a driven quest in the shell', () => {
 
     await userEvent.click(await screen.findByText('Expose a streaming budget'));
     const dialog = await screen.findByRole('dialog');
-    await userEvent.click(within(dialog).getByRole('button', { name: 'stop session' }));
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Stop session' }));
 
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'STOP_SESSION', {
       payload: { id: 's1a2b3c4' },
@@ -108,11 +108,11 @@ describe('trusting a folder the driver is holding (D73)', () => {
 
     await userEvent.click(await screen.findByText('Expose a streaming budget'));
     const dialog = await screen.findByRole('dialog');
-    await userEvent.click(within(dialog).getByRole('button', { name: 'trust this folder…' }));
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Trust this folder…' }));
     expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'TRUST_FOLDER', expect.anything());
 
     expect(within(dialog).getByText(HOLD.trustFile)).toBeInTheDocument();
-    await userEvent.click(within(dialog).getByRole('button', { name: 'trust this folder' }));
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Trust this folder' }));
 
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'TRUST_FOLDER', {
       payload: { folder: HOLD.folder, trustFile: HOLD.trustFile },
@@ -137,7 +137,7 @@ describe('trusting a folder the driver is holding (D73)', () => {
     await userEvent.click(await screen.findByText('Expose a streaming budget'));
     const dialog = await screen.findByRole('dialog');
     expect(within(dialog).getByText(/3 sessions failed on this quest/)).toBeInTheDocument();
-    await userEvent.click(within(dialog).getByRole('button', { name: 'try it again' }));
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Try again' }));
 
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'RETRY_QUEST', { payload: { quest: 'abc123' } });
     await waitFor(() => expect(notify).toHaveBeenCalledWith(expect.stringContaining('#abc123')));
@@ -152,7 +152,7 @@ describe('trusting a folder the driver is holding (D73)', () => {
 
     await userEvent.click(await screen.findByText('Expose a streaming budget'));
     const dialog = await screen.findByRole('dialog');
-    expect(within(dialog).queryByRole('button', { name: 'try it again' })).toBeNull();
+    expect(within(dialog).queryByRole('button', { name: 'Try again' })).toBeNull();
   });
 
   it('a quest nothing holds for trust offers no grant', async () => {
@@ -160,7 +160,7 @@ describe('trusting a folder the driver is holding (D73)', () => {
 
     await userEvent.click(await screen.findByText('Expose a streaming budget'));
     const dialog = await screen.findByRole('dialog');
-    expect(within(dialog).queryByRole('button', { name: 'trust this folder…' })).toBeNull();
+    expect(within(dialog).queryByRole('button', { name: 'Trust this folder…' })).toBeNull();
   });
 
   it('a held folder waits in *What needs you*, and its row opens the grant', async () => {

@@ -43,7 +43,7 @@ test('a quest carries a link and files: kept here, opened here, never run as the
 
   await page.goto('/');
   await nav(page, 'Quests').click();
-  await page.getByRole('button', { name: 'new quest' }).click();
+  await page.getByRole('button', { name: 'New quest' }).click();
   await page.getByLabel('from', { exact: true }).click();
   await page.getByRole('option', { name: 'game' }).click();
   await page.getByLabel('to', { exact: true }).click();
@@ -55,7 +55,7 @@ test('a quest carries a link and files: kept here, opened here, never run as the
     { name: 'before.png', mimeType: 'image/png', buffer: png },
     { name: 'page.html', mimeType: 'text/html', buffer: Buffer.from('<script>parent.document.title = "owned"</script>') },
   ]);
-  await page.getByRole('button', { name: 'publish quest' }).click();
+  await page.getByRole('button', { name: 'Publish quest' }).click();
   // The service's sentence, as it reads: a toast sets its backticked names as code, so the words
   // are the service's and the backticks are gone (`Inline`).
   await expect(page.getByText(/Published quest #[0-9a-f]{12} to engine/).first()).toBeVisible();
@@ -175,7 +175,7 @@ test('a repository opens its own code map, and one without says where it would g
 test('a quest travels: composed, published, taken, finished', async ({ page }) => {
   await page.goto('/');
   await nav(page, 'Quests').click();
-  await page.getByRole('button', { name: 'new quest' }).click();
+  await page.getByRole('button', { name: 'New quest' }).click();
 
   await page.getByLabel('from', { exact: true }).click();
   await page.getByRole('option', { name: 'game' }).click();
@@ -185,7 +185,7 @@ test('a quest travels: composed, published, taken, finished', async ({ page }) =
   await page.getByLabel('why, and the evidence').fill(
     'World streaming needs a per-frame cap; today hydration is unbounded. Evidence: seams whenever more than three chunks hydrate in one frame.',
   );
-  await page.getByRole('button', { name: 'publish quest' }).click();
+  await page.getByRole('button', { name: 'Publish quest' }).click();
 
   // The toast carries the service's sentence verbatim — that text IS the contract. (.first(): Radix
   // renders each toast twice — the visible element and its aria-live announcer.)
@@ -202,14 +202,14 @@ test('a quest travels: composed, published, taken, finished', async ({ page }) =
 
   // Closed work leaves the default list and returns on request.
   await expect(page.getByText('No open quests anywhere')).toBeVisible();
-  await page.getByText('include closed').click();
+  await page.getByText('Include closed').click();
   await expect(page.getByText('Expose a streaming budget on the chunk API')).toBeVisible();
 });
 
 test('a refusal reaches the person verbatim', async ({ page }) => {
   await page.goto('/');
   await nav(page, 'Quests').click();
-  await page.getByRole('button', { name: 'new quest' }).click();
+  await page.getByRole('button', { name: 'New quest' }).click();
 
   // Self-addressed: the one refusal the form cannot prevent, because the judgement is the service's.
   await page.getByLabel('from', { exact: true }).click();
@@ -218,7 +218,7 @@ test('a refusal reaches the person verbatim', async ({ page }) => {
   await page.getByRole('option', { name: 'engine' }).click();
   await page.getByLabel('what is wanted, in one line').fill('x');
   await page.getByLabel('why, and the evidence').fill('y');
-  await page.getByRole('button', { name: 'publish quest' }).click();
+  await page.getByRole('button', { name: 'Publish quest' }).click();
 
   await expect(page.getByText('a quest is work for someone else', { exact: false }).first()).toBeVisible();
 });
@@ -282,7 +282,7 @@ test('an ask is proposed by declarations, published by a person, and closed with
   await expect(page.getByText(/^Asks \(/)).toHaveCount(0);
 
   // With closed ones included it comes back, wearing its done pill.
-  await page.getByText('include closed').click();
+  await page.getByText('Include closed').click();
   await expect(page.getByText(/^Asks \(/)).toBeVisible();
   await expect(page.getByText('done', { exact: true }).first()).toBeVisible();
 });
@@ -331,7 +331,7 @@ test('an ask waiting on a person is in What needs you, and its record names its 
   await expect(page.getByRole('region', { name: 'What needs you' }).getByText('parked at a checkpoint')).toHaveCount(0);
 
   await asking.click();
-  const intake = page.getByRole('dialog', { name: sentence }).getByRole('region', { name: 'intake session' });
+  const intake = page.getByRole('dialog', { name: sentence }).getByRole('region', { name: 'Intake session' });
   await expect(intake.getByText('awaiting person')).toBeVisible();
   await expect(intake.getByText('stub', { exact: true })).toBeVisible();
   await expect(intake.getByRole('button')).toHaveCount(0);
@@ -377,14 +377,14 @@ test('a project created mid-run joins, and the platform shows it (D44)', async (
   await expect(page.getByText('Born during the test run.')).toBeVisible();
 
   await nav(page, 'Quests').click();
-  await page.getByRole('button', { name: 'new quest' }).click();
+  await page.getByRole('button', { name: 'New quest' }).click();
   await page.getByLabel('from', { exact: true }).click();
   await page.getByRole('option', { name: 'game' }).click();
   await page.getByLabel('to', { exact: true }).click();
   await page.getByRole('option', { name: 'newcomer' }).click();
   await page.getByLabel('what is wanted, in one line').fill('A first quest for the newcomer');
   await page.getByLabel('why, and the evidence').fill('Joining means being askable — prove it.');
-  await page.getByRole('button', { name: 'publish quest' }).click();
+  await page.getByRole('button', { name: 'Publish quest' }).click();
   await expect(page.getByText(/Published quest #[0-9a-f]{12} to newcomer/).first()).toBeVisible();
 });
 
@@ -467,7 +467,7 @@ test("a driven session's record reaches the drawer (D46)", async ({ page, reques
 
   // Read-only is the arc's central claim: the record renders, the control does not — stop reaches a
   // PROCESS, and a browser has none to reach (D46 §6).
-  await expect(dialog.getByRole('button', { name: 'stop session' })).toHaveCount(0);
+  await expect(dialog.getByRole('button', { name: 'Stop session' })).toHaveCount(0);
 });
 
 /**

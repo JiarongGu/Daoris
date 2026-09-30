@@ -103,9 +103,9 @@ describe('QuestsView', () => {
     expect(within(dialog).getByRole('heading', { name: 'New quest' })).toBeInTheDocument();
 
     // The draft LANDED: publish needs both repositories, and the person has chosen neither.
-    fireEvent.change(within(dialog).getByLabelText('what is wanted, in one line'), { target: { value: 'An ask' } });
-    fireEvent.change(within(dialog).getByLabelText('why, and the evidence'), { target: { value: 'Its reason.' } });
-    expect(within(dialog).getByRole('button', { name: 'publish quest' })).toBeEnabled();
+    fireEvent.change(within(dialog).getByLabelText('What is wanted, in one line'), { target: { value: 'An ask' } });
+    fireEvent.change(within(dialog).getByLabelText('Why, and the evidence'), { target: { value: 'Its reason.' } });
+    expect(within(dialog).getByRole('button', { name: 'Publish quest' })).toBeEnabled();
   });
 
   // ——— A conflict (D68 §5, SYNC6b): kept on the quest for a person, and reachable from the status bar.
@@ -199,7 +199,7 @@ describe('QuestsView', () => {
       await userEvent.click(await screen.findByText('Expose a streaming budget'));
       const dialog = await screen.findByRole('dialog');
 
-      expect(within(dialog).queryByRole('button', { name: 'delete…' })).toBeNull();
+      expect(within(dialog).queryByRole('button', { name: 'Delete…' })).toBeNull();
     });
 
     it('asks once, then deletes, and says what the service answered, verbatim', async () => {
@@ -208,12 +208,12 @@ describe('QuestsView', () => {
       await userEvent.click(await screen.findByText('Expose a streaming budget'));
       const dialog = await screen.findByRole('dialog');
 
-      await userEvent.click(within(dialog).getByRole('button', { name: 'delete…' }));
+      await userEvent.click(within(dialog).getByRole('button', { name: 'Delete…' }));
       const confirm = within(dialog).getByRole('group', { name: 'delete this quest' });
       expect(within(confirm).getByText(/cannot be undone/)).toBeInTheDocument();
       expect(deleted).toEqual([]);
 
-      await userEvent.click(within(confirm).getByRole('button', { name: 'delete it' }));
+      await userEvent.click(within(confirm).getByRole('button', { name: 'Delete quest' }));
 
       await waitFor(() => expect(deleted).toEqual(['/api/quests/abc123']));
       await waitFor(() => expect(notify).toHaveBeenCalledWith(
@@ -228,8 +228,8 @@ describe('QuestsView', () => {
       await userEvent.click(await screen.findByText('Expose a streaming budget'));
       const dialog = await screen.findByRole('dialog');
 
-      await userEvent.click(within(dialog).getByRole('button', { name: 'delete…' }));
-      await userEvent.click(within(dialog).getByRole('button', { name: 'delete it' }));
+      await userEvent.click(within(dialog).getByRole('button', { name: 'Delete…' }));
+      await userEvent.click(within(dialog).getByRole('button', { name: 'Delete quest' }));
 
       await waitFor(() => expect(notify).toHaveBeenCalledWith(refusal, 'error'));
       expect(screen.getByRole('dialog')).toBeInTheDocument();
@@ -241,11 +241,11 @@ describe('QuestsView', () => {
       await userEvent.click(await screen.findByText('Expose a streaming budget'));
       const dialog = await screen.findByRole('dialog');
 
-      await userEvent.click(within(dialog).getByRole('button', { name: 'delete…' }));
+      await userEvent.click(within(dialog).getByRole('button', { name: 'Delete…' }));
       await userEvent.click(within(dialog).getByRole('button', { name: 'Never mind' }));
 
       expect(within(dialog).queryByRole('group', { name: 'delete this quest' })).toBeNull();
-      expect(within(dialog).getByRole('button', { name: 'delete…' })).toBeInTheDocument();
+      expect(within(dialog).getByRole('button', { name: 'Delete…' })).toBeInTheDocument();
       expect(deleted).toEqual([]);
     });
   });
@@ -308,13 +308,13 @@ describe('QuestsView', () => {
         </QueryClientProvider>,
       );
 
-      await userEvent.click(await screen.findByRole('button', { name: 'ask' }));
+      await userEvent.click(await screen.findByRole('button', { name: 'Ask' }));
       const composer = await screen.findByRole('dialog', { name: 'Ask the workspace' });
       expect(within(composer).getByText('Asked in workspace default')).toBeInTheDocument();
-      await userEvent.type(within(composer).getByLabelText('what is wanted, and why'), 'Cap the hydration per frame.');
+      await userEvent.type(within(composer).getByLabelText('What is wanted, and why'), 'Cap the hydration per frame.');
       fireEvent.change(within(composer).getByLabelText(/links — a ticket/), { target: { value: 'https://tickets.example/T-42' } });
       await userEvent.upload(within(composer).getByLabelText('choose files…'), new File(['pixels'], 'trace.log'));
-      await userEvent.click(within(composer).getByRole('button', { name: 'ask' }));
+      await userEvent.click(within(composer).getByRole('button', { name: 'Ask' }));
 
       await waitFor(() => expect(posted).toHaveLength(1));
       expect(posted[0]).toEqual({
@@ -328,7 +328,7 @@ describe('QuestsView', () => {
       await waitFor(() => expect(notify).toHaveBeenCalledWith(
         'Asked as `#7c1e9a04b2d5` in `default` — by declarations only; no intake harness ran.'));
       const record = await screen.findByRole('dialog', { name: 'Cap the hydration per frame.' });
-      expect(within(record).getByRole('button', { name: 'publish to engine' })).toBeInTheDocument();
+      expect(within(record).getByRole('button', { name: 'Publish to engine' })).toBeInTheDocument();
     });
 
     it('lists the asks above the quests, and publishing a proposal goes through the ask\'s own door', async () => {
@@ -339,7 +339,7 @@ describe('QuestsView', () => {
       expect(await screen.findByText('Asks (1)')).toBeInTheDocument();
       await userEvent.click(screen.getByText('Cap the hydration per frame.'));
       const record = await screen.findByRole('dialog', { name: 'Cap the hydration per frame.' });
-      await userEvent.click(within(record).getByRole('button', { name: 'publish to engine' }));
+      await userEvent.click(within(record).getByRole('button', { name: 'Publish to engine' }));
 
       await waitFor(() => expect(posted).toEqual([{ url: '/api/asks/7c1e9a04b2d5/publish', body: { to: 'engine' } }]));
       // The quest it became is a door into the quest's own drawer.
@@ -406,7 +406,7 @@ describe('QuestsView', () => {
       );
 
       const record = await screen.findByRole('dialog', { name: 'Cap the hydration per frame.' });
-      expect(within(record).getByRole('button', { name: 'publish to engine' })).toBeInTheDocument();
+      expect(within(record).getByRole('button', { name: 'Publish to engine' })).toBeInTheDocument();
       expect(onAskFocused).toHaveBeenCalledTimes(1);
     });
 
@@ -433,7 +433,7 @@ describe('QuestsView', () => {
 
       await userEvent.click(await screen.findByText('Cap the hydration per frame.'));
       const record = await screen.findByRole('dialog', { name: 'Cap the hydration per frame.' });
-      const line = within(record).getByRole('region', { name: 'intake session' });
+      const line = within(record).getByRole('region', { name: 'Intake session' });
       await userEvent.click(await within(line).findByRole('button', { name: 'stub' }));
       expect(onAttend).toHaveBeenCalledWith('i9n8t7k6a5b4');
     });
@@ -489,7 +489,7 @@ describe('QuestsView', () => {
 
     await userEvent.click(screen.getByText('Expose a streaming budget'));
     const dialog = await screen.findByRole('dialog');
-    expect(within(dialog).getByText('waits on')).toBeInTheDocument();
+    expect(within(dialog).getByText('Waits on')).toBeInTheDocument();
     expect(within(dialog).getByText(/resumes, in the same tree/)).toBeInTheDocument();
 
     await userEvent.click(within(dialog).getByRole('button', { name: /What does the notes endpoint take/ }));
@@ -504,22 +504,22 @@ describe('QuestsView', () => {
 
     await userEvent.click(screen.getByText('Expose a streaming budget'));
     const dialog = await screen.findByRole('dialog');
-    expect(within(dialog).getByText('asked')).toBeInTheDocument();
+    expect(within(dialog).getByText('Asked')).toBeInTheDocument();
     expect(within(dialog).getByText(/^Answered/)).toBeInTheDocument();
   });
 
   it('a next step composed travels with the publish as its chain', async () => {
     view({ from: 'game', to: 'engine' });
     const dialog = await screen.findByRole('dialog');
-    fireEvent.change(within(dialog).getByLabelText('what is wanted, in one line'), { target: { value: 'Develop it' } });
-    fireEvent.change(within(dialog).getByLabelText('why, and the evidence'), { target: { value: 'Because.' } });
+    fireEvent.change(within(dialog).getByLabelText('What is wanted, in one line'), { target: { value: 'Develop it' } });
+    fireEvent.change(within(dialog).getByLabelText('Why, and the evidence'), { target: { value: 'Because.' } });
 
-    await userEvent.click(within(dialog).getByRole('button', { name: 'add a next step…' }));
-    await userEvent.click(within(dialog).getByLabelText('then ask'));
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Add a next step…' }));
+    await userEvent.click(within(dialog).getByLabelText('Then ask'));
     await userEvent.click(await screen.findByRole('option', { name: 'engine' }));
-    fireEvent.change(within(dialog).getByLabelText('what is wanted next, in one line'), { target: { value: 'Verify {parent}' } });
-    fireEvent.change(within(dialog).getByLabelText('why, and how to tell it is done'), { target: { value: 'Open the app.' } });
-    await userEvent.click(within(dialog).getByRole('button', { name: 'publish quest' }));
+    fireEvent.change(within(dialog).getByLabelText('What is wanted next, in one line'), { target: { value: 'Verify {parent}' } });
+    fireEvent.change(within(dialog).getByLabelText('Why, and how to tell it is done'), { target: { value: 'Open the app.' } });
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Publish quest' }));
 
     await vi.waitFor(() => expect(published).not.toBeNull());
     expect(published!.then).toEqual([{ to: 'engine', title: 'Verify {parent}', body: 'Open the app.' }]);
@@ -545,7 +545,7 @@ describe('QuestsView', () => {
     view({ from: 'game' });
     const dialog = await screen.findByRole('dialog');
 
-    await userEvent.click(within(dialog).getByLabelText('to'));
+    await userEvent.click(within(dialog).getByLabelText('To'));
     expect(await screen.findByRole('option', { name: 'legacy' })).toBeInTheDocument();
     expect(screen.queryByRole('option', { name: 'rootless' })).toBeNull();
   });
@@ -553,14 +553,14 @@ describe('QuestsView', () => {
   it('a next step started and left empty holds the publish back, and can be taken off', async () => {
     view({ from: 'game', to: 'engine' });
     const dialog = await screen.findByRole('dialog');
-    fireEvent.change(within(dialog).getByLabelText('what is wanted, in one line'), { target: { value: 'Develop it' } });
-    fireEvent.change(within(dialog).getByLabelText('why, and the evidence'), { target: { value: 'Because.' } });
+    fireEvent.change(within(dialog).getByLabelText('What is wanted, in one line'), { target: { value: 'Develop it' } });
+    fireEvent.change(within(dialog).getByLabelText('Why, and the evidence'), { target: { value: 'Because.' } });
 
-    await userEvent.click(within(dialog).getByRole('button', { name: 'add a next step…' }));
-    expect(within(dialog).getByRole('button', { name: 'publish quest' })).toBeDisabled();
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Add a next step…' }));
+    expect(within(dialog).getByRole('button', { name: 'Publish quest' })).toBeDisabled();
 
-    await userEvent.click(within(dialog).getByRole('button', { name: 'no next step' }));
-    expect(within(dialog).getByRole('button', { name: 'publish quest' })).toBeEnabled();
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Remove next step' }));
+    expect(within(dialog).getByRole('button', { name: 'Publish quest' })).toBeEnabled();
   });
 
   // ——— What a quest carries (D65 §2).
@@ -600,14 +600,14 @@ describe('QuestsView', () => {
     const dialog = await screen.findByRole('dialog');
     // Set rather than typed key by key: what is under test is what travels, not the keyboard — and
     // typing three fields character by character outran the suite's timeout under a full run.
-    fireEvent.change(within(dialog).getByLabelText('what is wanted, in one line'), { target: { value: 'Use the media config' } });
-    fireEvent.change(within(dialog).getByLabelText('why, and the evidence'), { target: { value: 'Field names are hard-coded.' } });
+    fireEvent.change(within(dialog).getByLabelText('What is wanted, in one line'), { target: { value: 'Use the media config' } });
+    fireEvent.change(within(dialog).getByLabelText('Why, and the evidence'), { target: { value: 'Field names are hard-coded.' } });
     fireEvent.change(
       within(dialog).getByLabelText(/^links/), { target: { value: 'https://tickets.example/T-1\nhttps://docs.example/media' } });
     await userEvent.upload(within(dialog).getByLabelText('choose files…'), new File(['pixels'], 'before.png'));
 
     expect(within(dialog).getByText('before.png')).toBeInTheDocument();
-    await userEvent.click(within(dialog).getByRole('button', { name: 'publish quest' }));
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Publish quest' }));
 
     await vi.waitFor(() => expect(published).not.toBeNull());
     expect(published!.links).toEqual(['https://tickets.example/T-1', 'https://docs.example/media']);
@@ -619,7 +619,7 @@ describe('QuestsView', () => {
     const dialog = await screen.findByRole('dialog');
     const shot = new File(['pixels'], 'image.png', { type: 'image/png' });
 
-    fireEvent.paste(within(dialog).getByLabelText('why, and the evidence'), { clipboardData: { files: [shot] } });
+    fireEvent.paste(within(dialog).getByLabelText('Why, and the evidence'), { clipboardData: { files: [shot] } });
 
     expect(await within(dialog).findByText('image.png')).toBeInTheDocument();
   });
@@ -661,7 +661,7 @@ describe('QuestsView', () => {
     // the list surviving the detail is the drawer pattern's whole point.
     const dialog = await screen.findByRole('dialog');
     expect(within(dialog).getByText('World streaming needs a per-frame cap.')).toBeInTheDocument();
-    expect(within(dialog).getByRole('button', { name: 'take' })).toBeInTheDocument();
+    expect(within(dialog).getByRole('button', { name: 'Take' })).toBeInTheDocument();
   });
 
   /**
@@ -674,10 +674,10 @@ describe('QuestsView', () => {
     await userEvent.click(await screen.findByText('Expose a streaming budget'));
     const dialog = await screen.findByRole('dialog');
 
-    expect(within(dialog).getByRole('button', { name: 'take' }).className).toContain('bg-accent');
-    expect(within(dialog).getByRole('button', { name: 'done' }).className).not.toContain('bg-accent');
+    expect(within(dialog).getByRole('button', { name: 'Take' }).className).toContain('bg-accent');
+    expect(within(dialog).getByRole('button', { name: 'Mark done' }).className).not.toContain('bg-accent');
     // U35: taking wore a check mark, the sign of done, beside a done that wore none.
-    expect(within(dialog).getByRole('button', { name: 'take' }).querySelector('svg')).toBeNull();
+    expect(within(dialog).getByRole('button', { name: 'Take' }).querySelector('svg')).toBeNull();
   });
 
   /**
@@ -701,7 +701,7 @@ describe('QuestsView', () => {
     await waitFor(() => expect(asked.length).toBeGreaterThan(0));
     const before = asked.length;
 
-    await userEvent.click(within(dialog).getByRole('button', { name: 'done' }));
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Mark done' }));
 
     await waitFor(() => expect(asked.length).toBeGreaterThan(before));
   });
@@ -715,14 +715,14 @@ describe('QuestsView', () => {
     await userEvent.click(await screen.findByText('Expose a streaming budget'));
     const dialog = await screen.findByRole('dialog');
 
-    expect(within(dialog).queryByRole('button', { name: 'take' })).toBeNull();
-    expect(within(dialog).getByRole('button', { name: 'done' }).className).toContain('bg-accent');
+    expect(within(dialog).queryByRole('button', { name: 'Take' })).toBeNull();
+    expect(within(dialog).getByRole('button', { name: 'Mark done' }).className).toContain('bg-accent');
   });
 
   it('publish stays disabled until the ask is complete — the form does not offer the mistake', async () => {
     view();
-    await userEvent.click(await screen.findByRole('button', { name: 'new quest' }));
-    expect(await screen.findByRole('button', { name: 'publish quest' })).toBeDisabled();
+    await userEvent.click(await screen.findByRole('button', { name: 'New quest' }));
+    expect(await screen.findByRole('button', { name: 'Publish quest' })).toBeDisabled();
   });
 
   /** Seen on the installed window, 2026-09-24: with nothing registered, `from` and `to` offered nobody. */
@@ -732,12 +732,12 @@ describe('QuestsView', () => {
       return url.startsWith('/api/registry') ? Response.json([]) : respond(url);
     }));
     view();
-    await userEvent.click(await screen.findByRole('button', { name: 'new quest' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'New quest' }));
     const dialog = await screen.findByRole('dialog');
 
     expect(await within(dialog).findByText('Nobody can be asked yet')).toBeInTheDocument();
-    expect(within(dialog).queryByRole('button', { name: 'publish quest' })).toBeNull();
-    expect(within(dialog).queryByLabelText('from')).toBeNull();
+    expect(within(dialog).queryByRole('button', { name: 'Publish quest' })).toBeNull();
+    expect(within(dialog).queryByLabelText('From')).toBeNull();
   });
 
   it('a quest a driver is working wears its session state on the card', async () => {
@@ -748,7 +748,7 @@ describe('QuestsView', () => {
   /** The drawer's session section — where things stand NOW. The chain above it keeps the history. */
   const sessionSection = async () => {
     await userEvent.click(await screen.findByText('Expose a streaming budget'));
-    return within(await screen.findByRole('dialog')).getByRole('region', { name: 'session' });
+    return within(await screen.findByRole('dialog')).getByRole('region', { name: 'Session' });
   };
 
   it("the drawer carries the session's record — state, adapter, and the evidence, verbatim", async () => {
@@ -772,7 +772,7 @@ describe('QuestsView', () => {
     const section = await sessionSection();
     // The record renders (above); the control must not — a browser could only wish (D46 §6).
     expect(within(section).getByText('working')).toBeInTheDocument();
-    expect(within(await screen.findByRole('dialog')).queryByRole('button', { name: 'stop session' }))
+    expect(within(await screen.findByRole('dialog')).queryByRole('button', { name: 'Stop session' }))
       .not.toBeInTheDocument();
   });
 });

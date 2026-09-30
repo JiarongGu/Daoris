@@ -540,7 +540,7 @@ describe('the attention band', () => {
 
       await userEvent.click(screen.getByRole('button', { name: /Cap the hydration per frame\./ }));
       const record = await screen.findByRole('dialog', { name: 'Cap the hydration per frame.' });
-      expect(within(record).getByRole('button', { name: 'publish to engine' })).toBeInTheDocument();
+      expect(within(record).getByRole('button', { name: 'Publish to engine' })).toBeInTheDocument();
     } finally {
       ASKS = [];
     }

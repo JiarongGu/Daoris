@@ -50,8 +50,8 @@ describe('the primitives', () => {
   });
 
   it('a disabled primary stays announced as disabled', () => {
-    render(<Button variant="primary" disabled>publish quest</Button>);
-    expect(screen.getByRole('button', { name: 'publish quest' })).toBeDisabled();
+    render(<Button variant="primary" disabled>Publish quest</Button>);
+    expect(screen.getByRole('button', { name: 'Publish quest' })).toBeDisabled();
   });
 });
 

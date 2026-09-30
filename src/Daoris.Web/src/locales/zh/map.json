@@ -35,7 +35,7 @@
   "map.when.short.open": "未完成",
   "map.when.short.week": "7 天",
   "map.when.short.month": "30 天",
-  "map.asks": "请求",
+  "map.asks": "需求",
   "map.asksCard": "{{count}} 个请求",
   "map.asksCard_other": "{{count}} 个请求",
   "map.asksLabel": "你的请求在 {{to}} 上变成了 {{count}} 个委托",
