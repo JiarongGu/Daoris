@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useContext, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { span } from '../format';
 import { cn } from '../lib/cn';
@@ -8,6 +8,42 @@ import { languageOf } from './codeLines';
 import { inTree } from './identity';
 import { type DiffLine, diffCounts, lineDiff, patchLines } from './lineDiff';
 import { DiffLines } from './PatchView';
+import { FileOpener, type LineRange, namedLines, treePath } from './preview';
+
+/**
+ * A file the card names, as a door into the side bar's preview (PREVIEW1, D111): the path relative to
+ * the tree, underlined as a link is, and never the card's own toggle — a press opens the file, not the card.
+ */
+function PreviewDoor({ path, lines, open }: { path: string; lines: LineRange | null; open: (file: { path: string; lines: LineRange | null }) => void }) {
+  const { t } = useTranslation();
+  return (
+    <button
+      type="button"
+      onClick={(event) => {
+        event.stopPropagation();
+        open({ path, lines });
+      }}
+      aria-label={lines
+        ? t('work.preview.openLines', { path, from: lines.from, to: lines.to })
+        : t('work.preview.open', { path })}
+      // Gives way at its FRONT, as the review's paths do: the file's name is the half a person looks for.
+      dir="rtl"
+      className="min-w-0 shrink cursor-pointer truncate border-0 bg-transparent p-0 text-left font-mono text-meta text-ink-soft underline decoration-line-strong decoration-dotted underline-offset-2 hover:text-accent hover:decoration-accent"
+    >
+      <span dir="ltr">{path}</span>
+    </button>
+  );
+}
+
+/** A title around the path it names: what reads before the path and after it, the wrapping quotes left off. */
+function around(title: string, where: string): { lead: string; trail: string } | null {
+  const at = title.indexOf(where);
+  if (at < 0) return null;
+  return {
+    lead: title.slice(0, at).replace(/[\s`'"]+$/, ''),
+    trail: title.slice(at + where.length).replace(/^[`'"]+/, '').trim(),
+  };
+}
 
 /** A tool call's ACP kind, as the glyph it wears. Anything else is a generic tool. */
 const KIND_ICON: Record<string, IconName> = {
@@ -76,37 +112,85 @@ export function ToolCard({ call, tree }: {
   const texts = [...(call.content ?? []).filter((item) => item.type !== 'diff').map((item) => item.text ?? ''), call.output ?? ''];
   const carried = counts ? 0 : texts.reduce((sum, text) => sum + (text ? text.split(/\r?\n/).length : 0), 0);
 
+  // The file this call acted on, as a door into the preview (PREVIEW1, D111): only where the frame opens
+  // previews, and only a path the page can see is inside the tree. The lines are a read's own input's.
+  const opener = useContext(FileOpener);
+  const previewing = opener && call.locations?.[0] ? treePath(call.locations[0], tree) : null;
+  const named = previewing && call.toolKind === 'read' ? namedLines(call.input) : null;
+  const split = previewing && where ? around(title, where) : null;
+  const toggle = () => setChosen(!open);
+
+  const chevron = <Icon name={hasBody ? (open ? 'chevronDown' : 'chevronRight') : 'tool'} size={13} className="shrink-0 text-ink-faint" />;
+  const kind = <Icon name={KIND_ICON[call.toolKind ?? ''] ?? 'tool'} size={14} className="shrink-0 text-ink-soft" />;
+  const marks = (
+    <>
+      {counts && (
+        <span className="shrink-0 font-mono text-meta">
+          <span className="text-st-done">+{counts.added}</span>{' '}
+          <span className="text-st-declined">−{counts.removed}</span>
+        </span>
+      )}
+      {!open && carried > 1 && (
+        <span className="shrink-0 text-meta tabular-nums text-ink-faint">{t('work.tool.lines', { count: carried })}</span>
+      )}
+      {took >= 1000 && <span className="ml-auto shrink-0 text-meta tabular-nums text-ink-faint">{span(took)}</span>}
+      <Dot
+        className={cn('shrink-0', !(took >= 1000) && 'ml-auto')}
+        tone={stopped ? 'idle' : STATUS_TONE[status] ?? 'idle'}
+        label={stopped ? t('work.tool.status.stopped') : t(`work.tool.status.${status}`, { defaultValue: status })}
+      />
+    </>
+  );
+
   return (
     <div className={cn('my-1.5 rounded-control border bg-raised', failed ? 'border-warn' : 'border-line')}>
-      <button
-        type="button"
-        aria-expanded={open}
-        disabled={!hasBody}
-        onClick={() => setChosen(!open)}
-        className="flex w-full min-w-0 cursor-pointer items-center gap-2 border-0 bg-transparent px-2.5 py-1.5 text-left disabled:cursor-default"
-      >
-        <Icon name={hasBody ? (open ? 'chevronDown' : 'chevronRight') : 'tool'} size={13} className="shrink-0 text-ink-faint" />
-        <Icon name={KIND_ICON[call.toolKind ?? ''] ?? 'tool'} size={14} className="shrink-0 text-ink-soft" />
-        <span className="min-w-0 truncate text-small text-ink">{title}</span>
-        {where && !title.includes(where) && (
-          <span className="min-w-0 truncate font-mono text-meta text-ink-faint">{where}</span>
+      {previewing && opener
+        ? (
+          // The row still opens the card anywhere but the path; the path is its own door, so the two are
+          // siblings — a button inside a button is neither. The toggle is named by the whole title.
+          <div
+            className={cn('flex w-full min-w-0 items-center gap-2 px-2.5 py-1.5', hasBody && 'cursor-pointer')}
+            onClick={hasBody ? toggle : undefined}
+          >
+            <button
+              type="button"
+              aria-expanded={open}
+              aria-label={title}
+              disabled={!hasBody}
+              onClick={(event) => {
+                event.stopPropagation();
+                toggle();
+              }}
+              className="flex min-w-0 cursor-pointer items-center gap-2 border-0 bg-transparent p-0 text-left disabled:cursor-default"
+            >
+              {chevron}
+              {kind}
+              {(split ? split.lead : title) && (
+                <span className="min-w-0 truncate text-small text-ink">{split ? split.lead : title}</span>
+              )}
+            </button>
+            <PreviewDoor path={previewing} lines={named} open={opener} />
+            {split?.trail && <span className="min-w-0 truncate text-small text-ink">{split.trail}</span>}
+            {marks}
+          </div>
+        )
+        : (
+          <button
+            type="button"
+            aria-expanded={open}
+            disabled={!hasBody}
+            onClick={toggle}
+            className="flex w-full min-w-0 cursor-pointer items-center gap-2 border-0 bg-transparent px-2.5 py-1.5 text-left disabled:cursor-default"
+          >
+            {chevron}
+            {kind}
+            <span className="min-w-0 truncate text-small text-ink">{title}</span>
+            {where && !title.includes(where) && (
+              <span className="min-w-0 truncate font-mono text-meta text-ink-faint">{where}</span>
+            )}
+            {marks}
+          </button>
         )}
-        {counts && (
-          <span className="shrink-0 font-mono text-meta">
-            <span className="text-st-done">+{counts.added}</span>{' '}
-            <span className="text-st-declined">−{counts.removed}</span>
-          </span>
-        )}
-        {!open && carried > 1 && (
-          <span className="shrink-0 text-meta tabular-nums text-ink-faint">{t('work.tool.lines', { count: carried })}</span>
-        )}
-        {took >= 1000 && <span className="ml-auto shrink-0 text-meta tabular-nums text-ink-faint">{span(took)}</span>}
-        <Dot
-          className={cn('shrink-0', !(took >= 1000) && 'ml-auto')}
-          tone={stopped ? 'idle' : STATUS_TONE[status] ?? 'idle'}
-          label={stopped ? t('work.tool.status.stopped') : t(`work.tool.status.${status}`, { defaultValue: status })}
-        />
-      </button>
 
       {open && hasBody && (
         <div className="grid gap-2 border-t border-line px-2.5 py-2">
@@ -121,11 +205,16 @@ export function ToolCard({ call, tree }: {
 
 function Content({ item, lines, tree }: { item: ToolContent; lines?: DiffLine[] | null; tree?: string | null }) {
   const { t } = useTranslation();
+  const opener = useContext(FileOpener);
   if (item.type === 'diff') {
+    // The file an edit wrote, as a door into its preview where one opens (PREVIEW1): an edit names no lines.
+    const previewing = opener && item.path ? treePath(item.path, tree) : null;
     return (
       <figure className="m-0 overflow-hidden rounded-control border border-line">
         {item.path && (
-          <figcaption className="border-b border-line bg-page px-2.5 py-1 font-mono text-meta text-ink-soft">{inTree(item.path, tree)}</figcaption>
+          <figcaption className="flex min-w-0 border-b border-line bg-page px-2.5 py-1 font-mono text-meta text-ink-soft">
+            {previewing && opener ? <PreviewDoor path={previewing} lines={null} open={opener} /> : inTree(item.path, tree)}
+          </figcaption>
         )}
         {/* The review's own lines (REVIEW2), highlighted in the file's language — unnumbered, since an
             edit's text is a piece of the file and its lines are not the file's. */}

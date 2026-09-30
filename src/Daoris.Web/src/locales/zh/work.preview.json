@@ -1,0 +1,20 @@
+{
+  "work.preview.label": "{{path}} 的预览",
+  "work.preview.tab": "预览：{{name}}",
+  "work.preview.close": "关闭预览",
+  "work.preview.open": "预览 {{path}}",
+  "work.preview.openLines": "预览 {{path}} 的第 {{from}}–{{to}} 行",
+  "work.preview.reload": "重新读取",
+  "work.preview.show": "显示",
+  "work.preview.file": "文件",
+  "work.preview.changes": "改动",
+  "work.preview.lines": "{{count}} 行",
+  "work.preview.lines_other": "{{count}} 行",
+  "work.preview.named": "第 {{from}}–{{to}} 行，由这次调用指明",
+  "work.preview.namedOne": "第 {{from}} 行，由这次调用指明",
+  "work.preview.binary": "{{name}} 是二进制文件（{{size}}），这里没有可显示的文本。",
+  "work.preview.truncated": "这个文件有 {{size}}；预览只显示第一行，其余部分在磁盘上的文件里。",
+  "work.preview.truncated_other": "这个文件有 {{size}}；预览只显示前 {{count}} 行，其余部分在磁盘上的文件里。",
+  "work.preview.empty": "这个文件是空的。",
+  "work.preview.reading": "读取中…"
+}

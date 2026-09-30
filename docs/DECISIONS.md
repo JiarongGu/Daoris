@@ -5078,12 +5078,23 @@ conversation; this is the preview. D55 still binds: there is no editor, so this 
 - **The path relative to the tree**, never the machine's path (platform language §4). A line-numbered
   monospace view, highlighted in the file's language only where the highlighter ships it (REVIEW2).
 - **The lines a tool call named, marked and scrolled to, where the card knows them**: a read's `offset`
-  and `limit`, from the call's own input as the wire carried it, on both doors. Nothing is inferred
-  from a title, an edit's text or the output.
+  (the line it starts at, in the tool's own terms) and `limit`, from the call's own input as the wire
+  carried it, and only a read's, since a search's `offset` is not a line. Nothing is inferred from a
+  title, an edit's text or the output.
 - **The file's changes against the line where the review already holds them**, one press away (*File ·
   Changes*): the review's own patch for that path, drawn by `PatchView`. The preview asks git for
   nothing: it reads the review's answer when the review has one, and says nothing of changes when it
   has none.
+
+### What the gates do not cover
+
+The driver's suite holds the reader's refusals through its link seam, and `FilePreviewLinkTests` holds
+them over a real link (a junction on Windows), in the `Process` half the merge runs. The modules' suite
+holds each refusal's code and the answer's shape; the web's holds the doors, the tab, the marked lines
+and the review's patch over a mocked bridge. **Nothing here has looked at the window**: the tab and the
+preview in both themes, 中文, and the side bar at its 300px floor are for the look. **Whether the
+protocol door carries a read's `offset` and `limit`** depends on the adapter's `rawInput`, which was not
+measured here; the native door carries the tool's input as it was given.
 
 ### Rejected
 

@@ -1,0 +1,20 @@
+{
+  "work.preview.label": "preview of {{path}}",
+  "work.preview.tab": "Preview: {{name}}",
+  "work.preview.close": "close the preview",
+  "work.preview.open": "preview {{path}}",
+  "work.preview.openLines": "preview {{path}}, lines {{from}}–{{to}}",
+  "work.preview.reload": "read it again",
+  "work.preview.show": "show",
+  "work.preview.file": "File",
+  "work.preview.changes": "Changes",
+  "work.preview.lines": "{{count}} line",
+  "work.preview.lines_other": "{{count}} lines",
+  "work.preview.named": "lines {{from}}–{{to}}, as the call named them",
+  "work.preview.namedOne": "line {{from}}, as the call named it",
+  "work.preview.binary": "{{name}} is a binary file ({{size}}), so there is no text here to show.",
+  "work.preview.truncated": "This file is {{size}}; the preview shows its first line. The file on disk has the rest.",
+  "work.preview.truncated_other": "This file is {{size}}; the preview shows its first {{count}} lines. The file on disk has the rest.",
+  "work.preview.empty": "This file is empty.",
+  "work.preview.reading": "reading…"
+}

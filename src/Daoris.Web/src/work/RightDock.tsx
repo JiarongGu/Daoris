@@ -12,8 +12,14 @@ import { dragProps, useViewDrop } from './viewDrag';
 // occupant — a dock holding one thing is a pane with extra chrome — and SURF6's diff is that
 // occupant, so the timeline moves here and the attended column gets its height back.
 
-/** What the dock can show: any view that stands in the right side bar (DOCK1b). */
-export type DockTab = ViewId;
+/**
+ * What the dock can show: any view that stands in the right side bar (DOCK1b), and a file's preview
+ * (PREVIEW1, D111), which is a tab of the side bar and never a view that moves.
+ */
+export type DockTab = ViewId | 'preview';
+
+/** A file's preview as the dock's tab: its name, its path for the tip, and its own ×. */
+export type DockPreview = { name: string; path: string; onClose: () => void };
 
 /**
  * The right dock: per-session surfaces, keyed to whatever the person is attending.
@@ -36,24 +42,30 @@ export type DockTab = ViewId;
  *
  * **What it holds is the person's** (DOCK1b): the views standing in the right side bar, in the order
  * `viewsIn` gives, any of which can move to the panel from its tab's menu. Emptied, it says so.
+ *
+ * **A file's preview is a tab after them** (PREVIEW1, D111), named for the file and closed by its own ×:
+ * it exists only once a door opened it, so it is not a view, never moves, and is not in the tab list's
+ * moves.
  */
 export function RightDock({
-  tab, onTab, views = ['timeline', 'review'], onMove, onReset, onDrag,
+  tab, onTab, views = ['timeline', 'review'], onMove, onReset, onDrag, preview,
   mode, width, range, autoFull = false, onResize, onResetWidth, onClose, onOpen, onFull, children,
 }: {
-  /** The view shown; ignored when it is not one of `views`. */
+  /** The view shown; ignored when it is not one of `views`, or `preview` with no preview. */
   tab?: DockTab;
+  /** The file previewed here, where a door opened one. */
+  preview?: DockPreview | null;
   /**
    * The views standing here: the session's timeline and review, Ask Daoris beside them — the one
    * right region, as VS Code's chat is a view of its secondary side bar — and whatever the person moved in.
    */
-  views?: readonly DockTab[];
+  views?: readonly ViewId[];
   /** Sends a view to the other region (DOCK1b). */
-  onMove?: (view: DockTab, to: Place) => void;
+  onMove?: (view: ViewId, to: Place) => void;
   /** Puts every view back where it started; absent while none has moved. */
   onReset?: () => void;
   /** Told while one of its tabs is dragged, and with null when the drag ends (DOCK1e). */
-  onDrag?: (view: DockTab | null) => void;
+  onDrag?: (view: ViewId | null) => void;
   onTab: (tab: DockTab) => void;
   mode: DockMode;
   width: number;
@@ -73,7 +85,9 @@ export function RightDock({
   const [menu, setMenu] = useState(false);
 
   const tabs = viewEntries(t, views);
-  const shown = tabs.some((entry) => entry.id === tab) ? tab : tabs[0]?.id;
+  const shown: DockTab | undefined = tab === 'preview'
+    ? (preview ? 'preview' : tabs[0]?.id)
+    : tabs.some((entry) => entry.id === tab) ? tab : tabs[0]?.id ?? (preview ? 'preview' : undefined);
   // A view dragged from the panel lands here, closed or open (DOCK1e).
   const drop = useViewDrop('right', onMove);
 
@@ -88,7 +102,7 @@ export function RightDock({
         {drop.over && <DropMark />}
         {/* Emptied, it is drawn only while a view is dragged to it (DOCK1e), and says what it is by
             the side bar's own picture rather than as a blank column at the window's edge. */}
-        {tabs.length === 0 && <Icon name="layoutRight" size={14} className="mt-1.5 text-ink-faint" aria-hidden />}
+        {tabs.length === 0 && !preview && <Icon name="layoutRight" size={14} className="mt-1.5 text-ink-faint" aria-hidden />}
         {tabs.map(({ id, label, icon }) => (
           <Tip key={id} content={t('work.dock.open', { tab: label })} side="left">
             <Button
@@ -102,6 +116,18 @@ export function RightDock({
             </Button>
           </Tip>
         ))}
+        {preview && (
+          <Tip content={t('work.dock.open', { tab: t('work.preview.tab', { name: preview.path }) })} side="left">
+            <Button
+              variant="ghost"
+              aria-label={t('work.dock.open', { tab: t('work.preview.tab', { name: preview.name }) })}
+              onClick={() => onOpen('preview')}
+              className="h-7 w-7 justify-center px-0"
+            >
+              <Icon name="read" size={14} />
+            </Button>
+          </Tip>
+        )}
       </aside>
     );
   }
@@ -171,13 +197,50 @@ export function RightDock({
               </button>
             </Tip>
           ))}
+          {/* A file's preview (PREVIEW1): after the views, shrinking as they do, with its own × — a
+              sibling of the tab, since a button inside a button is neither. */}
+          {preview && (
+            <div
+              className={cn(
+                'flex max-w-52 items-center border-b-2 transition-colors duration-(--speed)',
+                shown === 'preview'
+                  ? 'shrink-0 border-b-accent text-ink'
+                  : 'min-w-9 shrink border-b-transparent text-ink-faint hover:text-ink',
+              )}
+            >
+              <Tip content={t('work.preview.tab', { name: preview.path })}>
+                <button
+                  id={tabId('preview')}
+                  type="button"
+                  role="tab"
+                  aria-label={t('work.preview.tab', { name: preview.name })}
+                  aria-selected={shown === 'preview'}
+                  onClick={() => onTab('preview')}
+                  className="flex min-w-0 items-center gap-1.5 whitespace-nowrap py-1.5 pl-3 pr-1 text-small"
+                >
+                  <Icon name="read" size={14} className="shrink-0" />
+                  <span className="min-w-0 truncate">{preview.name}</span>
+                </button>
+              </Tip>
+              <Tip content={t('work.preview.close')}>
+                <button
+                  type="button"
+                  aria-label={t('work.preview.close')}
+                  onClick={preview.onClose}
+                  className="mr-1 flex h-5 w-5 shrink-0 items-center justify-center rounded-control text-ink-faint hover:bg-raised hover:text-ink"
+                >
+                  <Icon name="x" size={12} />
+                </button>
+              </Tip>
+            </div>
+          )}
         </div>
 
         <div className="ml-auto flex shrink-0 items-center gap-0.5">
           <ViewsMenu
             region="right"
             views={tabs}
-            selected={shown}
+            selected={shown === 'preview' ? undefined : shown}
             onSelect={onTab}
             onMove={onMove}
             onReset={onReset}

@@ -38,7 +38,7 @@ const LAYOUT = 'daoris.reviewLayout';
  *
  * Desktop-only, structurally: the hook is gated on the bridge, so in a browser this never asks.
  */
-export function DiffPane({ session, hasTree = false, onSendBack }: {
+export function DiffPane({ session, hasTree = false, onSendBack, onPreview }: {
   session: string | null;
   /**
    * Whether this session holds a working tree OF ITS OWN on this machine (D51) — which is what the
@@ -50,6 +50,8 @@ export function DiffPane({ session, hasTree = false, onSendBack }: {
   hasTree?: boolean;
   /** The door into the quest composer. Absent where there is nowhere to send it. */
   onSendBack?: () => void;
+  /** Opens one file's preview in the side bar (PREVIEW1, D111), by its path in the review. */
+  onPreview?: (path: string) => void;
 }) {
   const { t } = useTranslation();
   const diff = useSessionDiff(session);
@@ -307,6 +309,7 @@ export function DiffPane({ session, hasTree = false, onSendBack }: {
             layout={layout}
             onToggle={() => setOpen((was) => ({ ...was, [file.path]: !was[file.path] }))}
             onViewed={(next) => setViewed((was) => ({ ...was, [file.path]: next }))}
+            onPreview={onPreview ? () => onPreview(file.path) : undefined}
           />
         ))}
       </ul>

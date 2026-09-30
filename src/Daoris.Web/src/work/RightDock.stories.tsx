@@ -58,3 +58,16 @@ export const HoldingMovedViews: Story = {
 
 /** Every view moved out: it says how to fill it, as VS Code's empty container does. */
 export const Emptied: Story = { args: { views: [], onReset: () => {} } };
+
+const PREVIEW = { name: 'chunk.rs', path: 'src/world/streaming/chunk.rs', onClose: () => {} };
+
+/** A file's preview (PREVIEW1): a tab after the views, named for the file, with its own ×. */
+export const WithAPreview: Story = { args: { tab: 'preview', preview: PREVIEW } };
+
+/** At the floor with Ask Daoris and a preview: the preview keeps its name while it is shown, the rest give way. */
+export const APreviewAtTheFloor: Story = {
+  args: { views: ['timeline', 'review', 'ask'], tab: 'preview', preview: PREVIEW, width: 300, onMove: () => {} },
+};
+
+/** Closed with a preview open: its strip carries the file's door after the views'. */
+export const ClosedWithAPreview: Story = { args: { mode: 'closed', width: 32, preview: PREVIEW } };

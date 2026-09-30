@@ -7,9 +7,11 @@ import { useAnswerSession, useQuests, useRegistry, useSessions } from '../querie
 import {
   stopNotice, type TurnStop, useCancelTurn, useEndChat, useHarnesses, useResolveSession, useSendMessage,
   NO_TURNS, useChatTurns, useSessionOpenings, useSessionOptions, useSessionStreams, useSetSessionOption, useStartChat,
-  useStopSession, useStopTask, useSweepPlan, useTreeFiles,
+  useStopSession, useStopTask, useSweepPlan, useTreeFiles, useTreeFile, useReviewedPatch,
   logEvent, useTerminals,
 } from '../shell';
+import { FilePreview } from './FilePreview';
+import { type FileOpen, FileOpener, fileName } from './preview';
 import { TerminalView } from './TerminalView';
 import { Button, Drawer, failure, Icon, type Notify, SESSION_ACTIVE, Tip, useErrorNotify } from '../ui';
 import { AttendedSession, noteIsInTheHead } from './AttendedSession';
@@ -511,10 +513,16 @@ export function WorkFrame({
   const panelViews = viewsIn(placed.places, 'panel', present);
   // Ask Daoris is the machine's, not the attended session's: its tab stays whichever session is attended.
   const [asking, setAsking] = useState(false);
+  // A file's preview per session (PREVIEW1, D111): what a tool card or the review opened, and the tab it
+  // covered, which its × goes back to. Kept while the window is open, like the dock's tab.
+  const [previews, setPreviews] = useState<Record<string, FileOpen & { back: DockTab }>>({});
+  const previewing = attended && here ? previews[attended.id] ?? null : null;
   const sessionTab = docked[dockKey] ?? 'timeline';
   const dock: DockTab | undefined = asking && rightViews.includes('ask')
     ? 'ask'
-    : rightViews.includes(sessionTab) ? sessionTab : rightViews[0];
+    : sessionTab === 'preview'
+      ? (previewing ? 'preview' : rightViews[0])
+      : rightViews.includes(sessionTab) ? sessionTab : rightViews[0];
   const setDock = (tab: DockTab) => {
     setAsking(tab === 'ask');
     if (tab !== 'ask') setDocked((was) => ({ ...was, [dockKey]: tab }));
@@ -532,6 +540,26 @@ export function WorkFrame({
     setDock(tab);
     closeDock(false);
   };
+  // A door opening a file's preview (PREVIEW1): the side bar opens on it, over the tab it covers. Handed to
+  // the conversation's cards through a context, so one stable function is handed and the latest state read.
+  const previewNow = useRef<(file: FileOpen) => void>(() => {});
+  previewNow.current = (file: FileOpen) => {
+    if (!attended) return;
+    const covered = dock && dock !== 'preview' ? dock : previews[attended.id]?.back ?? 'timeline';
+    setPreviews((was) => ({ ...was, [attended.id]: { path: file.path, lines: file.lines ?? null, back: covered } }));
+    openDock('preview');
+  };
+  const openPreview = useCallback((file: FileOpen) => previewNow.current(file), []);
+  const closePreview = () => {
+    if (!attended) return;
+    const back = previews[attended.id]?.back ?? 'timeline';
+    setPreviews(({ [attended.id]: _closed, ...rest }) => rest);
+    if (dock === 'preview') setDock(back);
+    // A side bar the preview leaves with nothing in it closes, as one a moved view leaves does (DOCK1b).
+    if (rightViews.length === 0) closeDock(true);
+  };
+  const previewFile = useTreeFile(previewing ? attended!.id : null, previewing?.path ?? null);
+  const previewPatch = useReviewedPatch(previewing ? attended!.id : null, previewing?.path ?? null);
   // The person asking for a view by a door that does not know where it stands — the palette's review,
   // Ask Daoris's `F1` — opens whichever region holds it, on it.
   const openView = (view: ViewId) => {
@@ -643,6 +671,7 @@ export function WorkFrame({
           onSendBack={onSendBack && attended
             ? () => onSendBack(attended.repository)
             : undefined}
+          onPreview={attended && here ? (path) => openPreview({ path }) : undefined}
         />,
       );
     }
@@ -671,6 +700,22 @@ export function WorkFrame({
       )
       : <p className="m-0 p-3 text-small text-ink-faint">{t('work.attended.none.body')}</p>;
   };
+  // The file previewed for the attended session (PREVIEW1): the host's answer, or its sentence, and the
+  // review's patch for that path where the review already holds one.
+  const previewSurface = previewing && attended
+    ? withWhose(
+      <FilePreview
+        key={`${attended.id}:${previewing.path}`}
+        path={previewing.path}
+        file={previewFile.data ?? null}
+        pending={previewFile.isPending && !previewFile.error}
+        refusal={previewFile.error ? sentence(previewFile.error) : null}
+        lines={previewing.lines}
+        patch={previewPatch}
+        onReload={() => { void previewFile.refetch(); }}
+      />,
+    )
+    : null;
   useEffect(() => { if (intent) onIntentTaken?.(); }, [intent, onIntentTaken]);
 
   const roster = Array.isArray(harnesses.data?.harnesses) ? harnesses.data.harnesses : [];
@@ -829,18 +874,21 @@ export function WorkFrame({
               record came without its transcript, which stays on their machine (D47 §4). */}
           {attended && here && (
             <div className="mt-4 min-w-0">
-              <SessionConversation
-                session={attended.id}
-                adapter={attended.adapter}
-                chat={attended.kind === 'chat'}
-                tree={attended.tree}
-                live={live}
-                // A conversation the driver answers for is working while a turn is in flight, and not
-                // under words its agent said after the turn ended (found looking at CONSOLE2).
-                turnRunning={talking && chatTurns[attended.id] ? turns.taking : undefined}
-                scroller={centre}
-                onUsage={onUsage}
-              />
+              {/* A file a tool card names opens in the side bar's preview (PREVIEW1, D111). */}
+              <FileOpener.Provider value={openPreview}>
+                <SessionConversation
+                  session={attended.id}
+                  adapter={attended.adapter}
+                  chat={attended.kind === 'chat'}
+                  tree={attended.tree}
+                  live={live}
+                  // A conversation the driver answers for is working while a turn is in flight, and not
+                  // under words its agent said after the turn ended (found looking at CONSOLE2).
+                  turnRunning={talking && chatTurns[attended.id] ? turns.taking : undefined}
+                  scroller={centre}
+                  onUsage={onUsage}
+                />
+              </FileOpener.Provider>
             </div>
           )}
         </div>
@@ -973,6 +1021,7 @@ export function WorkFrame({
           onMove={moveView}
           onReset={placed.moved ? placed.reset : undefined}
           onDrag={onDrag}
+          preview={previewing ? { name: fileName(previewing.path), path: previewing.path, onClose: closePreview } : null}
           mode={layout.dock.mode}
           width={layout.dock.width}
           range={dockRange(width.viewport, width.frame, layout.rail.width)}
@@ -984,7 +1033,7 @@ export function WorkFrame({
           onOpen={openDock}
           onFull={setDockFull}
         >
-          {dock ? surface(dock, 'right') : null}
+          {dock === 'preview' ? previewSurface : dock ? surface(dock, 'right') : null}
         </RightDock>
       )}
     </div>

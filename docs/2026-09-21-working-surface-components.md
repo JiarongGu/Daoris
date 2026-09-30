@@ -192,9 +192,10 @@ Everything the design (§3–§5) needs, with the states its story must carry. N
 | `AwaitingIntake` | a parked intake's question, a door to its ask, and a stop that keeps the ask a proposal (INT4g) | asking · nothing can act |
 | `RunningIntake` | a running intake: why it takes no messages, a door to look at its ask, and the stop its composer used to carry (INT4h) | running · nothing can act |
 | `TrustAsk` | the agent's trust question for a folder the driver holds: the folder, what trusting means, what it holds, the one file written, and the grant on the press (D73) | asking · granting |
-| `DiffFileRow` | one file in the review pane | added, modified, deleted, renamed, binary, truncated |
+| `DiffFileRow` | one file in the review pane, and its door into the file's preview (PREVIEW1) | added, modified, deleted, renamed, binary, truncated, with its preview, deleted with no preview |
 | `PatchView` | a file's patch: numbered, highlighted a side at a time, unified or side by side (REVIEW2) | unified · side by side · unknown language · rename only · long line |
-| `RightDock` | the per-session surfaces beside the session, with its geometry handed in (FRAME6) | docked · cramped · full · full in a narrow window · closed |
+| `RightDock` | the per-session surfaces beside the session, with its geometry handed in (FRAME6), and a file's preview as a tab after them (PREVIEW1, D111) | docked · cramped · full · full in a narrow window · closed · with a preview · a preview at the floor · closed with a preview |
+| `FilePreview` | one file, read-only, from the session's tree: its path, numbered and highlighted lines, the lines a read named, and the review's patch for it where the review has one (PREVIEW1, D111) | read · marked lines · with its changes · bounded · binary · empty · refused · reading · a 中文 path at the floor |
 | `SessionStripRow` | one running session in the rail's 56px strip (FRAME6) | working · attended · awaiting person · a 中文 repository |
 | `Splitter` | the edge a column is resized by, keyboard-operable (FRAME6) | held by `chrome.test.tsx` |
 

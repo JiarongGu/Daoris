@@ -4,9 +4,11 @@ import { keys } from '../queries';
 // The shape lives beside the components that render it, so a molecule can name it without
 // importing this module (SURF6).
 import type { SessionDiff } from '../work/diff';
+import type { TreeFile } from '../work/preview';
 import { call } from './call';
 
 export type { DiffFile, SessionDiff } from '../work/diff';
+export type { TreeFile } from '../work/preview';
 
 // A session's tree on this machine (MOD3): what it did, the files in it, and the acts on it once
 // reviewed: land it by its repository's rule, hand its branch on, or discard it (D51, WSR1, WSR5).
@@ -63,6 +65,43 @@ export const useTreeFiles = (session: string | null, wanted: boolean) => {
     refetchOnWindowFocus: false,
     retry: false,
   });
+};
+
+/**
+ * One file in the session's tree, read for its preview in the side bar (PREVIEW1, D111).
+ *
+ * @remarks
+ * **Read when a door opens it**, and again on the preview's own *read it again*: the agent may be writing
+ * the file, so nothing here is held as fresh for long, and nothing is fetched on focus, which would read
+ * the disk every time the window is touched.
+ *
+ * Shell-only for the diff's reason: it is read off a checkout on this machine. A refusal is the host's
+ * sentence — outside the tree, a link that leads out of it, git's own folder, no tree here, not a file now.
+ */
+export const useTreeFile = (session: string | null, path: string | null) => {
+  const { isAvailable } = useShenora();
+  return useQuery({
+    queryKey: keys.treeFile(session ?? '', path ?? ''),
+    queryFn: () => call<TreeFile>('SESSION_FILE', { id: session, path }),
+    enabled: isAvailable && Boolean(session) && Boolean(path),
+    refetchOnWindowFocus: false,
+    retry: false,
+  });
+};
+
+/**
+ * The review's patch for one file, where the review already holds one (PREVIEW1, D111): read from the
+ * review's own answer, never asked of git, so a preview opened from a tool card before anyone looked at
+ * the review says nothing of changes rather than running a diff of its own.
+ */
+export const useReviewedPatch = (session: string | null, path: string | null): string | null => {
+  const reviewed = useQuery({
+    queryKey: keys.diff(session ?? ''),
+    queryFn: () => call<SessionDiff>('SESSION_DIFF', { id: session }),
+    // Never asked from here: the review asks, and this reads what it was answered.
+    enabled: false,
+  });
+  return (path && reviewed.data?.files.find((file) => file.path === path)?.patch) || null;
 };
 
 /**
