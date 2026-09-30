@@ -165,6 +165,8 @@ public sealed partial class DriverModule
         HarnessAction = applied.Applied && proposal.Kind == "agent" && proposal.Door is "update" or "pin"
             ? new { Harness = proposal.Target!.Trim(), Action = proposal.Door }
             : null,
+        // The card stands for another press (LEFT3 c): a sync card's look settles nothing, so the page logs no settlement.
+        applied.Stands,
     };
 
     // The person's Not now: nothing changes, and the agent is told so.

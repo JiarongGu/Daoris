@@ -136,9 +136,10 @@ internal sealed class HelpSyncProposals : IHelpProposalKind
         }
 
         Keep(applying.Home, id, rows, listed);
+        // The one Apply that settles nothing: the card stands for its press (LEFT3 c).
         return new HelpApplied(false,
             $"Looked for updates (`#{id}`): {moving.Count} thing(s) would change — {string.Join("; ", moving.Select(row => row.Says))}. "
-            + $"The card now lists them; nothing moves until the person applies it.{Besides(listed)}");
+            + $"The card now lists them; nothing moves until the person applies it.{Besides(listed)}") { Stands = true };
     }
 
     /// <summary>How many repositories the look left apart are named before the rest are counted.</summary>
@@ -273,6 +274,15 @@ public sealed partial record HelpPlan
 {
     /// <summary>What a sync card shows (HELP10); null for every other kind.</summary>
     public HelpSyncPlan? Sync { get; init; }
+}
+
+public sealed partial record HelpApplied
+{
+    /// <summary>
+    /// The proposal still waits for the person (LEFT3 c): a sync card's look that listed rows, which settles nothing, so
+    /// the card stays for its press and the page logs no settlement. False for every Apply that settles.
+    /// </summary>
+    public bool Stands { get; init; }
 }
 
 public partial interface IHelpDoors

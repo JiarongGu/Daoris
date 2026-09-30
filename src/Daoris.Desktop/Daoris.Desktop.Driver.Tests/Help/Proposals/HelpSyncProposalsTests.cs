@@ -62,6 +62,8 @@ public sealed class HelpSyncProposalsTests : HelpProposalsFixture
         var (looked, _, later) = await ApplyAsync(Sync("engine"), doors);
 
         Assert.False(looked.Applied);
+        // LEFT3 c: the look settles nothing, and says so, so the page logs no settlement for it.
+        Assert.True(looked.Stands);
         Assert.Equal(["TREES_SYNC_PLAN engine"], doors.Calls);
         Assert.Contains("3 thing(s) would change", looked.Told);
         Assert.Equal([looked.Told], later);
@@ -90,6 +92,7 @@ public sealed class HelpSyncProposalsTests : HelpProposalsFixture
         var (looked, _, _) = await ApplyAsync(Sync(), new HelpStandInDoors { Listed = Quiet });
 
         Assert.False(looked.Applied);
+        Assert.False(looked.Stands);
         Assert.Contains("nothing to bring up to date — engine  main  up to date with `origin/main`", looked.Told);
         Assert.Equal("refused", HelpProposals.Find(_home, "p11")!.State);
     }
@@ -215,6 +218,7 @@ public sealed class HelpSyncProposalsTests : HelpProposalsFixture
             _home, looked, HelpProposals.Plan(looked, DriverConfig.Empty, Facts), doors, _ => { }, CancellationToken.None);
 
         Assert.True(applied.Applied);
+        Assert.False(applied.Stands);
         Assert.Equal("TREES_SYNC engine engine:daoris/s-step engine:feature/q2-first engine:main", doors.Calls[^1]);
         Assert.Contains("1 line(s) moved, 1 branch(es) replayed, 1 removed", applied.Told);
         Assert.Equal("applied", HelpProposals.Find(_home, "p11")!.State);

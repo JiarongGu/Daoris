@@ -4064,6 +4064,12 @@ and runs anyway; a write that fails is dropped, never thrown.
 - **A logging library.** A file a day and a catalogue are each artefact's own few lines, and a library's
   configuration is one more thing an install carries.
 
+*Amended by LEFT3 (2026-10-01): `proposal.settled` is written once a press settled the proposal. Ask Daoris's sync
+card has two presses, and its first, the look, settles nothing: `HELP_APPLY` answers that the card `stands`, and the
+page writes no line for it. No event of its own was added for a look: it is a step of one proposal whose settling is
+still written, by its press or its Not now, and a look that found nothing to do settled the card and is written as
+any Apply is.*
+
 ## D95 — A quest nobody has started on can be deleted, and the delete travels as an operation (2026-09-30)
 
 **Decision (QUEST1).** The owner: *"we do need way to clear or delete quest"*. Clearing is what the

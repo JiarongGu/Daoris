@@ -102,6 +102,25 @@ public sealed class DriverModuleHelpTests : DriverModuleBridge
         Assert.Equal(followed, action.ValueKind == JsonValueKind.Null ? null : action.GetProperty("action").GetString());
         if (followed is not null) Assert.Equal("claude-code", action.GetProperty("harness").GetString());
         Assert.Equal(("told", applied), (answer.GetProperty("message").GetString(), answer.GetProperty("applied").GetBoolean()));
+        Assert.False(answer.GetProperty("stands").GetBoolean());
+    }
+
+    /// <summary>
+    /// LEFT3 c: a sync card's look leaves the card standing for its press, and the answer says so, so the page writes no
+    /// <c>proposal.settled</c> for it; a look that found nothing to do settled the card, and says that.
+    /// </summary>
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void An_answer_says_whether_the_card_still_stands(bool stands)
+    {
+        var proposal = new HelpProposal("p11", "sync", "sync", null, null, null, null, "why", "h1", "proposed");
+
+        var answer = JsonSerializer.SerializeToElement(
+            DriverModule.ApplyAnswer(proposal, new HelpApplied(false, "looked") { Stands = stands }),
+            new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
+
+        Assert.Equal(stands, answer.GetProperty("stands").GetBoolean());
     }
 
     [Fact]
