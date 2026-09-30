@@ -1,5 +1,6 @@
 import { useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
+import { ago } from '../format';
 import { cn } from '../lib/cn';
 import { Button, CheckField, Chip, Icon, Inline, Prose } from '../ui';
 import { sweepKey, type LandedBranch } from './Sweep';
@@ -37,6 +38,10 @@ export type LinePull = {
   commits: number;
   /** Why the fetch did not happen, in git's words. Content, never translated. */
   fetch?: string | null;
+  /** Where it was not fetched: when this checkout last heard from origin, an ISO moment, or none — never (WSR7). */
+  lastFetch?: string | null;
+  /** Where it was not fetched: how origin is reached — `ssh`, `https`, `http`, `git` or `file` (WSR7). */
+  reach?: string | null;
   /** Git's own words where it could not tell. Content. */
   detail?: string | null;
   moves: boolean;
@@ -92,6 +97,49 @@ const includes = (include: SyncInclude | undefined, repository: string) =>
 /** `was` and `more` together: every one stays every one. */
 const together = (was: SyncInclude | undefined, more: SyncInclude): SyncInclude =>
   was === 'all' || more === 'all' ? 'all' : [...new Set([...(was ?? []), ...more])];
+
+/**
+ * What was not fetched, said once, before the rows (WSR7): how many, grouped by git's reason, when each last heard from
+ * origin — which is what its row is judged against — and what the git Daoris runs needs to reach an origin over SSH or
+ * HTTPS. Every fetch failed on the owner's workspace, and the look said so only at the end of each of 29 rows.
+ *
+ * @remarks
+ * The person's own Git client may reach origin where this cannot: one carries its own git and ssh, and the driver runs
+ * the git on the path. So the advice names what that git needs, and no product.
+ */
+function NotFetched({ lines }: { lines: LinePull[] }) {
+  const { t } = useTranslation();
+  const failed = lines.filter((pull) => pull.fetch);
+  if (failed.length === 0) return null;
+  const reasons = [...new Set(failed.map((pull) => pull.fetch!))];
+  const when = (pull: LinePull) => pull.lastFetch
+    ? t('settings.sync.notFetched.when', { repository: pull.repository, when: ago(pull.lastFetch) })
+    : t('settings.sync.notFetched.never', { repository: pull.repository });
+
+  return (
+    <div role="note" aria-label={t('settings.sync.notFetched.label')} className="mt-2 rounded-control border border-line bg-raised px-3 py-2">
+      <p className="m-0 text-small text-ink">{t('settings.sync.notFetched.head', { count: failed.length, total: lines.length })}</p>
+      <ul className="m-0 mt-1 list-none p-0">
+        {reasons.map((reason) => {
+          const these = failed.filter((pull) => pull.fetch === reason);
+          return (
+            <li key={reason} className="mt-1 text-small">
+              <span className="break-words text-ink-soft"><Inline text={reason} /></span>
+              <span className="text-meta text-ink-faint"> · {these.length}</span>
+              <span className="block text-ink-soft">{these.map(when).join(' · ')}</span>
+            </li>
+          );
+        })}
+      </ul>
+      {failed.some((pull) => pull.reach === 'ssh') && (
+        <Prose className="mt-1 text-small text-ink-soft"><Inline text={t('settings.sync.notFetched.ssh')} /></Prose>
+      )}
+      {failed.some((pull) => pull.reach === 'https' || pull.reach === 'http') && (
+        <Prose className="mt-1 text-small text-ink-soft">{t('settings.sync.notFetched.https')}</Prose>
+      )}
+    </div>
+  );
+}
 
 /**
  * The repositories with a checkout here that hold no branch of Daoris's (D112): listed apart, collapsed, and looked at
@@ -262,6 +310,7 @@ export function SyncSection({ plan, scope, included, looking, lookingAt, bringin
         </p>
       )}
 
+      {plan && <NotFetched lines={plan.lines} />}
       {lookedAtNone && <Prose className="mt-2">{t('settings.sync.noneHeld')}</Prose>}
       {plan && !lookedAtNone && acting.length === 0 && <Prose className="mt-2">{t('settings.sync.nothing')}</Prose>}
 
@@ -275,9 +324,8 @@ export function SyncSection({ plan, scope, included, looking, lookingAt, bringin
               <Row key={`line:${pull.line ?? ''}`} name={pull.line ?? t('settings.sync.line.none')} moving={pull.moves}
                 word={t(pull.moves ? 'settings.sync.moves' : 'settings.sync.stays')}>
                 <Inline text={pulls(pull)} />
-                {pull.fetch && (
-                  <span className="mt-0.5 block text-meta text-ink-faint"><Inline text={t('settings.sync.line.notFetched', { why: pull.fetch })} /></span>
-                )}
+                {/* A short mark: the reason is said once, above the rows (WSR7). */}
+                {pull.fetch && <span className="mt-0.5 block text-meta text-ink-faint">{t('settings.sync.line.notFetched')}</span>}
                 {pull.kind === 'unknown' && pull.detail && (
                   <span className="mt-0.5 block break-words font-mono text-meta text-ink-faint">{pull.detail}</span>
                 )}

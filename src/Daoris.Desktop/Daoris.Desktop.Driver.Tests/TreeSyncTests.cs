@@ -263,13 +263,23 @@ public sealed class TreeSyncTests : LandedFixture
         Assert.Null(plan.Lines.Single().Fetch);
         Assert.Equal(PullKind.FastForward, plan.Lines.Single().Kind);
         Assert.Equal(heads, await GitAsync(root, "for-each-ref", "refs/heads"));
+        // WSR7: the look writes no FETCH_HEAD — only origin's refs are its to move.
+        var fetchHead = Path.Combine(root, (await GitAsync(root, "rev-parse", "--git-path", "FETCH_HEAD")).Trim());
+        Assert.False(File.Exists(fetchHead));
 
         Directory.Move(origin, origin + ".gone");
         var offline = await trees.SyncPlanAsync(Repositories(root), Nobody);
-        Assert.NotNull(offline.Lines.Single().Fetch);
+        var pull = offline.Lines.Single();
+        Assert.NotNull(pull.Fetch);
         // What the first fetch brought is still known, so the line still has somewhere to go.
-        Assert.Equal(PullKind.FastForward, offline.Lines.Single().Kind);
-        Assert.Contains("not fetched", SyncWords.Describe(offline.Lines.Single()));
+        Assert.Equal(PullKind.FastForward, pull.Kind);
+        Assert.EndsWith("(not fetched)", SyncWords.Describe(pull));
+        // Judged against what origin said when the first look fetched it, which moved `origin/main` a moment ago.
+        Assert.NotNull(pull.LastFetch);
+        Assert.InRange(pull.LastFetch!.Value, DateTimeOffset.UtcNow.AddMinutes(-5), DateTimeOffset.UtcNow.AddMinutes(1));
+        Assert.Equal("file", pull.Reach);
+        Assert.Contains("(1): engine (last fetched", string.Join("\n", SyncWords.NotFetched(offline.Lines, DateTimeOffset.UtcNow)));
+        Assert.False(File.Exists(fetchHead));
     }
 
     /// <summary>A session branch on its remote, or with uncommitted work in its tree, is left and named.</summary>

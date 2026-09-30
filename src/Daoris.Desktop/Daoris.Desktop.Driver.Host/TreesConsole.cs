@@ -159,6 +159,8 @@ internal static class TreesConsole
                 if (!args.Contains("--yes"))
                 {
                     var plan = await trees.SyncPlanAsync(repositories, inUse, fetch: true, scope: scope).ConfigureAwait(false);
+                    // What was not fetched, said once and first (WSR7), rather than at the end of every row.
+                    foreach (var line in SyncWords.NotFetched(plan.Lines, DateTimeOffset.UtcNow)) Console.WriteLine(line);
                     foreach (var pull in plan.Lines) Console.WriteLine($"  {(pull.Moves ? "moves" : "stays")}  {SyncWords.Describe(pull)}");
                     foreach (var item in plan.Rebases) Console.WriteLine($"  {(item.Replays ? "moves" : "stays")}  {SyncWords.Describe(item)}");
                     if (plan.Deletes.Count > 0) Console.WriteLine("  landed branches whose work reached the line:");
@@ -176,6 +178,7 @@ internal static class TreesConsole
                     inUseNow: async token => (await service.ActiveSessionsAsync(token).ConfigureAwait(false))
                         .Select(session => session.Tree).OfType<string>().Where(tree => tree.Length > 0)
                         .ToHashSet(StringComparer.OrdinalIgnoreCase), scope: scope).ConfigureAwait(false);
+                foreach (var line in SyncWords.NotFetched([.. done.Lines.Select(result => result.Pull)], DateTimeOffset.UtcNow)) Console.WriteLine(line);
                 foreach (var result in done.Lines) Console.WriteLine($"  {(result.Moved ? "moved " : "stayed")}  {result.Pull.Repository}  {result.Message}");
                 foreach (var result in done.Rebases) Console.WriteLine($"  {(result.Replayed ? "moved " : "stayed")}  {result.Item.Repository}  {result.Message}");
                 foreach (var result in done.Deletes)

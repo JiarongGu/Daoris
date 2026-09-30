@@ -147,8 +147,57 @@ describe('bringing repositories up to date', () => {
   it('names a fetch that did not happen, in git\'s words', () => {
     draw({ plan: { lines: [pull({ kind: 'up-to-date', fetch: 'there is no `origin` remote here' })], rebases: [], deletes: [] } });
 
-    expect(screen.getByText(/Not fetched/)).toBeInTheDocument();
-    expect(screen.getByText('origin', { selector: 'code' })).toBeInTheDocument();
+    const note = within(screen.getByRole('note', { name: 'Not fetched' }));
+    expect(note.getByText('origin', { selector: 'code' })).toBeInTheDocument();
+    expect(within(screen.getByRole('listitem', { name: 'main' })).getByText('not fetched')).toBeInTheDocument();
+  });
+
+  /**
+   * WSR7: every fetch failed on the owner's workspace (the git on the path could not reach its SSH remotes), and the
+   * look said so only at the end of each row. It is said once, first: how many, grouped by git's reason, when each
+   * last heard from origin, and what that git needs — with a short mark on each row.
+   */
+  it('says once, before the rows, what was not fetched, by reason, since when, and what git needs to reach origin', () => {
+    const unreadable = 'fatal: Could not read from remote repository.';
+    const yesterday = new Date(Date.now() - 26 * 3_600_000).toISOString();
+    draw({
+      plan: {
+        lines: [
+          pull({ kind: 'up-to-date', fetch: unreadable, lastFetch: yesterday, reach: 'ssh' }),
+          pull({ repository: 'game', kind: 'up-to-date', fetch: unreadable, reach: 'ssh' }),
+          pull({ repository: 'tools', kind: 'fast-forward', commits: 1, moves: true }),
+        ],
+        rebases: [],
+        deletes: [],
+      },
+    });
+
+    const note = screen.getByRole('note', { name: 'Not fetched' });
+    const said = within(note);
+    expect(said.getByText(/^2 of 3 repositories were not fetched, so each is judged against what origin said/)).toBeInTheDocument();
+    expect(said.getByText(unreadable)).toBeInTheDocument();
+    expect(said.getByText('engine: last fetched 1d ago · game: never fetched')).toBeInTheDocument();
+    expect(note.textContent).toMatch(/needs a key its own ssh reads, or core\.sshCommand/);
+    expect(note.textContent).not.toMatch(/credential helper/);
+    // Said once, before the rows: the rows carry a short mark, not the sentence.
+    expect(note.compareDocumentPosition(screen.getByRole('group', { name: 'engine' })) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(screen.getAllByText(unreadable)).toHaveLength(1);
+    expect(screen.getAllByText('not fetched')).toHaveLength(2);
+  });
+
+  it('says what the git on the path needs for an origin over HTTPS, and nothing where every fetch landed', () => {
+    const { unmount } = render(
+      <Tooltip.Provider>
+        <SyncSection
+          plan={{ lines: [pull({ kind: 'up-to-date', fetch: 'fatal: could not read Username', reach: 'https' })], rebases: [], deletes: [] }}
+          onLook={vi.fn()} onSync={vi.fn()} />
+      </Tooltip.Provider>,
+    );
+    expect(screen.getByRole('note', { name: 'Not fetched' }).textContent).toMatch(/credential helper that answers without asking/);
+    unmount();
+
+    draw();
+    expect(screen.queryByRole('note', { name: 'Not fetched' })).toBeNull();
   });
 
   it('holds both presses while one is under way', () => {

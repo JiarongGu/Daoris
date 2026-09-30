@@ -166,6 +166,8 @@ public sealed partial class DriverModule
         {
             pull.Repository, pull.Workspace, pull.Line, pull.Kind, From = Short(pull.From), To = Short(pull.To), pull.Commits,
             pull.Fetch, pull.Detail, pull.Moves,
+            // Where the fetch failed (WSR7): when this checkout last heard from origin, and how origin is reached.
+            pull.LastFetch, pull.Reach,
         };
         object Rebase(RebaseItem item) => new
         {

@@ -99,6 +99,8 @@ public sealed class DriverCommandTests
         Assert.Contains("case [\"sync\", ..]", program);
         Assert.Contains("args.Contains(\"--all\") ? SyncScope.Everything", program);
         Assert.Contains("| sync [--repository <name>] [--all] [--yes]]", program);
+        // WSR7: what was not fetched is said once, first, on the list and on the press alike.
+        Assert.Equal(2, program.Split("SyncWords.NotFetched(").Length - 1);
     }
 
     private static string SourceRoot()

@@ -5372,6 +5372,22 @@ branch and not run there; the git sequence it relies on (the squashed commit dro
 empty) was run by hand in scratch repositories. It stays with `--repository`, since the examples'
 registered roots are not repositories of their own and git walks up from a folder that is not one.*
 
+*Amended by WSR7 (2026-10-01), from the owner's workspace of 29 repositories. **A look fetches four repositories at a
+time** (`SyncBounds.FetchesAtOnce`), and **the page waits as long as the host may work** on each long route
+(`bridge/call.ts`'s `hostBounds`, a twin of `SyncBounds` held by `SyncBoundsTests`): the bridge's default 30 seconds
+gave up on a look that ran for minutes, and the host's answer reached nobody. **The fetch writes no `FETCH_HEAD`**
+(`--no-write-fetch-head`, git 2.29 and later): a fetch that fails empties that file and stamps it with the failure's
+time, so the person's own last fetch could no longer be read, and only origin's refs are the look's to move. **What was
+not fetched is said once, before the rows**, on both doors: how many, grouped by git's reason; when each last heard
+from origin, the newer of `FETCH_HEAD`'s time where it holds a fetch and the time `origin/<line>` last moved here, or
+never; and what the git on the path needs to reach an origin over SSH (a key its own ssh reads, or `core.sshCommand`)
+or HTTPS (a credential helper that answers without asking), since the person's own Git client may carry a git and an
+ssh of its own. A row carries a short mark. Which repositories a look takes is D112. The bound, the words and the
+twin are held in the fast half. That a failed fetch leaves `FETCH_HEAD` as it was, and that a fetch that lands logs
+`origin/<line>` with its time, were run by hand in scratch repositories (git 2.53, Windows), and a `TreeSyncTests` case
+in the `Process` half asserts both, written and not run here (MOD8). No fetch reached a real SSH remote. `HANDOFF` and
+`LAND_SESSION_TREE` still wait the bridge's default, since the work frame's tests hold those calls' exact shape.*
+
 ## D112 — Bringing up to date looks at the repositories that hold Daoris's branches; every other is listed apart, and included by the person (2026-10-01)
 
 **Decision (WSR7 c).** The first look on the owner's workspace of 29 repositories fetched all 29, and after one

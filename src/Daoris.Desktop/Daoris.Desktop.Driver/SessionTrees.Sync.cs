@@ -43,6 +43,16 @@ public sealed record LinePull(
     string Repository, string Workspace, string? Line, string Kind, string? From, string? To, int Commits, string? Fetch, string? Detail)
 {
     public bool Moves => Kind == PullKind.FastForward;
+
+    /// <summary>
+    /// Where the fetch failed, when this checkout last heard from origin (WSR7): what the row is judged against is what
+    /// origin said then. The newer of <c>FETCH_HEAD</c>'s time, where it holds a fetch, and when <c>origin/&lt;line&gt;</c>
+    /// last moved here; null where neither says, which is never.
+    /// </summary>
+    public DateTimeOffset? LastFetch { get; init; }
+
+    /// <summary>Where the fetch failed, how origin is reached, from its address: `ssh`, `https`, `http`, `git` or `file` (WSR7).</summary>
+    public string? Reach { get; init; }
 }
 
 /// <summary>What bringing one branch up to date would do, or found (WSR6). Only a replay moves anything.</summary>
@@ -176,7 +186,57 @@ public static class SyncWords
         PullKind.NoLocal => $"no local `{pull.Line}` to move: the line is read from `origin/{pull.Line}`",
         PullKind.NoLine => "no line is set and git names none",
         _ => $"git could not tell: {pull.Detail}",
-    } + (pull.Fetch is { } fetch ? $" (not fetched: {fetch})" : "");
+    } + (pull.Fetch is not null ? " (not fetched)" : "");
+
+    /// <summary>
+    /// Said once, before the rows (WSR7): how many repositories were not fetched, grouped by git's reason; that each is
+    /// judged against what origin said when it was last fetched here, and when that was; and what the git Daoris runs
+    /// needs to reach an origin over SSH or HTTPS. Nothing where every repository fetched.
+    /// </summary>
+    /// <remarks>
+    /// The person's own Git client may reach origin while the git on the path cannot: one carries its own git and ssh,
+    /// and Daoris runs the one the path finds. So the words name what that git needs, and no product.
+    /// </remarks>
+    public static IReadOnlyList<string> NotFetched(IReadOnlyList<LinePull> lines, DateTimeOffset now)
+    {
+        var failed = lines.Where(pull => pull.Fetch is not null).ToList();
+        if (failed.Count == 0) return [];
+        var said = new List<string>
+        {
+            $"trees: {failed.Count} of {lines.Count} repositories were not fetched, so each is judged against what origin said when it was last fetched here:",
+        };
+        foreach (var reason in failed.GroupBy(pull => pull.Fetch!, StringComparer.Ordinal))
+        {
+            said.Add($"  {reason.Key} ({reason.Count()}): "
+                + string.Join(", ", reason.Select(pull => $"{pull.Repository} ({LastFetched(pull.LastFetch, now)})")));
+        }
+
+        if (failed.Any(pull => pull.Reach == "ssh"))
+        {
+            said.Add("  To reach an origin over SSH, the git Daoris runs (the one on the path) needs a key its own ssh reads, "
+                + "or `core.sshCommand` naming an ssh that has one: a Git client with its own git and ssh does not lend them.");
+        }
+
+        if (failed.Any(pull => pull.Reach is "https" or "http"))
+        {
+            said.Add("  To reach an origin over HTTPS, the git Daoris runs needs a credential helper that answers without asking, "
+                + "since Daoris's fetch never prompts.");
+        }
+
+        return said;
+    }
+
+    /// <summary>When a repository last heard from origin, in words: `last fetched 2 days ago`, or `never fetched`.</summary>
+    public static string LastFetched(DateTimeOffset? at, DateTimeOffset now)
+    {
+        if (at is not { } then) return "never fetched";
+        var minutes = (int)Math.Max(0, (now - then).TotalMinutes);
+        static string Of(int count, string unit) => $"{count} {unit}{(count == 1 ? "" : "s")} ago";
+        return "last fetched " + (minutes < 1 ? "just now"
+            : minutes < 60 ? Of(minutes, "minute")
+            : minutes < 60 * 24 ? Of(minutes / 60, "hour")
+            : Of(minutes / (60 * 24), "day"));
+    }
 
     public static string Describe(RebaseItem item) => $"{item.Repository}  {item.Branch}  " + item.Kind switch
     {
@@ -257,10 +317,12 @@ public sealed partial class SessionTrees
         var (looked, apart) = await ScopedAsync(repositories, scope ?? SyncScope.Held, ct).ConfigureAwait(false);
         // The network first, a few repositories at a time (WSR7); then each judged in turn, from what it fetched.
         var fetches = await FetchedAsync(looked, fetch, ct).ConfigureAwait(false);
-        foreach (var ((repository, space, root, _), (line, fetched)) in looked.Zip(fetches))
+        foreach (var ((repository, space, root, _), fetched) in looked.Zip(fetches))
         {
             var workspace = RemoteTarget.Workspace(space);
-            var (pull, _) = await JudgePullAsync(root, repository, workspace, line, fetched, ct).ConfigureAwait(false);
+            var line = fetched.Line;
+            var (asJudged, _) = await JudgePullAsync(root, repository, workspace, line, fetched.Failed, ct).ConfigureAwait(false);
+            var pull = fetched.Onto(asJudged);
             lines.Add(pull);
 
             // What the line will be after the press: origin's tip where the pull moves it, else where it stands.
@@ -297,16 +359,79 @@ public sealed partial class SessionTrees
             new Checkout(each.Repository, each.Workspace, each.Root!, new SyncRepository(each.Repository, RemoteTarget.Workspace(each.Workspace), held)))];
     }
 
+    /// <summary>A checkout's line, and how its fetch went: why it failed, when origin was last heard from here, and how it is reached.</summary>
+    private sealed record Fetched(string? Line, string? Failed = null, DateTimeOffset? LastFetch = null, string? Reach = null)
+    {
+        /// <summary>The pull as judged, carrying what a failed fetch leaves it judged against (WSR7).</summary>
+        public LinePull Onto(LinePull pull) => Failed is null ? pull : pull with { LastFetch = LastFetch, Reach = Reach };
+    }
+
     /// <summary>
     /// Each checkout's line, and its fetch where asked (WSR7): the one network step, a few repositories at a time, so a
-    /// look waits about one fetch's time rather than one per repository. A failed fetch is the reason, in git's words.
+    /// look waits about one fetch's time rather than one per repository. A failed fetch is the reason, in git's words,
+    /// with when this checkout last heard from origin and how origin is reached, for the words said once before the rows.
     /// </summary>
-    private async Task<IReadOnlyList<(string? Line, string? Failed)>> FetchedAsync(List<Checkout> checkouts, bool fetch, CancellationToken ct) =>
+    private async Task<IReadOnlyList<Fetched>> FetchedAsync(List<Checkout> checkouts, bool fetch, CancellationToken ct) =>
         await AtMostAsync(checkouts, SyncBounds.FetchesAtOnce, async (each, token) =>
         {
             var line = (await LineAsync(each.Root, each.Repository, RemoteTarget.Workspace(each.Space), token).ConfigureAwait(false)).Branch;
-            return (line, fetch ? await FetchAsync(each.Root, line, token).ConfigureAwait(false) : null);
+            if (!fetch) return new Fetched(line);
+            var (failed, url) = await FetchAsync(each.Root, line, token).ConfigureAwait(false);
+            return failed is null
+                ? new Fetched(line)
+                : new Fetched(line, failed, await LastFetchAsync(each.Root, line, token).ConfigureAwait(false), ReachOf(url));
         }, ct).ConfigureAwait(false);
+
+    /// <summary>
+    /// When this checkout last heard from origin (WSR7): the newer of <c>FETCH_HEAD</c>'s time, where it holds a fetch,
+    /// and the time <c>origin/&lt;line&gt;</c> last moved here, from its log; null where neither says. Daoris's own fetch
+    /// writes no <c>FETCH_HEAD</c>, so its time is the person's own last fetch.
+    /// </summary>
+    private static async Task<DateTimeOffset?> LastFetchAsync(string root, string? line, CancellationToken ct)
+    {
+        DateTimeOffset? fetchHead = null;
+        var (pathCode, pathOut, _) = await WorkingTree.GitAsync(root, ["rev-parse", "--git-path", "FETCH_HEAD"], ct).ConfigureAwait(false);
+        if (pathCode == 0 && pathOut.Trim() is { Length: > 0 } relative)
+        {
+            var file = new FileInfo(Path.IsPathRooted(relative) ? relative : Path.Combine(root, relative));
+            // An empty one is a fetch that failed before it heard anything: it says when a fetch was tried, not heard.
+            if (file.Exists && file.Length > 0) fetchHead = new DateTimeOffset(file.LastWriteTimeUtc, TimeSpan.Zero);
+        }
+
+        DateTimeOffset? moved = null;
+        if (line is not null)
+        {
+            // `origin/main@{1790781297}`: the log's newest entry, its time in seconds.
+            var (logCode, logOut, _) = await WorkingTree.GitAsync(
+                root, ["log", "-g", "-1", "--date=unix", "--format=%gd", $"refs/remotes/origin/{line}"], ct).ConfigureAwait(false);
+            var at = logOut.LastIndexOf("@{", StringComparison.Ordinal);
+            if (logCode == 0 && at >= 0 && long.TryParse(logOut[(at + 2)..].TrimEnd().TrimEnd('}'), out var seconds))
+            {
+                moved = DateTimeOffset.FromUnixTimeSeconds(seconds);
+            }
+        }
+
+        return fetchHead is null ? moved : moved is null || fetchHead > moved ? fetchHead : moved;
+    }
+
+    /// <summary>How origin is reached, from its address (WSR7): `ssh`, `https`, `http`, `git` or `file`; null for none.</summary>
+    /// <remarks>An address with no scheme is ssh's `[user@]host:path` where a colon comes before any slash, after a host of
+    /// more than one letter: `C:\repos` is a folder on a drive, not a host.</remarks>
+    internal static string? ReachOf(string? url)
+    {
+        if (string.IsNullOrWhiteSpace(url)) return null;
+        var text = url.Trim();
+        var scheme = text.IndexOf("://", StringComparison.Ordinal);
+        if (scheme > 0)
+        {
+            var name = text[..scheme].ToLowerInvariant();
+            return name.Contains("ssh", StringComparison.Ordinal) ? "ssh" : name;
+        }
+
+        var colon = text.IndexOf(':');
+        var slash = text.IndexOfAny(['/', '\\']);
+        return colon > 1 && (slash < 0 || colon < slash) ? "ssh" : "file";
+    }
 
     /// <summary><paramref name="work"/> over each item, at most <paramref name="atOnce"/> at a time, the answers in the items' order (WSR7).</summary>
     internal static async Task<IReadOnlyList<TResult>> AtMostAsync<T, TResult>(
@@ -398,12 +523,14 @@ public sealed partial class SessionTrees
         // The network first, a few repositories at a time (WSR7); each is then judged again right before it acts.
         var fetches = await FetchedAsync(looked, fetch, ct).ConfigureAwait(false);
 
-        foreach (var ((repository, space, root, _), (line, fetched)) in looked.Zip(fetches))
+        foreach (var ((repository, space, root, _), fetched) in looked.Zip(fetches))
         {
             var workspace = RemoteTarget.Workspace(space);
+            var line = fetched.Line;
 
             // (a) Pull the line.
-            var (pull, inRoot) = await JudgePullAsync(root, repository, workspace, line, fetched, ct).ConfigureAwait(false);
+            var (asJudged, inRoot) = await JudgePullAsync(root, repository, workspace, line, fetched.Failed, ct).ConfigureAwait(false);
+            var pull = fetched.Onto(asJudged);
             if (Listed($"{repository}:{line}"))
             {
                 pulls.Add(pull.Moves
@@ -483,15 +610,20 @@ public sealed partial class SessionTrees
 
     /// <summary>
     /// Fetch the line from <c>origin</c> (WSR6), as the person, with their credentials: the one network step, and it
-    /// moves only origin's own refs here. Null where it fetched; otherwise why not, in git's words.
+    /// moves only origin's own refs here. Null where it fetched; otherwise why not, in git's words — and origin's address.
     /// </summary>
-    private static async Task<string?> FetchAsync(string root, string? line, CancellationToken ct)
+    /// <remarks>
+    /// <b>It writes no <c>FETCH_HEAD</c></b> (WSR7): a fetch that fails empties that file and stamps it with the failure's
+    /// time, which made the person's own last fetch unreadable, and only origin's refs are the look's to move.
+    /// </remarks>
+    private static async Task<(string? Failed, string? Url)> FetchAsync(string root, string? line, CancellationToken ct)
     {
-        if (line is null) return null;
-        var (remote, _, _) = await WorkingTree.GitAsync(root, ["remote", "get-url", "origin"], ct).ConfigureAwait(false);
-        if (remote != 0) return "there is no `origin` remote here";
-        var (code, _, err) = await WorkingTree.GitAsync(root, ["fetch", "--quiet", "origin", line], NoPrompt, SyncBounds.Fetch, ct).ConfigureAwait(false);
-        return code == 0 ? null : Failure(err);
+        if (line is null) return (null, null);
+        var (remote, url, _) = await WorkingTree.GitAsync(root, ["remote", "get-url", "origin"], ct).ConfigureAwait(false);
+        if (remote != 0) return ("there is no `origin` remote here", null);
+        var (code, _, err) = await WorkingTree.GitAsync(
+            root, ["fetch", "--quiet", "--no-write-fetch-head", "origin", line], NoPrompt, SyncBounds.Fetch, ct).ConfigureAwait(false);
+        return (code == 0 ? null : Failure(err), url.Trim());
     }
 
     /// <summary>Where the line stands as the rest of Daoris reads it — the local branch, else origin's — as a commit, or null.</summary>

@@ -66,6 +66,24 @@ export const EveryReasonToStay: Story = {
 };
 
 /**
+ * The owner's workspace after the look (WSR7): the git on the path could not reach any SSH origin, while their own Git
+ * client could. Said once, first, with when each last heard from origin; each row carries a short mark.
+ */
+export const NothingFetched: Story = {
+  args: {
+    plan: {
+      lines: [
+        pull({ kind: 'up-to-date', fetch: 'fatal: Could not read from remote repository.', reach: 'ssh', lastFetch: '2026-09-29T09:12:00Z' }),
+        pull({ repository: 'game', kind: 'up-to-date', fetch: 'fatal: Could not read from remote repository.', reach: 'ssh', lastFetch: '2026-09-30T16:40:00Z' }),
+        pull({ repository: 'tools', kind: 'up-to-date', fetch: 'fatal: Could not read from remote repository.', reach: 'ssh' }),
+      ],
+      rebases: [rebase({ branch: 'daoris/s-3c4d5e6f', kind: 'up-to-date' })],
+      deletes: [],
+    },
+  },
+};
+
+/**
  * The owner's workspace (WSR7, D112): three repositories hold Daoris's branches and the look fetches those; the rest
  * are listed apart, collapsed, to be ticked and included.
  */
