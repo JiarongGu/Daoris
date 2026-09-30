@@ -1,0 +1,11 @@
+{
+  "id": "azure-devops-pull-request",
+  "apiVersion": 1,
+  "name": "Azure DevOps pull request",
+  "version": "1.0.0",
+  "description": "Once a branch rule's landing has made its branch, pushes it to origin and opens a pull request with the az CLI's devops extension.",
+  "hooks": {
+    "command": ["node", "${plugin}/land.mjs"],
+    "points": ["work/land"]
+  }
+}

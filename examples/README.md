@@ -80,7 +80,10 @@ transcript in `_fixtures/rehearsal-logs/`:
 a process of its own; no code from one ever loads into Daoris. Two hand sessions a browser:
 [`plugins/browser`](plugins/browser/README.md) launches one of its own, and
 [`plugins/in-app-browser`](plugins/in-app-browser/README.md) attaches to Daoris's own window (D78),
-where the person signs in once.
+where the person signs in once. Two land work (D100): once accepting a session has put its work on a
+branch, [`plugins/github-pull-request`](plugins/github-pull-request/README.md) pushes it and opens a
+pull request with `gh`, and [`plugins/azure-devops-pull-request`](plugins/azure-devops-pull-request/README.md)
+with `az repos`. Neither runs until it is installed and a workspace's landing rule names it.
 
 The examples are tracked in full — manifests, locks, synced doctrine — so they are readable as
 examples, not only runnable as fixtures (D39). The cost is stated in the same decision: a canon change
