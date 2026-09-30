@@ -73,6 +73,19 @@ that hold today's behaviour are what prove it.
    files it must not touch, what the hand-back carries) becomes a repository-local skill. A prompt then
    says only the task, its lane and its reserved decision number.
 
+**Rules 6 and 7 are built (MOD9).** `tools/merge-branch.mjs` reads its plan from `daoris.gates.json`
+plus the `npm run` steps the release workflow adds (the release and family rehearsals), so there is no
+second list. It orders gates by kind: the devkit's checks, then the suites, then the rehearsals. The
+deployment rehearsal runs last, after `dotnet build-server shutdown`. `--plan` shows the order and
+merges nothing. Before merging, the tool prints which lanes of `tools/lanes.json` (§5, held to this
+table by a test) the branch touched, and never refuses on a lane. A commit check refuses a commit
+without its `Co-Authored-By:` line and work left uncommitted in the branch's worktree. When a
+`dotnet test` gate fails and every test it names is in a FLAKE1 class, each test is re-run alone once;
+if all pass, the gate reads FLAKE and the summary counts it. `--batch` is one merge at a time: git will
+not merge over an open merge and the tool never commits, so the parent commits each merge and
+`--continue` merges the next. The rehearsals run once, after the last. The brief is the local skill
+`dispatch-subagent`.
+
 ## 4. The splits (the code half)
 
 In the order that removes the most collisions per unit of risk:
