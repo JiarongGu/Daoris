@@ -56,7 +56,10 @@ public sealed partial class DriverModule
                 ("session", id));
         }
 
-        var diff = await WorkingTree.DiffAsync(tree, baseCommit, cancellationToken);
+        // A tree brought up to date since (WSR6) no longer holds the commit its session began at: the review measures
+        // from where its branch now grows from, or it would show the line's own changes as the session's work.
+        var from = await new SessionTrees(_loop.Home).ReviewBaseAsync(tree, baseCommit, cancellationToken);
+        var diff = await WorkingTree.DiffAsync(tree, from, cancellationToken);
         if (diff is null)
         {
             throw Refusals.Because(

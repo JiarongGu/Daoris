@@ -118,6 +118,17 @@ public sealed class DriverModuleLinesTests : DriverModuleBridge
         Assert.Contains(Refusals.DriverNotReady, await RefusalAsync(Module(), "SWEEP", new { only = new[] { "engine:daoris/s-x" } }));
     }
 
+    /// <summary>
+    /// Bringing repositories up to date (WSR6) reads the registry's checkouts and the sessions in use, as the clean-up
+    /// does, so before the driver is up both its list and its press are the cold-start sentence — and nothing is fetched.
+    /// </summary>
+    [Fact]
+    public async Task Bringing_up_to_date_before_the_driver_is_up_is_a_sentence()
+    {
+        Assert.Contains(Refusals.DriverNotReady, await RefusalAsync(Module(), "TREES_SYNC_PLAN"));
+        Assert.Contains(Refusals.DriverNotReady, await RefusalAsync(Module(), "TREES_SYNC", new { only = new[] { "engine:main" } }));
+    }
+
     /// <summary>What each repository's line is needs the registry's checkouts, so before the driver is up it is the cold-start sentence.</summary>
     [Fact]
     public async Task Asking_the_lines_before_the_driver_is_up_is_a_sentence()
