@@ -98,6 +98,28 @@ export const PanelViews: StoryObj = {
   ),
 };
 
+/**
+ * The panel's views at three widths, narrowest first (TABS1): the console shown keeps its name, and the
+ * terminal gives way to its icon, its name in its tip, before any name is cut. The row scrolls only when
+ * even the icon does not fit, and with room for both names both are whole. Where each width falls
+ * differs by language. Storybook lays them out, so the measure is real here.
+ */
+export const PanelViewsNarrow: StoryObj = {
+  render: () => (
+    <div className="grid gap-6">
+      {['w-[15rem]', 'w-[18rem]', 'w-[28rem]'].map((width) => (
+        <div key={width} className={width}>
+          <OutputPanel
+            console={<SessionConsole id="s1a2b3c4" fill quiet="nothing held here" />}
+            height={80} collapsed={false} onResize={() => {}} onToggle={() => {}}
+            views={['console', 'terminal']} view="console" onView={() => {}} onMove={() => {}}
+          />
+        </div>
+      ))}
+    </div>
+  ),
+};
+
 const PROFILES = [
   { name: 'personal', login: 'in' as const },
   { name: 'work', login: 'out' as const },

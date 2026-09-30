@@ -7,6 +7,7 @@ import { Mark } from '../Mark';
 import type { Place, ViewId } from './placements';
 import { DropMark, viewEntries, ViewsMenu } from './ViewsMenu';
 import { dragProps, useViewDrop } from './viewDrag';
+import { useTabFit } from './tabFit';
 
 // The window's own furniture (D55, extended by D56, simplified by D66): the app strip, the activity
 // bar, the status bar and the output panel. Small, presentational, and kept together because they
@@ -611,6 +612,12 @@ export function OutputPanel({
   const entries = viewEntries(t, views);
   const shown = entries.some((entry) => entry.id === view) ? view : entries[0]?.id;
   const tabbed = shown === 'console' && tabs && tabs.length > 1;
+  // Whether the unselected views are their icons (TABS1). The header also holds the console's streams, a
+  // stop and the show or hide, so what they say changes what the views' names need too.
+  const fit = useTabFit([
+    ...entries.map((entry) => entry.label), shown ?? '', collapsed,
+    ...(tabbed ? tabs.map((tab) => tab.label) : []), tabbed ? selected ?? '' : '',
+  ].join('\n'));
 
   const drag = (event: React.PointerEvent<HTMLDivElement>) => {
     event.preventDefault();
@@ -650,7 +657,7 @@ export function OutputPanel({
         />
       )}
 
-      <header className="flex min-w-0 items-center gap-2 px-4 py-1">
+      <header ref={fit.row} data-fit={fit.compact ? 'icons' : 'names'} className="flex min-w-0 items-center gap-2 px-4 py-1">
         {entries.length > 1
           ? (
             <div role="tablist" aria-label={t('work.views.panel')} className="flex min-w-0 shrink items-center overflow-x-auto [scrollbar-width:none]">
@@ -670,13 +677,14 @@ export function OutputPanel({
                     setMenu(true);
                   }}
                   className={cn(
-                    // The dock's tabs, a size down: the selected one whole, the rest giving way (DOCK1c).
-                    'flex max-w-40 items-center gap-1.5 whitespace-nowrap border-b-2 px-2 py-0.5 text-meta transition-colors duration-(--speed)',
-                    shown === id ? 'shrink-0 border-b-accent text-ink' : 'min-w-8 shrink border-b-transparent text-ink-faint hover:text-ink',
+                    // The side bar's tabs, a size down (TABS1): the selected one whole, and the rest whole
+                    // while the header holds every name, their icons alone when it does not; never cut.
+                    'flex shrink-0 items-center gap-1.5 whitespace-nowrap border-b-2 px-2 py-0.5 text-meta transition-colors duration-(--speed)',
+                    shown === id ? 'border-b-accent text-ink' : 'border-b-transparent text-ink-faint hover:text-ink',
                   )}
                 >
                   <Icon name={icon} size={12} className="shrink-0" />
-                  <span className="min-w-0 truncate">{label}</span>
+                  {(shown === id || !fit.compact) && <span>{label}</span>}
                 </button>
               ))}
             </div>
