@@ -185,6 +185,13 @@ public sealed partial class DriverModule
                 .Select(p => new { Repository = p.Key, p.Value.Form, p.Value.Pattern, p.Value.Tidy, p.Value.Plugin }).ToArray(),
             WorkspaceLandings = config.WorkspaceLandings.OrderBy(p => p.Key, StringComparer.Ordinal)
                 .Select(p => new { Workspace = p.Key, p.Value.Form, p.Value.Pattern, p.Value.Tidy, p.Value.Plugin }).ToArray(),
+            // Reading and writing across as set (D107), as rows for the same reason.
+            ReadAcross = config.ReadAcross.OrderBy(p => p.Key, StringComparer.Ordinal)
+                .Select(p => new { Repository = p.Key, Read = p.Value }).ToArray(),
+            WorkspaceReadAcross = config.WorkspaceReadAcross.OrderBy(p => p.Key, StringComparer.Ordinal)
+                .Select(p => new { Workspace = p.Key, Read = p.Value }).ToArray(),
+            WriteAcross = config.WriteAcross.OrderBy(p => p.Key, StringComparer.Ordinal)
+                .Select(p => new { Repository = p.Key, To = p.Value }).ToArray(),
             Running = _loop.Processes.Running,
             // Who is driving Daoris's browser (BRW8): the running sessions handed a server that drives it.
             DrivingBrowser = _loop.Processes.DrivingBrowser,

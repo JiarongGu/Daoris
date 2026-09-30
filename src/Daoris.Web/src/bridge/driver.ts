@@ -59,6 +59,12 @@ export type DriverState = {
   landings?: ({ repository: string } & LandingRule)[];
   /** And by workspace. */
   workspaceLandings?: ({ workspace: string } & LandingRule)[];
+  /** Reading across as set (D107), by repository — absent on a shell older than it. */
+  readAcross?: { repository: string; read: boolean }[];
+  /** And by workspace, for each repository there that sets none of its own. */
+  workspaceReadAcross?: { workspace: string; read: boolean }[];
+  /** The declared relationships (D107): what each repository's sessions may also write into. */
+  writeAcross?: { repository: string; to: string[] }[];
 };
 
 export const useDriver = () => {
