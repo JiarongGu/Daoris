@@ -5591,6 +5591,21 @@ this build's library in a scratch repository (a probe, not committed), and each 
 twin was not run: it needs a service. **Nothing has looked at the window**: the note in both themes, at the side
 bar's 300px floor, and 中文.
 
+*Amended by LEFT3 (2026-10-01): the traces are bounded. Each repository keeps its newest 50
+(`LandedBranches.TracesKept`), by when each went, dropped at the record's next write; a standing entry is never
+dropped. A count per repository rather than a span: the file grows with landings, not with the clock, and a person
+back after a month away still reviews last month's sessions, while a busy repository cannot push a quiet one's
+traces out. A session whose trace was dropped reads `SESSION_TREE_GONE` once its tree is gone, as one merged does.
+Held by `LandedTracesTests` in the fast half.*
+
+*A merge's own record was considered again (LEFT3) and is still not built, for §5's reason and one found looking:
+a merge's "branch" is the line itself, and every reader of the record treats an entry as a branch Daoris made. The
+clean-up deletes a recorded branch whose work reads on the line (`git branch -D`), bringing up to date replays one
+and counts its repository as holding Daoris's branches (D112), and the hand-off pushes one. A merge entry that
+reached any of them would delete, move or push the person's line. Building it is a change to what a landing record
+is: an entry of its own kind that `All()` never returns, the review reading the merge's own range (its first parent
+up to the merge commit) and the preview reading at that commit rather than at the line's tip, each with its test.*
+
 ## D116 — A name is a UI element, designed in each language; the glossary is the authority, and a check holds it (2026-10-01)
 
 **Decision (NAME1a, the owner's round).** The owner: names in Settings and every other display must be named
@@ -5669,17 +5684,3 @@ does not hold placeholders, which the parity gate does, and cannot see a sentenc
 `{{why}}`); the audit lists those it read by hand. That the budgets match the rooms is a claim about the window,
 derived from the tokens and the frame's constants in design §4 and **not measured here**: nothing looked at the
 window in this branch.
-*Amended by LEFT3 (2026-10-01): the traces are bounded. Each repository keeps its newest 50
-(`LandedBranches.TracesKept`), by when each went, dropped at the record's next write; a standing entry is never
-dropped. A count per repository rather than a span: the file grows with landings, not with the clock, and a person
-back after a month away still reviews last month's sessions, while a busy repository cannot push a quiet one's
-traces out. A session whose trace was dropped reads `SESSION_TREE_GONE` once its tree is gone, as one merged does.
-Held by `LandedTracesTests` in the fast half.*
-
-*A merge's own record was considered again (LEFT3) and is still not built, for §5's reason and one found looking:
-a merge's "branch" is the line itself, and every reader of the record treats an entry as a branch Daoris made. The
-clean-up deletes a recorded branch whose work reads on the line (`git branch -D`), bringing up to date replays one
-and counts its repository as holding Daoris's branches (D112), and the hand-off pushes one. A merge entry that
-reached any of them would delete, move or push the person's line. Building it is a change to what a landing record
-is: an entry of its own kind that `All()` never returns, the review reading the merge's own range (its first parent
-up to the merge commit) and the preview reading at that commit rather than at the line's tip, each with its test.*
