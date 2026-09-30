@@ -60,6 +60,12 @@ applications do with the **window** itself. Five rules recur, and Daoris breaks 
 > others. §3a's mode switch and §3b's frame icons are gone; everything else here stands, including
 > the strip as the title bar, the rail, the attended column's one owner for the verbs, the panel and
 > the status bar.
+>
+> **Amended by D118 (FRAME1a, 2026-10-01; to be built as FRAME1b–i).** Every view gets the same
+> regions. A list pane and a main area are the view's own, beside the frame's side bar and panel.
+> Sessions' rail becomes one list pane among several. A list becomes a strip when the main area has no
+> room beside it, rather than below a fixed 1024 px, and a strip the window drew opens its list over the
+> main area. `docs/2026-10-01-frame-model-design.md` is the contract, and §3c's rail is its first list.
 
 ```
 ┌────────────────────────────────────────────────┐

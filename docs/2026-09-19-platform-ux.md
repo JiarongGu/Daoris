@@ -41,6 +41,10 @@ D75), where its own rules live; this is what a view may assume of it.
 - **Narrow, nothing hides behind a hamburger.** The activity bar keeps each place 36px and scrolls
   rather than crushing them (U22), and the command center gives way to the menus rather than covering
   them (U15).
+- **One frame for every view** (D118, FRAME1a; built view by view as FRAME1b–i). Each view has a list
+  pane and a main area of its own, beside the frame's side bar and panel. Overview and Map have no list.
+  Each view's list collapses, resizes, answers the same keys and is remembered as Sessions' rail is, and
+  the main area lays out by its own width. `docs/2026-10-01-frame-model-design.md` is the contract.
 
 ## 3. Tokens
 
@@ -119,7 +123,9 @@ controls are in the frame design's §3.
 - **Drawer** (right, 32rem, overlay surface, scrim, ESC/scrim/× to close) is the single detail-and-form
   surface: reading a knowledge entry, composing a quest, a quest's detail with its actions. One pattern
   instead of three; the list stays a list. A `wide` drawer (52rem) is for what holds a line of source
-  (U43).
+  (U43). *To change by D118* (FRAME1d–f): the drawer keeps forms. A record (a quest, an ask, a knowledge
+  entry) moves to the main area of the view whose list holds it, because since DOCK1a a drawer lies over
+  the side bar and the panel.
 - 🔴 **An overlay sits between the strip and the status bar**, every one of them: a scrim, a drawer, a
   panel. It starts below the strip, because the strip holds the caption buttons the window paints and
   a page backdrop cannot dim what the page does not draw (a full-bleed scrim greyed the title bar and

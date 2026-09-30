@@ -291,16 +291,16 @@ The model is `docs/2026-10-01-frame-model-design.md` (D118). Its §6 lists the r
 |---|---|
 | A1 | Model §2–§3a: one `ListPane` on every view that has a list, Sessions' rail included (FRAME1b; views in FRAME1d–g) |
 | A2 | Model §3d: a record opened from a list opens in the view's main area, and the drawer keeps forms (FRAME1d, FRAME1f) |
-| A3 | Model §3f: each view remembers its selection, its list's closing and width, and its list's filters (FRAME1b, FRAME1d–g) |
+| A3 | Model §3f: each view remembers its selection, its list's closing and width, and its list's filters (FRAME1c; each view's own in FRAME1d–g) |
 | A4 | Model §3b: the main area lays out by its own width, never the viewport's (FRAME1c) |
-| A5 | Model §3g: below 1024 px every list is a strip, opened over the main area (FRAME1b, FRAME1g) |
+| A5 | Model §3a, §3g: a list with no room beside the main area becomes a strip that opens over it, and never stacks (FRAME1b, FRAME1g) |
 | A6 | Model §3h: every region draws its own loading, empty and error states, and never nothing (FRAME1c, FRAME1g) |
 | A7 | Model §3e: ↑, ↓, Home, End and Enter in every list (FRAME1b) |
 | A8 | Model §4: the monitor's rail is a `ListPane`, and a detached window's console is the `OutputPanel` (FRAME1h) |
 | A9 | FRAME1h: a named token |
 | A10 | FRAME1c: `lib/stored.ts` |
 | A11 | FRAME1b, which rewrites the toggles |
-| A12 | Model §3a: a strip the window drew opens its list over the main area, which amends FRAME6's rule (FRAME1b) |
+| A12 | Model §3a: a strip the window drew opens its list over the main area, which amends FRAME6's rule, and a list becomes a strip by room rather than below a fixed 1024 px (FRAME1b) |
 | F1's missing door | Model §3a: pressing the current place toggles its list (FRAME1b) |
 
 ## 5. For the parent to look at
