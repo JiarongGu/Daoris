@@ -6470,6 +6470,32 @@ Each row that builds a piece notes the amendment where it lands.
 
 `verify` checks the records' shape, budgets and duplicates, and none of these words. The design's §6 says what a
 rehearsal can prove and what waits for TOOLS11's real downloads.
+
+**As built (TOOLS2, 2026-10-01): `tools.json` and its resolution, twins, with the terminal's door.** The CLI's
+`tools.ts` and the driver's `Tools.cs` read and write the file, and `daoris tool list|path|use <tool> system|file
+<path>` is the terminal's door. Nothing starts a tool through them yet: that is TOOLS5. What the design left open,
+settled here:
+- **A `tools.json` that does not read refuses every tool**, and so does one whose `tools` is not an object. It is
+  never read as empty, as `harnesses.json` is (D57). Empty would run the program `PATH` finds in place of the one
+  chosen, which rule 2 already refuses for a single entry.
+- **Rule 2's *both* is read for each way.** An entry that names another way's field is refused: the system's with a
+  version or a file, managed with a file, a file with a version. JSON `null` is no field, and a `null` entry is no
+  entry.
+- **A managed version's record** is `<home>/tools/<tool>/<version>/tool.json`. Its `exe` names the executable under
+  `package/`, as a relative `/` path with no `..`. TOOLS4 writes the record in that shape.
+- **A system tool that `PATH` does not find is said, not refused.** The resolution names the three ways, and a
+  caller keeps today's behaviour (§2.3).
+- **A whole path is .NET's `Path.IsPathFullyQualified`**, spelled again in the CLI, so `\x` and `C:x` are not whole
+  on either side.
+- **`use … system` writes `{"use": "system"}`** rather than removing the entry, and a write keeps every key it has no
+  field for.
+- **The tables are held line for line by a gate.** `tools.test.ts` parses `ToolsTests`' theories and holds each row
+  to its own table, so a row changed on one side alone fails `npm run verify`.
+- **Not yet built.** `use … managed` refuses until TOOLS4, so the managed refusal names only `daoris tool use
+  <tool> system`. The design's *which downloads it* joins with the download. `list` shows each file but not its
+  version, since asking the version starts the program, and that is `toolchain.ts`'s job. The write-side checks of
+  rules 4 and 5 (`gitKeyProblem`, `locationProblem`) wait for TOOLS6's and TOOLS3's verbs.
+- **Rejected:** reading a file that does not read as empty, for the reason in the first point.
 ## D120 — Plugins leave the repository: a workshop in the home makes them, Daoris.Plugins keeps Daoris's own, and NuGet is where they are found (2026-10-01)
 
 **Decision (PLUGREPO2, PLUGDIST1).** The owner made an empty folder, Daoris.Plugins, beside this repository, for

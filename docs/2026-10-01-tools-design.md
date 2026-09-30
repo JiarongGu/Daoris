@@ -1,7 +1,9 @@
 # Tools: the system's, managed by Daoris, or a file you name (TOOLS1)
 
-**Status: the contract for TOOLS1, recorded as D121 before any code. Nothing here is built.** The owner,
-2026-10-01:
+**Status: the contract for TOOLS1, recorded as D121 before any code. TOOLS2 is built:** `tools.json`, its rules
+and its resolution (§2.1–§2.3), twins in `tools.ts` and `Tools.cs`, and `daoris tool list|path|use <tool>
+system|file <path>`. Nothing starts a tool through them yet (TOOLS5). D121's note says what TOOLS2 settled that
+this document left open. The owner, 2026-10-01:
 
 > *"all tools that daoris using like git, [terminal] should all have a self managed option (and can be setup
 > in settings) which can be download from locations … I perfer provide default download location and built
