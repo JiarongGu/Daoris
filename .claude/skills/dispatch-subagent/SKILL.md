@@ -14,7 +14,7 @@ decision number (MOD9, `docs/2026-09-30-parallel-development-design.md` §3 rule
 ```
 Task: <ROW>: <what, and why>. The contract is <design document, section> and the <ROW> row in TASKS.md.
 Start from: main at <sha> or later.
-Lane: <a lane in tools/lanes.json>. Do not touch: <files a branch in flight holds>.
+Lanes: <lane ids in daoris.lanes.json, e.g. cli, tools>. Do not touch: <files a branch in flight holds>.
 Decision number: D<n>, reserved for this branch. (Or: none. Write no decision.)
 Follow the dispatch-subagent skill's subagent half.
 ```
@@ -32,11 +32,13 @@ Follow the dispatch-subagent skill's subagent half.
 
 ### While working
 
-- **Stay in your lane.** Change the files your lane owns (`tools/lanes.json` lists each lane's paths)
-  and the tests beside them. If you need a change in another lane, say so in the hand-back and leave it
-  to the parent to schedule. Never make it yourself.
-- **Never edit `TASKS.md` or `docs/task-archive.md`.** They are the parent's. The merge tool names a
-  branch that touches them.
+- **Stay in your lane.** Change the files your lane owns (`daoris.lanes.json` lists each lane's paths
+  under its id) and the tests beside them. If you need a change in another lane, say so in the
+  hand-back and leave it to the parent to schedule. Never make it yourself.
+- **Never edit the `records` lane's files**: `TASKS.md`, `docs/task-archive.md` and `daoris.lanes.json`.
+  They are the steward's, and the parent is the steward. The merge tool names a branch that touches
+  them. One exception: a path you add that no lane owns fails the lanes test in `verify` until the map
+  places it. Place it, and name that change in the hand-back.
 - **Take exactly the reserved decision number.** With no reservation, write no decision. Never take
   the next free number: branches that did that took one number between them (D106).
 - **TDD.** Write the failing test first and watch it fail.
@@ -89,16 +91,16 @@ Follow the dispatch-subagent skill's subagent half.
 
 1. **Reserve the decision number** before dispatching. It is the next number after both the highest in
    `docs/DECISIONS.md` and every number already reserved for a branch in flight. Name it in the prompt.
-2. **Name the lane** (`tools/lanes.json`, design §5) and the files the branch must not touch, which is
-   anything a branch in flight holds. When two branches need the same lane, one waits for the other or
-   the work is split.
+2. **Name the lanes by id** (`daoris.lanes.json`, design §5) and the files the branch must not touch,
+   which is anything a branch in flight holds. When two branches need the same lane, one waits for the
+   other or the work is split.
 3. **Run at most three at once.** More load makes real-process tests flake.
 4. **Merge with `tools/merge-branch.mjs`**, from the main checkout with a clean tree:
    - `--plan <branch>` shows the lanes, the commit check and the gate order, and merges nothing.
    - `<branch>` merges with `--no-ff --no-commit`. It then runs every gate `daoris.gates.json` declares
      and every rehearsal the release workflow adds, fast first, whatever the branch touched. Each
-     gate's whole log goes to `local/scratch/merge-<branch>/`. In the lane report, look harder at the
-     diff of a branch that crossed lanes or touched the parent's records.
+     gate's whole log goes to `local/scratch/merge-<branch>/`. The lane report names lanes by id and
+     title. Look harder at the diff of a branch that crossed lanes or touched the steward's records.
    - On a conflict the tool stops and names the files. Resolve them, `git add` them, then run
      `--continue`. On a failed gate, read that gate's log, then either fix it in the merge and run
      `--continue`, or run `git merge --abort`.
@@ -108,9 +110,9 @@ Follow the dispatch-subagent skill's subagent half.
      died (its process ended, or it printed nothing) and passed when run again. Record it under FLAKE1;
      never let it through unrecorded.
 5. **Commit the merge yourself.** The tool never commits. Read `git diff --cached` and write the
-   records: move the row from `TASKS.md` to the archive with the hand-back's outcome paragraph, add the
-   changelog entry, and update the counts in `TASKS.md`'s State. Then commit as
-   `Merge <ROW>: <what>`, with a body and the `Co-Authored-By:` line.
+   records, as the `records` lane's steward: move the row from `TASKS.md` to the archive with the
+   hand-back's outcome paragraph, add the changelog entry, and update the counts in `TASKS.md`'s State.
+   Then commit as `Merge <ROW>: <what>`, with a body and the `Co-Authored-By:` line.
 
 ## Why
 
