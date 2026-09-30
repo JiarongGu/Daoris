@@ -776,15 +776,23 @@ public sealed partial class DriverModule
     /// <remarks>One method the route and Ask Daoris's door both call (HELP10), so the two cannot drift.</remarks>
     private int ProfileDefault(string harness, string? profile, string? workspace)
     {
-        var settings = _loop.Harnesses.Settings;
-
-        settings = workspace is { Length: > 0 }
-            ? settings.WithWorkspaceDefault(workspace, harness, profile)
-            : settings.WithDefault(harness, profile);
-
-        settings.Save(_loop.Harnesses.SettingsPath);
+        DefaultEdited(_loop.Harnesses.Settings, harness, profile, workspace).Save(_loop.Harnesses.SettingsPath);
         return 0;
     }
+
+    /// <summary>
+    /// An account's default set, or cleared by naming none (D49 §4): the machine's, or one workspace's — what
+    /// <c>profile-default</c> writes. A workspace left naming no account is dropped.
+    /// </summary>
+    /// <remarks>
+    /// 🔴 <b>A twin</b> of <c>daoris agent profile default … [--clear]</c> (LEFT3), the CLI's <c>withDefault</c>: each side's
+    /// table holds the same rows (<c>ProfileDefaultTwinTests</c>, <c>toolchain.test.ts</c>). Public for that table, which
+    /// the fast half runs without the roster the route asks again.
+    /// </remarks>
+    public static HarnessSettings DefaultEdited(HarnessSettings settings, string owner, string? profile, string? workspace) =>
+        workspace is { Length: > 0 }
+            ? settings.WithWorkspaceDefault(workspace, owner, profile)
+            : settings.WithDefault(owner, profile);
 
     /// <summary>The profile a profile verb is about. Absent is a refusal, never a guess.</summary>
     private static string Named(IpcRequest request) =>

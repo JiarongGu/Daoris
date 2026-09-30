@@ -347,6 +347,8 @@ line git can name. With an agent named, a starter is also a first message.
      its command name the owner. Applied through `IHelpDoors.SetDefaultAccountAsync`, which is `HARNESS_ACTION`'s own
      `profile-default` (one method the route and the door call) and asks the roster again, as the route does.
      *Left out:* clearing a default back to the tool's own home, which the screen offers and no terminal verb does.
+     *LEFT3 built the verb*, `daoris agent profile default <agent> --clear [--workspace <name>]`, a twin of the screen's
+     write; proposing a clear is a door owed (`HelpCoverageTests`' forms), and the room names the command meanwhile.
    - **The browser's settings.** A ninth kind, `browser_propose {door, value, address?, title?}`: the `daoris
      browser` verbs that change something (`use`, `links`, `extensions`, `favorite add|remove`), a favorite's address
      as the file's target. The files are the desktop modules', so the facts carry what `BrowserModule.HelpFacts`

@@ -5151,6 +5151,14 @@ Until then the room names each one's screen and command.
 
 Nothing here needed a decision of its own: each door is this section's, and the look is D109's rule applied to a card.
 
+*Amended by LEFT3 (2026-10-01): clearing an account's default, which the screen's *Make default* on the tool's own row
+does and no terminal verb could (D50), is `daoris agent profile default <agent> --clear [--workspace <name>]`, a twin of
+`HARNESS_ACTION`'s `profile-default` held by a table on each side. Clearing a workspace's default falls back to the
+machine's, as the screen's does, and the verb says which account its sessions run as now. Ask Daoris proposing a clear
+is a door owed: the `agent` kind's `default` door takes an account and no clear, and taking one waits on the
+service's `agent_propose` and the driver's judge. `HelpCoverageTests` holds it as a form owed, and the room names the
+command meanwhile.*
+
 **Why.** HELP6 and HELP8 each found a door built since the last pass that Ask Daoris could not reach, and
 READ1 left one the room already promised. A list kept by hand drifts; a list a test derives from the doors'
 own sources does not.

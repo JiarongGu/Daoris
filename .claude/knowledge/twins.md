@@ -48,6 +48,7 @@ map found this first (WSP3), and every twin since was built the same way for the
 | Reading and writing across in `driver.json` (D107): `readAcross`, `workspaceReadAcross`, `writeAcross`, and a repository never writing into itself | `driverconfig.ts` (`writeAcrossProblem`); `driverconfig.test.ts` holds the shape cases | `DriverConfig.cs`; `Across.cs` (`AcrossRules.Problem`), which alone resolves it; `AcrossTests` holds the same shape cases, then the precedence | — |
 | The remotes map (WSP3) | `remotemap.ts` | `RemoteTarget.cs` | `RemoteConfig.cs` |
 | Harnesses, pins and accounts (D57, D67) | `toolchain.ts` | `Harnesses.cs` | — |
+| An account's default set, and cleared back to the next one down, in `harnesses.json` (D49 §4, LEFT3) | `toolchain.ts` (`withDefault`, which `agent profile default <agent> <profile>\|--clear` writes); `toolchain.test.ts`'s `DEFAULT_EDITS` | the modules' `DriverModule.DefaultEdited`, which `HARNESS_ACTION`'s `profile-default` writes for the screen; `ProfileDefaultTwinTests` holds the same rows | — |
 | A maker's release channel (AGT2b) | `channels.ts` | `ReleaseChannel.cs` | — |
 | Permission rules (D72) | `permissions.ts` | `Permissions.cs` | — |
 | Rule proposals (D74) | `ruleproposals.ts` | `RuleProposals.cs` | `RuleProposals.cs` |

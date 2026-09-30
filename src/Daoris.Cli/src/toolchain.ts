@@ -377,6 +377,34 @@ export function resolveProfile(
   return settings.defaults[harness]?.trim() || null;
 }
 
+/**
+ * An account's default set, or cleared with `null` (D49 §4, LEFT3): the machine's, or one workspace's.
+ *
+ * @remarks
+ * 🔴 **A twin of the screen's write**, `HARNESS_ACTION`'s `profile-default` (`DriverModule.DefaultEdited`), which clears
+ * by naming no account. Each side's table holds the same rows (`toolchain.test.ts`, `ProfileDefaultTwinTests`). A clear
+ * removes one entry and nothing else, and a workspace left naming no account is dropped, as the driver drops it; so
+ * absence then means what it always means, the workspace falls back to the machine's default, and that to the agent's
+ * own configuration home.
+ */
+export function withDefault(
+  settings: HarnessSettings, owner: string, profile: string | null, workspace: string | null,
+): HarnessSettings {
+  if (!workspace) {
+    const defaults = { ...settings.defaults };
+    if (profile) defaults[owner] = profile;
+    else delete defaults[owner];
+    return { ...settings, defaults };
+  }
+
+  const circle = { ...settings.workspaces[workspace] };
+  if (profile) circle[owner] = profile;
+  else delete circle[owner];
+  const workspaces = { ...settings.workspaces, [workspace]: circle };
+  if (Object.keys(circle).length === 0) delete workspaces[workspace];
+  return { ...settings, workspaces };
+}
+
 /** Where a named profile's configuration home is. Daoris owns this location and nothing inside it. */
 export function profileHome(home: string, harness: string, profile: string): string {
   return join(home, 'harnesses', safeName(harness, 'agent name'), safeName(profile, 'profile name'));
@@ -1263,8 +1291,13 @@ export function commandHarness(
 
       case 'default': {
         const name = accountsOf(operand(argv, 2), 'profile default');
-        const profile = bare(argv, 3, 'profile default', '<agent> <profile> [--workspace <name>]');
-        const workspace = flagValue(argv, '--workspace');
+        const flagged = flagValue(argv, '--workspace');
+        const workspace = flagged ? normalizeWorkspace(flagged) : null;
+        // D50's second door onto the screen's own clear (LEFT3): its *Make default* on the tool's own row names no
+        // account, and so does this.
+        if (argv.includes('--clear')) return clearDefault(name, workspace);
+
+        const profile = bare(argv, 3, 'profile default', '<agent> <profile>|--clear [--workspace <name>]');
         // Refused rather than created: naming a default that does not exist is a typo with a silent
         // wrong answer available — every spawn in that circle would refuse, and the message would be
         // about logging in rather than about the name.
@@ -1275,20 +1308,10 @@ export function commandHarness(
             + `${profiles(home, name).join(', ') || '(none)'}`);
         }
 
-        writeHarnessSettings(path, workspace
-          ? {
-            ...settings,
-            workspaces: {
-              ...settings.workspaces,
-              [normalizeWorkspace(workspace)]: {
-                ...settings.workspaces[normalizeWorkspace(workspace)], [name]: profile,
-              },
-            },
-          }
-          : { ...settings, defaults: { ...settings.defaults, [name]: profile } });
+        writeHarnessSettings(path, withDefault(settings, name, profile, workspace));
 
         write(workspace
-          ? `daoris: sessions in \`${normalizeWorkspace(workspace)}\` run \`${name}\` as \`${profile}\`.`
+          ? `daoris: sessions in \`${workspace}\` run \`${name}\` as \`${profile}\`.`
           : `daoris: this machine runs \`${name}\` as \`${profile}\` by default.`);
         write(`  Written to ${path} — machine-local, tracked by nothing, like every wiring file here.`);
         return 0;
@@ -1297,6 +1320,31 @@ export function commandHarness(
       default:
         throw new DaorisError(
           `unknown agent profile verb '${action}' — one of: list, add, remove, default`);
+    }
+
+    /**
+     * `profile default <agent> --clear [--workspace <name>]` (LEFT3): the default gone, the machine's or one
+     * workspace's, as the screen's own clear writes it. Nothing is deleted, and it says what sessions run as now, since
+     * a workspace with none falls back to the machine's default.
+     */
+    function clearDefault(name: string, workspace: string | null): ExitCode {
+      if (operand(argv, 3) !== undefined) {
+        throw new DaorisError(
+          `\`--clear\` names no account — \`daoris agent profile default ${name} --clear\` clears the default, `
+          + `and \`daoris agent profile default ${name} ${operand(argv, 3)}\` sets it.`);
+      }
+
+      const after = withDefault(settings, name, null, workspace);
+      writeHarnessSettings(path, after);
+
+      const fallback = resolveProfile(after, name, workspace, null);
+      write(!workspace
+        ? `daoris: this machine runs \`${name}\` in its own configuration home again, by default.`
+        : fallback
+          ? `daoris: \`${workspace}\` names no account for \`${name}\` now: its sessions run as the machine's default, \`${fallback}\`.`
+          : `daoris: \`${workspace}\` names no account for \`${name}\` now: its sessions run in its own configuration home.`);
+      write(`  No account was deleted. Written to ${path} — machine-local, tracked by nothing, like every wiring file here.`);
+      return 0;
     }
   }
 
