@@ -8306,3 +8306,20 @@ background work ends with the session: today's behaviour is the rule, on both do
 documents' open questions point at D105. Left open: Settings' home hint still says a terminal reads the same
 folder, which an override makes untrue; the notice under it says so.
 **Proven by:** modules 396, CLI 616, release 66/66, family 301/301, deployment 70/70.
+
+
+## MOD1 — the records stop colliding (2026-09-30)
+
+> - [ ] **MOD1 — the records stop colliding** (design §3, §6.1; by the parent, first). Union merge for
+> the append-only records, decision numbers reserved at dispatch, no moving counters in `CLAUDE.md`, a
+> docs check that refuses a duplicated table row or heading.
+
+**Outcome** (by the parent): **D106**. `.gitattributes` marks the six append-only records `merge=union`
+(the changelog, the decision log, the task archive, the fix log, the documents' index, the twins table),
+so two branches adding lines at one place keep both. `tools/doc-duplicates.mjs`, run by `verify`,
+refuses what union can leave behind: a decision number, a heading, an index row or a changelog line
+twice, and a test holds that the records marked union are exactly the records checked. Decision numbers
+are reserved at dispatch (DRV8 got D104 and the owner's calls D105 that way). `CLAUDE.md` no longer
+carries a decision range. Not union: the backlog, whose rows move out, and the module READMEs, whose
+one long row every feature edits.
+**Proven by:** `verify` (CLI 622, `doc-duplicates` clean over the six records).

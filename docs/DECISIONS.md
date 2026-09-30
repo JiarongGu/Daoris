@@ -4721,3 +4721,33 @@ process that exits before it can join is not held. `ProcessJobTests` holds a chi
 parent ending when the session is untracked. The native door's own kill is the harness's behaviour,
 seen once at one binary version, and could change with a later one. Neither door's stop has been seen
 against a real session with background work still running.
+
+## D106 — The records stop colliding: union merge, reserved numbers, no moving counters (2026-09-30)
+
+**Decision (MOD1, from the owner's *"we should modulize this project properly so that paralle
+development with subagent can run smoothly"*; `docs/2026-09-30-parallel-development-design.md` §3).**
+- **The append-only records merge by union.** `.gitattributes` marks `CHANGELOG.md`,
+  `docs/DECISIONS.md`, `docs/task-archive.md`, `docs/FIX-LOG.md`, `docs/README.md` and
+  `.claude/knowledge/twins.md` `merge=union`. Two branches that add lines at one place keep both.
+- **What union can leave behind is refused.** Union also keeps both versions of a line two branches
+  changed. `tools/doc-duplicates.mjs`, run by `verify`, refuses what that looks like in each record: a
+  decision number, a heading, an index row (by its first cell) or a changelog line that appears twice.
+  It fails rather than reports (D54): a duplicated number is a fact about the file. A test holds that the
+  records marked union are exactly the records checked.
+- **Decision numbers are reserved at dispatch.** The parent names the number in a subagent's brief, so
+  two branches never take one. The day before, three branches took D102 between them.
+- **No moving counters in always-read files.** `CLAUDE.md` said *D1–D103*, changed with every decision
+  and conflicted for nothing. It says *the numbered decision log*.
+
+**Why.** The eighteen merges measured collided most on these records (§1 of the design): nothing about
+the work collided, only the insertion point. Serialising the work would remove the conflict and the
+parallelism with it; changing the insertion point removes only the conflict.
+
+**Rejected.**
+- **One file per decision.** It removes the collision too, but moving a hundred decisions would break
+  every anchor that cites one, and union plus reserved numbers already remove the collision.
+- **Union for the backlog.** Rows move out of `TASKS.md` when they close, and union would bring a
+  removed row back from the other side.
+- **Union for the module READMEs.** One long row there lists a module's whole surface and every feature
+  edits it. Union would keep every branch's version of that row, so those files stay as they are until
+  the splits (MOD3–MOD5) give each feature its own row.

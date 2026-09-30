@@ -16,3 +16,15 @@ src/Daoris.Cli/test/fixtures/vendor/** -text
 # Written by `daoris sync`, which writes LF atomically. Never a merge conflict worth resolving by
 # hand: regenerate it instead.
 daoris.lock -merge
+
+# The append-only records merge by union (MOD1, D106): every branch adds lines at one insertion point,
+# and nothing about the work collides, only the place. Union keeps both sides' lines. It also keeps both
+# versions of a line two branches changed, so `tools/doc-duplicates.mjs` (run by `verify`) refuses a
+# decision number, heading, index row or changelog line that appears twice; the parent reads every
+# merged diff besides. Not the backlog: rows move out of it, which union would undo.
+CHANGELOG.md merge=union
+docs/DECISIONS.md merge=union
+docs/task-archive.md merge=union
+docs/FIX-LOG.md merge=union
+docs/README.md merge=union
+.claude/knowledge/twins.md merge=union

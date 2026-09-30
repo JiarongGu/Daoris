@@ -21,7 +21,7 @@ lists.
 
 ## State
 
-**Counts, and this is their one home:** sixteen commands, **616 CLI tests, 646 service and 45 HTTP host, 1378 driver,
+**Counts, and this is their one home:** sixteen commands, **622 CLI tests, 646 service and 45 HTTP host, 1378 driver,
 396 desktop modules, 80 devkit, 1683 web unit, 21 Playwright**, 66/66 release rehearsal, **301/301
 family rehearsal** (it names its own phases when you run it), **70/70 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge
@@ -112,9 +112,9 @@ rather than designed.
 
 ## Backlog
 
-**Twenty-six rows are open, in three kinds** (triaged 2026-09-30, when the owner asked to go faster):
-- **Workable now, by the parent or subagents (twelve):** the parallel-development arc's seven
-  (MOD1–MOD9, the owner's newest), DRV8 (in flight), READ1, TASKBAR1, TEST1, and FLAKE1 (which MOD8
+**Twenty-five rows are open, in three kinds** (triaged 2026-09-30, when the owner asked to go faster):
+- **Workable now, by the parent or subagents (eleven):** the parallel-development arc's six
+  (MOD2–MOD9, the owner's newest; three in flight), DRV8 (merging), READ1, TASKBAR1, TEST1, and FLAKE1 (which MOD8
   absorbs).
 - **Waiting on the owner (six):** BUDGET1 and PLUGREPO1 (their calls), TRUST2 and AGT2c (a grant, two
   downloads), FG5 and BRW3 (the owner present).
@@ -132,9 +132,6 @@ rule it also ships. A heading below holds open rows only.
 `docs/2026-09-30-parallel-development-design.md` is the contract: what eighteen merges collided on,
 the two kinds of collision (a shared record, a god file), the rules, the splits, the lane map and the
 order. Every split is behaviour-preserving and proven by the gates as they stand.
-- [ ] **MOD1 — the records stop colliding** (design §3, §6.1; by the parent, first). Union merge for
-  the append-only records, decision numbers reserved at dispatch, no moving counters in `CLAUDE.md`, a
-  docs check that refuses a duplicated table row or heading.
 - [ ] **MOD2 — catalogues by area**: `locales/{en,zh}.json` → one file per area, merged at load, parity
   held per file. **MOD3 — the bridge by domain**: `shell.ts` → `bridge/<domain>.ts`, `shell.ts` the
   barrel. **MOD4 — Settings by domain**: one file per domain, the domain list the registry. One web
