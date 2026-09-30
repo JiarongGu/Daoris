@@ -4,7 +4,7 @@
   "settings.sync.look": "Look for updates",
   "settings.sync.lookAgain": "Look again",
   "settings.sync.apply": "Bring up to date ({{count}})",
-  "settings.sync.apply_other": "Bring up to date: {{count}} changes",
+  "settings.sync.apply_other": "Bring up to date ({{count}})",
   "settings.sync.nothing": "Everything here is up to date.",
   "settings.sync.scope": "A look fetches the {{count}} repository that holds a branch of Daoris's: a session's, or one a landing made.",
   "settings.sync.scope_other": "A look fetches the {{count}} repositories that hold a branch of Daoris's: a session's, or one a landing made.",

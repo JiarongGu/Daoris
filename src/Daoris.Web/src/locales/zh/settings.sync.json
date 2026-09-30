@@ -4,7 +4,7 @@
   "settings.sync.look": "检查更新",
   "settings.sync.lookAgain": "重新检查",
   "settings.sync.apply": "更新到最新（{{count}}）",
-  "settings.sync.apply_other": "同步到最新：{{count}} 项更改",
+  "settings.sync.apply_other": "更新到最新（{{count}}）",
   "settings.sync.nothing": "这里的一切都已是最新。",
   "settings.sync.scope": "查看时会获取持有 Daoris 分支的 {{count}} 个仓库：会话的分支，或落地产生的分支。",
   "settings.sync.scope_other": "查看时会获取持有 Daoris 分支的 {{count}} 个仓库：会话的分支，或落地产生的分支。",

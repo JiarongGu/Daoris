@@ -125,7 +125,7 @@ describe("the workspace domain: the machine's wiring", () => {
     const button = await screen.findByRole('button', { name: 'Look for updates' });
     expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'TREES_SYNC_PLAN', expect.anything());
     await userEvent.click(button);
-    await userEvent.click(await screen.findByRole('button', { name: 'Bring up to date: 2 changes' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Bring up to date (2)' }));
 
     // Each waits as long as the host may work (WSR7): a look a workspace's worth of fetches, the press two replays.
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'TREES_SYNC_PLAN', { timeoutMs: 18 * 60_000 });

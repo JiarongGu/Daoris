@@ -132,7 +132,7 @@ describe('bringing repositories up to date', () => {
   it('does only what it listed, on one press', async () => {
     const { onSync } = draw();
 
-    await userEvent.click(screen.getByRole('button', { name: 'Bring up to date: 4 changes' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Bring up to date (4)' }));
 
     expect(onSync).toHaveBeenCalledWith(['engine:main', 'engine:daoris/s-step', 'engine:feature/q2-second', 'engine:feature/q1-first']);
   });
