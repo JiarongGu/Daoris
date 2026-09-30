@@ -36,6 +36,50 @@ public static class HookPoints
 }
 
 /// <summary>
+/// What each point is sent, built in one place (PLUG8): the loop and the landing send these, and the
+/// plugin kit's sample frames are built by the same functions, so a sample cannot say what the driver
+/// does not. Every name is spelled here rather than left to a serializer's policy.
+/// </summary>
+public static class HookFrames
+{
+    /// <summary><see cref="HookPoints.QuestConsider"/>: one planned start.</summary>
+    public static object Consider(Consideration start) => new
+    {
+        quest = new { id = start.Quest.Id, title = start.Quest.Title, from = start.Quest.From, to = start.Quest.To },
+        repository = start.Quest.To,
+        workspace = start.Workspace,
+        root = start.Root,
+    };
+
+    /// <summary><see cref="HookPoints.SessionEnded"/>: what a tick concluded.</summary>
+    public static object Ended(SessionEnded ended) => new
+    {
+        session = ended.Session,
+        quest = ended.Quest,
+        repository = ended.Repository,
+        state = ended.State,
+        adapter = ended.Adapter,
+        account = ended.Account,
+        byPerson = ended.ByPerson,
+        note = ended.Note,
+    };
+
+    /// <summary><see cref="HookPoints.Land"/>: the branch a landing just made (D100).</summary>
+    public static object Land(LandingFrame frame) => new
+    {
+        repository = frame.Repository,
+        workspace = frame.Workspace,
+        root = frame.Root,
+        branch = frame.Branch,
+        @base = frame.Base,
+        title = frame.Title,
+        quest = frame.Quest is { } quest ? new { id = quest, title = frame.Title } : null,
+        session = frame.Session,
+        commits = frame.Commits.Select(commit => new { sha = commit.Sha, subject = commit.Subject }).ToArray(),
+    };
+}
+
+/// <summary>
 /// One plugin's side of the wire, as the host sees it — what a process gives once it speaks, and what a
 /// test can hand in without one.
 /// </summary>
@@ -79,7 +123,10 @@ public sealed class HookPeer(
     /// <summary>The wire version this host speaks. Stated in `initialize`; a plugin answering another is refused.</summary>
     public const int ProtocolVersion = 1;
 
-    private readonly TimeSpan _patience = patience ?? TimeSpan.FromSeconds(10);
+    /// <summary>How long a call waits for its answer unless the caller says otherwise — the loop's points wait this long.</summary>
+    public static readonly TimeSpan DefaultPatience = TimeSpan.FromSeconds(10);
+
+    private readonly TimeSpan _patience = patience ?? DefaultPatience;
     private readonly ConcurrentDictionary<int, TaskCompletionSource<JsonElement>> _pending = new();
     private readonly SemaphoreSlim _writeLock = new(1, 1);
     private readonly CancellationTokenSource _stopping = new();
@@ -310,7 +357,17 @@ public sealed class HookPeer(
                     continue;
                 }
 
-                if (frame.TryGetProperty("id", out var id) && !frame.TryGetProperty("method", out _))
+                // PLUG8: a JSON value that is not an object, and an object that is neither an answer nor
+                // a request, are not frames either. A bare `42` threw InvalidOperationException from the
+                // property read below, which the catch does not name, and the wire ended.
+                var hasMethod = frame.ValueKind == JsonValueKind.Object && frame.TryGetProperty("method", out _);
+                if (frame.ValueKind != JsonValueKind.Object || (!hasMethod && !frame.TryGetProperty("id", out _)))
+                {
+                    onLine?.Invoke(line);
+                    continue;
+                }
+
+                if (frame.TryGetProperty("id", out var id) && !hasMethod)
                 {
                     Complete(id, frame);
                 }
@@ -381,13 +438,18 @@ public sealed class HookProcess : IHookChannel
 
     public bool Alive => _peer.Alive && !_process.HasExited;
 
-    /// <summary>Start the plugin's program and complete the handshake, or throw with the reason.</summary>
-    public static async Task<HookProcess> StartAsync(
-        PluginEntry plugin, string home, Action<string> onLine, CancellationToken ct, TimeSpan? patience = null)
+    /// <summary>How long a plugin has to leave once it is told `shutdown`, before it is ended.</summary>
+    public static readonly TimeSpan Grace = TimeSpan.FromSeconds(2);
+
+    /// <summary>
+    /// What a plugin's program is started with: in its install folder, stdio redirected, and its id, its
+    /// folders and the home in the environment. Stated once, so the plugin kit's try (PLUG8) starts a
+    /// plugin exactly as the driver does.
+    /// </summary>
+    public static ProcessStartInfo StartInfo(PluginEntry plugin, string home)
     {
         var hooks = plugin.Manifest.Hooks
             ?? throw new DriverException($"plugin `{plugin.Manifest.Id}` declares no hooks.");
-        Directory.CreateDirectory(plugin.Data);
 
         var info = new ProcessStartInfo
         {
@@ -405,6 +467,16 @@ public sealed class HookProcess : IHookChannel
         info.Environment["DAORIS_PLUGIN_FOLDER"] = plugin.Folder;
         info.Environment["DAORIS_PLUGIN_DATA"] = plugin.Data;
         info.Environment[DaorisHome.Variable] = home;
+        return info;
+    }
+
+    /// <summary>Start the plugin's program and complete the handshake, or throw with the reason.</summary>
+    public static async Task<HookProcess> StartAsync(
+        PluginEntry plugin, string home, Action<string> onLine, CancellationToken ct, TimeSpan? patience = null)
+    {
+        var info = StartInfo(plugin, home);
+        var hooks = plugin.Manifest.Hooks!;
+        Directory.CreateDirectory(plugin.Data);
 
         Process process;
         try
@@ -448,7 +520,7 @@ public sealed class HookProcess : IHookChannel
         {
             if (!_process.HasExited)
             {
-                using var grace = new CancellationTokenSource(TimeSpan.FromSeconds(2));
+                using var grace = new CancellationTokenSource(Grace);
                 try
                 {
                     await _process.WaitForExitAsync(grace.Token).ConfigureAwait(false);
@@ -617,13 +689,7 @@ public sealed class HookSet(
     /// <summary>The waterfall, for one planned start.</summary>
     public async Task<HookDecision> ConsiderAsync(Consideration start, CancellationToken ct)
     {
-        var payload = new
-        {
-            quest = new { id = start.Quest.Id, title = start.Quest.Title, from = start.Quest.From, to = start.Quest.To },
-            repository = start.Quest.To,
-            workspace = start.Workspace,
-            root = start.Root,
-        };
+        var payload = HookFrames.Consider(start);
 
         foreach (var (id, channel) in Listening(HookPoints.QuestConsider))
         {
@@ -654,17 +720,7 @@ public sealed class HookSet(
     public async Task<IReadOnlyList<string>> EndedAsync(SessionEnded ended, CancellationToken ct)
     {
         var lines = new List<string>();
-        var payload = new
-        {
-            session = ended.Session,
-            quest = ended.Quest,
-            repository = ended.Repository,
-            state = ended.State,
-            adapter = ended.Adapter,
-            account = ended.Account,
-            byPerson = ended.ByPerson,
-            note = ended.Note,
-        };
+        var payload = HookFrames.Ended(ended);
 
         foreach (var (id, channel) in Listening(HookPoints.SessionEnded))
         {

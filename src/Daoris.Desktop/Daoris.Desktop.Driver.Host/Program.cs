@@ -62,6 +62,15 @@ using Daoris.Driver;
 //                 one readable line each, or as written with --json. A line that cannot be read is
 //                 skipped and counted. Settings → Logs is the screen's door to the same reading.
 //
+//   plugins new <id> --point <point>… [--in <folder>]
+//   plugins try <folder|id> [--point <point>] [--frame <file.json>]
+//                 the plugin kit (PLUG8, D101): `new` writes a plugin's folder — a manifest, a wire script
+//                 answering each point, its self-contained wire test (`node --test`) and a README — into a
+//                 new or empty folder, and installs nothing. `try` starts a plugin as the driver would,
+//                 speaks the handshake, one frame at each point and the shutdown, and checks every answer
+//                 by the driver's own reader: 0 when all are ones it reads, 1 when the plugin failed a check.
+//                 Settings → Plugins is the other door.
+//
 // While watching, a line marked `!` is what would have been a toast on a machine with a screen
 // (SURF5b): a session parked, or one ended without the person asking. `daoris driver notify off`
 // turns it off here exactly as the desktop's checkbox does — one file, two doors (D50).
@@ -137,6 +146,13 @@ try
     if (args is ["logs", .. var logsArgs])
     {
         return Daoris.Driver.Host.LogsConsole.Run(logsArgs);
+    }
+
+    // The plugin kit from a terminal (PLUG8, D50): Settings → Plugins is the other door. It needs no
+    // service, and a home only to try an installed plugin by its id.
+    if (args is ["plugins", .. var pluginsArgs])
+    {
+        return await PluginKitCommand.RunAsync(pluginsArgs, Console.Out, DaorisHome.Resolve());
     }
 
     var once = args.Contains("--once");

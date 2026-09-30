@@ -1,0 +1,77 @@
+# {{name}} (`{{id}}`)
+
+A Daoris plugin that **speaks**: a process of its own, which the Daoris driver starts and asks at the
+points below, over JSON-RPC 2.0 on its stdin and stdout. It was made by Daoris's plugin kit; what it
+does is what `plugin.mjs` does.
+
+> Say here, in a sentence, what it does and why someone would turn it on, and put the same sentence in
+> `plugin.json`'s `description`: that is what a person reads before installing it.
+
+A plugin is code that runs on the person's machine, as them. So it is made like any other change: in a
+repository, with its tests, reviewed as a diff. It is installed only when a person adds it.
+
+## The folder
+
+| File | What it is |
+|---|---|
+| `plugin.json` | the manifest: its id, the plugin API version, and the command and points it speaks on |
+| `plugin.mjs` | the wire script: the handshake, a handler for each point, the shutdown |
+| `plugin.test.mjs` | its wire test: `node --test` here, with nothing of Daoris's installed |
+| `README.md` | this: the wire, the rules, and each point's frame and answer |
+
+## Where it speaks
+
+A frame's `root` is the repository's checkout on the machine. In the samples below it is `{root}`,
+which the wire test and `try` replace with an empty scratch folder.
+
+{{points}}## The wire
+
+JSON-RPC 2.0, one frame per line. Daoris calls and the plugin answers; the plugin asks Daoris nothing.
+
+1. **`initialize`.** Daoris sends `{ "protocolVersion": 1, "plugin": "<id>", "home": "<the Daoris home>",
+   "data": "<its data folder>", "points": [ … ] }`, the points being what `plugin.json` declares. The
+   plugin answers `{ "protocolVersion": 1, "points": [ … ] }`: the points it actually listens on, never
+   more than the manifest declares. The kit's test and `try` also want every declared point listened on.
+2. **`hook/<point>`**, one per question, answered with that point's shape above. An error answer
+   (`"error": { "code": -32603, "message": "…" }`) is a refusal, and Daoris says it in the plugin's name.
+3. **`shutdown`**, a notification with no answer: the plugin leaves. The driver ends a plugin still
+   there two seconds later.
+
+## The rules
+
+- **stdout is the wire.** Nothing but frames goes there. Anything else, a log line or a debug print,
+  goes to stderr, which Daoris shows under `plugin:{{id}}`.
+- **What it keeps goes in its data folder**: `DAORIS_PLUGIN_DATA`, or `${data}` in a manifest command.
+  The install folder is replaced whole by the next `daoris plugin add`, and removing a plugin names its
+  data folder rather than deleting it.
+- **Where it is, is told.** `DAORIS_PLUGIN_ID`, `DAORIS_PLUGIN_FOLDER`, `DAORIS_PLUGIN_DATA` and
+  `DAORIS_HOME` are in its environment, and `${plugin}` in a manifest command is its install folder.
+  Never work a path out from the working directory.
+- **Every request is answered, promptly.** A decision that is late, wrong or missing holds the quest,
+  naming this plugin: the driver fails closed, because it spends real accounts. An observation that
+  fails is a line on the console. A landing has two minutes.
+- **A platform's tool on Windows is often a `.cmd` script** (npm's shims, `az`). Node cannot start one
+  without cmd, and cmd reads the line a second time, so quote every argument, and refuse one holding a
+  double quote, a percent sign or a line break rather than pass it. {{run}}
+- **Nothing runs until a person says so.** An installed plugin runs once it is turned on, and a landing
+  plugin only once a workspace's landing rule names it.
+
+## Testing it
+
+```sh
+node --test                                        # in this folder: the wire test, no Daoris needed
+daoris-driver plugins try <this folder>            # the same frames, through the driver itself
+daoris-driver plugins try <this folder> --point <point> --frame <file.json>
+```
+
+`plugin.test.mjs` starts the plugin as the driver does, then checks the handshake, one frame at every
+declared point, the shutdown, and that stdout held nothing but frames. The frames' `root` is an empty
+scratch folder where git is told there is no repository, so a plugin that pushes first fails on the
+machine and reaches nothing. A plugin that runs a platform's tool deserves a test of its own: a fake of
+that tool first on the PATH, recording its arguments, and a bare repository behind `origin`, so nothing
+reaches a network.
+
+## Installing it
+
+Once it is reviewed and landed: `daoris plugin add <this folder>`, or copy the folder under the Daoris
+home's `plugins/`. Then turn it on with `daoris plugin enable {{id}}` or in Settings → Plugins.{{install}}

@@ -567,8 +567,17 @@ export function commandPlugin({ argv, write }: CommandArgs): ExitCode {
       return 0;
     }
 
+    // The kit a plugin is made with (PLUG8, D101) lives with the code that starts plugins and speaks
+    // their wire, so what `try` checks is what the driver does: this module spawns nothing, and the
+    // samples a new plugin carries are the driver's own frames. Asked for here, it says where it is.
+    case 'new':
+    case 'try':
+      throw new DaorisError(
+        `the plugin kit is \`daoris-driver plugins ${verb}\`, or Settings → Plugins — it starts a plugin as the `
+        + 'driver would, so it lives with the driver. `daoris-driver plugins` says what each takes.');
+
     default:
-      throw new DaorisError(`unknown plugin verb '${verb}' — one of: list, add, remove, enable, disable`);
+      throw new DaorisError(`unknown plugin verb '${verb}' — one of: list, add, remove, enable, disable (and new, try: the kit)`);
   }
 }
 

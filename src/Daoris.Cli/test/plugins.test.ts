@@ -481,3 +481,25 @@ test('enable and disable edit the row, and an unknown id is refused naming the l
   }
   fx.cleanup();
 });
+
+/**
+ * PLUG8 (D101): the kit a plugin is made with lives with the code that starts plugins and speaks their
+ * wire, so `try` checks what the driver does — and the CLI spawns nothing outside `toolchain.ts`. Asked
+ * for here, the CLI says where the kit is, with the command to type, and needs no home to say it.
+ */
+test('new and try say where the plugin kit is, and touch nothing', () => {
+  const saved = process.env.DAORIS_HOME;
+  delete process.env.DAORIS_HOME;
+  try {
+    for (const verb of ['new', 'try']) {
+      const error = captureError(() => commandPlugin({
+        root: process.cwd(), argv: [verb, 'acme.gate'], write: () => {}, packageRoot: process.cwd(),
+      }));
+      assert.match(error.message, new RegExp(`\`daoris-driver plugins ${verb}\``));
+      assert.match(error.message, /Settings → Plugins/);
+      assert.equal((error as { exitCode?: number }).exitCode, 2);
+    }
+  } finally {
+    if (saved !== undefined) process.env.DAORIS_HOME = saved;
+  }
+});

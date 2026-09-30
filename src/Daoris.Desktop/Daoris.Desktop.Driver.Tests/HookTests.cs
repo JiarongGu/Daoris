@@ -354,6 +354,38 @@ public sealed class HookTests : IDisposable
         Assert.Contains("plugin diagnostics, printed to stdout by mistake", lines);
     }
 
+    /// <summary>
+    /// PLUG8: a JSON value that is not an object, and an object that is neither an answer nor a request,
+    /// are noise like any other line. A bare `42` on stdout threw InvalidOperationException in the pump,
+    /// which its catch did not name, so the wire ended and every call after it said the plugin had stopped.
+    /// </summary>
+    [Theory]
+    [InlineData("42")]
+    [InlineData("\"hello\"")]
+    [InlineData("[1,2]")]
+    [InlineData("""{"level":"info","msg":"a logging library's line"}""")]
+    public async Task A_json_line_that_is_not_a_frame_is_noise_and_the_wire_goes_on(string noise)
+    {
+        var lines = new List<string>();
+        var plugin = new FakePlugin((frame, self) =>
+        {
+            self.Push(noise);
+            return Method(frame) switch
+            {
+                "initialize" => Ok(frame, """{"protocolVersion":1,"points":["quest/consider"]}"""),
+                _ => Ok(frame, """{"kind":"allow"}"""),
+            };
+        });
+        var peer = Peer(plugin, onLine: lines.Add);
+
+        await peer.InitializeAsync("h", "d", ["quest/consider"], CancellationToken.None);
+        var decision = await peer.ConsiderAsync(new { }, CancellationToken.None);
+
+        Assert.True(decision.Allowed);
+        Assert.True(peer.Alive);
+        Assert.Equal([noise, noise], lines);
+    }
+
     // ——— the set
 
     private sealed class FakeChannel(IReadOnlyList<string> points, Func<object, HookDecision>? consider = null, Action<object>? ended = null)
