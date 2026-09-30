@@ -8,7 +8,7 @@ import { languageOf } from './codeLines';
 import { inTree } from './identity';
 import { type DiffLine, diffCounts, lineDiff, patchLines } from './lineDiff';
 import { DiffLines } from './PatchView';
-import { FileOpener, type LineRange, namedLines, treePath } from './preview';
+import { callLines, FileOpener, type LineRange, treePath } from './preview';
 
 /**
  * A file the card names, as a door into the side bar's preview (PREVIEW1, D111): the path relative to
@@ -23,9 +23,11 @@ function PreviewDoor({ path, lines, open }: { path: string; lines: LineRange | n
         event.stopPropagation();
         open({ path, lines });
       }}
-      aria-label={lines
-        ? t('work.preview.openLines', { path, from: lines.from, to: lines.to })
-        : t('work.preview.open', { path })}
+      aria-label={!lines
+        ? t('work.preview.open', { path })
+        : lines.to > lines.from
+          ? t('work.preview.openLines', { path, from: lines.from, to: lines.to })
+          : t('work.preview.openLine', { path, from: lines.from })}
       // Gives way at its FRONT, as the review's paths do: the file's name is the half a person looks for.
       dir="rtl"
       className="min-w-0 shrink cursor-pointer truncate border-0 bg-transparent p-0 text-left font-mono text-meta text-ink-soft underline decoration-line-strong decoration-dotted underline-offset-2 hover:text-accent hover:decoration-accent"
@@ -113,10 +115,11 @@ export function ToolCard({ call, tree }: {
   const carried = counts ? 0 : texts.reduce((sum, text) => sum + (text ? text.split(/\r?\n/).length : 0), 0);
 
   // The file this call acted on, as a door into the preview (PREVIEW1, D111): only where the frame opens
-  // previews, and only a path the page can see is inside the tree. The lines are a read's own input's.
+  // previews, and only a path the page can see is inside the tree. The lines are a read's own input's, else
+  // the line the location names (LEFT2), which is said of this first location.
   const opener = useContext(FileOpener);
   const previewing = opener && call.locations?.[0] ? treePath(call.locations[0], tree) : null;
-  const named = previewing && call.toolKind === 'read' ? namedLines(call.input) : null;
+  const named = previewing ? callLines(call) : null;
   const split = previewing && where ? around(title, where) : null;
   const toggle = () => setChosen(!open);
 

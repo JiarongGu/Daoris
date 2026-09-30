@@ -183,7 +183,11 @@ public sealed partial class DriverModule
             only = named.EnumerateArray().Where(e => e.ValueKind == JsonValueKind.String).Select(e => e.GetString()!).ToHashSet(StringComparer.Ordinal);
         }
 
-        var done = await trees.SyncAsync(repositories, inUse, only, fetch: false, cancellationToken);
+        // The sessions in use, asked again while each repository's trees are held for its replays (LEFT2): the
+        // driver may have opened one in a listed tree between the list and this press.
+        var service = _loop.Service ?? throw NotReady();
+        var done = await trees.SyncAsync(repositories, inUse, only, fetch: false, cancellationToken,
+            inUseNow: async token => await InUseAsync(service, token));
         _loop.Nudge();
         return new
         {
@@ -210,8 +214,7 @@ public sealed partial class DriverModule
     {
         var service = _loop.Service ?? throw NotReady();
         var registry = await service.RegistryAsync(cancellationToken);
-        var inUse = (await service.ActiveSessionsAsync(cancellationToken))
-            .Select(session => session.Tree).OfType<string>().Where(tree => tree.Length > 0).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var inUse = await InUseAsync(service, cancellationToken);
         var repositories = registry
             .Where(row => !string.IsNullOrWhiteSpace(row.Root))
             .Where(row => repository is null || string.Equals(row.Repository, repository, StringComparison.OrdinalIgnoreCase))
@@ -220,4 +223,9 @@ public sealed partial class DriverModule
             .ToList();
         return (repositories, inUse);
     }
+
+    /// <summary>The trees sessions still running or waiting name, as the service's ledger says now.</summary>
+    private static async Task<HashSet<string>> InUseAsync(ServiceClient service, CancellationToken cancellationToken) =>
+        (await service.ActiveSessionsAsync(cancellationToken))
+            .Select(session => session.Tree).OfType<string>().Where(tree => tree.Length > 0).ToHashSet(StringComparer.OrdinalIgnoreCase);
 }

@@ -24,6 +24,30 @@ public sealed record HomeEstablished(
 }
 
 /// <summary>
+/// How the home this process runs on stands to the account's <c>DAORIS_HOME</c>, which is the folder a terminal's
+/// <c>daoris</c> reads (LEFT2) — what Settings → Driver's home hint says of a terminal, from a field rather than
+/// from the notice's English.
+/// </summary>
+/// <remarks>
+/// Named for the relation rather than for one of its outcomes, because there are three: a start named for itself
+/// alone is neither the account's home nor an override of it, and D105 writes no notice for it.
+/// </remarks>
+public static class HomeAccount
+{
+    /// <summary>The account's variable names this home, so a terminal's daoris reads it too.</summary>
+    public const string Same = "same";
+
+    /// <summary>This install's own <c>data/</c> replaced another folder the account's variable names (D105); the notice says which.</summary>
+    public const string Overridden = "overridden";
+
+    /// <summary>
+    /// The home was named for this start alone — a gate's scratch home, a terminal's one-off, the dev loop's — and the
+    /// account's variable names another folder or none. A terminal's daoris does not read this one.
+    /// </summary>
+    public const string ThisStart = "this-start";
+}
+
+/// <summary>
 /// The installed application's own home (D63). The install's `data` folder, beside its launcher, is the Daoris
 /// home: this process and everything it spawns read it from <c>DAORIS_HOME</c>, and the user's
 /// environment is offered the same variable so a terminal's <c>daoris</c> and a session's MCP host
@@ -143,6 +167,28 @@ public static class InstallHome
     }
 
     /// <summary>
+    /// How <paramref name="home"/>, the home this process runs on once established, stands to <paramref name="account"/>,
+    /// the account's variable as it now stands (LEFT2) — a <see cref="HomeAccount"/> value.
+    /// </summary>
+    /// <remarks>
+    /// An override is said as one, since the notice then names the folder a terminal reads. Otherwise the two
+    /// spellings are compared as <see cref="Establish"/> compares them: the same folder, or a home this start named
+    /// for itself. No variable for the account is not this folder, whatever the process was handed.
+    /// </remarks>
+    public static string AccountOf(string home, HomeEstablished? established, string? account) =>
+        established?.Overrode is not null ? HomeAccount.Overridden
+        : SamePath(home, account) ? HomeAccount.Same
+        : HomeAccount.ThisStart;
+
+    /// <summary>
+    /// The account's own <c>DAORIS_HOME</c>, which every process the person starts inherits — or null off Windows,
+    /// where the user-level store is not a notion (the shell is Windows-only, D63).
+    /// </summary>
+    public static string? AccountVariable() => OperatingSystem.IsWindows()
+        ? Environment.GetEnvironmentVariable(DaorisHome.Variable, EnvironmentVariableTarget.User)
+        : null;
+
+    /// <summary>
     /// Two spellings of one folder: full, without a trailing separator, and without regard to case
     /// where the file system has none — a variable a person typed need not match the path this built.
     /// </summary>
@@ -168,9 +214,7 @@ public static class InstallHome
         baseDirectory,
         Environment.GetEnvironmentVariable,
         (name, value) => Environment.SetEnvironmentVariable(name, value),
-        () => OperatingSystem.IsWindows()
-            ? Environment.GetEnvironmentVariable(DaorisHome.Variable, EnvironmentVariableTarget.User)
-            : null,
+        AccountVariable,
         value =>
         {
             // The user-level store is a Windows notion; elsewhere the person's shell profile is

@@ -256,6 +256,37 @@ public sealed class InstallHomeTests : IDisposable
         Assert.Equal(["driver.json"], Establish(install, legacy)!.Moved);
     }
 
+    /// <summary>
+    /// How the home stands to the account's DAORIS_HOME (LEFT2), which is the folder a terminal's daoris reads: the
+    /// page's hint says a terminal reads this folder only when it is the same. Each start D105 names, judged after it
+    /// established, with the account's variable as it then stands.
+    /// </summary>
+    [Fact]
+    public void The_home_stands_to_the_account_as_the_same_folder_overridden_or_named_for_this_start_alone()
+    {
+        var install = Install();
+        var own = Path.Combine(install, "data");
+
+        // Set for the account on this start: a terminal reads it from now on.
+        var set = Establish(install);
+        Assert.Equal(HomeAccount.Same, InstallHome.AccountOf(_process[DaorisHome.Variable], set, _user));
+
+        // The account already names it, in a spelling of its own: nothing established, and still the same folder.
+        Assert.Null(Inherited(install, own + Path.DirectorySeparatorChar));
+        Assert.Equal(HomeAccount.Same, InstallHome.AccountOf(_process[DaorisHome.Variable], null, _user));
+
+        // Inherited from an account that names another install's home: overridden, and the notice says which.
+        var overrode = Inherited(install, Path.Combine(_root, "first", "data"));
+        Assert.Equal(HomeAccount.Overridden, InstallHome.AccountOf(_process[DaorisHome.Variable], overrode, _user));
+
+        // 🔴 Named for this start alone: D105 respects it and writes no notice, and a terminal reads the account's.
+        _process.Clear();
+        Assert.Null(Establish(install, already: Path.Combine(_root, "scratch-home")));
+        Assert.Equal(HomeAccount.ThisStart, InstallHome.AccountOf(_process[DaorisHome.Variable], null, _user));
+        // …and where the account names none, a terminal reads no home at all, which is not this one either.
+        Assert.Equal(HomeAccount.ThisStart, InstallHome.AccountOf(_process[DaorisHome.Variable], null, account: null));
+    }
+
     [Fact]
     public void No_legacy_directory_is_nothing_to_move_and_the_notice_says_only_where_the_home_is()
     {

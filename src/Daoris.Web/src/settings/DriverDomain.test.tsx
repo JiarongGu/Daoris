@@ -57,38 +57,44 @@ describe('the driver domain', () => {
   });
 
   /**
-   * LEFT1 (D105): a terminal's daoris reads the folder the account's DAORIS_HOME names. The hint says
-   * that is this folder only while nothing says otherwise; an install that overrode an inherited home
-   * says which folder a terminal still reads in its notice, and the hint leaves that to the notice.
-   * The notice is the host's sentence, passed through untranslated, so the same test holds `zh`.
+   * LEFT1 then LEFT2 (D105): a terminal's daoris reads the folder the account's DAORIS_HOME names. The hint says
+   * that is this folder only when the state's `homeAccount` says the account names it. An install that overrode
+   * an inherited home says which folder a terminal still reads in its notice, and the hint points there; a home
+   * named for this start alone has no notice (D105 respects it without one), so the hint says it itself. The
+   * field decides, never the notice's English: the host's sentence is passed through untranslated.
    */
-  it('says a terminal reads the same folder only when the host has not said it reads another', async () => {
+  it('says a terminal reads the same folder only when the state says the account names it', async () => {
     const home = 'D:/somewhere/second/data';
-    // Renders the row with the host's notice, and answers whether the hint claims a terminal reads it.
-    const claims = async (homeNotice: string | null) => {
+    const overridden = `Daoris home: ${home} — this install's own data folder, not D:/somewhere/first/data, which `
+      + "DAORIS_HOME names for your account; that variable is left as it is, so a terminal's daoris still reads "
+      + 'D:/somewhere/first/data until you change it.';
+    // Renders the row, and answers which of the three things the hint says of a terminal.
+    const hint = async (homeAccount: string | undefined, homeNotice: string | null) => {
       invoke.mockImplementation(async (module: string) => (module === 'DAORIS.DRIVER'
-        ? { ...DRIVER_STATE, home, homeNotice }
+        ? { ...DRIVER_STATE, home, homeNotice, ...(homeAccount === undefined ? {} : { homeAccount }) }
         : WIRING));
       const shown = show(<SettingsView notify={() => {}} section="driver" />);
       await screen.findByText(home);
       if (homeNotice) expect(screen.getByText(homeNotice)).toBeTruthy();
       // The rest of the hint is there either way.
       expect(screen.getByRole('note', { name: /Every file on this page lives under it/ })).toBeTruthy();
-      const said = screen.queryByRole('note', { name: /a terminal's daoris reads the same folder/ }) !== null;
+      const said = screen.queryByRole('note', { name: /a terminal's daoris reads the same folder/ }) ? 'same'
+        : screen.queryByRole('note', { name: /The line below says which folder a terminal's daoris reads/ }) ? 'below'
+          : screen.queryByRole('note', { name: /named for this start alone.*does not read this folder/ }) ? 'this start'
+            : 'nothing';
       shown.unmount();
       return said;
     };
 
-    expect(await claims(null)).toBe(true);
-    // The host's own sentence for the override (`InstallHome.Establish`), whose "left as it is" its
-    // tests hold present exactly when a start overrode.
-    expect(await claims(`Daoris home: ${home} — this install's own data folder, not D:/somewhere/first/data, which `
-      + "DAORIS_HOME names for your account; that variable is left as it is, so a terminal's daoris still reads "
-      + 'D:/somewhere/first/data until you change it.')).toBe(false);
-    // Other news about the home leaves the hint whole: a move-in, and the variable set for the account.
-    expect(await claims(`Daoris home: ${home} — moved in from D:/somewhere/.daoris: driver.json.`)).toBe(true);
-    expect(await claims(`Daoris home: ${home} — DAORIS_HOME set for your account, so a terminal's daoris sees the `
-      + 'same machine.')).toBe(true);
+    expect(await hint('same', null)).toBe('same');
+    expect(await hint('overridden', overridden)).toBe('below');
+    // 🔴 The case the notice could not tell: DAORIS_HOME set for this start alone, and no notice at all.
+    expect(await hint('this-start', null)).toBe('this start');
+    // The field decides, whatever the notice says: the override's words under a home the account names.
+    expect(await hint('same', overridden)).toBe('same');
+    expect(await hint('same', `Daoris home: ${home} — moved in from D:/somewhere/.daoris: driver.json.`)).toBe('same');
+    // A shell older than the field says what it always said.
+    expect(await hint(undefined, null)).toBe('same');
   });
 
   it('says nothing about the home on a shell that has never heard of one', async () => {

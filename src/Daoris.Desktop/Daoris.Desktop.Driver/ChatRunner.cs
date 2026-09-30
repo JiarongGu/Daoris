@@ -141,9 +141,15 @@ public sealed class ChatRunner(
         if (!selection.Allowed) return new(null, selection.Refusal!);
 
         // A tree of the conversation's own, when asked for — per conversation, or as the repository's
-        // standing choice (D51). Grown before the record, like every refusal above this line.
+        // standing choice (D51). Grown before the record, like every refusal above this line. Its
+        // repository's trees are held from here until the record is open, as a driven start holds them
+        // (LEFT2), so bringing the repository up to date does not rebase the tree under it.
+        var isolated = ownTree || config.OpensOwnTree(repository);
+        using var starting = isolated ? TreeLock.TryStarting(home, known.Workspace, known.Repository) : null;
+        if (isolated && starting is null) return new(null, TreeLock.Replaying(known.Repository));
+
         TreeOpened? opened = null;
-        if (ownTree || config.OpensOwnTree(repository))
+        if (isolated)
         {
             try
             {
@@ -175,6 +181,9 @@ public sealed class ChatRunner(
             if (opened is not null) await new SessionTrees(home).RemoveAsync(opened.Path, ct: ct).ConfigureAwait(false);
             return new(null, message);
         }
+
+        // The record is open, so the ledger holds the tree and a replay's own look sees it in use (LEFT2).
+        starting?.Dispose();
 
         // What it may reach outside its tree (D107), as a driven session in this repository would.
         var across = AcrossRules.Reach(config, snapshot.Repositories, known.Repository, known.Workspace);

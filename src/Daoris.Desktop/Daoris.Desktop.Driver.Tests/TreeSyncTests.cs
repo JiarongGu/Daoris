@@ -362,6 +362,46 @@ public sealed class TreeSyncTests : LandedFixture
         Assert.False(Directory.Exists(tree.Path));
     }
 
+    /// <summary>
+    /// WSR6's open window, closed (LEFT2): while a session is starting in the repository, which holds its trees from
+    /// choosing one until its record is open, the press leaves every replay as it was and says why; and a session a
+    /// driver opened after the list is seen by the press's own look inside the hold, so its branch is left in use.
+    /// Only then, with nothing starting and nothing in use, does the branch move.
+    /// </summary>
+    [Fact]
+    public async Task A_replay_leaves_a_repository_a_session_is_starting_in_and_sees_one_opened_since_the_list()
+    {
+        var (root, origin) = await RepositoryWithOriginAsync("engine");
+        var trees = new SessionTrees(Home);
+        var (_, b, step) = await ParentAndStepAsync(trees, root);
+        await GitAsync(root, "push", "--quiet", "origin", b);
+        await SquashOnPlatformAsync(origin, b);
+        var stepTip = await RevAsync(root, step.Branch);
+
+        using (var starting = TreeLock.TryStarting(Home, "aurora", "engine"))
+        {
+            Assert.NotNull(starting);
+            var held = await trees.SyncAsync(Repositories(root), Nobody, fetch: true);
+
+            // The line is the person's and no session's tree: it still moves.
+            Assert.True(held.Lines.Single().Moved, held.Lines.Single().Message);
+            var left = held.Rebases.Single(result => result.Item.Branch == step.Branch);
+            Assert.False(left.Replayed);
+            Assert.Contains("a session was starting", left.Message);
+            Assert.Equal(stepTip, await RevAsync(root, step.Branch));
+        }
+
+        var opened = await trees.SyncAsync(
+            Repositories(root), Nobody, inUseNow: _ => Task.FromResult<IReadOnlySet<string>>(new HashSet<string> { step.Path }));
+        var inUse = opened.Rebases.Single(result => result.Item.Branch == step.Branch);
+        Assert.Equal(RebaseKind.InUse, inUse.Item.Kind);
+        Assert.False(inUse.Replayed);
+        Assert.Equal(stepTip, await RevAsync(root, step.Branch));
+
+        var done = await trees.SyncAsync(Repositories(root), Nobody);
+        Assert.True(done.Rebases.Single(result => result.Item.Branch == step.Branch).Replayed);
+    }
+
     private static (string, string?, string?)[] Repositories(string root) => [("engine", "aurora", root)];
 
     /// <summary>

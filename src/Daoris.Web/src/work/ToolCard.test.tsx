@@ -72,6 +72,32 @@ describe('a tool card\'s file', () => {
     expect(screen.getByText('Read C:/somewhere/game/a.ts')).toBeInTheDocument();
   });
 
+  /** ACP's `locations[].line` (LEFT2): an edit's location names where its first hunk now starts. */
+  it('opens an edit\'s file marked at the line its location names', async () => {
+    const open = vi.fn();
+    show({ ...EDIT, status: 'completed', title: `Edit ${TREE}/src/world.ts`, locations: [`${TREE}/src/world.ts`], line: 17 }, open);
+
+    await userEvent.click(screen.getByRole('button', { name: 'preview src/world.ts, line 17' }));
+    expect(open).toHaveBeenCalledWith({ path: 'src/world.ts', lines: { from: 17, to: 17 } });
+  });
+
+  /** The adapter says a whole-file read is at line 1; the read's own input says it named no lines. */
+  it('marks nothing for a read whose input names no lines, whatever line its location says', async () => {
+    const open = vi.fn();
+    show({ ...READ, input: JSON.stringify({ file_path: `${TREE}/src/chunk.ts` }), line: 1 }, open);
+
+    await userEvent.click(screen.getByRole('button', { name: 'preview src/chunk.ts' }));
+    expect(open).toHaveBeenCalledWith({ path: 'src/chunk.ts', lines: null });
+  });
+
+  it('marks the location\'s line for a read whose input the wire did not carry', async () => {
+    const open = vi.fn();
+    show({ ...READ, input: null, line: 42 }, open);
+
+    await userEvent.click(screen.getByRole('button', { name: 'preview src/chunk.ts, line 42' }));
+    expect(open).toHaveBeenCalledWith({ path: 'src/chunk.ts', lines: { from: 42, to: 42 } });
+  });
+
   /** A search's `offset` is not a line: only a read's input names lines. */
   it('names no lines for a call that is not a read, whatever its input carries', async () => {
     const open = vi.fn();

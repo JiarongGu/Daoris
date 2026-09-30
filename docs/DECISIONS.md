@@ -3806,6 +3806,11 @@ request, and a plugin that fails leaves the branch. Daoris itself still never pu
 session's commits as they were made. After the line moves, the person's press may replay a session branch
 or a landed branch nobody pushed onto it, only its own commits.*
 
+*Amended by LEFT2 (2026-09-30): the merge alone, the shell's `MERGE_SESSION_TREE`, is retired. Since WSR1
+the page lands through `LAND_SESSION_TREE`, which merges only where the repository's rule says merge, and
+nothing had called the merge alone since; kept, it was a door that merged into the line whatever the rule
+said, and the terminal never had its twin (D50). The review's two acts are landing and discarding.*
+
 ## D88 — A session's branch goes once git proves its work is on a branch of the person's (2026-09-28)
 
 **Decision (WSR3, from the owner's *"after merge to master or feature branch we should cleanup daoris
@@ -4757,6 +4762,17 @@ deployment rehearsal starts its install with a scratch home, the respected case,
 the override. The row's hint (`settings.home.hint`) still says a terminal reads the same folder; the
 notice under it says when one does not, and qualifying the hint in both catalogues is left open.
 
+*Amended by LEFT1 (2026-09-30) and LEFT2 (2026-10-01): the hint is qualified. LEFT1 read the override from the
+notice's English; LEFT2 makes it a field of the driver's state, `homeAccount`, which
+`InstallHome.AccountOf` answers from the home, what establishing it did, and the account's variable:
+`same` (the account names this home: the hint says a terminal reads it), `overridden` (the hint points
+at the notice, which names the folder a terminal reads), or `this-start`, a home named for this start
+alone, which D105 respects without a notice and which the notice could therefore never tell; the hint
+then says a terminal does not read this folder. A shell older than the field keeps the old hint.
+`InstallHomeTests` hold the three, the vitest loop the hint for each over a mocked bridge, and a
+`DriverModuleDriverTests` case, in the `Process` half and not run in the branch, the state carrying
+it. Nothing has looked at the row on the window.*
+
 ### 2. DIST1 — a consumer installs the CLI from npm, `daoris@<version>`
 
 The owner's call: **npm's `daoris@X`**. REV3 found the defect (docs F1): the README's `npx
@@ -5218,6 +5234,19 @@ measured here; the native door carries the tool's input as it was given.
 - **The line an ACP location carries** (`locations[].line`). The driver keeps a location's path and
   drops its line today; carrying it changes the event's shape on both doors, and a read's input already
   says which lines it read.
+
+*Amended by LEFT2 (2026-10-01): the line an ACP location carries is kept after all. A tool event gains
+`line`, the line of its first location that names a path (the path a card opens), a whole number of zero
+or more, and absent on the native door, which carries none; the page keeps it with the locations it came
+with, replaced only when they are. The card marks it where a call's own input names no lines. What the
+adapter installed here says (claude-agent-acp 0.84.0, read from its source, not measured on the wire):
+a read's location is its `offset`, or 1 when it has none, and an edit's is its first hunk's start in the
+file as it now reads. So a read's input stays the authority on a read: one whose readable input names no
+lines read the whole file and marks nothing, since line 1 there is the adapter's default and not a line
+it named, and only a read whose input the wire did not carry falls back to its location's line. An edit
+now opens at the place its change starts. A line under 1 marks nothing. Nothing has looked at an edit's
+marked line on the window.*
+
 ## D109 — After a pull request merges, one press brings a repository up to date; Daoris fetches and never pushes (2026-09-30)
 
 **Decision (WSR6).** The owner, after their first real pull request merged: *"we also need a post merge and
@@ -5334,3 +5363,27 @@ The screen's section is held by the vitest loop over a mocked bridge, not looked
 branch rebased by hand keeps a record it no longer matches, and no door re-records it. An Ask Daoris proposal
 for this press was not built: it would reach into the service's proposal kinds and the page's cards. *(HELP10
 built it since: the `sync` kind, a card whose first press is the look; see D110.)*
+for this press was not built: it would reach into the service's proposal kinds and the page's cards.
+
+*Amended by LEFT2 (2026-10-01): the window between the list and the replay is closed. A repository's trees
+have a lock under the home (`locks/trees/<workspace>/<repository>.lock`, `TreeLock`), taken by the file
+system's own sharing: a driven start and a conversation's own tree take it shared, from before the tree is
+chosen or resumed until the session's record is open, when the ledger holds the tree; the press takes it
+alone around a repository's replays, and asks the ledger again inside it, so a session opened since the
+list is seen in use. A start that meets a replay is held for that look and carried on at the next; a
+replay that meets a start leaves that repository's replays, each said. Nothing waits for the lock, and a
+process that dies lets go of it with its handles. The line's fast-forward and the deletions are not held,
+since neither touches a session's tree. `TreeLockTests` hold the lock's sharing in the fast half; the
+press leaving a repository a session is starting in, and seeing one opened since the list, is a
+`TreeSyncTests` case in the `Process` half, written in the branch and not run there (MOD8). No driver tick
+was run against a held repository. A caller of the press that hands no fresh look at the sessions in use
+(both doors hand one) is still judged by the list's look inside the hold.*
+
+*A family-rehearsal check (LEFT2) drives the terminal's door over the example family's newcomer: a session's
+work put on a branch by a branch rule, pushed to a bare `origin` in scratch and squash-merged there, the
+session carried on in its tree with one commit; then `daoris-driver trees sync --repository newcomer` lists,
+and `--yes` fast-forwards the line, replays the session branch with only its own commit (the squashed one
+dropped as already on the line), and deletes the landed branch, pushing nothing. It was written in the
+branch and not run there; the git sequence it relies on (the squashed commit dropped, the proof's diff
+empty) was run by hand in scratch repositories. It stays with `--repository`, since the examples'
+registered roots are not repositories of their own and git walks up from a folder that is not one.*

@@ -4,6 +4,7 @@
   "work.preview.close": "关闭预览",
   "work.preview.open": "预览 {{path}}",
   "work.preview.openLines": "预览 {{path}} 的第 {{from}}–{{to}} 行",
+  "work.preview.openLine": "预览 {{path}} 的第 {{from}} 行",
   "work.preview.reload": "重新读取",
   "work.preview.show": "显示",
   "work.preview.file": "文件",

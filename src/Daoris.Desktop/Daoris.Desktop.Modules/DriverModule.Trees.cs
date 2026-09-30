@@ -5,8 +5,8 @@ namespace Daoris.Desktop;
 
 /// <summary>
 /// What a session's tree holds and what becomes of it, the page's `bridge/trees.ts` (MOD5): the review's
-/// diff (SURF6), the files a composer offers (CONV4d), merge and discard (D51), landing (WSR1) and the
-/// hand-off (WSR5b).
+/// diff (SURF6), the files a composer offers (CONV4d), a file's preview (D111), discard (D51), landing
+/// (WSR1) and the hand-off (WSR5b).
 /// </summary>
 public sealed partial class DriverModule
 {
@@ -141,18 +141,28 @@ public sealed partial class DriverModule
         var service = _loop.Service ?? throw NotReady();
 
         var (tree, _) = await service.SessionGroundAsync(id, cancellationToken);
-        return await PreviewAsync(id, tree, path, cancellationToken);
+        return await PreviewAsync(id, tree, path, cancellationToken, _loop.Log);
     }
 
     /// <summary>
     /// A file read for its preview in <paramref name="tree"/>, answered as the page receives it or refused as
     /// a code. Public, as <see cref="OptionsAnswer"/> is, so the route's answers are tested without a service.
     /// </summary>
-    public static async Task<object> PreviewAsync(string session, string? tree, string path, CancellationToken cancellationToken)
+    /// <param name="log">
+    /// The machine log a preview that opened is written to (LEFT2, D94), as <c>preview.opened</c>: the session and
+    /// the file relative to the tree, never the tree's own path and never the file's words. Null writes none.
+    /// </param>
+    public static async Task<object> PreviewAsync(
+        string session, string? tree, string path, CancellationToken cancellationToken, MachineLog? log = null)
     {
         var read = string.IsNullOrWhiteSpace(tree)
             ? FilePreviewResult.Refused(FilePreviewRefusal.NoTree)
             : await FilePreview.ReadAsync(tree, path, cancellationToken);
+        if (read is { Refusal: FilePreviewRefusal.None, File: { } opened })
+        {
+            log?.Info("preview.opened", ("session", session), ("path", opened.Path));
+        }
+
         return FileAnswer(session, path, read);
     }
 
@@ -189,28 +199,27 @@ public sealed partial class DriverModule
         };
     }
 
-    // The two acts on a reviewed session (SURF6b, D51 rules 6–7). Both are the PERSON's —
-    // nothing merges itself and nothing deletes itself — so both are their own route rather
-    // than anything the diff route could do as a side effect.
+    // Discarding a reviewed session's tree (SURF6b, D51 rule 7): the PERSON's act, since nothing
+    // deletes itself, so its own route rather than anything the diff route could do as a side effect.
+    // Its sibling, the merge alone, is retired (LEFT2): the work lands through `LAND_SESSION_TREE`,
+    // which merges where the repository's rule says merge (D87).
     /// <summary>
-    /// Merge a session's tree into the canonical line, or discard it (SURF6b, D51 rules 6–7).
+    /// Discard a session's tree (SURF6b, D51 rule 7).
     /// </summary>
     /// <remarks>
-    /// <para><b>A refusal here is an ANSWER, not an error</b> — the checkout is busy, the tree holds
-    /// work nobody merged, there is nothing to merge. Each comes back as `{ done: false, message }`
-    /// with the sentence the tree layer wrote, exactly as `START_CHAT` does, because the person's next
-    /// move is different for each and a code would flatten them into one.</para>
+    /// <para><b>A refusal here is an ANSWER, not an error</b> — the tree holds work nobody merged, or
+    /// uncommitted work. Each comes back as `{ done: false, message }` with the sentence the tree layer
+    /// wrote, exactly as `START_CHAT` does, because the person's next move is different for each and a
+    /// code would flatten them into one.</para>
     ///
     /// <para><b>Discard needs `force` said out loud.</b> The unforced call is what produces the
     /// refusal that names what would be lost, so the page asks, shows that sentence, and only then
     /// sends `force`. Destroying work is never a side effect of tidying (D51 rule 7).</para>
     /// </remarks>
-    [DriverRoute("MERGE_SESSION_TREE")]
     [DriverRoute("DISCARD_SESSION_TREE")]
-    private async Task<object?> ActOnTreeAsync(IpcRequest request, CancellationToken cancellationToken)
+    private async Task<object?> DiscardTreeAsync(IpcRequest request, CancellationToken cancellationToken)
     {
         var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
-        var merging = request.Type == "MERGE_SESSION_TREE";
         var force = Flag(request, "force");
 
         var service = _loop.Service ?? throw NotReady();
@@ -221,30 +230,20 @@ public sealed partial class DriverModule
             throw Refusals.Because(
                 Refusals.SessionNotReviewable,
                 "this session's record names no working tree on this machine, so there is nothing "
-                + "here to merge or discard.",
+                + "here to discard.",
                 ("session", id));
         }
 
         // The same home the loop derives for the chat runner and the watch: the directory holding
         // `driver.json`. Derived rather than stored twice, so one answer cannot drift from the other.
-        var trees = new SessionTrees(_loop.Home);
-        if (merging)
-        {
-            var merged = await trees.MergeAsync(tree, cancellationToken);
-            // The rail's states do not change, but the tree's mergeability does — and the review the
-            // person is looking at was computed before this.
-            _loop.Nudge();
-            return new { Session = id, Done = merged.Merged, merged.Message };
-        }
-
-        var removal = await trees.RemoveAsync(tree, force, cancellationToken);
+        var removal = await new SessionTrees(_loop.Home).RemoveAsync(tree, force, cancellationToken);
         _loop.Nudge();
         return new { Session = id, Done = removal.Removed, removal.Message };
     }
 
     // How a reviewed session's work lands (WSR1, D87): what a press WOULD do, said before it —
     // merge into the line, or the branch the rule names for this session — and the press, which
-    // applies the repository's rule. `MERGE_SESSION_TREE` stays the merge alone.
+    // applies the repository's rule. It is the one door that lands a session's work.
     /// <summary>
     /// A reviewed session's landing (WSR1, D87): the plan before the press, or the press itself.
     /// </summary>

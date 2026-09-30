@@ -42,6 +42,8 @@ export type SessionEvent = {
   toolKind?: string | null;
   status?: string | null;
   locations?: string[] | null;
+  /** The line the first of `locations` names, where the wire carried one (ACP's `locations[].line`, LEFT2). */
+  line?: number | null;
   content?: ToolContent[] | null;
   input?: string | null;
   output?: string | null;
@@ -94,6 +96,8 @@ export type Block = {
   toolKind?: string | null;
   status?: string | null;
   locations?: string[] | null;
+  /** The line the first of `locations` names (LEFT2): replaced with them, never on its own. */
+  line?: number | null;
   content?: ToolContent[] | null;
   input?: string | null;
   output?: string | null;
@@ -242,13 +246,16 @@ export function toTurns(
           for (const field of ['title', 'toolKind', 'status', 'locations', 'content', 'input', 'output'] as const) {
             if (event[field] != null) (card as Record<string, unknown>)[field] = event[field];
           }
+          // A line is said of the locations it came with (LEFT2): ACP replaces a present list whole, and a line
+          // kept past its list would mark a place in a file nobody named it of.
+          if (event.locations != null) card.line = event.line ?? null;
           if (event.status === 'completed' || event.status === 'failed') card.finished = event.at;
           where[event.seq] = card.key;
         } else {
           where[event.seq] = key;
           turn.items.push({
             key, kind: 'tool', at: event.at, id: event.id, title: event.title, toolKind: event.toolKind,
-            status: event.status, locations: event.locations, content: event.content,
+            status: event.status, locations: event.locations, line: event.line, content: event.content,
             input: event.input, output: event.output,
             // A call's first event names it; one with no name is an update to a call begun earlier.
             ...(event.title ? {} : { continued: true }),

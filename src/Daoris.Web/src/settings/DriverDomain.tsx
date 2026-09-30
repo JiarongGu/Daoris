@@ -4,13 +4,22 @@ import { useDriver, useSetNotify, useSetStrikes } from '../shell';
 import { Card, CheckField, failure, type Notify, PathText, SettingRow } from '../ui';
 
 /**
- * Whether the host's notice says this start overrode the home the account names (D105). A terminal's
- * daoris then reads that other folder, and the notice says so, so the home's hint stops claiming a
- * terminal reads this one (LEFT1). Read from the host's own sentence (`InstallHome.Establish`), since
- * the state carries no other sign: `InstallHomeTests` holds "left as it is" in the notice exactly when
- * a start overrode, and `DriverDomain.test.tsx` holds this against that sentence.
+ * The home's hint for how the home stands to the account's DAORIS_HOME, which a terminal's daoris reads
+ * (D105; LEFT1, then LEFT2). Read from the state's `homeAccount` (`InstallHome.AccountOf`), never from the
+ * notice's English, which is the host's sentence passed through as it was said.
+ *
+ * - `same`: a terminal reads this folder, and the hint says so.
+ * - `overridden`: this install's own `data/` replaced another the account names; the notice under the row
+ *   says which folder a terminal reads, and the hint points there.
+ * - `this-start`: DAORIS_HOME was named for this start alone. D105 respects it and writes no notice, so the
+ *   hint itself says a terminal does not read this folder.
+ *
+ * A shell older than the field says nothing of it, and the hint says what it always said.
  */
-const overrodeHome = (notice: string | null | undefined) => notice?.includes('left as it is') ?? false;
+const HOME_HINT: Record<string, string> = {
+  overridden: 'settings.home.hintOverridden',
+  'this-start': 'settings.home.hintThisStart',
+};
 
 /**
  * The Driver domain (D75): where this machine's Daoris lives, and the driver's two dials over
@@ -55,7 +64,7 @@ export function DriverDomain({ notify }: { notify: Notify }) {
         {driver.data?.home && (
           <SettingRow
             label={t('settings.home.label')}
-            why={t(overrodeHome(driver.data.homeNotice) ? 'settings.home.hintOverridden' : 'settings.home.hint')}
+            why={t(HOME_HINT[driver.data.homeAccount ?? ''] ?? 'settings.home.hint')}
             control={<PathText path={driver.data.home} className="text-small text-ink-soft" />}
           >
             {driver.data.homeNotice && (

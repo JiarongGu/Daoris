@@ -3213,6 +3213,94 @@ check(
 
 // Leave the root as section 7 left it — later phases assume the dirty file is theirs to manage.
 rmSync(join(newcomer, 'work-in-flight.txt'), { force: true });
+
+// Bringing a repository up to date after its pull request merged (WSR6, D109), from a terminal: the owner's case
+// over the newcomer. A session's work is put on a branch by the landing rule, the person pushes it to an `origin`
+// (a bare repository in scratch, so nothing reaches a network), and the platform squash-merges it, so the line
+// holds its content and none of its commits. The session had carried on in its tree after its landing. `trees
+// sync` then fast-forwards the line, replays the session branch with only its own commit, and deletes the landed
+// branch. Only `--repository newcomer`: the examples' registered roots are not repositories of their own, and git
+// walks UP from a folder that is not one. The replay makes commits, so it is handed an identity as every git
+// call here is, since the rehearsal runs on machines with no git config.
+const escaped = (text) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+// The line as Daoris resolves it, which the plan above named, and the checkout's own branch where it did not.
+const syncLine = /merge its work into `([^`]+)`/.exec(landPlan.out)?.[1] ?? run('git rev-parse --abbrev-ref HEAD', newcomer).out.trim();
+const syncRule = cliDriver('landing newcomer branch "feature/{quest}"');
+const syncQuest = await api('POST', '/api/quests', {
+  body: { from: 'game', to: 'newcomer', title: 'Land beside the line', body: 'Its work goes up as a pull request (WSR6).' },
+});
+const syncRun = driver({ serviceUrl: BASE, config: driverConfig, harness: HARNESS_ENV, mode: '--until-idle' });
+const syncRecord = ((await api('GET', '/api/sessions?repository=newcomer&includeClosed=true')).json ?? [])
+  .find((s) => s.quest === syncQuest.json?.quest?.id);
+const syncTree = syncRecord?.tree ?? '';
+const syncLanded = run(`dotnet "${driverDll}" trees land ${syncRecord?.id}`, scratch, cleanEnv);
+const landedBranch = /put the work on `([^`]+)`/.exec(syncLanded.out)?.[1] ?? '';
+check(
+  '`daoris-driver trees land` under a branch rule puts a session’s work on a branch of its own, for a pull request',
+  syncRule.code === 0 && syncRun.code === 0 && existsSync(syncTree) && syncLanded.code === 0
+    && landedBranch.startsWith('feature/') && run(`git branch --list "${landedBranch}"`, newcomer).out.includes(landedBranch),
+  syncRule.out + syncRun.out + syncLanded.out,
+);
+
+// The person pushes it; the platform squash-merges it and pushes the line.
+const syncOrigin = join(scratch, 'newcomer-origin.git');
+const syncPlatform = join(scratch, 'newcomer-platform');
+run(`git init -q --bare "${syncOrigin}"`, scratch);
+run(`git remote add origin "${syncOrigin}"`, newcomer);
+run(`git push -q origin ${syncLine} ${landedBranch}`, newcomer);
+run(`git clone -q -b ${syncLine} "${syncOrigin}" "${syncPlatform}"`, scratch);
+run(`git ${GIT_ID} merge --squash origin/${landedBranch}`, syncPlatform);
+run(`git ${GIT_ID} commit -q -m "Land beside the line (#1)"`, syncPlatform);
+run(`git push -q origin ${syncLine}`, syncPlatform);
+// The session carried on in its tree after its landing: one commit of its own on its branch.
+const sessionBranch = run('git rev-parse --abbrev-ref HEAD', syncTree).out.trim();
+writeFileSync(join(syncTree, 'carried-on.md'), 'carried on after its landing\n');
+run(`git ${GIT_ID} add -A`, syncTree);
+run(`git ${GIT_ID} commit -q -m "carried on after its landing"`, syncTree);
+
+const lineBefore = run(`git rev-parse ${syncLine}`, newcomer).out.trim();
+const syncListed = run(`dotnet "${driverDll}" trees sync --repository newcomer`, scratch, cleanEnv);
+check(
+  '`daoris-driver trees sync` fetches and lists the line’s fast-forward, the session branch’s replay and the landed branch going — and moves nothing',
+  syncListed.code === 0
+    && new RegExp(`moves\\s+newcomer\\s+${escaped(syncLine)}\\s+fast-forwards 1 commit\\(s\\) to \`origin/${escaped(syncLine)}\``).test(syncListed.out)
+    && new RegExp(`moves\\s+newcomer\\s+${escaped(sessionBranch)}\\s+replays 2 commit\\(s\\) of its own onto \`${escaped(syncLine)}\``).test(syncListed.out)
+    && new RegExp(`goes\\s+newcomer\\s+${escaped(landedBranch)}\\s+its pull request reached`).test(syncListed.out)
+    && /trees: 3 thing\(s\) would change/.test(syncListed.out)
+    && run(`git rev-parse ${syncLine}`, newcomer).out.trim() === lineBefore,
+  syncListed.out,
+);
+
+const originBefore = run('git for-each-ref', syncOrigin).out;
+const syncPressed = run(`dotnet "${driverDll}" trees sync --repository newcomer --yes`, scratch, {
+  ...cleanEnv,
+  GIT_AUTHOR_NAME: 'Family Rehearsal', GIT_AUTHOR_EMAIL: 'rehearsal@example.invalid',
+  GIT_COMMITTER_NAME: 'Family Rehearsal', GIT_COMMITTER_EMAIL: 'rehearsal@example.invalid',
+});
+check(
+  '…and --yes fast-forwards the line, replays the session branch with only its own commit, and deletes the landed branch',
+  syncPressed.code === 0
+    && new RegExp(`moved\\s+newcomer\\s+fast-forwarded \`${escaped(syncLine)}\` by 1 commit\\(s\\)`).test(syncPressed.out)
+    && new RegExp(`moved\\s+newcomer\\s+replayed \`${escaped(sessionBranch)}\` onto \`${escaped(syncLine)}\`: 1 commit\\(s\\) of its own \\(1 became empty`).test(syncPressed.out)
+    && new RegExp(`removed\\s+newcomer\\s+${escaped(landedBranch)}\\s`).test(syncPressed.out)
+    && /trees: 1 line\(s\) moved, 1 branch\(es\) replayed, 1 removed\./.test(syncPressed.out),
+  syncPressed.out,
+);
+check(
+  '…and git agrees: the line is origin’s, the session branch is its one commit on it, the landed branch is gone, and nothing was pushed',
+  run(`git rev-parse ${syncLine}`, newcomer).out.trim() === run(`git rev-parse origin/${syncLine}`, newcomer).out.trim()
+    && run(`git rev-parse ${sessionBranch}~1`, newcomer).out.trim() === run(`git rev-parse ${syncLine}`, newcomer).out.trim()
+    && run(`git log --format=%s ${syncLine}..${sessionBranch}`, newcomer).out.trim() === 'carried on after its landing'
+    && run(`git branch --list "${landedBranch}"`, newcomer).out.trim() === ''
+    && run('git for-each-ref', syncOrigin).out === originBefore
+    && run('git status --porcelain', newcomer).out.trim() === '',
+  run(`git log --oneline --graph --all -n 12`, newcomer).out,
+);
+
+// Leave the newcomer as the phases after this one expect it: no tree, no landing rule, no `origin`.
+run(`dotnet "${driverDll}" trees remove "${syncTree}" --force`, scratch, { DAORIS_DRIVER_CONFIG: driverConfig });
+run('git remote remove origin', newcomer);
+cliDriver('landing newcomer --clear');
 cliDriver('trees newcomer off');
 
 // -------------------------------------------------- 17. the protocol door

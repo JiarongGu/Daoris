@@ -459,6 +459,13 @@ public sealed partial class Driver(
             }
         }
 
+        // 🔴 WSR6's open window (LEFT2): bringing the repository up to date must not rebase a tree a session is
+        // starting in. Its trees are held, beside any other start, from choosing the tree until the record is open,
+        // when the ledger holds it; a replay holding them holds this start for one look. Let go right after the
+        // open below; the `using` lets go on every hold and throw between.
+        using var starting = isolated ? TreeLock.TryStarting(home, start.Workspace, quest.To) : null;
+        if (isolated && starting is null) return Hold(TreeLock.Replaying(quest.To));
+
         TreeOpened? opened = null;
         if (isolated && resumedIn is null)
         {
@@ -538,6 +545,9 @@ public sealed partial class Driver(
 
             return ($"refused  #{quest.Id} → {quest.To}: {message}", false, null, null);
         }
+
+        // The record is open, so the ledger holds the tree and a replay's own look sees it in use (LEFT2).
+        starting?.Dispose();
 
         try
         {

@@ -158,6 +158,8 @@ public sealed partial class DriverModule
             // machine-local path, answered only over this bridge, like every path here.
             _loop.Home,
             _loop.HomeNotice,
+            // How that home stands to the account's DAORIS_HOME (LEFT2): what the page's hint says of a terminal.
+            _loop.HomeAccount,
             _loop.HostNotice,
             config.Drivable,
             config.Holds,

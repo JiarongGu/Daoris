@@ -43,9 +43,16 @@ export type DriverState = {
   home?: string;
   /**
    * What establishing the home did on this start, when it is worth saying — state moved in from a
-   * profile directory, or the account's environment gaining the variable. Null when nothing was.
+   * profile directory, the account's environment gaining the variable, or the account's home set aside
+   * for this install's own (D105). Null when nothing was.
    */
   homeNotice?: string | null;
+  /**
+   * How that home stands to the account's DAORIS_HOME, which a terminal's daoris reads (LEFT2): the same
+   * folder, overridden by this install's own `data/` (D105; the notice says which), or named for this start
+   * alone (no notice). Absent on a shell older than it.
+   */
+  homeAccount?: 'same' | 'overridden' | 'this-start';
   /**
    * The host this shell adopted is serving a page that is not this install's, in the shell's own
    * sentence — or null. Standing, because it is true for as long as that host runs.
