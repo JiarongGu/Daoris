@@ -1,18 +1,16 @@
 {
-  "_why": "The lane map of docs/2026-09-30-parallel-development-design.md §5, as paths a tool can check (MOD9). tools/merge-branch.mjs prints which lanes a branch touched, and never refuses a merge on it: a lane is how the parent dispatches branches that do not share files, and the report tells the parent when one crossed. Each lane's title is the design's own; a test holds the two tables together and holds that every path here still matches a tracked file. `parent` lists the records a subagent never edits. Globs: `*` stays inside one folder, `**` crosses folders, `{a,b}` is either.",
+  "_why": "The lane map of docs/2026-09-30-parallel-development-design.md §5, as paths a tool can check (MOD9). tools/merge-branch.mjs prints which lanes a branch touched, and never refuses a merge on it: a lane is how the parent dispatches branches that do not share files, and the report tells the parent when one crossed. Each lane's title is the design's own; a test holds the two tables together and holds that every path here still matches a tracked file. `parent` lists the records a subagent never edits. `laneless` lists what belongs to no lane on purpose, each group with its reason; a test refuses a tracked file that is in no lane and not listed there, so a new path is placed when it is added, never left outside silently (LEFT1). Globs: `*` stays inside one folder, `**` crosses folders, `{a,b}` is either, and a path starting `!` carves a narrower lane's files out of a wider one.",
 
   "lanes": [
     {
       "title": "Web shell",
+      "_why": "The page, but its Settings: the frame, the bridge, the atoms, the work frame, every other screen, the modules they share, the catalogues outside Settings' areas, and the page's build and end-to-end suite.",
       "paths": [
-        "src/Daoris.Web/src/shell.ts",
-        "src/Daoris.Web/src/bridge/**",
-        "src/Daoris.Web/src/App.tsx",
-        "src/Daoris.Web/src/App.test.tsx",
-        "src/Daoris.Web/src/ui.tsx",
-        "src/Daoris.Web/src/work/**",
-        "src/Daoris.Web/src/locales/*/work.json",
-        "src/Daoris.Web/src/locales/*/work.*.json"
+        "src/Daoris.Web/**",
+        "!src/Daoris.Web/src/SettingsView*.tsx",
+        "!src/Daoris.Web/src/settings/**",
+        "!src/Daoris.Web/src/locales/*/settings.json",
+        "!src/Daoris.Web/src/locales/*/settings.*.json"
       ]
     },
     {
@@ -34,10 +32,13 @@
     },
     {
       "title": "Desktop modules",
+      "_why": "The modules, the application, and the launcher that starts it (D93), a twin of the modules' taskbar identity (D108). The desktop tree's package versions are the kit the application and the modules run on; the driver has no package of its own.",
       "paths": [
         "src/Daoris.Desktop/Daoris.Desktop.Modules/**",
         "src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/**",
-        "src/Daoris.Desktop/Daoris.Desktop.App/**"
+        "src/Daoris.Desktop/Daoris.Desktop.App/**",
+        "src/Daoris.Desktop/Daoris.Desktop.Launcher/**",
+        "src/Daoris.Desktop/Directory.Packages.props"
       ]
     },
     {
@@ -50,9 +51,39 @@
     },
     {
       "title": "Tools and records",
-      "paths": ["tools/**", ".gitattributes"]
+      "_why": "This repository's own tooling and gates: tools/, the devkit's gates, the gates' declaration and the release workflow that runs them, the desktop suites' Process settings the gates name (MOD8), and the workspace's scripts and ignore rules.",
+      "paths": [
+        "tools/**",
+        ".gitattributes",
+        ".gitignore",
+        ".github/**",
+        "daoris.gates.json",
+        "package.json",
+        "package-lock.json",
+        "src/Daoris.Devkit/**",
+        "src/Daoris.Desktop/process.runsettings"
+      ]
     }
   ],
 
-  "parent": ["TASKS.md", "docs/task-archive.md"]
+  "parent": ["TASKS.md", "docs/task-archive.md"],
+
+  "laneless": [
+    {
+      "what": "The docs and records: read by every lane and written by the change that makes them stale.",
+      "paths": ["docs/**", "README.md", "CLAUDE.md", "ROADMAP.md", "LICENSE", "src/Daoris.Desktop/README.md"]
+    },
+    {
+      "what": "The doctrine and what it is synced into: a canon change re-syncs this repository's own copy and the example family in the same commit, whichever lane asked for it.",
+      "paths": ["canon/**", "AGENTS.md", "daoris.json", "daoris.lock", ".claude/**", "examples/**"]
+    },
+    {
+      "what": "The harness's settings for working in this repository.",
+      "paths": [".mcp.json"]
+    },
+    {
+      "what": "Build settings every desktop project shares, the driver's and the modules' alike.",
+      "paths": ["src/Daoris.Desktop/Directory.Build.props"]
+    }
+  ]
 }

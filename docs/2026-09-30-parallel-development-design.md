@@ -82,8 +82,12 @@ deployment rehearsal runs last, after `dotnet build-server shutdown`. `--plan` s
 merges nothing. Before merging, the tool prints which lanes of `tools/lanes.json` (§5, held to this
 table by a test) the branch touched, and never refuses on a lane. A commit check refuses a commit
 without its `Co-Authored-By:` line and work left uncommitted in the branch's worktree. When a
-`dotnet test` gate fails and every test it names is in a FLAKE1 class, each test is re-run alone once;
-if all pass, the gate reads FLAKE and the summary counts it. `--batch` is one merge at a time: git will
+`dotnet test` gate of the `Process` half fails and names every failure, each failed test is re-run
+alone once; if all pass, the gate reads FLAKE and the summary counts it. A rehearsal that died is run
+again once, whole (LEFT1): one whose exit is a process ending (a shell's 127, a signal, a Windows crash
+status) or that printed nothing of its own, as the family rehearsal once exited 127 with no transcript
+while three worktrees built. If the second run passes it reads FLAKE. A rehearsal that reported failed
+checks, or said why it stopped, has failed and is not run again. `--batch` is one merge at a time: git will
 not merge over an open merge and the tool never commits, so the parent commits each merge and
 `--continue` merges the next. The rehearsals run once, after the last. The brief is the local skill
 `dispatch-subagent`.
@@ -111,17 +115,22 @@ touched them. Split one when two branches next meet in it.
 
 | Lane | Owns |
 |---|---|
-| Web shell | `src/Daoris.Web/src/{shell.ts,bridge/,App.tsx,ui.tsx}`, the work frame |
+| Web shell | `src/Daoris.Web/` but its Settings: `shell.ts`, `bridge/`, `App.tsx`, `ui.tsx`, the work frame, the other screens and the modules they share, and the page's build |
 | Web settings | `SettingsView.tsx`, `settings/`, and their catalogue areas |
 | Driver library | `Daoris.Desktop.Driver/` by feature folder: loop and planner, trees and landing, plugins and hooks, help, toolchain |
-| Desktop modules | `Daoris.Desktop.Modules/` by partial, and `Daoris.Desktop.App/` |
+| Desktop modules | `Daoris.Desktop.Modules/` by partial, `Daoris.Desktop.App/`, the launcher, and the desktop tree's package versions |
 | Service | `src/Daoris.Service/` |
 | CLI | `src/Daoris.Cli/` |
-| Tools and records | `tools/`, `.gitattributes`, the docs gates |
+| Tools and records | `tools/`, `.gitattributes`, the docs gates, the devkit, the gates' declaration and the release workflow |
 
 A feature usually crosses two or three lanes (a driver door, its module route, its screen). After the
 splits, crossing a lane means adding a file in it, not editing that lane's god file, so two features
 can cross the same lanes at once.
+
+What belongs to no lane is declared too, as `laneless` in `tools/lanes.json`: the docs and records, the
+doctrine and the example family it is synced into, and the harness's settings. The merge tool reports
+those as *no lane*. A test refuses a tracked file that is in no lane and not declared, so a new path is
+placed when it is added, never left outside silently (LEFT1).
 
 ## 6. Order of work
 
