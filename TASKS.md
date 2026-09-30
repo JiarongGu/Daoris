@@ -127,8 +127,8 @@ rather than designed.
 
 ## Backlog
 
-**Eighteen rows are open** (triaged 2026-09-30, when the owner asked to go faster; 2026-10-01 after the night's merges):
-- **Building (two):** HELP10 and LEFT2.
+**Twenty-one rows are open** (triaged 2026-09-30, when the owner asked to go faster; 2026-10-01 after the night's merges and the look):
+- **Building or next (five):** HELP10 and LEFT2 building; WSR7, REVIEW2 and TABS1, found looking.
 - **Waiting on the owner (six):** BUDGET1 and PLUGREPO1 (their calls), TRUST2 and AGT2c (a grant, two
   downloads), FG5 and BRW3 (the owner present).
 - **Parked on a trigger (ten):** TOOL4, TOOL5, PLUG7, SEM2, CANON9, HARNESS1, REH1, D76's held file tree,
@@ -157,6 +157,33 @@ rule it also ships. A heading below holds open rows only.
   no check for `trees sync`; opening a preview is not a machine-log event; a read's line from ACP's
   `locations[].line` is dropped by the driver (carrying it changes the event shape on both doors); and a
   driver resuming a session in a tree between *Bring up to date*'s list and its replay is a window not closed.
+
+**Found looking at the republished install (2026-10-01)**, each on the owner's real workspace of 29
+repositories, which no fixture has:
+
+- [ ] **WSR7 — *Bring up to date* on a real workspace.** (a) **The window never shows the look.** The page's
+  bridge gives up after its default 30 s, and the look fetches every repository with a checkout (48 s from a
+  terminal, minutes from the window), so the section shows nothing and the host finishes unheard. Nothing is
+  logged, because a client's timeout is not a refusal. Every long route needs a timeout matched to its own
+  bound: `TREES_SYNC_PLAN`, `TREES_SYNC`, `HANDOFF` and a plugin landing, and Ask Daoris's sync look through
+  `HELP_APPLY`. The look also needs a sentence while it runs, since its button does not show it is busy.
+  (b) **Every fetch failed** (`Could not read from remote repository`): the `git` on `PATH` cannot reach this
+  machine's SSH remotes, while the person's own Git client can. The look still judged against the last fetch,
+  as it should, but said so only at the end of each of 29 rows. Say it once, first: how many repositories
+  were not fetched, that each is judged against what origin said at its last fetch, and what the person's
+  git needs (a key it reads, or `core.sshCommand`). (c) **Scope.** After one pull request merged, the look
+  proposed fast-forwarding seven repositories Daoris has no work in. Decide, and record it as a decision,
+  whether the default is the repositories holding Daoris's branches, with the rest listed and opt-in.
+- [ ] **REVIEW2 — a landed session reads as landed.** The review of a session whose landing tidied its tree
+  says git cannot read its range (`SESSION_RANGE_UNREADABLE`), then still offers Accept, Send back and Discard.
+  It should say where the work landed (`landings.json`: the branch, when, and the pull request if a plugin
+  opened one), show the changes from the landed branch (`from..branch`), and offer the hand-off rather than
+  Accept. Its preview (`PREVIEW_NO_TREE` today) reads the file from the landed branch, saying so. Since a
+  finished session is usually a landed one, today's preview of it is always empty.
+- [ ] **TABS1 — a dock tab shows its whole name or its icon.** At a 430 px side bar the four tabs need 367 of
+  349 px, so each unselected tab loses about 6 px, and a three-character name reads as one character and an
+  ellipsis (时…, 改…, 问…). An unselected tab that cannot show its whole name shows its icon alone, its name
+  in the tip as now. The panel's tabs get the same.
 
 ### Plugins Daoris makes (owner, 2026-09-30)
 
