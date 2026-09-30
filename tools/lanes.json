@@ -1,0 +1,58 @@
+{
+  "_why": "The lane map of docs/2026-09-30-parallel-development-design.md §5, as paths a tool can check (MOD9). tools/merge-branch.mjs prints which lanes a branch touched, and never refuses a merge on it: a lane is how the parent dispatches branches that do not share files, and the report tells the parent when one crossed. Each lane's title is the design's own; a test holds the two tables together and holds that every path here still matches a tracked file. `parent` lists the records a subagent never edits. Globs: `*` stays inside one folder, `**` crosses folders, `{a,b}` is either.",
+
+  "lanes": [
+    {
+      "title": "Web shell",
+      "paths": [
+        "src/Daoris.Web/src/shell.ts",
+        "src/Daoris.Web/src/bridge/**",
+        "src/Daoris.Web/src/App.tsx",
+        "src/Daoris.Web/src/App.test.tsx",
+        "src/Daoris.Web/src/ui.tsx",
+        "src/Daoris.Web/src/work/**",
+        "src/Daoris.Web/src/locales/*/work.json",
+        "src/Daoris.Web/src/locales/*/work.*.json"
+      ]
+    },
+    {
+      "title": "Web settings",
+      "paths": [
+        "src/Daoris.Web/src/SettingsView*.tsx",
+        "src/Daoris.Web/src/settings/**",
+        "src/Daoris.Web/src/locales/*/settings.json",
+        "src/Daoris.Web/src/locales/*/settings.*.json"
+      ]
+    },
+    {
+      "title": "Driver library",
+      "paths": [
+        "src/Daoris.Desktop/Daoris.Desktop.Driver/**",
+        "src/Daoris.Desktop/Daoris.Desktop.Driver.Host/**",
+        "src/Daoris.Desktop/Daoris.Desktop.Driver.Tests/**"
+      ]
+    },
+    {
+      "title": "Desktop modules",
+      "paths": [
+        "src/Daoris.Desktop/Daoris.Desktop.Modules/**",
+        "src/Daoris.Desktop/Daoris.Desktop.Modules.Tests/**",
+        "src/Daoris.Desktop/Daoris.Desktop.App/**"
+      ]
+    },
+    {
+      "title": "Service",
+      "paths": ["src/Daoris.Service/**"]
+    },
+    {
+      "title": "CLI",
+      "paths": ["src/Daoris.Cli/**"]
+    },
+    {
+      "title": "Tools and records",
+      "paths": ["tools/**", ".gitattributes"]
+    }
+  ],
+
+  "parent": ["TASKS.md", "docs/task-archive.md"]
+}

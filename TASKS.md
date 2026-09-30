@@ -21,11 +21,11 @@ lists.
 
 ## State
 
-**Counts, and this is their one home:** sixteen commands, **629 CLI tests, 655 service and 46 HTTP host, 1431 driver,
+**Counts, and this is their one home:** sixteen commands, **654 CLI tests, 655 service and 46 HTTP host, 1431 driver,
 406 desktop modules, 80 devkit, 1700 web unit, 21 Playwright**, 66/66 release rehearsal, **301/301
 family rehearsal** (it names its own phases when you run it), **70/70 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge
-documents, 5 skills, 7 packs. The always-loaded core is **22,492 of 26,000 bytes** — a span in
+documents, 5 skills, 7 packs. The always-loaded core is **22,672 of 26,000 bytes** — a span in
 `AGENTS.md` since D59 — and **advisory rather than enforced** (D54: a fact gates, a judgement
 reports).
 
@@ -117,9 +117,9 @@ rather than designed.
 
 ## Backlog
 
-**Twenty rows are open, in three kinds** (triaged 2026-09-30, when the owner asked to go faster):
-- **Workable now, by the parent or subagents (six):** the parallel-development arc's two
-  (MOD8, MOD9, the owner's newest; MOD9 in flight), READ1, TASKBAR1, TEST1, and FLAKE1 (which MOD8
+**Nineteen rows are open, in three kinds** (triaged 2026-09-30, when the owner asked to go faster):
+- **Workable now, by the parent or subagents (five):** the parallel-development arc's last
+  (MOD8, in flight), READ1, TASKBAR1, TEST1, and FLAKE1 (which MOD8
   absorbs).
 - **Waiting on the owner (six):** BUDGET1 and PLUGREPO1 (their calls), TRUST2 and AGT2c (a grant, two
   downloads), FG5 and BRW3 (the owner present).
@@ -139,11 +139,6 @@ the two kinds of collision (a shared record, a god file), the rules, the splits,
 order. Every split is behaviour-preserving and proven by the gates as they stand.
 - [ ] **MOD8 — tests follow their code, and a `Process` category** run serially in the parent; the
   worktree path-length failure fixed at its cause.
-- [ ] **MOD9 — one merge tool and a dispatch skill**: `tools/merge-branch.mjs` (merge, stop on a
-  conflict it cannot resolve, EVERY declared gate in order whatever the branch's lane — MOD2 moved the
-  web's catalogues and two C# tests that read them broke unseen, because the batch skipped the .NET
-  suites as "web only" — whole outputs kept) and a repository skill
-  holding the brief every subagent gets.
 
 ### Watch it, type into it, set it up (owner, 2026-09-30) — in this order
 
