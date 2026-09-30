@@ -407,6 +407,10 @@ it can run beside one of them. PLUGUI1 can start once FRAME1c has landed.
   on the plugin's page (§3c), and the side bar keeps Ask Daoris for asking.
 - **Settings keeps only what is a setting.** That half is PLUGUI1's own, in the Web settings lane.
 
+*D119 (PLUGUI1a) is the view's contract: `docs/2026-10-01-plugins-screen-design.md`. It orders the list's groups
+by what a plugin needs from the person (waiting on you, on, off, then the offers), and confirms that the side bar
+and the panel gain nothing from the view.*
+
 ## 8. Not chosen
 
 - **A shared main area with tabs across views** (VS Code's editor groups): a quest, a session and an entry
