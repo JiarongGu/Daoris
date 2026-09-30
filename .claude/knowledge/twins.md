@@ -53,6 +53,7 @@ map found this first (WSP3), and every twin since was built the same way for the
 | A folder's trust (D73) | `trust.ts` | `ClaudeTrust.cs` | — |
 | An account's own model and effort, in the tool's `settings.json` (D98) | `agentsettings.ts` | `AgentSettings.cs` | — |
 | Plugins (D64), and `plugin add`'s copy (PLUG9) | `plugins.ts` | `Plugins.cs`; `PluginInstall.cs`, which adds and never replaces an installed plugin (the one difference, held by both tables) | — |
+| A hook answer's shape at each point (PLUG8, D101) | — | `HookPeer`'s reader, which `PluginKit`'s try uses; and the `ANSWERS` and `handshake` of the wire test the kit writes beside every plugin (`plugin-kit/plugin.test.mjs.template`), which runs with no Daoris. `PluginKitTests`' answer table gives one plugin each row's answer and wants both doors' verdict | — |
 | The in-app browser's favorites and settings (BRW5, CHR7), the settings' `links` among them (BRW7) | `browser.ts` | `BrowserFavorites.cs`, `BrowserSettings.cs` (the desktop modules, read by `daoris-browser` at each start; `links` by the page, through `BrowserModule`'s state) | — |
 | The code map (MAP3) | — | `CodeMapFile.cs` | `CodeMap.cs` (the devkit produces it) |
 | A Daoris host's status names its search tier, `tier` (HOSTID1) | — | the shell's `HostSupervisor.IsDaorisStatus`, which adopts only such an answer | `StatusResponse.Tier` (`ApiContracts.cs`); the page's `Status` type reads it too |

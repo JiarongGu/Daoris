@@ -7,7 +7,7 @@ import { useScope } from './scope';
 import { useHarnessRun, WithHarnessRuns } from './harnessRuns';
 import {
   useAddFavorite, useBrowserSettings, useDriver, useHarnessAction, useHarnesses, useLines,
-  usePluginAction, usePlugins, useRefreshHarnesses, useRemotes, useRemoveFavorite, useRuleAction, useRuleProposal, useRules,
+  usePickFolder, usePluginAction, usePluginNew, usePlugins, usePluginTry, useRefreshHarnesses, useRemotes, useRemoveFavorite, useRuleAction, useRuleProposal, useRules,
   useSetAgentSettings, useSetBrowser, useSetExtensions, useSetHelper, useSetIntake, useSetLanding, useSetLine, useSetLinks, useSetNotify, useSweep, useSweepPlan, useSetStrikes, useStarts, useUnwireRemote, useUsage,
   useWireRemote, useMachineLog, useOpenLogFolder,
 } from './shell';
@@ -20,6 +20,7 @@ import { SessionConsole } from './SessionConsole';
 import { AiJobs, type SearchTier } from './settings/AiJobs';
 import { LandingList } from './settings/Landings';
 import { LineList } from './settings/Lines';
+import { PluginKitCard, TrialReport, type KitPoint, type PluginTrialResult } from './settings/PluginKit';
 import { SweepList } from './settings/Sweep';
 import { SignIn } from './SignIn';
 import { byTool, doorLabel, type ToolDoor } from './tools';
@@ -1104,11 +1105,17 @@ function Starts({ notify }: { notify: Notify }) {
  * **Two doors, one folder** (D50): the switch is a row in `plugins.json` that `daoris plugin
  * enable|disable` edits too, and Remove takes the install folder while naming what the plugin kept.
  * **No plugin code runs in this page** — a plugin's word reaches the console under `plugin:<id>`.
+ *
+ * A plugin that speaks can be tried where it stands (PLUG8): the shell starts it as the driver would and
+ * the report sits under its row. Beneath the catalogue, the kit a plugin is made with.
  */
 function Plugins({ notify }: { notify: Notify }) {
   const { t } = useTranslation();
   const catalog = usePlugins();
   const act = usePluginAction();
+  const trying = usePluginTry();
+  // Each installed plugin's last trial, by id, shown under its row until it is tried again.
+  const [trials, setTrials] = useState<Record<string, PluginTrialResult>>({});
   useErrorNotify(catalog.error, notify);
 
   // Defensive about the shape, for SES1's reason: a shell older than this surface answers something
@@ -1133,7 +1140,15 @@ function Plugins({ notify }: { notify: Notify }) {
     return parts.length > 0 ? parts.join('; ') : t('plugin.quiet');
   };
 
+  const tryInstalled = (id: string) => trying.mutate({ id }, {
+    onSuccess: (trial) => setTrials((was) => ({ ...was, [id]: trial })),
+    onError: failure(notify),
+  });
+  // An older shell has never heard of the kit, and gets no card for it.
+  const kit = Array.isArray(catalog.data.kit?.points) ? catalog.data.kit.points : null;
+
   return (
+    <>
     <Card className="mt-3.5">
       <SettingRow
         label={t('plugin.folder')}
@@ -1166,6 +1181,17 @@ function Plugins({ notify }: { notify: Notify }) {
           )}
           control={(
             <>
+              {/* A plugin that speaks can be tried; one that only declares runs nothing to try. */}
+              {kit && !plugin.problem && plugin.points.length > 0 && (
+                <Button
+                  variant="ghost"
+                  disabled={trying.isPending}
+                  aria-label={t('plugin.kit.tryNamed', { id: plugin.id })}
+                  onClick={() => tryInstalled(plugin.id)}
+                >
+                  {t('plugin.kit.try')}
+                </Button>
+              )}
               <Button
                 variant="ghost"
                 disabled={act.isPending}
@@ -1188,9 +1214,50 @@ function Plugins({ notify }: { notify: Notify }) {
               <Inline text={plugin.problem} />
             </p>
           )}
+          {trials[plugin.id] && <TrialReport trial={trials[plugin.id]!} />}
         </SettingRow>
       ))}
     </Card>
+    {kit && <PluginKitSection notify={notify} points={kit} />}
+    </>
+  );
+}
+
+/**
+ * The kit a plugin is made with (PLUG8, D101): the screen's half of `daoris-driver plugins new|try`.
+ * New writes into the folder the person picks or types and installs nothing; Try runs a folder's plugin.
+ */
+function PluginKitSection({ notify, points }: { notify: Notify; points: KitPoint[] }) {
+  const { t } = useTranslation();
+  const make = usePluginNew();
+  const trying = usePluginTry();
+  const pick = usePickFolder();
+  const [made, setMade] = useState<string | null>(null);
+  const [trial, setTrial] = useState<PluginTrialResult | null>(null);
+
+  return (
+    <PluginKitCard
+      points={points}
+      busy={make.isPending || trying.isPending}
+      made={made}
+      trial={trial}
+      onPick={async () => {
+        try {
+          return (await pick.mutateAsync())?.path ?? null;
+        } catch (error) {
+          failure(notify)(error);
+          return null;
+        }
+      }}
+      onMake={(plugin) => make.mutate(plugin, {
+        onSuccess: (result) => {
+          setMade(result.folder);
+          notify(t('plugin.kit.made', { id: result.id, folder: result.folder }));
+        },
+        onError: failure(notify),
+      })}
+      onTry={(folder) => trying.mutate({ folder }, { onSuccess: setTrial, onError: failure(notify) })}
+    />
   );
 }
 

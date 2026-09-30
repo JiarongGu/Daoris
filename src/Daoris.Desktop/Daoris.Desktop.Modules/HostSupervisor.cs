@@ -132,6 +132,9 @@ public sealed partial class HostSupervisor(string serviceUrl, Func<HostLocation?
             UseShellExecute = false,
             CreateNoWindow = true,
             RedirectStandardInput = true,
+            // Nothing is written on it, only closed, but every redirected stream names UTF-8 (a source
+            // scan holds it), and one with no byte-order mark writes nothing ahead of a first byte.
+            StandardInputEncoding = new System.Text.UTF8Encoding(encoderShouldEmitUTF8Identifier: false),
         };
         start.Environment[StopOnInputEnd] = "1";
         return start;

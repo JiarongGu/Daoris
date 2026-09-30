@@ -975,6 +975,10 @@ public static class HarnessProbe
             FileName = resolved[0],
             RedirectStandardOutput = true,
             RedirectStandardError = true,
+            // Read as the tools write, not in the console's code page, which garbled a plugin's words on
+            // a Chinese-locale machine (PLUG8); a sign-in status can carry a name.
+            StandardOutputEncoding = Encoding.UTF8,
+            StandardErrorEncoding = Encoding.UTF8,
             UseShellExecute = false,
             CreateNoWindow = true, // a probe from a window must not open a console (Adapters.Shell)
         };

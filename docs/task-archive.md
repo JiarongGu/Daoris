@@ -8192,3 +8192,29 @@ checkout is copied as it stands, and the card says so.
 **Proven by:** service 632 + 45, driver 1221, modules 387, vitest 1635, CLI 592, Playwright 21, family
 301/301 (a first run exited 127 before its transcript while three worktrees built; the rerun alone
 passed), deployment 67/67.
+
+## PLUG8 — the kit a session makes a plugin with (2026-09-30)
+
+> - [ ] **PLUG8 — the kit a session makes a plugin with.** (a) `daoris plugin new <id> --point <p>…
+>   [--harness]` … (b) `daoris plugin try <folder> --point <p> [--frame <file>]` … (c) The authoring
+>   knowledge a session reads …
+
+**Outcome** (built by a subagent in its own worktree, merged, then looked at and rehearsed on main):
+**D101**. `daoris-driver plugins new` and Settings → Plugins → Make a plugin write a plugin's folder: a
+manifest, a wire script already answering each point, a README with the wire and its rules, and a wire
+test needing only Node. So `node --test` is a plugins repository's whole gate with no Daoris on its
+PATH; the published install carries neither CLI, and a driven session gets none. `plugins try` and the
+Try buttons start a plugin with the driver's own start, reader and frames (`HookFrames`, now shared by
+the loop, the landing and the kit), and report each check in its own sentence with exit 0/1/2. One
+22-row table holds `try` and the wire test to the same verdicts. The sample frames name no repository:
+their root is an empty folder with no git behind it, proven inside a real repository. The CLI's `plugin
+new|try` points at the kit; no spawn was added to the CLI. `--harness` and servers were left out,
+because they are declarations rather than code. A non-frame JSON line no longer ends a plugin's wire.
+**Found on the window and fixed in the merge:** the hook wire read and wrote a plugin's streams in the
+console's code page, so on this machine every non-ASCII word a plugin said came back garbled (FIX-LOG);
+every redirected stream in the desktop now names UTF-8, held by a source scan. Also the kit card's
+body showed raw `**` (a catalogue test now refuses markdown bold), and its folder field shrank to two
+characters with the side bar open. Try's scratch folder is under the system's temporary folder,
+removed within the call; D101 records it.
+**Proven by:** driver 1294, modules 388, service 632 + 45, vitest 1653, CLI 593, family 301/301, Playwright 21,
+deployment 67/67.

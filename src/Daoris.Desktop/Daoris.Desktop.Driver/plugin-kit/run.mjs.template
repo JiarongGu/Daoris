@@ -1,0 +1,54 @@
+
+/** The last line a command said, for a sentence. */
+const lastLine = (text) => (text ?? '').trim().split(/\r?\n/).at(-1)?.trim() ?? '';
+
+/** Where a command is, as this machine starts it: on Windows by PATH and PATHEXT, elsewhere by name. */
+function which(command) {
+  if (process.platform !== 'win32') return command;
+  const extensions = (process.env.PATHEXT ?? '.COM;.EXE;.BAT;.CMD').split(';').filter(Boolean);
+  for (const directory of (process.env.PATH ?? '').split(delimiter).filter(Boolean)) {
+    for (const extension of extensions) {
+      const candidate = join(directory, command + extension);
+      if (existsSync(candidate)) return candidate;
+    }
+  }
+  return null;
+}
+
+/**
+ * Run a platform's tool with its arguments, never through a shell, and answer `{ ok, out, why }`.
+ *
+ * On Windows a tool is often a `.cmd` script (npm's shims, `az`), which only cmd can start. cmd reads the
+ * line a second time, so every argument is quoted, and one holding what cmd would still act on inside
+ * quotes (a double quote, a percent sign, a line break) is refused rather than passed. Respell such
+ * text (see `safe` below) before it becomes an argument.
+ */
+function run(command, args, cwd) {
+  const found = which(command);
+  if (found === null) return { ok: false, out: '', why: `\`${command}\` is not on this machine's PATH` };
+
+  let result;
+  if (process.platform === 'win32' && /\.(cmd|bat)$/i.test(found)) {
+    const unsafe = args.find((arg) => /["%\r\n]/.test(arg));
+    if (unsafe !== undefined) {
+      return { ok: false, out: '', why: `\`${command}\` is a cmd script here, and \`${unsafe}\` cannot pass through cmd safely` };
+    }
+    const line = [found, ...args].map((arg) => `"${arg.replace(/(\\+)$/, '$1$1')}"`).join(' ');
+    result = spawnSync(process.env.ComSpec ?? 'cmd.exe', ['/d', '/s', '/c', `"${line}"`],
+      { cwd, encoding: 'utf8', windowsVerbatimArguments: true });
+  } else {
+    result = spawnSync(found, args, { cwd, encoding: 'utf8' });
+  }
+
+  if (result.error) return { ok: false, out: '', why: `\`${command}\` could not run: ${result.error.message}` };
+  return {
+    ok: result.status === 0,
+    out: result.stdout ?? '',
+    why: lastLine(result.stderr) || lastLine(result.stdout) || `it exited ${result.status}`,
+  };
+}
+
+/** Text cmd can carry on Windows: its double quotes made single, its percent signs spelled, one line. */
+const safe = (text) => (process.platform === 'win32'
+  ? text.replace(/"/g, "'").replace(/%/g, ' percent').replace(/[\r\n]+/g, ' ')
+  : text);

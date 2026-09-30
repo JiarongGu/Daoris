@@ -20,6 +20,7 @@ import type { LineChange, RepositoryLine } from './settings/Lines';
 import type { LandingChange, LandingRule, RepositoryLanding } from './settings/Landings';
 import type { LandedBranch, SweepBranch } from './settings/Sweep';
 import type { LogFilters, LogReading } from './settings/Logs';
+import type { KitPoint, NewPlugin, PluginTrialResult } from './settings/PluginKit';
 import type { OpenTerminal, TerminalOpening, TerminalShellChoice, Terminals } from './work/terminals';
 
 export type { DiffFile, SessionDiff } from './work/diff';
@@ -1499,7 +1500,12 @@ export type PluginEntry = {
   folder: string;
   data: string;
 };
-export type PluginCatalog = { folder: string; plugins: PluginEntry[] };
+export type PluginCatalog = {
+  folder: string;
+  plugins: PluginEntry[];
+  /** Where a new plugin may speak (PLUG8): the kit's points, which are the driver's. An older shell sends none. */
+  kit?: { points: KitPoint[] };
+};
 
 export const usePlugins = () => {
   const { isAvailable } = useShenora();
@@ -1562,6 +1568,25 @@ export const usePluginAction = () => {
     },
   });
 };
+
+/**
+ * The screen's half of `daoris-driver plugins new` (PLUG8, D101): a plugin's folder written into the one
+ * the person named. Nothing is installed, so nothing is asked again.
+ */
+export const usePluginNew = () =>
+  useMutation({
+    mutationFn: (plugin: NewPlugin) =>
+      call<{ id: string; folder: string; points: string[]; files: string[] }>('PLUGIN_NEW', plugin),
+  });
+
+/**
+ * The screen's half of `daoris-driver plugins try`: an installed plugin by its id, or a folder by its
+ * path, started as the driver would. It may take as long as the driver waits — two minutes for a landing.
+ */
+export const usePluginTry = () =>
+  useMutation({
+    mutationFn: (target: { id: string } | { folder: string }) => call<PluginTrialResult>('PLUGIN_TRY', target),
+  });
 
 /**
  * Install, update, or log a profile in — each by that harness's OWN mechanism.

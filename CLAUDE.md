@@ -83,7 +83,7 @@ workflow (`tools/release-prep.mjs`). A hand-bump leaves every file consistent an
 
 - `README.md` — the consuming story: install, the commands, the manifest, the three layers.
 - `docs/2026-08-04-daoris-design.md` — the **contract**. Read it first.
-- `docs/DECISIONS.md` — the numbered decision log (D1–D100) and why each was made. **D45 is the
+- `docs/DECISIONS.md` — the numbered decision log (D1–D102) and why each was made. **D45 is the
   direction: Daoris drives** — read it before planning anything; **D48–D50 are a closed arc**
   (workspaces; the interactive surface; management parity).
 - **The desktop is a code-gen-driven IDE** (D55): the organising object is a **session, not a file**,
@@ -145,7 +145,9 @@ workflow (`tools/release-prep.mjs`). A hand-bump leaves every file consistent an
   shell before building** — an orphaned host holds the build's own assemblies.
 - **A plugin is a folder that declares, and may speak** (**D64**, `docs/2026-09-23-plugin-design.md`):
   a manifest under `plugins/`: harnesses on the ACP door, servers every session is handed,
-  behaviour spoken over a wire — **never code loaded into a host**, no registry.
+  behaviour spoken over a wire — **never code loaded into a host**, no registry. **One is made with
+  the driver's kit** (D101, §9): `daoris-driver plugins new|try`, a folder whose own `node --test`
+  needs no Daoris.
 - **The conversation is built** (owner, 2026-09-25 → **D76**,
   `docs/2026-09-24-reference-gap-study.md`): a session's structured updates are kept as typed events
   on the machine, and the page renders a conversation from them; the console becomes its raw view.

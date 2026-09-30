@@ -1090,6 +1090,52 @@ public sealed class DriverModuleTests : Bridge
     }
 
     /// <summary>
+    /// PLUG8: the plugin kit's screen half. The catalogue says where a new plugin may speak; New writes a
+    /// plugin's folder where the person named and installs nothing; Try starts a folder or an installed
+    /// plugin as the driver would. The kit's refusals arrive in its own words.
+    /// </summary>
+    [Fact]
+    public async Task The_kit_makes_a_plugin_where_the_person_names_and_tries_it_or_an_installed_one()
+    {
+        var module = Module();
+        var kit = (await AnswerAsync(module, "PLUGINS")).GetProperty("kit").GetProperty("points").EnumerateArray().ToList();
+        Assert.Equal(["quest/consider", "session/ended", "work/land"], kit.Select(p => p.GetProperty("name").GetString()!).ToArray());
+        Assert.Equal(["decision", "observation", "act"], kit.Select(p => p.GetProperty("kind").GetString()!).ToArray());
+
+        var repository = Path.Combine(Home, "a-plugins-repository");
+        Directory.CreateDirectory(repository);
+        var made = await AnswerAsync(module, "PLUGIN_NEW", new { id = "acme.gate", points = new[] { "quest/consider" }, folder = repository });
+        var folder = Path.Combine(repository, "acme.gate");
+        Assert.Equal(folder, made.GetProperty("folder").GetString());
+        Assert.Equal(["plugin.json", "plugin.mjs", "plugin.test.mjs", "README.md"],
+            made.GetProperty("files").EnumerateArray().Select(f => f.GetString()!).ToArray());
+        // Making one installs nothing.
+        Assert.Empty((await AnswerAsync(module, "PLUGINS")).GetProperty("plugins").EnumerateArray());
+
+        var tried = await AnswerAsync(module, "PLUGIN_TRY", new { folder });
+        Assert.True(tried.GetProperty("passed").GetBoolean(), tried.GetRawText());
+        Assert.Equal("acme.gate", tried.GetProperty("plugin").GetString());
+        Assert.Equal(["handshake", "quest/consider", "shutdown", "stdout"],
+            tried.GetProperty("steps").EnumerateArray().Select(s => s.GetProperty("name").GetString()!).ToArray());
+        Assert.Contains("answered as the driver reads it", tried.GetProperty("summary").GetString());
+
+        Assert.Contains("already holds", await RefusalAsync(module, "PLUGIN_NEW", new { id = "acme.gate", points = new[] { "quest/consider" }, folder = repository }));
+        Assert.Contains("is not a point", await RefusalAsync(module, "PLUGIN_NEW", new { id = "acme.other", points = new[] { "quest/started" }, folder = repository }));
+        Assert.False(Directory.Exists(Path.Combine(repository, "acme.other")));
+
+        // Installed, it is tried by its id, from its own folder under the home.
+        var installed = Path.Combine(Home, "plugins", "acme.gate");
+        Directory.CreateDirectory(installed);
+        foreach (var file in Directory.GetFiles(folder)) File.Copy(file, Path.Combine(installed, Path.GetFileName(file)));
+        var byId = await AnswerAsync(module, "PLUGIN_TRY", new { id = "acme.gate" });
+        Assert.True(byId.GetProperty("passed").GetBoolean(), byId.GetRawText());
+        Assert.Equal(installed, byId.GetProperty("folder").GetString());
+
+        Assert.Contains("no plugin `acme.nobody`", await RefusalAsync(module, "PLUGIN_TRY", new { id = "acme.nobody" }));
+        Assert.Contains("an installed plugin's id or a folder", await RefusalAsync(module, "PLUGIN_TRY", new { }));
+    }
+
+    /// <summary>
     /// What an agent may do (PERM1, D72) as the page reads it: Daoris's defaults, each with its reason and
     /// whether it is on, and every scope the machine's file holds — the file the terminal's
     /// `daoris agent rules` edits.

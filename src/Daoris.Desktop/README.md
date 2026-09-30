@@ -92,6 +92,14 @@ every line one writes reaches the console under `plugin:<id>`, over the bridge a
 card is the other — the same rows, the same `plugins.json`, Remove naming what a plugin kept.
 **No plugin code ever runs inside the shell, the host or the page.**
 
+**The kit a plugin is made with** (PLUG8, D101, the plugin design's §9) is the driver library's
+`PluginKit`: `daoris-driver plugins new <id> --point <p>… [--in <folder>]` writes a plugin's folder
+(a manifest, a wire script, a wire test `node --test` runs with no Daoris, a README) from templates
+embedded in the library (`plugin-kit/*.template`), and `daoris-driver plugins try <folder|id>` starts
+a plugin as the driver would and checks every answer with the driver's own reader. On the page,
+`DAORIS.DRIVER`'s `PLUGINS` answer carries `kit.points`, `PLUGIN_NEW` {id, points, folder} writes the
+folder, and `PLUGIN_TRY` {id} or {folder} answers the trial's steps, summary and stderr lines.
+
 ## The dev loop — `tools/desktop.mjs` (2026-09-21)
 
 Everything else here has a loop that can see it. The shell had none: Playwright cannot reach it (the

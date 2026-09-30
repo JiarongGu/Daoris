@@ -18,4 +18,10 @@
     <EmbeddedResource Include="hooks\tree-guard.mjs" LogicalName="Daoris.Driver.tree-guard.mjs" />
   </ItemGroup>
 
+  <!-- The plugin kit's templates (PLUG8): what `plugins new` writes into a new plugin's folder. Named
+       `.template` so no test runner or gate mistakes them for this repository's own scripts. -->
+  <ItemGroup>
+    <EmbeddedResource Include="plugin-kit\*.template" LogicalName="Daoris.Driver.plugin-kit.%(Filename)%(Extension)" />
+  </ItemGroup>
+
 </Project>
