@@ -36,7 +36,7 @@ public sealed class HelpRoomDoorsTests
         }
 
         Assert.Contains("Settings → Workspace → Lines", agents);
-        // HELP9: a parked quest's Retry is on its drawer, which the room names since Ask Daoris cannot propose it yet.
+        // HELP9: a parked quest's Retry is on its drawer, which the room names beside the command (HELP10: and proposes).
         Assert.Contains("Quests → the quest's drawer → try it again", agents);
         // What a landing pattern may say, as `LandingRules` reads it — the first real conversation had to guess.
         foreach (var token in new[] { "{quest}", "{session}", "{slug}", "{repository}" }) Assert.Contains(token, agents);

@@ -4,8 +4,8 @@ using System.Text.Json.Nodes;
 
 namespace Daoris.Driver;
 
-/// <summary>One of Ask Daoris's proposals, as the connector wrote it (HELP1c, D89; HELP6; PLUG9; WSR5b).</summary>
-/// <param name="Kind">Which kind it is, one <see cref="HelpProposalKinds"/> registers: `setting`, `ask`, `agent`, `delete`, `account`, `go`, `plugin` or `hand`.</param>
+/// <summary>One of Ask Daoris's proposals, as the connector wrote it (HELP1c, D89; HELP6; PLUG9; WSR5b; HELP10).</summary>
+/// <param name="Kind">Which kind it is, one <see cref="HelpProposalKinds"/> registers: `setting`, `ask`, `agent`, `delete`, `account`, `go`, `plugin`, `hand`, `browser` or `sync`.</param>
 /// <param name="Door">Which of its kind's changes it is, as that kind's class says: a `daoris driver` verb for a setting, `update` or `pin` for an agent, and so on.</param>
 /// <param name="Target">What the change is for, as its kind's class says: a repository, an agent, a record's id, a view, a plugin, a session or a branch.</param>
 /// <param name="Value">What it is set to, where its kind takes one: a setting's value, a pin's version, a hand-off's plugin.</param>

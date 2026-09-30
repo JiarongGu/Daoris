@@ -21,8 +21,8 @@ lists.
 
 ## State
 
-**Counts, and this is their one home:** sixteen commands, **667 CLI tests, 672 service and 46 HTTP host, 1558 driver,
-427 desktop modules, 80 devkit, 1774 web unit, 21 Playwright**, 66/66 release rehearsal, **301/301
+**Counts, and this is their one home:** sixteen commands, **667 CLI tests, 697 service and 46 HTTP host, 1616 driver,
+433 desktop modules, 80 devkit, 1778 web unit, 21 Playwright**, 66/66 release rehearsal, **301/301
 family rehearsal** (it names its own phases when you run it), **70/70 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge
 documents, 5 skills, 7 packs. The always-loaded core is **22,672 of 26,000 bytes** — a span in
@@ -56,9 +56,11 @@ registries, a `Process` test category, `tools/merge-branch.mjs` and the `dispatc
 TASKBAR1 (D108). **The same night:** HELP9 (D110: Ask Daoris reaches every door, held by a coverage
 test that caught WSR6's new control on its first merge), PREVIEW1 (D111: a file's preview in the side
 bar), WSR6 (D109: one press brings a repository up to date after its pull request merges) and LEFT1,
-each merged with every gate. **Building:** HELP10 (D112) and LEFT2 (D113), each a subagent in its own
-worktree. **Next:** merge them, then nothing workable is left without the owner — the rows below are theirs
-or parked. Dispatch through the `dispatch-subagent` skill and merge with `tools/merge-branch.mjs`. The
+each merged with every gate; then HELP10 (Ask Daoris's owed doors, under D110). **The look at the
+republished install** (2026-10-01) found WSR7, REVIEW2 and TABS1 on the owner's real workspace. **In
+flight:** LEFT2 and TABS1 merging; WSR7 (D112) and REVIEW2 (D113) building, each a subagent in its own
+worktree. **Next:** merge them and look again on the install; then nothing workable is left without the
+owner — the rows below are theirs or parked. Dispatch through the `dispatch-subagent` skill and merge with `tools/merge-branch.mjs`. The
 kit's own relay (Shenora.Chromium 0.18.0) leaves a pump unobserved as Daoris's did: a request for the
 kit's owner, not Daoris's to change (LOG2b).
 - **The owner's ticket AR-2201**: its first follow-up merged by the owner's pull request (squash). The
@@ -127,8 +129,8 @@ rather than designed.
 
 ## Backlog
 
-**Twenty-one rows are open** (triaged 2026-09-30, when the owner asked to go faster; 2026-10-01 after the night's merges and the look):
-- **Building or next (five):** HELP10 and LEFT2 building; WSR7, REVIEW2 and TABS1, found looking.
+**Twenty rows are open** (triaged 2026-09-30, when the owner asked to go faster; 2026-10-01 after the night's merges and the look):
+- **Building or merging (four):** LEFT2 and TABS1 merging; WSR7 and REVIEW2 building, found looking.
 - **Waiting on the owner (six):** BUDGET1 and PLUGREPO1 (their calls), TRUST2 and AGT2c (a grant, two
   downloads), FG5 and BRW3 (the owner present).
 - **Parked on a trigger (ten):** TOOL4, TOOL5, PLUG7, SEM2, CANON9, HARNESS1, REH1, D76's held file tree,
@@ -141,13 +143,6 @@ rule it also ships. A heading below holds open rows only.
 
 ### Keep going (owner, 2026-09-30: *"lets continue the development … you probabbly should start with subagents"*)
 
-- [ ] **HELP10 — the doors HELP9 left owed, and the two built since** (building, D112; D110 names them). Retrying a
-  parked quest (the facts must say which quests are parked, `HelpFactsAsync`), making an account the default
-  (a door on `IHelpDoors` that `ScreenDoors` makes with `HARNESS_ACTION`'s own profile-default), and the
-  browser's settings (a `BrowserModule` door); then Ask Daoris proposing WSR6's *Bring up to date* (a kind,
-  with the plan shown before Apply) and the room saying PREVIEW1's file preview exists; and a go to
-  Permissions → *Reading and writing across* (a `settings-across` anchor). `HelpCoverageTests` moves each
-  from owed to a door.
 
 - [ ] **LEFT2 — the leftovers of PREVIEW1, WSR6 and LEFT1** (building, D113), each a "left out" in a hand-back:
   `MERGE_SESSION_TREE` is called by neither the page nor a test since WSR1 (retire it or give it a caller,

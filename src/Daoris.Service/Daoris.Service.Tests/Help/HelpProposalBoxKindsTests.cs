@@ -23,6 +23,8 @@ public sealed class HelpProposalBoxKindsTests
         ("go", "go_propose"),
         ("plugin", "plugin_propose"),
         ("hand", "hand_propose"),
+        ("browser", "browser_propose"),
+        ("sync", "sync_propose"),
     ];
 
     private static string RepositoryRoot()

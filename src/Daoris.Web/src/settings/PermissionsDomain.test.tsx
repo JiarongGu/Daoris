@@ -155,4 +155,21 @@ describe('the reading and writing across card', () => {
     await waitFor(() => expect(notify).toHaveBeenCalledWith(
       'Sessions in plugins no longer write into engine; a change needed there is a quest again.'));
   });
+
+  /** HELP10: Ask Daoris's go to *Reading and writing across* opens the domain at this card, once it is drawn. */
+  it('is where a go to Permissions → Reading and writing across opens', async () => {
+    const scrolled = vi.fn();
+    const original = Element.prototype.scrollIntoView;
+    Element.prototype.scrollIntoView = function scroll(this: Element) { scrolled(this.id); };
+    const anchored = vi.fn();
+    try {
+      show(<SettingsView notify={() => {}} section="permissions" anchor="across" onAnchored={anchored} />);
+
+      await screen.findByRole('radiogroup', { name: "Reading engine's checkout" });
+      await waitFor(() => expect(scrolled).toHaveBeenCalledWith('settings-across'));
+      expect(anchored).toHaveBeenCalled();
+    } finally {
+      Element.prototype.scrollIntoView = original;
+    }
+  });
 });
