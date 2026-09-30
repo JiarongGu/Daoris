@@ -123,7 +123,7 @@ rather than designed.
 
 ## Backlog
 
-**Sixteen rows are open, in two kinds** (triaged 2026-09-30, when the owner asked to go faster):
+**Seventeen rows are open** (triaged 2026-09-30, when the owner asked to go faster):
 - **Waiting on the owner (six):** BUDGET1 and PLUGREPO1 (their calls), TRUST2 and AGT2c (a grant, two
   downloads), FG5 and BRW3 (the owner present).
 - **Parked on a trigger (ten):** TOOL4, TOOL5, PLUG7, SEM2, CANON9, HARNESS1, REH1, D76's held file tools,
@@ -132,6 +132,22 @@ rather than designed.
 
 Every closed row is in `docs/task-archive.md`, and this file holds no ticked rows, by the `task-lifecycle`
 rule it also ships. A heading below holds open rows only.
+
+### After a pull request merges (owner, 2026-09-30)
+
+> *"pr merged so we also need a post merge and rebase logic pull latest "master" delete the merged
+> branch and rebase working branches"*
+
+- [ ] **WSR6 — bring a repository up to date after its pull request merges** (D109, building). The first
+  real case: the ticket's branch was squash-merged, and a session still working grew from that branch, so
+  its commits are on the line by content only. (a) **Pull the line**: fetch, then fast-forward the local
+  line branch, only when the checkout is clean and on it (or by moving the ref when it is not checked
+  out); never a merge commit, never a force, never a push. (b) **Delete what merged**: WSR5's content
+  proof, over the branches landings recorded. (c) **Rebase what still works on it**: a session branch not
+  in use and a recorded branch not yet merged are replayed onto the new line, only their own commits
+  (`--onto`, cutting at the commit they grew from, so a squash-merged parent's commits drop), in a tree of
+  Daoris's own, never the person's checkout; a conflict aborts and is named; a branch already pushed is
+  left, since rebasing it would need a force push. Listed first, done by a press, on both doors.
 
 ### Watch it, type into it, set it up (owner, 2026-09-30) — in this order
 
