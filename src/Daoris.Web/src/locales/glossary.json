@@ -69,7 +69,7 @@
         "quests.detail.conflicts", "quests.detail.files", "quests.detail.links", "quests.groups.*",
         "quests.session.title", "settings.across.title", "settings.browser.extensions.title",
         "settings.browser.favorites.title", "settings.browser.which.title", "settings.landing.title",
-        "settings.lines.title", "settings.logs.title", "settings.rules.addTitle", "settings.rules.defaults",
+        "settings.lines.title", "settings.rules.addTitle", "settings.rules.defaults",
         "settings.rules.proposals.earlier", "settings.rules.proposals.title", "settings.rules.scopeMachine",
         "settings.rules.scopeRepository", "settings.rules.scopeWorkspace", "settings.sweep.landed.title",
         "settings.sweep.title", "settings.sync.apart.label", "settings.sync.notFetched.label",
