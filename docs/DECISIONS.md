@@ -5481,8 +5481,6 @@ press including a repository only where a listed row names it, and `--all` are `
 over a mocked bridge, and was not looked at on the window. The card's words are held by `HelpSyncProposalsTests`, and
 that every modules door's press hands the sessions in use again is a source-reading test, since only a live driver
 opens a session between a look and its press.
-for this press was not built: it would reach into the service's proposal kinds and the page's cards. *(HELP10
-built it since: the `sync` kind, a card whose first press is the look; see D110.)*
 
 *Amended by LEFT3 (2026-10-01): Ask Daoris's sync card says what was not fetched and which repositories were left
 apart on the card itself, not only in its look's words. The look keeps both in the proposal's file beside its rows
