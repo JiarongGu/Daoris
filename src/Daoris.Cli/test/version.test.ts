@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { readText } from '../src/fsx.ts';
+import { COMMANDS } from '../src/cli.ts';
 
 // package.json and the sources are this package's; the canon, the manifest and
 // the README belong to the workspace two levels up.
@@ -56,12 +57,13 @@ test('every shipped reference names the repository exactly', () => {
  * saying "Twelve commands" — a sentence nothing read, wrong for two whole landings.
  *
  * Asserted as a SET rather than a count, because a count agrees with itself while naming the wrong
- * command, and a renamed verb is exactly the change that would keep the number right.
+ * command, and a renamed verb is exactly the change that would keep the number right. The set is the
+ * dispatcher's own table (MOD7), read rather than parsed out of its source.
  */
 const dispatcherCommands = (): string[] => {
-  const table = readCli('src/cli.ts').match(/const commands[^{]*\{([\s\S]*?)\n\};/);
-  assert.ok(table, 'the dispatcher table must be findable — this test is worthless if it is not');
-  return [...table[1]!.matchAll(/^\s{2}([a-z]+):/gm)].map((m) => m[1]!).sort();
+  const names = COMMANDS.map((command) => command.name).sort();
+  assert.ok(names.length >= 10, 'the dispatcher table emptied — this test is worthless if it is');
+  return names;
 };
 
 test('the README command table lists exactly the commands the dispatcher has', () => {

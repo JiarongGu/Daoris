@@ -1,8 +1,9 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { join, dirname } from 'node:path';
+import { join, dirname, posix } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { existsSync, readdirSync } from 'node:fs';
+import { COMMANDS } from '../src/cli.ts';
 import { readCanon } from '../src/canon.ts';
 import { parseFrontmatter, SKILL_FIELDS } from '../src/document.ts';
 import { listFiles, readText } from '../src/fsx.ts';
@@ -387,10 +388,23 @@ test('only the service client may touch the network', () => {
  *
  * Walked from every DOCTRINE command's entry point, not only `check`'s: they all run offline, and a
  * test that named one of them would be silent the day `sync` grew a "just ask the service" shortcut.
+ *
+ * Since the commands became a table (MOD7), each doctrine command's row module under `cli/` is an
+ * entry point too, read from the table rather than listed: a row that reached the dispatcher, or a
+ * management row, would reach the whole management class through it.
  */
+const DOCTRINE_ROWS = COMMANDS.filter((command) => command.kind === 'doctrine').map((command) => `cli/${command.name}.ts`);
 const DOCTRINE = [
   'drift.ts', 'materialize.ts', 'indexgen.ts', 'upstream.ts', 'commands.ts', 'twins.ts', 'analyze.ts',
+  ...DOCTRINE_ROWS,
 ];
+
+test('the doctrine rows are read from the table, and check is one of them', () => {
+  // Without this the rows could vanish from the walk (a renamed field, a class flipped) and every
+  // assertion below would stay green over the handler modules alone.
+  assert.ok(DOCTRINE_ROWS.includes('cli/check.ts'), `the doctrine rows were: ${DOCTRINE_ROWS.join(', ')}`);
+  assert.ok(DOCTRINE_ROWS.includes('cli/sync.ts'), `the doctrine rows were: ${DOCTRINE_ROWS.join(', ')}`);
+});
 
 test('nothing a doctrine command reaches can import the service client', () => {
   for (const entry of DOCTRINE) {
@@ -422,7 +436,10 @@ test('nothing a doctrine command reaches can spawn a harness', () => {
   }
 });
 
-/** Every module an entry point pulls in, transitively — both import spellings. */
+/**
+ * Every module an entry point pulls in, transitively — both import spellings. Modules are named by
+ * their path under `src/`, so a row under `cli/` importing `../drift.ts` reaches `drift.ts`.
+ */
 function reachableFrom(entry: string): Set<string> {
   const seen = new Set<string>();
   const walk = (module: string): void => {
@@ -431,9 +448,10 @@ function reachableFrom(entry: string): Set<string> {
     const file = join(cliRoot, 'src', module);
     if (!existsSync(file)) return;
     // `from './x.ts'`, a bare `import './x.ts'` and a dynamic `import('./x.ts')`, in either quote — the
-    // side-effect import was missed at first, and the dynamic one and the double quote until REV3.
-    for (const match of readText(file).matchAll(/(?:\bfrom|\bimport)\s*\(?\s*['"]\.\/([\w.-]+\.ts)['"]/g)) {
-      walk(match[1]!);
+    // side-effect import was missed at first, and the dynamic one and the double quote until REV3. A
+    // parent or nested path since MOD7, when the table's rows moved one folder down.
+    for (const match of readText(file).matchAll(/(?:\bfrom|\bimport)\s*\(?\s*['"](\.{1,2}\/[\w./-]+\.ts)['"]/g)) {
+      walk(posix.join(posix.dirname(module), match[1]!));
     }
   };
 
@@ -468,7 +486,8 @@ test('the file-local management verbs reach no network module either', () => {
  * the verbs of their class that do. They reach it the way `connect` reaches a service:
  * through `service.ts`, which the DISPATCHER hands in. So the toolchain and everything that judges a
  * download (the channel, the signature, the archive) import no network module, and the one place the
- * two meet is a line in `cli.ts` a reviewer can read.
+ * two meet is a line a reviewer can read: the `agent` row of the dispatcher's table, `cli/agent.ts`
+ * since MOD7.
  */
 test('agent pin reaches a release channel only through the fetcher the dispatcher hands in', () => {
   for (const entry of ['channels.ts', 'openpgp.ts', 'tarball.ts']) {
@@ -477,9 +496,9 @@ test('agent pin reaches a release channel only through the fetcher the dispatche
     assert.equal(seen.has(SPAWNS), false, `${entry} reaches the harness toolchain through: ${[...seen].sort().join(', ')}`);
   }
 
-  const dispatcher = readText(join(cliRoot, 'src', 'cli.ts'));
-  assert.match(dispatcher, /import \{ releaseFetcher \} from '\.\/service\.ts';/);
-  assert.match(dispatcher, /agent: \(args\) => commandHarness\(args, releaseFetcher\(\)\)/);
+  const row = readText(join(cliRoot, 'src', 'cli', 'agent.ts'));
+  assert.match(row, /import \{ releaseFetcher \} from '\.\.\/service\.ts';/);
+  assert.match(row, /run: \(args\) => commandHarness\(args, releaseFetcher\(\)\)/);
 });
 
 /**
