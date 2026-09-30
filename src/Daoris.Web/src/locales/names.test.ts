@@ -1,14 +1,15 @@
 import { spawnSync } from 'node:child_process';
+import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
-  type Catalogue, type Finding, type Glossary, check, kindOf, load, measure, report, validate,
+  type Catalogue, type Finding, type Glossary, check, kindOf, load, measure, report, validate, verdict,
 } from '../../scripts/names-check.mjs';
 
 /**
- * The names check (NAME1a, D116): `scripts/names-check.mjs`, beside the parity check. It reports and
- * never fails today; NAME1b turns its facts' half to a gate with `--strict`
- * (`docs/2026-10-01-naming-design.md` §6).
+ * The names check (NAME1a, D116): `scripts/names-check.mjs`, beside the parity check. NAME1b turned its
+ * facts' half to a gate: `--strict` runs in the web's build and fails on a glossary, form or door finding;
+ * the budgets report and never fail (`docs/2026-10-01-naming-design.md` §6).
  */
 
 const MEASURE: Glossary['measure'] = {
@@ -119,6 +120,25 @@ describe('the glossary rules', () => {
     const found = check(fixture(), en, zh);
     expect(rules(found, 'area.state.waiting')).toEqual(['glossary:zh']);
     expect(rules(found, 'area.state.parked')).toEqual([]);
+  });
+
+  /**
+   * NAME1b: *like a git remote* says 远程仓库, git remote's own name, which holds 远程, a word the workspace's
+   * remote must not be called. A term the same English names is its own name, never a stray word.
+   */
+  it("does not take another term's name, where the English names that term too, for a stray word", () => {
+    const glossary = fixture();
+    glossary.terms.push(
+      { term: 'remote', en: 'remote', zh: '远端', means: 'A deployment.', match: '\\bremotes?\\b', avoid: { en: [], zh: ['远程'] } },
+      { term: 'git remote', en: 'git remote', zh: '远程仓库', means: 'Git\'s.', match: '\\bgit remotes?\\b', avoid: { en: [], zh: [] } },
+    );
+    const { en, zh } = catalogues({
+      'elsewhere.like': ['Wiring, like a git remote.', '接线，如同 git 的远程仓库。'],
+      'elsewhere.stray': ['Wired to a remote.', '已接到远程。'],
+    });
+    const all = check(glossary, en, zh, { all: true });
+    expect(rules(all, 'elsewhere.like')).toEqual([]);
+    expect(rules(all, 'elsewhere.stray')).toEqual(['glossary:zh']);
   });
 
   it('checks a sentence only when asked for every key, and then only for the words a term must not be called', () => {
@@ -233,6 +253,9 @@ describe('the real glossary and catalogues', () => {
       'settings.sync.title': ['Updates', '更新'],
       'settings.sync.look': ['Look for updates', '检查更新'],
       'command.go.convergence': ['Convergence', '同归'],
+      // The owner's two calls: the view of repositories is named for them, and an ask is 需求.
+      'nav.projects': ['Repositories', '仓库'],
+      'asks.group': ['Asks ({{count}})', '需求（{{count}}）'],
     };
     for (const [key, [english, chinese]] of Object.entries(approved)) {
       expect([en[key], zh[key]], key).toEqual([english, chinese]);
@@ -240,13 +263,60 @@ describe('the real glossary and catalogues', () => {
     }
   });
 
-  it('report what they find and exit 0, and exit 1 under --strict until the renames land', () => {
+  /**
+   * NAME1b turned the facts' half to a gate: the build runs `--strict` beside the parity check, and it
+   * passes, because no label breaks the glossary, its form or its door. The budgets still report and never
+   * gate (D54): a character count estimates a width, and the window is where a width is a fact.
+   */
+  it('find no glossary, form or door finding, so --strict passes, while the budgets still report', () => {
+    const found = check(glossary, en, zh);
+    expect(found.filter((finding) => finding.rule !== 'budget').map(({ key, rule, language }) => `${key} ${rule}:${language}`))
+      .toEqual([]);
+    expect(report(found)).toMatch(/budget/);
+
     const script = join(process.cwd(), 'scripts', 'names-check.mjs');
     const reported = spawnSync(process.execPath, [script], { encoding: 'utf8' });
     expect(reported.status, reported.stderr).toBe(0);
     expect(reported.stdout).toMatch(/names-check: \d+ label keys/);
     const strict = spawnSync(process.execPath, [script, '--strict'], { encoding: 'utf8' });
-    expect(strict.status).toBe(1);
-    expect(report(check(glossary, en, zh))).toMatch(/budget/);
+    expect(strict.status, strict.stdout).toBe(0);
+  });
+
+  it('are gated by the build: --strict runs beside the parity check, before the bundle is built', () => {
+    const scripts = (JSON.parse(readFileSync(join(process.cwd(), 'package.json'), 'utf8')) as { scripts: Record<string, string> }).scripts;
+    const build = scripts.build!.split('&&').map((step) => step.trim());
+    expect(build).toContain('node scripts/names-check.mjs --strict');
+    expect(build.indexOf('node scripts/names-check.mjs --strict')).toBeLessThan(build.findIndex((step) => step.startsWith('vite build')));
+  });
+
+  /**
+   * A sentence's words are held only under `--all`, which reports; the eight it still finds are words a
+   * sentence rightly says of something else (the audit's §5 lists them): a browser's or Windows' profile,
+   * git's credential helper, a request's value no application accepts, a process that ended.
+   */
+  it("say in sentences only what the audit found to be another thing's word", () => {
+    const stray = check(glossary, en, zh, { all: true })
+      .filter((finding) => finding.rule === 'glossary' && finding.kind === 'sentence')
+      .map(({ key, language }) => `${key}:${language}`).sort();
+    expect(stray).toEqual([
+      'errors.HARNESS_ACTION_IDLE:zh', 'errors.INVALID_PAYLOAD_VALUE:zh',
+      'settings.browser.which.hintDaoris:en', 'settings.browser.which.hintEdge:en',
+      'settings.home.hint:en', 'settings.home.hintOverridden:en', 'settings.home.hintThisStart:en',
+      'settings.sync.notFetched.https:en',
+    ]);
+  });
+});
+
+describe('what the check answers', () => {
+  const finding = (rule: Finding['rule']): Finding =>
+    ({ key: 'k', kind: 'button', rule, language: 'en', message: 'm', value: 'v' });
+
+  it('fails under --strict on a fact, and never on a budget, and never without --strict', () => {
+    expect(verdict([finding('budget')], { strict: true })).toBe(0);
+    for (const rule of ['glossary', 'form', 'door'] as const) {
+      expect(verdict([finding('budget'), finding(rule)], { strict: true }), rule).toBe(1);
+      expect(verdict([finding(rule)], { strict: false }), rule).toBe(0);
+    }
+    expect(verdict([], { strict: true })).toBe(0);
   });
 });
