@@ -254,6 +254,10 @@ jobs:
       # an end-to-end pass is not a substitute for the unit judgement underneath it, and a store rule
       # or a payload guard can break without any rehearsal noticing. Both target plain net10.0, so
       # there was never a portability reason either.
+      #
+      # `src/Daoris.Service` is a folder holding one solution, so this runs every suite the solution
+      # lists — the HTTP host's in-process suite included (HTTP1). A dogfood test holds that every test
+      # project is in a solution a declared gate runs, or named by one.
       - name: Service gate
         run: dotnet test src/Daoris.Service --nologo
 

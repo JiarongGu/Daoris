@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    The HTTP host, started in-process (HTTP1). The service suite beside this one tests Core and the MCP
+    door; the host's own doors (the shared gate, the key check, what a caller off the machine is never
+    told, the delete routes, the request log) were reached only by the family rehearsal, one route
+    each. WebApplicationFactory runs the host's real Program over an in-memory server, so no port is
+    bound and a host already running on this machine is never touched.
+  -->
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Daoris.Service.Http\Daoris.Service.Http.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -6,7 +6,9 @@ knowledge into addressable entries, classifies each as canonical or local, store
 answers ranked queries over FTS5, and finds where repositories learned the same lesson independently.
 Quests and pushed registrations persist in the same database, so what one session publishes another
 session — or another machine's `connect` — finds waiting. Its tests are the `service` gate in
-`daoris.gates.json`; the count lives in `TASKS.md`, where a count is kept current.
+`daoris.gates.json`, which runs the solution: `Daoris.Service.Tests` for Core and the MCP door, and
+`Daoris.Service.Http.Tests` for the HTTP host's own doors, started in-process with no port bound
+(HTTP1). The count lives in `TASKS.md`, where a count is kept current.
 
 Since **D59** the always-loaded tier is a region of `AGENTS.md` rather than a directory, so the
 scanner reads `DoctrineRegion` for a repository's rules and a gate holds that a canonical rule stays
@@ -398,4 +400,8 @@ by diverging. The service indexes the second kind.
 
 What was the sharpest open question — does shared mode need hosting at all? — is settled (D47 §3):
 it does, it is this same binary in shared mode, and it is built, gate-proven by the family rehearsal's
-two-machine phase. The surviving ceiling is the SQLite file, held until a real team outgrows it.
+two-machine phase. Its doors are held in-process as well (HTTP1): every route a shared host maps
+refuses a caller without a key and answers a valid one; an expired or revoked key is named by its
+prefix and never repeated; no page is served; no GET answers a machine path to any caller; and a local
+host asked to bind beyond loopback does not start. The surviving ceiling is the SQLite file, held until
+a real team outgrows it.
