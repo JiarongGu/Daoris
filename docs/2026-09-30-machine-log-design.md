@@ -127,7 +127,8 @@ the transcript beside it.
   filters, and opens the folder.
 - **For improving Daoris**: `tools/usage-report.mjs --install <dir> [--days 7]` reads an install's
   logs and prints what was used most, what was refused, what failed and what was slow. A development
-  session starts from it instead of from a guess.
+  session starts from it instead of from a guess. Since LEFT3 what was used most includes the side bar's
+  previews (`preview.opened`): how many, in how many sessions, and of what kind by extension, never the path.
 - **Never over HTTP.** A browser, and a remote, see none of it (D47 §4). The host writes its file and
   serves no route onto any of them.
 

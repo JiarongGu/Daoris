@@ -4068,7 +4068,8 @@ and runs anyway; a write that fails is dropped, never thrown.
 card has two presses, and its first, the look, settles nothing: `HELP_APPLY` answers that the card `stands`, and the
 page writes no line for it. No event of its own was added for a look: it is a step of one proposal whose settling is
 still written, by its press or its Not now, and a look that found nothing to do settled the card and is written as
-any Apply is.*
+any Apply is. And `tools/usage-report.mjs` summarises LEFT2's `preview.opened` under what was used most: how many
+previews, in how many sessions, and of what kind by extension, never the path.*
 
 ## D95 — A quest nobody has started on can be deleted, and the delete travels as an operation (2026-09-30)
 
