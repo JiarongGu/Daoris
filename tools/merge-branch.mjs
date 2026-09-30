@@ -300,7 +300,21 @@ export function globToRegExp(glob) {
   return new RegExp(`^${source}$`);
 }
 
-/** `tools/lanes.json`, or null where a repository has none. */
+/**
+ * A lane's paths as one test: a path is the lane's when one of its globs matches it and none of its `!`
+ * globs does. A `!` glob carves a narrower lane's paths out of a wider one: the web's shell owns the
+ * page but its Settings (LEFT1).
+ */
+export function laneMatcher(paths) {
+  const include = paths.filter((path) => !path.startsWith('!')).map(globToRegExp);
+  const exclude = paths.filter((path) => path.startsWith('!')).map((path) => globToRegExp(path.slice(1)));
+  return (path) => include.some((pattern) => pattern.test(path)) && !exclude.some((pattern) => pattern.test(path));
+}
+
+/**
+ * `tools/lanes.json`, or null where a repository has none. `laneless` is read flat: its groups are for
+ * the person reading the map, each saying why its paths have no lane.
+ */
 export function readLanes(root) {
   const file = join(root, 'tools', 'lanes.json');
   if (!existsSync(file)) return null;
@@ -308,6 +322,7 @@ export function readLanes(root) {
   return {
     lanes: (parsed.lanes ?? []).map((lane) => ({ title: lane.title, paths: lane.paths ?? [] })),
     parent: parsed.parent ?? [],
+    laneless: (parsed.laneless ?? []).flatMap((group) => group.paths ?? []),
   };
 }
 
@@ -327,20 +342,23 @@ const attributePattern = (pattern) => (pattern.includes('/')
 
 /**
  * Where each changed path belongs: the parent's records first (a subagent never edits them), then the
- * records that merge by union, then the first lane whose paths match, else outside every lane. Lanes
- * come back in the map's order, only those touched.
+ * records that merge by union, then the first lane that owns it, then the paths the map declares
+ * laneless (the docs and records, the doctrine), else outside every lane: a path the map does not
+ * place, which the lanes test refuses (LEFT1). Lanes come back in the map's order, only those touched.
  */
-export function classify(paths, { lanes = [], parent = [], union = [] } = {}) {
-  const lanePatterns = lanes.map((lane) => ({ title: lane.title, patterns: lane.paths.map(globToRegExp), files: [] }));
+export function classify(paths, { lanes = [], parent = [], union = [], laneless = [] } = {}) {
+  const lanePatterns = lanes.map((lane) => ({ title: lane.title, owns: laneMatcher(lane.paths), files: [] }));
   const parentPatterns = parent.map(globToRegExp);
   const unionPatterns = union.map(attributePattern);
-  const placed = { lanes: [], parent: [], shared: [], outside: [] };
+  const declared = laneMatcher(laneless);
+  const placed = { lanes: [], parent: [], shared: [], laneless: [], outside: [] };
   for (const path of paths) {
     if (parentPatterns.some((pattern) => pattern.test(path))) placed.parent.push(path);
     else if (unionPatterns.some((pattern) => pattern.test(path))) placed.shared.push(path);
     else {
-      const lane = lanePatterns.find((candidate) => candidate.patterns.some((pattern) => pattern.test(path)));
+      const lane = lanePatterns.find((candidate) => candidate.owns(path));
       if (lane) lane.files.push(path);
+      else if (declared(path)) placed.laneless.push(path);
       else placed.outside.push(path);
     }
   }
@@ -640,7 +658,8 @@ function laneReport(root, branch) {
   const list = (files, max = 6) => `${files.slice(0, max).join(', ')}${files.length > max ? `, … ${files.length - max} more` : ''}`;
   for (const lane of placed.lanes) out.push(`  ${pad(lane.title, 20)} ${count(lane.files.length, 'file')}`);
   if (placed.shared.length) out.push(`  ${pad('shared records', 20)} ${count(placed.shared.length, 'file')}: ${list(placed.shared)} (merge by union)`);
-  if (placed.outside.length) out.push(`  ${pad('outside every lane', 20)} ${count(placed.outside.length, 'file')}: ${list(placed.outside)}`);
+  if (placed.laneless.length) out.push(`  ${pad('no lane', 20)} ${count(placed.laneless.length, 'file')}: ${list(placed.laneless)} (the map declares them laneless)`);
+  if (placed.outside.length) out.push(`  ${pad('outside every lane', 20)} ${count(placed.outside.length, 'file')}: ${list(placed.outside)} (the map places no such path; the lanes test refuses it)`);
   if (placed.lanes.length > 1) out.push(`  note: it crosses ${placed.lanes.length} lanes`);
   if (placed.parent.length) out.push(`  note: it edits the parent's records (${placed.parent.join(', ')}); a subagent never does`);
   return out;

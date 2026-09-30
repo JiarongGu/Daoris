@@ -111,17 +111,22 @@ touched them. Split one when two branches next meet in it.
 
 | Lane | Owns |
 |---|---|
-| Web shell | `src/Daoris.Web/src/{shell.ts,bridge/,App.tsx,ui.tsx}`, the work frame |
+| Web shell | `src/Daoris.Web/` but its Settings: `shell.ts`, `bridge/`, `App.tsx`, `ui.tsx`, the work frame, the other screens and the modules they share, and the page's build |
 | Web settings | `SettingsView.tsx`, `settings/`, and their catalogue areas |
 | Driver library | `Daoris.Desktop.Driver/` by feature folder: loop and planner, trees and landing, plugins and hooks, help, toolchain |
-| Desktop modules | `Daoris.Desktop.Modules/` by partial, and `Daoris.Desktop.App/` |
+| Desktop modules | `Daoris.Desktop.Modules/` by partial, `Daoris.Desktop.App/`, the launcher, and the desktop tree's package versions |
 | Service | `src/Daoris.Service/` |
 | CLI | `src/Daoris.Cli/` |
-| Tools and records | `tools/`, `.gitattributes`, the docs gates |
+| Tools and records | `tools/`, `.gitattributes`, the docs gates, the devkit, the gates' declaration and the release workflow |
 
 A feature usually crosses two or three lanes (a driver door, its module route, its screen). After the
 splits, crossing a lane means adding a file in it, not editing that lane's god file, so two features
 can cross the same lanes at once.
+
+What belongs to no lane is declared too, as `laneless` in `tools/lanes.json`: the docs and records, the
+doctrine and the example family it is synced into, and the harness's settings. The merge tool reports
+those as *no lane*. A test refuses a tracked file that is in no lane and not declared, so a new path is
+placed when it is added, never left outside silently (LEFT1).
 
 ## 6. Order of work
 

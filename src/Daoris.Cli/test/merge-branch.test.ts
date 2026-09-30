@@ -19,7 +19,7 @@ import { makeFixture } from './_fixture.ts';
 
 interface Gate { name: string; run: string; kind: string; before: string[]; cwd?: string }
 interface Lane { title: string; paths: string[] }
-interface Classified { lanes: { title: string; files: string[] }[]; parent: string[]; shared: string[]; outside: string[] }
+interface Classified { lanes: { title: string; files: string[] }[]; parent: string[]; shared: string[]; laneless: string[]; outside: string[] }
 interface Options { branches: string[]; keepGoing: boolean; commitCheck: boolean; resume: boolean; dropBatch: boolean; plan: boolean }
 interface GateResult { gate: Gate; code: number; log: string; verdict: string; note: string; ms: number }
 type Step = (command: string, cwd: string, fd: number) => Promise<number>;
@@ -41,8 +41,9 @@ const tool = await import(
   rerunCommand: (run: string, test: string) => string;
   rerunPassed: (output: string) => boolean;
   globToRegExp: (glob: string) => RegExp;
-  classify: (paths: string[], map: { lanes?: Lane[]; parent?: string[]; union?: string[] }) => Classified;
-  readLanes: (root: string) => { lanes: Lane[]; parent: string[] } | null;
+  laneMatcher: (paths: string[]) => (path: string) => boolean;
+  classify: (paths: string[], map: { lanes?: Lane[]; parent?: string[]; union?: string[]; laneless?: string[] }) => Classified;
+  readLanes: (root: string) => { lanes: Lane[]; parent: string[]; laneless: string[] } | null;
   unionRecords: (root: string) => string[];
   parseStatus: (text: string) => { branch: string; changed: { code: string; path: string }[] };
   startRefusal: (facts: { branch: string; merging: boolean; changed: { code: string; path: string }[]; ignored: boolean }) => string | null;
@@ -314,30 +315,49 @@ test('a lane path is a glob: * stays in a folder, ** crosses folders, {a,b} is e
   assert.ok(tool.globToRegExp('a.b').test('a.b') && !tool.globToRegExp('a.b').test('axb'), 'a dot is a dot');
 });
 
-test("a branch's files are placed in lanes, the shared records, the parent's records, or outside every lane", () => {
+test("a lane's `!` path carves a narrower lane's paths out of a wider one (LEFT1)", () => {
+  const shell = tool.laneMatcher(['src/Daoris.Web/**', '!src/Daoris.Web/src/settings/**', '!src/Daoris.Web/src/SettingsView*.tsx']);
+  assert.ok(shell('src/Daoris.Web/src/queries.ts'));
+  assert.ok(shell('src/Daoris.Web/vite.config.ts'));
+  assert.ok(shell('src/Daoris.Web/src/settingsX/y.ts'), 'a carve-out is its own glob, not a prefix');
+  assert.ok(!shell('src/Daoris.Web/src/settings/DriverDomain.tsx'));
+  assert.ok(!shell('src/Daoris.Web/src/SettingsView.tsx'));
+  assert.ok(!shell('src/Daoris.Cli/src/cli.ts'));
+  // A lane of carve-outs alone owns nothing.
+  assert.ok(!tool.laneMatcher(['!src/**'])('README.md'));
+});
+
+test("a branch's files are placed in lanes, the shared records, the parent's records, no lane, or outside every lane", () => {
   const map = tool.readLanes(repoRoot)!;
   const placed = tool.classify([
     'src/Daoris.Web/src/settings/PluginsDomain.tsx',
     'src/Daoris.Web/src/locales/zh/settings.ai.json',
     'src/Daoris.Web/src/locales/en/work.panel.json',
+    'src/Daoris.Web/src/queries.ts',
     'src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.cs',
+    'src/Daoris.Desktop/Daoris.Desktop.Launcher/Program.cs',
     'src/Daoris.Desktop/Daoris.Desktop.Driver/Help/HelpRoom.cs',
+    'src/Daoris.Devkit/Daoris.Devkit.Core/Gates.cs',
     'TASKS.md',
     'docs/task-archive.md',
     'CHANGELOG.md',
     'docs/2026-09-30-parallel-development-design.md',
+    'src/Daoris.Somewhere/Program.cs',
   ], { ...map, union: tool.unionRecords(repoRoot) });
 
   assert.deepEqual(placed.lanes, [
-    { title: 'Web shell', files: ['src/Daoris.Web/src/locales/en/work.panel.json'] },
+    { title: 'Web shell', files: ['src/Daoris.Web/src/locales/en/work.panel.json', 'src/Daoris.Web/src/queries.ts'] },
     { title: 'Web settings', files: ['src/Daoris.Web/src/settings/PluginsDomain.tsx', 'src/Daoris.Web/src/locales/zh/settings.ai.json'] },
     { title: 'Driver library', files: ['src/Daoris.Desktop/Daoris.Desktop.Driver/Help/HelpRoom.cs'] },
-    { title: 'Desktop modules', files: ['src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.cs'] },
+    { title: 'Desktop modules', files: ['src/Daoris.Desktop/Daoris.Desktop.Modules/DriverModule.cs', 'src/Daoris.Desktop/Daoris.Desktop.Launcher/Program.cs'] },
+    { title: 'Tools and records', files: ['src/Daoris.Devkit/Daoris.Devkit.Core/Gates.cs'] },
   ]);
   // The archive merges by union too, but it is the parent's: that is what the parent needs to hear.
   assert.deepEqual(placed.parent, ['TASKS.md', 'docs/task-archive.md']);
   assert.deepEqual(placed.shared, ['CHANGELOG.md']);
-  assert.deepEqual(placed.outside, ['docs/2026-09-30-parallel-development-design.md']);
+  // A document belongs to no lane on purpose; a new source tree is a path nothing placed.
+  assert.deepEqual(placed.laneless, ['docs/2026-09-30-parallel-development-design.md']);
+  assert.deepEqual(placed.outside, ['src/Daoris.Somewhere/Program.cs']);
 });
 
 test("the lane map's lanes are the design's §5 lanes, by title", () => {
@@ -351,21 +371,48 @@ test("the lane map's lanes are the design's §5 lanes, by title", () => {
   assert.deepEqual(tool.readLanes(repoRoot)!.lanes.map((lane) => lane.title), titles);
 });
 
-test('every lane path matches a tracked file, and no tracked file is in two lanes', () => {
+const trackedFiles = (): string[] => {
   const listed = spawnSync('git', ['ls-files'], { cwd: repoRoot, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
   assert.equal(listed.status, 0, listed.stderr);
-  const files = listed.stdout.split('\n').filter(Boolean);
-  const { lanes } = tool.readLanes(repoRoot)!;
+  return listed.stdout.split('\n').filter(Boolean);
+};
 
-  for (const lane of lanes) {
-    for (const glob of lane.paths) {
-      const pattern = tool.globToRegExp(glob);
-      assert.ok(files.some((file) => pattern.test(file)), `${lane.title}: '${glob}' matches no tracked file — the map points at nothing`);
+test('every lane path and every laneless path matches a tracked file, and no tracked file has two places', () => {
+  const files = trackedFiles();
+  const { lanes, laneless } = tool.readLanes(repoRoot)!;
+
+  // A carve-out (`!`) that matches nothing carves nothing, and is as stale as a path that points at nothing.
+  for (const [title, globs] of [...lanes.map((lane) => [lane.title, lane.paths] as const), ['laneless', laneless] as const]) {
+    for (const glob of globs) {
+      const pattern = tool.globToRegExp(glob.replace(/^!/, ''));
+      assert.ok(files.some((file) => pattern.test(file)), `${title}: '${glob}' matches no tracked file — the map points at nothing`);
     }
   }
+  const owns = lanes.map((lane) => ({ title: lane.title, owns: tool.laneMatcher(lane.paths) }));
+  const declared = tool.laneMatcher(laneless);
   for (const file of files) {
-    const owners = lanes.filter((lane) => lane.paths.some((glob) => tool.globToRegExp(glob).test(file)));
-    assert.ok(owners.length <= 1, `${file} is in two lanes: ${owners.map((lane) => lane.title).join(', ')}`);
+    const owners = owns.filter((lane) => lane.owns(file)).map((lane) => lane.title);
+    assert.ok(owners.length <= 1, `${file} is in two lanes: ${owners.join(', ')}`);
+    assert.ok(!(owners.length && declared(file)), `${file} is in ${owners[0]} and declared laneless`);
+  }
+});
+
+/**
+ * LEFT1: `queries.ts` and a few paths sat outside every lane unremarked, and a new source tree would
+ * have too. Every tracked file now has a place: a lane, the parent's records, a record that merges by
+ * union, or the map's `laneless` list (the docs and records, the doctrine, the harness's settings). A
+ * new top-level path fails here until the map places it on purpose.
+ */
+test('every tracked file has a place, so a new path is placed on purpose, never left outside silently', () => {
+  const map = tool.readLanes(repoRoot)!;
+  const placed = tool.classify(trackedFiles(), { ...map, union: tool.unionRecords(repoRoot) });
+  assert.deepEqual(placed.outside, [],
+    `outside every lane: ${placed.outside.slice(0, 12).join(', ')}${placed.outside.length > 12 ? ', …' : ''}\n`
+    + '  Give each a lane in tools/lanes.json, or list it under "laneless" with the reason no lane owns it.');
+  // The laneless list names files, never a source tree: a `src/**` there would place everything and
+  // guard nothing.
+  for (const glob of map.laneless.filter((path) => /^(src|tools)\//.test(path))) {
+    assert.ok(!glob.includes('*'), `laneless: '${glob}' is a glob over a source tree; give that tree a lane`);
   }
 });
 
