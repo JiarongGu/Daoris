@@ -945,6 +945,11 @@ one agent to work everywhere.
 splitting it would leave neither side working. A change that merely *touches* two repositories is not
 that — it is two changes and one quest.
 
+*Amended by D115 (DEV4, 2026-10-01): the exchange's self-address refusal is narrowed to a quest that
+names no lane. A repository may address one of its own lanes (`repository:lane`), because work for
+another lane is work for another session, which is what the refusal protects. A quest to itself with
+no lane is still refused, with the same sentence, at every door, since `QuestExchange` judges them all.*
+
 ## D33 — The CLI is TypeScript; the dev loop stays buildless and the package stays dependency-free
 
 **Decided 2026-08-05.** `src/Daoris.Cli` is TypeScript under `strict`, with `noUncheckedIndexedAccess`
@@ -1475,6 +1480,14 @@ deployment is a minted key. The mid-build finding that forced a second small ame
 across machines needs the remote's **registry** mirrored down beside its quests — foreign rows only,
 because the machine holding a checkout is the authority on its own registration and its root must
 survive the sync untouched.
+
+*Noted by D115 (DEV4, 2026-10-01): the remote carries lanes both ways. A quest's `lanes` ride its
+publish on the quest wire, written only when there are some, so an older build reads such a quest as
+one to the whole repository. The remote keeps them as the publishing machine's exchange judged them,
+since its own copy of the registration may lag, and refuses only a lane no registration could declare.
+A joined repository's lanes travel with its registration as words, always as a list (`[]` for none),
+because a deployment keeps a row's lanes when a registration says nothing of them. A teammate's copy
+brings them down, and a change to its lanes alone re-files it.*
 
 ## D48 — The workspace is the unit of sharing; a server serves one; the registry is managed (2026-09-20)
 
@@ -5712,6 +5725,24 @@ steward's paths where the parent's were. Held by `merge-branch.test.ts`, which a
 place it in the steward's file, or the lanes test fails. The dispatch skill names that as the one exception and
 the merge tool reports it; in the driven cycle §2.3's check would send such a branch back, so DEV9's steward
 instruction needs an answer for it. §11's twin waits for the driver's reader (DEV6).*
+
+*Built in part by DEV4 (2026-10-01): point 2. `connect` reads `daoris.lanes.json` with the CLI's own code
+(`lanes.ts`: the file's rules in the merge tool's sentences, all but `gates`, which the queue judges, and the
+words rule) and sends each lane's `id`, `title`, `summary` and `steward`, never its globs, always as a list. It
+refuses an unreadable file, naming each problem. The registration keeps the words by `Declared.Lanes`, the
+CLI's `laneWords` twin with the same table. Unlike `uses`, a registration silent about lanes keeps the row's:
+the page's add, an import and an older client re-register without reading the file. The registry's HTTP and
+MCP answers list them. The exchange splits the address once (`QuestAddress`). It refuses a lane the
+registration does not declare, and any lane of a repository that declares none, naming the lanes there are,
+and it allows a self-addressed quest only when it names a lane. The quest keeps `to` and gains `lanes`, sorted,
+in the declared spelling, and `MakeId` appends `@<lanes>` only when there are some. The log, the cache, the
+wire, both doors, the remote sync (D47's note) and the intake's room carry them, and the page shows them on
+the Quests card and drawer. Left out: the import reads no lanes, since the service stores what `connect`
+sends; a `then` step takes no lane address yet (the steward's record steps, DEV9); and the page's composer
+offers no lane, while the terminal's `--to` and `quest_publish` take one. Held by `lanes.test.ts`,
+`connect.test.ts`, `RegistrationStoreTests`, `QuestLaneTests`, `McpToolsTests`, `LocalHostTests`, the driver's
+`LaneReadingTests` and `RemoteSyncTests`, `QuestsView.test.tsx`, and the family rehearsal's phase 4b, which the
+parent's serial run at merge proves.*
 
 ## D117 — One repository, every agent: knowledge and skills under `.agents/`, a mirror for the agent that reads `.claude/`, rooms, and a set-up the repository's own session does (2026-10-01)
 
