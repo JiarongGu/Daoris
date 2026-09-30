@@ -66,7 +66,7 @@ public sealed class TrustHoldTickTests : IDisposable
     {
         await using var service = StandInService.Start(_repository);
 
-        var report = await Driver(service).TickAsync();
+        var report = await Driver(service).RunOnceAsync();
 
         Assert.Empty(report.Untrusted);
         Assert.DoesNotContain(report.Events, line => line.Contains("never been trusted", StringComparison.Ordinal));
@@ -86,7 +86,7 @@ public sealed class TrustHoldTickTests : IDisposable
             """{"machine":{"deny":["mcp__daoris-knowledge__quest_respond"]}}""");
         await using var service = StandInService.Start(_repository);
 
-        var report = await Driver(service).TickAsync();
+        var report = await Driver(service).RunOnceAsync();
 
         Assert.Single(report.Untrusted);
     }
@@ -100,7 +100,7 @@ public sealed class TrustHoldTickTests : IDisposable
         await using var service = StandInService.Start(_repository);
         var driver = Driver(service);
 
-        var held = await driver.TickAsync();
+        var held = await driver.RunOnceAsync();
 
         var hold = Assert.Single(held.Untrusted);
         Assert.Equal(_repository, hold.Folder);
@@ -113,7 +113,7 @@ public sealed class TrustHoldTickTests : IDisposable
             && line.Contains("--profile work", StringComparison.Ordinal));
 
         ClaudeTrust.Grant(hold.TrustFile, hold.Folder);
-        var after = await driver.TickAsync();
+        var after = await driver.RunOnceAsync();
 
         Assert.Empty(after.Untrusted);
         Assert.DoesNotContain(after.Events, line => line.Contains("never been trusted", StringComparison.Ordinal));

@@ -62,7 +62,7 @@ public sealed class DrivenSessionInputTests : IDisposable
         var heard = Path.Combine(_home, "heard.txt");
         var driver = Driver(adapter, heard, service, processes);
 
-        var tick = driver.TickAsync();
+        var tick = driver.RunOnceAsync();
         await Until(() => processes.Running.Contains("s1"));
 
         var why = processes.RefusesInput("s1");
@@ -99,7 +99,7 @@ public sealed class DrivenSessionInputTests : IDisposable
         var processes = new SessionProcesses();
         var driver = Driver("acp-silent", Path.Combine(_home, "heard.txt"), service, processes);
 
-        var tick = driver.TickAsync();
+        var tick = driver.RunOnceAsync();
         await Until(() => processes.Running.Contains("s1"));
 
         Assert.True(processes.Stop("s1"));
@@ -122,7 +122,7 @@ public sealed class DrivenSessionInputTests : IDisposable
         var driver = Driver("stub", Path.Combine(_home, "heard.txt"), service, processes);
         using var closing = new CancellationTokenSource();
 
-        var tick = driver.TickAsync(closing.Token);
+        var tick = driver.RunOnceAsync(closing.Token);
         await Until(() => processes.Running.Contains("s1"));
         closing.Cancel();
         try { await tick.WaitAsync(TimeSpan.FromSeconds(90)); }
@@ -150,7 +150,7 @@ public sealed class DrivenSessionInputTests : IDisposable
         var prompts = Path.Combine(_home, "prompts.txt");
         var driver = Driver("acp-turns", prompts, service, processes, turns: when == "send-now" ? "hold" : "quick");
 
-        var tick = driver.TickAsync();
+        var tick = driver.RunOnceAsync();
         await Poll.Until(() => processes.InboxOf("s1") is not null && File.Exists(prompts), () => "the first turn never began", TimeSpan.FromSeconds(60));
         var inbox = processes.InboxOf("s1")!;
         Assert.True(inbox.Hold(new ChatMessage("the budget is in level.json, not config.json", [])));
@@ -192,7 +192,7 @@ public sealed class DrivenSessionInputTests : IDisposable
         var processes = new SessionProcesses();
         var driver = Driver("stub", Path.Combine(_home, "heard.txt"), service, processes);
 
-        await driver.TickAsync().WaitAsync(TimeSpan.FromSeconds(30));
+        await driver.RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(30));
 
         Assert.Empty(processes.Running);
         var heartbeat = Path.Combine(_repository, "heartbeat.txt");
@@ -214,7 +214,7 @@ public sealed class DrivenSessionInputTests : IDisposable
         var processes = new SessionProcesses();
         var driver = Driver("claude_code", Path.Combine(_home, "heard.txt"), service, processes);
 
-        var report = await driver.TickAsync().WaitAsync(TimeSpan.FromSeconds(30));
+        var report = await driver.RunOnceAsync().WaitAsync(TimeSpan.FromSeconds(30));
 
         Assert.Contains(report.Events, line => line.StartsWith("held", StringComparison.Ordinal) && line.Contains("claude_code"));
         Assert.Empty(processes.Running);
@@ -235,7 +235,7 @@ public sealed class DrivenSessionInputTests : IDisposable
         var driver = Driver("stub", Path.Combine(_home, "heard.txt"), service, processes, sync);
         using var closing = new CancellationTokenSource();
 
-        var tick = driver.TickAsync(closing.Token);
+        var tick = driver.RunOnceAsync(closing.Token);
         await Until(() => processes.Running.Contains("s1"));
         await Task.Delay(1500);   // past one beside-sync, so the loop is where the close finds it
         closing.Cancel();
@@ -270,7 +270,7 @@ public sealed class DrivenSessionInputTests : IDisposable
             "stub", Path.Combine(_home, "heard.txt"), service, processes,
             browser: shell ? new AnsweringBrowser("http://127.0.0.1:4810") : null);
 
-        var tick = driver.TickAsync();
+        var tick = driver.RunOnceAsync();
         await Until(() => processes.Running.Contains("s1"));
 
         string[] driving = shell ? ["s1"] : [];

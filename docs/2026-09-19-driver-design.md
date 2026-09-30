@@ -230,8 +230,10 @@ tier, and says which tier ran.
   *Amended by D51 and PAR1 (2026-09-27): this line and §3's one active session per repository hold only
   for a repository whose sessions run in its root. Where they open trees of their own, several run side
   by side, up to the cap. D115 (DEV1, `docs/2026-10-01-self-development-design.md`) designs the split
-  this line asks for: lanes, domains a repository declares, and a queue that lands them. Nothing of it
-  is built yet.*
+  this line asks for: lanes, domains a repository declares, and a queue that lands them. Its first
+  piece is built (DEV3, 2026-10-01): a session outlives the tick that started it, so sessions started at
+  different ticks run side by side, and a quest an active session serves is not started again. Lanes and
+  the queue are not built yet.*
 - **No cross-machine driving** — DRV3's problem, fed local-first by this design's records.
 - **No per-caller identity** — local trust and the single write key, as today; identity folds into
   DRV3/SVC2 (OIDC and per-person keys), where it is needed to mean anything.

@@ -603,6 +603,8 @@ public sealed class ServiceClient : IDisposable
                 Ask = Text(session, "ask"),
                 // The tree it holds — the lock where a repository opens a tree per session (PAR1).
                 Tree = Text(session, "tree"),
+                // The quest it serves, which it holds while it works (DEV3).
+                Quest = Text(session, "quest"),
             });
         }
 

@@ -4713,6 +4713,12 @@ planner and the ledger need.
 - **The desktop refusing to come up beside a headless loop.** Its host, page and conversations race
   nobody for a quest; only its loop waits.
 
+**Amended 2026-10-01 (DEV3, D115): the shutdown reaches every running session, whichever look started it.** A
+session now outlives the look that started it, so the watch keeps the running sessions, and a close ends each
+on the loop's own token. The loop lets go only once every record says `stopped` and interrupted. A failure that
+ends a headless loop (exit 2) ends its running sessions the same way first, so none is left working with
+nothing watching it, and each is carried on at the next start.
+
 **What the gates do not cover.** The window between reading a stale lock and removing it is not closed:
 two loops starting inside it could both run, and the quest lock still decides the race. A `--share` loop
 that outlives the driver it shared with leaves the home unlocked until the next loop starts. The remote
@@ -5691,6 +5697,37 @@ split the domain*.
   lanes are its *split the domain*.
 
 Each row that builds a piece notes the amendment where it lands.
+
+**Built 2026-10-01 (DEV3): a session outlives the look that started it** (§3.1, point 4 above).
+- The watch keeps the running sessions (`RunningSessions`) and hands them to the driver it builds for each
+  look. A look syncs, stops a lost claim, plans and begins every start. It waits for each start only until the
+  session's record is open or the start came to nothing, then returns. A hold, a refusal or an error before the
+  spawn is still that look's to report, and every session it opened is in the ledger before the next look plans.
+- Each ending joins the next look's report, and wakes the watch at once, so its slot is used and the ending is
+  said without waiting out the poll.
+- `RunUntilIdleAsync` looks until nothing runs, a look starts nothing and no ending is left unreported. Between
+  looks it waits for the next ending or the poll. `RunOnceAsync` is one look and then every session it started
+  to its end, with the sync beside them; the headless `--once` uses it, so what it prints is what it printed.
+- Unchanged: the sync at every look with the lost-claim stop after it (D68 §5, §6), the orphan sweep, the
+  shutdown's interrupted record (D104, amended there), the machine's cap, PAR1 and `driver.lock`.
+- Building it found three things the design did not say:
+  1. With trees on, a look could find a quest still open while its own session works, before that session
+     takes it or when it never does. Nothing held that quest, so a second session would start on it in a
+     second tree. The planner now holds a quest an active session serves (`RepositoryBusy`, naming the
+     session), from the quest each active record carries.
+  2. A nudge that arrived during a look was lost until the next poll. Looks are short now and the person's
+     controls nudge often, so the watch counts nudges and looks again at once.
+  3. A failed look leaves its endings unreported. After one the watch waits out its pace rather than wake on
+     them again and again against a service that is down.
+- **What a person sees.** A quest published while a long session runs starts at the next look instead of
+  after that session, which could take up to its 30-minute timeout: at once when it is published on the
+  window, whose publish nudges the loop, and within the poll (15 seconds by default) when it arrives any other
+  way. Every control that nudges the loop is heard while sessions run, where before it waited for them. Each
+  session's ending is said as it happens, not when the last session of its tick ends, and the window hears a
+  look when a session starts, not only when it ends.
+- **What the gates do not cover.** The fast half holds the scheduling with an in-process stand-in for each
+  start's run. The same cases over a real stub harness, and the shutdown marking two sessions interrupted, are
+  in the `Process` half, which this branch did not run, and neither did it run the family rehearsal.
 
 **What the gates do not cover.** This change is documents only, and nothing is built. Its statements about
 today's code were read from the files the design's §0 names: the planner, the tick and the watch, the trees, the

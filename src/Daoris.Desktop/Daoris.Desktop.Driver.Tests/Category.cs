@@ -16,6 +16,11 @@ namespace Daoris.Desktop.Driver.Tests;
 /// the one whose folder the process holds, and the cleanup that failed under load was a class's. A
 /// class that only reads and writes files, or talks to an in-process stand-in, is not one. That half
 /// has to stay fast and whole, because it is all a subagent runs.
+///
+/// A look's scheduling can stay in that half (DEV3): the real client over <c>StandInLedger</c>, an
+/// in-process handler for the service's doors, and a driver or watch handed <c>StandInRuns</c> as its
+/// <c>Runner</c>, which opens and moves records the way a start's run does and spawns nothing.
+/// <c>SessionsOutliveTheirLookTests</c> is the exemplar; its real-stub twin stays in this category.
 /// </remarks>
 internal static class Category
 {
