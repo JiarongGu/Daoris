@@ -70,7 +70,9 @@ service host with its bundle under `app/daoris-knowledge-http/`; the
 install's own `data/` once it has run, and an `INSTALLED.md` saying so. **`data/` is the Daoris
 home** (D63): on first start the shell sets `DAORIS_HOME` to it for its own process — every host and
 session it spawns inherits it — and, once, for the account when it has none, so a terminal's `daoris`
-meets the same machine. Nothing of Daoris's lives under the user profile; a `~/.daoris` from before
+meets the same machine. A second or moved install runs on its own `data/` even when the account's
+variable names another folder, leaves that variable as it is, and says so on Settings' home row
+(D105). Nothing of Daoris's lives under the user profile; a `~/.daoris` from before
 the decision moves in on that first start, `bin/` excepted, and the shell says so once. **Starting it
 starts the driver loop.** The publish refuses a folder it did not
 write; `--beside` installs next to whatever is there — the repositories it drives, typically — and

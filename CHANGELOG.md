@@ -358,7 +358,9 @@ The first version: doctrine that installs, is checked, and flows back.
   binaries — lives under `DAORIS_HOME`, and every default in the CLI, the hosts and the driver derives
   from that one variable. The installed desktop sets it to its own `data/` for itself and every
   session it spawns, and once for the account when it has none, so a terminal's `daoris` meets the
-  same machine; a `~/.daoris` from before moves in on the first start and the shell says so once.
+  same machine; a `~/.daoris` from before moves in on the first start and the shell says so once. A
+  second or moved install runs on its own `data/` even when the account's variable names another
+  folder, leaves that variable as it is, and says so on Settings' home row (D105).
   With no home set the management commands and the hosts refuse in a sentence naming it, rather than
   writing somewhere nobody pointed them. `publish:service --install` lands the hosts under the home's
   `bin/` and prints the `.mcp.json` snippet with the home filled in.

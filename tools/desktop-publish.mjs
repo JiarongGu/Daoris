@@ -352,7 +352,10 @@ re-publish never touches it.
 In \`${HOME}/\`, and nowhere under your user profile. On first start the application sets
 \`DAORIS_HOME\` to that folder for itself and — once, if your account has none — for your account,
 which is how the \`daoris\` CLI on a terminal and the desktop are **two doors onto one machine**: what
-one sets the other sees. A \`.daoris\` folder under your profile from an earlier version moves in on
+one sets the other sees. When your account's \`DAORIS_HOME\` already names another folder — another
+install's \`${HOME}/\`, or this one's before it moved — the application still runs on its own, leaves
+that variable as it is, and says so on Settings' home row (D105): a terminal reads the folder the
+variable names. A \`.daoris\` folder under your profile from an earlier version moves in on
 that first start (its \`bin/\` stays; re-run \`publish:service --install\` to land the hosts here).
 Deleting this folder removes the application and its machine — nothing else on the machine changes.
 

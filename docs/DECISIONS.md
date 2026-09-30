@@ -2352,6 +2352,10 @@ answer on a machine with no application.
 **What it changes elsewhere.** D60's "installed home" is `$DAORIS_HOME/bin` (amended in place); the
 toolchain design's directory layout is the same tree under a different root; DEPLOY4 closes.
 
+*Amended by D105 (HOME1, 2026-09-30): a `DAORIS_HOME` the install only inherited from the account, naming
+another folder, no longer wins over the install's own `data/`. The account's variable is left as it is,
+and the window says so. A home named for one start alone is still respected.*
+
 ## D64 — A plugin is a folder that declares, and may speak: no code loads into a host (2026-09-23)
 
 **Decision.** The owner's direction, after ARCH1 declined a runtime and named three seams: *"the
@@ -4510,3 +4514,56 @@ safe side. The hand-off's plugins in the tests are fakes on the wire's channel; 
 the examples' own tests drive against a bare repository, but no hand-off has run against a real platform.
 The review's button and Ask Daoris's card are held by the page's tests over a mocked bridge, not yet looked
 at on the window.
+
+## D105 — An install runs on its own home, the CLI installs from npm, and a session's background work ends with it (2026-09-30)
+
+**Decision.** Three questions REV3 and CONSOLE3 left for the owner, decided the same day: HOME1 (which
+home a second install uses), DIST1 (how a consumer installs the CLI) and CONSOLE3's last one (whether a
+driven session waits for its own background work).
+
+### 1. HOME1 — a moved or second install runs on its own `data/`
+
+The owner's call: **the install's own `data/` wins**, and the window says when it overrode an
+inherited home. REV3 found the defect (modules F4): `InstallHome.Establish` deferred to any
+`DAORIS_HOME` already in its environment, and the first install had set one for the account, which
+every process the person starts inherits. A second install, or the first one moved, ran on the old
+`data/` and said nothing.
+
+- **Which value is inherited.** A process value that equals the account's variable (as a path: full,
+  no trailing separator, case ignored on Windows) was inherited, and the install's own `data/` replaces
+  it for this process and everything it spawns. A value that differs from the account's, or any value
+  when the account has none, was named for this start alone (a gate's scratch home, a terminal's
+  one-off), and is still respected whole. Without that exception the deployment rehearsal would run
+  its install on the install's `data/`, and on a machine whose account has no variable, set one for
+  the account from a gate. A value that already names this install's `data/` establishes nothing, as
+  before.
+- **The account's variable is left as it is**, whatever folder it names, and the notice says so. D63
+  sets it once, when the account has none, and that stands. Rewriting one that names another install
+  would move every terminal to whichever install was opened last, and it is the person's setting.
+  Removing a stale one is theirs too.
+- **Where the window says it: Settings → Driver's *Daoris home* row**, as `homeNotice`, the standing
+  line under the home's path, which already carried what establishing the home did. That row is where
+  the fact belongs: it corrects the path printed beside it. It also rides the one-time event the home's
+  other news takes. It is a sentence the person can act on: *Daoris home: `<install>\data` — this
+  install's own data folder, not `<other>`, which DAORIS_HOME names for your account; that variable is
+  left as it is, so a terminal's daoris still reads `<other>` until you change it.* It is said on
+  every start that overrides, since the fact lasts as long as the variable names the other folder.
+  **Not the status bar**, which carries what changes while a person works. **Not the machine log's
+  `app.started`**: that log is read in a development session to improve Daoris (D94), and no person
+  meets a sentence there.
+
+Off Windows the account's variable is not read (the user-level store is a Windows notion, as D63's code
+says), so no process value counts as inherited there; the shell is Windows-only, so no install meets it.
+
+**Rejected.** **The inherited home wins, and the shell says so**, the other way the row offered: the
+window would name a home that is not the install's, and D63 made the install's folder the home. **Setting
+the account's variable to the install on every start**: the last install opened would own every terminal.
+**Treating every value as inherited**: no gate could keep an install off the real machine.
+
+**What the gates do not cover.** `InstallHomeTests` hold the rule over temporary folders and a fake
+environment: the override, the moved install, the respected one-off, the account left alone, the
+notice, and that it is worth saying. The rest is held by existing tests, joined by that flag: the
+state carries the notice of a record worth saying (`DriverModuleTests`), and the row renders whatever
+`homeNotice` holds (`shell.test.tsx`). No second install has been started on a real account, and the
+deployment rehearsal starts its install with a scratch home, the respected case, so it never shows
+the override.
