@@ -176,6 +176,11 @@ and the right side bar (`Ctrl+Alt+B`) on every view, and the session list (`Ctrl
 You open on `F1` or `Ctrl+Alt+I`, and Quick Ask, a box where the palette opens, on
 `Ctrl+Shift+Alt+L`.
 
+A file path in a session's tool card, or a file's button in the review's list, opens a preview of that
+file as a tab of the right side bar: the file in the session's tree as it is on disk now, read-only,
+the lines a read named marked, and its changes one press away where the review holds them. One preview
+a session; opening another replaces it, and its own × goes back. In this conversation a path is plain text.
+
 You cannot see the window. Where the person is, and where the views stand, comes with their
 message when it changed; for anything else on the screen, ask them rather than guess.
 

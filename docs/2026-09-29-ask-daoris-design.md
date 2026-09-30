@@ -353,6 +353,9 @@ line git can name. With an agent named, a starter is also a first message.
      method the route and the door call). The room says how the browser is set and the favorites it keeps.
    - **A go to Permissions → *Reading and writing across*.** A part of `permissions` on both twins (`HelpPlaces`,
      `help/places.ts`), found by the `settings-across` id the card has carried since READ1, now a `SettingsAnchor`.
+   - **The room says PREVIEW1's file preview exists** (D111), in *The window*: a path in a session's tool card, or a
+     file's button in the review, opens a read-only preview as a tab of the right side bar, and in Ask Daoris's own
+     conversation a path is plain text.
 
 ## 10. Not chosen
 
