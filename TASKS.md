@@ -46,14 +46,18 @@ SHEN1 (Shenora 0.18), USE1a–f (what the window showed, one defect for the over
 QUEST1 (delete, D95), CONSOLE4 (a terminal, D96), SETUP1 (the setup guide, D97), AGT6 (model and
 effort, D98), CHR8 (one Chromium, D99), BRW7–8 (the browser's door, link routing, who drives), HELP6
 (Ask Daoris proposes every new door, tried with a real helper), WORK1, DEPLOY5 and HTTP1 — most built
-by subagents in their own worktrees and merged, rehearsed and looked at on main. **Next:** LOG2 and
-HELP7 (what the log and the helper showed), then the owner's calls.
+by subagents in their own worktrees and merged, rehearsed and looked at on main. Then HELP7, LOG2
+(the host writes its stop), WSR4 (D100: a landing plugin pushes and opens the pull request, two inert
+examples), HELP8 (Ask Daoris proposes one), and a narrow Settings row that now stacks. **Next:**
+PLUG8 and PLUG9, the owner's *Daoris makes plugins* (building), then the owner's calls. The kit's own
+relay (Shenora.Chromium 0.18.0) leaves a pump unobserved as Daoris's did: a request for the kit's
+owner, not Daoris's to change (LOG2b).
 - **The owner's ticket AR-2201 is landed** on its feature branch in the repository that owns it, not
   pushed; the pull request is theirs, and so are two calls the verify step raised (a rounding change
   in a shared helper, and a production config update). Two landed branches of the ticket before it
   wait for the owner to delete (the permission policy refused a forced branch delete). The private
   notes name them.
-- **The install** runs the latest main; republishing is the session's own call, never while a session
+- **The install** runs main at the narrow-row fix (republished 2026-09-30, host now logs its stop); republishing is the session's own call, never while a session
   on it runs. Start it the normal way, not through the dev tool, unless the instruments are needed
   (USE1g is a session shell's PATH seen once under a dev-tool start).
 - **Load makes flakes**: FLAKE1's real-tick classes fail under parallel builds and pass alone. Run the
