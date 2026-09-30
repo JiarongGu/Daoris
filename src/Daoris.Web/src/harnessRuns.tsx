@@ -1,7 +1,7 @@
 import { createContext, type ReactNode, useContext, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { sentence } from './format';
-import { useHarnessAction, useHarnessEnded } from './shell';
+import { type DefaultStanding, useHarnessAction, useHarnessEnded } from './shell';
 import type { Notify } from './ui';
 
 /** A process action a person started on a tool: an install, an update, a pin, or a sign-in. */
@@ -28,6 +28,26 @@ export type HarnessRun = {
 };
 
 const Runs = createContext<HarnessRun | null>(null);
+
+/**
+ * What sessions run as where a default was edited, in the sentence `daoris agent profile default … [--clear]` prints
+ * (LOOK2c, D50): the machine's account or its own home again, a workspace's own account, or a workspace naming none that
+ * runs as the machine's default or in the agent's own home.
+ */
+export const defaultSaid = (
+  t: ReturnType<typeof useTranslation>['t'], harness: string, standing: DefaultStanding,
+): string => {
+  const { workspace, account } = standing;
+  if (!workspace) {
+    return standing.from === 'own' || !account
+      ? t('harness.default.machineOwn', { harness })
+      : t('harness.default.machine', { harness, account });
+  }
+  if (standing.from === 'workspace' && account) return t('harness.default.workspace', { harness, workspace, account });
+  return standing.from === 'machine' && account
+    ? t('harness.default.workspaceMachine', { harness, workspace, account })
+    : t('harness.default.workspaceOwn', { harness, workspace });
+};
 
 /** The state of a tool's running action, and the one listener for its end. */
 function useRunState(notify: Notify): HarnessRun {
@@ -99,6 +119,14 @@ function useRunState(notify: Notify): HarnessRun {
       onSuccess: (result) => {
         if (result.started) {
           setInFlight(`${harness}:${action}`);
+          return;
+        }
+        // A default's edit says what sessions there run as now (LOOK2c), as the terminal's verb prints it: a workspace
+        // cleared on the tool's own row runs as the machine's default where one is set, not in the tool's own home.
+        if (action === 'profile-default' && result.default && (result.exitCode ?? 0) === 0) {
+          setRunningProfile(null);
+          setSigningInNew(null);
+          notify(defaultSaid(t, harness, result.default));
           return;
         }
         ended(action, profile, result.exitCode ?? 0, null);

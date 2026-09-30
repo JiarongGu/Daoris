@@ -1,10 +1,10 @@
 import { useCallback } from 'react';
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useShenora } from '@shenora/react';
+import { type QueryClient, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useShenora, useShenoraEvent } from '@shenora/react';
 import { keys } from '../queries';
 import type { Consideration, TrustHold } from '../signals';
 import type { LandingRule } from '../settings/Landings';
-import { call } from './call';
+import { call, refusedNotReady } from './call';
 
 // The driver's standing state and its dials (MOD3): what this machine drives and holds, what it says
 // when a session parks, how many failures park a quest, which agent answers an ask, and a look now.
@@ -14,6 +14,11 @@ import { call } from './call';
  * config path, cap, adapter, poll interval); the fields land here when a surface reads them.
  */
 export type DriverState = {
+  /**
+   * Whether the driver's service is up (LOOK2a): until it is, every route that reads it refuses *still coming up*.
+   * Absent on a shell older than it, which is read as up, as this answer alone said before.
+   */
+  ready?: boolean;
   drivable: string[];
   holds: string[];
   /** Repositories whose sessions open their own worktree instead of the registered root (D51). */
@@ -83,6 +88,30 @@ export const useDriver = () => {
     queryFn: () => call<DriverState>('STATE'),
     enabled: isAvailable,
   });
+};
+
+/**
+ * Ask again what the driver could not answer before its service was up (LOOK2a): its own answers, all keyed under the
+ * driver (its state, which now says ready, the lines, the clean-up's list, which repositories a look takes), and every
+ * other query it refused as not ready, such as a session's review or preview. A query refused for a reason of its own
+ * keeps its answer.
+ */
+export const askAgainWhenReady = (client: QueryClient) => {
+  void client.invalidateQueries({ queryKey: keys.driver });
+  void client.invalidateQueries({ predicate: (query) => refusedNotReady(query.state.error) });
+};
+
+/**
+ * Hear the driver say its service is up (`DRIVER_READY`, LOOK2a), and ask again then what it refused while it came up.
+ *
+ * @remarks
+ * A screen opened as the shell starts asks at once and is refused *still coming up*. Before LOOK2a only a tick asked
+ * again, and the first tick can wait on a remote's sync or on another driver's lock, so Settings → Workspace said no
+ * repository had a line until something else happened to ask. Said once by the shell, the moment the refusals stop.
+ */
+export const useDriverReady = () => {
+  const client = useQueryClient();
+  useShenoraEvent('DAORIS', 'DRIVER_READY', () => askAgainWhenReady(client));
 };
 
 /**

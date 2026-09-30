@@ -328,6 +328,20 @@ describe('StatusBar', () => {
   });
 
   /**
+   * LOOK2a: the driver's file answers before its service is up, and the bar said *ready* while every route that reads
+   * the service still refused *still coming up*. Starting is its own word, and its settings are still one press away.
+   */
+  it('says the driver is starting until its service is up', () => {
+    const onDriver = vi.fn();
+    render(<StatusBar driver="starting" sessions={0} workspace={null} remote={null} onDriver={onDriver} />);
+
+    expect(screen.getByText('starting')).toBeTruthy();
+    expect(screen.queryByText('ready')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: /driver/i }));
+    expect(onDriver).toHaveBeenCalledTimes(1);
+  });
+
+  /**
    * AGT6: the tier leads where it is explained and changed — Daoris's own AI, on Settings — and its
    * words stay the service's, verbatim, with the note one hover away (D24).
    */

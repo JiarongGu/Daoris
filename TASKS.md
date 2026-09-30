@@ -21,8 +21,8 @@ lists.
 
 ## State
 
-**Counts, and this is their one home:** sixteen commands, **671 CLI tests, 697 service and 46 HTTP host, 1695 driver,
-458 desktop modules, 80 devkit, 1861 web unit, 21 Playwright**, 66/66 release rehearsal, **305/305
+**Counts, and this is their one home:** sixteen commands, **680 CLI tests, 697 service and 46 HTTP host, 1695 driver,
+466 desktop modules, 80 devkit, 1895 web unit, 21 Playwright**, 66/66 release rehearsal, **305/305
 family rehearsal** (it names its own phases when you run it), **70/70 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge
 documents, 5 skills, 7 packs. The always-loaded core is **22,672 of 26,000 bytes** — a span in
@@ -132,8 +132,8 @@ rather than designed.
 
 ## Backlog
 
-**Forty-six rows are open** (most of them the three designed builds below) (triaged 2026-09-30, when the owner asked to go faster; 2026-10-01 after the night's merges, the look, and the owner's round):
-- **Merging next:** NAME1a, LOOK1 and LOOK2, then LAYOUT2's evidence. **Building:** NAME1b, DEV3, LAYOUT3.
+**Forty-four rows are open** (most of them the three designed builds below) (triaged 2026-09-30, when the owner asked to go faster; 2026-10-01 after the night's merges, the look, and the owner's round):
+- **Merging next:** one integration of LAYOUT2, DEV2, DEV3, DEV4, LAYOUT3, LAYOUT4 and NAME1b. **Building:** PLUGUI1a.
 - **Designed, to build in order:** DEV2–DEV11 (D115); FRAME1b–i (D118) after NAME1b; PLUGUI1 after FRAME1c;
   LAYOUT3–LAYOUT10 (D117) after LAYOUT2's evidence.
 - **Waiting on the owner (six):** BUDGET1 and PLUGREPO1 (their calls), TRUST2 and AGT2c (a grant, two
@@ -199,22 +199,6 @@ install in both themes and both languages.
   - making and trying one (the kit, PLUG8), and asking for one (PLUG9), from the screen.
   Settings keeps only what is a setting. Ask Daoris's plugin kind gains go anchors into the screen. The
   contract is a design document written first, extending `docs/2026-09-23-plugin-design.md`.
-- [ ] **LOOK2 — what the post-merge look found** (2026-10-01, the install at `66efbf7`). (a) Right after a
-  start, Settings → Workspace's Line and landing cards said no repository here has a line: `LINES` answered
-  from the driver's snapshot before the service held its registry, and the page kept that empty answer until
-  *Bring up to date*'s look invalidated it. A route that reads the snapshot should refuse *not ready* rather
-  than answer empty, or the page should ask again when the driver becomes ready; check every screen that
-  reads it in the first seconds. (b) The session list still says where a session's tree was (*位于
-  s-2394e5d9*) after the landing tidied it and its branch went; it should say where the work landed, as
-  REVIEW2's review now does.
-  (c) **The Agents screen's "use for a workspace" on the tool's own row** removes the workspace's entry,
-  which falls back to the machine's default, not the tool's own home, when a machine default is set (found
-  by LEFT3; the terminal's `--clear --workspace` does the same, as its twin must, and says what sessions run
-  as). The screen's wording promises more than it does: say what it falls back to, or offer both.
-- [ ] **LOOK1 — `shot --theme` says when it cannot take.** It emulates the system's colour scheme, which
-  the page follows only while the viewer's theme choice is *system*. On the install the choice was dark, so
-  `--theme light` silently photographed dark (`tools/desktop.mjs`, `theme.ts`'s `effectiveDark`). Set the
-  page's own choice for the capture and put it back, or refuse with the reason.
 
 ### Daoris develops Daoris (D115) — the build
 

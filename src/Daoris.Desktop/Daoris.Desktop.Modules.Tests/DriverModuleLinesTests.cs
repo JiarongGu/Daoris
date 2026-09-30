@@ -172,4 +172,42 @@ public sealed class DriverModuleLinesTests : DriverModuleBridge
 
         Assert.Contains(Refusals.DriverNotReady, refusal);
     }
+
+    /// <summary>
+    /// LOOK2a: right after a start, Settings → Workspace said no repository here had a line, and kept saying it. The
+    /// lines refuse *still coming up* until the loop's service is up, never answering an empty list for it; the moment it
+    /// is, the state says so, the page is told once (<c>DRIVER_READY</c>), which is when it asks again what the driver
+    /// refused, and the lines answer every repository the registry holds.
+    /// </summary>
+    [Fact]
+    public async Task The_lines_refuse_until_the_drivers_service_is_up_and_the_page_is_told_when_it_is()
+    {
+        var loop = Loop();
+        var module = new DriverModule(Bus, loop);
+        Assert.Contains(Refusals.DriverNotReady, await RefusalAsync(module, "LINES"));
+        Assert.False((await AnswerAsync(module, "STATE")).GetProperty("ready").GetBoolean());
+        Assert.DoesNotContain(Raised, message => message.Type == "DRIVER_READY");
+
+        await loop.ComeUpAsync(new ServiceClient("http://stand-in", null, new HttpClient(new StandInService())));
+
+        Assert.True((await AnswerAsync(module, "STATE")).GetProperty("ready").GetBoolean());
+        Assert.Single(Raised, message => message.Type == "DRIVER_READY");
+        var lines = (await AnswerAsync(module, "LINES")).GetProperty("lines");
+        Assert.Equal(["engine", "game"], lines.EnumerateArray().Select(line => line.GetProperty("repository").GetString()));
+    }
+
+    /// <summary>The service a driver reads its snapshot from, standing in: two registered repositories, no quest, no session.</summary>
+    private sealed class StandInService : HttpMessageHandler
+    {
+        protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
+        {
+            var body = request.RequestUri!.AbsolutePath == "/api/registry"
+                ? """[{"repository":"game","workspace":"aurora"},{"repository":"engine","workspace":"aurora"}]"""
+                : "[]";
+            return Task.FromResult(new HttpResponseMessage(System.Net.HttpStatusCode.OK)
+            {
+                Content = new StringContent(body, System.Text.Encoding.UTF8, "application/json"),
+            });
+        }
+    }
 }

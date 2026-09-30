@@ -2,6 +2,7 @@
   "work.status.label": "state of this machine",
   "work.status.driver": "driver",
   "work.status.driverRunning": "ready",
+  "work.status.driverStarting": "starting",
   "work.status.driverStopped": "not answering",
   "work.status.driverAbsent": "none here",
   "work.status.sessions": "{{count}} session",

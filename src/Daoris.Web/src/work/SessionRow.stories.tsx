@@ -129,6 +129,27 @@ export const InTheRegisteredRoot: Story = {
   args: { root: 'C:/checkouts/engine', session: { ...SESSION, tree: 'C:/checkouts/engine' } },
 };
 
+/**
+ * A session whose landing tidied its tree away (LOOK2b, D113): the row says where the work landed, not the tree it
+ * no longer has.
+ */
+export const Landed: Story = {
+  args: {
+    root: 'C:/checkouts/engine',
+    session: { ...SESSION, state: 'completed', created: at(95), updated: at(50), tree: 'C:/somewhere/.daoris/trees/default/engine/s-2394e5d9' },
+    where: { treeGone: true, landed: { repository: 'engine', branch: 'feature/7a82cc-streaming-budget', state: 'standing' } },
+  },
+};
+
+/** The same, once its branch has gone too: still where the work landed, and that the branch is gone. */
+export const LandedBranchGone: Story = {
+  args: {
+    root: 'C:/checkouts/engine',
+    session: { ...SESSION, state: 'completed', created: at(95), updated: at(50), tree: 'C:/somewhere/.daoris/trees/default/engine/s-2394e5d9' },
+    where: { treeGone: true, landed: { repository: 'engine', branch: 'feature/7a82cc-streaming-budget', state: 'gone' } },
+  },
+};
+
 /** Three hours deep. The whole reason elapsed is on the row: "moved 4m ago" says none of this. */
 export const RunningThreeHours: Story = {
   args: { session: { ...SESSION, created: at(181), updated: at(4) } },

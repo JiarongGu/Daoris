@@ -88,6 +88,18 @@ export const useHarnesses = () => {
 };
 
 /**
+ * What sessions run as where a default was just set or cleared (LOOK2c): the workspace, or null for the machine; the
+ * account, or null for the agent's own configuration home; and which rung answered — the workspace's own account, the
+ * machine's default (a workspace naming none falls back to it), or the agent's own home. The same fact `daoris agent
+ * profile default … [--clear]` prints.
+ */
+export type DefaultStanding = {
+  workspace?: string | null;
+  account?: string | null;
+  from: 'workspace' | 'machine' | 'own';
+};
+
+/**
  * Install, update, or log a profile in — each by that harness's OWN mechanism.
  *
  * @remarks
@@ -116,6 +128,8 @@ export const useHarnessAction = () => {
       harness: string; action: string; exitCode?: number; started?: boolean;
       /** For `key-add`: the account made, and the key's handle. */
       profile?: string; key?: string;
+      /** For `profile-default`: what sessions there run as now (LOOK2c). Absent on a shell older than it. */
+      default?: DefaultStanding;
     }>('HARNESS_ACTION', action),
     onSuccess: () => void client.invalidateQueries({ queryKey: keys.harnesses }),
   });
