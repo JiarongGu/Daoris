@@ -5959,3 +5959,149 @@ does not hold placeholders, which the parity gate does, and cannot see a sentenc
 `{{why}}`); the audit lists those it read by hand. That the budgets match the rooms is a claim about the window,
 derived from the tokens and the frame's constants in design §4 and **not measured here**: nothing looked at the
 window in this branch.
+
+## D121 — Every tool Daoris runs is the system's, managed, or a file the person names; a list built in says where each version downloads, and more locations extend it without a release (2026-10-01)
+
+**Decision (TOOLS1).** The owner: *"all tools that daoris using like git, [terminal] should all have a self managed
+option (and can be setup in settings) which can be download from locations … I perfer provide default download
+location and built into the app with a resouce json file that can be updated if need other resouce location"*. The
+contract is `docs/2026-10-01-tools-design.md`, which extends D57 from agents to tools. So:
+
+1. **The tools are declared in code, in both artefacts**: Git, Node.js (with `npm` and `npx`), PowerShell, GitHub
+   CLI and Azure CLI. A list may offer versions of these. It can never make Daoris run a program its code does not
+   name. Windows PowerShell, Command Prompt and Daoris's own programs are not tools.
+2. **Each tool is run one of three ways, and holds exactly one**, in `$DAORIS_HOME/tools.json`, twins in the CLI
+   and the driver:
+   - **the system's**, from `PATH`. Absent means this, and it is today's behaviour byte for byte;
+   - **managed**: one exact version downloaded into `<home>/tools/<tool>/<version>/` and verified;
+   - **a file** the person names.
+
+   The way set decides every question about the tool. A managed version nobody downloaded refuses, and so does a
+   named file that is gone. Neither ever falls back to `PATH`, as D57's pin does not. Nothing switches to managed on
+   its own.
+3. **One answer for Daoris and every child.** Daoris's own starts use the resolved file by its path: git, a hook's
+   first word, npm in a pin, and the tree guard's node. Every child the driver and the modules start gets the tools'
+   environment:
+   - the folders of each tool that is managed or a file, first on its `PATH`;
+   - `GIT_CONFIG_GLOBAL`, when git carries a setting.
+
+   Nothing else changes, and the application's own environment is never rewritten. A source-reading test holds
+   every start, as `NoConsoleWindowTests` holds `CreateNoWindow`.
+4. **Git carries settings from an allow-list, and its first key is `core.sshCommand`**, which answers the failure
+   WSR7 measured. It travels in a global file Daoris writes under the home:
+   - it includes the person's own global configuration first, which is read and never written;
+   - Daoris's keys follow, between markers, and a child's own writes there are kept;
+   - a repository's own configuration still wins over both.
+
+   The resolved git's version is asked: below 2.32 a setting refuses, since that git would ignore it silently, and
+   below 2.29 the fetch says it cannot run as D109 needs.
+5. **`resources.json` is built into the install**, at `app/resources.json` beside the application.
+   - **Schema 1.** For each tool: its source and licence, then each version's files by platform, each with a URL,
+     a sha256 and a size, an archive kind (`zip` or `tar.gz`), the executable inside, and the folders for `PATH`.
+   - **Never rewritten in place.** A newer list is a **resource location**: the address of another list, `https://`
+     or loopback `http://`, set in Settings and in `tools.json`. It is fetched only on the person's press and kept
+     under the home.
+   - **The merge.** The person's locations are read in order, then the built-in list.
+     - One tool, version and platform is one download: lists that disagree on it refuse that version, naming both.
+     - Lists that agree under different addresses are mirrors, tried in order.
+     - A tool's versions are the union, and the newest is the highest by number.
+     - An unknown tool or schema is refused.
+   - **Every file is checked** against its list's hash and size, staged, and moved whole. Finding its record is the
+     proof.
+   - **Trust.** A list is trusted as its host until lists are signed, which waits for a release key Daoris does not
+     have.
+   - **No default location** is named until Daoris publishes one of its own.
+6. **Agents stay on their makers' channels** (D57 §3a). The two share:
+   - the staging and layout discipline;
+   - HTTPS only;
+   - nothing redistributed or patched;
+   - the CLI's fetcher seam;
+   - update resolving the newest to one exact version.
+
+   Node is the one crossing: a pin's `npm` is Tools' npm, and `agent install` keeps the system's.
+7. **The doors.**
+   - **Settings → Tools**: a machine domain after *Agents*.
+   - **The terminal**: `daoris tool list|path|use|download|update|delete|git ssh|locations|look`.
+   - **Ask Daoris**: an eleventh kind, `tool`. Its doors: *use* the system's or a managed version, *update*, the
+     SSH command as git's own or Windows', removing a location, and the go places.
+   - **Exempt, each with its reason**:
+     - a named file, a custom SSH command and a new location are the person's own press: a program, or a source of
+       programs;
+     - *Download* and *Look for updates* change nothing;
+     - deleting a version is a discard.
+   - **Names**: three glossary terms, *tool* 工具, *managed* 托管 and *resource location* 资源位置, within D116's
+     budgets, after NAME1b renames *Tools & accounts*.
+
+**Why.** Git is the program Daoris can least do without and the one it chooses least. It is a bare name that
+nothing resolves, its version is never asked, and nothing but the command line can hand it a setting. So WSR7 could
+only say what the git on the path needed; it could not give it. Five resolvers answer *which program is this*, and
+git and a hook's command use none of them. A session's tools are whatever `PATH` it inherited, as USE1g found from
+the other side. D57 already answered the same question for agents, and its answer carries: a way the person
+chooses, absent meaning today, a choice that cannot run refusing rather than guessing, and one resolution that both
+doors and every child share.
+
+**The alternative weighed, as the owner asked: a separately released resource package.** A sibling project in the
+family ships one (read, not changed).
+- **It bundles three parts**, and every other tool is a constant in its application's code.
+- **A new package still needs a new application**, since the application names the package's version, and the
+  sibling's own publish script warns of exactly that.
+- **The package is not hashed.** It is trusted as TLS and an immutable registry.
+- **Installed means marker files exist**, so a newer package is never noticed.
+- **The registry's size limit** trimmed what it could carry.
+- **Its version once drifted** across three places.
+
+The list built in, with more locations, needs no release for a newer version, redistributes nothing, hashes every
+file, knows each version by its folder, and moves each tool alone. Its cost is keeping the list's hashes current
+from the makers' published sums. From the sibling it keeps:
+- an HTTPS-or-loopback rule for an override address;
+- staging then moving;
+- asking the resolution again at each start;
+- meeting an agent's need for Git Bash from the machine before downloading one for it.
+
+**Rejected** (the design's §8 has the full list):
+- **The separately released package.**
+- **Rewriting the built-in list in place.** The install folder is the publish's.
+- **Agents under the list.** It is a weaker check for the same bytes, and a list that lags the makers.
+- **Layering the three ways as D57 layers an agent's.** A pin hidden under a file is invisible on a screen of one
+  choice.
+- **Managed by default.**
+- **A tool set a list can extend.**
+- **Rewriting the application's own `PATH`.**
+- **Carrying git's settings as `-c` on Daoris's calls alone.** The driver and a session would get two answers.
+- **`GIT_CONFIG_COUNT` or `GIT_SSH_COMMAND`.** Their command-line scope overrides a repository's own configuration.
+- **Writing the person's global configuration, or a checkout's.**
+- **Patching a managed git's own system configuration.**
+- **Git's full portable distribution, for its bash**, until TOOLS10 measures the need.
+- **A `file:` location.**
+- **Accounts for gh and az.**
+- **Per-workspace tools.**
+- **Ask Daoris proposing a named file, a custom SSH command, or a new location.**
+
+**What it amends, when built.**
+- D57 and the toolchain design: the resolution rule's home gains tools, held to one way rather than layers.
+- D96 and the terminal design: the shells come from the tools' `PATH`, and Git Bash is the bash beside the git
+  Tools resolves, else the system's.
+- D64 and D100: a hook's first word that a tool answers for is the resolved file, so a landing plugin's `git`, `gh`
+  and `az` are Tools'.
+- D109 as amended by WSR7: the fetch's git is Tools' git, and what was not fetched can name Settings → Tools.
+- D110: an eleventh kind.
+- D116: three terms.
+
+Each row that builds a piece notes the amendment where it lands.
+
+**What the gates do not cover.** This change is documents only, and nothing is built.
+- **Read from the code:** the statements about today's code, from the files the design's §1 names, at `d618cbb`.
+  The service starts no process, and no test holds that.
+- **Read from outside:** the sibling's package, from its folder, which was not changed.
+- **Not measured:**
+  - which of the makers publish an archive Daoris can unpack, which TOOLS3 confirms before a list line is written;
+  - which ssh reaches the owner's SSH remotes;
+  - how git reads an include whose file is gone;
+  - what a minimal git's configuration reads differently from Git for Windows';
+  - how Claude Code finds its Git Bash with a minimal git first on `PATH`;
+  - where a managed npm puts a global install;
+  - whether an agent passes its `PATH` on to the servers it starts;
+  - whether gh and az stay signed in when managed.
+
+`verify` checks the records' shape, budgets and duplicates, and none of these words. The design's §6 says what a
+rehearsal can prove and what waits for TOOLS11's real downloads.

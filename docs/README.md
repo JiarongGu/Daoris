@@ -47,6 +47,7 @@ what was measured, and it stays a record of that moment. A *record* is append-on
 | `2026-10-01-agent-layout-design.md` | contract | One repository, every agent: knowledge and skills under `.agents/`, a skills mirror and imports instead of links, rooms, and a repository set up by its own session (LAYOUT1) | Designed (D117); nothing built. §1 is what each agent reads, measured and not, §5.4 the move's cells, §7 the phased build LAYOUT2–LAYOUT10, §8 what only a real adopter can prove |
 | `2026-10-01-frame-model-design.md` | contract | One frame for every view: the list pane and the main area each view owns, what each view puts in them, and the build (FRAME1, D118) | Designed (FRAME1a); built as FRAME1b–i, and PLUGUI1's screen on it |
 | `2026-10-01-naming-design.md` | contract | Names: a name is a UI element, designed in each language; the kinds, their rules and budgets, the glossary and the check (NAME1, D116) | Current. NAME1a wrote it with the glossary and the check in report mode; the renames are NAME1b's |
+| `2026-10-01-tools-design.md` | contract | Tools: every program Daoris runs beside its agents (Git, Node.js, PowerShell, GitHub CLI, Azure CLI) is the system's, managed, or a file you name; a `resources.json` built in, and resource locations that extend it without a release (TOOLS1) | Designed (D121); nothing built. §1 is what an install starts today and how it finds each, §3 the list and its merge, §3.9 the resource package weighed, §6 what only a real download can prove, §7 the phased build TOOLS2–TOOLS11 |
 
 ## Studies and evidence
 
