@@ -146,19 +146,26 @@ public sealed partial class DriverModule
             _loop.Home, proposal, plan, HelpDoors(service), Say, cancellationToken).ConfigureAwait(false);
         if (proposal.Kind is "ask" or "delete") _loop.Nudge();
 
-        return new
-        {
-            Message = applied.Told,
-            applied.Applied,
-            // Where a go takes the person: the page navigates, as its starters' doors do (HELP6).
-            Go = applied.Go is { } place ? new { place.View, place.Domain, place.Part } : null,
-            // The action an update or a pin started, so the Agents screen follows its console and its end. A default
-            // (HELP10) is a file edit that starts nothing, so there is nothing to follow.
-            HarnessAction = applied.Applied && proposal.Kind == "agent" && proposal.Door is "update" or "pin"
-                ? new { Harness = proposal.Target!.Trim(), Action = proposal.Door }
-                : null,
-        };
+        return ApplyAnswer(proposal, applied);
     }
+
+    /// <summary>
+    /// What an Apply answers the page (HELP1c, HELP6), the page's <c>HelpSettled</c>: the driver's sentence, whether it was
+    /// applied, where a go takes the person, and the agent action the Agents screen follows. Public so the fast half holds
+    /// the answer without a service (LEFT3 d), as it holds a conversation's options.
+    /// </summary>
+    public static object ApplyAnswer(HelpProposal proposal, HelpApplied applied) => new
+    {
+        Message = applied.Told,
+        applied.Applied,
+        // Where a go takes the person: the page navigates, as its starters' doors do (HELP6).
+        Go = applied.Go is { } place ? new { place.View, place.Domain, place.Part } : null,
+        // The action an update or a pin started, so the Agents screen follows its console and its end. A default
+        // (HELP10) is a file edit that starts nothing, so there is nothing to follow.
+        HarnessAction = applied.Applied && proposal.Kind == "agent" && proposal.Door is "update" or "pin"
+            ? new { Harness = proposal.Target!.Trim(), Action = proposal.Door }
+            : null,
+    };
 
     // The person's Not now: nothing changes, and the agent is told so.
     [DriverRoute("HELP_DISMISS")]

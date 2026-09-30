@@ -80,6 +80,30 @@ public sealed class DriverModuleHelpTests : DriverModuleBridge
         Assert.Null(DriverModule.SyncShown(null));
     }
 
+    /// <summary>
+    /// HELP10's guard (LEFT3 d): an Apply names an agent action for the Agents screen to follow only where one started,
+    /// an update's or a pin's. A default is a file edit that starts nothing, so an applied one names none, and nor does
+    /// an update the route refused.
+    /// </summary>
+    [Theory]
+    [InlineData("update", true, "update")]
+    [InlineData("pin", true, "pin")]
+    [InlineData("default", true, null)]
+    [InlineData("update", false, null)]
+    public void An_applied_agent_proposal_names_an_action_to_follow_only_where_one_started(string door, bool applied, string? followed)
+    {
+        var proposal = new HelpProposal("p1", "agent", door, " claude-code ", null, "work", null, "why", "h1", "proposed");
+
+        var answer = JsonSerializer.SerializeToElement(
+            DriverModule.ApplyAnswer(proposal, new HelpApplied(applied, "told")),
+            new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
+
+        var action = answer.GetProperty("harnessAction");
+        Assert.Equal(followed, action.ValueKind == JsonValueKind.Null ? null : action.GetProperty("action").GetString());
+        if (followed is not null) Assert.Equal("claude-code", action.GetProperty("harness").GetString());
+        Assert.Equal(("told", applied), (answer.GetProperty("message").GetString(), answer.GetProperty("applied").GetBoolean()));
+    }
+
     [Fact]
     public async Task Ask_Daoris_asked_for_before_the_loop_is_up_says_so()
     {
