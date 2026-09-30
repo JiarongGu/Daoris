@@ -5,6 +5,34 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## A tidy called a tree it had removed "not removed", and its empty folder stayed for ever (2026-09-30)
+
+**Symptom.** The first real post-merge run, done by hand: after a landing's tidy, the session tree's folder
+was left on disk, empty, and could not be deleted ("Permission denied", then "Device or resource busy"),
+while git no longer listed it as a working tree. The tidy said the tree stayed.
+
+**Root cause.** `git worktree remove` deletes a tree's files, then deletes its registration *whatever came
+of the files*, and exits non-zero when the folder itself would not go. On Windows a folder is held by any
+process whose working folder it is — a terminal left in it, a harness that ran there — so git let go of the
+tree and left the folder. `RemoveAsync` and the clean-up's removal read the exit code alone: they answered
+"git would not remove the tree", skipped deleting the branch their proof had cleared, and nothing ever
+looked at the folder again (`trees list` showed it as an unreadable tree).
+
+**Fix.** WSR6 (D109 §5). After a failed `worktree remove`, `LetGoAsync` asks git whether it still counts the
+tree as one. If not, the removal is what happened: the branch goes as the proof allowed, an empty folder is
+deleted if it can be, and the sentence says plainly that the tree and its branch are gone and the folder is
+left, and why. The clean-up's press (`CleanAsync`) deletes every empty folder under the trees home once
+nothing holds it, and says so for each. Only an empty folder is ever deleted: one holding anything is named
+and left.
+
+**Verify.** Reproduced by hand with git 2.53 on Windows: a native process (`git cat-file --batch`) whose
+working folder is the tree makes `worktree remove` exit 255 with the registration gone and the folder empty;
+`rmdir` succeeds once the process ends. `TreeLeftoversTests` (the clean-up's retry, no git) passes;
+`TreeSyncTests.A_tree_folder_held_open_is_said_plainly_and_the_clean_up_removes_it_once_free` holds the
+removal and the retry with that same holder, in the `Process` half, written and not run in the branch.
+**The trap:** an exit code is git's verdict on the whole command, and `worktree remove` does two things.
+Ask git what state it left, not only whether it complained.
+
 ## The long-path test failed in every git worktree, because its depth assumed where the checkout sits (2026-09-30)
 
 **Symptom.** `SessionTreesTests.A_tracked_path_that_fits_the_root_but_not_a_trees_longer_prefix_still_opens`
