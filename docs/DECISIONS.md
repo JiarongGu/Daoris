@@ -552,6 +552,16 @@ for it:
 A switched-off row is never paired as a rename with the pack's replacement, however alike they read.
 A switch is a decision the manifest names, not a move, and reporting it as one would hide the decision.
 
+*Amended by D117 (LAYOUT3, 2026-10-01): a move, and three things `sync` writes that are not canon files.* The
+table above is lock × disk × canon at ONE root. A **move** is a manifest naming a root its lock was not written
+under, and **the lock, not the manifest, says where the files are**: every row above is read and deleted at the
+lock's root and written at the manifest's. The cells a move adds — a canonical document under the old root, the
+repository's own documents in an old tier, a skills mirror, a room's pointer, a link or a link held as text — are
+enumerated in `docs/2026-10-01-agent-layout-design.md` §5.4, one `node --test` case each (`layout-move`,
+`layout-mirror`, `layout-rooms`, `layout-links`). Two readings carry over unchanged: an old file whose body is the
+canon's now is untouched (the state after `upstream`), and a mirror, too, is drift only when it differs from the
+lock.
+
 ## D18 — Every path daoris touches must resolve inside the target directory (2026-08-05)
 
 **Decision.** `sync` resolves every write and delete against the target directory and **refuses** any
@@ -2166,6 +2176,16 @@ and keeps meaning the same thing.
 **refused, never guessed at** — the file on the other side of that guess is the adopter's own
 doctrine, and `file-tool-discipline` already states why computed boundaries take the rest of a file
 with them when they are wrong.
+
+*Amended by D117 (LAYOUT3, 2026-10-01): the region stays, and what surrounds it moves.* Under the `agents`
+descriptor, knowledge and skills live under `.agents/` rather than `.claude/`; the region, its per-rule
+provenance and the root pointer are unchanged. Three things join the file-and-region states of the
+instruction-file design's §4: each declared room gets the same pointer, `<room>/CLAUDE.md` holding the import
+region (removed, and the file with it when the region was all of it, once the room is undeclared); the roster
+gains the mirror sentence and a *Rooms* table, each only when there is a mirror or a room, so a region without
+them is byte for byte what it was; and an `AGENTS.md` or `CLAUDE.md` that is a link, or a link held as text, is
+refused and never written through, on both descriptors. That last refusal is this decision's *never guess at a
+boundary* in another shape.
 
 ## D60 — The deployed artefact gets a gate, and it names the host it found rather than pinning it (2026-09-22)
 
@@ -5764,6 +5784,26 @@ staging. Its statements about the reference are the parent's measurement on the 
 design did not read. Three cells of its §1 are observations from its own session, one build of one harness; the
 rest are marked *not measured*, for LAYOUT2. `verify` checks the records' shape and budgets, and none of those
 words.
+
+*Built by LAYOUT3 (2026-10-01): the agents layout in the CLI, the design's §2, §3 and §5.1–§5.4. `agents` is a second
+descriptor in `src/harness.ts` carrying its mirror (`skills` to `.claude/skills` for Claude Code, each skill's
+`agents/` folder left out) and the root it moves from (`formerly`). The lock gains `harness`, `target`, `mirrors` and
+`rooms`, each only when there is one, so a lock on the older layout is unchanged byte for byte; `layout.ts` answers
+where the files are from the lock. Every cell of §5.4 is a `node --test` case, written first and watched failing.
+Five choices the design left open, each held by a test: (1) `init` keeps writing `claude-code` and takes
+`--harness agents`, since the family and deployment rehearsals' newcomers write `.claude/knowledge/` after `init`
+and the service reads `.claude` until LAYOUT4; flipping the default belongs with LAYOUT4/LAYOUT5. (2) Rooms and the
+link refusals apply on both descriptors, since both write `AGENTS.md` and a `CLAUDE.md` pointer. (3) A mirror's
+`SKILL.md` carries the mirror header in place of the source's provenance line, one instruction rather than two;
+any other file is copied as its bytes, hashed as text unless it holds a NUL. (4) A link held as text is a file
+whose whole content is one token naming its partner (`AGENTS.md` for `CLAUDE.md`), starting `./` or `../`, or
+resolving beside it; a file where a folder must go refuses either way. (5) The repository's own documents left
+in an old tier refuse even `--force`, as links and a room with no instructions do: `--force` discards an edit, and
+none of those is one. The index names a room by its first heading. `check` reports `AGENTS.md` against codex's
+32,768 bytes, LAYOUT2's smallest measured limit, and never fails on it (D54). Not built here: `analyze` and
+`status` naming what reaches each harness (LAYOUT7's table and its twin), the service's half (LAYOUT4), the
+lanes' rooms (LAYOUT9). The release rehearsal's move phase is written and was not run in the branch.*
+
 *Amended by LEFT3 (2026-10-01): the traces are bounded. Each repository keeps its newest 50
 (`LandedBranches.TracesKept`), by when each went, dropped at the record's next write; a standing entry is never
 dropped. A count per repository rather than a span: the file grows with landings, not with the clock, and a person
