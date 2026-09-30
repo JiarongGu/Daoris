@@ -22,7 +22,7 @@ lists.
 ## State
 
 **Counts, and this is their one home:** sixteen commands, **538 CLI tests, 602 service, 994 driver,
-320 desktop modules, 80 devkit, 1447 web unit, 21 Playwright**, 66/66 release rehearsal, **301/301
+320 desktop modules, 80 devkit, 1491 web unit, 21 Playwright**, 66/66 release rehearsal, **301/301
 family rehearsal** (it names its own phases when you run it), **58/58 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge
 documents, 5 skills, 7 packs. The always-loaded core is **22,492 of 26,000 bytes** — a span in
@@ -144,8 +144,8 @@ rather than designed.
 
 ## Backlog
 
-**Thirty-two rows are open**: the owner's six of 2026-09-30 (USE1, AGT6, HELP6, LOG1,
-CONSOLE4, SETUP1), first; WSR4
+**Thirty-one rows are open**: the owner's five of 2026-09-30 (USE1, AGT6, HELP6, LOG1,
+CONSOLE4), first; WSR4
 from the first real workspace (its other WSR, HELP, SESS, DOCK
 and MAP rows are in the archive); the four REV3 left (DIST1, BUDGET1 and HOME1 the owner's, and HTTP1);
 the in-app browser's three (BRW3, BRW7, BRW8); D85's one (TASKBAR1); the first goal's four
@@ -243,16 +243,6 @@ TASK.md and complete one by one"*).
   closed with its process. (c) Desktop-only (D47 §4): the keystrokes and output ride the bridge,
   never HTTP. *Designed 2026-09-30:* `docs/2026-09-30-terminal-design.md`, D96, records that the console became a place to type, and that a
   session's own streams stay read-only (the composer is how a session is spoken to).
-- [ ] **SETUP1 — a first-use guide.** A fresh install opens on a guide rather than an empty window,
-  and the guide stays reachable later (the Daoris menu, the palette). Its steps are the machine's
-  own facts, each done when the fact holds, each with its screen and its terminal command (D50):
-  (1) **an agent**: a tool installed or pinned, and an account signed in (D57); (2) **Daoris's own
-  agent**: the agent Ask Daoris and the intake run on (D89, *Daoris's own AI*); (3) **a workspace
-  and its repositories**; (4) **the rules**: which repositories are driven, how their work lands
-  (WSR1), what agents may do (D72), notifications. Built on the facts Ask Daoris's starters already
-  read (HELP1d), so a step and a starter never disagree. A decision (D97) records the steps and
-  what makes one done.
-
 ### After the first real workspace (owner, 2026-09-28) — to start later
 
 > *"I also found issues after the [first workspace] work, which points out things that daoris leak

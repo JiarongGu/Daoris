@@ -23,6 +23,8 @@ describe('SettingsView in a browser', () => {
       const url = String(input);
       if (url.startsWith('/api/status')) return Response.json({ semantic: false, tier: 'lexical only', note: '' });
       if (url.startsWith('/api/registry')) return Response.json(REGISTRY);
+      // Get started's reading counts what waits on the person, for the starters it shares a reading with.
+      if (url.startsWith('/api/sessions')) return Response.json([]);
       throw new Error(`unstubbed request: ${url}`);
     }));
   });
@@ -58,8 +60,23 @@ describe('SettingsView in a browser', () => {
 
     const domains = screen.getByRole('navigation', { name: 'Settings domains' });
     expect(within(domains).getAllByRole('button').map((button) => button.textContent))
-      .toEqual(['Appearance', "Daoris's own AI", 'Workspace']);
+      .toEqual(['Get started', 'Appearance', "Daoris's own AI", 'Workspace']);
     expect(within(domains).getByRole('button', { name: 'Appearance' })).toHaveAttribute('aria-current', 'page');
     expect(await screen.findByText('Theme')).toBeTruthy();
+  });
+
+  /**
+   * SETUP1a (D97): Get started leads the list, a browser's too, holding what a browser can know — the
+   * registry — and saying the rest is the desktop's (D47 §4). Nothing else of a machine is asked for.
+   */
+  it('opens Get started first in the list, with only the step a browser can know', async () => {
+    view('start');
+
+    const steps = await screen.findByRole('list', { name: 'setup steps' });
+    expect(within(steps).getAllByRole('listitem').map((item) => item.getAttribute('aria-label')))
+      .toEqual(['3. A workspace and its repositories']);
+    expect(within(steps).getByText('done')).toBeTruthy();
+    expect(screen.getByText(/the desktop's Get started shows them/)).toBeTruthy();
+    expect(screen.queryByRole('checkbox', { name: "Don't open at start" })).toBeNull();
   });
 });

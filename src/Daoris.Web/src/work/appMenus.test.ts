@@ -12,9 +12,11 @@ describe('the menus by domain', () => {
   it('opens each setup item at its own domain on the desktop', () => {
     const menus = appMenus({ attached: true, workspaces: TWO, scope: null, waiting: 1 });
 
+    // *Set up Daoris* leads (SETUP1a, D97): the steps a machine needs, in order.
     expect(ids(menus.daoris)).toEqual([
-      'settings:appearance', 'settings:driver', 'settings:plugins', 'refresh', 'language', 'about',
+      'settings:start', 'settings:appearance', 'settings:driver', 'settings:plugins', 'refresh', 'language', 'about',
     ]);
+    expect(menus.daoris[0]).toMatchObject({ label: 'Set up Daoris' });
     expect(ids(menus.agents)).toEqual([
       'settings:agents', 'settings:permissions', 'proposals', 'usage', 'settings:ai',
     ]);
@@ -46,7 +48,8 @@ describe('the menus by domain', () => {
   it('holds only what a browser may know in a browser', () => {
     const menus = appMenus({ attached: false, workspaces: TWO, scope: null, waiting: 3 });
 
-    expect(ids(menus.daoris)).toEqual(['settings:appearance', 'refresh', 'language', 'about']);
+    // Get started is a browser's too, holding the one step it can know (D47 §4).
+    expect(ids(menus.daoris)).toEqual(['settings:start', 'settings:appearance', 'refresh', 'language', 'about']);
     expect(ids(menus.workspace)).toEqual(['scope:*', 'scope:aurora', 'scope:tools']);
     expect(ids(menus.agents)).toEqual(['settings:ai']);
   });
@@ -61,5 +64,6 @@ describe('the menus by domain', () => {
     expect(menuAction('scope:*')).toEqual({ kind: 'scope', workspace: null });
     expect(menuAction('scope:aurora')).toEqual({ kind: 'scope', workspace: 'aurora' });
     expect(menuAction('import')).toEqual({ kind: 'import' });
+    expect(menuAction('settings:start')).toEqual({ kind: 'settings', section: 'start' });
   });
 });

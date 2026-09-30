@@ -46,6 +46,8 @@ export function appMenus({ attached, workspaces, scope, waiting }: {
   const machine = (items: MenuItem[]) => (attached ? items : []);
 
   const daoris: MenuItem[] = [
+    // The setup guide (SETUP1a, D97): a browser's too, holding the one step a browser can know.
+    { id: 'settings:start', label: t('menu.setup'), icon: 'plan' },
     { id: 'settings:appearance', label: t('menu.settings'), icon: 'settings' },
     ...machine([
       { id: 'settings:driver', label: t('menu.driver'), icon: 'frameWork' },

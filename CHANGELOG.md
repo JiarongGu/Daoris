@@ -706,6 +706,17 @@ The first version: doctrine that installs, is checked, and flows back.
   wants is a card saying what it changes and the command that does the same, checked by the driver
   first; nothing changes until you press **apply**. It is a tab of the right side bar on every view,
   opened by the side bar's toggle, `F1` or `Ctrl+Alt+I`.
+- **Get started: the setup a machine needs, in order** (SETUP1a, D97). The first domain in Settings
+  lists six steps, an agent signed in, Daoris's own agent, a repository registered, what is driven,
+  how work lands and (optionally) what agents may do, each saying whether it is done, with a button to
+  the screen that does it and the command that does the same, copyable. It reads the same facts Ask
+  Daoris's starters do, so the two never disagree, and the starters end with a way to it. The Daoris
+  menu's *Set up Daoris* and the palette open it; a browser sees the one step it can know. **A machine
+  missing an agent, Daoris's own agent or a repository opens on it at start** (SETUP1b), once, never
+  pulling you from where you went, unless you tick *Don't open at start*; the status bar says
+  *setup: n of 5* until the required steps are done. *Set up with Ask Daoris* opens the side bar on a
+  first message asking to be walked through what is left. A question handed to Ask Daoris, from the
+  palette too, is no longer asked again when its tab or Quick Ask's box is drawn again.
 - **The layout toggles are on the strip** (DOCK1c, SURF11). The panel and the right side bar each
   have a toggle beside the window controls on every view, and the session list on Sessions, pressed
   while shown, and an item in the View menu with VS Code's keys: `Ctrl+B`, `Ctrl+J`, `Ctrl+Alt+B`.

@@ -5,6 +5,31 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## A question handed to Ask Daoris was asked again by its next drawing (2026-09-30)
+
+**Symptom.** Found building SETUP1b's hand-off, not reported: a question the palette handed Quick Ask
+(DOCK1d) would be sent again each time the box opened afterwards, and the setup guide's first message
+would have been sent again each time the side bar's Ask Daoris tab was drawn.
+
+**Root cause.** The application held the opening (`{ text, id }`) and never let it go; the
+conversation remembered the last id it sent in a ref. The box's content is unmounted when it closes and
+the side bar's tab is drawn only while it shows, so each new drawing started with an empty ref and a
+held opening, and sent it. DOCK1d's test re-rendered one instance, which the ref covers, and never drew
+a second.
+
+**Fix.** The conversation says it sent one (`onOpened`, from its effect, frontend-architecture §4b), and
+the application clears the opening; ids come from one counter in the application, so a cleared
+opening's id is never handed out again to an instance that remembers it.
+
+**Verify.** `AskDaoris.test.tsx`, *says when it has sent a question it was handed, so a later drawing
+does not send it again*: a holder that clears on `onOpened`, drawn, hidden and drawn again, sends once;
+it sent twice before the fix. `setupStart.test.tsx` carries the guide's message to the helper over the
+whole window. Quick Ask's own wiring (`onOpened` clearing `quickOpening`) is the same line and has no
+test of its own over the window.
+
+**The trap.** An event held by a parent outlives the child that consumed it, and a ref is per drawing:
+§4b's *tell the parent* is what makes a consumed event stay consumed.
+
 ## The desktop did not find an agent npm put on PATH (2026-09-30)
 
 **Symptom.** `claude-code-acp`, installed globally with npm, was listed by `daoris agent list`, and

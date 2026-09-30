@@ -84,6 +84,11 @@ export function commands(world: {
   /** Open Quick Ask (DOCK1d): Ask Daoris's conversation in a box at the palette's place. Shell-only. */
   quickAsk: () => void;
   /**
+   * Open Settings on Get started (SETUP1a, D97) — anywhere, a browser included: its guide holds the one
+   * step a browser can know and says the rest is the desktop's.
+   */
+  setup: () => void;
+  /**
    * Detach the attended session into a window of its own (SURF8) — absent when nothing is attended,
    * for the reason every other absence here is: a palette is a promise that what it lists can be
    * done, and "detach" with nothing to detach is a row that does nothing.
@@ -170,6 +175,14 @@ export function commands(world: {
   }
 
   list.push(
+    {
+      id: 'do.setup',
+      icon: 'plan',
+      group: world.group('do'),
+      title: world.label('do.setup'),
+      keywords: 'setup get started first start onboarding guide steps 配置 入门 开始使用',
+      run: world.setup,
+    },
     {
       id: 'do.ask',
       icon: 'plus',

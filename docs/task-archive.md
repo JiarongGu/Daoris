@@ -7930,3 +7930,28 @@ Daoris favorites folder, and the browser closed with the shell.
 the same exit hang. **Proven by:** deployment rehearsal 58/58 (no second engine, the retired folder
 removed, one browser process from the app's executable, gone with the shell), modules 320, driver
 994, CLI 538.
+
+## SETUP1 — a first-use setup guide (2026-09-30, D97)
+
+> - [ ] **SETUP1 — a first-use guide.** A fresh install opens on a guide rather than an empty window,
+>   and the guide stays reachable later (the Daoris menu, the palette). …
+
+**Outcome** (built by a subagent in its own worktree, merged, then looked at and adjusted on main).
+**SETUP1a:** *Get started* is Settings' first domain: six steps in setup order, each with its state
+read off the machine, the screens that do it, and the terminal commands that do the same, copyable.
+One pure reading (`readMachine`) serves the guide and Ask Daoris's starters, and a table test holds a
+step and a starter to one answer. Step 1 counts a sign-in as the roster does, so *unknown* is not *to
+do*; step 5 is done only when something is driven and every driven repository has a line and an
+explicit landing rule; step 6 is optional and never done. A browser sees step 3 and a sentence. Doors:
+the Daoris menu's and the palette's *Set up Daoris*, and a last button in the starters. **SETUP1b:** a
+machine missing an agent, Daoris's own agent or a repository opens on it at start, decided once after
+the machine is read; *Don't open at start*; *setup: n of 5* in the status bar; *Set up with Ask
+Daoris*, which opens the side bar on a first message listing the steps left. A question handed to Ask
+Daoris is now let go once sent, where each redraw had asked it again (FIX-LOG); the room names the
+guide.
+
+**Looked at** on the scratch window with an emptied home (light, dark, 中文): the guide opened at
+start on *2 of 5*. Beside the side bar the card is narrow, and the rows' fixed two-column grid broke a
+command mid-word and a door's label onto two lines; the rows now wrap, the doors drop under the text,
+and the page never scrolls sideways (measured: scroll width equals the column's).
+**Proven by:** vitest 1491, Playwright 21, verify, and the window.

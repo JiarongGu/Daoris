@@ -7,6 +7,9 @@ import {
 import { useScope } from './scope';
 import { AskDaoris } from './help/AskDaoris';
 import { QuickAsk } from './help/QuickAsk';
+import { opensAtStart, setupProgress, setupSteps } from './help/setup';
+import { useMachine } from './help/useMachine';
+import { useSetupAtStart } from './setupGuide';
 import { useFrameClosings } from './work/closings';
 import { usePlacements, viewsIn } from './work/placements';
 import { LAYOUT_KEYS, type LayoutRegion, LayoutToggles } from './work/LayoutToggles';
@@ -151,11 +154,24 @@ export function App() {
   // bar*; the region's own close and toggle are what close it, on every view alike.
   const openHelp = useCallback(() => setHelpFocus((was) => was + 1), []);
   const onSessions = useRef(false);
+  // A question handed to Ask Daoris gets an id no earlier one had, whichever door handed it: each is let
+  // go once sent (SETUP1b), so an id counted from the last one held would repeat.
+  const openings = useRef(0);
   // Quick Ask (DOCK1d): open or not, and the question the palette handed it, one id per question.
   const [quick, setQuick] = useState(false);
   const [quickOpening, setQuickOpening] = useState<{ text: string; id: number } | null>(null);
+  // The side bar's question (SETUP1b): the setup guide's *Set up with Ask Daoris*, held until it is sent.
+  const [helpOpening, setHelpOpening] = useState<{ text: string; id: number } | null>(null);
+  const askSetup = (message: string) => {
+    openings.current += 1;
+    setHelpOpening({ text: message, id: openings.current });
+    openHelp();
+  };
   const askQuickly = (question?: string) => {
-    if (question) setQuickOpening((was) => ({ text: question, id: (was?.id ?? 0) + 1 }));
+    if (question) {
+      openings.current += 1;
+      setQuickOpening({ text: question, id: openings.current });
+    }
     // 🔴 A beat after the palette closes, never with it: closing, the palette hands focus back to where
     // it was, which pulled it out of a box opened in the same step, and the box's trap caught it on its
     // frame instead of its message box (found looking at DOCK1d).
@@ -303,6 +319,21 @@ export function App() {
     setView('settings');
   };
 
+  // The setup guide (SETUP1b, D97), from the reading Ask Daoris's starters share: the status bar's count
+  // until the required steps are done, and Get started opened once at start on a machine missing any of
+  // the first three. Both wait for the machine to be read, and neither is a browser's (D47 §4).
+  const setupReading = useMachine();
+  const setupStepsNow = setupSteps(setupReading.machine);
+  const setupCount = setupReading.settled ? setupProgress(setupStepsNow) ?? undefined : undefined;
+  useSetupAtStart({
+    settled: setupReading.settled,
+    needed: opensAtStart(setupStepsNow),
+    // The view chosen, not the one shown: a remembered Sessions stands in as Overview until the shell
+    // answers, and that is not the person going anywhere.
+    view: tab,
+    open: () => openSettings('start'),
+  });
+
   // The menus by domain (D75), as data. The count waiting is the rules' own, where they are answered.
   const rules = useRules();
   const menus = appMenus({
@@ -384,6 +415,17 @@ export function App() {
   // session opens in Sessions, which only a shell has. An ask opens its record, where it is answered
   // (INT4d), and a quest nobody can take opens its own drawer. Both of those a browser has too.
   const openAsk = (id: string) => { setAskFocus(id); setView('quests'); };
+  // Where a starter's or a setup step's door leads (HELP1d, SETUP1a): a domain of Settings at the part it
+  // names, a view, or one of the Workspace menu's drawers, opened on Projects as the menu opens them.
+  const go = (door: StarterDoor) => {
+    if (door.view === 'settings' && door.section) {
+      openSettings(door.section, door.anchor);
+      return;
+    }
+    if (door.drawer === 'add') setAddRequested(true);
+    if (door.drawer === 'import') setImportRequested(true);
+    setView(door.view);
+  };
   // What Ask Daoris is handed wherever it stands: what is on the screen (HELP1b) — the view, the scope,
   // the settings domain on Settings, and the attended session on Sessions — and its two ways out.
   const askProps = {
@@ -400,10 +442,7 @@ export function App() {
     attending,
     // Unframed in the side bar, whose own close is the region's; nothing here closes on its own.
     onClose: () => closings.setDock(true),
-    onGo: (door: StarterDoor) => {
-      if (door.view === 'settings' && door.section) openSettings(door.section, door.anchor);
-      else setView(door.view);
-    },
+    onGo: go,
   };
 
   const attentionDoors: AttentionDoors = {
@@ -484,6 +523,9 @@ export function App() {
             onSection={chooseSettings}
             anchor={settingsAnchor}
             onAnchored={() => setSettingsAnchor(null)}
+            onGo={go}
+            // Ask Daoris is the shell's (HELP1): a browser's guide offers no hand-off.
+            onAskSetup={attached ? askSetup : undefined}
           />
         )}
       </div>
@@ -644,7 +686,7 @@ export function App() {
               // A quest on the chain, or one the session asked (SESS1), opens where quests are read.
               onOpenQuest={(id) => { setQuestFocus(id); setView('quests'); }}
               // Ask Daoris as a view of the frame's regions: one right region, never a second column.
-              ask={<AskDaoris {...askProps} framed={false} />}
+              ask={<AskDaoris {...askProps} framed={false} opening={helpOpening} onOpened={() => setHelpOpening(null)} />}
               askFocus={helpFocus}
               closings={closings}
               placements={placements}
@@ -713,6 +755,9 @@ export function App() {
         onIndex={() => setView('projects')}
         // Settings holds Daoris's own AI (AGT6) in a browser too, so the tier leads there everywhere.
         onTier={() => openSettings('ai')}
+        // Where the setup is done (SETUP1b): absent in a browser, and once the required steps are.
+        setup={setupCount}
+        onSetup={() => openSettings('start')}
         tier={status.data
           ? { label: status.data.tier, note: status.data.note ?? '', semantic: status.data.semantic }
           : undefined}
@@ -774,6 +819,7 @@ export function App() {
           ask: () => { setView('quests'); setAsking(true); },
           help: openHelp,
           quickAsk: () => askQuickly(),
+          setup: () => openSettings('start'),
         }).map(counted)}
         // The command center's one question (DOCK1d): what was typed, asked in Quick Ask.
         onAsk={attached ? (question) => { logEvent('command.run', { command: 'ask' }); askQuickly(question); } : undefined}
@@ -789,6 +835,8 @@ export function App() {
             {...askProps}
             framed={false}
             opening={quickOpening}
+            // The box is drawn anew each time it opens: a question still held would be asked again.
+            onOpened={() => setQuickOpening(null)}
             // A starter's door leads away from the box, so the box goes with it.
             onGo={(door) => { setQuick(false); askProps.onGo(door); }}
             onClose={() => setQuick(false)}

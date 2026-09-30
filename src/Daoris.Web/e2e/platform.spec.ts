@@ -534,7 +534,8 @@ test('a browser learns nothing about this machine’s harnesses (D49 §4)', asyn
   // passed whatever a browser was shown. The domain list is what a browser is OFFERED, so it is
   // asserted whole: a machine domain appearing here fails this line.
   const domains = page.getByRole('navigation', { name: 'Settings domains' }).getByRole('button');
-  await expect(domains).toHaveText([/Appearance/, /Daoris.s own AI/, /Workspace/]);
+  // Get started leads (SETUP1a, D97), holding in a browser only the registry's step.
+  await expect(domains).toHaveText([/Get started/, /Appearance/, /Daoris.s own AI/, /Workspace/]);
 
   // Workspace is the one domain with a machine half (its wiring), so it is opened and that half's
   // absence asserted where it would render, after its browser half is seen.

@@ -34,7 +34,7 @@ const VIEWS: Record<View, string> = {
 };
 
 const DOMAINS: Record<SettingsSection, string> = {
-  appearance: 'Appearance', ai: "Daoris's own AI", workspace: 'Workspace', driver: 'Driver',
+  start: 'Get started', appearance: 'Appearance', ai: "Daoris's own AI", workspace: 'Workspace', driver: 'Driver',
   agents: 'Agents & accounts', permissions: 'Permissions', plugins: 'Plugins', browser: 'Browser',
 };
 

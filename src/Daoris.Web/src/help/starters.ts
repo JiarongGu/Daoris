@@ -1,9 +1,13 @@
 import type { View } from '../commands';
 import type { SettingsAnchor, SettingsSection } from '../SettingsView';
-import type { Tool } from '../tools';
+import type { Machine } from './machine';
 
-/** Where the screen that fixes a starter is: a view, and in Settings its domain and the card in it. */
-export type StarterDoor = { view: View; section?: SettingsSection; anchor?: SettingsAnchor };
+/**
+ * Where the screen that fixes a starter, or does a setup step, is: a view, and in Settings its domain
+ * and the card in it — or on Projects, the Workspace menu's drawer that adds a repository or imports a
+ * folder (SETUP1a).
+ */
+export type StarterDoor = { view: View; section?: SettingsSection; anchor?: SettingsAnchor; drawer?: 'add' | 'import' };
 
 /**
  * One thing this machine lacks (HELP1d, D89): the sentence's key and its values, the screen that fixes
@@ -24,19 +28,12 @@ export type Starter = {
  * @remarks
  * A tool is signed out only on a **definite** `out` from the tool, with no named account signed in
  * either — the roster's own rule (SES3): `unknown` is not a lack anyone can act on.
+ *
+ * The machine is `readMachine`'s, the one reading the setup guide's steps are made from too (D97).
  */
-export function starters(machine: {
-  /** The repositories registered here. */
-  repositories: readonly string[];
-  drivable: readonly string[];
-  tools: readonly Tool[];
-  /** How many sessions wait on the person. */
-  waiting: number;
-  /** Repositories with no line set and none git can name. */
-  unnamedLines: readonly string[];
-  /** The agent Ask Daoris runs on, or null. */
-  helper: string | null;
-}): Starter[] {
+export function starters(
+  machine: Pick<Machine, 'repositories' | 'drivable' | 'tools' | 'waiting' | 'unnamedLines' | 'helper'>,
+): Starter[] {
   const found: Starter[] = [];
 
   if (machine.waiting > 0) found.push({ id: 'waiting', values: { count: machine.waiting }, door: { view: 'sessions' } });

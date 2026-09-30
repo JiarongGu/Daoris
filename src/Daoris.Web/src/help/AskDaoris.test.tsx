@@ -1,4 +1,4 @@
-import { StrictMode } from 'react';
+import { StrictMode, useState } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, cleanup, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
@@ -340,6 +340,36 @@ describe('Ask Daoris, with an agent named', () => {
     rerender(view({ text: 'why is engine held?', id: 1 }));
     rerender(view({ text: 'and how do I drive it?', id: 2 }));
     await waitFor(() => expect(sent()).toEqual(['why is engine held?', 'and how do I drive it?']));
+  });
+
+  /**
+   * SETUP1b: the side bar's AskDaoris is drawn again whenever its tab is, and a Quick Ask box each time it
+   * opens, so a question still held by the application would be asked again by every new drawing. It
+   * says when it has sent one, and the holder, told, lets it go (frontend-architecture §4b): held the way
+   * the application holds it, a drawing after that sends nothing.
+   */
+  it('says when it has sent a question it was handed, so a later drawing does not send it again', async () => {
+    bridge();
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    function Holder({ shown }: { shown: boolean }) {
+      const [opening, setOpening] = useState<{ text: string; id: number } | null>({ text: 'walk me through it', id: 1 });
+      return shown
+        ? <AskDaoris opening={opening} onOpened={() => setOpening(null)} onGo={vi.fn()} onClose={vi.fn()} />
+        : null;
+    }
+    const view = (shown: boolean) => (
+      <QueryClientProvider client={client}>
+        <Tooltip.Provider><Holder shown={shown} /></Tooltip.Provider>
+      </QueryClientProvider>
+    );
+    const sent = () => invoke.mock.calls.filter(([, type]) => type === 'SESSION_INPUT').map(([, , request]) => request.payload.text);
+
+    const { rerender } = render(view(true));
+    await waitFor(() => expect(sent()).toEqual(['walk me through it']));
+    rerender(view(false));
+    rerender(view(true));
+    await act(async () => { await new Promise((resolve) => setTimeout(resolve, 50)); });
+    expect(sent()).toEqual(['walk me through it']);
   });
 
   /** HELP1b: where the person is goes ahead of their words, and an unchanged screen is not said twice. */

@@ -583,8 +583,10 @@ describe('the machine settings surface', () => {
     show(<SettingsView notify={() => {}} section="driver" onSection={onSection} />);
 
     const domains = await screen.findByRole('navigation', { name: 'Settings domains' });
-    await waitFor(() => expect(within(domains).getAllByRole('button')).toHaveLength(8));
+    await waitFor(() => expect(within(domains).getAllByRole('button')).toHaveLength(9));
     expect(within(domains).getByRole('button', { name: 'Driver' })).toHaveAttribute('aria-current', 'page');
+    // The setup guide leads (SETUP1a, D97).
+    expect(within(domains).getAllByRole('button')[0]?.textContent).toBe('Get started');
     // Daoris's browser (CHR5, CHR7) is a machine's domain, last in the list.
     expect(within(domains).getAllByRole('button').at(-1)?.textContent).toBe('Browser');
     expect(await screen.findByLabelText('Park a quest after this many failed sessions')).toBeTruthy();

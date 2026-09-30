@@ -62,6 +62,23 @@ describe('Ask Daoris', () => {
     expect(screen.getByRole('separator', { name: 'resize Ask Daoris' })).toBeInTheDocument();
   });
 
+  /**
+   * SETUP1a (D97 §2): the starters lead to the setup guide while its required steps are not all done —
+   * what is missing in order, beside what is missing now.
+   */
+  it('leads to the setup guide while setup is not done, and not after', async () => {
+    const onGo = vi.fn();
+    const { rerender } = render(
+      <AskPanel starters={LACKING} helper={null} setup={{ done: 2, of: 5 }} onGo={onGo} onClose={vi.fn()} />,
+    );
+
+    await userEvent.click(screen.getByRole('button', { name: 'set up Daoris step by step: 2 of 5 done' }));
+    expect(onGo).toHaveBeenCalledWith({ view: 'settings', section: 'start' });
+
+    rerender(<AskPanel starters={LACKING} helper={null} setup={{ done: 5, of: 5 }} onGo={onGo} onClose={vi.fn()} />);
+    expect(screen.queryByRole('button', { name: /set up Daoris/ })).toBeNull();
+  });
+
   it('says so when the machine lacks nothing, and names the agent it runs on', () => {
     render(<AskPanel starters={[]} helper="claude-code-acp" onGo={vi.fn()} onClose={vi.fn()} />);
 

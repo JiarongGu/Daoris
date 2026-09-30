@@ -240,6 +240,21 @@ describe('the shell in a browser, over two workspaces', () => {
     expect(within(domains).getByRole('button', { name: "Daoris's own AI" })).toHaveAttribute('aria-current', 'page');
   });
 
+  /**
+   * SETUP1a (D97): the Daoris menu's *Set up Daoris* opens Get started — a browser's too, holding the one
+   * step a browser can know, and saying the rest is the desktop's.
+   */
+  it('the Daoris menu sets Daoris up, opening Get started', async () => {
+    shell();
+    const user = await openMenu('Daoris');
+
+    await user.click(await screen.findByRole('menuitem', { name: 'Set up Daoris' }));
+    const domains = await screen.findByRole('navigation', { name: 'Settings domains' });
+    expect(within(domains).getByRole('button', { name: 'Get started' })).toHaveAttribute('aria-current', 'page');
+    const steps = await screen.findByRole('list', { name: 'setup steps' });
+    expect(within(steps).getByRole('listitem', { name: '3. A workspace and its repositories' })).toHaveTextContent('done');
+  });
+
   /** REV3 web-rest F14: a window is the shell's to open, so a browser's View menu offers none. */
   it('the View menu offers a browser the palette and no window', async () => {
     shell();
