@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 // Untyped workspace tooling, suppressed at the one site — see desktop-tool.test.ts for why.
 import {
   KEPT_LOCALES, LAUNCHER, MARKER, MARKER_HEADER, OFFERED_PLUGINS, OWN, PLUGIN_OFFERS, RETIRED_IN_APP, RETIRED_LAUNCHERS,
-  SHELL_EXE, SHELL_FILES, SHELL_HOME, isInstall, layOffers, recordedShellFiles, refusal, retiredPaths,
+  SHELL_EXE, SHELL_FILES, SHELL_HOME, installedNote, isInstall, layOffers, recordedShellFiles, refusal, retiredPaths,
   // @ts-expect-error — untyped workspace tooling; see above
 } from '../../../tools/desktop-publish.mjs';
 import { OFFERS_DIR, readManifest } from '../src/plugins.ts';
@@ -49,6 +49,34 @@ test('a folder this script installed to before is fine, whatever else it now hol
   mkdirSync(join(at, 'a-repository'));
   assert.ok(isInstall(at));
   assert.equal(refusal(at, { beside: false }), null);
+});
+
+/**
+ * The note a publish writes is also its marker, so it opens with the header `isInstall` reads, and it
+ * names no machine path (`sensitive-info`): it is written into the install, never tracked. LEFT1 adds
+ * how to pin Daoris (D108 §2): from its running window, because the window names Daoris's taskbar id
+ * and a pin made from it starts the launcher; a pin made on the launcher in Explorer carries no id, so
+ * the running window shows as a second button beside it.
+ */
+test('the install note is the marker, and says how to pin Daoris from its running window (D108)', () => {
+  const note: string = installedNote();
+  assert.ok(note.startsWith(`${MARKER_HEADER}\n`), 'the note opens with the header isInstall reads');
+  const at = folder();
+  writeFileSync(join(at, MARKER), note);
+  assert.ok(isInstall(at));
+
+  const pinning = note.slice(note.indexOf('## Pinning it to the taskbar'));
+  assert.ok(note.includes('## Pinning it to the taskbar'), 'the note has no pinning section');
+  const section = pinning.slice(0, pinning.indexOf('\n## ', 3) === -1 ? undefined : pinning.indexOf('\n## ', 3));
+  assert.match(section, /right-click its button on the taskbar, then \*Pin to taskbar\*/);
+  assert.match(section, new RegExp(`starts \`${LAUNCHER.replace('.', '\\.')}\` here`));
+  // Why the other pin shows a second button: the launcher starts the application and exits.
+  assert.match(section, new RegExp(`A pin made on \`${LAUNCHER.replace('.', '\\.')}\` itself, from Explorer, carries no id`));
+  assert.match(section, /second button/);
+  assert.match(section, new RegExp(`\`${[...SHELL_HOME, SHELL_EXE].join('/').replace(/\./g, '\\.')}\``));
+  assert.match(section, /unpin/);
+
+  assert.doesNotMatch(note, /[A-Za-z]:[\\/]|\/home\/|\/Users\//, 'a machine path in the note');
 });
 
 test('a marker without the header is not ours — a file with that name proves nothing', () => {

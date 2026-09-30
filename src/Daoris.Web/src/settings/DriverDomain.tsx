@@ -4,6 +4,15 @@ import { useDriver, useSetNotify, useSetStrikes } from '../shell';
 import { Card, CheckField, failure, type Notify, PathText, SettingRow } from '../ui';
 
 /**
+ * Whether the host's notice says this start overrode the home the account names (D105). A terminal's
+ * daoris then reads that other folder, and the notice says so, so the home's hint stops claiming a
+ * terminal reads this one (LEFT1). Read from the host's own sentence (`InstallHome.Establish`), since
+ * the state carries no other sign: `InstallHomeTests` holds "left as it is" in the notice exactly when
+ * a start overrode, and `DriverDomain.test.tsx` holds this against that sentence.
+ */
+const overrodeHome = (notice: string | null | undefined) => notice?.includes('left as it is') ?? false;
+
+/**
  * The Driver domain (D75): where this machine's Daoris lives, and the driver's two dials over
  * `driver.json`, the same file `daoris driver` edits (D50). The file is the truth and this is an
  * editor over it: hand-editing keeps working, and neither surface is the only way to say anything.
@@ -46,7 +55,7 @@ export function DriverDomain({ notify }: { notify: Notify }) {
         {driver.data?.home && (
           <SettingRow
             label={t('settings.home.label')}
-            why={t('settings.home.hint')}
+            why={t(overrodeHome(driver.data.homeNotice) ? 'settings.home.hintOverridden' : 'settings.home.hint')}
             control={<PathText path={driver.data.home} className="text-small text-ink-soft" />}
           >
             {driver.data.homeNotice && (

@@ -21,8 +21,8 @@ lists.
 
 ## State
 
-**Counts, and this is their one home:** sixteen commands, **661 CLI tests, 672 service and 46 HTTP host, 1558 driver,
-427 desktop modules, 80 devkit, 1761 web unit, 21 Playwright**, 66/66 release rehearsal, **301/301
+**Counts, and this is their one home:** sixteen commands, **667 CLI tests, 672 service and 46 HTTP host, 1558 driver,
+427 desktop modules, 80 devkit, 1774 web unit, 21 Playwright**, 66/66 release rehearsal, **301/301
 family rehearsal** (it names its own phases when you run it), **70/70 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge
 documents, 5 skills, 7 packs. The always-loaded core is **22,672 of 26,000 bytes** — a span in
@@ -53,23 +53,27 @@ and installs plugins, D101, D103), WSR5 (landed branches cleaned and handed to a
 (one driver loop per home, cut-off takes carried on, D104), the owner's calls (D105, READ1 D107), the
 **parallel-development arc whole** (MOD1–MOD9: union-merged records D106, every god file split into
 registries, a `Process` test category, `tools/merge-branch.mjs` and the `dispatch-subagent` skill), and
-TASKBAR1 (D108). **Next:** nothing workable is left without the owner — the rows below are theirs or
-parked. Dispatch through the `dispatch-subagent` skill and merge with `tools/merge-branch.mjs`. The
+TASKBAR1 (D108). **The same night:** HELP9 (D110: Ask Daoris reaches every door, held by a coverage
+test that caught WSR6's new control on its first merge), PREVIEW1 (D111: a file's preview in the side
+bar), WSR6 (D109: one press brings a repository up to date after its pull request merges) and LEFT1,
+each merged with every gate. **Building:** HELP10 (D112) and LEFT2 (D113), each a subagent in its own
+worktree. **Next:** merge them, then nothing workable is left without the owner — the rows below are theirs
+or parked. Dispatch through the `dispatch-subagent` skill and merge with `tools/merge-branch.mjs`. The
 kit's own relay (Shenora.Chromium 0.18.0) leaves a pump unobserved as Daoris's did: a request for the
 kit's owner, not Daoris's to change (LOG2b).
-- **The owner's ticket AR-2201 is landed with its follow-up** (the "vs Yesterday" rounding fixed and checked
-  through prod-link) on one branch in the repository that owns it, not pushed; the pull request is theirs,
-  and so is the production config update. The owner asked for the "vs Last 7 Days Avg" total (subtracted
-  as if an average) to be fixed too: a second follow-up is running on the ticket's branch, and lands onto
-  a new branch holding it all. At the owner's word the repository's other local branches were deleted,
-  leaving the line and the ticket's; each was backed up to a bundle first, and the private notes say where.
+- **The owner's ticket AR-2201**: its first follow-up merged by the owner's pull request (squash). The
+  second ("vs Last 7 Days Avg" as the average day, the total ÷7) and third (the seven days before the
+  selection, a rolling window; shifts are not set up, by the owner's word) landed onto one branch holding
+  both over the merged line, not pushed; the pull request is theirs, and so is the production config
+  update (the summary's subtitle now reads slightly off). The repository keeps only its line and that
+  branch; everything deleted was backed up first, and the private notes say where.
 - **The install** runs main at TASKBAR1 (`34f8602`, republished 2026-09-30 night: the splits, READ1, MOD8, TASKBAR1; the taskbar is the owner's to look at); republishing is the session's own call, never while a session
   on it runs. Start it the normal way, not through the dev tool, unless the instruments are needed
   (USE1g, confirmed: a start from Git Bash hands sessions a `PATH` their shell cannot read).
 - **Load makes flakes**: FLAKE1's real-tick classes fail under parallel builds and pass alone. Run the
   rehearsals when nothing else builds.
-- **Open and the owner's:** READACROSS1, HELPREAD1, TRUST2, AGT2c, DIST1, BUDGET1, HOME1; on a trigger:
-  TOOL4, TOOL5, PLUG7, CANON9, HARNESS1, REH1. **A new direction from the owner outranks all of them.**
+- **Open and the owner's:** BUDGET1, PLUGREPO1, TRUST2, AGT2c, FG5, BRW3; on a trigger: TOOL4, TOOL5,
+  PLUG7, SEM2, CANON9, HARNESS1, REH1. **A new direction from the owner outranks all of them.**
 
 **Start by reading the contract the item cites** — every backlog row names one, and
 `docs/README.md` says which documents are current. `CLAUDE.md` carries the standing rules and the
@@ -123,10 +127,11 @@ rather than designed.
 
 ## Backlog
 
-**Twenty rows are open** (triaged 2026-09-30, when the owner asked to go faster):
+**Eighteen rows are open** (triaged 2026-09-30, when the owner asked to go faster; 2026-10-01 after the night's merges):
+- **Building (two):** HELP10 and LEFT2.
 - **Waiting on the owner (six):** BUDGET1 and PLUGREPO1 (their calls), TRUST2 and AGT2c (a grant, two
   downloads), FG5 and BRW3 (the owner present).
-- **Parked on a trigger (ten):** TOOL4, TOOL5, PLUG7, SEM2, CANON9, HARNESS1, REH1, D76's held file tools,
+- **Parked on a trigger (ten):** TOOL4, TOOL5, PLUG7, SEM2, CANON9, HARNESS1, REH1, D76's held file tree,
   and FLAKE1 and TEST1, which wait for their next sighting (the Process category runs serially since MOD8,
   and the final serial run was clean). None is work until its trigger arrives.
 
@@ -136,32 +141,22 @@ rule it also ships. A heading below holds open rows only.
 
 ### Keep going (owner, 2026-09-30: *"lets continue the development … you probabbly should start with subagents"*)
 
-- [ ] **HELP10 — the doors HELP9 left owed, and the two built since** (D110 names them). Retrying a
+- [ ] **HELP10 — the doors HELP9 left owed, and the two built since** (building, D112; D110 names them). Retrying a
   parked quest (the facts must say which quests are parked, `HelpFactsAsync`), making an account the default
   (a door on `IHelpDoors` that `ScreenDoors` makes with `HARNESS_ACTION`'s own profile-default), and the
   browser's settings (a `BrowserModule` door); then Ask Daoris proposing WSR6's *Bring up to date* (a kind,
   with the plan shown before Apply) and the room saying PREVIEW1's file preview exists; and a go to
   Permissions → *Reading and writing across* (a `settings-across` anchor). `HelpCoverageTests` moves each
   from owed to a door.
-- [ ] **LEFT1 — the day's leftovers**, each small, each a "left out" in a hand-back: Settings' home hint
-  still says a terminal reads the same folder when an install overrode it (D105); `INSTALLED.md` says
-  nothing about pinning from the running button (D108); `tools/lanes.json` leaves `queries.ts` and a few
-  docs outside every lane; the merge tool never re-runs a failed rehearsal (the family rehearsal's
-  exit 127 was one); `MERGE_SESSION_TREE` is called by neither the page nor a test since WSR1 (retire it
-  or give it a caller).
 
-### Watch it, type into it, set it up (owner, 2026-09-30) — in this order
-
-> *"we also need to make input line for console too, so we can control console just like regular
-> console window (more into powershell style), and also we will need a setup guide for first use
-> daoris, so setup agent and agent for "daoris" (the main agent for daoris system) and other rules
-> … also setup proper logging system to moniter my use in local daoris and we can improve the
-> system by this way"*
-
-Logging went first (LOG1a landed); then the owner's later asks the same day came before the rest of
-it: their own workspace's work (WORK1), then the kit (SHEN1), both archived; then what they met on the window.
-Each row's parts land and are archived one by one (*"for all my request you can set them into
-TASK.md and complete one by one"*).
+- [ ] **LEFT2 — the leftovers of PREVIEW1, WSR6 and LEFT1** (building, D113), each a "left out" in a hand-back:
+  `MERGE_SESSION_TREE` is called by neither the page nor a test since WSR1 (retire it or give it a caller,
+  now that the trees branches have merged); the page reads the home's override from the host's English
+  sentence ("left as it is"), where the driver's state could carry a `homeOverrode` field, and a start whose
+  `DAORIS_HOME` was set for that start alone still reads as a terminal's folder; the family rehearsal has
+  no check for `trees sync`; opening a preview is not a machine-log event; a read's line from ACP's
+  `locations[].line` is dropped by the driver (carrying it changes the event shape on both doors); and a
+  driver resuming a session in a tree between *Bring up to date*'s list and its replay is a window not closed.
 
 ### Plugins Daoris makes (owner, 2026-09-30)
 
@@ -267,20 +262,6 @@ attached over CDP drives a WebView2.
 🔴 **D84 changed the course (2026-09-28): Daoris ships a Chromium for its browser, and the person's
 Edge is always an option** (`docs/2026-09-28-managed-edge-evidence.md`). The engine landed as CHR3
 (below), in place of the WebView2 window, and the Edge option as BRW12 and BRW13, in the archive.
-### Chromium under the windows (owner, 2026-09-28 → D85)
-
-> *"to shift to chromeiun, because we mostly build the ui itself in react and the only missing part
-> is the shenora currently dont support this … we can start the work here and also file the new task
-> to shenora for this"*
-
-`docs/2026-09-28-chromium-host-design.md` is the contract, and its §5 carries each row's detail.
-Shenora's backlog carries the request (filed 2026-09-28 at the owner's say-so, uncommitted there).
-CHR1–CHR7 are in the archive: **the browser is `daoris-browser`, the engine's own window in a
-process of its own**, and **the window renders on the Chromium the install carries** (CHR2, D92), in
-an install that is a `Daoris.exe` launcher, the application under `app/` and the home in `data/`
-(CHR4, D93). Agents open tabs in it through a relay, and Daoris's favorites
-and the extensions setting are in Settings → Browser and `daoris browser`
-(`docs/2026-09-28-chromium-embedding-evidence.md`).
 ### The first goal — a real workspace, a ticket, a task started (owner, 2026-09-27 → D77)
 
 > *"I think we still does not meet the first goal: setup [the named workspace] as workspace and use
@@ -329,8 +310,9 @@ close that. **The owner chose the conversation model and every extra → D76** (
 *"you should check screen by screen and all ui ux logic"*. Take them in order; each is one landing,
 TDD, looked at on the window, and the ones that touch a real session use one (authorised
 2026-09-24). **CONV4 was split (2026-09-25)**, and all four parts are in the archive.
-- [ ] ⏸ **Held, after the conversation:** a file tree and document preview in the dock (when a tool
-  card wants to open a file); a terminal (design §6's trigger).
+- [ ] ⏸ **Held, after the conversation:** a file tree in the dock, when a person asks to browse a tree
+  rather than open a named file. The rest of this row is built: the document preview (PREVIEW1, D111,
+  opened from a tool card or the review) and the terminal (CONSOLE4, D96).
 
 ### Open — the arc's leftovers, in the order they are worth doing
 
@@ -375,7 +357,9 @@ TDD, looked at on the window, and the ones that touch a real session use one (au
   worktrees built: `LandedBranchTests.A_branch_landing_records_the_branch_it_made_under_the_home`,
   1415/1416, green alone three times. **And a rehearsal the same day**: the family rehearsal exited 127
   straight after building the HTTP host, writing no transcript of its own, while three worktrees
-  built beside it. It passed 301/301 run alone.
+  built beside it. It passed 301/301 run alone. **Since LEFT1 the merge tool runs a rehearsal that died**
+  (a process-level exit, or nothing printed of its own) once more and reads FLAKE if it passes; one that
+  reported a failed check has failed. The three merges after it (PREVIEW1, WSR6, LEFT1) needed no re-run.
 
 - [ ] **TEST1 — the Playwright suite aborts a worker with `0xC0000409`: seen twice now.** The
   second sighting was its trigger. Both runs died with `worker process exited unexpectedly
