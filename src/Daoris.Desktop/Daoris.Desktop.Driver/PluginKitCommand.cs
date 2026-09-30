@@ -93,7 +93,12 @@ public static class PluginKitCommand
         PluginTrial result;
         if (Directory.Exists(positional))
         {
-            result = await PluginKit.TryFolderAsync(positional, trial, ct).ConfigureAwait(false);
+            // A trial keeps its scratch under the home (D63): with none named, it refuses, as every writer does.
+            result = await PluginKit.TryFolderAsync(
+                home ?? throw new DriverException(
+                    $"no Daoris home: a trial keeps what the plugin keeps under it. Set {DaorisHome.Variable}, or run "
+                    + "`node --test` in the folder, which needs no Daoris."),
+                positional, trial, ct).ConfigureAwait(false);
         }
         else if (PluginCatalog.IsId(positional) && home is not null)
         {

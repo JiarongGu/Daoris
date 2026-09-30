@@ -1157,7 +1157,7 @@ public sealed class DriverModule : ModuleBase
                 var trial = Optional(request, "id") is { } id
                     ? await PluginKit.TryInstalledAsync(_loop.Home, id, options, cancellationToken)
                     : Optional(request, "folder") is { } folder
-                        ? await PluginKit.TryFolderAsync(folder, options, cancellationToken)
+                        ? await PluginKit.TryFolderAsync(_loop.Home, folder, options, cancellationToken)
                         : throw new DriverException("a try needs an installed plugin's id or a folder.");
                 return new
                 {

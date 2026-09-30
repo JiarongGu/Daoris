@@ -256,7 +256,8 @@ the shutdown, stdout. It exits 0 when every answer is one the driver reads, 1 wh
 check (a wrong answer, a silent plugin, a crash, a line on stdout that is not a frame, a plugin that
 stays after `shutdown`), and 2 when it could not do what was asked. A folder's plugin is told a scratch
 home and keeps what it keeps in a scratch data folder, both removed after; an installed one is tried
-from its own folders.
+from its own folders. Every trial's scratch is under `<home>/plugins/.trials/`, a dot-folder the
+catalogue skips, never the system's temporary folder (D63; the owner's call, amending D101).
 
 ### The points
 

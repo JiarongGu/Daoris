@@ -23,6 +23,9 @@ public sealed class PluginKitTests : IDisposable
 
     public PluginKitTests() => Directory.CreateDirectory(_scratch);
 
+    /// <summary>The Daoris home a trial keeps its scratch under (D63).</summary>
+    private string Home => Path.Combine(_scratch, "home");
+
     public void Dispose()
     {
         // A plugin's process stands in its folder a moment after it is told to go (FLAKE1).
@@ -255,7 +258,7 @@ public sealed class PluginKitTests : IDisposable
     {
         var folder = New("acme.fresh", points);
 
-        var trial = await PluginKit.TryFolderAsync(folder);
+        var trial = await PluginKit.TryFolderAsync(Home, folder);
 
         Assert.True(trial.Passed, Describe(trial));
         Assert.Equal(0, trial.ExitCode);
@@ -273,7 +276,7 @@ public sealed class PluginKitTests : IDisposable
         var folder = New("acme.wrong", [HookPoints.QuestConsider]);
         Replace(folder, "({ kind: 'allow' })", "({ kind: 'maybe' })");
 
-        var trial = await PluginKit.TryFolderAsync(folder);
+        var trial = await PluginKit.TryFolderAsync(Home, folder);
 
         Assert.False(trial.Passed);
         Assert.Equal(1, trial.ExitCode);
@@ -291,7 +294,7 @@ public sealed class PluginKitTests : IDisposable
         // It takes the frame and never answers it.
         Replace(folder, "      send({ jsonrpc: '2.0', id: frame.id, result: await points[frame.method.slice(5)](frame.params ?? {}) });", "      // silence");
 
-        var trial = await PluginKit.TryFolderAsync(folder, new TrialOptions(Patience: TimeSpan.FromSeconds(1)));
+        var trial = await PluginKit.TryFolderAsync(Home, folder, new TrialOptions(Patience: TimeSpan.FromSeconds(1)));
 
         var step = Failed(trial, HookPoints.Land);
         Assert.Contains("is running and did not answer `hook/work/land` within 1s", step.Sentence);
@@ -305,7 +308,7 @@ public sealed class PluginKitTests : IDisposable
         var folder = New("acme.noisy", [HookPoints.SessionEnded]);
         Replace(folder, "const send = ", "console.log('hello from stdout');\nconst send = ");
 
-        var trial = await PluginKit.TryFolderAsync(folder);
+        var trial = await PluginKit.TryFolderAsync(Home, folder);
 
         var step = Failed(trial, "stdout");
         Assert.Contains("1 line on stdout that is not a frame", step.Sentence);
@@ -326,7 +329,7 @@ public sealed class PluginKitTests : IDisposable
         var folder = New("acme.crashes", [HookPoints.QuestConsider]);
         Replace(folder, "({ kind: 'allow' })", "(() => { console.error('cannot read the calendar'); process.exit(3); })()");
 
-        var trial = await PluginKit.TryFolderAsync(folder);
+        var trial = await PluginKit.TryFolderAsync(Home, folder);
 
         var step = Failed(trial, HookPoints.QuestConsider);
         Assert.Contains("exited (code 3) before answering `hook/quest/consider`", step.Sentence);
@@ -347,7 +350,7 @@ public sealed class PluginKitTests : IDisposable
         var folder = New("acme.broken", [HookPoints.QuestConsider]);
         File.WriteAllText(Path.Combine(folder, "plugin.mjs"), "this is not javascript at all\n");
 
-        var trial = await PluginKit.TryFolderAsync(folder);
+        var trial = await PluginKit.TryFolderAsync(Home, folder);
 
         var step = Assert.Single(trial.Steps);
         Assert.Equal("handshake", step.Name);
@@ -362,7 +365,7 @@ public sealed class PluginKitTests : IDisposable
         var folder = New("acme.stays", [HookPoints.SessionEnded]);
         Replace(folder, "    process.exit(0);", "    // stays");
 
-        var trial = await PluginKit.TryFolderAsync(folder);
+        var trial = await PluginKit.TryFolderAsync(Home, folder);
 
         var step = Failed(trial, "shutdown");
         Assert.Contains("did not leave within 2s of `shutdown`", step.Sentence);
@@ -378,7 +381,7 @@ public sealed class PluginKitTests : IDisposable
         var folder = New("acme.promises", [HookPoints.QuestConsider, HookPoints.SessionEnded]);
         Replace(folder, "  'session/ended'", "  'session/ended-not'");
 
-        var trial = await PluginKit.TryFolderAsync(folder);
+        var trial = await PluginKit.TryFolderAsync(Home, folder);
 
         var step = Failed(trial, HookPoints.SessionEnded);
         Assert.Contains("declared but the process does not listen there", step.Sentence);
@@ -395,7 +398,7 @@ public sealed class PluginKitTests : IDisposable
             "(frame.quest.title.includes('[hold]') ? { kind: 'hold', reason: 'the title says so' } : { kind: 'allow' })");
         var frame = JsonNode.Parse("""{ "quest": { "id": "q1", "title": "[hold] rename everything" }, "repository": "engine" }""")!.AsObject();
 
-        var trial = await PluginKit.TryFolderAsync(folder, new TrialOptions(Point: HookPoints.QuestConsider, Frame: frame));
+        var trial = await PluginKit.TryFolderAsync(Home, folder, new TrialOptions(Point: HookPoints.QuestConsider, Frame: frame));
 
         Assert.True(trial.Passed, Describe(trial));
         Assert.Equal(["handshake", HookPoints.QuestConsider, "shutdown", "stdout"], trial.Steps.Select(s => s.Name));
@@ -431,7 +434,7 @@ public sealed class PluginKitTests : IDisposable
             """);
         Replace(folder, "    message: `${id} does not push yet", "    message: `git: ${run('git', ['rev-parse', '--show-toplevel'], frame.root).why} — ${id} does not push yet");
 
-        var trial = await PluginKit.TryFolderAsync(folder, null, CancellationToken.None, scratchParent: temp);
+        var trial = await PluginKit.TryFolderAsync(Home, folder, null, CancellationToken.None, scratchParent: temp);
         var (exit, output) = await NodeTestAsync(folder, new() { ["TEMP"] = temp, ["TMP"] = temp, ["TMPDIR"] = temp });
 
         var step = trial.Steps.Single(s => s.Name == HookPoints.Land);
@@ -457,12 +460,44 @@ public sealed class PluginKitTests : IDisposable
         File.WriteAllText(manifest, text.Replace("\"${plugin}/plugin.mjs\"]", "\"${plugin}/plugin.mjs\", \"${data}\"]", StringComparison.Ordinal));
         Replace(folder, "    message: `${id} does not push yet", "    message: `data told: ${process.argv[2] === data} — ${id} does not push yet");
 
-        var trial = await PluginKit.TryFolderAsync(folder);
+        var trial = await PluginKit.TryFolderAsync(Home, folder);
 
         var step = trial.Steps.Single(s => s.Name == HookPoints.Land);
         Assert.True(step.Ok, step.Sentence);
         Assert.Contains("data told: true", step.Sentence);
         Assert.False(Directory.Exists(Path.Combine(Path.GetDirectoryName(folder)!, ".data")));
+    }
+
+    /// <summary>
+    /// What a trial keeps goes under the home, never the system's temporary folder, which is under the
+    /// user profile where nothing of Daoris's lives (D63, the owner's call): a dot-folder the catalogue
+    /// skips, gone once the trial ends. The plugin is told that folder, so it can say where it was.
+    /// </summary>
+    [Fact]
+    public async Task A_trials_scratch_is_under_the_homes_plugins_folder_and_goes_after()
+    {
+        var folder = New("acme.where", [HookPoints.SessionEnded]);
+        Replace(folder, "  'session/ended': (frame) => ({}),", "  'session/ended': (frame) => { console.error('data at ' + process.env.DAORIS_PLUGIN_DATA); return {}; },");
+
+        var trial = await PluginKit.TryFolderAsync(Home, folder);
+
+        Assert.True(trial.Passed, Describe(trial));
+        var said = Assert.Single(trial.Said, line => line.StartsWith("data at ", StringComparison.Ordinal));
+        Assert.StartsWith(Path.Combine(PluginKit.TrialsOf(Home), "try-"), said["data at ".Length..], StringComparison.OrdinalIgnoreCase);
+        Assert.Empty(Directory.Exists(PluginKit.TrialsOf(Home)) ? Directory.GetFileSystemEntries(PluginKit.TrialsOf(Home)) : []);
+        Assert.Empty(PluginCatalog.Load(Home).Plugins);
+    }
+
+    /// <summary>With no home named, the terminal's folder trial refuses, as every writer does (D63), and says what needs none.</summary>
+    [Fact]
+    public async Task The_terminal_refuses_a_folder_trial_with_no_home()
+    {
+        var folder = New("acme.homeless", [HookPoints.SessionEnded]);
+        var said = new StringWriter();
+
+        Assert.Equal(2, await PluginKitCommand.RunAsync(["try", folder], said, home: null));
+        Assert.Contains("no Daoris home", said.ToString());
+        Assert.Contains("`node --test`", said.ToString());
     }
 
     [Fact]
@@ -486,18 +521,18 @@ public sealed class PluginKitTests : IDisposable
         var folder = New("acme.gate", [HookPoints.QuestConsider]);
 
         Assert.Contains("no `plugin.json`",
-            (await Assert.ThrowsAsync<DriverException>(() => PluginKit.TryFolderAsync(_scratch))).Message);
+            (await Assert.ThrowsAsync<DriverException>(() => PluginKit.TryFolderAsync(Home, _scratch))).Message);
         Assert.Contains("`work/land` is not a point `acme.gate` declares",
-            (await Assert.ThrowsAsync<DriverException>(() => PluginKit.TryFolderAsync(folder, new TrialOptions(Point: HookPoints.Land)))).Message);
+            (await Assert.ThrowsAsync<DriverException>(() => PluginKit.TryFolderAsync(Home, folder, new TrialOptions(Point: HookPoints.Land)))).Message);
         Assert.Contains("a frame needs its point",
-            (await Assert.ThrowsAsync<DriverException>(() => PluginKit.TryFolderAsync(folder, new TrialOptions(Frame: new JsonObject())))).Message);
+            (await Assert.ThrowsAsync<DriverException>(() => PluginKit.TryFolderAsync(Home, folder, new TrialOptions(Frame: new JsonObject())))).Message);
 
         var declares = Path.Combine(_scratch, "acme.agent");
         Directory.CreateDirectory(declares);
         File.WriteAllText(Path.Combine(declares, "plugin.json"),
             """{ "id": "acme.agent", "harnesses": [ { "name": "acme-agent", "command": ["acme"] } ] }""");
         Assert.Contains("speaks on no point",
-            (await Assert.ThrowsAsync<DriverException>(() => PluginKit.TryFolderAsync(declares))).Message);
+            (await Assert.ThrowsAsync<DriverException>(() => PluginKit.TryFolderAsync(Home, declares))).Message);
     }
 
     [Fact]
@@ -508,7 +543,7 @@ public sealed class PluginKitTests : IDisposable
         File.WriteAllText(Path.Combine(folder, "plugin.json"),
             """{ "id": "acme.future", "apiVersion": 99, "hooks": { "command": ["node", "x.mjs"], "points": ["quest/consider"] } }""");
 
-        var trial = await PluginKit.TryFolderAsync(folder);
+        var trial = await PluginKit.TryFolderAsync(Home, folder);
 
         var step = Assert.Single(trial.Steps);
         Assert.Equal("manifest", step.Name);
@@ -559,7 +594,7 @@ public sealed class PluginKitTests : IDisposable
             JsonSerializer.Serialize(new { point, answer = answer.Replace("{point}", declared, StringComparison.Ordinal) }));
         File.WriteAllText(Path.Combine(folder, "plugin.mjs"), Echo);
 
-        var trial = await PluginKit.TryFolderAsync(folder);
+        var trial = await PluginKit.TryFolderAsync(Home, folder);
         var (exit, output) = await NodeTestAsync(folder);
 
         Assert.True(accepted == trial.Passed, $"try: {Describe(trial)}");
@@ -612,12 +647,12 @@ public sealed class PluginKitTests : IDisposable
         Replace(bad, "({ kind: 'allow' })", "({ kind: 'maybe' })");
 
         var passed = new StringWriter();
-        Assert.Equal(0, await PluginKitCommand.RunAsync(["try", good], passed, home: null));
+        Assert.Equal(0, await PluginKitCommand.RunAsync(["try", good], passed, home: Home));
         Assert.Contains("ok    quest/consider", passed.ToString());
         Assert.Contains("answered as the driver reads it", passed.ToString());
 
         var failed = new StringWriter();
-        Assert.Equal(1, await PluginKitCommand.RunAsync(["try", bad], failed, home: null));
+        Assert.Equal(1, await PluginKitCommand.RunAsync(["try", bad], failed, home: Home));
         Assert.Contains("fail  quest/consider", failed.ToString());
         Assert.Contains("failed 1 of 4 checks", failed.ToString());
     }
@@ -649,10 +684,10 @@ public sealed class PluginKitTests : IDisposable
         File.WriteAllText(notJson, "not json");
 
         var output = new StringWriter();
-        Assert.Equal(0, await PluginKitCommand.RunAsync(["try", folder, "--point", "quest/consider", "--frame", frame], output, home: null));
+        Assert.Equal(0, await PluginKitCommand.RunAsync(["try", folder, "--point", "quest/consider", "--frame", frame], output, home: Home));
 
         var refused = new StringWriter();
-        Assert.Equal(2, await PluginKitCommand.RunAsync(["try", folder, "--point", "quest/consider", "--frame", notJson], refused, home: null));
+        Assert.Equal(2, await PluginKitCommand.RunAsync(["try", folder, "--point", "quest/consider", "--frame", notJson], refused, home: Home));
         Assert.Contains("is not a JSON object", refused.ToString());
     }
 

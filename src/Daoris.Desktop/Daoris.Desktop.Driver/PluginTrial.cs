@@ -30,16 +30,31 @@ public sealed record PluginTrial(
 public static partial class PluginKit
 {
     /// <summary>
+    /// Where a trial keeps what it keeps, under the home: never the system's temporary folder, which is
+    /// under the user profile, where nothing of Daoris's lives (D63; the owner's call on D101). A dot-folder,
+    /// which both catalogue readers skip, so a scratch left by a trial cut short is never read as a plugin.
+    /// </summary>
+    public const string TrialsFolder = ".trials";
+
+    /// <summary>The home's folder of trials' scratch, <c>&lt;home&gt;/plugins/.trials</c>.</summary>
+    public static string TrialsOf(string home) => Path.Combine(home, PluginCatalog.Folder, TrialsFolder);
+
+    /// <summary>One trial's scratch folder, made fresh under <paramref name="parent"/>; removed when the trial ends.</summary>
+    private static string ScratchIn(string parent) =>
+        Directory.CreateDirectory(Path.Combine(parent, "try-" + Guid.NewGuid().ToString("N")[..8])).FullName;
+
+    /// <summary>
     /// Try a plugin in a folder anywhere — a plugins repository's, before anything is installed. What it
     /// keeps goes to a scratch data folder, and it is told a scratch home: a plugin nobody installed is
     /// part of no machine yet.
     /// </summary>
+    /// <param name="home">The Daoris home, where the trial keeps its scratch (<see cref="TrialsOf"/>).</param>
     /// <exception cref="DriverException">There is nothing here try can check, or the options ask for something it cannot do.</exception>
-    public static Task<PluginTrial> TryFolderAsync(string folder, TrialOptions? options = null, CancellationToken ct = default) =>
-        TryFolderAsync(folder, options, ct, scratchParent: null);
+    public static Task<PluginTrial> TryFolderAsync(string home, string folder, TrialOptions? options = null, CancellationToken ct = default) =>
+        TryFolderAsync(home, folder, options, ct, scratchParent: null);
 
-    /// <param name="scratchParent">Where the scratch folder goes instead of the system's temporary folder — a test's, under a repository, to prove the sample root still names none.</param>
-    internal static async Task<PluginTrial> TryFolderAsync(string folder, TrialOptions? options, CancellationToken ct, string? scratchParent)
+    /// <param name="scratchParent">Where the scratch folder goes instead of the home's — a test's, under a repository, to prove the sample root still names none.</param>
+    internal static async Task<PluginTrial> TryFolderAsync(string home, string folder, TrialOptions? options, CancellationToken ct, string? scratchParent)
     {
         var full = Path.GetFullPath(folder);
         if (!File.Exists(Path.Combine(full, PluginCatalog.ManifestName)))
@@ -47,16 +62,15 @@ public static partial class PluginKit
             throw new DriverException($"no `{PluginCatalog.ManifestName}` in {full} — a plugin is a folder with a manifest at its root.");
         }
 
-        var scratch = scratchParent is null
-            ? Directory.CreateTempSubdirectory("daoris-plugin-try-").FullName
-            : Directory.CreateDirectory(Path.Combine(scratchParent, "daoris-plugin-try-" + Guid.NewGuid().ToString("N")[..8])).FullName;
+        var scratch = ScratchIn(scratchParent ?? TrialsOf(home));
         try
         {
             var data = Path.Combine(scratch, "data");
             var (manifest, problem) = PluginCatalog.ReadFolder(full, data);
-            var home = Path.Combine(scratch, "home");
-            Directory.CreateDirectory(home);
-            return await TryAsync(new PluginEntry(manifest, full, data, Enabled: true, problem), home, scratch, options ?? new(), ct)
+            // The plugin is told a scratch home of its own: one nobody installed is part of no machine yet.
+            var told = Path.Combine(scratch, "home");
+            Directory.CreateDirectory(told);
+            return await TryAsync(new PluginEntry(manifest, full, data, Enabled: true, problem), told, scratch, options ?? new(), ct)
                 .ConfigureAwait(false);
         }
         finally
@@ -76,7 +90,7 @@ public static partial class PluginKit
             .FirstOrDefault(plugin => string.Equals(plugin.Manifest.Id, id, StringComparison.OrdinalIgnoreCase))
             ?? throw new DriverException($"no plugin `{id}` on this machine — `daoris plugin list` shows what there is.");
 
-        var scratch = Directory.CreateTempSubdirectory("daoris-plugin-try-").FullName;
+        var scratch = ScratchIn(TrialsOf(home));
         try
         {
             return await TryAsync(entry, home, scratch, options ?? new(), ct).ConfigureAwait(false);

@@ -4421,6 +4421,10 @@ needs Node 21 or later. No real plugins repository exists yet, and no session ha
 (PLUG9 proposes that ask). The screen's New and Try were checked by the vitest loop over a mocked bridge
 and by the module tests, not yet by looking at the window.
 
+*Amended 2026-09-30 (the owner's call): a trial's scratch is under `<home>/plugins/.trials/`, never the
+system's temporary folder, which is under the user profile (D63). Both doors take the home; the terminal's
+folder trial refuses without one and points at `node --test`, which needs none.*
+
 ## D102 — A branch a landing made is recorded, goes once its work reads on the line, and can be handed to its plugin afterwards (2026-09-30)
 
 **Decision (WSR5, amending D88 and D100).** The first real ticket's pull request was completed as a squash merge,
