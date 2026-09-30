@@ -155,6 +155,38 @@ public sealed class TreeGuardTests : IDisposable
         Assert.Contains("\"deny\"", multi.Output);
     }
 
+    /// <summary>
+    /// D107: a declared write target is one more argument after the tree. A write there gets no decision, as
+    /// one in the tree does, and a write anywhere else is still refused, naming what the session may write.
+    /// </summary>
+    [Fact]
+    public async Task A_write_into_a_declared_target_is_let_through_and_anywhere_else_still_refused()
+    {
+        var (tree, target) = Trees();
+        var elsewhere = Path.Combine(_home, "work", "third");
+        Directory.CreateDirectory(elsewhere);
+
+        var inTarget = await HookWith([tree, target], Call("Write", new JsonObject { ["file_path"] = Path.Combine(target, "a.txt") }, tree));
+        var inTree = await HookWith([tree, target], Call("Edit", new JsonObject { ["file_path"] = Path.Combine(tree, "src", "a.ts") }, tree));
+        var outside = await HookWith([tree, target], Call("Write", new JsonObject { ["file_path"] = Path.Combine(elsewhere, "a.txt") }, tree));
+
+        Assert.Equal("", inTarget.Output.Trim());
+        Assert.Equal("", inTree.Output.Trim());
+        var reason = (string?)JsonNode.Parse(outside.Output)!["hookSpecificOutput"]!["permissionDecisionReason"] ?? "";
+        Assert.Contains("outside", reason);
+        Assert.Contains(target, reason);
+    }
+
+    [Fact]
+    public void The_guard_for_a_session_names_its_tree_then_each_declared_target()
+    {
+        var guard = TreeGuard.For(_home, Path.Combine(_home, "work", "engine"), [Path.Combine(_home, "work", "game")]);
+
+        Assert.Equal(Path.GetFullPath(Path.Combine(_home, "work", "engine")), guard.Tree);
+        Assert.Equal([Path.GetFullPath(Path.Combine(_home, "work", "game"))], guard.Also);
+        Assert.Empty(TreeGuard.For(_home, _home).Also);
+    }
+
     /// <summary>A tool with no path this guard knows how to judge — a shell command — is not its call.</summary>
     [Fact]
     public async Task A_shell_command_is_not_this_guards_to_judge()
@@ -258,7 +290,10 @@ public sealed class TreeGuardTests : IDisposable
     }.ToJsonString();
 
     /// <summary>The hook exactly as the harness runs it: exec form, the tree as one argument, JSON on stdin.</summary>
-    private async Task<(int Code, string Output)> Hook(string? tree, string stdin)
+    private Task<(int Code, string Output)> Hook(string? tree, string stdin) => HookWith(tree is null ? [] : [tree], stdin);
+
+    /// <summary>The same, with the tree and each declared target as one argument each (D107).</summary>
+    private async Task<(int Code, string Output)> HookWith(IReadOnlyList<string> trees, string stdin)
     {
         var script = TreeGuard.Install(_home);
         var info = new ProcessStartInfo("node")
@@ -269,7 +304,7 @@ public sealed class TreeGuardTests : IDisposable
             RedirectStandardError = true,
         };
         info.ArgumentList.Add(script);
-        if (tree is not null) info.ArgumentList.Add(tree);
+        foreach (var tree in trees) info.ArgumentList.Add(tree);
         // A test must not inherit a real project directory from whatever launched it.
         info.Environment.Remove("CLAUDE_PROJECT_DIR");
 

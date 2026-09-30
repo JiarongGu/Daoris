@@ -1,9 +1,11 @@
 // Daoris's tree guard (PERM3, D72): a PreToolUse hook that refuses a file write outside the session's
 // own tree. Shipped inside the driver and written under the Daoris home; the harness runs it as
 //
-//   node tree-guard.mjs <tree>
+//   node tree-guard.mjs <tree> [<target> ...]
 //
-// with the call as JSON on stdin. Zero dependencies — it runs inside every session.
+// with the call as JSON on stdin. Each <target> after the tree is a checkout the person declared this
+// session's repository may also write into (D107): a write there is let through as one in the tree is.
+// Zero dependencies — it runs inside every session.
 //
 // It judges the tools that name a file (Write, Edit, MultiEdit, NotebookEdit) by their path fields,
 // resolved through links. A shell command's writes cannot be judged by reading the command, so Bash is
@@ -112,26 +114,29 @@ async function main() {
   const paths = targets(call?.tool_name, call?.tool_input);
   if (paths.length === 0) return;
 
-  // The session's tree, as the driver named it — then the harness's own project directory.
+  // The session's tree, as the driver named it — then the harness's own project directory. Each argument
+  // after it is a declared write target (D107).
   const tree = process.argv[2] || process.env.CLAUDE_PROJECT_DIR;
   if (!tree) {
     deny('it was not told which tree this session works in, so it refuses every write rather than guess.');
     return;
   }
+  const declared = process.argv.slice(3).filter((one) => one.length > 0);
 
   const cwd = typeof call.cwd === 'string' && call.cwd.length > 0 ? call.cwd : null;
   for (const target of paths) {
     let judged;
     try {
-      judged = judge({ tree, target, cwd, realpath: resolveThroughLinks });
+      judged = [tree, ...declared].map((root) => judge({ tree: root, target, cwd, realpath: resolveThroughLinks }));
     } catch (error) {
       // Fail closed: a path this guard cannot resolve is not one it lets through.
       deny(`it could not resolve \`${target}\` (${error instanceof Error ? error.message : error}), so it refuses the write.`);
       return;
     }
-    const { outside, resolved } = judged;
-    if (outside) {
-      deny(`\`${resolved}\` is outside this session's tree \`${tree}\`. A session writes only inside `
+    if (judged.every(({ outside }) => outside)) {
+      const also = declared.length === 0 ? ''
+        : ` and the checkouts its repository may also write into (${declared.map((one) => `\`${one}\``).join(', ')})`;
+      deny(`\`${judged[0].resolved}\` is outside this session's tree \`${tree}\`${also}. A session writes only inside `
         + 'its own tree; a change needed elsewhere is a quest to whoever owns it.');
       return;
     }

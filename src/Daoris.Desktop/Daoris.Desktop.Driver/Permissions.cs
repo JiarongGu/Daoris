@@ -26,6 +26,12 @@ public sealed record RuleLists(IReadOnlyList<string> Allow, IReadOnlyList<string
     public static RuleLists Empty { get; } = new([], [], []);
 
     public bool IsEmpty => Allow.Count == 0 && Ask.Count == 0 && Deny.Count == 0;
+
+    /// <summary>These lists and <paramref name="more"/>'s, each rule once, in the order first met.</summary>
+    public RuleLists Joined(RuleLists more) => new(
+        [.. Allow.Union(more.Allow, StringComparer.Ordinal)],
+        [.. Ask.Union(more.Ask, StringComparer.Ordinal)],
+        [.. Deny.Union(more.Deny, StringComparer.Ordinal)]);
 }
 
 /// <summary>A rule set Daoris ships, with the reason it exists — switchable off by id, removable by nothing else.</summary>
@@ -157,7 +163,17 @@ public static class PermissionRules
     /// a deny is case-folded on Windows), so the path keeps exactly the case the service answered it in,
     /// which is the case the session's prompt shows it.</para>
     /// </remarks>
-    public static string ReadRule(string directory)
+    public static string ReadRule(string directory) => $"Read({Absolute(directory)})";
+
+    /// <summary>
+    /// An edit of everything under <paramref name="directory"/>, in the same absolute form as
+    /// <see cref="ReadRule"/> (D107): allowed in a declared write target, denied in every other checkout.
+    /// The harness applies an Edit rule to each of its tools that writes a file.
+    /// </summary>
+    public static string EditRule(string directory) => $"Edit({Absolute(directory)})";
+
+    /// <summary>Everything under a directory as the harness's absolute pattern: <c>//c/x/**</c> for <c>C:\x</c>.</summary>
+    private static string Absolute(string directory)
     {
         var posix = directory.Replace('\\', '/').TrimEnd('/');
         if (posix.Length >= 2 && char.IsAsciiLetter(posix[0]) && posix[1] == ':')
@@ -165,7 +181,7 @@ public static class PermissionRules
             posix = "/" + char.ToLowerInvariant(posix[0]) + posix[2..];
         }
 
-        return $"Read(/{posix}/**)";
+        return $"/{posix}/**";
     }
 
     /// <summary>Why a rule is refused, or null when it is the harness's shape.</summary>
@@ -435,7 +451,8 @@ public static class SpawnSettings
                     {
                         ["type"] = "command",
                         ["command"] = "node",
-                        ["args"] = new JsonArray(guard.Script, guard.Tree),
+                        // The declared write targets follow the tree, one argument each (D107).
+                        ["args"] = new JsonArray([guard.Script, guard.Tree, .. guard.Also.Select(also => (JsonNode)also)]),
                         ["timeout"] = 30,
                     }),
                 }),

@@ -3527,6 +3527,10 @@ behind a codebase does not travel, and a request does.
   work never resumed.
 - **Waiting inside the session.** A session is one turn on both doors, and its tree survives it.
 
+*Amended by D107 (READ1, 2026-09-30): the owner reversed the first rejection. A session reads its
+workspace's other checkouts by default. What stays of this decision is that a change, or what only the
+other repository knows, is asked of it and waited on.*
+
 ## D80 — A session cut off after its take is carried on in its tree, like a failed start is retried (2026-09-27)
 
 **Decision.** A taken quest, waiting on nothing, whose last session on this machine concluded
@@ -3861,6 +3865,10 @@ checkout to research its answer, which showed the room's allow-list is no gate i
 its own actions — and a helper able to run a command could run `daoris driver …`, the change nobody
 confirmed that this decision forbids. In `default` every tool off the allow-list asks, and over the
 protocol door every ask is refused by construction (D52).
+
+*Amended by D107 (READ1, 2026-09-30): what it is handed at spawn also reads each checkout reading across
+allows, by file and by two git commands on exact prefixes, and its room names those checkouts' paths. It
+still has no shell, and it still runs in `default`.*
 
 ## D90 — A working driven session hears what the person adds, as its next prompt (2026-09-29)
 

@@ -45,6 +45,8 @@ public sealed class HelpRoomGoldenTests
                 Checkout = true, Drivable = true, Line = new Line("develop", LineSource.Workspace),
             },
         ],
+        // Reading across (D107): `reports-db` switched off, the rest on, one path that git needs quoted.
+        Reads = [new("console-ui", "work", "/work/console-ui"), new("tools", "default", "/src/my tools")],
         Agents =
         [
             new("claude-code")

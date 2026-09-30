@@ -141,6 +141,63 @@ public sealed record DriverConfig(
     public DriverConfig WithWorkspaceLanding(string workspace, LandingRule? rule) =>
         this with { WorkspaceLandings = Set(WorkspaceLandings, workspace, rule) };
 
+    /// <summary>
+    /// Whether a repository's checkout may be read by agents outside it (READ1, D107), as the person set
+    /// it, by repository. It wins over the workspace's; absent takes the workspace's, then on
+    /// (<see cref="AcrossRules.Reading"/>).
+    /// </summary>
+    public IReadOnlyDictionary<string, bool> ReadAcross { get; init; } =
+        new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>A workspace's reading across, for every repository in it that sets none of its own.</summary>
+    public IReadOnlyDictionary<string, bool> WorkspaceReadAcross { get; init; } =
+        new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// The declared relationships (D107): the repositories each repository's sessions may also write into.
+    /// One direction per entry; absent is none, which is the default.
+    /// </summary>
+    public IReadOnlyDictionary<string, IReadOnlyList<string>> WriteAcross { get; init; } =
+        new Dictionary<string, IReadOnlyList<string>>(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>Set whether a repository's checkout is read across, or clear it with null to take its workspace's.</summary>
+    public DriverConfig WithReadAcross(string repository, bool? read) =>
+        this with { ReadAcross = SetFlag(ReadAcross, repository, read) };
+
+    /// <summary>Set a workspace's reading across, or clear it with null to take the default, on.</summary>
+    public DriverConfig WithWorkspaceReadAcross(string workspace, bool? read) =>
+        this with { WorkspaceReadAcross = SetFlag(WorkspaceReadAcross, workspace, read) };
+
+    /// <summary>
+    /// Declare that <paramref name="repository"/>'s sessions may write into <paramref name="to"/>, or take
+    /// that back. A repository never names itself: its own tree is already its sessions'.
+    /// </summary>
+    public DriverConfig WithWriteAcross(string repository, string to, bool allow)
+    {
+        if (AcrossRules.Problem(repository, to) is { } problem) throw new DriverException(problem);
+
+        bool Same(string name) => string.Equals(name, to.Trim(), StringComparison.OrdinalIgnoreCase);
+        var next = new Dictionary<string, IReadOnlyList<string>>(WriteAcross, StringComparer.OrdinalIgnoreCase);
+        var held = next.GetValueOrDefault(repository.Trim()) ?? [];
+        IReadOnlyList<string> kept = allow
+            ? (held.Any(Same) ? held : [.. held, to.Trim()])
+            : [.. held.Where(name => !Same(name))];
+
+        // The repository's existing spelling, when it has one in another case: one entry, never two.
+        var key = next.Keys.FirstOrDefault(k => string.Equals(k, repository.Trim(), StringComparison.OrdinalIgnoreCase)) ?? repository.Trim();
+        next.Remove(key);
+        if (kept.Count > 0) next[key] = kept;
+        return this with { WriteAcross = next };
+    }
+
+    private static IReadOnlyDictionary<string, bool> SetFlag(IReadOnlyDictionary<string, bool> map, string key, bool? value)
+    {
+        var next = new Dictionary<string, bool>(map, StringComparer.OrdinalIgnoreCase);
+        if (value is { } set) next[key.Trim()] = set;
+        else next.Remove(key.Trim());
+        return next;
+    }
+
     private static IReadOnlyDictionary<string, LandingRule> Set(
         IReadOnlyDictionary<string, LandingRule> map, string key, LandingRule? rule)
     {
@@ -234,6 +291,22 @@ public sealed record DriverConfig(
             // Written only when set (WSR1), for the same reason: absent is the merge it always was.
             WriteRules(writer, "landings", Landings);
             WriteRules(writer, "workspaceLandings", WorkspaceLandings);
+            // Written only when set (D107), for the same reason: absent is reading on and no relationship.
+            WriteFlags(writer, "readAcross", ReadAcross);
+            WriteFlags(writer, "workspaceReadAcross", WorkspaceReadAcross);
+            if (WriteAcross.Count > 0)
+            {
+                writer.WriteStartObject("writeAcross");
+                foreach (var (repository, targets) in WriteAcross.OrderBy(pair => pair.Key, StringComparer.Ordinal))
+                {
+                    writer.WriteStartArray(repository);
+                    foreach (var target in targets) writer.WriteStringValue(target);
+                    writer.WriteEndArray();
+                }
+
+                writer.WriteEndObject();
+            }
+
             writer.WriteStartObject("commands");
             foreach (var (name, command) in Commands.OrderBy(c => c.Key, StringComparer.Ordinal))
             {
@@ -255,6 +328,62 @@ public sealed record DriverConfig(
         writer.WriteStartObject(name);
         foreach (var (key, value) in map.OrderBy(pair => pair.Key, StringComparer.Ordinal)) writer.WriteString(key, value);
         writer.WriteEndObject();
+    }
+
+    private static void WriteFlags(Utf8JsonWriter writer, string name, IReadOnlyDictionary<string, bool> map)
+    {
+        if (map.Count == 0) return;
+        writer.WriteStartObject(name);
+        foreach (var (key, value) in map.OrderBy(pair => pair.Key, StringComparer.Ordinal)) writer.WriteBoolean(key, value);
+        writer.WriteEndObject();
+    }
+
+    /// <summary>A map of names to booleans; an entry of any other type is not read (D107).</summary>
+    private static IReadOnlyDictionary<string, bool> FlagMap(JsonElement root, string name)
+    {
+        var map = new Dictionary<string, bool>(StringComparer.OrdinalIgnoreCase);
+        if (root.TryGetProperty(name, out var element) && element.ValueKind == JsonValueKind.Object)
+        {
+            foreach (var property in element.EnumerateObject())
+            {
+                if (property.Value.ValueKind is JsonValueKind.True or JsonValueKind.False && property.Name.Trim().Length > 0)
+                {
+                    map[property.Name.Trim()] = property.Value.GetBoolean();
+                }
+            }
+        }
+
+        return map;
+    }
+
+    /// <summary>
+    /// The declared relationships (D107): each repository's list of other names, once each in any case, in
+    /// the order first written. A list that is not one, an entry that is not a name, and the repository
+    /// itself are not read; a repository left with none has no entry.
+    /// </summary>
+    private static IReadOnlyDictionary<string, IReadOnlyList<string>> TargetMap(JsonElement root, string name)
+    {
+        var map = new Dictionary<string, IReadOnlyList<string>>(StringComparer.OrdinalIgnoreCase);
+        if (!root.TryGetProperty(name, out var element) || element.ValueKind != JsonValueKind.Object) return map;
+
+        foreach (var property in element.EnumerateObject())
+        {
+            if (property.Value.ValueKind != JsonValueKind.Array || property.Name.Trim().Length == 0) continue;
+            var targets = new List<string>();
+            foreach (var item in property.Value.EnumerateArray())
+            {
+                if (item.ValueKind == JsonValueKind.String && item.GetString()?.Trim() is { Length: > 0 } target
+                    && AcrossRules.Problem(property.Name, target) is null
+                    && !targets.Contains(target, StringComparer.OrdinalIgnoreCase))
+                {
+                    targets.Add(target);
+                }
+            }
+
+            if (targets.Count > 0) map[property.Name.Trim()] = targets;
+        }
+
+        return map;
     }
 
     private static void WriteRules(Utf8JsonWriter writer, string name, IReadOnlyDictionary<string, LandingRule> map)
@@ -381,6 +510,9 @@ public sealed record DriverConfig(
             WorkspaceLines = BranchMap(root, "workspaceLines"),
             Landings = RuleMap(root, "landings"),
             WorkspaceLandings = RuleMap(root, "workspaceLandings"),
+            ReadAcross = FlagMap(root, "readAcross"),
+            WorkspaceReadAcross = FlagMap(root, "workspaceReadAcross"),
+            WriteAcross = TargetMap(root, "writeAcross"),
         };
     }
 

@@ -271,7 +271,7 @@ public sealed partial class Driver(
 
         var runs = starts.Select(async start =>
         {
-            var (line, opened, ended, held) = await RunAsync(start, untrusted, ct).ConfigureAwait(false);
+            var (line, opened, ended, held) = await RunAsync(start, snapshot.Repositories, untrusted, ct).ConfigureAwait(false);
             lock (events)
             {
                 events.Add(line);
@@ -384,8 +384,9 @@ public sealed partial class Driver(
     /// nothing, so the third value is null: there is no session to have ended. A refusal is not a
     /// hold either: somebody else got there first, and the quest is theirs rather than sitting.
     /// </returns>
+    /// <param name="registry">The registry as this tick's snapshot answered it: what the session may reach across (D107).</param>
     private async Task<(string Line, bool Opened, SessionEnded? Ended, string? Held)> RunAsync(
-        Consideration start, List<TrustHold> untrusted, CancellationToken ct)
+        Consideration start, IReadOnlyList<RepoView> registry, List<TrustHold> untrusted, CancellationToken ct)
     {
         var quest = start.Quest;
         var root = start.Root!;
@@ -541,8 +542,13 @@ public sealed partial class Driver(
         try
         {
             var adapter = _adapters.Resolve(config.Adapter);
+            // What it may read and write outside its tree (D107): the rules it is handed, and the sentence
+            // every harness's instruction carries.
+            var across = AcrossRules.Reach(config, registry, quest.To, start.Workspace);
             var target = SessionTarget.ForQuest(quest, workTree, service.BaseUrl) with
             {
+                ReadsAcross = across.Reads,
+                WritesAcross = across.Writes,
                 // Named on its spawn as on its connector, so what it publishes says it did (SESS1).
                 Session = sessionId,
                 Answered = answered,
@@ -598,7 +604,7 @@ public sealed partial class Driver(
 
             // What this session may do (PERM1, D72): the rules composed for its circle and repository,
             // handed over as the harness's own settings tier.
-            var rules = HandRules(adapter, info, sessionId, start.Workspace, quest.To, workTree, target.AttachmentsDirectory);
+            var rules = HandRules(adapter, info, sessionId, start.Workspace, quest.To, workTree, target.AttachmentsDirectory, across: across);
 
             _live[quest.Id] = sessionId;
             using var live = new Disposer(() => _live.TryRemove(quest.Id, out var _));
@@ -796,10 +802,14 @@ public sealed partial class Driver(
     /// (INT4j): a read there would otherwise be asked, and every ask is refused (D52). Only a read — the
     /// tree guard still refuses a write anywhere outside the tree, and says nothing about reads.
     /// </param>
+    /// <param name="across">
+    /// What it may reach outside its tree (D107): a read of each checkout it may read, an edit in each declared
+    /// target, and a refusal everywhere else — beside the person's rules, whose denies still win.
+    /// </param>
     /// <returns>The file, which goes when the session does, and what the protocol door carries.</returns>
     private (string? File, object? Meta) HandRules(
         ISessionAdapter adapter, ProcessStartInfo info, string sessionId, string? workspace, string? repository,
-        string tree, string? kept, IReadOnlyList<string>? job = null)
+        string tree, string? kept, IReadOnlyList<string>? job = null, AcrossReach? across = null)
     {
         // A harness a Claude Code rule means nothing to is handed nothing, and no file is written.
         if (!adapter.TakesSettings) return (null, null);
@@ -811,6 +821,8 @@ public sealed partial class Driver(
             composed = composed with { Allow = [.. composed.Allow, PermissionRules.ReadRule(kept)] };
         }
 
+        if (across is not null) composed = composed.Joined(AcrossRules.Rules(across, [tree, kept ?? ""]));
+
         // 🔴 What the session's job needs, beside the person's rules (FG5): an intake's room names its tools
         // in its own settings file, and over the protocol door only what is handed at spawn counts. The
         // first real intake was refused `WebFetch` that way. A deny the person wrote still wins.
@@ -821,7 +833,7 @@ public sealed partial class Driver(
 
         var file = SpawnSettings.Write(
             home, sessionId, composed,
-            PermissionRules.GuardsTree(rules) ? TreeGuard.For(home, tree) : null);
+            PermissionRules.GuardsTree(rules) ? TreeGuard.For(home, tree, across?.Writes.Select(target => target.Path)) : null);
         if (file is null) return (null, null);
 
         if (adapter.Wire == SessionWire.Pipe)

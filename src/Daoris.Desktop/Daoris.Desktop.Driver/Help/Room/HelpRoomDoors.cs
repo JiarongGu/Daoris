@@ -40,6 +40,11 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
         ("bound how long one session runs", "(no screen yet)", "`daoris driver timeout <minutes>`"),
         ("say so when a session parks", "Settings → Driver", "`daoris driver notify on|off`"),
         ("allow, ask or deny what an agent may do", "Settings → Permissions", "`daoris agent rules …`"),
+        // D107: reading other checkouts is on unless switched off; writing into one is a declared relationship.
+        ("let agents read a repository's checkout, or not; let one repository's sessions write into another",
+            "Settings → Permissions → Reading and writing across",
+            "`daoris driver across <repository> read on|off|--clear` (`--workspace <name>` for a whole workspace), "
+            + "`daoris driver across <repository> write-to <other> [--clear]`"),
         ("sign an agent in, or add an account", "Settings → Agents & accounts", "`daoris agent login <agent>`"),
         // HELP6: the doors built since, which the helper now proposes too.
         ("update an agent, or pin it to one version", "Settings → Agents & accounts → Update, Pin a version",
