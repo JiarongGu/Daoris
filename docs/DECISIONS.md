@@ -1425,6 +1425,14 @@ knowledge server on `session/new`, not through the repository's own files. It is
 because the canon is what adoption installs. For such a repository the driven session is the only one
 that can answer, and the surfaces say so. The pipe door keeps its own requirements.
 
+**Amended 2026-10-01 (LOOK2a): the shell says when its driver is up.** Every route that reads the driver's service
+refuses *still coming up* (`DRIVER_NOT_READY`) until the loop hands the service over, and never answers an empty list
+for it. The service holds its registry the moment it answers at all, so that handing over is the whole of being ready.
+The loop then says `DRIVER_READY` once, and the page asks again everything the driver refused as not ready, and the
+driver's own answers. Before, only a tick asked again, and the first tick can wait on a remote's sync or on another
+driver's lock (DRV8a): Settings → Workspace said no repository had a line until something else asked. The driver's
+state carries `ready`, and the status bar says *starting* until it is true, where it said *ready* from the file alone.
+
 ## D47 — The remote is the same host fed by the desktop; transitions write through, records sync (2026-09-20)
 
 **Decision.** DRV3's design is settled: `docs/2026-09-20-remote-design.md` is the mechanism for D45's
