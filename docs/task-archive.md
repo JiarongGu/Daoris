@@ -8906,3 +8906,98 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > measured" cell … Keyless first; one canary turn per harness is the owner's to allow.
 
 **Outcome** (measured by a subagent, merged with `tools/merge-branch.mjs`, every gate; no decision): The keyless half landed as `docs/2026-10-01-entry-point-evidence.md`: every cell D117 §1 left unmeasured, for Claude Code on both doors (2.1.285 native; 2.1.284 under the ACP adapter 0.84.0), codex 0.154.0, codex-acp 1.12.0 and dsh 0.1.6-alpha.2, each cell labelled source, doc or not measured and citing the harness's shipped code; no turn, no login, no model. **The ACP adapter loads project instructions**: `claude-agent-acp` 0.84.0 passes `settingSources: ["user","project","local"]` on every session, so driven Claude Code sessions have been getting `CLAUDE.md` and, through `@AGENTS.md`, the doctrine; D117's held row (hand instructions over at `session/new`) stays held. A maker-side flag, off by default, would drop them; only the canary turn shows it is off for the account. codex cuts project docs at 32,768 bytes, root first, and loads none in an untrusted folder (codex-acp marks every root trusted); dsh caps the chain at 65,536 bytes and lists a skill found in two roots once; Claude Code never reads `.agents/skills`, and since 2.1.277 reads `AGENTS.md` only where no `CLAUDE.md` exists, so room pointers are still needed. A `CLAUDE.md` in any folder above the Daoris home reaches every driven Claude Code session, since trees live under the home. The canary turn (§6: fixtures, prompt, commands, predicted answers) is the owner's to authorise, and stays open on the row.
+
+
+## PLUGUI1a — plugins get a screen of their own: the design (2026-10-01)
+
+> - [ ] **PLUGUI1 — plugins get a screen of their own.** Plugins will be a big part of Daoris, and today
+> they are one Settings domain (D64, D101, D103). An activity-bar view, on FRAME1's frame, holding:
+> - installed plugins, each with its state, the points it answers, the servers it hands sessions, the
+> harnesses it rides, where it came from and whether an update waits;
+> - a plugin's own page: its manifest read as a person reads it, what it said on its wire lately (calls,
+> answers, errors, from the machine log), its data folder, its trials and its own tests;
+> - the offers the install carries, to install;
+> - making and trying one (the kit, PLUG8), and asking for one (PLUG9), from the screen.
+> Settings keeps only what is a setting. Ask Daoris's plugin kind gains go anchors into the screen. The
+> contract is a design document written first, extending `docs/2026-09-23-plugin-design.md`.
+
+**Outcome** (designed by a subagent, merged with `tools/merge-branch.mjs`, every gate; **D119**): Designed (D119, `docs/2026-10-01-plugins-screen-design.md`, extending the plugin design on D118's frame): Plugins becomes a shell-only view. Its list groups plugins by what they need from the person (waiting on you, on, off, then the install's offers); each plugin has a page with its switch, *Try*, *Update…* and *Remove…* (which now asks once), a health line from five states decided by the loop's own record (the machine log's last word for a terminal), and sections for points, agents, servers, activity, tests, data folder and source, each with its loading, empty and error states. The side bar and panel gain nothing (D118 §3c). What a plugin did is kept in seven `plugin.*` machine-log events that never hold its words; each installed plugin's last trial and test run are kept. Routes stay `DAORIS.DRIVER`'s; each act has its terminal twin (`daoris plugin` for the catalogue, new `daoris-driver plugins show|activity|test`); every control has its Ask Daoris answer. Settings keeps only the plugins folder, as a read-only row in Settings → Driver, and every old anchor points at the view. Every name is given in both languages within its D116 budget. Found reading the code: Remove removes on its first press, the running pill wears done's green, a plugin's words reach a ring no screen reads, and the machine log holds no plugin event.
+
+
+## DOC1 and UNBLOCK1 — the development-document standard, and fewer asks: the design (2026-10-01)
+
+> - [ ] **DOC1 — the development-document standard for code generation** (research, then a canon change). What a
+> repository's documents must hold so a code-generating session does good work unasked: the brief, how to
+> build, test and verify, the lanes and rooms, the conventions, the decisions, the open work. Study the
+> patterns in use (dsh's `AGENTS.md` and notes, the public `AGENTS.md` convention, skills, this canon), measure
+> what sessions actually read (LAYOUT2's evidence), and propose one standard, project-agnostic, as canon: a
+> template every set-up quest carries (LAYOUT7) and `check` can hold. Doctrine is still Daoris's first role.
+
+**Outcome** (designed by a subagent, merged with `tools/merge-branch.mjs`, every gate; **D122**): Designed (D122, `docs/2026-10-01-development-documents-design.md`). The study compared this canon and this repository's records with dsh's public repository, the `AGENTS.md` convention and the makers' guidance for Claude Code, codex, Copilot and Gemini, against LAYOUT2's measurements; they converge on one short `AGENTS.md` holding what cannot be derived, exact commands with a check that means done, detail on demand, and a ceiling on what is read whole. The standard becomes core canon (a knowledge document `development-documents` and a skill `set-up-documents` with templates); a repository binds document roles to paths in its manifest, `sync` renders where they are, and `check` fails on facts and reports judgements. Fewer asks: a repository declares its safe work beside its gates, Daoris reads it from the line and judges it against the carve-outs (push, publish, release, history, discard, recursive delete, outside paths, shell operators), and the person says yes once per repository and per widening (D74 unchanged); Claude Code on both doors gets exact rules, codex and dsh nothing until measured. Found, for the build: the default core budget crowds out a brief under codex's 32 KiB cut (BUDGET1); a push written as `git -C . push` passes `no-push` in auto mode (UNBLOCK4); a skill's `allowed-tools` is honoured in an untrusted folder; auto mode drops package-manager wildcards; nothing counts asks today (UNBLOCK5 first). Documents only.
+
+
+## UNBLOCK1 — fewer asks: designed with DOC1 (2026-10-01)
+
+> - [ ] **UNBLOCK1 — fewer asks: a repository declares what is safe, and its sessions may do it.** Today a
+> session asks the person for every command its harness does not already allow. A repository declares its
+> safe work (its gates, build and test commands, git on its own branch, installs from its lockfile), and
+> Daoris turns that into each harness's allowances for that repository's sessions (the permission scopes,
+> D72–D74; the set-up press's rule, LAYOUT7), while destructive, irreversible, publishing and
+> cross-repository acts still ask (`autonomous-development`). Measure: asks per session, from the machine log,
+> before and after. Design first, with a decision.
+
+**Outcome** Designed together with DOC1 in D122 (`docs/2026-10-01-development-documents-design.md` §3): a repository declares its safe work beside its gates, Daoris judges it against the carve-outs and turns it into each harness's allowances, and the person says yes once per repository and per widening. Its build is UNBLOCK2–UNBLOCK8, filed; UNBLOCK4 (the push hole the study found) was built the same day.
+
+
+## TOOLS1 — self-managed tools: the design (2026-10-01)
+
+> - [ ] **TOOLS1 — self-managed tools** (design first, extending D57's toolchain from agents to tools). Every tool
+> Daoris runs (git, the terminal's shell, Node, the landing plugins' `gh` and `az`) can be *the system's*,
+> *managed by Daoris* (downloaded into the home) or *a path you name*, set in Settings → Tools and by a terminal
+> verb. A `resources.json` built into the app lists each tool's default download location, version and hash; it
+> can be updated, and more resource locations added, without a new release. A managed git can carry the
+> settings Daoris's own fetch needs (the SSH finding, WSR7).
+
+**Outcome** (designed by a subagent, merged with `tools/merge-branch.mjs`, every gate; **D121**): Designed (D121, `docs/2026-10-01-tools-design.md`, extending D57 from agents to tools). An inventory from the code: git is a bare name nothing resolves, versions or configures, and five resolvers answer "which program"; WSR7's SSH failure is the measured example. Every tool Daoris runs beside its agents (Git, Node.js, PowerShell, GitHub CLI, Azure CLI) is run one of three ways: the system's (absent means today's behaviour), managed (downloaded into the home and hash-verified), or a file the person names, held in a twinned `tools.json`; a missing managed version or file refuses rather than falling back to `PATH`. Daoris and every child share one resolution and one environment; git's settings, starting with `core.sshCommand`, travel in a global file under the home that includes the person's own and never writes it. A `resources.json` built into the install says where each version downloads, with a hash; resource locations extend it without a release (a disagreement refuses that version naming both lists; agreeing lists are mirrors). Agents stay on their makers' channels. Doors: Settings → Tools, `daoris tool …`, and Ask Daoris's `tool` kind. A separately released resource package, as a sibling ships, was weighed and rejected: a new package still needs a release, it redistributes other makers' binaries unhashed, and it knows only marker files.
+
+
+## PLUGREPO2 — Daoris.Plugins: the design, its set-up, and its first task done by Daoris (2026-10-01)
+
+> - [ ] **PLUGREPO2 — Daoris.Plugins, the default plugins' home** (the owner created it on 2026-10-01, answering
+> PLUGREPO1). Initialize it (it is empty and has no owner yet, so this is set-up, not reaching in), give it its
+> own gates (each plugin's `node --test`, as the kit makes them), move Daoris's own plugins there (the landing
+> plugins in `examples/plugins/`, the in-app browser's), and keep only what the rehearsals need in `examples/`.
+> First, a survey of how the family's sibling plugin repositories are laid out and packaged (read only).
+> **Built by Daoris itself** (owner, 2026-10-01: *"you can let daoris to develop plugin so we also test this
+> feature too"*): the parent only initializes the empty folder as a repository and registers it in a
+> workspace; every plugin in it is then asked for through Ask Daoris or the intake (PLUG9), taken by that
+> repository's own driven session with the kit (PLUG8), and landed by the workspace's rule, so the whole path
+> is proven on a real repository.
+
+**Outcome** Designed in D120 (§3: layout, brief, gate, connection, what moves). Then **set up** by the parent (PLUGREPO2a, 2026-10-01): `git init`, `daoris init --harness agents` (the first real repository on D117's layout, `check` clean at 25,319 of 30,000 bytes), the `windows-machine` pack, its domain and brief, `package.json`, and `.gitattributes` pinning LF (without it, a machine with `core.autocrlf` checks every synced file out as CRLF and reads it as drift: `init` should write it, INIT1). Registered in a new `daoris` workspace with Daoris itself (not driven, so plugin sessions can read its documents), drivable with trees on, landing by `merge`. Then **its first task was done by Daoris itself**, as the owner asked: an ask published through the platform's door became a quest to Daoris.Plugins, its own session built `test/repository.test.mjs` with a fixture for each failure (16/16), recorded a trap it found in the brief (`node --test` runs every `.mjs` under a `test/` folder), and the parent reviewed and landed it by the merge rule. The second task (the two landing plugins, PLUGREPO2c) is with its session.
+
+
+## PLUGDEV1 — Daoris develops plugins where you choose: in D120's workshop (2026-10-01)
+
+> - [ ] **PLUGDEV1 — Daoris develops plugins where you choose** (owner, 2026-10-01, answering where a plugin
+> Daoris develops lives). A desktop feature: when a person needs a new capability (an MCP server, access
+> management), Daoris develops a plugin for it. By default it is developed and kept **in Daoris's own home**,
+> needing no repository, **or in a location the person configures**; Daoris.Plugins is the default location
+> for our own plugins and the published, searchable source. Daoris develops in whichever location is set up,
+> or in the home and then copies the plugin over, through that repository's own door. This changes PLUG9's
+> premise (D103: a plugin made as an ask at the repository that holds plugins); PLUGDIST1's design (D120)
+> carries the model, and the build follows it.
+
+**Outcome** Folded into D120's design (`docs/2026-10-01-plugin-distribution-design.md` §2) as the **plugin workshop**: a plugin Daoris makes is made by default in a workshop in its home (a small git repository Daoris owns, one workshop session at a time, its ending observed from the plugin's own tests), or in a folder or registered repository the person sets, at both doors; a plugin reaches a repository only through that repository's own door, a quest carrying it as one zip; D103's update gains a source the person names. The build is WORKSHOP1a–d, filed.
+
+
+## PLUGDIST1 — plugins from a public catalogue: the design (2026-10-01)
+
+> - [ ] **PLUGDIST1 — plugins from a public catalogue.** The recommendation, to be recorded as a decision:
+> **NuGet**, each plugin a package of a custom package type (`DaorisPlugin`) that the search API filters by
+> exactly (`packageType=DaorisPlugin`), downloaded from the flat container over HTTP with no NuGet client,
+> its hash checked. npm's keywords are free-form and filter less precisely; both are free and open to other
+> publishers. The Plugins view gains *Find plugins* (search, versions, install, update); publishing from
+> Daoris.Plugins stays the owner's call.
+
+**Outcome** (designed by a subagent, merged with `tools/merge-branch.mjs`, every gate; **D120**): **NuGet** is the package source (D120): a custom `DaorisPlugin` package type (its version the wire's `apiVersion`), search by `packageType`, downloads from the flat container over HTTP with no client, the catalog's SHA-512 checked (and seen to match a served package), and other publishers' plugins installed switched off. The facts were checked against the maker's pages and live queries (`packageType=McpServer` 274 hits, case-insensitive; a custom type accepted on push). npm was rejected even though its keyword filter proved exact (the row's premise that it filtered less precisely did not hold): a keyword carries no version or meaning, and npm's install machinery would silently not apply; its stronger integrity and namespaces are answered by a pinned hash, the owner account and a held signature row. The offers move to pinned packages after the owner's first publish. *Find plugins* was designed on D119's view with both doors and Ask Daoris's doors. The build is PLUGDIST1a–h, filed.
