@@ -102,8 +102,8 @@ reference did not make for us:
   repository and the state as its name and tip. The strip has no room for the words, and a mark is
   never hue alone (D41 §6).
 - **A strip the window drew offers no "open"**: only widening undoes it, so the button would do
-  nothing. *Amended by D118 (FRAME1a; to be built as FRAME1b):* a strip the window drew opens its list
-  over the main area. The rail becomes a strip when the main area has no room beside it, rather than below
+  nothing. *Amended by D118 (FRAME1a; built as FRAME1b, on `ListPane`):* a strip the window drew opens its
+  list over the main area. The rail becomes a strip when the main area has no room beside it, rather than below
   1024 px. Without an open, below 1024 px the rail left an ended session and its search out of reach, and
   a view whose list is its only way in would leave the whole view out of reach
   (`2026-10-01-frame-model-design.md` §3a).
@@ -164,6 +164,7 @@ Everything the design (§3–§5) needs, with the states its story must carry. N
 | `Dot` | live / attention indicator beside an identity | live, parked, ended, idle — **always beside a label** (D41 §6: never hue alone) |
 | `MonoWell` | verbatim monospace region with a "what fell out" footer | empty, short, scrolled-to-bottom, 500 lines with 12k dropped |
 | `MetaLine` | the label · value pairs of a session head | one pair, six pairs, a missing value, a long path |
+| `StripMark` | one item on a list closed to its strip: an initial and its mark, named in words (FRAME1b, D118) | working · chosen · waiting · idle · unmarked · off · a 中文 name |
 
 `Pill`, `Button`, `Chip`, `Card`, `EmptyState`, `SkeletonRows`, `Tip` are reused unchanged.
 
@@ -205,8 +206,9 @@ Everything the design (§3–§5) needs, with the states its story must carry. N
 | `PatchView` | a file's patch: numbered, highlighted a side at a time, unified or side by side (REVIEW2) | unified · side by side · unknown language · rename only · long line |
 | `RightDock` | the per-session surfaces beside the session, with its geometry handed in (FRAME6), and a file's preview as a tab after them (PREVIEW1, D111) | docked · cramped · full · full in a narrow window · closed · with a preview · a preview at the floor · closed with a preview |
 | `FilePreview` | one file, read-only, from the session's tree: its path, numbered and highlighted lines, the lines a read named, and the review's patch for it where the review has one (PREVIEW1, D111) | read · marked lines · with its changes · bounded · binary · empty · refused · reading · a 中文 path at the floor |
-| `SessionStripRow` | one running session in the rail's 56px strip (FRAME6) | working · attended · awaiting person · a 中文 repository |
+| `SessionStripRow` | one running session in the rail's 56px strip (FRAME6), a `StripMark` since FRAME1b | working · attended · awaiting person · a 中文 repository |
 | `Splitter` | the edge a column is resized by, keyboard-operable (FRAME6) | held by `chrome.test.tsx` |
+| `ListPane` | a view's list pane: its header, the list and its keys, its edge, its strip, and the list laid over the main area (FRAME1b, D118) | open · closed · strip by the window · laid over · at its least and its most · a `＋` of two kinds · 中文 · empty · loading |
 
 ### Organisms — `src/work/`
 

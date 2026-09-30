@@ -6012,6 +6012,25 @@ widths, the room rule's numbers, or the F6 key has been tried on the window: FRA
 drops it if the engine keeps F6 for itself. The build rows are the design's §6, and each carries its own
 proof.
 
+**Built: FRAME1b (2026-10-01), and what it settled that the design left open.**
+- **Every door toggles by what the room made of the list.** An open list closes, and the closing is the
+  person's. A list laid over the main area goes, and nothing is remembered. A strip opens, whoever drew it:
+  beside the main area where there is room, over it where there is none, so a door is never a press that does
+  nothing. The rule is one pure function (`listToggled` in `layout.ts`), and the frame tells the application
+  what the list is now, since only the frame measures.
+- **The side bar counts at its 300 px floor whenever it is open, full included**, and at its 32 px strip
+  closed, as the room rule's words say. Sessions' rail is therefore open from a 760 px window with the side
+  bar closed and from 1028 px with it open.
+- **A press on a door is not a press outside the list.** The strip's toggle and the current place stand
+  outside a list laid over, so a press on either closed it and its click opened it again. A door carries
+  `data-list-door`, and the list leaves that press to it.
+- **The list is named per view in two keys**, `layout.list.<view>` for the toggle's sentence and
+  `layout.menu.list.<view>` for the View menu's item, so each view joins by adding its own two.
+- **A list laid over sits above a full side bar**, as §3d has every overlay do.
+- **F6 was not measured.** A branch cannot start the window, so F6 and Shift+F6 were built alone in one
+  commit, and the look on the window keeps that commit or reverts it. The focus lands on a region's chosen
+  item, then its list's first row, then its first control, and on the region itself where it has none.
+
 ## D116 — A name is a UI element, designed in each language; the glossary is the authority, and a check holds it (2026-10-01)
 
 **Decision (NAME1a, the owner's round).** The owner: names in Settings and every other display must be named
