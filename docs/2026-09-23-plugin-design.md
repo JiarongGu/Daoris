@@ -157,13 +157,27 @@ Every decision and every failure is a console line under `plugin:<id>`, the way 
 | From a terminal | On the Machine view |
 |---|---|
 | `daoris plugin list` | the Plugins card — one row per plugin: name, what it declares, its problem if refused |
-| `daoris plugin add <folder>` — copies the folder in under its manifest's id, replacing wholesale, `.data/` untouched | *(the folder is a machine path; a terminal names it)* |
+| `daoris plugin add <folder>` — copies the folder in under its manifest's id, replacing wholesale, `.data/` untouched | *(the folder is a machine path; a terminal names it)* — *PLUG9: or Ask Daoris's plugin card, from a folder named within a registered repository's checkout; it adds and never replaces* |
 | `daoris plugin remove <id>` — the install folder goes; the data folder is named and stays | *Forget* — the same, worded for what it does |
 | `daoris plugin enable|disable <id>` | the row's switch |
 
 The roster shows a declared harness like any other, with the plugin it came from beside it; a
 session record names the harness exactly as it names `dsh`, and the plugin nowhere — the record
 carries what ran, not where the declaration lived.
+
+**Making one, and installing it from Ask Daoris** (PLUG9, 2026-09-30). A plugin runs on the machine as
+the person, so making one is work: Ask Daoris's room sends it as an ask to the workspace of the
+repository that holds plugins, naming the point it speaks on, and the session there makes it with its
+tests; with no such repository, where plugins live is the person's call. Ask Daoris never writes one.
+Once it has landed, its `plugin` proposal (`plugin_propose`) adds it from its folder in that checkout,
+or switches one installed here. The driver reads the folder with the catalogue's own reader
+(`PluginCatalog.ReadAsWritten`, the placeholders left as written, and `RefusedByThisBuild`, which
+`Load` asks too), refuses a folder with no sound manifest, one inside or holding the Daoris home, one
+outside the checkout it names, and an id already installed, and the card shows the id, the command it
+starts, its points, harnesses and servers before Apply. Apply is `PluginInstall.Add`, the driver's twin
+of `plugin add`'s copy, or `PLUGIN_ACTION`'s own switch; neither starts anything, and the loop starts a
+hook at its next look as it does any plugin. **Not covered:** whether the folder's contents have landed
+on the repository's line is not checked; the card copies the checkout as it stands.
 
 ## 7. Deliberately not in this design
 

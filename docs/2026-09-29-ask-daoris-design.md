@@ -53,7 +53,7 @@ a `SessionTree`:
   Added after it guessed at a menu that does not exist.
 - **`CLAUDE.md`** carrying `@AGENTS.md`, and **`.claude/settings.json`** allowing the family's read
   tools, the connector's `setting_propose` and `ask_propose` (and since HELP6 its four further
-  `*_propose` tools, §9.6), and nothing else. Over the protocol door
+  `*_propose` tools, §9.6, and since PLUG9 `plugin_propose`, §9.7), and nothing else. Over the protocol door
   a request for anything unlisted is refused by construction (D52), which is the point: it reads, and
   it proposes.
 
@@ -87,6 +87,11 @@ proposal the route would refuse is refused to the agent, in the route's words, a
 model and effort (`agent_settings_propose`), the delete of a quest or an ask made by mistake
 (`delete_propose`), and a screen to open (`go_propose`), each judged by the rules of the screen that
 makes the same change and applied through that screen's own route.
+
+**A plugin** (PLUG9, §9.7): one that has landed, added from its folder in the checkout of the
+repository that holds it (`plugin_propose`), or one installed here switched on or off. Making one is
+never a proposal of this kind: it is an ask at that repository's workspace, since a plugin runs as the
+person and is made with tests and reviewed like any other work.
 
 **Never**: a push, a merge, a discard, a sign-in, a key. Those stay the person's own presses where
 they already are.
@@ -230,6 +235,36 @@ line git can name. With an agent named, a starter is also a first message.
      a door that opens it.
    - **What the gates do not cover:** a real helper choosing these tools, and the cards on the window
      in both themes; both are the owner's look on the installed window.
+7. **PLUG9 (a) and (b)**: Ask Daoris makes a plugin by asking for it, and installs one by a press
+   (2026-09-30). The owner asked that Daoris make plugins itself, through Ask Daoris; the reading in the
+   backlog is that a plugin is code running as the person, so making one is work and installing it is
+   the person's press. It fits HELP6's shape, so it needed no decision of its own. *Built:*
+   - **The room says how a plugin is made** (*Making a plugin*): as an ask (`ask_propose`) at the
+     workspace of the repository that holds plugins, addressed to it, saying what the plugin does and
+     the point it speaks on, each point named from `HookPoints` with what it is for; the session there
+     makes it with its tests. The helper finds that repository by what the registry says it owns, and
+     with none the person decides where plugins live. It never writes one and never proposes adding one
+     that has not landed. The room lists the plugins installed here by id and state.
+   - **`plugin_propose {action, repository?, folder?, id?}`**: `add` names the folder from a registered
+     repository's checkout root (a whole path only where the person gave one), `enable` or `disable` an
+     installed id. The service checks the shape, `..` and a whole path within a repository included.
+   - **Judged by the catalogue's own reader** (`PluginCatalog.ReadAsWritten`, `RefusedByThisBuild`,
+     through `PluginInstall.Read`): a folder with no sound manifest, a harness this build carries, a
+     folder inside or holding the Daoris home, one outside the checkout it names, a repository with no
+     checkout here, and an id already installed are refused; a switch needs an installed id not already
+     where it would put it.
+   - **The card shows what will run before Apply**: the id, the command it starts with `${plugin}` as
+     written, its points, the agents it declares and the servers it hands every session, and for an add
+     that the folder is copied in and nothing starts at the press. The terminal twin is `daoris plugin
+     add <folder>` or `daoris plugin enable|disable <id>`.
+   - **Applied through the door the screen or the terminal uses**: an add is `PluginInstall.Add`, the
+     driver's twin of `plugin add`'s copy, which never replaces an installed plugin; a switch is
+     `PLUGIN_ACTION`'s own row, one method the route and the door share. Neither starts anything.
+   - **Left for PLUG9 (c) and (d)**: remembering where an added plugin came from, to update it, and the
+     install's example plugins offered as cards.
+   - **What the gates do not cover:** whether the folder's contents have landed on the repository's line
+     (the checkout is copied as it stands), a real helper choosing the tool, and the card on the window in
+     both themes.
 
 ## 10. Not chosen
 

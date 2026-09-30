@@ -112,7 +112,7 @@ rather than designed.
 
 ## Backlog
 
-**Twenty-four rows are open**: the day's three (USE1's last part to confirm, PLUG8, PLUG9),
+**Twenty-five rows are open**: the day's four (USE1's last part to confirm, WSR5, PLUG8, PLUG9),
 first; the three REV3 left (DIST1, BUDGET1 and
 HOME1, the owner's); the in-app browser's one (BRW3); D85's one (TASKBAR1); the first
 goal's four (FG5, READACROSS1 and HELPREAD1 the owner's, and SEM2 on a trigger); D76's held file tools;
@@ -167,6 +167,21 @@ TASK.md and complete one by one"*).
   (`Harnesses.Apply`). Still confounded: the start (Git Bash hands on `PATH` upper-case with MSYS's
   variables; a normal start hands on `Path`) and the bundled Claude Code (2.1.274 in 0.79.0, 2.1.284
   in 0.84.0). The next session on the normal start answers it: read its snapshot's `export PATH`.
+- [ ] **WSR5 — what a landed branch needs after its pull request** (owner, 2026-09-30: *"we still
+  have so many branch need to clean up"*; *"if you want to open pr is the azure plugin ready"*).
+  (a) **A landed branch whose work reached the line is cleaned up by the same press as a session's**
+  (D88 extended). The first real ticket left two branches the landing made, merged by a squash pull
+  request. Git calls them unmerged, since no commit of theirs is on the line, and D88 never looks at
+  them because they are not `daoris/`. The proof is by content: every file the branch changed since
+  it left the line reads on the line as the branch left it, or the branch is inside another landed
+  branch the proof clears. It is only for branches a landing made and recorded; a person's own
+  branch is never judged. The doors are Settings → Workspace → Session branches and
+  `daoris-driver trees clean`, listed first, and removed by the person's press. (b) **A landed
+  branch can be handed to its landing plugin afterwards.** Today the plugin runs only inside the
+  landing, and pressing again is refused because the branch exists. So a ticket landed before its
+  workspace named a plugin, or one whose plugin failed, has no door but a hand push. The hand-off
+  speaks the same `work/land` frame for the branch as it stands, with its record, on the review and
+  `daoris-driver trees`, and Ask Daoris can propose it.
 
 ### Plugins Daoris makes (owner, 2026-09-30)
 
@@ -199,6 +214,7 @@ contract and the rehearsals' fixtures, so they stay here. Whether to make one, a
   Installing from a repository's folder remembers the source, so the plugin can be updated when its
   repository lands a change. (d) The install carries Daoris's own example plugins as offers in
   Settings → Plugins and in the room, never installed until a press (D87: off by default).
+  *(a) and (b) landed 2026-09-30 and are in the archive; (c) and (d) are open.*
 
 ### What REV3 left (2026-09-25)
 

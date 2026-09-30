@@ -52,7 +52,7 @@ map found this first (WSP3), and every twin since was built the same way for the
 | Rule proposals (D74) | `ruleproposals.ts` | `RuleProposals.cs` | `RuleProposals.cs` |
 | A folder's trust (D73) | `trust.ts` | `ClaudeTrust.cs` | — |
 | An account's own model and effort, in the tool's `settings.json` (D98) | `agentsettings.ts` | `AgentSettings.cs` | — |
-| Plugins (D64) | `plugins.ts` | `Plugins.cs` | — |
+| Plugins (D64), and `plugin add`'s copy (PLUG9) | `plugins.ts` | `Plugins.cs`; `PluginInstall.cs`, which adds and never replaces an installed plugin (the one difference, held by both tables) | — |
 | The in-app browser's favorites and settings (BRW5, CHR7), the settings' `links` among them (BRW7) | `browser.ts` | `BrowserFavorites.cs`, `BrowserSettings.cs` (the desktop modules, read by `daoris-browser` at each start; `links` by the page, through `BrowserModule`'s state) | — |
 | The code map (MAP3) | — | `CodeMapFile.cs` | `CodeMap.cs` (the devkit produces it) |
 | A Daoris host's status names its search tier, `tier` (HOSTID1) | — | the shell's `HostSupervisor.IsDaorisStatus`, which adopts only such an answer | `StatusResponse.Tier` (`ApiContracts.cs`); the page's `Status` type reads it too |
@@ -63,7 +63,7 @@ map found this first (WSP3), and every twin since was built the same way for the
 | The desktop page's origin on the engine it ships, `https://daoris.localhost` (D92) | — | the shell's `DesktopPage.VirtualHost` (CHR2b) | `DesktopPage.cs` (a local host allows it); the family rehearsal spells it a third time and asks with it, and `tools/desktop.mjs`'s `SHELL_ORIGIN` a fourth, to tell the shell's page from any other |
 | A machine log line, `logs/<date>.<source>.jsonl` (D94 §3): what is a line and what a reader skips | `tools/usage-report.mjs` reads it (`parseLine`); `usage-report.test.ts` holds the parse table | `MachineLog.cs` writes it; `MachineLogReader.cs` reads it for `daoris-driver logs` and Settings → Logs; `MachineLogReaderTests.Parsing` holds the same table | `MachineLog.cs` writes it, for the host and the MCP host; its tests hold the writers' line table beside the driver's |
 | What a repository says it uses, `domain.uses` (D91) | `connect.ts` (`usesOf`) | `RemoteSyncPayloads.cs` carries it; `RegistryModule.cs` preserves it | `Registry.cs` (`Declared.Uses`), `RegistryImport.cs` |
-| Ask Daoris's proposals, one file each under `<home>/help/proposals/` (HELP1c, HELP6), six kinds | — | `HelpProposals.cs`, which reads, judges and settles them | `HelpProposals.cs` (`HelpProposalBox`), which writes them for the connector's `*_propose` tools |
+| Ask Daoris's proposals, one file each under `<home>/help/proposals/` (HELP1c, HELP6, PLUG9), seven kinds | — | `HelpProposals.cs`, which reads, judges and settles them | `HelpProposals.cs` (`HelpProposalBox`), which writes them for the connector's `*_propose` tools |
 | The places Ask Daoris's go may name (HELP6) | — | `HelpPlaces` (`HelpProposals.cs`), which judges a go and lists the places in the room | — ; the page's `help/places.ts` navigates to them, and both tests hold the same table |
 
 A twin not in this table is still a twin: the rule is the arrangement, and the table is where to

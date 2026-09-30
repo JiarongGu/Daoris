@@ -638,6 +638,30 @@ public sealed class KnowledgeTools(
         return box.ProposeGo(view, domain, part, why, intake?.Session, DateTimeOffset.UtcNow).Message;
     }
 
+    [McpServerTool(Name = "plugin_propose")]
+    [Description(
+        "Ask Daoris only: propose adding a plugin that has landed, or switching one installed here on or off, for the "
+        + "person to apply — `daoris plugin add <folder>` and Settings → Plugins' switch. `add` copies the plugin's "
+        + "folder into Daoris's home under its manifest's id: name the repository whose checkout holds it and the folder "
+        + "there. The card shows what the plugin runs before the person presses Apply, and nothing is copied, switched or "
+        + "started until they do. Never for a plugin that has not landed: making one is work, proposed with ask_propose "
+        + "at the workspace of the repository that holds plugins.")]
+    public string ProposePlugin(
+        [Description("add, enable, or disable.")]
+        string action,
+        [Description("Why: what the person asked, and what the plugin does. The person decides on this.")]
+        string why,
+        [Description("For add: the repository whose checkout holds the plugin, as the registry names it.")]
+        string? repository = null,
+        [Description("For add: the plugin's folder from that checkout's root, like `quiet-hours` or `plugins/quiet-hours`; a whole path only when the person gave one, with no repository.")]
+        string? folder = null,
+        [Description("For enable and disable: the plugin's id, as the room lists the plugins installed here.")]
+        string? id = null)
+    {
+        var box = help ?? HelpProposalBox.FromEnvironment();
+        return box.ProposePlugin(action, id, folder, repository, why, intake?.Session, DateTimeOffset.UtcNow).Message;
+    }
+
     [McpServerTool(Name = "knowledge_refresh")]
     [Description("Re-read every repository from disk and rebuild the index. Use after doctrine or decisions have changed; it takes about a second.")]
     public async Task<string> RefreshAsync(CancellationToken ct = default)

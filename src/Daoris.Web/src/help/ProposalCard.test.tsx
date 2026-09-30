@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen } from '@testing-library/react';
+import { cleanup, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import '../i18n';
 import { type HelpProposal, ProposalCard } from './ProposalCard';
@@ -67,6 +67,31 @@ const GO: HelpProposal = {
   why: 'the person asked where to name its agent',
 };
 
+// PLUG9: a plugin that has landed, added from its folder, or one installed here switched on.
+const PLUGIN_ADD: HelpProposal = {
+  id: 'p6', kind: 'plugin',
+  describe: 'Add plugin `acme.quiet-hours` (Quiet hours 1.0.0) from `quiet-hours` in `house-plugins`, copied into Daoris\'s home under its id.',
+  terminal: 'daoris plugin add /checkouts/house-plugins/quiet-hours',
+  why: 'the person wants quests held overnight',
+  plugin: {
+    id: 'acme.quiet-hours', name: 'Quiet hours', version: '1.0.0',
+    command: ['node', '${plugin}/hooks.mjs'], points: ['quest/consider', 'session/ended'],
+    harnesses: [{ name: 'acme-agent', command: ['acme-agent', '--acp'] }],
+    servers: [{ name: 'browser', command: ['npx', '-y', '@playwright/mcp@latest'] }],
+    copied: true,
+  },
+};
+
+// The bridge leaves a null out, so a switch's view arrives with no command and no `copied`.
+const PLUGIN_ON: HelpProposal = {
+  id: 'p7', kind: 'plugin', describe: 'Switch plugin `example.lands` on.', terminal: 'daoris plugin enable example.lands',
+  why: 'the person wants it on',
+  plugin: {
+    id: 'example.lands', name: 'example.lands', version: '', points: [], harnesses: [], servers: [],
+    problem: 'declares harness `claude-code`, which this build already carries.',
+  },
+};
+
 const press = async (proposal: HelpProposal, apply: string) => {
   const onApply = vi.fn();
   const onDismiss = vi.fn();
@@ -112,16 +137,48 @@ describe('the kinds that reach every door', () => {
     expect(screen.queryByText(/the same at a terminal/)).not.toBeInTheDocument();
   });
 
+  it('a plugin to add shows what will run before Apply: its id, its command as written, its points, harnesses and servers', async () => {
+    await press(PLUGIN_ADD, 'apply');
+
+    expect(screen.getByText('Ask Daoris proposes a plugin')).toBeInTheDocument();
+    const runs = within(screen.getByRole('list', { name: 'what the plugin runs' }));
+    expect(runs.getByText('acme.quiet-hours', { selector: 'code' })).toBeInTheDocument();
+    // `${plugin}` as the manifest writes it, never a path on this machine.
+    expect(runs.getByText('node ${plugin}/hooks.mjs', { selector: 'code' })).toBeInTheDocument();
+    expect(runs.getByText('quest/consider', { selector: 'code' })).toBeInTheDocument();
+    expect(runs.getByText('session/ended', { selector: 'code' })).toBeInTheDocument();
+    expect(runs.getByText('acme-agent', { selector: 'code' })).toBeInTheDocument();
+    expect(runs.getByText('acme-agent --acp', { selector: 'code' })).toBeInTheDocument();
+    expect(runs.getByText('browser', { selector: 'code' })).toBeInTheDocument();
+    expect(runs.getByText('npx -y @playwright/mcp@latest', { selector: 'code' })).toBeInTheDocument();
+    expect(screen.getByText(/copies its folder into Daoris's home under its id/)).toBeInTheDocument();
+    expect(screen.getByText(PLUGIN_ADD.terminal, { selector: 'code' })).toBeInTheDocument();
+  });
+
+  it('a plugin to switch says it is not copied, and what keeps it from contributing in the driver\'s words', () => {
+    render(<ul><ProposalCard proposal={PLUGIN_ON} onApply={vi.fn()} onDismiss={vi.fn()} /></ul>);
+
+    const runs = within(screen.getByRole('list', { name: 'what the plugin runs' }));
+    expect(runs.getByText('example.lands', { selector: 'code' })).toBeInTheDocument();
+    expect(runs.getByText(/runs no process of its own/)).toBeInTheDocument();
+    expect(screen.queryByText(/copies its folder/)).not.toBeInTheDocument();
+    expect(screen.getByText(/contributes nothing: declares harness/)).toBeInTheDocument();
+  });
+
   it('speaks 中文 for every kind, the driver\'s sentence left as it said it', async () => {
     const { default: i18n } = await import('../i18n');
     await i18n.changeLanguage('zh');
     try {
-      render(<ul><ProposalCard proposal={DELETE} onApply={vi.fn()} onDismiss={vi.fn()} /><ProposalCard proposal={GO} onApply={vi.fn()} onDismiss={vi.fn()} /></ul>);
+      render(<ul><ProposalCard proposal={DELETE} onApply={vi.fn()} onDismiss={vi.fn()} /><ProposalCard proposal={GO} onApply={vi.fn()} onDismiss={vi.fn()} /><ProposalCard proposal={PLUGIN_ADD} onApply={vi.fn()} onDismiss={vi.fn()} /></ul>);
       expect(screen.getByText('问道衍提议删除')).toBeInTheDocument();
       expect(screen.getByText('问道衍建议打开一个界面')).toBeInTheDocument();
       expect(screen.getByRole('button', { name: '删除' })).toBeInTheDocument();
       expect(screen.getByRole('button', { name: '前往' })).toBeInTheDocument();
       expect(screen.getByText(GO.describe)).toBeInTheDocument();
+      // PLUG9: the plugin card's chrome translates; the command stays as the manifest writes it.
+      expect(screen.getByText('问道衍提议一个插件')).toBeInTheDocument();
+      const runs = within(screen.getByRole('list', { name: '插件会运行什么' }));
+      expect(runs.getByText('node ${plugin}/hooks.mjs', { selector: 'code' })).toBeInTheDocument();
     } finally {
       cleanup();
       await i18n.changeLanguage('en');

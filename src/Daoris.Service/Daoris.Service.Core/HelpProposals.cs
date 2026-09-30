@@ -16,11 +16,13 @@ public sealed record SettingChange(string Door, string? Target, string? Workspac
 /// the person to apply or not.
 /// </summary>
 /// <remarks>
-/// <para><b>Six kinds</b>, each a door a screen already has: a <c>setting</c> and an <c>ask</c> (HELP1c);
-/// an <c>agent</c>'s update or pin, a <c>delete</c> of a quest or an ask, an <c>account</c>'s model and
-/// effort, and a <c>go</c> to a screen (HELP6). Every file carries <c>target</c>, <c>workspace</c>,
+/// <para><b>Seven kinds</b>, each a door a screen or a terminal already has: a <c>setting</c> and an
+/// <c>ask</c> (HELP1c); an <c>agent</c>'s update or pin, a <c>delete</c> of a quest or an ask, an
+/// <c>account</c>'s model and effort, and a <c>go</c> to a screen (HELP6); a <c>plugin</c> added from its
+/// folder, or switched on or off (PLUG9). Every file carries <c>target</c>, <c>workspace</c>,
 /// <c>value</c> and <c>sentence</c>, null where the kind has none; an account adds <c>account</c>,
-/// <c>model</c> and <c>effort</c>, and a go <c>domain</c> and <c>part</c>.</para>
+/// <c>model</c> and <c>effort</c>, a go <c>domain</c> and <c>part</c>, and a plugin <c>repository</c> and
+/// <c>folder</c>.</para>
 ///
 /// <para><b>PERM2's shape</b> (<see cref="RuleProposalBox"/>): a file under the home, never a row in the
 /// store, since what it would change is machine-local; one file per proposal, so two never collide.</para>
@@ -235,6 +237,63 @@ public sealed class HelpProposalBox(string? home)
             Nullable(writer, "domain", within);
             Nullable(writer, "part", piece);
         }, why, session, at);
+    }
+
+    /// <summary>
+    /// Write one plugin proposal (PLUG9): <c>add</c> a plugin that has landed, from its folder in the
+    /// checkout of the repository that holds it — <c>daoris plugin add</c>'s copy — or <c>enable</c> or
+    /// <c>disable</c> one installed here, Settings → Plugins' switch. Whether the folder holds a sound
+    /// manifest, and whether the id is installed, is the driver's, read with the catalogue's own reader.
+    /// </summary>
+    /// <param name="id">For enable and disable: the installed plugin's id.</param>
+    /// <param name="folder">For add: the folder from the repository's checkout root, or a whole path the person gave.</param>
+    /// <param name="repository">For add: the repository whose checkout holds it; null only for a whole path.</param>
+    public (string? Id, string Message) ProposePlugin(
+        string action, string? id, string? folder, string? repository, string why, string? session, DateTimeOffset at)
+    {
+        var door = action.Trim().ToLowerInvariant();
+        var named = Blank(id);
+        var where = Blank(folder);
+        var holder = Blank(repository);
+        if (string.IsNullOrWhiteSpace(why)) return NoReason;
+        var refused = door is not ("add" or "enable" or "disable")
+            ? "a plugin's change is `add`, `enable` or `disable`: add copies a plugin that has landed into Daoris's home from its folder, and enable or disable switches one installed here."
+            : door == "add" ? AddRefusal(named, where, holder)
+            : named is null ? $"`{door}` names the plugin by its id, as the room lists the plugins installed here."
+            : where is not null || holder is not null ? $"`{door}` names only the plugin's id — a folder is for `add`."
+            : Word(named, "an id");
+        if (refused is not null) return (null, $"{Capital(refused)} Nothing was proposed.");
+
+        return Write(writer =>
+        {
+            writer.WriteString("kind", "plugin");
+            writer.WriteString("door", door);
+            Nullable(writer, "target", door == "add" ? null : named);
+            writer.WriteNull("workspace");
+            writer.WriteNull("value");
+            writer.WriteNull("sentence");
+            Nullable(writer, "repository", door == "add" ? holder : null);
+            Nullable(writer, "folder", door == "add" ? where : null);
+        }, why, session, at);
+    }
+
+    /// <summary>Why an add is not an add's shape: a folder, no id, and a repository's checkout it stays inside.</summary>
+    private static string? AddRefusal(string? id, string? folder, string? repository)
+    {
+        if (folder is null) return "`add` names the plugin's folder: where it landed, in the checkout of the repository that holds it.";
+        if (id is not null) return "`add` names no id — a plugin's id is its manifest's, read from its folder.";
+        if (repository is null)
+        {
+            return Path.IsPathRooted(folder)
+                ? null
+                : "name the repository whose checkout holds it, with its folder there — a whole path only when the person gave one.";
+        }
+
+        if (Word(repository, "a repository") is { } word) return word;
+        if (Path.IsPathRooted(folder)) return "a folder in a repository is written from its checkout's root, like `plugins/quiet-hours`, never as a whole path.";
+        return folder.Split('/', '\\').Contains("..")
+            ? "a folder in a repository stays inside its checkout — `..` leaves it."
+            : null;
     }
 
     private static readonly (string? Id, string Message) NoReason =

@@ -1383,6 +1383,8 @@ export const useSettleHelp = () => {
       void client.invalidateQueries({ queryKey: keys.harnesses });
       void client.invalidateQueries({ queryKey: keys.allQuests });
       void client.invalidateQueries({ queryKey: keys.allAsks });
+      // …and a plugin it added or switched (PLUG9).
+      void client.invalidateQueries({ queryKey: keys.plugins });
     },
   });
 };

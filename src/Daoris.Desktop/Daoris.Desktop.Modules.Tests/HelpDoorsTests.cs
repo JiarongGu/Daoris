@@ -109,6 +109,60 @@ public sealed class HelpDoorsTests : Bridge
         Assert.Contains("still coming up", refused.Message);
     }
 
+    /// <summary>
+    /// PLUG9: an add is <c>daoris plugin add</c>'s copy (the driver's twin): the folder copied into the home
+    /// under its id, the catalogue reading it there. 🔴 Nothing it declares runs at the press — its hook
+    /// would leave a mark, and there is none; the loop starts it at its next look.
+    /// </summary>
+    [Fact]
+    public void A_plugin_is_added_by_copying_its_folder_in_and_nothing_it_declares_runs()
+    {
+        // A checkout beside the home, never inside it: a folder in the home is refused.
+        var checkout = Path.Combine(Path.GetDirectoryName(Home)!, "checkout-" + Path.GetFileName(Home));
+        try
+        {
+            var mark = Path.Combine(checkout, "ran.txt");
+            var source = Path.Combine(checkout, "quiet-hours");
+            Directory.CreateDirectory(source);
+            File.WriteAllText(Path.Combine(source, PluginCatalog.ManifestName), """
+                { "id": "acme.quiet-hours", "hooks": { "command": ["node", "${plugin}/hooks.mjs"], "points": ["session/ended"] } }
+                """);
+            File.WriteAllText(Path.Combine(source, "hooks.mjs"), $"require('fs').writeFileSync({JsonSerializer.Serialize(mark)}, 'ran');");
+            var doors = Module().HelpDoors(null);
+
+            doors.AddPlugin(source);
+
+            var entry = Assert.Single(PluginCatalog.Load(Home).Plugins);
+            Assert.Equal(("acme.quiet-hours", true, (string?)null), (entry.Manifest.Id, entry.Enabled, entry.Problem));
+            Assert.True(File.Exists(Path.Combine(Home, PluginCatalog.Folder, "acme.quiet-hours", "hooks.mjs")));
+            Assert.False(File.Exists(mark));
+            // Never a replace from here: that stays `daoris plugin add` at a terminal.
+            Assert.Contains("already installed", Assert.Throws<DriverException>(() => doors.AddPlugin(source)).Message);
+        }
+        finally
+        {
+            try { Directory.Delete(checkout, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
+        }
+    }
+
+    /// <summary>PLUG9: a switch is <c>PLUGIN_ACTION</c>'s own — the same row, and the same refusal for an id not installed.</summary>
+    [Fact]
+    public void A_plugin_is_switched_as_the_plugins_screens_route_switches_it()
+    {
+        var folder = Path.Combine(Home, PluginCatalog.Folder, "acme.gate");
+        Directory.CreateDirectory(folder);
+        File.WriteAllText(Path.Combine(folder, PluginCatalog.ManifestName), """{ "id": "acme.gate" }""");
+        var doors = Module().HelpDoors(null);
+
+        doors.SwitchPlugin("acme.gate", on: false);
+        Assert.Equal(["acme.gate"], PluginState.Load(Home).Disabled);
+        doors.SwitchPlugin("acme.gate", on: true);
+        Assert.Empty(PluginState.Load(Home).Disabled);
+
+        var refused = Assert.ThrowsAny<Exception>(() => doors.SwitchPlugin("nobody", on: true));
+        Assert.Contains("no plugin `nobody` on this machine", refused.Message);
+    }
+
     /// <summary>The local host's delete routes, standing in: each answers the service's sentence.</summary>
     private sealed class StandInHost : HttpMessageHandler
     {

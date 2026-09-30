@@ -385,7 +385,20 @@ public sealed class DriverModule : ModuleBase
                         continue;
                     }
 
-                    shown.Add(new { proposal.Id, proposal.Kind, plan.Describe, plan.Terminal, proposal.Why });
+                    shown.Add(new
+                    {
+                        proposal.Id, proposal.Kind, plan.Describe, plan.Terminal, proposal.Why,
+                        // What a plugin runs, as its manifest writes it (PLUG9), for the card to show before Apply.
+                        Plugin = plan.Plugin is { } plugin
+                            ? new
+                            {
+                                plugin.Id, plugin.Name, plugin.Version, plugin.Command, plugin.Points,
+                                Harnesses = plugin.Harnesses.Select(part => new { part.Name, part.Command }).ToArray(),
+                                Servers = plugin.Servers.Select(part => new { part.Name, part.Command }).ToArray(),
+                                plugin.Copied, plugin.Problem,
+                            }
+                            : null,
+                    });
                 }
 
                 return new { Session = session, Proposals = shown.ToArray() };
@@ -989,18 +1002,12 @@ public sealed class DriverModule : ModuleBase
                 await Task.CompletedTask;
                 var action = PayloadHelper.GetRequiredValue<string>(request.Payload, "action");
                 var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
-                var entry = PluginCatalog.Load(_loop.Home).Plugins
-                    .FirstOrDefault(p => string.Equals(p.Manifest.Id, id, StringComparison.OrdinalIgnoreCase))
-                    ?? throw Refusals.Because(
-                        Refusals.PluginUnknown, $"no plugin `{id}` on this machine.", ("id", id));
+                var entry = InstalledPlugin(id);
 
                 switch (action)
                 {
-                    case "enable":
-                        PluginState.Enable(_loop.Home, entry.Manifest.Id);
-                        break;
-                    case "disable":
-                        PluginState.Disable(_loop.Home, entry.Manifest.Id);
+                    case "enable" or "disable":
+                        SwitchPlugin(entry, action == "enable");
                         break;
                     case "remove":
                     {
@@ -1986,6 +1993,37 @@ public sealed class DriverModule : ModuleBase
         // SET_AGENT_SETTINGS's own write.
         public AgentSettingsRead SetAgentSettings(string harness, string account, AgentSettingEdit? model, AgentSettingEdit? effort) =>
             module.WriteAgentSettings(harness, account, () => (model, effort, null)).Read;
+
+        // `daoris plugin add`'s copy, the driver's twin (PLUG9); the loop is asked to look, and it starts
+        // what the plugin runs at that look, as it does any plugin. Nothing runs here.
+        public void AddPlugin(string folder)
+        {
+            PluginInstall.Add(module._loop.Home, folder, AdapterSet.Built().Names);
+            module._loop.Nudge();
+        }
+
+        // PLUGIN_ACTION's own enable|disable: the same lookup, the same row, the same nudge.
+        public void SwitchPlugin(string id, bool on)
+        {
+            module.SwitchPlugin(module.InstalledPlugin(id), on);
+            module._loop.Nudge();
+        }
+    }
+
+    /// <summary>An installed plugin by its id, or the Plugins screen's refusal (<c>PLUGIN_ACTION</c>, PLUG9's door).</summary>
+    private PluginEntry InstalledPlugin(string id) =>
+        PluginCatalog.Load(_loop.Home).Plugins
+            .FirstOrDefault(p => string.Equals(p.Manifest.Id, id, StringComparison.OrdinalIgnoreCase))
+        ?? throw Refusals.Because(Refusals.PluginUnknown, $"no plugin `{id}` on this machine.", ("id", id));
+
+    /// <summary>
+    /// A plugin switched on or off: a row in <c>plugins.json</c>. <c>PLUGIN_ACTION</c> and Ask Daoris's plugin
+    /// door (PLUG9) both call this, so the screen and the card cannot drift.
+    /// </summary>
+    private void SwitchPlugin(PluginEntry entry, bool on)
+    {
+        if (on) PluginState.Enable(_loop.Home, entry.Manifest.Id);
+        else PluginState.Disable(_loop.Home, entry.Manifest.Id);
     }
 
     /// <summary>What every route that needs the loop's service says before it answers (REV3 CLEAN1: five wrote it).</summary>
@@ -2153,6 +2191,13 @@ public sealed class DriverModule : ModuleBase
         {
             // A landing rule naming a plugin is judged by the catalogue the landing route reads (HELP8, D100).
             Plugins = PluginCatalog.Load(_loop.Home, AdapterSet.Built().Names),
+            // A plugin is added from a registered checkout, never from the home, and may not shadow a
+            // harness this build carries (PLUG9) — what `daoris plugin add` refuses.
+            Home = _loop.Home,
+            Checkouts = snapshot.Repositories
+                .GroupBy(known => known.Repository, StringComparer.OrdinalIgnoreCase)
+                .ToDictionary(same => same.Key, same => same.First().Root, StringComparer.OrdinalIgnoreCase),
+            Reserved = AdapterSet.Built().Names,
         };
 
         if (proposals.Any(proposal => proposal.Kind is "agent" or "account"))

@@ -176,15 +176,11 @@ public sealed class PluginCatalog
 
             if (problem is null && enabled)
             {
-                foreach (var harness in manifest.Harnesses)
+                // What this build refuses whatever else is installed, asked first, as the CLI's twin
+                // and `daoris plugin add` ask it (PLUG9: the driver's add asks the same question).
+                problem = RefusedByThisBuild(manifest, reserved);
+                foreach (var harness in problem is null ? manifest.Harnesses : [])
                 {
-                    if (reserved.Contains(harness.Name))
-                    {
-                        problem = $"declares harness `{harness.Name}`, which this build already carries — "
-                            + "a plugin adds a harness and never replaces one.";
-                        break;
-                    }
-
                     if (declaredBy.TryGetValue(harness.Name, out var other))
                     {
                         problem = $"declares harness `{harness.Name}`, which plugin `{other}` already declares — "
@@ -194,17 +190,9 @@ public sealed class PluginCatalog
                 }
 
                 // A server's name is what the agent calls it, and two plugins claiming one would
-                // give the session two tools under one name — the first by id keeps it. The
-                // knowledge host's name is Daoris's own and is refused outright.
+                // give the session two tools under one name — the first by id keeps it.
                 foreach (var server in problem is null ? manifest.Servers : [])
                 {
-                    if (string.Equals(server.Name, KnowledgeConnector.ServerName, StringComparison.OrdinalIgnoreCase))
-                    {
-                        problem = $"declares server `{server.Name}`, which is Daoris's own knowledge host — "
-                            + "a plugin hands a session servers beside it, never in its place.";
-                        break;
-                    }
-
                     if (servedBy.TryGetValue(server.Name, out var other))
                     {
                         problem = $"declares server `{server.Name}`, which plugin `{other}` already declares — "
@@ -229,7 +217,41 @@ public sealed class PluginCatalog
         return new(entries);
     }
 
-    private static (PluginManifest Manifest, string? Problem) Read(string folderName, string folder, string path)
+    /// <summary>
+    /// What in a manifest this build refuses, whatever else is installed: a harness it already carries,
+    /// or a server under the knowledge host's name. Case-blind, as every name here is. The catalogue and
+    /// the driver's add ask this one question (PLUG9), as the CLI's twin asks `refusedByThisBuild`.
+    /// </summary>
+    public static string? RefusedByThisBuild(PluginManifest manifest, IEnumerable<string> reservedHarnesses)
+    {
+        var reserved = new HashSet<string>(reservedHarnesses, StringComparer.OrdinalIgnoreCase);
+        if (manifest.Harnesses.FirstOrDefault(harness => reserved.Contains(harness.Name)) is { } carried)
+        {
+            return $"declares harness `{carried.Name}`, which this build already carries — "
+                + "a plugin adds a harness and never replaces one.";
+        }
+
+        if (manifest.Servers.FirstOrDefault(server =>
+                string.Equals(server.Name, KnowledgeConnector.ServerName, StringComparison.OrdinalIgnoreCase)) is { } own)
+        {
+            return $"declares server `{own.Name}`, which is Daoris's own knowledge host — "
+                + "a plugin hands a session servers beside it, never in its place.";
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// One manifest read by the catalogue's own rules, from any folder, its placeholders left as written
+    /// (PLUG9): what the driver's add reads before it copies, and what an Ask Daoris card shows, so the
+    /// person sees `${plugin}` where the manifest says it and never a machine path.
+    /// </summary>
+    /// <param name="id">The id it must carry: the name of the folder it is, or will be, installed as.</param>
+    public static (PluginManifest Manifest, string? Problem) ReadAsWritten(string id, string manifestPath) =>
+        Read(id, folder: null, manifestPath);
+
+    /// <param name="folder">The install folder the placeholders expand to, or null to leave them as written.</param>
+    private static (PluginManifest Manifest, string? Problem) Read(string folderName, string? folder, string path)
     {
         JsonDocument document;
         try
@@ -399,7 +421,7 @@ public sealed class PluginCatalog
             : null;
 
     /// <summary>A string array, with the plugin placeholder expanded to the install folder in every entry.</summary>
-    private static IReadOnlyList<string>? Strings(JsonElement element, string name, string folder)
+    private static IReadOnlyList<string>? Strings(JsonElement element, string name, string? folder)
     {
         if (element.ValueKind != JsonValueKind.Object
             || !element.TryGetProperty(name, out var value)
@@ -422,8 +444,9 @@ public sealed class PluginCatalog
     /// The data folder is the install folder's sibling under <see cref="DataFolder"/>, by the same name:
     /// a plugin's folder IS its id, so the two are one derivation and never disagree.
     /// </remarks>
-    private static string Expand(string text, string folder)
+    private static string Expand(string text, string? folder)
     {
+        if (folder is null) return text;
         var plugin = text.Contains(Placeholder, StringComparison.Ordinal);
         var data = text.Contains(DataPlaceholder, StringComparison.Ordinal);
         if (!plugin && !data) return text;

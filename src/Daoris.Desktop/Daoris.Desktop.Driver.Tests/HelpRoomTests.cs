@@ -216,6 +216,8 @@ public sealed class HelpRoomTests : IDisposable
         Assert.Contains("mcp__daoris-knowledge__delete_propose", allowed);
         Assert.Contains("mcp__daoris-knowledge__agent_settings_propose", allowed);
         Assert.Contains("mcp__daoris-knowledge__go_propose", allowed);
+        // PLUG9: adding a landed plugin, or switching one, a card the person applies like the rest.
+        Assert.Contains("mcp__daoris-knowledge__plugin_propose", allowed);
         Assert.DoesNotContain("mcp__daoris-knowledge__permission_propose", allowed);
         Assert.DoesNotContain(allowed, rule => rule.StartsWith("Bash", StringComparison.Ordinal)
             || rule.StartsWith("Edit", StringComparison.Ordinal) || rule.StartsWith("Write", StringComparison.Ordinal));
@@ -409,6 +411,73 @@ public sealed class HelpRoomTests : IDisposable
             PluginState.Disable(home, "example.off");
 
             Assert.Equal(["example.lands"], HelpRoom.LandingPluginsOf(PluginCatalog.Load(home)));
+        }
+        finally
+        {
+            try { Directory.Delete(home, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
+        }
+    }
+
+    /// <summary>
+    /// PLUG9: a plugin runs on this machine as the person, so making one is work. The room sends it to the
+    /// repository that holds plugins as an ask, naming every point a plugin may speak on, says the helper
+    /// never writes one and never proposes adding one that has not landed, and leaves where plugins live
+    /// to the person when no repository says it holds them.
+    /// </summary>
+    [Fact]
+    public void The_room_says_a_plugin_is_made_as_an_ask_and_only_a_landed_one_is_added()
+    {
+        var agents = HelpRoom.Render(Machine);
+
+        Assert.Contains("## Making a plugin", agents);
+        Assert.Contains("never write one yourself", agents);
+        Assert.Contains("as an ask (`ask_propose`) at the workspace of the repository that holds plugins", agents);
+        foreach (var point in HookPoints.All) Assert.Contains($"`{point}`", agents);
+        Assert.Contains("makes it with its tests", agents);
+        Assert.Contains("the person decides where plugins live (a repository of their own, connected like any other)", agents);
+        Assert.Contains("never propose adding one that has not landed", agents);
+        Assert.Contains("`plugin_propose`", agents);
+        // The doors (D50): the terminal twins of what a plugin card applies.
+        Assert.Contains("`daoris plugin add <folder>`, `daoris plugin enable|disable <id>`", agents);
+    }
+
+    /// <summary>PLUG9: the plugins installed here, by id and state, so a switch names one the catalogue holds.</summary>
+    [Fact]
+    public void The_room_lists_the_plugins_installed_here()
+    {
+        var some = HelpRoom.Render(Machine with
+        {
+            Plugins =
+            [
+                new HelpPlugin("example.lands", Enabled: true, ["work/land"]),
+                new HelpPlugin("example.off", Enabled: false, []),
+                new HelpPlugin("example.broken", Enabled: true, []) { Problem = "`apiVersion` must be an integer." },
+            ],
+        });
+
+        Assert.Contains("- Plugins: `example.lands` (on, speaks on `work/land`), `example.off` (off), "
+            + "`example.broken` (on, contributes nothing: `apiVersion` must be an integer.)", some);
+        Assert.Contains("- Plugins: none installed.", HelpRoom.Render(Machine));
+    }
+
+    [Fact]
+    public void The_plugins_are_described_from_the_catalogue()
+    {
+        var home = Path.Combine(Path.GetTempPath(), "daoris-help-installed-" + Guid.NewGuid().ToString("N")[..8]);
+        try
+        {
+            var folder = Path.Combine(home, PluginCatalog.Folder, "example.lands");
+            Directory.CreateDirectory(folder);
+            File.WriteAllText(Path.Combine(folder, PluginCatalog.ManifestName),
+                """{ "id": "example.lands", "hooks": { "command": ["node", "${plugin}/h.mjs"], "points": ["work/land"] } }""");
+            PluginState.Disable(home, "example.lands");
+
+            var machine = HelpRoom.Describe(
+                DriverConfig.Empty, new Snapshot([], [], []), [], [], _ => null, asks: 0, plugins: PluginCatalog.Load(home));
+
+            var plugin = Assert.Single(machine.Plugins);
+            Assert.Equal(("example.lands", false, null), (plugin.Id, plugin.Enabled, plugin.Problem));
+            Assert.Equal(["work/land"], plugin.Points);
         }
         finally
         {

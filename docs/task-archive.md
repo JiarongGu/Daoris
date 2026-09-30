@@ -8170,3 +8170,25 @@ one is the person's; the service twin's hint and the MCP tool's description name
 **Proven by:** `HelpProposalsTests` (both orders, six refusals), `HelpRoomTests` (the list and its
 source), the service twin's shape test; driver 1184, modules 385, service 620 + 45, CLI 592, family
 301/301.
+
+## PLUG9 (a) and (b) — Ask Daoris makes a plugin by asking, and installs one by a press (2026-09-30)
+
+> - [ ] **PLUG9 — Ask Daoris makes one by asking for it, and installs it by a press.** (a) The room says a
+>   plugin is made as an ask at the workspace holding the plugins repository … (b) A new proposal kind,
+>   `plugin` … *(c) and (d) stay open in the backlog.*
+
+**Outcome** (built by a subagent in its own worktree, merged, then rehearsed on main). The room says a
+plugin is made as an ask at the workspace of the repository that holds plugins, naming the point it
+speaks on from `HookPoints`, and made there with its tests; with no such repository, where plugins live
+is the person's call. The helper never writes a plugin and never proposes adding one that has not
+landed. A seventh kind, `plugin` (`plugin_propose`), adds a landed plugin from its folder in a
+registered checkout, or switches one installed here. The driver judges it with the catalogue's own
+reader and refuses an unsound manifest, a harness this build carries, a folder in or around the home or
+outside its checkout, and an id already installed. The card shows the id, the command with `${plugin}`
+as written, and the points, agents and servers before Apply. Apply is `PluginInstall.Add`, the driver's
+twin of `plugin add` that adds and never replaces, or `PLUGIN_ACTION`'s own switch; neither starts
+anything. Whether the folder's content has landed on the repository's line is not checked: the
+checkout is copied as it stands, and the card says so.
+**Proven by:** service 632 + 45, driver 1221, modules 387, vitest 1635, CLI 592, Playwright 21, family
+301/301 (a first run exited 127 before its transcript while three worktrees built; the rerun alone
+passed), deployment 67/67.
