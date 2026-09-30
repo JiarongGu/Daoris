@@ -18,6 +18,13 @@ record says whether it was **interrupted** (D104): ended by the driver's orphan 
 not by the person. The ledger carries an interrupted take on as it does a failed one (D80), and never a
 person's stop; the column arrives by `SchemaColumns`, so an older record reads as the person's.
 
+Since **D117** (LAYOUT4) the scanner reads the layout a repository's lock was written under, never an
+assumed `.claude`: the lock's root before the manifest's, and the root a layout moved from; both
+`.agents` and `.claude` for a repository with no lock; the lock's mirrors skipped, so a skill is found
+once, at its source; each declared room's `AGENTS.md` as the repository's own knowledge; and never a
+link, a junction or a link held as text (`RepositoryLayout`, `RepositoryLinks`, twins of the CLI's
+`layout.ts` and `links.ts`).
+
 ## The registry — who is out there, and what they own
 
 Each repository declares a `domain` in its manifest: a one-line summary, the areas it **owns**, the
