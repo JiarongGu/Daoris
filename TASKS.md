@@ -59,10 +59,10 @@ kit's own relay (Shenora.Chromium 0.18.0) leaves a pump unobserved as Daoris's d
 kit's owner, not Daoris's to change (LOG2b).
 - **The owner's ticket AR-2201 is landed with its follow-up** (the "vs Yesterday" rounding fixed and checked
   through prod-link) on one branch in the repository that owns it, not pushed; the pull request is theirs,
-  and so are the production config update and a question the follow-up raised (a "vs Last 7 Days Avg"
-  total subtracted as if an average). Two landed branches of the ticket before it
-  wait for the owner to delete (the permission policy refused a forced branch delete). The private
-  notes name them.
+  and so is the production config update. The owner asked for the "vs Last 7 Days Avg" total (subtracted
+  as if an average) to be fixed too: a second follow-up is running on the ticket's branch, and lands onto
+  a new branch holding it all. At the owner's word the repository's other local branches were deleted,
+  leaving the line and the ticket's; each was backed up to a bundle first, and the private notes say where.
 - **The install** runs main at TASKBAR1 (`34f8602`, republished 2026-09-30 night: the splits, READ1, MOD8, TASKBAR1; the taskbar is the owner's to look at); republishing is the session's own call, never while a session
   on it runs. Start it the normal way, not through the dev tool, unless the instruments are needed
   (USE1g, confirmed: a start from Git Bash hands sessions a `PATH` their shell cannot read).
