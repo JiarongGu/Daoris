@@ -19,6 +19,8 @@ internal sealed partial class HelpAgentProposals : IHelpProposalKind
     // HELP6: every door built since HELP1c, each a card the person applies the same way.
     public string Tool => "agent_propose";
 
+    public IReadOnlyList<string> Doors { get; } = ["update", "pin"];
+
     public HelpPlan Plan(HelpProposal proposal, DriverConfig config, HelpMachineFacts facts)
     {
         var name = proposal.Target?.Trim() ?? "";

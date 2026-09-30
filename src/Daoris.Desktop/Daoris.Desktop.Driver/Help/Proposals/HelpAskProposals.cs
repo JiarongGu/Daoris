@@ -13,6 +13,8 @@ internal sealed class HelpAskProposals : IHelpProposalKind
 
     public string Tool => "ask_propose";
 
+    public IReadOnlyList<string> Doors { get; } = ["ask"];
+
     public HelpPlan Plan(HelpProposal proposal, DriverConfig config, HelpMachineFacts facts)
     {
         var workspace = proposal.Workspace?.Trim() ?? "";

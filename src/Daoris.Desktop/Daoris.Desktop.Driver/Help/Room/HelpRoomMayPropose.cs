@@ -15,7 +15,12 @@ internal sealed class HelpRoomMayPropose : IHelpRoomSection
         // HELP6: every door built since HELP1c, each with the rule its route judges it by, said so the
         // helper proposes what the route takes rather than learning it from a refusal.
         text.Append("## What you may propose\n\n");
-        text.Append("- `setting_propose`: one of the doors below that `daoris driver` spells.\n");
+        // HELP9: every `daoris driver` verb but `retry`, whose judge waits on facts the driver does not hand it yet;
+        // across (D107) said form by form, and a write-to as the say-so the canon asks for, which its card says too.
+        text.Append("- `setting_propose`: every door below that `daoris driver` spells but `retry`, whose press is on the quest's drawer.\n");
+        text.Append("  `across` takes `read on|off|--clear` for a repository or a whole workspace,\n");
+        text.Append("  or `write-to <other> [--clear]` for a repository, to let its sessions write into the other's checkout, one way.\n");
+        text.Append("  Applying a write-to is the person's standing say-so for writing across, and its card says so.\n");
         text.Append("- `ask_propose`: something to start, as an ask at a workspace.\n");
         text.Append("- `agent_propose`: an agent's Update, or a pin to one version, as Settings → Agents & accounts offers them.\n");
         text.Append("  Update moves a pinned agent's pin to its newest release, or runs an unpinned one's own updater, and is\n");
