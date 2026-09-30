@@ -147,7 +147,7 @@ describe('matching what was typed', () => {
     label: (id: string) => ({
       'go.overview': 'Overview',
       'go.sessions': 'Sessions',
-      'go.projects': 'Projects',
+      'go.projects': 'Repositories',
       'go.convergence': 'Convergence',
       'go.search': 'Search',
       'go.settings': 'Settings',

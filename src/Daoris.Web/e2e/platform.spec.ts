@@ -22,9 +22,9 @@ test('the overview shows the example family', async ({ page }) => {
   await expect(page.getByText('game').first()).toBeVisible();
 });
 
-test('projects lists both members with their declarations', async ({ page }) => {
+test('repositories lists both members with their declarations', async ({ page }) => {
   await page.goto('/');
-  await nav(page, 'Projects').click();
+  await nav(page, 'Repositories').click();
   await expect(page.getByText('the engine runtime — simulation, rendering, assets')).toBeVisible();
   await expect(page.getByText('a playtest finding, with the reproduction')).toBeVisible();
 });
@@ -373,7 +373,7 @@ test('a project created mid-run joins, and the platform shows it (D44)', async (
   });
 
   await page.goto('/');
-  await nav(page, 'Projects').click();
+  await nav(page, 'Repositories').click();
   await expect(page.getByText('Born during the test run.')).toBeVisible();
 
   await nav(page, 'Quests').click();
@@ -415,7 +415,7 @@ test('the console scopes by workspace once the family holds two (WSP5)', async (
   await page.getByRole('option', { name: 'studio' }).click();
   await expect(scope).toHaveText('studio');
   await expect(page.getByText('of 1 in the family')).toBeVisible();
-  await nav(page, 'Projects').click();
+  await nav(page, 'Repositories').click();
   await expect(page.getByText('Born during the test run.')).toBeVisible();
   await expect(page.getByText('the engine runtime — simulation, rendering, assets')).toHaveCount(0);
 
@@ -425,7 +425,7 @@ test('the console scopes by workspace once the family holds two (WSP5)', async (
 
   await page.getByRole('combobox', { name: 'workspace' }).click();
   await page.getByRole('option', { name: /every workspace/ }).click();
-  await nav(page, 'Projects').click();
+  await nav(page, 'Repositories').click();
   await expect(page.getByText('the engine runtime — simulation, rendering, assets')).toBeVisible();
 
   const back = await request.post('/api/registry/newcomer/workspace', { data: { workspace: 'default' } });
@@ -543,7 +543,7 @@ test('a browser learns nothing about this machine’s harnesses (D49 §4)', asyn
   await expect(page.getByText('default').first()).toBeVisible();
   await expect(page.getByText(/remotes\.json|harnesses\.json|driver\.json/)).toHaveCount(0);
 
-  await nav(page, 'Projects').click();
+  await nav(page, 'Repositories').click();
   await expect(page.getByText('the engine runtime — simulation, rendering, assets')).toBeVisible();
   // Nothing that would name a configuration home: a registration's root is a machine path, and a
   // browser on the host's own machine is still not told another's (D47 §4).

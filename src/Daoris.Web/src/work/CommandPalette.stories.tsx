@@ -9,7 +9,7 @@ import { CommandPalette } from './CommandPalette';
 const LABELS: Record<string, string> = {
   'go.overview': 'Overview',
   'go.quests': 'Quests',
-  'go.projects': 'Projects',
+  'go.projects': 'Repositories',
   'go.convergence': 'Convergence',
   'go.search': 'Search',
   'go.settings': 'Settings',

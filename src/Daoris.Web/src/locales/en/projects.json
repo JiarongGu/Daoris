@@ -2,7 +2,7 @@
   "projects.fed": "fed from",
   "projects.fedTip": "this deployment's copy came from commit {{commit}} on {{branch}}, fed by {{origin}}. Only the canonical line feeds knowledge, and a newer commit replaces an older one.",
   "projects.fedUnknownOrigin": "an unnamed machine",
-  "projects.title": "Projects",
+  "projects.title": "Repositories",
   "projects.empty.headline": "No repository is registered yet",
   "projects.empty.headlineIn": "No repository in {{workspace}} yet",
   "projects.empty.body": "Add one here, or register a whole folder of checkouts from a terminal with `daoris import <folder>`. Adding writes nothing into a repository.",

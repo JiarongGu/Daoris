@@ -56,7 +56,7 @@
   "help.starter.no-line_other": "{{count}} 个仓库未设置主线，git 也未指明——先看 {{first}}。",
   "help.starter.helper-off": "问道衍未运行任何智能体：指定一个即可在此与它对话。",
   "help.door.sessions": "打开会话",
-  "help.door.projects": "打开项目",
+  "help.door.projects": "打开仓库",
   "help.door.agents": "打开智能体",
   "help.door.workspace": "打开工作区",
   "help.door.ai": "打开 AI 功能",

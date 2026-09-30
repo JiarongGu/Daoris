@@ -137,7 +137,7 @@ export const MetaLines: StoryObj = {
 export const Tiles: StoryObj = {
   render: () => (
     <div className="grid max-w-3xl grid-cols-[repeat(auto-fit,minmax(10.5rem,1fr))] gap-3">
-      <Tile label="Adopted projects" value={2} note="of 17 in the family" />
+      <Tile label="Adopted repositories" value={2} note="of 17 in the family" />
       <Tile label="Open quests" value={3} note="oldest has sat 12d" warn />
       <Tile label="Knowledge entries" value="12.9K" note="across 14 repositories" />
     </div>

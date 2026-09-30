@@ -2,7 +2,7 @@
   "projects.fed": "来源提交",
   "projects.fedTip": "本部署所存的这份副本来自 {{branch}} 上的提交 {{commit}}，由 {{origin}} 送来。只有主干那条线才送出知识，更新的提交会替换更旧的。",
   "projects.fedUnknownOrigin": "一台未具名的机器",
-  "projects.title": "项目",
+  "projects.title": "仓库",
   "projects.empty.headline": "还没有登记任何仓库",
   "projects.empty.headlineIn": "{{workspace}} 里还没有仓库",
   "projects.empty.body": "在这里添加一个，或在终端用 `daoris import <folder>` 登记一整个文件夹里的检出。添加不会往仓库里写任何东西。",

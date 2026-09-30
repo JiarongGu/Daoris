@@ -1,7 +1,7 @@
 {
   "overview.title": "总览",
   "overview.description": "是否有事在搁置，家族是否健康——被管理之物的状态。",
-  "overview.tiles.adopted.label": "已加入的项目",
+  "overview.tiles.adopted.label": "已采用的仓库",
   "overview.tiles.adopted.note": "家族共 {{total}} 个",
   "overview.tiles.open.label": "待接委托",
   "overview.tiles.open.noteNone": "无事在等",
@@ -22,7 +22,7 @@
   "overview.outstanding.emptyHeadline": "无事搁置",
   "overview.outstanding.emptyBody": "家族眼下两不相欠。一个项目需要同族项目做什么时，就在这里提出。",
   "overview.repositories.title": "仓库，按索引所收内容",
-  "overview.repositories.button": "项目",
+  "overview.repositories.button": "仓库",
   "overview.repositories.local": "本地 {{count}}",
   "overview.repositories.more": "另有 {{count}} 个，在“项目”中",
   "overview.repositories.emptyHeadline": "索引里还什么都没有",

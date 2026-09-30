@@ -56,7 +56,7 @@
   "help.starter.no-line_other": "{{count}} repositories have no line set, and git names none — {{first}} first.",
   "help.starter.helper-off": "Ask Daoris runs no agent: name one to talk with it here.",
   "help.door.sessions": "open Sessions",
-  "help.door.projects": "open Projects",
+  "help.door.projects": "Open Repositories",
   "help.door.agents": "Open Agents",
   "help.door.workspace": "Open Workspace",
   "help.door.ai": "Open AI features",

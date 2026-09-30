@@ -28,14 +28,15 @@ function listed(views: readonly ViewId[]): string {
   return names.length === 1 ? names[0]! : `${names.slice(0, -1).join(', ')} and ${names[names.length - 1]}`;
 }
 
+// The window's own names (NAME1b), so the agent names a place the person can find.
 const VIEWS: Record<View, string> = {
-  overview: 'Overview', sessions: 'Sessions', quests: 'Quests', projects: 'Projects',
+  overview: 'Overview', sessions: 'Sessions', quests: 'Quests', projects: 'Repositories',
   map: 'Map', convergence: 'Convergence', search: 'Search', settings: 'Settings',
 };
 
 const DOMAINS: Record<SettingsSection, string> = {
-  start: 'Get started', appearance: 'Appearance', ai: "Daoris's own AI", workspace: 'Workspace', driver: 'Driver',
-  agents: 'Agents & accounts', permissions: 'Permissions', plugins: 'Plugins', browser: 'Browser', logs: 'Logs',
+  start: 'Setup', appearance: 'Appearance', ai: 'AI features', workspace: 'Workspace', driver: 'Driver',
+  agents: 'Agents', permissions: 'Permissions', plugins: 'Plugins', browser: 'Browser', logs: 'Machine log',
 };
 
 /** The attended session as the preface names it — or null when none is attended, or it is not in the list. */

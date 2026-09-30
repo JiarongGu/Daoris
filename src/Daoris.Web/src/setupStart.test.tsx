@@ -131,7 +131,7 @@ describe('the setup guide, at start', () => {
     expect(await within(bar).findByText('setup: 0 of 5')).toBeInTheDocument();
 
     // The count leads back to it from wherever the person went.
-    await userEvent.click(screen.getByRole('button', { name: 'Projects' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Repositories' }));
     await waitFor(() => expect(screen.queryByRole('navigation', { name: 'Settings domains' })).toBeNull());
     await userEvent.click(within(bar).getByRole('button', { name: 'setup' }));
     expect(within(await domains()).getByRole('button', { name: 'Setup' })).toHaveAttribute('aria-current', 'page');

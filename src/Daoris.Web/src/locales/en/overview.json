@@ -1,7 +1,7 @@
 {
   "overview.title": "Overview",
   "overview.description": "Is anything sitting, and is the family healthy — the state of the thing being managed.",
-  "overview.tiles.adopted.label": "Adopted projects",
+  "overview.tiles.adopted.label": "Adopted repositories",
   "overview.tiles.adopted.note": "of {{total}} in the family",
   "overview.tiles.open.label": "Open quests",
   "overview.tiles.open.noteNone": "nothing is waiting",
@@ -22,7 +22,7 @@
   "overview.outstanding.emptyHeadline": "Nothing is sitting",
   "overview.outstanding.emptyBody": "The family owes itself nothing right now. When a project needs something from a sibling, it is asked for here.",
   "overview.repositories.title": "Repositories, by what the index holds",
-  "overview.repositories.button": "projects",
+  "overview.repositories.button": "Repositories",
   "overview.repositories.local": "{{count}} local",
   "overview.repositories.more": "and {{count}} more, in Projects",
   "overview.repositories.emptyHeadline": "The index holds nothing yet",

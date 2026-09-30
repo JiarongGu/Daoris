@@ -17,7 +17,8 @@ export const VIEWS: readonly { view: View; icon: IconName; keywords?: string; sh
   // A stream never leaves the machine that produced it (D47 §4), so a browser is shown no Sessions.
   { view: 'sessions', icon: 'frameWork', keywords: 'work watch console conversation', shellOnly: true },
   { view: 'quests', icon: 'quests' },
-  { view: 'projects', icon: 'projects' },
+  // Named Repositories since NAME1b; the view's old name still finds it.
+  { view: 'projects', icon: 'projects', keywords: 'projects 项目' },
   // The workspace map (MAP2, D67 §3): how the repositories are wired, read at a glance.
   { view: 'map', icon: 'map', keywords: 'map topology graph wiring repositories' },
   { view: 'convergence', icon: 'convergence' },
