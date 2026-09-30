@@ -68,9 +68,6 @@ const USAGE = [
   '  --help, --version',
 ].join('\n');
 
-const handlers: Record<string, CliCommand['run']> =
-  Object.fromEntries(COMMANDS.map((command) => [command.name, command.run]));
-
 export function runCli(
   argv: string[],
   cwd: string,
@@ -92,7 +89,9 @@ export function runCli(
       return 2;
     }
 
-    const handler = handlers[command];
+    // By the table's own verbs: an object lookup also answered for `toString` and `constructor`,
+    // Object's members, and ran them as handlers.
+    const handler = COMMANDS.find((entry) => entry.name === command)?.run;
     if (!handler) {
       // A verb that moved says where to, once — it is not a second name for the new one (AGT1).
       const moved = COMMANDS.find((entry) => entry.formerly?.includes(command));

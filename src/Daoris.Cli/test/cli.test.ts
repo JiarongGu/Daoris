@@ -32,6 +32,21 @@ test('an unknown command is a tool error (exit 2)', () => {
 });
 
 /**
+ * The table answers for its own verbs only. Looked up as a plain object, `toString` and `constructor`
+ * resolved to Object's own members, ran as handlers, and their return reached `process.exit`, which
+ * threw: a stack trace and exit 1, the policy code. `__proto__` and `hasOwnProperty` printed a
+ * TypeError's message. Found while MOD7 made the commands a table.
+ */
+test('a verb named like a member of Object is an unknown command (exit 2), never a crash', async () => {
+  for (const verb of ['toString', 'constructor', '__proto__', 'hasOwnProperty', 'valueOf']) {
+    const out: string[] = [];
+    const code = await runCli([verb], process.cwd(), (s) => out.push(s));
+    assert.equal(code, 2, `daoris ${verb}`);
+    assert.deepEqual(out, [`daoris: unknown command '${verb}' — run 'daoris --help'`], `daoris ${verb}`);
+  }
+});
+
+/**
  * AGT1: the tools a session runs are AGENTS to a person — the owner, reading `daoris harness`:
  * *"I have no idea what harness is"*. The old verb is not a second name for the new one; it says
  * where the command went, once, and fails like any unknown command.
