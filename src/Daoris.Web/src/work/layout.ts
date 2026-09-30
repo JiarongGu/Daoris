@@ -150,7 +150,7 @@ export function frameLayout(viewport: number, frame: number, prefs: FramePrefs):
  * person's; one laid over the main area is dismissed; a strip opens — beside where there is room, and
  * over the main area where the window drew it for want of room.
  */
-export function listToggled(list: ListLayout): { closed: boolean; over: boolean } {
+export function listToggled(list: Pick<ListLayout, 'mode'>): { closed: boolean; over: boolean } {
   if (list.mode === 'open') return { closed: true, over: false };
   if (list.mode === 'over') return { closed: false, over: false };
   return { closed: false, over: true };

@@ -11,6 +11,7 @@ import { opensAtStart, setupProgress, setupSteps } from './help/setup';
 import { useMachine } from './help/useMachine';
 import { useSetupAtStart } from './setupGuide';
 import { useFrameClosings } from './work/closings';
+import { type ListMode, listToggled } from './work/layout';
 import { usePlacements, viewsIn } from './work/placements';
 import { LAYOUT_KEYS, type LayoutRegion, LayoutToggles } from './work/LayoutToggles';
 import { frameShortcut } from './shortcuts';
@@ -153,6 +154,10 @@ export function App() {
   // What the person closed in the frame (DOCK1c): held here, so the strip's toggles, the View menu and
   // the keys reach them from every view.
   const closings = useFrameClosings();
+  // What the view's list is now, as the frame measured it (D118 §3a): open, a strip, or laid over the
+  // main area. A strip the window drew is not shown, and its toggle lays the list over.
+  const [listMode, setListMode] = useState<ListMode | null>(null);
+  const listShown = listMode === 'open' || listMode === 'over';
   // Where each view stands (DOCK1b): held here, so the View menu's reset reaches it.
   const placements = usePlacements();
   // Its doors open it, never close it — `F1`, `Ctrl+Alt+I`, the palette, Quick Ask's *Open in the side
@@ -221,7 +226,11 @@ export function App() {
     if (!attached) return false;
     if (region === 'right') closings.setDock(!closings.dock);
     else if (region === 'panel') closings.setPanel(!closings.panel);
-    else if (view === 'sessions') closings.setRail(!closings.rail);
+    else if (view === 'sessions' && listMode) {
+      const next = listToggled({ mode: listMode });
+      closings.setList(next.closed);
+      closings.setListOver(next.over);
+    }
     else return false;
     return true;
   };
@@ -585,7 +594,7 @@ export function App() {
                 // The region toggles' second door (DOCK1c, SURF11), with their keys, ticked while shown: the
                 // rail on Sessions, whose list it is, and the panel and the side bar on every view (DOCK1a).
                 ...(view === 'sessions' ? [
-                  { id: 'layout:rail', label: t('layout.menu.rail'), icon: LAYOUT_KEYS.rail.icon, shortcut: LAYOUT_KEYS.rail.keys, checked: !closings.rail, separated: true },
+                  { id: 'layout:rail', label: t('layout.menu.rail'), icon: LAYOUT_KEYS.rail.icon, shortcut: LAYOUT_KEYS.rail.keys, checked: listShown, separated: true },
                 ] : []),
                 ...(attached ? [
                   {
@@ -628,7 +637,7 @@ export function App() {
             <BrowserDoor onOpen={() => openBrowser.mutate()} drivers={driving} onAttend={openInWork} />
             <LayoutToggles
               regions={view === 'sessions' ? ['rail', 'panel', 'right'] : ['panel', 'right']}
-              closed={{ rail: closings.rail, panel: closings.panel, right: closings.dock }}
+              closed={{ rail: !listShown, panel: closings.panel, right: closings.dock }}
               onToggle={toggleRegion}
             />
           </div>
@@ -708,6 +717,7 @@ export function App() {
               // The person's own shell (CONSOLE4b): a frame is only drawn where a shell is attached.
               terminal
               closings={closings}
+              onListMode={setListMode}
               placements={placements}
               content={view === 'sessions' ? undefined : renderView()}
               onOpenSessions={() => setView('sessions')}

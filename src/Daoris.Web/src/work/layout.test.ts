@@ -128,10 +128,10 @@ describe('a view with no list', () => {
 
 describe('a toggle of the list', () => {
   it('closes an open list, dismisses one laid over, and opens a strip — over the main area where there is no room', () => {
-    expect(listToggled({ mode: 'open', width: 280, beside: 280, auto: false })).toEqual({ closed: true, over: false });
-    expect(listToggled({ mode: 'over', width: 280, beside: LIST_STRIP, auto: true })).toEqual({ closed: false, over: false });
-    expect(listToggled({ mode: 'strip', width: LIST_STRIP, beside: LIST_STRIP, auto: true })).toEqual({ closed: false, over: true });
-    expect(listToggled({ mode: 'strip', width: LIST_STRIP, beside: LIST_STRIP, auto: false })).toEqual({ closed: false, over: true });
+    expect(listToggled({ mode: 'open' })).toEqual({ closed: true, over: false });
+    expect(listToggled({ mode: 'over' })).toEqual({ closed: false, over: false });
+    // A strip opens whoever drew it: the person's closing is undone, and the window's is laid over.
+    expect(listToggled({ mode: 'strip' })).toEqual({ closed: false, over: true });
   });
 
   it('lands where the person can see it, at every width', () => {

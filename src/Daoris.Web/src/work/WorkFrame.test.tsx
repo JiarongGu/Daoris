@@ -2225,6 +2225,101 @@ describe('the frame\'s geometry (FRAME6)', () => {
   });
 
   /**
+   * D118 §3a: the rail is a strip by room, not below a fixed 1024 px. At 900 px beside a closed side bar
+   * the conversation has 540 px beside the rail, so the rail stays open; the side bar opened takes the room.
+   */
+  it('keeps the rail open at 900 px beside a closed side bar, and draws its strip beside an open one', async () => {
+    widen(900);
+    window.localStorage.setItem('daoris.dockClosed', '1');
+    show('s1a2b3c4');
+    expect(await screen.findByRole('separator', { name: 'session list width' })).toBeInTheDocument();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Open Timeline' }));
+    await waitFor(() => expect(screen.queryByRole('separator', { name: 'session list width' })).toBeNull());
+    expect(screen.getByRole('button', { name: 'Chat · engine · working' })).toBeInTheDocument();
+  });
+
+  /**
+   * D118 §3a, amending FRAME6: a strip the window drew opens the rail OVER the conversation, so an ended
+   * session and the rail's search are within reach at 900 px. It closes on a choice, on Escape and on a
+   * press outside it, and is never remembered.
+   */
+  it('lays the rail over the conversation from a strip the window drew, and closes it on a choice, Escape or a press outside', async () => {
+    widen(900);
+    const { onSelect } = show('s1a2b3c4');
+    const open = await screen.findByRole('button', { name: 'Show the session list' });
+
+    await userEvent.click(open);
+    let over = screen.getByRole('region', { name: 'Sessions' });
+    expect(within(over).getByRole('searchbox', { name: 'search sessions' })).toBeInTheDocument();
+    // The strip stays beside it, and the conversation keeps its room: nothing was pushed aside.
+    expect(screen.getByRole('button', { name: 'Chat · engine · working' })).toBeInTheDocument();
+    // A row is its button, named by what it holds; its menu is named for it.
+    const chat = within(over).getAllByRole('button').find((button) => !button.hasAttribute('aria-label') && button.textContent?.includes('Chat'));
+    await userEvent.click(chat!);
+    expect(onSelect).toHaveBeenCalledWith('c0ffee11');
+    expect(screen.queryByRole('region', { name: 'Sessions' })).toBeNull();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Show the session list' }));
+    over = screen.getByRole('region', { name: 'Sessions' });
+    await userEvent.keyboard('{Escape}');
+    expect(screen.queryByRole('region', { name: 'Sessions' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Show the session list' })).toHaveFocus();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Show the session list' }));
+    fireEvent.pointerDown(await screen.findByRole('heading', { level: 2, name: 'Expose a streaming budget' }));
+    expect(screen.queryByRole('region', { name: 'Sessions' })).toBeNull();
+    expect(window.localStorage.getItem('daoris.railClosed')).toBeNull();
+  });
+
+  it('gives the rail back beside the conversation, not over it, when the room returns', async () => {
+    widen(900);
+    show('s1a2b3c4');
+    await userEvent.click(await screen.findByRole('button', { name: 'Show the session list' }));
+    expect(screen.getByRole('region', { name: 'Sessions' })).toBeInTheDocument();
+
+    widen(1600);
+    expect(await screen.findByRole('separator', { name: 'session list width' })).toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: 'Sessions' })).toBeNull();
+    // Narrowed again, the window draws its strip: the laying over was not kept.
+    widen(900);
+    await waitFor(() => expect(screen.queryByRole('separator', { name: 'session list width' })).toBeNull());
+    expect(screen.queryByRole('region', { name: 'Sessions' })).toBeNull();
+  });
+
+  /** FRAME6's keys are still read, so nothing a person closed or widened changes on the upgrade (D118 §3f). */
+  it('reads the rail\'s old keys: its width and its closing', async () => {
+    window.localStorage.setItem('daoris.railWidth', '330');
+    const { unmount } = show(null);
+    expect(await screen.findByRole('separator', { name: 'session list width' })).toHaveAttribute('aria-valuenow', '330');
+    // The rail's rows are drawn, so what the list asked of the driver has been answered.
+    await screen.findByText('Expose a streaming budget');
+    unmount();
+
+    window.localStorage.setItem('daoris.railClosed', '1');
+    show(null);
+    expect(await screen.findByRole('button', { name: 'Show the session list' })).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: 'Chat · engine · working' })).toBeInTheDocument();
+    expect(screen.queryByRole('separator', { name: 'session list width' })).toBeNull();
+  });
+
+  /** D118 §3e (audit A7): the rail moves by ↑ and ↓, where it was walked by Tab. */
+  it('moves between the rail\'s rows by the arrows', async () => {
+    show('s1a2b3c4');
+    const rail = await screen.findByRole('navigation', { name: 'Sessions' });
+    await within(rail).findAllByText('Expose a streaming budget');
+    // Each row is its button, named by what it holds, and its menu, named for it.
+    const rows = within(rail).getAllByRole('button').filter((button) => !button.hasAttribute('aria-label'));
+    expect(rows).toHaveLength(2);
+    const [first, second] = rows;
+    first!.focus();
+    await userEvent.keyboard('{ArrowDown}');
+    expect(second).toHaveFocus();
+    await userEvent.keyboard('{ArrowUp}');
+    expect(first).toHaveFocus();
+  });
+
+  /**
    * LAYOUT1: a dragged dock was remembered in pixels and stayed 389px while the window grew
    * from 1518 to 1923 (measured on the shell). It is remembered as its share of the window now.
    */

@@ -134,8 +134,9 @@ export function SessionRow({
   ].filter((action) => Boolean(action)) as Array<{ label: string; icon: IconName; act: (id: string) => void }>;
 
   return (
-    // A group, so the menu's trigger shows on the row's hover and focus and stays out of the way else.
-    <li className="group relative">
+    // A group, so the menu's trigger shows on the row's hover and focus and stays out of the way else;
+    // and a row of its list, so the list's arrows move to it (D118 §3e).
+    <li data-list-row="" className="group relative">
       <button
         type="button"
         // `aria-current` rather than `aria-selected`: the row is a button, not a listbox option,
