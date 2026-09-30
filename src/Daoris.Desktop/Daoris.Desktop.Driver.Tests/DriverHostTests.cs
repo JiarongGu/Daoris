@@ -16,6 +16,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// asked. Every <c>DAORIS_</c> variable is dropped from its environment and the home is a scratch folder:
 /// no run here can reach this machine's own home or service.</para>
 /// </remarks>
+[Trait(Category.Name, Category.Process)]
 public sealed class DriverHostTests : IDisposable
 {
     private readonly string _home = Path.Combine(

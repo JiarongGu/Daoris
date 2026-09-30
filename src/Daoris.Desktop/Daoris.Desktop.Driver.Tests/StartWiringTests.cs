@@ -14,6 +14,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// with its source beside it, and whether the start would happen is <see cref="HarnessRoster.SelectAsync"/>
 /// itself — its refusal verbatim.
 /// </remarks>
+[Trait(Category.Name, Category.Process)]
 public sealed class StartWiringTests : IDisposable
 {
     private readonly string _home = Path.Combine(

@@ -10,6 +10,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// plugin server, and one conversation running at a time.
 /// </summary>
 /// <remarks>A real process (node) speaking the protocol door, and a stand-in service. No model, no account.</remarks>
+[Trait(Category.Name, Category.Process)]
 public sealed class HelpChatTests : IDisposable
 {
     private readonly string _home = Path.Combine(

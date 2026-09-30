@@ -7,6 +7,7 @@ namespace Daoris.Desktop.Modules.Tests;
 /// A conversation over the bridge (`DriverModule.Conversation.cs`, MOD5): its record, its start, the
 /// person's messages and files, finishing, stopping a turn, and its queue.
 /// </summary>
+[Trait(Category.Name, Category.Process)]
 public sealed class DriverModuleConversationTests : DriverModuleBridge
 {
     /// <summary>

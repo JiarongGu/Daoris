@@ -10,6 +10,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// because by then the agent was gone and they were nobody's children. Everything a session starts
 /// ends when its session does.
 /// </summary>
+[Trait(Category.Name, Category.Process)]
 public sealed class ProcessJobTests : IDisposable
 {
     private readonly string _home = Path.Combine(

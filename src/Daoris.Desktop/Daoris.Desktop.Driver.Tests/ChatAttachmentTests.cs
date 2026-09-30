@@ -13,6 +13,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// The stand-in harnesses write down what reached them — the message, the blocks, and the settings they
 /// were handed — so each assertion is about the wire, not about what the driver meant to send.
 /// </remarks>
+[Trait(Category.Name, Category.Process)]
 public sealed class ChatAttachmentTests : IDisposable
 {
     private readonly string _home = Path.Combine(

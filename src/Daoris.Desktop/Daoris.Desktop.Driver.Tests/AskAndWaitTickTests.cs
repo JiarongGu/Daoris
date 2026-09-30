@@ -12,6 +12,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// the quest — in the same tree, handed the answer. A real process (node) and a stand-in service on a
 /// loopback port, the shape <see cref="DrivenSessionInputTests"/> uses; no model and no account.
 /// </summary>
+[Trait(Category.Name, Category.Process)]
 public sealed class AskAndWaitTickTests : IDisposable
 {
     private readonly string _home = Path.Combine(

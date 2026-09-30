@@ -12,6 +12,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// wrong — flushing, line endings, and what a closed stream does to the far side. Node is the
 /// stand-in harness: every gate in this repository already needs it, and it echoes without a model.
 /// </remarks>
+[Trait(Category.Name, Category.Process)]
 public sealed class ChatTurnTakingTests
 {
     /// <summary>A harness that answers what it hears and exits when the person stops talking.</summary>

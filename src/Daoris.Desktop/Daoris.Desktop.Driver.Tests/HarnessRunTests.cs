@@ -10,6 +10,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// process whose stdin nobody held, was a login that could never finish.
 /// </summary>
 [Collection(ProcessPath.Name)]
+[Trait(Category.Name, Category.Process)]
 public sealed class HarnessRunTests
 {
     private static readonly HarnessToolchain Node = new(Binary: ["node"], VersionArguments: ["--version"]);

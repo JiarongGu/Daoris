@@ -6,6 +6,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// WSR5a, the proof by content, case by case: every file a landed branch changed since it left the line —
 /// a deletion and both paths of a rename included — must read on the line as the branch left it.
 /// </summary>
+[Trait(Category.Name, Category.Process)]
 public sealed class LandedProofTests : LandedFixture
 {
     [Fact]

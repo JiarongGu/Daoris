@@ -573,6 +573,7 @@ public sealed class RemoteSyncTests
 /// the remote knows who is joined before their records arrive — D47 §9), and a wall is reported and
 /// never thrown (records sync eventually; a dead tick would take the driver's whole look with it).
 /// </summary>
+[Trait(Category.Name, Category.Process)]
 public sealed class RemoteSyncRunTests : IDisposable
 {
     private const string Local = "http://localhost:5177";
@@ -1099,6 +1100,7 @@ public sealed class RemoteSyncRunTests : IDisposable
 /// One machine, many circles: a sync per workspace with a remote (D48 §5). Each feeds only its own
 /// rows, and one circle's wall does not take another's pass with it.
 /// </summary>
+[Trait(Category.Name, Category.Process)]
 public sealed class RemoteSyncSetTests
 {
     private const string Local = "http://localhost:5177";

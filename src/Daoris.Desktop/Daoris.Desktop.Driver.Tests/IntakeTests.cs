@@ -52,6 +52,7 @@ public sealed class AskSignatureTests
 /// stand-in service on a loopback port: the spawn, the environment, the room and the publish are
 /// exactly what a fake would get wrong. No model anywhere, and no account.
 /// </remarks>
+[Trait(Category.Name, Category.Process)]
 public sealed class IntakeTests : IDisposable
 {
     private readonly string _home = Path.Combine(

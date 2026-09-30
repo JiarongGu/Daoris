@@ -14,6 +14,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// except the path-length test's, which needs a root shorter than the checkout's (MOD8). Each test
 /// makes its own repository, so nothing here is order-dependent.
 /// </remarks>
+[Trait(Category.Name, Category.Process)]
 public sealed class SessionTreesTests : IDisposable
 {
     private readonly string _scratch;

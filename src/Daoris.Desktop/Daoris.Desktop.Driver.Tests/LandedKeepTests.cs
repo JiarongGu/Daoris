@@ -7,6 +7,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// no longer the landing's, moved since the list, not named by the press, or leaned on by a session branch
 /// that stays.
 /// </summary>
+[Trait(Category.Name, Category.Process)]
 public sealed class LandedKeepTests : LandedFixture
 {
     /// <summary>A branch checked out anywhere — the checkout's HEAD or a worktree of the person's — is kept, whatever the proof says.</summary>

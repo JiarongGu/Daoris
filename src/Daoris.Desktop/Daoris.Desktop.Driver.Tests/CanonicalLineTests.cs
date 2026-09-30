@@ -8,6 +8,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// repository, then for its workspace, then the checkout's guess — read from one place by every door
 /// that grows or lands work. Real git for the doors, as the other tree tests use it.
 /// </summary>
+[Trait(Category.Name, Category.Process)]
 public sealed class CanonicalLineTests : IDisposable
 {
     private readonly string _scratch;

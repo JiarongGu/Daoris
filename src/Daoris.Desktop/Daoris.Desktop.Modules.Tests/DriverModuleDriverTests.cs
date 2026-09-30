@@ -7,6 +7,7 @@ namespace Daoris.Desktop.Modules.Tests;
 /// The driver's state and standing choices over the bridge (`DriverModule.Driver.cs`, MOD5): the state,
 /// the drivable set, holds, trees, notifications, strikes, the intake and helper agents, trust and *Sync now*.
 /// </summary>
+[Trait(Category.Name, Category.Process)]
 public sealed class DriverModuleDriverTests : DriverModuleBridge
 {
     [Fact]

@@ -20,6 +20,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// request the probe measured (docs/2026-09-25-stream-json-evidence.md, § Stopping a turn), and ACP's
 /// is <c>session/cancel</c>, answered by the prompt's own <c>cancelled</c>.</para>
 /// </remarks>
+[Trait(Category.Name, Category.Process)]
 public sealed class TurnStopTests : IDisposable
 {
     private readonly string _home = Path.Combine(

@@ -7,6 +7,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// of this half is that git's answer is the one that matters — a stubbed one would prove nothing
 /// about the arguments, the format, or the parse.
 /// </summary>
+[Trait(Category.Name, Category.Process)]
 public sealed class WorkingTreeProvenanceTests : IDisposable
 {
     private readonly GitTree _tree = new("worktree");

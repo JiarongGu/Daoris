@@ -7,6 +7,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// the roster the build's adapters plus whatever the plugins declare, and a runner built before a
 /// plugin arrived must still find the harness it declared.
 /// </summary>
+[Trait(Category.Name, Category.Process)]
 public sealed class ChatRunnerTests : IDisposable
 {
     private readonly string _home = Path.Combine(

@@ -9,6 +9,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// exited 0 once the driver closed its stdin. The quest was still taken, so the record said
 /// "stood-down — someone else has it". It was nobody else: the turn had been refused.
 /// </summary>
+[Trait(Category.Name, Category.Process)]
 public sealed class AcpTurnFailureTickTests : IDisposable
 {
     private readonly string _home = Path.Combine(
