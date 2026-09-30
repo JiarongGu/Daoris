@@ -40,10 +40,6 @@ public sealed partial class HelpCoverageTests
         "what an agent may do is never proposed by an agent: the room is not handed `permission_propose` (HELP1c), "
         + "since a rule narrowing is applied with nobody's press (PERM2).";
 
-    private const string Browser =
-        "the browser's settings are the desktop modules' own file (BrowserSettings, BRW5, BRW7), applied through "
-        + "BrowserModule; a door on `IHelpDoors` for them is the modules' to add, and until then a go reaches Settings → Browser.";
-
     /// <summary>
     /// The driver lock's <c>--share</c> (DRV8, D104), decided: a flag on the start of a headless loop, not a setting.
     /// </summary>
@@ -69,10 +65,7 @@ public sealed partial class HelpCoverageTests
         ("intake", new Door("setting", "intake")),
         ("helper", new Door("setting", "helper")),
         ("strikes", new Door("setting", "strikes")),
-        ("retry", new Owed(
-            "its judge needs which quests are parked, the last tick's verdict the quest's drawer shows Retry by, and "
-            + "the facts a proposal is judged against carry none until the modules' `HelpFactsAsync` hands them; "
-            + "until then the room names the drawer's Retry.")),
+        ("retry", new Door("setting", "retry")),
         ("timeout", new Door("setting", "timeout")),
         ("cap", new Door("setting", "cap")),
         ("adapter", new Door("setting", "adapter")),
@@ -89,10 +82,7 @@ public sealed partial class HelpCoverageTests
 
         ("workspace", "useSetLine", null, new Door("setting", "line")),
         ("workspace", "useSetLanding", null, new Door("setting", "landing")),
-        ("workspace", "useTreesSync", null, new Owed(
-            "bringing a repository up to date after its pull request merges (WSR6, D109) is a press Ask Daoris could "
-            + "propose, its card showing the plan `TREES_SYNC_PLAN` lists before Apply acts on those rows only; the kind "
-            + "is HELP10's, and until then the room names Settings → Workspace → Session branches → Bring up to date.")),
+        ("workspace", "useTreesSync", null, new Door("sync", "sync")),
         ("workspace", "useSweep", null, new Exempt(
             "it removes session trees and branches whose work landed, a discard, which stays the person's own press "
             + "(D89); the room names Settings → Workspace → Session branches.")),
@@ -115,9 +105,7 @@ public sealed partial class HelpCoverageTests
         ("agents", "useHarnessAction", "profile-add", new Exempt("an account is made by its own sign-in; " + SignIn)),
         ("agents", "useHarnessAction", "profile-remove", new Exempt(
             "it deletes an account with its sign-in, which only the person can make again (D89).")),
-        ("agents", "useHarnessAction", "profile-default", new Owed(
-            "which account a tool runs as, for the machine or a workspace, is a setting Ask Daoris could propose, but "
-            + "its Apply is `HARNESS_ACTION`'s own `profile-default`, a door on `IHelpDoors` the modules' screen doors must add.")),
+        ("agents", "useHarnessAction", "profile-default", new Door("agent", "default")),
         ("agents", "useSetAgentSettings", null, new Door("account", "settings")),
         ("agents", "useRefreshHarnesses", null, new Exempt("it reads the roster again and changes nothing.")),
         ("agents", "useHarnessInput", null, new Exempt("it types into a running sign-in, the person's own words to it; " + SignIn)),
@@ -146,11 +134,11 @@ public sealed partial class HelpCoverageTests
             "a trial runs the plugin's code as the person to show what it answers (PLUG8), and changes nothing to propose.")),
         ("plugins", "usePickFolder", null, new Exempt("it is the system's folder picker, for the person's own choice.")),
 
-        ("browser", "useSetBrowser", null, new Owed(Browser)),
-        ("browser", "useSetLinks", null, new Owed(Browser)),
-        ("browser", "useSetExtensions", null, new Owed(Browser)),
-        ("browser", "useAddFavorite", null, new Owed(Browser)),
-        ("browser", "useRemoveFavorite", null, new Owed(Browser)),
+        ("browser", "useSetBrowser", null, new Door("browser", "use")),
+        ("browser", "useSetLinks", null, new Door("browser", "links")),
+        ("browser", "useSetExtensions", null, new Door("browser", "extensions")),
+        ("browser", "useAddFavorite", null, new Door("browser", "favorite")),
+        ("browser", "useRemoveFavorite", null, new Door("browser", "favorite")),
 
         ("logs", "useOpenLogFolder", null, new Exempt(
             "it opens the log's folder in the system's file browser and changes nothing; a go reaches Settings → Logs.")),
@@ -238,6 +226,17 @@ public sealed partial class HelpCoverageTests
         {
             Assert.True(reason.Length >= 40 && reason.EndsWith('.'), $"a reason is a sentence that says why: `{reason}`.");
         }
+    }
+
+    /// <summary>
+    /// HELP10: WSR6's <c>daoris-driver trees sync</c> (D109), a verb of the headless host rather than the CLI's table, is
+    /// the <c>sync</c> kind's door while the host's usage still spells it.
+    /// </summary>
+    [Fact]
+    public void The_headless_hosts_trees_sync_is_the_sync_kinds_door()
+    {
+        Assert.Contains("sync [--repository <name>] [--yes]", DriverCommand.Usage);
+        Assert.Contains("sync", HelpProposalKinds.Find("sync")!.Doors);
     }
 
     /// <summary>DRV8's <c>--share</c>, decided (D110): exempt, while the headless loop's usage still names it.</summary>

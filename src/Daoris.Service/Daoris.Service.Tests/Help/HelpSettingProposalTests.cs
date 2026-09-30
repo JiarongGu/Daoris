@@ -58,6 +58,18 @@ public sealed class HelpSettingProposalTests : HelpProposalBoxFixture
         Assert.Equal(value, file.GetProperty("value").GetString());
     }
 
+    /// <summary>HELP10: a retry names its quest as the target, and nothing else; whether it is parked is the driver's to judge.</summary>
+    [Fact]
+    public void A_retry_is_written_with_its_quest_as_the_target()
+    {
+        var (id, _) = Box().ProposeSetting(new SettingChange("retry", "#q1a2b3c4", null, null), "the person asked", session: "h1", Now);
+
+        var file = Written(id!);
+        Assert.Equal("retry", file.GetProperty("door").GetString());
+        Assert.Equal("#q1a2b3c4", file.GetProperty("target").GetString());
+        Assert.Equal(JsonValueKind.Null, file.GetProperty("value").ValueKind);
+    }
+
     /// <summary>HELP9: the connector's tool names every door the box takes, so the helper is told of each.</summary>
     [Fact]
     public void The_tool_names_every_door()
@@ -99,6 +111,10 @@ public sealed class HelpSettingProposalTests : HelpProposalBoxFixture
     [InlineData("cap", null, null, "0", "a whole number, 1 or more")]
     [InlineData("adapter", null, null, null, "an agent")]
     [InlineData("adapter", null, null, "two words", "an agent")]
+    [InlineData("retry", null, null, null, "names the quest its failed sessions parked")]
+    [InlineData("retry", "q1 q2", null, null, "names the quest its failed sessions parked")]
+    [InlineData("retry", "q1a2b3c4", "work", null, "names the quest its failed sessions parked")]
+    [InlineData("retry", "q1a2b3c4", null, "--at 2", "names the quest its failed sessions parked")]
     public void A_setting_that_is_no_door_s_shape_is_refused_with_nothing_written(
         string door, string? target, string? workspace, string? value, string says)
     {

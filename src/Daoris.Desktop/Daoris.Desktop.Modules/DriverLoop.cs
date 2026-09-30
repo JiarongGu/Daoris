@@ -186,6 +186,12 @@ public sealed class DriverLoop(
     /// </summary>
     public TrustHolds Trust { get; } = new();
 
+    /// <summary>
+    /// What the last tick parked by its strikes (DRV6) — the verdict the quest drawer shows its Retry by, and what
+    /// Ask Daoris's <c>retry</c> is judged against and its room lists (HELP10).
+    /// </summary>
+    public ParkedQuests Parked { get; } = new();
+
     /// <summary>The loop's syncs, once it is up — the ones its tick runs, and the ones *Sync now* runs.</summary>
     private RemoteSyncSet? _sync;
 
@@ -374,6 +380,10 @@ public sealed class DriverLoop(
                 // What this tick held for trust, kept for the screen's grant to be checked against
                 // (D73) — replaced whole, so a folder the driver stopped holding cannot be granted.
                 Trust.Record(report.Untrusted);
+
+                // And what it parked by its strikes (HELP10), replaced whole the same way, so Ask Daoris proposes a
+                // retry only of a quest the drawer would offer Retry on.
+                Parked.Record(report.Considerations);
 
                 // 🔴 And the asks (INT4d): the attention band reads them beside the sessions, and an
                 // ask made by the other door — a terminal, a teammate's sync — moves nothing above,

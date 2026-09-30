@@ -5130,6 +5130,20 @@ Each is the desktop modules' to add, which this branch's lane did not reach:
 
 Until then the room names each one's screen and command.
 
+*Built by HELP10 (2026-09-30), as this section says, with no new decision* (design §9.10):
+- **`retry`** is a setting door. The loop keeps what each tick parked by its strikes (`ParkedQuests`), the facts
+  carry it, and a quest not on it is refused; applied as `RETRY_QUEST`'s own edit.
+- **An account made default** is the agent kind's `default` door, applied through `IHelpDoors.SetDefaultAccountAsync`,
+  which `ScreenDoors` builds on `HARNESS_ACTION`'s own `profile-default`.
+- **The browser's settings** are a kind of their own, `browser`, since their file is not the driver's: judged by what
+  `BrowserModule` read of its files and applied through `IHelpDoors.ChangeBrowser`, `BrowserModule`'s own edits.
+- **WSR6's *Bring up to date*** (D109), built since, is the `sync` kind. D109 fetches nothing until the person presses,
+  so its card keeps the screen's two presses: the first Apply is the look (`TREES_SYNC_PLAN`'s list, its rows kept in the
+  proposal's file), the second `TREES_SYNC`'s press on those rows only. Its Settings control is a door, and
+  `daoris-driver trees sync` is held to the kind while the headless host's usage spells it.
+
+Nothing here needed a decision of its own: each door is this section's, and the look is D109's rule applied to a card.
+
 **Why.** HELP6 and HELP8 each found a door built since the last pass that Ask Daoris could not reach, and
 READ1 left one the room already promised. A list kept by hand drifts; a list a test derives from the doors'
 own sources does not.
@@ -5437,3 +5451,5 @@ is held in the fast half. Reading which repositories hold Daoris's branches, the
 press including a repository only where a listed row names it, and `--all` are `TreeSyncTests` cases in the
 `Process` half, written in the branch and not run there (MOD8). The screen's list apart is held by the vitest loop
 over a mocked bridge, and was not looked at on the window.
+for this press was not built: it would reach into the service's proposal kinds and the page's cards. *(HELP10
+built it since: the `sync` kind, a card whose first press is the look; see D110.)*

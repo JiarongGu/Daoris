@@ -15,7 +15,7 @@ describe('the places a go may name', () => {
       'projects/add', 'projects/import',
       'start/agent', 'start/helper', 'start/repositories', 'start/driven', 'start/landing', 'start/rules',
       'workspace/wiring', 'workspace/lines', 'workspace/landing', 'workspace/sweep',
-      'agents/usage', 'permissions/proposals',
+      'agents/usage', 'permissions/proposals', 'permissions/across',
     ]);
   });
 
@@ -30,6 +30,9 @@ describe('the places a go may name', () => {
     expect(placeDoor({ view: 'settings', domain: 'workspace', part: 'lines' })).toEqual({ view: 'settings', section: 'workspace', anchor: 'lines' });
     expect(placeDoor({ view: 'settings', domain: 'start', part: 'helper' })).toEqual({ view: 'settings', section: 'start', anchor: 'step-helper' });
     expect(placeDoor({ view: 'projects', part: 'import' })).toEqual({ view: 'projects', drawer: 'import' });
+    // HELP10: the card READ1 built, found by its own `settings-across`.
+    expect(placeDoor({ view: 'settings', domain: 'permissions', part: 'across' }))
+      .toEqual({ view: 'settings', section: 'permissions', anchor: 'across' });
   });
 
   it('refuse a place the window does not have, rather than guess at one', () => {

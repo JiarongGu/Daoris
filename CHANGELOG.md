@@ -903,6 +903,10 @@ The first version: doctrine that installs, is checked, and flows back.
 - **The Daoris home's hint tells the truth when an install overrode your account's folder** (LEFT1). It
   says a terminal's `daoris` reads the same folder only when it does, and otherwise points at the
   notice. `INSTALLED.md` now says how to pin Daoris to the taskbar: from the running window.
+- **Ask Daoris proposes what was still owed** (HELP10, under D110). Retrying a parked quest, making an
+  account an agent's default, Daoris's browser and its favorites, a go to Permissions → *Reading and
+  writing across*, and *Bring up to date*, whose card keeps the screen's two presses: the first looks
+  (fetching, as you), the second acts on the rows it listed. The room now says a file opens in a preview.
 - **A plugin can push the branch and open the pull request** (WSR4, D100). A branch landing rule may
   name an installed plugin (`daoris driver landing … branch <pattern> --plugin <id>`, or the *who
   pushes it* chooser in Settings → Workspace → *How work lands*). Once accepting has made the branch,

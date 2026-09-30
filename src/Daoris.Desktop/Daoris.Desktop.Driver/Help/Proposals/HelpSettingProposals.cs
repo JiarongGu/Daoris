@@ -12,9 +12,10 @@ namespace Daoris.Driver;
 /// <para>The names the routes do not check, and a helper can invent, are checked here first: a registered
 /// repository, a workspace, an agent. Applied as the <c>SET_*</c> routes make the same edit.</para>
 ///
-/// <para>Since HELP9 (D110), every verb but <c>list</c>, which changes nothing, and <c>retry</c>, whose judge needs
-/// the parked quests the facts do not carry: reading and writing across (D107), as <c>SET_READ_ACROSS</c> and
-/// <c>SET_WRITE_ACROSS</c> make them, and <c>cap</c> and <c>adapter</c>, which only a terminal set before.</para>
+/// <para>Since HELP9 (D110), every verb but <c>list</c>, which changes nothing: reading and writing across (D107), as
+/// <c>SET_READ_ACROSS</c> and <c>SET_WRITE_ACROSS</c> make them, and <c>cap</c> and <c>adapter</c>, which only a
+/// terminal set before. Since HELP10 <c>retry</c> too, its target a quest the loop's last tick parked
+/// (<see cref="HelpMachineFacts.Parked"/>), applied as <c>RETRY_QUEST</c> makes the same edit.</para>
 /// </remarks>
 internal sealed class HelpSettingProposals : IHelpProposalKind
 {
@@ -24,11 +25,14 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
     public string Tool => "setting_propose";
 
     /// <summary>The `daoris driver` verbs it takes, in the order the service's twin lists them (<c>HelpProposalBox.Doors</c>).</summary>
-    /// <remarks>HELP9 added <c>across</c> (D107), and <c>cap</c> and <c>adapter</c>, which only a terminal set before.</remarks>
+    /// <remarks>
+    /// HELP9 added <c>across</c> (D107), and <c>cap</c> and <c>adapter</c>, which only a terminal set before; HELP10
+    /// <c>retry</c>, once the facts carried the parked quests.
+    /// </remarks>
     public IReadOnlyList<string> Doors { get; } =
     [
-        "drive", "undrive", "hold", "resume", "trees", "line", "landing", "across", "intake", "helper", "strikes", "timeout",
-        "notify", "cap", "adapter",
+        "drive", "undrive", "hold", "resume", "trees", "line", "landing", "across", "intake", "helper", "strikes", "retry",
+        "timeout", "notify", "cap", "adapter",
     ];
 
     public HelpPlan Plan(HelpProposal proposal, DriverConfig config, HelpMachineFacts facts)
@@ -37,6 +41,9 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
         var workspace = proposal.Workspace?.Trim();
         var value = proposal.Value?.Trim() ?? "";
         HelpPlan Refused(string why, string describe, string terminal) => new(why, describe, terminal, null);
+
+        // HELP10: a retry's target is a quest, not a repository, so it is judged before the registry is asked.
+        if (proposal.Door == "retry") return Retry(target, config, facts);
 
         // The names the route itself does not check, and a helper can invent: a repository, a circle, an agent.
         if (target is { Length: > 0 } && !facts.Repositories.Contains(target, StringComparer.OrdinalIgnoreCase))
@@ -192,6 +199,42 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
     }
 
     /// <summary>
+    /// <c>retry</c> (HELP10, D110), as <c>daoris driver retry</c> reads it: a quest by id, <c>#</c> or not, which the
+    /// loop's last tick parked by its strikes — the verdict the quest drawer shows its Retry by — said in the terminal's
+    /// words, and marked forgiven at the strike limit as <c>RETRY_QUEST</c> marks it.
+    /// </summary>
+    /// <remarks>
+    /// The route takes any id; this does not, since a helper can invent one, and forgiving a quest that is not parked
+    /// lets it run past its strikes (D110). The limit is the one standing when the person applies, as the route reads it.
+    /// </remarks>
+    private static HelpPlan Retry(string? target, DriverConfig config, HelpMachineFacts facts)
+    {
+        var quest = target?.TrimStart('#') ?? "";
+        if (quest.Length == 0)
+        {
+            return new HelpPlan("`retry` names the quest its failed sessions parked, by id — `daoris driver retry <quest>`.", "", "", null);
+        }
+
+        var terminal = $"daoris driver retry {quest}";
+        if (!facts.Parked.Any(parked => string.Equals(parked.Quest, quest, StringComparison.OrdinalIgnoreCase)))
+        {
+            var parked = facts.Parked.Count > 0 ? Names(facts.Parked.Select(each => $"#{each.Quest}")) : "none";
+            return new HelpPlan(
+                $"`#{quest}` is not parked — only a quest its failed sessions parked starts again, as its drawer's *try it again* "
+                + $"does; at the driver's last look it parked {parked}.",
+                "", terminal, null);
+        }
+
+        var strikes = config.Strikes;
+        return new HelpPlan(null,
+            $"Quest `#{quest}` may be started again. Counting from {strikes} failure(s) — what already happened is still in the "
+            + $"records, and {(strikes > 0 ? strikes.ToString(CultureInfo.InvariantCulture) : "no")} more failure(s) will park it again.",
+            terminal,
+            // RETRY_QUEST's own edit: marked at the limit rather than erased, so the records still read true.
+            c => c.WithForgiven(quest, c.Strikes));
+    }
+
+    /// <summary>
     /// <c>across</c> (HELP9, D107), as <c>daoris driver across</c> reads its words: <c>read on|off|--clear</c> for a
     /// repository or a whole workspace, or <c>write-to &lt;other&gt; [--clear]</c> from a repository, <c>--clear</c>
     /// wherever it stands — said as the terminal says it, or refused in its words.
@@ -275,6 +318,15 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
 
 public partial interface IHelpDoors
 {
-    /// <summary>An edit to the driver's file, as the `SET_*` routes make it.</summary>
+    /// <summary>An edit to the driver's file, as the `SET_*` routes and `RETRY_QUEST` make it.</summary>
     void Change(Func<DriverConfig, DriverConfig> edit);
+}
+
+public sealed partial record HelpMachineFacts
+{
+    /// <summary>
+    /// The quests the loop's last tick parked by their failed sessions (HELP10), which a retry must name: the verdict
+    /// the quest drawer shows its Retry by. Empty before any tick, and while another loop holds the home (D104).
+    /// </summary>
+    public IReadOnlyList<ParkedQuest> Parked { get; init; } = [];
 }

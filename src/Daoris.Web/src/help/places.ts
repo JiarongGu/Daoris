@@ -28,6 +28,8 @@ export const PLACE_PARTS: readonly { within: string; part: string }[] = [
   { within: 'workspace', part: 'wiring' }, { within: 'workspace', part: 'lines' }, { within: 'workspace', part: 'landing' },
   { within: 'workspace', part: 'sweep' },
   { within: 'agents', part: 'usage' }, { within: 'permissions', part: 'proposals' },
+  // HELP10: the card READ1 built, found by its own `settings-across`.
+  { within: 'permissions', part: 'across' },
 ];
 
 /**

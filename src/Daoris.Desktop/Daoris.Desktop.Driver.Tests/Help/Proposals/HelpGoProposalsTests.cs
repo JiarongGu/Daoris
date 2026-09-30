@@ -54,7 +54,7 @@ public sealed class HelpGoProposalsTests : HelpProposalsFixture
                 "projects/add", "projects/import",
                 "start/agent", "start/helper", "start/repositories", "start/driven", "start/landing", "start/rules",
                 "workspace/wiring", "workspace/lines", "workspace/landing", "workspace/sweep",
-                "agents/usage", "permissions/proposals",
+                "agents/usage", "permissions/proposals", "permissions/across",
             ],
             HelpPlaces.Parts.Select(part => $"{part.Within}/{part.Id}"));
     }

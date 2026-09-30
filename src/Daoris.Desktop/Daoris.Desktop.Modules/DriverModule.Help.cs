@@ -48,7 +48,11 @@ public sealed partial class DriverModule
             config, snapshot, lines, roster, adapter => _loop.Harnesses.Toolchain(adapter)?.Product, asks, standing,
             PluginCatalog.Load(_loop.Home, AdapterSet.Built().Names), new LandedBranches(_loop.Home).All(),
             // The install's own plugins (PLUG9 d), which the helper may propose installing by id.
-            PluginOffers.Load(OffersFolder, _loop.Home, AdapterSet.Built().Names));
+            PluginOffers.Load(OffersFolder, _loop.Home, AdapterSet.Built().Names),
+            // What the last tick parked by its strikes (HELP10), so a retry names a quest the drawer offers Retry on.
+            _loop.Parked.Latest,
+            // Daoris's browser as its files hold it (HELP10), so a favorite removed is one kept.
+            BrowserModule.HelpFacts(BrowserModule.Home));
 
         var start = await chat.StartHelpAsync(
             helper, config, machine,
@@ -97,6 +101,11 @@ public sealed partial class DriverModule
                         Changes = ChangesOf(plugin.Changes),
                     }
                     : null,
+                // Bringing up to date (HELP10): whether the person has looked, and every row the look listed, in the
+                // terminal's words, for the card to show before Apply.
+                Sync = plan.Sync is { } sync
+                    ? new { sync.Looked, Rows = sync.Rows.Select(row => new { row.Key, row.Step, row.Moves, row.Says }).ToArray() }
+                    : null,
             });
         }
 
@@ -133,8 +142,9 @@ public sealed partial class DriverModule
             applied.Applied,
             // Where a go takes the person: the page navigates, as its starters' doors do (HELP6).
             Go = applied.Go is { } place ? new { place.View, place.Domain, place.Part } : null,
-            // The action an update or a pin started, so the Agents screen follows its console and its end.
-            HarnessAction = applied.Applied && proposal.Kind == "agent"
+            // The action an update or a pin started, so the Agents screen follows its console and its end. A default
+            // (HELP10) is a file edit that starts nothing, so there is nothing to follow.
+            HarnessAction = applied.Applied && proposal.Kind == "agent" && proposal.Door is "update" or "pin"
                 ? new { Harness = proposal.Target!.Trim(), Action = proposal.Door }
                 : null,
         };
@@ -191,6 +201,57 @@ public sealed partial class DriverModule
                 module.Relay(harness, action), config, ended);
         }
 
+        // HARNESS_ACTION's own profile-default (HELP10): the door's owner (AGT7), the same write, and the roster asked
+        // again as the route asks it after every file edit, since its answer is cached with the default in it.
+        public async Task SetDefaultAccountAsync(string harness, string account, string? workspace, CancellationToken ct)
+        {
+            var config = DriverConfig.Load(module._loop.ConfigPath);
+            var toolchain = module._loop.Harnesses.Toolchain(harness)
+                ?? throw new DriverException($"Daoris manages no toolchain for `{harness}` — its accounts are its own tooling's.");
+            module.ProfileDefault(toolchain.Owner(harness), account, workspace);
+            await module._loop.Harnesses.RosterAsync(config, refresh: true, ct).ConfigureAwait(false);
+        }
+
+        // TREES_SYNC_PLAN's own list (HELP10, WSR6): the same checkouts and sessions, and each line fetched as the person,
+        // whose press this is — the look on Ask Daoris's card, never its proposal (D109).
+        public async Task<SyncPlan> SyncPlanAsync(string? repository, CancellationToken ct)
+        {
+            var (repositories, inUse) = await module.CheckoutsAndSessionsAsync(repository, ct).ConfigureAwait(false);
+            return await new SessionTrees(module._loop.Home).SyncPlanAsync(repositories, inUse, fetch: true, ct).ConfigureAwait(false);
+        }
+
+        // TREES_SYNC's own press: only the rows the look listed, fetching nothing, then the loop asked to look.
+        public async Task<SyncDone> SyncAsync(string? repository, IReadOnlySet<string> only, CancellationToken ct)
+        {
+            var (repositories, inUse) = await module.CheckoutsAndSessionsAsync(repository, ct).ConfigureAwait(false);
+            var done = await new SessionTrees(module._loop.Home).SyncAsync(repositories, inUse, only, fetch: false, ct).ConfigureAwait(false);
+            module._loop.Nudge();
+            return done;
+        }
+
+        // BrowserModule's own edits (HELP10): the same check, the same refusal for a file it could not read, the
+        // same write. A route's refusal is its words as the driver's, so the card settles refused with them.
+        public void ChangeBrowser(string setting, string value, string? address, string? title)
+        {
+            var home = BrowserModule.Home;
+            try
+            {
+                switch (setting, value)
+                {
+                    case ("use", _): BrowserModule.SetBrowser(home, value); break;
+                    case ("links", _): BrowserModule.SetLinks(home, value); break;
+                    case ("extensions", _): BrowserModule.SetExtensions(home, value); break;
+                    case ("favorite", "add"): BrowserModule.AddFavorite(home, address ?? "", title); break;
+                    case ("favorite", "remove"): BrowserModule.RemoveFavorite(home, address ?? ""); break;
+                    default: throw new DriverException($"`{setting} {value}` is not a change the Browser screen makes.");
+                }
+            }
+            catch (ShenoraException refused)
+            {
+                throw new DriverException(refused.Message);
+            }
+        }
+
         // SET_AGENT_SETTINGS's own write.
         public AgentSettingsRead SetAgentSettings(string harness, string account, AgentSettingEdit? model, AgentSettingEdit? effort) =>
             module.WriteAgentSettings(harness, account, () => (model, effort, null)).Read;
@@ -236,7 +297,8 @@ public sealed partial class DriverModule
 
     /// <summary>
     /// What a proposal of Ask Daoris's is judged against (HELP1c): the driver's file, and the names the
-    /// machine holds — its registered repositories and their circles, and the agents it has. For the
+    /// machine holds — its registered repositories and their circles, the agents it has, and the quests the
+    /// last tick parked (HELP10). For the
     /// kinds that need them (HELP6), each door as the Agents screen's roster reads it, and every quest
     /// and ask with the service's own reading of whether it may be deleted — asked only then.
     /// </summary>
@@ -264,6 +326,8 @@ public sealed partial class DriverModule
             // The install's own plugins (PLUG9 d), which an add may name by id, and where an offer's update reads.
             OffersFolder = OffersFolder,
             Offers = PluginOffers.Load(OffersFolder, _loop.Home, AdapterSet.Built().Names),
+            // A retry names a quest the last tick parked by its strikes (HELP10), the verdict the drawer shows Retry by.
+            Parked = _loop.Parked.Latest,
         };
 
         if (proposals.Any(proposal => proposal.Kind is "agent" or "account"))
@@ -298,6 +362,12 @@ public sealed partial class DriverModule
         {
             var (quests, asks) = await HelpProposals.RecordsAsync(service, ct).ConfigureAwait(false);
             facts = facts with { Quests = quests, Asks = asks };
+        }
+
+        // Daoris's browser's files as the Browser screen reads them (HELP10), read only when a browser change is pending.
+        if (proposals.Any(proposal => proposal.Kind == "browser"))
+        {
+            facts = facts with { Browser = BrowserModule.HelpFacts(BrowserModule.Home) };
         }
 
         return (config, facts);

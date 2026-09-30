@@ -274,7 +274,7 @@ public sealed partial class DriverModule
             // and what lands inside it is the harness's own.
             "profile-add" => ProfileAdd(owner, request),
             "profile-remove" => ProfileRemove(owner, request, stream),
-            "profile-default" => ProfileDefault(owner, request),
+            "profile-default" => ProfileDefault(owner, Optional(request, "profile"), Optional(request, "workspace")),
             "install" or "update" or "login" or "login-new" or "pin" => null,
             _ => throw Refusals.Because(
                 Refusals.HarnessActionUnknown,
@@ -773,10 +773,9 @@ public sealed partial class DriverModule
     /// named CLEARS it: "use the tool's own home again" is a choice a person makes, not an argument
     /// they forgot, and the file's own rule is that absence means the harness's own home.
     /// </summary>
-    private int ProfileDefault(string harness, IpcRequest request)
+    /// <remarks>One method the route and Ask Daoris's door both call (HELP10), so the two cannot drift.</remarks>
+    private int ProfileDefault(string harness, string? profile, string? workspace)
     {
-        var profile = Optional(request, "profile");
-        var workspace = Optional(request, "workspace");
         var settings = _loop.Harnesses.Settings;
 
         settings = workspace is { Length: > 0 }

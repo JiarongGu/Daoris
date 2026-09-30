@@ -1,0 +1,26 @@
+namespace Daoris.Driver;
+
+/// <summary>A quest the loop's last tick parked by its failed sessions (DRV6): its id, and the repository it is addressed to.</summary>
+public sealed record ParkedQuest(string Quest, string Repository);
+
+/// <summary>
+/// The quests the loop's last tick parked by their failed sessions (DRV6, <see cref="StartVerdict.Exhausted"/>): the
+/// verdict the quest drawer shows its Retry by, and what Ask Daoris's <c>retry</c> is judged against (HELP10, D110).
+/// </summary>
+/// <remarks>
+/// Kept as <see cref="TrustHolds"/> keeps the trust holds, and for the same reason: replaced whole each tick, so a
+/// quest retried, done or gone is no longer offered. A helper can invent a quest id, and forgiving one that is not
+/// parked lets it run past its strikes (D110), so nothing wider than the last tick's verdict is ever offered.
+/// </remarks>
+public sealed class ParkedQuests
+{
+    private volatile IReadOnlyList<ParkedQuest> _latest = [];
+
+    /// <summary>What the last tick parked, in its order; empty before any tick.</summary>
+    public IReadOnlyList<ParkedQuest> Latest => _latest;
+
+    public void Record(IEnumerable<Consideration> considered) =>
+        _latest = [.. considered
+            .Where(consideration => consideration.Verdict == StartVerdict.Exhausted)
+            .Select(consideration => new ParkedQuest(consideration.Quest.Id, consideration.Quest.To))];
+}

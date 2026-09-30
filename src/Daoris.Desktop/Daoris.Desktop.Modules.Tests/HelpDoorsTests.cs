@@ -76,6 +76,24 @@ public sealed class HelpDoorsTests : Bridge
             && JsonSerializer.Serialize(message.Payload).Contains("updated to 9.9.10"));
     }
 
+    /// <summary>
+    /// HELP10: a default is <c>HARNESS_ACTION</c>'s own <c>profile-default</c> — a door's default is its owner's (AGT7),
+    /// for the machine or one workspace — and the roster is asked again, as the route asks it, so the screen shows it.
+    /// </summary>
+    [Fact]
+    public async Task A_default_is_written_as_the_agents_screens_route_writes_it_for_the_machine_and_a_workspace()
+    {
+        var doors = Module().HelpDoors(null);
+
+        await doors.SetDefaultAccountAsync("claude-code-acp", "work", null, CancellationToken.None);
+        await doors.SetDefaultAccountAsync("claude-code", "play", "lab", CancellationToken.None);
+
+        var settings = HarnessSettings.Load(HarnessSettingsPath);
+        Assert.Equal("work", settings.Defaults["claude-code"]);
+        Assert.False(settings.Defaults.ContainsKey("claude-code-acp"));
+        Assert.Equal("play", settings.Workspaces["lab"]["claude-code"]);
+    }
+
     /// <summary>A door with no Update is refused in the words <c>HARNESS_ACTION</c> refuses it with.</summary>
     [Fact]
     public async Task An_update_on_a_door_with_none_is_refused_as_the_agents_screens_route_refuses_it()

@@ -15,14 +15,19 @@ internal sealed class HelpRoomMayPropose : IHelpRoomSection
         // HELP6: every door built since HELP1c, each with the rule its route judges it by, said so the
         // helper proposes what the route takes rather than learning it from a refusal.
         text.Append("## What you may propose\n\n");
-        // HELP9: every `daoris driver` verb but `retry`, whose judge waits on facts the driver does not hand it yet;
-        // across (D107) said form by form, and a write-to as the say-so the canon asks for, which its card says too.
-        text.Append("- `setting_propose`: every door below that `daoris driver` spells but `retry`, whose press is on the quest's drawer.\n");
+        // HELP9: every `daoris driver` verb; across (D107) said form by form, and a write-to as the say-so the canon
+        // asks for, which its card says too. HELP10: `retry` too, of a quest the driver parked, named from the list.
+        text.Append("- `setting_propose`: every door below that `daoris driver` spells.\n");
+        text.Append("  `retry` takes a quest parked by its failed sessions, from this machine's list below, as the target,\n");
+        text.Append("  as its drawer's *try it again* does; a quest not on that list is refused.\n");
         text.Append("  `across` takes `read on|off|--clear` for a repository or a whole workspace,\n");
         text.Append("  or `write-to <other> [--clear]` for a repository, to let its sessions write into the other's checkout, one way.\n");
         text.Append("  Applying a write-to is the person's standing say-so for writing across, and its card says so.\n");
         text.Append("- `ask_propose`: something to start, as an ask at a workspace.\n");
-        text.Append("- `agent_propose`: an agent's Update, or a pin to one version, as Settings → Agents & accounts offers them.\n");
+        // HELP10: an agent's default account, which HELP9 left owed.
+        text.Append("- `agent_propose`: an agent's Update or a pin to one version, as Settings → Agents & accounts offers them,\n");
+        text.Append("  or which of its accounts it runs as by default, for the machine or one workspace (`default`,\n");
+        text.Append("  the account one the room lists under that agent).\n");
         text.Append("  Update moves a pinned agent's pin to its newest release, or runs an unpinned one's own updater, and is\n");
         text.Append("  offered only where that screen shows Update; a pin names one exact release, like 2.1.300, never `latest`.\n");
         text.Append("- `agent_settings_propose`: an account's own model and effort, as Settings → Agents & accounts → Model &\n");
@@ -45,11 +50,25 @@ internal sealed class HelpRoomMayPropose : IHelpRoomSection
         text.Append("- `hand_propose`: hand a branch a landing made (from the list below) to a landing plugin, which pushes it\n");
         text.Append("  and opens the pull request, signed in as the person. Name the session that landed it or the branch, and\n");
         text.Append("  a plugin only where the repository's landing rule names none. Only a branch a landing made and recorded\n");
-        text.Append("  here can be handed on; the person's own branches are theirs to push.\n\n");
-        // HELP7: the real helper said *press Apply* of a card whose button reads *go there*.
+        text.Append("  here can be handed on; the person's own branches are theirs to push.\n");
+        // HELP10: the browser's settings, which HELP9 left owed, each as `daoris browser` spells it.
+        text.Append("- `browser_propose`: Daoris's browser's settings, as Settings → Browser sets them: `use` `daoris` or `edge`,\n");
+        text.Append("  `links` `system` or `daoris`, `extensions` `offer` or `refuse`,\n");
+        text.Append("  or a `favorite` to `add` (its address, and a title if wanted) or `remove` (one the list below keeps).\n");
+        text.Append("  Each but `links` holds from the browser's next start.\n");
+        // HELP10: WSR6's Bring up to date (D109), whose look fetches and so is the person's press, as on the screen.
+        text.Append("- `sync_propose`: bring repositories up to date after a pull request merged, as Settings → Workspace →\n");
+        text.Append("  Session branches → Bring up to date does: each line fast-forwarded from `origin`, the branches still at\n");
+        text.Append("  work replayed onto it, the landed branches whose work reached it deleted. Name a repository, or none for\n");
+        text.Append("  every one with a checkout here. Its card asks the person to look first, which fetches each line as them,\n");
+        text.Append("  then lists what the press would do; apply acts on those rows only. Daoris never pushes.\n\n");
+        // HELP7: the real helper said *press Apply* of a card whose button reads *go there*. HELP10: a delete's
+        // press was *delete* all along, and a bring-up-to-date card's first is the look.
         text.Append("Each proposal reaches the person as a card with two buttons, and you name them as the card does:\n");
-        text.Append("every card but a go reads **apply** and **not now** (in 中文 **应用** and **暂不**), and\n");
-        text.Append("a go card reads **go there** and **not now** (in 中文 **前往** and **暂不**).\n\n");
+        text.Append("a go card reads **go there** and **not now** (in 中文 **前往** and **暂不**),\n");
+        text.Append("a delete card **delete** and **not now** (in 中文 **删除** and **暂不**),\n");
+        text.Append("a bring-up-to-date card **look for updates** until the person has looked, then **apply** (in 中文 **查看更新**, then **应用**),\n");
+        text.Append("and every other card reads **apply** and **not now** (in 中文 **应用** and **暂不**).\n\n");
         return text.ToString();
     }
 }
