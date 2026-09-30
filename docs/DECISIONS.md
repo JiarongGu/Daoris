@@ -4567,3 +4567,36 @@ state carries the notice of a record worth saying (`DriverModuleTests`), and the
 `homeNotice` holds (`shell.test.tsx`). No second install has been started on a real account, and the
 deployment rehearsal starts its install with a scratch home, the respected case, so it never shows
 the override.
+
+### 2. DIST1 — a consumer installs the CLI from npm, `daoris@<version>`
+
+The owner's call: **npm's `daoris@X`**. REV3 found the defect (docs F1): the README's `npx
+github:JiarongGu/Daoris#v0.0.1 …` could not run, because the repository's root package is a private
+workspace with no `bin`, and no tag exists. The release workflow already packs `src/Daoris.Cli` and
+publishes it to npm as `daoris`, so that package is what a consumer runs.
+
+- **The install lines** are `npx daoris@0.0.1 init`, `sync` and `check`, at the version the release
+  tooling already holds. Nothing was bumped.
+- **`init` writes `"source": "daoris@<canon version>"`**: D11's provenance and command to re-run, now
+  literally what follows `npx`. The canon's version is the package's, which a test already holds.
+- **Daoris's own manifest and the examples' pin the same**, and their locks were re-synced, since the
+  lock records the manifest's `source` and the family rehearsal requires a sync to change nothing.
+- **`release-prep` rewrites and checks the new spelling**: every `daoris@X.Y.Z` in the README, and a
+  manifest's `source` field alone. `--check` also reports a README with no `npx daoris@` install line,
+  which would otherwise pass with nothing to disagree with, and any `github:…#v` ref left in the README
+  or a manifest, since nothing rewrites that spelling now. `version.test.ts` holds the rewrite and the
+  check together: every file rewritten at a new version must then agree at it.
+
+**What does not move.** D11: the canon ships inside the package, and `source` is never fetched. A
+manifest that still names the git ref reads as before, since the tool requires only that `source` is
+there; changing it is the repository's own edit, and the live consumer count is zero.
+
+**Rejected.** **A git ref with a root `bin`**, the other way the row offered: the root would have to
+become a publishable package beside the one the release publishes. `npx` of a git ref also clones and
+builds on every new machine, and needs a tag for every release, which the workflow creates only on
+request. The npm package is already built, published with provenance, and gated by the release rehearsal.
+
+**What the gates do not cover.** No release has run, so nothing is on npm. On 2026-09-30 the registry
+answered 404 for `daoris`: the name was unclaimed, and nothing yet proves the first publish will get
+it. `npm run rehearse` installs the packed tarball through its `bin` locally, which is the nearest
+proof of the install lines; it did not run in this change.

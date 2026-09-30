@@ -44,8 +44,9 @@ The first version: doctrine that installs, is checked, and flows back.
   that failed a build would be worse than the duplication. Validated against the real case, where it
   independently finds a 58% overlap that previously took a manual read to notice.
 - **Zero runtime dependencies.** Node ≥ 22, ESM, `node:test`. Nothing to install — every command runs
-  through `npx` against a pinned reference.
-- **The canon ships inside the package**, so the pinned reference *is* the version pin. No command
+  as `npx daoris@<version>`, the npm package the release publishes, and `init` writes that as the
+  manifest's `source` (D105).
+- **The canon ships inside the package**, so the pinned version *is* the doctrine's version. No command
   fetches anything, which is what makes `check` offline by construction rather than by discipline —
   asserted by a test that deletes the canon and requires a clean exit.
 - **Three layers.** Core installs everywhere, except a row a pack offers off and the repository

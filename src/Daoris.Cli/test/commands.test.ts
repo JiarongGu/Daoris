@@ -31,6 +31,9 @@ test('init writes a manifest with no packs and reports what is available', () =>
   const manifest = readManifest(repoFx.root);
   assert.deepEqual(manifest.packs, []);
   assert.equal(manifest.target, '.claude');
+  // The npm package the canon shipped in, at the canon's version (DIST1, D105): what a consumer
+  // re-runs as `npx <source> sync`, and never a git ref, which has no `bin` to run.
+  assert.equal(manifest.source, 'daoris@0.1.0');
   assert.match(out.join('\n'), /win\s+—\s+Windows machine traps/);
   assert.match(out.join('\n'), /knowledge\/storage\.md/);
 
