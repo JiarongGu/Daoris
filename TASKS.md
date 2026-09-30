@@ -168,20 +168,11 @@ then FRAME1's audit and model, then PLUGUI1 on that frame. DEV1 is a design docu
 them. Each starts with its contract document, is built in parts by subagents, and is looked at on the
 install in both themes and both languages.
 
-- [ ] **NAME1 — a name is a UI element, designed in both languages.** (NAME1a, the design half, building: D116.) Today many Chinese names are
-  translations of the English, not names: Settings' own sections (*Daoris 自身的 AI*, *智能体与账户*),
-  a section's title against its button (*同步到最新* over *查看更新*), and one concept under two words
-  across screens. English has the same drift. (a) **A glossary, one term per concept in each language**,
-  chosen as names rather than translated (session, quest, line, landing, workspace, repository, agent,
-  account, plugin, harness, tree, branch, and the rest), kept as a file both catalogues are checked
-  against. (b) **Naming rules for each kind of element**: a navigation item, a tab, a section title, a
-  button (verb first, the object named as the glossary names it), a status word, and a sentence. Each gets
-  a length budget per language, measured on the window at the design's widths. (c) **An audit of every
-  catalogue key a person reads as a label** (navigation, headings, tabs, buttons, badges, the status
-  bar), with its proposed name in each language and why. (d) **The renames, and a check**: the i18n check
-  gains glossary conformance and the label budgets, so drift fails a gate. It extends
-  `.claude/knowledge/translation-parity.md` (*chrome translates and content does not*) and
-  `docs/2026-09-19-platform-ux.md`. The contract is a naming design document, written first.
+- [ ] **NAME1b — the renames, and the names check strict** (building; D116). The owner approved the audit's
+  names on 2026-10-01, with Projects → Repositories (项目 → 仓库) and an ask named 需求. Apply
+  `docs/2026-10-01-naming-audit.md` in both catalogues (keys stay), the sentences with a forbidden word,
+  and `names:check --strict` in the gate for glossary, form and doors (budgets report only, D54); then every
+  screen looked at in both languages.
 - [ ] **FRAME1b — the list pane, Sessions' first** (D118, model §6): `ListPane`, `StripMark`, `listKeys`,
   per-view bounds, strip by room, the laid-over mode; Sessions' rail moves onto it. Look: 1280, 900, 680 px.
 - [ ] **FRAME1c — the main area and the view contract**: `ViewMain`, per-view memory, `open(view, item?)`,
@@ -482,7 +473,9 @@ TDD, looked at on the window, and the ones that touch a real session use one (au
   **Two more at LEFT3's merge (2026-10-01)**, with three subagents building beside it, each failing in the full
   serial run and passing alone: `TurnStopTests.A_conversation_on_the_native_door_is_handed_the_plugins_servers`
   (driver, 571/572) and `DriverModulePluginsTests.The_kit_makes_a_plugin_where_the_person_names_and_tries_it_or_an_installed_one`
-  (modules, 113/114). Both spawn real processes; load is again the common factor.
+  (modules, 113/114). Both spawn real processes; load is again the common factor. **And one at NAME1a's merge**:
+  `PluginKitTests.A_silent_plugin_is_still_running_and_said_nothing_within_the_patience`, a timing test under
+  three subagents' builds (the driver's Process half took 37 minutes), green alone.
 
 - [ ] **TEST1 — a Node process aborts with `0xC0000409`: seen three times now, once outside Playwright.** The
   second sighting was its trigger. Both runs died with `worker process exited unexpectedly
