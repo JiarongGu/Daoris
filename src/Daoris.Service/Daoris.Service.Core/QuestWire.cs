@@ -148,6 +148,15 @@ public static class QuestWire
             writer.WriteString("body", asked.Body);
             if (asked.Parent is not null) writer.WriteString("parent", asked.Parent);
             if (asked.PublishedBy is not null) writer.WriteString("publishedBy", asked.PublishedBy);
+            // Only when it names some (D115 §2.2): an older build reads a quest with lanes as a quest to
+            // the whole repository, and a quest to the whole repository crosses exactly as it did.
+            if (asked.Lanes.Count > 0)
+            {
+                writer.WriteStartArray("lanes");
+                foreach (var lane in asked.Lanes) writer.WriteStringValue(lane);
+                writer.WriteEndArray();
+            }
+
             writer.WriteStartArray("links");
             foreach (var link in asked.Links) writer.WriteStringValue(link);
             writer.WriteEndArray();
@@ -264,6 +273,10 @@ public static class QuestWire
                 steps.Add(new(stepTo, stepTitle, stepBody));
             }
 
+            // A lane that is not a string is half an address, and a quest half-addressed is not whole.
+            var lanes = Items(asked, "lanes");
+            if (lanes.Any(lane => lane.ValueKind != JsonValueKind.String)) return null;
+
             published = new Quest(quest, from, to, title, body, QuestStatus.Open, null, at, at)
             {
                 Links = Items(asked, "links").Select(l => l.ValueKind == JsonValueKind.String ? l.GetString() : null)
@@ -272,6 +285,7 @@ public static class QuestWire
                 Then = steps,
                 Parent = Text(asked, "parent"),
                 PublishedBy = Text(asked, "publishedBy"),
+                Lanes = lanes.Select(lane => lane.GetString()!).ToList(),
             };
         }
 

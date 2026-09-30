@@ -138,6 +138,9 @@ public sealed class RegistrationStore
             // What it says it uses (D91): part of the declaration, replaced with it on every
             // registration like `owns`. Empty for every row from before it — nothing declared.
             ("uses", "uses TEXT NOT NULL DEFAULT '[]'"),
+            // The lanes it declares (D115 §2.2), as their words. NULL is unstated, which is every row
+            // from before it and what a registration that says nothing of lanes preserves.
+            ("lanes", "lanes TEXT NULL"),
         })
         {
             await SchemaColumns.EnsureAsync(_connection, "registrations", column, definition, ct).ConfigureAwait(false);
@@ -205,9 +208,9 @@ public sealed class RegistrationStore
     {
         await using var command = _connection.CreateCommand();
         command.CommandText = $"""
-            INSERT INTO registrations (repository, summary, owns, accepts, packs, updated, root, joined, shares_knowledge, workspace, adopted, default_branch, uses)
+            INSERT INTO registrations (repository, summary, owns, accepts, packs, updated, root, joined, shares_knowledge, workspace, adopted, default_branch, uses, lanes)
             VALUES ($repository, $summary, $owns, $accepts, $packs, $updated, $root, $joined, $shares,
-                    COALESCE($workspace, '{Workspaces.Default}'), $adopted, $default_branch, $uses)
+                    COALESCE($workspace, '{Workspaces.Default}'), $adopted, $default_branch, $uses, $lanes)
             ON CONFLICT (repository) DO UPDATE SET
               summary = $summary, owns = $owns, accepts = $accepts, packs = $packs, updated = $updated, uses = $uses,
               root = $root, joined = $joined, shares_knowledge = $shares, adopted = $adopted,
@@ -215,8 +218,11 @@ public sealed class RegistrationStore
               -- Unstated preserves, for the same reason the workspace does: `daoris connect` says
               -- nothing about branches and runs on every tick, and a null that overwrote would erase
               -- what the driver declared — after which every feed would be taken from any branch.
-              default_branch = COALESCE($default_branch, default_branch)
-            RETURNING workspace, default_branch
+              default_branch = COALESCE($default_branch, default_branch),
+              -- The lanes too (D115 §2.2): only `connect` reads the repository's file, and it always
+              -- says; the page's add and an import say nothing, and must not erase what it said.
+              lanes = COALESCE($lanes, lanes)
+            RETURNING workspace, default_branch, lanes
             """;
         command.Parameters.AddWithValue("$adopted", registration.Adopted ? 1 : 0);
         command.Parameters.AddWithValue(
@@ -228,6 +234,8 @@ public sealed class RegistrationStore
         command.Parameters.AddWithValue("$accepts", ToJson(registration.Accepts));
         command.Parameters.AddWithValue("$packs", ToJson(registration.Packs));
         command.Parameters.AddWithValue("$uses", ToJson(registration.DependsOn));
+        command.Parameters.AddWithValue(
+            "$lanes", registration.Lanes is null ? DBNull.Value : LanesJson(registration.DeclaredLanes));
         command.Parameters.AddWithValue("$updated", now.ToString("O"));
         command.Parameters.AddWithValue("$root", (object?)registration.Root ?? DBNull.Value);
         command.Parameters.AddWithValue("$joined", registration.Joined ? 1 : 0);
@@ -238,7 +246,7 @@ public sealed class RegistrationStore
                 ? DBNull.Value
                 : registration.DefaultBranch.Trim());
 
-        // Both preserved fields come back, for the same reason: what is SERVED is what the store
+        // Every preserved field comes back, for the same reason: what is SERVED is what the store
         // decided, never what arrived (D48 §2) — otherwise the row in memory and the row on disk
         // disagree until a restart.
         await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
@@ -251,6 +259,7 @@ public sealed class RegistrationStore
         {
             Workspace = Workspaces.Normalize(reader.IsDBNull(0) ? null : reader.GetString(0)),
             DefaultBranch = reader.IsDBNull(1) ? null : reader.GetString(1),
+            Lanes = reader.IsDBNull(2) ? null : LanesFromJson(reader.GetString(2)),
         };
     }
 
@@ -520,7 +529,7 @@ public sealed class RegistrationStore
         await using var command = _connection.CreateCommand();
         command.CommandText =
             "SELECT repository, summary, owns, accepts, packs, root, joined, shares_knowledge, workspace, adopted, "
-            + "default_branch, uses FROM registrations";
+            + "default_branch, uses, lanes FROM registrations";
 
         var registrations = new List<Registration>();
         await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
@@ -539,10 +548,46 @@ public sealed class RegistrationStore
                 SharesKnowledge: reader.GetInt32(7) != 0,
                 Workspace: Workspaces.Normalize(reader.IsDBNull(8) ? null : reader.GetString(8)),
                 DefaultBranch: reader.IsDBNull(10) ? null : reader.GetString(10),
-                Uses: FromJson(reader.GetString(11))));
+                Uses: FromJson(reader.GetString(11)),
+                Lanes: reader.IsDBNull(12) ? null : LanesFromJson(reader.GetString(12))));
         }
 
         return registrations;
+    }
+
+    /// <summary>A registration's lanes as the store keeps them: their words, in the declared order.</summary>
+    private static string LanesJson(IReadOnlyList<DeclaredLane> lanes)
+    {
+        using var stream = new MemoryStream();
+        using (var writer = new Utf8JsonWriter(stream))
+        {
+            writer.WriteStartArray();
+            foreach (var lane in lanes)
+            {
+                writer.WriteStartObject();
+                writer.WriteString("id", lane.Id);
+                writer.WriteString("title", lane.Title);
+                writer.WriteString("summary", lane.Summary);
+                writer.WriteBoolean("steward", lane.Steward);
+                writer.WriteEndObject();
+            }
+
+            writer.WriteEndArray();
+        }
+
+        return System.Text.Encoding.UTF8.GetString(stream.ToArray());
+    }
+
+    private static IReadOnlyList<DeclaredLane> LanesFromJson(string json)
+    {
+        using var document = JsonDocument.Parse(json);
+        return Declared.Lanes(document.RootElement.EnumerateArray()
+            .Where(item => item.ValueKind == JsonValueKind.Object)
+            .Select(item => new DeclaredLane(
+                JsonFields.Text(item, "id") ?? "",
+                JsonFields.Text(item, "title") ?? "",
+                JsonFields.Text(item, "summary") ?? "",
+                item.TryGetProperty("steward", out var steward) && steward.ValueKind == JsonValueKind.True)));
     }
 
     // Written and read by hand rather than through the reflection serializer, for the same reason the

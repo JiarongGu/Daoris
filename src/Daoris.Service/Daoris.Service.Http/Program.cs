@@ -841,7 +841,13 @@ app.MapPost("/api/registry", async (ComposedService s, HttpContext http, Registe
         // The canonical line, as the checkout that registered knows it (D48 §6) — unstated preserves.
         DefaultBranch: body.DefaultBranch,
         // What it says it uses (D91), part of the declaration and replaced with it.
-        Uses: Declared.Uses(body.Domain?.Uses, body.Repository));
+        Uses: Declared.Uses(body.Domain?.Uses, body.Repository),
+        // Its lanes' words (D115 §2.2); unstated preserves what the row holds.
+        Lanes: body.Lanes is null
+            ? null
+            : Declared.Lanes(body.Lanes.Select(lane => lane is null
+                ? null
+                : new DeclaredLane(lane.Id ?? "", lane.Title ?? "", lane.Summary ?? "", lane.Steward ?? false))));
 
     // A SHARED deployment holds many machines' copies of one declaration, so it orders them by the
     // commit each was read at, as it orders their knowledge (SYNC5b) — the last writer no longer wins.
@@ -959,7 +965,9 @@ app.MapGet("/api/registry", async (
         // Machine-local by design (D46): a filesystem path is answered only to a caller on this
         // machine, so a remote deployment never serves anyone's disk layout to the network.
         Root: MachineLocal(http) ? r.Root : null,
-        r.Joined, r.SharesKnowledge, r.InWorkspace, r.DefaultBranch, r.Addressable, r.DependsOn)));
+        r.Joined, r.SharesKnowledge, r.InWorkspace, r.DefaultBranch, r.Addressable, r.DependsOn,
+        // What an asker may address there (D115 §2.2): each lane's words, never its paths.
+        r.DeclaredLanes.Select(lane => new LaneWire(lane.Id, lane.Title, lane.Summary, lane.Steward)).ToList())));
 
 // A repository's code map (MAP3a): its modules and how they depend on each other, read from its own
 // committed file — never written to (D32). A repository with a checkout here is read from it on each
@@ -1289,7 +1297,8 @@ static QuestResponse ToQuest(Quest q, QuestFiles? files, bool machineLocal, bool
     q.Conflicts.Select(c => new QuestConflictResponse(c.Machine, c.Attempted.ToString(), c.Note, c.At, c.Sequence)).ToList(),
     q.Awaits,
     q.PublishedBy,
-    deletable);
+    deletable,
+    q.Lanes);
 
 // An ask's answer. A refusal is the desk's sentence, whole — including a named receiver the exchange
 // refused, whose message already says the ask was kept and where it was proposed instead.

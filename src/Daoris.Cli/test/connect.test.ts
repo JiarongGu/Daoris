@@ -53,6 +53,75 @@ test('a declaration goes on the wire with what it uses, and without the field wh
   assert.equal('uses' in (silent.domain ?? {}), false);
 });
 
+/**
+ * D115 §2.2 (DEV4): a repository's lanes travel as their words, and ALWAYS as a list — none is `[]`.
+ * The service keeps a registration's lanes when one says nothing about them (the page's add, an older
+ * client), so only an explicit empty list can take away lanes a repository stopped declaring.
+ */
+test('the registration carries the lanes\' words, and none is an explicit empty list', () => {
+  const lanes = [{ id: 'core', title: 'Core', summary: 'The runtime.', steward: false }];
+  const said = registration('/srv/engine', manifest, 'engine', 'https://daoris.example.com', undefined, lanes);
+  assert.deepEqual(said.lanes, lanes);
+
+  const none = registration('/srv/engine', manifest, 'engine', 'https://daoris.example.com');
+  assert.deepEqual(none.lanes, []);
+});
+
+test('connect --dry-run sends the lanes daoris.lanes.json declares, words only, and says how to address one', async () => {
+  const fx = makeFixture('connect-lanes');
+  fx.write('daoris.json', JSON.stringify({
+    source: 's',
+    domain: { summary: 'An engine.', owns: ['the runtime'], accepts: ['a quest'] },
+  }));
+  fx.write('daoris.lanes.json', JSON.stringify({
+    lanes: [
+      { id: 'core', title: 'Core', summary: 'The runtime.', paths: ['runtime/**'] },
+      { id: 'assets', title: 'Assets', summary: 'The pipeline.', paths: ['assets/**'], gates: ['cli'] },
+    ],
+  }));
+  process.env.DAORIS_SERVICE_URL = 'http://localhost:5177';
+
+  const out: string[] = [];
+  const code = await commandConnect({
+    root: fx.root, argv: ['--dry-run'], write: (s: string) => out.push(s), packageRoot: '',
+  });
+
+  assert.equal(code, 0);
+  const payload = JSON.parse(out.slice(0, -1).join('\n'));
+  assert.deepEqual(payload.lanes, [
+    { id: 'core', title: 'Core', summary: 'The runtime.', steward: false },
+    { id: 'assets', title: 'Assets', summary: 'The pipeline.', steward: false },
+  ]);
+  assert.equal(JSON.stringify(payload).includes('runtime/**'), false, 'no glob goes on the wire');
+
+  delete process.env.DAORIS_SERVICE_URL;
+  fx.cleanup();
+});
+
+test('connect refuses an unreadable daoris.lanes.json before it sends anything', async () => {
+  const fx = makeFixture('connect-lanes-unreadable');
+  fx.write('daoris.json', JSON.stringify({
+    source: 's',
+    domain: { summary: 'An engine.', owns: ['the runtime'], accepts: ['a quest'] },
+  }));
+  fx.write('daoris.lanes.json', JSON.stringify({ lanes: [{ id: 'core', paths: ['a/**'] }, { id: 'core', paths: ['b/**'] }] }));
+  process.env.DAORIS_SERVICE_URL = 'http://localhost:5177';
+
+  const out: string[] = [];
+  try {
+    await commandConnect({ root: fx.root, argv: ['--dry-run'], write: (s: string) => out.push(s), packageRoot: '' });
+    assert.fail('expected a refusal');
+  } catch (error) {
+    assert.ok(error instanceof DaorisError);
+    assert.equal(error.exitCode, 1);
+    assert.match(error.message, /lane 'core': the id is used twice/);
+  }
+  assert.deepEqual(out, []);
+
+  delete process.env.DAORIS_SERVICE_URL;
+  fx.cleanup();
+});
+
 test('a remote service is not told the root', () => {
   const body = registration('/srv/Repo', manifest, 'Repo', 'https://daoris.example.com');
 
