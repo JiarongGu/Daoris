@@ -22,13 +22,24 @@
  * needed *a* page passed, and the ones that cared which host they were in read exactly like an app
  * regression. Pick a free one, and attach only to something we started.
  */
+/**
+ * Both loopback addresses. The engine binds its debug port to `localhost`, which one machine resolves to
+ * IPv4 and another (or the same one, another day) to IPv6 alone: a port asked only on 127.0.0.1 then read
+ * as free while the shell held it on [::1], and every instrument found nothing listening (LOOK3).
+ */
+export const LOOPBACKS = ['127.0.0.1', '[::1]'];
+
 export async function freePort(preferred, span = 20) {
   for (let port = preferred; port < preferred + span; port += 1) {
     // ANY answer means something is listening — not just an OK one. Testing `response.ok` would call
     // a port held by some other HTTP server free, and the shell would then fail to bind it.
-    const taken = await fetch(`http://127.0.0.1:${port}/json/version`, { signal: AbortSignal.timeout(700) })
-      .then(() => true)
-      .catch(() => false);
+    let taken = false;
+    for (const host of LOOPBACKS) {
+      taken = await fetch(`http://${host}:${port}/json/version`, { signal: AbortSignal.timeout(700) })
+        .then(() => true)
+        .catch(() => false);
+      if (taken) break;
+    }
     if (!taken) return port;
   }
   throw new Error(`no free port in ${preferred}..${preferred + span - 1}`);
@@ -68,9 +79,12 @@ export function pickPageTarget(targets, window = null) {
 
 /** The targets a CDP endpoint is serving, or null when nothing is listening there. */
 export async function targetsAt(port) {
-  const response = await fetch(`http://127.0.0.1:${port}/json/list`, { signal: AbortSignal.timeout(2000) })
-    .catch(() => null);
-  return response ? response.json() : null;
+  for (const host of LOOPBACKS) {
+    const response = await fetch(`http://${host}:${port}/json/list`, { signal: AbortSignal.timeout(2000) })
+      .catch(() => null);
+    if (response) return response.json();
+  }
+  return null;
 }
 
 /** One socket, id-matched replies. */
