@@ -83,4 +83,11 @@ export const UpToDate: Story = {
   args: { plan: { lines: [pull({ kind: 'up-to-date' })], rebases: [rebase({ branch: 'daoris/s-1f2e3d4c', kind: 'up-to-date' })], deletes: [] } },
 };
 
-export const Working: Story = { args: { ...AfterASquashMerge.args, busy: true } };
+/** A press under way: its button reads as busy, and the section says what it is doing. */
+export const Working: Story = { args: { ...AfterASquashMerge.args, bringing: true } };
+
+/** A look under way (WSR7): how many repositories it is fetching, said where the person pressed. */
+export const Looking: Story = { args: { ...RepositoriesApart.args, looking: true, lookingAt: 3 } };
+
+/** A look the page stopped waiting for, said in the section rather than only in a toast. */
+export const StoppedWaiting: Story = { args: { ...RepositoriesApart.args, stopped: 'look' } };

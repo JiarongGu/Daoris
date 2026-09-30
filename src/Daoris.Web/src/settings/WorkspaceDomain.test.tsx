@@ -127,10 +127,40 @@ describe("the workspace domain: the machine's wiring", () => {
     await userEvent.click(button);
     await userEvent.click(await screen.findByRole('button', { name: 'Bring up to date: 2 changes' }));
 
-    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'TREES_SYNC_PLAN', {});
-    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'TREES_SYNC', { payload: { only: ['engine:main', 'engine:daoris/s-step'] } });
+    // Each waits as long as the host may work (WSR7): a look a workspace's worth of fetches, the press two replays.
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'TREES_SYNC_PLAN', { timeoutMs: 18 * 60_000 });
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'TREES_SYNC', {
+      payload: { only: ['engine:main', 'engine:daoris/s-step'] }, timeoutMs: 12 * 60_000,
+    });
     expect(notify).toHaveBeenCalledWith('2 of 2 done. What did not happen is still listed, with why.');
     expect(serviceCalls()).toEqual([]);
+  });
+
+  /**
+   * WSR7: a look the page stopped waiting for is said in the section, where it was asked, rather than only in a toast
+   * that goes — and the look's bound is the host's, for the repositories it takes.
+   */
+  it('says in the section that it stopped waiting for a look, and waits as long as the look it asked may take', async () => {
+    const notify = vi.fn();
+    invoke.mockImplementation(async (module: string, type: string) => {
+      if (module !== 'DAORIS.DRIVER') return WIRING;
+      if (type === 'TREES_SYNC_SCOPE') {
+        return { repositories: ['engine', 'game', 'tools', 'atlas', 'beacon'].map((repository) => ({ repository, workspace: 'aurora', holds: true })) };
+      }
+      if (type === 'TREES_SYNC_PLAN') throw Object.assign(new Error('DAORIS.DRIVER.TREES_SYNC_PLAN timed out'), { code: 'TIMEOUT' });
+      if (type === 'SWEEP_PLAN') return { branches: [], landed: [] };
+      return DRIVER_STATE;
+    });
+    show(<SettingsView notify={notify} section="workspace" />);
+
+    await screen.findByText(/A look fetches the 5 repositories/);
+    await userEvent.click(screen.getByRole('button', { name: 'Look for updates' }));
+
+    const section = within(screen.getByRole('region', { name: 'Bring up to date' }));
+    expect((await section.findByRole('alert')).textContent).toMatch(/stopped waiting before the look answered/);
+    // Five repositories, four at a time: two rounds of a fetch's two minutes, and two to spare.
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'TREES_SYNC_PLAN', { timeoutMs: 6 * 60_000 });
+    expect(notify).not.toHaveBeenCalledWith(expect.stringMatching(/did not answer in time/), 'error');
   });
 
   /**

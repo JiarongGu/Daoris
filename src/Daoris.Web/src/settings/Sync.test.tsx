@@ -152,9 +152,63 @@ describe('bringing repositories up to date', () => {
   });
 
   it('holds both presses while one is under way', () => {
-    draw({ busy: true });
+    draw({ bringing: true });
 
-    expect(screen.getByRole('button', { name: /Bring up to date/ })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /Bring/ })).toBeDisabled();
     expect(screen.getByRole('button', { name: 'Look again' })).toBeDisabled();
+  });
+
+  describe('while it works, and when the page stops waiting (WSR7)', () => {
+    it('says how many repositories a look is fetching, and its button reads as busy', () => {
+      draw({ plan: undefined, looking: true, lookingAt: 7 });
+
+      expect(screen.getByRole('status').textContent).toBe('Looking at 7 repositories: fetching each from origin, a few at a time.');
+      const button = screen.getByRole('button', { name: 'Looking…' });
+      expect(button).toBeDisabled();
+      expect(button).toHaveAttribute('aria-busy', 'true');
+    });
+
+    it('still says it is looking where it does not know how many', () => {
+      draw({ plan: undefined, looking: true });
+
+      expect(screen.getByRole('status').textContent).toMatch(/^Looking: fetching each repository/);
+    });
+
+    it('holds the last answer, dimmed, while it looks again', () => {
+      draw({ looking: true, lookingAt: 2 });
+
+      expect(screen.getByRole('group', { name: 'engine' })).toHaveClass('opacity-60');
+    });
+
+    it('says a press is under way on its own button', () => {
+      draw({ bringing: true });
+
+      expect(screen.getByRole('status').textContent).toMatch(/judged again right before it moves/);
+      expect(screen.getByRole('button', { name: 'Bringing up to date…' })).toHaveAttribute('aria-busy', 'true');
+    });
+
+    it('says in the section that the page stopped waiting, for a look and for a press', () => {
+      const { rerender } = render(
+        <Tooltip.Provider>
+          <SyncSection plan={undefined} stopped="look" onLook={vi.fn()} onSync={vi.fn()} />
+        </Tooltip.Provider>,
+      );
+      expect(screen.getByRole('alert').textContent).toMatch(/stopped waiting before the look answered/);
+
+      rerender(
+        <Tooltip.Provider>
+          <SyncSection plan={PLAN} stopped="press" onLook={vi.fn()} onSync={vi.fn()} />
+        </Tooltip.Provider>,
+      );
+      expect(screen.getByRole('alert').textContent).toMatch(/stopped waiting before the press answered/);
+
+      // A look under way is the answer to it, so the sentence goes while it runs.
+      rerender(
+        <Tooltip.Provider>
+          <SyncSection plan={PLAN} stopped="look" looking onLook={vi.fn()} onSync={vi.fn()} />
+        </Tooltip.Provider>,
+      );
+      expect(screen.queryByRole('alert')).toBeNull();
+    });
   });
 });

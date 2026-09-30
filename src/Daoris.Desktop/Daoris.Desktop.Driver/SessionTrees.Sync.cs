@@ -205,16 +205,30 @@ public static class SyncWords
           + ". `--all` includes them, and `--repository <name>` one of them.";
 }
 
+/// <summary>
+/// How long bringing up to date may take over each step (WSR6, WSR7), and how many fetches run at once. Public because
+/// the page spells them again, to wait as long as the host may work: `bridge/call.ts`'s `hostBounds`, held to these by
+/// `SyncBoundsTests`. A page that waited its bridge's default 30 seconds gave up on a look that ran for minutes.
+/// </summary>
+public static class SyncBounds
+{
+    /// <summary>A fetch is a round trip a person is waiting on, as a plugin's push is (D100).</summary>
+    public static readonly TimeSpan Fetch = TimeSpan.FromMinutes(2);
+
+    /// <summary>
+    /// How many repositories are fetched at once (WSR7): a look waits about one fetch's time rather than one per
+    /// repository, and a small number asks little of the machine's connection and of a remote that limits its callers.
+    /// </summary>
+    public const int FetchesAtOnce = 4;
+
+    /// <summary>A replay is local, but a signing prompt nobody answers must not hold the press for ever.</summary>
+    public static readonly TimeSpan Replay = TimeSpan.FromMinutes(5);
+}
+
 public sealed partial class SessionTrees
 {
     /// <summary>What the press says of a row that is no longer what the person saw listed.</summary>
     private const string LeftSince = "it changed since the list, and is left as it was";
-
-    /// <summary>A fetch is a round trip a person is waiting on, as a plugin's push is (D100).</summary>
-    private static readonly TimeSpan FetchBound = TimeSpan.FromMinutes(2);
-
-    /// <summary>A replay is local, but a signing prompt nobody answers must not hold the press for ever.</summary>
-    private static readonly TimeSpan ReplayBound = TimeSpan.FromMinutes(5);
 
     /// <summary>
     /// A credential prompt with nobody at a terminal would wait for ever: git is told to fail instead. The person's
@@ -241,11 +255,11 @@ public sealed partial class SessionTrees
         var rebases = new List<RebaseItem>();
         var deletes = new List<LandedItem>();
         var (looked, apart) = await ScopedAsync(repositories, scope ?? SyncScope.Held, ct).ConfigureAwait(false);
-        foreach (var (repository, space, root, _) in looked)
+        // The network first, a few repositories at a time (WSR7); then each judged in turn, from what it fetched.
+        var fetches = await FetchedAsync(looked, fetch, ct).ConfigureAwait(false);
+        foreach (var ((repository, space, root, _), (line, fetched)) in looked.Zip(fetches))
         {
             var workspace = RemoteTarget.Workspace(space);
-            var line = (await LineAsync(root, repository, workspace, ct).ConfigureAwait(false)).Branch;
-            var fetched = fetch ? await FetchAsync(root, line, ct).ConfigureAwait(false) : null;
             var (pull, _) = await JudgePullAsync(root, repository, workspace, line, fetched, ct).ConfigureAwait(false);
             lines.Add(pull);
 
@@ -274,15 +288,36 @@ public sealed partial class SessionTrees
         IEnumerable<(string Repository, string? Workspace, string? Root)> repositories, CancellationToken ct)
     {
         var record = Recorded.All();
-        var checkouts = new List<Checkout>();
-        foreach (var (repository, space, root) in repositories)
-        {
-            if (string.IsNullOrWhiteSpace(root) || !Directory.Exists(root)) continue;
-            var holds = await HoldsAsync(root, repository, record, ct).ConfigureAwait(false);
-            checkouts.Add(new Checkout(repository, space, root, new SyncRepository(repository, RemoteTarget.Workspace(space), holds)));
-        }
+        var present = repositories
+            .Where(each => !string.IsNullOrWhiteSpace(each.Root) && Directory.Exists(each.Root))
+            .ToList();
+        var holds = await AtMostAsync(present, SyncBounds.FetchesAtOnce,
+            (each, token) => HoldsAsync(each.Root!, each.Repository, record, token), ct).ConfigureAwait(false);
+        return [.. present.Zip(holds, (each, held) =>
+            new Checkout(each.Repository, each.Workspace, each.Root!, new SyncRepository(each.Repository, RemoteTarget.Workspace(each.Workspace), held)))];
+    }
 
-        return checkouts;
+    /// <summary>
+    /// Each checkout's line, and its fetch where asked (WSR7): the one network step, a few repositories at a time, so a
+    /// look waits about one fetch's time rather than one per repository. A failed fetch is the reason, in git's words.
+    /// </summary>
+    private async Task<IReadOnlyList<(string? Line, string? Failed)>> FetchedAsync(List<Checkout> checkouts, bool fetch, CancellationToken ct) =>
+        await AtMostAsync(checkouts, SyncBounds.FetchesAtOnce, async (each, token) =>
+        {
+            var line = (await LineAsync(each.Root, each.Repository, RemoteTarget.Workspace(each.Space), token).ConfigureAwait(false)).Branch;
+            return (line, fetch ? await FetchAsync(each.Root, line, token).ConfigureAwait(false) : null);
+        }, ct).ConfigureAwait(false);
+
+    /// <summary><paramref name="work"/> over each item, at most <paramref name="atOnce"/> at a time, the answers in the items' order (WSR7).</summary>
+    internal static async Task<IReadOnlyList<TResult>> AtMostAsync<T, TResult>(
+        IReadOnlyList<T> items, int atOnce, Func<T, CancellationToken, Task<TResult>> work, CancellationToken ct)
+    {
+        var answers = new TResult[items.Count];
+        await Parallel.ForEachAsync(
+            Enumerable.Range(0, items.Count),
+            new ParallelOptions { MaxDegreeOfParallelism = atOnce, CancellationToken = ct },
+            async (index, token) => answers[index] = await work(items[index], token).ConfigureAwait(false)).ConfigureAwait(false);
+        return answers;
     }
 
     /// <summary>The checkouts a scope takes, and every other one, listed apart (D112).</summary>
@@ -360,12 +395,12 @@ public sealed partial class SessionTrees
         var deletes = new List<LandedResult>();
         bool Listed(string key) => only is null || only.Contains(key);
         var (looked, apart) = await ScopedAsync(repositories, (scope ?? SyncScope.Held).Listed(only), ct).ConfigureAwait(false);
+        // The network first, a few repositories at a time (WSR7); each is then judged again right before it acts.
+        var fetches = await FetchedAsync(looked, fetch, ct).ConfigureAwait(false);
 
-        foreach (var (repository, space, root, _) in looked)
+        foreach (var ((repository, space, root, _), (line, fetched)) in looked.Zip(fetches))
         {
             var workspace = RemoteTarget.Workspace(space);
-            var line = (await LineAsync(root, repository, workspace, ct).ConfigureAwait(false)).Branch;
-            var fetched = fetch ? await FetchAsync(root, line, ct).ConfigureAwait(false) : null;
 
             // (a) Pull the line.
             var (pull, inRoot) = await JudgePullAsync(root, repository, workspace, line, fetched, ct).ConfigureAwait(false);
@@ -455,7 +490,7 @@ public sealed partial class SessionTrees
         if (line is null) return null;
         var (remote, _, _) = await WorkingTree.GitAsync(root, ["remote", "get-url", "origin"], ct).ConfigureAwait(false);
         if (remote != 0) return "there is no `origin` remote here";
-        var (code, _, err) = await WorkingTree.GitAsync(root, ["fetch", "--quiet", "origin", line], NoPrompt, FetchBound, ct).ConfigureAwait(false);
+        var (code, _, err) = await WorkingTree.GitAsync(root, ["fetch", "--quiet", "origin", line], NoPrompt, SyncBounds.Fetch, ct).ConfigureAwait(false);
         return code == 0 ? null : Failure(err);
     }
 
@@ -838,7 +873,7 @@ public sealed partial class SessionTrees
     {
         var (code, output, err) = await WorkingTree.GitAsync(
             tree, ["-c", "rebase.updateRefs=false", "-c", "rebase.autoStash=false", "rebase", "--onto", onto, upstream],
-            environment: null, ReplayBound, ct).ConfigureAwait(false);
+            environment: null, SyncBounds.Replay, ct).ConfigureAwait(false);
         if (code == 0) return (false, "");
 
         await WorkingTree.GitAsync(tree, ["rebase", "--abort"], ct).ConfigureAwait(false);

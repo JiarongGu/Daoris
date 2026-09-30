@@ -1,7 +1,13 @@
 import { useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button, CheckField, Chip, Inline, Prose } from '../ui';
+import { cn } from '../lib/cn';
+import { Button, CheckField, Chip, Icon, Inline, Prose } from '../ui';
 import { sweepKey, type LandedBranch } from './Sweep';
+
+/** A press under way, on its own button: the refresh mark turning, and still under reduced motion. */
+function Working() {
+  return <Icon name="refresh" size={14} className="motion-safe:animate-spin" />;
+}
 
 /** One row: what the press does to it, its name, and the sentence — the session branches card's own grid. */
 function Row({ name, moving, word, children }: { name: string; moving: boolean; word: string; children: ReactNode }) {
@@ -150,19 +156,31 @@ export const syncKeys = (plan: SyncPlan) => [
  *
  * **It takes the repositories that hold Daoris's branches** (D112). Every other one with a checkout is listed apart,
  * collapsed, and looked at only once the person ticks it — or all of them — and asks; looking again keeps it.
+ *
+ * **A look takes a while, and says so** (WSR7): a sentence naming how many repositories it is fetching, and a button
+ * that reads as busy, since a dimmed one read as nothing happening. A look or a press the page stopped waiting for is
+ * said here, where it was asked, not only in a toast that goes.
  */
-export function SyncSection({ plan, scope, included, busy, onLook, onSync }: {
+export function SyncSection({ plan, scope, included, looking, lookingAt, bringing, stopped, onLook, onSync }: {
   /** Undefined until the person looks. */
   plan?: SyncPlan;
   /** Every repository with a checkout here, and whether each holds a branch of Daoris's; undefined until known. */
   scope?: SyncRepository[];
   /** What the last look was asked to take beside the default. */
   included?: SyncInclude;
-  busy?: boolean;
+  /** A look is under way. */
+  looking?: boolean;
+  /** How many repositories it fetches, where known. */
+  lookingAt?: number | null;
+  /** A press is under way. */
+  bringing?: boolean;
+  /** The step the page stopped waiting for, before the driver answered. */
+  stopped?: 'look' | 'press';
   onLook: (include: SyncInclude) => void;
   onSync: (only: string[]) => void;
 }) {
   const { t } = useTranslation();
+  const busy = looking || bringing;
   const acting = plan ? syncKeys(plan) : [];
   const repositories = plan
     ? [...new Set([...plan.lines, ...plan.rebases, ...plan.deletes].map((row) => row.repository))].sort((a, b) => a.localeCompare(b))
@@ -231,12 +249,26 @@ export function SyncSection({ plan, scope, included, busy, onLook, onSync }: {
         </Prose>
       )}
 
+      {/* What is under way, where the person asked: a look fetches for minutes on a large workspace (WSR7). */}
+      {looking && (
+        <p role="status" className="mt-2 text-small text-ink">
+          {lookingAt ? t('settings.sync.looking', { count: lookingAt }) : t('settings.sync.lookingSome')}
+        </p>
+      )}
+      {bringing && <p role="status" className="mt-2 text-small text-ink">{t('settings.sync.bringing')}</p>}
+      {stopped && !busy && (
+        <p role="alert" className="mt-2 text-small text-st-declined">
+          {t(stopped === 'look' ? 'settings.sync.stopped.look' : 'settings.sync.stopped.press')}
+        </p>
+      )}
+
       {lookedAtNone && <Prose className="mt-2">{t('settings.sync.noneHeld')}</Prose>}
       {plan && !lookedAtNone && acting.length === 0 && <Prose className="mt-2">{t('settings.sync.nothing')}</Prose>}
 
-      {/* A group, not a region, per repository: the session branches below draw a region of the same name. */}
+      {/* A group, not a region, per repository: the session branches below draw a region of the same name. A look
+          again holds the last answer, dimmed, until the new one comes (D41's loading rule). */}
       {plan && repositories.map((repository) => (
-        <div key={repository} role="group" aria-label={repository} className="mt-2">
+        <div key={repository} role="group" aria-label={repository} className={cn('mt-2', looking && 'opacity-60')}>
           <div className="text-small font-medium text-ink-soft">{repository}</div>
           <ul className="m-0 mt-1 list-none p-0">
             {plan.lines.filter((pull) => pull.repository === repository).map((pull) => (
@@ -272,12 +304,14 @@ export function SyncSection({ plan, scope, included, busy, onLook, onSync }: {
 
       <div className="mt-3 flex flex-wrap items-center gap-2">
         {plan && (
-          <Button variant="primary" disabled={busy || acting.length === 0} onClick={() => onSync(acting)}>
-            {t('settings.sync.apply', { count: acting.length })}
+          <Button variant="primary" disabled={busy || acting.length === 0} aria-busy={bringing || undefined} onClick={() => onSync(acting)}>
+            {bringing && <Working />}
+            {bringing ? t('settings.sync.bringingButton') : t('settings.sync.apply', { count: acting.length })}
           </Button>
         )}
-        <Button variant={plan ? 'ghost' : 'primary'} disabled={busy} onClick={() => onLook(included ?? [])}>
-          {t(plan ? 'settings.sync.lookAgain' : 'settings.sync.look')}
+        <Button variant={plan ? 'ghost' : 'primary'} disabled={busy} aria-busy={looking || undefined} onClick={() => onLook(included ?? [])}>
+          {looking && <Working />}
+          {looking ? t('settings.sync.lookingButton') : t(plan ? 'settings.sync.lookAgain' : 'settings.sync.look')}
         </Button>
       </div>
 
