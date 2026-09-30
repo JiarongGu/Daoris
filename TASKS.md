@@ -21,7 +21,7 @@ lists.
 
 ## State
 
-**Counts, and this is their one home:** sixteen commands, **592 CLI tests, 619 service and 45 HTTP host, 1174 driver,
+**Counts, and this is their one home:** sixteen commands, **592 CLI tests, 620 service and 45 HTTP host, 1184 driver,
 385 desktop modules, 80 devkit, 1631 web unit, 21 Playwright**, 66/66 release rehearsal, **301/301
 family rehearsal** (it names its own phases when you run it), **67/67 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge
@@ -46,14 +46,18 @@ SHEN1 (Shenora 0.18), USE1a–f (what the window showed, one defect for the over
 QUEST1 (delete, D95), CONSOLE4 (a terminal, D96), SETUP1 (the setup guide, D97), AGT6 (model and
 effort, D98), CHR8 (one Chromium, D99), BRW7–8 (the browser's door, link routing, who drives), HELP6
 (Ask Daoris proposes every new door, tried with a real helper), WORK1, DEPLOY5 and HTTP1 — most built
-by subagents in their own worktrees and merged, rehearsed and looked at on main. **Next:** LOG2 and
-HELP7 (what the log and the helper showed), then the owner's calls.
+by subagents in their own worktrees and merged, rehearsed and looked at on main. Then HELP7, LOG2
+(the host writes its stop), WSR4 (D100: a landing plugin pushes and opens the pull request, two inert
+examples), HELP8 (Ask Daoris proposes one), and a narrow Settings row that now stacks. **Next:**
+PLUG8 and PLUG9, the owner's *Daoris makes plugins* (building), then the owner's calls. The kit's own
+relay (Shenora.Chromium 0.18.0) leaves a pump unobserved as Daoris's did: a request for the kit's
+owner, not Daoris's to change (LOG2b).
 - **The owner's ticket AR-2201 is landed** on its feature branch in the repository that owns it, not
   pushed; the pull request is theirs, and so are two calls the verify step raised (a rounding change
   in a shared helper, and a production config update). Two landed branches of the ticket before it
   wait for the owner to delete (the permission policy refused a forced branch delete). The private
   notes name them.
-- **The install** runs the latest main; republishing is the session's own call, never while a session
+- **The install** runs main at the narrow-row fix (republished 2026-09-30, host now logs its stop); republishing is the session's own call, never while a session
   on it runs. Start it the normal way, not through the dev tool, unless the instruments are needed
   (USE1g is a session shell's PATH seen once under a dev-tool start).
 - **Load makes flakes**: FLAKE1's real-tick classes fail under parallel builds and pass alone. Run the
@@ -108,7 +112,7 @@ rather than designed.
 
 ## Backlog
 
-**Twenty-five rows are open**: the day's four (USE1's last part to confirm, HELP8, PLUG8, PLUG9),
+**Twenty-four rows are open**: the day's three (USE1's last part to confirm, PLUG8, PLUG9),
 first; the three REV3 left (DIST1, BUDGET1 and
 HOME1, the owner's); the in-app browser's one (BRW3); D85's one (TASKBAR1); the first
 goal's four (FG5, READACROSS1 and HELPREAD1 the owner's, and SEM2 on a trigger); D76's held file tools;
@@ -163,11 +167,6 @@ TASK.md and complete one by one"*).
   (`Harnesses.Apply`). Still confounded: the start (Git Bash hands on `PATH` upper-case with MSYS's
   variables; a normal start hands on `Path`) and the bundled Claude Code (2.1.274 in 0.79.0, 2.1.284
   in 0.84.0). The next session on the normal start answers it: read its snapshot's `export PATH`.
-- [ ] **HELP8 — Ask Daoris proposes a landing rule that names a plugin** (WSR4 left it, D100). Its
-  parser takes `branch <pattern>` and `--tidy` and reads the rest as the pattern. It should take
-  `--plugin <id>` in either order, refuse in `daoris driver landing`'s own words (not installed,
-  switched off, lands no work, a merge naming one), and the room should name the plugins that can land
-  work here, so the helper proposes one the route takes.
 
 ### Plugins Daoris makes (owner, 2026-09-30)
 

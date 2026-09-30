@@ -123,6 +123,9 @@ public sealed class PluginCatalog
     /// </summary>
     public string Signature { get; }
 
+    /// <summary>A machine with no plugins: what a reader that was handed none judges against (HELP8).</summary>
+    public static PluginCatalog None { get; } = new([]);
+
     private PluginCatalog(IReadOnlyList<PluginEntry> plugins)
     {
         Plugins = plugins;

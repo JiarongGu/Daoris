@@ -93,7 +93,25 @@ describe('a setting row', () => {
     const { container } = render(
       <SettingRow label="Which account each tool runs as" control={<span>a-long-path</span>} />);
 
-    expect(container.firstElementChild!.getAttribute('class')).toContain('grid-cols-[minmax(min(16rem,50%),1fr)_auto]');
+    const grid = container.querySelector('.grid')!;
+    expect(grid.getAttribute('class')).toContain('grid-cols-[minmax(min(16rem,50%),1fr)_auto]');
+  });
+
+  /**
+   * WSR4, seen on the window: with Settings' nav and the side bar open a row was 309px, the floor left
+   * the control 130px, and a branch pattern showed eleven characters. A row that narrow puts its control
+   * under the label, at the row's full width; the row is its own container, so it answers to the width
+   * it has, not the window's.
+   */
+  it('puts the control under the label when the row itself is narrow', () => {
+    const { container } = render(
+      <SettingRow label="How work lands" control={<input aria-label="pattern" />} />);
+
+    const row = container.firstElementChild!;
+    expect(row.getAttribute('class')).toContain('@container');
+    const grid = row.querySelector('.grid')!;
+    expect(grid.getAttribute('class')).toContain('@max-[26rem]:grid-cols-1');
+    expect(screen.getByLabelText('pattern').parentElement!.getAttribute('class')).toContain('@max-[26rem]:justify-start');
   });
 });
 

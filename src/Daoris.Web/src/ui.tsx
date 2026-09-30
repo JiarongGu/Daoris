@@ -685,10 +685,10 @@ export function SelectField({ value, onChange, options, placeholder, ariaLabel, 
         aria-label={ariaLabel}
         className={bar
           ? 'flex h-full items-center gap-1.5 px-2 text-meta text-ink transition-colors duration-[var(--speed)] hover:bg-accent-soft focus-visible:bg-accent-soft focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-inset focus-visible:ring-accent'
-          : 'inline-flex min-h-[1.9rem] items-center justify-between gap-2 rounded-control border border-line-strong bg-raised px-2.5 py-1.5 text-body text-ink data-[placeholder]:text-ink-faint data-[disabled]:opacity-60'}
+          : 'inline-flex min-h-[1.9rem] min-w-0 max-w-full items-center justify-between gap-2 rounded-control border border-line-strong bg-raised px-2.5 py-1.5 text-body text-ink data-[placeholder]:text-ink-faint data-[disabled]:opacity-60'}
       >
         {bar && <Layers size={12} aria-hidden className="shrink-0 text-ink-soft" />}
-        <RadixSelect.Value placeholder={placeholder} />
+        <span className="min-w-0 truncate"><RadixSelect.Value placeholder={placeholder} /></span>
         <ChevronDown size={bar ? 12 : 14} aria-hidden className="text-ink-faint" />
       </RadixSelect.Trigger>
       <RadixSelect.Portal>
@@ -862,23 +862,28 @@ export function SettingRow({ label, hint, why, control, children }: {
   label: ReactNode; hint?: ReactNode; why?: string; control?: ReactNode; children?: ReactNode;
 }) {
   return (
-    // 🔴 The label's column has a floor, 16rem or half the row, and the control's gives way to it.
-    // With `minmax(0,1fr)` a path as the control took its whole width first, and at 888 the label
-    // beside it was 24px wide, one character a line (UX5 U58). A path breaks at its separators.
-    <div className="grid grid-cols-[minmax(min(16rem,50%),1fr)_auto] items-center gap-x-6 gap-y-1.5 border-t border-line py-2.5 first:border-t-0 first:pt-0 last:pb-0">
-      <div className="min-w-0">
-        <div className="flex items-center gap-1.5 text-body font-medium text-ink">
-          <span>{label}</span>
-          {why && <WhyGlyph why={why} />}
-        </div>
-        {hint && (
-          <div className="mt-0.5 max-w-prose text-small text-ink-faint">
-            {typeof hint === 'string' ? <Inline text={hint} /> : hint}
+    // The row is its own container (WSR4): below 26rem the control goes under the label at the row's
+    // full width. Beside a 155px label floor a 309px row left the control 130px, and a branch pattern
+    // showed eleven characters.
+    <div className="@container border-t border-line py-2.5 first:border-t-0 first:pt-0 last:pb-0">
+      {/* 🔴 The label's column has a floor, 16rem or half the row, and the control's gives way to it.
+          With `minmax(0,1fr)` a path as the control took its whole width first, and at 888 the label
+          beside it was 24px wide, one character a line (UX5 U58). A path breaks at its separators. */}
+      <div className="grid grid-cols-[minmax(min(16rem,50%),1fr)_auto] items-center gap-x-6 gap-y-1.5 @max-[26rem]:grid-cols-1">
+        <div className="min-w-0">
+          <div className="flex items-center gap-1.5 text-body font-medium text-ink">
+            <span>{label}</span>
+            {why && <WhyGlyph why={why} />}
           </div>
-        )}
+          {hint && (
+            <div className="mt-0.5 max-w-prose text-small text-ink-faint">
+              {typeof hint === 'string' ? <Inline text={hint} /> : hint}
+            </div>
+          )}
+        </div>
+        {control && <div className="flex min-w-0 shrink-0 items-center justify-end gap-2 @max-[26rem]:justify-start">{control}</div>}
+        {children && <div className="col-span-2 min-w-0 @max-[26rem]:col-span-1">{children}</div>}
       </div>
-      {control && <div className="flex min-w-0 shrink-0 items-center justify-end gap-2">{control}</div>}
-      {children && <div className="col-span-2 min-w-0">{children}</div>}
     </div>
   );
 }

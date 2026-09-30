@@ -352,7 +352,8 @@ public sealed class DriverModule : ModuleBase
                 var asks = standing.Count(ask => ask.State == "Proposed");
                 // The asks by id too (HELP6), so a delete of one made by mistake can name it.
                 var machine = HelpRoom.Describe(
-                    config, snapshot, lines, roster, adapter => _loop.Harnesses.Toolchain(adapter)?.Product, asks, standing);
+                    config, snapshot, lines, roster, adapter => _loop.Harnesses.Toolchain(adapter)?.Product, asks, standing,
+                    PluginCatalog.Load(_loop.Home, AdapterSet.Built().Names));
 
                 var start = await chat.StartHelpAsync(
                     helper, config, machine,
@@ -2190,7 +2191,11 @@ public sealed class DriverModule : ModuleBase
             .Append(RemoteTarget.DefaultWorkspace).Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
         var config = DriverConfig.Load(_loop.ConfigPath);
         var facts = new HelpMachineFacts(
-            [.. snapshot.Repositories.Select(known => known.Repository)], workspaces, _loop.Harnesses.Adapters.Names);
+            [.. snapshot.Repositories.Select(known => known.Repository)], workspaces, _loop.Harnesses.Adapters.Names)
+        {
+            // A landing rule naming a plugin is judged by the catalogue the landing route reads (HELP8, D100).
+            Plugins = PluginCatalog.Load(_loop.Home, AdapterSet.Built().Names),
+        };
 
         if (proposals.Any(proposal => proposal.Kind is "agent" or "account"))
         {

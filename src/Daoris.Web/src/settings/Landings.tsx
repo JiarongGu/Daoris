@@ -158,7 +158,7 @@ function LandingField({ name, set, inherited, landers, busy, onSave }: {
 
   return (
     <form
-      className="flex flex-wrap items-center justify-end gap-2"
+      className="flex min-w-0 flex-wrap items-center justify-end gap-2"
       onSubmit={(event) => {
         event.preventDefault();
         if (changed) onSave(draft);
@@ -174,13 +174,15 @@ function LandingField({ name, set, inherited, landers, busy, onSave }: {
         onChange={setForm}
       />
       {form === 'branch' && (
+        // Gives way to its column: with the side bar open the row's control column was 130px, and a
+        // fixed 14rem field spilled left over the row's words (WSR4, seen on the window).
         <input
           aria-label={t('settings.landing.pattern', { name })}
           value={pattern}
           onChange={(event) => setPattern(event.target.value)}
           placeholder={fallback}
           spellCheck={false}
-          className="w-56 rounded-control border border-line-strong bg-raised px-2.5 py-1 font-mono text-small text-ink placeholder:italic placeholder:text-ink-faint"
+          className="w-56 min-w-0 max-w-full rounded-control border border-line-strong bg-raised px-2.5 py-1 font-mono text-small text-ink placeholder:italic placeholder:text-ink-faint"
         />
       )}
       {form === 'branch' && choices.length > 0 && (
@@ -208,7 +210,7 @@ function LandingField({ name, set, inherited, landers, busy, onSave }: {
         disabled={busy || set === undefined}
         aria-hidden={set === undefined}
         tabIndex={set === undefined ? -1 : undefined}
-        className={cn(set === undefined && 'invisible')}
+        className={cn(set === undefined && 'invisible @max-[26rem]:hidden')}
         onClick={() => onSave(undefined)}
       >
         {t('settings.landing.clear')}

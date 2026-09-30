@@ -89,6 +89,15 @@ describe('the landing card', () => {
     expect(screen.getByRole('textbox', { name: 'The branch pattern for aurora' })).toHaveValue('feature/{quest}-{slug}');
   });
 
+  // A field's percentage cap is what lets a narrow control column shrink it: with a fixed width alone it
+  // spilled left over the row's words at 1205px with the side bar open (seen on the window).
+  it('lets the pattern field give way to a narrow row', () => {
+    draw();
+
+    const field = screen.getByRole('textbox', { name: 'The branch pattern for game' });
+    expect(field).toHaveClass('min-w-0', 'max-w-full');
+  });
+
   /**
    * WSR4 (D100): a branch rule may name the plugin that pushes it and opens the pull request — one of the
    * plugins here that land work. With none installed nothing is offered, and a merge never names one.

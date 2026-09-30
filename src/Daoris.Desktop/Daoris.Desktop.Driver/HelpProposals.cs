@@ -46,6 +46,9 @@ public sealed record HelpMachineFacts(
 
     /// <summary>The asks, closed ones included, each with the service's own reading of whether it may be deleted.</summary>
     public IReadOnlyList<HelpAskFacts> Asks { get; init; } = [];
+
+    /// <summary>This machine's plugins, for a landing rule that names one (HELP8, D100).</summary>
+    public PluginCatalog Plugins { get; init; } = PluginCatalog.None;
 }
 
 /// <summary>One door as the Agents screen reads it (HELP6): what its Update does, whether it pins, whose accounts it runs as.</summary>
@@ -331,18 +334,45 @@ public static partial class HelpProposals
             }
             case "landing":
             {
-                var tidy = value.EndsWith(" --tidy", StringComparison.Ordinal);
-                var bare = tidy ? value[..^" --tidy".Length].Trim() : value;
+                // As `daoris driver landing` reads its words (HELP8): the form, a branch's pattern, and
+                // `--tidy` and `--plugin <id>` in either order. A pattern holds no space, since git takes none.
+                var words = value.Split(' ', StringSplitOptions.RemoveEmptyEntries).ToList();
+                var tidy = words.Remove("--tidy");
+                string? plugin = null;
+                if (words.IndexOf("--plugin") is var at and >= 0)
+                {
+                    if (at + 1 >= words.Count || words[at + 1].StartsWith("--", StringComparison.Ordinal))
+                    {
+                        return Refused("`--plugin` needs the id of an installed plugin — `--plugin <id>`; "
+                            + "`daoris plugin list` shows what there is.", "", "");
+                    }
+
+                    plugin = words[at + 1];
+                    words.RemoveRange(at, 2);
+                }
+
+                var bare = string.Join(' ', words);
                 LandingRule? rule = bare switch
                 {
                     "--clear" => null,
-                    "merge" => new LandingRule("merge", null, tidy),
-                    _ when bare.StartsWith("branch ", StringComparison.Ordinal) => new LandingRule("branch", bare["branch ".Length..].Trim(), tidy),
-                    _ => new LandingRule(bare, null, tidy),
+                    "merge" => new LandingRule("merge", null, tidy, plugin),
+                    _ when bare.StartsWith("branch ", StringComparison.Ordinal) => new LandingRule("branch", bare["branch ".Length..].Trim(), tidy, plugin),
+                    _ => new LandingRule(bare, null, tidy, plugin),
                 };
+
+                // The plugin must land work on THIS machine, asked as the screen's route asks it (D100),
+                // once the rule's own shape is sound, so a merge naming one is told why in that shape's words.
+                if (rule is { Plugin: { } named } && LandingRules.Problem(rule) is null
+                    && LandingRules.PluginProblem(named, facts.Plugins) is { } unready)
+                {
+                    return Refused(unready, "", "");
+                }
+
+                var after = (plugin is null ? "" : $", plugin `{plugin}` pushes it and opens the pull request")
+                    + (tidy ? ", its tree removed once landed" : "");
                 var lands = rule is null ? $"Clear {whose}'s landing rule."
-                    : rule.Form == "branch" ? $"Land {whose}'s accepted work on a branch `{rule.Pattern}`{(tidy ? ", its tree removed once landed" : "")}."
-                    : $"Land {whose}'s accepted work merged into its line{(tidy ? ", its tree removed once landed" : "")}.";
+                    : rule.Form == "branch" ? $"Land {whose}'s accepted work on a branch `{rule.Pattern}`{after}."
+                    : $"Land {whose}'s accepted work merged into its line{after}.";
                 planned = (lands, $"daoris driver landing {scope} {value}",
                     c => workspace is { Length: > 0 } ? c.WithWorkspaceLanding(workspace, rule) : c.WithLanding(target!, rule));
                 break;

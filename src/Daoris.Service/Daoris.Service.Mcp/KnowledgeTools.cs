@@ -532,7 +532,7 @@ public sealed class KnowledgeTools(
         string? target = null,
         [Description("The workspace, for a line or a landing set for every repository in it. Name this or target, not both.")]
         string? workspace = null,
-        [Description("What it is set to, as the CLI takes it: `on`/`off` (trees, notify), a branch or `--clear` (line), `merge`, `branch <pattern>` with `--tidy` if wanted, or `--clear` (landing), an agent or `off` (intake, helper), a number (strikes, timeout minutes).")]
+        [Description("What it is set to, as the CLI takes it: `on`/`off` (trees, notify), a branch or `--clear` (line), `merge`, `branch <pattern>` with `--tidy` and `--plugin <id>` if wanted, or `--clear` (landing), an agent or `off` (intake, helper), a number (strikes, timeout minutes).")]
         string? value = null)
     {
         var box = help ?? HelpProposalBox.FromEnvironment();
