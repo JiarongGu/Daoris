@@ -142,8 +142,9 @@ public sealed partial class DriverModule
             applied.Applied,
             // Where a go takes the person: the page navigates, as its starters' doors do (HELP6).
             Go = applied.Go is { } place ? new { place.View, place.Domain, place.Part } : null,
-            // The action an update or a pin started, so the Agents screen follows its console and its end.
-            HarnessAction = applied.Applied && proposal.Kind == "agent"
+            // The action an update or a pin started, so the Agents screen follows its console and its end. A default
+            // (HELP10) is a file edit that starts nothing, so there is nothing to follow.
+            HarnessAction = applied.Applied && proposal.Kind == "agent" && proposal.Door is "update" or "pin"
                 ? new { Harness = proposal.Target!.Trim(), Action = proposal.Door }
                 : null,
         };
