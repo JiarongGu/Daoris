@@ -132,9 +132,10 @@ rather than designed.
 
 ## Backlog
 
-**Twenty-two rows are open** (triaged 2026-09-30, when the owner asked to go faster; 2026-10-01 after the night's merges, the look, and the owner's round):
-- **Merging next:** DEV1's design (its build rows DEV2–DEV11 file with it).
-- **Next, the owner's round (six):** NAME1 and LAYOUT1 building (their design halves), LOOK1 and LOOK2 building; FRAME1 and PLUGUI1.
+**Forty-six rows are open** (most of them the three designed builds below) (triaged 2026-09-30, when the owner asked to go faster; 2026-10-01 after the night's merges, the look, and the owner's round):
+- **Merging next:** NAME1a, LOOK1 and LOOK2, then LAYOUT2's evidence. **Building:** NAME1b, DEV3, LAYOUT3.
+- **Designed, to build in order:** DEV2–DEV11 (D115); FRAME1b–i (D118) after NAME1b; PLUGUI1 after FRAME1c;
+  LAYOUT3–LAYOUT10 (D117) after LAYOUT2's evidence.
 - **Waiting on the owner (six):** BUDGET1 and PLUGREPO1 (their calls), TRUST2 and AGT2c (a grant, two
   downloads), FG5 and BRW3 (the owner present).
 - **Parked on a trigger (nine):** TOOL4, TOOL5, PLUG7, SEM2, CANON9, REH1, D76's held file tree,
@@ -167,30 +168,27 @@ then FRAME1's audit and model, then PLUGUI1 on that frame. DEV1 is a design docu
 them. Each starts with its contract document, is built in parts by subagents, and is looked at on the
 install in both themes and both languages.
 
-- [ ] **NAME1 — a name is a UI element, designed in both languages.** (NAME1a, the design half, building: D116.) Today many Chinese names are
-  translations of the English, not names: Settings' own sections (*Daoris 自身的 AI*, *智能体与账户*),
-  a section's title against its button (*同步到最新* over *查看更新*), and one concept under two words
-  across screens. English has the same drift. (a) **A glossary, one term per concept in each language**,
-  chosen as names rather than translated (session, quest, line, landing, workspace, repository, agent,
-  account, plugin, harness, tree, branch, and the rest), kept as a file both catalogues are checked
-  against. (b) **Naming rules for each kind of element**: a navigation item, a tab, a section title, a
-  button (verb first, the object named as the glossary names it), a status word, and a sentence. Each gets
-  a length budget per language, measured on the window at the design's widths. (c) **An audit of every
-  catalogue key a person reads as a label** (navigation, headings, tabs, buttons, badges, the status
-  bar), with its proposed name in each language and why. (d) **The renames, and a check**: the i18n check
-  gains glossary conformance and the label budgets, so drift fails a gate. It extends
-  `.claude/knowledge/translation-parity.md` (*chrome translates and content does not*) and
-  `docs/2026-09-19-platform-ux.md`. The contract is a naming design document, written first.
-- [ ] **FRAME1 — every view gets the frame Sessions has.** Sessions has the full layout: a list that
-  collapses and resizes, the main area, the right side bar with its movable views, the panel, the strip's
-  toggles, and each remembered. Other views have part of it (DOCK1a put the side bar and panel on every
-  view; the rest differs). (a) **An audit**, measured on the window as UX5's was: for each view (Overview,
-  Sessions, Quests, Projects, Knowledge, the Plugins screen to come, Settings, and the rest), which layout
-  affordances it has, how each behaves, and where they disagree. (b) **One layout model**: which regions
-  every view has, what each view puts in them, the same toggles, resizing, collapsing, keyboard and
-  persistence everywhere, and what a narrow window does. (c) **The build**, view by view. The contracts are
-  `docs/2026-09-21-desktop-frame-design.md` (D56), `docs/2026-09-29-dock-design.md` and
-  `docs/2026-09-19-platform-ux.md`; the model is written into them, or into a document they point to.
+- [ ] **NAME1b — the renames, and the names check strict** (building; D116). The owner approved the audit's
+  names on 2026-10-01, with Projects → Repositories (项目 → 仓库) and an ask named 需求. Apply
+  `docs/2026-10-01-naming-audit.md` in both catalogues (keys stay), the sentences with a forbidden word,
+  and `names:check --strict` in the gate for glossary, form and doors (budgets report only, D54); then every
+  screen looked at in both languages.
+- [ ] **FRAME1b — the list pane, Sessions' first** (D118, model §6): `ListPane`, `StripMark`, `listKeys`,
+  per-view bounds, strip by room, the laid-over mode; Sessions' rail moves onto it. Look: 1280, 900, 680 px.
+- [ ] **FRAME1c — the main area and the view contract**: `ViewMain`, per-view memory, `open(view, item?)`,
+  container queries in Overview, Projects and Map, loading states, drawers above a full side bar.
+- [ ] **FRAME1d — Quests on the frame**: asks and quests in the list, a record in the main area, composers
+  stay drawers; `test:web`'s quest-lifecycle spec moves to the page in the same row.
+- [ ] **FRAME1e — Repositories on the frame** (the renamed Projects): adopted, then registered; the
+  repository's page with Manage and its code map.
+- [ ] **FRAME1f — Search and Convergence on the frame**: the hits and findings in the list, the entry in the
+  main area; the reader drawer retires for these.
+- [ ] **FRAME1g — Settings on the frame** (after FRAME1c): the domains as the list pane, never stacked; skeleton
+  rows while machine domains load.
+- [ ] **FRAME1h — the secondary windows**: the monitor's rail on `ListPane`, a detached console on
+  `OutputPanel`, the monitor's title on a real token (`tokens.test.ts` fails on `text-h3` first).
+- [ ] **FRAME1i — Ask Daoris knows each view's list and item**: `where.ts`, `go` naming an item, the room.
+  Order: b, c, then d–g (d, e, f one at a time; g beside one), then h and i. PLUGUI1 starts after FRAME1c.
 - [ ] **PLUGUI1 — plugins get a screen of their own.** Plugins will be a big part of Daoris, and today
   they are one Settings domain (D64, D101, D103). An activity-bar view, on FRAME1's frame, holding:
   - installed plugins, each with its state, the points it answers, the servers it hands sessions, the
@@ -201,54 +199,6 @@ install in both themes and both languages.
   - making and trying one (the kit, PLUG8), and asking for one (PLUG9), from the screen.
   Settings keeps only what is a setting. Ask Daoris's plugin kind gains go anchors into the screen. The
   contract is a design document written first, extending `docs/2026-09-23-plugin-design.md`.
-- [ ] **DEV1 — Daoris develops Daoris through Daoris.** (The design, building: D115.) The module and domain refactor is done (MOD1–MOD9:
-  registries, lanes in `tools/lanes.json`, a `Process` test category, `tools/merge-branch.mjs`, the
-  `dispatch-subagent` skill). But the cycle it enables is run by an assistant session acting as the
-  parent, not by Daoris's own driver. The family's model is one session per repository, and Daoris is one
-  repository with seven lanes, the shape a large adopter will have too. Design, as a contract document
-  with its decision:
-  - **lanes as domains within a repository**: declared by the repository, addressable by a quest, each
-    with the files it owns;
-  - **concurrent sessions in one repository**, one per lane in its own tree, and the load cap that keeps
-    real-process tests honest (FLAKE1);
-  - **a merge queue as Daoris's own landing**: each branch gated by the repository's declared gates,
-    serially, with the flake rule; the merge tool's steps as the driver's;
-  - **who keeps the records**: the backlog, the archive, decision numbers reserved at dispatch (D106), and
-    which session plays the parent that dispatches and merges;
-  - **where the person stands**: the target set, the final diff and the look on the window verified
-    (D37), and everything irreversible still theirs.
-  Then the phased build, Daoris's own development its first user, and any adopter with lanes the second.
-  The contract starts from `docs/2026-09-30-parallel-development-design.md`.
-- [ ] **LAYOUT1 — one repository, every agent (the design half building: D117): the `.agents/` layout, here and in every repository Daoris
-  manages** (owner, 2026-10-01: *"the agent/claude file/folder we should follow [deepseek-harness] which
-  make repo compatible to different agents we should apply this to current repo also find a way to apply
-  this to daoris managed repo too … we should have a way to initallize the set setup"*). The reference is
-  dsh's own repository (public; D53 adopted dsh as a protocol). Its layout: `AGENTS.md` is the one
-  instruction file, at the root and nested per package; `CLAUDE.md` is a symlink to it; skills live in
-  `.agents/skills/` with `.claude/skills` a symlink to them; decision notes live in `.agents/notes/` by
-  lifecycle, in both languages. **What that leaves Daoris short of:** D59 moved only the always-loaded rules
-  into `AGENTS.md`; knowledge and skills still live under `.claude/`, which codex and dsh do not read; and this
-  repository's own `CLAUDE.md` carries the project's whole brief, which only Claude reads. **A trap measured
-  on this machine:** `core.symlinks` is false here, and dsh's checkout has `CLAUDE.md` as a 9-byte file that
-  reads `AGENTS.md`, so on Windows a symlink layout silently hands Claude the literal path. Design first,
-  as a contract extending `docs/2026-09-22-instruction-file-design.md` and D59, with its decision:
-  - (a) **The layout**: what is canonical under `.agents/` (skills, knowledge, and whether decision notes
-    move there), what each agent's entry point is (`CLAUDE.md`'s one-line `@AGENTS.md`, a `.claude/skills`
-    mirror, others as measured), and nested `AGENTS.md` per package or lane (which DEV1's lanes can be told).
-    Everything must work without symlinks: a mirror Daoris materializes and tracks in the lock, measured
-    against the lock as D13 says, never a symlink a Windows checkout turns into text.
-  - (b) **This repository first**: move the project brief from `CLAUDE.md` into `AGENTS.md` outside
-    Daoris's region, the canon's skills and knowledge to `.agents/`, and a nested `AGENTS.md` per artefact.
-  - (c) **The canon's materialization** (`sync`, `init`, `upstream`, `check`, `inspect`): the new locations,
-    the mirrors, and the move of every adopted repository's existing files. Read D19 first, since the state
-    space is lock × disk × canon, and a move is new territory in it; the rehearsals must carry an upgrade
-    from today's layout.
-  - (d) **Setting up a repository Daoris manages**: never by writing into it (D32). A repository in a
-    workspace gets *Set up for agents* on the screen, a terminal verb and an Ask Daoris proposal. Each
-    publishes a quest to that repository, whose own session runs `daoris init`/`sync` on a branch and lands
-    it by the workspace's rule. The adoption knowledge document says the adopter's agent runs the flow;
-    this is that flow, driven.
-  HARNESS1 (a second harness layout) is absorbed here: its trigger has arrived.
 - [ ] **LOOK2 — what the post-merge look found** (2026-10-01, the install at `66efbf7`). (a) Right after a
   start, Settings → Workspace's Line and landing cards said no repository here has a line: `LINES` answered
   from the driver's snapshot before the service held its registry, and the page kept that empty answer until
@@ -265,6 +215,58 @@ install in both themes and both languages.
   the page follows only while the viewer's theme choice is *system*. On the install the choice was dark, so
   `--theme light` silently photographed dark (`tools/desktop.mjs`, `theme.ts`'s `effectiveDark`). Set the
   page's own choice for the capture and put it back, or refuse with the reason.
+
+### Daoris develops Daoris (D115) — the build
+
+The contract is `docs/2026-10-01-self-development-design.md`; each row names its sections, which carry the
+detail and the proof. Order: DEV2 ∥ DEV3 ∥ DEV4, then DEV5 → DEV6 → DEV7 (one lane, in sequence), then
+DEV8 ∥ DEV9, then DEV10 and DEV11.
+
+- [ ] **DEV2 — the lanes are the repository's declaration** (§2.1): `tools/lanes.json` becomes
+  `daoris.lanes.json` with ids, summaries and a steward lane `records`; the merge tool and the skill follow.
+- [ ] **DEV3 — sessions outlive their tick** (building; §3.1): today a tick awaits every session it started, so nothing
+  new starts until the last ends. Changes behaviour for every repository; the family phases must pass unchanged.
+- [ ] **DEV4 — lanes in the registry and on the quest** (§2.2): `repository:lane[+lane]`, a self-addressed quest
+  allowed only when it names a lane; a family check over an example with two lanes.
+- [ ] **DEV5 — the queue lands a branch from outside** (§4.2–§4.8): the `queue` form in a detached tree under
+  the home, gates by declared `kind` with the `quiet` re-run, the fast-forward under TreeLock,
+  `daoris-driver queue …`, `tools/commit-check.mjs`.
+- [ ] **DEV6 — lanes side by side** (§3.2–§3.4): lane locks, oldest-first reservation, `laneCap` (default 3,
+  both doors), `lanes` on the record and in the prompt.
+- [ ] **DEV7 — a driven session readies, and the queue answers it** (§4.1, §4.5, §4.6): `session_ready`, the
+  verdict through the answer door (D83), three failures to the person, done means landed.
+- [ ] **DEV8 — the queue on the window** (§4.9), with Ask Daoris's doors for every new verb (D110).
+- [ ] **DEV9 — the steward** (§5): the split into lane quests, decision numbers, record steps; the dispatch
+  skill rewritten for the steward and the lane session.
+- [ ] **DEV10 — the first user** (the owner present): a real row through steward → lane → queue → record, then
+  one crossing two lanes; the cap and the strikes rule revisited from its evidence.
+- [ ] **DEV11 — the second user, and the tools retire**: a canon knowledge document on lanes, a laned example,
+  then `tools/merge-branch.mjs` retires and the dev loop says *queue*.
+
+### One repository, every agent (D117) — the build
+
+The contract is `docs/2026-10-01-agent-layout-design.md`; §7 carries each row's full text and proof.
+LAYOUT2 first: until it measures, the layout's entry points are the design's reading, not the harnesses'.
+
+- [ ] **LAYOUT2 — the entry-point probe** (§1): per harness at its pinned version, measure every "not
+  measured" cell: instruction files above and below the working directory, `@path` in a nested file, skill
+  roots, a link held as text, the byte limit and what is cut, **whether an ACP adapter loads project
+  instructions at all**, a duplicate skill. Keyless first; one canary turn per harness is the owner's to allow.
+- [ ] **LAYOUT3 — the `agents` layout in the CLI** (building; §2, §3, §5.1–§5.4): the descriptor, mirrors, `rooms`,
+  the lock's new fields, `sync`'s move cells (each a failing test first), and the release rehearsal's move.
+- [ ] **LAYOUT4 — the service reads the layout** (§5.5): the lock's root first, mirrors skipped, rooms indexed;
+  fixes the scanner's hardcoded `.claude`.
+- [ ] **LAYOUT5 — this repository's doctrine moves** (§4.1, §4.3, §4.4), run alone: `git mv`, the manifest,
+  `sync`; `.gitattributes`' union line moves in the same commit; `examples/engine` moves.
+- [ ] **LAYOUT6 — the brief moves** (§4.2): `CLAUDE.md` into the root `AGENTS.md` (about 1,300 words, under
+  codex's documented 32 KiB) and eight rooms; `CLAUDE.md` keeps the import alone.
+- [ ] **LAYOUT7 — the layout facts and the set-up quest** (§6.1–§6.3): read from the line, `daoris-driver
+  setup <repo> [--plan]`, the quest composer, the permission rule the press adds.
+- [ ] **LAYOUT8 — the layout on the screen, and its Ask Daoris door** (§6.1, §6.5): Projects' rows, *Set up
+  for agents*, the `setup` kind; both languages, looked at on the window.
+- [ ] **LAYOUT9 — a lane names its rooms** (§2.5), after DEV2 and DEV6.
+- [ ] **LAYOUT10 — the first real set-ups** (the owner's run, after the first publish): one unadopted
+  repository, and one with instruction files of its own.
 
 ### Plugins Daoris makes (owner, 2026-09-30)
 
@@ -471,7 +473,9 @@ TDD, looked at on the window, and the ones that touch a real session use one (au
   **Two more at LEFT3's merge (2026-10-01)**, with three subagents building beside it, each failing in the full
   serial run and passing alone: `TurnStopTests.A_conversation_on_the_native_door_is_handed_the_plugins_servers`
   (driver, 571/572) and `DriverModulePluginsTests.The_kit_makes_a_plugin_where_the_person_names_and_tries_it_or_an_installed_one`
-  (modules, 113/114). Both spawn real processes; load is again the common factor.
+  (modules, 113/114). Both spawn real processes; load is again the common factor. **And one at NAME1a's merge**:
+  `PluginKitTests.A_silent_plugin_is_still_running_and_said_nothing_within_the_patience`, a timing test under
+  three subagents' builds (the driver's Process half took 37 minutes), green alone.
 
 - [ ] **TEST1 — a Node process aborts with `0xC0000409`: seen three times now, once outside Playwright.** The
   second sighting was its trigger. Both runs died with `worker process exited unexpectedly
