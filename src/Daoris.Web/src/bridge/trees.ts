@@ -5,7 +5,7 @@ import { keys } from '../queries';
 // importing this module (SURF6).
 import type { SessionDiff } from '../work/diff';
 import type { TreeFile } from '../work/preview';
-import { call } from './call';
+import { call, pluginBound } from './call';
 
 export type { DiffFile, SessionDiff } from '../work/diff';
 export type { TreeFile } from '../work/preview';
@@ -138,11 +138,15 @@ export const useLanding = (id: string | null) => {
 /** What the rule's plugin answered once the branch was made (D100): whether it pushed, the pull request, its words. */
 export type PluginLanding = { id: string; pushed: boolean; pullRequest?: string; message: string; failed?: boolean };
 
-/** Accept a session: its work lands as its repository's rule says — merged, or put on a branch to push. */
+/**
+ * Accept a session: its work lands as its repository's rule says — merged, or put on a branch to push. A rule naming a
+ * plugin hands the branch to it inside the press, so the page waits as long as that plugin may (`pluginBound`, LEFT3).
+ */
 export const useLandSessionTree = () => {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => call<TreeAct & { branch?: string; plugin?: PluginLanding }>('LAND_SESSION_TREE', { id }),
+    mutationFn: (id: string) =>
+      call<TreeAct & { branch?: string; plugin?: PluginLanding }>('LAND_SESSION_TREE', { id }, { timeoutMs: pluginBound }),
     onSuccess: (result) => {
       // Only a merge that happened changes what a diff or a removal would say.
       if (result.done) {
@@ -172,11 +176,15 @@ export const useHandOff = (id: string | null) => {
   });
 };
 
-/** Hand a session's landed branch to its plugin (WSR5b): the plugin pushes and opens the pull request; a refusal is an answer. */
+/**
+ * Hand a session's landed branch to its plugin (WSR5b): the plugin pushes and opens the pull request; a refusal is an
+ * answer. The page waits as long as the plugin may (`pluginBound`, LEFT3), not the bridge's 30 seconds.
+ */
 export const useHandOffPress = () => {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => call<TreeAct & { branch?: string | null; plugin?: PluginLanding | null }>('HANDOFF', { id }),
+    mutationFn: (id: string) =>
+      call<TreeAct & { branch?: string | null; plugin?: PluginLanding | null }>('HANDOFF', { id }, { timeoutMs: pluginBound }),
     onSuccess: (result) => {
       void client.invalidateQueries({ queryKey: keys.handOff(result.session) });
       void client.invalidateQueries({ queryKey: keys.sweep });
