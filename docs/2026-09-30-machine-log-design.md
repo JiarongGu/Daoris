@@ -134,7 +134,8 @@ the transcript beside it.
   local time) and whose `source`, `level` and `event` are strings; `data` that is absent or no object is
   read as none, and a field nobody knows is ignored. **Anything else is skipped and counted**, a torn
   last line included; a blank line is neither. The table of those cases is a twin's: the usage report
-  (LOG1d) reads the same lines with its own code, and its test holds the same rows.
+  (LOG1d) reads the same lines with its own code, and `usage-report.test.ts` holds the same rows as
+  `MachineLogReaderTests.Parsing`.
 - **The filters**: `--since` is a span back from now in minutes, hours or days (`30m`, `2h`, `3d`);
   `--source` one of the five; `--event` a name; `--level` a floor (`warn` is warnings and errors). A flag
   the reader cannot use is a sentence and exit 2, never read as no filter; no home is the driver's usual
@@ -151,6 +152,22 @@ the transcript beside it.
   first if nothing has written there, and the page never names a path. A filter the reader cannot use
   is refused as `LOG_FILTER_UNKNOWN`, a folder the system would not open as `LOG_FOLDER_NOT_OPENED`.
 
+**As built (LOG1d)**, measured against the code and its tests:
+
+- `node tools/usage-report.mjs --home <dir> | --install <dir> [--days 7] [--json]`, where `--install`
+  is the install's `data/` home. It reads the period's lines with its own code (the twin table above)
+  and prints six parts: the **lifecycle** (starts, stops, the uptime `app.stopped` says, the versions
+  each process ran); **used most** (views, commands, panel moves, most first); **conversations and
+  sessions** (started, by kind and adapter; the median and slowest `openMs` and `firstAnswerMs`, with the
+  slowest session's id; turns ended, by stop reason, and the median and slowest `turnMs`; how sessions
+  ended; messages sent by kind; proposals applied and not); **refused** (by code, most first, with the
+  requests that met each); and **failed**, grouped, most first: `error` by type and where, `page.error`
+  by where and message, `log` at `error` by category, and `request.failed` by method, route and status
+  with its slowest time. A time the log could not know is left out of the timings, never counted as
+  zero. `--json` is the same summary as data.
+- **Nobody's words**: the one free text it shows, a caught error's message, is its first line cut at
+  the log's own 120 characters. It writes nothing; a missing `logs/` is a sentence and exit 2.
+
 ## 7. Build order
 
 1. **LOG1a**: the writers and the lifecycle events: the desktop's (`MachineLog` in the driver
@@ -165,7 +182,8 @@ the transcript beside it.
 3. **LOG1c**: the two doors to read it. **Landed** (2026-09-30): `MachineLogReader` in the driver
    library, `daoris-driver logs`, and Settings → Logs over `DAORIS.LOG` · `LINES` and `OPEN_FOLDER`;
    §6's *As built* says what each reads and refuses.
-4. **LOG1d**: the report.
+4. **LOG1d**: the report. **Landed** (2026-09-30): `tools/usage-report.mjs`, its summarising helpers
+   tested over a fixture home (`usage-report.test.ts`); §6's *As built* says what it prints.
 
 ## 8. Not chosen
 
