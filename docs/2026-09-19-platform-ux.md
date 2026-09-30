@@ -164,7 +164,11 @@ controls are in the frame design's §3.
   improved"*): the label, a one-line hint that is its terminal twin, written as code (U55), the
   control at the right, and the paragraph that motivated it on an info glyph. **The label keeps its
   room**: its column has a floor, 16rem or half the row, and the control gives way to it, a path
-  breaking at its separators (U58: a path crushed its label to one character a line). A settings page
+  breaking at its separators (U58: a path crushed its label to one character a line). **A narrow row
+  stacks** (WSR4, 2026-09-30): the row is its own container, and below 26rem its control goes under
+  the label at the row's full width. With Settings' nav and the side bar open a row was 309px, the
+  floor left the control 130px, and a fixed-width branch pattern spilled left over the row's words; a
+  field in a control gives way to its column (`min-w-0 max-w-full`, and the form around it `min-w-0`). A settings page
   laid out as an essay is read once and scrolled past every time after; a page of rows is scanned. A
   rarely used form (wiring a deployment, adding an account) is one press away. The rule between rows
   belongs to what has siblings: a row alone in its list item lost both.
