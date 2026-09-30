@@ -11,7 +11,8 @@ import { opensAtStart, setupProgress, setupSteps } from './help/setup';
 import { useMachine } from './help/useMachine';
 import { useSetupAtStart } from './setupGuide';
 import { useFrameClosings } from './work/closings';
-import { type ListMode, listToggled } from './work/layout';
+import { type ListMode, type ListView, listToggled } from './work/layout';
+import { useListPanes } from './work/listPanes';
 import { usePlacements, viewsIn } from './work/placements';
 import { LAYOUT_KEYS, type LayoutRegion, LayoutToggles } from './work/LayoutToggles';
 import { frameShortcut } from './shortcuts';
@@ -67,19 +68,11 @@ type Tab = View;
  */
 const VIEW = 'daoris.view';
 
-/**
- * And which session they were attending (D56). Sessions survived a restart and the selection did
- * not, so relaunching into it landed on *Nothing attended* while a session sat parked — the one
- * arrangement SURF5a's whole attention half exists to prevent. An id that no longer names a record
- * is cleared by the view's own effect, so a stale one costs nothing.
- */
-const ATTENDING = 'daoris.attending';
-
-/**
- * And which domain of Settings they last had open (D75), so the gear returns to it. A domain this
- * window cannot show is Settings' own business: it opens on Appearance instead.
- */
-const SETTINGS_SECTION = 'daoris.settings';
+// What each view's list has chosen is its list's memory since FRAME1c (`work/listPanes.ts`, D118 §3f),
+// in the keys that predate it: the session attended (D56), since relaunching into Sessions landed on
+// *Nothing attended* while a session sat parked, and Settings' domain (D75), so the gear returns to it.
+// An id that no longer names a record is cleared by the view's own effect, and a domain this window
+// cannot show opens on Appearance, so a stale one costs nothing.
 
 function rememberedView(): Tab {
   // Landing on Overview is the safe half of the choice.
@@ -94,7 +87,8 @@ const NAV = VIEWS.filter(({ view }) => view !== 'settings');
  * The views drawn with a list pane (D118 §2), each naming it in `layout.list.<view>` and
  * `layout.menu.list.<view>`. Sessions' first (FRAME1b); each view joins as its row moves it onto the frame.
  */
-const LISTED: ReadonlySet<View> = new Set<View>(['sessions']);
+const LISTED: ReadonlySet<ListView> = new Set<ListView>(['sessions']);
+const isListed = (view: View): view is View & ListView => (LISTED as ReadonlySet<string>).has(view);
 
 /** A palette command that says it ran, into the machine log (LOG1b): by its id, never what was typed. */
 const counted = (command: Command): Command => ({
@@ -113,9 +107,10 @@ const counted = (command: Command): Command => ({
 export function App() {
   const { t, i18n } = useTranslation();
   const [tab, setTab] = useState<Tab>(rememberedView);
-  const [attending, setAttendingState] = useState<string | null>(() => stored(ATTENDING));
-  const [settingsSection, setSettingsSection] = useState<SettingsSection>(
-    () => (stored(SETTINGS_SECTION) as SettingsSection | null) ?? 'appearance');
+  // What each view's list remembers (D118 §3f): its closing, its width, its chosen item, its filters.
+  const lists = useListPanes();
+  const attending = lists.pane('sessions').chosen;
+  const settingsSection = (lists.pane('settings').chosen as SettingsSection | null) ?? 'appearance';
   // The part of a Settings domain a menu item named, brought into view once it is drawn (UX5 U72).
   const [settingsAnchor, setSettingsAnchor] = useState<SettingsAnchor | null>(null);
   const [readingId, setReadingId] = useState<string | null>(null);
@@ -228,7 +223,7 @@ export function App() {
 
   // Whether the view in front has a list pane (D118 §3a), whose four doors — the strip's toggle, the View
   // menu's item, Ctrl+B and a press on its place — are absent where it has none, never disabled.
-  const listed = attached && LISTED.has(view);
+  const listed = attached && isListed(view);
 
   // A region toggled (DOCK1c): the side bar and the panel are the frame's on every view since DOCK1a, and
   // the list is the view's own, so where the view has none its key does nothing. True when it did. In a
@@ -237,11 +232,11 @@ export function App() {
     if (!attached) return false;
     if (region === 'right') closings.setDock(!closings.dock);
     else if (region === 'panel') closings.setPanel(!closings.panel);
-    else if (listed && listMode) {
+    else if (listed && isListed(view) && listMode) {
       // By what the room made of it: an open list closes, one laid over goes, and a strip opens — over
-      // the main area where the window drew it (D118 §3a).
+      // the main area where the window drew it (D118 §3a). The closing is this view's own (§3f).
       const next = listToggled({ mode: listMode });
-      closings.setList(next.closed);
+      lists.setClosed(view, next.closed);
       closings.setListOver(next.over);
     }
     else return false;
@@ -344,8 +339,7 @@ export function App() {
    * opened the whole page at its top.
    */
   const chooseSettings = (section: SettingsSection) => {
-    setSettingsSection(section);
-    store(SETTINGS_SECTION, section);
+    lists.choose('settings', section);
     // A domain chosen from the list opens at its top: an anchor its part never answered is dropped.
     setSettingsAnchor(null);
   };
@@ -434,10 +428,8 @@ export function App() {
 
   // The attended session is remembered alongside the view (D56), so a relaunch into Sessions reopens
   // what the person was watching rather than an empty column.
-  const setAttending = useCallback((next: string | null) => {
-    setAttendingState(next);
-    store(ATTENDING, next);
-  }, []);
+  const { choose } = lists;
+  const setAttending = useCallback((next: string | null) => choose('sessions', next), [choose]);
 
   // A door from a record into the session itself. The selection lives here rather than inside the
   // view precisely so a door can name which session it is opening (D55: one selection, every
@@ -742,6 +734,7 @@ export function App() {
               // The person's own shell (CONSOLE4b): a frame is only drawn where a shell is attached.
               terminal
               closings={closings}
+              lists={lists}
               onListMode={setListMode}
               placements={placements}
               content={view === 'sessions' ? undefined : renderView()}

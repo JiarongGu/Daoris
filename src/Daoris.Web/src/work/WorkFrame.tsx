@@ -32,16 +32,16 @@ import { panelTabs } from './streams';
 import { DOCK, dockRange, frameLayout, LIST_BOUNDS, type ListMode, listToggled } from './layout';
 import { ListPane } from './ListPane';
 import { type FrameClosings, useFrameClosings } from './closings';
+import { type ListPanes, useListPanes } from './listPanes';
 import { type Place, type Placements, usePlacements, type ViewId, viewsIn } from './placements';
 import { relationsOf } from './relations';
 import { store, stored } from '../lib/stored';
 import { cn } from '../lib/cn';
 
 // Per-viewer conveniences, like the language and the workspace scope (D42): a remembered layout is
-// a preference, never machine wiring and never a tracked file.
+// a preference, never machine wiring and never a tracked file. A view's list keeps its own since FRAME1c
+// (`listPanes.ts`, D118 §3f).
 const PANEL_HEIGHT = 'daoris.panelHeight';
-// The frame's columns (FRAME6): the widths the person dragged, and what they closed.
-const RAIL_WIDTH = 'daoris.railWidth';
 // The dock's dragged width, as a SHARE of the window (LAYOUT1). `daoris.dockWidth` held pixels, and a
 // dock kept in pixels stayed the same while the window grew; one held there is read once, as its share
 // of the window it is read in, and then forgotten.
@@ -127,8 +127,13 @@ const door = (structured?: boolean): 'structured' | 'text' | undefined =>
  */
 export function WorkFrame({
   selected, onSelect, notify, onSendBack, onAnswerAsk, onOpenQuest, intent, onIntentTaken, ask, askFocus = 0, closings, placements,
-  content, onOpenSessions, terminal = false, onListMode,
+  lists, content, onOpenSessions, terminal = false, onListMode,
 }: {
+  /**
+   * What each view's list remembers (D118 §3f), held by the application so the list's doors reach it from
+   * every view; this frame's own where it is rendered alone.
+   */
+  lists?: ListPanes;
   /**
    * What the view's list is now — open, a strip, laid over, or none (D118 §3a) — for the application,
    * whose doors toggle it and say whether it is shown. The room decides it, and only this frame measures.
@@ -206,8 +211,9 @@ export function WorkFrame({
   // The frame's columns (FRAME6): what the person chose, and what the window leaves room for.
   const root = useRef<HTMLDivElement>(null);
   const width = useFrameWidth(root);
-  const [railWidth, setRailWidth] = useState(() => rememberedWidth(RAIL_WIDTH));
   const [dockShare, setDockShare] = useState(rememberedShare);
+  const ownLists = useListPanes();
+  const listed = lists ?? ownLists;
   // What the person closed (DOCK1c): the application's where it holds them, so the strip's toggles and
   // the View menu reach them from every view; this frame's own where it is rendered alone.
   const own = useFrameClosings();
@@ -221,7 +227,9 @@ export function WorkFrame({
   // Another view in the centre (DOCK1a): the frame without Sessions' rail.
   const elsewhere = content !== undefined;
   const layout = frameLayout(width.viewport, width.frame, {
-    list: elsewhere ? null : { bounds: LIST_BOUNDS.sessions, width: railWidth, closed: closed.list, over: closed.listOver },
+    list: elsewhere ? null : {
+      bounds: LIST_BOUNDS.sessions, width: listed.pane('sessions').width, closed: listed.pane('sessions').closed, over: closed.listOver,
+    },
     dockShare, dockClosed, dockFull,
   });
   const list = layout.list;
@@ -233,15 +241,12 @@ export function WorkFrame({
   const { listOver, setListOver } = closed;
   useEffect(() => { if (listOver && listMode !== 'over') setListOver(false); }, [listOver, listMode, setListOver]);
 
-  const resizeRail = (next: number | null) => {
-    setRailWidth(next);
-    store(RAIL_WIDTH, next === null ? null : String(next));
-  };
+  const resizeRail = (next: number | null) => listed.setWidth('sessions', next);
   /** The strip's open: beside where there is room, over the main area where the window drew the strip. */
   const toggleList = () => {
     if (!list) return;
     const next = listToggled(list);
-    closed.setList(next.closed);
+    listed.setClosed('sessions', next.closed);
     closed.setListOver(next.over);
   };
   /** A choice in a list laid over closes it (D118 §3a). */
@@ -764,7 +769,7 @@ export function WorkFrame({
           // Each running session's initial and mark, in the open rail's order (FRAME6).
           strip={<SessionRail selected={selected} onSelect={(id) => { chosen(); attend(id); }} notify={notify} compact taking={taking} />}
           onOpen={toggleList}
-          onClose={() => closed.setList(true)}
+          onClose={() => listed.setClosed('sessions', true)}
           onDismiss={() => setListOver(false)}
           onResize={resizeRail}
         >
