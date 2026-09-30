@@ -76,16 +76,36 @@ describe('the plugins card', () => {
     expect(pill.className).not.toMatch(/st-done/);
   });
 
-  it('the switch and Remove land on the bridge as the actions a terminal has', async () => {
-    const notify = vi.fn();
-    show(<SettingsView notify={notify} section="plugins" />);
+  it('the switch lands on the bridge as the action a terminal has', async () => {
+    show(<SettingsView notify={() => {}} section="plugins" />);
     const row = (await screen.findByText('Acme gate')).closest('div')!.parentElement!.parentElement!;
 
     await userEvent.click(within(row as HTMLElement).getByRole('button', { name: 'Turn off' }));
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'PLUGIN_ACTION', { payload: { id: 'acme.gate', action: 'disable' } });
+  });
 
-    await userEvent.click(within(row as HTMLElement).getByRole('button', { name: 'Remove' }));
+  /**
+   * PLUG10 (P8): a removal takes the install folder, which only a fresh install brings back, so the first
+   * press only asks, saying what the second will do and where what the plugin kept stays.
+   */
+  it('Remove asks once: the first press says what the second does, and only the second reaches the bridge', async () => {
+    show(<SettingsView notify={() => {}} section="plugins" />);
+    const row = (await screen.findByText('Acme gate')).closest('div')!.parentElement!.parentElement!;
+    const removals = () => invoke.mock.calls.filter(([, type]) => type === 'PLUGIN_ACTION');
+
+    await userEvent.click(within(row as HTMLElement).getByRole('button', { name: 'Remove…' }));
+    const ask = screen.getByRole('group', { name: 'remove acme.gate' });
+    expect(within(ask).getByText(/What it kept stays at/)).toHaveTextContent('C:/somewhere/data/plugins/.data/acme.gate');
+    expect(removals()).toEqual([]);
+
+    await userEvent.click(within(ask).getByRole('button', { name: 'Never mind' }));
+    expect(screen.queryByRole('group', { name: 'remove acme.gate' })).toBeNull();
+    expect(removals()).toEqual([]);
+
+    await userEvent.click(within(row as HTMLElement).getByRole('button', { name: 'Remove…' }));
+    await userEvent.click(within(screen.getByRole('group', { name: 'remove acme.gate' })).getByRole('button', { name: 'Remove plugin' }));
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'PLUGIN_ACTION', { payload: { id: 'acme.gate', action: 'remove' } });
+    expect(removals()).toHaveLength(1);
   });
 
   it('a machine with no plugins says where one would go', async () => {
@@ -225,6 +245,12 @@ describe('the plugins card', () => {
       expect(screen.getByRole('button', { name: '更新 acme.gate' })).toBeTruthy();
       expect(screen.getByRole('button', { name: '安装 github-pull-request' })).toBeTruthy();
       expect(screen.getByText('gh auth login', { selector: 'code' })).toBeTruthy();
+
+      // PLUG10 (P8): the ask once, in the glossary's words — 移除 is remove's, 插件 plugin's.
+      await userEvent.click(screen.getByRole('button', { name: '移除…' }));
+      const ask = screen.getByRole('group', { name: '移除 acme.gate' });
+      expect(within(ask).getByText(/它保存的内容留在/)).toBeTruthy();
+      expect(within(ask).getByRole('button', { name: '确认移除插件' })).toBeTruthy();
     } finally {
       await i18n.changeLanguage('en');
     }

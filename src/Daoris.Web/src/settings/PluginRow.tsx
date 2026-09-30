@@ -1,6 +1,6 @@
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button, Inline, Pill, SettingRow, Tip } from '../ui';
+import { Button, Inline, Pill, SettingRow } from '../ui';
 import { PluginSourceLine, updatable, type PluginSourceShown } from './PluginUpdate';
 
 /**
@@ -32,9 +32,13 @@ export type PluginShown = {
  * and speaks on, its folder and where it came from, and its acts. Props in, presses out: the domain
  * holds the catalogue and the mutations, and what sits under the row (a trial's report, an update's
  * plan) comes in as children.
+ *
+ * *Remove…* asks once (PLUG10 P8, D41 §4): a removal takes the install folder, which only a fresh
+ * install brings back, so the first press opens a sentence saying what the second does and where what
+ * the plugin kept stays, beside *Remove plugin* and *Never mind*. Only the second press is `onRemove`.
  */
 export function PluginRow({
-  plugin, canTry = false, trying = false, updating = false, acting = false,
+  plugin, canTry = false, trying = false, updating = false, acting = false, defaultAsking = false,
   onTry, onAskUpdate, onSwitch, onRemove, children,
 }: {
   plugin: PluginShown;
@@ -43,6 +47,8 @@ export function PluginRow({
   trying?: boolean;
   updating?: boolean;
   acting?: boolean;
+  /** Opens with the removal's ask shown, so a story can draw it. */
+  defaultAsking?: boolean;
   onTry: (id: string) => void;
   onAskUpdate: (id: string) => void;
   onSwitch: (id: string, action: 'enable' | 'disable') => void;
@@ -50,6 +56,7 @@ export function PluginRow({
   children?: ReactNode;
 }) {
   const { t } = useTranslation();
+  const [asking, setAsking] = useState(defaultAsking);
   const what = [
     plugin.harnesses.length > 0 ? t('plugin.declares', { harnesses: plugin.harnesses.join(', ') }) : null,
     plugin.points.length > 0 ? t('plugin.speaks', { points: plugin.points.join(', ') }) : null,
@@ -109,11 +116,12 @@ export function PluginRow({
           >
             {t(plugin.enabled ? 'plugin.disable' : 'plugin.enable')}
           </Button>
-          <Tip content={t('plugin.forgetTip')}>
-            <Button variant="ghost" disabled={acting} onClick={() => onRemove(plugin.id)}>
+          {/* While it asks, the ask below holds the move, so the first press is not offered twice. */}
+          {!asking && (
+            <Button variant="ghost" disabled={acting} onClick={() => setAsking(true)}>
               {t('plugin.forget')}
             </Button>
-          </Tip>
+          )}
         </>
       )}
     >
@@ -123,6 +131,28 @@ export function PluginRow({
         <p className="max-w-prose border-l-[3px] border-warn bg-page/60 px-3.5 py-2 text-body text-ink-soft">
           <Inline text={plugin.problem} />
         </p>
+      )}
+      {asking && (
+        <div
+          role="group"
+          aria-label={t('plugin.removeTitle', { id: plugin.id })}
+          className="flex flex-wrap items-center gap-2 rounded-control border border-line bg-sunken px-2.5 py-2"
+        >
+          <span className="min-w-0 flex-1 basis-64 text-small text-ink-soft">
+            <Inline text={t('plugin.removeConfirm', { data: plugin.data })} />
+          </span>
+          <Button
+            variant="danger"
+            disabled={acting}
+            onClick={() => {
+              setAsking(false);
+              onRemove(plugin.id);
+            }}
+          >
+            {t('plugin.removeMeanIt')}
+          </Button>
+          <Button variant="ghost" onClick={() => setAsking(false)}>{t('common.cancel')}</Button>
+        </div>
       )}
       {children}
     </SettingRow>

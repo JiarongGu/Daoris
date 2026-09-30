@@ -3,7 +3,8 @@ import { Card } from '../ui';
 import { PluginRow, type PluginShown } from './PluginRow';
 
 // An installed plugin's row (D64), in the shape the driver's PLUGINS answer takes: running, switched off,
-// and refused with the driver's sentence. PLUG10 (P9): running wears the in-progress hue, never done's.
+// refused with the driver's sentence, and a removal asking. PLUG10: running wears the in-progress hue,
+// never done's (P9), and Remove… asks once before anything is removed (P8).
 
 const GATE: PluginShown = {
   id: 'acme.quiet-hours', name: 'Quiet hours', version: '1.1.0',
@@ -38,3 +39,6 @@ export const Refused: Story = {
     },
   },
 };
+
+/** Remove…'s first press: what the second does and where what it kept stays, beside the move and Never mind. */
+export const RemoveAsking: Story = { args: { defaultAsking: true } };

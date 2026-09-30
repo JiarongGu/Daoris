@@ -14,7 +14,8 @@ import { PluginUpdatePlan, type PluginUpdatePlanShown } from './PluginUpdate';
  * what it speaks on, whether it is running, and why it contributes nothing when it does not.
  *
  * **Two doors, one folder** (D50): the switch is a row in `plugins.json` that `daoris plugin
- * enable|disable` edits too, and Remove takes the install folder while naming what the plugin kept.
+ * enable|disable` edits too, and Remove, asked once (PLUG10), takes the install folder while naming what
+ * the plugin kept.
  * **No plugin code runs in this page** — a plugin's word reaches the console under `plugin:<id>`.
  *
  * A plugin that speaks can be tried where it stands (PLUG8): the shell starts it as the driver would and
