@@ -122,8 +122,8 @@ public static class PermissionRules
         new(
             "commit", RuleList.Allow,
             ["Bash(cd:*)", "Bash(git add:*)", "Bash(git commit:*)", "Bash(git mv:*)"],
-            "A session commits its own work in its own tree, renames included, because committing is part of "
-            + "finishing a task — the push is still refused."),
+            "A session commits its own work in its own tree, because committing is part of finishing a task "
+            + "— the push is still refused."),
         // 🔴 UNBLOCK4 (D122 §3.7): the harness matches a Bash rule against the command as written, so
         // `git push …` alone let `git -C . push` and `git -c <key>=<value> push` through, and auto mode's
         // classifier allows a push to the working repository by default. The option-first rules take
@@ -135,9 +135,9 @@ public static class PermissionRules
         new(
             "no-push", RuleList.Deny,
             ["Bash(git push)", "Bash(git push:*)", "Bash(git -* push)", "Bash(git -* push *)"],
-            "A push leaves this machine, and that stays the person's call, with options written before it too. "
-            + "Where the agent judges its own actions, it is also told that any push, publish or release is the "
-            + "person's.",
+            // UNBLOCK4 left the reason as it was: the page's Chinese catalogue translates it by id, and the
+            // rules say the rest.
+            "A push leaves this machine, and that stays the person's call.",
             HardDeny: "Pushing to any remote in any form (for example git -C <dir> push, git -c <key>=<value> "
             + "push), publishing a package, or creating a release: these stay the person's."),
         new(

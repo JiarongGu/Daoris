@@ -83,8 +83,8 @@ export const DEFAULTS: readonly PermissionDefault[] = [
     id: 'commit',
     list: 'allow',
     rules: ['Bash(cd:*)', 'Bash(git add:*)', 'Bash(git commit:*)', 'Bash(git mv:*)'],
-    why: 'A session commits its own work in its own tree, renames included, because committing is part of '
-      + 'finishing a task — the push is still refused.',
+    why: 'A session commits its own work in its own tree, because committing is part of finishing a task '
+      + '— the push is still refused.',
   },
   // 🔴 UNBLOCK4 (D122 §3.7): a Bash rule matches the command as written, so `git push …` alone let
   // `git -C . push` and `git -c <key>=<value> push` through. The option-first rules take every push with
@@ -95,9 +95,7 @@ export const DEFAULTS: readonly PermissionDefault[] = [
     id: 'no-push',
     list: 'deny',
     rules: ['Bash(git push)', 'Bash(git push:*)', 'Bash(git -* push)', 'Bash(git -* push *)'],
-    why: 'A push leaves this machine, and that stays the person\'s call, with options written before it too. '
-      + 'Where the agent judges its own actions, it is also told that any push, publish or release is the '
-      + 'person\'s.',
+    why: 'A push leaves this machine, and that stays the person\'s call.',
   },
   // PERM3: a hook the driver hands at spawn, not a rule — a rule cannot say "outside the tree".
   {
