@@ -8084,3 +8084,21 @@ exception unobserved (LOG2).
 **On main:** Ask Daoris's places (HELP6, merged just before) lacked the new *Logs* domain, and the page's
 test that every Settings domain is a place caught it; both twins gained it.
 **Proven by:** driver, modules 361, vitest 1588, CLI 581, family 301/301, deployment 67/67, Playwright 21.
+
+## BRW7, BRW8 — the browser's door and link routing, and who is driving it (2026-09-30)
+
+> - [ ] **BRW7 — start it from the app, and route links to it.** … - [ ] **BRW8 — who is driving.** …
+
+**Outcome** (built by a subagent in its own worktree, merged, then looked at on main). **BRW7:** Daoris's
+browser has a door on the app strip, a compass before the region toggles, on a shell only; not on the
+activity bar, whose items are places in this window (D66; the in-app browser design §3c has the
+reasoning). `links` in the browser's settings (`system` by default, or `daoris`) has two doors, `daoris
+browser links` and Settings → Browser; every link on the page opens through one `ExternalLink`, held by
+a test against hand-written anchors, and where a shell is here and `links` is `daoris` a click opens
+the page as a tab in the chosen browser. A sign-in link always opens in the system's browser. **BRW8:**
+who is driving is read from what the driver handed (a `${browser}` server), kept beside each session's
+process for driven quests, intakes and conversations, and answered as `drivingBrowser`; one session is a
+chip beside the door that opens it, several a count with a menu, and Settings → Browser names them.
+**Looked at:** the compass on the strip and the Browser domain's new rows, no overflow; not yet a live
+driving chip or a routed click (both need a session with the browser plugin).
+**Proven by:** driver 1140, modules 376, vitest 1625, CLI 584.

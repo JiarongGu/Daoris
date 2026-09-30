@@ -6,14 +6,15 @@ namespace Daoris.Desktop;
 
 /// <summary>
 /// Daoris's browser, as a Settings domain (CHR5, CHR7, D50): its favorites, which it shows in a
-/// <i>Daoris</i> folder on its bookmarks bar, and whether other software's Chrome extensions are
-/// offered or refused. The page asks, this edits <c>favorites.json</c> and <c>settings.json</c> under
-/// the home: the same files <c>daoris browser</c> edits and <c>daoris-browser</c> reads each time it
-/// starts.
+/// <i>Daoris</i> folder on its bookmarks bar, whether other software's Chrome extensions are offered
+/// or refused, which browser it is (BRW12), and where the page's links open (BRW7). The page asks,
+/// this edits <c>favorites.json</c> and <c>settings.json</c> under the home: the same files
+/// <c>daoris browser</c> edits and <c>daoris-browser</c> reads each time it starts.
 /// </summary>
 /// <remarks>
 /// <para><b>The files are the API; this is an editor.</b> A change lands in the file at once and in
-/// the browser the next time it starts, which the page says.</para>
+/// the browser the next time it starts, which the page says. The links setting is the page's own, read
+/// back from this answer, so it holds at once.</para>
 ///
 /// <para><b>Shell-only, like every machine domain</b> (D47 §4): the service has no door onto these
 /// files, and a browser over a keyed remote learns nothing of them.</para>
@@ -91,6 +92,24 @@ public sealed class BrowserModule(IEventBus events) : ModuleBase(events: events)
                 return Task.FromResult<object?>(State(home));
             }
 
+            // Where the page's links open (BRW7): the page reads the answer back and routes each click
+            // by it, so this one holds at once rather than at the browser's next start.
+            case "SET_LINKS":
+            {
+                var links = PayloadHelper.GetRequiredValue<string>(request.Payload, "links");
+                if (links is not (LinksSetting.System or LinksSetting.Daoris))
+                {
+                    throw Refusals.Because(
+                        Refusals.BrowserLinksUnknown,
+                        $"Links open in `system` or `daoris`, not `{links}`.",
+                        ("value", links));
+                }
+
+                Unreadable(BrowserSettings.Read(home).Problem, BrowserSettings.FilePath(home));
+                BrowserSettings.SetLinks(home, links);
+                return Task.FromResult<object?>(State(home));
+            }
+
             default:
                 throw UnknownType(request);
         }
@@ -118,6 +137,7 @@ public sealed class BrowserModule(IEventBus events) : ModuleBase(events: events)
             SettingsPath = BrowserSettings.FilePath(home),
             settings.Extensions,
             settings.Browser,
+            settings.Links,
             // Whether the Edge option has an Edge to start on this machine, so the page can say so
             // before it is chosen rather than after a press does nothing.
             EdgeFound = EdgeBrowser.Locate() is not null,

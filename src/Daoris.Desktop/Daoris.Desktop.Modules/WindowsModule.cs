@@ -43,10 +43,25 @@ public sealed class WindowsModule(
         {
             // Not a route into the bundle like the others: the browser shows pages that are not
             // Daoris's, in a process of its own that holds no bridge (D78 §3.1, D85). Opening it
-            // again brings it forward, as every window here does.
+            // again brings it forward, as every window here does. With a `url`, a link on the page is
+            // opened there (BRW7) — only a web page, by the favorites' rule, since whatever it opens
+            // is a page agents can drive.
             case "OPEN_BROWSER":
             {
-                browser?.Show();
+                if (PayloadHelper.GetOptionalValue<string>(request.Payload, "url") is { } url)
+                {
+                    var address = BrowserFavorites.Address(url)
+                        ?? throw Refusals.Because(
+                            Refusals.BrowserLinkNotAPage,
+                            $"`{url}` is not a web page, so Daoris's browser will not open it.",
+                            ("address", url));
+                    browser?.Open(address);
+                }
+                else
+                {
+                    browser?.Show();
+                }
+
                 return Task.FromResult<object?>(State(opened: browser is not null));
             }
 

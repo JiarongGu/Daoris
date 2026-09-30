@@ -47,6 +47,14 @@
 > window, profile (`<home>/browser/engine`), favorites folder, extensions setting and closing with the
 > shell. §3.4 stands with one difference: the relay behind the port is the kit's now, and announces a new
 > tab as a `page` as Daoris's did.
+>
+> **Amended by BRW7 (2026-09-30): a door on the strip, and links routed to it.** §3.2's doors gain a
+> third, the app strip's, and the settings file a `links` field, with its terminal door. §3c says what
+> was built and why the door is where it is.
+>
+> **Amended by BRW8 (2026-09-30): who is driving.** §3.2's *which tab an agent drives is the agent's*
+> stands, and Daoris now says whose hands are on the browser, beside its door and in Settings →
+> Browser. §3d says what it is read from.
 
 ## 0. Why the first answer is not enough
 
@@ -174,6 +182,75 @@ recording a visit and completing are the window's alone.
    title whatever the case. A host that starts with what was typed comes before one that only contains
    it, and history then goes by how often, then how lately. A typed scheme alone matches nothing.
 
+## 3c. The door, and where links open (BRW7, 2026-09-30)
+
+**The door is on the app strip**, a compass before the region toggles, in the strip's right-hand
+group, shell-only like them. It does what View → *Browser* and the palette do: opens whichever browser
+the machine uses (Daoris's own or the person's Edge, §3's BRW12) on its own start page, or brings it
+forward. **Not on the activity bar**, by the frame design's rules (§3a–b there): the bar is the one
+navigation (D66), a place per icon, each item changing what the window's centre shows and wearing the
+current-place mark, and its foot holds actions on this window. The browser is another window, and
+opening it changes no place. The strip is where the application's acts are, the View menu that
+already opens the browser among them, and its right end holds what changes the work's surroundings
+rather than the view. The strip also has room for a session's name in words, which BRW8 needs; a 48px
+bar has room for a count.
+
+**Where the page's links open is the person's choice**, `links` in `<home>/browser/settings.json`:
+`system` (the default, and anything that is not `daoris`) or `daoris`, which is whichever browser the
+file's `browser` chooses. A twin like the rest of the file: `browser.ts` (`daoris browser links
+[system|daoris]`) and `BrowserSettings.cs` (Settings → Browser, `SET_LINKS`), with the same table. The
+page reads it from `DAORIS.BROWSER`'s state, not `daoris-browser`, so it needs no restart: a change
+from Settings holds at the next click, and one from a terminal once an open window reads its settings
+again, as it does coming back to the front.
+
+1. **Every link on the page opens through one place**, `ExternalLink` (`links.tsx`): a quest's and an
+   ask's links, a quest's kept files, a conversation's Markdown links and images. A test fails on a
+   hand-written `<a` anywhere else. With no opener, or an address that is not an absolute `http` or
+   `https` page with a host and no credentials, it is the link it always was, `target="_blank"`.
+2. **The opener is the application's**, through a context: where a shell is here and `links` is
+   `daoris`, a click is prevented and `DAORIS.WINDOWS` `OPEN_BROWSER` is asked with `{ url }`. A
+   browser has no bridge and is never given one. The detached session's window provides the same.
+3. **The shell checks again, by the favorites' address rule** (§3a.2), and refuses anything else by
+   code (`BROWSER_LINK_NOT_A_PAGE`), since whatever it opens is a page agents can drive. It brings the
+   chosen browser up as the person's press does and opens the page as a tab of its own
+   (`Target.createTarget` with no `newWindow`, as an agent's tab is made), then brings that tab
+   forward. A browser that was not running opens its start page first, with the link's tab beside it.
+4. **A sign-in link always opens in the system's browser**, whatever `links` says: an account's
+   sign-in is the person's own, and never belongs in a browser any process on this machine can drive
+   (§3.4).
+
+**Not verified when it was written**: no window was started, because the owner's install was running
+on the machine. The tab's placement and focus in the engine's window, and in Edge's, are the look
+after merging.
+
+## 3d. Who is driving (BRW8, 2026-09-30)
+
+An agent's current tab is the first page it found, not the one in front (§3.2, measured with BRW4),
+and neither the engine's window nor Edge's is Daoris's to draw in. So it is said in Daoris, before the
+person types into a page: beside the strip's door, and at the head of Settings → Browser.
+
+1. **Read from what the driver handed**, never from the page. `InAppBrowserServers.HandAsync` answers
+   whether a server that drives the browser was handed (`Drives`: an endpoint was answered and every
+   server that needs it got it). The session's registry entry keeps it beside the process
+   (`SessionProcesses.Track(…, drivesBrowser)`), on all three doors that hand servers: a driven
+   quest's session, an intake, and a conversation. Ask Daoris is handed no plugin servers, so it never
+   drives.
+2. **Driving lasts from the handing until the session ends**, whether or not the agent has used the
+   browser yet: that is its own, and never reaches the driver. The words say so in the tip.
+3. **`drivingBrowser` in the driver's state** is those ids, running. Only this registry's: a
+   terminal's driver has no shell to hand it a browser, so every session that can drive this shell's
+   browser is held here.
+4. **The page names each session as the rail does** (`browserDrivers`): its repository, then what it
+   is for (`sessionTitle`). A session the page has no record of — the list has not caught up, or it is
+   in a circle the window is not scoped to — is named by its id rather than left out.
+5. **On the strip**, one session is a chip, *driven by engine · Read the ticket*, that opens it in
+   Sessions; two or more are a count whose menu lists each. Nothing is said while nobody drives. In
+   words, never a mark alone (D41 §6), and the strip's room is why the door is there (§3c). **In
+   Settings → Browser**, *Driving it now* names each, a door into Sessions, or says no session is.
+
+**Not verified when it was written**: the chip's width beside the command center at a narrow window,
+and its look in both themes, are the look after merging.
+
 ## 4. What is deliberately not in it
 
 - **Downloads, devtools, history UI.** v1 was one page an agent and a person share; tabs came with
@@ -192,3 +269,5 @@ recording a visit and completing are the window's alone.
 | **BRW1** | The browser window: its own environment and profile under the home, a loopback CDP port, the address bar, and View → *Browser* with the palette's door | module tests for the pure parts (the endpoint, the address rules), and a look on the window with Playwright MCP attached from outside |
 | **BRW2** | `${browser}` in a plugin server, expanded at hand-over from the shell's answer, and the server withheld where there is none. The driver brings the browser up before the spawn. The example plugin moves to it | driver tests with a stand-in browser host, the twin tests for the placeholder staying unexpanded at read, and a stub session handed the endpoint |
 | **BRW3** | The owner's machine: the plugin, the one sign-in in the in-app browser, `mcp__browser` allowed, and the first ask whose ticket the intake reads through it | the owner's run, FG5 |
+| **BRW7** | The strip's door, `links` in the settings file on both doors, `ExternalLink` as the one place a link opens, and `OPEN_BROWSER` with a `url` (§3c) | the twin tables, module tests with a stand-in browser, vitest over a mocked bridge (the helper, the Settings row, the whole window's door and a quest's link), and a look on the window after merging |
+| **BRW8** | Who is driving: `Drives` from the hand-over, kept in the registry, `drivingBrowser` in the driver's state, the strip's chip and Settings' row (§3d) | driver tests (the hand-over, the registry, a real tick's driven session and a real conversation, each with a stand-in browser and without), the module's state, vitest over a mocked bridge (no session, one, two, and the whole window) |

@@ -12,6 +12,7 @@ import type { HelpProposal } from './help/ProposalCard';
 import type { HelpPlace } from './help/places';
 import { type ChatMessage, type EventPage, mergeEvents, type SessionEvent } from './work/conversation';
 import { toUpload } from './attachments';
+import { sentence } from './format';
 import { effectiveDark, subscribeTheme } from './theme';
 import type { WiringAnswer } from './map/wiring';
 import type { AgentRulesState, RuleListName, RuleScopeName } from './settings/AgentRules';
@@ -38,6 +39,11 @@ export type DriverState = {
   trees: string[];
   /** Session ids with a live process right now — what "stop" can actually reach. */
   running: string[];
+  /**
+   * Who is driving Daoris's browser (BRW8): the running sessions the driver handed a server that drives
+   * it, from the handing until each ends. Absent on a shell older than it, which says nothing.
+   */
+  drivingBrowser?: string[];
   /** Whether this machine interrupts the person when a session parks or ends unasked (SURF5b). */
   notify: boolean;
   /** How many failed sessions park a quest (D58); `0` never parks. */
@@ -529,6 +535,11 @@ export type BrowserSettingsState = {
   edgeFound: boolean;
   /** The profile of Daoris's that Edge runs on — never the person's default, which cannot be driven. */
   edgeProfile: string;
+  /**
+   * Where a link on the page opens (BRW7): the system's browser, or Daoris's — whichever `browser` is.
+   * Absent on a shell older than it, which is the system's.
+   */
+  links?: 'system' | 'daoris';
   settingsProblem: string | null;
 };
 
@@ -560,6 +571,36 @@ export const useRemoveFavorite = () => useBrowserChange<{ address: string }>('RE
 export const useSetExtensions = () => useBrowserChange<{ extensions: 'offer' | 'refuse' }>('SET_EXTENSIONS');
 
 export const useSetBrowser = () => useBrowserChange<{ browser: 'daoris' | 'edge' }>('SET_BROWSER');
+
+export const useSetLinks = () => useBrowserChange<{ links: 'system' | 'daoris' }>('SET_LINKS');
+
+/**
+ * What opens a link on the page in Daoris's browser (BRW7), or null where links open as links do: a
+ * browser, which has no bridge and no Daoris's browser to open, and a machine whose `links` setting is
+ * the system's — or a shell too old to say. `ExternalLink` honours whatever this answers, through the
+ * `LinkOpener` the application provides.
+ *
+ * @remarks
+ * The setting is read from the browser's settings, the cache Settings → Browser fills, so a change made
+ * there holds at the next click; one made from a terminal holds once the page asks again. A refusal —
+ * an address the shell will not open — is said in the shell's sentence.
+ */
+export function useLinkOpener(notify: (text: string, kind?: 'ok' | 'error') => void): ((address: string) => void) | null {
+  const { isAvailable } = useShenora();
+  const settings = useBrowserSettings();
+  const open = useMutation({
+    mutationFn: (url: string) =>
+      getBridge().invoke<{ opened: boolean; windows: string[] }>('DAORIS.WINDOWS', 'OPEN_BROWSER', { payload: { url } }),
+  });
+  const { mutate } = open;
+  const routed = isAvailable && settings.data?.links === 'daoris';
+  return useMemo(
+    () => (routed
+      ? (address: string) => mutate(address, { onError: (error) => notify(sentence(error), 'error') })
+      : null),
+    [routed, mutate, notify],
+  );
+}
 
 /**
  * Open one of this build's secondary windows (D55 §b, SURF8): the monitor, or one session detached.

@@ -79,7 +79,8 @@ export function offenders(files: [path: string, source: string][]): string[] {
 // `settings/` since AGT6: Daoris's own AI, drawn from props — SettingsView above it holds the queries.
 // `projects/` since INT3c: the driver's row, drawn from props — ProjectsView above it holds the driver.
 // `help/` since HELP1: Ask Daoris's panel and its starters, drawn from props — AskDaoris holds the machine.
-const sources = import.meta.glob('./{ui.tsx,work/**/*.{ts,tsx},map/**/*.{ts,tsx},asks/**/*.{ts,tsx},compose/**/*.{ts,tsx},settings/**/*.{ts,tsx},projects/**/*.{ts,tsx},help/**/*.{ts,tsx}}', {
+// `links.tsx` since BRW7: the one place a link opens, told where by a context the application provides.
+const sources = import.meta.glob('./{ui.tsx,links.tsx,work/**/*.{ts,tsx},map/**/*.{ts,tsx},asks/**/*.{ts,tsx},compose/**/*.{ts,tsx},settings/**/*.{ts,tsx},projects/**/*.{ts,tsx},help/**/*.{ts,tsx}}', {
   eager: true, query: '?raw', import: 'default',
 }) as Record<string, string>;
 

@@ -14,4 +14,10 @@ public interface IInAppBrowser
 
     /// <summary>Open it for the person, in front: the address bar, their sign-in, and what an agent does there.</summary>
     void Show();
+
+    /// <summary>
+    /// Open a page in it for the person, in front, as a tab of its own (BRW7): a link on Daoris's page,
+    /// where the person chose that links open here. <paramref name="address"/> is already a web page's.
+    /// </summary>
+    void Open(string address);
 }

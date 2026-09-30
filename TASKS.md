@@ -106,9 +106,9 @@ rather than designed.
 
 ## Backlog
 
-**Twenty-seven rows are open**: the day's three (USE1's last part to confirm, LOG2, HELP7),
+**Twenty-five rows are open**: the day's three (USE1's last part to confirm, LOG2, HELP7),
 first; WSR4 from the first real workspace; the three REV3 left (DIST1, BUDGET1 and
-HOME1, the owner's); the in-app browser's three (BRW3, BRW7, BRW8); D85's one (TASKBAR1); the first
+HOME1, the owner's); the in-app browser's one (BRW3); D85's one (TASKBAR1); the first
 goal's four (FG5, READACROSS1 and HELPREAD1 the owner's, and SEM2 on a trigger); D76's held file tools;
 three leftovers (CONSOLE3, FLAKE1, TEST1); two on the owner (TRUST2, AGT2c); REH1; and the rest on a
 trigger (TOOL4, TOOL5, PLUG7, CANON9, HARNESS1). Every closed one is in `docs/task-archive.md`, and
@@ -279,17 +279,6 @@ attached over CDP drives a WebView2.
 🔴 **D84 changed the course (2026-09-28): Daoris ships a Chromium for its browser, and the person's
 Edge is always an option** (`docs/2026-09-28-managed-edge-evidence.md`). The engine landed as CHR3
 (below), in place of the WebView2 window, and the Edge option as BRW12 and BRW13, in the archive.
-- [ ] **BRW7 — start it from the app, and route links to it.** A door as visible as the monitor's:
-  the activity bar or the strip, not only View → *Browser*. A setting for whether links on the page
-  (a ticket in a quest, a URL in the conversation) open in Daoris's browser or the system browser,
-  orca's link routing. It opens whichever browser the machine uses (CHR3, BRW12), on that
-  browser's own start page.
-- [ ] **BRW8 — who is driving.** Say when a session is driving the browser, name the session, and
-  link to it, so the person knows whose hands are on the page before they type into it. **Measured
-  with BRW4 (2026-09-28):** an agent's current tab is the first page it found, not the one in front.
-  In a real browser its own tabs are visible (D84's evidence). Neither the engine's window (CHR3) nor
-  Edge's is Daoris's to draw in, so it is said in Daoris (the session, the strip) or by an extension.
-
 ### Chromium under the windows (owner, 2026-09-28 → D85)
 
 > *"to shift to chromeiun, because we mostly build the ui itself in react and the only missing part

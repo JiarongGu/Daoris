@@ -89,6 +89,11 @@ applications do with the **window** itself. Five rules recur, and Daoris breaks 
 > **Amended by D75 (2026-09-24, the owner's choice).** The strip's menus are the setup domains,
 > *Daoris · Workspace · Agents · View*, each item opening its own domain of one Settings page, and the
 > workspace is named in every state, none included. `docs/2026-09-24-menus-design.md` is the contract.
+>
+> **Amended by BRW7 and BRW8 (2026-09-30).** The strip's right-hand group holds Daoris's browser's door
+> before the region toggles, on a shell only, and beside it, while a session drives the browser, a chip
+> naming it that opens it. The door opens another window and changes no place, so it is an act of the
+> strip's and not a place on the activity bar; the in-app browser design's §3c and §3d have the reasoning.
 
 Wordmark (`Daoris` 道衍 — the serif's one appearance, D41 §1), the **Manage ⇄ Work** mode switch, and
 the **workspace scope**, right-aligned with three reserved slots at its right edge. It is present in

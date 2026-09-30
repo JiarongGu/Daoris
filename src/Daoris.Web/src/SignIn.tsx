@@ -1,6 +1,7 @@
 import { type FormEvent, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useHarnessCancel, useHarnessInput, useSessionConsole } from './shell';
+import { ExternalLink } from './links';
 import { Button, Dot, Icon, MonoWell } from './ui';
 
 /**
@@ -102,15 +103,16 @@ export function SignIn({
             <p className="m-0 text-body text-ink">{t('signin.step.open')}</p>
             {url ? (
               <div className="mt-1 flex flex-wrap items-center gap-2">
-                <a
+                {/* Always the system's browser, whatever links are set to (BRW7): an account's sign-in is
+                    the person's own, and never belongs in a browser any process here can drive. */}
+                <ExternalLink
                   href={url}
-                  target="_blank"
-                  rel="noreferrer"
+                  system
                   className="inline-flex max-w-full items-center gap-1 truncate font-mono text-small text-accent underline-offset-2 hover:underline"
                 >
                   <Icon name="external" size={12} />
                   <span className="truncate">{url}</span>
-                </a>
+                </ExternalLink>
                 <Button variant="ghost" onClick={copy}>
                   <Icon name="copy" size={12} />
                   {copied ? t('signin.copied') : t('signin.copy')}

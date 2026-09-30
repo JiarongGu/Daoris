@@ -63,6 +63,28 @@ public sealed class BrowserModuleTests : Bridge
         Assert.Contains(state.GetProperty("edgeFound").ValueKind, new[] { JsonValueKind.True, JsonValueKind.False });
     }
 
+    /// <summary>BRW7: where the page's links open, set from Settings in the file `daoris browser links` edits.</summary>
+    [Fact]
+    public async Task Sending_links_to_Daoris_browser_writes_the_settings_file_the_page_reads()
+    {
+        var before = await AnswerAsync(Module(), "STATE");
+        Assert.Equal(LinksSetting.System, before.GetProperty("links").GetString());
+
+        var state = await AnswerAsync(Module(), "SET_LINKS", new { links = "daoris" });
+
+        Assert.Equal(LinksSetting.Daoris, BrowserSettings.Read(Home).Links);
+        Assert.Equal(LinksSetting.Daoris, state.GetProperty("links").GetString());
+    }
+
+    [Fact]
+    public async Task A_links_setting_that_is_neither_is_refused_by_code_and_writes_nothing()
+    {
+        var refusal = await RefusalAsync(Module(), "SET_LINKS", new { links = "chrome" });
+
+        Assert.Contains(Refusals.BrowserLinksUnknown, refusal);
+        Assert.False(File.Exists(BrowserSettings.FilePath(Home)));
+    }
+
     [Fact]
     public async Task A_browser_that_is_neither_is_refused_by_code()
     {
@@ -93,6 +115,8 @@ public sealed class BrowserModuleTests : Bridge
             await RefusalAsync(Module(), "ADD_FAVORITE", new { address = "site.example/board" }));
         Assert.Contains(Refusals.BrowserFileUnreadable,
             await RefusalAsync(Module(), "SET_EXTENSIONS", new { extensions = "refuse" }));
+        Assert.Contains(Refusals.BrowserFileUnreadable,
+            await RefusalAsync(Module(), "SET_LINKS", new { links = "daoris" }));
 
         Assert.Equal("not json", File.ReadAllText(BrowserFavorites.FilePath(Home)));
         Assert.Equal("[1]", File.ReadAllText(BrowserSettings.FilePath(Home)));

@@ -173,7 +173,7 @@ public sealed partial class Driver
             string? preamble = null;
             // The plugins' servers — a ticket behind a sign-in is read through Daoris's own browser, brought
             // up here for a server that drives it (D78), or that server left out and the transcript told why.
-            var (servers, browserNotice) = await InAppBrowserServers.HandAsync(_servers, browser, ct).ConfigureAwait(false);
+            var (servers, browserNotice, drivesBrowser) = await InAppBrowserServers.HandAsync(_servers, browser, ct).ConfigureAwait(false);
             if (adapter.Wire == SessionWire.Pipe)
             {
                 var connector = Connector(sessionId, scope);
@@ -197,6 +197,7 @@ public sealed partial class Driver
                 scope: scope,
                 preamble: JoinNotices(preamble, browserNotice),
                 handedServers: servers,
+                drivesBrowser: drivesBrowser,
                 conclude: async (exitCode, used, turnFailed) =>
                 {
                     if (used is not null)

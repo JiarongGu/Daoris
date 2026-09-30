@@ -2110,6 +2110,8 @@ public sealed class DriverModule : ModuleBase
             WorkspaceLandings = config.WorkspaceLandings.OrderBy(p => p.Key, StringComparer.Ordinal)
                 .Select(p => new { Workspace = p.Key, p.Value.Form, p.Value.Pattern, p.Value.Tidy }).ToArray(),
             Running = _loop.Processes.Running,
+            // Who is driving Daoris's browser (BRW8): the running sessions handed a server that drives it.
+            DrivingBrowser = _loop.Processes.DrivingBrowser,
         };
     }
 

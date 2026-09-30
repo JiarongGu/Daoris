@@ -10,6 +10,7 @@ import {
 import { TrustAsk } from './work/TrustAsk';
 import { ago, sentence, sessionTool, sittingDays, size, stamp } from './format';
 import { isImage, linksOf, toUpload } from './attachments';
+import { ExternalLink } from './links';
 import { CarriedCount, CarryFields, useCarry } from './compose/carry';
 import { AsksSection } from './asks/AsksSection';
 import { sittingBecause, sittingSentence } from './signals';
@@ -655,19 +656,20 @@ export function QuestsView({
           <p className="m-0 whitespace-pre-wrap text-body leading-relaxed">{detail.body}</p>
           {(detail.links?.length ?? 0) > 0 && (
             /* The asker's addresses, as links — the service accepted only http and https, so each
-               is an address and nothing that would run. */
+               is an address and nothing that would run. They open where the person chose, their
+               browser or Daoris's (BRW7). */
             <div className="mt-4">
               <SectionTitle>{t('quests.detail.links')}</SectionTitle>
               <ul className="m-0 grid list-none gap-1 p-0">
                 {detail.links!.map((link) => (
                   <li key={link} className="min-w-0">
-                    <a
-                      href={link} target="_blank" rel="noreferrer"
+                    <ExternalLink
+                      href={link}
                       className="inline-flex max-w-full items-center gap-1.5 text-body text-accent underline-offset-2 hover:underline"
                     >
                       <Icon name="link" size={12} />
                       <span className="truncate">{link}</span>
-                    </a>
+                    </ExternalLink>
                   </li>
                 ))}
               </ul>
@@ -683,8 +685,8 @@ export function QuestsView({
                 {detail.attachments!.map((file) => (
                   <li key={file.sha256} className="min-w-0 text-body">
                     {file.path ? (
-                      <a
-                        href={api.attachmentUrl(detail.id, file.sha256)} target="_blank" rel="noreferrer"
+                      <ExternalLink
+                        href={api.attachmentUrl(detail.id, file.sha256)}
                         className="group inline-grid max-w-full gap-1.5 text-accent"
                       >
                         <span className="inline-flex min-w-0 items-center gap-1.5">
@@ -698,7 +700,7 @@ export function QuestsView({
                             className="max-h-40 max-w-full rounded-control border border-line object-contain"
                           />
                         )}
-                      </a>
+                      </ExternalLink>
                     ) : (
                       <span className="inline-flex min-w-0 flex-wrap items-center gap-1.5 text-ink-soft">
                         <Icon name="attach" size={12} />

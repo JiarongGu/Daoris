@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Ask, Session } from '../api';
 import { ago, sessionTool, size, stamp } from '../format';
+import { ExternalLink } from '../links';
 import { Button, Drawer, Icon, Pill, SectionTitle, SelectField, SESSION_TONE } from '../ui';
 import { ASK_TONE, firstLine, tierWords } from './AskCard';
 
@@ -240,13 +241,14 @@ export function AskRecord({
           <ul className="m-0 grid list-none gap-1 p-0">
             {ask.links.map((link) => (
               <li key={link} className="min-w-0">
-                <a
-                  href={link} target="_blank" rel="noreferrer"
+                {/* Where the person chose, their browser or Daoris's (BRW7). */}
+                <ExternalLink
+                  href={link}
                   className="inline-flex max-w-full items-center gap-1.5 text-body text-accent underline-offset-2 hover:underline"
                 >
                   <Icon name="link" size={12} />
                   <span className="truncate">{link}</span>
-                </a>
+                </ExternalLink>
               </li>
             ))}
           </ul>

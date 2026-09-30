@@ -65,6 +65,31 @@ public sealed class EngineBrowserHost(string home) : IInAppBrowser
         }
     });
 
+    /// <summary>
+    /// A link on Daoris's page, in whichever browser the settings choose (BRW7): brought up as the
+    /// person's press brings it up, then the page in a tab of its own, in front. A browser that was not
+    /// running opens on its start page first, and the link's tab beside it.
+    /// </summary>
+    public void Open(string address) => _ = Task.Run(async () =>
+    {
+        try
+        {
+            var port = _port;
+            if (EdgeChosen) port = await BringUpEdgeAsync(activate: false, CancellationToken.None).ConfigureAwait(false);
+            else await BringUpAsync(background: false, activate: false, CancellationToken.None).ConfigureAwait(false);
+
+            using var engine = new EngineCdp(port);
+            var tab = await engine.NewTabAsync(address).ConfigureAwait(false);
+            await engine.ActivateAsync(tab).ConfigureAwait(false);
+        }
+        catch (Exception error) when (error is InvalidOperationException or TimeoutException
+                                          or HttpRequestException or System.Net.WebSockets.WebSocketException)
+        {
+            // A module call has no screen to say this on, and a link that opens nothing reads as broken.
+            MessageBox.Show(error.Message, "Daoris", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+        }
+    });
+
     public async Task<string?> EnsureAsync(CancellationToken ct = default)
     {
         if (EdgeChosen)

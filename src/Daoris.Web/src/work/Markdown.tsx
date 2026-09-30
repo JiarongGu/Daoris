@@ -1,6 +1,7 @@
 import type { ComponentProps } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import { ExternalLink } from '../links';
 import { CodeBlock } from './CodeBlock';
 
 /**
@@ -11,9 +12,9 @@ import { CodeBlock } from './CodeBlock';
  * **Safe by default** (D76 §5). Raw HTML in the text is shown as text, never parsed: the renderer is
  * not given the plugin that would, so an agent cannot put markup into the page.
  *
- * **A link leaves the application.** In the desktop's webview a plain link would navigate the whole
- * window away, which is the drop-a-file failure in another form (platform language §4), so every
- * link opens outside, as the ask record's links already do. **An image is never fetched** — it is
+ * **A link leaves the application**, through `ExternalLink`: in the system's browser, or in Daoris's
+ * where the person chose that (BRW7). A plain link would navigate the whole window away, which is the
+ * drop-a-file failure in another form (platform language §4). **An image is never fetched** — it is
  * a link to what it names, opened only on purpose.
  *
  * **Content, not chrome** (translation-parity): the text is the agent's own, in whatever language it
@@ -61,18 +62,17 @@ type Components = ComponentProps<typeof ReactMarkdown>['components'];
 
 const COMPONENTS: Components = {
   a: ({ href, children }) => (
-    <a href={href} target="_blank" rel="noreferrer" className="text-accent underline underline-offset-2">
+    <ExternalLink href={href} className="text-accent underline underline-offset-2">
       {children}
-    </a>
+    </ExternalLink>
   ),
   // 🔴 Never loaded (REV3). A rendered image is a request the page makes with no click, so whatever an
   // agent wrote into its URL would leave the machine even where its harness's own network tools are
   // refused (D47 §4, D52). Raw HTML was already text; a Markdown image is not raw HTML. It is a link.
   img: ({ src, alt }) => (
-    <a href={typeof src === 'string' ? src : undefined} target="_blank" rel="noreferrer"
-      className="text-accent underline underline-offset-2">
+    <ExternalLink href={typeof src === 'string' ? src : undefined} className="text-accent underline underline-offset-2">
       {`🖼 ${alt || (typeof src === 'string' ? src : '')}`}
-    </a>
+    </ExternalLink>
   ),
   // Fenced code is a block with a language class; inline code is neither.
   code: ({ className, children }) => {
