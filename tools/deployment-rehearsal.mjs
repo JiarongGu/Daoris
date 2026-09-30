@@ -19,6 +19,12 @@
  * gate that installs and runs the ARTEFACT — which is what `rehearse` does for the CLI package and
  * nothing did for the desktop.
  *
+ * And a third, held since DEPLOY5 (FIX-LOG, 2026-09-25): a chat open when the shell closed came back
+ * ended by the next start's SWEEP, because the shell's own shutdown disposed the client the chat's
+ * record concluded through before it stopped the chat. The driver tests at the runner passed; only
+ * the window saw it. So phase 6 closes the shell with a conversation open, and phase 7 reads the note
+ * the close wrote.
+ *
  *   npm run rehearse:deploy
  *
  * Exit 0 = the deployed thing works. Exit 1 = it does not; the transcript names the first failure.
@@ -39,6 +45,13 @@
  *    round trip through a single-byte page; with ACP 65001 there is no round trip to make. The check
  *    is still the right one — it goes red on every machine that *can* express the defect, which is
  *    every machine Daoris has so far been deployed on.
+ *  - **This start has a debug port, and a person's does not** (DEPLOY5). A chat starts over the
+ *    bridge, which only the page holds, so the gate reaches the page the way `run --install` does:
+ *    `debugEnvironment`, through the environment, on a port picked for this run. The port needs the
+ *    kit's development switch, and the window and everything it starts run with it. Nothing of
+ *    Daoris's own reads that switch; the kit does (the port), and so would the ASP.NET host, which is
+ *    why the host is pinned to production beside it. That pin rests on the framework's documented
+ *    order and is not measured here; phase 3's host, started directly, is production regardless.
  */
 import { spawn } from 'node:child_process';
 import {
@@ -48,7 +61,9 @@ import { dirname, join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { copyTree, isMain } from './fsx.mjs';
-import { capture, makeChecker, openTranscript } from './rehearsal-kit.mjs';
+import {
+  ACP_STUB_AGENT, capture, makeChecker, openTranscript,
+} from './rehearsal-kit.mjs';
 // The install's layout, from the script that makes it (REV3 CLEAN1) — never a second spelling of it.
 import {
   HOME, HOST_EXE, HOST_HOME, KEPT_LOCALES, LAUNCHER, OWN, RETIRED_BROWSER_EXE, RETIRED_IN_APP, RETIRED_LAUNCHERS,
@@ -121,6 +136,125 @@ export function hookLines(rows, scratch) {
     .filter((pid) => Number.isInteger(pid) && pid > 0);
 }
 
+/**
+ * The note a conversation's record takes when the shell holding it closes: `ChatRunner.ClosedNote`,
+ * spelled a second time on purpose (`twins.md`), and `deployment-rehearsal.test.ts` reads both.
+ */
+export const CLOSED_NOTE =
+  'the application closed while this conversation ran; its process was ended with it.';
+
+/**
+ * The note the next start's sweep writes on a record nothing runs any more: `Orphans.Note`, read the
+ * same way. The same `stopped` as the close's, which is why the gate reads the note.
+ */
+export const SWEPT_NOTE =
+  'nothing on this machine was running it any more — its process ended with the application that '
+  + 'started it, and the record had not been told.';
+
+/**
+ * Whether a conversation's record was concluded by the shell's own close (DEPLOY5).
+ *
+ * 🔴 By its note, never its state. The FIX-LOG entry of 2026-09-25 found this on the window after the
+ * driver tests passed: a chat open at close came back `stopped`, but with the SWEEP's note, because
+ * the close had written nothing and the next start found the record claiming a process. The state
+ * alone passes on exactly that defect.
+ */
+export function concludedByTheClose(record) {
+  return record?.state === 'stopped' && record.note === CLOSED_NOTE;
+}
+
+/**
+ * The marker a tracked process leaves under the home's `sessions/`, as `<pid> <start ticks>`, or null
+ * for anything else. Read as `SessionProcesses.AliveOnThisMachine` reads it. The ticks are a BigInt:
+ * .NET's ticks outgrow a JavaScript number, and a rounded start time would name a different second.
+ */
+export function markedProcess(text) {
+  const fields = String(text ?? '').trim().split(' ');
+  if (fields.length !== 2 || !fields.every((field) => /^\d+$/.test(field))) return null;
+  return { pid: Number(fields[0]), started: BigInt(fields[1]) };
+}
+
+/**
+ * Whether the process a marker names is the one running under its pid now: the start time `startedNow`
+ * (UTC ticks, as PowerShell prints them, or empty for no such process) within a second of the marker's.
+ * The pid alone could be a process the machine has since given that number to.
+ */
+export function isMarkedProcess(marked, startedNow) {
+  if (!marked || !/^\s*\d+\s*$/.test(String(startedNow ?? ''))) return false;
+  const apart = BigInt(String(startedNow).trim()) - marked.started;
+  return (apart < 0n ? -apart : apart) < 10_000_000n;
+}
+
+/**
+ * One call to a module of the shell, made from INSIDE its page, and its answer (DEPLOY5).
+ *
+ * A chat starts over the bridge, and the bridge is the page's alone, so the gate calls it where the
+ * page would: this function is sent over the debug port as source (`bridgeCall`) and runs in the page,
+ * which is why it closes over nothing and every name in it is a parameter or a page global. It speaks
+ * the kit's Chromium transport as the page's own bridge does: the envelope is posted to the route the
+ * marker names, and the answer is pushed back through the marker's `receive`.
+ *
+ * That `receive` belongs to the page's bridge, so this listens BESIDE it: every push still reaches the
+ * page, in order, and the page has its own `receive` back once the answer has come. A page whose
+ * bridge is not up yet is told so before anything is posted, since a reply pushed then would go to a
+ * `receive` the page replaces as it starts.
+ *
+ * Answers `{ ok: true, data }` or `{ ok: false, error: { code, message } }`, never a throw: a refusal is
+ * what a check prints.
+ */
+export function invokeInPage(host, module, type, payload, timeoutMs = 30000) {
+  const marker = host.__shenora_chromium;
+  if (!marker || typeof marker.ipc !== 'string' || typeof marker.receive !== 'function') {
+    return Promise.resolve({ ok: false, error: { code: 'NOT_READY', message: 'the page has no bridge yet' } });
+  }
+
+  const id = `deploy5-${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
+  const page = marker.receive;
+  return new Promise((resolve) => {
+    let timer = null;
+    let listener = null;
+    const done = (answer) => {
+      clearTimeout(timer);
+      if (marker.receive === listener) marker.receive = page;
+      resolve(answer);
+    };
+    listener = (message) => {
+      try {
+        let reply = null;
+        try { reply = JSON.parse(message); } catch { reply = null; }
+        if (reply && reply.category === 'ipc' && reply.id === id) {
+          done(reply.success
+            ? { ok: true, data: reply.data ?? null }
+            : { ok: false, error: reply.error ?? { code: 'UNKNOWN_ERROR', message: 'refused, with no error' } });
+        }
+      } finally {
+        page(message);
+      }
+    };
+    marker.receive = listener;
+    timer = setTimeout(() => done({
+      ok: false, error: { code: 'TIMEOUT', message: `${module}.${type} had no answer within ${timeoutMs} ms` },
+    }), timeoutMs);
+    let posted;
+    try {
+      posted = host.fetch(marker.ipc, {
+        method: 'POST',
+        body: JSON.stringify({ id, module, type, payload, timestamp: new Date().toISOString() }),
+      });
+    } catch (error) {
+      posted = Promise.reject(error);
+    }
+    Promise.resolve(posted)
+      .catch((error) => done({ ok: false, error: { code: 'NO_TRANSPORT', message: String(error?.message ?? error) } }));
+  });
+}
+
+/** {@link invokeInPage} as an expression for `Runtime.evaluate` in the shell's page. */
+export function bridgeCall(module, type, payload, timeoutMs = 30000) {
+  return `(${invokeInPage.toString()})(window, ${JSON.stringify(module)}, ${JSON.stringify(type)}, `
+    + `${JSON.stringify(payload ?? null)}, ${Number(timeoutMs)})`;
+}
+
 // ---------------------------------------------------------------------------------------------
 
 const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
@@ -161,11 +295,15 @@ const children = [];
 
 const run = (command, cwd, env = {}, timeout = 0) => capture(command, cwd, { env, timeout });
 
-const { CLEARED, REDIRECTED } = await import('./desktop.mjs');
+const {
+  CLEARED, PAGE_IDENTITY, REDIRECTED, debugEnvironment, isShell,
+} = await import('./desktop.mjs');
 const {
   applicationsAt, browsersAt, eachApplicationAt, powershell, psQuote, running, stopAll,
 } = await import('./processes.mjs');
-const { freePort } = await import('./cdp.mjs');
+const {
+  Cdp, freePort, pickPageTarget, targetsAt,
+} = await import('./cdp.mjs');
 
 const API_TIMEOUT = 30_000;
 
@@ -248,6 +386,42 @@ function hookProcesses() {
   return hookLines(powershell(
     "Get-CimInstance Win32_Process -Filter \"Name = 'node.exe'\" -ErrorAction SilentlyContinue | "
     + 'ForEach-Object { "$($_.ProcessId)|$($_.CommandLine)" }'), scratch);
+}
+
+/** A process's start time as UTC ticks, or empty when no process has that id: what `isMarkedProcess` compares. */
+function startedTicks(pid) {
+  if (!Number.isInteger(pid) || pid <= 0) return '';
+  return powershell(
+    `$p = Get-Process -Id ${pid} -ErrorAction SilentlyContinue; if ($p) { $p.StartTime.ToUniversalTime().Ticks }`).trim();
+}
+
+/** A promise, or `fallback` once `ms` have passed: a CDP socket that dies mid-call never answers. */
+const bounded = (promise, ms, fallback) => Promise.race([promise, sleep(ms, fallback)]);
+
+/**
+ * The shell's own page over the debug port this run opened, identified before anything is asked of
+ * it (`isShell`): a port is not ours because a page answers on it, and a chat opened in the wrong page
+ * would be a claim about a shell nobody started. `{ cdp: null, found }` says what was there instead.
+ */
+async function shellPage(port, serviceUrl) {
+  let target = null;
+  for (let attempt = 0; attempt < 40 && !target; attempt += 1) {
+    target = pickPageTarget(await targetsAt(port).catch(() => null), null);
+    if (!target) await sleep(500);
+  }
+  if (!target) return { cdp: null, found: `no page of the application's on the debug port ${port}` };
+
+  let cdp = null;
+  try {
+    cdp = await bounded(new Cdp(target.webSocketDebuggerUrl).open(), 10_000, null);
+    const page = cdp ? await bounded(cdp.evaluate(PAGE_IDENTITY), 10_000, null) : null;
+    if (isShell(page, serviceUrl)) return { cdp, found: JSON.stringify(page) };
+    cdp?.close();
+    return { cdp: null, found: `not this shell's page: ${JSON.stringify(page ?? target)}` };
+  } catch (error) {
+    cdp?.close();
+    return { cdp: null, found: `the page on ${port} did not answer: ${error.message}` };
+  }
 }
 
 function stopEverything() {
@@ -544,6 +718,12 @@ const done = await respond('done', 'Landed by the stub session.');
 if (!done.ok) throw new Error(done.text);
 `);
 
+  // The protocol stub the conversation in phase 6 runs on (DEPLOY5): the family rehearsal's, from the
+  // kit both gates share, so no model and no account. Named for `acp-stub` alone; the driven loop
+  // stays on the pipe stub above.
+  const acpAgent = join(scratch, 'acp-agent.mjs');
+  writeFileSync(acpAgent, ACP_STUB_AGENT);
+
   // A plugin that SPEAKS (D64), in the scratch home before the shell starts — the tracked example,
   // as a person would have added it. The family rehearsal drives the headless host's loop with it;
   // this is the only gate that drives the SHELL's, which owns the processes differently (it starts
@@ -571,12 +751,15 @@ if (!done.ok) throw new Error(done.text);
     cap: 1,
     timeoutMinutes: 3,
     pollSeconds: 2,
-    commands: { stub: ['node', stubAgent] },
+    commands: { stub: ['node', stubAgent], 'acp-stub': ['node', acpAgent] },
     notify: false,
   }, null, 2)}\n`);
 
   const shellPort = await freePort(5311);
   const base = `http://127.0.0.1:${shellPort}`;
+  // The debug port (DEPLOY5), picked clear of the dev loop's 9333 and the ports after it, which an
+  // install the owner is looking at through `run --install` may hold.
+  const cdpPort = await freePort(9433);
 
   /**
    * What a deployed shell is given, and — more importantly — what it is not.
@@ -585,6 +768,9 @@ if (!done.ok) throw new Error(done.text);
    * to keep a dev loop honest, and it is exactly the variable that would skip the code path 2a
    * broke. Same for `--app-root`: the deployed shell's own default is `data/` beside the
    * executable, and the install is scratch, so the default already isolates this run.
+   *
+   * What it is given that a person's start is not: the debug port (DEPLOY5), the dev loop's own
+   * opt-in, so phase 6 can open a chat over the bridge.
    */
   const shellEnvironment = {
     ...HERMETIC,
@@ -593,6 +779,13 @@ if (!done.ok) throw new Error(done.text);
     DAORIS_KNOWLEDGE_DB: join(home, 'knowledge.db'),
     DAORIS_KNOWLEDGE_ROOT: family,
     DAORIS_DRIVER_CONFIG: join(home, 'driver.json'),
+    ...debugEnvironment(cdpPort),
+    // The kit reads its development switch from `DOTNET_ENVIRONMENT` first, and the host the shell
+    // starts inherits it. A host in development can serve a PROJECT's `wwwroot` through ASP.NET's
+    // static-assets manifest (`DesktopPage.BundleOf` says so), which is the workspace masking a
+    // deployment, the class this gate exists for. In ASP.NET `ASPNETCORE_ENVIRONMENT` overrides the
+    // switch, so this keeps that host in production, as an installed one runs.
+    ASPNETCORE_ENVIRONMENT: 'Production',
   };
 
   // The pair-check `desktop-tool.test.ts` holds for the dev loop, applied to this run: a
@@ -644,8 +837,9 @@ if (!done.ok) throw new Error(done.text);
   check('…and the launcher that started it has exited', running(launcherExe).length === 0,
     running(launcherExe).map((pid) => `pid ${pid}`).join(', '));
 
-  // WHICH ENGINE answered (CHR4). A published shell opens no debug port (D78 §3.1), so the answer is
-  // read off the process tree: the page renders in a renderer the INSTALL's own executable started,
+  // WHICH ENGINE answered (CHR4). A published shell opens no debug port (D78 §3.1) — this run's is
+  // the gate's own, for phase 6 — so the answer is read off the process tree, as it would be on a
+  // person's start: the page renders in a renderer the INSTALL's own executable started,
   // and no WebView2 process is the shell's child. A shell that fell back to WebView2, or a page that
   // never rendered, fails here rather than looking fine in a screenshot.
   const shellPids = applicationsAt(shellExe);
@@ -788,7 +982,53 @@ if (!done.ok) throw new Error(done.text);
 
   // -------------------------------------------------------------- 6. it stops without orphaning
 
-  section('6. Closing the shell stops what the shell owns');
+  section('6. Closing the shell stops what the shell owns, a conversation open in it included');
+
+  // DEPLOY5. A conversation runs in the chat runner, beside the driven loop rather than in it, and
+  // the shutdown order that ends it was wrong twice — the second time visible on the window alone.
+  // So one is open when the shell closes: on the protocol stub, in the newcomer (free since its
+  // driven session completed, and a git tree of its own), started over the bridge as the page starts
+  // one, from inside the page, over the debug port this run opened.
+  const { cdp, found } = await shellPage(cdpPort, base);
+  check(`the debug port this run opened (${cdpPort}) reaches the install’s own page`, Boolean(cdp), found);
+
+  let opened = { ok: false, error: { code: 'NO_PAGE', message: found } };
+  for (let attempt = 0; attempt < 40 && cdp; attempt += 1) {
+    opened = await bounded(
+      cdp.evaluate(bridgeCall('DAORIS.DRIVER', 'START_CHAT', { repository: 'newcomer', adapter: 'acp-stub' }))
+        .catch((error) => ({ ok: false, error: { code: 'EVALUATE', message: error.message } })),
+      45_000,
+      { ok: false, error: { code: 'NO_ANSWER', message: 'the page did not answer within 45s' } });
+    // Only a page whose bridge is not up yet is asked again: nothing was posted to it.
+    if (opened?.error?.code !== 'NOT_READY') break;
+    await sleep(500);
+  }
+  cdp?.close();
+  const chatId = (opened?.ok && opened.data?.sessionId) || '';
+  check('a conversation opens in the newcomer, on the protocol stub, over the bridge',
+    Boolean(chatId), JSON.stringify(opened));
+
+  let chatRecord = null;
+  for (let attempt = 0; attempt < 60 && chatId; attempt += 1) {
+    const sessions = await api('GET', '/api/sessions?repository=newcomer&includeClosed=true', base);
+    chatRecord = (sessions.json ?? []).find((session) => session.id === chatId) ?? chatRecord;
+    if (chatRecord && !['queued', 'starting'].includes(chatRecord.state)) break;
+    await sleep(500);
+  }
+  check('…and its record is `working`: a conversation, serving no quest, on the stub',
+    chatRecord?.state === 'working' && chatRecord.kind === 'chat' && chatRecord.adapter === 'acp-stub'
+      && !chatRecord.quest,
+    JSON.stringify(chatRecord));
+
+  // The marker every tracked process leaves under the home (FIX-LOG, 2026-09-25): what tells a live
+  // session from an orphan, and what names the harness this close has to end.
+  const chatMarker = join(home, 'sessions', `${chatId || 'no-conversation'}.pid`);
+  const marked = markedProcess(existsSync(chatMarker) ? readFileSync(chatMarker, 'utf8') : '');
+  check('…with its harness running, and marked on this machine',
+    isMarkedProcess(marked, startedTicks(marked?.pid)),
+    marked ? `the marker names pid ${marked.pid}, and that process is not running` : `no marker at ${chatMarker}`);
+
+  // Closed the way a person closes it — the same path as before a conversation was open in it.
   stopAll(shellExe);
   shell = null;
   await sleep(1500);
@@ -821,9 +1061,56 @@ if (!done.ok) throw new Error(done.text);
   check('and the plugin’s process went with the loop', hooksLeft.length === 0,
     hooksLeft.map((pid) => `pid ${pid}`).join(', '));
 
-  // -------------------------------------------------------------- 7. report
+  // The conversation's harness is the shell's as much as the plugin's process is: a forced stop once
+  // left one running against its repository (case study 4c), and the close's own path must not.
+  let harnessLeft = isMarkedProcess(marked, startedTicks(marked?.pid));
+  for (let attempt = 0; attempt < 10 && harnessLeft; attempt += 1) {
+    await sleep(500);
+    harnessLeft = isMarkedProcess(marked, startedTicks(marked?.pid));
+  }
+  check('and the conversation’s harness went with it', Boolean(marked) && !harnessLeft,
+    marked ? `pid ${marked.pid} still runs` : 'there was no marked harness to watch');
+  check('…and its marker, removed as the shell let the process go', Boolean(chatId) && !existsSync(chatMarker),
+    chatMarker);
 
-  section('7. Result');
+  // -------------------------------------------------------------- 7. what the close wrote
+
+  section('7. What the close wrote in the conversation’s record');
+
+  // The shell's host went with the shell, which phase 6 just asserted, so the record is read from the
+  // install's host started on its own over the store the shell left, as phase 3 started it. A host
+  // runs no sweep — that is a driver's, at its first tick — so what it answers is what the close
+  // wrote and nothing since.
+  const readerPort = await freePort(5321);
+  const readerBase = `http://127.0.0.1:${readerPort}`;
+  const readerEnvironment = {
+    ...process.env,
+    ...HERMETIC,
+    ASPNETCORE_URLS: readerBase,
+    DAORIS_KNOWLEDGE_DB: join(home, 'knowledge.db'),
+    DAORIS_KNOWLEDGE_ROOT: family,
+  };
+  for (const name of CLEARED) delete readerEnvironment[name];
+  const reader = spawn(installedHost, { cwd: join(install, ...HOST_HOME), stdio: 'ignore', env: readerEnvironment });
+  children.push(reader);
+  check('the install’s host answers again, over the store the shell left', await answers(readerBase, 120));
+
+  const afterClose = await api('GET', '/api/sessions?repository=newcomer&includeClosed=true', readerBase);
+  const closedRecord = (afterClose.json ?? []).find((session) => session.id === chatId) ?? null;
+  check('the conversation’s record says the CLOSE ended it: `stopped`, with the close’s note, not the sweep’s',
+    concludedByTheClose(closedRecord),
+    closedRecord?.note === SWEPT_NOTE
+      ? `ended by the sweep's note, so the close wrote nothing: ${JSON.stringify(closedRecord)}`
+      : JSON.stringify(closedRecord ?? afterClose.text));
+
+  reader.kill();
+  children.length = 0;
+  await sleep(1200);   // the port and the store's handle outlive the kill by a beat on Windows
+  check('…and that host stops when it is told to', !hostProcesses().some((host) => host.pid === reader.pid));
+
+  // -------------------------------------------------------------- 8. report
+
+  section('8. Result');
   stopEverything();
   await sleep(500);
 
@@ -845,8 +1132,10 @@ if (!done.ok) throw new Error(done.text);
   console.log('  session’s own door, and its transcript holding an em-dash and 道衍 BYTE FOR BYTE —');
   console.log('  which is the defect a console codepage hid behind valid UTF-8. A plugin found under');
   console.log('  the install’s own home was started by that loop, asked before the start, told of the');
-  console.log('  ending, and kept it beside itself. Closed, not killed, and the host it owned and the');
-  console.log('  plugin’s process went with it.');
+  console.log('  ending, and kept it beside itself. A conversation opened over the bridge, on the');
+  console.log('  protocol stub, was working when the shell was closed, not killed: the host it owned,');
+  console.log('  the plugin’s process and the conversation’s harness went with it, and the record');
+  console.log('  carries the close’s own note, not the sweep’s.');
   rmSync(scratch, { recursive: true, force: true });
 }
 

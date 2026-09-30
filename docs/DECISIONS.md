@@ -2219,6 +2219,19 @@ and it turns case-study 4d into a gate — and it goes red on any machine whose 
 stale, which is a true statement about that machine and not about the change under test. A gate that
 fails for the developer's machine state is one people learn to re-run.
 
+*Amended by DEPLOY5 (2026-09-30): the gate starts the install with a debug port, `run --install`'s
+own opt-in (`debugEnvironment`) on a port of its own, clear of the dev loop's 9333. The chat left
+`working` at close (FIX-LOG, 2026-09-25) lived in the shell's shutdown order, where only the window
+saw it, and a chat starts over the bridge, which only the page holds. Phase 6 opens a conversation on
+the family rehearsal's protocol stub, now the rehearsal kit's, and closes the shell as before; phase 7
+reads the record from the install's host started alone, which runs no sweep, and passes only on the
+close's note, since the sweep's is the same `stopped`. The port needs the kit's development switch,
+which the shell's host inherits, so the gate sets `ASPNETCORE_ENVIRONMENT=Production` beside it; that
+rests on ASP.NET's documented order and is not measured. Rejected: a second start, with the port, for
+the conversation alone, which would keep phases 4 and 5 on a person's exact start. It closes the shell
+twice, and with the host pinned what is left is the kit's own development mode (the port, and the
+engine reading its command-line switches), which none of phase 4's or 5's checks depends on.*
+
 ## D61 — Translation parity is a pack, not core (2026-09-22)
 
 **Decision.** The en/zh catalogue lesson enters the canon as **`localized-ui`**, a new pack holding
