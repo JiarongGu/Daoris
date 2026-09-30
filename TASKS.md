@@ -66,9 +66,12 @@ kit's owner, not Daoris's to change (LOG2b).
 - **The owner's ticket AR-2201**: its first follow-up merged by the owner's pull request (squash). The
   second ("vs Last 7 Days Avg" as the average day, the total ÷7) and third (the seven days before the
   selection, a rolling window; shifts are not set up, by the owner's word) landed onto one branch holding
-  both over the merged line, not pushed; the pull request is theirs, and so is the production config
-  update (the summary's subtitle now reads slightly off). The repository keeps only its line and that
-  branch; everything deleted was backed up first, and the private notes say where.
+  both over the merged line. **The owner merged that pull request too (2026-10-01)**, and the post-merge
+  step ran through Daoris's own door on the window: *Bring up to date* found the line already current,
+  proved the landed branch's work on it, and deleted the branch; the review now says where the work
+  landed. The repository keeps only its line. What is left is the owner's: the production config update
+  (the summary's subtitle now reads slightly off). Everything deleted earlier was backed up first, and the
+  private notes say where.
 - **The install** runs main at TASKBAR1 (`34f8602`, republished 2026-09-30 night: the splits, READ1, MOD8, TASKBAR1; the taskbar is the owner's to look at); republishing is the session's own call, never while a session
   on it runs. Start it the normal way, not through the dev tool, unless the instruments are needed
   (USE1g, confirmed: a start from Git Bash hands sessions a `PATH` their shell cannot read).
@@ -129,9 +132,9 @@ rather than designed.
 
 ## Backlog
 
-**Twenty-two rows are open** (triaged 2026-09-30, when the owner asked to go faster; 2026-10-01 after the night's merges, the look, and the owner's round):
+**Twenty-three rows are open** (triaged 2026-09-30, when the owner asked to go faster; 2026-10-01 after the night's merges, the look, and the owner's round):
 - **Building (one):** LEFT3.
-- **Next, the owner's round (five):** NAME1, FRAME1, PLUGUI1, DEV1, LOOK1.
+- **Next, the owner's round (six):** NAME1 and DEV1 building (their design halves); FRAME1, PLUGUI1, LOOK1 and LOOK2.
 - **Waiting on the owner (six):** BUDGET1 and PLUGREPO1 (their calls), TRUST2 and AGT2c (a grant, two
   downloads), FG5 and BRW3 (the owner present).
 - **Parked on a trigger (ten):** TOOL4, TOOL5, PLUG7, SEM2, CANON9, HARNESS1, REH1, D76's held file tree,
@@ -174,7 +177,7 @@ then FRAME1's audit and model, then PLUGUI1 on that frame. DEV1 is a design docu
 them. Each starts with its contract document, is built in parts by subagents, and is looked at on the
 install in both themes and both languages.
 
-- [ ] **NAME1 — a name is a UI element, designed in both languages.** Today many Chinese names are
+- [ ] **NAME1 — a name is a UI element, designed in both languages.** (NAME1a, the design half, building: D116.) Today many Chinese names are
   translations of the English, not names: Settings' own sections (*Daoris 自身的 AI*, *智能体与账户*),
   a section's title against its button (*同步到最新* over *查看更新*), and one concept under two words
   across screens. English has the same drift. (a) **A glossary, one term per concept in each language**,
@@ -208,7 +211,7 @@ install in both themes and both languages.
   - making and trying one (the kit, PLUG8), and asking for one (PLUG9), from the screen.
   Settings keeps only what is a setting. Ask Daoris's plugin kind gains go anchors into the screen. The
   contract is a design document written first, extending `docs/2026-09-23-plugin-design.md`.
-- [ ] **DEV1 — Daoris develops Daoris through Daoris.** The module and domain refactor is done (MOD1–MOD9:
+- [ ] **DEV1 — Daoris develops Daoris through Daoris.** (The design, building: D115.) The module and domain refactor is done (MOD1–MOD9:
   registries, lanes in `tools/lanes.json`, a `Process` test category, `tools/merge-branch.mjs`, the
   `dispatch-subagent` skill). But the cycle it enables is run by an assistant session acting as the
   parent, not by Daoris's own driver. The family's model is one session per repository, and Daoris is one
@@ -226,6 +229,14 @@ install in both themes and both languages.
     (D37), and everything irreversible still theirs.
   Then the phased build, Daoris's own development its first user, and any adopter with lanes the second.
   The contract starts from `docs/2026-09-30-parallel-development-design.md`.
+- [ ] **LOOK2 — what the post-merge look found** (2026-10-01, the install at `66efbf7`). (a) Right after a
+  start, Settings → Workspace's Line and landing cards said no repository here has a line: `LINES` answered
+  from the driver's snapshot before the service held its registry, and the page kept that empty answer until
+  *Bring up to date*'s look invalidated it. A route that reads the snapshot should refuse *not ready* rather
+  than answer empty, or the page should ask again when the driver becomes ready; check every screen that
+  reads it in the first seconds. (b) The session list still says where a session's tree was (*位于
+  s-2394e5d9*) after the landing tidied it and its branch went; it should say where the work landed, as
+  REVIEW2's review now does.
 - [ ] **LOOK1 — `shot --theme` says when it cannot take.** It emulates the system's colour scheme, which
   the page follows only while the viewer's theme choice is *system*. On the install the choice was dark, so
   `--theme light` silently photographed dark (`tools/desktop.mjs`, `theme.ts`'s `effectiveDark`). Set the
