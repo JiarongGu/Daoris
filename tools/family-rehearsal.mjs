@@ -70,8 +70,12 @@ const run = (command, cwd, env = {}, timeout = 0) => capture(command, cwd, { env
 // FAIL, never a frozen gate — and NO_REMOTE is always underneath: a phase that wants a remote opts in
 // by env pair, which outranks the config-file lookup by the loader's own rule.
 const DRIVE_TIMEOUT = 90_000;
+// The loop by its verb (DRV8a, D104): a bare `daoris-driver` is the usage and drives nothing, so a loop
+// mode (a flag) is asked for as `drive`; any other verb this helper carries (`ask`, `quest delete`) goes
+// as it is. Prefixing every mode sent `drive ask …` and failed fourteen checks.
+const verbOf = (mode) => (mode.startsWith('--') ? `drive ${mode}` : mode);
 const driver = ({ serviceUrl, config, remote = {}, harness = {}, mode = '--once' }) =>
-  run(`dotnet "${driverDll}" ${mode}`, scratch, {
+  run(`dotnet "${driverDll}" ${verbOf(mode)}`, scratch, {
     DAORIS_SERVICE_URL: serviceUrl,
     DAORIS_DRIVER_CONFIG: config,
     ...NO_REMOTE,
@@ -86,7 +90,7 @@ const driver = ({ serviceUrl, config, remote = {}, harness = {}, mode = '--once'
  */
 const driverInBackground = ({ serviceUrl, config, remote = {}, harness = {}, mode = '--once' }) =>
   new Promise((resolve) => {
-    const child = spawn('dotnet', [driverDll, mode], {
+    const child = spawn('dotnet', [driverDll, 'drive', mode], {
       cwd: scratch,
       env: {
         ...process.env,

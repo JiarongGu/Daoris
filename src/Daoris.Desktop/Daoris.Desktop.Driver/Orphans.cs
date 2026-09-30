@@ -24,7 +24,9 @@ public sealed record OrphanEnded(string Id, string Repository);
 /// sessions as unmarked, which is why nothing but a driver's own loop and a person's stop ever asks.</para>
 ///
 /// <para><b>Ended <c>stopped</c></b>, as the driven path records a session the driver was closed under:
-/// what ended it is not known, only that nothing runs it, and the note says exactly that.</para>
+/// what ended it is not known, only that nothing runs it, and the note says exactly that. The sweep's stop
+/// is <b>interrupted</b> (D104), not the person's, so a take it ended is carried on; the person's stop on
+/// one record is theirs, since they asked about that one, and never is.</para>
 /// </remarks>
 public static class Orphans
 {
@@ -46,7 +48,7 @@ public static class Orphans
 
             try
             {
-                await service.AdvanceAsync(session.Id, "stopped", note: Note, ct: ct).ConfigureAwait(false);
+                await service.AdvanceAsync(session.Id, "stopped", note: Note, ct: ct, interrupted: only is null).ConfigureAwait(false);
                 ended.Add(new OrphanEnded(session.Id, session.Repository));
             }
             catch (DriverException)

@@ -63,6 +63,24 @@ public sealed class SessionStoreTests : IAsyncLifetime
         Assert.Equal(Now.AddHours(1), moved.Updated);
     }
 
+    /// <summary>
+    /// D104: a stop the sweep or a shutdown made, not the person, is kept on the record as interrupted —
+    /// read back as written, and false for every move that did not say so.
+    /// </summary>
+    [Fact]
+    public async Task An_interrupted_stop_is_kept_on_the_record()
+    {
+        var interrupted = await Create();
+        var persons = await Create();
+
+        await _sessions.SetStateAsync(interrupted.Id, SessionState.Working, null, null, null, Now);
+        await _sessions.SetStateAsync(interrupted.Id, SessionState.Stopped, "the driver was stopped.", null, null, Now, interrupted: true);
+        await _sessions.SetStateAsync(persons.Id, SessionState.Stopped, "the person stopped it.", null, null, Now);
+
+        Assert.True((await _sessions.FindAsync(interrupted.Id))!.Interrupted);
+        Assert.False((await _sessions.FindAsync(persons.Id))!.Interrupted);
+    }
+
     /// <summary>An attachment set earlier survives a later move that does not mention it.</summary>
     [Fact]
     public async Task An_unmentioned_attachment_is_kept_not_erased()
@@ -329,6 +347,9 @@ public sealed class SessionSchemaUpgradeTests : IAsyncLifetime
         // …and everything that predates D51 names no tree, which the lock reads as "possibly any of
         // them". A record of work that happened survives every column that arrives after it.
         Assert.Null(elder.Tree);
+        // …and a record from before D104 says nothing about being interrupted: the old reading, a stop
+        // that was the person's.
+        Assert.False(elder.Interrupted);
 
         var chat = await sessions.CreateAsync(
             null, "Elder", "stub", Now, workspace: null, kind: SessionKind.Chat);

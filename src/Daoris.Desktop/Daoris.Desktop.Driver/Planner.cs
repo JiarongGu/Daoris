@@ -38,9 +38,13 @@ public sealed record QuestView(string Id, string From, string To, string Title, 
 /// <param name="Note">What its record said about that ending — the words a session carrying on is told.</param>
 /// <param name="Repository">Where it ran — whether a chain's next step can build on its tree (CHAIN2).</param>
 /// <param name="Answer">The person's answer when it parked to ask them (STANDDOWN2) — what a carry-on is handed.</param>
+/// <param name="Interrupted">
+/// A `stopped` ending that was not the person's (D104): the orphan sweep's, or the driver's shutdown — a
+/// cut-off, carried on like a `failed` one.
+/// </param>
 public sealed record PriorSession(
     string Session, string? Tree, string State = "", string? Note = null, string? Repository = null,
-    string? Answer = null);
+    string? Answer = null, bool Interrupted = false);
 
 /// <summary>One step of a chain, as the service answered it.</summary>
 public sealed record QuestStepView(string To, string Title, string Body);
@@ -120,9 +124,9 @@ public static class ActiveSessions
 /// <summary>Everything a tick's decisions are made from, fetched once so the plan is coherent.</summary>
 /// <param name="Strikes">
 /// How many sessions have <b>failed</b> on each quest, by quest id — <b>derived</b> from the session
-/// records this machine already wrote, never a tally the driver keeps (DRV6). Only `failed` counts: a
-/// stand-down means somebody else got there first, a decline is a real answer, and a stop was the
-/// person. A quest nobody has failed is simply absent.
+/// records this machine already wrote, never a tally the driver keeps (DRV6). Only `failed` counts, and a
+/// stop that was not the person's (D104): a stand-down means somebody else got there first, a decline is
+/// a real answer, and the person's stop was theirs. A quest nobody has failed is simply absent.
 /// </param>
 public sealed record Snapshot(
     IReadOnlyList<QuestView> Quests,
@@ -299,6 +303,9 @@ public static class Planner
             else if (quest is { Status: "Taken", Awaits: null or "" }
                      && snapshot.LastRun.TryGetValue(quest.Id, out var cutOff)
                      && (string.Equals(cutOff.State, "failed", StringComparison.OrdinalIgnoreCase)
+                         // A stop that was not the person's — the sweep's or a shutdown's (D104). The
+                         // person's own stop is their decision, and is never carried on.
+                         || cutOff is { State: "stopped", Interrupted: true }
                          // The person answered a session that parked to ask them (STANDDOWN2).
                          || cutOff is { State: "completed", Answer: not null }))
             {
@@ -309,8 +316,9 @@ public static class Planner
         return considerations;
 
         // A cut-off (D80): this machine's session took the quest and failed before closing it — timed
-        // out, refused, crashed — so the take is still here and the work is in its tree. Carried on like
-        // a failed start is retried: the strikes count every cut-off, and the third parks it.
+        // out, refused, crashed, or ended by the sweep or a shutdown (D104) — so the take is still here
+        // and the work is in its tree. Carried on like a failed start is retried: the strikes count every
+        // cut-off, and the third parks it.
         Consideration CarryOn(QuestView quest, PriorSession cutOff)
         {
             var considered = Consider(quest, into: cutOff);

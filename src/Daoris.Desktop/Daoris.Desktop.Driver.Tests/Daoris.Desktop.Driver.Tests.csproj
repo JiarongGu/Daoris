@@ -13,6 +13,9 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Daoris.Desktop.Driver\Daoris.Desktop.Driver.csproj" />
+    <!-- Built first and never referenced (DRV8a): its tests start `daoris-driver` itself, to hold that a
+         bare invocation starts nothing and a held home is refused before the service is reached. -->
+    <ProjectReference Include="..\Daoris.Desktop.Driver.Host\Daoris.Desktop.Driver.Host.csproj" ReferenceOutputAssembly="false" />
   </ItemGroup>
 
 </Project>

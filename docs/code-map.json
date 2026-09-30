@@ -119,6 +119,11 @@
       "kind": "project"
     },
     {
+      "from": "Daoris.Desktop.Driver.Tests",
+      "to": "Daoris.Desktop.Driver.Host",
+      "kind": "project"
+    },
+    {
       "from": "Daoris.Desktop.Modules",
       "to": "Daoris.Desktop.Driver",
       "kind": "project"

@@ -143,6 +143,55 @@ public sealed class SessionLedgerTests : IAsyncLifetime
     }
 
     /// <summary>
+    /// D104, found running the owner's ticket: the orphan sweep and a shutdown both ended the record
+    /// `stopped`, and a take ended so sat taken with nothing to move it. A stop that says it was
+    /// interrupted — not the person's — is carried on like a failure; the person's own stop never is.
+    /// </summary>
+    [Theory]
+    [InlineData(true, SessionOpenRefusal.None)]
+    [InlineData(false, SessionOpenRefusal.QuestNotOpen)]
+    public async Task A_taken_quest_whose_last_session_here_was_interrupted_may_be_carried_on_and_a_persons_stop_is_not(
+        bool interrupted, SessionOpenRefusal expected)
+    {
+        var quest = await Publish();
+        var first = (await _ledger.OpenAsync(quest.Id, "stub", Now)).Session!;
+        await _ledger.AdvanceAsync(first.Id, "starting", null, null, null, Now);
+        await _ledger.AdvanceAsync(first.Id, "working", null, null, null, Now);
+        await _quests.MoveAsync(quest.Id, QuestStatus.Taken, null, Now.AddMinutes(1));
+        var stopped = await _ledger.AdvanceAsync(
+            first.Id, "stopped", interrupted ? "the driver was stopped while this ran." : "the person stopped it.",
+            null, null, Now.AddMinutes(5), interrupted: interrupted);
+        Assert.Equal(SessionAdvanceRefusal.None, stopped.Refusal);
+        Assert.Equal(interrupted, stopped.Session!.Interrupted);
+
+        var carried = await _ledger.OpenAsync(quest.Id, "stub", Now.AddMinutes(6));
+
+        Assert.Equal(expected, carried.Refusal);
+    }
+
+    /// <summary>
+    /// Interrupted says whose decision a STOP was, so only a stop carries it: a move anywhere else asking
+    /// for it is refused, and the record does not move.
+    /// </summary>
+    [Theory]
+    [InlineData("failed")]
+    [InlineData("completed")]
+    [InlineData("stood-down")]
+    public async Task Only_a_stop_may_be_interrupted(string state)
+    {
+        var quest = await Publish();
+        var session = (await _ledger.OpenAsync(quest.Id, "stub", Now)).Session!;
+        await _ledger.AdvanceAsync(session.Id, "starting", null, null, null, Now);
+        await _ledger.AdvanceAsync(session.Id, "working", null, null, null, Now);
+
+        var refused = await _ledger.AdvanceAsync(session.Id, state, null, null, null, Now, interrupted: true);
+
+        Assert.Equal(SessionAdvanceRefusal.InvalidMove, refused.Refusal);
+        Assert.Contains("stopped", refused.Message);
+        Assert.Equal(SessionState.Working, (await _sessions.FindAsync(session.Id))!.State);
+    }
+
+    /// <summary>
     /// 🔴 A stand-down means somebody else has the quest, so the take is not this machine's — and a
     /// taken quest nobody here ran is somebody else's too. Neither is carried on.
     /// </summary>

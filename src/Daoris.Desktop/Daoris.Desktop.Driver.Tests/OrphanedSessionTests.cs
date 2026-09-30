@@ -99,6 +99,8 @@ public sealed class OrphanedSessionTests : IDisposable
         Assert.Equal(["a1"], ended.Select(e => e.Id));
         Assert.Equal("stopped", service.State("a1"));
         Assert.Contains("nothing on this machine was running it", service.Note("a1"));
+        // Not the person's stop (D104): the record says so, and a take it ended is carried on.
+        Assert.True(service.Interrupted("a1"));
         Assert.Equal(("working", "working", "awaiting-person", "starting"),
             (service.State("a2"), service.State("person@machine-b/a3"), service.State("a4"), service.State("a5")));
     }
@@ -116,6 +118,8 @@ public sealed class OrphanedSessionTests : IDisposable
 
         Assert.Equal(["a5"], ended.Select(e => e.Id));
         Assert.Equal(("working", "stopped"), (service.State("a1"), service.State("a5")));
+        // 🔴 The person asked about that one: their stop is their decision, never carried on (D104).
+        Assert.False(service.Interrupted("a5"));
     }
 
     /// <summary>
@@ -291,6 +295,12 @@ public sealed class OrphanedSessionTests : IDisposable
 
         public string? Note(string id) => Field(id, "note");
 
+        /// <summary>Whether its record says a stop was not the person's (D104).</summary>
+        public bool Interrupted(string id)
+        {
+            lock (_sessions) return _sessions.Single(s => s["id"]!.GetValue<string>() == id)["interrupted"]?.GetValue<bool>() == true;
+        }
+
         private string? Field(string id, string name)
         {
             lock (_sessions) return _sessions.SingleOrDefault(s => s["id"]!.GetValue<string>() == id)?[name]?.GetValue<string>();
@@ -394,6 +404,7 @@ public sealed class OrphanedSessionTests : IDisposable
                         var session = _sessions.Single(s => s["id"]!.GetValue<string>() == id);
                         session["state"] = body["state"]!.GetValue<string>();
                         if (body["note"] is { } note) session["note"] = note.GetValue<string>();
+                        if (body["interrupted"] is { } interrupted) session["interrupted"] = interrupted.GetValue<bool>();
                         return (200, new JsonObject { ["session"] = session.DeepClone(), ["message"] = "moved" }.ToJsonString());
                     }
 

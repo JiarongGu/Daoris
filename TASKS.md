@@ -21,8 +21,8 @@ lists.
 
 ## State
 
-**Counts, and this is their one home:** sixteen commands, **622 CLI tests, 646 service and 45 HTTP host, 1378 driver,
-396 desktop modules, 80 devkit, 1683 web unit, 21 Playwright**, 66/66 release rehearsal, **301/301
+**Counts, and this is their one home:** sixteen commands, **622 CLI tests, 652 service and 46 HTTP host, 1416 driver,
+399 desktop modules, 80 devkit, 1683 web unit, 21 Playwright**, 66/66 release rehearsal, **301/301
 family rehearsal** (it names its own phases when you run it), **70/70 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge
 documents, 5 skills, 7 packs. The always-loaded core is **22,492 of 26,000 bytes** — a span in
@@ -112,9 +112,9 @@ rather than designed.
 
 ## Backlog
 
-**Twenty-five rows are open, in three kinds** (triaged 2026-09-30, when the owner asked to go faster):
-- **Workable now, by the parent or subagents (eleven):** the parallel-development arc's six
-  (MOD2–MOD9, the owner's newest; three in flight), DRV8 (merging), READ1, TASKBAR1, TEST1, and FLAKE1 (which MOD8
+**Twenty-four rows are open, in three kinds** (triaged 2026-09-30, when the owner asked to go faster):
+- **Workable now, by the parent or subagents (ten):** the parallel-development arc's six
+  (MOD2–MOD9, the owner's newest; three in flight), READ1, TASKBAR1, TEST1, and FLAKE1 (which MOD8
   absorbs).
 - **Waiting on the owner (six):** BUDGET1 and PLUGREPO1 (their calls), TRUST2 and AGT2c (a grant, two
   downloads), FG5 and BRW3 (the owner present).
@@ -159,17 +159,6 @@ Logging went first (LOG1a landed); then the owner's later asks the same day came
 it: their own workspace's work (WORK1), then the kit (SHEN1), both archived; then what they met on the window.
 Each row's parts land and are archived one by one (*"for all my request you can set them into
 TASK.md and complete one by one"*).
-- [ ] **DRV8 — what a stray driver loop showed** (2026-09-30, found running the owner's ticket). (a) **A
-  bare `daoris-driver` starts a loop beside a running desktop.** Run with no verb to read its usage, it
-  started a headless loop on the install's home, and that loop took a fresh quest two seconds before the
-  desktop's own. The quest lock held and the desktop stood its session down, but a second loop on one
-  home is almost never meant. A bare invocation should print its usage, and a loop should refuse a home
-  another live driver is already driving, naming it, unless it is asked to share. (b) **A take whose
-  session was swept or shut down is never carried on.** The orphan sweep and a shutdown both end a
-  record `stopped`, and the planner carries on only `failed` and answered takes, so the quest stays
-  Taken with nothing to move it. A person's stop is their decision; a swept or shut-down session's is
-  not. It should be carried on like a cut-off (D80), counted against the strikes, or the person should
-  get a door that releases the take. Here the quest was declined with the reason and re-issued by hand.
 
 ### Plugins Daoris makes (owner, 2026-09-30)
 
@@ -385,7 +374,9 @@ TDD, looked at on the window, and the ones that touch a real session use one (au
   itself; a stop landing mid-handshake was tested and is not the cause. **A fifth class, twice on
   2026-09-30** (LOG2's baseline, then its merge while WSR4 built beside it):
   `ProcessJobTests.A_child_that_outlives_its_parent_ends_when_the_session_is_untracked`, 1144/1145,
-  green alone three times running. **And a rehearsal the same day**: the family rehearsal exited 127
+  green alone three times running. **A sixth class the same evening**, merging DRV8 while three
+  worktrees built: `LandedBranchTests.A_branch_landing_records_the_branch_it_made_under_the_home`,
+  1415/1416, green alone three times. **And a rehearsal the same day**: the family rehearsal exited 127
   straight after building the HTTP host, writing no transcript of its own, while three worktrees
   built beside it. It passed 301/301 run alone.
 

@@ -2113,6 +2113,9 @@ a parked quest freely. **Absent `strikes` means the default, not off** — the o
 driving unattended longest. And the limit is per quest rather than per repository: a repository with
 one broken quest must keep working the rest.
 
+*Amended by D104 (DRV8, 2026-09-30): a `stopped` record that says it was interrupted — the orphan sweep's
+or a shutdown's, not the person's — counts as a strike too. The person's own stop still never does.*
+
 ## D59 — The always-loaded tier lives in `AGENTS.md`, inside a region Daoris owns (2026-09-22)
 
 **Decision.** `sync` stops writing `.claude/rules/` and writes the core rules into a marked region of
@@ -3551,6 +3554,9 @@ ended the same way, on an account limit (ACPEND1).
 - **Carrying on a clean exit with the quest still taken** (a stand-down). That shape includes
   somebody else having the quest, and the driver cannot tell the two apart.
 
+*Amended by D104 (DRV8, 2026-09-30): a last session that ended `stopped` and interrupted — by the orphan
+sweep or the driver's shutdown, not the person — is a cut-off too, carried on and counted the same way.*
+
 ## D81 — A driven session works in its harness's own judged mode, as a regular session would (2026-09-27)
 
 **Decision.** On the protocol door, Claude Code sessions drive in `auto`, the harness's own mode in
@@ -4602,6 +4608,77 @@ three offers and installs none, and that the deployed driver finds them beside t
 redirected home; it was written here and not run (the parent runs it). The screen's Update and Install,
 and the proposal cards, were checked by the vitest loop over a mocked bridge in both catalogues, not yet
 on the window. No offer has been installed and run against a real platform.
+
+## D104 — A driver loop is asked for by name and holds its home; a take a shutdown or the sweep cut off is carried on (2026-09-30)
+
+**Decision (DRV8, found running the owner's ticket).**
+
+- **A bare `daoris-driver` prints its usage and exits 2.** It never starts a loop. The loop is the verb
+  `drive [--once | --until-idle] [--share]`. The spelling before the verb, a bare `--once` or
+  `--until-idle`, still runs its tick, since a flag that names a mode is an explicit ask. Any other word
+  is the usage and exit 2, saying what was not understood, and `help` is the usage and exit 0. The
+  usage names every verb the host answers, and a test holds that.
+- **One live driver per home.** A loop takes `<home>/driver.lock` before it reaches the service. The
+  file names the driver's kind (`desktop` or `headless`), its process id and that process's start
+  time, and when it took the home. It is written beside and moved into place without replacing, so of
+  two loops starting at once one takes it. It is released on exit, and only while it still names this
+  driver. Every mode takes it, `--once` and `--until-idle` too, since each starts sessions.
+- **A second loop is refused, naming the first**: which door, its process id, and since when. At a
+  terminal that is exit 1, a refusal and not a tool error. `--share` runs beside a live driver on
+  purpose: it takes the lock where it is free, and otherwise runs without it and says whose home it
+  shares. **A stale lock never blocks.** One whose process is gone, whose process id now belongs to a
+  process started at another time, or that does not read is replaced. That is the session markers'
+  test (`SessionProcesses`), and like theirs, a start time that cannot be read counts as alive.
+- **The desktop's loop takes the same lock.** Where a headless loop holds its home, the desktop says so
+  once on the channel a person acts on (`DRIVER_ERROR`). Its host, its page and its conversations carry
+  on, and its loop starts the moment the lock frees.
+- **A record the orphan sweep or a shutdown ended says so: `stopped`, with `interrupted`.** This is a
+  new field on the session record. It is allowed only on a move to `stopped`, a move to anything else
+  asking for it is refused, and the store adds its column by `SchemaColumns`, so a record from before
+  it reads false, the old reading. The sweep sets it on every record it ends. A driven session's
+  shutdown sets it: the driver closing under it, from the desktop's close or Ctrl+C in a terminal. A
+  person's stop never sets it, their stop on an orphan included, since they asked about that one. A
+  conversation or an intake the application closes is not marked, since nothing carries either on.
+- **An interrupted take is carried on like a cut-off (D80).** The ledger opens a session on a taken
+  quest whose last session here ended `stopped` and interrupted, as it does after `failed`. The driver
+  counts it as a strike, and the planner carries it on in the tree it worked in, telling it what the
+  record said ended it. The third parks it behind `daoris driver retry`. A person's stop stays as it
+  was: never carried on, never a strike.
+
+**Why.** Run with no verb to read its usage, `daoris-driver` started a headless loop on the install's
+home, and that loop took a fresh quest two seconds before the desktop's own. The quest lock held (D46)
+and the desktop stood its session down, but a second loop on one home is almost never meant, and
+reading the usage must not start one. The same run showed the other half: the orphan sweep and a
+shutdown both ended a record `stopped`, and the planner carries on only `failed` and answered takes, so
+the quest stayed taken with nothing to move it, and it was declined with the reason and re-issued by
+hand. A person's stop is their decision. A swept or shut-down session's is not.
+
+**Why a field, and not the note or a new state.** The note is a sentence written for a person, and
+classifying by it would turn a rewording into a change of behaviour (D48 §6). A new state would reach
+every surface that renders one and every catalogue that words one, and a build that reads the store
+parses the state strictly, so an older one would fail on a newer record. `stopped` is still true:
+something ended the process. What the field adds is whose decision that was, which is the one thing the
+planner and the ledger need.
+
+**Rejected.**
+- **Recording a shutdown or a swept session `failed`.** The strikes and the carry-on would follow for
+  free, but the record would claim a failure that did not happen, and an application closed on purpose
+  would read as one on the page.
+- **A door that releases the take to *Open*.** D79's and D80's rejected draft: anyone could take it
+  fresh, without its tree.
+- **Locking only the watch mode.** A one-tick run starts sessions too, and races the desktop the same way.
+- **An operating system's file lock held open for the process's life.** It is advisory on the other
+  systems the headless driver runs on, and where it is exclusive it keeps the holder's name from the
+  loop that has to be refused with it.
+- **The desktop refusing to come up beside a headless loop.** Its host, page and conversations race
+  nobody for a quest; only its loop waits.
+
+**What the gates do not cover.** The window between reading a stale lock and removing it is not closed:
+two loops starting inside it could both run, and the quest lock still decides the race. A `--share` loop
+that outlives the driver it shared with leaves the home unlocked until the next loop starts. The remote
+feed does not carry `interrupted`: the strikes and the carry-on read only this machine's own records. The
+page shows the record's note and nothing new. The desktop's wait is held by a modules test of its hold
+step, not looked at on the window, and no rehearsal was run by this change.
 
 ## D105 — An install runs on its own home, the CLI installs from npm, and a session's background work ends with it (2026-09-30)
 

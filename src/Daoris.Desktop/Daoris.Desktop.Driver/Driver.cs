@@ -677,12 +677,14 @@ public sealed partial class Driver(
             // The person is closing the driver. WaitAsync already ended the process tree, so nothing
             // is orphaned — and the record must say so rather than sit at "working" forever. The write
             // rides an unbound token: the cancelled one would refuse the very report it caused.
+            // Interrupted (D104): closing the driver is not a decision about this quest, so a take this
+            // session held is carried on at the next start, as a cut-off is.
             try
             {
                 await service.AdvanceAsync(
                     sessionId, "stopped",
                     note: "the driver was stopped while this ran; the session's process was ended with it.",
-                    ct: CancellationToken.None).ConfigureAwait(false);
+                    ct: CancellationToken.None, interrupted: true).ConfigureAwait(false);
             }
             catch
             {

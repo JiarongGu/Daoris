@@ -32,7 +32,10 @@ public enum SessionState
     /// <summary>The process died, or exited with the quest unexplained.</summary>
     Failed,
 
-    /// <summary>The person cancelled it.</summary>
+    /// <summary>
+    /// The person cancelled it — or, where the record says <see cref="Session.Interrupted"/>, the orphan
+    /// sweep or the driver's shutdown ended it (D104).
+    /// </summary>
     Stopped,
 }
 
@@ -142,6 +145,14 @@ public sealed record Session(
     /// that carries its quest on is handed it.
     /// </summary>
     public string? Answer { get; init; }
+
+    /// <summary>
+    /// A <see cref="SessionState.Stopped"/> record that was not the person's stop (D104): the orphan
+    /// sweep found nothing running it, or the driver shut down under it. A take ended so is carried on
+    /// like a failed one (D80); a person's stop never is. False for everything else, and for every record
+    /// from before the field, which is the old reading.
+    /// </summary>
+    public bool Interrupted { get; init; }
 
     /// <summary>Whether this session still holds its repository. Parked counts: the person is the flow control.</summary>
     public bool Active => State is SessionState.Queued or SessionState.Starting
@@ -278,6 +289,10 @@ public sealed class SessionStore
         // parked to ask them, which the session that carries the quest on is handed.
         await SchemaColumns.EnsureAsync(_connection, "sessions", "took", "took INTEGER NULL", ct).ConfigureAwait(false);
         await SchemaColumns.EnsureAsync(_connection, "sessions", "answer", "answer TEXT NULL", ct).ConfigureAwait(false);
+
+        // D104: a stop that was not the person's — the sweep's, or a shutdown's. A record from before it
+        // says nothing, and nothing is the old reading: the person's stop.
+        await SchemaColumns.EnsureAsync(_connection, "sessions", "interrupted", "interrupted INTEGER NULL", ct).ConfigureAwait(false);
 
         await using (var cursor = _connection.CreateCommand())
         {
@@ -428,9 +443,10 @@ public sealed class SessionStore
     /// Move a session and attach what the move carries. An attachment left null keeps its old value:
     /// a later move must not erase the transcript an earlier one recorded.
     /// </summary>
+    /// <param name="interrupted">That this move ends it not by the person's hand (D104) — kept once said.</param>
     public async Task<Session?> SetStateAsync(
         string id, SessionState state, string? note, string? evidence, string? transcript,
-        DateTimeOffset now, CancellationToken ct = default)
+        DateTimeOffset now, CancellationToken ct = default, bool interrupted = false)
     {
         var session = await FindAsync(id, ct).ConfigureAwait(false);
         if (session is null) return null;
@@ -442,13 +458,16 @@ public sealed class SessionStore
             Evidence = evidence ?? session.Evidence,
             Transcript = transcript ?? session.Transcript,
             Updated = now,
+            Interrupted = interrupted || session.Interrupted,
         };
 
         await using var command = _connection.CreateCommand();
         command.CommandText = $"""
             UPDATE sessions SET state = $state, note = $note, evidence = $evidence,
-              transcript = $transcript, updated = $updated, revision = {NextRevision} WHERE id = $id
+              transcript = $transcript, updated = $updated, interrupted = $interrupted,
+              revision = {NextRevision} WHERE id = $id
             """;
+        command.Parameters.AddWithValue("$interrupted", moved.Interrupted ? 1 : (object)DBNull.Value);
         command.Parameters.AddWithValue("$state", moved.State.ToString());
         command.Parameters.AddWithValue("$note", (object?)moved.Note ?? DBNull.Value);
         command.Parameters.AddWithValue("$evidence", (object?)moved.Evidence ?? DBNull.Value);
@@ -752,6 +771,7 @@ public sealed class SessionStore
         Ask = reader.IsDBNull(reader.GetOrdinal("ask")) ? null : reader.GetString(reader.GetOrdinal("ask")),
         Took = !reader.IsDBNull(reader.GetOrdinal("took")) && reader.GetInt64(reader.GetOrdinal("took")) != 0,
         Answer = reader.IsDBNull(reader.GetOrdinal("answer")) ? null : reader.GetString(reader.GetOrdinal("answer")),
+        Interrupted = !reader.IsDBNull(reader.GetOrdinal("interrupted")) && reader.GetInt64(reader.GetOrdinal("interrupted")) != 0,
     };
 
     /// <summary>Keep the person's answer on a parked session's record (STANDDOWN2).</summary>

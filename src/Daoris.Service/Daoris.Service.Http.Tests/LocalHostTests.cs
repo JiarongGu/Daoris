@@ -163,6 +163,36 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
     }
 
     /// <summary>
+    /// D104: the driver says a stop was not the person's — the sweep's, or a shutdown's — through the
+    /// state door, and the record answers it back. Asked of any other move, it is refused, 409.
+    /// </summary>
+    [Fact]
+    public async Task A_stop_the_driver_says_was_interrupted_is_kept_and_answered_back()
+    {
+        var quest = await PublishAsync("A quest whose session the driver's shutdown ended");
+        var opened = await host.PostAsync("/api/sessions", new { quest, adapter = "stub" });
+        Assert.Equal(200, opened.Status);
+        var id = opened.Json.GetProperty("session").GetProperty("id").GetString()!;
+        foreach (var state in new[] { "starting", "working" })
+        {
+            Assert.Equal(200, (await host.PostAsync($"/api/sessions/{id}/state", new { state })).Status);
+        }
+
+        var refused = await host.PostAsync($"/api/sessions/{id}/state", new { state = "failed", interrupted = true });
+        Assert.Equal(409, refused.Status);
+        Assert.Contains("stopped", refused.Error);
+
+        var stopped = await host.PostAsync(
+            $"/api/sessions/{id}/state", new { state = "stopped", note = "the driver was stopped while this ran.", interrupted = true });
+
+        Assert.Equal(200, stopped.Status);
+        Assert.True(stopped.Json.GetProperty("session").GetProperty("interrupted").GetBoolean());
+        var listed = (await host.GetAsync("/api/sessions?includeClosed=true")).Json.EnumerateArray()
+            .Single(row => row.GetProperty("id").GetString() == id);
+        Assert.True(listed.GetProperty("interrupted").GetBoolean());
+    }
+
+    /// <summary>
     /// The page is served here — which is what makes the shared host's 404 for the same file a refusal
     /// rather than a missing file.
     /// </summary>

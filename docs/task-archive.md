@@ -8323,3 +8323,24 @@ are reserved at dispatch (DRV8 got D104 and the owner's calls D105 that way). `C
 carries a decision range. Not union: the backlog, whose rows move out, and the module READMEs, whose
 one long row every feature edits.
 **Proven by:** `verify` (CLI 622, `doc-duplicates` clean over the six records).
+
+
+## DRV8 — what a stray driver loop showed (2026-09-30)
+
+> - [ ] **DRV8 — what a stray driver loop showed** (2026-09-30, found running the owner's ticket). (a) **A
+> bare `daoris-driver` starts a loop beside a running desktop.** Run with no verb to read its usage, it …
+
+**Outcome** (built by a subagent in its own worktree, merged, then rehearsed on main): **D104**, amending D58
+and D80. **(a)** A bare `daoris-driver`, or a word it does not know, prints its usage and exits 2; the loop
+is `drive [--once | --until-idle] [--share]`, the bare flags still accepted. A loop takes
+`<home>/driver.lock` (kind, pid, process start, since) before it reaches the service, moved in without
+replacing and released only while it still names this loop; a home a live driver holds is refused with
+exit 1, naming it, and `--share` runs beside it. A lock whose process is gone, reused or unreadable never
+blocks. The desktop's loop takes the same lock and waits, saying so once, while a headless one holds it.
+**(b)** A stopped record now says whether it was `interrupted` (a service field in a column added by
+`SchemaColumns`, allowed only on a move to `stopped`). The orphan sweep and a shutdown set it, a person's
+stop never; the planner carries such a take on in its tree like a D80 cut-off, and the strikes count it.
+The merge found one miss the branch could not see: the family rehearsal's helper put `drive` before
+`ask` and `quest delete` too, failing fourteen checks, fixed on main.
+**Proven by:** driver 1416 (one load flake, green alone), modules 399, service 652 + 46, CLI 622,
+Playwright 21, family 301/301, deployment 70/70.
