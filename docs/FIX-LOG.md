@@ -5,6 +5,29 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## A second or moved install ran on the first one's home (2026-09-30)
+
+**Symptom.** Found by reading (REV3 modules F4), not on a machine: an install published to a second
+folder, or the first one moved, would run on the first install's `data/` (its registry, its quests,
+its drivable set) and say nothing. Its own `data/` stayed empty.
+
+**Root cause.** D63 has the install set `DAORIS_HOME` for the account once, so a terminal meets the
+same machine. Windows hands the account's variables to every process the person starts, the next
+install included, and `InstallHome.Establish` deferred to any `DAORIS_HOME` already in its
+environment. That deference existed for a gate's scratch home, and it could not tell one from the
+account's.
+
+**Fix (D105).** A process value equal to the account's variable, compared as a path, was inherited:
+the install's own `data/` replaces it for this process and everything it spawns. A value that differs,
+or any value when the account has none, was named for this start alone and is still respected. The
+account's variable is never rewritten. The override rides `HomeEstablished.Overrode`, which makes the
+start worth saying, so Settings' *Daoris home* row carries the sentence.
+
+**Verification.** Tests first over temporary folders and a fake environment: the second-install and
+moved-install facts were red on the old rule (`Establish` answered null), then green. Removing the
+respected branch turned the gate's case red (`A_home_named_for_this_start_alone_is_respected…`).
+Modules 390 → 393. No second install was started on a real account.
+
 ## A plugin's words came back in the console's code page (2026-09-30)
 
 **Symptom.** PLUG8's Try on the window, on a Chinese-locale machine: the GitHub example plugin's
