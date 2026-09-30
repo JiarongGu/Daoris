@@ -247,7 +247,7 @@ public sealed partial class DriverModule
             if (_loop.Harnesses.AccountToolchain(harness)?.KeyVariable is not { Length: > 0 })
             {
                 throw new DriverException(
-                    $"`{harness}` takes no API key from Daoris — sign in with its own login instead.");
+                    $"`{harness}` takes no API key from Daoris — sign it in instead.");
             }
 
             var account = HarnessKeys.Add(
@@ -800,7 +800,7 @@ public sealed partial class DriverModule
             ? profile
             : throw Refusals.Because(
                 Refusals.HarnessProfileNeeded,
-                "that action needs a profile name.",
+                "that action needs an account name.",
                 ("action", "profile"));
 
     /// <summary>Back to `PATH`. Nothing is deleted — re-pinning that version needs no download.</summary>

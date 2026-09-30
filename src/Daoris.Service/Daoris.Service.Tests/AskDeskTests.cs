@@ -74,7 +74,7 @@ public sealed class AskDeskTests : IAsyncLifetime
         Assert.Equal(AskDesk.ByDeclarations, ask.Tier);
         Assert.Equal("media-api", ask.Proposal[0].Repository);
         Assert.Contains("by declarations only", outcome.Message);
-        Assert.Contains("no intake harness ran", outcome.Message);
+        Assert.Contains("no intake agent ran", outcome.Message);
         Assert.Contains("media-api", outcome.Message);
         Assert.Null(outcome.Quest);
         Assert.Empty(await _quests.ListAsync());

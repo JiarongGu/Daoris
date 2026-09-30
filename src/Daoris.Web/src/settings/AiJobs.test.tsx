@@ -35,7 +35,7 @@ const intake = (extra: Partial<IntakeJob> = {}): IntakeJob => ({
 const show = (props: Parameters<typeof AiJobs>[0]) =>
   render(<Tooltip.Provider><AiJobs {...props} /></Tooltip.Provider>);
 
-describe("Daoris's own AI", () => {
+describe('AI features', () => {
   /** D24: which tier answers is said in the service's own words, beside what changes it. */
   it('states the search tier and its note verbatim, and how the model is chosen', () => {
     show({ search: LEXICAL });

@@ -77,7 +77,7 @@ internal sealed class HelpSyncProposals : IHelpProposalKind
         var repository = Repository(proposal);
         if (repository is not null && !facts.Repositories.Contains(repository, StringComparer.OrdinalIgnoreCase))
         {
-            return new HelpPlan($"`{repository}` is not registered on this machine — use a repository's name as Projects lists it.", "", "", null);
+            return new HelpPlan($"`{repository}` is not registered on this machine — use a repository's name as Repositories lists it.", "", "", null);
         }
 
         var scope = repository is null ? "every repository with a checkout here" : $"`{repository}`";

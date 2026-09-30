@@ -111,7 +111,7 @@ export const ProposingEveryKind: Story = {
               terminal: 'daoris-driver ask --delete a1b2c3d4', why: 'it was a test',
             },
             {
-              id: 'g1', kind: 'go' as const, describe: 'Open Settings → Get started at step 2, Daoris\'s own agent.', terminal: '',
+              id: 'g1', kind: 'go' as const, describe: 'Open Settings → Setup at step 2, Ask Daoris\'s agent.', terminal: '',
               why: 'you asked where to name its agent',
             },
             {

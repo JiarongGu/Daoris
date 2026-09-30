@@ -38,12 +38,12 @@ public sealed class HelpRoomDoorsTests
 
         Assert.Contains("Settings → Workspace → Lines", agents);
         // HELP9: a parked quest's Retry is on its drawer, which the room names beside the command (HELP10: and proposes).
-        Assert.Contains("Quests → the quest's drawer → try it again", agents);
+        Assert.Contains("Quests → the quest's drawer → Try again", agents);
         // What a landing pattern may say, as `LandingRules` reads it — the first real conversation had to guess.
         foreach (var token in new[] { "{quest}", "{session}", "{slug}", "{repository}" }) Assert.Contains(token, agents);
-        Assert.Contains("Settings → Daoris's own AI", agents);
+        Assert.Contains("Settings → AI features", agents);
         // SETUP1b: the setup guide the person may be walked through, by the names the window gives it.
-        Assert.Contains("Settings → Get started (the Daoris menu's *Set up Daoris*)", agents);
+        Assert.Contains("Settings → Setup (the Daoris menu's *Setup*)", agents);
         // It reads and advises; the moves that stay the person's are named as never its own.
         Assert.Contains("You change nothing yourself", agents);
         // It proposes (HELP1c): a card the person applies, through the connector's two tools.

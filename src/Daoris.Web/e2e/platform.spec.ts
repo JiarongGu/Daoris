@@ -253,7 +253,7 @@ test('an ask is proposed by declarations, published by a person, and closed with
   await composer.getByRole('button', { name: 'Ask', exact: true }).click();
 
   // The service's sentence, verbatim: which tier answered, what it proposed, and that nothing went out.
-  await expect(page.getByText(/Asked as #[0-9a-f]{6} in default — by declarations only; no intake harness ran — proposed, best first: engine/).first()).toBeVisible();
+  await expect(page.getByText(/Asked as #[0-9a-f]{6} in default — by declarations only; no intake agent ran — proposed, best first: engine/).first()).toBeVisible();
 
   // The record opens on the answer: the tier in words, the proposal as a verb, the file by name only.
   // (The quest it becomes takes the same words for its title, so each drawer is told apart by what it holds.)

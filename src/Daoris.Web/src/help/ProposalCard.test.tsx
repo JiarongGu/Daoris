@@ -63,7 +63,7 @@ const DELETE: HelpProposal = {
 };
 
 const GO: HelpProposal = {
-  id: 'p5', kind: 'go', describe: 'Open Settings → Get started at step 2, Daoris\'s own agent.', terminal: '',
+  id: 'p5', kind: 'go', describe: 'Open Settings → Setup at step 2, Ask Daoris\'s agent.', terminal: '',
   why: 'the person asked where to name its agent',
 };
 
@@ -88,7 +88,7 @@ const PLUGIN_ON: HelpProposal = {
   why: 'the person wants it on',
   plugin: {
     id: 'example.lands', name: 'example.lands', version: '', points: [], harnesses: [], servers: [],
-    problem: 'declares harness `claude-code`, which this build already carries.',
+    problem: 'declares agent `claude-code`, which this build already carries.',
   },
 };
 
@@ -187,7 +187,7 @@ describe('the kinds that reach every door', () => {
     expect(runs.getByText('example.lands', { selector: 'code' })).toBeInTheDocument();
     expect(runs.getByText(/runs no process of its own/)).toBeInTheDocument();
     expect(screen.queryByText(/copies its folder/)).not.toBeInTheDocument();
-    expect(screen.getByText(/contributes nothing: declares harness/)).toBeInTheDocument();
+    expect(screen.getByText(/contributes nothing: declares agent/)).toBeInTheDocument();
   });
 
   // WSR5b: a branch a landing made, handed to a landing plugin — the one card whose Apply leads to a push.

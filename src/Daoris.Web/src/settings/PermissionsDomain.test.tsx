@@ -157,7 +157,7 @@ describe('the reading and writing across card', () => {
   });
 
   /** HELP10: Ask Daoris's go to *Reading and writing across* opens the domain at this card, once it is drawn. */
-  it('is where a go to Permissions → Reading and writing across opens', async () => {
+  it('is where a go to Permissions → Across repositories opens', async () => {
     const scrolled = vi.fn();
     const original = Element.prototype.scrollIntoView;
     Element.prototype.scrollIntoView = function scroll(this: Element) { scrolled(this.id); };

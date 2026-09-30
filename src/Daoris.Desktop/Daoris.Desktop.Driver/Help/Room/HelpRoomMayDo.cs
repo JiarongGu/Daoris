@@ -73,7 +73,7 @@ internal sealed class HelpRoomMayDo : IHelpRoomSection
         if (machine.Reads.Count == 0 && machine.Repositories.Any(repository => repository.Checkout))
         {
             text.Append("Reading the checkouts here is switched off. The person turns it on under Settings → Permissions →\n");
-            text.Append("Reading and writing across, or with `daoris driver across <repository> read on` (`--workspace <name>`\n");
+            text.Append("Across repositories, or with `daoris driver across <repository> read on` (`--workspace <name>`\n");
             text.Append("in place of the repository for a whole workspace).\n\n");
         }
 

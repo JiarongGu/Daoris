@@ -292,7 +292,7 @@ describe('QuestsView', () => {
             : PROPOSED;
           return Response.json({ ask, message: url.endsWith('/publish')
             ? 'Published quest `#abc123` to `engine` — Open.'
-            : 'Asked as `#7c1e9a04b2d5` in `default` — by declarations only; no intake harness ran.' });
+            : 'Asked as `#7c1e9a04b2d5` in `default` — by declarations only; no intake agent ran.' });
         }
         return respond(url);
       }));
@@ -326,7 +326,7 @@ describe('QuestsView', () => {
       });
       // The service's sentence, verbatim — and the record opens on what it proposed.
       await waitFor(() => expect(notify).toHaveBeenCalledWith(
-        'Asked as `#7c1e9a04b2d5` in `default` — by declarations only; no intake harness ran.'));
+        'Asked as `#7c1e9a04b2d5` in `default` — by declarations only; no intake agent ran.'));
       const record = await screen.findByRole('dialog', { name: 'Cap the hydration per frame.' });
       expect(within(record).getByRole('button', { name: 'Publish to engine' })).toBeInTheDocument();
     });

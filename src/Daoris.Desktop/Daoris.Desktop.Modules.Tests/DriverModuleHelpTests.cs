@@ -19,7 +19,7 @@ public sealed class DriverModuleHelpTests : DriverModuleBridge
         var refusal = await RefusalAsync(Module(), "START_HELP");
 
         Assert.Contains(Refusals.DriverRefused, refusal);
-        Assert.Contains("Settings → Daoris's own AI", refusal);
+        Assert.Contains("Settings → AI features", refusal);
         Assert.Contains("daoris driver helper <agent>", refusal);
     }
 

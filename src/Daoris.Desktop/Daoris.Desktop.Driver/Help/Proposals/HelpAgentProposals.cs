@@ -46,7 +46,7 @@ internal sealed partial class HelpAgentProposals : IHelpProposalKind
             if (!door.Present)
             {
                 return Refused($"`{name}` is not installed on this machine, so there is nothing to update — install it under "
-                    + $"Settings → Agents & accounts, or with `daoris agent install {name}`.");
+                    + $"Settings → Agents, or with `daoris agent install {name}`.");
             }
 
             return door.Updates switch

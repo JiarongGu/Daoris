@@ -247,7 +247,7 @@ public sealed class SessionLedger(
             return new(
                 SessionOpenRefusal.RepositoryUnknown,
                 $"`{repository}` is not registered on this machine, so there is no working tree to talk "
-                + "in. `daoris connect` from inside it, or add it from Projects.",
+                + "in. `daoris connect` from inside it, or add it from Repositories.",
                 Session: null);
         }
 
@@ -331,7 +331,7 @@ public sealed class SessionLedger(
             id, "completed", $"{session.Note ?? "It stopped to ask the person; its question is in its transcript."}\n\nAnswered: {said}",
             evidence: null, transcript: null, now, ct).ConfigureAwait(false);
         return moved.Refusal == SessionAdvanceRefusal.None
-            ? moved with { Message = $"Answered session `{id}`: `#{session.Quest}` is carried on in its tree at the driver's next tick." }
+            ? moved with { Message = $"Answered session `{id}`: `#{session.Quest}` is carried on in its tree at the driver's next look." }
             : moved;
     }
 

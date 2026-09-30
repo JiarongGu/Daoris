@@ -670,9 +670,9 @@ public sealed class AskDesk(KnowledgeService service, AskStore asks, QuestExchan
             $"intake session `{intake}` is answering it: it publishes where the declarations settle it, "
             + "and asks you where they do not.",
         _ when ask.Proposal.Count == 0 =>
-            "by declarations only; no intake harness ran — and no repository's declarations share its words. "
+            "by declarations only; no intake agent ran — and no repository's declarations share its words. "
             + "Nothing was published. Name the receiver, or declare what the owner owns and ask again.",
-        _ => "by declarations only; no intake harness ran — proposed, best first: "
+        _ => "by declarations only; no intake agent ran — proposed, best first: "
              + string.Join("; ", ask.Proposal.Select(m => $"`{m.Repository}` ({string.Join(", ", m.Matched)})"))
              + ". Nothing was published: a proposal is a person's to accept.",
     };

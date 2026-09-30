@@ -11,10 +11,10 @@ public sealed class HelpGoProposalsTests : HelpProposalsFixture
 
     [Theory]
     [InlineData("quests", null, null, "Open Quests.")]
-    [InlineData("settings", "agents", null, "Open Settings → Agents & accounts.")]
+    [InlineData("settings", "agents", null, "Open Settings → Agents.")]
     [InlineData("settings", "workspace", "lines", "Open Settings → Workspace → Lines.")]
-    [InlineData("settings", "start", "helper", "Open Settings → Get started at step 2, Daoris's own agent.")]
-    [InlineData("projects", null, "import", "Open Projects → Import a folder.")]
+    [InlineData("settings", "start", "helper", "Open Settings → Setup at step 2, Ask Daoris's agent.")]
+    [InlineData("projects", null, "import", "Open Repositories → Import a folder.")]
     public void A_screen_is_a_go_that_changes_nothing(string view, string? domain, string? part, string says)
     {
         var plan = HelpProposals.Plan(Go(view, domain, part), DriverConfig.Empty, Machine);

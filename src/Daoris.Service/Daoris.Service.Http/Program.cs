@@ -909,7 +909,7 @@ app.MapPost("/api/registry/{repository}/workspace", async (
     if (existing is null)
     {
         return Results.NotFound(new ErrorResponse(
-            $"`{repository}` is not registered here — `daoris connect` from inside it, or add it from Projects."));
+            $"`{repository}` is not registered here — `daoris connect` from inside it, or add it from Repositories."));
     }
 
     var wired = await s.Service.RegisterAsync(

@@ -183,7 +183,7 @@ public sealed class PluginCatalog
                 {
                     if (declaredBy.TryGetValue(harness.Name, out var other))
                     {
-                        problem = $"declares harness `{harness.Name}`, which plugin `{other}` already declares — "
+                        problem = $"declares agent `{harness.Name}`, which plugin `{other}` already declares — "
                             + "the first by id keeps it, and this plugin contributes nothing.";
                         break;
                     }
@@ -227,8 +227,8 @@ public sealed class PluginCatalog
         var reserved = new HashSet<string>(reservedHarnesses, StringComparer.OrdinalIgnoreCase);
         if (manifest.Harnesses.FirstOrDefault(harness => reserved.Contains(harness.Name)) is { } carried)
         {
-            return $"declares harness `{carried.Name}`, which this build already carries — "
-                + "a plugin adds a harness and never replaces one.";
+            return $"declares agent `{carried.Name}`, which this build already carries — "
+                + "a plugin adds an agent and never replaces one.";
         }
 
         if (manifest.Servers.FirstOrDefault(server =>
@@ -355,13 +355,13 @@ public sealed class PluginCatalog
                     var name = Text(row, "name");
                     if (string.IsNullOrWhiteSpace(name))
                     {
-                        return (PluginManifest.Empty(id), "a declared harness needs a `name`.");
+                        return (PluginManifest.Empty(id), "a declared agent needs a `name`.");
                     }
 
                     var command = Strings(row, "command", folder, data);
                     if (command is not { Count: > 0 })
                     {
-                        return (PluginManifest.Empty(id), $"harness `{name}` needs a `command` — what to run.");
+                        return (PluginManifest.Empty(id), $"agent `{name}` needs a `command` — what to run.");
                     }
 
                     harnesses.Add(new PluginHarness(
