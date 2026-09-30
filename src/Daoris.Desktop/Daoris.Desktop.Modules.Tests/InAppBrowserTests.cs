@@ -63,10 +63,13 @@ public sealed class InAppBrowserTests : Bridge
     private sealed class Browser : IInAppBrowser
     {
         public int Shown;
+        public readonly List<string> Opened = [];
 
         public Task<string?> EnsureAsync(CancellationToken ct = default) => Task.FromResult<string?>(null);
 
         public void Show() => Shown++;
+
+        public void Open(string address) => Opened.Add(address);
     }
 
     private sealed class NoWindows : ISecondaryWindows
@@ -87,5 +90,52 @@ public sealed class InAppBrowserTests : Bridge
         await AnswerAsync(module, "OPEN_BROWSER", new { });
 
         Assert.Equal(1, browser.Shown);
+        Assert.Empty(browser.Opened);
+    }
+
+    /// <summary>
+    /// BRW7: a link on the page, opened in Daoris's browser where the person chose that — on the page
+    /// it names, in its parsed form, rather than on the browser's start page.
+    /// </summary>
+    [Fact]
+    public async Task The_page_opens_a_link_in_the_browser_on_the_page_it_names()
+    {
+        var browser = new Browser();
+        var module = new WindowsModule(Bus, new NoWindows(), new PlatformAddress("http://localhost:5177"), browser);
+
+        var state = await AnswerAsync(module, "OPEN_BROWSER", new { url = "https://Tickets.Example/browse/T-1" });
+
+        Assert.Equal(["https://tickets.example/browse/T-1"], browser.Opened);
+        Assert.Equal(0, browser.Shown);
+        Assert.True(state.GetProperty("opened").GetBoolean());
+    }
+
+    /// <summary>What is no web page — a script, a file, a credential in the address — is refused by code and opens nothing.</summary>
+    [Theory]
+    [InlineData("javascript:alert(1)")]
+    [InlineData("file:///C:/secrets.txt")]
+    [InlineData("https://someone:password@tickets.example/")]
+    [InlineData("about:blank")]
+    public async Task A_link_that_is_no_web_page_is_refused_by_code_and_opens_nothing(string url)
+    {
+        var browser = new Browser();
+        var module = new WindowsModule(Bus, new NoWindows(), new PlatformAddress("http://localhost:5177"), browser);
+
+        var refusal = await RefusalAsync(module, "OPEN_BROWSER", new { url });
+
+        Assert.Contains(Refusals.BrowserLinkNotAPage, refusal);
+        Assert.Empty(browser.Opened);
+        Assert.Equal(0, browser.Shown);
+    }
+
+    /// <summary>A host that carries no browser answers that nothing opened, rather than a failure.</summary>
+    [Fact]
+    public async Task With_no_browser_a_link_opens_nothing_and_says_so()
+    {
+        var module = new WindowsModule(Bus, new NoWindows(), new PlatformAddress("http://localhost:5177"));
+
+        var state = await AnswerAsync(module, "OPEN_BROWSER", new { url = "https://tickets.example/" });
+
+        Assert.False(state.GetProperty("opened").GetBoolean());
     }
 }

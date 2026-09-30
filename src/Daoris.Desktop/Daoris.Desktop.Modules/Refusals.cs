@@ -110,6 +110,15 @@ public static class Refusals
     /// <summary>A browser choice that is neither `daoris` nor `edge` (BRW12).</summary>
     public const string BrowserChoiceUnknown = "BROWSER_CHOICE_UNKNOWN";
 
+    /// <summary>A links setting that is neither `system` nor `daoris` (BRW7).</summary>
+    public const string BrowserLinksUnknown = "BROWSER_LINKS_UNKNOWN";
+
+    /// <summary>
+    /// A link the page asked Daoris's browser to open that is no web page (BRW7): the favorites' rule,
+    /// so a script, a file or a credential in the address never reaches a browser agents drive.
+    /// </summary>
+    public const string BrowserLinkNotAPage = "BROWSER_LINK_NOT_A_PAGE";
+
     /// <summary>A terminal asked for a shell this build does not offer (CONSOLE4a): not one of `pwsh`, `powershell`, `cmd`, `bash`.</summary>
     public const string TerminalShellUnknown = "TERMINAL_SHELL_UNKNOWN";
 

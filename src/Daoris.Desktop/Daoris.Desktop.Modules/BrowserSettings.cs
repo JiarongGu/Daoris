@@ -25,12 +25,23 @@ public static class BrowserChoice
     public const string Edge = "edge";
 }
 
+/// <summary>
+/// Where a link on Daoris's page opens (BRW7): in the system's browser, as a link always has, or in
+/// Daoris's — whichever <see cref="BrowserChoice"/> the file chooses.
+/// </summary>
+public static class LinksSetting
+{
+    public const string System = "system";
+    public const string Daoris = "daoris";
+}
+
 /// <summary>What the settings file holds, and why a file that was there gave only the defaults.</summary>
-public sealed record BrowserSettingsRead(string Extensions, string Browser, string? Problem);
+public sealed record BrowserSettingsRead(string Extensions, string Browser, string Links, string? Problem);
 
 /// <summary>
 /// Daoris's browser's settings (CHR7): <c>&lt;home&gt;/browser/settings.json</c>, which
-/// <c>daoris-browser</c> reads each time it starts.
+/// <c>daoris-browser</c> reads each time it starts, and whose <c>links</c> the page reads at each
+/// click (BRW7), so that one holds at once.
 /// </summary>
 /// <remarks>
 /// <para>🔴 <b>A twin file</b>, as the favorites are. The CLI's <c>browser.ts</c> reads and edits it
@@ -53,7 +64,8 @@ public static class BrowserSettings
             ? ExtensionsSetting.Refuse
             : ExtensionsSetting.Offer;
         var browser = file is not null && Text(file, "browser") == BrowserChoice.Edge ? BrowserChoice.Edge : BrowserChoice.Daoris;
-        return new(extensions, browser, problem);
+        var links = file is not null && Text(file, "links") == LinksSetting.Daoris ? LinksSetting.Daoris : LinksSetting.System;
+        return new(extensions, browser, links, problem);
     }
 
     /// <summary>Set the extensions setting for the browser's next start.</summary>
@@ -78,6 +90,18 @@ public static class BrowserSettings
         }
 
         Set(home, "browser", browser);
+    }
+
+    /// <summary>Choose where the page's links open (BRW7).</summary>
+    /// <exception cref="InvalidOperationException">A value that is neither, or a file this could not read.</exception>
+    public static void SetLinks(string home, string links)
+    {
+        if (links is not (LinksSetting.System or LinksSetting.Daoris))
+        {
+            throw new InvalidOperationException($"Links open in `system` or `daoris`, not `{links}`.");
+        }
+
+        Set(home, "links", links);
     }
 
     private static void Set(string home, string field, string value)

@@ -28,9 +28,9 @@ The first version: doctrine that installs, is checked, and flows back.
   (D67); `driver` sets what this machine drives; `plugin` lists, adds, removes and switches the
   machine's plugins, loading no code from any of them; and `browser` keeps the in-app browser's
   favorites, which it shows in a Daoris folder on its bookmarks bar, and its settings, among them
-  whether it is Daoris's own or the person's Edge. `agent` **spawns**; `connect`, `retire` and
-  `import` talk to a service; `remote`, `driver`, `plugin` and `browser` only edit files under the
-  Daoris home.
+  whether it is Daoris's own or the person's Edge and whether the page's links open there. `agent`
+  **spawns**; `connect`, `retire` and `import` talk to a service; `remote`, `driver`, `plugin` and
+  `browser` only edit files under the Daoris home.
 - **A pack may switch a core row off, and the repository confirms it** (D71). A pack's `pack.json`
   offers `switchesOff`: a core rule, knowledge document or skill, with the reason its own document
   replaces it. The row goes off only when `daoris.json` names it under `switchedOff`. Until then it
@@ -298,6 +298,13 @@ The first version: doctrine that installs, is checked, and flows back.
   an install is a small `Daoris.exe` launcher, the application under `app/`, and the home in `data/`
   (D93). Daoris's own browser runs on that same Chromium, as the application started as a browser, so
   an install carries one engine rather than two (D99).
+- **Daoris's browser has a door on the strip, and the page's links can open there** (BRW7). A compass
+  beside the region toggles opens it from every view, where View → *Browser* and the palette were the
+  only ways in. Settings → Browser and `daoris browser links system|daoris` choose whether a link on the
+  page — a ticket in a quest or an ask, a URL in a conversation, a link an agent wrote — opens in the
+  system's browser or in Daoris's (its own, or the person's Edge). Every link opens through one place,
+  held by a test; a sign-in link always opens in the system's browser, and a browser with no bridge
+  opens links as it always did.
 - **A plugin is a folder that declares, and may speak** (D64). Under the home's `plugins/<id>/`, a
   `plugin.json` names what a plugin declares — configurations of the ACP door, so a fifth harness
   arrives as a file — and what it speaks. The catalogue reads the API version before anything else,

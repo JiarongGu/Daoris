@@ -53,7 +53,7 @@ map found this first (WSP3), and every twin since was built the same way for the
 | A folder's trust (D73) | `trust.ts` | `ClaudeTrust.cs` | — |
 | An account's own model and effort, in the tool's `settings.json` (D98) | `agentsettings.ts` | `AgentSettings.cs` | — |
 | Plugins (D64) | `plugins.ts` | `Plugins.cs` | — |
-| The in-app browser's favorites and settings (BRW5, CHR7) | `browser.ts` | `BrowserFavorites.cs`, `BrowserSettings.cs` (the desktop modules, read by `daoris-browser` at each start) | — |
+| The in-app browser's favorites and settings (BRW5, CHR7), the settings' `links` among them (BRW7) | `browser.ts` | `BrowserFavorites.cs`, `BrowserSettings.cs` (the desktop modules, read by `daoris-browser` at each start; `links` by the page, through `BrowserModule`'s state) | — |
 | The code map (MAP3) | — | `CodeMapFile.cs` | `CodeMap.cs` (the devkit produces it) |
 | A Daoris host's status names its search tier, `tier` (HOSTID1) | — | the shell's `HostSupervisor.IsDaorisStatus`, which adopts only such an answer | `StatusResponse.Tier` (`ApiContracts.cs`); the page's `Status` type reads it too |
 | An install's application, `app/Daoris.Desktop.exe` (D93) | `tools/desktop-publish.mjs`'s `SHELL_HOME` and `SHELL_EXE`, which lay it out | the launcher's `Launcher.AppFolder` and `Launcher.ShellExe`, which start it, and the app's `AssemblyName`, which names it; `desktop-publish.test.ts` reads all three | — |

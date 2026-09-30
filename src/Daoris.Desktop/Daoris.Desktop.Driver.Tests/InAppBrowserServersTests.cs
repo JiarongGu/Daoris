@@ -27,6 +27,8 @@ public sealed class InAppBrowserServersTests
         }
 
         public void Show() { }
+
+        public void Open(string address) { }
     }
 
     [Fact]

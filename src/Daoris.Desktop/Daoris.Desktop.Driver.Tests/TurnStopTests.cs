@@ -421,6 +421,8 @@ public sealed class TurnStopTests : IDisposable
         public Task<string?> EnsureAsync(CancellationToken ct = default) => Task.FromResult<string?>(endpoint);
 
         public void Show() { }
+
+        public void Open(string address) { }
     }
 
     // ------------------------------------------------------------------ the harness behind each door

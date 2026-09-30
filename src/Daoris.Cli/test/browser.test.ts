@@ -4,7 +4,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname } from 'node:path';
 import {
   addFavorite, commandBrowser, favoriteAddress, favoritesFile, readBrowserSettings, readFavorites,
-  removeFavorite, setExtensions, settingsFile,
+  removeFavorite, setExtensions, setLinks, settingsFile,
 } from '../src/browser.ts';
 import { captureError, makeFixture } from './_fixture.ts';
 
@@ -157,9 +157,9 @@ function writeSettings(home: string, json: string): void {
   writeFileSync(settingsFile(home), json, 'utf8');
 }
 
-test('no settings file offers other software\'s extensions, as the engine does, and uses Daoris\'s browser', () => {
+test('no settings file offers other software\'s extensions, as the engine does, uses Daoris\'s browser, and opens links in the system\'s', () => {
   const fx = makeFixture('settings-none');
-  assert.deepEqual(readBrowserSettings(fx.root), { extensions: 'offer', browser: 'daoris', problem: null });
+  assert.deepEqual(readBrowserSettings(fx.root), { extensions: 'offer', browser: 'daoris', links: 'system', problem: null });
   fx.cleanup();
 });
 
@@ -176,7 +176,7 @@ test('the browser is daoris or edge, and anything else is Daoris\'s own', () => 
   for (const [value, expected] of BROWSERS) {
     const fx = makeFixture('settings-browser');
     writeSettings(fx.root, JSON.stringify({ browser: value, extensions: 'refuse' }));
-    assert.deepEqual(readBrowserSettings(fx.root), { extensions: 'refuse', browser: expected, problem: null }, JSON.stringify(value));
+    assert.deepEqual(readBrowserSettings(fx.root), { extensions: 'refuse', browser: expected, links: 'system', problem: null }, JSON.stringify(value));
     fx.cleanup();
   }
 });
@@ -186,8 +186,55 @@ test('`browser use` says which browser and sets it, keeping the rest', () => {
   assert.match(run(['use'], fx.root).out, /Daoris's own browser/);
   writeSettings(fx.root, JSON.stringify({ extensions: 'refuse' }));
   assert.match(run(['use', 'edge'], fx.root).out, /Edge.*Microsoft account/s);
-  assert.deepEqual(readBrowserSettings(fx.root), { extensions: 'refuse', browser: 'edge', problem: null });
+  assert.deepEqual(readBrowserSettings(fx.root), { extensions: 'refuse', browser: 'edge', links: 'system', problem: null });
   assert.match(String(captureError(() => run(['use', 'firefox'], fx.root))?.message), /daoris.*edge/);
+  fx.cleanup();
+});
+
+// BRW7: where the page's links open, answer for answer, as the C# table. `daoris` is whichever browser
+// `browser` chooses: Daoris's own, or the person's Edge on Daoris's profile.
+const LINKS: [unknown, 'system' | 'daoris'][] = [
+  ['system', 'system'],
+  ['daoris', 'daoris'],
+  ['Daoris', 'system'],
+  ['edge', 'system'],
+  [true, 'system'],
+];
+
+test('links open in the system\'s browser or Daoris\'s, and anything else is the system\'s', () => {
+  for (const [value, expected] of LINKS) {
+    const fx = makeFixture('settings-links');
+    writeSettings(fx.root, JSON.stringify({ links: value, browser: 'edge' }));
+    assert.deepEqual(readBrowserSettings(fx.root), { extensions: 'offer', browser: 'edge', links: expected, problem: null }, JSON.stringify(value));
+    fx.cleanup();
+  }
+});
+
+test('setting the links keeps what it has no field for, and is refused over a file it could not read', () => {
+  const fx = makeFixture('settings-links-keep');
+  writeSettings(fx.root, JSON.stringify({ extensions: 'refuse', theirs: { kept: true } }));
+  setLinks(fx.root, 'daoris');
+  const file = JSON.parse(readFileSync(settingsFile(fx.root), 'utf8'));
+  assert.deepEqual(file.theirs, { kept: true });
+  assert.deepEqual(readBrowserSettings(fx.root), { extensions: 'refuse', browser: 'daoris', links: 'daoris', problem: null });
+  fx.cleanup();
+
+  const broken = makeFixture('settings-links-unreadable');
+  writeSettings(broken.root, 'not json');
+  assert.ok(captureError(() => setLinks(broken.root, 'daoris')));
+  assert.equal(readFileSync(settingsFile(broken.root), 'utf8'), 'not json');
+  broken.cleanup();
+});
+
+test('`browser links` says where links open and sets it, and refuses anything else', () => {
+  const fx = makeFixture('settings-links-command');
+  assert.match(run(['links'], fx.root).out, /system's browser/);
+  const set = run(['links', 'daoris'], fx.root);
+  assert.equal(set.code, 0);
+  assert.match(set.out, /Daoris's browser.*No restart/s);
+  assert.match(run(['links'], fx.root).out, /open in Daoris's browser/);
+  assert.equal(readBrowserSettings(fx.root).links, 'daoris');
+  assert.match(String(captureError(() => run(['links', 'chrome'], fx.root))?.message), /system.*daoris/);
   fx.cleanup();
 });
 
@@ -205,7 +252,7 @@ test('the extensions setting is offer or refuse, and anything else is the defaul
   for (const [value, expected] of EXTENSIONS) {
     const fx = makeFixture('settings-value');
     writeSettings(fx.root, JSON.stringify({ extensions: value }));
-    assert.deepEqual(readBrowserSettings(fx.root), { extensions: expected, browser: 'daoris', problem: null }, JSON.stringify(value));
+    assert.deepEqual(readBrowserSettings(fx.root), { extensions: expected, browser: 'daoris', links: 'system', problem: null }, JSON.stringify(value));
     fx.cleanup();
   }
 });
@@ -271,7 +318,7 @@ test('`browser favorite` with no home refuses, naming the variable (D63)', () =>
 
 test('`browser` knows `favorite` and `extensions`, and says what it takes', () => {
   const fx = makeFixture('favorites-usage');
-  assert.match(String(captureError(() => run(['tabs'], fx.root))?.message), /browser favorite.*browser extensions.*browser use/s);
+  assert.match(String(captureError(() => run(['tabs'], fx.root))?.message), /browser favorite.*browser extensions.*browser use.*browser links/s);
   assert.match(String(captureError(() => run(['favorite', 'add'], fx.root))?.message), /needs an address/);
   fx.cleanup();
 });

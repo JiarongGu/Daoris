@@ -159,8 +159,9 @@ export function removeFavorite(home: string, typed: string): boolean {
 }
 
 // CHR7: the browser's settings — `<home>/browser/settings.json`, which `daoris-browser` reads each time
-// it starts. 🔴 A TWIN file as the favorites are: `BrowserSettings.cs` in the desktop modules reads and
-// edits it with its own code, and `BrowserSettingsTests.cs` carries this side's table.
+// it starts, and whose `links` the page reads at each click (BRW7). 🔴 A TWIN file as the favorites
+// are: `BrowserSettings.cs` in the desktop modules reads and edits it with its own code, and
+// `BrowserSettingsTests.cs` carries this side's table.
 
 export const SETTINGS_FILE = join('browser', 'settings.json');
 
@@ -176,20 +177,30 @@ export type ExtensionsSetting = 'offer' | 'refuse';
  */
 export type BrowserChoice = 'daoris' | 'edge';
 
+/**
+ * Where a link on Daoris's page opens (BRW7): in the `system`'s browser, as a link always has, or in
+ * `daoris`'s browser — whichever `browser` chooses, Daoris's own or the person's Edge. The page reads it,
+ * not `daoris-browser`, so a change needs no restart of either.
+ */
+export type LinksSetting = 'system' | 'daoris';
+
 export function settingsFile(home: string): string {
   return join(home, SETTINGS_FILE);
 }
 
 /** The settings, or the defaults with why a file that was there gave none. */
-export function readBrowserSettings(home: string): { extensions: ExtensionsSetting; browser: BrowserChoice; problem: string | null } {
+export function readBrowserSettings(home: string): {
+  extensions: ExtensionsSetting; browser: BrowserChoice; links: LinksSetting; problem: string | null;
+} {
   const { value, problem } = readJsonObject(settingsFile(home));
   const extensions = value?.extensions === 'refuse' ? 'refuse' : 'offer';
   const browser = value?.browser === 'edge' ? 'edge' : 'daoris';
-  return { extensions, browser, problem };
+  const links = value?.links === 'daoris' ? 'daoris' : 'system';
+  return { extensions, browser, links, problem };
 }
 
 /** Set one field, keeping what an editor has no field for. Refused over a file it could not read. */
-function setField(home: string, field: 'extensions' | 'browser', choice: string): void {
+function setField(home: string, field: 'extensions' | 'browser' | 'links', choice: string): void {
   const { value, problem } = readJsonObject(settingsFile(home));
   if (problem !== null) {
     throw new DaorisError(`${problem}. Fix it, or delete it to start from the defaults — `
@@ -208,6 +219,10 @@ export function setBrowser(home: string, browser: BrowserChoice): void {
   setField(home, 'browser', browser);
 }
 
+export function setLinks(home: string, links: LinksSetting): void {
+  setField(home, 'links', links);
+}
+
 /** The home, or the refusal every management verb gives without one (D63). */
 function requireHome(): string {
   const home = daorisHome();
@@ -217,7 +232,33 @@ function requireHome(): string {
 
 const USAGE = '`daoris browser favorite list`, `daoris browser favorite add <address> [--title T]`, '
   + '`daoris browser favorite remove <address>`, `daoris browser extensions [offer|refuse]`, '
-  + 'or `daoris browser use [daoris|edge]`';
+  + '`daoris browser use [daoris|edge]`, or `daoris browser links [system|daoris]`';
+
+/** `browser links [system|daoris]`: say where the page's links open, or choose it (BRW7). */
+function commandLinks(value: string | undefined, write: (line: string) => void): ExitCode {
+  const home = requireHome();
+  if (value === undefined) {
+    const { links, problem } = readBrowserSettings(home);
+    if (problem) write(`daoris: ⚠ ${problem}; the default holds.`);
+    write(links === 'daoris'
+      ? 'daoris: links on Daoris\'s page open in Daoris\'s browser — its own, or your Edge where `browser use edge` chose it.'
+      : 'daoris: links on Daoris\'s page open in the system\'s browser.');
+    return problem ? 1 : 0;
+  }
+
+  if (value !== 'system' && value !== 'daoris') {
+    throw new DaorisError(`\`browser links\` takes \`system\` or \`daoris\`, not \`${value}\`.`);
+  }
+
+  setLinks(home, value);
+  write(value === 'daoris'
+    ? 'daoris: links on Daoris\'s page open in Daoris\'s browser. No restart: an open window takes it up when '
+      + 'it is next brought to the front. A sign-in link still opens in the system\'s browser, where your own '
+      + 'sign-ins are.'
+    : 'daoris: links on Daoris\'s page open in the system\'s browser. No restart: an open window takes it up '
+      + 'when it is next brought to the front.');
+  return 0;
+}
 
 /** `browser use [daoris|edge]`: say which browser, or choose it for the next time one is opened. */
 function commandUse(value: string | undefined, write: (line: string) => void): ExitCode {
@@ -276,6 +317,7 @@ export function commandBrowser({ argv, write }: CommandArgs): ExitCode {
   const [area, verb, address] = operands(argv, new Set(['--title']));
   if (area === 'extensions') return commandExtensions(verb, write);
   if (area === 'use') return commandUse(verb, write);
+  if (area === 'links') return commandLinks(verb, write);
   if (area === 'history') {
     throw new DaorisError('`browser history` is retired: Daoris\'s browser keeps the browser\'s own history '
       + 'now, on its History page, where it is cleared as well.');

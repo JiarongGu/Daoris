@@ -47,6 +47,10 @@
 > window, profile (`<home>/browser/engine`), favorites folder, extensions setting and closing with the
 > shell. §3.4 stands with one difference: the relay behind the port is the kit's now, and announces a new
 > tab as a `page` as Daoris's did.
+>
+> **Amended by BRW7 (2026-09-30): a door on the strip, and links routed to it.** §3.2's doors gain a
+> third, the app strip's, and the settings file a `links` field, with its terminal door. §3c says what
+> was built and why the door is where it is.
 
 ## 0. Why the first answer is not enough
 
@@ -174,6 +178,47 @@ recording a visit and completing are the window's alone.
    title whatever the case. A host that starts with what was typed comes before one that only contains
    it, and history then goes by how often, then how lately. A typed scheme alone matches nothing.
 
+## 3c. The door, and where links open (BRW7, 2026-09-30)
+
+**The door is on the app strip**, a compass before the region toggles, in the strip's right-hand
+group, shell-only like them. It does what View → *Browser* and the palette do: opens whichever browser
+the machine uses (Daoris's own or the person's Edge, §3's BRW12) on its own start page, or brings it
+forward. **Not on the activity bar**, by the frame design's rules (§3a–b there): the bar is the one
+navigation (D66), a place per icon, each item changing what the window's centre shows and wearing the
+current-place mark, and its foot holds actions on this window. The browser is another window, and
+opening it changes no place. The strip is where the application's acts are, the View menu that
+already opens the browser among them, and its right end holds what changes the work's surroundings
+rather than the view. The strip also has room for a session's name in words, which BRW8 needs; a 48px
+bar has room for a count.
+
+**Where the page's links open is the person's choice**, `links` in `<home>/browser/settings.json`:
+`system` (the default, and anything that is not `daoris`) or `daoris`, which is whichever browser the
+file's `browser` chooses. A twin like the rest of the file: `browser.ts` (`daoris browser links
+[system|daoris]`) and `BrowserSettings.cs` (Settings → Browser, `SET_LINKS`), with the same table. The
+page reads it from `DAORIS.BROWSER`'s state, not `daoris-browser`, so it needs no restart: a change
+from Settings holds at the next click, and one from a terminal once an open window reads its settings
+again, as it does coming back to the front.
+
+1. **Every link on the page opens through one place**, `ExternalLink` (`links.tsx`): a quest's and an
+   ask's links, a quest's kept files, a conversation's Markdown links and images. A test fails on a
+   hand-written `<a` anywhere else. With no opener, or an address that is not an absolute `http` or
+   `https` page with a host and no credentials, it is the link it always was, `target="_blank"`.
+2. **The opener is the application's**, through a context: where a shell is here and `links` is
+   `daoris`, a click is prevented and `DAORIS.WINDOWS` `OPEN_BROWSER` is asked with `{ url }`. A
+   browser has no bridge and is never given one. The detached session's window provides the same.
+3. **The shell checks again, by the favorites' address rule** (§3a.2), and refuses anything else by
+   code (`BROWSER_LINK_NOT_A_PAGE`), since whatever it opens is a page agents can drive. It brings the
+   chosen browser up as the person's press does and opens the page as a tab of its own
+   (`Target.createTarget` with no `newWindow`, as an agent's tab is made), then brings that tab
+   forward. A browser that was not running opens its start page first, with the link's tab beside it.
+4. **A sign-in link always opens in the system's browser**, whatever `links` says: an account's
+   sign-in is the person's own, and never belongs in a browser any process on this machine can drive
+   (§3.4).
+
+**Not verified when it was written**: no window was started, because the owner's install was running
+on the machine. The tab's placement and focus in the engine's window, and in Edge's, are the look
+after merging.
+
 ## 4. What is deliberately not in it
 
 - **Downloads, devtools, history UI.** v1 was one page an agent and a person share; tabs came with
@@ -192,3 +237,4 @@ recording a visit and completing are the window's alone.
 | **BRW1** | The browser window: its own environment and profile under the home, a loopback CDP port, the address bar, and View → *Browser* with the palette's door | module tests for the pure parts (the endpoint, the address rules), and a look on the window with Playwright MCP attached from outside |
 | **BRW2** | `${browser}` in a plugin server, expanded at hand-over from the shell's answer, and the server withheld where there is none. The driver brings the browser up before the spawn. The example plugin moves to it | driver tests with a stand-in browser host, the twin tests for the placeholder staying unexpanded at read, and a stub session handed the endpoint |
 | **BRW3** | The owner's machine: the plugin, the one sign-in in the in-app browser, `mcp__browser` allowed, and the first ask whose ticket the intake reads through it | the owner's run, FG5 |
+| **BRW7** | The strip's door, `links` in the settings file on both doors, `ExternalLink` as the one place a link opens, and `OPEN_BROWSER` with a `url` (§3c) | the twin tables, module tests with a stand-in browser, vitest over a mocked bridge (the helper, the Settings row, the whole window's door and a quest's link), and a look on the window after merging |

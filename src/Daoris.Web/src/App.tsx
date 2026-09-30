@@ -30,8 +30,11 @@ import { type SettingsAnchor, type SettingsSection, SettingsView } from './Setti
 import { Reader } from './Reader';
 import { ShellSignals } from './ShellSignals';
 import {
-  logEvent, useDriver, useOpenBrowser, useOpenWindow, useRemotes, useRules, useSyncNow, useTrustFolder, useUntrusted,
+  logEvent, useDriver, useLinkOpener, useOpenBrowser, useOpenWindow, useRemotes, useRules, useSyncNow, useTrustFolder,
+  useUntrusted,
 } from './shell';
+import { LinkOpener } from './links';
+import { BrowserDoor } from './work/BrowserDoor';
 import { appMenus, menuAction } from './work/appMenus';
 import type { TrustHold } from './signals';
 import { TrustAsk } from './work/TrustAsk';
@@ -194,6 +197,9 @@ export function App() {
   // which is why the commands that use it are gated on a shell being here.
   const openWindow = useOpenWindow();
   const openBrowser = useOpenBrowser();
+  // Where the page's links open (BRW7): Daoris's browser where the person chose it and a shell is here
+  // to open one, and otherwise null — a link then opens as a link always has.
+  const linkOpener = useLinkOpener(notify);
 
   // Sessions does not exist in a browser (D55): no stream, no tree path, nothing honest to show. A
   // remembered `sessions` where no shell answers falls back rather than rendering an empty view.
@@ -530,6 +536,8 @@ export function App() {
   return (
     // A tool's running action — a sign-in above all — outlives the view it started on (SIGNIN1).
     <HarnessRuns notify={notify}>
+    {/* Every link on the page opens through one place, told here where to (BRW7). */}
+    <LinkOpener.Provider value={linkOpener}>
     {/* A window, not a page (D55): the viewport IS the frame, every region scrolls inside it, and
         the status bar is therefore always where it was. Page scrolling would put the output panel
         below the fold exactly when a session is producing output. */}
@@ -603,13 +611,17 @@ export function App() {
         // The region toggles (DOCK1c, SURF11) at the strip's right, beside the window controls, as VS
         // Code's sit: the panel and the right side bar on every view since DOCK1a, and the rail on Sessions,
         // whose list it is. Ask Daoris has no button of its own up here: it is a tab of the side bar, so
-        // the right toggle, F1 and Ctrl+Alt+I are its doors.
+        // the right toggle, F1 and Ctrl+Alt+I are its doors. Before them, Daoris's browser (BRW7): an act
+        // of the application's, one press from every view, where View → Browser was the only one.
         trailing={attached ? (
-          <LayoutToggles
-            regions={view === 'sessions' ? ['rail', 'panel', 'right'] : ['panel', 'right']}
-            closed={{ rail: closings.rail, panel: closings.panel, right: closings.dock }}
-            onToggle={toggleRegion}
-          />
+          <div className="flex items-center gap-2">
+            <BrowserDoor onOpen={() => openBrowser.mutate()} />
+            <LayoutToggles
+              regions={view === 'sessions' ? ['rail', 'panel', 'right'] : ['panel', 'right']}
+              closed={{ rail: closings.rail, panel: closings.panel, right: closings.dock }}
+              onToggle={toggleRegion}
+            />
+          </div>
         ) : undefined}
       />
 
@@ -868,6 +880,7 @@ export function App() {
           rather than on whatever was last open. */}
       <ShellSignals notify={notify} onAttend={openInWork} />
     </div>
+    </LinkOpener.Provider>
     </HarnessRuns>
   );
 }

@@ -1,10 +1,11 @@
 import { useShenora } from '@shenora/react';
 import { App } from './App';
+import { LinkOpener } from './links';
 import { ShellSignals } from './ShellSignals';
 import { Toasts, useToasts } from './ui';
 import { DetachedSession } from './work/DetachedSession';
 import { MonitorWindow } from './work/MonitorWindow';
-import { useSecondaryWindowTheme } from './shell';
+import { useLinkOpener, useSecondaryWindowTheme } from './shell';
 import { MONITOR_WINDOW, type SecondaryWindow, sessionWindowName } from './work/window';
 
 /**
@@ -30,17 +31,19 @@ export function SecondaryWindowRoot({ window: which }: { window: SecondaryWindow
   const { toasts, notify, dismiss } = useToasts();
   // Its own frame's caption follows the theme this page is in (WINDOW2), not the OS's.
   useSecondaryWindowTheme(which.kind === 'monitor' ? MONITOR_WINDOW : sessionWindowName(which.id));
+  // A detached conversation's links go where the application's do (BRW7).
+  const linkOpener = useLinkOpener(notify);
 
   if (!isAvailable) return <App />;
 
   return (
-    <>
+    <LinkOpener.Provider value={linkOpener}>
       {which.kind === 'monitor'
         ? <MonitorWindow notify={notify} />
         : <DetachedSession id={which.id} notify={notify} />}
 
       <Toasts items={toasts} onClose={dismiss} />
       <ShellSignals notify={notify} />
-    </>
+    </LinkOpener.Provider>
   );
 }

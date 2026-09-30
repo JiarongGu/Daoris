@@ -8,7 +8,7 @@ import { useHarnessRun, WithHarnessRuns } from './harnessRuns';
 import {
   useAddFavorite, useBrowserSettings, useDriver, useHarnessAction, useHarnesses, useLines,
   usePluginAction, usePlugins, useRefreshHarnesses, useRemotes, useRemoveFavorite, useRuleAction, useRuleProposal, useRules,
-  useSetAgentSettings, useSetBrowser, useSetExtensions, useSetHelper, useSetIntake, useSetLanding, useSetLine, useSetNotify, useSweep, useSweepPlan, useSetStrikes, useStarts, useUnwireRemote, useUsage,
+  useSetAgentSettings, useSetBrowser, useSetExtensions, useSetHelper, useSetIntake, useSetLanding, useSetLine, useSetLinks, useSetNotify, useSweep, useSweepPlan, useSetStrikes, useStarts, useUnwireRemote, useUsage,
   useWireRemote,
 } from './shell';
 import { AccountSettingsForm, AccountSettingsSummary } from './settings/AccountSettings';
@@ -692,7 +692,8 @@ function WiringSettings({ notify }: { notify: Notify }) {
  * Daoris's browser (CHR5, CHR7): its favorites, which it shows in a Daoris folder on its bookmarks
  * bar, and whether other software's Chrome extensions are offered or refused. The same two files
  * `daoris browser` edits (D50), which `daoris-browser` reads each time it starts, so the page says
- * that an edit shows at the next start rather than implying it shows now.
+ * that an edit shows at the next start rather than implying it shows now — except where the page's
+ * links open (BRW7), which the page itself reads at each click, and says so.
  */
 function BrowserDomain({ notify }: { notify: Notify }) {
   const { t } = useTranslation();
@@ -701,6 +702,7 @@ function BrowserDomain({ notify }: { notify: Notify }) {
   const remove = useRemoveFavorite();
   const setExtensions = useSetExtensions();
   const setBrowser = useSetBrowser();
+  const setLinks = useSetLinks();
   useErrorNotify(state.error, notify);
   const onError = failure(notify);
 
@@ -756,6 +758,30 @@ function BrowserDomain({ notify }: { notify: Notify }) {
         {data?.browser === 'edge' && (
           <Prose className="mt-3 text-small">{t('settings.browser.ownOnly')}</Prose>
         )}
+      </Card>
+
+      {/* Where the page's links open (BRW7): the system's browser, or the one chosen above. The page
+          reads this at each click, so unlike the rest of the domain it holds at once. */}
+      <Card id="settings-links" className="mt-3.5 scroll-mt-3">
+        <SettingRow
+          label={t('settings.browser.links.label')}
+          hint={t('settings.browser.links.hint')}
+          why={t('settings.browser.links.why')}
+          control={data && (
+            <Segmented
+              label={t('settings.browser.links.label')}
+              value={data.links ?? 'system'}
+              options={[
+                { value: 'system', label: t('settings.browser.links.system') },
+                { value: 'daoris', label: t('settings.browser.links.daoris') },
+              ]}
+              onChange={(links) => setLinks.mutate({ links }, {
+                onSuccess: () => notify(t(links === 'daoris' ? 'settings.browser.links.setDaoris' : 'settings.browser.links.setSystem')),
+                onError,
+              })}
+            />
+          )}
+        />
       </Card>
 
       <Card id="settings-favorites" className="mt-3.5 scroll-mt-3">

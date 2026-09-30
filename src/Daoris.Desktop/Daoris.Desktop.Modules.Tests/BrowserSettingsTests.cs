@@ -4,7 +4,8 @@ namespace Daoris.Desktop.Modules.Tests;
 
 /// <summary>
 /// CHR7: Daoris's browser's settings, kept in <c>&lt;home&gt;/browser/settings.json</c> and read by
-/// <c>daoris-browser</c> each time it starts. 🔴 A TWIN file: the CLI's <c>browser.ts</c> reads and edits
+/// <c>daoris-browser</c> each time it starts — and its <c>links</c> by the page at each click (BRW7).
+/// 🔴 A TWIN file: the CLI's <c>browser.ts</c> reads and edits
 /// it too, and its <c>browser.test.ts</c> carries the same table. A case changed here is changed there,
 /// in the same commit.
 /// </summary>
@@ -19,8 +20,10 @@ public sealed class BrowserSettingsTests : Bridge
     }
 
     [Fact]
-    public void No_settings_file_offers_other_softwares_extensions_as_the_engine_does_and_uses_Daoris_browser() =>
-        Assert.Equal(new BrowserSettingsRead(ExtensionsSetting.Offer, BrowserChoice.Daoris, null), BrowserSettings.Read(Home));
+    public void No_settings_file_offers_other_softwares_extensions_as_the_engine_does_uses_Daoris_browser_and_opens_links_in_the_systems() =>
+        Assert.Equal(
+            new BrowserSettingsRead(ExtensionsSetting.Offer, BrowserChoice.Daoris, LinksSetting.System, null),
+            BrowserSettings.Read(Home));
 
     /// <summary>Which browser (BRW12) — the CLI's twin table holds these cases, answer for answer.</summary>
     [Theory]
@@ -33,7 +36,7 @@ public sealed class BrowserSettingsTests : Bridge
     {
         Write($$"""{ "browser": {{value}}, "extensions": "refuse" }""");
 
-        Assert.Equal(new BrowserSettingsRead(ExtensionsSetting.Refuse, expected, null), BrowserSettings.Read(Home));
+        Assert.Equal(new BrowserSettingsRead(ExtensionsSetting.Refuse, expected, LinksSetting.System, null), BrowserSettings.Read(Home));
     }
 
     [Fact]
@@ -43,8 +46,44 @@ public sealed class BrowserSettingsTests : Bridge
 
         BrowserSettings.SetBrowser(Home, BrowserChoice.Edge);
 
-        Assert.Equal(new BrowserSettingsRead(ExtensionsSetting.Refuse, BrowserChoice.Edge, null), BrowserSettings.Read(Home));
+        Assert.Equal(new BrowserSettingsRead(ExtensionsSetting.Refuse, BrowserChoice.Edge, LinksSetting.System, null), BrowserSettings.Read(Home));
         Assert.Throws<InvalidOperationException>(() => BrowserSettings.SetBrowser(Home, "firefox"));
+    }
+
+    /// <summary>
+    /// Where the page's links open (BRW7) — the CLI's twin table holds these cases, answer for answer.
+    /// `daoris` is whichever browser the file's `browser` chooses.
+    /// </summary>
+    [Theory]
+    [InlineData("\"system\"", "system")]
+    [InlineData("\"daoris\"", "daoris")]
+    [InlineData("\"Daoris\"", "system")]
+    [InlineData("\"edge\"", "system")]
+    [InlineData("true", "system")]
+    public void Links_open_in_the_systems_browser_or_Daoris_and_anything_else_is_the_systems(string value, string expected)
+    {
+        Write($$"""{ "links": {{value}}, "browser": "edge" }""");
+
+        Assert.Equal(new BrowserSettingsRead(ExtensionsSetting.Offer, BrowserChoice.Edge, expected, null), BrowserSettings.Read(Home));
+    }
+
+    [Fact]
+    public void Setting_the_links_keeps_what_it_has_no_field_for_and_refuses_what_is_neither_or_a_file_it_could_not_read()
+    {
+        Write("""{ "extensions": "refuse", "theirs": { "kept": true } }""");
+
+        BrowserSettings.SetLinks(Home, LinksSetting.Daoris);
+
+        var file = JsonNode.Parse(System.IO.File.ReadAllText(File))!.AsObject();
+        Assert.True((bool)file["theirs"]!["kept"]!);
+        Assert.Equal(
+            new BrowserSettingsRead(ExtensionsSetting.Refuse, BrowserChoice.Daoris, LinksSetting.Daoris, null),
+            BrowserSettings.Read(Home));
+        Assert.Throws<InvalidOperationException>(() => BrowserSettings.SetLinks(Home, "chrome"));
+
+        Write("not json");
+        Assert.Throws<InvalidOperationException>(() => BrowserSettings.SetLinks(Home, LinksSetting.Daoris));
+        Assert.Equal("not json", System.IO.File.ReadAllText(File));
     }
 
     /// <summary>The extensions setting — the CLI's twin table holds these cases, answer for answer.</summary>
@@ -59,7 +98,7 @@ public sealed class BrowserSettingsTests : Bridge
     {
         Write($$"""{ "extensions": {{value}} }""");
 
-        Assert.Equal(new BrowserSettingsRead(expected, BrowserChoice.Daoris, null), BrowserSettings.Read(Home));
+        Assert.Equal(new BrowserSettingsRead(expected, BrowserChoice.Daoris, LinksSetting.System, null), BrowserSettings.Read(Home));
     }
 
     [Theory]

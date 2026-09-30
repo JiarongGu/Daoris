@@ -826,6 +826,20 @@ describe('the browser domain', () => {
     await waitFor(() => expect(notify).toHaveBeenCalledWith('your Edge, from the next time the browser is opened.'));
   });
 
+  /** BRW7: where the page's links open — set here or by `daoris browser links`, and holding at once. */
+  it("sending links to Daoris's browser lands as the verb a terminal has, and says it holds at once", async () => {
+    const notify = vi.fn();
+    show(<SettingsView notify={notify} section="browser" />);
+
+    // A shell that sends no `links` is the system's, as a link always was.
+    expect(await screen.findByRole('radio', { name: "the system's browser" })).toHaveAttribute('aria-checked', 'true');
+    expect(screen.getByText(/daoris browser links system\|daoris/)).toBeTruthy();
+    await userEvent.click(screen.getByRole('radio', { name: "Daoris's browser" }));
+
+    expect(invoke).toHaveBeenCalledWith('DAORIS.BROWSER', 'SET_LINKS', { payload: { links: 'daoris' } });
+    await waitFor(() => expect(notify).toHaveBeenCalledWith("Links on the page open in Daoris's browser, from the next click."));
+  });
+
   it('with Edge chosen, says its profile, its account and its default profile, and whose favorites these are', async () => {
     invoke.mockImplementation(async (module: string) => (module === 'DAORIS.BROWSER' ? { ...BROWSER, browser: 'edge' } : DRIVER_STATE));
     show(<SettingsView notify={() => {}} section="browser" />);

@@ -232,6 +232,17 @@ public sealed class EngineCdp(int port) : IDisposable
     public Task<JsonElement> NewWindowAsync(string url, bool background, CancellationToken ct = default) =>
         BrowserCallAsync("Target.createTarget", new { url, newWindow = true, background }, ct);
 
+    /// <summary>
+    /// A new tab on <paramref name="url"/> in the window in front, as an agent's tab is made (BRW7), and
+    /// its target id, which <see cref="ActivateAsync"/> brings forward.
+    /// </summary>
+    public async Task<string> NewTabAsync(string url, CancellationToken ct = default)
+    {
+        var created = await BrowserCallAsync("Target.createTarget", new { url }, ct).ConfigureAwait(false);
+        return created.GetProperty("targetId").GetString()
+            ?? throw new InvalidOperationException("Target.createTarget answered no target id.");
+    }
+
     /// <summary>One call on the browser's own socket, answered by its id.</summary>
     public async Task<JsonElement> BrowserCallAsync(string method, object parameters, CancellationToken ct = default)
     {
