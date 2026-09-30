@@ -15,7 +15,7 @@ describe('the frame\'s keys', () => {
     expect(frameShortcut(press('¬', { ctrl: true, shift: true, alt: true }, 'KeyL'))).toBe('quickAsk');
     expect(frameShortcut(press('F1'))).toBe('help');
     expect(frameShortcut(press('i', { ctrl: true, alt: true }))).toBe('help');
-    expect(frameShortcut(press('b', { ctrl: true }))).toBe('rail');
+    expect(frameShortcut(press('b', { ctrl: true }))).toBe('list');
     expect(frameShortcut(press('j', { ctrl: true }))).toBe('panel');
     expect(frameShortcut(press('B', { ctrl: true, alt: true }))).toBe('right');
   });

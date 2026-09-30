@@ -168,7 +168,7 @@ export type ActivityItem<T extends string> = {
  * leaves the machine), because a greyed row implies the thing exists somewhere you could get to.
  */
 export function ActivityBar<T extends string>({
-  label, items, end = [], active, onSelect, footer,
+  label, items, end = [], active, onSelect, onToggleCurrent, footer,
 }: {
   /** The bar's accessible name — passed in, so this stays a molecule with no i18n of its own. */
   label: string;
@@ -180,6 +180,11 @@ export function ActivityBar<T extends string>({
   end?: ActivityItem<T>[];
   active: T;
   onSelect: (tab: T) => void;
+  /**
+   * A press on the place you are on (D118 §3a, audit F1): its view's list toggles, as VS Code's activity
+   * bar toggles its side bar. Absent where the view has no list, and the press then selects it again.
+   */
+  onToggleCurrent?: () => void;
   /** Actions, not state: refresh and language. State went to the status bar. */
   footer?: ReactNode;
 }) {
@@ -189,7 +194,7 @@ export function ActivityBar<T extends string>({
         type="button"
         aria-label={name}
         aria-current={active === tab ? 'page' : undefined}
-        onClick={() => onSelect(tab)}
+        onClick={() => (active === tab && onToggleCurrent ? onToggleCurrent() : onSelect(tab))}
         className={cn(
           'relative flex h-9 w-9 shrink-0 items-center justify-center rounded-control transition-colors duration-(--speed)',
           active === tab

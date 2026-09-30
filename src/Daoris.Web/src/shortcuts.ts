@@ -1,5 +1,5 @@
 /** A key the frame answers wherever focus is: a field, a message box, or the terminal. */
-export type FrameShortcut = 'quickAsk' | 'help' | 'rail' | 'panel' | 'right';
+export type FrameShortcut = 'quickAsk' | 'help' | 'list' | 'panel' | 'right';
 
 type Pressed = Pick<KeyboardEvent, 'key' | 'code' | 'ctrlKey' | 'shiftKey' | 'altKey' | 'metaKey'>;
 
@@ -12,14 +12,14 @@ type Pressed = Pick<KeyboardEvent, 'key' | 'code' | 'ctrlKey' | 'shiftKey' | 'al
  * @remarks
  * One list, read by the application's key handler and by the terminal's renderer (CONSOLE4b), which
  * leaves these to the frame as VS Code's terminal leaves its commands to the workbench: a renderer that
- * took them would send the shell a ^B and the rail would never close.
+ * took them would send the shell a ^B and the view's list would never close.
  */
 export function frameShortcut(event: Pressed): FrameShortcut | null {
   if (event.ctrlKey && event.shiftKey && event.altKey && event.code === 'KeyL') return 'quickAsk';
   const letter = event.key.toLowerCase();
   if (event.key === 'F1' || (letter === 'i' && event.ctrlKey && event.altKey)) return 'help';
   if (event.ctrlKey && !event.shiftKey && !event.metaKey && (letter === 'b' || (letter === 'j' && !event.altKey))) {
-    return letter === 'j' ? 'panel' : event.altKey ? 'right' : 'rail';
+    return letter === 'j' ? 'panel' : event.altKey ? 'right' : 'list';
   }
   return null;
 }

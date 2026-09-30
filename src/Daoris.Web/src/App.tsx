@@ -89,6 +89,12 @@ function rememberedView(): Tab {
 // was (D66) — is absent in a browser rather than disabled.
 const NAV = VIEWS.filter(({ view }) => view !== 'settings');
 
+/**
+ * The views drawn with a list pane (D118 §2), each naming it in `layout.list.<view>` and
+ * `layout.menu.list.<view>`. Sessions' first (FRAME1b); each view joins as its row moves it onto the frame.
+ */
+const LISTED: ReadonlySet<View> = new Set<View>(['sessions']);
+
 /** A palette command that says it ran, into the machine log (LOG1b): by its id, never what was typed. */
 const counted = (command: Command): Command => ({
   ...command,
@@ -219,14 +225,20 @@ export function App() {
     if (!settling) logEvent('view.opened', { view });
   }, [view, settling]);
 
+  // Whether the view in front has a list pane (D118 §3a), whose four doors — the strip's toggle, the View
+  // menu's item, Ctrl+B and a press on its place — are absent where it has none, never disabled.
+  const listed = attached && LISTED.has(view);
+
   // A region toggled (DOCK1c): the side bar and the panel are the frame's on every view since DOCK1a, and
-  // the rail is Sessions' own list, so elsewhere its key does nothing. True when it did. In a browser
-  // there is no frame, only the view (D47 §4: the regions hold this machine's sessions).
+  // the list is the view's own, so where the view has none its key does nothing. True when it did. In a
+  // browser there is no frame, only the view (D47 §4: the regions hold this machine's sessions).
   const toggleRegion = (region: LayoutRegion): boolean => {
     if (!attached) return false;
     if (region === 'right') closings.setDock(!closings.dock);
     else if (region === 'panel') closings.setPanel(!closings.panel);
-    else if (view === 'sessions' && listMode) {
+    else if (listed && listMode) {
+      // By what the room made of it: an open list closes, one laid over goes, and a strip opens — over
+      // the main area where the window drew it (D118 §3a).
       const next = listToggled({ mode: listMode });
       closings.setList(next.closed);
       closings.setListOver(next.over);
@@ -592,14 +604,17 @@ export function App() {
                   { id: 'browser', label: t('work.menu.browser'), icon: 'browser' as const },
                 ] : []),
                 // The region toggles' second door (DOCK1c, SURF11), with their keys, ticked while shown: the
-                // rail on Sessions, whose list it is, and the panel and the side bar on every view (DOCK1a).
-                ...(view === 'sessions' ? [
-                  { id: 'layout:rail', label: t('layout.menu.rail'), icon: LAYOUT_KEYS.rail.icon, shortcut: LAYOUT_KEYS.rail.keys, checked: listShown, separated: true },
+                // view's list, named for the view (D118 §3a), and the panel and the side bar on every view (DOCK1a).
+                ...(listed ? [
+                  {
+                    id: 'layout:list', label: t(`layout.menu.list.${view}`), icon: LAYOUT_KEYS.list.icon, shortcut: LAYOUT_KEYS.list.keys,
+                    checked: listShown, separated: true,
+                  },
                 ] : []),
                 ...(attached ? [
                   {
                     id: 'layout:panel', label: t('layout.menu.panel'), icon: LAYOUT_KEYS.panel.icon, shortcut: LAYOUT_KEYS.panel.keys,
-                    checked: !closings.panel, separated: view !== 'sessions',
+                    checked: !closings.panel, separated: !listed,
                   },
                   { id: 'layout:right', label: t('layout.menu.right'), icon: LAYOUT_KEYS.right.icon, shortcut: LAYOUT_KEYS.right.keys, checked: !closings.dock },
                   // VS Code's *Reset View Locations* (DOCK1b): every view back where it started. Said, and
@@ -628,16 +643,17 @@ export function App() {
           />
         )}
         // The region toggles (DOCK1c, SURF11) at the strip's right, beside the window controls, as VS
-        // Code's sit: the panel and the right side bar on every view since DOCK1a, and the rail on Sessions,
-        // whose list it is. Ask Daoris has no button of its own up here: it is a tab of the side bar, so
-        // the right toggle, F1 and Ctrl+Alt+I are its doors. Before them, Daoris's browser (BRW7): an act
-        // of the application's, one press from every view, where View → Browser was the only one.
+        // Code's sit: the panel and the right side bar on every view since DOCK1a, and the view's list where
+        // it has one, named for it (D118 §3a). Ask Daoris has no button of its own up here: it is a tab of
+        // the side bar, so the right toggle, F1 and Ctrl+Alt+I are its doors. Before them, Daoris's browser
+        // (BRW7): an act of the application's, one press from every view, where View → Browser was the only one.
         trailing={attached ? (
           <div className="flex items-center gap-2">
             <BrowserDoor onOpen={() => openBrowser.mutate()} drivers={driving} onAttend={openInWork} />
             <LayoutToggles
-              regions={view === 'sessions' ? ['rail', 'panel', 'right'] : ['panel', 'right']}
-              closed={{ rail: !listShown, panel: closings.panel, right: closings.dock }}
+              regions={['list', 'panel', 'right']}
+              list={listed ? t(`layout.list.${view}`) : undefined}
+              closed={{ list: !listShown, panel: closings.panel, right: closings.dock }}
               onToggle={toggleRegion}
             />
           </div>
@@ -671,6 +687,8 @@ export function App() {
           end={[{ tab: 'settings', label: t('nav.settings'), icon: 'settings' }]}
           active={view}
           onSelect={setView}
+          // The list's fourth door (D118 §3a): the place you are on, pressed again, toggles its list.
+          onToggleCurrent={listed ? () => { toggleRegion('list'); } : undefined}
           footer={(
             <>
               <Tip content={refresh.isPending ? t('sidebar.refreshing') : t('sidebar.refresh')}>

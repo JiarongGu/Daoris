@@ -158,6 +158,34 @@ describe('ActivityBar', () => {
     expect(onSelect.mock.calls).toEqual([['sessions'], ['settings']]);
   });
 
+  /**
+   * D118 §3a (audit F1): pressing the place you are on toggles its list, as VS Code's activity bar toggles
+   * its side bar. It is one of the list's four doors, so a view without a list is handed none, and the
+   * press then only selects the place again.
+   */
+  it("toggles the current place's list when it is pressed again, and selects any other place", async () => {
+    const onSelect = vi.fn();
+    const onToggleCurrent = vi.fn();
+    render(
+      <ActivityBar label="Views" items={VIEWS} end={SETTINGS} active="sessions" onSelect={onSelect} onToggleCurrent={onToggleCurrent} />,
+    );
+
+    await userEvent.click(screen.getByRole('button', { name: 'Sessions' }));
+    expect(onToggleCurrent).toHaveBeenCalledOnce();
+    expect(onSelect).not.toHaveBeenCalled();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Quests' }));
+    expect(onSelect).toHaveBeenCalledWith('quests');
+    expect(onToggleCurrent).toHaveBeenCalledOnce();
+  });
+
+  it('selects the current place again where its view has no list to toggle', async () => {
+    const onSelect = vi.fn();
+    render(<ActivityBar label="Views" items={VIEWS} end={SETTINGS} active="overview" onSelect={onSelect} />);
+    await userEvent.click(screen.getByRole('button', { name: 'Overview' }));
+    expect(onSelect).toHaveBeenCalledWith('overview');
+  });
+
   it('shows only the views it is given — a browser gets no Sessions at all', () => {
     render(
       <ActivityBar
