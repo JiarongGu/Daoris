@@ -5658,3 +5658,74 @@ today's code were read from the files the design's §0 names: the planner, the t
 tree lock, the landing rules, the ledger, the exchange, the merge tool, the lane map, the gates and the skill.
 `verify` checks the records' shape and the budgets, and none of those words. Its statements about the future
 are design. The design's §9 says which of them a rehearsal can prove, and which wait for DEV10's real run.
+
+## D117 — One repository, every agent: knowledge and skills under `.agents/`, a mirror for the agent that reads `.claude/`, rooms, and a set-up the repository's own session does (2026-10-01)
+
+**Decision (LAYOUT1, the owner's *one repository, every agent*: the reference harness's own layout, applied to
+this repository and to every repository Daoris manages, with a way to set one up).** The contract is
+`docs/2026-10-01-agent-layout-design.md`. It extends D59, which moved only the always-loaded tier.
+
+1. **The agents layout.** `knowledge/` and `skills/` live under `.agents/`; the always-loaded tier stays a region
+   in `AGENTS.md`. A second descriptor, `agents`, selected by the manifest's `harness`, serves several harnesses
+   at once: one target, plus what each harness that does not read it needs. `claude-code` stays for every
+   repository that has not moved.
+2. **No links.** Where the reference links, Daoris writes files. `CLAUDE.md` holds the `@AGENTS.md` import, at
+   the root and in each room. `.claude/skills/` holds a mirror of every skill in `.agents/skills/`, canonical
+   and local, each `SKILL.md` with a mirror header under its frontmatter. The lock records each mirror, and a
+   mirror is measured against the lock (D13): an edited one is refused, naming its source, and `upstream` takes
+   a canonical mirror's edit.
+3. **Rooms.** A folder with an `AGENTS.md` of its own is declared in `daoris.json`'s `rooms`. `sync` keeps its
+   `CLAUDE.md` pointer, the roster lists every room, and a declared room with no instructions fails `check`.
+   Daoris never writes a room's text. A lane names its rooms, and its session's prompt names them (D115).
+4. **A move is the repository's manifest change, and `sync`'s cells**, enumerated as D19's. Daoris moves its
+   own files. The repository's own documents in an old tier refuse the move until the repository moves them,
+   since the index would stop listing them and nothing would say so. A link, or a link held as text, is refused
+   and never written through. The lock, not the manifest, says where the files are.
+5. **The service reads the same root**, skips mirrors and indexes rooms.
+6. **Decision records stay in `docs/`.**
+7. **A repository is set up by its own session.** *Set up for agents* on the screen, `daoris-driver setup` and
+   an Ask Daoris `setup` proposal each publish one ask to one repository, carrying what was read on its line,
+   the steps and how to close it. Its session runs the CLI on its branch and lands by the workspace's rule. The
+   screen shows each repository's adoption, its layout and the agents it serves, from measured cells only.
+8. **Measured before relied on.** LAYOUT2 measures every cell of the design's §1 that is not measured, and
+   nothing in the layout depends on a nested instruction file being loaded.
+
+**Why.** `AGENTS.md` is the one instruction file all three agents read (D59's measurement), and `.agents/skills/`
+is the skill root most of them read: dsh natively, per working directory, in any home, and the reference ignores
+per-agent metadata there in a file named for codex's maker. The reference's mechanism is links, and on a checkout without links, the
+owner's, its `CLAUDE.md` is 9 bytes reading `AGENTS.md`: Claude Code loads the path. A copy and an import work on
+every checkout, and the lock already knows how to keep a copy honest. A set-up rewrites what every future session
+reads, so it is the repository's own act and its owner's review (D32). The quest carries the playbook because the
+playbook is Daoris's own document, which a session in another repository cannot read.
+
+**Rejected** (the design's §9 has the full list):
+- **Links**, the reference's mechanism: D3, and measured failing on the owner's checkout.
+- **`.agents/skills/` with no mirror**: Claude Code does not read it.
+- **The source in `.claude/`, mirrored into `.agents/`**: the source goes where most agents read.
+- **A mirror of knowledge**: nothing auto-reads knowledge.
+- **Rooms found by walking the tree, or written by Daoris.**
+- **Decision notes under `.agents/`**: the records already converge with the reference's in substance, their
+  numbers are cited everywhere, and people read them.
+- **Daoris replacing a repository's link, or setting a repository up by writing into it.**
+- **One quest for a whole workspace.**
+- **Syncing from the driver or the service**: a second implementation of D19's table.
+
+**What it amends, when built.**
+- D7 as amended by D59, and the instruction-file design's §3: knowledge and skills move under `.agents/` in the
+  `agents` layout.
+- D18: containment over the roots the descriptor declares and the declared rooms.
+- D23: a second descriptor, and the first to serve several harnesses.
+- D106: the union attribute moves with `twins.md`.
+- D115: a lane gains `rooms`.
+- HELP2's dsh profile root, on LAYOUT2's finding.
+- The adoption playbook: the layout's steps, and the uncommitted diff becomes the landed branch.
+
+Each row that builds a piece notes the amendment where it lands.
+
+**What the gates do not cover.** This change is documents only, and nothing is built. Its statements about
+today's files were read from them: the manifest, the lock, `harness.ts`, `materialize.ts`, `upstream.ts`, the
+service's `DaorisLock` and `RepositoryScanner`, the dsh profile, `.gitattributes`, the lane map and the package's
+staging. Its statements about the reference are the parent's measurement on the owner's checkout, which this
+design did not read. Three cells of its §1 are observations from its own session, one build of one harness; the
+rest are marked *not measured*, for LAYOUT2. `verify` checks the records' shape and budgets, and none of those
+words.
