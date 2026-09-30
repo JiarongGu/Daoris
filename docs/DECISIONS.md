@@ -5209,6 +5209,19 @@ measured here; the native door carries the tool's input as it was given.
 - **The line an ACP location carries** (`locations[].line`). The driver keeps a location's path and
   drops its line today; carrying it changes the event's shape on both doors, and a read's input already
   says which lines it read.
+
+*Amended by LEFT2 (2026-10-01): the line an ACP location carries is kept after all. A tool event gains
+`line`, the line of its first location that names a path (the path a card opens), a whole number of zero
+or more, and absent on the native door, which carries none; the page keeps it with the locations it came
+with, replaced only when they are. The card marks it where a call's own input names no lines. What the
+adapter installed here says (claude-agent-acp 0.84.0, read from its source, not measured on the wire):
+a read's location is its `offset`, or 1 when it has none, and an edit's is its first hunk's start in the
+file as it now reads. So a read's input stays the authority on a read: one whose readable input names no
+lines read the whole file and marks nothing, since line 1 there is the adapter's default and not a line
+it named, and only a read whose input the wire did not carry falls back to its location's line. An edit
+now opens at the place its change starts. A line under 1 marks nothing. Nothing has looked at an edit's
+marked line on the window.*
+
 ## D109 — After a pull request merges, one press brings a repository up to date; Daoris fetches and never pushes (2026-09-30)
 
 **Decision (WSR6).** The owner, after their first real pull request merged: *"we also need a post merge and

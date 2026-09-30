@@ -86,6 +86,12 @@ const whole = (value: unknown): number | null =>
  * names none, or was cut before it could be read — nothing is inferred from a title or an output.
  */
 export function namedLines(input: string | null | undefined): LineRange | null {
+  const parsed = inputObject(input);
+  return parsed ? linesOf(parsed) : null;
+}
+
+/** A call's input as the object it is, or null where it is absent, not JSON, not an object, or was cut. */
+function inputObject(input: string | null | undefined): Record<string, unknown> | null {
   if (!input) return null;
   let parsed: unknown;
   try {
@@ -93,13 +99,38 @@ export function namedLines(input: string | null | undefined): LineRange | null {
   } catch {
     return null;
   }
-  if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return null;
-  const { offset, limit } = parsed as { offset?: unknown; limit?: unknown };
+  return parsed && typeof parsed === 'object' && !Array.isArray(parsed) ? parsed as Record<string, unknown> : null;
+}
+
+function linesOf({ offset, limit }: Record<string, unknown>): LineRange | null {
   const start = whole(offset);
   const count = whole(limit);
   if (start === null && (count === null || count === 0)) return null;
   const from = Math.max(1, start ?? 1);
   return { from, to: count ? from + count - 1 : from };
+}
+
+/**
+ * The lines a card marks when it opens its call's file (PREVIEW1, LEFT2): a read's own input's lines, and
+ * otherwise the line the call's first location names (ACP's `locations[].line`), as one line.
+ *
+ * @remarks
+ * **A read's input is the authority on a read.** One the page can read and that names no lines read the
+ * whole file, and marks nothing: the adapter still says a line for it (claude-agent-acp says `offset ?? 1`),
+ * and line 1 of a whole-file read is a line the read never named. Only a read whose input the wire did not
+ * carry, or cut, falls back to its location's line.
+ *
+ * **Any other call's line is its location's**, never its input's `offset` (a search's is not a line). The
+ * adapter says an edit's location at its first hunk's start in the file as it now reads, which is the file
+ * the preview reads. A line under 1 is no line: the preview counts from 1, as a read's `offset` does.
+ */
+export function callLines(call: { toolKind?: string | null; input?: string | null; line?: number | null }): LineRange | null {
+  if (call.toolKind === 'read') {
+    const input = inputObject(call.input);
+    if (input) return linesOf(input);
+  }
+  const { line } = call;
+  return typeof line === 'number' && Number.isInteger(line) && line >= 1 ? { from: line, to: line } : null;
 }
 
 /** A file's text as its lines: the last newline ends a line rather than starting an empty one. */

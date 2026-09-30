@@ -4,6 +4,7 @@
   "work.preview.close": "close the preview",
   "work.preview.open": "preview {{path}}",
   "work.preview.openLines": "preview {{path}}, lines {{from}}–{{to}}",
+  "work.preview.openLine": "preview {{path}}, line {{from}}",
   "work.preview.reload": "read it again",
   "work.preview.show": "show",
   "work.preview.file": "File",

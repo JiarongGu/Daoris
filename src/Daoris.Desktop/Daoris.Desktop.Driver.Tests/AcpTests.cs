@@ -419,6 +419,7 @@ public sealed class AcpTests
         Assert.Equal("edit", call.ToolKind);
         Assert.Equal("pending", call.Status);
         Assert.Equal(["src/chunk.rs"], call.Locations);
+        Assert.Equal(12, call.Line);
         Assert.Contains("src/chunk.rs", call.Input);
 
         var done = events[3];
@@ -436,6 +437,31 @@ public sealed class AcpTests
 
         // The console is unchanged: the lines are still there for the raw view.
         Assert.Contains(lines, line => line.Contains("Edit src/chunk.rs"));
+    }
+
+    /// <summary>
+    /// A location's line rides with its path (LEFT2): the line of the first location that names a path, which is
+    /// the path a card opens, and never a later location's. A line that is not a whole number of zero or more is
+    /// no line: the wire is shape-checked, as every read of it is.
+    /// </summary>
+    [Theory]
+    [InlineData("""[{"path":"src/a.ts","line":40},{"path":"src/b.ts","line":3}]""", 40L)]
+    [InlineData("""[{"path":"src/a.ts"},{"path":"src/b.ts","line":3}]""", null)]
+    [InlineData("""[{"line":7},{"path":"src/b.ts","line":3}]""", 3L)]
+    [InlineData("""[{"path":"src/a.ts","line":"40"}]""", null)]
+    [InlineData("""[{"path":"src/a.ts","line":-1}]""", null)]
+    [InlineData("""[{"path":"src/a.ts","line":1.5}]""", null)]
+    [InlineData("""[]""", null)]
+    public void A_location_s_line_rides_with_the_first_path(string locations, long? line)
+    {
+        using var update = JsonDocument.Parse(
+            $$"""{"sessionUpdate":"tool_call","toolCallId":"c1","title":"Edit src/a.ts","kind":"edit","locations":{{locations}}}""");
+
+        var mapped = AcpSession.Map(update.RootElement)!;
+
+        Assert.Equal(line, mapped.Line);
+        // The line pairs with the first path the event keeps, so an event with no path has no line either.
+        if (mapped.Locations is null) Assert.Null(mapped.Line);
     }
 
     /// <summary>One streamed piece of the agent's words, as the wire sends it.</summary>

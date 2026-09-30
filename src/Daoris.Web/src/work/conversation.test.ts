@@ -101,6 +101,25 @@ describe('toTurns', () => {
     expect(message).toMatchObject({ kind: 'message', text: 'editing' });
   });
 
+  /**
+   * A location's line rides with the locations it was said of (LEFT2): an update that carries no locations keeps
+   * the card's line, and one that replaces them (ACP replaces a present list whole) replaces the line too.
+   */
+  it('keeps a tool call\'s line with its locations, replaced only when they are', () => {
+    const { turns } = toTurns([
+      e(1, { kind: 'tool', id: 'c1', title: 'Edit src/chunk.rs', toolKind: 'edit', status: 'pending', locations: ['src/chunk.rs'], line: 12 }),
+      e(2, { kind: 'tool', id: 'c1', status: 'in_progress' }),
+    ]);
+    expect(turns[0]!.items[0]).toMatchObject({ locations: ['src/chunk.rs'], line: 12 });
+
+    const moved = toTurns([
+      e(1, { kind: 'tool', id: 'c1', title: 'Edit src/chunk.rs', toolKind: 'edit', status: 'pending', locations: ['src/chunk.rs'], line: 12 }),
+      e(2, { kind: 'tool', id: 'c1', status: 'completed', locations: ['src/level.rs'] }),
+    ]).turns;
+    expect(moved[0]!.items[0]!.locations).toEqual(['src/level.rs']);
+    expect(moved[0]!.items[0]!.line ?? null).toBeNull();
+  });
+
   it('starts a new turn at each ask, and keeps a plan as its latest entries', () => {
     const { turns } = toTurns([
       e(1, { kind: 'user', origin: 'target', text: 'take quest #q1' }),

@@ -124,6 +124,13 @@ public sealed record SessionEvent
     /// <summary>The files a tool call touched, as the wire named them.</summary>
     public IReadOnlyList<string>? Locations { get; init; }
 
+    /// <summary>
+    /// The line the first of <see cref="Locations"/> names, where the wire carried one (ACP's
+    /// <c>locations[].line</c>, LEFT2): the file a card opens, at the place the adapter says. In the adapter's own
+    /// terms, never inferred; the native door carries none.
+    /// </summary>
+    public long? Line { get; init; }
+
     public IReadOnlyList<ToolContent>? Content { get; init; }
 
     /// <summary>A tool call's input as the wire carried it, compact and bounded.</summary>

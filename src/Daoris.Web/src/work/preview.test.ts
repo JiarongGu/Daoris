@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { fileLines, fileName, namedLines, treePath } from './preview';
+import { callLines, fileLines, fileName, namedLines, treePath } from './preview';
 
 // A file's preview (PREVIEW1, D111): the derivations the tool card, the review and the preview share.
 
@@ -59,6 +59,35 @@ describe('the lines a tool call named', () => {
     expect(namedLines('{"file_path":"a.ts","offset":')).toBeNull();
     expect(namedLines(null)).toBeNull();
     expect(namedLines('[1,2]')).toBeNull();
+  });
+});
+
+describe('the lines a card marks when it opens its call\'s file', () => {
+  it('are a read\'s own input\'s lines first, whatever the location says', () => {
+    expect(callLines({ toolKind: 'read', input: '{"file_path":"a.ts","offset":120,"limit":40}', line: 120 }))
+      .toEqual({ from: 120, to: 159 });
+  });
+
+  /** claude-agent-acp says `offset ?? 1`: line 1 of a whole-file read is the adapter's default, not a line it named. */
+  it('are nothing for a read whose readable input names no lines, though the location says line 1', () => {
+    expect(callLines({ toolKind: 'read', input: '{"file_path":"a.ts"}', line: 1 })).toBeNull();
+  });
+
+  it('are the location\'s line for a read whose input the page cannot read, as one line', () => {
+    expect(callLines({ toolKind: 'read', input: null, line: 42 })).toEqual({ from: 42, to: 42 });
+    expect(callLines({ toolKind: 'read', input: '{"file_path":"a.ts","offs', line: 42 })).toEqual({ from: 42, to: 42 });
+  });
+
+  /** An edit's location is its first hunk's start in the file as it now reads, which is the file the preview reads. */
+  it('are the location\'s line for a call that is not a read, and never its input\'s offset', () => {
+    expect(callLines({ toolKind: 'edit', input: '{"file_path":"a.ts"}', line: 17 })).toEqual({ from: 17, to: 17 });
+    expect(callLines({ toolKind: 'search', input: '{"path":"a.ts","offset":10}' })).toBeNull();
+  });
+
+  it('are nothing for a line under 1 or not a whole number: the preview counts from 1', () => {
+    expect(callLines({ toolKind: 'edit', line: 0 })).toBeNull();
+    expect(callLines({ toolKind: 'edit', line: 2.5 })).toBeNull();
+    expect(callLines({ toolKind: 'edit', line: null })).toBeNull();
   });
 });
 

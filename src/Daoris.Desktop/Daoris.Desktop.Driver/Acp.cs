@@ -1042,6 +1042,7 @@ public sealed class AcpSession(
                 ToolKind = StringField(update, "kind"),
                 Status = StringField(update, "status"),
                 Locations = Locations(update),
+                Line = LocationLine(update),
                 Content = Contents(update),
                 Input = update.TryGetProperty("rawInput", out var input) ? Compact(input) : null,
                 Output = update.TryGetProperty("rawOutput", out var output) ? Compact(output) : null,
@@ -1070,18 +1071,28 @@ public sealed class AcpSession(
     /// <summary>The paths a tool call names in <c>locations</c>, when it is a list of objects with one.</summary>
     private static IReadOnlyList<string>? Locations(JsonElement update)
     {
-        if (!update.TryGetProperty("locations", out var locations) || locations.ValueKind != JsonValueKind.Array)
-        {
-            return null;
-        }
-
-        var paths = locations.EnumerateArray()
-            .Where(location => location.ValueKind == JsonValueKind.Object)
-            .Select(location => StringField(location, "path"))
-            .OfType<string>()
-            .ToList();
+        var paths = Located(update).Select(location => StringField(location, "path")!).ToList();
         return paths.Count == 0 ? null : paths;
     }
+
+    /// <summary>
+    /// The line the first location with a path names (LEFT2), when it is a whole number of zero or more — the one
+    /// <see cref="Locations"/>' first path pairs with, so a line never rides with a path it was not said of.
+    /// </summary>
+    private static long? LocationLine(JsonElement update) =>
+        Located(update).FirstOrDefault() is { ValueKind: JsonValueKind.Object } first
+        && first.TryGetProperty("line", out var line)
+        && line.ValueKind == JsonValueKind.Number
+        && line.TryGetInt64(out var number)
+        && number >= 0
+            ? number
+            : null;
+
+    /// <summary>The entries of <c>locations</c> that are objects naming a path, in the wire's order.</summary>
+    private static IEnumerable<JsonElement> Located(JsonElement update) =>
+        update.TryGetProperty("locations", out var locations) && locations.ValueKind == JsonValueKind.Array
+            ? locations.EnumerateArray().Where(location => location.ValueKind == JsonValueKind.Object && StringField(location, "path") is not null)
+            : [];
 
     /// <summary>
     /// A tool call's <c>content</c> in ACP's three shapes — a content block (its text), a diff, a
