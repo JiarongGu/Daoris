@@ -17,6 +17,11 @@ export type TreeFile = {
   text: string | null;
   /** Whether the file holds more than `text`. */
   truncated: boolean;
+  /**
+   * The landed branch it was read from, once the session's tree is gone (REVIEW2, D113): the file as that branch
+   * holds it, not a file on disk. Null or absent for the file on disk.
+   */
+  branch?: string | null;
 };
 
 /** Lines of a file, one-based and both ends included. */
