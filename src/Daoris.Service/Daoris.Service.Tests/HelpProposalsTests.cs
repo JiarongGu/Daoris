@@ -88,5 +88,96 @@ public sealed class HelpProposalsTests : IDisposable
         Assert.Null(Box().ProposeSetting(new SettingChange("drive", "engine", null, null), " ", "h1", Now).Id);
         Assert.Null(Box().ProposeAsk(" ", "work", "a reason", "h1", Now).Id);
         Assert.Null(new HelpProposalBox(null).ProposeSetting(new SettingChange("drive", "engine", null, null), "a reason", "h1", Now).Id);
+        Assert.Null(Box().ProposeAgent("update", "claude-code", null, " ", "h1", Now).Id);
+        Assert.Null(new HelpProposalBox(null).ProposeGo("quests", null, null, "a reason", "h1", Now).Id);
+    }
+
+    /// <summary>HELP6: an agent's Update, or a pin to one version — the Agents screen's two presses.</summary>
+    [Fact]
+    public void An_agent_update_or_pin_is_written_with_the_agent_and_the_version()
+    {
+        var (update, message) = Box().ProposeAgent("update", "claude-code-acp", null, "the person asked for the newest", "h1", Now);
+        var (pin, _) = Box().ProposeAgent(" Pin ", "claude-code", "2.1.300", "the person wants that release", "h1", Now);
+
+        Assert.Contains($"#{update}", message);
+        var updated = Written(update!);
+        Assert.Equal(("agent", "update", "claude-code-acp"), (updated.GetProperty("kind").GetString(), updated.GetProperty("door").GetString(), updated.GetProperty("target").GetString()));
+        Assert.Equal(JsonValueKind.Null, updated.GetProperty("value").ValueKind);
+        var pinned = Written(pin!);
+        Assert.Equal(("agent", "pin", "claude-code", "2.1.300"),
+            (pinned.GetProperty("kind").GetString(), pinned.GetProperty("door").GetString(), pinned.GetProperty("target").GetString(), pinned.GetProperty("value").GetString()));
+        Assert.Equal("h1", pinned.GetProperty("by").GetProperty("session").GetString());
+    }
+
+    /// <summary>HELP6: a quest or an ask made by mistake, by its id — the drawer's and the record's Delete.</summary>
+    [Fact]
+    public void A_delete_is_written_with_what_it_would_delete()
+    {
+        var (quest, _) = Box().ProposeDelete("#q1a2b3c4", null, "a duplicate of #q9", "h1", Now);
+        var (ask, _) = Box().ProposeDelete(null, "a5b6c7d8", "made by mistake", "h1", Now);
+
+        var one = Written(quest!);
+        Assert.Equal(("delete", "quest", "q1a2b3c4"), (one.GetProperty("kind").GetString(), one.GetProperty("door").GetString(), one.GetProperty("target").GetString()));
+        var other = Written(ask!);
+        Assert.Equal(("delete", "ask", "a5b6c7d8"), (other.GetProperty("kind").GetString(), other.GetProperty("door").GetString(), other.GetProperty("target").GetString()));
+    }
+
+    /// <summary>HELP6: an account's own model and effort (the Agents screen's *Model &amp; effort*).</summary>
+    [Fact]
+    public void An_accounts_model_and_effort_are_written_with_the_agent_and_the_account()
+    {
+        var (id, _) = Box().ProposeAgentSettings("claude-code", "work", "opus", "high", "the person wants it to think harder", "h1", Now);
+        var (cleared, _) = Box().ProposeAgentSettings("claude-code", "work", "unset", null, "back to the tool's own", "h1", Now);
+
+        var file = Written(id!);
+        Assert.Equal(("account", "settings", "claude-code"), (file.GetProperty("kind").GetString(), file.GetProperty("door").GetString(), file.GetProperty("target").GetString()));
+        Assert.Equal(("work", "opus", "high"), (file.GetProperty("account").GetString(), file.GetProperty("model").GetString(), file.GetProperty("effort").GetString()));
+        var clearing = Written(cleared!);
+        Assert.Equal("unset", clearing.GetProperty("model").GetString());
+        Assert.Equal(JsonValueKind.Null, clearing.GetProperty("effort").ValueKind);
+    }
+
+    /// <summary>HELP6: a screen to open — a view, a Settings domain, a part of it or a setup step.</summary>
+    [Fact]
+    public void A_go_is_written_with_the_place()
+    {
+        var (id, _) = Box().ProposeGo("Settings", "start", "helper", "the person asked where to name its agent", "h1", Now);
+        var (view, _) = Box().ProposeGo("quests", null, null, "the person asked where asks are", "h1", Now);
+
+        var file = Written(id!);
+        Assert.Equal(("go", "go", "settings"), (file.GetProperty("kind").GetString(), file.GetProperty("door").GetString(), file.GetProperty("target").GetString()));
+        Assert.Equal(("start", "helper"), (file.GetProperty("domain").GetString(), file.GetProperty("part").GetString()));
+        Assert.Equal(JsonValueKind.Null, Written(view!).GetProperty("domain").ValueKind);
+    }
+
+    /// <summary>HELP6: the new kinds' shapes, checked here and nothing more; what each route says is the driver's.</summary>
+    [Theory]
+    [InlineData("agent", "downgrade|claude-code|", "`update` or `pin`")]
+    [InlineData("agent", "update| |", "names the agent")]
+    [InlineData("agent", "pin|claude-code|", "names the version")]
+    [InlineData("agent", "update|claude-code|2.1.300", "names no version")]
+    [InlineData("delete", "||", "a quest or an ask — name exactly one")]
+    [InlineData("delete", "q1|a1|", "a quest or an ask — name exactly one")]
+    [InlineData("account", "claude-code||opus|", "names the account")]
+    [InlineData("account", "claude-code|work||", "a model, an effort, or both")]
+    [InlineData("account", "claude-code|work|two words|", "one word")]
+    [InlineData("go", "||", "names the view")]
+    [InlineData("go", "quests|agents|", "domain is a part of Settings")]
+    [InlineData("go", "settings|work space|", "one word")]
+    public void A_malformed_proposal_of_a_new_kind_is_refused_with_nothing_written(string kind, string fields, string says)
+    {
+        var part = fields.Split('|').Select(field => field.Length == 0 ? null : field).ToArray();
+        var (id, message) = kind switch
+        {
+            "agent" => Box().ProposeAgent(part[0] ?? "", part[1] ?? "", part[2], "a reason", "h1", Now),
+            "delete" => Box().ProposeDelete(part[0], part[1], "a reason", "h1", Now),
+            "account" => Box().ProposeAgentSettings(part[0] ?? "", part[1] ?? "", part[2], part.ElementAtOrDefault(3), "a reason", "h1", Now),
+            _ => Box().ProposeGo(part[0] ?? "", part[1], part[2], "a reason", "h1", Now),
+        };
+
+        Assert.Null(id);
+        Assert.Contains(says, message);
+        Assert.Contains("Nothing was proposed", message);
+        Assert.False(Directory.Exists(Path.Combine(_home, "help", "proposals")));
     }
 }

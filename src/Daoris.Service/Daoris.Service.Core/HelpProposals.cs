@@ -16,6 +16,12 @@ public sealed record SettingChange(string Door, string? Target, string? Workspac
 /// the person to apply or not.
 /// </summary>
 /// <remarks>
+/// <para><b>Six kinds</b>, each a door a screen already has: a <c>setting</c> and an <c>ask</c> (HELP1c);
+/// an <c>agent</c>'s update or pin, a <c>delete</c> of a quest or an ask, an <c>account</c>'s model and
+/// effort, and a <c>go</c> to a screen (HELP6). Every file carries <c>target</c>, <c>workspace</c>,
+/// <c>value</c> and <c>sentence</c>, null where the kind has none; an account adds <c>account</c>,
+/// <c>model</c> and <c>effort</c>, and a go <c>domain</c> and <c>part</c>.</para>
+///
 /// <para><b>PERM2's shape</b> (<see cref="RuleProposalBox"/>): a file under the home, never a row in the
 /// store, since what it would change is machine-local; one file per proposal, so two never collide.</para>
 ///
@@ -112,6 +118,131 @@ public sealed class HelpProposalBox(string? home)
             writer.WriteString("sentence", sentence.Trim());
         }, why, session, at);
     }
+
+    /// <summary>
+    /// Write one agent proposal (HELP6): <c>update</c> to its newest release, or <c>pin</c> to one exact
+    /// version — the Agents screen's two presses, which the driver judges by that door's roster.
+    /// </summary>
+    public (string? Id, string Message) ProposeAgent(string action, string agent, string? version, string why, string? session, DateTimeOffset at)
+    {
+        var door = action.Trim().ToLowerInvariant();
+        var named = Blank(agent);
+        var release = Blank(version);
+        if (string.IsNullOrWhiteSpace(why)) return NoReason;
+        var refused = door is not ("update" or "pin")
+            ? "an agent's change is `update` or `pin`: update moves it to its newest release, and pin to one exact version."
+            : named is null ? "the change names the agent it is for, as `daoris agent` spells it."
+            : door == "pin" && release is null ? "`pin` names the version: one exact release, such as 2.1.300."
+            : door == "update" && release is not null ? "`update` names no version — it moves to the newest release, and `pin` names one."
+            : Word(named, "an agent") ?? (release is null ? null : Word(release, "a version"));
+        if (refused is not null) return (null, $"{Capital(refused)} Nothing was proposed.");
+
+        return Write(writer =>
+        {
+            writer.WriteString("kind", "agent");
+            writer.WriteString("door", door);
+            writer.WriteString("target", named);
+            writer.WriteNull("workspace");
+            Nullable(writer, "value", release);
+            writer.WriteNull("sentence");
+        }, why, session, at);
+    }
+
+    /// <summary>
+    /// Write one delete proposal (HELP6): a quest or an ask made by mistake, by its id. Whether the record
+    /// may go is the service's own reading, which the driver asks before the person sees the card.
+    /// </summary>
+    public (string? Id, string Message) ProposeDelete(string? quest, string? ask, string why, string? session, DateTimeOffset at)
+    {
+        var questId = Blank(quest)?.TrimStart('#');
+        var askId = Blank(ask)?.TrimStart('#');
+        if (string.IsNullOrWhiteSpace(why)) return NoReason;
+        var refused = (questId is null) == (askId is null)
+            ? "a delete names a quest or an ask — name exactly one, by its id."
+            : Word(questId ?? askId!, "an id");
+        if (refused is not null) return (null, $"{Capital(refused)} Nothing was proposed.");
+
+        return Write(writer =>
+        {
+            writer.WriteString("kind", "delete");
+            writer.WriteString("door", questId is not null ? "quest" : "ask");
+            writer.WriteString("target", questId ?? askId);
+            writer.WriteNull("workspace");
+            writer.WriteNull("value");
+            writer.WriteNull("sentence");
+        }, why, session, at);
+    }
+
+    /// <summary>
+    /// Write one proposal to change an account's own model and effort (HELP6): the Agents screen's
+    /// <i>Model &amp; effort</i>, which the driver judges with that route's own rules.
+    /// </summary>
+    /// <param name="model">A model the tool reads, or <c>unset</c> for the tool's own default; null leaves it.</param>
+    /// <param name="effort">An effort the tool's settings keep, or <c>unset</c>; null leaves it.</param>
+    public (string? Id, string Message) ProposeAgentSettings(
+        string agent, string account, string? model, string? effort, string why, string? session, DateTimeOffset at)
+    {
+        var named = Blank(agent);
+        var whose = Blank(account);
+        var chosenModel = Blank(model);
+        var chosenEffort = Blank(effort);
+        if (string.IsNullOrWhiteSpace(why)) return NoReason;
+        var refused = named is null ? "the change names the agent whose account it is, as `daoris agent` spells it."
+            : whose is null ? "the change names the account — one of Daoris's accounts for that agent; the tool's own configuration home is never touched."
+            : chosenModel is null && chosenEffort is null ? "the change sets a model, an effort, or both — `unset` returns either to the tool's own default."
+            : Word(named, "an agent") ?? Word(whose, "an account")
+              ?? (chosenModel is null ? null : Word(chosenModel, "a model"))
+              ?? (chosenEffort is null ? null : Word(chosenEffort, "an effort"));
+        if (refused is not null) return (null, $"{Capital(refused)} Nothing was proposed.");
+
+        return Write(writer =>
+        {
+            writer.WriteString("kind", "account");
+            writer.WriteString("door", "settings");
+            writer.WriteString("target", named);
+            writer.WriteNull("workspace");
+            writer.WriteNull("value");
+            writer.WriteNull("sentence");
+            writer.WriteString("account", whose);
+            Nullable(writer, "model", chosenModel);
+            Nullable(writer, "effort", chosenEffort);
+        }, why, session, at);
+    }
+
+    /// <summary>
+    /// Write one proposal to take the person to a screen (HELP6): a view, a domain of Settings, and a part
+    /// of it or a setup step. It changes nothing; which places exist is the driver's to judge.
+    /// </summary>
+    public (string? Id, string Message) ProposeGo(string view, string? domain, string? part, string why, string? session, DateTimeOffset at)
+    {
+        var where = Blank(view)?.ToLowerInvariant();
+        var within = Blank(domain)?.ToLowerInvariant();
+        var piece = Blank(part)?.ToLowerInvariant();
+        if (string.IsNullOrWhiteSpace(why)) return NoReason;
+        var refused = where is null ? "a screen names the view it is on — overview, sessions, quests, projects, map, convergence, search or settings."
+            : within is not null && where != "settings" ? "a domain is a part of Settings — name `settings` as the view."
+            : Word(where, "a view") ?? (within is null ? null : Word(within, "a domain")) ?? (piece is null ? null : Word(piece, "a part"));
+        if (refused is not null) return (null, $"{Capital(refused)} Nothing was proposed.");
+
+        return Write(writer =>
+        {
+            writer.WriteString("kind", "go");
+            writer.WriteString("door", "go");
+            writer.WriteString("target", where);
+            writer.WriteNull("workspace");
+            writer.WriteNull("value");
+            writer.WriteNull("sentence");
+            Nullable(writer, "domain", within);
+            Nullable(writer, "part", piece);
+        }, why, session, at);
+    }
+
+    private static readonly (string? Id, string Message) NoReason =
+        (null, "A proposal needs its reason: what the person asked, and what the change would do. Nothing was proposed.");
+
+    /// <summary>Why a name is not one word, or null when it is: every name a proposal carries is.</summary>
+    private static string? Word(string value, string what) =>
+        value.Any(c => char.IsWhiteSpace(c) || char.IsControl(c)) ? $"{what} is one word — `{value}` is not." : null;
 
     private (string? Id, string Message) Write(Action<Utf8JsonWriter> body, string why, string? session, DateTimeOffset at)
     {
