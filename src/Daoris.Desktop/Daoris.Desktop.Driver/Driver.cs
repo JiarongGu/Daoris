@@ -17,6 +17,13 @@ public sealed record SessionEnded(
     string Session, string Repository, string State, bool ByPerson, string? Note = null,
     string? Quest = null, string? Adapter = null, string? Account = null);
 
+/// <summary>What one start came to (DEV3): a quest's session, or an ask's intake.</summary>
+/// <param name="Line">The console line a person reads, which the report carries.</param>
+/// <param name="Opened">Whether a session record was opened for it — what a look counts as progress.</param>
+/// <param name="Ended">What it ended as and whose decision that was, when it ended here; null for a hold, a refusal or a park.</param>
+/// <param name="Held">The hold's own sentence when it was held before a record opened, which the report carries as the quest's verdict.</param>
+internal sealed record StartRun(string Line, bool Opened, SessionEnded? Ended = null, string? Held = null);
+
 /// <param name="Considerations">Every open quest, with its verdict and reason — the plan, printable.</param>
 /// <param name="Events">What actually happened this tick: sessions concluded, held, or refused.</param>
 /// <param name="Progressed">
@@ -89,6 +96,14 @@ public sealed partial class Driver(
     // carries one — the headless host, every gate — and such a server is then not handed.
     IInAppBrowser? browser = null)
 {
+    /// <summary>
+    /// How one quest's start is run, from its holds to its record's conclusion: <see cref="RunAsync"/>, unless a
+    /// test hands in an in-process stand-in (DEV3). Every real run spawns git and a harness, which the suite's fast
+    /// half may not, and what a look does with its starts is the scheduling that half has to hold. The action is
+    /// the run's to call once its session record is open.
+    /// </summary>
+    internal Func<Consideration, Action, CancellationToken, Task<StartRun>>? Runner { get; init; }
+
     /// <summary>What a session whose take lost is told, in its record (D68 §5).</summary>
     public const string LostClaim =
         "stopped by this machine's driver: another machine's take on the quest reached the remote first, so this "
@@ -269,25 +284,26 @@ public sealed partial class Driver(
         var intakes = await IntakesDueAsync(config.Cap - snapshot.Active.Count - starts.Count, events, ct)
             .ConfigureAwait(false);
 
+        var run = Runner ?? ((start, opened, token) => RunAsync(start, snapshot.Repositories, untrusted, opened, token));
         var runs = starts.Select(async start =>
         {
-            var (line, opened, ended, held) = await RunAsync(start, snapshot.Repositories, untrusted, ct).ConfigureAwait(false);
+            var ran = await run(start, () => { }, ct).ConfigureAwait(false);
             lock (events)
             {
-                events.Add(line);
-                progressed |= opened;
-                if (ended is not null) concluded.Add(ended);
-                if (held is not null) heldAt[start.Quest.Id] = held;
+                events.Add(ran.Line);
+                progressed |= ran.Opened;
+                if (ran.Ended is not null) concluded.Add(ran.Ended);
+                if (ran.Held is not null) heldAt[start.Quest.Id] = ran.Held;
             }
         });
         var intakeRuns = intakes.Select(async ask =>
         {
-            var (line, opened, ended) = await RunIntakeAsync(ask, untrusted, ct).ConfigureAwait(false);
+            var ran = await RunIntakeAsync(ask, untrusted, () => { }, ct).ConfigureAwait(false);
             lock (events)
             {
-                events.Add(line);
-                progressed |= opened;
-                if (ended is not null) concluded.Add(ended);
+                events.Add(ran.Line);
+                progressed |= ran.Opened;
+                if (ran.Ended is not null) concluded.Add(ran.Ended);
             }
         });
         // The sync runs BESIDE the sessions, not only around them (D68 §6): a session no longer holds
@@ -381,17 +397,18 @@ public sealed partial class Driver(
     /// The console line, whether a session actually opened, — when one ended here — what it ended
     /// as and whose decision that was (SURF5b), and — when the start was HELD at spawn — the hold's
     /// own sentence, which the report carries as the quest's verdict. A hold or a refusal ends
-    /// nothing, so the third value is null: there is no session to have ended. A refusal is not a
+    /// nothing, so what ended is null: there is no session to have ended. A refusal is not a
     /// hold either: somebody else got there first, and the quest is theirs rather than sitting.
     /// </returns>
     /// <param name="registry">The registry as this tick's snapshot answered it: what the session may reach across (D107).</param>
-    private async Task<(string Line, bool Opened, SessionEnded? Ended, string? Held)> RunAsync(
-        Consideration start, IReadOnlyList<RepoView> registry, List<TrustHold> untrusted, CancellationToken ct)
+    /// <param name="onOpened">Called once the session's record is open, and never for a start that held or was refused (DEV3).</param>
+    private async Task<StartRun> RunAsync(
+        Consideration start, IReadOnlyList<RepoView> registry, List<TrustHold> untrusted, Action onOpened, CancellationToken ct)
     {
         var quest = start.Quest;
         var root = start.Root!;
         var isolated = config.OpensOwnTree(quest.To);
-        (string, bool, SessionEnded?, string?) Hold(string why) => ($"held  #{quest.Id} → {quest.To}: {why}", false, null, why);
+        StartRun Hold(string why) => new($"held  #{quest.Id} → {quest.To}: {why}", false, null, why);
 
         // Clean tree, or nothing: uncommitted changes are somebody's work in flight (D46 §3). No
         // session record exists yet, so a hold here costs nothing and destroys nothing. VACUOUS for a
@@ -543,11 +560,12 @@ public sealed partial class Driver(
                 await _trees.RemoveAsync(opened.Path, ct: ct).ConfigureAwait(false);
             }
 
-            return ($"refused  #{quest.Id} → {quest.To}: {message}", false, null, null);
+            return new StartRun($"refused  #{quest.Id} → {quest.To}: {message}", false);
         }
 
         // The record is open, so the ledger holds the tree and a replay's own look sees it in use (LEFT2).
         starting?.Dispose();
+        onOpened();
 
         try
         {
@@ -672,7 +690,7 @@ public sealed partial class Driver(
                     var where = opened is not null ? $" [own tree: {opened.Path}]"
                         : resumedIn is not null ? $" [own tree, resumed: {resumedIn}]"
                         : "";
-                    return (
+                    return new StartRun(
                         $"{conclusion.State}  session {sessionId} (#{quest.Id} → {quest.To}){where}: {conclusion.Note}",
                         true,
                         // 🔴 The stop flag IS the "whose decision was this" answer (SURF5b) — the same
@@ -681,11 +699,10 @@ public sealed partial class Driver(
                         // watch says so from the active list, as it does for a parked intake.
                         SessionStates.IsParked(conclusion.State)
                             ? null
-                            : (SessionEnded?)new SessionEnded(
+                            : new SessionEnded(
                                 sessionId, quest.To, conclusion.State,
                                 ByPerson: stoppedFor is null && _processes.WasStopRequested(sessionId), conclusion.Note,
-                                Quest: quest.Id, Adapter: adapter.Name, Account: selection.Profile),
-                        (string?)null);
+                                Quest: quest.Id, Adapter: adapter.Name, Account: selection.Profile));
                 }).ConfigureAwait(false);
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
@@ -709,11 +726,10 @@ public sealed partial class Driver(
 
             // The person is closing the driver, so this ending is theirs — no interruption is owed
             // for something they are in the middle of doing (design §4).
-            return (
+            return new StartRun(
                 $"stopped  session {sessionId} (#{quest.Id} → {quest.To}): the driver was stopped.",
                 true,
-                new SessionEnded(sessionId, quest.To, "stopped", ByPerson: true, Quest: quest.Id, Adapter: config.Adapter),
-                null);
+                new SessionEnded(sessionId, quest.To, "stopped", ByPerson: true, Quest: quest.Id, Adapter: config.Adapter));
         }
         catch (Exception error)
         {
@@ -733,11 +749,10 @@ public sealed partial class Driver(
                 // and a host that is gone or slow here must not turn that report into a second throw.
             }
 
-            return (
+            return new StartRun(
                 $"failed  session {sessionId} (#{quest.Id} → {quest.To}): {error.Message}",
                 true,
-                new SessionEnded(sessionId, quest.To, "failed", ByPerson: false, error.Message, Quest: quest.Id, Adapter: config.Adapter),
-                null);
+                new SessionEnded(sessionId, quest.To, "failed", ByPerson: false, error.Message, Quest: quest.Id, Adapter: config.Adapter));
         }
         finally
         {

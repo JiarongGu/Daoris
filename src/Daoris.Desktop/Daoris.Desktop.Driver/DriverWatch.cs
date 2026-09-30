@@ -40,6 +40,9 @@ public sealed class DriverWatch(
     /// <inheritdoc cref="_harnesses"/>
     public HarnessRoster Harnesses => _harnesses;
 
+    /// <summary>Handed to every look's driver: <see cref="Driver.Runner"/>, a test's in-process stand-in for a start's run (DEV3).</summary>
+    internal Func<Consideration, Action, CancellationToken, Task<StartRun>>? Runner { get; init; }
+
     /// <summary>Look now rather than at the next poll — a control that just changed something should
     /// not leave the person watching a countdown.</summary>
     public void Nudge()
@@ -87,7 +90,8 @@ public sealed class DriverWatch(
                 }
 
                 var report = await new Driver(
-                    service, config, AdapterSet.Built(), home, processes, sync, output, _harnesses, usage, hooks, events, browser)
+                        service, config, AdapterSet.Built(), home, processes, sync, output, _harnesses, usage, hooks, events, browser)
+                    { Runner = Runner }
                     .TickAsync(ct).ConfigureAwait(false);
                 if (sweep.Count > 0)
                 {
