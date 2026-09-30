@@ -913,6 +913,11 @@ The first version: doctrine that installs, is checked, and flows back.
   session can no longer start in a tree while *Bring up to date* replays it.
 - **A dock tab shows its whole name or its icon** (TABS1). In a narrow side bar or panel, the tabs you are
   not looking at become icons, named in their tips, instead of names cut to one character.
+- **Bring up to date works on a real workspace** (WSR7, D112). It takes the repositories holding Daoris's
+  branches by default; every other checkout is listed apart, and you include it by a tick, `--all` or by
+  name. It fetches four at a time, the window waits as long as the host may and says what it is looking at,
+  and what could not be fetched is said once, first: how many, when each last heard from origin, and what
+  your git needs to reach it. A failed fetch no longer empties your `FETCH_HEAD`.
 - **A plugin can push the branch and open the pull request** (WSR4, D100). A branch landing rule may
   name an installed plugin (`daoris driver landing … branch <pattern> --plugin <id>`, or the *who
   pushes it* chooser in Settings → Workspace → *How work lands*). Once accepting has made the branch,

@@ -21,8 +21,8 @@ lists.
 
 ## State
 
-**Counts, and this is their one home:** sixteen commands, **667 CLI tests, 697 service and 46 HTTP host, 1630 driver,
-436 desktop modules, 80 devkit, 1803 web unit, 21 Playwright**, 66/66 release rehearsal, **305/305
+**Counts, and this is their one home:** sixteen commands, **667 CLI tests, 697 service and 46 HTTP host, 1660 driver,
+437 desktop modules, 80 devkit, 1803 web unit, 21 Playwright**, 66/66 release rehearsal, **305/305
 family rehearsal** (it names its own phases when you run it), **70/70 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge
 documents, 5 skills, 7 packs. The always-loaded core is **22,672 of 26,000 bytes** — a span in
@@ -130,7 +130,7 @@ rather than designed.
 ## Backlog
 
 **Eighteen rows are open** (triaged 2026-09-30, when the owner asked to go faster; 2026-10-01 after the night's merges and the look):
-- **Merging (two):** WSR7 and REVIEW2, found looking.
+- **Merging or building (two):** REVIEW2 merging; LEFT3 building.
 - **Waiting on the owner (six):** BUDGET1 and PLUGREPO1 (their calls), TRUST2 and AGT2c (a grant, two
   downloads), FG5 and BRW3 (the owner present).
 - **Parked on a trigger (ten):** TOOL4, TOOL5, PLUG7, SEM2, CANON9, HARNESS1, REH1, D76's held file tree,
@@ -148,25 +148,22 @@ rule it also ships. A heading below holds open rows only.
 **Found looking at the republished install (2026-10-01)**, each on the owner's real workspace of 29
 repositories, which no fixture has:
 
-- [ ] **WSR7 — *Bring up to date* on a real workspace.** (a) **The window never shows the look.** The page's
-  bridge gives up after its default 30 s, and the look fetches every repository with a checkout (48 s from a
-  terminal, minutes from the window), so the section shows nothing and the host finishes unheard. Nothing is
-  logged, because a client's timeout is not a refusal. Every long route needs a timeout matched to its own
-  bound: `TREES_SYNC_PLAN`, `TREES_SYNC`, `HANDOFF` and a plugin landing, and Ask Daoris's sync look through
-  `HELP_APPLY`. The look also needs a sentence while it runs, since its button does not show it is busy.
-  (b) **Every fetch failed** (`Could not read from remote repository`): the `git` on `PATH` cannot reach this
-  machine's SSH remotes, while the person's own Git client can. The look still judged against the last fetch,
-  as it should, but said so only at the end of each of 29 rows. Say it once, first: how many repositories
-  were not fetched, that each is judged against what origin said at its last fetch, and what the person's
-  git needs (a key it reads, or `core.sshCommand`). (c) **Scope.** After one pull request merged, the look
-  proposed fast-forwarding seven repositories Daoris has no work in. Decide, and record it as a decision,
-  whether the default is the repositories holding Daoris's branches, with the rest listed and opt-in.
 - [ ] **REVIEW2 — a landed session reads as landed.** The review of a session whose landing tidied its tree
   says git cannot read its range (`SESSION_RANGE_UNREADABLE`), then still offers Accept, Send back and Discard.
   It should say where the work landed (`landings.json`: the branch, when, and the pull request if a plugin
   opened one), show the changes from the landed branch (`from..branch`), and offer the hand-off rather than
   Accept. Its preview (`PREVIEW_NO_TREE` today) reads the file from the landed branch, saying so. Since a
   finished session is usually a landed one, today's preview of it is always empty.
+- [ ] **LEFT3 — the leftovers of HELP10, LEFT2, WSR7 and REVIEW2** (building, D114), each a "left out" in a hand-back:
+  `HANDOFF` and `LAND_SESSION_TREE` still wait the bridge's default 30 s, though a plugin that pushes and
+  opens a pull request may take minutes (pass WSR7's `pluginBound`; two `WorkFrame.test.tsx` assertions pin
+  the calls' shape); Ask Daoris's sync card says what was not fetched, and the repositories left apart, only
+  in its message, not on the card (`help/ProposalCard.tsx`); the page logs `proposal.settled` for a sync
+  card's look, which settles nothing; HELP10's guard that an applied default starts no agent action has no
+  test; clearing an account's default back to the tool's own has a screen control and no terminal verb (D50);
+  `tools/usage-report.mjs` does not summarise `preview.opened`; and a merged session records no landing, so
+  once tidied its review reads `SESSION_TREE_GONE` with nothing to show, while `landings.json`'s traces of
+  gone branches are never pruned.
 
 ### Plugins Daoris makes (owner, 2026-09-30)
 
