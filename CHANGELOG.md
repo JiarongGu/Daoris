@@ -138,7 +138,7 @@ The first version: doctrine that installs, is checked, and flows back.
   *service* is the exception, and publishing a quest is the only one the canon instructs — so it names
   the alternative in the same breath ("a message to that repository's owner where none does"), and a
   gate refuses any canon file that instructs a quest without one.
-- **Five core knowledge documents**, each knowledge rather than a rule because it applies to a
+- **Six core knowledge documents**, each knowledge rather than a rule because it applies to a
   situation, not to every task — a distinction the budget gate enforced more than once.
   `model-decoupling` (the model is a deployment choice: specify the feature without naming one, select
   the provider by deployment, report which tier ran), `claims-need-checks` (behavioural prose is
@@ -147,9 +147,13 @@ The first version: doctrine that installs, is checked, and flows back.
   writing into another repository, and why the repair is worse), and `autonomous-development`
   (development is automation-first: a person sets the target and verifies the outcome, agents execute
   the steps between under gates, and destructive, irreversible, cross-repository and publishing actions
-  stay explicitly human). The canon's own `CHANGELOG.md` carries the full reasoning per document.
-- **Five core skills**, each canonized from copies found across the family and reduced to what they share.
-  `doc-loader` and `pattern-finder` (six repositories each) start a task; `post-feature` (four) and
+  stay explicitly human), and `development-documents` (the documents a repository keeps for a
+  code-generating session: each with one role and one way it is read, a short brief every agent reads,
+  ceilings on what is read whole, and what may run unasked declared where a tool reads it). The canon's
+  own `CHANGELOG.md` carries the full reasoning per document.
+- **Six core skills.** `set-up-documents` carries `development-documents`' procedure and a template per
+  document shape. The other five were canonized from copies found across the family and reduced to
+  what they share. `doc-loader` and `pattern-finder` (six repositories each) start a task; `post-feature` (four) and
   `fix-log` (three) close one; `caveman` (five) governs output. `fix-log`'s copies sat within 100 bytes of
   each other, so the invariant was nearly the whole file. `post-feature`'s looked least alike of any —
   one a stack checklist, another a diff-detection procedure — and the shared shape turned out to be the

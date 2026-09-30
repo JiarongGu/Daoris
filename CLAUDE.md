@@ -37,8 +37,8 @@ about a neighbour could only either ignore it or trespass.
 
 ## Current state
 
-**Built and proven; nothing published.** Sixteen commands and a canon of 8 core rules, 5 core
-knowledge documents, 5 core skills and 7 packs; the test counts live in `TASKS.md`'s State, their one
+**Built and proven; nothing published.** Sixteen commands and a canon of 8 core rules, 6 core
+knowledge documents, 6 core skills and 7 packs; the test counts live in `TASKS.md`'s State, their one
 home. Daoris carries its own manifest and syncs core into its own `AGENTS.md` region and
 `.claude/`. It was **adopted
 into a sibling and proven there** — collisions, a renamed twin and a real budget overage all caught on
@@ -64,7 +64,7 @@ screen can set, a terminal can.
 the person sets the target and verifies the final diff; agents execute and gates verify the middle —
 see canon knowledge `autonomous-development`.
 
-**Three things to know before changing anything.** The always-loaded core sits at **22,672 of 26,000
+**Three things to know before changing anything.** The always-loaded core sits at **23,306 of 26,000
 bytes** (CANON7, D28 as amended: this repository's number caps *the canon's core*, a different
 question from the 30000 an adopter starts at). **The budget
 reports and never fails** (D54): a fact gates, a judgement reports. The answer to a full budget is to
