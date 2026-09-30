@@ -5,6 +5,36 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## A landed session's review offered to land it again, and its preview was always empty (2026-10-01)
+
+**Symptom.** Found by the parent on the installed window (REVIEW2). A session accepted under a branch rule that
+tidies: its review said git could not read the session's range (`SESSION_RANGE_UNREADABLE`) and still offered
+Accept (naming the branch that already existed), Send back and Discard the tree. Its file preview answered
+`PREVIEW_NO_TREE` for every file. A finished session is usually a landed one, so these were the reviews people open.
+
+**Root cause.** Three facts the review never joined. (1) `SESSION_DIFF` and `SESSION_FILE` read only the tree the
+session record names, and a tidy removes the tree but not the record's path. (2) The page gated every act on
+`hasTree`, which it derives from that path alone (a tree under the trees home, not the checkout), so a removed tree
+still looked present and a refusal left Accept and Discard armed. (3) The one place that knew the work had landed,
+`landings.json` (D102), was never asked by the review, and it *forgot* an entry once the clean-up removed its branch,
+so after a squash merge and a clean-up nothing on the machine said where the work went.
+
+**Fix.** D113. The review reads the tree while it is here, else the session's landing: the landed branch's changes
+in the repository's checkout (refs and objects only, the checkout proven to be a repository of its own first), or,
+for a branch gone since, that it is gone and whether its work reads on the line. The answer carries `asLanded` and
+the page's acts follow it (no Accept, no Send back; Discard only where a tree is still here; the hand-off where one
+applies). The preview reads the landed branch once the tree is gone. The record marks a gone branch (`goneAt`,
+`removedAs`) instead of forgetting it. A tree gone with no landing is `SESSION_TREE_GONE`, which arms nothing.
+
+**Verify.** `LandedRecordTests` caught the record's own trap while it was written: `Edit` read `All()`, which now
+returns standing entries only, so every write dropped every trace; it reads every entry since. The fast halves and
+the vitest loop hold the rest (D113's gates paragraph). The git sequences were run by hand against the built library
+in a scratch repository: the tidied landing read from its branch with the checkout dirty and on another branch and
+its status unchanged, the preview's bound and binary test, `.git` and outside refused, a root inside another
+repository answered as no checkout, the squash and clean-up leaving a trace read as on the line, and a pruned commit
+said and not guessed. **The trap:** a record that gates what a person may press has to be the one that knows the
+state; a path string outlives the tree it named.
+
 ## A tidy called a tree it had removed "not removed", and its empty folder stayed for ever (2026-09-30)
 
 **Symptom.** The first real post-merge run, done by hand: after a landing's tidy, the session tree's folder
