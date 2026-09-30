@@ -5693,3 +5693,163 @@ today's code were read from the files the design's §0 names: the planner, the t
 tree lock, the landing rules, the ledger, the exchange, the merge tool, the lane map, the gates and the skill.
 `verify` checks the records' shape and the budgets, and none of those words. Its statements about the future
 are design. The design's §9 says which of them a rehearsal can prove, and which wait for DEV10's real run.
+
+## D117 — One repository, every agent: knowledge and skills under `.agents/`, a mirror for the agent that reads `.claude/`, rooms, and a set-up the repository's own session does (2026-10-01)
+
+**Decision (LAYOUT1, the owner's *one repository, every agent*: the reference harness's own layout, applied to
+this repository and to every repository Daoris manages, with a way to set one up).** The contract is
+`docs/2026-10-01-agent-layout-design.md`. It extends D59, which moved only the always-loaded tier.
+
+1. **The agents layout.** `knowledge/` and `skills/` live under `.agents/`; the always-loaded tier stays a region
+   in `AGENTS.md`. A second descriptor, `agents`, selected by the manifest's `harness`, serves several harnesses
+   at once: one target, plus what each harness that does not read it needs. `claude-code` stays for every
+   repository that has not moved.
+2. **No links.** Where the reference links, Daoris writes files. `CLAUDE.md` holds the `@AGENTS.md` import, at
+   the root and in each room. `.claude/skills/` holds a mirror of every skill in `.agents/skills/`, canonical
+   and local, each `SKILL.md` with a mirror header under its frontmatter. The lock records each mirror, and a
+   mirror is measured against the lock (D13): an edited one is refused, naming its source, and `upstream` takes
+   a canonical mirror's edit.
+3. **Rooms.** A folder with an `AGENTS.md` of its own is declared in `daoris.json`'s `rooms`. `sync` keeps its
+   `CLAUDE.md` pointer, the roster lists every room, and a declared room with no instructions fails `check`.
+   Daoris never writes a room's text. A lane names its rooms, and its session's prompt names them (D115).
+4. **A move is the repository's manifest change, and `sync`'s cells**, enumerated as D19's. Daoris moves its
+   own files. The repository's own documents in an old tier refuse the move until the repository moves them,
+   since the index would stop listing them and nothing would say so. A link, or a link held as text, is refused
+   and never written through. The lock, not the manifest, says where the files are.
+5. **The service reads the same root**, skips mirrors and indexes rooms.
+6. **Decision records stay in `docs/`.**
+7. **A repository is set up by its own session.** *Set up for agents* on the screen, `daoris-driver setup` and
+   an Ask Daoris `setup` proposal each publish one ask to one repository, carrying what was read on its line,
+   the steps and how to close it. Its session runs the CLI on its branch and lands by the workspace's rule. The
+   screen shows each repository's adoption, its layout and the agents it serves, from measured cells only.
+8. **Measured before relied on.** LAYOUT2 measures every cell of the design's §1 that is not measured, and
+   nothing in the layout depends on a nested instruction file being loaded.
+
+**Why.** `AGENTS.md` is the one instruction file all three agents read (D59's measurement), and `.agents/skills/`
+is the skill root most of them read: dsh natively, per working directory, in any home, and the reference ignores
+per-agent metadata there in a file named for codex's maker. The reference's mechanism is links, and on a checkout without links, the
+owner's, its `CLAUDE.md` is 9 bytes reading `AGENTS.md`: Claude Code loads the path. A copy and an import work on
+every checkout, and the lock already knows how to keep a copy honest. A set-up rewrites what every future session
+reads, so it is the repository's own act and its owner's review (D32). The quest carries the playbook because the
+playbook is Daoris's own document, which a session in another repository cannot read.
+
+**Rejected** (the design's §9 has the full list):
+- **Links**, the reference's mechanism: D3, and measured failing on the owner's checkout.
+- **`.agents/skills/` with no mirror**: Claude Code does not read it.
+- **The source in `.claude/`, mirrored into `.agents/`**: the source goes where most agents read.
+- **A mirror of knowledge**: nothing auto-reads knowledge.
+- **Rooms found by walking the tree, or written by Daoris.**
+- **Decision notes under `.agents/`**: the records already converge with the reference's in substance, their
+  numbers are cited everywhere, and people read them.
+- **Daoris replacing a repository's link, or setting a repository up by writing into it.**
+- **One quest for a whole workspace.**
+- **Syncing from the driver or the service**: a second implementation of D19's table.
+
+**What it amends, when built.**
+- D7 as amended by D59, and the instruction-file design's §3: knowledge and skills move under `.agents/` in the
+  `agents` layout.
+- D18: containment over the roots the descriptor declares and the declared rooms.
+- D23: a second descriptor, and the first to serve several harnesses.
+- D106: the union attribute moves with `twins.md`.
+- D115: a lane gains `rooms`.
+- HELP2's dsh profile root, on LAYOUT2's finding.
+- The adoption playbook: the layout's steps, and the uncommitted diff becomes the landed branch.
+
+Each row that builds a piece notes the amendment where it lands.
+
+**What the gates do not cover.** This change is documents only, and nothing is built. Its statements about
+today's files were read from them: the manifest, the lock, `harness.ts`, `materialize.ts`, `upstream.ts`, the
+service's `DaorisLock` and `RepositoryScanner`, the dsh profile, `.gitattributes`, the lane map and the package's
+staging. Its statements about the reference are the parent's measurement on the owner's checkout, which this
+design did not read. Three cells of its §1 are observations from its own session, one build of one harness; the
+rest are marked *not measured*, for LAYOUT2. `verify` checks the records' shape and budgets, and none of those
+words.
+*Amended by LEFT3 (2026-10-01): the traces are bounded. Each repository keeps its newest 50
+(`LandedBranches.TracesKept`), by when each went, dropped at the record's next write; a standing entry is never
+dropped. A count per repository rather than a span: the file grows with landings, not with the clock, and a person
+back after a month away still reviews last month's sessions, while a busy repository cannot push a quiet one's
+traces out. A session whose trace was dropped reads `SESSION_TREE_GONE` once its tree is gone, as one merged does.
+Held by `LandedTracesTests` in the fast half.*
+
+*A merge's own record was considered again (LEFT3) and is still not built, for §5's reason and one found looking:
+a merge's "branch" is the line itself, and every reader of the record treats an entry as a branch Daoris made. The
+clean-up deletes a recorded branch whose work reads on the line (`git branch -D`), bringing up to date replays one
+and counts its repository as holding Daoris's branches (D112), and the hand-off pushes one. A merge entry that
+reached any of them would delete, move or push the person's line. Building it is a change to what a landing record
+is: an entry of its own kind that `All()` never returns, the review reading the merge's own range (its first parent
+up to the merge commit) and the preview reading at that commit rather than at the line's tip, each with its test.*
+
+## D118 — Every view has the same frame: its own list pane and main area, beside the frame's side bar and panel (2026-10-01)
+
+**Decision (FRAME1a).** The owner, 2026-10-01: *"why only session has more layout option we do need to make
+everything consitant"*. `docs/2026-10-01-frame-audit.md` reads each view's layout from the code, and found
+that only Sessions has a list that collapses, resizes and is remembered. On four views a record opens in a
+modal drawer over the side bar and the panel. Only Sessions remembers what was open in it.
+`docs/2026-10-01-frame-model-design.md` is the contract. It settles:
+
+1. **The same regions on every view, with two owners.** The list pane and the main area are the view's:
+   they change with it, and each view remembers its own. The activity bar, the strip, the status bar, the
+   right side bar and the panel are the frame's: they are the same on every view, as DOCK1a made the side
+   bar and the panel. **The frame's regions hold only what is the same on every view**, so a view's own
+   detail never goes to the side bar.
+2. **What each view puts there** is the design's §2 table:
+   - Quests' asks and quests, Projects' repositories, Search's hits, Convergence's findings and Settings'
+     domains become list panes;
+   - the quest, the repository, the entry, the finding and the domain become the main area;
+   - Overview and Map have no list, for §4's reasons;
+   - Plugins, PLUGUI1's view, is built on the frame.
+3. **A record is the main area and a form is a drawer.** A record opens in the main area of the view whose
+   list holds it, and every door into a view names the item it opens, through one opener. A form stays a
+   drawer, and every overlay opens above a full side bar.
+4. **One list pane everywhere.** A header with `＋` and ⋯; a resize within per-view bounds; a person's
+   closing that leaves a 56 px strip; four doors that toggle it (the strip, the View menu, Ctrl+B, and a
+   press on the current place); ↑, ↓, Home, End and Enter inside it.
+   - **A list becomes a strip by room, not below a fixed width.** That happens when the main area would
+     fall below its 400 px floor with the side bar as it stands.
+   - **A strip the window drew opens the list over the main area.**
+5. **Remembered per view:** the list's closing, its width, the chosen item and the list's filters.
+   Sessions' and Settings' existing keys are kept. What the frame remembers stays for every view, as now.
+6. **The main area lays out by its own width**, never the viewport's, and shows skeleton rows while its
+   item loads, never the empty state.
+7. **A browser keeps the list and the main area**, and never the side bar or the panel. The monitor's rail
+   and a detached window's console take the same `ListPane` and `OutputPanel`.
+
+**Why.** The owner asked for one product rather than a set of screens. The audit showed the frame DOCK1a
+put on every view stopped at the frame's own regions. Every view kept its own arrangement inside the
+centre, and none of them had Sessions' list. Two things follow from DOCK1a itself:
+- **the drawer**, the platform's detail surface since D41, now lies over the regions that hold Ask Daoris
+  and the attended session;
+- **a view's detail in the side bar** would make the side bar change with the view, which is what DOCK1a
+  made it the frame's to prevent.
+
+So a record moves to the main area, and the side bar keeps only what is the same everywhere.
+
+This **amends**, each marked where it is amended:
+- **D41 §4** (platform language §4 *Drawer*): a record leaves the drawer once its view has a list;
+- **FRAME6** (components plan §3a): a strip the window drew offered no open, and the rail was a strip below
+  a fixed 1024 px;
+- **DOCK1a** (dock design §4): a browser keeps the view alone;
+- **D56 §3**: the rail as Sessions' alone.
+
+D40's landing, D55's session as the organising object, and D47 §4 are unchanged.
+
+**Rejected.**
+- **A shared main area with tabs across views** (VS Code's editor groups): a second navigation beside the
+  list, and the file model D55 declined for a session.
+- **A view's own detail as a side bar view**: the side bar would change with the view.
+- **Keeping a record in the drawer**: it is modal over the side bar and the panel.
+- **One list state for every view** (VS Code's): each list differs in kind and width, and closing Sessions'
+  rail for room is not asking to lose Quests' list. VS Code shares one side bar because it shares one
+  editor.
+- **One viewport threshold for every list** (1024 px, Sessions' today): it strips Settings' 176 px list
+  where it fits, and it keeps Sessions' rail a strip with 540 px free beside it.
+- **A list on Overview or on Map**: a second copy of *What needs you*, and Projects twice.
+- **Stacking a list above the main area when narrow** (Settings' today): the arrangement D56 rejected for
+  the activity bar.
+- **Hiding a list when narrow** (the monitor's today): it leaves no way back.
+
+**What the gates do not cover.** This is a design, and nothing is built. The audit was read from the source
+at `7a3fb5f`, and its rows marked *to look at* wait for the window (its §5 lists twelve looks). None of the
+widths, the room rule's numbers, or the F6 key has been tried on the window: FRAME1b measures F6 first, and
+drops it if the engine keeps F6 for itself. The build rows are the design's §6, and each carries its own
+proof.
