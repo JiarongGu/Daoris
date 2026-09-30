@@ -65,6 +65,20 @@ describe('the shell push channel (ShellSignals)', () => {
   });
 
   /**
+   * LOOK2a: the driver saying its service is up is heard wherever the ticks are, and the driver's answers are asked
+   * again then, since the first tick can be long in coming.
+   */
+  it('the driver coming up asks its answers again', () => {
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const invalidate = vi.spyOn(client, 'invalidateQueries');
+    show(<ShellSignals notify={() => {}} />, client);
+
+    eventHandlers.get('DAORIS.DRIVER_READY')!({ ready: true });
+
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: keys.driver });
+  });
+
+  /**
    * 🔴 UX5 U30: a tick that could not reach the service toasted the .NET socket's own words, *No
    * connection could be made because the target machine actively refused it. (127.0.0.1:5188)*. The
    * loop now says which failure it was, and the page words a known one from its catalogue, in the

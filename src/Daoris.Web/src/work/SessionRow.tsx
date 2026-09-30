@@ -65,8 +65,17 @@ export function SessionStripRow({ session, quest, opening, taking, selected = fa
   );
 }
 
+/**
+ * Where a session's work is now, as this machine's own files say (LOOK2b): whether the tree it opened is still here,
+ * and its landing (D113), standing or gone since as the record holds it. The rail asks it once for its rows.
+ */
+export type SessionWhere = {
+  treeGone: boolean;
+  landed?: { repository: string; branch: string; state: 'standing' | 'gone' } | null;
+};
+
 export function SessionRow({
-  session, quest, opening, root, taking, lastTurn, selected = false, onSelect, onDetach, onReview, onCopy,
+  session, quest, opening, root, where, taking, lastTurn, selected = false, onSelect, onDetach, onReview, onCopy,
 }: {
   session: Session;
   /**
@@ -85,6 +94,11 @@ export function SessionRow({
    * one in the root. Absent where the path is not answered, and then nothing is claimed.
    */
   root?: string | null;
+  /**
+   * Where its work is now (LOOK2b): its tree, or where its landing put the work once it read as landed. Absent where
+   * the machine has not answered, and then the tree the record names stands, as before.
+   */
+  where?: SessionWhere | null;
   selected?: boolean;
   onSelect?: (id: string) => void;
   /**
@@ -98,7 +112,10 @@ export function SessionRow({
   const { t } = useTranslation();
   const title = sessionTitle(session, quest, opening);
   const origin = sessionOrigin(session);
-  const tree = ownTree(session, root);
+  // Where its work is (LOOK2b): where it landed while that reads as landed, as its review does (D113) — the landed
+  // branch still stands, or the tree is gone — else the tree it opened, unless that is gone too.
+  const landed = where?.landed && (where.treeGone || where.landed.state === 'standing') ? where.landed : null;
+  const tree = landed || where?.treeGone ? null : ownTree(session, root);
   const running = SESSION_ACTIVE.has(session.state);
   const shown = shownState(session, taking);
 
@@ -108,14 +125,16 @@ export function SessionRow({
   const meta = [
     // An intake is a chat only by the way it was opened (INT4b); it says what it is (INT4g).
     t(isIntake(session) ? 'work.intake.kind' : session.kind === 'chat' ? 'work.kind.chat' : 'work.kind.driven'),
+    landed ? t(landed.state === 'gone' ? 'work.rail.landedGone' : 'work.rail.landedOn', { branch: landed.branch }) : null,
     tree ? t('work.rail.inTree', { tree }) : null,
     origin ? t('work.rail.on', { origin }) : null,
     t('work.rail.moved', { ago: ago(movedAt(session, lastTurn)) }),
   ].filter(Boolean).join(' · ');
 
-  // Only the two unusual facts explain themselves: a tip that appeared on every row would be one
+  // Only the unusual facts explain themselves: a tip that appeared on every row would be one
   // people stop reading.
   const tip = [
+    landed ? t(landed.state === 'gone' ? 'work.rail.landedGoneTip' : 'work.rail.landedTip') : null,
     tree ? t('work.rail.treeTip') : null,
     origin ? t('work.rail.onTip') : null,
   ].filter(Boolean).join(' ');

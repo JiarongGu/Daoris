@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClient, QueryClientProvider, useQuery } from '@tanstack/react-query';
 
 // The driver's own calls, as hooks (MOD3: moved from `shell.test.tsx` beside the domain they call).
 
@@ -21,7 +21,8 @@ vi.mock('@shenora/react', () => ({
 }));
 
 import { keys } from '../queries';
-import { useNudge, useSyncNow } from './driver';
+import { useDriverReady, useNudge, useSyncNow } from './driver';
+import { useLines } from './lines';
 
 describe('the driver domain', () => {
   afterEach(() => {
@@ -62,5 +63,46 @@ describe('the driver domain', () => {
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SYNC_NOW', { payload: { workspace: 'aurora' } });
     expect(report.notes).toEqual([]);
     await waitFor(() => expect(invalidate).toHaveBeenCalledWith({ queryKey: keys.allSync }));
+  });
+
+  /**
+   * LOOK2a: Settings → Workspace, opened as the shell started, asked for the lines at once, was refused *still coming
+   * up*, and kept that answer until *Bring up to date* happened to ask again. The driver says when its service is up,
+   * and everything it refused as not ready is asked again then — under its own key or not — while an answer refused
+   * for a reason of its own is left as it was.
+   */
+  it('what the driver refused while it came up is asked again when it says it is up', async () => {
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const notReady = () => Object.assign(new Error('still coming up'), { code: 'DRIVER_NOT_READY' });
+    let up = false;
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (!up) throw notReady();
+      return type === 'LINES'
+        ? { lines: [{ repository: 'engine', workspace: 'aurora', branch: 'main', source: 'checkout' }], landings: [] }
+        : null;
+    });
+    const review = vi.fn(async () => {
+      if (!up) throw notReady();
+      return 'the review';
+    });
+    const gone = vi.fn(async () => { throw Object.assign(new Error('gone'), { code: 'SESSION_TREE_GONE' }); });
+    const { result } = renderHook(() => {
+      useDriverReady();
+      return {
+        lines: useLines(),
+        review: useQuery({ queryKey: ['sessions', 's-1', 'diff'], queryFn: review }),
+        gone: useQuery({ queryKey: ['sessions', 's-2', 'diff'], queryFn: gone }),
+      };
+    }, { wrapper: ({ children }) => <QueryClientProvider client={client}>{children}</QueryClientProvider> });
+
+    await waitFor(() => expect(result.current.lines.isError).toBe(true));
+    await waitFor(() => expect(result.current.review.isError && result.current.gone.isError).toBe(true));
+
+    up = true;
+    eventHandlers.get('DAORIS.DRIVER_READY')!({ ready: true });
+
+    await waitFor(() => expect(result.current.lines.data?.lines).toHaveLength(1));
+    await waitFor(() => expect(result.current.review.data).toBe('the review'));
+    expect(gone).toHaveBeenCalledTimes(1);
   });
 });

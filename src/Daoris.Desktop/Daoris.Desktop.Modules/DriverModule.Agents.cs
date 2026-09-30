@@ -287,7 +287,15 @@ public sealed partial class DriverModule
             // Whatever it did, what this machine HAS has probably changed — so the next question
             // asks the tool again rather than answering from before.
             await _loop.Harnesses.RosterAsync(config, refresh: true, cancellationToken);
-            return new { Harness = harness, Action = action, ExitCode = code };
+            // A default's edit says what sessions there run as now (LOOK2c), the fact the terminal's verb prints: a
+            // workspace cleared on the tool's own row runs as the machine's default where one is set.
+            return action == "profile-default"
+                ? new
+                {
+                    Harness = harness, Action = action, ExitCode = code,
+                    Default = DefaultStanding(_loop.Harnesses.Settings, owner, Optional(request, "workspace")),
+                }
+                : (object)new { Harness = harness, Action = action, ExitCode = code };
         }
 
         // A pin's version is asked for before anything starts: a pin without one is a malformed call.
@@ -794,6 +802,28 @@ public sealed partial class DriverModule
             ? settings.WithWorkspaceDefault(workspace, owner, profile)
             : settings.WithDefault(owner, profile);
 
+    /// <summary>
+    /// What sessions run as where a default was just edited (LOOK2c): the machine's, or one workspace's — an account, the
+    /// machine's default a workspace naming none falls back to, or the agent's own configuration home. The screen says it
+    /// after its press, as <c>daoris agent profile default … [--clear]</c> prints it, from the same resolution a start
+    /// takes (<see cref="HarnessSettings.ResolveFrom"/>).
+    /// </summary>
+    /// <remarks>
+    /// Found by LEFT3: the tool's own row's *use for a workspace* clears the workspace's entry, and with a machine default
+    /// set its sessions then run as that default, not in the tool's own home the row names.
+    /// </remarks>
+    public static DefaultStandingAnswer DefaultStanding(HarnessSettings settings, string owner, string? workspace)
+    {
+        var scope = workspace is { Length: > 0 } ? workspace : null;
+        var (account, from) = settings.ResolveFrom(owner, scope, null);
+        return new DefaultStandingAnswer(scope, account, from switch
+        {
+            ChoiceFrom.Workspace => DefaultFrom.Workspace,
+            ChoiceFrom.Machine => DefaultFrom.Machine,
+            _ => DefaultFrom.Own,
+        });
+    }
+
     /// <summary>The profile a profile verb is about. Absent is a refusal, never a guess.</summary>
     private static string Named(IpcRequest request) =>
         Optional(request, "profile") is { Length: > 0 } profile
@@ -809,4 +839,23 @@ public sealed partial class DriverModule
         _loop.Harnesses.Settings.WithVersion(harness, null).Save(_loop.Harnesses.SettingsPath);
         return 0;
     }
+}
+
+/// <summary>
+/// What sessions run as where a default was edited (LOOK2c): the workspace, or null for the machine; the account, or
+/// null for the agent's own configuration home; and which rung answered, <see cref="DefaultFrom"/>.
+/// </summary>
+public sealed record DefaultStandingAnswer(string? Workspace, string? Account, string From);
+
+/// <summary>Which rung a default's standing came from, as the page spells it.</summary>
+public static class DefaultFrom
+{
+    /// <summary>The workspace names an account of its own.</summary>
+    public const string Workspace = "workspace";
+
+    /// <summary>The machine's default: the machine's own edit, or a workspace naming none that falls back to it.</summary>
+    public const string Machine = "machine";
+
+    /// <summary>No account at all: the agent's own configuration home.</summary>
+    public const string Own = "own";
 }

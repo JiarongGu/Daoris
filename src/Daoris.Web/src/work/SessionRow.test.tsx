@@ -186,6 +186,48 @@ describe('a session row', () => {
     expect(screen.queryByText(/ in /)).not.toBeInTheDocument();
   });
 
+  /**
+   * LOOK2b: the rail said *in s-2394e5d9* after the landing had tidied that tree away and its branch had gone. It says
+   * where the work landed, as the review does (D113): while the landed branch stands, or once the tree is gone. A tree
+   * still here after its branch went is the session's again, and a tree gone with no landing is not claimed at all.
+   */
+  it('says where the work landed once its landing took the tree, and never names a tree that is gone', () => {
+    const tree = 'C:/somewhere/.daoris/trees/default/engine/s-2394e5d9';
+    const landed = { repository: 'engine', branch: 'feature/7a82cc-streaming-budget' };
+    const row = (where: Parameters<typeof SessionRow>[0]['where']) =>
+      render(<SessionRow root="C:/checkouts/engine" session={session({ state: 'completed', tree })} where={where} />);
+
+    let shown = row({ treeGone: true, landed: { ...landed, state: 'standing' } });
+    expect(screen.getByText(/landed on feature\/7a82cc-streaming-budget/)).toBeInTheDocument();
+    expect(screen.queryByText(/in s-2394e5d9/)).not.toBeInTheDocument();
+    shown.unmount();
+
+    shown = row({ treeGone: true, landed: { ...landed, state: 'gone' } });
+    expect(screen.getByText(/landed on feature\/7a82cc-streaming-budget, gone since/)).toBeInTheDocument();
+    shown.unmount();
+
+    // Landed without a tidy: the branch stands and the tree stays, and the review reads as landed.
+    shown = row({ treeGone: false, landed: { ...landed, state: 'standing' } });
+    expect(screen.getByText(/landed on feature\/7a82cc-streaming-budget/)).toBeInTheDocument();
+    shown.unmount();
+
+    // Carried on in its tree after its branch went (WSR6): the tree is where its work is.
+    shown = row({ treeGone: false, landed: { ...landed, state: 'gone' } });
+    expect(screen.getByText(/in s-2394e5d9/)).toBeInTheDocument();
+    expect(screen.queryByText(/landed on/)).not.toBeInTheDocument();
+    shown.unmount();
+
+    // Merged and tidied, which records no landing: nothing is claimed of a tree that is gone.
+    shown = row({ treeGone: true, landed: null });
+    expect(screen.queryByText(/ in /)).not.toBeInTheDocument();
+    expect(screen.queryByText(/landed on/)).not.toBeInTheDocument();
+    shown.unmount();
+
+    // Not answered (a browser, or before the machine replied): the tree, as before.
+    row(undefined);
+    expect(screen.getByText(/in s-2394e5d9/)).toBeInTheDocument();
+  });
+
   it('measures a finished session to where it ended, not to now', () => {
     render(<SessionRow session={session({
       state: 'completed', created: '2026-09-21T09:00:00Z', updated: '2026-09-21T09:45:00Z',

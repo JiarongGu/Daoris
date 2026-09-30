@@ -5,6 +5,53 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## Right after a start, no repository had a line until something else asked (2026-10-01)
+
+**Symptom.** Found looking at the install (LOOK2a): Settings → Workspace's Line and landing cards said no repository
+here had a line, and kept saying it until *Bring up to date*'s look happened to ask for the lines again.
+
+**Root cause.** Read from the code, not reproduced on the window. Two halves. (1) A screen open as the shell starts
+asks the driver at once. Until the loop hands its service to the routes, `LINES` (like every route that reads the
+service) refuses *still coming up*; the query retried once, a second later, and kept the refusal. The cards render an answer they do not have as an empty list, so the
+refusal read as "no repository". (2) Nothing asked again but a tick, whose invalidation of the driver's keys does
+reach the lines; and the first tick can wait long, on a remote's sync or on another driver's lock (DRV8a). The status
+bar said *ready* throughout, because it read the driver's state, which answers from `driver.json` alone. The service
+itself was never short of its registry: it reads its store on each ask and is composed before it answers at all.
+
+**Fix.** D46 as amended. The loop says `DRIVER_READY` the moment it hands its service over (`DriverLoop.ComeUpAsync`),
+and the page (`useDriverReady`, mounted with the tick's listener) asks again the driver's own answers and every query
+refused `DRIVER_NOT_READY`, leaving a query refused for its own reason as it was. `STATE` carries `ready`, and the
+status bar says *starting* until it is true.
+
+**Verify.** `DriverModuleLinesTests`: `LINES` refuses and `STATE` says not ready before the loop comes up, and after
+it, against a stand-in service, the page was told once and the lines answer every registered repository.
+`bridge/driver.test.tsx`: a refused `LINES` and a refused review are asked again on `DRIVER_READY`, and a review
+refused as gone is not. `chrome.test.tsx`: the bar's *starting*. **Not run on the window.**
+
+## `shot --theme light` photographed a dark window and said nothing (2026-10-01)
+
+**Symptom.** Found looking at the install (LOOK1): `npm run desktop -- shot --theme light` captured the dark
+window, and exited 0. `--page --theme light` did the same, since `--page` never read `--theme` at all.
+
+**Root cause.** `--theme` emulates `prefers-color-scheme` over the debug port, and the page follows that only
+while the viewer's theme choice is System (`theme.ts`, `effectiveDark`: a light or dark choice is a forced
+`data-theme` that wins over the media query). On the install the choice was dark. Nothing read what theme the
+page was in before capturing, so the emulation's silence looked like success.
+
+**Fix.** `withPageTheme` in `tools/desktop.mjs`, for both captures. It emulates the scheme, then reads the
+page's theme as the page reckons it. Where the emulation did not take, it sets the viewer's choice for the
+capture through the page's own store (`daoris.theme`) and tells the page with the storage event
+`followStoredTheme` already hears from a second window, then puts the choice back after the capture, raw value
+and all, whether the capture worked or not. A page still not in the theme is refused, never photographed; a
+choice that cannot be set or put back fails the shot and names what it was. The capture now throws rather than
+exiting, since an exit inside it would have skipped putting the choice back. The key is a twin (`twins.md`).
+
+**Verify.** `desktop-tool.test.ts` runs the expressions in a page of its own that follows a storage event as
+`theme.ts` does: a System viewer is emulated and never written to; a dark viewer is set to light and put back,
+including when the capture throws; a refused store and a page that does not follow both refuse; a choice that
+cannot be put back fails naming it; and the page's key and listener are read from `theme.ts`. **Not run on the
+window**: the subagent that built it may not start one.
+
 ## A landed session's review offered to land it again, and its preview was always empty (2026-10-01)
 
 **Symptom.** Found by the parent on the installed window (REVIEW2). A session accepted under a branch rule that

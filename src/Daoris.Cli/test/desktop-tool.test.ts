@@ -4,13 +4,15 @@ import { mkdtempSync, mkdirSync, writeFileSync, utimesSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import vm from 'node:vm';
 import { readText, listFiles } from '../src/fsx.ts';
 // The workspace's own tooling is plain `.mjs` and ships no declarations, so this import is untyped
 // by construction. Suppressed at the one site rather than given a hand-written `.d.mts`, which would
 // be a second description of the tool to keep in step with it — and the thing this suite asserts is
 // the tool's BEHAVIOUR, which a stale declaration would not protect.
 import {
-  CLEARED, REDIRECTED, SHELL_ORIGIN, assemblyExe, installedExe, isShell, prune, scratchEnvironment, startedHere,
+  CLEARED, PAGE_THEME, REDIRECTED, SHELL_ORIGIN, THEME_KEY, assemblyExe, installedExe, isShell, prune, scratchEnvironment,
+  startedHere, withPageTheme,
   // @ts-expect-error — untyped workspace tooling; see above
 } from '../../../tools/desktop.mjs';
 import {
@@ -409,4 +411,171 @@ test('kill stops the process the loop recorded, never another from the same path
   assert.deepEqual(startedHere([4100], { pid: 4200 }), [], 'the recorded run has ended; the other is not ours');
   assert.deepEqual(startedHere([4100], {}), [4100], 'a record without a pid keeps the old answer');
   assert.deepEqual(startedHere([4100], null), [4100]);
+});
+
+/**
+ * A page the theme tests photograph: the stored choice, the system's scheme, and the page's own
+ * following of a storage event, as `theme.ts`'s `followStoredTheme` does. Its expressions run in a
+ * context of their own, as `Runtime.evaluate` runs them in the page, and come back by value.
+ */
+function themedPage({
+  choice = null as string | null, systemDark = true, follows = true,
+  refuseWrite = ((_write: number) => false) as (write: number) => boolean,
+} = {}) {
+  const store = new Map<string, string>(choice === null ? [] : [['daoris.theme', choice]]);
+  const root = { dataset: {} as Record<string, string> };
+  let emulated: string | null = null;
+  let writes = 0;
+  const follow = () => {
+    if (!follows) return;
+    const held = store.get('daoris.theme');
+    if (held === 'light' || held === 'dark') root.dataset.theme = held;
+    else delete root.dataset.theme;
+  };
+  follow();
+  const write = (apply: () => void) => {
+    writes += 1;
+    if (refuseWrite(writes)) throw new Error('storage is refused here');
+    apply();
+  };
+  class StorageEvent {
+    type: string;
+    key: string | null;
+    constructor(type: string, init: { key?: string | null } = {}) {
+      this.type = type;
+      this.key = init.key ?? null;
+    }
+  }
+  const context = vm.createContext({
+    document: { documentElement: root },
+    localStorage: {
+      getItem: (key: string) => store.get(key) ?? null,
+      setItem: (key: string, value: string) => write(() => store.set(key, String(value))),
+      removeItem: (key: string) => write(() => store.delete(key)),
+    },
+    matchMedia: () => ({ matches: (emulated ?? (systemDark ? 'dark' : 'light')) === 'dark' }),
+    StorageEvent,
+    dispatchEvent: (event: StorageEvent) => {
+      if (event.type === 'storage' && (event.key === 'daoris.theme' || event.key === null)) follow();
+      return true;
+    },
+  });
+  const cdp = {
+    async send(method: string, params: { features?: { name: string; value: string }[] } = {}) {
+      if (method === 'Emulation.setEmulatedMedia') emulated = params.features?.[0]?.value ?? null;
+      return {};
+    },
+    async evaluate(expression: string) {
+      const value = vm.runInContext(expression, context);
+      return value === undefined ? undefined : JSON.parse(JSON.stringify(value));
+    },
+  };
+  return {
+    cdp,
+    stored: () => store.get('daoris.theme') ?? null,
+    attribute: () => root.dataset.theme ?? null,
+    writes: () => writes,
+  };
+}
+
+/**
+ * LOOK1: `shot --theme` emulates the system's scheme, which the page follows only while the viewer's
+ * choice is System. On the install the choice was dark, and `--theme light` photographed dark with
+ * nothing said. Where the emulation alone takes, the viewer's choice is never touched.
+ */
+test('a theme the page takes from the system is emulated, and the viewer’s choice is never touched', async () => {
+  const page = themedPage({ choice: null, systemDark: true });
+  let during: unknown = null;
+  await withPageTheme(page.cdp, 'light', async () => { during = await page.cdp.evaluate(PAGE_THEME); }, { settle: 0 });
+
+  assert.equal(during, 'light');
+  assert.equal(page.writes(), 0);
+  assert.equal(page.stored(), null);
+});
+
+test('a viewer’s own choice is set for the capture and put back after it', async () => {
+  const page = themedPage({ choice: 'dark' });
+  let during: unknown = null;
+  let storedDuring: string | null = null;
+  await withPageTheme(page.cdp, 'light', async () => {
+    during = await page.cdp.evaluate(PAGE_THEME);
+    storedDuring = page.stored();
+  }, { settle: 0 });
+
+  assert.equal(during, 'light');
+  assert.equal(storedDuring, 'light');
+  assert.equal(page.stored(), 'dark', 'the viewer’s choice is back');
+  assert.equal(page.attribute(), 'dark', 'and the page follows it back');
+  assert.equal(page.writes(), 2, 'one write to take, one to put back');
+});
+
+test('a theme the viewer already chose is photographed as it is, and nothing is written', async () => {
+  const page = themedPage({ choice: 'light', systemDark: true });
+  await withPageTheme(page.cdp, 'light', async () => {}, { settle: 0 });
+  assert.equal(page.writes(), 0);
+  assert.equal(page.stored(), 'light');
+});
+
+test('the viewer’s choice is put back even when the capture fails', async () => {
+  const page = themedPage({ choice: 'dark' });
+  await assert.rejects(
+    withPageTheme(page.cdp, 'light', async () => { throw new Error('the capture exited 1'); }, { settle: 0 }),
+    /the capture exited 1/);
+  assert.equal(page.stored(), 'dark');
+  assert.equal(page.attribute(), 'dark');
+});
+
+test('a choice that cannot be set refuses with the reason, and captures nothing', async () => {
+  const page = themedPage({ choice: 'dark', refuseWrite: () => true });
+  let captured = false;
+  await assert.rejects(
+    withPageTheme(page.cdp, 'light', async () => { captured = true; }, { settle: 0 }),
+    (error: Error) => /refusing/.test(error.message) && /storage is refused here/.test(error.message)
+      && /System/.test(error.message));
+  assert.equal(captured, false);
+  assert.equal(page.stored(), 'dark');
+});
+
+test('a page that does not follow its choice refuses rather than photographing the other theme', async () => {
+  const page = themedPage({ choice: 'dark', follows: false });
+  // Never followed, so the attribute the page started with is set by hand here: forced dark.
+  await page.cdp.evaluate("document.documentElement.dataset.theme = 'dark'");
+  let captured = false;
+  await assert.rejects(
+    withPageTheme(page.cdp, 'light', async () => { captured = true; }, { settle: 0 }),
+    (error: Error) => /refusing/.test(error.message) && /still dark/.test(error.message));
+  assert.equal(captured, false);
+  assert.equal(page.stored(), 'dark', 'put back all the same');
+});
+
+test('a choice that cannot be put back says what it was, and fails the shot', async () => {
+  const page = themedPage({ choice: 'dark', refuseWrite: (write) => write === 2 });
+  await assert.rejects(
+    withPageTheme(page.cdp, 'light', async () => {}, { settle: 0 }),
+    (error: Error) => /not put back/.test(error.message) && /was dark/.test(error.message)
+      && /is light now/.test(error.message));
+});
+
+test('a viewer on System is put back to System when the page had to be set', async () => {
+  // The system's scheme emulated and a page that still reads dark: a choice the page holds alone,
+  // since storage refused it earlier in the page's life. Setting it through the store makes it take;
+  // putting it back removes the key, which is how the page remembers System.
+  const page = themedPage({ choice: null, systemDark: true });
+  await page.cdp.evaluate("document.documentElement.dataset.theme = 'dark'");
+  let during: unknown = null;
+  await withPageTheme(page.cdp, 'light', async () => { during = await page.cdp.evaluate(PAGE_THEME); }, { settle: 0 });
+  assert.equal(during, 'light');
+  assert.equal(page.stored(), null);
+});
+
+/**
+ * The theme's key is a twin (`twins.md`): the page remembers the viewer's choice under it and hears a
+ * write to it, and `shot --theme` sets it for a capture and puts it back. Spelled twice, held here.
+ */
+test('the tool and the page spell the theme’s key the same, and the page hears a write to it', () => {
+  const theme = readText(join(repoRoot, 'src', 'Daoris.Web', 'src', 'theme.ts'));
+  assert.ok(theme.includes(`export const THEME_KEY = '${THEME_KEY}';`),
+    `the tool writes ${THEME_KEY} and the page remembers its choice under another key`);
+  assert.ok(theme.includes("window.addEventListener('storage', followStoredTheme)"),
+    'the page no longer hears a storage event, so a choice set for a capture would not take');
 });

@@ -9,7 +9,11 @@ import { store, stored } from './lib/stored';
 
 export type ThemeChoice = 'system' | 'light' | 'dark';
 
-/** Where the choice is remembered. Per viewer; a lost or blocked store is simply the system. */
+/**
+ * Where the choice is remembered. Per viewer; a lost or blocked store is simply the system. Spelled
+ * again in `tools/desktop.mjs` (`THEME_KEY`), whose `shot --theme` sets it for a capture and puts it
+ * back (LOOK1, `twins.md`).
+ */
 export const THEME_KEY = 'daoris.theme';
 
 /** The remembered choice, or the system when there is none or it is one this build does not know. */

@@ -323,7 +323,7 @@ public sealed class DriverLoop(
                 Listening = queue.Taking,
             });
         Chat = chat;
-        Service = service;
+        await ComeUpAsync(service).ConfigureAwait(false);
 
         // A plugin's word goes to the console under `plugin:<id>` (D49 §2, D64 §4) — the same buffer
         // a session's lines and a harness action's lines land in, readable only over this bridge.
@@ -448,6 +448,26 @@ public sealed class DriverLoop(
                 ? eventBus.EmitAsync("DAORIS", "DRIVER_ERROR", new { said.Code, said.Message })
                 : Task.CompletedTask,
             ct).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// The loop's service, handed to the routes, and the page told (LOOK2a): until now every route that reads the
+    /// service refused *still coming up*, and from now it answers.
+    /// </summary>
+    /// <remarks>
+    /// <para><b>The page asks again on this, not on a tick.</b> A page opened on a screen that reads the service asks at
+    /// once, is refused, and until LOOK2a kept that refusal until something else asked again: the first tick, which can
+    /// wait on a remote's sync or on another driver's lock (DRV8a). Settings → Workspace said no repository had a line
+    /// until *Bring up to date* happened to ask again. <c>DRIVER_READY</c> is said once, the moment the refusals stop.</para>
+    ///
+    /// <para>The service holds its registry the moment it answers at all (its store is read on each ask), so the
+    /// service being handed over is the whole of being ready. Called by the loop once its host answers; public so the
+    /// tests hold what the page is told.</para>
+    /// </remarks>
+    public async Task ComeUpAsync(ServiceClient service)
+    {
+        Service = service;
+        await eventBus.EmitAsync("DAORIS", "DRIVER_READY", new { Ready = true }).ConfigureAwait(false);
     }
 
     /// <summary>How often a loop waiting on another driver's lock looks again (DRV8a).</summary>
