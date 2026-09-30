@@ -7,7 +7,7 @@ import { useScope } from './scope';
 import { useHarnessRun, WithHarnessRuns } from './harnessRuns';
 import {
   useAddFavorite, useBrowserSettings, useDriver, useHarnessAction, useHarnesses, useLines,
-  usePickFolder, usePluginAction, usePluginNew, usePlugins, usePluginTry, useRefreshHarnesses, useRemotes, useRemoveFavorite, useRuleAction, useRuleProposal, useRules,
+  usePickFolder, usePluginAction, usePluginInstall, usePluginNew, usePlugins, usePluginTry, usePluginUpdate, useRefreshHarnesses, useRemotes, useRemoveFavorite, useRuleAction, useRuleProposal, useRules,
   useSetAgentSettings, useSetBrowser, useSetExtensions, useSetHelper, useSetIntake, useSetLanding, useSetLine, useSetLinks, useSetNotify, useSweep, useSweepPlan, useSetStrikes, useStarts, useUnwireRemote, useUsage,
   useWireRemote, useMachineLog, useOpenLogFolder,
 } from './shell';
@@ -21,6 +21,8 @@ import { AiJobs, type SearchTier } from './settings/AiJobs';
 import { LandingList } from './settings/Landings';
 import { LineList } from './settings/Lines';
 import { PluginKitCard, TrialReport, type KitPoint, type PluginTrialResult } from './settings/PluginKit';
+import { PluginOffersCard } from './settings/PluginOffers';
+import { PluginSourceLine, PluginUpdatePlan, updatable, type PluginUpdatePlanShown } from './settings/PluginUpdate';
 import { SweepList } from './settings/Sweep';
 import { SignIn } from './SignIn';
 import { byTool, doorLabel, type ToolDoor } from './tools';
@@ -1108,14 +1110,22 @@ function Starts({ notify }: { notify: Notify }) {
  *
  * A plugin that speaks can be tried where it stands (PLUG8): the shell starts it as the driver would and
  * the report sits under its row. Beneath the catalogue, the kit a plugin is made with.
+ *
+ * Each row says where its plugin came from, and one with a record is updated by two presses (PLUG9 c):
+ * *Update…* asks what would change, shown under the row, and *Update now* makes it. Beneath the catalogue,
+ * Daoris's own plugins the install carries, each installed only by its press (PLUG9 d, D103).
  */
 function Plugins({ notify }: { notify: Notify }) {
   const { t } = useTranslation();
   const catalog = usePlugins();
   const act = usePluginAction();
   const trying = usePluginTry();
+  const updating = usePluginUpdate();
+  const installing = usePluginInstall();
   // Each installed plugin's last trial, by id, shown under its row until it is tried again.
   const [trials, setTrials] = useState<Record<string, PluginTrialResult>>({});
+  // What an update of each plugin would change, by id, shown under its row until it is pressed or put away.
+  const [plans, setPlans] = useState<Record<string, PluginUpdatePlanShown>>({});
   useErrorNotify(catalog.error, notify);
 
   // Defensive about the shape, for SES1's reason: a shell older than this surface answers something
@@ -1144,8 +1154,31 @@ function Plugins({ notify }: { notify: Notify }) {
     onSuccess: (trial) => setTrials((was) => ({ ...was, [id]: trial })),
     onError: failure(notify),
   });
+  const putAway = (id: string) => setPlans((was) => {
+    const kept = { ...was };
+    delete kept[id];
+    return kept;
+  });
+  // The first press asks what would change; the plan's own press makes it.
+  const askUpdate = (id: string) => updating.mutate({ id }, {
+    onSuccess: (plan) => setPlans((was) => ({ ...was, [id]: { ...plan, changes: Array.isArray(plan.changes) ? plan.changes : [] } })),
+    onError: failure(notify),
+  });
+  const update = (id: string) => updating.mutate({ id, apply: true }, {
+    onSuccess: () => {
+      putAway(id);
+      notify(t('plugin.update.done', { id }));
+    },
+    onError: failure(notify),
+  });
+  const install = (id: string) => installing.mutate(id, {
+    onSuccess: (added) => notify(t('plugin.offers.installed', { id: added.id })),
+    onError: failure(notify),
+  });
   // An older shell has never heard of the kit, and gets no card for it.
   const kit = Array.isArray(catalog.data.kit?.points) ? catalog.data.kit.points : null;
+  // Nor of the install's own plugins (PLUG9 d).
+  const offers = Array.isArray(catalog.data.offers) ? catalog.data.offers : [];
 
   return (
     <>
@@ -1177,6 +1210,8 @@ function Plugins({ notify }: { notify: Notify }) {
                   wrong. Its sentence stands alone beneath. */}
               {!plugin.problem && <span>{what(plugin)}{plugin.description ? ` — ${plugin.description}` : ''}</span>}
               <span className="truncate font-mono text-meta">{plugin.folder}</span>
+              {/* Where it came from (PLUG9 c): an older shell sends nothing, and nothing is said. */}
+              <PluginSourceLine source={plugin.source} />
             </span>
           )}
           control={(
@@ -1190,6 +1225,17 @@ function Plugins({ notify }: { notify: Notify }) {
                   onClick={() => tryInstalled(plugin.id)}
                 >
                   {t('plugin.kit.try')}
+                </Button>
+              )}
+              {/* Only where there is a source to read: one with no record has nothing to update from. */}
+              {updatable(plugin.source) && (
+                <Button
+                  variant="ghost"
+                  disabled={updating.isPending}
+                  aria-label={t('plugin.update.askNamed', { id: plugin.id })}
+                  onClick={() => askUpdate(plugin.id)}
+                >
+                  {t('plugin.update.ask')}
                 </Button>
               )}
               <Button
@@ -1215,9 +1261,18 @@ function Plugins({ notify }: { notify: Notify }) {
             </p>
           )}
           {trials[plugin.id] && <TrialReport trial={trials[plugin.id]!} />}
+          {plans[plugin.id] && (
+            <PluginUpdatePlan
+              plan={plans[plugin.id]!}
+              busy={updating.isPending}
+              onApply={update}
+              onCancel={() => putAway(plugin.id)}
+            />
+          )}
         </SettingRow>
       ))}
     </Card>
+    <PluginOffersCard offers={offers} busy={installing.isPending} onInstall={install} />
     {kit && <PluginKitSection notify={notify} points={kit} />}
     </>
   );

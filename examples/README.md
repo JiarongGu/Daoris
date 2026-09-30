@@ -83,7 +83,10 @@ a process of its own; no code from one ever loads into Daoris. Two hand sessions
 where the person signs in once. Two land work (D100): once accepting a session has put its work on a
 branch, [`plugins/github-pull-request`](plugins/github-pull-request/README.md) pushes it and opens a
 pull request with `gh`, and [`plugins/azure-devops-pull-request`](plugins/azure-devops-pull-request/README.md)
-with `az repos`. Neither runs until it is installed and a workspace's landing rule names it.
+with `az repos`. Neither runs until it is installed and a workspace's landing rule names it. The
+published desktop carries those two and `in-app-browser` as **Daoris's own plugins**, offered in
+Settings → Plugins and by `daoris plugin list` and never installed until a press (D103);
+`hold-by-title` is the rehearsals' fixture, and `browser` is for a machine without the shell.
 
 The examples are tracked in full — manifests, locks, synced doctrine — so they are readable as
 examples, not only runnable as fixtures (D39). The cost is stated in the same decision: a canon change

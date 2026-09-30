@@ -1,15 +1,16 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 // Untyped workspace tooling, suppressed at the one site — see desktop-tool.test.ts for why.
 import {
-  KEPT_LOCALES, LAUNCHER, MARKER, MARKER_HEADER, OWN, RETIRED_IN_APP, RETIRED_LAUNCHERS, SHELL_EXE, SHELL_FILES, SHELL_HOME,
-  isInstall, recordedShellFiles, refusal, retiredPaths,
+  KEPT_LOCALES, LAUNCHER, MARKER, MARKER_HEADER, OFFERED_PLUGINS, OWN, PLUGIN_OFFERS, RETIRED_IN_APP, RETIRED_LAUNCHERS,
+  SHELL_EXE, SHELL_FILES, SHELL_HOME, isInstall, layOffers, recordedShellFiles, refusal, retiredPaths,
   // @ts-expect-error — untyped workspace tooling; see above
 } from '../../../tools/desktop-publish.mjs';
+import { OFFERS_DIR, readManifest } from '../src/plugins.ts';
 
 /**
  * The publish guard (`tools/desktop-publish.mjs`): what it refuses to write into, and the one door
@@ -140,6 +141,85 @@ test('the locales an install keeps are the kit’s fallback and the ones the app
   const app = readFileSync(join(here, '..', '..', 'Daoris.Desktop', 'Daoris.Desktop.App', 'Daoris.Desktop.App.csproj'), 'utf8');
   const named = (/<ShenoraChromiumLocales>([^<]*)</.exec(app)?.[1] ?? '').split(';').map((name) => name.trim()).filter(Boolean);
   assert.deepEqual([...KEPT_LOCALES].sort(), ['en-US', ...named].map((name) => `${name}.pak`).sort());
+});
+
+/**
+ * PLUG9 (d), D103: the install carries Daoris's own example plugins as OFFERS, in `app/plugin-offers/`,
+ * never under `data/plugins/`, so none is installed until a press. The ones meant for people: the two that
+ * land work, and the one that hands a session the install's own browser. Not the rehearsal fixture, and not
+ * the browser a machine without the shell launches, which claims the same server name.
+ */
+test('the offers are the examples meant for people, never a rehearsal fixture', () => {
+  assert.deepEqual([...OFFERED_PLUGINS], ['github-pull-request', 'azure-devops-pull-request', 'in-app-browser']);
+  assert.ok(!OFFERED_PLUGINS.includes('hold-by-title'), 'the family and deployment rehearsals install hold-by-title');
+  assert.ok(!OFFERED_PLUGINS.includes('browser'), 'a second `browser` server would contribute nothing beside in-app-browser');
+  const examples = join(here, '..', '..', '..', 'examples', 'plugins');
+  for (const id of OFFERED_PLUGINS) {
+    assert.equal(readManifest(id, join(examples, id), true).problem, null, id);
+  }
+});
+
+/**
+ * Where the offers are is a twin (D103): the publish lays them out, the CLI finds them beside the home, and
+ * the driver's `PluginOffers.Layout` beside the application or the home. Three spellings, held here.
+ */
+test('the offers folder is where the CLI and the driver look for it', () => {
+  assert.deepEqual([...PLUGIN_OFFERS], ['app', 'plugin-offers']);
+  assert.deepEqual([...PLUGIN_OFFERS], [...OFFERS_DIR]);
+  assert.equal(PLUGIN_OFFERS[0], SHELL_HOME[0], 'beside the application, in app/');
+  const driver = readFileSync(join(here, '..', '..', 'Daoris.Desktop', 'Daoris.Desktop.Driver', 'PluginOffers.cs'), 'utf8');
+  assert.ok(driver.includes(`Layout = [${PLUGIN_OFFERS.map((part: string) => `"${part}"`).join(', ')}]`), 'PluginOffers.Layout');
+});
+
+test('laying out the offers copies each one whole into app/plugin-offers, and nothing into the home', () => {
+  const examples = folder();
+  for (const id of ['github-pull-request', 'azure-devops-pull-request', 'in-app-browser', 'hold-by-title']) {
+    mkdirSync(join(examples, id, 'lib'), { recursive: true });
+    writeFileSync(join(examples, id, 'plugin.json'), `{ "id": "${id}" }\n`);
+    writeFileSync(join(examples, id, 'lib', 'part.mjs'), `// ${id}\n`);
+  }
+  const install = folder();
+  mkdirSync(join(install, 'data'), { recursive: true });
+
+  const laid = layOffers(examples, install);
+
+  const offers = join(install, ...PLUGIN_OFFERS);
+  assert.deepEqual(laid, [...OFFERED_PLUGINS]);
+  assert.deepEqual(readdirSync(offers).sort(), [...OFFERED_PLUGINS].sort());
+  assert.equal(readFileSync(join(offers, 'github-pull-request', 'lib', 'part.mjs'), 'utf8'), '// github-pull-request\n');
+  assert.equal(existsSync(join(install, 'data', 'plugins')), false, '🔴 an offer is never installed by the publish');
+});
+
+test('a republish replaces the offers whole: a stale file and an offer dropped since both go', () => {
+  const examples = folder();
+  for (const id of OFFERED_PLUGINS) {
+    mkdirSync(join(examples, id), { recursive: true });
+    writeFileSync(join(examples, id, 'plugin.json'), `{ "id": "${id}", "version": "1.1.0" }\n`);
+  }
+  const install = folder();
+  const offers = join(install, ...PLUGIN_OFFERS);
+  mkdirSync(join(offers, 'github-pull-request'), { recursive: true });
+  writeFileSync(join(offers, 'github-pull-request', 'stale.mjs'), '// from the publish before\n');
+  mkdirSync(join(offers, 'retired-offer'), { recursive: true });
+
+  layOffers(examples, install);
+
+  assert.equal(existsSync(join(offers, 'github-pull-request', 'stale.mjs')), false);
+  assert.equal(existsSync(join(offers, 'retired-offer')), false);
+  assert.match(readFileSync(join(offers, 'github-pull-request', 'plugin.json'), 'utf8'), /1\.1\.0/);
+  assert.deepEqual(readdirSync(join(install, SHELL_HOME[0])), [PLUGIN_OFFERS[1]], 'nothing left staged beside it');
+});
+
+test('an offer missing from the examples stops the publish, naming it, and the offers stand as they were', () => {
+  const examples = folder();
+  mkdirSync(join(examples, 'github-pull-request'), { recursive: true });
+  writeFileSync(join(examples, 'github-pull-request', 'plugin.json'), '{ "id": "github-pull-request" }\n');
+  const install = folder();
+  const offers = join(install, ...PLUGIN_OFFERS);
+  mkdirSync(join(offers, 'in-app-browser'), { recursive: true });
+
+  assert.throws(() => layOffers(examples, install), /azure-devops-pull-request/);
+  assert.ok(existsSync(join(offers, 'in-app-browser')), 'the last publish’s offers are untouched');
 });
 
 test('the last publish’s record is read from inside app/, and no record is no names', () => {

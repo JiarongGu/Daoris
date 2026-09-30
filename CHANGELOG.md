@@ -25,7 +25,7 @@ The first version: doctrine that installs, is checked, and flows back.
   edits the machine's map of one deployment per workspace, talking to nothing and never printing a key
   back; `agent` manages the agent tools sessions run on and the named accounts they run as, spawning
   each tool's own installer and sign-in — and keeps an API key only for an account that is one
-  (D67); `driver` sets what this machine drives; `plugin` lists, adds, removes and switches the
+  (D67); `driver` sets what this machine drives; `plugin` lists, adds, updates, removes and switches the
   machine's plugins, loading no code from any of them; and `browser` keeps the in-app browser's
   favorites, which it shows in a Daoris folder on its bookmarks bar, and its settings, among them
   whether it is Daoris's own or the person's Edge and whether the page's links open there. `agent`
@@ -774,6 +774,21 @@ The first version: doctrine that installs, is checked, and flows back.
   its manifest writes it, the points it speaks on, and the agents and servers it declares. Adding
   copies the folder into Daoris's home under its id, as `daoris plugin add` does, and never replaces an
   installed plugin; nothing it runs starts at the press.
+- **A plugin remembers where it came from, and takes a newer copy from there** (PLUG9 c, D103). Every
+  add (`daoris plugin add <folder>`, an Ask Daoris card, **Install** beside one of Daoris's own) records
+  the folder or the offer it came from, and its row in Settings → Plugins says which. **Update…** on the
+  row, or `daoris plugin update <id>`, re-reads that source as the catalogue reads a plugin and says what
+  changes (its version, command, points, agents and servers) before anything happens; **Update now**, or
+  `--yes` at a terminal, replaces its folder whole and keeps what the plugin kept. A source that is gone,
+  unsound, another plugin, or one this build refuses is refused in the same words at both doors. A plugin
+  added before, or copied in by hand, has no record, and says so. Ask Daoris can propose an update too.
+- **The install offers Daoris's own plugins** (PLUG9 d, D103). The published application carries
+  `github-pull-request`, `azure-devops-pull-request` and `in-app-browser` in `app/plugin-offers/`, none
+  installed. Settings → Plugins lists them under *Daoris's own plugins*, each with what it speaks on and
+  what it needs in its README's words (`gh auth login`; `az login` and the devops extension), and
+  **Install** copies one in, as `daoris plugin add --offer <id>` does. `daoris plugin list` shows them,
+  and Ask Daoris names them and may propose installing one by its id. Installing one runs nothing: the
+  driver starts it later, and a plugin that lands work only where a rule names it.
 - **The layout toggles are on the strip** (DOCK1c, SURF11). The panel and the right side bar each
   have a toggle beside the window controls on every view, and the session list on Sessions, pressed
   while shown, and an item in the View menu with VS Code's keys: `Ctrl+B`, `Ctrl+J`, `Ctrl+Alt+B`.

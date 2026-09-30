@@ -23,7 +23,8 @@
  * Chromium and its libraries, with the HTTP host in a folder of its own under `app/`; `data/` is the
  * home. Daoris's browser is the application itself since CHR8 (D99), started with the browser's
  * argument, so the install carries one Chromium. The names the shell's publish put in `app/` are
- * listed in `app/shell-files.txt`, so the next publish removes exactly those and nothing else.
+ * listed in `app/shell-files.txt`, so the next publish removes exactly those and nothing else. Daoris's
+ * own example plugins sit beside them in `app/plugin-offers/`, offered and never installed (D103).
  *
  * **What a deployed shell finds.** Nothing is wired into it: with no `DAORIS_*` overrides it makes
  * the install's `data/` the Daoris home (D63) — the machine's registry, quests, drivable set and profiles
@@ -32,10 +33,10 @@
  * the folder is self-sufficient.
  */
 import { execSync } from 'node:child_process';
-import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, isAbsolute, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { isMain } from './fsx.mjs';
+import { copyTree, isMain } from './fsx.mjs';
 import { running } from './processes.mjs';
 
 // ---------------------------------------------------------------------------------------------
@@ -122,6 +123,47 @@ export const KEPT_LOCALES = Object.freeze(['en-US.pak', 'zh-CN.pak']);
 
 /** The shell's own home, which it creates on first start (D63). */
 export const HOME = 'data';
+
+/**
+ * Where an install carries Daoris's own example plugins as offers (PLUG9 d, D103), as path segments:
+ * beside the application in `app/`, never under `data/plugins/`, so none is installed until a person
+ * presses Install (or runs `daoris plugin add --offer <id>`). A twin of the CLI's `OFFERS_DIR` and the
+ * driver's `PluginOffers.Layout`, which find them; `desktop-publish.test.ts` reads all three.
+ */
+export const PLUGIN_OFFERS = Object.freeze(['app', 'plugin-offers']);
+
+/**
+ * The tracked examples an install offers (D103): the two that land work (D100), and the one that hands a
+ * session the install's own browser (D78). Not `hold-by-title`, which the rehearsals install as their
+ * fixture, and not `browser`, which launches a browser of its own for a machine without the shell and
+ * claims the same server name as `in-app-browser`, so the second installed would contribute nothing.
+ */
+export const OFFERED_PLUGINS = Object.freeze(['github-pull-request', 'azure-devops-pull-request', 'in-app-browser']);
+
+/**
+ * Lay the offers out in an install: each of {@link OFFERED_PLUGINS} copied whole from `examples` into
+ * `<install>/app/plugin-offers/`, which is replaced wholesale — staged beside, then swapped — so a stale
+ * file or an offer dropped since does not survive a republish. Nothing is written under the home.
+ *
+ * @returns the ids laid out, in the order offered.
+ * @throws when an offered example has no `plugin.json`, before anything is replaced.
+ */
+export function layOffers(examples, install) {
+  const missing = OFFERED_PLUGINS.filter((id) => !existsSync(join(examples, id, 'plugin.json')));
+  if (missing.length > 0) {
+    throw new Error(`desktop-publish: no plugin.json for the offered ${missing.join(', ')} under ${examples}`);
+  }
+
+  const target = join(install, ...PLUGIN_OFFERS);
+  const parent = dirname(target);
+  mkdirSync(parent, { recursive: true });
+  const staged = join(parent, `.${PLUGIN_OFFERS.at(-1)}-staging`);
+  rmSync(staged, { recursive: true, force: true });
+  for (const id of OFFERED_PLUGINS) copyTree(join(examples, id), join(staged, id));
+  rmSync(target, { recursive: true, force: true });
+  renameSync(staged, target);
+  return [...OFFERED_PLUGINS];
+}
 
 /**
  * Every name a publish writes at the root of an install — and the shell's own `data/`, which it
@@ -303,6 +345,11 @@ function main() {
   cpSync(join(launcherStage, LAUNCHER), join(to, LAUNCHER));
   rmSync(stages, { recursive: true, force: true });
 
+  // Daoris's own example plugins, as offers beside the application (PLUG9 d, D103): Settings → Plugins
+  // lists them and installs one only when pressed, so the publish writes nothing under the home.
+  const offered = layOffers(join(repoRoot, 'examples', 'plugins'), to);
+  console.log(`desktop-publish: offering ${offered.join(', ')} in ${PLUGIN_OFFERS.join('/')}/ (none installed).`);
+
   if (flag('--service')) {
     // Supporting binaries go under `app/`, which is the shape the neighbouring applications on this
     // machine use: one launcher at the root, everything it needs out of sight, runtime state in `data/`.
@@ -341,7 +388,7 @@ Published from a Daoris workspace by \`tools/desktop-publish.mjs\`.
 | | |
 |---|---|
 | \`${LAUNCHER}\` | **the application** — the only thing to run. A small launcher that starts \`${[...SHELL_HOME, SHELL_EXE].join('/')}\`. |
-| \`${SHELL_HOME[0]}/\` | the application itself, on the Chromium it carries (its files are listed in \`${SHELL_FILES.join('/')}\`), which is also Daoris's own browser; and the HTTP host in \`${HOST_HOME.slice(1).join('/')}/\` when published with \`--service\`. Nothing to open. |
+| \`${SHELL_HOME[0]}/\` | the application itself, on the Chromium it carries (its files are listed in \`${SHELL_FILES.join('/')}\`), which is also Daoris's own browser; the HTTP host in \`${HOST_HOME.slice(1).join('/')}/\` when published with \`--service\`; and Daoris's own example plugins in \`${PLUGIN_OFFERS.slice(1).join('/')}/\` (${OFFERED_PLUGINS.join(', ')}), offered in Settings → Plugins and by \`daoris plugin list\`, none installed until you install one. Nothing to open. |
 | \`${HOME}/\` | **the Daoris home**: the registry, the quests, the drivable set, the harness profiles, the installed service binaries — and the window's engine profile (\`chromium/\`) and its geometry. |
 
 Anything else in this folder is not the application's — repositories it drives, typically — and a

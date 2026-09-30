@@ -41,7 +41,7 @@ import { basename, dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { copyTree, isMain } from './fsx.mjs';
 // The install's layout, from the script that makes it (REV3 CLEAN1): one launcher at the root, the home in `data/`.
-import { HOME, LAUNCHER, RETIRED_LAUNCHERS, SHELL_EXE, SHELL_HOME } from './desktop-publish.mjs';
+import { HOME, LAUNCHER, RETIRED_LAUNCHERS, SHELL_EXE, SHELL_HOME, layOffers } from './desktop-publish.mjs';
 import { applicationsAt, browsersAt, running, stopAll, stopProcesses } from './processes.mjs';
 
 export const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
@@ -492,6 +492,9 @@ async function start(command, args) {
       for (const name of ['engine', 'game']) copyTree(join(repoRoot, 'examples', name), join(family, name));
       console.log(`copied examples/{engine,game} -> ${family}`);
     }
+    // The install's offers (PLUG9 d, D103), laid out beside this run's home as a publish lays them beside
+    // an install's `data/`, so Settings → Plugins shows them here too. None is installed by this.
+    layOffers(join(repoRoot, 'examples', 'plugins'), scratchRoot);
 
     const httpHost = assemblyExe(HTTP_PROJECT);
     if (!httpHost) fail('the service host is not built — `node tools/desktop.mjs build`.');

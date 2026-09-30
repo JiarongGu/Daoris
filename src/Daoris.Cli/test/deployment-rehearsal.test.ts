@@ -10,12 +10,12 @@ import { readText } from '../src/fsx.ts';
 import { makeFixture } from './_fixture.ts';
 import {
   CLOSED_NOTE, SWEPT_NOTE, bridgeCall, concludedByTheClose, hookLines, insideWorkspace, invokeInPage,
-  isMarkedProcess, launchers, markedProcess, strays, transcriptHolds, utf8Of,
+  isMarkedProcess, launchers, markedProcess, offerProblems, strays, transcriptHolds, utf8Of,
   // @ts-expect-error — untyped workspace tooling; the same seam desktop-tool.test.ts documents
 } from '../../../tools/deployment-rehearsal.mjs';
 // The install's layout, from the script that makes it: the gate reads the same constants.
 // @ts-expect-error — untyped workspace tooling; the same seam desktop-tool.test.ts documents
-import { HOST_EXE, HOST_HOME } from '../../../tools/desktop-publish.mjs';
+import { HOST_EXE, HOST_HOME, OFFERED_PLUGINS, PLUGIN_OFFERS } from '../../../tools/desktop-publish.mjs';
 // The protocol stub both rehearsals run (DEPLOY5): one copy, where the family rehearsal's used to be.
 // @ts-expect-error — untyped workspace tooling; the same seam desktop-tool.test.ts documents
 import { ACP_STUB_AGENT } from '../../../tools/rehearsal-kit.mjs';
@@ -33,6 +33,27 @@ import { ACP_STUB_AGENT } from '../../../tools/rehearsal-kit.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const repoRoot = dirname(dirname(dirname(here)));
+
+/**
+ * PLUG9 (d), D103: the gate's check on the install's offers, watched failing both ways — an offer the
+ * install does not carry, and one installed under a home, which a publish must never do.
+ */
+test('the offers check names an offer not carried and one installed, and passes on a sound install', () => {
+  const fx = makeFixture('deploy-offers');
+  const install = join(fx.root, 'install');
+  const home = join(fx.root, 'home');
+  for (const id of OFFERED_PLUGINS) fx.write(`install/${PLUGIN_OFFERS.join('/')}/${id}/plugin.json`, `{ "id": "${id}" }`);
+
+  assert.deepEqual(offerProblems(install, [home]), []);
+
+  fx.write(`home/plugins/${OFFERED_PLUGINS[0]}/plugin.json`, '{}');
+  assert.deepEqual(offerProblems(install, [home]), [`${OFFERED_PLUGINS[0]} is installed under ${home}`]);
+
+  const bare = join(fx.root, 'bare');
+  assert.equal(offerProblems(bare, []).length, OFFERED_PLUGINS.length);
+  assert.match(offerProblems(bare, [])[0], /plugin-offers\/github-pull-request is not carried/);
+  fx.cleanup();
+});
 
 /**
  * 🔴 The check that must be watched failing, because it is the whole of defect 4c.

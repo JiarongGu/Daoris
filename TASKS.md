@@ -21,9 +21,9 @@ lists.
 
 ## State
 
-**Counts, and this is their one home:** sixteen commands, **593 CLI tests, 639 service and 45 HTTP host, 1331 driver,
-390 desktop modules, 80 devkit, 1662 web unit, 21 Playwright**, 66/66 release rehearsal, **301/301
-family rehearsal** (it names its own phases when you run it), **67/67 deployment rehearsal** (D60),
+**Counts, and this is their one home:** sixteen commands, **613 CLI tests, 646 service and 45 HTTP host, 1376 driver,
+393 desktop modules, 80 devkit, 1683 web unit, 21 Playwright**, 66/66 release rehearsal, **301/301
+family rehearsal** (it names its own phases when you run it), **70/70 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge
 documents, 5 skills, 7 packs. The always-loaded core is **22,492 of 26,000 bytes** — a span in
 `AGENTS.md` since D59 — and **advisory rather than enforced** (D54: a fact gates, a judgement
@@ -112,13 +112,17 @@ rather than designed.
 
 ## Backlog
 
-**Thirty rows are open**: the parallel-development arc's seven (MOD1–MOD9, the owner's newest), then the day's two (DRV8, PLUG9's last two parts),
-first; the three REV3 left (DIST1, BUDGET1 and
-HOME1, the owner's); the in-app browser's one (BRW3); D85's one (TASKBAR1); the first
-goal's four (FG5, READACROSS1 and HELPREAD1 the owner's, and SEM2 on a trigger); D76's held file tools;
-three leftovers (CONSOLE3, FLAKE1, TEST1); two on the owner (TRUST2, AGT2c); REH1; and the rest on a
-trigger (TOOL4, TOOL5, PLUG7, CANON9, HARNESS1). Every closed one is in `docs/task-archive.md`, and
-this file holds no ticked rows, by the `task-lifecycle` rule it also ships. A heading below holds open rows only.
+**Twenty-nine rows are open, in three kinds** (triaged 2026-09-30, when the owner asked to go faster):
+- **Workable now, by the parent or subagents (fourteen):** the parallel-development arc's seven
+  (MOD1–MOD9, the owner's newest), DRV8 (in flight), READ1, HOME1 and DIST1 (the
+  owner decided both; in flight), TASKBAR1, TEST1, and FLAKE1 (which MOD8 absorbs).
+- **Waiting on the owner (seven):** BUDGET1 and PLUGREPO1 (their calls), TRUST2 and AGT2c (a grant, two downloads), FG5 and
+  BRW3 (the owner present), and CONSOLE3 until D105 lands (decided).
+- **Parked on a trigger (eight):** TOOL4, TOOL5, PLUG7, SEM2, CANON9, HARNESS1, REH1, and D76's held file
+  tools. None is work until its trigger arrives.
+
+Every closed row is in `docs/task-archive.md`, and this file holds no ticked rows, by the `task-lifecycle`
+rule it also ships. A heading below holds open rows only.
 
 ### Parallel development (owner, 2026-09-30) — the next arc
 
@@ -175,24 +179,12 @@ TASK.md and complete one by one"*).
 > *"do we need a Daoris.Plugins repo? … I think Daoris should have ability to create plugin by itself,
 > say for example via "ask Daoris""*
 
-The reading, recorded before anything is built. A plugin is code that runs on this machine as the
-person: WSR4's pushes with their git and platform sign-in. So **making one is work, not a setting**.
-Written by a session in a repository, with tests, reviewed as a diff and landed; installed only by the
-person's press, with the card naming what it runs and where it speaks. Ask Daoris is the door in, not
-the author: it has no shell and changes nothing itself (HELP4), and a plugin it wrote in one tool call
-would run untested with the person's credentials. **A plugins repository** is then the natural home for
-what Daoris makes: versioned, reviewed, shareable with a team, owned by its own agent like any
-repository. It is not a registry (D64) and not a home for Daoris's own examples: those are the wire's
-contract and the rehearsals' fixtures, so they stay here. Whether to make one, and where, is the owner's.
-- [ ] **PLUG9 — Ask Daoris makes one by asking for it, and installs it by a press.** (a) The room says a
-  plugin is made as an ask at the workspace holding the plugins repository, and proposes that ask; it
-  never writes one. (b) A new proposal kind, `plugin`: add a landed plugin from its folder, enable or
-  disable one. It is judged by the catalogue's own reader, and the card shows the id, the command it
-  starts, and its points, harnesses and servers, so the person sees what will run before Apply. (c)
-  Installing from a repository's folder remembers the source, so the plugin can be updated when its
-  repository lands a change. (d) The install carries Daoris's own example plugins as offers in
-  Settings → Plugins and in the room, never installed until a press (D87: off by default).
-  *(a) and (b) landed 2026-09-30 and are in the archive; (c) and (d) are open.*
+PLUG8 and PLUG9 built the reading recorded here (in the archive): making a plugin is work done in a
+repository with tests, and installing one is the person's press.
+- [ ] **PLUGREPO1 — where the plugins Daoris makes live** (the owner's call). A plugins repository is
+  the natural home: versioned, reviewed, shareable with a team, owned by its own agent, and connected
+  like any repository. It is not a registry (D64), and Daoris's own examples stay here as the wire's
+  contract. Whether to make one, and where, is the owner's; Ask Daoris asks rather than picks until then.
 
 ### What REV3 left (2026-09-25)
 
@@ -203,7 +195,8 @@ found that is not session-sized, or is the owner's call. Each one was confirmed 
   `npx github:JiarongGu/Daoris#v0.0.1 …` cannot run: the root package is a private workspace with no
   `bin`, and no tag exists. Choose npm's `daoris@X` (the release workflow already publishes it) or a
   git ref with a root `bin`; the README, `init`'s written `source`, `release-prep` and
-  `version.test.ts` then move together.
+  `version.test.ts` then move together. *Decided 2026-09-30 (the owner): npm, `daoris@X` — being built
+  (D105).*
 - [ ] **BUDGET1 — what the core budget caps** (CLI F10; the owner's call). Since D59 `inspect` counts
   only the body of Daoris's `AGENTS.md` region. The repository's own always-loaded material is not
   counted: the rest of `AGENTS.md`, `CLAUDE.md`, a local `.claude/rules/` file. The README and the
@@ -213,7 +206,8 @@ found that is not session-sized, or is the owner's call. Each one was confirmed 
   `InstallHome.Establish` defers to a `DAORIS_HOME` already in the environment, and the first
   install set one for the account. So a moved or second install runs on the first one's `data/`
   and says nothing. Either the install's own `data/` wins, or the inherited home wins and the shell
-  says so.
+  says so. *Decided 2026-09-30 (the owner): the install's own `data/` wins, and the window says when it
+  overrode an inherited home — being built (D105).*
 ### What an agent may do — permission scopes (owner, 2026-09-24 → D72, D73)
 
 Measured: rules and hooks Daoris hands over at spawn reach an untrusted session on both doors, and a
@@ -336,19 +330,14 @@ is behind a sign-in. FG1–FG4 are in the archive. **INT6 is reshaped as FG5.**
   **The loop is met** (2026-09-27): six legs, from the first ask to a chain that ran end to end, are
   the study's §8. **Still the owner's:** the verify step's camera-GUID defect and the daily view's note
   chip, both in that repository, and the branches its sessions left (WSR3).
-- [ ] **READACROSS1 — may a session READ another repository?** (the owner's call; FG5, 2026-09-27).
-  Under D81's `auto` mode the apply session read the backend's controller, its roles and its
-  service wiring to diagnose a 403, cited them by file and line, and wrote nothing there. D79 says
-  what another repository knows is asked of it, and the owner said then *"it should request to
-  [the backend]"*. The owner has since said a session should do *"as much as it can just like
-  regular claude code"*. Decide: reads across are fine and writes never, or reads are asked too. The
-  answer is a handed rule, and a sentence in the instruction.
-- [ ] **HELPREAD1 — may Ask Daoris read a checkout?** (the owner's call; HELP4, 2026-09-30). The help
-  room reads the family's knowledge and quests and nothing else (D89): its first real repository
-  question (clean up a repository's branches) opened with a shell command, refused by construction.
-  HELP4 made the room say so and route such work to that repository. Decide whether it may also read
-  a registered tree: `git status`, a branch list, a file. That widens D89's allow-list, and the
-  question is READACROSS1's, asked of a helper that belongs to no repository.
+- [ ] **READ1 — reading across repositories, configurable** (the owner's call, 2026-09-30, closing
+  READACROSS1 and HELPREAD1: *"should be configuable and default to read yes write no (because some repo
+  have master/child relationship like plugin repos)"*). A driven session and Ask Daoris may read any
+  registered checkout (`git status`, a branch list, a file) and write none, by default. It is set per
+  workspace and per repository on both doors, and a declared relationship (a parent and its child, like a
+  plugins repository and the repository it serves) may also allow writes, as the person's durable say-so
+  that the canon's rule on writing across asks for. It is the handed rules and a sentence in the
+  instruction for sessions, and D89's allow-list and the room for Ask Daoris.
 - [ ] ⏸ **SEM2 — vectors that persist** (after SEM1, held). SEM1 embeds what is on disk once per
   process, on first use. The MCP host is one process per session, so with an embedder configured,
   each session's first search embeds the whole corpus. Lyntai.Storage.Sqlite's vector store would
@@ -391,7 +380,8 @@ TDD, looked at on the window, and the ones that touch a real session use one (au
   on either door: the protocol door ends that work with the session (ORPHAN1's job object), and the
   native door's binary kills it itself when its turn ends (the probe). Waiting is a choice about how
   long a session holds its tree, so it is the owner's to make. A stop against the real adapter is
-  unseen: the request's shape is from its source.
+  unseen: the request's shape is from its source. *Decided 2026-09-30 (the owner): it ends with the
+  session, today's behaviour as the rule; D105 records it, and the row closes when that lands.*
 
 - [ ] **FLAKE1 — an intake test failed once in about 20 full driver runs.**
   `IntakeTests.An_ask_with_an_intake_harness_is_answered_by_a_session_that_publishes_onto_it`: the

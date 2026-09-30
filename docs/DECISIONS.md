@@ -4510,3 +4510,87 @@ safe side. The hand-off's plugins in the tests are fakes on the wire's channel; 
 the examples' own tests drive against a bare repository, but no hand-off has run against a real platform.
 The review's button and Ask Daoris's card are held by the page's tests over a mocked bridge, not yet looked
 at on the window.
+
+## D103 — An installed plugin remembers where it came from, and the install offers Daoris's own (2026-09-30)
+
+**Decision (PLUG9 c and d).** The owner asked that Daoris make and install plugins easily, "easy access
+for everything". PLUG9 (a, b) made a plugin an ask and its install a card. The two parts left: a plugin
+added from a repository's folder can be updated when that repository lands a change, and the install
+carries Daoris's own example plugins as offers, installed only by a press (D87: off by default).
+
+- **Where a plugin came from is a file in its install folder**, `.daoris-source.json`: `{ "folder":
+  <whole path> }` for one added from a folder, `{ "offer": <id> }` for one installed from the install's
+  offers. Every add door writes it into the staged copy before the swap: `daoris plugin add <folder>`,
+  `daoris plugin add --offer <id>`, the driver's `PluginInstall.Add` and `AddOffer` behind Ask Daoris's
+  card and Settings → Plugins' Install. So the record is replaced with the install, goes with it on a
+  remove, and is absent from a folder copied in by hand. A plugin with no record is said to have none
+  ("added before Daoris kept one, or copied in by hand"), on its row, in `daoris plugin list` and in Ask
+  Daoris's room, and is never given a guessed source. A record that does not read is named, not read
+  as none. The catalogue reads only the manifest, so it reads past the file.
+- **Update, both doors.** `daoris plugin update <id>` prints what would change and replaces nothing;
+  `--yes` updates, the question being the command without it, as `agent trust` asks one. Settings →
+  Plugins' **Update…** on a row with a record asks the same (`PLUGIN_UPDATE` {id}) and shows it under
+  the row; **Update now** makes it (`{id, apply: true}`). Ask Daoris's `plugin_propose` takes action
+  `update` with the plugin's `id`, its card showing the changes. Each re-reads the source with the
+  catalogue's own reader (`readManifest`/`ReadAsWritten`, placeholders as written) and refuses, in one
+  order and one wording on both twins: an id that is not one, a plugin not installed, no record, a record
+  that does not read, an offer the install no longer carries, a source inside or holding the home, a
+  folder that is gone, one with no manifest, an unsound manifest (the catalogue's words), a manifest of
+  another id, and a declaration this build refuses. What changes is five rows, each side as its manifest
+  writes it: version, command, points, harnesses, servers. The swap is `add`'s: copied beside as a
+  dot-folder, the record written into it, the installed folder moved aside whole (a held folder is
+  refused whole, the installed version untouched), the copy renamed in. `.data/<id>` is its sibling and
+  is never touched. The driver stops the plugin's hook first, and the loop starts the new one at its
+  next look. Nothing it runs starts at the press.
+- **The offers are `app/plugin-offers/` in the install**, beside the application and never under
+  `data/plugins/`, laid out by `tools/desktop-publish.mjs` (`layOffers`, replaced whole each publish).
+  They are the examples meant for people: `github-pull-request` and `azure-devops-pull-request`, which
+  land work (D100), and `in-app-browser`, which hands a session the install's own browser (D78). Not
+  `hold-by-title`, the rehearsals' fixture, and not `browser`, which launches a browser of its own for a
+  machine with no shell and claims `in-app-browser`'s server name, so the second installed would
+  contribute nothing.
+- **How each door finds them.** The CLI on a terminal has only `DAORIS_HOME`, which the install sets
+  to its `data/` (D63), so it looks beside the home: `<home>/../app/plugin-offers`. The driver looks
+  beside the running application first (`AppContext.BaseDirectory/plugin-offers`, the way the HTTP host
+  is found beside the shell), then beside the home. In an install the two are one folder; where a home
+  is redirected (a rehearsal, a dev loop), the application still finds its own. The dev loop lays the
+  offers out beside its scratch home.
+- **What an offer needs is its README's `## What it needs`**, its bullets read by both twins (a wrapped
+  bullet joined, emphasis dropped, code kept) and shown verbatim, never translated: content, not chrome.
+  `in-app-browser`'s README gained that section.
+- **Offers on every door, installed by a press.** Settings → Plugins lists the offers not installed in
+  their own card, *Daoris's own plugins*, each with what it declares and needs and an **Install** that is
+  `PLUGIN_INSTALL` {offer}, `add --offer`'s copy. `daoris plugin list` shows them with the command.
+  Ask Daoris's room names the sound ones not installed by id, with their points and needs; its
+  `plugin_propose` add names one in `offer`, by id and never a path (the service refuses an offer and a
+  folder together). Installing one records `{ "offer": id }`, so a republish that brings a newer copy is
+  taken by an update.
+
+**Why a file in the install folder, not a row in `plugins.json`.** `plugins.json` is rewritten whole by
+two writers, the CLI's and the driver's, and by every older build still on a machine (the owner's install
+runs a build before this), none of which has a field for a source: one switch from an older build would
+drop every record. A row also outlives a folder deleted by hand, and a later hand-copied folder of the
+same id would then inherit a source nobody gave it. The file is one move with the install and nothing
+else writes it.
+
+**Why the offers are not installed.** D87 and D100: nothing pushes by default, and a landing plugin runs
+as the person with their platform's sign-in. An offer copied into `data/plugins/` would be installed by a
+publish nobody pressed for.
+
+**Rejected.**
+- **The source in the plugin's data folder.** `.data/<id>` is what the plugin keeps, which an update must
+  never touch and a remove leaves; a record there would outlive the install it describes.
+- **An absolute path for an offer's source.** An install moved to another folder would leave every
+  offer-installed plugin pointing at nowhere. The offer's id is resolved at update time.
+- **Offers found by a path written into `INSTALLED.md`.** A second reader of a prose file, where the
+  layout is already D93's and the home already names it.
+- **A `needs` field in the manifest.** It would change the manifest for a line the README already
+  carries for a person; the README is the author's words for exactly this reader.
+- **Replacing an installed plugin from Ask Daoris's add, or from Install.** PLUG9's rule stands: the
+  driver adds and never replaces. Taking a newer copy is an update, which shows what changes first.
+
+**What the gates do not cover.** The deployment rehearsal now checks the published install carries the
+three offers and installs none, and that the deployed driver finds them beside the application with a
+redirected home; it was written here and not run (the parent runs it). The screen's Update and Install,
+and the proposal cards, were checked by the vitest loop over a mocked bridge in both catalogues, not yet
+on the window. No offer has been installed and run against a real platform.

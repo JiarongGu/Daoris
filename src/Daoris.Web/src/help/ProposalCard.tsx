@@ -16,6 +16,12 @@ export type HelpPluginShown = {
   servers: { name: string; command: string[] }[];
   copied?: boolean;
   problem?: string | null;
+  /** What one of the install's own plugins needs, in its README's words (PLUG9 d). */
+  needs?: string[];
+  /** What an update changes, each side as the manifests write it (PLUG9 c). */
+  changes?: { what: string; was: string; now: string }[];
+  /** Whether Apply replaces an installed plugin's folder from where it came from (an update). */
+  replaced?: boolean;
 };
 
 /**
@@ -59,6 +65,15 @@ function PluginRuns({ plugin }: { plugin: HelpPluginShown }) {
         said(t('help.proposal.plugin.harness', { name: harness.name, command: line(harness.command) }), `harness-${harness.name}`))}
       {plugin.servers.map((server) =>
         said(t('help.proposal.plugin.server', { name: server.name, command: line(server.command) }), `server-${server.name}`))}
+      {/* PLUG9 (c): each side as the manifests write it; a side that is empty is none. */}
+      {(plugin.changes ?? []).map((change) =>
+        said(t('help.proposal.plugin.change', {
+          what: t(`plugin.update.what.${change.what}`, { defaultValue: change.what }),
+          was: change.was ? `\`${change.was}\`` : t('plugin.update.none'),
+          now: change.now ? `\`${change.now}\`` : t('plugin.update.none'),
+        }), `change-${change.what}`))}
+      {/* PLUG9 (d): the README's own requirement lines, which the person sets up themselves. */}
+      {(plugin.needs ?? []).map((need) => said(t('help.proposal.plugin.needs', { need }), `need-${need}`))}
     </ul>
   );
 }
@@ -103,6 +118,7 @@ export function ProposalCard({ proposal, pending = false, onApply, onDismiss }: 
       <p className="m-0 mt-1 text-small text-ink"><Inline text={proposal.describe} /></p>
       {plugin && <PluginRuns plugin={plugin} />}
       {plugin?.copied && <p className="m-0 mt-1 text-meta text-ink-faint">{t('help.proposal.plugin.copied')}</p>}
+      {plugin?.replaced && <p className="m-0 mt-1 text-meta text-ink-faint">{t('help.proposal.plugin.replaced')}</p>}
       {/* The catalogue's sentence, carried through as a value: one copy of it, the driver's. */}
       {plugin?.problem && (
         <p className="m-0 mt-1 text-meta text-st-declined"><Inline text={t('help.proposal.plugin.problem', { problem: plugin.problem })} /></p>

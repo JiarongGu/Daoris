@@ -89,7 +89,8 @@ model and effort (`agent_settings_propose`), the delete of a quest or an ask mad
 makes the same change and applied through that screen's own route.
 
 **A plugin** (PLUG9, §9.7): one that has landed, added from its folder in the checkout of the
-repository that holds it (`plugin_propose`), or one installed here switched on or off. Making one is
+repository that holds it (`plugin_propose`), or one installed here switched on or off; since D103 one
+of the install's own by its id, or an update of one from where it came from. Making one is
 never a proposal of this kind: it is an ask at that repository's workspace, since a plugin runs as the
 person and is made with tests and reviewed like any other work.
 
@@ -265,8 +266,13 @@ line git can name. With an agent named, a starter is also a first message.
    - **Applied through the door the screen or the terminal uses**: an add is `PluginInstall.Add`, the
      driver's twin of `plugin add`'s copy, which never replaces an installed plugin; a switch is
      `PLUGIN_ACTION`'s own row, one method the route and the door share. Neither starts anything.
-   - **Left for PLUG9 (c) and (d)**: remembering where an added plugin came from, to update it, and the
-     install's example plugins offered as cards.
+   - **Built as PLUG9 (c) and (d)** (D103): an `update` action, with the plugin's `id`, judged by
+     `PluginInstall.PlanUpdate` (a plugin with no record of where it came from is refused, never guessed)
+     and applied through `PLUGIN_UPDATE`'s own apply, its card listing what changes; and an `add` naming one
+     of the install's own plugins in `offer`, by id and never a path (the service refuses an offer beside a
+     folder), judged by what the install offers and applied through `PLUGIN_INSTALL`'s copy. The room lists
+     the offers not installed, with their points and their README's requirement lines, and says of each
+     installed plugin only the kind of its source.
    - **What the gates do not cover:** whether the folder's contents have landed on the repository's line
      (the checkout is copied as it stands), a real helper choosing the tool, and the card on the window in
      both themes.

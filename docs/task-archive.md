@@ -8256,3 +8256,27 @@ and no platform's squash merge or push was exercised (a local squash and a bare 
 **Proven by:** driver 1331, modules 390, service 639 + 45, vitest 1662, CLI 593, family 301/301,
 Playwright 21, deployment 67/67 (a first run failed publishing: a long-lived MSBuild server carried a
 broken environment, and `dotnet build-server shutdown` cleared it).
+
+
+## PLUG9 (c) and (d) — a plugin remembers where it came from, and the install offers Daoris's own (2026-09-30)
+
+> - [ ] **PLUG9 — Ask Daoris makes one by asking for it, and installs it by a press.** … (c) Installing
+>   from a repository's folder remembers the source, so the plugin can be updated when its repository
+>   lands a change. (d) The install carries Daoris's own example plugins as offers …
+
+**Outcome** (built by a subagent in its own worktree, merged, then rehearsed on main): **D103** (it took
+D102 in its worktree, which WSR5 had landed with; renumbered on merge). **(c)** Every add records where
+the plugin came from in `.daoris-source.json` inside its install folder (the folder, or the install's
+offer), written into the staged copy before the swap, so it moves and goes with the install. A plugin added
+earlier or copied in by hand says it has no record, and is never given a guessed source. `daoris plugin
+update <id> [--yes]`, Settings → Plugins' Update… / Update now and Ask Daoris's `update` card re-read the
+source with the catalogue's own reader, refuse in one order and wording on both twins, show what changes
+before the press, and swap the folder whole with `.data` untouched, stopping the hook first. A file, not a
+`plugins.json` row, because every writer of that file, older builds included, drops a field it does not
+know. **(d)** The publish lays `github-pull-request`, `azure-devops-pull-request` and `in-app-browser` out
+in the install's `app/plugin-offers/`, never under `data/plugins/`; Settings → Plugins lists the uninstalled
+ones with their README's *What it needs*, and Install copies one in with the offer recorded. `plugin list`
+shows them, and Ask Daoris names them by id. Installing runs nothing; no offer has run against a real
+platform. The merge with WSR5 took eleven conflicts, all in the files the parallel-development design names.
+**Proven by:** driver 1376, modules 393, service 646 + 45, vitest 1683, CLI 613, family 301/301, Playwright
+21, deployment 70/70 (three new checks: the offers carried, none installed, the deployed driver finds them).

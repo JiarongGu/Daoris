@@ -50,6 +50,21 @@ public sealed record HelpPlugin(string Id, bool Enabled, IReadOnlyList<string> P
 {
     /// <summary>Why it contributes nothing, in the catalogue's words; null when sound.</summary>
     public string? Problem { get; init; }
+
+    /// <summary>Where it came from (PLUG9 c): `folder`, `offer`, or null for none recorded — never the path itself.</summary>
+    public string? Source { get; init; }
+}
+
+/// <summary>
+/// One of Daoris's own plugins the install offers and this machine has not installed (PLUG9 d), as the room
+/// lists it: by id, with what it speaks on and what it needs, so an add can name it — never by a path.
+/// </summary>
+public sealed record HelpOffer(string Id, string Name, string Version, IReadOnlyList<string> Points, IReadOnlyList<string> Needs)
+{
+    /// <summary>The harnesses it declares and the servers it hands every session, by name.</summary>
+    public IReadOnlyList<string> Harnesses { get; init; } = [];
+
+    public IReadOnlyList<string> Servers { get; init; } = [];
 }
 
 /// <summary>A branch a landing made here, as the room lists it (WSR5b): by name and session, so a hand-off names one the record holds.</summary>
@@ -90,6 +105,8 @@ public sealed record HelpMachine
 
     /// <summary>The branches this machine's landings made and recorded, in the order they landed (WSR5b).</summary>
     public IReadOnlyList<HelpLanded> Landed { get; init; } = [];
+    /// <summary>The install's own plugins not installed here and sound, which an add may name by id (PLUG9 d).</summary>
+    public IReadOnlyList<HelpOffer> Offers { get; init; } = [];
 }
 
 /// <summary>
@@ -188,10 +205,12 @@ public static class HelpRoom
     /// <param name="product">What a person calls a harness's tool, where its toolchain says.</param>
     /// <param name="asks">How many asks wait for the person's answer.</param>
     /// <param name="standing">The asks the host answered, listed by id where they are not closed (HELP6).</param>
+    /// <param name="offers">The install's own plugins (PLUG9 d); the room lists the sound ones not installed here.</param>
     public static HelpMachine Describe(
         DriverConfig config, Snapshot snapshot, IReadOnlyList<RepositoryLine> lines,
         IReadOnlyList<HarnessReport> roster, Func<string, string?> product, int asks,
-        IReadOnlyList<AskView>? standing = null, PluginCatalog? plugins = null, IReadOnlyList<LandedBranch>? landed = null)
+        IReadOnlyList<AskView>? standing = null, PluginCatalog? plugins = null, IReadOnlyList<LandedBranch>? landed = null,
+        IReadOnlyList<PluginOffer>? offers = null)
     {
         var lineOf = lines.ToDictionary(line => line.Repository, StringComparer.OrdinalIgnoreCase);
         bool Named(IReadOnlyList<string> list, string repository) => list.Contains(repository, StringComparer.OrdinalIgnoreCase);
@@ -227,8 +246,19 @@ public static class HelpRoom
             })],
             LandingPlugins = LandingPluginsOf(plugins ?? PluginCatalog.None),
             Plugins = [.. (plugins ?? PluginCatalog.None).Plugins.Select(entry =>
-                new HelpPlugin(entry.Manifest.Id, entry.Enabled, entry.Manifest.Hooks?.Points ?? []) { Problem = entry.Problem })],
+                new HelpPlugin(entry.Manifest.Id, entry.Enabled, entry.Manifest.Hooks?.Points ?? [])
+                {
+                    Problem = entry.Problem,
+                    // Its kind only: the folder it came from is a path on this machine, which the room never names.
+                    Source = PluginSource.Read(entry.Folder).Source is { } source ? (source.Offer is not null ? "offer" : "folder") : null,
+                })],
             Landed = [.. (landed ?? []).Select(entry => new HelpLanded(entry.Repository, entry.Branch, entry.Session, entry.Pushed, entry.PullRequest))],
+            Offers = [.. (offers ?? []).Where(offer => !offer.Installed && offer.Problem is null).Select(offer =>
+                new HelpOffer(offer.Id, offer.Manifest.Name, offer.Manifest.Version, offer.Manifest.Hooks?.Points ?? [], offer.Needs)
+                {
+                    Harnesses = [.. offer.Manifest.Harnesses.Select(harness => harness.Name)],
+                    Servers = [.. offer.Manifest.Servers.Select(server => server.Name)],
+                })],
         };
     }
 
@@ -295,7 +325,10 @@ public static class HelpRoom
         text.Append("- `go_propose`: take the person to a place on the window, from the list below. It changes nothing.\n");
         text.Append("- `plugin_propose`: add a plugin that has landed, from its folder in the checkout of the repository that\n");
         text.Append("  holds it (name the repository and the folder there), or switch one installed here on or off. Daoris copies\n");
-        text.Append("  an added plugin into its home under its id, and never replaces one already installed.\n");
+        text.Append("  an added plugin into its home under its id, and never replaces one already installed. An `add` may name\n");
+        text.Append("  one of Daoris's own plugins by its id instead (`offer`, below), and an `update` (the plugin's `id`) takes a\n");
+        text.Append("  newer copy from where an installed one came from, the card saying what changes; one with no record of\n");
+        text.Append("  where it came from cannot be updated.\n");
         // WSR5b: the review's own hand-off, for a ticket landed before its workspace named a plugin, or whose plugin failed.
         text.Append("- `hand_propose`: hand a branch a landing made (from the list below) to a landing plugin, which pushes it\n");
         text.Append("  and opens the pull request, signed in as the person. Name the session that landed it or the branch, and\n");
@@ -321,6 +354,18 @@ public static class HelpRoom
         text.Append("rather than pick one. Once it has landed, propose adding it with `plugin_propose`, from the folder the\n");
         text.Append("session named; never propose adding one that has not landed.\n\n");
 
+        // PLUG9 (d): the install carries Daoris's own example plugins as offers, named by id on the wire.
+        if (machine.Offers.Count > 0)
+        {
+            text.Append("## Daoris's own plugins\n\n");
+            text.Append("This install carries plugins of Daoris's own, none of them installed here. Nothing of one runs until the\n");
+            text.Append("person installs it, and one that lands work runs only where a branch rule names it. Before making a\n");
+            text.Append("plugin, see whether one of these does the job: propose installing it with `plugin_propose` (`add`, and\n");
+            text.Append("`offer` its id, never a path), and say what it needs, which the person sets up themselves.\n\n");
+            foreach (var offer in machine.Offers) text.Append($"- {OfferLine(offer)}\n");
+            text.Append('\n');
+        }
+
         text.Append("## The doors\n\n");
         text.Append("| To | On the screen | At a terminal |\n");
         text.Append("|---|---|---|\n");
@@ -333,10 +378,14 @@ public static class HelpRoom
         // HELP8: a branch rule may name a plugin (D100), and the helper can only name one it can see.
         text.Append("A branch rule may add `--plugin <id>`: once Daoris has made the branch, that plugin pushes it and\n");
         text.Append("opens the pull request, as the person's own platform tools are signed in.\n");
+        var offeredLanders = machine.Offers.Where(offer => offer.Points.Contains(HookPoints.Land, StringComparer.Ordinal)).Select(offer => $"`{offer.Id}`").ToList();
         text.Append(machine.LandingPlugins.Count > 0
             ? $"Plugins that can land work here: {string.Join(", ", machine.LandingPlugins.Select(id => $"`{id}`"))}.\n\n"
             : "No plugin that lands work is installed here: the person installs one (`daoris plugin add <folder>`,\n"
-              + "Settings → Plugins), so never propose a rule naming one.\n\n");
+              + "Settings → Plugins), so never propose a rule naming one"
+              + (offeredLanders.Count > 0
+                  ? $" until it is installed; this install offers {string.Join(" and ", offeredLanders)}, which you may propose installing first.\n\n"
+                  : ".\n\n"));
 
         // HELP6: the places a go may name, from the table the driver judges one by, so the two cannot disagree.
         text.Append("## Where you may take the person\n\n");
@@ -477,9 +526,13 @@ public static class HelpRoom
             "`daoris agent settings <agent> --account <name> model <model> effort <effort>`"),
         ("delete a quest or an ask made by mistake", "Quests → the quest's drawer, or the ask's record → delete",
             "`daoris-driver quest delete <id>`, `daoris-driver ask --delete <id>`"),
-        // PLUG9: the card installs one that landed; the screen switches one installed.
+        // PLUG9: the card installs one that landed; the screen switches one installed, installs one of
+        // Daoris's own (d) and updates one from where it came from (c).
         ("add a plugin that has landed, or switch one on or off", "Settings → Plugins (its switch)",
             "`daoris plugin add <folder>`, `daoris plugin enable|disable <id>`"),
+        ("install one of Daoris's own plugins, or update one from where it came from",
+            "Settings → Plugins (Install beside Daoris's own; Update on an installed one's row)",
+            "`daoris plugin add --offer <id>`, `daoris plugin update <id>`"),
         ("start a task", "Quests → ask for something", "`daoris-driver ask --workspace <name> \"…\"`"),
         ("answer what waits on the person", "Sessions, and what needs you", "`daoris-driver answer`"),
     ];
@@ -498,11 +551,35 @@ public static class HelpRoom
 
     private static string PluginLine(HelpPlugin plugin)
     {
-        if (!plugin.Enabled) return $"`{plugin.Id}` (off)";
-        if (plugin.Problem is { } problem) return $"`{plugin.Id}` (on, contributes nothing: {problem})";
+        // PLUG9 (c): whether an update has anything to read — its kind, never the path.
+        var from = plugin.Source switch
+        {
+            "offer" => ", installed from this install's offer",
+            "folder" => ", added from a folder",
+            _ => ", no record of where it came from",
+        };
+        if (!plugin.Enabled) return $"`{plugin.Id}` (off{from})";
+        if (plugin.Problem is { } problem) return $"`{plugin.Id}` (on, contributes nothing: {problem}{from})";
         return plugin.Points.Count > 0
-            ? $"`{plugin.Id}` (on, speaks on {string.Join(", ", plugin.Points.Select(point => $"`{point}`"))})"
-            : $"`{plugin.Id}` (on)";
+            ? $"`{plugin.Id}` (on, speaks on {string.Join(", ", plugin.Points.Select(point => $"`{point}`"))}{from})"
+            : $"`{plugin.Id}` (on{from})";
+    }
+
+    /// <summary>An offer as the room lists it: its id, name and version, what it speaks on or hands, and what it needs.</summary>
+    private static string OfferLine(HelpOffer offer)
+    {
+        var titled = string.Join(" ", new[] { offer.Name != offer.Id ? offer.Name : "", offer.Version }.Where(part => part.Length > 0));
+        var parts = new List<string>();
+        if (offer.Points.Count > 0)
+        {
+            parts.Add("speaks on " + string.Join(", ", offer.Points.Select(point =>
+                PointSaid.TryGetValue(point, out var said) ? $"`{point}`, {said}" : $"`{point}`")));
+        }
+
+        if (offer.Harnesses.Count > 0) parts.Add($"declares {string.Join(", ", offer.Harnesses.Select(name => $"`{name}`"))}");
+        if (offer.Servers.Count > 0) parts.Add($"hands every session {string.Join(", ", offer.Servers.Select(name => $"`{name}`"))}");
+        if (offer.Needs.Count > 0) parts.Add($"needs: {string.Join("; ", offer.Needs)}");
+        return $"`{offer.Id}`{(titled.Length > 0 ? $" ({titled})" : "")}: {string.Join("; ", parts)}";
     }
 
     private static string Driven(HelpRepository repository)
