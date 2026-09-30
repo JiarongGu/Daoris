@@ -333,6 +333,49 @@ export function DotMark({ tone = 'idle', className }: { tone?: keyof typeof DOT_
 }
 
 /**
+ * One item on a list closed to its strip (FRAME6's session strip row, made general by D118 §5): the first
+ * character of its name and its mark, one press away. What it is and how it stands are its accessible
+ * name and its tip, since the strip has no room for the words and a mark is never hue alone (D41 §6).
+ *
+ * @remarks
+ * A row of its list (`data-list-row`), so the list's arrows move along the strip too (`work/listKeys`).
+ * The first character is taken whole, by code point, so a 中文 name shows its first character rather than
+ * half of one.
+ */
+export function StripMark({ label, initialOf, tone = 'idle', current = false, onPress }: {
+  /** Its accessible name and its tip: what it is and how it stands. */
+  label: string;
+  /** The name whose first character the strip shows. */
+  initialOf: string;
+  tone?: keyof typeof DOT_TONE;
+  /** The one chosen in the list, marked as the activity bar marks its current place. */
+  current?: boolean;
+  onPress?: () => void;
+}) {
+  return (
+    <li data-list-row="">
+      <Tip content={label} side="right">
+        <button
+          type="button"
+          aria-label={label}
+          aria-current={current || undefined}
+          onClick={onPress}
+          className={cn(
+            'relative flex h-8 w-10 items-center justify-center rounded-control transition-colors duration-(--speed)',
+            current ? 'bg-accent-soft text-ink' : 'text-ink-soft hover:bg-accent-soft/50',
+          )}
+        >
+          {/* The same 2px accent rail the activity bar gives its current place. */}
+          {current && <span aria-hidden className="absolute inset-y-1 left-0 w-0.5 rounded-full bg-accent" />}
+          <span aria-hidden className="text-small font-semibold uppercase">{Array.from(initialOf)[0] ?? '?'}</span>
+          <DotMark tone={tone} className="absolute right-1 top-1" />
+        </button>
+      </Tip>
+    </li>
+  );
+}
+
+/**
  * A verbatim monospace region with a "what fell out" footer — a session's console, a build log, a
  * diff hunk.
  *
