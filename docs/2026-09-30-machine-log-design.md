@@ -184,6 +184,34 @@ the transcript beside it.
    §6's *As built* says what each reads and refuses.
 4. **LOG1d**: the report. **Landed** (2026-09-30): `tools/usage-report.mjs`, its summarising helpers
    tested over a fixture home (`usage-report.test.ts`); §6's *As built* says what it prints.
+5. **LOG2**: what the first real log showed, when the report was run on the owner's machine. **Landed**
+   (2026-09-30); the two defects' mechanisms are in `docs/FIX-LOG.md`.
+
+**As built (LOG2a): the host's stop is written.** The shell starts the host with its standard input
+redirected and `DAORIS_STOP_ON_INPUT_END=1` (`HostSupervisor.StartInfo`; a twin of the host's
+`InputEndStop.Variable`). Asked, the host reads that input to its end on a background thread, reading
+nothing from it, and then stops through its lifetime as on Ctrl+C: `app.stopped` is written with the
+uptime, and it exits 0. The shell's stop closes the input, waits up to five seconds (`StopWithin`), and
+kills only a host still running then. A host started without the variable (from a terminal) never opens
+its input; a host the shell adopted (HOSTID1) is not the shell's to stop. Held by `InputEndStopTests`
+(the watcher, the variable table, and the real executable closed as the shell closes it) and
+`HostSupervisorTests` (stand-in hosts: one that honours the input is let go, one that ignores it is
+killed after the bound, an adopted one is left). **Not gated**: a force-killed shell's host stops too,
+since the pipe's writer dies with the shell; observed by hand once, and no gate kills a shell to see it.
+
+**As built (LOG2b): the browser's own tasks are observed.** `MachineLog.Observe(task, where, failed)`
+writes a failed task as the `error` event with its place and then runs the reaction; a cancellation is
+no failure, and the observation never faults. The browser hands it every task it starts and does not
+await: its first window (`the browser's first window`, made by `EngineCdp.FirstWindowAsync`, which
+throws whatever went wrong and says a client timeout as a `TimeoutException`), whose failure also stops
+the browser, and its watch on the shell (`the browser's watch on the shell`). Held by `MachineLogTests`
+(an observed failure is a line and never reaches the finalizer, where the same one left alone does),
+`FirstWindowTests` (an engine that takes the socket and drops it is one line and a stopped browser) and a
+source test over `BrowserProcess`. **Still possible**: the kit's relay (Shenora.Chromium 0.18.0,
+`Shenora.Chromium.Host.CdpRelay.RelaySocketAsync`) awaits `Task.WhenAny` of its two pumps and observes
+neither, as Daoris's own relay did before CHR8, so a CDP client still connected when the browser closes
+can leave an `error` from *an unobserved task* here. That is a request for the kit's owner, not an edit
+from this repository.
 
 ## 8. Not chosen
 
@@ -195,3 +223,6 @@ the transcript beside it.
   code, and a library's configuration would be one more thing an install carries.
 - **Sending anything anywhere.** There is no telemetry. What improves Daoris is the owner's own log,
   read on their own machine, when they choose.
+- **A route to stop the host** (LOG2a). An HTTP door that stops the host is one any caller on the
+  machine could press; the host's standard input is held by the one process that started it, and
+  closes by itself if that process dies.

@@ -8112,3 +8112,24 @@ driving chip or a routed click (both need a session with the browser plugin).
 card names them: every card but a go reads *apply* and *not now*, a go card *go there* and *not now*,
 each with its 中文 label beside it, so the helper points at the button the person sees.
 **Proven by:** `HelpRoomTests` (the phrases pinned, each on one line), 13 room tests.
+
+## LOG2 — what the first real log showed (2026-09-30)
+
+> - [ ] **LOG2 — what the first real log showed** (2026-09-30, read by LOG1d's report on a copy of the
+>   owner's log). (a) **The HTTP host never writes `app.stopped`** … (b) **The browser leaves a task's
+>   exception unobserved** when a WebSocket to its debug port closes without a handshake …
+
+**Outcome** (built by a subagent in its own worktree, merged, then rehearsed on main). **(a)** The host
+never wrote `app.stopped` because `HostSupervisor.Stop` killed the host the shell started. The
+supervisor now starts it with standard input redirected and `DAORIS_STOP_ON_INPUT_END=1` (a twin, in
+`twins.md`), stops it by closing that input, waits up to 5 s and kills only a host still running then
+(`HostStop`). The host's `InputEndStop`, active only when asked, reads the input to its end and calls
+`StopApplication`, so it writes `app.stopped` and exits 0; a terminal's host never opens its input, an
+adopted host is left running, and there is no stop route. A force-killed shell's host now stops too
+(observed by hand, not gated). **(b)** The log's `error` came from the pre-CHR8 relay, which CHR8 had
+already removed. The browser's two remaining let-go tasks now go through `MachineLog.Observe`, which
+writes a failure as an `error` line naming its place and never faults; the first window moved to the
+modules as `EngineCdp.FirstWindowAsync`. The kit's own relay (Shenora.Chromium 0.18.0) has the same
+unobserved `WhenAny`, which is a request for the kit's owner.
+**Proven by:** service 619 + HTTP host 45, modules 384, driver 1144 (the ProcessJob real-tick test once
+under a parallel build, green alone thrice), CLI 584, deployment 67/67.

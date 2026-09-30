@@ -5,6 +5,64 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## The browser left a task's exception to the finalizer (2026-09-30)
+
+**Symptom.** The owner's first real machine log (LOG2) held one `error` in the `browser` source: `where`
+*an unobserved task*, an `AggregateException` wrapping *The remote party closed the WebSocket
+connection without completing the close handshake* (a `SocketException` 10054 underneath), written
+fifteen seconds before the browser's `app.stopped`, as the application was closed; the host's next
+`app.started` ran the CHR8 build.
+
+**Root cause.** The stack's last frame is `Daoris.Desktop.CdpRelay.PumpAsync`: the browser was still
+the pre-CHR8 build. `RelaySocketAsync` started two pumps, `await Task.WhenAny(up, down)`, cancelled
+the other and returned, observing neither. As the engine shut down it dropped its sockets without a close
+frame, the pump reading from it faulted, and only the finalizer ever looked. CHR8 (D99) deleted that relay,
+and the browser's own two remaining fire-and-forget tasks had the same shape in a smaller form: the first
+window caught a list of exception types and left any other to fault a task nobody held, and the shell
+watch caught none.
+
+**Fix.** `MachineLog.Observe(task, where, failed)` in the driver library: a continuation that writes a
+failure as the `error` event with its place, runs the reaction, writes that too if it throws, and never
+faults. `BrowserProcess` hands both tasks to it; the first window moved to `EngineCdp.FirstWindowAsync`
+in the modules, throws whatever went wrong, and turns a client timeout into a `TimeoutException`.
+
+**Verify.** `MachineLogTests`: an observed failed task never reaches `TaskScheduler.UnobservedTaskException`
+after forced collections, and the same task unobserved does. `FirstWindowTests`: a stand-in engine that
+completes the socket handshake and drops the connection gives one line (`the browser's first window`,
+`System.Net.WebSockets.WebSocketException`) and a cancelled stop. A source test fails if `BrowserProcess`
+discards a task without `log.Observe(`; it failed on the two it had.
+
+**The trap.** `Task.WhenAny` returns a task; it observes nothing, the winner's exception included. The
+kit's relay that replaced Daoris's (Shenora.Chromium 0.18.0) has the same lines, which is a request for
+the kit, not a fix here.
+
+## The HTTP host never wrote its own stop (2026-09-30)
+
+**Symptom.** The usage report over the owner's first real machine log (LOG2): the `host` source had an
+`app.started` for every start of the application and not one `app.stopped`, while the shell's own
+starts and stops paired up.
+
+**Root cause.** `HostSupervisor.Stop` ended the host the shell started with
+`Kill(entireProcessTree: true)`. The host's `app.stopped` is written from
+`ApplicationStopping`, which a kill never reaches, so the lifetime's whole clean path (Kestrel's drain,
+the log line, the log's own close) was skipped on every close. LOG1a added the line and could not see it
+missing: the in-process test host is stopped by its factory, which runs the lifetime.
+
+**Fix.** The supervisor starts the host with its standard input redirected and
+`DAORIS_STOP_ON_INPUT_END=1` (`HostSupervisor.StartInfo`), and stops it by closing that input, waiting up
+to five seconds, and killing only a host still running then. The host (`InputEndStop`, wired on
+`ApplicationStarted`) reads its input to the end on a background thread only when the variable asks, and
+then calls `StopApplication`. No route: a door to stop the host would be pressable by any caller.
+
+**Verify.** `InputEndStopTests` starts the real `daoris-knowledge-http` with its input redirected and
+closes it: exit 0 and `app.stopped` with the uptime (it failed before the host was wired); unasked, the
+same close leaves it serving. `HostSupervisorTests` holds a stand-in host that honours the input
+(`HostStop.Exited`, failed as `Killed` against the old stop) and one that ignores it (killed after the
+bound). By hand: a starter killed outright left its host to see the pipe break and stop cleanly.
+
+**The trap.** A clean-stop hook proves nothing until the thing that stops the process runs it: a test
+host stopped by its own harness is not the process the shell stops.
+
 ## A question handed to Ask Daoris was asked again by its next drawing (2026-09-30)
 
 **Symptom.** Found building SETUP1b's hand-off, not reported: a question the palette handed Quick Ask

@@ -167,6 +167,39 @@ public sealed class MachineLog : IDisposable
         TaskScheduler.UnobservedTaskException += (_, e) => Failed("an unobserved task", e.Exception, false);
     }
 
+    /// <summary>
+    /// A task nobody awaits, observed (LOG2b): when it fails, its exception is written as the
+    /// <c>error</c> event with <paramref name="where"/>, and then <paramref name="failed"/> runs. A task
+    /// that finishes or is cancelled writes nothing.
+    /// </summary>
+    /// <returns>The observation: it completes after <paramref name="task"/> does, and never faults.</returns>
+    /// <remarks>
+    /// The first real log's one <c>error</c> in the browser was a task's exception the finalizer rethrew:
+    /// an AggregateException whose only place was "an unobserved task", written whenever a collection
+    /// happened to run. A task started and let go belongs here, so its failure is said where and when it
+    /// happened, and never left to the finalizer.
+    /// </remarks>
+    public Task Observe(Task task, string where, Action? failed = null) =>
+        task.ContinueWith(
+            done =>
+            {
+                if (done.Exception is not { } error) return;
+                Failed(where, error.InnerExceptions.Count == 1 ? error.InnerExceptions[0] : error);
+                try
+                {
+                    failed?.Invoke();
+                }
+                catch (Exception next)
+                {
+                    // Whatever the reaction threw is written too: an observation that faulted would be
+                    // one more task nobody observes.
+                    Failed(where, next);
+                }
+            },
+            CancellationToken.None,
+            TaskContinuationOptions.ExecuteSynchronously,
+            TaskScheduler.Default);
+
     /// <summary>An exception, written as the <c>error</c> event.</summary>
     public void Failed(string where, Exception? error, bool terminating = false) =>
         Error("error",

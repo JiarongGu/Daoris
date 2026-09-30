@@ -1,5 +1,6 @@
 using System.Net;
 using System.Text;
+using System.Text.Json;
 using Daoris.Driver;
 
 namespace Daoris.Desktop.Modules.Tests;
@@ -16,8 +17,27 @@ public sealed class HostSupervisorTests : IDisposable
     private readonly string _root = Path.Combine(
         Path.GetTempPath(), "daoris-supervisor-" + Guid.NewGuid().ToString("N")[..8]);
 
+    private readonly List<StandInHost> _standIns = [];
+
     public void Dispose()
     {
+        // A stand-in a failed test left running would hold its folder, and a port, until the run ended.
+        // Only a node by that id: one that has gone may have handed its id to somebody else's process.
+        foreach (var host in _standIns)
+        {
+            try
+            {
+                using var process = System.Diagnostics.Process.GetProcessById(host.Pid());
+                if (!string.Equals(process.ProcessName, "node", StringComparison.OrdinalIgnoreCase)) continue;
+                process.Kill(entireProcessTree: true);
+                process.WaitForExit(5_000);
+            }
+            catch (Exception error) when (error is ArgumentException or InvalidOperationException or IOException or FormatException)
+            {
+                // Gone already, or it never wrote its id.
+            }
+        }
+
         if (Directory.Exists(_root)) Directory.Delete(_root, recursive: true);
     }
 
@@ -114,6 +134,150 @@ public sealed class HostSupervisorTests : IDisposable
         Assert.Null(supervisor.Trouble);
     }
 
+    /// <summary>
+    /// LOG2a: the host this shell starts is started to be stopped cleanly — its input redirected, and
+    /// asked to stop when that input ends. The variable is a twin of the host's
+    /// <c>InputEndStop.Variable</c>, whose tests hold the same spelling and take only <c>1</c>.
+    /// </summary>
+    [Fact]
+    public void The_host_it_starts_is_asked_to_stop_when_its_input_ends()
+    {
+        var location = new HostLocation(Path.Combine(_root, "app", "daoris-knowledge-http", "host"), Path.Combine(_root, "app"));
+
+        var start = HostSupervisor.StartInfo(location);
+
+        Assert.Equal("DAORIS_STOP_ON_INPUT_END", HostSupervisor.StopOnInputEnd);
+        Assert.Equal("1", start.Environment[HostSupervisor.StopOnInputEnd]);
+        Assert.True(start.RedirectStandardInput);
+        Assert.False(start.RedirectStandardOutput);
+        Assert.False(start.UseShellExecute);
+        Assert.True(start.CreateNoWindow);
+        Assert.Equal(location.Executable, start.FileName);
+        Assert.Equal(location.WorkingDirectory, start.WorkingDirectory);
+    }
+
+    /// <summary>
+    /// The first real log's finding: the shell killed the host it started, so the host never wrote its
+    /// stop. A host that goes when its input closes is let go, and never killed.
+    /// </summary>
+    [Fact]
+    public async Task A_host_that_stops_when_its_input_ends_is_let_go_and_not_killed()
+    {
+        var host = StandIn(honoursInputEnd: true);
+        var supervisor = new HostSupervisor(host.Url, () => host.Location) { StopWithin = TimeSpan.FromSeconds(20) };
+        Assert.True(await supervisor.EnsureAsync(), supervisor.Trouble);
+
+        var stopped = supervisor.Stop();
+
+        Assert.Equal(HostStop.Exited, stopped);
+        Assert.True(await GoneAsync(host.Pid()), "the stand-in host is still running");
+    }
+
+    /// <summary>A host that does not go when asked is killed, after the bound and not before.</summary>
+    [Fact]
+    public async Task A_host_that_ignores_its_input_ending_is_killed_after_the_bound()
+    {
+        var host = StandIn(honoursInputEnd: false);
+        var bound = TimeSpan.FromSeconds(1);
+        var supervisor = new HostSupervisor(host.Url, () => host.Location) { StopWithin = bound };
+        Assert.True(await supervisor.EnsureAsync(), supervisor.Trouble);
+        var pid = host.Pid();
+
+        var clock = System.Diagnostics.Stopwatch.StartNew();
+        var stopped = supervisor.Stop();
+
+        Assert.Equal(HostStop.Killed, stopped);
+        Assert.True(clock.Elapsed >= bound - TimeSpan.FromMilliseconds(50), $"killed after {clock.Elapsed}, before the bound");
+        Assert.True(await GoneAsync(pid), "the stand-in host is still running");
+    }
+
+    /// <summary>HOSTID1's other half: a host the shell adopted is somebody else's, and its stop is theirs.</summary>
+    [Fact]
+    public async Task A_host_it_adopted_is_not_stopped()
+    {
+        using var running = await StubHost.StartAsync(Page("index-CFwEAMAB.js"));
+        var supervisor = new HostSupervisor(running.Url, () => Carrying("index-CFwEAMAB.js"));
+        Assert.True(await supervisor.EnsureAsync());
+
+        Assert.Equal(HostStop.NotOwned, supervisor.Stop());
+
+        using var probe = new HttpClient();
+        Assert.Contains("tier", await probe.GetStringAsync($"{running.Url}/api/status"));
+    }
+
+    /// <summary>
+    /// A stand-in for the HTTP host, as the supervisor starts it: a program at a location that answers
+    /// the status probe as a Daoris host does. One that honours its input stops when that input ends,
+    /// and only when asked by the variable, as the host does; one that ignores it serves on.
+    /// </summary>
+    private StandInHost StandIn(bool honoursInputEnd)
+    {
+        var folder = Path.Combine(_root, "stand-in-" + Guid.NewGuid().ToString("N")[..6]);
+        Directory.CreateDirectory(folder);
+        var port = StubHost.FreePort();
+        var pidFile = Path.Combine(folder, "pid");
+        File.WriteAllText(Path.Combine(folder, "host.mjs"), $$"""
+            import { createServer } from 'node:http';
+            import { writeFileSync } from 'node:fs';
+            writeFileSync({{JsonSerializer.Serialize(pidFile)}}, String(process.pid));
+            const server = createServer((request, response) => {
+              response.writeHead(200, { 'content-type': 'application/json' });
+              response.end(request.url === '/api/status' ? {{JsonSerializer.Serialize(StubHost.DaorisStatus)}} : '<html></html>');
+            });
+            server.listen({{port}}, '127.0.0.1');
+            if ({{(honoursInputEnd ? "true" : "false")}} && process.env.{{HostSupervisor.StopOnInputEnd}} === '1') {
+              process.stdin.on('data', () => {});
+              process.stdin.on('end', () => { server.close(); process.exit(0); });
+            }
+            """);
+
+        // The supervisor starts a location's executable by itself, with no arguments, as it starts the
+        // real host: so the stand-in is a script that runs node on the program beside it.
+        string executable;
+        if (OperatingSystem.IsWindows())
+        {
+            executable = Path.Combine(folder, "host.cmd");
+            File.WriteAllText(executable, "@echo off\r\nnode \"%~dp0host.mjs\"\r\n");
+        }
+        else
+        {
+            executable = Path.Combine(folder, "host");
+            File.WriteAllText(executable, "#!/bin/sh\nexec node \"$(dirname \"$0\")/host.mjs\"\n");
+            File.SetUnixFileMode(executable, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute);
+        }
+
+        var host = new StandInHost($"http://127.0.0.1:{port}", new HostLocation(executable, folder), pidFile);
+        _standIns.Add(host);
+        return host;
+    }
+
+    private sealed record StandInHost(string Url, HostLocation Location, string PidFile)
+    {
+        /// <summary>The stand-in program's own process: under a script on Windows, the script itself elsewhere.</summary>
+        public int Pid() => int.Parse(File.ReadAllText(PidFile), System.Globalization.CultureInfo.InvariantCulture);
+    }
+
+    /// <summary>Whether a process has gone, within a few seconds: a kill lands a moment after it is asked.</summary>
+    private static async Task<bool> GoneAsync(int pid)
+    {
+        for (var attempt = 0; attempt < 50; attempt++)
+        {
+            try
+            {
+                using var process = System.Diagnostics.Process.GetProcessById(pid);
+                if (process.HasExited) return true;
+            }
+            catch (ArgumentException)
+            {
+                return true;
+            }
+
+            await Task.Delay(100);
+        }
+
+        return false;
+    }
+
     private static string Page(string bundle) =>
         $"<!doctype html><html><head><script type=\"module\" crossorigin src=\"/assets/{bundle}\"></script></head></html>";
 
@@ -175,7 +339,7 @@ public sealed class HostSupervisorTests : IDisposable
             }
         }
 
-        private static int FreePort()
+        public static int FreePort()
         {
             var probe = new System.Net.Sockets.TcpListener(IPAddress.Loopback, 0);
             probe.Start();

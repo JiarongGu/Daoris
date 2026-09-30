@@ -116,10 +116,13 @@ export const eachApplicationAt = (exe, each) => {
  * force as the backstop rather than the method.
  *
  * 🔴 That path is what stops the HTTP host the shell spawned and owns (`OnStopping`: the driver
- * loop, then the host). A forced kill orphans a `daoris-knowledge-http` that keeps the port and holds
- * the build's own DLLs. Measured: seven of them, after a session of restarts, failing the next
- * `build` with MSB3027. Nothing here touches a host directly, because a host this tool did not start
- * belongs to whoever did (the shell's own supervisor makes exactly that distinction).
+ * loop, then the host). A forced kill used to orphan a `daoris-knowledge-http` that kept the port and
+ * held the build's own DLLs. Measured: seven of them, after a session of restarts, failing the next
+ * `build` with MSB3027. Since LOG2a the host a shell started reads a pipe whose other end only that
+ * shell holds, and stops when it breaks, so a killed shell's host goes too (observed by hand, not gated);
+ * the close is still the method, because it is what ends and records the loop's sessions. Nothing
+ * here touches a host directly, because a host this tool did not start belongs to whoever did (the
+ * shell's own supervisor makes exactly that distinction).
  *
  * 🔴 `CloseMainWindow` closes whichever window WINDOWS calls main, and since SURF8 that may be the
  * monitor rather than the application — closing it leaves the app running, the wait expires, and the

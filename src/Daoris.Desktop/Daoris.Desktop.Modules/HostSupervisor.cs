@@ -16,8 +16,18 @@ namespace Daoris.Desktop;
 /// </param>
 public sealed partial class HostSupervisor(string serviceUrl, Func<HostLocation?>? locate = null) : IDisposable
 {
+    /// <summary>
+    /// The variable that asks the host this supervisor starts to stop when its standard input ends
+    /// (LOG2a), set to <c>1</c>. A twin of the host's <c>InputEndStop.Variable</c>, duplicated on purpose
+    /// since the artefacts share no code; each side's tests hold the same spelling.
+    /// </summary>
+    public const string StopOnInputEnd = "DAORIS_STOP_ON_INPUT_END";
+
     private readonly HttpClient _probe = new() { Timeout = TimeSpan.FromSeconds(2) };
     private Process? _owned;
+
+    /// <summary>How long a host whose input was closed is given to stop by itself before it is killed.</summary>
+    public TimeSpan StopWithin { get; init; } = TimeSpan.FromSeconds(5);
 
     /// <summary>Why the last <see cref="EnsureAsync"/> answered false — a sentence for the person.</summary>
     public string? Trouble { get; private set; }
@@ -79,17 +89,9 @@ public sealed partial class HostSupervisor(string serviceUrl, Func<HostLocation?
             return false;
         }
 
-        // The working directory is the location's, not the binary's — a dev host must run from its
-        // project so the platform bundle in its wwwroot is what gets served (see HostLocation).
         try
         {
-            _owned = Process.Start(new ProcessStartInfo
-            {
-                FileName = location.Executable,
-                WorkingDirectory = location.WorkingDirectory,
-                UseShellExecute = false,
-                CreateNoWindow = true,
-            });
+            _owned = Process.Start(StartInfo(location));
         }
         catch (Exception error) when (error is System.ComponentModel.Win32Exception or InvalidOperationException)
         {
@@ -115,15 +117,65 @@ public sealed partial class HostSupervisor(string serviceUrl, Func<HostLocation?
         return false;
     }
 
-    /// <summary>Ends the host — but only one this supervisor started.</summary>
-    public void Stop()
+    /// <summary>
+    /// How a host this supervisor starts is started (LOG2a): its standard input redirected and
+    /// <see cref="StopOnInputEnd"/> set, so closing that input is its stop. The working directory is the
+    /// location's, not the binary's — a dev host must run from its project so the platform bundle in its
+    /// wwwroot is what gets served (see HostLocation).
+    /// </summary>
+    public static ProcessStartInfo StartInfo(HostLocation location)
     {
-        if (_owned is { HasExited: false })
+        var start = new ProcessStartInfo
         {
-            _owned.Kill(entireProcessTree: true);
-        }
+            FileName = location.Executable,
+            WorkingDirectory = location.WorkingDirectory,
+            UseShellExecute = false,
+            CreateNoWindow = true,
+            RedirectStandardInput = true,
+        };
+        start.Environment[StopOnInputEnd] = "1";
+        return start;
+    }
 
-        _owned = null;
+    /// <summary>
+    /// Ends the host — but only one this supervisor started. Its input is closed first, which the host
+    /// takes as its stop, and only a host still running <see cref="StopWithin"/> later is killed.
+    /// </summary>
+    /// <remarks>
+    /// 🔴 LOG2a: the first real machine log held an <c>app.started</c> from the host for every start and
+    /// no <c>app.stopped</c> at all. The shell killed the host it started, so nothing the host does on a
+    /// clean stop ever ran. Closing the input asks for that stop without a door: a route to stop the host
+    /// would be one any caller on the machine could press. The kill stays as the backstop, for a host
+    /// that is wedged, or one whose input something else still holds open.
+    /// </remarks>
+    public HostStop Stop()
+    {
+        var owned = Interlocked.Exchange(ref _owned, null);
+        if (owned is null) return HostStop.NotOwned;
+        using (owned)
+        {
+            try
+            {
+                if (owned.HasExited) return HostStop.NotOwned;
+                try
+                {
+                    owned.StandardInput.Close();
+                }
+                catch (IOException)
+                {
+                    // The pipe had broken already: the host is going, or the kill below ends it.
+                }
+
+                if (owned.WaitForExit(StopWithin)) return HostStop.Exited;
+                owned.Kill(entireProcessTree: true);
+                return HostStop.Killed;
+            }
+            catch (InvalidOperationException)
+            {
+                // It went between the look and the kill.
+                return HostStop.Exited;
+            }
+        }
     }
 
     /// <summary>What answers the status probe: nothing, a Daoris host, or something else.</summary>
@@ -220,4 +272,17 @@ public sealed partial class HostSupervisor(string serviceUrl, Func<HostLocation?
         Stop();
         _probe.Dispose();
     }
+}
+
+/// <summary>What <see cref="HostSupervisor.Stop"/> did.</summary>
+public enum HostStop
+{
+    /// <summary>Nothing this supervisor started was running: a host it adopted, or none at all.</summary>
+    NotOwned,
+
+    /// <summary>The host went by itself once its input was closed, and wrote its own stop.</summary>
+    Exited,
+
+    /// <summary>It was still running after <see cref="HostSupervisor.StopWithin"/>, and was killed.</summary>
+    Killed,
 }

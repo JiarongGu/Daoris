@@ -75,6 +75,12 @@ public static class EngineBrowser
     /// </summary>
     public const string LogName = "cef.log";
 
+    /// <summary>Where the machine log says a failure making the browser's first window happened (LOG2b).</summary>
+    public const string FirstWindowPlace = "the browser's first window";
+
+    /// <summary>Where it says a failure watching for the shell that started the browser happened (LOG2b).</summary>
+    public const string ShellWatchPlace = "the browser's watch on the shell";
+
     /// <summary>
     /// The pages an engine's `/json/list` names, in its order, as target ids. Anything that is not a page
     /// (a worker, the browser itself) is not a window the person sees.
@@ -219,6 +225,41 @@ public sealed class EngineCdp(int port) : IDisposable
         catch (Exception error) when (error is HttpRequestException or TaskCanceledException or JsonException)
         {
             return null;
+        }
+    }
+
+    /// <summary>
+    /// The browser's first window (CHR3): made over this port once it answers, the way an agent's windows
+    /// are, in the background when a session asked. Throws what went wrong, a port that never answered
+    /// within <paramref name="portLimit"/> as a <see cref="TimeoutException"/>; cancelled only when
+    /// <paramref name="ct"/> is, because the shell or the engine went before there was a window to make.
+    /// </summary>
+    /// <remarks>
+    /// In the modules rather than in `daoris-browser`, so it is tested (LOG2b): the browser starts it and
+    /// does not await it, and hands it to the log to observe.
+    /// </remarks>
+    public async Task FirstWindowAsync(bool background, TimeSpan portLimit, CancellationToken ct = default)
+    {
+        try
+        {
+            var deadline = DateTime.UtcNow + portLimit;
+            while (!await AnswersAsync(ct).ConfigureAwait(false))
+            {
+                if (DateTime.UtcNow > deadline)
+                {
+                    throw new TimeoutException(
+                        $"its port did not answer within {portLimit.TotalSeconds.ToString("0.#", CultureInfo.InvariantCulture)} seconds");
+                }
+
+                await Task.Delay(100, ct).ConfigureAwait(false);
+            }
+
+            await NewWindowAsync("chrome://newtab/", background, ct).ConfigureAwait(false);
+        }
+        catch (OperationCanceledException error) when (!ct.IsCancellationRequested)
+        {
+            // The client's own timeout, not the shell going: a failure to say, never a quiet cancellation.
+            throw new TimeoutException("the engine did not answer the call that makes the window", error);
         }
     }
 

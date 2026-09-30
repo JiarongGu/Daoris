@@ -21,8 +21,8 @@ lists.
 
 ## State
 
-**Counts, and this is their one home:** sixteen commands, **584 CLI tests, 619 service and 30 HTTP host, 1140 driver,
-376 desktop modules, 80 devkit, 1625 web unit, 21 Playwright**, 66/66 release rehearsal, **301/301
+**Counts, and this is their one home:** sixteen commands, **584 CLI tests, 619 service and 45 HTTP host, 1144 driver,
+384 desktop modules, 80 devkit, 1625 web unit, 21 Playwright**, 66/66 release rehearsal, **301/301
 family rehearsal** (it names its own phases when you run it), **67/67 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge
 documents, 5 skills, 7 packs. The always-loaded core is **22,492 of 26,000 bytes** — a span in
@@ -108,7 +108,7 @@ rather than designed.
 
 ## Backlog
 
-**Twenty-four rows are open**: the day's two (USE1's last part to confirm, LOG2),
+**Twenty-three rows are open**: the day's one (USE1's last part to confirm),
 first; WSR4 from the first real workspace; the three REV3 left (DIST1, BUDGET1 and
 HOME1, the owner's); the in-app browser's one (BRW3); D85's one (TASKBAR1); the first
 goal's four (FG5, READACROSS1 and HELPREAD1 the owner's, and SEM2 on a trigger); D76's held file tools;
@@ -157,13 +157,13 @@ TASK.md and complete one by one"*).
   `desktop -- run --install` from a Git Bash shell): its agent worked round it by exporting Git's
   folders in each command. The session before it, on 0.79.0 and a normal start, committed with git.
   Check on a normal start before anything else, then decide whether the shell's environment or the
-  adapter's release is the cause.
-- [ ] **LOG2 — what the first real log showed** (2026-09-30, read by LOG1d's report on a copy of the
-  owner's log). (a) **The HTTP host never writes `app.stopped`**: the shell ends it by force, so its log
-  shows starts and no stops; let the shell ask it to stop and wait a moment before the force, as the
-  close already does for sessions. (b) **The browser leaves a task's exception unobserved** when a
-  WebSocket to its debug port closes without a handshake (an `AggregateException` at `error`): observe
-  it where the relay or the first-window call awaits it, and say what closed.
+  adapter's release is the cause. *Narrowed, 2026-09-30:* Claude Code's own shell snapshot for that
+  session holds `PATH` in **Windows form** (`C:\…;C:\…`) in a bash `export`, so no entry resolved,
+  not even System32; the two sessions before it hold POSIX form. The driver sets no `PATH`
+  (`Harnesses.Apply`). Still confounded: the start (Git Bash hands on `PATH` upper-case with MSYS's
+  variables; a normal start hands on `Path`) and the bundled Claude Code (2.1.274 in 0.79.0, 2.1.284
+  in 0.84.0). The next session on the normal start answers it: read its snapshot's `export PATH`.
+
 ### After the first real workspace (owner, 2026-09-28) — to start later
 
 > *"I also found issues after the [first workspace] work, which points out things that daoris leak
@@ -398,7 +398,10 @@ TDD, looked at on the window, and the ones that touch a real session use one (au
   **And a fourth class the same day**: `CanonicalLineTests.A_session_tree_grows_from_the_line_set_for_its_repository`
   failed once (*"the tree grew from main, not develop"*, 993/994) while five subagents built in
   parallel; its class passed three runs alone. Load is the common factor in every sighting. The driven-session assertion now carries the record and the tick's lines, so its next failure names
-  itself; a stop landing mid-handshake was tested and is not the cause.
+  itself; a stop landing mid-handshake was tested and is not the cause. **A fifth class, twice on
+  2026-09-30** (LOG2's baseline, then its merge while WSR4 built beside it):
+  `ProcessJobTests.A_child_that_outlives_its_parent_ends_when_the_session_is_untracked`, 1144/1145,
+  green alone three times running.
 
 - [ ] **TEST1 — the Playwright suite aborts a worker with `0xC0000409`: seen twice now.** The
   second sighting was its trigger. Both runs died with `worker process exited unexpectedly

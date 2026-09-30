@@ -16,6 +16,8 @@ using Daoris.Knowledge.Http;
 //   DAORIS_WEB_ORIGIN      the dev UI's origin for CORS    (absent: same-origin only)
 //   DAORIS_WORKSPACE       which circle a SHARED host serves    (default: `default`; D48 §5)
 //                          Refused on a local host, which holds every workspace this machine wired.
+//   DAORIS_STOP_ON_INPUT_END  `1`: stop cleanly when standard input ends — how the desktop stops a
+//                          host it started (LOG2a). Unset, standard input is never opened.
 //   DAORIS_MODE            local (default) or shared (D47 §3/§7). Shared is the team deployment:
 //                          EVERY /api route needs a minted key, no page is served (the remote is an
 //                          API until person-auth exists), and no machine path is ever answered.
@@ -1199,6 +1201,11 @@ log.Info("app.started",
     ("mode", mode.ToString().ToLowerInvariant()));
 app.Lifetime.ApplicationStopping.Register(() =>
     log.Info("app.stopped", ("uptimeSeconds", (long)(DateTimeOffset.UtcNow - started).TotalSeconds)));
+// LOG2a: the shell stops a host it started by closing its standard input, so the stop is the lifetime's
+// and the line above is written. Only when the shell asked (the variable): a terminal's host never opens
+// its input. Watched once the host is up, so a stop is never asked of a host still starting.
+app.Lifetime.ApplicationStarted.Register(() => _ = InputEndStop.WatchWhenAsked(
+    Environment.GetEnvironmentVariable(InputEndStop.Variable), Console.OpenStandardInput, app.Lifetime));
 app.Run();
 return 0;
 
