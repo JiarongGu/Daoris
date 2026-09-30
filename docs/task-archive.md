@@ -8789,3 +8789,23 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > `docs/2026-09-19-platform-ux.md`; the model is written into them, or into a document they point to.
 
 **Outcome** (designed by a subagent, merged with `tools/merge-branch.mjs`, every gate; **D118**): The frame is audited and a layout model designed (D118). `docs/2026-10-01-frame-audit.md` reads every view's layout from the code (the monitor, a detached session's window and a browser too): for each of 11 affordances the deciding file and line, a verdict (same, choice, drift, gap), and twelve looks only the window can settle. Its findings: only Sessions has a list pane; a record opens in a modal drawer over the side bar and panel on four views; only Sessions remembers its selection; viewport breakpoints lay out columns the side bar narrows; Settings stacks its list when narrow; some regions draw blank while loading; no list moves by arrow keys; the secondary windows' regions are fixed. `docs/2026-10-01-frame-model-design.md` is the contract: every view has a list pane and a main area of its own beside the frame's side bar and panel, which hold only what is the same on every view; a record opens in the main area and a form stays a drawer, every door naming its item through one opener; one `ListPane` collapses, resizes, answers the same keys, is remembered per view, and becomes a strip by room rather than at a fixed width (amending FRAME6); the main area lays out by its own width; Overview and Map have no list, and a browser keeps the list and main area but not the side bar or panel. The build is FRAME1b–i, and PLUGUI1 takes its list pane, main area, memory and opener. Nothing built; nothing looked at on the window.
+
+
+## NAME1a — a name is a UI element: the design, glossary, audit and check (2026-10-01)
+
+> - [ ] **NAME1 — a name is a UI element, designed in both languages.** (NAME1a, the design half, building: D116.) Today many Chinese names are
+> translations of the English, not names: Settings' own sections (*Daoris 自身的 AI*, *智能体与账户*),
+> a section's title against its button (*同步到最新* over *查看更新*), and one concept under two words
+> across screens. English has the same drift. (a) **A glossary, one term per concept in each language**,
+> chosen as names rather than translated (session, quest, line, landing, workspace, repository, agent,
+> account, plugin, harness, tree, branch, and the rest), kept as a file both catalogues are checked
+> against. (b) **Naming rules for each kind of element**: a navigation item, a tab, a section title, a
+> button (verb first, the object named as the glossary names it), a status word, and a sentence. Each gets
+> a length budget per language, measured on the window at the design's widths. (c) **An audit of every
+> catalogue key a person reads as a label** (navigation, headings, tabs, buttons, badges, the status
+> bar), with its proposed name in each language and why. (d) **The renames, and a check**: the i18n check
+> gains glossary conformance and the label budgets, so drift fails a gate. It extends
+> `.claude/knowledge/translation-parity.md` (*chrome translates and content does not*) and
+> `docs/2026-09-19-platform-ux.md`. The contract is a naming design document, written first.
+
+**Outcome** (built by a subagent, merged with `tools/merge-branch.mjs`, every gate; **D116**): Designed (D116): `docs/2026-10-01-naming-design.md` defines a name as part of its UI element, designed in each language: fourteen kinds (a palette row's `command` kind found while building the check), each with rules in English and Chinese and a budget per language derived from the frame's rooms at 888 px with the side bar at its 300 px floor, and two cross-language rules (a door names its destination; a heading and its button name one act). `src/Daoris.Web/src/locales/glossary.json` is the authority: about 110 terms, each with its names in both languages, a definition, the words it must not be called and a match pattern; it also maps every label key to its kind and pairs each door with its destination. `names:check` (`scripts/names-check.mjs`) reports glossary conformance, budgets, form and doors, exiting 0; `--strict` is ready for NAME1b, for the facts only (budgets report and never gate, D54). Today it finds 519. `docs/2026-10-01-naming-audit.md` proposes names for all 772 label keys, 406 of which change, Settings first; applied in memory, the proposals leave no glossary, form or door finding and keep every placeholder, with 107 budget judgements left. Web vitest 1856 → 1881; nothing looked at on the window.

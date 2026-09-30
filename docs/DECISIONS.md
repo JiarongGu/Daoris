@@ -5853,3 +5853,82 @@ at `7a3fb5f`, and its rows marked *to look at* wait for the window (its §5 list
 widths, the room rule's numbers, or the F6 key has been tried on the window: FRAME1b measures F6 first, and
 drops it if the engine keeps F6 for itself. The build rows are the design's §6, and each carries its own
 proof.
+
+## D116 — A name is a UI element, designed in each language; the glossary is the authority, and a check holds it (2026-10-01)
+
+**Decision (NAME1a, the owner's round).** The owner: names in Settings and every other display must be named
+properly in both English and Chinese, *"since this is not just translation this is part of the ui element"*. Read
+where each of the 1,699 keys renders, 772 are names; many Chinese ones are English names translated (Settings'
+「Daoris 自身的 AI」, 「智能体与账户」), sixteen concepts wear two or more words across screens (项目 and 仓库 for one
+view's rows, 同归 and 汇聚 for one view, 加入, 采用 and 接入 for *adopt*, 同步 for both *sync* and *bring up to
+date*), and English buttons split 133 lower-case to 50 capitalised. `docs/2026-10-01-naming-design.md` is the
+contract. So:
+
+### 1. What a name is
+
+- **A name is part of its element, designed in each language for that element**, never a translation of the other
+  language's name and never a sentence. It is decided by the concept it names (the glossary), the kind of element
+  (its form) and the room the frame gives it (its budget). Chrome is named; content is not, as `translation-parity`
+  already says, and a key stays structural: renaming a name never renames its key.
+- **Fourteen kinds**, each with its rules in each language: `nav`, `title`, `tab`, `section`, `field`, `choice`,
+  `button`, `status`, `menu`, `command`, `headline`, `placeholder`, `toast`, `sentence`. An accessible name or a
+  tooltip takes the kind of the control it names. `command`, a palette row, was found building the check: a name, a
+  dash and a gloss in a 34rem dialog, which a strip menu's room reported row by row.
+- **English is sentence case for every name but a status word and a placeholder**, which are lower case. Buttons were
+  the drift; every other kind had settled, and Windows writes sentence case.
+- **Chinese names are nouns and verb-object phrases chosen as names**: a place is one noun of two to four
+  characters with no 的 and no 与; a section names what it holds, never an English question carried over; a button
+  is 动宾 with no pronoun, its confirming press 确认 and the verb, its back-out 取消; a status word is 已 and the verb
+  for an outcome, the verb and 中 for a state in progress, a bare word for a condition. Latin stays for products,
+  what a person types, and acronyms with no settled Chinese name, never for a concept the glossary names.
+- **A door names its destination by the destination's own name**, and a heading and the press under it name one
+  act.
+- **A budget per kind and language**, from the room the frame gives the kind at 888px wide with the side bar at its
+  300px floor, in English characters and Chinese units (a Chinese character 1, a Latin one ½); design §4 has the
+  rooms and how the window verifies each.
+
+### 2. The glossary is the authority
+
+`src/Daoris.Web/src/locales/glossary.json`, beside the language folders and merged into neither: one term per
+concept, each with its English and Chinese names, a one-line definition, the words it must not be called and how its
+English is recognised; the kinds with their budgets and **the keys of each kind**, by key or prefix, the most
+specific winning, a key named by no kind a sentence; and the doors with their destinations. A code word never shown on
+the window (`harness`, `profile`, `strike`, `tick`) is a term that points at the one that is.
+
+### 3. The check, in report mode
+
+`scripts/names-check.mjs` (`npm --prefix src/Daoris.Web run names:check`) reports glossary conformance, budgets,
+form and doors per key, and exits 0; it exits 2 only when the glossary is malformed, since a glossary that cannot be
+read has stopped checking anything. A label is held to the term's name; with `--all`, a sentence, a tooltip or a toast
+is held only to the words a term must not be called, since a sentence may say a thing its own way. **NAME1b turns on
+what is a fact**: conformance, form and doors gate through `--strict` in the web's build once the renames land. **The budgets stay a report** (D54: a fact gates, a judgement
+reports): a character count estimates a width, and the window is where a width is a fact. This reads the NAME1 row's
+*"so drift fails a gate"* as the facts' half, and says so for the owner to overrule.
+
+### 4. What NAME1a does not do
+
+No catalogue value or key changes and no component is touched; the proposals are the audit
+(`docs/2026-10-01-naming-audit.md`), and the renames are NAME1b's, after the owner reads them.
+
+### 5. Rejected
+
+- **Translating the English names more carefully.** A careful translation of a possessive is still a possessive.
+- **A kind declared by the key's name** (`….title`, `….button`). Keys are structural, many end in a word that is not
+  their kind, and renaming them churns every call site to say what one line of a map says.
+- **Measuring widths by rendering in the check.** A browser in the check for an estimate the window confirms anyway.
+- **Failing the build before the renames.** A gate red on its first day is switched off rather than obeyed.
+- **Title Case**, and **lower case for every button**: the first is neither Windows' nor the page's; the second
+  keeps a button's name in another case from the heading above it and the menu item that does the same act.
+- **One Chinese word for chat and conversation.** A chat is a kind of session; the conversation is the record
+  every structured session keeps. 聊天 and 对话.
+
+### What the gates do not cover
+
+The glossary's shape is held by `src/locales/glossary.test.ts`, and the check's rules, the kind map's resolution,
+the measure and report mode by `src/locales/names.test.ts`, both in the web's vitest loop. That the audit's proposals
+obey the rules they propose (none left on the facts' half once applied, and every placeholder where it was) was
+checked by a scratch run over the catalogues in memory, not by a gate: NAME1b's `--strict` is that gate. The check
+does not hold placeholders, which the parity gate does, and cannot see a sentence the driver writes (English
+`{{why}}`); the audit lists those it read by hand. That the budgets match the rooms is a claim about the window,
+derived from the tokens and the frame's constants in design §4 and **not measured here**: nothing looked at the
+window in this branch.
