@@ -22,6 +22,8 @@ public sealed class HelpRoomDoorsTests
             "daoris driver helper <agent>|off", "daoris driver strikes <n>", "daoris driver timeout <minutes>",
             "daoris driver notify on|off", "daoris agent rules", "daoris-driver ask --workspace <name>",
             "daoris-driver trees clean",
+            // WSR6: bringing a repository up to date after its pull request merged.
+            "daoris-driver trees sync [--repository <name>] [--yes]",
             // D107: reading and writing across, the CLI's `driver across` verbs.
             "daoris driver across <repository> read on|off|--clear", "daoris driver across <repository> write-to <other> [--clear]",
         })

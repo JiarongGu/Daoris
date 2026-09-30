@@ -86,6 +86,18 @@ public sealed class DriverCommandTests
         }
     }
 
+    /// <summary>
+    /// WSR6: bringing a repository up to date after its pull request merged is a `trees` verb, and the host's
+    /// terminal door says it in the usage — the list first, `--yes` the press.
+    /// </summary>
+    [Fact]
+    public void The_usage_names_bringing_a_repository_up_to_date()
+    {
+        Assert.Contains("| sync [--repository <name>] [--yes]", DriverCommand.Usage);
+        var program = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host", "TreesConsole.cs"));
+        Assert.Contains("case [\"sync\", ..]", program);
+    }
+
     private static string SourceRoot()
     {
         var folder = new DirectoryInfo(AppContext.BaseDirectory);

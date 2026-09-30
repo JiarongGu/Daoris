@@ -435,8 +435,18 @@ public static class WorkingTree
 
     // Internal rather than private since D51: SessionTrees asks git the same way for the same reason —
     // one process-spawning implementation, not two that differ in encoding or error shape.
+    internal static Task<(int Code, string Stdout, string Stderr)> GitAsync(
+        string root, IReadOnlyList<string> arguments, CancellationToken ct) =>
+        GitAsync(root, arguments, environment: null, timeout: null, ct);
+
+    /// <summary>
+    /// git with variables of its own and a bound on how long it may take (WSR6): a fetch reaches the network as
+    /// the person, and one that waits on a credential nobody is there to type must end rather than hold a press.
+    /// </summary>
+    /// <remarks>On the bound, git and whatever it started are stopped, and the answer is a failure that says why.</remarks>
     internal static async Task<(int Code, string Stdout, string Stderr)> GitAsync(
-        string root, IReadOnlyList<string> arguments, CancellationToken ct)
+        string root, IReadOnlyList<string> arguments, IReadOnlyDictionary<string, string>? environment, TimeSpan? timeout,
+        CancellationToken ct)
     {
         var info = new ProcessStartInfo
         {
@@ -457,19 +467,44 @@ public static class WorkingTree
         info.ArgumentList.Add("-c");
         info.ArgumentList.Add("core.longpaths=true");
         foreach (var argument in arguments) info.ArgumentList.Add(argument);
+        if (environment is not null)
+        {
+            foreach (var (name, value) in environment) info.Environment[name] = value;
+        }
 
+        using var bound = timeout is not null ? CancellationTokenSource.CreateLinkedTokenSource(ct) : null;
+        if (timeout is { } limit) bound!.CancelAfter(limit);
+        var waitOn = bound?.Token ?? ct;
+        // Not `using` inside the try: a process disposed before the catch runs could not be stopped there.
+        Process? process = null;
         try
         {
-            using var process = Process.Start(info)
-                ?? throw new DriverException("git did not start");
-            var stdout = process.StandardOutput.ReadToEndAsync(ct);
-            var stderr = process.StandardError.ReadToEndAsync(ct);
-            await process.WaitForExitAsync(ct).ConfigureAwait(false);
+            process = Process.Start(info) ?? throw new DriverException("git did not start");
+            var stdout = process.StandardOutput.ReadToEndAsync(waitOn);
+            var stderr = process.StandardError.ReadToEndAsync(waitOn);
+            await process.WaitForExitAsync(waitOn).ConfigureAwait(false);
             return (process.ExitCode, await stdout.ConfigureAwait(false), await stderr.ConfigureAwait(false));
+        }
+        catch (OperationCanceledException) when (bound is not null && !ct.IsCancellationRequested)
+        {
+            try
+            {
+                process?.Kill(entireProcessTree: true);
+            }
+            catch (Exception kill) when (kill is InvalidOperationException or System.ComponentModel.Win32Exception)
+            {
+                // Gone already: nothing is left to stop.
+            }
+
+            return (-1, "", $"git did not answer within {timeout!.Value.TotalSeconds:0} seconds, and was stopped.");
         }
         catch (Exception error) when (error is not OperationCanceledException)
         {
             return (-1, "", error.Message);
+        }
+        finally
+        {
+            process?.Dispose();
         }
     }
 

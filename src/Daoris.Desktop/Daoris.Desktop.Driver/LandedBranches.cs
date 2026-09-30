@@ -25,6 +25,12 @@ public sealed record LandedBranch(
 
     /// <summary>The branch's commit when the plugin pushed it: a hand-off at the same commit would push nothing new.</summary>
     public string? PushedTip { get; init; }
+
+    /// <summary>
+    /// The commit its work grew from (WSR6): the start of the session branch it was made from, where that is
+    /// recorded, else null. Bringing it up to date cuts here, so only its own commits are replayed.
+    /// </summary>
+    public string? From { get; init; }
 }
 
 /// <summary>
@@ -94,6 +100,13 @@ public sealed class LandedBranches(string home)
             ? each with { Plugin = said.Plugin, Pushed = said.Pushed, PullRequest = said.PullRequest, PushedTip = tip }
             : each)]);
 
+    /// <summary>
+    /// Where bringing it up to date replayed it (WSR6): its new tip, and the line's commit it now grows from.
+    /// Daoris moved it, so it stays the landing's; a branch someone else rebased no longer holds its tip and is not.
+    /// </summary>
+    public void Moved(string repository, string branch, string tip, string from) => Edit(all =>
+        [.. all.Select(each => Same(each, repository, branch) ? each with { Tip = tip, From = from } : each)]);
+
     /// <summary>Forget branches that are gone, or no longer the landing's.</summary>
     public void Forget(string repository, IReadOnlyCollection<string> branches) => Edit(all =>
         [.. all.Where(each => !(string.Equals(each.Repository, repository, StringComparison.OrdinalIgnoreCase)
@@ -136,6 +149,7 @@ public sealed class LandedBranches(string home)
                 if (entry.Pushed) writer.WriteBoolean("pushed", true);
                 if (entry.PullRequest is not null) writer.WriteString("pullRequest", entry.PullRequest);
                 if (entry.PushedTip is not null) writer.WriteString("pushedTip", entry.PushedTip);
+                if (entry.From is not null) writer.WriteString("from", entry.From);
                 writer.WriteEndObject();
             }
 
@@ -165,6 +179,7 @@ public sealed class LandedBranches(string home)
             Pushed = element.TryGetProperty("pushed", out var pushed) && pushed.ValueKind == JsonValueKind.True,
             PullRequest = Text(element, "pullRequest"),
             PushedTip = Text(element, "pushedTip"),
+            From = Text(element, "from"),
         };
     }
 
