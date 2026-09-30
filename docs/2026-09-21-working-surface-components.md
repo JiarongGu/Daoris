@@ -39,6 +39,11 @@ CJK title, a stream that dropped 12,000 lines. That is the whole trick, and it i
 test asserts that no file in the presentational set imports `./queries` or `./shell`. Same shape as
 the gate-list and catalogue checks already here — a rule nobody can quietly stop following.
 
+**A door deep in a molecule is a context the frame provides** (BRW7's link opener in `links.tsx`,
+PREVIEW1's file opener in `work/preview.ts`): the molecule reads it with React's own `useContext`,
+which reaches no data, and rendered with no provider the door is plain text. Threading the callback
+instead would make every level between the frame and a tool card carry a prop it does not use.
+
 **Deliberately not adopted: the folder taxonomy.** `atoms/ molecules/ organisms/` scatters one feature
 across three directories and starts a taxonomy argument on every file ("is a composer a molecule?").
 The surface's own components live together in **`src/Daoris.Web/src/work/`**, colocated with their
