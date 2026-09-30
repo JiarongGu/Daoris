@@ -351,6 +351,8 @@ line git can name. With an agent named, a starter is also a first message.
      read never written over, each in the route's words; Edge where none is installed says so before Apply, as the
      screen does. Applied through `IHelpDoors.ChangeBrowser`, which is `BrowserModule`'s own edit (each route now one
      method the route and the door call). The room says how the browser is set and the favorites it keeps.
+   - **A go to Permissions → *Reading and writing across*.** A part of `permissions` on both twins (`HelpPlaces`,
+     `help/places.ts`), found by the `settings-across` id the card has carried since READ1, now a `SettingsAnchor`.
 
 ## 10. Not chosen
 

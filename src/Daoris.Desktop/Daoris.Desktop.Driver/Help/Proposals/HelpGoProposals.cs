@@ -110,6 +110,8 @@ public static class HelpPlaces
         ("workspace", "wiring", "Wiring"), ("workspace", "lines", "Lines"), ("workspace", "landing", "How work lands"),
         ("workspace", "sweep", "Session branches"),
         ("agents", "usage", "Usage"), ("permissions", "proposals", "Proposed by agents"),
+        // HELP10: the card READ1 built (D107), which the page finds by its own `settings-across`.
+        ("permissions", "across", "Reading and writing across"),
     ];
 }
 

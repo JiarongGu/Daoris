@@ -137,7 +137,7 @@ view, for Settings its domain, and a part where the place has one.
 - Parts of `start`, the setup guide's steps: `agent` (step 1, an agent), `helper` (step 2, Daoris's own agent), `repositories` (step 3, a workspace and its repositories), `driven` (step 4, what is driven), `landing` (step 5, how work lands), `rules` (step 6, what agents may do).
 - Parts of `workspace`: `wiring` (Wiring), `lines` (Lines), `landing` (How work lands), `sweep` (Session branches).
 - Parts of `agents`: `usage` (Usage).
-- Parts of `permissions`: `proposals` (Proposed by agents).
+- Parts of `permissions`: `proposals` (Proposed by agents), `across` (Reading and writing across).
 
 ## The window
 
