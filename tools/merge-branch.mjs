@@ -70,12 +70,12 @@ const SHUTDOWN = 'dotnet build-server shutdown';
 const KINDS = ['check', 'suite', 'rehearsal'];
 
 /**
- * FLAKE1's classes: each failed at least once under a loaded full run and passed alone. The real-process
- * test category MOD8 adds (design §3 rule 5) is meant to name them in the code instead.
+ * The gates that run the `Process` test category (MOD8): every test in one starts a real process or runs a
+ * real tick, so a failure there may be the load and is re-run alone once. Named by the settings file those
+ * gates run with, not by a list of classes: a list goes stale the day a new real-process class is written,
+ * and one did (a landing plugin's and a protocol chat's flakes read as plain failures).
  */
-export const PROCESS_CLASSES = [
-  'IntakeTests', 'DrivenSessionInputTests', 'HookTests', 'CanonicalLineTests', 'ProcessJobTests', 'LandedBranchTests',
-];
+export const isProcessGate = (gate) => /process\.runsettings/.test(gate.run);
 
 export const USAGE = [
   'usage: node tools/merge-branch.mjs <branch> [--batch <branch>…] [--keep-going] [--no-commit-check]',
@@ -222,7 +222,6 @@ const SUMMARY = /^\s*(?:Passed|Failed)!\s+-\s+Failed:\s+(\d+),\s+Passed:\s+(\d+)
 
 /** The simple name of a test's class: the segment before the method, a nested class's outer name. */
 export const testClass = (test) => (test.split('.').at(-2) ?? '').split('+')[0];
-export const isProcessTest = (test) => PROCESS_CLASSES.includes(testClass(test));
 const short = (test) => test.split('.').slice(-2).join('.');
 
 /**
@@ -249,8 +248,11 @@ export function testSummary(output) {
   return summary;
 }
 
-/** Whether a failed run's failures are re-run alone: all of them named, and all real-process tests. */
-export function flakeDecision(output, isProcess = isProcessTest) {
+/**
+ * Whether a failed run's failures are re-run alone: all of them named, and all real-process tests. The caller
+ * asks only of a Process gate, where every test is one, so the default says yes.
+ */
+export function flakeDecision(output, isProcess = () => true) {
   const summary = testSummary(output);
   if (summary.summaries === 0) return { rerun: [], reason: 'the suite printed no result: it did not build, or its run was cut off' };
   if (summary.failedLines === 0) return { rerun: [], reason: 'no failing test is named: the run failed outside a test' };
@@ -573,7 +575,9 @@ export async function runGate(root, gate, dir, { step = runStep } = {}) {
     return exit;
   });
   const result = { gate, code, log, verdict: code === 0 ? 'PASS' : 'FAIL', note: code === 0 ? '' : `exit ${code}` };
-  if (code !== 0 && /^dotnet test\b/.test(gate.run)) {
+  if (code !== 0 && /^dotnet test\b/.test(gate.run) && !isProcessGate(gate)) {
+    result.note = `exit ${code}; outside the Process category, a failure is real and never re-run`;
+  } else if (code !== 0 && /^dotnet test\b/.test(gate.run)) {
     const decision = flakeDecision(readFileSync(log, 'utf8'));
     if (decision.rerun.length === 0) {
       result.note = `exit ${code}; ${decision.reason}`;

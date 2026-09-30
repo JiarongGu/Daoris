@@ -37,7 +37,7 @@ const tool = await import(
   gateKind: (run: string) => string;
   gatePlan: (declared: { name: string; run: string }[], workflow?: string) => Gate[];
   readPlan: (root: string) => Gate[];
-  flakeDecision: (output: string) => { rerun: string[]; reason?: string };
+  flakeDecision: (output: string, isProcess?: (test: string) => boolean) => { rerun: string[]; reason?: string };
   rerunCommand: (run: string, test: string) => string;
   rerunPassed: (output: string) => boolean;
   globToRegExp: (glob: string) => RegExp;
@@ -48,7 +48,7 @@ const tool = await import(
   startRefusal: (facts: { branch: string; merging: boolean; changed: { code: string; path: string }[]; ignored: boolean }) => string | null;
   parseCommits: (text: string) => { sha: string; merge: boolean; subject: string; trailer: string }[];
   worktreeFor: (porcelain: string, branch: string) => string | null;
-  PROCESS_CLASSES: string[];
+  isProcessGate: (gate: { name: string; run: string }) => boolean;
 };
 
 const TOOL = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..', 'tools', 'merge-branch.mjs');
@@ -240,9 +240,10 @@ const CATALOGUE_FAILURE = [
   'Failed!  - Failed:     2, Passed:   397, Skipped:     0, Total:   399, Duration: 1 m 1 s - Daoris.Desktop.Modules.Tests.dll (net10.0)',
 ].join('\n');
 
-test("FLAKE1's classes are the real-process classes the tool will re-run", () => {
-  assert.deepEqual([...tool.PROCESS_CLASSES].sort(),
-    ['CanonicalLineTests', 'DrivenSessionInputTests', 'HookTests', 'IntakeTests', 'LandedBranchTests', 'ProcessJobTests']);
+test('only a gate that runs the Process category is one whose failures may be flakes (MOD8)', () => {
+  assert.equal(tool.isProcessGate({ name: 'driver-process', run: 'dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests --settings src/Daoris.Desktop/process.runsettings' }), true);
+  assert.equal(tool.isProcessGate({ name: 'driver', run: 'dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests --filter Category!=Process' }), false);
+  assert.equal(tool.isProcessGate({ name: 'service', run: 'dotnet test src/Daoris.Service' }), false);
 });
 
 test('a real-process test that failed is re-run alone; a theory is re-run by its method, once', () => {
@@ -258,13 +259,13 @@ test('a real-process test that failed is re-run alone; a theory is re-run by its
 });
 
 test('a failure that is not a real-process test is never re-run, and says why', () => {
-  const catalogue = tool.flakeDecision(CATALOGUE_FAILURE);
+  const catalogue = tool.flakeDecision(CATALOGUE_FAILURE, () => false);
   assert.deepEqual(catalogue.rerun, []);
   assert.match(catalogue.reason!, /not a real-process test: RefusalCatalogueTests\.Every_refusal/);
 
   // A flake beside a real failure is still a failure: nothing is re-run.
   const mixed = [PROCESS_FAILURE.replace(/Failed!.*$/, ''), CATALOGUE_FAILURE.replace('Failed:     2', 'Failed:     3')].join('\n');
-  assert.deepEqual(tool.flakeDecision(mixed).rerun, []);
+  assert.deepEqual(tool.flakeDecision(mixed, (name) => name.includes("ProcessJobTests")).rerun, []);
 
   const build = 'src/X.cs(3,1): error CS1002: ; expected\nBuild FAILED.\n';
   assert.match(tool.flakeDecision(build).reason!, /printed no result/);
@@ -283,7 +284,7 @@ test('a solution prints one summary per project, and the counts are summed', () 
     '  Failed Daoris.Service.Http.Tests.HostTests.A_route [1 s]',
     'Failed!  - Failed:     1, Passed:    45, Skipped:     0, Total:    46, Duration: 10 s - Daoris.Service.Http.Tests.dll (net10.0)',
   ].join('\n');
-  assert.match(tool.flakeDecision(service).reason!, /not a real-process test: HostTests\.A_route/);
+  assert.match(tool.flakeDecision(service, () => false).reason!, /not a real-process test: HostTests\.A_route/);
 });
 
 test('a re-run runs that one test with no build, and passes only on a test that ran and passed', () => {
@@ -423,7 +424,7 @@ test("a gate's whole output is kept in its log, and the build servers are shut d
 
 test('a real-process failure is re-run alone once: a pass alone is a FLAKE, a second failure a FAIL, and nothing else is re-run', async () => {
   const fx = makeFixture('merge-branch-flake-runs');
-  const driver = planned('driver', 'dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests');
+  const driver = planned('driver-process', 'dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests --settings src/Daoris.Desktop/process.runsettings');
   const flaky = 'Daoris.Desktop.Driver.Tests.ProcessJobTests.A_child_that_outlives_its_parent_ends_when_the_session_is_untracked';
   const alone = 'Passed!  - Failed:     0, Passed:     1, Skipped:     0, Total:     1, Duration: 5 s - D.dll (net10.0)\n';
 
@@ -431,8 +432,8 @@ test('a real-process failure is re-run alone once: a pass alone is a FLAKE, a se
   let result = await tool.runGate(fx.root, driver, fx.root, { step: fake.step });
   assert.equal(result.verdict, 'FLAKE');
   assert.deepEqual(fake.asked, [driver.run, tool.rerunCommand(driver.run, flaky)]);
-  assert.match(result.note, /failed in the full run and passed alone: ProcessJobTests\.A_child.*driver\.rerun\.log/);
-  assert.match(readFileSync(join(fx.root, 'driver.rerun.log'), 'utf8'), /Passed!/);
+  assert.match(result.note, /failed in the full run and passed alone: ProcessJobTests\.A_child.*driver-process\.rerun\.log/);
+  assert.match(readFileSync(join(fx.root, 'driver-process.rerun.log'), 'utf8'), /Passed!/);
 
   fake = fakeStep(() => ({ out: PROCESS_FAILURE, code: 1 }));
   result = await tool.runGate(fx.root, driver, fx.root, { step: fake.step });
@@ -445,11 +446,13 @@ test('a real-process failure is re-run alone once: a pass alone is a FLAKE, a se
   result = await tool.runGate(fx.root, driver, fx.root, { step: fake.step });
   assert.equal(result.verdict, 'FAIL');
 
-  fake = fakeStep(() => ({ out: CATALOGUE_FAILURE, code: 1 }));
-  result = await tool.runGate(fx.root, driver, fx.root, { step: fake.step });
+  // Outside the Process category a failure is real: the fast half, the service, any gate without the settings.
+  const fast = planned('driver', 'dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests --filter Category!=Process');
+  fake = fakeStep(() => ({ out: PROCESS_FAILURE, code: 1 }));
+  result = await tool.runGate(fx.root, fast, fx.root, { step: fake.step });
   assert.equal(result.verdict, 'FAIL');
-  assert.deepEqual(fake.asked, [driver.run], 'a failure that is not a real-process test is never re-run');
-  assert.match(result.note, /not a real-process test: RefusalCatalogueTests/);
+  assert.deepEqual(fake.asked, [fast.run], 'a failure outside the Process category is never re-run');
+  assert.match(result.note, /outside the Process category, a failure is real and never re-run/);
 
   // Only a .NET suite is read for flakes: a rehearsal that fails has failed.
   fake = fakeStep(() => ({ out: PROCESS_FAILURE, code: 1 }));
@@ -679,7 +682,7 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
     const repo = scratch('batch', [
       { name: 'cli', run: 'node gate.mjs cli' },
       { name: 'check', run: 'dotnet run --project devkit -- check' },
-      { name: 'driver', run: 'dotnet test fake/Driver.Tests' },
+      { name: 'driver', run: 'dotnet test fake/Driver.Tests --settings fake/process.runsettings' },
       { name: 'deployment', run: 'npm run rehearse:deploy' },
     ], {
       'package.json': `${JSON.stringify({ name: 'scratch', private: true, scripts: {
