@@ -16,6 +16,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// failure is Windows': elsewhere a bare name starts as it always did.
 /// </remarks>
 [Collection(ProcessPath.Name)]
+[Trait(Category.Name, Category.Process)]
 public sealed class CommandShimTests : IDisposable
 {
     // Scratch in the repository's own gitignored `_fixtures/`, never OS temp.

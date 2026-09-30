@@ -261,13 +261,23 @@ jobs:
       - name: Service gate
         run: dotnet test src/Daoris.Service --nologo
 
+      # Each desktop suite runs as two gates (MOD8): the tests that start real processes or run real
+      # ticks carry the `Process` category and run one class at a time after the rest
+      # (`process.runsettings`), which is how the parent's merge runs them too. They are the ones load
+      # has failed (FLAKE1).
       - name: Driver gate
-        run: dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests --nologo
+        run: dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests --filter Category!=Process --nologo
 
       # The shell's head — every IPC module the platform page talks to. Plain net10.0 precisely so it
       # runs here: the window is Windows-only, what it answers is not.
       - name: Desktop modules gate
-        run: dotnet test src/Daoris.Desktop/Daoris.Desktop.Modules.Tests --nologo
+        run: dotnet test src/Daoris.Desktop/Daoris.Desktop.Modules.Tests --filter Category!=Process --nologo
+
+      - name: Driver process gate
+        run: dotnet test src/Daoris.Desktop/Daoris.Desktop.Driver.Tests --settings src/Daoris.Desktop/process.runsettings --nologo
+
+      - name: Desktop modules process gate
+        run: dotnet test src/Daoris.Desktop/Daoris.Desktop.Modules.Tests --settings src/Daoris.Desktop/process.runsettings --nologo
 
       - name: Release rehearsal
         run: npm run rehearse

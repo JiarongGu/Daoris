@@ -15,6 +15,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// directory that is the tool's (D49 §4), shown back only as its last four characters, and handed to
 /// the agent at spawn through the variable its toolchain declares.</para>
 /// </remarks>
+[Trait(Category.Name, Category.Process)]
 public sealed class ApiKeyAccountTests : IDisposable
 {
     private readonly string _home = Path.Combine(

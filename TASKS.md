@@ -21,7 +21,7 @@ lists.
 
 ## State
 
-**Counts, and this is their one home:** sixteen commands, **660 CLI tests, 655 service and 46 HTTP host, 1480 driver,
+**Counts, and this is their one home:** sixteen commands, **661 CLI tests, 655 service and 46 HTTP host, 1480 driver,
 410 desktop modules, 80 devkit, 1713 web unit, 21 Playwright**, 66/66 release rehearsal, **301/301
 family rehearsal** (it names its own phases when you run it), **70/70 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge
@@ -117,9 +117,8 @@ rather than designed.
 
 ## Backlog
 
-**Eighteen rows are open, in three kinds** (triaged 2026-09-30, when the owner asked to go faster):
-- **Workable now, by the parent or subagents (four):** the parallel-development arc's last
-  (MOD8, in flight), READ1, TASKBAR1, TEST1, and FLAKE1 (which MOD8
+**Seventeen rows are open, in three kinds** (triaged 2026-09-30, when the owner asked to go faster):
+- **Workable now, by the parent or subagents (three):** READ1, TASKBAR1, TEST1, and FLAKE1 (which MOD8
   absorbs).
 - **Waiting on the owner (six):** BUDGET1 and PLUGREPO1 (their calls), TRUST2 and AGT2c (a grant, two
   downloads), FG5 and BRW3 (the owner present).
@@ -137,8 +136,6 @@ rule it also ships. A heading below holds open rows only.
 `docs/2026-09-30-parallel-development-design.md` is the contract: what eighteen merges collided on,
 the two kinds of collision (a shared record, a god file), the rules, the splits, the lane map and the
 order. Every split is behaviour-preserving and proven by the gates as they stand.
-- [ ] **MOD8 — tests follow their code, and a `Process` category** run serially in the parent; the
-  worktree path-length failure fixed at its cause.
 
 ### Watch it, type into it, set it up (owner, 2026-09-30) — in this order
 
@@ -333,7 +330,13 @@ TDD, looked at on the window, and the ones that touch a real session use one (au
 
 
 
-- [ ] **FLAKE1 — an intake test failed once in about 20 full driver runs.**
+- [ ] **FLAKE1 — an intake test failed once in about 20 full driver runs.** *Narrowed by MOD8
+  (2026-09-30): every class that starts a real process or runs a real tick carries the `Process` category,
+  subagents never run it, and the parent and the release run it serially; the final serial run on an idle
+  machine was 543/543. Still live: `SessionProcesses.Stop` catching only one exception type (a kill mid-exit
+  threw through a chat's cleanup; being fixed), `LandingPluginTests.A_plugin_that_never_answers…` (a 3 s
+  patience against a slow `initialize`), and `DrivenSessionInputTests` (acp-stub, "the pipe is being
+  closed", once in a parallel run). The history below stands.*
   `IntakeTests.An_ask_with_an_intake_harness_is_answered_by_a_session_that_publishes_onto_it`: the
   intake opened, and its stub agent published nothing onto the ask (2026-09-25, under a loaded full
   run). It passed 10 runs in a row after. Its assertion now carries the session's transcript and the

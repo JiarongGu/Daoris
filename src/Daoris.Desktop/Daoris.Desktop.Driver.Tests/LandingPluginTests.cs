@@ -13,6 +13,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// 🔴 <b>Nothing here reaches a network.</b> `origin` is a bare repository under the scratch folder,
 /// and the plugin that pushes pushes there.
 /// </remarks>
+[Trait(Category.Name, Category.Process)]
 public sealed class LandingPluginTests : IDisposable
 {
     private const string Id = "example.lands";

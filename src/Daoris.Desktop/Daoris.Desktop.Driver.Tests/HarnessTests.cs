@@ -330,6 +330,7 @@ public sealed class HarnessSettingsTests : IDisposable
 /// a gate CAN hold is that the probe asks, parses what it is given, and refuses to guess when the
 /// answer is a shape it does not recognise.
 /// </remarks>
+[Trait(Category.Name, Category.Process)]
 public sealed class HarnessProbeTests : IDisposable
 {
     private readonly string _home = Path.Combine(
@@ -688,6 +689,7 @@ public sealed class HarnessProbeTests : IDisposable
 /// for both doors</b> — the driven loop and a conversation ask the same question of the same object,
 /// because two copies of "may this start" drift and the drift is invisible.
 /// </summary>
+[Trait(Category.Name, Category.Process)]
 public sealed class HarnessSelectionTests : IDisposable
 {
     private readonly string _home = Path.Combine(

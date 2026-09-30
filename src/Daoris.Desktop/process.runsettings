@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The desktop suites' Process half (MOD8): the test classes that start real processes, run real ticks,
+  or hold a wall-clock bound on either, run one class at a time. They are the ones another worktree's
+  load has failed (FLAKE1). The parent runs them at its merge, with this file as the test run's
+  settings; a subagent's worktree runs the rest, filtered to Category!=Process. daoris.gates.json
+  declares both halves of each suite, and each test project's Category.cs says which classes carry
+  the trait, and why.
+
+  A file, not a run-settings argument at the end of the command line: VSTest ANDs this filter with any
+  filter the caller adds, so the merge tool can re-run one failed test alone by adding its own. Whatever
+  is appended after a trailing run-settings argument is read as one more: measured, that re-run built
+  again and ran the whole half.
+-->
+<RunSettings>
+  <RunConfiguration>
+    <TestCaseFilter>Category=Process</TestCaseFilter>
+  </RunConfiguration>
+  <xUnit>
+    <ParallelizeTestCollections>false</ParallelizeTestCollections>
+  </xUnit>
+</RunSettings>

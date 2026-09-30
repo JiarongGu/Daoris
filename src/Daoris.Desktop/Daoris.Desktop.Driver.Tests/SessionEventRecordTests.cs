@@ -12,6 +12,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// back after a restart — the target the driver composed, what the wire said, and how the turn ended —
 /// in the file the driver writes, not in a list a test handed it.
 /// </remarks>
+[Trait(Category.Name, Category.Process)]
 public sealed class SessionEventRecordTests : IDisposable
 {
     private readonly string _home = Path.Combine(

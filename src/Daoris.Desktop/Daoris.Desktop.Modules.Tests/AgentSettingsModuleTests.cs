@@ -17,6 +17,7 @@ namespace Daoris.Desktop.Modules.Tests;
 /// is a stand-in script: a probe of the machine's own <c>claude</c> would be a real tool asked real
 /// questions by a test.</para>
 /// </remarks>
+[Trait(Category.Name, Category.Process)]
 public sealed class AgentSettingsModuleTests : Bridge
 {
     private DriverModule Module() => new(Bus, new DriverLoop(Bus, new HostSupervisor("http://localhost:0"), "http://localhost:0"));

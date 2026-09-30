@@ -12,6 +12,7 @@ namespace Daoris.Desktop.Modules.Tests;
 /// is <i>spawned</i>; this is the other door. What the shell can honestly say is what the page names
 /// about itself: its own bundle.
 /// </summary>
+[Trait(Category.Name, Category.Process)]
 public sealed class HostSupervisorTests : IDisposable
 {
     private readonly string _root = Path.Combine(

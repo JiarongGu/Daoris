@@ -10,6 +10,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// judged. Real git throughout, in scratch repositories; the proof's cases are <see cref="LandedProofTests"/>
 /// and what keeps a branch is <see cref="LandedKeepTests"/>.
 /// </summary>
+[Trait(Category.Name, Category.Process)]
 public sealed class LandedBranchTests : LandedFixture
 {
     // ——— the record

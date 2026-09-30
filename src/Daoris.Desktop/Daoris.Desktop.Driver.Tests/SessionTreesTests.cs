@@ -10,9 +10,11 @@ namespace Daoris.Desktop.Driver.Tests;
 /// for once.
 /// </summary>
 /// <remarks>
-/// Fixtures live under the repository's gitignored `_fixtures/`, never OS temp — the family's own
-/// scratch rule. Each test makes its own repository, so nothing here is order-dependent.
+/// Fixtures live under the repository's gitignored `_fixtures/` — the family's own scratch rule —
+/// except the path-length test's, which needs a root shorter than the checkout's (MOD8). Each test
+/// makes its own repository, so nothing here is order-dependent.
 /// </remarks>
+[Trait(Category.Name, Category.Process)]
 public sealed class SessionTreesTests : IDisposable
 {
     private readonly string _scratch;
@@ -25,11 +27,13 @@ public sealed class SessionTreesTests : IDisposable
         Directory.CreateDirectory(_home);
     }
 
-    public void Dispose()
+    public void Dispose() => Remove(_scratch);
+
+    private static void Remove(string folder)
     {
         try
         {
-            Directory.Delete(_scratch, recursive: true);
+            Directory.Delete(folder, recursive: true);
         }
         catch (IOException)
         {
@@ -233,20 +237,44 @@ public sealed class SessionTreesTests : IDisposable
     /// repository's deepest tracked file fitted under its own root and not under a session tree, whose
     /// prefix is longer. `worktree add` failed on every tick, and the quest sat.
     /// </summary>
+    /// <remarks>
+    /// MOD8: the depth was a constant sized for where the main checkout sits. In a git worktree the
+    /// repository sits deeper, the fixture's own `git add` crossed the limit, and the test failed in
+    /// every worktree. It now makes its repository under a short root of its own and sizes the path
+    /// from that root, so it proves the same thing wherever the repository sits.
+    /// </remarks>
     [Fact]
     public async Task A_tracked_path_that_fits_the_root_but_not_a_trees_longer_prefix_still_opens()
     {
-        var root = await MakeRepositoryAsync("engine");
-        var deep = string.Join("/", Enumerable.Repeat("component", 17)) + "/x.ts";
-        Directory.CreateDirectory(Path.GetDirectoryName(Path.Combine(root, deep))!);
-        await File.WriteAllTextAsync(Path.Combine(root, deep), "x\n");
-        await GitAsync(root, "add", ".");
-        await GitAsync(root, "commit", "-m", "a deep file");
+        // OS temp, as many of this assembly's fixtures are: `_fixtures/` sits as deep as the checkout.
+        var shortRoot = Path.Combine(Path.GetTempPath(), "daoris-lp-" + Guid.NewGuid().ToString("N")[..8]);
+        try
+        {
+            var home = Path.Combine(shortRoot, "daoris-home");
+            Directory.CreateDirectory(home);
+            var root = await MakeRepositoryAsync("engine", under: shortRoot);
+            // At most 240 characters under the root: inside Windows' 248 for a folder and 260 for a
+            // file. The tree's prefix is 36 longer (`daoris-home/trees/aurora/` and `/s-xxxxxxxx`),
+            // so the same path crosses 260 under it.
+            const string segment = "component/";
+            var room = 240 - (root.Length + 1) - "x.ts".Length;
+            Assert.True(room >= 5 * segment.Length, $"the short root is too long to fit a deep path under: {root}");
+            var deep = string.Concat(Enumerable.Repeat(segment, room / segment.Length)) + "x.ts";
+            Directory.CreateDirectory(Path.GetDirectoryName(Path.Combine(root, deep))!);
+            await File.WriteAllTextAsync(Path.Combine(root, deep), "x\n");
+            var added = await GitTupleAsync(root, "add", ".");
+            Assert.True(added.Code == 0, $"the fixture must fit under its own root: {added.Stderr}");
+            await GitAsync(root, "commit", "-m", "a deep file");
 
-        var opened = await new SessionTrees(_home).OpenAsync(root, "engine", "aurora");
+            var opened = await new SessionTrees(home).OpenAsync(root, "engine", "aurora");
 
-        Assert.True(Path.Combine(opened.Path, deep).Length > 260, "the fixture must cross the limit to test it");
-        Assert.True(File.Exists(Path.Combine(opened.Path, deep)));
+            Assert.True(Path.Combine(opened.Path, deep).Length > 260, "the fixture must cross the limit to test it");
+            Assert.True(File.Exists(Path.Combine(opened.Path, deep)));
+        }
+        finally
+        {
+            Remove(shortRoot);
+        }
     }
 
     /// <summary>
@@ -311,9 +339,9 @@ public sealed class SessionTreesTests : IDisposable
 
     // ---------------------------------------------------------------------------------- fixtures
 
-    private async Task<string> MakeRepositoryAsync(string name)
+    private async Task<string> MakeRepositoryAsync(string name, string? under = null)
     {
-        var root = Path.Combine(_scratch, name);
+        var root = Path.Combine(under ?? _scratch, name);
         Directory.CreateDirectory(root);
         await GitAsync(root, "init", "--quiet");
         await GitAsync(root, "config", "user.email", "fixture@example.test");

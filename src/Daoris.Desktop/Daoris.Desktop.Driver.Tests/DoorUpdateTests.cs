@@ -17,6 +17,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <b>No test here downloads anything.</b> npm is a stand-in script that answers <c>view</c> and lays
 /// down a shim for <c>install</c>, and the channel is a transport over a table.
 /// </remarks>
+[Trait(Category.Name, Category.Process)]
 public sealed class DoorUpdateTests : IDisposable
 {
     private const string AcpPackage = "@agentclientprotocol/claude-agent-acp";

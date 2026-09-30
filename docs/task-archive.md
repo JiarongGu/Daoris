@@ -8465,3 +8465,24 @@ shell. **Seen on the window:** the card's body showed raw backticks; fixed on ma
 Write, the `git -C` prefix rules as an agent types them).
 **Proven by:** driver 1480, modules 410, service 655 + 46, CLI 660, vitest 1713, release 66/66, family 301/301,
 Playwright 21, deployment 70/70.
+
+
+## MOD8 — tests follow their code, and a `Process` category (2026-09-30)
+
+> - [ ] **MOD8 — tests follow their code, and a `Process` category** run serially in the parent; the
+> worktree path-length failure fixed at its cause.
+
+**Outcome** (built by a subagent in its own worktree, merged with `tools/merge-branch.mjs`, eleven gates
+passing). Tests that start real processes (git, node, a harness stub, a hook, the host, a pseudo console), run
+real ticks, or hold a wall-clock bound on one carry `[Trait(Category.Name, Category.Process)]` on the class: 46
+driver classes and 11 modules classes, found by reading and by per-class timings, and checked by running the
+rest with git and node off PATH. Each desktop suite is two declared gates: `--filter Category!=Process` (driver
+888 tests in 7.6 s, modules 294 in 12 s), what a subagent runs; and `--settings
+src/Daoris.Desktop/process.runsettings`, the category one class at a time (driver 11 m 55 s, modules 1 m 16 s),
+in the parent's merge and the release workflow. A dogfood test holds each pair. The settings are a file, not a
+trailing `-- xUnit…`, because VSTest ANDs the file's filter with the merge tool's alone-rerun filter, while a
+trailing argument swallows it. The worktree path-length failure is fixed at its cause: its fixture was sized for
+the main checkout, and now builds under a short root of its own (FIX-LOG). Five test classes moved beside their
+sources. The merge tool still names six flake classes by hand; its rule moves to the category next.
+**Proven by:** driver 1480, modules 410, service 655 + 46, CLI 661, release 66/66, family 301/301, Playwright 21,
+deployment 70/70.

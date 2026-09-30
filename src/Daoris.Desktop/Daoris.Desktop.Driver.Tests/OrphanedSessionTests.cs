@@ -19,6 +19,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <para>Real processes (node, as every gate already needs) and a stand-in service on a loopback port:
 /// the spawn, the marker and the record's move are exactly what a fake would get wrong.</para>
 /// </remarks>
+[Trait(Category.Name, Category.Process)]
 public sealed class OrphanedSessionTests : IDisposable
 {
     private readonly string _home = Path.Combine(

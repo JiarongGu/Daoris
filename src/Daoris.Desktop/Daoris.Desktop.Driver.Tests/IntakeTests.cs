@@ -43,66 +43,6 @@ public sealed class AskSignatureTests
 }
 
 /// <summary>
-/// And when the ACTIVE SESSIONS changed (UX5 U13): a conversation started or ended from the main
-/// window moves nothing a tick reports, so a quiet tick never told the other windows, and the monitor
-/// never showed a chat the person had just opened. Seen on the window: a minute and two ticks later,
-/// still absent.
-/// </summary>
-public sealed class ActiveSessionSignatureTests
-{
-    [Fact]
-    public void The_same_sessions_sign_the_same_whatever_their_order()
-    {
-        var a = new[] { new SessionView("s1", "engine", "working"), new SessionView("c2", "game", "awaiting-person") };
-
-        Assert.Equal(ActiveSessions.Signature(a), ActiveSessions.Signature([a[1], a[0]]));
-    }
-
-    [Fact]
-    public void A_session_started_ended_or_moved_signs_differently()
-    {
-        var before = new[] { new SessionView("s1", "engine", "working") };
-
-        Assert.NotEqual(ActiveSessions.Signature(before),
-            ActiveSessions.Signature([.. before, new SessionView("c2", "game", "working")]));
-        Assert.NotEqual(ActiveSessions.Signature(before), ActiveSessions.Signature([]));
-        Assert.NotEqual(ActiveSessions.Signature(before),
-            ActiveSessions.Signature([new SessionView("s1", "engine", "awaiting-person")]));
-        Assert.Equal(string.Empty, ActiveSessions.Signature([]));
-    }
-}
-
-/// <summary>
-/// And when the REGISTRY changed (FG4): a folder imported from a terminal moves nothing a tick
-/// reports, so the page kept saying *no workspace yet* until it was reloaded. Seen on the deployed
-/// application, with 29 repositories just registered.
-/// </summary>
-public sealed class RepositorySignatureTests
-{
-    [Fact]
-    public void The_same_registry_signs_the_same_whatever_its_order()
-    {
-        var a = new[] { new RepoView("engine", true, "/work/engine", "aurora"), new RepoView("game", false, "/work/game") };
-
-        Assert.Equal(Repositories.Signature(a), Repositories.Signature([a[1], a[0]]));
-    }
-
-    [Fact]
-    public void A_repository_added_retired_re_wired_moved_or_adopted_signs_differently()
-    {
-        var before = new[] { new RepoView("engine", false, "/work/engine", "aurora") };
-
-        Assert.NotEqual(Repositories.Signature(before),
-            Repositories.Signature([.. before, new RepoView("game", false, "/work/game", "aurora")]));
-        Assert.NotEqual(Repositories.Signature(before), Repositories.Signature([]));
-        Assert.NotEqual(Repositories.Signature(before), Repositories.Signature([new RepoView("engine", false, "/work/engine", "tools")]));
-        Assert.NotEqual(Repositories.Signature(before), Repositories.Signature([new RepoView("engine", false, "/elsewhere/engine", "aurora")]));
-        Assert.NotEqual(Repositories.Signature(before), Repositories.Signature([new RepoView("engine", true, "/work/engine", "aurora")]));
-        Assert.Equal(string.Empty, Repositories.Signature([]));
-    }
-}
-
-/// <summary>
 /// The intake session (D65 §1b, INT4b): an ask the declarations did not settle is answered by a
 /// SESSION the driver opens in a room it owns — which reads the circle's declarations, publishes the
 /// quests onto the ask itself, and asks the person where the declarations do not settle it.
@@ -112,6 +52,7 @@ public sealed class RepositorySignatureTests
 /// stand-in service on a loopback port: the spawn, the environment, the room and the publish are
 /// exactly what a fake would get wrong. No model anywhere, and no account.
 /// </remarks>
+[Trait(Category.Name, Category.Process)]
 public sealed class IntakeTests : IDisposable
 {
     private readonly string _home = Path.Combine(
