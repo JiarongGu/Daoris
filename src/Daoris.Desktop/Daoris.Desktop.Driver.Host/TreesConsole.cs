@@ -166,7 +166,11 @@ internal static class TreesConsole
                     return 0;
                 }
 
-                var done = await trees.SyncAsync(repositories, inUse, only: null, fetch: true).ConfigureAwait(false);
+                // The sessions in use, asked again while each repository's trees are held for its replays (LEFT2).
+                var done = await trees.SyncAsync(repositories, inUse, only: null, fetch: true,
+                    inUseNow: async token => (await service.ActiveSessionsAsync(token).ConfigureAwait(false))
+                        .Select(session => session.Tree).OfType<string>().Where(tree => tree.Length > 0)
+                        .ToHashSet(StringComparer.OrdinalIgnoreCase)).ConfigureAwait(false);
                 foreach (var result in done.Lines) Console.WriteLine($"  {(result.Moved ? "moved " : "stayed")}  {result.Pull.Repository}  {result.Message}");
                 foreach (var result in done.Rebases) Console.WriteLine($"  {(result.Replayed ? "moved " : "stayed")}  {result.Item.Repository}  {result.Message}");
                 foreach (var result in done.Deletes)

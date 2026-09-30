@@ -220,12 +220,23 @@ public sealed partial class SessionTrees
     /// <para><b>Branches that shared commits keep sharing them.</b> A landing's branch made at a session's tip is
     /// the same commit replayed once, and one inside another is replayed onto the other's new commits, so the
     /// clean-up's proof reads them together afterwards as it did before.</para>
+    ///
+    /// <para>🔴 <b>No session starts in a tree while it is replayed</b> (LEFT2). A repository's replays run with its
+    /// trees held alone (<see cref="TreeLock"/>), which a driver or a conversation takes, shared, from choosing its
+    /// tree until its record is open; the sessions in use are asked again inside the hold. A repository a session is
+    /// starting in has its replays left, each said, for another press.</para>
     /// </remarks>
     /// <param name="only">The rows the person saw listed, as <c>repository:branch</c> (the line's by its branch); null for everything the proofs clear now.</param>
     /// <param name="fetch">Whether to fetch first — the terminal's one command does; the screen's press acts on what its list fetched.</param>
+    /// <param name="inUseNow">
+    /// The trees sessions running or waiting hold, asked again while a repository's trees are held for its replays
+    /// (<see cref="TreeLock"/>, LEFT2): a session a driver opened since <paramref name="inUse"/> was read is then seen.
+    /// Every door with a service hands it; without it the replays judge by <paramref name="inUse"/> alone.
+    /// </param>
     public async Task<SyncDone> SyncAsync(
         IEnumerable<(string Repository, string? Workspace, string? Root)> repositories, IReadOnlySet<string> inUse,
-        IReadOnlySet<string>? only = null, bool fetch = false, CancellationToken ct = default)
+        IReadOnlySet<string>? only = null, bool fetch = false, CancellationToken ct = default,
+        Func<CancellationToken, Task<IReadOnlySet<string>>>? inUseNow = null)
     {
         var busy = new HashSet<string>(inUse.Select(Normal), StringComparer.OrdinalIgnoreCase);
         var pulls = new List<PullResult>();
@@ -249,9 +260,15 @@ public sealed partial class SessionTrees
                     : new PullResult(pull, false, only is null ? SyncWords.Describe(pull) : $"{SyncWords.Describe(pull)} — {LeftSince}"));
             }
 
-            // (c) Replay what still works on it, onto the line as it now stands.
+            // (c) Replay what still works on it, onto the line as it now stands — with the repository's trees held
+            // alone (LEFT2), so no session starts in one while it is rebased, and the sessions in use asked again
+            // inside that hold, since one may have opened since the look `inUse` came from.
             var onto = await OntoAsync(root, line, ct).ConfigureAwait(false);
-            var (judged, _) = await JudgeBranchesAsync(root, repository, workspace, line, onto, busy, ct).ConfigureAwait(false);
+            using var held = TreeLock.TryReplaying(home, workspace, repository);
+            var busyNow = held is not null && inUseNow is not null
+                ? new HashSet<string>((await inUseNow(ct).ConfigureAwait(false)).Select(Normal), StringComparer.OrdinalIgnoreCase)
+                : busy;
+            var (judged, _) = await JudgeBranchesAsync(root, repository, workspace, line, onto, busyNow, ct).ConfigureAwait(false);
             var replayed = new List<Replayed>();
             foreach (var each in await DeepestLastAsync(root, judged, ct).ConfigureAwait(false))
             {
@@ -263,8 +280,17 @@ public sealed partial class SessionTrees
                     continue;
                 }
 
+                if (held is null)
+                {
+                    rebases.Add(new(each.Item, false, $"`{each.Item.Branch}`: {TreeLock.Starting(repository)}."));
+                    continue;
+                }
+
                 rebases.Add(await ReplayAsync(root, repository, workspace, line!, onto!, each, replayed, ct).ConfigureAwait(false));
             }
+
+            // Let go once the replays are done: the deletions below touch no session's tree. (The `using` is for a throw.)
+            held?.Dispose();
 
             // (b) Delete what merged: the landed half of the clean-up, after the replays, and never a branch just replayed.
             var replayedNow = judged.Where(each => each.Item.Replays).Select(each => $"{repository}:{each.Item.Branch}").ToHashSet(StringComparer.Ordinal);

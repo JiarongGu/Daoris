@@ -5337,3 +5337,17 @@ the two minutes. A driver resuming a session in a tree between the list's check 
 The screen's section is held by the vitest loop over a mocked bridge, not looked at on the window. A landing
 branch rebased by hand keeps a record it no longer matches, and no door re-records it. An Ask Daoris proposal
 for this press was not built: it would reach into the service's proposal kinds and the page's cards.
+
+*Amended by LEFT2 (2026-10-01): the window between the list and the replay is closed. A repository's trees
+have a lock under the home (`locks/trees/<workspace>/<repository>.lock`, `TreeLock`), taken by the file
+system's own sharing: a driven start and a conversation's own tree take it shared, from before the tree is
+chosen or resumed until the session's record is open, when the ledger holds the tree; the press takes it
+alone around a repository's replays, and asks the ledger again inside it, so a session opened since the
+list is seen in use. A start that meets a replay is held for that look and carried on at the next; a
+replay that meets a start leaves that repository's replays, each said. Nothing waits for the lock, and a
+process that dies lets go of it with its handles. The line's fast-forward and the deletions are not held,
+since neither touches a session's tree. `TreeLockTests` hold the lock's sharing in the fast half; the
+press leaving a repository a session is starting in, and seeing one opened since the list, is a
+`TreeSyncTests` case in the `Process` half, written in the branch and not run there (MOD8). No driver tick
+was run against a held repository. A caller of the press that hands no fresh look at the sessions in use
+(both doors hand one) is still judged by the list's look inside the hold.*
