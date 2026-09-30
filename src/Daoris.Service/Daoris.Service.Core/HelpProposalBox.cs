@@ -44,6 +44,7 @@ public sealed partial class HelpProposalBox(string? home)
         ("go", "go_propose"),
         ("plugin", "plugin_propose"),
         ("hand", "hand_propose"),
+        ("browser", "browser_propose"),
     ];
 
     public string? Home { get; } = home;

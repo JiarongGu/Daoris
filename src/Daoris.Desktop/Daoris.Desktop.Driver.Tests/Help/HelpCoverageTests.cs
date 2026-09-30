@@ -40,10 +40,6 @@ public sealed partial class HelpCoverageTests
         "what an agent may do is never proposed by an agent: the room is not handed `permission_propose` (HELP1c), "
         + "since a rule narrowing is applied with nobody's press (PERM2).";
 
-    private const string Browser =
-        "the browser's settings are the desktop modules' own file (BrowserSettings, BRW5, BRW7), applied through "
-        + "BrowserModule; a door on `IHelpDoors` for them is the modules' to add, and until then a go reaches Settings → Browser.";
-
     /// <summary>
     /// The driver lock's <c>--share</c> (DRV8, D104), decided: a flag on the start of a headless loop, not a setting.
     /// </summary>
@@ -137,11 +133,11 @@ public sealed partial class HelpCoverageTests
             "a trial runs the plugin's code as the person to show what it answers (PLUG8), and changes nothing to propose.")),
         ("plugins", "usePickFolder", null, new Exempt("it is the system's folder picker, for the person's own choice.")),
 
-        ("browser", "useSetBrowser", null, new Owed(Browser)),
-        ("browser", "useSetLinks", null, new Owed(Browser)),
-        ("browser", "useSetExtensions", null, new Owed(Browser)),
-        ("browser", "useAddFavorite", null, new Owed(Browser)),
-        ("browser", "useRemoveFavorite", null, new Owed(Browser)),
+        ("browser", "useSetBrowser", null, new Door("browser", "use")),
+        ("browser", "useSetLinks", null, new Door("browser", "links")),
+        ("browser", "useSetExtensions", null, new Door("browser", "extensions")),
+        ("browser", "useAddFavorite", null, new Door("browser", "favorite")),
+        ("browser", "useRemoveFavorite", null, new Door("browser", "favorite")),
 
         ("logs", "useOpenLogFolder", null, new Exempt(
             "it opens the log's folder in the system's file browser and changes nothing; a go reaches Settings → Logs.")),

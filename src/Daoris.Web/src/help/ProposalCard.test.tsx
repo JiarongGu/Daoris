@@ -207,6 +207,22 @@ describe('the kinds that reach every door', () => {
     expect(screen.getByText(HAND.terminal, { selector: 'code' })).toBeInTheDocument();
   });
 
+  // HELP10: Daoris's browser's settings, a card as a setting's is: what changes, and the command that does the same.
+  const BROWSER: HelpProposal = {
+    id: 'p10', kind: 'browser',
+    describe: 'Links on the page open in Daoris\'s browser, from the next click. A sign-in link always opens in the system\'s browser.',
+    terminal: 'daoris browser links daoris',
+    why: 'the person wants tickets opened where their sign-ins are',
+  };
+
+  it('a browser setting says what changes and the command that does the same, with Apply and Not now', async () => {
+    await press(BROWSER, 'apply');
+
+    expect(screen.getByText('Ask Daoris proposes')).toBeInTheDocument();
+    expect(screen.getByText(BROWSER.describe)).toBeInTheDocument();
+    expect(screen.getByText(BROWSER.terminal, { selector: 'code' })).toBeInTheDocument();
+  });
+
   it('one of the install\'s own plugins says what it needs, in its README\'s words, before Apply', async () => {
     await press(PLUGIN_OFFER, 'apply');
 

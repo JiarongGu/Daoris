@@ -29,11 +29,12 @@ export type HelpPluginShown = {
  * Since HELP6 a kind for each door built since: an agent's update or pin, an account's model and effort, a
  * delete of a record made by mistake, and a go to a screen, which has no command since it changes nothing.
  * Since PLUG9 a plugin that has landed, added from its folder, or one switched on or off, with what it runs.
- * Since WSR5b a branch a landing made, handed to a landing plugin, which pushes it.
+ * Since WSR5b a branch a landing made, handed to a landing plugin, which pushes it. Since HELP10 Daoris's
+ * browser's settings, a card as a setting's is.
  */
 export type HelpProposal = {
   id: string;
-  kind: 'setting' | 'ask' | 'agent' | 'account' | 'delete' | 'go' | 'plugin' | 'hand';
+  kind: 'setting' | 'ask' | 'agent' | 'account' | 'delete' | 'go' | 'plugin' | 'hand' | 'browser';
   describe: string;
   terminal: string;
   why: string;

@@ -86,6 +86,18 @@ public sealed class HelpRoomMayProposeTests
         Assert.Contains("`daoris agent profile default <agent> <profile> [--workspace <name>]`", agents);
     }
 
+    /// <summary>HELP10: the browser's settings, each named as the terminal spells it, and when each holds.</summary>
+    [Fact]
+    public void The_room_says_how_the_browsers_settings_are_proposed()
+    {
+        var proposes = new HelpRoomMayPropose().Render(HelpRoomFixture.Machine);
+
+        Assert.Contains("- `browser_propose`: Daoris's browser's settings, as Settings → Browser sets them", proposes);
+        Assert.Contains("`use` `daoris` or `edge`", proposes);
+        Assert.Contains("a `favorite` to `add` (its address, and a title if wanted) or `remove` (one the list below keeps)", proposes);
+        Assert.Contains("Each but `links` holds from the browser's next start.", proposes);
+    }
+
     /// <summary>MOD6: every kind registered is a tool the room teaches, so a kind cannot be added that the helper never hears of.</summary>
     [Fact]
     public void Every_kinds_tool_is_named_in_what_it_may_propose()

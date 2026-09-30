@@ -50,7 +50,9 @@ public sealed partial class DriverModule
             // The install's own plugins (PLUG9 d), which the helper may propose installing by id.
             PluginOffers.Load(OffersFolder, _loop.Home, AdapterSet.Built().Names),
             // What the last tick parked by its strikes (HELP10), so a retry names a quest the drawer offers Retry on.
-            _loop.Parked.Latest);
+            _loop.Parked.Latest,
+            // Daoris's browser as its files hold it (HELP10), so a favorite removed is one kept.
+            BrowserModule.HelpFacts(BrowserModule.Home));
 
         var start = await chat.StartHelpAsync(
             helper, config, machine,
@@ -204,6 +206,29 @@ public sealed partial class DriverModule
             await module._loop.Harnesses.RosterAsync(config, refresh: true, ct).ConfigureAwait(false);
         }
 
+        // BrowserModule's own edits (HELP10): the same check, the same refusal for a file it could not read, the
+        // same write. A route's refusal is its words as the driver's, so the card settles refused with them.
+        public void ChangeBrowser(string setting, string value, string? address, string? title)
+        {
+            var home = BrowserModule.Home;
+            try
+            {
+                switch (setting, value)
+                {
+                    case ("use", _): BrowserModule.SetBrowser(home, value); break;
+                    case ("links", _): BrowserModule.SetLinks(home, value); break;
+                    case ("extensions", _): BrowserModule.SetExtensions(home, value); break;
+                    case ("favorite", "add"): BrowserModule.AddFavorite(home, address ?? "", title); break;
+                    case ("favorite", "remove"): BrowserModule.RemoveFavorite(home, address ?? ""); break;
+                    default: throw new DriverException($"`{setting} {value}` is not a change the Browser screen makes.");
+                }
+            }
+            catch (ShenoraException refused)
+            {
+                throw new DriverException(refused.Message);
+            }
+        }
+
         // SET_AGENT_SETTINGS's own write.
         public AgentSettingsRead SetAgentSettings(string harness, string account, AgentSettingEdit? model, AgentSettingEdit? effort) =>
             module.WriteAgentSettings(harness, account, () => (model, effort, null)).Read;
@@ -314,6 +339,12 @@ public sealed partial class DriverModule
         {
             var (quests, asks) = await HelpProposals.RecordsAsync(service, ct).ConfigureAwait(false);
             facts = facts with { Quests = quests, Asks = asks };
+        }
+
+        // Daoris's browser's files as the Browser screen reads them (HELP10), read only when a browser change is pending.
+        if (proposals.Any(proposal => proposal.Kind == "browser"))
+        {
+            facts = facts with { Browser = BrowserModule.HelpFacts(BrowserModule.Home) };
         }
 
         return (config, facts);

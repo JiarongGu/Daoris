@@ -71,6 +71,10 @@ present it as the tree.
   and opens the pull request, signed in as the person. Name the session that landed it or the branch, and
   a plugin only where the repository's landing rule names none. Only a branch a landing made and recorded
   here can be handed on; the person's own branches are theirs to push.
+- `browser_propose`: Daoris's browser's settings, as Settings → Browser sets them: `use` `daoris` or `edge`,
+  `links` `system` or `daoris`, `extensions` `offer` or `refuse`,
+  or a `favorite` to `add` (its address, and a title if wanted) or `remove` (one the list below keeps).
+  Each but `links` holds from the browser's next start.
 
 Each proposal reaches the person as a card with two buttons, and you name them as the card does:
 every card but a go reads **apply** and **not now** (in 中文 **应用** and **暂不**), and
@@ -182,6 +186,7 @@ message when it changed; for anything else on the screen, ask them rather than g
 - Ask Daoris: you, on `claude-code-acp`.
 - 1 session waits on the person; 2 asks wait for an answer.
 - Quests parked by their failed sessions, at the driver's last look: `#q5e6f7a8` (to `engine`), `#q6b7c8d9` (to `tools`).
+- Daoris's browser: your Edge; links on the page open in Daoris's browser; other software's extensions refused; favorites https://site.example/board, https://docs.example/.
 - Plugins: `example.lands` (on, speaks on `work/land`, added from a folder), `example.off` (off, installed from this install's offer), `example.broken` (on, contributes nothing: `apiVersion` must be an integer., no record of where it came from), `example.quiet` (on, added from a folder).
 - Branches landings made: `feature/q2-second` in `engine` (session `s2a3b4c5`, not pushed), `feature/q3-third` in `game` (session `s3`, pushed, pull request https://example.test/pr/3), `feature/q4-fourth` in `game` (session `s4`, pushed).
 

@@ -82,6 +82,7 @@ internal static class HelpProposalKinds
         new HelpGoProposals(),
         new HelpPluginProposals(),
         new HelpHandProposals(),
+        new HelpBrowserProposals(),
     ];
 
     /// <summary>The class that judges a kind, matched exactly as the file spells it; null for a kind none judges.</summary>

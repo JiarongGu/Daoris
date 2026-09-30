@@ -5107,6 +5107,8 @@ Until then the room names each one's screen and command.
   carry it, and a quest not on it is refused; applied as `RETRY_QUEST`'s own edit.
 - **An account made default** is the agent kind's `default` door, applied through `IHelpDoors.SetDefaultAccountAsync`,
   which `ScreenDoors` builds on `HARNESS_ACTION`'s own `profile-default`.
+- **The browser's settings** are a kind of their own, `browser`, since their file is not the driver's: judged by what
+  `BrowserModule` read of its files and applied through `IHelpDoors.ChangeBrowser`, `BrowserModule`'s own edits.
 
 **Why.** HELP6 and HELP8 each found a door built since the last pass that Ask Daoris could not reach, and
 READ1 left one the room already promised. A list kept by hand drifts; a list a test derives from the doors'

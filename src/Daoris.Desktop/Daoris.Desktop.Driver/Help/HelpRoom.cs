@@ -107,15 +107,16 @@ public static class HelpRoom
     /// <param name="standing">The asks the host answered, listed by id where they are not closed (HELP6).</param>
     /// <param name="offers">The install's own plugins (PLUG9 d); the room lists the sound ones not installed here.</param>
     /// <param name="parked">The quests the loop's last tick parked by their failed sessions (HELP10), which a retry names.</param>
+    /// <param name="browser">What Daoris's browser's files hold, as the desktop read them (HELP10); null where none was read.</param>
     public static HelpMachine Describe(
         DriverConfig config, Snapshot snapshot, IReadOnlyList<RepositoryLine> lines,
         IReadOnlyList<HarnessReport> roster, Func<string, string?> product, int asks,
         IReadOnlyList<AskView>? standing = null, PluginCatalog? plugins = null, IReadOnlyList<LandedBranch>? landed = null,
-        IReadOnlyList<PluginOffer>? offers = null, IReadOnlyList<ParkedQuest>? parked = null)
+        IReadOnlyList<PluginOffer>? offers = null, IReadOnlyList<ParkedQuest>? parked = null, HelpBrowserFacts? browser = null)
     {
         var sources = new HelpMachineSources(
             config, snapshot, lines, roster, product, asks, standing ?? [], plugins ?? PluginCatalog.None, landed ?? [], offers ?? [],
-            parked ?? []);
+            parked ?? [], browser);
         return HelpRoomSections.All.Aggregate(new HelpMachine(), (machine, section) => section.Describe(machine, sources));
     }
 
@@ -160,7 +161,9 @@ public sealed partial record HelpMachine
 /// <param name="Standing">The asks the host answered.</param>
 /// <param name="Offers">The install's own plugins (PLUG9 d).</param>
 /// <param name="Parked">The quests the loop's last tick parked by their failed sessions (HELP10).</param>
+/// <param name="Browser">What Daoris's browser's files hold (HELP10), or null where the desktop read none.</param>
 internal sealed record HelpMachineSources(
     DriverConfig Config, Snapshot Snapshot, IReadOnlyList<RepositoryLine> Lines, IReadOnlyList<HarnessReport> Roster,
     Func<string, string?> Product, int Asks, IReadOnlyList<AskView> Standing, PluginCatalog Plugins,
-    IReadOnlyList<LandedBranch> Landed, IReadOnlyList<PluginOffer> Offers, IReadOnlyList<ParkedQuest> Parked);
+    IReadOnlyList<LandedBranch> Landed, IReadOnlyList<PluginOffer> Offers, IReadOnlyList<ParkedQuest> Parked,
+    HelpBrowserFacts? Browser);

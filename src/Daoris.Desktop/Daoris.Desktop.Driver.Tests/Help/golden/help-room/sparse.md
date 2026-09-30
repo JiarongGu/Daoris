@@ -64,6 +64,10 @@ present it as the tree.
   and opens the pull request, signed in as the person. Name the session that landed it or the branch, and
   a plugin only where the repository's landing rule names none. Only a branch a landing made and recorded
   here can be handed on; the person's own branches are theirs to push.
+- `browser_propose`: Daoris's browser's settings, as Settings → Browser sets them: `use` `daoris` or `edge`,
+  `links` `system` or `daoris`, `extensions` `offer` or `refuse`,
+  or a `favorite` to `add` (its address, and a title if wanted) or `remove` (one the list below keeps).
+  Each but `links` holds from the browser's next start.
 
 Each proposal reaches the person as a card with two buttons, and you name them as the card does:
 every card but a go reads **apply** and **not now** (in 中文 **应用** and **暂不**), and

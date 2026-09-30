@@ -102,8 +102,9 @@ export const useSettleHelp = () => {
       void client.invalidateQueries({ queryKey: keys.harnesses });
       void client.invalidateQueries({ queryKey: keys.allQuests });
       void client.invalidateQueries({ queryKey: keys.allAsks });
-      // …and a plugin it added or switched (PLUG9).
+      // …and a plugin it added or switched (PLUG9), and the browser's settings or favorites (HELP10).
       void client.invalidateQueries({ queryKey: keys.plugins });
+      void client.invalidateQueries({ queryKey: keys.browserSettings });
     },
   });
 };

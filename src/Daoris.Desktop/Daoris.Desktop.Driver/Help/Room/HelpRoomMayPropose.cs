@@ -50,7 +50,12 @@ internal sealed class HelpRoomMayPropose : IHelpRoomSection
         text.Append("- `hand_propose`: hand a branch a landing made (from the list below) to a landing plugin, which pushes it\n");
         text.Append("  and opens the pull request, signed in as the person. Name the session that landed it or the branch, and\n");
         text.Append("  a plugin only where the repository's landing rule names none. Only a branch a landing made and recorded\n");
-        text.Append("  here can be handed on; the person's own branches are theirs to push.\n\n");
+        text.Append("  here can be handed on; the person's own branches are theirs to push.\n");
+        // HELP10: the browser's settings, which HELP9 left owed, each as `daoris browser` spells it.
+        text.Append("- `browser_propose`: Daoris's browser's settings, as Settings → Browser sets them: `use` `daoris` or `edge`,\n");
+        text.Append("  `links` `system` or `daoris`, `extensions` `offer` or `refuse`,\n");
+        text.Append("  or a `favorite` to `add` (its address, and a title if wanted) or `remove` (one the list below keeps).\n");
+        text.Append("  Each but `links` holds from the browser's next start.\n\n");
         // HELP7: the real helper said *press Apply* of a card whose button reads *go there*.
         text.Append("Each proposal reaches the person as a card with two buttons, and you name them as the card does:\n");
         text.Append("every card but a go reads **apply** and **not now** (in 中文 **应用** and **暂不**), and\n");

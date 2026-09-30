@@ -53,7 +53,8 @@ a `SessionTree`:
   Added after it guessed at a menu that does not exist.
 - **`CLAUDE.md`** carrying `@AGENTS.md`, and **`.claude/settings.json`** allowing the family's read
   tools, the connector's `setting_propose` and `ask_propose` (and since HELP6 its four further
-  `*_propose` tools, §9.6, since PLUG9 `plugin_propose`, §9.7, and since WSR5b `hand_propose`, §9.8), and nothing else. Over the protocol door
+  `*_propose` tools, §9.6, since PLUG9 `plugin_propose`, §9.7, since WSR5b `hand_propose`, §9.8, and since HELP10
+  `browser_propose`, §9.10), and nothing else. Over the protocol door
   a request for anything unlisted is refused by construction (D52), which is the point: it reads, and
   it proposes.
 
@@ -102,6 +103,10 @@ person and is made with tests and reviewed like any other work.
 **Reading and writing across, a cap, an adapter** (HELP9, §9.9, D110): `across`, `cap` and `adapter` are
 setting doors, and since HELP10 (§9.10) `retry` of a quest the driver parked, so every `daoris driver` verb but
 `list` is one. A write-to's card says applying it is the person's standing say-so for writing across.
+
+**The browser's settings** (HELP10, §9.10): which browser sessions and the person use, where the page's links
+open, other software's extensions, and a favorite kept or dropped (`browser_propose`), applied through the
+Browser screen's own edits.
 
 **A hand-off** (WSR5b, §9.8, D102): a branch a landing made and recorded, handed to a landing plugin
 (`hand_propose`), applied through the review's own door. It is the one card whose press leads to a push:
@@ -338,6 +343,14 @@ line git can name. With an agent named, a starter is also a first message.
      its command name the owner. Applied through `IHelpDoors.SetDefaultAccountAsync`, which is `HARNESS_ACTION`'s own
      `profile-default` (one method the route and the door call) and asks the roster again, as the route does.
      *Left out:* clearing a default back to the tool's own home, which the screen offers and no terminal verb does.
+   - **The browser's settings.** A ninth kind, `browser_propose {door, value, address?, title?}`: the `daoris
+     browser` verbs that change something (`use`, `links`, `extensions`, `favorite add|remove`), a favorite's address
+     as the file's target. The files are the desktop modules', so the facts carry what `BrowserModule.HelpFacts`
+     read of them, with its own reader of an address, and none read is no proposal. Judged by the Browser screen's
+     routes: the values each takes, a favorite that is a web page, one removed that is kept, and a file it could not
+     read never written over, each in the route's words; Edge where none is installed says so before Apply, as the
+     screen does. Applied through `IHelpDoors.ChangeBrowser`, which is `BrowserModule`'s own edit (each route now one
+     method the route and the door call). The room says how the browser is set and the favorites it keeps.
 
 ## 10. Not chosen
 

@@ -110,6 +110,37 @@ public sealed class HelpRoomMachineNowTests
         Assert.Contains("`retry` takes a quest parked by its failed sessions, from this machine's list below", some);
     }
 
+    /// <summary>
+    /// HELP10: Daoris's browser as its two files hold it, so a browser proposal names a favorite kept; said only where
+    /// the desktop read them, since the files are its own.
+    /// </summary>
+    [Fact]
+    public void The_room_says_how_Daoris_browser_is_set_and_what_it_keeps()
+    {
+        var some = HelpRoom.Render(HelpRoomFixture.Machine with
+        {
+            Browser = new HelpBrowser("edge", "daoris", "refuse", ["https://site.example/board", "https://docs.example/"]),
+        });
+
+        Assert.Contains("- Daoris's browser: your Edge; links on the page open in Daoris's browser; other software's extensions "
+            + "refused; favorites https://site.example/board, https://docs.example/.", some);
+        Assert.Contains("favorites none.", HelpRoom.Render(HelpRoomFixture.Machine with { Browser = new HelpBrowser("daoris", "system", "offer", []) }));
+        Assert.DoesNotContain("- Daoris's browser:", HelpRoom.Render(HelpRoomFixture.Machine));
+    }
+
+    [Fact]
+    public void The_browser_is_described_from_its_files_as_the_desktop_read_them()
+    {
+        var files = new HelpBrowserFacts("daoris", "system", "offer", ["https://site.example/board"]) { Page = typed => typed };
+
+        var machine = HelpRoom.Describe(DriverConfig.Empty, new Snapshot([], [], []), [], [], _ => null, asks: 0, browser: files);
+
+        var browser = machine.Browser!;
+        Assert.Equal(("daoris", "system", "offer"), (browser.Browser, browser.Links, browser.Extensions));
+        Assert.Equal(["https://site.example/board"], browser.Favorites);
+        Assert.Null(HelpRoom.Describe(DriverConfig.Empty, new Snapshot([], [], []), [], [], _ => null, asks: 0).Browser);
+    }
+
     [Fact]
     public void The_parked_quests_are_described_from_the_loops_last_tick()
     {
