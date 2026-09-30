@@ -31,17 +31,17 @@ differed in 12 of 19 files.
 
 ## Install
 
-Nothing is published yet (DIST1); once it is, every command runs through `npx` against a pinned
-reference:
+Nothing is published until the first release (D105). Then every command runs as npm's `daoris`, at a
+pinned version:
 
 ```sh
-npx github:JiarongGu/Daoris#v0.0.1 init     # write daoris.json, report available packs
-npx github:JiarongGu/Daoris#v0.0.1 sync     # materialize the doctrine, write daoris.lock
-npx github:JiarongGu/Daoris#v0.0.1 check    # the gate — offline, exit 1 on drift
+npx daoris@0.0.1 init     # write daoris.json, report available packs
+npx daoris@0.0.1 sync     # materialize the doctrine, write daoris.lock
+npx daoris@0.0.1 check    # the gate — offline, exit 1 on drift
 ```
 
-The canon ships **inside the package**, so the pinned reference is itself the version pin — no command
-ever fetches anything, and `check` therefore works with no network at all.
+The canon ships **inside the package**, so pinning the package pins the doctrine: once `npx` has it,
+no command fetches anything, and `check` works offline.
 
 ## Commands
 
@@ -141,7 +141,7 @@ still wants a read-through by hand; `doctor` shortens that job rather than repla
 
 ```json
 {
-  "source": "github:JiarongGu/Daoris#v0.0.1",
+  "source": "daoris@0.0.1",
   "packs": ["dotnet-library"],
   "target": ".claude",
   "coreBudgetBytes": 30000,

@@ -53,13 +53,99 @@ public sealed class InstallHomeTests : IDisposable
         Assert.Null(_user);
     }
 
-    /// <summary>What the environment already says is respected — a gate's scratch home above all.</summary>
+    /// <summary>
+    /// A home named for this start alone is respected — a gate's scratch home above all. It is not the
+    /// account's (HOME1, D105): the account has none, or names another folder.
+    /// </summary>
     [Fact]
-    public void A_home_already_named_is_respected_and_nothing_is_set()
+    public void A_home_named_for_this_start_alone_is_respected_and_nothing_is_set()
     {
         Assert.Null(Establish(Install(), already: Path.Combine(_root, "elsewhere")));
         Assert.Equal(Path.Combine(_root, "elsewhere"), _process[DaorisHome.Variable]);
         Assert.Null(_user);
+
+        _user = Path.Combine(_root, "first", "data");
+        Assert.Null(Establish(Install(), already: Path.Combine(_root, "scratch-home")));
+        Assert.Equal(Path.Combine(_root, "scratch-home"), _process[DaorisHome.Variable]);
+        Assert.Equal(Path.Combine(_root, "first", "data"), _user);
+    }
+
+    /// <summary>
+    /// 🔴 HOME1 (D105): a second install started with the account's variable in its environment — the
+    /// variable the first install set — runs on its OWN `data/`, and says so. The account's variable
+    /// is left exactly as it was: it is the person's, and a start that rewrote it would move every
+    /// terminal to whichever install was opened last.
+    /// </summary>
+    [Fact]
+    public void A_second_install_runs_on_its_own_data_over_the_home_its_account_names_and_says_so()
+    {
+        var first = Path.Combine(_root, "first", "data");
+        Directory.CreateDirectory(first);
+        var install = Install();
+
+        var established = Inherited(install, first);
+
+        Assert.NotNull(established);
+        Assert.Equal(Path.Combine(install, "data"), established.Home);
+        Assert.True(Directory.Exists(established.Home));
+        Assert.Equal(established.Home, _process[DaorisHome.Variable]);
+        Assert.Equal(first, established.Overrode);
+        Assert.Equal(first, _user);
+        Assert.False(established.SetForUser);
+        // Worth saying, so it rides the state and the one-time notice.
+        Assert.True(established.Worth);
+        Assert.Contains(established.Home, established.Notice);
+        Assert.Contains(first, established.Notice);
+        Assert.Contains("left as it is", established.Notice);
+    }
+
+    /// <summary>
+    /// A moved install is the same case: the account's variable names the folder it moved from, which
+    /// may no longer exist, and the install's own `data/` — which moved with it — is the home.
+    /// </summary>
+    [Fact]
+    public void A_moved_install_runs_on_its_own_data_not_the_folder_it_moved_from()
+    {
+        var install = Install();
+        Directory.CreateDirectory(Path.Combine(install, "data"));
+        File.WriteAllText(Path.Combine(install, "data", "driver.json"), "{}");
+        var before = Path.Combine(_root, "where-it-was", "data");
+
+        var established = Inherited(install, before);
+
+        Assert.Equal(Path.Combine(install, "data"), established!.Home);
+        Assert.Equal(before, established.Overrode);
+        Assert.Equal(before, _user);
+        Assert.False(Directory.Exists(before));
+        Assert.Equal("{}", File.ReadAllText(Path.Combine(established.Home, "driver.json")));
+    }
+
+    /// <summary>
+    /// The first install's own starts, once the account names it: the variable already says this
+    /// install's `data/` — spelled with a trailing separator, or on Windows in another case, as a
+    /// person might have — and there is nothing to establish or to say.
+    /// </summary>
+    [Fact]
+    public void An_install_its_account_already_names_establishes_nothing_and_says_nothing()
+    {
+        var install = Install();
+        var own = Path.Combine(install, "data");
+
+        Assert.Null(Inherited(install, own));
+        Assert.Null(Inherited(install, own + Path.DirectorySeparatorChar));
+        Assert.Equal(own + Path.DirectorySeparatorChar, _user);
+        if (OperatingSystem.IsWindows()) Assert.Null(Inherited(install, own.ToUpperInvariant()));
+    }
+
+    /// <summary>
+    /// The account's variable, in this process's environment too — what a start from the file manager
+    /// or a terminal opened after the first install inherits.
+    /// </summary>
+    private HomeEstablished? Inherited(string install, string accountHome)
+    {
+        _user = accountHome;
+        _process.Clear();
+        return Establish(install, already: accountHome);
     }
 
     [Fact]
@@ -178,5 +264,8 @@ public sealed class InstallHomeTests : IDisposable
         Assert.Empty(established!.Moved);
         Assert.DoesNotContain("moved", established.Notice);
         Assert.Contains(established.Home, established.Notice);
+        // Nothing inherited, so nothing overridden and nothing said about it.
+        Assert.Null(established.Overrode);
+        Assert.DoesNotContain("left as it is", established.Notice);
     }
 }

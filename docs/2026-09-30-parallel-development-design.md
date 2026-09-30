@@ -2,7 +2,7 @@
 
 > The owner, 2026-09-30: *"since daoris is getting more and more complex we should modulize this
 > project properly so that paralle development with subagent can run smoothly"*. The contract for the
-> MOD rows in `TASKS.md`. Status: **proposed**, measured, not yet built.
+> MOD rows in `TASKS.md`. Status: **MOD1 built (D106)**; the splits are in progress.
 
 ## 1. What was measured
 

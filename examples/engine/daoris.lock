@@ -1,7 +1,7 @@
 {
   "version": 1,
   "canonVersion": "0.0.1",
-  "source": "github:JiarongGu/Daoris#v0.0.1",
+  "source": "daoris@0.0.1",
   "entries": [
     {
       "pack": "core",

@@ -8280,3 +8280,46 @@ shows them, and Ask Daoris names them by id. Installing runs nothing; no offer h
 platform. The merge with WSR5 took eleven conflicts, all in the files the parallel-development design names.
 **Proven by:** driver 1376, modules 393, service 646 + 45, vitest 1683, CLI 613, family 301/301, Playwright
 21, deployment 70/70 (three new checks: the offers carried, none installed, the deployed driver finds them).
+
+
+## HOME1, DIST1, CONSOLE3 — the owner's calls of 2026-09-30, built (2026-09-30)
+
+> - [ ] **HOME1 — which home a second install uses** (modules F4; the owner's call).
+> `InstallHome.Establish` defers to a `DAORIS_HOME` already in the environment, and the first …
+
+> - [ ] **DIST1 — how a consumer installs Daoris** (docs F1; the owner's call). The README's
+> `npx github:JiarongGu/Daoris#v0.0.1 …` cannot run: the root package is a private workspace with no …
+
+> - [ ] **CONSOLE3 — what the console's tabs left** (CONSOLE2, 2026-09-28; the evidence is
+> `docs/2026-09-28-console2-streams-evidence.md`, and for the native door …
+
+**Outcome** (built by a subagent in its own worktree, merged, then rehearsed on main): **D105**, the owner's
+three calls. **HOME1:** a moved or second install runs on its own `data/`. A `DAORIS_HOME` equal to the
+account's variable counts as inherited and is overridden for the process and everything it spawns; one
+named for a single start, like a gate's scratch home, is still respected. The account's variable is never
+rewritten, and Settings → Driver's *Daoris home* row says when the install overrode it. Only a real second
+install proves the override; none has been started. **DIST1:** consumers install the CLI from npm,
+`npx daoris@0.0.1 …`; `init` writes `daoris@<canon version>` as its `source`, the manifests and the
+examples' locks say the same, and `release-prep` rewrites and checks the npm spelling and refuses a leftover
+git ref. Nothing is published; the name was unclaimed on npm the same day. **CONSOLE3:** a driven session's
+background work ends with the session: today's behaviour is the rule, on both doors, and the two evidence
+documents' open questions point at D105. Left open: Settings' home hint still says a terminal reads the same
+folder, which an override makes untrue; the notice under it says so.
+**Proven by:** modules 396, CLI 616, release 66/66, family 301/301, deployment 70/70.
+
+
+## MOD1 — the records stop colliding (2026-09-30)
+
+> - [ ] **MOD1 — the records stop colliding** (design §3, §6.1; by the parent, first). Union merge for
+> the append-only records, decision numbers reserved at dispatch, no moving counters in `CLAUDE.md`, a
+> docs check that refuses a duplicated table row or heading.
+
+**Outcome** (by the parent): **D106**. `.gitattributes` marks the six append-only records `merge=union`
+(the changelog, the decision log, the task archive, the fix log, the documents' index, the twins table),
+so two branches adding lines at one place keep both. `tools/doc-duplicates.mjs`, run by `verify`,
+refuses what union can leave behind: a decision number, a heading, an index row or a changelog line
+twice, and a test holds that the records marked union are exactly the records checked. Decision numbers
+are reserved at dispatch (DRV8 got D104 and the owner's calls D105 that way). `CLAUDE.md` no longer
+carries a decision range. Not union: the backlog, whose rows move out, and the module READMEs, whose
+one long row every feature edits.
+**Proven by:** `verify` (CLI 622, `doc-duplicates` clean over the six records).

@@ -21,8 +21,8 @@ lists.
 
 ## State
 
-**Counts, and this is their one home:** sixteen commands, **613 CLI tests, 646 service and 45 HTTP host, 1377 driver,
-393 desktop modules, 80 devkit, 1683 web unit, 21 Playwright**, 66/66 release rehearsal, **301/301
+**Counts, and this is their one home:** sixteen commands, **622 CLI tests, 646 service and 45 HTTP host, 1378 driver,
+396 desktop modules, 80 devkit, 1683 web unit, 21 Playwright**, 66/66 release rehearsal, **301/301
 family rehearsal** (it names its own phases when you run it), **70/70 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge
 documents, 5 skills, 7 packs. The always-loaded core is **22,492 of 26,000 bytes** — a span in
@@ -112,12 +112,12 @@ rather than designed.
 
 ## Backlog
 
-**Twenty-nine rows are open, in three kinds** (triaged 2026-09-30, when the owner asked to go faster):
-- **Workable now, by the parent or subagents (fourteen):** the parallel-development arc's seven
-  (MOD1–MOD9, the owner's newest), DRV8 (in flight), READ1, HOME1 and DIST1 (the
-  owner decided both; in flight), TASKBAR1, TEST1, and FLAKE1 (which MOD8 absorbs).
-- **Waiting on the owner (seven):** BUDGET1 and PLUGREPO1 (their calls), TRUST2 and AGT2c (a grant, two downloads), FG5 and
-  BRW3 (the owner present), and CONSOLE3 until D105 lands (decided).
+**Twenty-five rows are open, in three kinds** (triaged 2026-09-30, when the owner asked to go faster):
+- **Workable now, by the parent or subagents (eleven):** the parallel-development arc's six
+  (MOD2–MOD9, the owner's newest; three in flight), DRV8 (merging), READ1, TASKBAR1, TEST1, and FLAKE1 (which MOD8
+  absorbs).
+- **Waiting on the owner (six):** BUDGET1 and PLUGREPO1 (their calls), TRUST2 and AGT2c (a grant, two
+  downloads), FG5 and BRW3 (the owner present).
 - **Parked on a trigger (eight):** TOOL4, TOOL5, PLUG7, SEM2, CANON9, HARNESS1, REH1, and D76's held file
   tools. None is work until its trigger arrives.
 
@@ -132,9 +132,6 @@ rule it also ships. A heading below holds open rows only.
 `docs/2026-09-30-parallel-development-design.md` is the contract: what eighteen merges collided on,
 the two kinds of collision (a shared record, a god file), the rules, the splits, the lane map and the
 order. Every split is behaviour-preserving and proven by the gates as they stand.
-- [ ] **MOD1 — the records stop colliding** (design §3, §6.1; by the parent, first). Union merge for
-  the append-only records, decision numbers reserved at dispatch, no moving counters in `CLAUDE.md`, a
-  docs check that refuses a duplicated table row or heading.
 - [ ] **MOD2 — catalogues by area**: `locales/{en,zh}.json` → one file per area, merged at load, parity
   held per file. **MOD3 — the bridge by domain**: `shell.ts` → `bridge/<domain>.ts`, `shell.ts` the
   barrel. **MOD4 — Settings by domain**: one file per domain, the domain list the registry. One web
@@ -191,23 +188,11 @@ repository with tests, and installing one is the person's press.
 REV3 is in the archive, and `docs/2026-09-25-rev3-review.md` is its ledger. These rows are what it
 found that is not session-sized, or is the owner's call. Each one was confirmed in the code.
 
-- [ ] **DIST1 — how a consumer installs Daoris** (docs F1; the owner's call). The README's
-  `npx github:JiarongGu/Daoris#v0.0.1 …` cannot run: the root package is a private workspace with no
-  `bin`, and no tag exists. Choose npm's `daoris@X` (the release workflow already publishes it) or a
-  git ref with a root `bin`; the README, `init`'s written `source`, `release-prep` and
-  `version.test.ts` then move together. *Decided 2026-09-30 (the owner): npm, `daoris@X` — being built
-  (D105).*
 - [ ] **BUDGET1 — what the core budget caps** (CLI F10; the owner's call). Since D59 `inspect` counts
   only the body of Daoris's `AGENTS.md` region. The repository's own always-loaded material is not
   counted: the rest of `AGENTS.md`, `CLAUDE.md`, a local `.claude/rules/` file. The README and the
   instruction-file design still say the budget guards it, and `analyze` projects the pre-D59
   quantity (`config.ts` now says so). Decide what the number caps, then move all three together.
-- [ ] **HOME1 — which home a second install uses** (modules F4; the owner's call).
-  `InstallHome.Establish` defers to a `DAORIS_HOME` already in the environment, and the first
-  install set one for the account. So a moved or second install runs on the first one's `data/`
-  and says nothing. Either the install's own `data/` wins, or the inherited home wins and the shell
-  says so. *Decided 2026-09-30 (the owner): the install's own `data/` wins, and the window says when it
-  overrode an inherited home — being built (D105).*
 ### What an agent may do — permission scopes (owner, 2026-09-24 → D72, D73)
 
 Measured: rules and hooks Daoris hands over at spawn reach an untrusted session on both doors, and a
@@ -373,15 +358,6 @@ TDD, looked at on the window, and the ones that touch a real session use one (au
 ### Open — the arc's leftovers, in the order they are worth doing
 
 
-- [ ] **CONSOLE3 — what the console's tabs left** (CONSOLE2, 2026-09-28; the evidence is
-  `docs/2026-09-28-console2-streams-evidence.md`, and for the native door
-  `docs/2026-09-30-console3-native-streams-evidence.md`). One left (CONSOLE3a–c are in the archive):
-  **whether a driven session waits for its own background work** before it closes. Today it does not
-  on either door: the protocol door ends that work with the session (ORPHAN1's job object), and the
-  native door's binary kills it itself when its turn ends (the probe). Waiting is a choice about how
-  long a session holds its tree, so it is the owner's to make. A stop against the real adapter is
-  unseen: the request's shape is from its source. *Decided 2026-09-30 (the owner): it ends with the
-  session, today's behaviour as the rule; D105 records it, and the row closes when that lands.*
 
 - [ ] **FLAKE1 — an intake test failed once in about 20 full driver runs.**
   `IntakeTests.An_ask_with_an_intake_harness_is_answered_by_a_session_that_publishes_onto_it`: the

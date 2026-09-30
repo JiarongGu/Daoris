@@ -83,7 +83,7 @@ workflow (`tools/release-prep.mjs`). A hand-bump leaves every file consistent an
 
 - `README.md` — the consuming story: install, the commands, the manifest, the three layers.
 - `docs/2026-08-04-daoris-design.md` — the **contract**. Read it first.
-- `docs/DECISIONS.md` — the numbered decision log (D1–D103) and why each was made. **D45 is the
+- `docs/DECISIONS.md` — the numbered decision log and why each was made. **D45 is the
   direction: Daoris drives** — read it before planning anything; **D48–D50 are a closed arc**
   (workspaces; the interactive surface; management parity).
 - **The desktop is a code-gen-driven IDE** (D55): the organising object is a **session, not a file**,
@@ -202,7 +202,7 @@ Run every command from the **workspace root**, not from a package directory.
   rather than compiling them, so without this a type error reaches `npm pack` and nothing sooner —
   FIX-LOG 2026-09-21), then every CLI test, `daoris check` against Daoris's own doctrine,
   `doc-budgets` (word ceilings for the prose a session reads whole; reported, never enforced — D54),
-  then `release-prep --check` (every shipped version reference agrees, example pins included), then
+  `doc-duplicates` (the union-merged records hold nothing twice — D106), then `release-prep --check` (every shipped version reference agrees, example pins included), then
   the devkit's universal gates (SEN1). Run before claiming a change is complete.
 - **`npm run rehearse`** — the "would a release work?" gate. Packs the tarball, installs it into a clean
   repository, and drives the whole consumer lifecycle through the `bin` entry: adopt, collide, sync,

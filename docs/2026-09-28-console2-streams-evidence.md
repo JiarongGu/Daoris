@@ -152,8 +152,8 @@ For 2b and 2c. Each is a landing of its own, TDD, and looked at on the window.
 - **A session's end ends its streams.** A child or a task still open when the session's reader ends is
   closed with it and says so. That is ORPHAN1's job object, said on the console.
 - **The words after a turn are the session's**, on the console as they already are. Whether a driven
-  session should wait for its own background work before it closes is a separate question, and
-  nothing here answers it.
+  session should wait for its own background work before it closes was a separate question, and D105
+  answers it: it does not, and that work ends with the session.
 - **Left:** stopping one task from its tab (`_session/async_task/stop`) until a tab exists to put it
   on, and the native door's equivalents (`stream-json`'s `parent_tool_use_id` and task messages),
   which no probe has read. **The stop landed as CONSOLE3a** (2026-09-30), against a stub agent that
