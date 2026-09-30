@@ -9,7 +9,7 @@ namespace Daoris.Driver.Tests;
 /// reordered or reworded shows here as the whole room's difference, byte for byte.
 /// </summary>
 /// <remarks>
-/// The golden files under <c>golden/help-room/</c> are the room as the helper reads it. A change to what the
+/// The golden files under <c>Help/golden/help-room/</c> are the room as the helper reads it. A change to what the
 /// room says changes its golden file in the same commit, so review reads the room as the helper will; the
 /// section tests beside this one say why each sentence is there.
 /// </remarks>
@@ -108,7 +108,7 @@ public sealed class HelpRoomGoldenTests
     }
 
     internal static string GoldenPath(string file) =>
-        Path.Combine(RepositoryRoot(), "src", "Daoris.Desktop", "Daoris.Desktop.Driver.Tests", "golden", "help-room", file);
+        Path.Combine(RepositoryRoot(), "src", "Daoris.Desktop", "Daoris.Desktop.Driver.Tests", "Help", "golden", "help-room", file);
 
     [Theory]
     [InlineData("full")]
