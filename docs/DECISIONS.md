@@ -6126,3 +6126,115 @@ check went from 519 findings (glossary 84, form 288, door 16, budget 131) to 107
 placeholders. The Playwright specs were edited to the new names and **not run** in the branch (the parent runs
 `test:web`); what they pin was read against Playwright's matching (case-insensitive substrings unless `exact`). The
 107 budgets are the window's to judge, and nothing looked at the window in this branch either.
+## D119 — Plugins get a view of their own: a list by what they need, a page per plugin, and Settings keeps where they are looked for (2026-10-01)
+
+**Decision (PLUGUI1a).** The owner, 2026-10-01: *"because plugin will be a big part of daoris so it need to have a
+panel/screen itself, and develop proper ui/ux"*. Plugins were one domain of Settings (D64, D101, D103): a row each,
+a trial's report and an update's plan under the row while the domain was shown, and no page. Read from the code,
+a plugin's words reached a console ring no screen reads, the machine log held no plugin event, nobody kept a trial,
+and nothing said whether a plugin answers. `docs/2026-10-01-plugins-screen-design.md` is the contract, extending the
+plugin design and built on D118's frame. It settles:
+
+1. **Plugins is a view of the activity bar**, shell-only (D47 §4), after Search. Its list pane holds the installed
+   plugins in groups by what they need from the person: *Waiting on you* (failing or refused while on), *On*,
+   *Off*, then *Daoris's own plugins*, the offers not installed. Its main area holds a plugin's page, and an
+   offer's. This refines D118's §7 order (running, off, refused): the person acts on a plugin's state, and a
+   plugin may be of every kind at once.
+2. **Five states, one of them per plugin.** `running`, `ready` (on, with nothing to keep running), `failing`,
+   `refused` and `off`.
+   - **The loop's own record decides a state**: `PluginHealth`, fed by the hook set, the landing and the hand-off
+     in the process that runs the loop. A terminal reads the machine log's last word, and says so. One table of
+     cases holds both.
+   - **Failing and refused wear the waiting hue**, since both wait on the person's act, and the bar's Plugins
+     place counts them.
+   - **Running wears no live mark**, since a hook process is up between calls. This retires the done-green
+     *running* pill, against the platform language's §3.
+3. **A plugin's page** has a header with its switch, *Try*, *Update…* and *Remove…*, which now asks once. Then
+   its health line, then Points, Agents, Servers, Activity, Tests, Data folder and Source, each with its loading,
+   empty and error states.
+   - A server's environment is shown by name, never by value.
+   - A refused plugin's manifest is shown as written and marked *not taken*.
+   - *Make a plugin* and *Install from a folder* are drawers, since they are forms.
+   - *Ask Daoris for a plugin* opens Ask Daoris on a whole first message.
+4. **The side bar and the panel gain nothing from this view**, as D118 §3c holds. A plugin's live words stay in
+   its Activity, since the panel's console follows the attended session.
+5. **What a plugin did is kept without its words.** Seven `plugin.*` events join D94's catalogue: started,
+   stopped, called, failed, served, tried and tested. Each holds names, counts, flags and times, and never a
+   hold's reason, a message, an address, a command line, an environment value or what the plugin wrote to
+   stderr.
+   - A plugin's words stay in the console's ring for this run, and the page says so.
+   - The last trial and the last test run of an installed plugin are kept in `<home>/plugins/.checks/<id>.json`,
+     written by both doors and deleted by a removal or an update.
+   - A plugin's own tests run as `node --test` in a copy under `.trials/`, with its temporary folders inside the
+     run, bounded at five minutes.
+6. **The routes stay `DAORIS.DRIVER`'s** (MOD5), since the loop owns a plugin's process and the catalogue is the
+   driver's.
+   - `PLUGINS` gains servers, the hook, what the process listens on, health, and whether an update waits.
+   - The new routes are `PLUGIN`, `PLUGIN_ACTIVITY`, `PLUGIN_READ`, `PLUGIN_ADD`, `PLUGIN_TEST` and
+     `PLUGIN_OPEN_FOLDER`.
+   - Each reader is the driver library's, shared with its terminal twin: `daoris-driver plugins show`,
+     `activity` and `test`.
+   - The CLI's `daoris plugin` keeps the catalogue's edits. Every act on the view has its twin named in the
+     design's §4.4 (D50).
+7. **Every control on the view has its Ask Daoris answer** (D110). *Install from a folder* is the `plugin` kind's
+   `add`. *Read*, *Run tests*, *Open folder* and the Ask Daoris openers are exempt, each for its reason. No door
+   is owed. A go names a plugin (`open('plugins', id)`, through FRAME1i's `item`), and a go to Settings →
+   `plugins` is refused naming the view. `HelpCoverageTests` reads the view as a screen beside Settings' domains.
+8. **Settings keeps only what is a setting.** Nothing about a plugin is set there. The Plugins domain retires, and
+   the plugins folder, a fact of the home, becomes a read-only row under the Daoris home in Settings → Driver, with
+   a door to the view.
+   - Every other control moves to the view.
+   - Every old anchor points at it: the Daoris menu, Ask Daoris's places (twins), `where.ts`, the room's doors, the
+     service's hint and the CLI's kit refusal.
+   - Agents' *declared by plugin* chip and a landing rule's named plugin become doors to its page.
+9. **Names** follow D116, in the names NAME1b gives the catalogues, each within its kind's budget.
+   - The glossary gains four terms: *try* 试运行, *Daoris's own plugins* 「Daoris 自带的插件」 (`offer` its code
+     word), *held back* 拦下 (a plugin's hold, never the person's 暂停), and *data folder* 数据文件夹.
+   - The doors `command.go.plugins` and `menu.plugins` both open `nav.plugins`.
+
+The build is PLUGUI1b–h, the design's §6. The view comes first, on today's answers, once FRAME1c has landed. The
+host's events and readers can run beside it. Settings' half follows the view, and the page is made whole on the
+host's answers.
+
+**Why.** The owner asked for a screen, and D118 made one frame every view is built on. A plugin runs as the person
+and can hold every quest when it fails closed (D64 §4), so whether it answers is the fact a person most needs, and
+nothing said it. What a plugin did had to be kept to be shown. D94 already says what a log may hold, so the events
+are the calls without the words.
+
+**This amends:**
+- **D64 §6**: the screen is the Plugins view, not the Machine view's card or Settings → Plugins.
+- **D101**: the kit's screen half moves to the view, and a trial's report is kept.
+- **D103**: *Install* is on an offer's row and page.
+- **D118 §7**: the groups' order.
+- **D94 §4**: the plugin events, once PLUGUI1d builds them.
+
+**D64 §7 stands**: no plugin adds a view, and none of a plugin's code runs in the page.
+
+**Rejected.**
+- **Keeping plugins a Settings domain with a bigger row each.** A domain has no list, no main area and no memory,
+  and a record under a row lasts only while the domain is shown (frame audit PL4, PL9).
+- **Grouping by kind** (hooks, agents, servers). One plugin may be all three, and the person acts on state.
+- **A plugin's words in the panel's console, or its page in the side bar.** Either would make a frame region change
+  with the view (D118 §3c).
+- **A module of its own, as `BrowserModule` is.** That module stands apart because its files are not the driver's,
+  and a plugin's are.
+- **A plugin's words in the machine log.** D94 §5 holds, and a second copy of them would have none of the ring's
+  bounds.
+- **Health from the log alone.** A failed log write is dropped by design. The process that runs the loop knows
+  exactly.
+- **Aliases for the CLI's verbs under `daoris-driver plugins`.** They would be a second twin of `plugins.ts`.
+- **A toggle atom for the switch.** It would be a new control for one place, where a button named for its act reads
+  the same in both languages.
+- **The raw `plugin.json` on the page.** An environment value may be a key.
+- **Running a plugin's tests in place.** An update replaces the install folder whole, and a source checkout is
+  another repository's tree.
+- **A history of trials.** Activity counts them.
+- **A search in the list.** No machine holds a screen of plugins yet.
+- **A failing plugin in *What needs you*.** The bar's count says it once, and each quest it holds carries its reason.
+- **A marketplace.** D24, D57 and D64 §7 stand.
+
+**What the gates do not cover.** This is a design, and nothing is built. No width, threshold or budget has been
+measured on the window: the names' counts are D116's estimates. The health states have not met a real failing
+plugin, and the tests' runner has not met a real plugins repository or the PATH an install hands the application
+(USE1g). No landing plugin has pushed to a real platform, so Activity's pushes have not been seen. Each build row
+names its own proof, and the design's §9 says what only the window and a real plugin can prove.

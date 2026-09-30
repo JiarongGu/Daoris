@@ -8,6 +8,11 @@
 > already took: a reference is a reference). Both were read on this machine and neither was written.
 > The decision is **D64**.
 
+*Extended by D119 (PLUGUI1a, 2026-10-01): plugins get a view of their own on the frame,
+`docs/2026-10-01-plugins-screen-design.md`. As PLUGUI1b–h build it, §6's and §9's screen column moves from
+Settings → Plugins to the Plugins view. A plugin's calls are kept in the machine log without its words, and an
+installed plugin's last trial and test run are kept under the home.*
+
 ## 1. What the two references actually do
 
 **deepseek-harness.** Everything is a plugin, mounted beside the others; there is no privileged core.
@@ -197,7 +202,8 @@ id. Installing one runs nothing.
 ## 7. Deliberately not in this design
 
 - **A plugin cannot add a view.** D52 stands. If that ever changes, Yaorin's markup-rendered manager
-  is the shape — the host's atoms, no plugin code in the page — and not a bundle.
+  is the shape — the host's atoms, no plugin code in the page — and not a bundle. *(D119: the Plugins view is
+  Daoris's own, drawing plugins as data with the host's atoms. No plugin adds it, and this stands.)*
 - **No registry, no marketplace, no catalogue of third-party plugins.** D24 and D57 stand; a plugin
   is a folder somebody put on a machine.
 - **No code loads into a host.** Not an assembly, not a script, not a package. The wire is the whole
