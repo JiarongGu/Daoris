@@ -8,7 +8,15 @@ import { store, stored } from '../lib/stored';
  */
 export type ViewId = 'timeline' | 'review' | 'ask' | 'console' | 'terminal';
 
-/** Every view, in the frame's order: a region's tabs read in it, whichever were moved there. */
+/**
+ * Every view, in the frame's order: a region's tabs read in it, whichever were moved there.
+ *
+ * @remarks
+ * A new view is named here and in `DEFAULT_PLACES`; its tab's name and icon (`ViewsMenu`) and the name Ask
+ * Daoris is told (`help/where.ts`) are records over `ViewId`, so the compiler asks for them; its surface and
+ * where it is present are the Work frame's. The one place nothing checks is Ask Daoris's room (`Help.cs`,
+ * *The window*), which lists the views in prose: its test holds a phrase for each (CONSOLE4b found it).
+ */
 export const VIEW_IDS: readonly ViewId[] = ['timeline', 'review', 'ask', 'console', 'terminal'];
 
 /** A region a view can go: the right side bar, or the panel under the session. */
