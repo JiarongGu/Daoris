@@ -17,6 +17,15 @@ public sealed class HelpSettingProposalsTests : HelpProposalsFixture
     [InlineData("strikes", null, null, "5", "daoris driver strikes 5", "5 failed sessions")]
     [InlineData("timeout", null, null, "120", "daoris driver timeout 120", "120 minutes")]
     [InlineData("notify", null, null, "off", "daoris driver notify off", "Stop saying")]
+    // HELP9: reading and writing across (D107), and the two dials the terminal alone had.
+    [InlineData("across", "engine", null, "read off", "daoris driver across engine read off", "read by no agent outside it")]
+    [InlineData("across", "engine", null, "read on", "daoris driver across engine read on", "never a write")]
+    [InlineData("across", null, "work", "read off", "daoris driver across --workspace work read off", "Each checkout in workspace `work` that sets none of its own")]
+    [InlineData("across", "engine", null, "read --clear", "daoris driver across engine read --clear", "takes its workspace's reading again")]
+    [InlineData("across", "game", null, "write-to engine", "daoris driver across game write-to engine", "your standing say-so")]
+    [InlineData("across", "game", null, "write-to engine --clear", "daoris driver across game write-to engine --clear", "no longer write into `engine`")]
+    [InlineData("cap", null, null, "3", "daoris driver cap 3", "at most 3 sessions at once")]
+    [InlineData("adapter", null, null, "claude-code-acp", "daoris driver adapter claude-code-acp", "`claude-code-acp`")]
     public void A_setting_is_planned_as_what_it_changes_and_the_command_that_does_the_same(
         string door, string? target, string? workspace, string? value, string terminal, string says)
     {
@@ -41,6 +50,53 @@ public sealed class HelpSettingProposalsTests : HelpProposalsFixture
         Assert.Equal(120, config.TimeoutMinutes);
     }
 
+    /// <summary>HELP9: across (D107), a cap and an adapter, applied as `SET_READ_ACROSS`, `SET_WRITE_ACROSS` and the terminal make them.</summary>
+    [Fact]
+    public void Applying_across_a_cap_and_an_adapter_makes_the_edit_the_terminal_makes()
+    {
+        var config = DriverConfig.Empty;
+        config = HelpProposals.Plan(Setting("across", "engine", null, "read off"), config, Facts).Apply!(config);
+        config = HelpProposals.Plan(Setting("across", null, "work", "read off"), config, Facts).Apply!(config);
+        config = HelpProposals.Plan(Setting("across", "game", null, "write-to engine"), config, Facts).Apply!(config);
+        config = HelpProposals.Plan(Setting("cap", value: "3"), config, Facts).Apply!(config);
+        config = HelpProposals.Plan(Setting("adapter", value: "claude-code-acp"), config, Facts).Apply!(config);
+
+        Assert.False(config.ReadAcross["engine"]);
+        Assert.False(config.WorkspaceReadAcross["work"]);
+        Assert.Equal(["engine"], config.WriteAcross["game"]);
+        Assert.Equal(3, config.Cap);
+        Assert.Equal("claude-code-acp", config.Adapter);
+
+        config = HelpProposals.Plan(Setting("across", "engine", null, "read --clear"), config, Facts).Apply!(config);
+        config = HelpProposals.Plan(Setting("across", "game", null, "write-to engine --clear"), config, Facts).Apply!(config);
+
+        Assert.False(config.ReadAcross.ContainsKey("engine"));
+        Assert.False(config.WriteAcross.ContainsKey("game"));
+    }
+
+    /// <summary>
+    /// HELP9: every door the kind names is one it plans, so the doors Ask Daoris's coverage is held against
+    /// (<c>HelpCoverageTests</c>) are doors a proposal can take, and none is named that falls to the refusal.
+    /// </summary>
+    [Fact]
+    public void Every_door_the_kind_names_is_one_it_plans()
+    {
+        (string Door, string? Target, string? Workspace, string? Value)[] samples =
+        [
+            ("drive", "engine", null, null), ("undrive", "engine", null, null), ("hold", "engine", null, null),
+            ("resume", "engine", null, null), ("trees", "engine", null, "off"), ("line", "engine", null, "main"),
+            ("landing", "engine", null, "merge"), ("across", "engine", null, "read on"), ("intake", null, null, "off"),
+            ("helper", null, null, "claude-code"), ("strikes", null, null, "0"), ("timeout", null, null, "30"),
+            ("notify", null, null, "on"), ("cap", null, null, "1"), ("adapter", null, null, "claude-code"),
+        ];
+
+        Assert.Equal(new HelpSettingProposals().Doors, samples.Select(sample => sample.Door));
+        foreach (var (door, target, workspace, value) in samples)
+        {
+            Assert.Null(HelpProposals.Plan(Setting(door, target, workspace, value), DriverConfig.Empty, Facts).Refusal);
+        }
+    }
+
     /// <summary>What the route would refuse is refused here in its own words, and never shown to the person.</summary>
     [Theory]
     [InlineData("drive", "nowhere", null, null, "`nowhere` is not registered")]
@@ -48,6 +104,17 @@ public sealed class HelpSettingProposalsTests : HelpProposalsFixture
     [InlineData("line", "engine", null, "bad..name", "not a branch name git would take")]
     [InlineData("landing", "engine", null, "branch feature/fixed", "`{quest}` or `{session}`")]
     [InlineData("intake", null, null, "gpt-agent", "no agent `gpt-agent`")]
+    // HELP9: what `daoris driver across` refuses, in its words, and the names a helper can invent.
+    [InlineData("across", "engine", null, "write-to engine", "`engine` writes in its own tree already")]
+    [InlineData("across", "engine", null, "write-to nowhere", "`nowhere` is not registered")]
+    [InlineData("across", "engine", null, "write-to", "a relationship names the repository it may write into")]
+    [InlineData("across", null, "work", "write-to engine", "a relationship is declared from one repository")]
+    [InlineData("across", "engine", "work", "read off", "a repository or a workspace")]
+    [InlineData("across", null, null, "read off", "a repository or a workspace")]
+    [InlineData("across", "engine", null, "read sometimes", "`read on|off|--clear`")]
+    [InlineData("across", "engine", null, "peek", "`across` sets `read on|off|--clear` or `write-to <other> [--clear]`")]
+    [InlineData("cap", null, null, "0", "`cap 0` is not a change the driver makes")]
+    [InlineData("adapter", null, null, "gpt-agent", "no agent `gpt-agent`")]
     public void What_the_route_would_refuse_is_refused_in_its_words(
         string door, string? target, string? workspace, string? value, string says)
     {

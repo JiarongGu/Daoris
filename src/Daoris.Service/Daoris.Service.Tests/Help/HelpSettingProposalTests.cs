@@ -40,6 +40,42 @@ public sealed class HelpSettingProposalTests : HelpProposalBoxFixture
             new SettingChange("landing", Target: "engine", Workspace: null, Value: "rebase"), "why", session: "h1e1p000", Now).Message);
     }
 
+    /// <summary>HELP9: reading and writing across (D107), a cap and an adapter pass the shape as the terminal spells them.</summary>
+    [Theory]
+    [InlineData("across", "engine", null, "read off")]
+    [InlineData("across", null, "work", "read --clear")]
+    [InlineData("across", "plugins", null, "write-to engine")]
+    [InlineData("across", "plugins", null, "write-to engine --clear")]
+    [InlineData("cap", null, null, "3")]
+    [InlineData("adapter", null, null, "claude-code-acp")]
+    public void Across_a_cap_and_an_adapter_are_written_as_the_terminal_spells_them(string door, string? target, string? workspace, string value)
+    {
+        var (id, _) = Box().ProposeSetting(new SettingChange(door, target, workspace, value), "the person asked", session: "h1", Now);
+
+        Assert.NotNull(id);
+        var file = Written(id!);
+        Assert.Equal(door, file.GetProperty("door").GetString());
+        Assert.Equal(value, file.GetProperty("value").GetString());
+    }
+
+    /// <summary>HELP9: the connector's tool names every door the box takes, so the helper is told of each.</summary>
+    [Fact]
+    public void The_tool_names_every_door()
+    {
+        var method = typeof(Daoris.Knowledge.Mcp.KnowledgeTools).GetMethod(nameof(Daoris.Knowledge.Mcp.KnowledgeTools.ProposeSetting))!;
+        var door = method.GetParameters().Single(parameter => parameter.Name == "door")
+            .GetCustomAttributes(typeof(System.ComponentModel.DescriptionAttribute), false)
+            .Cast<System.ComponentModel.DescriptionAttribute>().Single().Description;
+        var tool = method.GetCustomAttributes(typeof(System.ComponentModel.DescriptionAttribute), false)
+            .Cast<System.ComponentModel.DescriptionAttribute>().Single().Description;
+
+        foreach (var name in HelpProposalBox.Doors)
+        {
+            Assert.Contains(name, door);
+            Assert.Contains(name, tool);
+        }
+    }
+
     /// <summary>The shape is checked here, and nothing more: what the route would say is the driver's.</summary>
     [Theory]
     [InlineData("push", "engine", null, null, "is not a door")]
@@ -53,6 +89,16 @@ public sealed class HelpSettingProposalTests : HelpProposalBoxFixture
     [InlineData("strikes", null, null, "many", "a whole number")]
     [InlineData("timeout", null, null, "0", "a whole number of minutes, 1 or more")]
     [InlineData("notify", null, null, "loud", "`on` or `off`")]
+    [InlineData("across", null, null, "read off", "a repository or a workspace")]
+    [InlineData("across", "engine", "work", "read off", "a repository or a workspace")]
+    [InlineData("across", "engine", null, "read maybe", "`read on|off|--clear`")]
+    [InlineData("across", null, "work", "write-to engine", "declared from one repository")]
+    [InlineData("across", "plugins", null, "write-to", "`write-to <other>`")]
+    [InlineData("across", "plugins", null, "write-to two words", "`write-to <other>`")]
+    [InlineData("across", "engine", null, "peek", "`read on|off|--clear` or `write-to <other> [--clear]`")]
+    [InlineData("cap", null, null, "0", "a whole number, 1 or more")]
+    [InlineData("adapter", null, null, null, "an agent")]
+    [InlineData("adapter", null, null, "two words", "an agent")]
     public void A_setting_that_is_no_door_s_shape_is_refused_with_nothing_written(
         string door, string? target, string? workspace, string? value, string says)
     {

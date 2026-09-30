@@ -23,6 +23,16 @@ internal interface IHelpProposalKind
     /// <summary>The connector's tool that proposes it, which the room allows (HELP1c).</summary>
     string Tool { get; }
 
+    /// <summary>
+    /// The doors it takes, as the file's <c>door</c> spells them and its judge reads them: a door not here is refused.
+    /// </summary>
+    /// <remarks>
+    /// HELP9 (D110): what Ask Daoris's coverage is held against — each <c>daoris driver</c> verb and each Settings
+    /// control is one of these doors, a door owed, or exempt with its reason — and what the service's writer of the
+    /// same kind spells, which the kinds' structural test reads.
+    /// </remarks>
+    IReadOnlyList<string> Doors { get; }
+
     /// <summary>The fields only this kind carries, read from a file; one the file lacks reads as null.</summary>
     HelpProposal Read(HelpProposal proposal, JsonElement file) => proposal;
 

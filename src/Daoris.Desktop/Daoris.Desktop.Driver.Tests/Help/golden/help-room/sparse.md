@@ -32,7 +32,10 @@ present it as the tree.
 
 ## What you may propose
 
-- `setting_propose`: one of the doors below that `daoris driver` spells.
+- `setting_propose`: every door below that `daoris driver` spells but `retry`, whose press is on the quest's drawer.
+  `across` takes `read on|off|--clear` for a repository or a whole workspace,
+  or `write-to <other> [--clear]` for a repository, to let its sessions write into the other's checkout, one way.
+  Applying a write-to is the person's standing say-so for writing across, and its card says so.
 - `ask_propose`: something to start, as an ask at a workspace.
 - `agent_propose`: an agent's Update, or a pin to one version, as Settings → Agents & accounts offers them.
   Update moves a pinned agent's pin to its newest release, or runs an unpinned one's own updater, and is
@@ -88,17 +91,22 @@ session named; never propose adding one that has not landed.
 | hand a branch a landing made to a landing plugin, to push it and open the pull request | Sessions → the session's review → hand it to <plugin> | `daoris-driver trees hand <session|branch> [--plugin <id>]` |
 | choose the agent that answers asks | Settings → Daoris's own AI | `daoris driver intake <agent>|off` |
 | choose the agent Ask Daoris runs on | Settings → Daoris's own AI | `daoris driver helper <agent>|off` |
+| choose the agent driven sessions start on | (no screen yet) | `daoris driver adapter <agent>` |
 | park a quest after failed sessions | Settings → Driver | `daoris driver strikes <n>` |
+| start a quest its failed sessions parked again | Quests → the quest's drawer → try it again | `daoris driver retry <quest>` |
 | bound how long one session runs | (no screen yet) | `daoris driver timeout <minutes>` |
+| bound how many sessions run at once | (no screen yet) | `daoris driver cap <n>` |
 | say so when a session parks | Settings → Driver | `daoris driver notify on|off` |
 | allow, ask or deny what an agent may do | Settings → Permissions | `daoris agent rules …` |
 | let agents read a repository's checkout, or not; let one repository's sessions write into another | Settings → Permissions → Reading and writing across | `daoris driver across <repository> read on|off|--clear` (`--workspace <name>` for a whole workspace), `daoris driver across <repository> write-to <other> [--clear]` |
 | sign an agent in, or add an account | Settings → Agents & accounts | `daoris agent login <agent>` |
+| choose which account an agent's sessions use, for the machine or a workspace | Settings → Agents & accounts → Make default, use for a workspace | `daoris agent profile default <agent> <profile> [--workspace <name>]` |
 | update an agent, or pin it to one version | Settings → Agents & accounts → Update, Pin a version | `daoris agent update <agent>`, `daoris agent pin <agent> <version>` |
 | set an account's own model and effort | Settings → Agents & accounts → Model & effort | `daoris agent settings <agent> --account <name> model <model> effort <effort>` |
 | delete a quest or an ask made by mistake | Quests → the quest's drawer, or the ask's record → delete | `daoris-driver quest delete <id>`, `daoris-driver ask --delete <id>` |
 | add a plugin that has landed, or switch one on or off | Settings → Plugins (its switch) | `daoris plugin add <folder>`, `daoris plugin enable|disable <id>` |
 | install one of Daoris's own plugins, or update one from where it came from | Settings → Plugins (Install beside Daoris's own; Update on an installed one's row) | `daoris plugin add --offer <id>`, `daoris plugin update <id>` |
+| choose Daoris's browser, where the page's links open, whether extensions are offered, and its favorites | Settings → Browser | `daoris browser use daoris|edge`, `daoris browser links system|daoris`, `daoris browser extensions offer|refuse`, `daoris browser favorite add|remove <address>` |
 | start a task | Quests → ask for something | `daoris-driver ask --workspace <name> "…"` |
 | answer what waits on the person | Sessions, and what needs you | `daoris-driver answer` |
 

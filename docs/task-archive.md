@@ -8507,3 +8507,28 @@ the owner's to look after the republish, pinning from the running button; a pin 
 carries no id, and the browser's own button is left for that look.
 **Proven by:** modules 418, driver 1482, CLI 661, service 655 + 46, release 66/66, family 301/301, Playwright 21,
 deployment 70/70.
+
+
+## HELP9 — Ask Daoris reaches every door built since HELP8 (2026-09-30)
+
+> - [ ] **HELP9 — Ask Daoris reaches every door built since HELP8** (building). Its setting kind cannot yet
+> propose `daoris driver across` (READ1 left it out), and the doors built since (plugins by offer id,
+> a hand-off, the landing plugin) are to be checked one by one. A coverage test lists every `daoris driver`
+> verb and every Settings control against Ask Daoris's kinds, with an explicit, reasoned exemption list,
+> so the next door cannot be built without it.
+
+**Outcome** (built by a subagent, dispatched through the `dispatch-subagent` skill, merged with
+`tools/merge-branch.mjs`: thirteen gates, one recorded flake): **D110**. Of the doors built since HELP8,
+the landing rule's `--plugin`, PLUG9's install by offer id and update, and WSR5b's hand-off were already
+proposals; `daoris driver across` was not, though READ1's room row promised it. `across` is now a setting
+door (`read on|off|--clear` for a repository or a workspace, `write-to <other> [--clear]` from a
+repository), judged by the edits `SET_READ_ACROSS` and `SET_WRITE_ACROSS` make, a write-to's card saying
+applying it is the person's standing say-so; `cap` and `adapter`, once terminal-only, are setting doors
+too. Each kind names its doors, and the service writer of the same kind is held to them.
+`HelpCoverageTests` reads the CLI's command table and the page's Settings sources and holds every verb and
+control to a door, a door owed, or an exemption with its reason (the person's own press, a discard, what
+changes nothing, a viewer's own look, what an agent may do), and was seen to fail when a row was removed.
+DRV8's `--share` is exempt (a loop's start flag, not a setting). Three doors are owed to the desktop
+modules, now HELP10. Not proven: a real helper choosing the new doors, and the write-to card on the window.
+**Proven by:** driver 963 fast + 548 Process, modules 306 + 112, service 672 + 46, CLI 661, vitest 1713,
+release, family, Playwright and deployment rehearsals.

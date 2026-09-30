@@ -16,6 +16,8 @@ internal sealed class HelpAccountProposals : IHelpProposalKind
 
     public string Tool => "agent_settings_propose";
 
+    public IReadOnlyList<string> Doors { get; } = ["settings"];
+
     public HelpProposal Read(HelpProposal proposal, JsonElement file) => proposal with
     {
         Account = Text(file, "account"),

@@ -34,6 +34,8 @@ internal sealed class HelpPluginProposals : IHelpProposalKind
     // PLUG9: adding a plugin that has landed, or switching one; making one is an ask, never this.
     public string Tool => "plugin_propose";
 
+    public IReadOnlyList<string> Doors { get; } = ["add", "enable", "disable", "update"];
+
     public HelpProposal Read(HelpProposal proposal, JsonElement file) => proposal with
     {
         Folder = Text(file, "folder"),

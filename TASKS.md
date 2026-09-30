@@ -21,7 +21,7 @@ lists.
 
 ## State
 
-**Counts, and this is their one home:** sixteen commands, **661 CLI tests, 655 service and 46 HTTP host, 1482 driver,
+**Counts, and this is their one home:** sixteen commands, **661 CLI tests, 672 service and 46 HTTP host, 1511 driver,
 418 desktop modules, 80 devkit, 1713 web unit, 21 Playwright**, 66/66 release rehearsal, **301/301
 family rehearsal** (it names its own phases when you run it), **70/70 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge
@@ -151,11 +151,13 @@ rule it also ships. A heading below holds open rows only.
 
 ### Keep going (owner, 2026-09-30: *"lets continue the development … you probabbly should start with subagents"*)
 
-- [ ] **HELP9 — Ask Daoris reaches every door built since HELP8** (building). Its setting kind cannot yet
-  propose `daoris driver across` (READ1 left it out), and the doors built since (plugins by offer id,
-  a hand-off, the landing plugin) are to be checked one by one. A coverage test lists every `daoris driver`
-  verb and every Settings control against Ask Daoris's kinds, with an explicit, reasoned exemption list,
-  so the next door cannot be built without it.
+- [ ] **HELP10 — the doors HELP9 left owed, and the two built since** (D110 names them). Retrying a
+  parked quest (the facts must say which quests are parked, `HelpFactsAsync`), making an account the default
+  (a door on `IHelpDoors` that `ScreenDoors` makes with `HARNESS_ACTION`'s own profile-default), and the
+  browser's settings (a `BrowserModule` door); then Ask Daoris proposing WSR6's *Bring up to date* (a kind,
+  with the plan shown before Apply) and the room saying PREVIEW1's file preview exists; and a go to
+  Permissions → *Reading and writing across* (a `settings-across` anchor). `HelpCoverageTests` moves each
+  from owed to a door.
 - [ ] **PREVIEW1 — a file's preview in the dock** (building; D76's held file tools, its trigger met: the
   conversation's tool cards and the review name files the person wants to read). Read-only, from the
   session's own tree or the repository's checkout, opened from a tool card's path or the review's file
@@ -386,7 +388,9 @@ TDD, looked at on the window, and the ones that touch a real session use one (au
   itself; a stop landing mid-handshake was tested and is not the cause. **A fifth class, twice on
   2026-09-30** (LOG2's baseline, then its merge while WSR4 built beside it):
   `ProcessJobTests.A_child_that_outlives_its_parent_ends_when_the_session_is_untracked`, 1144/1145,
-  green alone three times running. **A sixth class the same evening**, merging DRV8 while three
+  green alone three times running. **A seventh, the same night, caught by the merge tool as a FLAKE**
+  (its first: the category rule, not the old list): `PseudoConsoleTests.Closing_it_ends_a_child_the_shell_started_too`,
+  547/548 in a serial Process run loaded by a subagent's build and a live session, green alone. **A sixth class the same evening**, merging DRV8 while three
   worktrees built: `LandedBranchTests.A_branch_landing_records_the_branch_it_made_under_the_home`,
   1415/1416, green alone three times. **And a rehearsal the same day**: the family rehearsal exited 127
   straight after building the HTTP host, writing no transcript of its own, while three worktrees
