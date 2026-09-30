@@ -18,7 +18,7 @@
   "quests.card.follows": "承接 #{{id}}",
   "quests.card.lanes": "泳道 {{lanes}}",
   "quests.card.lanes_other": "泳道 {{lanes}}",
-  "quests.card.lanesHint": "它委托的是 {{repository}} 的这些泳道：是这些泳道的会话的工作，而不是整个仓库的。",
+  "quests.card.lanesHint": "它委托的是 {{repository}} 的这些泳道：交给这些泳道的会话去做，而不是整个仓库。",
   "quests.card.resume": "恢复 {{repository}}",
   "quests.card.resumeTip": "{{repository}} 在本机已暂停，它的委托会一直等待。恢复后驱动会开始它们；在项目里也能暂停和恢复。",
   "quests.card.waits": "等待 #{{id}}",

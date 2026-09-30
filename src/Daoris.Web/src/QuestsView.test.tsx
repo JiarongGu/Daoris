@@ -135,7 +135,8 @@ describe('QuestsView', () => {
     expect(await screen.findByText('lanes assets + core')).toBeInTheDocument();
     await userEvent.click(screen.getByText('Expose a streaming budget'));
     const dialog = await screen.findByRole('dialog');
-    expect(within(dialog).getByText('lanes')).toBeInTheDocument();
+    // A field's name is sentence case (the glossary's `field` kind, NAME1a).
+    expect(within(dialog).getByText('Lanes')).toBeInTheDocument();
     // Named as the repository declares them, where its registration says.
     expect(within(dialog).getByText('assets (Assets), core (Core)')).toBeInTheDocument();
   });
@@ -146,7 +147,7 @@ describe('QuestsView', () => {
     const dialog = await screen.findByRole('dialog');
 
     expect(screen.queryByText(/^lanes? /)).toBeNull();
-    expect(within(dialog).queryByText('lanes')).toBeNull();
+    expect(within(dialog).queryByText('Lanes')).toBeNull();
   });
 
   it('says a quest\'s lanes in 中文, the lanes\' own names left as they are', async () => {
