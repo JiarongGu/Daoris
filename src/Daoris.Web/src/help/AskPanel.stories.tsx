@@ -129,6 +129,32 @@ export const ProposingEveryKind: Story = {
               describe: 'Hand `feature/0fda18-fix-the-api-gap` (in `engine`) to plugin `example.github-pull-request`: it pushes the branch and opens the pull request against the line, signed in as you, for the work landed from session `s1a2b3c4` “Fix the API gap”.',
               terminal: 'daoris-driver trees hand feature/0fda18-fix-the-api-gap --repository engine', why: 'you want its pull request opened',
             },
+            // HELP10: the browser's settings, and bringing up to date before and after the person looked.
+            {
+              id: 'b1', kind: 'browser' as const,
+              describe: 'Links on the page open in Daoris\'s browser, from the next click. A sign-in link always opens in the system\'s browser.',
+              terminal: 'daoris browser links daoris', why: 'you want tickets opened where your sign-ins are',
+            },
+            {
+              id: 'y1', kind: 'sync' as const,
+              describe: 'Bring `engine` up to date after a pull request merged. Look for updates first: Daoris fetches each line from `origin`, as you — only origin\'s own refs move — and this card then lists what the press would do.',
+              terminal: 'daoris-driver trees sync --repository engine', why: 'your pull request merged',
+              sync: { looked: false, rows: [] },
+            },
+            {
+              id: 'y2', kind: 'sync' as const,
+              describe: 'Bring `engine` up to date: 3 thing(s) change, only the rows below that move, each judged again right before it acts. Daoris fetches nothing more, and never pushes.',
+              terminal: 'daoris-driver trees sync --repository engine --yes', why: 'your pull request merged',
+              sync: {
+                looked: true,
+                rows: [
+                  { key: 'engine:main', step: 'line' as const, moves: true, says: 'engine  main  fast-forwards 1 commit(s) to `origin/main`' },
+                  { key: 'engine:daoris/s-step', step: 'replay' as const, moves: true, says: 'engine  daoris/s-step  replays 2 commit(s) of its own onto `main`, after `feature/q2-first`\'s work, which reached the line' },
+                  { key: 'engine:daoris/s-busy', step: 'replay' as const, moves: false, says: 'engine  daoris/s-busy  a session still running or waiting holds its tree' },
+                  { key: 'engine:feature/q2-first', step: 'delete' as const, moves: true, says: 'engine  feature/q2-first  its work is on the line' },
+                ],
+              },
+            },
           ].map((proposal) => <ProposalCard key={proposal.id} proposal={proposal} onApply={() => {}} onDismiss={() => {}} />)}
         </ul>
       ),
