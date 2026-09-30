@@ -61,6 +61,7 @@ nested. A reader skips a line it cannot parse and a field it does not know.
 | `turn.ended` | desktop | session, stopReason, turnMs | how long a turn takes, and how it ends |
 | `session.ended` | desktop | session, state, seconds | how it finished |
 | `refused` | desktop | code, request | a refusal the person met, by its catalogue code (REFUSE1) |
+| `preview.opened` | desktop | session, path | a file read for its preview (D111), whether the side bar's reading room is used (LEFT2) |
 | `view.opened`, `command.run`, `panel.moved` | desktop, from the page | the view, the command, the region | what is used, and what never is |
 | `message.sent` | desktop, from the page | session, kind, length, files | how the conversations are used |
 | `proposal.settled` | desktop, from the page | applied | whether Ask Daoris's proposals help |
@@ -96,6 +97,10 @@ through by mistake.
   passes it: `code`, and `request` as `MODULE.TYPE`. A Daoris refusal is `info`; the kit's own codes (an
   unexpected exception, a type or a module the shell does not have) are `warn`; a cancelled request is
   not written. The refusal's parameters and sentence never are.
+- **`preview.opened`** (LEFT2) is written by the shell's `SESSION_FILE` route when a file was read for its
+  preview, never by the page, so the module's filter below does not list it. `path` is the file relative
+  to the session's tree, with forward slashes, as the preview names it: never the tree's own path, and
+  never the file's words. A preview that was refused writes nothing; its refusal is `refused`'s.
 - **The page's fields** each have a kind: a name (`view`, `command`, `region`, `session`, `kind`,
   `where`: an identifier, never a sentence), a text (`message`), a count (`length`, `files`) or a flag
   (`applied`). A value of another kind is dropped, and a string is cut at 120 characters with an

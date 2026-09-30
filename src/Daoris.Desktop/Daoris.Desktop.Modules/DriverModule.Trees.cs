@@ -141,18 +141,28 @@ public sealed partial class DriverModule
         var service = _loop.Service ?? throw NotReady();
 
         var (tree, _) = await service.SessionGroundAsync(id, cancellationToken);
-        return await PreviewAsync(id, tree, path, cancellationToken);
+        return await PreviewAsync(id, tree, path, cancellationToken, _loop.Log);
     }
 
     /// <summary>
     /// A file read for its preview in <paramref name="tree"/>, answered as the page receives it or refused as
     /// a code. Public, as <see cref="OptionsAnswer"/> is, so the route's answers are tested without a service.
     /// </summary>
-    public static async Task<object> PreviewAsync(string session, string? tree, string path, CancellationToken cancellationToken)
+    /// <param name="log">
+    /// The machine log a preview that opened is written to (LEFT2, D94), as <c>preview.opened</c>: the session and
+    /// the file relative to the tree, never the tree's own path and never the file's words. Null writes none.
+    /// </param>
+    public static async Task<object> PreviewAsync(
+        string session, string? tree, string path, CancellationToken cancellationToken, MachineLog? log = null)
     {
         var read = string.IsNullOrWhiteSpace(tree)
             ? FilePreviewResult.Refused(FilePreviewRefusal.NoTree)
             : await FilePreview.ReadAsync(tree, path, cancellationToken);
+        if (read is { Refusal: FilePreviewRefusal.None, File: { } opened })
+        {
+            log?.Info("preview.opened", ("session", session), ("path", opened.Path));
+        }
+
         return FileAnswer(session, path, read);
     }
 

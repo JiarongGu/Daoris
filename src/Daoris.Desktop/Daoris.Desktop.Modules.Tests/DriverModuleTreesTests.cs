@@ -82,6 +82,39 @@ public sealed class DriverModuleTreesTests : DriverModuleBridge
     }
 
     /// <summary>
+    /// Opening a preview is a line in the machine log (LEFT2, D94): the session and the file relative to the tree,
+    /// asked for here by its full path, so the line is seen to keep the relative one and never the tree's own. A
+    /// preview that is refused opens nothing and writes nothing.
+    /// </summary>
+    [Fact]
+    public async Task Opening_a_preview_is_a_machine_log_line_with_the_session_and_the_path_relative_to_the_tree()
+    {
+        var tree = Path.Combine(Home, "trees", "engine");
+        Directory.CreateDirectory(Path.Combine(tree, "src"));
+        File.WriteAllText(Path.Combine(tree, "src", "chunk.ts"), "export const a = 1;\n");
+        File.WriteAllText(Path.Combine(Home, "driver.json"), "{}");
+        using var log = new MachineLog(Home, "desktop", () => new DateTimeOffset(2026, 9, 30, 7, 10, 0, TimeSpan.Zero));
+
+        await DriverModule.PreviewAsync("s1a2b3c4", tree, Path.Combine(tree, "src", "chunk.ts"), CancellationToken.None, log);
+        await Assert.ThrowsAsync<Shenora.Core.Ipc.ShenoraException>(
+            () => DriverModule.PreviewAsync("s1a2b3c4", tree, "../../driver.json", CancellationToken.None, log));
+        await Assert.ThrowsAsync<Shenora.Core.Ipc.ShenoraException>(
+            () => DriverModule.PreviewAsync("s1a2b3c4", tree, "src/gone.ts", CancellationToken.None, log));
+
+        var folder = Path.Combine(Home, MachineLog.Folder);
+        var lines = Directory.GetFiles(folder).SelectMany(file =>
+        {
+            using var stream = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.ReadWrite | FileShare.Delete);
+            using var reader = new StreamReader(stream);
+            return reader.ReadToEnd().Split('\n', StringSplitOptions.RemoveEmptyEntries);
+        }).ToArray();
+        var line = JsonDocument.Parse(Assert.Single(lines)).RootElement;
+        Assert.Equal("preview.opened", line.GetProperty("event").GetString());
+        Assert.Equal("info", line.GetProperty("level").GetString());
+        Assert.Equal("""{"session":"s1a2b3c4","path":"src/chunk.ts"}""", line.GetProperty("data").GetRawText());
+    }
+
+    /// <summary>
     /// The three refusals PREVIEW1 names, and its two pieces of information, each a code of its own: the
     /// page renders each from the catalogue, and a person's next move differs for each.
     /// </summary>

@@ -30,6 +30,12 @@ public sealed class DriverLoop(
     /// <summary>Completes when the HTTP host answers (or provably will not) — what navigation waits on.</summary>
     public Task<bool> HostReady => _hostReady.Task;
 
+    /// <summary>
+    /// The shell's machine log (D94), or null where none was handed in — for a route that writes what the person
+    /// did through it, as the preview's opening is (LEFT2).
+    /// </summary>
+    public MachineLog? Log => log;
+
     /// <summary>The live processes, shared across ticks — how "stop that session" reaches its target.</summary>
     /// <remarks>
     /// Marked under the home's <c>sessions/</c>, so a terminal's driver sharing the home can tell this
