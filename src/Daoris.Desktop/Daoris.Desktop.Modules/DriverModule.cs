@@ -347,9 +347,11 @@ public sealed class DriverModule : ModuleBase
                         .Select(known => (known.Repository, (string?)known.Workspace, known.Root)),
                     cancellationToken).ConfigureAwait(false);
                 var roster = await _loop.Harnesses.RosterAsync(config, ct: cancellationToken).ConfigureAwait(false);
-                var asks = (await service.AsksAsync(cancellationToken).ConfigureAwait(false)).Count(ask => ask.State == "Proposed");
+                var standing = await service.AsksAsync(cancellationToken).ConfigureAwait(false);
+                var asks = standing.Count(ask => ask.State == "Proposed");
+                // The asks by id too (HELP6), so a delete of one made by mistake can name it.
                 var machine = HelpRoom.Describe(
-                    config, snapshot, lines, roster, adapter => _loop.Harnesses.Toolchain(adapter)?.Product, asks);
+                    config, snapshot, lines, roster, adapter => _loop.Harnesses.Toolchain(adapter)?.Product, asks, standing);
 
                 var start = await chat.StartHelpAsync(
                     helper, config, machine,
@@ -368,9 +370,10 @@ public sealed class DriverModule : ModuleBase
             {
                 var session = PayloadHelper.GetRequiredValue<string>(request.Payload, "session");
                 var service = _loop.Service ?? throw NotReady();
-                var (config, facts) = await HelpFactsAsync(service, cancellationToken).ConfigureAwait(false);
+                var pending = HelpProposals.Pending(_loop.Home, session);
+                var (config, facts) = await HelpFactsAsync(service, pending, cancellationToken).ConfigureAwait(false);
                 var shown = new List<object>();
-                foreach (var proposal in HelpProposals.Pending(_loop.Home, session))
+                foreach (var proposal in pending)
                 {
                     var plan = HelpProposals.Plan(proposal, config, facts);
                     if (plan.Refusal is { } refused)
@@ -386,9 +389,9 @@ public sealed class DriverModule : ModuleBase
                 return new { Session = session, Proposals = shown.ToArray() };
             }
 
-            // The person's Apply: the same edit the screen's route makes, judged again first, since the
-            // machine may have moved since the card was drawn. The result goes back into the conversation
-            // as the person's next message, so the agent knows (D89).
+            // The person's Apply: made through the door the screen's own route uses (HELP6), judged again
+            // first, since the machine may have moved since the card was drawn. The result goes back into
+            // the conversation as the person's next message, so the agent knows (D89).
             case "HELP_APPLY":
             {
                 var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
@@ -397,31 +400,29 @@ public sealed class DriverModule : ModuleBase
                     ?? throw new DriverException($"there is no proposal `#{id}` on this machine.");
                 if (proposal.State != "proposed") throw new DriverException($"proposal `#{id}` is already {proposal.State}.");
 
-                var (config, facts) = await HelpFactsAsync(service, cancellationToken).ConfigureAwait(false);
+                var (config, facts) = await HelpFactsAsync(service, [proposal], cancellationToken).ConfigureAwait(false);
                 var plan = HelpProposals.Plan(proposal, config, facts);
-                string told;
-                if (plan.Refusal is { } refused)
+                // What it did, and an agent action's end once it comes, into the conversation that proposed it.
+                void Say(string text)
                 {
-                    HelpProposals.Settle(_loop.Home, id, "refused", refused);
-                    told = $"Not applied: `#{id}` — the route refuses it: {refused}";
-                }
-                else if (proposal.Kind == "ask")
-                {
-                    var answer = await service
-                        .AskAsync(proposal.Workspace!, proposal.Sentence!, [], [], null, cancellationToken).ConfigureAwait(false);
-                    HelpProposals.Settle(_loop.Home, id, answer.Ok ? "applied" : "refused", answer.Message);
-                    told = $"{(answer.Ok ? "Applied" : "Not applied")}: `#{id}` (`{plan.Terminal}`) — {answer.Message}";
-                    _loop.Nudge();
-                }
-                else
-                {
-                    Change(plan.Apply!);
-                    HelpProposals.Settle(_loop.Home, id, "applied", null);
-                    told = $"Applied: `#{id}` — {plan.Describe} (`{plan.Terminal}`)";
+                    if (proposal.Session is { } session) _loop.Chat?.Say(session, InPersonsWords(text));
                 }
 
-                if (proposal.Session is { } said) _loop.Chat?.Say(said, InPersonsWords(told));
-                return new { Message = told, Applied = plan.Refusal is null };
+                var applied = await HelpProposals.ApplyAsync(
+                    _loop.Home, proposal, plan, HelpDoors(service), Say, cancellationToken).ConfigureAwait(false);
+                if (proposal.Kind is "ask" or "delete") _loop.Nudge();
+
+                return new
+                {
+                    Message = applied.Told,
+                    applied.Applied,
+                    // Where a go takes the person: the page navigates, as its starters' doors do (HELP6).
+                    Go = applied.Go is { } place ? new { place.View, place.Domain, place.Part } : null,
+                    // The action an update or a pin started, so the Agents screen follows its console and its end.
+                    HarnessAction = applied.Applied && proposal.Kind == "agent"
+                        ? new { Harness = proposal.Target!.Trim(), Action = proposal.Door }
+                        : null,
+                };
             }
 
             // The person's Not now: nothing changes, and the agent is told so.
@@ -909,59 +910,9 @@ public sealed class DriverModule : ModuleBase
                     return new { Harness = harness, Action = action, ExitCode = code };
                 }
 
-                // 🔴 A process action is answered when the process has STARTED, and its end is news
-                // (HARNESS_ENDED) — the same way a conversation's ending is (D49 §3). It waits on a
-                // network, or on a person in a browser, and a request that waited with it timed out
-                // on the bridge at thirty seconds while the login ran on: the page closed its panel,
-                // the row said nothing had changed, and the process kept waiting for a browser nobody
-                // was told about (measured on the installed shell, 2026-09-23). While it runs the
-                // page may answer it or stop it (HARNESS_INPUT, HARNESS_CANCEL).
-                var key = $"{harness}:{action}";
-                var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-                Action<HarnessRun> track = run =>
-                {
-                    _actions[key] = run;
-                    started.TrySetResult();
-                };
-                // 🔴 Signing in to ANOTHER account (D66 §3): the account is made by the sign-in, not
-                // named before it. It opens under the next free `account-N` — nobody knows whose it
-                // is yet — and the tool's own answer names who, on the roster, once it ends.
-                var fresh = action == "login-new"
-                    ? HarnessSettings.NextAccount(_loop.Harnesses.Home, owner)
-                    : null;
-                var profileHome = HarnessSettings.ProfileHome(
-                    _loop.Harnesses.Home, owner,
-                    fresh ?? profile ?? _loop.Harnesses.Settings.Resolve(owner, null, null) ?? "default");
-                Func<Task<int>> run = action switch
-                {
-                    "install" => () => HarnessActions.InstallAsync(toolchain, stream, CancellationToken.None, track),
-                    "update" => () => UpdateAsync(harness, toolchain, command, stream, CancellationToken.None, track),
-                    "login" => () => HarnessActions.LoginAsync(toolchain, command, profileHome, stream, CancellationToken.None, track),
-                    "login-new" => () => SignInAsync(harness, fresh!, toolchain, command, profileHome, stream, config, track),
-                    // The managed toolchain (TOOL2/D57) — the desktop's half of
-                    // `daoris agent pin|unpin`, over the same file.
-                    _ => () => PinAsync(harness, toolchain, stream, request, CancellationToken.None, track),
-                };
-
-                // 🔴 One at a time on this machine, claimed as the action starts and released by
-                // `RunActionAsync` however it ends (REV3). The page re-enabled its buttons once the
-                // request answered `started`, and a second login under the same name took the first's
-                // place in `_actions`: the first could no longer be answered or stopped, and its end
-                // removed the second's entry. Claimed last, so nothing above can throw with it held.
-                if (Interlocked.CompareExchange(ref _acting, key, null) is { } busy)
-                {
-                    throw Refusals.Because(
-                        Refusals.HarnessActionBusy,
-                        $"{busy} is still running — wait for it to end, or stop it, before starting another.",
-                        ("running", busy));
-                }
-
-                var work = RunActionAsync(key, harness, action, fresh ?? profile, run, started.Task, config);
-
-                await Task.WhenAny(started.Task, work);
-                // A refusal before the process started — no installer, no login flow, a binary that
-                // did not start — travels as a refusal, exactly as it did when the request waited.
-                if (work.IsCompleted) await work;
+                // A pin's version is asked for before anything starts: a pin without one is a malformed call.
+                var version = action == "pin" ? PayloadHelper.GetRequiredValue<string>(request.Payload, "version") : null;
+                await StartProcessActionAsync(harness, action, profile, version, toolchain, command, stream, config);
                 return new { Harness = harness, Action = action, Started = true };
             }
 
@@ -988,29 +939,8 @@ public sealed class DriverModule : ModuleBase
             case "SET_AGENT_SETTINGS":
             {
                 var harness = PayloadHelper.GetRequiredValue<string>(request.Payload, "harness");
-                var toolchain = _loop.Harnesses.Toolchain(harness)
-                    ?? throw new DriverException(
-                        $"Daoris manages no toolchain for `{harness}` — its accounts are its own tooling's.");
-                var owner = toolchain.Owner(harness);
-                var file = _loop.Harnesses.AccountToolchain(harness)?.SettingsFile
-                    ?? throw new DriverException(
-                        $"`{owner}` keeps its settings in files of its own that Daoris does not know the shape of, "
-                        + "so Daoris offers none — set its model with the tool itself.");
-                var profile = Optional(request, "profile")
-                    ?? throw new DriverException(
-                        $"name the account these settings are for — `{owner}`'s own configuration home is the tool's, "
-                        + "and Daoris never touches it.");
-                var accounts = HarnessSettings.Profiles(_loop.Harnesses.Home, owner);
-                if (!accounts.Contains(profile, StringComparer.Ordinal))
-                {
-                    throw new DriverException(
-                        $"`{owner}` has no account `{profile}` on this machine — accounts that exist: "
-                        + (accounts.Count > 0 ? string.Join(", ", accounts) : "(none)"));
-                }
-
-                var read = AgentSettings.Write(
-                    Path.Combine(HarnessSettings.ProfileHome(_loop.Harnesses.Home, owner, profile), file),
-                    Edit(request, "model"), Edit(request, "effort"), PerModel(request));
+                var (owner, profile, read) = WriteAgentSettings(
+                    harness, Optional(request, "profile"), () => (Edit(request, "model"), Edit(request, "effort"), PerModel(request)));
                 return new { Harness = owner, Profile = profile, read.Model, read.Effort, PerModel = PerModelOf(read), read.Problem };
             }
 
@@ -1722,13 +1652,79 @@ public sealed class DriverModule : ModuleBase
     }
 
     /// <summary>
+    /// A process action on a harness, answered once it has started — <c>HARNESS_ACTION</c>'s own start,
+    /// and the one Ask Daoris's Apply of an update or a pin calls too (HELP6), so the two cannot differ.
+    /// </summary>
+    /// <remarks>
+    /// 🔴 A process action is answered when the process has STARTED, and its end is news
+    /// (HARNESS_ENDED) — the same way a conversation's ending is (D49 §3). It waits on a network, or on
+    /// a person in a browser, and a request that waited with it timed out on the bridge at thirty seconds
+    /// while the login ran on: the page closed its panel, the row said nothing had changed, and the
+    /// process kept waiting for a browser nobody was told about (measured on the installed shell,
+    /// 2026-09-23). While it runs the page may answer it or stop it (HARNESS_INPUT, HARNESS_CANCEL).
+    /// </remarks>
+    /// <param name="ended">Told the exit code and any problem once the process ends, after the news goes out.</param>
+    private async Task StartProcessActionAsync(
+        string harness, string action, string? profile, string? version, HarnessToolchain toolchain,
+        IReadOnlyList<string>? command, Action<string> stream, DriverConfig config, Action<int, string?>? ended = null)
+    {
+        var owner = toolchain.Owner(harness);
+        var key = $"{harness}:{action}";
+        var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        Action<HarnessRun> track = run =>
+        {
+            _actions[key] = run;
+            started.TrySetResult();
+        };
+        // 🔴 Signing in to ANOTHER account (D66 §3): the account is made by the sign-in, not named
+        // before it. It opens under the next free `account-N` — nobody knows whose it is yet — and the
+        // tool's own answer names who, on the roster, once it ends.
+        var fresh = action == "login-new"
+            ? HarnessSettings.NextAccount(_loop.Harnesses.Home, owner)
+            : null;
+        var profileHome = HarnessSettings.ProfileHome(
+            _loop.Harnesses.Home, owner,
+            fresh ?? profile ?? _loop.Harnesses.Settings.Resolve(owner, null, null) ?? "default");
+        Func<Task<int>> run = action switch
+        {
+            "install" => () => HarnessActions.InstallAsync(toolchain, stream, CancellationToken.None, track),
+            "update" => () => UpdateAsync(harness, toolchain, command, stream, CancellationToken.None, track),
+            "login" => () => HarnessActions.LoginAsync(toolchain, command, profileHome, stream, CancellationToken.None, track),
+            "login-new" => () => SignInAsync(harness, fresh!, toolchain, command, profileHome, stream, config, track),
+            // The managed toolchain (TOOL2/D57) — the desktop's half of `daoris agent pin|unpin`, over
+            // the same file.
+            _ => () => PinAsync(harness, toolchain, stream, version!, CancellationToken.None, track),
+        };
+
+        // 🔴 One at a time on this machine, claimed as the action starts and released by
+        // `RunActionAsync` however it ends (REV3). The page re-enabled its buttons once the request
+        // answered `started`, and a second login under the same name took the first's place in
+        // `_actions`: the first could no longer be answered or stopped, and its end removed the second's
+        // entry. Claimed last, so nothing above can throw with it held.
+        if (Interlocked.CompareExchange(ref _acting, key, null) is { } busy)
+        {
+            throw Refusals.Because(
+                Refusals.HarnessActionBusy,
+                $"{busy} is still running — wait for it to end, or stop it, before starting another.",
+                ("running", busy));
+        }
+
+        var work = RunActionAsync(key, harness, action, fresh ?? profile, run, started.Task, config, ended);
+
+        await Task.WhenAny(started.Task, work);
+        // A refusal before the process started — no installer, no login flow, a binary that did not
+        // start — travels as a refusal, exactly as it did when the request waited.
+        if (work.IsCompleted) await work;
+    }
+
+    /// <summary>
     /// A process action to its end, and the end announced — after the request that started it has
     /// been answered. A failure before the process started is the caller's to refuse; one after it
     /// is news like any other end, because nobody awaits this any more.
     /// </summary>
     private async Task RunActionAsync(
         string key, string harness, string action, string? profile, Func<Task<int>> run, Task started,
-        DriverConfig config)
+        DriverConfig config, Action<int, string?>? ended = null)
     {
         int code;
         try
@@ -1738,6 +1734,7 @@ public sealed class DriverModule : ModuleBase
         catch (Exception error) when (started.IsCompletedSuccessfully)
         {
             await AnnounceAsync(harness, action, profile, -1, error.Message, config);
+            Tell(-1, error.Message);
             return;
         }
         finally
@@ -1748,6 +1745,21 @@ public sealed class DriverModule : ModuleBase
         }
 
         await AnnounceAsync(harness, action, profile, code, null, config);
+        Tell(code, null);
+
+        // Whoever asked to hear the end (HELP6: Ask Daoris's conversation) hears it after the news; a
+        // listener that fails costs its own view, never the end the screen was told.
+        void Tell(int exit, string? problem)
+        {
+            try
+            {
+                ended?.Invoke(exit, problem);
+            }
+            catch (Exception)
+            {
+                // The news already went out.
+            }
+        }
     }
 
     private async Task AnnounceAsync(
@@ -1856,10 +1868,9 @@ public sealed class DriverModule : ModuleBase
     /// that cannot start a session.
     /// </remarks>
     private async Task<int> PinAsync(
-        string harness, HarnessToolchain toolchain, Action<string> stream, IpcRequest request,
+        string harness, HarnessToolchain toolchain, Action<string> stream, string version,
         CancellationToken ct, Action<HarnessRun> started)
     {
-        var version = PayloadHelper.GetRequiredValue<string>(request.Payload, "version");
         var code = await HarnessActions.PinAsync(
             toolchain, _loop.Harnesses.Home, harness, version, stream, ct, started);
 
@@ -1880,6 +1891,82 @@ public sealed class DriverModule : ModuleBase
             _loop.Harnesses.Settings.ResolveVersion(harness, null, null),
             version => _loop.Harnesses.Settings.WithVersion(harness, version).Save(_loop.Harnesses.SettingsPath),
             stream, ct, started);
+
+    /// <summary>
+    /// An account's own model and effort, written — <c>SET_AGENT_SETTINGS</c>'s own write, and the one Ask
+    /// Daoris's Apply makes too (HELP6). Never the tool's own configuration home, and never an account a
+    /// setting would bring into being.
+    /// </summary>
+    /// <param name="edits">The keys to change, read only once the account is known to be one Daoris keeps.</param>
+    private (string Owner, string Profile, AgentSettingsRead Read) WriteAgentSettings(
+        string harness, string? profile,
+        Func<(AgentSettingEdit? Model, AgentSettingEdit? Effort, IReadOnlyDictionary<string, AgentSettingEdit>? PerModel)> edits)
+    {
+        var toolchain = _loop.Harnesses.Toolchain(harness)
+            ?? throw new DriverException(
+                $"Daoris manages no toolchain for `{harness}` — its accounts are its own tooling's.");
+        var owner = toolchain.Owner(harness);
+        var file = _loop.Harnesses.AccountToolchain(harness)?.SettingsFile
+            ?? throw new DriverException(
+                $"`{owner}` keeps its settings in files of its own that Daoris does not know the shape of, "
+                + "so Daoris offers none — set its model with the tool itself.");
+        var named = profile
+            ?? throw new DriverException(
+                $"name the account these settings are for — `{owner}`'s own configuration home is the tool's, "
+                + "and Daoris never touches it.");
+        var accounts = HarnessSettings.Profiles(_loop.Harnesses.Home, owner);
+        if (!accounts.Contains(named, StringComparer.Ordinal))
+        {
+            throw new DriverException(
+                $"`{owner}` has no account `{named}` on this machine — accounts that exist: "
+                + (accounts.Count > 0 ? string.Join(", ", accounts) : "(none)"));
+        }
+
+        var (model, effort, perModel) = edits();
+        var read = AgentSettings.Write(
+            Path.Combine(HarnessSettings.ProfileHome(_loop.Harnesses.Home, owner, named), file), model, effort, perModel);
+        return (owner, named, read);
+    }
+
+    /// <summary>
+    /// The doors Ask Daoris's Apply goes through (HELP6): each the code a screen's own route runs, so an
+    /// Apply is what the screen would have done. <paramref name="service"/> is the loop's, or null before
+    /// it is up — when an ask or a delete is the cold-start sentence.
+    /// </summary>
+    public IHelpDoors HelpDoors(ServiceClient? service) => new ScreenDoors(this, service);
+
+    private sealed class ScreenDoors(DriverModule module, ServiceClient? service) : IHelpDoors
+    {
+        // SET_DRIVABLE, SET_LINE, SET_LANDING…: an edit to the driver's file, then a nudge.
+        public void Change(Func<DriverConfig, DriverConfig> edit) => module.Change(edit);
+
+        // The ask composer's door, the local host's `POST /api/asks`.
+        public Task<AskAnswer> AskAsync(string workspace, string sentence, CancellationToken ct) =>
+            (service ?? throw NotReady()).AskAsync(workspace, sentence, [], [], null, ct);
+
+        // The quest drawer's Delete: the local host's `DELETE /api/quests/{id}`.
+        public Task<(bool Ok, string Message)> DeleteQuestAsync(string id, CancellationToken ct) =>
+            (service ?? throw NotReady()).DeleteQuestAsync(id, ct);
+
+        // The ask's record's Delete: the local host's `DELETE /api/asks/{id}`.
+        public Task<(bool Ok, string Message)> DeleteAskAsync(string id, CancellationToken ct) =>
+            (service ?? throw NotReady()).DeleteAskAsync(id, ct);
+
+        // HARNESS_ACTION's own start, streamed under the same key and ended with the same news.
+        public Task StartAgentActionAsync(string harness, string action, string? version, Action<int, string?> ended, CancellationToken ct)
+        {
+            var config = DriverConfig.Load(module._loop.ConfigPath);
+            var toolchain = module._loop.Harnesses.Toolchain(harness)
+                ?? throw new DriverException($"Daoris manages no toolchain for `{harness}` — its accounts are its own tooling's.");
+            return module.StartProcessActionAsync(
+                harness, action, profile: null, version, toolchain, config.Commands.GetValueOrDefault(harness),
+                module.Relay(harness, action), config, ended);
+        }
+
+        // SET_AGENT_SETTINGS's own write.
+        public AgentSettingsRead SetAgentSettings(string harness, string account, AgentSettingEdit? model, AgentSettingEdit? effort) =>
+            module.WriteAgentSettings(harness, account, () => (model, effort, null)).Read;
+    }
 
     /// <summary>What every route that needs the loop's service says before it answers (REV3 CLEAN1: five wrote it).</summary>
     private static Exception NotReady() => Refusals.Because(
@@ -2028,15 +2115,55 @@ public sealed class DriverModule : ModuleBase
 
     /// <summary>
     /// What a proposal of Ask Daoris's is judged against (HELP1c): the driver's file, and the names the
-    /// machine holds — its registered repositories and their circles, and the agents it has.
+    /// machine holds — its registered repositories and their circles, and the agents it has. For the
+    /// kinds that need them (HELP6), each door as the Agents screen's roster reads it, and every quest
+    /// and ask with the service's own reading of whether it may be deleted — asked only then.
     /// </summary>
-    private async Task<(DriverConfig Config, HelpMachineFacts Facts)> HelpFactsAsync(ServiceClient service, CancellationToken ct)
+    private async Task<(DriverConfig Config, HelpMachineFacts Facts)> HelpFactsAsync(
+        ServiceClient service, IReadOnlyCollection<HelpProposal> proposals, CancellationToken ct)
     {
         var snapshot = await service.SnapshotAsync(ct).ConfigureAwait(false);
         var workspaces = snapshot.Repositories.Select(known => known.Workspace)
             .Append(RemoteTarget.DefaultWorkspace).Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
-        return (DriverConfig.Load(_loop.ConfigPath), new HelpMachineFacts(
-            [.. snapshot.Repositories.Select(known => known.Repository)], workspaces, _loop.Harnesses.Adapters.Names));
+        var config = DriverConfig.Load(_loop.ConfigPath);
+        var facts = new HelpMachineFacts(
+            [.. snapshot.Repositories.Select(known => known.Repository)], workspaces, _loop.Harnesses.Adapters.Names);
+
+        if (proposals.Any(proposal => proposal.Kind is "agent" or "account"))
+        {
+            // The HARNESSES route's own reading of each door, field by field.
+            var roster = await _loop.Harnesses.RosterAsync(config, ct: ct).ConfigureAwait(false);
+            var settings = _loop.Harnesses.Settings;
+            facts = facts with
+            {
+                Doors = [.. roster.Select(report =>
+                {
+                    var toolchain = _loop.Harnesses.Toolchain(report.Adapter);
+                    var pinned = settings.ResolveVersion(report.Adapter, null, null);
+                    var owner = toolchain?.Owner(report.Adapter) ?? report.Adapter;
+                    return new HelpDoorFacts(report.Adapter)
+                    {
+                        Present = report.Present,
+                        Updates = toolchain is null ? null : HarnessActions.UpdateOf(toolchain, pinned),
+                        Pinned = pinned,
+                        Package = toolchain?.Package,
+                        Channel = toolchain?.Channel,
+                        Product = toolchain?.Product,
+                        Owner = owner,
+                        Accounts = HarnessSettings.Profiles(_loop.Harnesses.Home, owner),
+                        SettingsKnown = _loop.Harnesses.AccountToolchain(report.Adapter)?.SettingsFile is { Length: > 0 },
+                    };
+                })],
+            };
+        }
+
+        if (proposals.Any(proposal => proposal.Kind == "delete"))
+        {
+            var (quests, asks) = await HelpProposals.RecordsAsync(service, ct).ConfigureAwait(false);
+            facts = facts with { Quests = quests, Asks = asks };
+        }
+
+        return (config, facts);
     }
 
     /// <summary>

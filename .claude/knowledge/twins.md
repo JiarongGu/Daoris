@@ -61,6 +61,8 @@ map found this first (WSP3), and every twin since was built the same way for the
 | The browser's argument, `--daoris-browser` first on the application's command line (D99) | `tools/processes.mjs`'s `BROWSER_ARGUMENT`, which tells the browser from the application and the engine's processes | `EngineBrowser.Argument`, which the application routes on and the shell starts the browser with; `desktop-tool.test.ts` reads it | — |
 | The desktop page's origin on the engine it ships, `https://daoris.localhost` (D92) | — | the shell's `DesktopPage.VirtualHost` (CHR2b) | `DesktopPage.cs` (a local host allows it); the family rehearsal spells it a third time and asks with it, and `tools/desktop.mjs`'s `SHELL_ORIGIN` a fourth, to tell the shell's page from any other |
 | What a repository says it uses, `domain.uses` (D91) | `connect.ts` (`usesOf`) | `RemoteSyncPayloads.cs` carries it; `RegistryModule.cs` preserves it | `Registry.cs` (`Declared.Uses`), `RegistryImport.cs` |
+| Ask Daoris's proposals, one file each under `<home>/help/proposals/` (HELP1c, HELP6), six kinds | — | `HelpProposals.cs`, which reads, judges and settles them | `HelpProposals.cs` (`HelpProposalBox`), which writes them for the connector's `*_propose` tools |
+| The places Ask Daoris's go may name (HELP6) | — | `HelpPlaces` (`HelpProposals.cs`), which judges a go and lists the places in the room | — ; the page's `help/places.ts` navigates to them, and both tests hold the same table |
 
 A twin not in this table is still a twin: the rule is the arrangement, and the table is where to
 look first.

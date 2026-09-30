@@ -270,6 +270,17 @@ public sealed class ServiceClient : IDisposable
         return [.. document.RootElement.EnumerateArray().Select(ReadAsk)];
     }
 
+    /// <summary>Every ask this machine holds, closed ones included — what a delete Ask Daoris proposes is judged against (HELP6).</summary>
+    public async Task<IReadOnlyList<AskView>> EveryAskAsync(CancellationToken ct = default)
+    {
+        using var document = JsonDocument.Parse(await GetAsync("/api/asks?includeClosed=true", ct).ConfigureAwait(false));
+        return [.. document.RootElement.EnumerateArray().Select(ReadAsk)];
+    }
+
+    /// <summary>Every quest, closed ones included, each with the service's reading of whether it may be deleted (HELP6).</summary>
+    public async Task<IReadOnlyList<QuestView>> EveryQuestAsync(CancellationToken ct = default) =>
+        ReadQuests(await GetAsync("/api/quests?includeClosed=true", ct).ConfigureAwait(false));
+
     /// <summary>One ask as it stands — how an intake's end is observed. Null when the service has none.</summary>
     public async Task<AskView?> FindAskAsync(string id, CancellationToken ct = default)
     {
@@ -328,7 +339,12 @@ public sealed class ServiceClient : IDisposable
             Proposed = ask.TryGetProperty("proposal", out var proposal) && proposal.ValueKind == JsonValueKind.Array
                 ? [.. proposal.EnumerateArray().Select(match => Text(match, "repository")).OfType<string>()]
                 : [],
+            Deletable = Flag(ask, "deletable"),
         };
+
+    /// <summary>A field that is true, or false when it is anything else or absent.</summary>
+    private static bool Flag(JsonElement element, string name) =>
+        element.ValueKind == JsonValueKind.Object && element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.True;
 
     private static IReadOnlyList<string> Strings(JsonElement element, string name) =>
         element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.Array
@@ -488,6 +504,7 @@ public sealed class ServiceClient : IDisposable
                 // Absent is not waiting: a host from before D79 answers without it.
                 Awaits = Text(quest, "awaits"),
                 Note = Text(quest, "note"),
+                Deletable = Flag(quest, "deletable"),
             });
         }
 

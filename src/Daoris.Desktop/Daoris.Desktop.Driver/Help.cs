@@ -41,6 +41,9 @@ public sealed record HelpAgent(string Name)
 /// <summary>An account Daoris keeps for an agent, by its name — never its key (AGT3).</summary>
 public sealed record HelpAccount(string Name, string Login);
 
+/// <summary>An ask not closed, as the room lists it (HELP6): by id, so a delete of one made by mistake can name it.</summary>
+public sealed record HelpAsk(string Id, string Sentence, string Workspace, string State, IReadOnlyList<string> Quests);
+
 /// <summary>What the room says this machine holds now: names and states, never a key, never a path.</summary>
 public sealed record HelpMachine
 {
@@ -64,6 +67,9 @@ public sealed record HelpMachine
 
     /// <summary>How many asks wait for the person's answer.</summary>
     public int Asks { get; init; }
+
+    /// <summary>The asks not closed, newest first (HELP6).</summary>
+    public IReadOnlyList<HelpAsk> OpenAsks { get; init; } = [];
 }
 
 /// <summary>
@@ -76,9 +82,9 @@ public sealed record HelpMachine
 /// write, since no one else owns it. Never a session tree, and never asked about by git — it is no
 /// repository, and git asked about it walks UP.</para>
 ///
-/// <para><b>It reads, and it advises.</b> Its allow-list reads the family and nothing else, and over
-/// the protocol door anything unlisted is refused by construction (D52). A change is the person's,
-/// on a screen or at a terminal; proposing one for the person to confirm is HELP1c's.</para>
+/// <para><b>It reads, and it advises.</b> Its allow-list reads the family and proposes, and nothing
+/// else, and over the protocol door anything unlisted is refused by construction (D52). A change is the
+/// person's, on a screen or at a terminal; a proposal is a card the person confirms (HELP1c, HELP6).</para>
 /// </remarks>
 public static class HelpRoom
 {
@@ -118,6 +124,11 @@ public static class HelpRoom
         // narrowing at the tick with nobody's press, and every change here is the person's.
         $"mcp__{KnowledgeConnector.ServerName}__setting_propose",
         $"mcp__{KnowledgeConnector.ServerName}__ask_propose",
+        // HELP6: every door built since, each a card the person applies the same way.
+        $"mcp__{KnowledgeConnector.ServerName}__agent_propose",
+        $"mcp__{KnowledgeConnector.ServerName}__delete_propose",
+        $"mcp__{KnowledgeConnector.ServerName}__agent_settings_propose",
+        $"mcp__{KnowledgeConnector.ServerName}__go_propose",
     ];
 
     public static string PathOf(string home) => Path.Combine(home, Folder);
@@ -152,9 +163,11 @@ public static class HelpRoom
     /// </summary>
     /// <param name="product">What a person calls a harness's tool, where its toolchain says.</param>
     /// <param name="asks">How many asks wait for the person's answer.</param>
+    /// <param name="standing">The asks the host answered, listed by id where they are not closed (HELP6).</param>
     public static HelpMachine Describe(
         DriverConfig config, Snapshot snapshot, IReadOnlyList<RepositoryLine> lines,
-        IReadOnlyList<HarnessReport> roster, Func<string, string?> product, int asks)
+        IReadOnlyList<HarnessReport> roster, Func<string, string?> product, int asks,
+        IReadOnlyList<AskView>? standing = null)
     {
         var lineOf = lines.ToDictionary(line => line.Repository, StringComparer.OrdinalIgnoreCase);
         bool Named(IReadOnlyList<string> list, string repository) => list.Contains(repository, StringComparer.OrdinalIgnoreCase);
@@ -168,6 +181,9 @@ public static class HelpRoom
             Cap = config.Cap,
             Waiting = snapshot.Active.Count(session => session.State == "awaiting-person"),
             Asks = asks,
+            OpenAsks = [.. (standing ?? [])
+                .Where(ask => !string.Equals(ask.State, "Closed", StringComparison.OrdinalIgnoreCase))
+                .Select(ask => new HelpAsk(ask.Id, ask.Sentence, ask.Workspace, ask.State, ask.Quests))],
             Repositories = [.. snapshot.Repositories.Select(known => new HelpRepository(known.Repository, known.Workspace)
             {
                 Checkout = known.Root is { Length: > 0 },
@@ -201,11 +217,11 @@ public static class HelpRoom
         text.Append("You read, you advise, and you propose. You change nothing yourself: every change is the person's, made\n");
         text.Append("on a screen or with a terminal command, and the two always do the same thing. When a change would\n");
         text.Append("help, name both — the screen and where on it, and the command — and, where the person wants it made,\n");
-        text.Append("propose it: `setting_propose` for one of the doors below that `daoris driver` spells, `ask_propose` to\n");
-        text.Append("start something as an ask at a workspace. A proposal is a card with Apply and Not now; nothing\n");
-        text.Append("changes until the person presses Apply, and their answer comes back as their next message. Read the\n");
-        text.Append("family through `daoris-knowledge` (the registry, its knowledge, its quests) when the question needs\n");
-        text.Append("more than this page.\n\n");
+        text.Append("propose it with the tool for its kind (below). A proposal is a card with Apply and Not now; nothing\n");
+        text.Append("changes until the person presses Apply, and their answer comes back as their next message. Daoris\n");
+        text.Append("checks each proposal first by the rules of the screen that makes the same change, and one those rules\n");
+        text.Append("would refuse never reaches the person: you are told why instead. Read the family through\n");
+        text.Append("`daoris-knowledge` (the registry, its knowledge, its quests) when the question needs more than this page.\n\n");
         text.Append("Never offer to push, merge, discard, sign in, or handle a key: those stay the person's own presses,\n");
         text.Append("where they already are.\n\n");
         // HELP4: the first repository question met a shell refused before it ran, then a guess at the
@@ -221,6 +237,25 @@ public static class HelpRoom
         text.Append("are all you can see, say what you could not see: never build a repository's state from its quests and\n");
         text.Append("present it as the tree.\n\n");
 
+        // HELP6: every door built since HELP1c, each with the rule its route judges it by, said so the
+        // helper proposes what the route takes rather than learning it from a refusal.
+        text.Append("## What you may propose\n\n");
+        text.Append("- `setting_propose`: one of the doors below that `daoris driver` spells.\n");
+        text.Append("- `ask_propose`: something to start, as an ask at a workspace.\n");
+        text.Append("- `agent_propose`: an agent's Update, or a pin to one version, as Settings → Agents & accounts offers them.\n");
+        text.Append("  Update moves a pinned agent's pin to its newest release, or runs an unpinned one's own updater, and is\n");
+        text.Append("  offered only where that screen shows Update; a pin names one exact release, like 2.1.300, never `latest`.\n");
+        text.Append("- `agent_settings_propose`: an account's own model and effort, as Settings → Agents & accounts → Model &\n");
+        text.Append("  effort sets them, for a tool whose settings Daoris knows and one of Daoris's accounts, never the tool's own\n");
+        text.Append("  sign-in. The values are the tool's own: one of its model aliases or a full model id, and an effort of low,\n");
+        text.Append("  medium, high or xhigh. `max` is for one conversation, never an account's default; `unset` returns either\n");
+        text.Append("  to the tool's own default.\n");
+        text.Append("- `delete_propose`: a quest or an ask made by mistake (a duplicate, a test), as the quest's drawer and the\n");
+        text.Append("  ask's record delete them. Only an open quest nobody has started on can go, and an ask goes with every quest it became, or not at all.\n");
+        text.Append("  Never propose deleting a taken, done or declined quest: its record stays,\n");
+        text.Append("  the route refuses it, and declining it with the reason is the way instead. A delete cannot be undone.\n");
+        text.Append("- `go_propose`: take the person to a place on the window, from the list below. It changes nothing.\n\n");
+
         text.Append("## The doors\n\n");
         text.Append("| To | On the screen | At a terminal |\n");
         text.Append("|---|---|---|\n");
@@ -230,6 +265,24 @@ public static class HelpRoom
         text.Append("A landing pattern may say `{quest}`, `{session}`, `{slug}` (the quest's title, as words) and\n");
         text.Append("`{repository}`. It needs `{quest}` or `{session}`, or every session's work would land on one branch,\n");
         text.Append("and git must take what it comes out as: `feature/{quest}-{slug}` is a pattern that works.\n\n");
+
+        // HELP6: the places a go may name, from the table the driver judges one by, so the two cannot disagree.
+        text.Append("## Where you may take the person\n\n");
+        text.Append("`go_propose` opens one of these places and changes nothing; the person does the rest there. Name the\n");
+        text.Append("view, for Settings its domain, and a part where the place has one.\n\n");
+        static string Listed(IEnumerable<(string Id, string Name)> places) =>
+            string.Join(", ", places.Select(place => $"`{place.Id}` ({place.Name})"));
+        text.Append($"- Views: {Listed(HelpPlaces.Views)}.\n");
+        text.Append($"- Settings domains: {Listed(HelpPlaces.Domains)}.\n");
+        foreach (var within in HelpPlaces.Parts.Select(part => part.Within).Distinct())
+        {
+            var parts = HelpPlaces.Parts.Where(part => part.Within == within).Select(part => (part.Id, part.Name));
+            text.Append(within == "start"
+                ? $"- Parts of `start`, the setup guide's steps: {Listed(parts)}.\n"
+                : $"- Parts of `{within}`: {Listed(parts)}.\n");
+        }
+
+        text.Append('\n');
 
         // How the window is laid out (HELP2): asked what the panel held, the helper guessed at a menu that
         // does not exist. Said by the names the window's own labels use (DOCK1b), keys as its menus show them.
@@ -292,6 +345,20 @@ public static class HelpRoom
             text.Append('\n');
         }
 
+        // HELP6: by id, so a delete of one made by mistake can name it. The quests are the family's
+        // `quest_list`; the asks are this machine's alone.
+        if (machine.OpenAsks.Count > 0)
+        {
+            text.Append("### Asks\n\n");
+            foreach (var ask in machine.OpenAsks)
+            {
+                var quests = ask.Quests.Count > 0 ? $"; quests {string.Join(", ", ask.Quests.Select(quest => $"`#{quest}`"))}" : "";
+                text.Append($"- `#{ask.Id}` at `{ask.Workspace}`: “{Clipped(ask.Sentence)}” ({ask.State}{quests})\n");
+            }
+
+            text.Append('\n');
+        }
+
         return text.ToString();
     }
 
@@ -318,6 +385,13 @@ public static class HelpRoom
         ("say so when a session parks", "Settings → Driver", "`daoris driver notify on|off`"),
         ("allow, ask or deny what an agent may do", "Settings → Permissions", "`daoris agent rules …`"),
         ("sign an agent in, or add an account", "Settings → Agents & accounts", "`daoris agent login <agent>`"),
+        // HELP6: the doors built since, which the helper now proposes too.
+        ("update an agent, or pin it to one version", "Settings → Agents & accounts → Update, Pin a version",
+            "`daoris agent update <agent>`, `daoris agent pin <agent> <version>`"),
+        ("set an account's own model and effort", "Settings → Agents & accounts → Model & effort",
+            "`daoris agent settings <agent> --account <name> model <model> effort <effort>`"),
+        ("delete a quest or an ask made by mistake", "Quests → the quest's drawer, or the ask's record → delete",
+            "`daoris-driver quest delete <id>`, `daoris-driver ask --delete <id>`"),
         ("start a task", "Quests → ask for something", "`daoris-driver ask --workspace <name> \"…\"`"),
         ("answer what waits on the person", "Sessions, and what needs you", "`daoris-driver answer`"),
     ];
@@ -374,6 +448,13 @@ public static class HelpRoom
     };
 
     private static string Count(int count, string one, string many) => $"{count} {(count == 1 ? one : many)}";
+
+    /// <summary>An ask's words on one line, cut where they run long: the id is what a proposal names.</summary>
+    private static string Clipped(string sentence)
+    {
+        var line = string.Join(' ', sentence.Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries));
+        return line.Length <= 120 ? line : line[..119].TrimEnd() + "…";
+    }
 
     /// <summary>The allow-list, as the harness reads a project's settings.</summary>
     private static string Settings()
