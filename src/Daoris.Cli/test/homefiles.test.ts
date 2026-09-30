@@ -10,11 +10,12 @@ import {
 } from '../src/toolchain.ts';
 import { STATE_FILE, disablePlugin, readPluginState } from '../src/plugins.ts';
 import { readDriverChoices, writeDriverChoices } from '../src/driverconfig.ts';
+import { TOOLS_FILE, readTools, useSystem } from '../src/tools.ts';
 import { captureError, makeFixture } from './_fixture.ts';
 
 /**
  * The home's JSON files — `permissions.json`, `remotes.json`, `harnesses.json`, `keys.json`,
- * `plugins.json`, `driver.json` — are each read by the CLI and by a C# twin, and edited by both.
+ * `plugins.json`, `driver.json`, `tools.json` — are each read by the CLI and by a C# twin, and edited by both.
  *
  * Two rules, found by REV3 and held here for every one of them:
  *   1. A BOM is not an unreadable file. The C# readers strip it (`File.ReadAllText`), so a CLI that
@@ -143,6 +144,23 @@ test('driver.json: a BOM reads rather than refusing, and the writer holds the sa
   writeFileSync(path, torn, 'utf8');
   const error = captureError(() => writeDriverChoices(path, choices));
   assert.match(error.message, /will not overwrite a file it could not understand/);
+  assert.equal(readFileSync(path, 'utf8'), torn);
+  fx.cleanup();
+});
+
+test('tools.json: a BOM reads, and a write over a torn file is refused with the file untouched', () => {
+  const fx = makeFixture('homefiles-tools');
+  const path = join(fx.root, TOOLS_FILE);
+
+  writeFileSync(path, `${BOM}{ "tools": { "git": { "use": "managed", "version": "2.51.0" } } }`, 'utf8');
+  assert.deepEqual(readTools(fx.root).entries.git, { way: 'managed', version: '2.51.0', file: null, problem: null });
+  useSystem(fx.root, 'node');
+  assert.equal(readTools(fx.root).entries.git!.version, '2.51.0', 'the managed git survived the edit');
+
+  const torn = '{ "tools": { "git": { "use": "managed", "version": "2.51.0" } }, }';
+  writeFileSync(path, torn, 'utf8');
+  const error = captureError(() => useSystem(fx.root, 'node'));
+  assert.match(error.message, /nothing was written/);
   assert.equal(readFileSync(path, 'utf8'), torn);
   fx.cleanup();
 });
