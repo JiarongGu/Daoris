@@ -14,14 +14,14 @@
   "settings.ai.helper.named": "问道衍现在运行在 {{agent}} 上。",
   "settings.ai.helper.cleared": "问道衍现在只提供入门提示。",
   "settings.ai.intake.label": "受理",
-  "settings.ai.intake.hint": "也可用 `daoris driver intake <agent>|off`——同一个 driver.json 字段，每个周期都会重读。",
-  "settings.ai.intake.why": "请求不指明仓库。先由工作区的声明作答，不用模型；声明定不下来的，提议给你。在这里指定一个智能体后，这些请求改为在它上面开一个会话：它读声明、发布委托，判断不了的地方来问你。每次受理都会消耗一次真实登录。",
+  "settings.ai.intake.hint": "也可用 `daoris driver intake <agent>|off`——同一个 driver.json 字段，驱动每一轮都会重读。",
+  "settings.ai.intake.why": "需求不指明仓库。先由工作区的声明作答，不用模型；声明定不下来的，提议给你。在这里指定一个智能体后，这些需求改为在它上面开一个会话：它读声明、发布委托，判断不了的地方来问你。每次受理都会消耗真实账户的额度。",
   "settings.ai.intake.agent": "受理智能体",
   "settings.ai.intake.off": "关闭——仅按声明",
   "settings.ai.intake.choice": "{{product}}——{{door}}（{{agent}}）",
-  "settings.ai.intake.tierOff": "请求由工作区的声明作答；声明定不下来的，提议给你。",
-  "settings.ai.intake.tierOn": "先按声明；声明定不下来的请求，在 {{agent}} 上开一个会话——每次一次登录。",
+  "settings.ai.intake.tierOff": "需求由工作区的声明作答；声明定不下来的，提议给你。",
+  "settings.ai.intake.tierOn": "先按声明；声明定不下来的需求，在 {{agent}} 上开一个会话——每次都消耗账户额度。",
   "settings.ai.intake.runsAs": "运行账户",
-  "settings.ai.intake.named": "声明定不下来的请求，现在会在 {{agent}} 上开受理会话。",
-  "settings.ai.intake.cleared": "本机的请求现在仅按声明作答。"
+  "settings.ai.intake.named": "声明定不下来的需求，现在会在 {{agent}} 上开受理会话。",
+  "settings.ai.intake.cleared": "本机的需求现在仅按声明作答。"
 }

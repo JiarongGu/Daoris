@@ -72,9 +72,9 @@ public sealed class HelpRoomMachineNowTests
             ],
         });
 
-        Assert.Contains("- Branches landings made: `feature/q2-second` in `engine` (session `s2a3b4c5`, not pushed), "
+        Assert.Contains("- Landed branches: `feature/q2-second` in `engine` (session `s2a3b4c5`, not pushed), "
             + "`feature/q3-third` in `game` (session `s3`, pushed, pull request https://example.test/pr/3).", some);
-        Assert.Contains("- Branches landings made: none recorded.", HelpRoom.Render(HelpRoomFixture.Machine));
+        Assert.Contains("- Landed branches: none recorded.", HelpRoom.Render(HelpRoomFixture.Machine));
         Assert.Contains("`hand_propose`", some);
         Assert.Contains("`daoris-driver trees hand <session|branch> [--plugin <id>]`", some);
     }

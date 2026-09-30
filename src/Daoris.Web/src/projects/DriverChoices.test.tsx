@@ -22,8 +22,8 @@ describe('the driver choices', () => {
   it('offers driving and its own tree, and says what was chosen', async () => {
     const { onDrive, onTrees } = show();
 
-    await userEvent.click(screen.getByLabelText('drive on this machine'));
-    await userEvent.click(screen.getByLabelText('own tree per session'));
+    await userEvent.click(screen.getByLabelText('Drive on this machine'));
+    await userEvent.click(screen.getByLabelText('A tree per session'));
 
     expect(onDrive).toHaveBeenCalledWith(true);
     expect(onTrees).toHaveBeenCalledWith(true);
@@ -31,13 +31,13 @@ describe('the driver choices', () => {
 
   it('offers a hold only once the repository is driven — a hold on nothing is noise', () => {
     show();
-    expect(screen.queryByLabelText('hold')).toBeNull();
+    expect(screen.queryByLabelText('Hold')).toBeNull();
   });
 
   it('holds a driven repository', async () => {
     const { onHold } = show({ drivable: true });
 
-    await userEvent.click(screen.getByLabelText('hold'));
+    await userEvent.click(screen.getByLabelText('Hold'));
 
     expect(onHold).toHaveBeenCalledWith(true);
   });
@@ -49,7 +49,7 @@ describe('the driver choices', () => {
   });
 
   it('carries the view\'s own action at the end of the row', () => {
-    show({ action: <button type="button">manage</button> });
-    expect(screen.getByRole('button', { name: 'manage' })).toBeInTheDocument();
+    show({ action: <button type="button">Manage</button> });
+    expect(screen.getByRole('button', { name: 'Manage' })).toBeInTheDocument();
   });
 });

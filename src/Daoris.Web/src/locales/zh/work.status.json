@@ -21,5 +21,5 @@
   "work.status.sessions_other": "{{count}} 个会话",
   "work.status.setup": "配置：{{done}}/{{of}}",
   "work.status.setupLabel": "配置",
-  "work.status.setupTip": "这台电脑需要的步骤完成了几步。点击打开「开始使用」。"
+  "work.status.setupTip": "本机需要的步骤完成了几步。点击打开「配置」。"
 }

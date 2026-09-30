@@ -125,16 +125,16 @@ describe('the setup guide, at start', () => {
   it('opens a fresh machine on Get started, and counts the setup in the status bar', async () => {
     start();
 
-    expect(within(await domains()).getByRole('button', { name: 'Get started' })).toHaveAttribute('aria-current', 'page');
+    expect(within(await domains()).getByRole('button', { name: 'Setup' })).toHaveAttribute('aria-current', 'page');
     expect(await screen.findByRole('list', { name: 'setup steps' })).toBeInTheDocument();
     const bar = screen.getByRole('contentinfo', { name: 'state of this machine' });
     expect(await within(bar).findByText('setup: 0 of 5')).toBeInTheDocument();
 
     // The count leads back to it from wherever the person went.
-    await userEvent.click(screen.getByRole('button', { name: 'Projects' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Repositories' }));
     await waitFor(() => expect(screen.queryByRole('navigation', { name: 'Settings domains' })).toBeNull());
     await userEvent.click(within(bar).getByRole('button', { name: 'setup' }));
-    expect(within(await domains()).getByRole('button', { name: 'Get started' })).toHaveAttribute('aria-current', 'page');
+    expect(within(await domains()).getByRole('button', { name: 'Setup' })).toHaveAttribute('aria-current', 'page');
   });
 
   it('does not open for a viewer who turned it off, and still counts the setup', async () => {

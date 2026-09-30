@@ -1,8 +1,8 @@
 {
-  "kind.Rule": "Rule",
-  "kind.Knowledge": "Knowledge",
-  "kind.Skill": "Skill",
-  "kind.Decision": "Decision",
-  "kind.Fix": "Fix",
-  "kind.TaskOutcome": "Task outcome"
+  "kind.Rule": "rule",
+  "kind.Knowledge": "knowledge",
+  "kind.Skill": "skill",
+  "kind.Decision": "decision",
+  "kind.Fix": "fix",
+  "kind.TaskOutcome": "task outcome"
 }

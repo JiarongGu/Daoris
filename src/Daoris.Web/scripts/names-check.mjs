@@ -10,11 +10,12 @@
 //   apart from Chinese and no Latin punctuation inside it;
 // - door: a door says its destination's name.
 //
-// It REPORTS and exits 0: today's names fail every rule before NAME1b renames them, and a gate that is red
-// on its first day is switched off rather than obeyed. It exits 2 when the glossary itself is malformed,
-// since a glossary that cannot be read has stopped checking anything. `--strict` exits 1 on a glossary,
-// form or door finding (facts) and never on a budget (a judgement: a character count estimates a width,
-// and the window is where a width is a fact, D54). NAME1b adds `--strict` to the build.
+// Alone it REPORTS and exits 0. It exits 2 when the glossary itself is malformed, since a glossary that
+// cannot be read has stopped checking anything. `--strict` exits 1 on a glossary, form or door finding
+// (facts) and never on a budget (a judgement: a character count estimates a width, and the window is where
+// a width is a fact, D54). NAME1b renamed what NAME1a's audit found and put `--strict` in the web's build,
+// beside the parity check; `--all` also reads every sentence for the words a term must not be called, and
+// reports.
 import { readdirSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -158,15 +159,19 @@ export function check(glossary, en, zh, { all = false } = {}) {
 
     // The glossary: what a label's English names, its Chinese names by the term's name. A sentence may
     // say a thing its own way, so it is held only to the words a term must not be called.
-    for (const { term, pattern } of matchers) {
-      if (!pattern.test(english)) continue;
+    const said = matchers.filter(({ pattern }) => pattern.test(english)).map(({ term }) => term);
+    for (const term of said) {
       const own = [term.zh, ...(term.zhForms ?? [])];
       if (label && term.pair !== false && !own.some((name) => chinese.includes(name))) {
         note(key, kind, 'glossary', 'zh', `names ${term.term} in English, and says ${own.join(' or ')} nowhere`);
       }
-      // Only the name itself is set aside: 规范包 holds 包 and is right, while a short form such as 等你 would
-      // hide the 等你决定 it is there to catch.
-      const rest = chinese.split(term.zh).join('¤');
+      // Only names are set aside: this term's, and those of the other terms the same English names
+      // (NAME1b: *a git remote* says 远程仓库, which holds the 远程 a workspace's remote must not be
+      // called). 规范包 holds 包 and is right, while a short form such as 等你 would hide the 等你决定 it is
+      // there to catch, so short forms are never set aside.
+      const names = [term.zh, ...said.filter((other) => other !== term).map((other) => other.zh)]
+        .sort((a, b) => b.length - a.length);
+      const rest = names.reduce((text, name) => text.split(name).join('¤'), chinese);
       for (const word of term.avoid.zh) if (rest.includes(word)) note(key, kind, 'glossary', 'zh', `says ${word} for ${term.term}, which is ${term.zh}`);
     }
     for (const term of glossary.terms) {
@@ -243,13 +248,18 @@ export function report(findings, { labels } = {}) {
   const lines = [
     `names-check: ${labels ?? '?'} label keys; ${findings.length} findings — `
       + ['glossary', 'budget', 'form', 'door'].map((rule) => `${rule} ${count(rule)} (en ${count(rule, 'en')}, zh ${count(rule, 'zh')})`).join(', '),
-    'Report only: nothing fails until NAME1b turns on --strict, and the budgets stay a report after it.',
+    'Under --strict (the build runs it) a glossary, form or door finding fails; the budgets are a report and never fail (D54).',
   ];
   const order = (finding) => `${KINDS.indexOf(finding.kind).toString().padStart(2, '0')}|${finding.key}|${finding.rule}|${finding.language}`;
   for (const finding of [...findings].sort((a, b) => order(a).localeCompare(order(b)))) {
     lines.push(`  ${finding.rule} ${finding.language} ${finding.key} [${finding.kind}]: ${finding.message} — ${JSON.stringify(finding.value)}`);
   }
   return lines.join('\n');
+}
+
+/** The exit code: 1 under --strict when a fact is found (glossary, form, door), never for a budget. */
+export function verdict(findings, { strict }) {
+  return strict && findings.some((finding) => finding.rule !== 'budget') ? 1 : 0;
 }
 
 if (isMain(import.meta.url)) {
@@ -264,6 +274,5 @@ if (isMain(import.meta.url)) {
   const kindFor = kindOf(glossary);
   const labels = Object.keys(en).filter((key) => LABELS.has(kindFor(key)) && !PLURAL.test(key)).length;
   console.log(flags.has('--json') ? JSON.stringify(findings, null, 2) : report(findings, { labels }));
-  const facts = findings.filter((finding) => finding.rule !== 'budget');
-  process.exit(flags.has('--strict') && facts.length ? 1 : 0);
+  process.exit(verdict(findings, { strict: flags.has('--strict') }));
 }

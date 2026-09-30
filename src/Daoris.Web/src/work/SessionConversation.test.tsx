@@ -60,7 +60,7 @@ describe('SessionConversation', () => {
       </QueryClientProvider>,
     );
 
-    await userEvent.click(await screen.findByRole('button', { name: 'first failure' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'First failure' }));
 
     await waitFor(() => expect(screen.getByText('npm test')).toBeInTheDocument());
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_HISTORY', { payload: { id: 's1', before: 300 } });

@@ -2,7 +2,7 @@
   "signin.title": "正在登录 {{profile}}",
   "signin.titleNew": "正在登录另一个 {{harness}} 账户",
   "signin.readyNew": "登录完成后，账户会以登录者的名字出现在上方。如果没有完成，什么也不会保留。",
-  "signin.cancel": "取消",
+  "signin.cancel": "取消登录",
   "signin.step.open": "在打开的页面中登录。",
   "signin.step.openHint": "浏览器没有打开？把链接复制到浏览器里。",
   "signin.waiting": "等待工具打开登录页面…",

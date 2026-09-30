@@ -34,7 +34,7 @@ internal sealed class HelpRoomWorkspaces : IHelpRoomSection
         if (machine.Repositories.Count == 0)
         {
             text.Append("No repository is registered on this machine yet. The first step is `daoris connect` from inside\n");
-            text.Append("one, or Projects → Import a folder as a workspace, to register a folder of them at once\n");
+            text.Append("one, or Repositories → Import a folder as a workspace, to register a folder of them at once\n");
             text.Append("(`daoris import <folder> --workspace <name>`).\n\n");
         }
 

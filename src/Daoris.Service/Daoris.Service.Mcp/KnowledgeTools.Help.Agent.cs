@@ -9,7 +9,7 @@ public sealed partial class KnowledgeTools
     [McpServerTool(Name = "agent_propose")]
     [Description(
         "Ask Daoris only: propose updating an agent, pinning it to one exact version, or making one of its accounts "
-        + "the one it runs as by default, for the person to apply — the Agents & accounts screen's Update, Pin and Make "
+        + "the one it runs as by default, for the person to apply — the Agents screen's Update, Pin and Make "
         + "default. Update is offered only where that screen offers it: a pinned agent moves its pin to the newest "
         + "release, and an unpinned one runs its own updater. A pin names one exact release, like 2.1.300, never "
         + "`latest`. A default names an account the room lists under that agent, for the machine or one workspace. The "

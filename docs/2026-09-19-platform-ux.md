@@ -236,9 +236,13 @@ controls are in the frame design's §3.
   never by matching the English; where the words need what the page is not told, the driver's words
   stand (U27, U28). A default's reason passes the driver's sentence through in English and is
   translated in 中文. A count is said in its number, never with *(s)* (U54).
-- **One word per thing, in each language**, held by tests: 智能体 for an agent, 驱动 for the driver
-  (never 驱动器, a disk drive), 委托 for a quest, 工作区 for a workspace, and *Daoris* in running text
-  (the wordmark keeps 道衍). A view is named by its name: no sentence sends a person to *Work* (U19).
+- **One word per thing, in each language**: the glossary (`src/Daoris.Web/src/locales/glossary.json`,
+  D116) names each concept once in each, and `names:check --strict` in the web's build holds every
+  label to it (NAME1b): 智能体 for an agent, 驱动 for the driver (never 驱动器, a disk drive), 委托 for a
+  quest, 需求 for an ask, 仓库 for a repository, 工作区 for a workspace, and *Daoris* in running text
+  (the wordmark keeps 道衍). A name is designed in each language for its element, not translated
+  (`docs/2026-10-01-naming-design.md`). A view is named by its name: no sentence sends a person to
+  *Work* (U19).
 - **中文 sets a number apart from Chinese**, in an age as in a span (`1 天前`, `9 分钟`); a Chinese
   word inside a Chinese sentence stays tight. Two sentences join the catalogue's way: English puts a
   space after a full stop and Chinese does not.
@@ -253,7 +257,7 @@ controls are in the frame design's §3.
   (row = pill · title · route · how long — and, on the desktop, *sitting — why*, the driver's own
   sentence from its last look, truncated with the whole in its tip) beside *Repositories by index
   size* (single-hue bars, adopted dot, values in ink). Every row is a door: outstanding rows open the
-  quest drawer; repository rows go to Projects. Above the tiles, *What needs you* (working surface
+  quest drawer; repository rows go to Repositories. Above the tiles, *What needs you* (working surface
   §4) lists parked sessions, then asks waiting on a person (INT4d), then quests nobody can take, then
   folders waiting on trust, and it is absent when nothing waits. **The band is live, or it lies**: an
   ask made by another door moves nothing else a tick reports, so the shell forwards a tick when the
@@ -268,23 +272,23 @@ controls are in the frame design's §3.
   no intake ran above the intake that did. The ask composer promises only what this machine will do:
   an intake agent publishes on its own, so *nothing is published until you name a receiver* is said
   only where none is set (U34). *New quest* opens the **compose drawer**; the list stays scannable
-  (pill, title, route, age, first line of the ask) grouped Open / In progress / Closed; **clicking a
-  card opens the detail drawer**: the whole ask, the meta, the note, and the actions — take, done,
-  decline-with-reason — and the loud one is the quest's next step: *take* while it is open, *done*
-  once it is taken (U31). A card is for reading. What a quest carries (D65 §2) is **counted on the
+  (pill, title, route, age, first line of the ask) grouped Open / Taken / Closed; **clicking a
+  card opens the detail drawer**: the whole ask, the meta, the note, and the actions — *Take*, *Mark
+  done*, *Decline…* with a reason — and the loud one is the quest's next step: *Take* while it is
+  open, *Mark done* once it is taken (U31). A card is for reading. What a quest carries (D65 §2) is **counted on the
   card** (a link glyph and a paperclip, each with its number) and **listed in the drawer**: links as
   links, files by name and size, a picture shown as one. The composer takes links one per line and
-  files by drop, paste or *choose files…*, and says why a file was left off while the person is still
-  choosing. **A chain** (D65 §4) is behind *add a next step…*; the drawer shows it as one strip
+  files by drop, paste or *Choose files…*, and says why a file was left off while the person is still
+  choosing. **A chain** (D65 §4) is behind *Add a next step…*; the drawer shows it as one strip
   (MAP1a): the ask, the quests before and after, the steps still to come as written, and every
   session under its quest, the one being read marked and the others underlined doors.
 - **A folder waiting on trust** (D73) — the grant is offered where the hold is read: the quest's
-  drawer carries *trust this folder…* under its sitting line, and *What needs you* a `trust` row, the
+  drawer carries *Trust this folder…* under its sitting line, and *What needs you* a `trust` row, the
   only place an intake's held room shows. The question is the agent's own, asked in the open: the
   folder, what trusting means in the agent's terms, what the driver is holding, and the one file
   written. It is never wider than the hold, since the shell refuses any pair the driver did not
   produce, and there is one row per folder.
-- **Projects** — adopted as cards (two columns from 1024px, one below) with chips and the local/canonical
+- **Repositories** (named *Projects* until NAME1b, the owner's call) — adopted as cards (two columns from 1024px, one below) with chips and the local/canonical
   split; non-adopters as one group, *Registered, not adopted*, led by one line with its reasoning on
   the info glyph (U36), each with the driving row where it has a root here, and the join steps
   proposed as text at a reading measure. **Who can be asked is the host's answer**: every receiver
@@ -302,7 +306,7 @@ controls are in the frame design's §3.
   the full-width item, or the note stops breaking to its own line.
 - **Map** (MAP2; MAP4a past twelve repositories: columns by who asks whom, which pan and zoom, a
   search, and a sizing menu behind the percentage; MAP4b: what the asks became in long dashes, a
-  chain's hops dotted, and a *Lines* menu that switches each kind) — the circle's repositories on a ring, the quests between them as directed arrows
+  chain's hops dotted, and a *Connections* menu that switches each kind) — the circle's repositories on a ring, the quests between them as directed arrows
   with a count on each, and a shared finding as a dashed line; a detail panel beside the map says what
   the chosen node or line holds, and a legend says every mark in words, the number in a node
   included. It adds no actions: a quest in a detail opens its drawer (U46). What the window taught it
@@ -326,14 +330,14 @@ controls are in the frame design's §3.
     window, its review, its id.
   - **The centre is the record, then the conversation**, one scroll, following the centre's width
     (U16): the head read once, then the agent's words, which the region follows until the person
-    scrolls up and is then offered *back to bottom*. **A long run reads from what it was asked**
-    (SESS1): the ask comes first, and *load earlier* sits in the gap after it. **Every word the agent
+    scrolls up and is then offered *Back to bottom*. **A long run reads from what it was asked**
+    (SESS1): the ask comes first, and *Load earlier* sits in the gap after it. **Every word the agent
     said stays in view, and the work between two of them folds** into one row that counts it and its
     failures in the failed tone (*5 tool calls · 1 failed*); a run of one is shown as itself, and the
     run in hand stays open while the turn goes on, which says *working…*. A driven session is one
     turn, so folding a turn whole hid its account of the run. A turn the session ended inside says so,
     and its open calls read *stopped*. **A long run has a way through**, kept at the top of the
-    conversation: *first failure*, *last words*, and *find in this session*; a jump opens the fold it
+    conversation: *First failure*, *Last words*, and *find in this session*; a jump opens the fold it
     lands in and outlines the block. The head says the branch its own tree left and whether its work
     landed, and *how this work ran* marks *this session*. The driver's composed
     target is folded to two lines and named as the driver's. A tool call is a row that says what it
@@ -349,17 +353,17 @@ controls are in the frame design's §3.
     by kind and state in words (*background · running*). One tab is no tabs, so a session that runs
     nothing beside itself keeps the header it had. Picking a tab opens a hidden panel, and a stream the
     session no longer lists falls back to the session's own console.
-  - **The composer's turn** (CONV4b): while a turn runs *send* reads *queue*, and what waits behind it
-    sits above the box under *waiting for this turn to end*; *stop turn* stands beside the endings,
+  - **The composer's turn** (CONV4b): while a turn runs *Send* reads *Queue*, and what waits behind it
+    sits above the box under *waiting for this turn to end*; *Stop turn* stands beside the endings,
     neutral, only while the driver says a turn is in flight and only on a door that can see a turn
     end. A stop hands back what was waiting into the box, and a stopped turn says *the turn was
     stopped here*, its cut calls drawn as *stopped*. A draft is kept per session, across a switch and
     a reload. Files ride the composer (CONV4c) as chips above the box, and the sent message names them.
     `@` completes from what git says the tree holds (CONV4d).
-  - **An intake is named for what it serves** (INT4g, INT4h): *intake for ask #id*, *ask* and *room*
+  - **An intake is named for what it serves** (INT4g, INT4h): *Intake for ask #id*, *Ask* and *Room*
     in its head. It takes no messages, so it gets no composer; its answer is on the ask, so its one
-    answering move is a door (*answer ask #id*), and *stop it* stays, saying the ask then stays a
-    proposal. A running intake's door looks (*open ask #id*) and only a parked one's answers.
+    answering move is a door (*Answer ask #id*), and *Stop session* stays, saying the ask then stays a
+    proposal. A running intake's door looks (*Open ask #id*) and only a parked one's answers.
   - **A tree is reviewed as one only when it is the session's own** (U66): a session in the
     repository's checkout is offered no merge and no discard, since both could only refuse; sending the
     work back is about the work and stays.
@@ -368,11 +372,12 @@ controls are in the frame design's §3.
     own lets it start beside it, and says a refused start in the form (U68).
   - **The monitor is the present tense**, its rail as its tiles, at the main rail's width (U69, U70).
 - **Settings** (D66, as amended by **D75**) — one page with its **domains in a list at its left**,
-  one shown at a time and reachable by name: *Get started*, *Appearance*, *Daoris's own AI*,
-  *Workspace*, *Driver*, *Agents & accounts*, *Permissions*, *Plugins*. Every way in opens the domain
-  its fact is set in, at the part it names, and a browser is offered only the first four. What the
-  domains hold:
-  - **Get started** (D97): the six setup steps in order, each a row with its state pill (done's hue,
+  one shown at a time and reachable by name: *Setup*, *Appearance*, *AI features*, *Workspace*,
+  *Driver*, *Agents*, *Permissions*, *Plugins*, *Browser*, *Machine log* (配置, 外观, AI 功能, 工作区,
+  驱动, 智能体, 权限, 插件, 浏览器, 本机日志; named so by NAME1b, D116). Every way in opens the domain its
+  fact is set in, at the part it names, and a browser is offered only the first four. What the domains
+  hold:
+  - **Setup** (D97): the six setup steps in order, each a row with its state pill (done's hue,
     open's for *to do*, neutral for optional), what done means, its commands with a copy each, and the
     doors to the screens that do it at the right; a done step's doors are quiet, a step to do's are
     buttons. *Set up with Ask Daoris* is the head's one primary control, present only where Ask Daoris
@@ -380,7 +385,7 @@ controls are in the frame design's §3.
     and says the rest is the desktop's, with neither control. The status bar's *setup: n of 5* leads
     here until the required steps are done.
   - *Appearance*: the theme and the language, each a segmented choice.
-  - **Daoris's own AI** (AGT6), for everyone, because which tier answers search is the service's
+  - **AI features** (AGT6), for everyone, because which tier answers search is the service's
     answer and given to every browser: search and convergence with the service's tier and note
     verbatim, and beside them the page's own words for what changes it (the variables, read when the
     service starts: a setting from the environment gets a sentence, never a control). On the desktop,
@@ -390,9 +395,9 @@ controls are in the frame design's §3.
   - On the desktop only, the machine's domains: *Driver* (the home's path, the notification switch,
     the strikes dial); *Workspace* (the workspaces, the wiring with *Wire a workspace* behind a press,
     and *What a start runs on*: one row per workspace and job, each part with the setting that chose
-    it, a job named once a circle has two, a held start's sentence at a reading measure);
-    *Agents & accounts* (one card per tool, its accounts leading, its ways in beneath — a declared door
-    wearing the plugin it came from — and what each account has carried); *Permissions* (the rules
+    it, a job named once a circle has two, a blocked start's sentence at a reading measure);
+    *Agents* (one card per agent, its accounts leading, its ways in beneath — a declared door
+    wearing the plugin it came from — and *Usage*, what each account has carried); *Permissions* (the rules
     file, Daoris's defaults each with a switch and no remove, a person's rules with a remove, and
     nothing on the card ranking one scope over another, since precedence is the harness's; the
     machine's scope reads *every session on this machine*); *Plugins* (a row per folder: what it

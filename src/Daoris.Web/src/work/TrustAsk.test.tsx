@@ -38,7 +38,7 @@ describe('asking for an agent\'s trust in a folder', () => {
     show({ onGrant });
 
     expect(onGrant).not.toHaveBeenCalled();
-    await userEvent.click(screen.getByRole('button', { name: 'trust this folder' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Trust this folder' }));
     expect(onGrant).toHaveBeenCalledTimes(1);
   });
 
@@ -46,8 +46,8 @@ describe('asking for an agent\'s trust in a folder', () => {
     const onCancel = vi.fn();
     show({ onCancel, busy: true });
 
-    expect(screen.getByRole('button', { name: 'trust this folder' })).toBeDisabled();
-    await userEvent.click(screen.getByRole('button', { name: 'not now' }));
+    expect(screen.getByRole('button', { name: 'Trust this folder' })).toBeDisabled();
+    await userEvent.click(screen.getByRole('button', { name: 'Not now' }));
     expect(onCancel).toHaveBeenCalledTimes(1);
   });
 });

@@ -8,7 +8,7 @@
   "convergence.empty": "Nothing converges at {{value}} or above",
   "convergence.emptyBody": "A lower similarity finds weaker likenesses — and, lower still, documents that only share words.",
   "convergence.emptyFloor": "{{value}} is the lowest it goes: below it, two documents would only share words. Nothing here converges.",
-  "convergence.lower": "lower it to {{value}}",
+  "convergence.lower": "Lower to {{value}}",
   "convergence.methods.Convergent.label": "Same lesson, different words",
   "convergence.methods.Convergent.hint": "The finding no text comparison can make — and the reason the semantic tier exists.",
   "convergence.methods.Restatement.label": "Substantially the same words",

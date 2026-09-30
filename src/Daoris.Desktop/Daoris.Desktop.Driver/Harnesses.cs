@@ -1471,9 +1471,9 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
         if (login == LoginState.Out)
         {
             return new HarnessSelection(
-                $"the `{owner}` profile `{profile}` is not logged in, so a session would have "
+                $"the `{owner}` account `{profile}` is not signed in, so a session would have "
                 + $"nothing to run as — `daoris agent login {owner} --profile {profile}` runs "
-                + "the agent's own login flow into it. Daoris manages the directory and the name; the "
+                + "the agent's own sign-in into it. Daoris manages the directory and the name; the "
                 + "credential stays in the agent's own store.");
         }
 
@@ -1850,7 +1850,7 @@ public static class HarnessActions
         toolchain.LoginArguments is { Count: > 0 } login
             ? RunAsync([.. toolchain.Command(command), .. login], toolchain, profileHome, write, ct, started)
             : throw new DriverException(
-                "that agent declares no login flow — log in with its own tooling, pointing its "
+                "that agent declares no sign-in flow — sign in with its own tooling, pointing its "
                 + "configuration-home variable at the account's directory.");
 
     /// <summary>

@@ -34,10 +34,10 @@ describe('Quick Ask', () => {
 
   it('carries the conversation to the side bar, or closes, on the person\'s press', async () => {
     const { onClose, onExpand } = show();
-    await userEvent.click(screen.getByRole('button', { name: 'open in the side bar' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Open in the side bar' }));
     expect(onExpand).toHaveBeenCalledOnce();
 
-    await userEvent.click(screen.getByRole('button', { name: 'close Quick Ask' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Close Quick Ask' }));
     expect(onClose).toHaveBeenCalled();
   });
 

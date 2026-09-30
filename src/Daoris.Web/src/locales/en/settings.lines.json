@@ -11,7 +11,7 @@
   "settings.lines.from.workspace": "`{{branch}}`, set for the workspace {{workspace}}.",
   "settings.lines.from.checkout": "`{{branch}}`, the checkout's own.",
   "settings.lines.from.none": "No line: none is set, and git names none here.",
-  "settings.lines.set": "Set",
+  "settings.lines.set": "Save",
   "settings.lines.clear": "Clear",
   "settings.lines.saved": "In {{name}}, work grows from `{{branch}}` and lands on it now. A session already running keeps its own.",
   "settings.lines.cleared": "{{name}} takes its line from what stands above it again."

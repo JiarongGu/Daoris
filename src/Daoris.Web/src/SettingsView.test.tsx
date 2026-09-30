@@ -60,7 +60,7 @@ describe('SettingsView in a browser', () => {
 
     const domains = screen.getByRole('navigation', { name: 'Settings domains' });
     expect(within(domains).getAllByRole('button').map((button) => button.textContent))
-      .toEqual(['Get started', 'Appearance', "Daoris's own AI", 'Workspace']);
+      .toEqual(['Setup', 'Appearance', "AI features", 'Workspace']);
     expect(within(domains).getByRole('button', { name: 'Appearance' })).toHaveAttribute('aria-current', 'page');
     expect(await screen.findByText('Theme')).toBeTruthy();
   });
@@ -76,7 +76,7 @@ describe('SettingsView in a browser', () => {
     expect(within(steps).getAllByRole('listitem').map((item) => item.getAttribute('aria-label')))
       .toEqual(['3. A workspace and its repositories']);
     expect(within(steps).getByText('done')).toBeTruthy();
-    expect(screen.getByText(/the desktop's Get started shows them/)).toBeTruthy();
+    expect(screen.getByText(/the desktop's Setup shows them/)).toBeTruthy();
     expect(screen.queryByRole('checkbox', { name: "Don't open at start" })).toBeNull();
   });
 });

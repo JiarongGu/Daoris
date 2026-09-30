@@ -56,7 +56,7 @@ describe('the browser domain', () => {
     expect(await screen.findByText('Board')).toBeTruthy();
     expect(screen.getByText('https://site.example/board')).toBeTruthy();
     expect(screen.getByText('C:/somewhere/data/browser/favorites.json')).toBeTruthy();
-    expect(screen.getByRole('radio', { name: 'offer' }).getAttribute('aria-checked')).toBe('true');
+    expect(screen.getByRole('radio', { name: 'Offer' }).getAttribute('aria-checked')).toBe('true');
     expect(screen.getByText(/next time Daoris's browser starts/)).toBeTruthy();
     expect(invoke).toHaveBeenCalledWith('DAORIS.BROWSER', 'STATE', {});
     expect(serviceCalls()).toEqual([]);
@@ -69,11 +69,11 @@ describe('the browser domain', () => {
 
     await userEvent.type(screen.getByPlaceholderText('https://…'), 'site.example/new');
     await userEvent.type(screen.getByPlaceholderText("the page's host"), 'New');
-    await userEvent.click(screen.getByRole('button', { name: 'keep it' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Add favorite' }));
     expect(invoke).toHaveBeenCalledWith('DAORIS.BROWSER', 'ADD_FAVORITE', { payload: { address: 'site.example/new', title: 'New' } });
     await waitFor(() => expect(notify).toHaveBeenCalledWith('New is a favorite.'));
 
-    await userEvent.click(screen.getByRole('button', { name: 'remove' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Remove' }));
     expect(invoke).toHaveBeenCalledWith('DAORIS.BROWSER', 'REMOVE_FAVORITE', { payload: { address: 'https://site.example/board' } });
   });
 
@@ -81,7 +81,7 @@ describe('the browser domain', () => {
     const notify = vi.fn();
     show(<SettingsView notify={notify} section="browser" />);
 
-    await userEvent.click(await screen.findByRole('radio', { name: 'refuse' }));
+    await userEvent.click(await screen.findByRole('radio', { name: 'Refuse' }));
 
     expect(invoke).toHaveBeenCalledWith('DAORIS.BROWSER', 'SET_EXTENSIONS', { payload: { extensions: 'refuse' } });
     await waitFor(() => expect(notify).toHaveBeenCalledWith(
@@ -94,10 +94,10 @@ describe('the browser domain', () => {
     show(<SettingsView notify={notify} section="browser" />);
 
     expect(await screen.findByRole('radio', { name: "Daoris's own" })).toHaveAttribute('aria-checked', 'true');
-    await userEvent.click(screen.getByRole('radio', { name: 'your Edge' }));
+    await userEvent.click(screen.getByRole('radio', { name: 'Your Edge' }));
 
     expect(invoke).toHaveBeenCalledWith('DAORIS.BROWSER', 'SET_BROWSER', { payload: { browser: 'edge' } });
-    await waitFor(() => expect(notify).toHaveBeenCalledWith('your Edge, from the next time the browser is opened.'));
+    await waitFor(() => expect(notify).toHaveBeenCalledWith('Your Edge, from the next time the browser is opened.'));
   });
 
   /** BRW7: where the page's links open — set here or by `daoris browser links`, and holding at once. */
@@ -106,7 +106,7 @@ describe('the browser domain', () => {
     show(<SettingsView notify={notify} section="browser" />);
 
     // A shell that sends no `links` is the system's, as a link always was.
-    expect(await screen.findByRole('radio', { name: "the system's browser" })).toHaveAttribute('aria-checked', 'true');
+    expect(await screen.findByRole('radio', { name: "System browser" })).toHaveAttribute('aria-checked', 'true');
     expect(screen.getByText(/daoris browser links system\|daoris/)).toBeTruthy();
     await userEvent.click(screen.getByRole('radio', { name: "Daoris's browser" }));
 
@@ -126,8 +126,8 @@ describe('the browser domain', () => {
       />,
     );
 
-    expect(await screen.findByText('Driving it now')).toBeTruthy();
-    await userEvent.click(screen.getByRole('button', { name: 'open game · conversation' }));
+    expect(await screen.findByText('Driven by')).toBeTruthy();
+    await userEvent.click(screen.getByRole('button', { name: 'Open game · conversation' }));
     expect(onAttend).toHaveBeenCalledWith('c0ffee00');
     unmount();
 

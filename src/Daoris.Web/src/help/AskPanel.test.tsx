@@ -19,7 +19,7 @@ describe('Ask Daoris', () => {
     expect(within(panel).getByText('1 session is waiting on you.')).toBeInTheDocument();
     expect(within(panel).getByText(/No repository is driven on this machine/)).toBeInTheDocument();
     expect(within(panel).getByText('daoris driver drive <repository>', { selector: 'code' })).toBeInTheDocument();
-    expect(within(panel).getByText(/Name an agent under Daoris's own AI/)).toBeInTheDocument();
+    expect(within(panel).getByText(/Name an agent under AI features/)).toBeInTheDocument();
   });
 
   it('goes to the screen that fixes a starter, and closes', async () => {
@@ -27,9 +27,9 @@ describe('Ask Daoris', () => {
     const onClose = vi.fn();
     render(<AskPanel starters={LACKING} helper={null} onGo={onGo} onClose={onClose} />);
 
-    await userEvent.click(screen.getByRole('button', { name: "open Daoris's own AI" }));
+    await userEvent.click(screen.getByRole('button', { name: "Open AI features" }));
     expect(onGo).toHaveBeenCalledWith({ view: 'settings', section: 'ai' });
-    await userEvent.click(screen.getByRole('button', { name: 'close Ask Daoris' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Close Ask Daoris' }));
     expect(onClose).toHaveBeenCalledOnce();
   });
 
@@ -47,8 +47,8 @@ describe('Ask Daoris', () => {
     );
 
     expect(screen.queryByRole('complementary')).toBeNull();
-    expect(screen.queryByRole('button', { name: 'close Ask Daoris' })).toBeNull();
-    expect(screen.getByRole('button', { name: 'new conversation' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Close Ask Daoris' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'New conversation' })).toBeInTheDocument();
     expect(screen.getByText('the conversation')).toBeInTheDocument();
     expect(screen.getByText('the box')).toBeInTheDocument();
   });
@@ -72,7 +72,7 @@ describe('Ask Daoris', () => {
       <AskPanel starters={LACKING} helper={null} setup={{ done: 2, of: 5 }} onGo={onGo} onClose={vi.fn()} />,
     );
 
-    await userEvent.click(screen.getByRole('button', { name: 'set up Daoris step by step: 2 of 5 done' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Set up Daoris step by step: 2 of 5 done' }));
     expect(onGo).toHaveBeenCalledWith({ view: 'settings', section: 'start' });
 
     rerender(<AskPanel starters={LACKING} helper={null} setup={{ done: 5, of: 5 }} onGo={onGo} onClose={vi.fn()} />);

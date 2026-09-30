@@ -122,9 +122,9 @@ describe('ConversationView', () => {
   it('folds the target the driver composed, and names it as that', async () => {
     view([ev({ kind: 'user', origin: 'target', text: 'take quest #q1\n\nthe whole target…' })]);
 
-    expect(screen.getByText('the target Daoris composed')).toBeTruthy();
-    await userEvent.click(screen.getByRole('button', { name: 'show all' }));
-    expect(screen.getByRole('button', { name: 'fold' })).toBeTruthy();
+    expect(screen.getByText('The target Daoris composed')).toBeTruthy();
+    await userEvent.click(screen.getByRole('button', { name: 'Show all' }));
+    expect(screen.getByRole('button', { name: 'Fold' })).toBeTruthy();
   });
 
   /**
@@ -239,7 +239,7 @@ describe('ConversationView', () => {
 
     const figure = container.querySelector('figure')!;
     expect(within(figure).getByText('rust')).toBeTruthy();
-    expect(within(figure).getByRole('button', { name: /copy/ })).toBeTruthy();
+    expect(within(figure).getByRole('button', { name: /Copy/ })).toBeTruthy();
     expect(figure.querySelector('.hljs-keyword')?.textContent).toBe('let');
   });
 
@@ -310,8 +310,8 @@ describe('ConversationView', () => {
       </Tooltip.Provider>,
     );
 
-    const target = screen.getByText('the target Daoris composed');
-    const earlier = screen.getByRole('button', { name: 'load earlier' });
+    const target = screen.getByText('The target Daoris composed');
+    const earlier = screen.getByRole('button', { name: 'Load earlier' });
     const words = screen.getByText('Clean. Now the gates.');
     // In the order a reader reads them: the ask, the gap, then the page.
     expect(target.compareDocumentPosition(earlier) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
@@ -383,7 +383,7 @@ describe('ConversationView', () => {
     const long = `permission refused: {"toolCallId":"toolu_01","rawInput":{"command":"${'x'.repeat(300)}"}} — the repository's own configuration governs`;
     view([ev({ kind: 'note', text: long })]);
 
-    const show = screen.getByRole('button', { name: 'show all' });
+    const show = screen.getByRole('button', { name: 'Show all' });
     expect(show).toHaveAttribute('aria-expanded', 'false');
     await userEvent.click(show);
     expect(show).toHaveAttribute('aria-expanded', 'true');
@@ -393,7 +393,7 @@ describe('ConversationView', () => {
     let asked = 0;
     view(FINISHED(), { earlier: true, onLoadEarlier: () => { asked += 1; } });
 
-    await userEvent.click(screen.getByRole('button', { name: 'load earlier' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Load earlier' }));
     expect(asked).toBe(1);
   });
 

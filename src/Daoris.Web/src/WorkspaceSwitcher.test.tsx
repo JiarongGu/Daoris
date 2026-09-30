@@ -19,7 +19,7 @@ describe('WorkspaceSwitcher', () => {
 
   it('states the scope it spans when nothing is chosen — the D24 shape, never a silent mix', () => {
     show(<WorkspaceSwitcher workspaces={['default', 'aurora']} value={null} onChange={() => {}} />);
-    expect(screen.getByRole('combobox', { name: 'workspace' })).toHaveTextContent('every workspace · 2');
+    expect(screen.getByRole('combobox', { name: 'workspace' })).toHaveTextContent('Every workspace · 2');
   });
 
   it('shows the chosen workspace as the current value', () => {
@@ -43,7 +43,7 @@ describe('WorkspaceSwitcher', () => {
       </Tooltip.Provider>,
     );
     await userEvent.click(screen.getByRole('combobox', { name: 'workspace' }));
-    await userEvent.click(await screen.findByRole('option', { name: /every workspace/ }));
+    await userEvent.click(await screen.findByRole('option', { name: /Every workspace/ }));
     expect(onChange).toHaveBeenLastCalledWith(null);
   });
 });

@@ -263,7 +263,7 @@ public sealed class ClaudeStreamJson : IStreamMapper
             return StreamMapped.Nothing;
         }
 
-        return new([$"— the harness refused a control request: {Str(response, "error") ?? "it gave no reason"}"], []);
+        return new([$"— the agent refused a control request: {Str(response, "error") ?? "it gave no reason"}"], []);
     }
 
     /// <summary>The last assistant message's context: its input, cache-creation and cache-read tokens.</summary>

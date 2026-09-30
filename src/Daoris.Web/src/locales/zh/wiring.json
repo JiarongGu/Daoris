@@ -1,5 +1,5 @@
 {
-  "wiring.title": "启动时用什么",
+  "wiring.title": "启动配置",
   "wiring.body": "每个工作区：驱动会话启动时会用的智能体、账户与版本——为受理指定了智能体后，受理也一样——以及各由哪项设置决定。驱动读取的正是同一个答案。",
   "wiring.row": "{{workspace}} 中的启动",
   "wiring.rowIntake": "{{workspace}} 中的受理",

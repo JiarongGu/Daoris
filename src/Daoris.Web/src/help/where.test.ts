@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Session } from '../api';
+import { en } from '../locales';
+import { PLACE_DOMAINS, PLACE_VIEWS } from './places';
 import { attendedOf, prefaceOf } from './where';
 
 // HELP1b (D89): where the person is, as the helper is told it ahead of their words.
@@ -15,6 +17,21 @@ describe('where the person is', () => {
   it('names the settings domain on Settings', () => {
     expect(prefaceOf({ view: 'settings', workspace: null, settings: 'workspace' }))
       .toBe('Where the person is now: Settings → Workspace, every workspace.');
+  });
+
+  /**
+   * NAME1b: the agent names back the place the person is in, so it is told each place by the window's own
+   * English name — the one the activity bar and Settings' domain list show — never a name of its own.
+   */
+  it("names every view and every domain as the window's English does", () => {
+    for (const view of PLACE_VIEWS.filter((name) => name !== 'settings')) {
+      expect(prefaceOf({ view, workspace: null }), view)
+        .toBe(`Where the person is now: the ${en[`nav.${view}`]} view, every workspace.`);
+    }
+    for (const domain of PLACE_DOMAINS) {
+      expect(prefaceOf({ view: 'settings', workspace: null, settings: domain }), domain)
+        .toBe(`Where the person is now: Settings → ${en[`settings.domain.${domain}`]}, every workspace.`);
+    }
   });
 
   it('names the session attended on Sessions, and what a parked one asks, on one line and bounded', () => {

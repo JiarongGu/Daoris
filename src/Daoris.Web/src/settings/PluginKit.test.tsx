@@ -60,9 +60,9 @@ describe('the plugin kit card', () => {
     draw();
 
     expect(screen.getByRole('checkbox', { name: /quest\/consider/ })).toBeInTheDocument();
-    expect(screen.getByText(/a decision, before a planned start/)).toBeInTheDocument();
-    expect(screen.getByText(/an observation, after a session ends/)).toBeInTheDocument();
-    expect(screen.getByText(/an act, once a landing has made its branch/)).toBeInTheDocument();
+    expect(screen.getByText(/A decision, before a planned start/)).toBeInTheDocument();
+    expect(screen.getByText(/An observation, after a session ends/)).toBeInTheDocument();
+    expect(screen.getByText(/An act, once a landing has made its branch/)).toBeInTheDocument();
   });
 
   // A zero-basis field never wraps its row, it only shrinks: with the side bar open the folder showed
@@ -81,7 +81,7 @@ describe('the plugin kit card', () => {
     const make = screen.getByRole('button', { name: 'New' });
 
     expect(make).toBeDisabled();
-    await user.type(screen.getByRole('textbox', { name: 'Plugin id' }), 'acme.gate');
+    await user.type(screen.getByRole('textbox', { name: 'Plugin ID' }), 'acme.gate');
     expect(make).toBeDisabled();
     await user.click(screen.getByRole('checkbox', { name: /quest\/consider/ }));
     await user.click(screen.getByRole('checkbox', { name: /work\/land/ }));

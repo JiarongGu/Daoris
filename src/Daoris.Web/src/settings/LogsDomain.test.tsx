@@ -56,7 +56,7 @@ describe('the logs domain', () => {
   it('is a domain of a desktop, reading the last day of every source from the machine, and nothing over the service', async () => {
     show(<SettingsView notify={() => {}} section="logs" />);
 
-    expect(await within(screen.getByRole('navigation', { name: 'Settings domains' })).findByRole('button', { name: 'Logs' }))
+    expect(await within(screen.getByRole('navigation', { name: 'Settings domains' })).findByRole('button', { name: 'Machine log' }))
       .toHaveAttribute('aria-current', 'page');
     expect(await screen.findByRole('listitem', { name: 'page.error' })).toBeInTheDocument();
     expect(screen.getByText('C:/somewhere/data/logs')).toBeInTheDocument();
@@ -68,11 +68,11 @@ describe('the logs domain', () => {
     show(<SettingsView notify={() => {}} section="logs" />);
     await screen.findByRole('listitem', { name: 'page.error' });
 
-    await userEvent.click(screen.getByRole('radio', { name: 'errors' }));
+    await userEvent.click(screen.getByRole('radio', { name: 'Errors' }));
     await waitFor(() => expect(invoke).toHaveBeenLastCalledWith(
       'DAORIS.LOG', 'LINES', { payload: { since: '1d', level: 'error', limit: 200 } }));
 
-    await userEvent.click(screen.getByRole('radio', { name: 'last 7 days' }));
+    await userEvent.click(screen.getByRole('radio', { name: 'Last 7 days' }));
     await waitFor(() => expect(invoke).toHaveBeenLastCalledWith(
       'DAORIS.LOG', 'LINES', { payload: { since: '7d', level: 'error', limit: 200 } }));
   });

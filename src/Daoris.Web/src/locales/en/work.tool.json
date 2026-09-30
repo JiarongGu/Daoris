@@ -12,7 +12,7 @@
   "work.tool.status.cancelled": "cancelled",
   "work.tool.status.disconnected": "disconnected",
   "work.tool.status.session-ended": "ended with its session",
-  "work.tool.input": "input",
-  "work.tool.output": "output",
+  "work.tool.input": "Input",
+  "work.tool.output": "Output",
   "work.tool.terminal": "terminal {{id}}"
 }

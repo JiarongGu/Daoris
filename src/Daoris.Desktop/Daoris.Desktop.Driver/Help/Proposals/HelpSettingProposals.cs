@@ -48,7 +48,7 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
         // The names the route itself does not check, and a helper can invent: a repository, a circle, an agent.
         if (target is { Length: > 0 } && !facts.Repositories.Contains(target, StringComparer.OrdinalIgnoreCase))
         {
-            return Refused($"`{target}` is not registered on this machine — use a repository's name as Projects lists it.", "", "");
+            return Refused($"`{target}` is not registered on this machine — use a repository's name as Repositories lists it.", "", "");
         }
 
         if (workspace is { Length: > 0 } && !facts.Workspaces.Contains(workspace, StringComparer.OrdinalIgnoreCase))
@@ -62,7 +62,7 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
         switch (proposal.Door)
         {
             case "drive":
-                planned = ($"Drive `{target}`: a quest addressed to it starts a session on this machine.", $"daoris driver drive {target}", c => c.WithDrivable(target!, true));
+                planned = ($"Drive `{target}`: a quest for it starts a session on this machine.", $"daoris driver drive {target}", c => c.WithDrivable(target!, true));
                 break;
             case "undrive":
                 planned = ($"Stop driving `{target}`.", $"daoris driver undrive {target}", c => c.WithDrivable(target!, false));
@@ -292,7 +292,7 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
                 if (other.Length > 0 && !string.Equals(other, target, StringComparison.OrdinalIgnoreCase)
                     && !facts.Repositories.Contains(other, StringComparer.OrdinalIgnoreCase))
                 {
-                    return ($"`{other}` is not registered on this machine — use a repository's name as Projects lists it.", default);
+                    return ($"`{other}` is not registered on this machine — use a repository's name as Repositories lists it.", default);
                 }
 
                 var describe = clear

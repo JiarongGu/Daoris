@@ -1,9 +1,9 @@
 {
-  "chain.title": "这件工作如何流转",
+  "chain.title": "工作流转",
   "chain.show": "展开流转详情",
   "chain.hide": "收起流转详情",
   "chain.next": "下一步：{{to}}",
-  "chain.ask": "请求 #{{id}}",
+  "chain.ask": "需求 #{{id}}",
   "chain.askHint": "在工作区提出",
   "chain.unseen": "本页未载入的上一步",
   "chain.current": "当前委托",
@@ -13,5 +13,5 @@
   "chain.noSession": "尚无会话",
   "chain.closedUnrun": "未经会话即关闭",
   "chain.pending": "尚未发布",
-  "chain.pendingHint": "每一步在上一步完成关闭时发布，以同一委托方的名义；被拒绝则链条就此停止。"
+  "chain.pendingHint": "每一步在上一步完成关闭时发布，以同一委托方的名义；被谢绝则链条就此停止。"
 }

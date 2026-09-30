@@ -1,6 +1,6 @@
 {
   "scope.label": "workspace",
-  "scope.every": "every workspace · {{count}}",
+  "scope.every": "Every workspace · {{count}}",
   "scope.none": "no workspace yet",
   "scope.tip": "Which workspace this window is scoped to. Knowledge, quests and records cross within a workspace and never across one; with nothing chosen the console spans every workspace this deployment holds — and says so here rather than mixing them."
 }

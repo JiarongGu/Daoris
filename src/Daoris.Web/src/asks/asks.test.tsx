@@ -79,7 +79,7 @@ describe('AskRecord', () => {
   /** The sentence the tier writes about itself is what a person reads: which tier answered, never implied. */
   it('says which tier answered, in the words for it, beside the ask\'s own words whole', () => {
     const { drawer } = record(PROPOSED);
-    expect(within(drawer).getByText('by declarations only; no intake harness ran')).toBeInTheDocument();
+    expect(within(drawer).getByText('by declarations only; no intake agent ran')).toBeInTheDocument();
     // The first line is the title, and the rest follows it — each once (POLISH4).
     expect(within(drawer).getAllByText(/The chunk streamer stalls on a cold cache/)).toHaveLength(1);
     expect(within(drawer).getByText(/Seen on the test rig after a fresh install/)).toBeInTheDocument();
@@ -89,7 +89,7 @@ describe('AskRecord', () => {
   it('labels the tier so that no tier\'s words repeat the label', () => {
     const { drawer } = record(PROPOSED);
     expect(within(drawer).queryByText('answered by')).toBeNull();
-    expect(within(drawer).getByText('answered')).toBeInTheDocument();
+    expect(within(drawer).getByText('Answered')).toBeInTheDocument();
   });
 
   /** 🔴 Seen on the window (POLISH4): a one-line ask was its drawer's title and then its body. */
@@ -112,7 +112,7 @@ describe('AskRecord', () => {
     const { drawer, onPublish } = record(PROPOSED);
 
     expect(within(drawer).getByText(/chunk, stream, frame/)).toBeInTheDocument();
-    await userEvent.click(within(drawer).getByRole('button', { name: 'publish to engine' }));
+    await userEvent.click(within(drawer).getByRole('button', { name: 'Publish to engine' }));
 
     expect(onPublish).toHaveBeenCalledWith('engine');
   });
@@ -125,7 +125,7 @@ describe('AskRecord', () => {
     within(drawer).getByRole('combobox', { name: 'publish to another' }).focus();
     await user.keyboard('{Enter}');
     await user.click(await screen.findByRole('option', { name: 'lantern' }));
-    await user.click(within(drawer).getByRole('button', { name: 'publish' }));
+    await user.click(within(drawer).getByRole('button', { name: 'Publish' }));
 
     expect(onPublish).toHaveBeenCalledWith('lantern');
   });
@@ -149,14 +149,14 @@ describe('AskRecord', () => {
     const { drawer } = record(REFUSED);
 
     expect(within(drawer).getByText(REFUSED.note!)).toBeInTheDocument();
-    expect(within(drawer).getByRole('button', { name: 'publish to engine' })).toBeInTheDocument();
+    expect(within(drawer).getByRole('button', { name: 'Publish to engine' })).toBeInTheDocument();
   });
 
   it('closes with a reason, and not without one', async () => {
     const { drawer, onClose } = record(PROPOSED);
 
-    await userEvent.click(within(drawer).getByRole('button', { name: 'close the ask' }));
-    const confirm = within(drawer).getByRole('button', { name: 'close with this reason' });
+    await userEvent.click(within(drawer).getByRole('button', { name: 'Close ask' }));
+    const confirm = within(drawer).getByRole('button', { name: 'Close with this reason' });
     expect(confirm).toBeDisabled();
     await userEvent.type(within(drawer).getByLabelText('why — what became of it'), 'Answered elsewhere.');
     await userEvent.click(confirm);
@@ -169,8 +169,8 @@ describe('AskRecord', () => {
     const { drawer } = record(CLOSED);
 
     expect(within(drawer).getByText('Answered in the design review instead.')).toBeInTheDocument();
-    expect(within(drawer).queryByRole('button', { name: /publish/ })).toBeNull();
-    expect(within(drawer).queryByRole('button', { name: 'close the ask' })).toBeNull();
+    expect(within(drawer).queryByRole('button', { name: /publish/i })).toBeNull();
+    expect(within(drawer).queryByRole('button', { name: 'Close ask' })).toBeNull();
   });
 
   it('names its files and never the path this machine keeps them at', () => {
@@ -199,9 +199,9 @@ describe('AskRecord', () => {
   it('names its intake session by state and tool, and opens it where Sessions exists', async () => {
     const onAttend = vi.fn();
     const { drawer } = record(INTAKE_ASKED, { intake: INTAKE_PARKED, onAttend });
-    const line = within(drawer).getByRole('region', { name: 'intake session' });
+    const line = within(drawer).getByRole('region', { name: 'Intake session' });
 
-    expect(within(line).getByText('awaiting person')).toBeInTheDocument();
+    expect(within(line).getByText('waiting on you')).toBeInTheDocument();
     await userEvent.click(within(line).getByRole('button', { name: 'claude-code · 2.1.4' }));
     expect(onAttend).toHaveBeenCalledWith('i9n8t7k6a5b4');
   });
@@ -209,7 +209,7 @@ describe('AskRecord', () => {
   /** A browser has no Sessions: the session is named, and nothing pretends to open it. */
   it('names its intake session without a door where Sessions does not exist', () => {
     const { drawer } = record(BY_INTAKE, { intake: INTAKE_SESSION });
-    const line = within(drawer).getByRole('region', { name: 'intake session' });
+    const line = within(drawer).getByRole('region', { name: 'Intake session' });
 
     expect(within(line).getByText('claude-code · 2.1.4')).toBeInTheDocument();
     expect(within(line).getByText('completed')).toBeInTheDocument();
@@ -218,7 +218,7 @@ describe('AskRecord', () => {
 
   it('names an intake session the page has not loaded by its id, and offers no door that would open nothing', () => {
     const { drawer } = record(BY_INTAKE, { onAttend: vi.fn() });
-    const line = within(drawer).getByRole('region', { name: 'intake session' });
+    const line = within(drawer).getByRole('region', { name: 'Intake session' });
 
     expect(within(line).getByText('#i9n8t7')).toBeInTheDocument();
     expect(within(line).queryByRole('button')).toBeNull();
@@ -230,13 +230,13 @@ describe('AskRecord', () => {
    */
   it('never says no intake ran above the intake that did', () => {
     const { drawer } = record(INTAKE_ASKED, { intake: INTAKE_PARKED });
-    expect(within(drawer).queryByText('by declarations only; no intake harness ran')).toBeNull();
+    expect(within(drawer).queryByText('by declarations only; no intake agent ran')).toBeNull();
     expect(within(drawer).getByText('by declarations; an intake read it and has not published')).toBeInTheDocument();
   });
 
   it('has no intake line for an ask no intake served', () => {
     const { drawer } = record(PROPOSED);
-    expect(within(drawer).queryByRole('region', { name: 'intake session' })).toBeNull();
+    expect(within(drawer).queryByRole('region', { name: 'Intake session' })).toBeNull();
   });
 });
 
@@ -284,11 +284,11 @@ describe('AskComposer', () => {
     const drawer = screen.getByRole('dialog');
 
     expect(within(drawer).getByText('Asked in workspace aurora')).toBeInTheDocument();
-    expect(within(drawer).queryByRole('combobox', { name: 'workspace' })).toBeNull();
-    const send = within(drawer).getByRole('button', { name: 'ask' });
+    expect(within(drawer).queryByRole('combobox', { name: 'Workspace' })).toBeNull();
+    const send = within(drawer).getByRole('button', { name: 'Ask' });
     expect(send).toBeDisabled();
 
-    await userEvent.type(within(drawer).getByLabelText('what is wanted, and why'), 'Cap the hydration.');
+    await userEvent.type(within(drawer).getByLabelText('What is wanted, and why'), 'Cap the hydration.');
     await userEvent.click(send);
     expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({ sentence: 'Cap the hydration.', to: '' }));
   });
@@ -298,15 +298,15 @@ describe('AskComposer', () => {
     render(<Holder fixed={null} circles={['aurora', 'tools']} />);
     const drawer = screen.getByRole('dialog');
 
-    await userEvent.type(within(drawer).getByLabelText('what is wanted, and why'), 'Cap the hydration.');
-    expect(within(drawer).getByRole('button', { name: 'ask' })).toBeDisabled();
+    await userEvent.type(within(drawer).getByLabelText('What is wanted, and why'), 'Cap the hydration.');
+    expect(within(drawer).getByRole('button', { name: 'Ask' })).toBeDisabled();
 
     const user = userEvent.setup();
-    within(drawer).getByRole('combobox', { name: 'workspace' }).focus();
+    within(drawer).getByRole('combobox', { name: 'Workspace' }).focus();
     await user.keyboard('{Enter}');
     await user.click(await screen.findByRole('option', { name: 'tools' }));
 
-    expect(within(drawer).getByRole('button', { name: 'ask' })).toBeEnabled();
+    expect(within(drawer).getByRole('button', { name: 'Ask' })).toBeEnabled();
   });
 
   /**
@@ -318,17 +318,17 @@ describe('AskComposer', () => {
     const drawer = screen.getByRole('dialog');
 
     expect(within(drawer).getByText('There is no workspace to ask yet')).toBeInTheDocument();
-    expect(within(drawer).queryByLabelText('what is wanted, and why')).toBeNull();
-    expect(within(drawer).queryByRole('button', { name: 'ask' })).toBeNull();
+    expect(within(drawer).queryByLabelText('What is wanted, and why')).toBeNull();
+    expect(within(drawer).queryByRole('button', { name: 'Ask' })).toBeNull();
   });
 
   it('carries links and files like the quest composer, from the same fields', async () => {
     render(<Holder fixed="aurora" circles={['aurora']} />);
     const drawer = screen.getByRole('dialog');
 
-    await userEvent.upload(within(drawer).getByLabelText('choose files…'), new File(['x'], 'trace.log'));
+    await userEvent.upload(within(drawer).getByLabelText('Choose files…'), new File(['x'], 'trace.log'));
     expect(within(drawer).getByText('trace.log')).toBeInTheDocument();
-    expect(within(drawer).getByText(/links — a ticket/)).toBeInTheDocument();
+    expect(within(drawer).getByText(/Links — a ticket/)).toBeInTheDocument();
   });
 });
 
@@ -363,28 +363,28 @@ describe('the asks, in the order they are read', () => {
 describe('deleting an ask', () => {
   it('offers no delete on an ask the service does not say may go', () => {
     const { drawer } = record(PUBLISHED, { onDelete: vi.fn() });
-    expect(within(drawer).queryByRole('button', { name: 'delete…' })).toBeNull();
+    expect(within(drawer).queryByRole('button', { name: 'Delete…' })).toBeNull();
   });
 
   it('asks once, saying its quests go with it, then deletes', async () => {
     const { drawer, onDelete } = record({ ...PUBLISHED, deletable: true }, { onDelete: vi.fn() });
 
-    await userEvent.click(within(drawer).getByRole('button', { name: 'delete…' }));
+    await userEvent.click(within(drawer).getByRole('button', { name: 'Delete…' }));
     const confirm = within(drawer).getByRole('group', { name: 'delete this ask' });
     expect(within(confirm).getByText(/every quest it became goes with it/)).toBeInTheDocument();
     expect(onDelete).not.toHaveBeenCalled();
 
-    await userEvent.click(within(confirm).getByRole('button', { name: 'delete it' }));
+    await userEvent.click(within(confirm).getByRole('button', { name: 'Delete ask' }));
     expect(onDelete).toHaveBeenCalledTimes(1);
   });
 
   it('never mind puts the verbs back and deletes nothing', async () => {
     const { drawer, onDelete } = record({ ...PROPOSED, deletable: true }, { onDelete: vi.fn() });
 
-    await userEvent.click(within(drawer).getByRole('button', { name: 'delete…' }));
-    await userEvent.click(within(drawer).getByRole('button', { name: 'never mind' }));
+    await userEvent.click(within(drawer).getByRole('button', { name: 'Delete…' }));
+    await userEvent.click(within(drawer).getByRole('button', { name: 'Never mind' }));
 
-    expect(within(drawer).getByRole('button', { name: 'close the ask' })).toBeInTheDocument();
+    expect(within(drawer).getByRole('button', { name: 'Close ask' })).toBeInTheDocument();
     expect(onDelete).not.toHaveBeenCalled();
   });
 
@@ -392,8 +392,8 @@ describe('deleting an ask', () => {
   it('offers delete on a closed ask the service says may go, and nothing else', () => {
     const { drawer } = record({ ...CLOSED, deletable: true }, { onDelete: vi.fn() });
 
-    expect(within(drawer).getByRole('button', { name: 'delete…' })).toBeInTheDocument();
-    expect(within(drawer).queryByRole('button', { name: 'close the ask' })).toBeNull();
+    expect(within(drawer).getByRole('button', { name: 'Delete…' })).toBeInTheDocument();
+    expect(within(drawer).queryByRole('button', { name: 'Close ask' })).toBeNull();
   });
 });
 

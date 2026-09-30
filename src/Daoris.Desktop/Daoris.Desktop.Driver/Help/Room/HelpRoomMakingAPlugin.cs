@@ -25,7 +25,7 @@ internal sealed class HelpRoomMakingAPlugin : IHelpRoomSection
         text.Append("## Making a plugin\n\n");
         text.Append("A plugin runs on this machine as the person (one that lands work pushes with their sign-in), so making\n");
         text.Append("one is work, not a setting: never write one yourself. Propose it\n");
-        text.Append("as an ask (`ask_propose`) at the workspace of the repository that holds plugins, addressed to it by name:\n");
+        text.Append("as an ask (`ask_propose`) at the workspace of the repository that holds plugins, naming it as the receiver:\n");
         text.Append("what the plugin should do, and the point it speaks on ("
             + string.Join("; ", HookPoints.All.Select(point => PointSaid.TryGetValue(point, out var said) ? $"`{point}`, {said}" : $"`{point}`"))
             + ").\n");

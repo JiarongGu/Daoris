@@ -250,7 +250,7 @@ public sealed class ClaudeStreamJsonTests
         var (lines, events, _) = Map(answered, refused);
 
         Assert.Empty(events);
-        Assert.Equal(["— the harness refused a control request: no turn to interrupt"], lines);
+        Assert.Equal(["— the agent refused a control request: no turn to interrupt"], lines);
     }
 
     /// <summary>The native door's stop, as the one line the binary answered in the probe.</summary>

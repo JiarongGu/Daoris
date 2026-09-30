@@ -1,7 +1,7 @@
 {
   "chain.title": "How this work ran",
-  "chain.show": "show how it ran",
-  "chain.hide": "hide how it ran",
+  "chain.show": "Show how it ran",
+  "chain.hide": "Hide how it ran",
   "chain.next": "next: {{to}}",
   "chain.ask": "ask #{{id}}",
   "chain.askHint": "asked at the workspace",

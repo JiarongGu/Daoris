@@ -76,7 +76,7 @@ describe('a refresh, said whole', () => {
   it('a refresh that could not find a registered checkout says which', async () => {
     shell();
 
-    fireEvent.click(await screen.findByRole('button', { name: 'refresh index' }));
+    fireEvent.click(await screen.findByRole('button', { name: 'Refresh the index' }));
 
     expect(await screen.findByText(/Indexed 3 entries/)).toBeTruthy();
     expect(await screen.findByText(/Not found where the registry says: studio/)).toBeTruthy();
@@ -138,7 +138,7 @@ describe('the shell in a browser, over two workspaces', () => {
   it('offers the scope in the app strip, stating that it spans every workspace', async () => {
     shell();
     const scope = await screen.findByRole('combobox', { name: 'workspace' });
-    expect(scope).toHaveTextContent('every workspace · 2');
+    expect(scope).toHaveTextContent('Every workspace · 2');
     // Nothing chosen: the page asks the doors for everything, and says so above rather than picking.
     for (const url of requested()) expect(url).not.toContain('workspace=');
   });
@@ -219,7 +219,7 @@ describe('the shell in a browser, over two workspaces', () => {
     shell();
     await screen.findByRole('combobox', { name: 'workspace' });
     const user = await openMenu('Workspace');
-    const every = await screen.findByRole('menuitem', { name: /every workspace · 2/ });
+    const every = await screen.findByRole('menuitem', { name: /Every workspace · 2/ });
     expect(every.querySelector('svg')).not.toBeNull();
     // A browser is offered the list, and none of the machine's acts.
     expect(screen.queryByRole('menuitem', { name: /Add repository/ })).toBeNull();
@@ -232,12 +232,12 @@ describe('the shell in a browser, over two workspaces', () => {
   it('the Agents menu opens Settings at the domain it names', async () => {
     shell();
     const user = await openMenu('Agents');
-    await screen.findByRole('menuitem', { name: "Daoris's own AI" });
-    expect(screen.getAllByRole('menuitem').map((item) => item.textContent)).toEqual(["Daoris's own AI"]);
+    await screen.findByRole('menuitem', { name: "AI features" });
+    expect(screen.getAllByRole('menuitem').map((item) => item.textContent)).toEqual(["AI features"]);
 
-    await user.click(screen.getByRole('menuitem', { name: "Daoris's own AI" }));
+    await user.click(screen.getByRole('menuitem', { name: "AI features" }));
     const domains = await screen.findByRole('navigation', { name: 'Settings domains' });
-    expect(within(domains).getByRole('button', { name: "Daoris's own AI" })).toHaveAttribute('aria-current', 'page');
+    expect(within(domains).getByRole('button', { name: "AI features" })).toHaveAttribute('aria-current', 'page');
   });
 
   /**
@@ -248,9 +248,9 @@ describe('the shell in a browser, over two workspaces', () => {
     shell();
     const user = await openMenu('Daoris');
 
-    await user.click(await screen.findByRole('menuitem', { name: 'Set up Daoris' }));
+    await user.click(await screen.findByRole('menuitem', { name: 'Setup' }));
     const domains = await screen.findByRole('navigation', { name: 'Settings domains' });
-    expect(within(domains).getByRole('button', { name: 'Get started' })).toHaveAttribute('aria-current', 'page');
+    expect(within(domains).getByRole('button', { name: 'Setup' })).toHaveAttribute('aria-current', 'page');
     const steps = await screen.findByRole('list', { name: 'setup steps' });
     expect(within(steps).getByRole('listitem', { name: '3. A workspace and its repositories' })).toHaveTextContent('done');
   });
@@ -300,7 +300,7 @@ describe('the shell in a browser, over two workspaces', () => {
   it('a remembered workspace that no longer exists falls back to every, out loud', async () => {
     shell('gone');
     await waitFor(() => {
-      expect(screen.getByRole('combobox', { name: 'workspace' })).toHaveTextContent('every workspace · 2');
+      expect(screen.getByRole('combobox', { name: 'workspace' })).toHaveTextContent('Every workspace · 2');
     });
     // …and the queries settle on every circle, not on a scope nobody holds any more.
     await waitFor(() => {
@@ -540,7 +540,7 @@ describe('the attention band', () => {
 
       await userEvent.click(screen.getByRole('button', { name: /Cap the hydration per frame\./ }));
       const record = await screen.findByRole('dialog', { name: 'Cap the hydration per frame.' });
-      expect(within(record).getByRole('button', { name: 'publish to engine' })).toBeInTheDocument();
+      expect(within(record).getByRole('button', { name: 'Publish to engine' })).toBeInTheDocument();
     } finally {
       ASKS = [];
     }

@@ -19,7 +19,7 @@ public sealed partial class DriverModule
         if (config.HelperAdapter is not { Length: > 0 } helper)
         {
             throw new DriverException(
-                "Ask Daoris has no agent to run on — name one under Settings → Daoris's own AI, or "
+                "Ask Daoris has no agent to run on — name one under Settings → AI features, or "
                 + "`daoris driver helper <agent>`. Its starters need none.");
         }
 

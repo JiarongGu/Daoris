@@ -28,7 +28,7 @@ import { DRIVER_STATE, respond, show, STATUS, WIRING } from '../test/shellHarnes
  * it. The search tier is the service's answer, over HTTP like every browser's; the intake is this
  * machine's `driver.json`, and its control is the screen's half of `daoris driver intake` (D50).
  */
-describe("Daoris's own AI on Settings", () => {
+describe('AI features on Settings', () => {
   const ROSTER = {
     settingsPath: 'C:/somewhere/.daoris/harnesses.json',
     adapter: 'claude-code',

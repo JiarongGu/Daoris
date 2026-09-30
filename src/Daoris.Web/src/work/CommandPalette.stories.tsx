@@ -9,7 +9,7 @@ import { CommandPalette } from './CommandPalette';
 const LABELS: Record<string, string> = {
   'go.overview': 'Overview',
   'go.quests': 'Quests',
-  'go.projects': 'Projects',
+  'go.projects': 'Repositories',
   'go.convergence': 'Convergence',
   'go.search': 'Search',
   'go.settings': 'Settings',
@@ -18,13 +18,13 @@ const LABELS: Record<string, string> = {
   'work.review': 'Review what this session landed',
   'work.monitor': 'Open the monitor window',
   'work.detach': 'Open this session in its own window',
-  'do.setup': 'Set up Daoris — the steps this machine needs, in order',
+  'do.setup': 'Setup — the steps this machine needs, in order',
   'do.ask': 'Ask the workspace…',
   'do.refresh': 'Refresh the index',
   'do.language': 'Switch language',
 };
 
-const GROUPS = { go: 'go to', do: 'do', work: 'work' } as const;
+const GROUPS = { go: 'Go to', do: 'Actions', work: 'Sessions' } as const;
 
 const world = (over: Partial<Parameters<typeof commands>[0]> = {}) => commands({
   label: (id) => LABELS[id] ?? id,

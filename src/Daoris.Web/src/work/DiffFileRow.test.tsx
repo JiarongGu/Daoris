@@ -77,7 +77,7 @@ describe('DiffFileRow', () => {
 
   it('carries the person’s own viewed mark, which is theirs to set', async () => {
     const { onViewed } = show(FILE);
-    await userEvent.click(screen.getByRole('checkbox', { name: 'viewed' }));
+    await userEvent.click(screen.getByRole('checkbox', { name: 'Viewed' }));
     expect(onViewed).toHaveBeenCalledWith(true);
     // The platform's own box, never the OS's (UX5 U5).
     expect(document.querySelector('input[type="checkbox"]:not([aria-hidden="true"])')).toBeNull();

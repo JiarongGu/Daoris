@@ -1,8 +1,8 @@
 {
-  "sessionState.queued": "已排队",
+  "sessionState.queued": "排队中",
   "sessionState.starting": "启动中",
   "sessionState.working": "工作中",
-  "sessionState.awaiting-person": "等待人工",
+  "sessionState.awaiting-person": "等你处理",
   "sessionState.completed": "已完成",
   "sessionState.declined": "已谢绝",
   "sessionState.stood-down": "已让位",

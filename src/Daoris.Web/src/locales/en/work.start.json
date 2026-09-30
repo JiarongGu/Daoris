@@ -1,15 +1,15 @@
 {
   "work.start.title": "Start a session",
-  "work.start.repository": "repository",
-  "work.start.harness": "agent tool",
-  "work.start.harnessDefault": "this machine's default",
-  "work.start.harnessDefaultNamed": "this machine's default: {{name}}",
+  "work.start.repository": "Repository",
+  "work.start.harness": "Agent",
+  "work.start.harnessDefault": "This machine's default",
+  "work.start.harnessDefaultNamed": "This machine's default: {{name}}",
   "work.start.busyOption": "{{repository}} · busy",
   "work.start.busy": "{{repository}} has an active session in its checkout. A working tree of its own lets this one start beside it.",
-  "work.start.profile": "account",
-  "work.start.profileDefault": "whatever this machine already decided",
-  "work.start.ownTree": "in a working tree of its own",
+  "work.start.profile": "Account",
+  "work.start.profileDefault": "As already set",
+  "work.start.ownTree": "In a tree of its own",
   "work.start.ownTreeTip": "a fresh tree holds nothing git does not track — no installed dependencies, no build outputs, no untracked local configuration. That cost is paid once per tree, by whatever this repository's own setup costs.",
-  "work.start.go": "start",
-  "work.start.none": "No repository on this machine has a checkout to talk in. Add one from Projects."
+  "work.start.go": "Start",
+  "work.start.none": "No repository on this machine has a checkout to talk in. Add one from Repositories."
 }

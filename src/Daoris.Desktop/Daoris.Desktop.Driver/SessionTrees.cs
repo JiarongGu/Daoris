@@ -84,14 +84,14 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
         {
             throw new DriverException(
                 $"`{repository}`'s registered root is not a git repository ({FirstLine(topErr)}) — "
-                + "a session tree is a linked worktree, and there is nothing here to link it to.");
+                + "a session's tree is one git links to its checkout, and there is nothing here to link it to.");
         }
 
         if (!SamePath(toplevel.Trim(), root))
         {
             throw new DriverException(
                 $"`{repository}`'s registered root {root} is INSIDE the repository at {toplevel.Trim()} "
-                + "rather than being one — refusing to grow a worktree on a repository the registration "
+                + "rather than being one — refusing to grow a tree on a repository the registration "
                 + "does not name. Re-run `daoris connect` from the actual root.");
         }
 
@@ -405,8 +405,8 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
             // 🔴 The sentence that the tree stays goes when the tidy removed it: the message said both
             // (found landing AR-2202, 2026-09-29).
             Message = tidied.Removed
-                ? landed.Message.Replace(TreeStays, "", StringComparison.Ordinal) + $" Tidied, as the rule says: {tidied.Message}"
-                : landed.Message + $" The rule says to tidy, and the tree stays: {tidied.Message}",
+                ? landed.Message.Replace(TreeStays, "", StringComparison.Ordinal) + $" Cleaned up, as the rule says: {tidied.Message}"
+                : landed.Message + $" The rule says to clean up, and the tree stays: {tidied.Message}",
         };
     }
 

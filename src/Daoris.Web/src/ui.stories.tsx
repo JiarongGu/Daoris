@@ -137,7 +137,7 @@ export const MetaLines: StoryObj = {
 export const Tiles: StoryObj = {
   render: () => (
     <div className="grid max-w-3xl grid-cols-[repeat(auto-fit,minmax(10.5rem,1fr))] gap-3">
-      <Tile label="Adopted projects" value={2} note="of 17 in the family" />
+      <Tile label="Adopted repositories" value={2} note="of 17 in the family" />
       <Tile label="Open quests" value={3} note="oldest has sat 12d" warn />
       <Tile label="Knowledge entries" value="12.9K" note="across 14 repositories" />
     </div>
@@ -149,7 +149,7 @@ export const Empty: StoryObj = {
     <EmptyState
       icon="inbox"
       headline="No open quests anywhere"
-      body="The family owes itself nothing right now. When a project needs something from a sibling, it is asked for here — never edited across."
+      body="The family owes itself nothing right now. When a repository needs something from a sibling, it is asked for here — never edited across."
       action={<Button>ask for something</Button>}
     />
   ),

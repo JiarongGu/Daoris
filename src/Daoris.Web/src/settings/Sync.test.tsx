@@ -122,7 +122,7 @@ describe('bringing repositories up to date', () => {
     expect(within(screen.getByRole('group', { name: 'game' })).getByText(/uncommitted work, so it stays/)).toBeInTheDocument();
     expect(within(row('daoris/s-step')).getByText(/Replays 1 commit of its own onto/)).toBeInTheDocument();
     expect(within(row('daoris/s-step')).getByText('daoris/s-parent', { selector: 'code' })).toBeInTheDocument();
-    expect(within(row('feature/q2-second')).getByText("a landing's")).toBeInTheDocument();
+    expect(within(row('feature/q2-second')).getByText("landed")).toBeInTheDocument();
     expect(within(row('daoris/s-busy')).getByText('stays')).toBeInTheDocument();
     expect(within(row('feature/q3-open')).getByText(/force push/)).toBeInTheDocument();
     expect(within(row('daoris/s-waits')).getByText(/has not reached the line yet/)).toBeInTheDocument();
@@ -132,7 +132,7 @@ describe('bringing repositories up to date', () => {
   it('does only what it listed, on one press', async () => {
     const { onSync } = draw();
 
-    await userEvent.click(screen.getByRole('button', { name: 'Bring up to date: 4 changes' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Bring up to date (4)' }));
 
     expect(onSync).toHaveBeenCalledWith(['engine:main', 'engine:daoris/s-step', 'engine:feature/q2-second', 'engine:feature/q1-first']);
   });

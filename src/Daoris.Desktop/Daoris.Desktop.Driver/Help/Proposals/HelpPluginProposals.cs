@@ -153,7 +153,7 @@ internal sealed class HelpPluginProposals : IHelpProposalKind
         {
             if (!facts.Repositories.Contains(repository, StringComparer.OrdinalIgnoreCase))
             {
-                return Refused($"`{repository}` is not registered on this machine — use a repository's name as Projects lists it.");
+                return Refused($"`{repository}` is not registered on this machine — use a repository's name as Repositories lists it.");
             }
 
             if (!facts.Checkouts.TryGetValue(repository, out var root) || root is not { Length: > 0 })
@@ -260,7 +260,7 @@ internal sealed class HelpPluginProposals : IHelpProposalKind
             said.Add($"It runs `{Line(command)}`, speaking on {string.Join(", ", view.Points.Select(point => $"`{point}`"))}.");
         }
 
-        said.AddRange(view.Harnesses.Select(harness => $"It declares harness `{harness.Name}` (`{Line(harness.Command)}`)."));
+        said.AddRange(view.Harnesses.Select(harness => $"It declares agent `{harness.Name}` (`{Line(harness.Command)}`)."));
         said.AddRange(view.Servers.Select(server => $"It hands every session server `{server.Name}` (`{Line(server.Command)}`)."));
         return said.Count > 0 ? string.Join(" ", said) : "It declares nothing and runs nothing.";
     }

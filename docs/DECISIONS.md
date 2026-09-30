@@ -6032,3 +6032,39 @@ does not hold placeholders, which the parity gate does, and cannot see a sentenc
 `{{why}}`); the audit lists those it read by hand. That the budgets match the rooms is a claim about the window,
 derived from the tokens and the frame's constants in design §4 and **not measured here**: nothing looked at the
 window in this branch.
+
+### NAME1b: the owner's calls, and what applying them settled (2026-10-01)
+
+**The owner approved the audit on 2026-10-01**, with the two calls it left to them: the view that lists repositories
+is named for them, *Projects* → *Repositories* (项目 → 仓库), on the activity bar, as the view's title and on the
+Overview's tile; and an ask is 需求, not 请求, wherever Chinese names one. NAME1b applied every row of the audit and
+its one plural form, the sentences its §5 lists (leaving the eight it found to be another thing's word), the
+driver's pass-through sentences in 中文, the host's own sentences a person reads (a refusal shown verbatim, a
+start's reason, a plugin's problem, a proposal's plan) and Ask Daoris's room, which it names places back from. The
+check went from 519 findings (glossary 84, form 288, door 16, budget 131) to 107, all budgets; under `--all`, from
+649 to 115, the eight sentences and the budgets.
+
+- **`--strict` gates the web's build**, beside the parity check and before the type check and the bundle, on the
+  facts' half; the budgets report (D54), as §3 above says. Its exit is a function, `verdict`, held rule by rule.
+- **A name said inside a sentence takes a fragment of its own**, never a name lower-cased in code: the account's
+  summary line (`harness.settings.summary.default`), a proposal's and a toast's scope (`settings.rules.where.*`), an
+  update's changed field, which now leads its line (*Servers: was → now*). Rejected: lower-casing a sentence-case
+  name at the call site, which is one language's rule written into a component.
+- **One act, one name, even where two presses do it**: the parked band's *Finish* and the composer's are one name
+  now, so the tests that told them apart by name ask the composer's form instead.
+- **A door named for a part opens at the part**: the sync menu's *Wiring…* opens the Workspace domain at Wiring, as
+  *Wire to a remote…* does (UX5 U72); the Machine log's card, alone in its domain, carries no title (U57).
+- **An accessible name moves with the name it begins with**: the map's *Connections* menu kept *Lines:* in its
+  accessible name and tip, which would have broken label-in-name.
+- **The check sets aside every name the English names**, not only the term's own: *like a git remote* says 远程仓库,
+  whose 远程 the workspace's remote must not be called; and *hold* is recognised in *held repositories* and *is
+  held*. A short form is never set aside.
+- **Kept on purpose**: the CLI's verbs and flags (`daoris agent login`, `--profile`), the MCP tools' descriptions a
+  session's agent reads (not the window), the headless host's console text and the driver loop's log lines say the
+  code's words; a browser's, Windows' and dsh's own *profile* and git's credential *helper* are theirs. The palette
+  keeps *projects*, 项目, *get started* and 请求 as words that still find the renamed places.
+
+**What the gates do not cover.** `--strict` holds the facts over every label, and the parity gate the keys and
+placeholders. The Playwright specs were edited to the new names and **not run** in the branch (the parent runs
+`test:web`); what they pin was read against Playwright's matching (case-insensitive substrings unless `exact`). The
+107 budgets are the window's to judge, and nothing looked at the window in this branch either.

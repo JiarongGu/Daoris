@@ -82,7 +82,7 @@ describe('the landed branches in the session branches card', () => {
   it('lists each branch a landing made in its own group, with what it holds', () => {
     draw({ landed: LANDED });
 
-    const group = screen.getByRole('region', { name: 'Branches landings made' });
+    const group = screen.getByRole('region', { name: 'Landed branches' });
     const row = (name: string) => within(group).getByRole('listitem', { name });
     expect(within(row('feature/q2-second')).getByText('goes')).toBeInTheDocument();
     expect(within(row('feature/q2-second')).getByText('origin/main', { selector: 'code' })).toBeInTheDocument();
@@ -109,6 +109,6 @@ describe('the landed branches in the session branches card', () => {
 
   it('draws no group where no landing made a branch', () => {
     draw({ landed: [] });
-    expect(screen.queryByRole('region', { name: 'Branches landings made' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('region', { name: 'Landed branches' })).not.toBeInTheDocument();
   });
 });

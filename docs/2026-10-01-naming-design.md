@@ -1,7 +1,9 @@
 # Names — a name is a UI element, designed in both languages (NAME1)
 
-**Status: the contract for NAME1, written first (NAME1a, D116).** The renames it proposes are NAME1b's,
-made after the owner reads them; this document, the glossary and the check are what they are made
+**Status: the contract for NAME1, written first (NAME1a, D116); applied by NAME1b.** The owner approved
+the audit's names on 2026-10-01, with two calls of their own (the view *Projects* is *Repositories*, 仓库;
+an ask is 需求), and NAME1b renamed the catalogues, the host's sentences and Ask Daoris's room, and put
+`--strict` in the web's build (§6). This document, the glossary and the check are what they are made
 against. The owner, 2026-10-01:
 
 > *"also for naming (for example in settings) we do need to have properly named in both en/zh since this
@@ -255,17 +257,25 @@ reads the glossary and both catalogues and reports, per key:
    from Chinese.
 4. **Doors.** A door that does not say its destination's name.
 
-**It reports and never fails, today.** Today's names would fail every rule above before NAME1b renames
-them, and a gate that is red on its first day is a gate someone switches off. It exits 0 with its report,
-and 2 only when the glossary itself is malformed (a kind naming a key the catalogues lack, a term
-without a name in either language, two terms claiming one name), since a glossary that cannot be read
-has stopped checking anything, which is a fact.
+**Alone it reports.** It exits 0 with its report, and 2 only when the glossary itself is malformed (a
+kind naming a key the catalogues lack, a term without a name in either language, two terms claiming one
+name), since a glossary that cannot be read has stopped checking anything, which is a fact. It reported
+and never failed while NAME1a's names stood, since a gate red on its first day is switched off.
 
-**What NAME1b turns on, by D54's line** (*a fact gates, a judgement reports*). Conformance, form and
-doors are facts: a quest's label says 任务 or it does not. They gate once the renames land, by the
-`--strict` flag the script already takes, added to the web's build beside the parity check. The budgets
-stay a report: a character count estimates a width, and the window is where a width is a fact. The
-parity gate itself is unchanged.
+**What NAME1b turned on, by D54's line** (*a fact gates, a judgement reports*). Conformance, form and
+doors are facts: a quest's label says 任务 or it does not. With the renames landed they gate: the web's
+build runs `names-check.mjs --strict` beside the parity check, before the type check and the bundle, and
+it exits 1 on a glossary, form or door finding. The budgets stay a report: a character count estimates a
+width, and the window is where a width is a fact. The parity gate itself is unchanged. Under `--all` it
+still reports the eight sentences the audit found to say another thing's word (a browser's or Windows'
+*profile*, git's credential *helper*, a request's value no application *accepts*, a process that
+*ended*).
+
+**What NAME1b learned building it.** A word a term must not be called may sit inside another term's
+name: *like a git remote* says 远程仓库, git remote's name, which holds the 远程 a workspace's remote must
+not be called. So the names of every term the same English names are set aside before the words are
+looked for, never a short form (which would hide the 等你决定 等你 is there to catch). And *hold* is
+recognised in *held repositories* and *is held*, so 暂停 there is hold's name, not park's stray word.
 
 ## 7. The audit, and the renames
 

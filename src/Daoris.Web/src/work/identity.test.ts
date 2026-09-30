@@ -36,7 +36,7 @@ describe('a session title', () => {
   });
 
   it('names a conversation by its kind, because a chat serves no quest by design', () => {
-    expect(sessionTitle(session({ kind: 'chat' }))).toBe('conversation');
+    expect(sessionTitle(session({ kind: 'chat' }))).toBe('Chat');
   });
 
   /**
@@ -47,18 +47,18 @@ describe('a session title', () => {
   it('names a conversation by its first line, where this machine holds one', () => {
     expect(sessionTitle(session({ kind: 'chat' }), null, 'Read README.md and tell me its first heading.'))
       .toBe('Read README.md and tell me its first heading.');
-    expect(sessionTitle(session({ kind: 'chat' }), null, null)).toBe('conversation');
+    expect(sessionTitle(session({ kind: 'chat' }), null, null)).toBe('Chat');
     expect(sessionTitle(session({ kind: 'chat', quest: '7a82cc' }), quest(), 'anything said'))
       .toBe('Expose a streaming budget on the chunk API');
   });
 
   it('names a driven session with no quest by its kind too — nothing is fabricated', () => {
-    expect(sessionTitle(session({ kind: 'driven' }))).toBe('session');
+    expect(sessionTitle(session({ kind: 'driven' }))).toBe('Session');
   });
 
   it('serves the derived name in the active language', async () => {
     await i18n.changeLanguage('zh');
-    expect(sessionTitle(session({ kind: 'chat' }))).toBe('对话');
+    expect(sessionTitle(session({ kind: 'chat' }))).toBe('聊天');
     await i18n.changeLanguage('en');
   });
 
@@ -69,10 +69,10 @@ describe('a session title', () => {
    */
   it('names an intake by the ask it serves, never as a conversation', async () => {
     const intake = session({ kind: 'chat', repository: 'ask #0fda18', ask: '0fda18' });
-    expect(sessionTitle(intake)).toBe('intake for ask #0fda18');
+    expect(sessionTitle(intake)).toBe('Intake for ask #0fda18');
 
     await i18n.changeLanguage('zh');
-    expect(sessionTitle(intake)).toBe('请求 #0fda18 的受理会话');
+    expect(sessionTitle(intake)).toBe('需求 #0fda18 的受理会话');
     await i18n.changeLanguage('en');
   });
 

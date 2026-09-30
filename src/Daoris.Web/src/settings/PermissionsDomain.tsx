@@ -84,9 +84,10 @@ function RulesSettings({ notify }: { notify: Notify }) {
   const rows = registry.data ?? [];
   const circles = workspacesOf(rows);
   const repositories = rows.map((row) => row.repository).sort();
+  // NAME1b: said inside a toast's sentence, so the fragments rather than the sections' sentence-case titles.
   const where = (scope: string, name: string | undefined) => scope === 'machine'
-    ? t('settings.rules.scopeMachine')
-    : t(scope === 'workspace' ? 'settings.rules.scopeWorkspace' : 'settings.rules.scopeRepository', { name: name ?? '' });
+    ? t('settings.rules.proposals.everywhere')
+    : t(scope === 'workspace' ? 'settings.rules.where.workspace' : 'settings.rules.where.repository', { name: name ?? '' });
   const failed = failure(notify);
 
   return (

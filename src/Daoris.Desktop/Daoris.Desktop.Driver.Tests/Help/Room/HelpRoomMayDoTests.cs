@@ -60,7 +60,7 @@ public sealed class HelpRoomMayDoTests
 
         Assert.Contains("you read no checkout", agents);
         Assert.Contains("Reading the checkouts here is switched off", agents);
-        Assert.Contains("Settings → Permissions → Reading and writing across", agents);
+        Assert.Contains("Settings → Permissions → Across repositories", agents);
         Assert.Contains("`daoris driver across <repository> read on`", agents);
     }
 

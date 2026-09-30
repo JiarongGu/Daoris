@@ -6,6 +6,12 @@ proposed ones, for the owner to read before NAME1b renames anything. The contrac
 (`src/Daoris.Web/src/locales/glossary.json`) that every proposal here takes its terms from. Nothing in the
 catalogues changes in NAME1a.
 
+**Applied (NAME1b, 2026-10-01).** The owner approved the proposals, and made the two calls §4 left to them:
+the view is *Repositories* (仓库) and an ask is 需求. NAME1b applied every row below with its plural forms, and
+what §4 and §5 ask beyond the strings; the check now finds no glossary, form or door finding in any label,
+and its `--strict` gates the web's build (design §6). The rows keep today's names as they stood, so the
+record reads before and after.
+
 **How it was found** (UX5's method: read each key where it renders, not only in the catalogue). A source scan
 found every `t('…')` call, every template prefix and every key held as data in the web's components, with the
 element or prop around it (`Button`, `SectionTitle`, `SettingRow`'s label, a `Pill`, a menu, a placeholder,

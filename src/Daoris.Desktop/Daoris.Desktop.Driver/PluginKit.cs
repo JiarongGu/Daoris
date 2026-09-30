@@ -104,7 +104,7 @@ public static partial class PluginKit
         new(
             HookPoints.SessionEnded,
             "observation",
-            "After a session concludes, every plugin that listens here is told what the tick concluded. "
+            "After a session concludes, every plugin that listens here is told what the driver concluded. "
             + "Nothing said here changes anything: the record has already moved.",
             "`{}`. The answer is not read, but it is waited for.",
             "the driver would say so on its console and go on",
@@ -168,7 +168,7 @@ public static partial class PluginKit
         {
             throw new DriverException(
                 $"a plugin that speaks needs at least one point — one of: {Names}. A plugin that only declares a "
-                + "harness or a server is a manifest written by hand (the plugin design's §3); there is no code to make.");
+                + "agent or a server is a manifest written by hand (the plugin design's §3); there is no code to make.");
         }
 
         if (named.FirstOrDefault(point => Find(point) is null) is { } unknown)

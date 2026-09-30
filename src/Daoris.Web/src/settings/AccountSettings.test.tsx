@@ -46,10 +46,10 @@ describe("an account's own settings", () => {
     expect(screen.getByText('model opus · effort high')).toBeInTheDocument();
 
     rerender(<AccountSettingsSummary settings={settings()} />);
-    expect(screen.getByText("the tool's own model and effort")).toBeInTheDocument();
+    expect(screen.getByText("the agent's own model and effort")).toBeInTheDocument();
 
     rerender(<AccountSettingsSummary settings={settings({ model: 'sonnet', perModel: [{ model: 'claude-opus-5', effort: 'xhigh' }] })} />);
-    expect(screen.getByText("model sonnet · effort the tool's own default · 1 set per model")).toBeInTheDocument();
+    expect(screen.getByText("model sonnet · effort the agent's own default · 1 set per model")).toBeInTheDocument();
   });
 
   it('says a file it could not read in the driver’s own words', () => {
@@ -83,7 +83,7 @@ describe("an account's own settings", () => {
     const onSave = vi.fn();
     form({ settings: settings({ model: 'opus', effort: 'high' }), onSave });
 
-    await choose('effort', "the tool's own default");
+    await choose('effort', "The agent's own default");
     await userEvent.click(screen.getByRole('button', { name: 'Save' }));
 
     expect(onSave).toHaveBeenLastCalledWith({ effort: null });
@@ -124,7 +124,7 @@ describe("an account's own settings", () => {
     const perModel = screen.getByRole('group', { name: 'set per model' });
     expect(within(perModel).getByText('claude-opus-5')).toBeInTheDocument();
     await choose('effort for claude-opus-5', 'medium');
-    await choose('effort for claude-sonnet-5', 'not set');
+    await choose('effort for claude-sonnet-5', 'Not set');
     await userEvent.click(screen.getByRole('button', { name: 'Save' }));
 
     expect(onSave).toHaveBeenLastCalledWith({ perModel: { 'claude-opus-5': 'medium', 'claude-sonnet-5': null } });
@@ -141,7 +141,7 @@ describe("an account's own settings", () => {
     const onCancel = vi.fn();
     const { rerender } = form({ onCancel });
 
-    await userEvent.click(screen.getByRole('button', { name: 'never mind' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Never mind' }));
     expect(onCancel).toHaveBeenCalled();
 
     rerender(

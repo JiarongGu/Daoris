@@ -17,7 +17,7 @@ describe('the browser door', () => {
     const onOpen = vi.fn();
     render(<BrowserDoor onOpen={onOpen} />);
 
-    await userEvent.click(screen.getByRole('button', { name: "open Daoris's browser" }));
+    await userEvent.click(screen.getByRole('button', { name: "Open Daoris's browser" }));
 
     expect(onOpen).toHaveBeenCalledOnce();
   });
