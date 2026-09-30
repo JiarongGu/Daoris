@@ -8006,3 +8006,36 @@ now read defensively where the roster is read, with a test that sends them as th
 account row's actions also ran past the card with the new button; they wrap now.
 **Not seen:** the composer's controls in a live conversation (a real account); covered by the test agent.
 **Proven by:** driver 1040, modules 345, vitest 1556, CLI 558, and the window.
+
+## DEPLOY5 — the deployment rehearsal holds a chat open at close (2026-09-30)
+
+> - [ ] **DEPLOY5 — the artefact gate holds a chat open at close.** … The deployment rehearsal closes the
+>   installed shell (§6) with no chat open, and it has no way to open one … Give it one …
+
+**Outcome** (built by a subagent in its own worktree, merged, then run on main). The deployment
+rehearsal starts the installed application with the dev loop's own debug port (from 9433, never
+9333), the host it starts pinned to production so a development host cannot serve a project's
+bundle. Phase 6 finds the install's own page over that port, opens a conversation on the protocol
+stub over the bridge, checks it `working` with its harness marked and alive, closes the shell the way
+it always has, and checks the harness and its marker went with it. Phase 7 starts the install's host
+alone, which runs no orphan sweep, and passes only on the close's own note: the sweep's note is the
+same `stopped`, which is what the window saw on 2026-09-25. The family rehearsal's protocol stub moved
+word for word into the rehearsal kit, so both gates run one copy.
+**Proven by:** the deployment rehearsal, 67/67 on main (58 before); CLI tests for its helpers.
+
+## HTTP1 — the HTTP host under test (2026-09-30)
+
+> - [ ] **HTTP1 — the HTTP host under test** (service F19). … The fix is a `WebApplicationFactory` suite
+>   over shared mode's doors.
+
+**Outcome** (built by a subagent in its own worktree, merged, then run on main). `Daoris.Service.Http.Tests`
+starts the host's real `Program` in-process through `WebApplicationFactory`, over a scratch home, index,
+repositories and web root per class; no port is bound, and the host needed no change. Local mode: a
+root is answered to loopback only; a quest nobody took is deleted, a taken one refused with 409 and the
+service's sentence word for word. Shared mode: the host's own route table is enumerated, every route
+refused without a key and answered with a valid one, expired and revoked keys named by prefix and never
+repeated, no page served, no machine path in any answer, no delete routes; a local host asked to bind
+beyond loopback does not start. A 500 is one `request.failed` line by route pattern. A dogfood test now
+holds that every .NET test project is run by a declared gate. On main, its LAN example became a
+documentation address: the sensitive scan refuses a private network's.
+**Proven by:** 30 tests, each seen failing against a deliberately broken host; the service gate 632.

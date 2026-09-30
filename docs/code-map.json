@@ -62,6 +62,11 @@
       "summary": "the HTTP host: the platform's API and page, local or shared"
     },
     {
+      "id": "Daoris.Service.Http.Tests",
+      "path": "src/Daoris.Service/Daoris.Service.Http.Tests",
+      "summary": "the HTTP host's tests: its real doors, in-process, local and shared"
+    },
+    {
       "id": "Daoris.Service.Mcp",
       "path": "src/Daoris.Service/Daoris.Service.Mcp",
       "summary": "the MCP host: the family's knowledge and quests, for an agent's session"
@@ -126,6 +131,11 @@
     {
       "from": "Daoris.Service.Http",
       "to": "Daoris.Service.Core",
+      "kind": "project"
+    },
+    {
+      "from": "Daoris.Service.Http.Tests",
+      "to": "Daoris.Service.Http",
       "kind": "project"
     },
     {

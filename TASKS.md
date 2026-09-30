@@ -21,9 +21,9 @@ lists.
 
 ## State
 
-**Counts, and this is their one home:** sixteen commands, **538 CLI tests, 602 service, 994 driver,
-320 desktop modules, 80 devkit, 1491 web unit, 21 Playwright**, 66/66 release rehearsal, **301/301
-family rehearsal** (it names its own phases when you run it), **58/58 deployment rehearsal** (D60),
+**Counts, and this is their one home:** sixteen commands, **568 CLI tests, 602 service and 30 HTTP host, 1040 driver,
+345 desktop modules, 80 devkit, 1556 web unit, 21 Playwright**, 66/66 release rehearsal, **301/301
+family rehearsal** (it names its own phases when you run it), **67/67 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge
 documents, 5 skills, 7 packs. The always-loaded core is **22,492 of 26,000 bytes** — a span in
 `AGENTS.md` since D59 — and **advisory rather than enforced** (D54: a fact gates, a judgement
@@ -38,64 +38,26 @@ mechanics drafted at `docs/adoption/shenora-repo-mechanics.md`, budget 40,000, `
 
 ## Handover — where a fresh session picks up
 
-🔴 **The owner set the direction again on 2026-09-27: the first goal (D77).** A real workspace, a
-ticket read through a browser, and a task started with no repository named. FG1–FG4 landed the
-code changes the study and the setup found. **FG5, the first run, is next**, and waits on the owner.
-🔴 **Then the owner asked for Daoris's own browser (D78)**, so the sign-in happens in a window Daoris
-owns and every harness can drive: **BRW1–BRW2 landed, and BRW3, the owner's sign-in and first ticket through it, comes first**, and FG5's ticket is read through them.
-🔴 **The first run showed a session guessing what another repository knew, so D79 landed: ask and
-wait** (ASK1–ASK3, in the archive). A session publishes its question, parks its taken quest on it,
-and is resumed in the same tree with the answer. **ACPEND1 landed with it**: the same run's account
-limit had been recorded as a stand-down. **The second run then met the first goal**: a ticket read,
-routed, developed, gated and closed done with no repository named. That needed ASKAGAIN1 and D80 (a
-cut-off carried on), both in the archive. The chain's verify step found three more. ORPHAN1 is fixed
-(in the archive). **CHAIN2 has the owner's answer**: a same-repository step starts on the parent's
-branch. The owner then set two more directions, **D81**: a session works in its harness's own `auto`
-mode, "as much as it can just like regular claude code". And **parallel sessions (PAR1)** and **a
-console tab for everything running (CONSOLE2)**. CHAIN2 landed as D82, PAR1 with it, STANDDOWN2 as
-D83, and CONSOLE2 and BRW10 (a sign-in that survives a restart) on 2026-09-28, all in the archive.
-**Then the browser as a browser** (BRW4–BRW6), until **D84 and D85** (2026-09-28): Daoris ships a
-Chromium for its browser and, once Shenora's host is released, for its page. **CHR1–CHR7 landed**
-(2026-09-30, D92, D93): the browser is `daoris-browser`, the engine's own window, and the page renders
-on Shenora 0.17's Chromium, in an install that is a `Daoris.exe` launcher, the application under `app/`
-and the home in `data/`. Two engines ride until Shenora can host the browser (CHR8). 🔴 **The owner also
-filed six rows from the first real workspace** (2026-09-28, *After the first real workspace*, "lets
-start them later"): workspace rules for how work lands, the default branch, cleaning up session
-branches, the session view, the map, and asking Daoris for help. Ask which comes first.
-🔴 **Where the 2026-09-27 session stopped (the owner: "lets continue in next session").** The first
-goal's loop is met (FG5's sixth leg). 🔴 **Republishing is the session's own call** (the owner,
-2026-09-29: *"you can always republish if you need"*): the install keeps its sign-in across a
-restart (BRW10). The one rule left is the app's: a republish closes it, so never while a session on
-it is running; a parked one has no process and survives. **The owner has five open calls:**
-the verify step's camera-GUID defect, sent to the front end as a quest before any camera note is
-saved; whether the daily view gains a note chip; the single-select answer said back on the ticket;
-merging four docs commits left on session branches, in both repositories; and READACROSS1. The
-private notes name the branches and ids.
-D76's round is done, and so are its two leftovers (SURF11 as DOCK1c, and RAIL2). Nothing is pushed or
-published, and a release is still blocked on REH1.
-- **Landed:** CONV1 (the record), CONV2 (the view), CONV3a (Claude Code's `stream-json`), CONV3b
-  (chats on the protocol door), CONV4a (stopping a turn, one queue on both doors), CONV4b (the
-  composer's turn, queue and drafts), CONV4c (attachments), CONV4d (`@` a file in the tree), CONV5
-  (the meters), FRAME6 (the frame), RAIL1 (the list) and REVIEW2 (review), with the fixes the looks
-  found. All are in the archive, under 2026-09-25 and 2026-09-26.
-- **REV3, the owner's full review, is closed**, and so is **CLEAN1**, its cleanup lists (both in
-  the archive). The ledger is `docs/2026-09-25-rev3-review.md`, and what they left is under *What
-  REV3 left* below.
-- **UX5, screen by screen, is closed** (2026-09-26, in the archive). Its ledger,
-  `docs/2026-09-26-ux5-screen-audit.md`, holds every finding with its disposition and, at its head,
-  what the instruments need to look at the window; the rules it settled are in the body of
-  `docs/2026-09-19-platform-ux.md`. **The next direction is the owner's to set.**
-- **How each landing is checked:** TDD, the gates, then a look on the window with a real session.
-  Real sessions on this machine's Claude Code account are authorised (2026-09-24).
-- **The scratch machine:** its `driver.json` points `claude-code-acp` at the ACP adapter the dsh
-  probe installed under `_fixtures/dsh/npm` (0.79.0), which is how a protocol-door chat is looked
-  at without installing anything.
-- **Open beside it:** FLAKE1 (an intake test, about 1 run in 20), DEPLOY5 (the artefact gate
-  holding a chat at close) and TEST1 (the Playwright worker's `0xC0000409`, seen a second time).
-- **The owner's to spend or attend:** TRUST2's first grant, AGT2c (two downloads, not authorized)
-  and FG5's sign-in and ticket. **Six wait on a trigger:** TOOL4 on TOOL3's transcripts; TOOL5, CANON9 and HARNESS1 on a
-  repository naming what it wants; REH1 on a captured recurrence; PLUG7 on a plugin asking for a
-  service-side point. **A new direction from the owner outranks all of them.**
+🔴 **Where 2026-09-30 left it.** The owner's direction: *Daoris is the master development tool, doctrine
+and knowledge sharing*; their ticket work runs through the local Daoris, and Ask Daoris should reach
+everything. **The day's rows landed** (all in the archive): HELP4–HELP5 (Ask Daoris honest and faster),
+LOG1a–b (the machine log, D94), SHEN1 (Shenora 0.18), USE1a–f (what the window showed, one defect for
+the overflow and the side bar), QUEST1 (delete, D95), CONSOLE4 (a terminal, D96), SETUP1 (the setup
+guide, D97), AGT6 (model and effort, D98), CHR8 (one Chromium, D99), WORK1, DEPLOY5 and HTTP1, most
+built by subagents in their own worktrees and merged, rehearsed and looked at on main. **HELP6** (Ask
+Daoris proposes every new door) is being built.
+- **The owner's ticket AR-2201 is landed** on its feature branch in the repository that owns it, not
+  pushed; the pull request is theirs, and so are two calls the verify step raised (a rounding change
+  in a shared helper, and a production config update). Two landed branches of the ticket before it
+  wait for the owner to delete (the permission policy refused a forced branch delete). The private
+  notes name them.
+- **The install** runs the latest main; republishing is the session's own call, never while a session
+  on it runs. Start it the normal way, not through the dev tool, unless the instruments are needed
+  (USE1g is a session shell's PATH seen once under a dev-tool start).
+- **Load makes flakes**: FLAKE1's real-tick classes fail under parallel builds and pass alone. Run the
+  rehearsals when nothing else builds.
+- **Open and the owner's:** READACROSS1, HELPREAD1, TRUST2, AGT2c, DIST1, BUDGET1, HOME1; on a trigger:
+  TOOL4, TOOL5, PLUG7, CANON9, HARNESS1, REH1. **A new direction from the owner outranks all of them.**
 
 **Start by reading the contract the item cites** — every backlog row names one, and
 `docs/README.md` says which documents are current. `CLAUDE.md` carries the standing rules and the
@@ -144,16 +106,13 @@ rather than designed.
 
 ## Backlog
 
-**Twenty-nine rows are open**: the owner's three of 2026-09-30 (USE1, HELP6, LOG1),
-first; WSR4
-from the first real workspace (its other WSR, HELP, SESS, DOCK
-and MAP rows are in the archive); the four REV3 left (DIST1, BUDGET1 and HOME1 the owner's, and HTTP1);
-the in-app browser's three (BRW3, BRW7, BRW8); D85's one (TASKBAR1); the first goal's four
-(FG5, READACROSS1 and HELPREAD1 the owner's, and SEM2 on a trigger); D76's held file tools; four
-leftovers (CONSOLE3, FLAKE1, DEPLOY5, TEST1); two on the owner (TRUST2, AGT2c); REH1; and the rest on
-a trigger (TOOL4, TOOL5, PLUG7, CANON9, HARNESS1; see *Handover*). Every closed one is in
-`docs/task-archive.md`, and this file holds no ticked rows, by the `task-lifecycle` rule it also
-ships. A heading below holds open rows only.
+**Twenty-seven rows are open**: the owner's three of 2026-09-30 (USE1's last part to confirm, HELP6,
+LOG1's last two), first; WSR4 from the first real workspace; the three REV3 left (DIST1, BUDGET1 and
+HOME1, the owner's); the in-app browser's three (BRW3, BRW7, BRW8); D85's one (TASKBAR1); the first
+goal's four (FG5, READACROSS1 and HELPREAD1 the owner's, and SEM2 on a trigger); D76's held file tools;
+three leftovers (CONSOLE3, FLAKE1, TEST1); two on the owner (TRUST2, AGT2c); REH1; and the rest on a
+trigger (TOOL4, TOOL5, PLUG7, CANON9, HARNESS1). Every closed one is in `docs/task-archive.md`, and
+this file holds no ticked rows, by the `task-lifecycle` rule it also ships. A heading below holds open rows only.
 
 ### Watch it, type into it, set it up (owner, 2026-09-30) — in this order
 
@@ -254,10 +213,6 @@ found that is not session-sized, or is the owner's call. Each one was confirmed 
   install set one for the account. So a moved or second install runs on the first one's `data/`
   and says nothing. Either the install's own `data/` wins, or the inherited home wins and the shell
   says so.
-- [ ] **HTTP1 — the HTTP host under test** (service F19). The service suite references Core and the
-  MCP host only, so the shared gate, the key check and path stripping are exercised by one
-  rehearsal route each. The fix is a `WebApplicationFactory` suite over shared mode's doors.
-
 ### What an agent may do — permission scopes (owner, 2026-09-24 → D72, D73)
 
 Measured: rules and hooks Daoris hands over at spawn reach an untrusted session on both doors, and a
@@ -471,14 +426,6 @@ TDD, looked at on the window, and the ones that touch a real session use one (au
   **And a fourth class the same day**: `CanonicalLineTests.A_session_tree_grows_from_the_line_set_for_its_repository`
   failed once (*"the tree grew from main, not develop"*, 993/994) while five subagents built in
   parallel; its class passed three runs alone. Load is the common factor in every sighting.
-
-- [ ] **DEPLOY5 — the artefact gate holds a chat open at close.** The fix for a chat left `working`
-  when the shell closes (FIX-LOG, 2026-09-25) is held by driver tests at the runner. But the defect
-  that survived them lived in the shell's own shutdown order, and only the window saw it. The
-  deployment rehearsal closes the installed shell (§6) with no chat open, and it has no way to open
-  one: a chat starts over the bridge, and the rehearsal has no debug port. Give it one (the
-  `run --install` loop already does), open a stub chat, close the shell, and read the record for
-  the close's note, never the sweep's.
 
 - [ ] **TEST1 — the Playwright suite aborts a worker with `0xC0000409`: seen twice now.** The
   second sighting was its trigger. Both runs died with `worker process exited unexpectedly
