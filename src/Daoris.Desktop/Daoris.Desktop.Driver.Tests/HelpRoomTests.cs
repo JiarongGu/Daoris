@@ -154,6 +154,8 @@ public sealed class HelpRoomTests : IDisposable
             "the right side bar", "the panel", "the timeline, the review and the console", "Every view sits in one frame",
             "tab list", "right-click", "drag", "Reset view locations",
             "`Ctrl+B`", "`Ctrl+J`", "`Ctrl+Alt+B`", "`F1`", "`Ctrl+Alt+I`", "`Ctrl+Shift+Alt+L`", "`Ctrl+K`",
+            // The person's own terminal (CONSOLE4b), and that it is theirs rather than a session's.
+            "terminal: the person's own shell", "never a session's",
         })
         {
             Assert.Contains(said, agents);

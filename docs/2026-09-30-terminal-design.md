@@ -81,7 +81,33 @@ into the machine log (D94).
      keystroke or a resize for a terminal that has gone is answered quietly: a toast per key would be
      noise, and the page already knows it ended.
 2. **CONSOLE4b**: the terminal view in the page on a terminal renderer (`@xterm/xterm` and its fit
-   addon), one tab first, in the panel; looked at on the window in both themes.
+   addon), one tab first, in the panel; looked at on the window in both themes. *Built 2026-09-30*
+   (`work/TerminalView.tsx`, `useTerminals`); **not yet looked at on the window**, which the build
+   session could not open beside the owner's running install. What building it settled:
+   - **A view like the others** (`placements.ts`): `terminal`, in the panel after the console, moved
+     and dragged as they are, and absent where no shell handed it in (`WorkFrame`'s `terminal`, as
+     `ask` is).
+   - **The terminals are held by the Work frame, not by their view** (`useTerminals` in `shell.ts`):
+     the view unmounts whenever it moves or another view of its region is shown, and a shell must
+     outlive that. Output that comes while no screen listens is held, bounded, and handed to the next
+     that does; each screen is kept beside the view and moved, not reopened, into wherever it is shown
+     next, with its scrollback. An output batch can beat its terminal's own `OPEN` answer, so what is
+     held is keyed by id before the page has heard of it.
+   - **Shown with none open, it opens one**, once per showing: a person who closed the last one has
+     closed it. A second open waits on the first, so strict mode's doubled effect opens one shell.
+   - **Where it starts is the page's choice** (§2): the attended session's tree (a record with none
+     works in its repository's root), else the first repository of the workspace in scope with a
+     checkout here, else nothing said and the module's own answer, the home.
+   - **Its colours are the tokens'** (`work/terminalTheme.ts`): the page, the ink, the accent as the
+     cursor, and the four status colours as red, green, yellow and blue, validated in both themes;
+     magenta and cyan are halfway between two of them; the greys turn round with the theme. A test
+     keeps the file free of any colour of its own. It follows a theme chosen in Settings (tested) and
+     the system's own when that is the choice (heard from the media query; no test reaches it).
+   - **Keys as a Windows console and VS Code have them**: Ctrl+C copies a selection and interrupts
+     without one, Ctrl+V pastes, and the frame's own keys (`shortcuts.ts`, now one list with the
+     application's handler) go to the frame rather than the shell.
+   - Ask Daoris's room names the terminal among the views, and says it is the person's, never a
+     session's.
 3. **CONSOLE4c**: more than one, the shell's choice, where it starts, and its tab's name.
 
 ## 5. Not chosen

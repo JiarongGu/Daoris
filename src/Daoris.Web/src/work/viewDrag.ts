@@ -1,5 +1,5 @@
 import { type DragEvent, useRef, useState } from 'react';
-import type { Place, ViewId } from './placements';
+import { type Place, VIEW_IDS, type ViewId } from './placements';
 
 // DOCK1e: a view's tab dragged from one region and dropped on the other, as VS Code's tabs are. The
 // move is the same `onMove` the tab list's *Move to* calls (DOCK1b), so a drop and a menu press can
@@ -14,7 +14,8 @@ const VIEW_TYPE = 'application/x-daoris-view';
  */
 const fromType = (place: Place) => `application/x-daoris-view-from-${place}`;
 
-const VIEWS: readonly string[] = ['timeline', 'review', 'ask', 'console'];
+// The one list of views, so a view added there (the terminal, CONSOLE4b) can be dropped as surely as moved.
+const VIEWS: readonly string[] = VIEW_IDS;
 
 /** What makes a view's tab draggable, and tells the frame while it is being dragged. */
 export function dragProps(view: ViewId, from: Place, onDrag?: (view: ViewId | null) => void) {

@@ -238,8 +238,11 @@ public static class HelpRoom
         text.Append("Sessions, Quests, Projects, Map, Convergence and Search, with Settings at its foot; `Ctrl+K` opens\n");
         text.Append("the command palette. Every view sits in one frame: the view in the centre, the panel beneath it,\n");
         text.Append("and the right side bar beside it; on Sessions the session list is at the left and the centre is the\n");
-        text.Append("attended session. Four views stand in the two regions and move between them:\n");
-        text.Append("the timeline, the review and the console of the session attended on Sessions, and Ask Daoris.\n");
+        text.Append("attended session. Five views stand in the two regions and move between them:\n");
+        text.Append("the timeline, the review and the console of the session attended on Sessions, Ask Daoris, and the\n");
+        text.Append("terminal: the person's own shell (PowerShell unless they choose another), in the panel beside the\n");
+        text.Append("console, which starts where the attended session works. A session's console takes no typing; the\n");
+        text.Append("terminal is the person's, never a session's.\n");
         text.Append("A view moves from its region's tab list (the button at the end of the tab row), by a right-click on\n");
         text.Append("its tab, or by dragging its tab to the other region; View → Reset view locations puts every view\n");
         text.Append("back. The toggles beside the window controls, and the View menu, show or hide the panel (`Ctrl+J`)\n");

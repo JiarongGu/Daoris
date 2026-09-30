@@ -63,6 +63,10 @@ describe('where the person is', () => {
       .toBe('Where the person is now: the Quests view, every workspace. The right side bar holds Ask Daoris, and is open; '
         + 'the panel holds the console, and is showing.');
     expect(prefaceOf({ view: 'quests', workspace: null })).toBe('Where the person is now: the Quests view, every workspace.');
+    // The person's own terminal (CONSOLE4b), by the name its tab carries.
+    expect(prefaceOf({ view: 'quests', workspace: null, layout: { right: ['ask'], panel: ['console', 'terminal'], rightShown: true, panelShown: true } }))
+      .toBe('Where the person is now: the Quests view, every workspace. The right side bar holds Ask Daoris, and is open; '
+        + 'the panel holds the console and the terminal, and is showing.');
   });
 
   it('names a working session by its state, and one that asked nothing by no quote', () => {

@@ -10,6 +10,7 @@ import { QuickAsk } from './help/QuickAsk';
 import { useFrameClosings } from './work/closings';
 import { usePlacements, viewsIn } from './work/placements';
 import { LAYOUT_KEYS, type LayoutRegion, LayoutToggles } from './work/LayoutToggles';
+import { frameShortcut } from './shortcuts';
 import type { StarterDoor } from './help/starters';
 import { WorkspaceSwitcher } from './WorkspaceSwitcher';
 import {
@@ -333,25 +334,19 @@ export function App() {
   // everywhere, a field included, since it types nothing (HELP1).
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
-      // Quick Ask (DOCK1d) on `Ctrl+Shift+Alt+L`, VS Code's Quick Chat key; by the key's place, since
-      // what `key` says under Shift and Alt differs by layout.
-      if (attached && event.ctrlKey && event.shiftKey && event.altKey && event.code === 'KeyL') {
+      // The frame's own keys (`shortcuts.ts`), the one list the terminal leaves to the frame too: Quick
+      // Ask (DOCK1d), Ask Daoris (HELP1), and the region toggles (DOCK1c). Anywhere, a field included:
+      // none of them types anything there.
+      const shortcut = frameShortcut(event);
+      if (shortcut === 'quickAsk' || shortcut === 'help') {
+        if (!attached) return;
         event.preventDefault();
-        setQuick(true);
+        if (shortcut === 'quickAsk') setQuick(true);
+        else openHelp();
         return;
       }
-      // `Ctrl+Alt+I` too, the key VS Code gives its chat, so a hand that knows one knows the other.
-      const chatKey = event.key.toLowerCase() === 'i' && event.ctrlKey && event.altKey;
-      if ((event.key === 'F1' || chatKey) && attached) {
-        event.preventDefault();
-        openHelp();
-        return;
-      }
-      // The region toggles (DOCK1c), VS Code's keys: Ctrl+B the rail, Ctrl+J the panel, Ctrl+Alt+B the
-      // right side bar. Anywhere, a field included: none of them types anything there.
-      const letter = event.key.toLowerCase();
-      if (event.ctrlKey && !event.shiftKey && !event.metaKey && (letter === 'b' || (letter === 'j' && !event.altKey))) {
-        const region: LayoutRegion = letter === 'j' ? 'panel' : event.altKey ? 'right' : 'rail';
+      if (shortcut) {
+        const region: LayoutRegion = shortcut;
         if (toggleRegionRef.current(region)) event.preventDefault();
         return;
       }
@@ -646,6 +641,8 @@ export function App() {
               // Ask Daoris as a view of the frame's regions: one right region, never a second column.
               ask={<AskDaoris {...askProps} framed={false} />}
               askFocus={helpFocus}
+              // The person's own shell (CONSOLE4b): a frame is only drawn where a shell is attached.
+              terminal
               closings={closings}
               placements={placements}
               content={view === 'sessions' ? undefined : renderView()}

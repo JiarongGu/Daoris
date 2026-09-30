@@ -10,7 +10,7 @@ import {
   CloudOff, Compass, Copy, Ellipsis, FileDiff, FilePen, FileText, Gauge, GitMerge, Globe, Inbox, Info, KeyRound, Languages,
   LayoutDashboard, LayoutGrid, Layers, Link, ListTodo, LogIn, Maximize2, Minimize2, Monitor, Network,
   PanelBottom, PanelLeft, PanelLeftClose, PanelLeftOpen, PanelRight, PanelRightClose, Paperclip, Plug, Plus,
-  RotateCw, Search, Settings, Shield, Square, SquareArrowOutUpRight, SquareTerminal, Trash2, TriangleAlert,
+  RotateCw, Search, Settings, Shield, Square, SquareArrowOutUpRight, SquareTerminal, Terminal, Trash2, TriangleAlert,
   Wrench, X,
 } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
@@ -111,6 +111,8 @@ const ICONS = {
   // Stopping one piece of background work from its tab (CONSOLE3a): the square every player and
   // terminal draws for stop, which is not the bin (removing) or the cross (closing).
   stop: Square,
+  // The person's own shell (CONSOLE4b): a prompt, where the console's framed square is a session's output.
+  terminal: Terminal,
 } as const;
 
 export type IconName = keyof typeof ICONS;

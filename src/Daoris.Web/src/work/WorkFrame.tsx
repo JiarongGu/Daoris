@@ -7,8 +7,9 @@ import { useAnswerSession, useQuests, useRegistry, useSessions } from '../querie
 import {
   stopNotice, type TurnStop, useCancelTurn, useEndChat, useHarnesses, useResolveSession, useSendMessage,
   NO_TURNS, useChatTurns, useSessionOpenings, useSessionStreams, useStartChat, useStopSession, useStopTask, useSweepPlan, useTreeFiles,
-  logEvent,
+  logEvent, useTerminals,
 } from '../shell';
+import { TerminalView } from './TerminalView';
 import { Button, Drawer, failure, Icon, type Notify, SESSION_ACTIVE, Tip, useErrorNotify } from '../ui';
 import { AttendedSession, noteIsInTheHead } from './AttendedSession';
 import { SessionConversation } from './SessionConversation';
@@ -121,8 +122,13 @@ const door = (structured?: boolean): 'structured' | 'text' | undefined =>
  */
 export function WorkFrame({
   selected, onSelect, notify, onSendBack, onAnswerAsk, onOpenQuest, intent, onIntentTaken, ask, askFocus = 0, closings, placements,
-  content, onOpenSessions,
+  content, onOpenSessions, terminal = false,
 }: {
+  /**
+   * The person's own terminal as a view of the regions (CONSOLE4b, D96): only where a shell is attached,
+   * as Ask Daoris is, since its shells are this machine's and ride the bridge alone (D47 §4).
+   */
+  terminal?: boolean;
   /** Go to Sessions, where the attended session is read whole — the door its line offers off Sessions. */
   onOpenSessions?: () => void;
   /**
@@ -265,6 +271,10 @@ export function WorkFrame({
   const shown = attended
     ? (picked && streams.some((row) => row.key === picked) ? picked : attended.id)
     : null;
+
+  // The person's own terminals (CONSOLE4b), held here rather than by their view, which unmounts whenever
+  // it moves or another view of its region is shown: a shell outlives that, as VS Code's terminal does.
+  const terminals = useTerminals();
 
   // A conversation is the only thing there is anything to say to. A driven session also holds a
   // tree, but it was given its whole target at once and has no channel to speak into — an input
@@ -490,8 +500,8 @@ export function WorkFrame({
   // so the palette's ask never landed. The parent is told from an effect, not during this render.
   // The attended session's dock surface: the one it had, or the timeline it opens on (FRAME6).
   const dockKey = attended?.id ?? '';
-  // What stands where (DOCK1b): Ask Daoris only where a shell handed it in.
-  const present = (view: ViewId) => view !== 'ask' || Boolean(ask);
+  // What stands where (DOCK1b): Ask Daoris only where a shell handed it in, and the terminal likewise.
+  const present = (view: ViewId) => (view === 'ask' ? Boolean(ask) : view === 'terminal' ? terminal : true);
   const rightViews = viewsIn(placed.places, 'right', present);
   const panelViews = viewsIn(placed.places, 'panel', present);
   // Ask Daoris is the machine's, not the attended session's: its tab stays whichever session is attended.
@@ -606,9 +616,19 @@ export function WorkFrame({
   ) : null);
   const withWhose = (surface: ReactNode, flush = false) => (elsewhere && attended ? <>{whose(flush)}{surface}</> : surface);
 
+  // Where a terminal opened here starts (D96): the attended session's tree (a record with none works in
+  // its repository's root), else the first repository of the workspace in scope that has a checkout here.
+  // Said by the page, which knows what is attended and what the viewer is scoped to; with nothing to say,
+  // the module opens it in the home, and it opens there too when this folder is not on the machine.
+  const rootOf = (repository: string) => (registry.data ?? []).find((row) => row.repository === repository)?.root;
+  const terminalCwd = (attended && here ? attended.tree ?? rootOf(attended.repository) : undefined)
+    ?? [...(registry.data ?? [])].filter((row) => row.root).sort((a, b) => a.repository.localeCompare(b.repository))[0]?.root
+    ?? undefined;
+
   /** A view's surface, drawn in whichever region it stands (DOCK1b). The panel draws the console itself. */
   const surface = (view: ViewId, where: Place = 'panel') => {
     if (view === 'ask') return ask;
+    if (view === 'terminal') return <TerminalView terminals={terminals} cwd={terminalCwd} />;
     if (view === 'review') {
       return withWhose(
         <DiffPane
