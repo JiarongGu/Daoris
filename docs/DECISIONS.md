@@ -3633,6 +3633,14 @@ should act without asking, with the harness's own judgement in place of a list.
 - **Growing the handed allow-list command by command.** That is what FG5 was doing, one proposal
   per refusal, and it never catches up with a real repository's tooling.
 
+**Amended 2026-10-01 (UNBLOCK4, D122 §3.7): "no push by default" held in the classifier as well.** The rules
+handed at spawn did not keep what this decision said they kept. `no-push` denied `git push …` as written, the
+harness matches a rule against the command as written, and auto mode's classifier allows a push to the working
+repository by default. So `git -C . push` passed both (DOC1's finding, from the maker's documentation). The spawn
+file now tells the classifier, as a hard denial after its own `"$defaults"`, that a push in any form, a publish and
+a release are the person's, and `no-push` denies a push with options before its subcommand on both doors. D122's
+note has the whole account. What this door's classifier does with it is the owner's canary to show.
+
 ## D82 — A chain's next step in the same repository starts on the branch the step before landed on (2026-09-27)
 
 **Decision.** When a quest is a chain's next step (D65 §4) and its parent's last session on this
@@ -6325,6 +6333,33 @@ repository were read from its files: the canon's rules and skills, `Acp.cs`, `Ad
 2026-10-01 and cited in design §9, or LAYOUT2's reading of their shipped code; none was measured on a turn. The
 account of what AR-2201's sessions read is the parent's, recorded in no tracked document. `verify` checks this
 entry's shape and the design's links and budget, and none of their words.
+
+**Built 2026-10-01 (UNBLOCK4): the carve-outs held harder, and `git mv`.** Point 7 and the `commit` half of point 4,
+as design §3.6 and §3.7 say, with one addition.
+- **`commit` gains `Bash(git mv:*)`**, in both defaults tables (`Permissions.cs`, `permissions.ts`), held together by
+  the test that reads the CLI's source. This amends D72's `commit` default.
+- **The spawn file carries `autoMode.hard_deny`** while `no-push` is on: `"$defaults"`, then the sentence the design
+  wrote. `SpawnSettings.Write` puts `"$defaults"` first whatever it is handed, and takes the list as a required
+  argument, so no spawn on either door forgets to say. `no-push` switched off hands no `autoMode` key at all. The
+  sentence rides the `no-push` default in the driver's table (`HardDeny`), and has no twin in the CLI's, which
+  writes no spawn file. This amends D72's composed file.
+- **The addition: `no-push` denies a push with options before it**, as `Bash(git -* push)` and `Bash(git -* push
+  *)`. The maker's rule syntax puts a `*` anywhere, and only an allow with one before the subcommand draws its
+  warning. So the forms the maker names as passing a `git push` rule (`git -C . push`, `git -c <key>=<value> push`)
+  and their cousins (`--git-dir`, `--no-pager`) are refused structurally, on the pipe door too, before any
+  classifier. What no rule can name, a quoted subcommand, an alias, a path to git or a shell running it, is left to
+  the classifier's entry, and on the pipe door nothing allows it.
+- **Rejected**: listing each option (`git -C * push`, `git -c * push`, …), which misses the next one; `Bash(git *
+  push *)`, which also refuses any commit whose message says *push* as a word before another; and leaving the pipe
+  door to the rule that nothing else allows a push, which holds only until a person or a trusted repository allows
+  `git` broadly. **The price, stated**: `git -C <dir> commit -m "…"` with *push* as a word before another is refused,
+  and a session rewords or commits from inside the tree.
+- **Proven, and not.** Keylessly: the composed file on both doors (the fast half's `PermissionRulesTests`, and the
+  real-tick `PermissionSpawnTests` for the pipe and protocol doors), and which form meets a deny, by a model of the
+  maker's matching that `BashRuleTests` holds to the maker's own rows, with the same forms in `permissions.test.ts`.
+  Unproven until the owner's canary: that the harness matches the option-first rules as its documentation says, and
+  that the classifier reads `autoMode` from this file on the protocol door and refuses `git -C . push`.
+
 ## D121 — Every tool Daoris runs is the system's, managed, or a file the person names; a list built in says where each version downloads, and more locations extend it without a release (2026-10-01)
 
 **Decision (TOOLS1).** The owner: *"all tools that daoris using like git, [terminal] should all have a self managed
