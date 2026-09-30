@@ -27,6 +27,15 @@ internal static class TreesConsole
         _ => item.Kind,
     };
 
+    /// <summary>What accepting a session would do, in one line — who pushes it where a plugin does, and what would refuse it (D100).</summary>
+    internal static string Planned(string session, LandingPlan plan)
+    {
+        var line = $"trees: accepting `{session}` would {(plan.Form == LandingForm.Branch ? "put its work on the branch" : "merge its work into")} `{plan.Target}` ({plan.Source})";
+        if (plan.Plugin is { } plugin) line += $", then plugin `{plugin}` would push it and open the pull request";
+        line += ".";
+        return plan.Problem is { } problem ? $"{line} It would be refused now: {problem}" : line;
+    }
+
     public static async Task<int> RunAsync(string[] args)
     {
         var configPath = DriverConfig.ResolvePath();
@@ -108,7 +117,8 @@ internal static class TreesConsole
 
             // Accepting a session's work (WSR1, D87): the review's Accept, from a terminal — D50's second
             // door, which the landing had not had. The workspace's rule decides the form (merged into the
-            // line, or a branch for the person to push), and --plan says where it would go and does nothing.
+            // line, or a branch for the person to push, or for the rule's plugin to push — D100), and --plan
+            // says where it would go and does nothing.
             case ["land", var session, ..]:
             {
                 using var service = ServiceClient.FromEnvironment();
@@ -120,21 +130,27 @@ internal static class TreesConsole
                 }
 
                 var questId = await service.SessionQuestAsync(session).ConfigureAwait(false);
+                var events = new SessionEvents(Path.Combine(home, "sessions"));
                 // Named for the chain's first quest (WSR5), as the review's press names it.
                 var subject = await LandingRules.SubjectAsync(
                     session, questId, quest => service.FindQuestAsync(quest),
-                    new SessionEvents(Path.Combine(home, "sessions")).Openings([session]).GetValueOrDefault(session)).ConfigureAwait(false);
+                    events.Openings([session]).GetValueOrDefault(session)).ConfigureAwait(false);
+                // A plugin's own lines, said as they come, under its name — as the console says them (D64 §4).
+                var landing = new SessionTrees(home, new LandingPlugins(home, say: (plugin, line) => Console.WriteLine($"  plugin:{plugin}  {line}")));
 
                 if (args.Contains("--plan"))
                 {
-                    var plan = await trees.PlanAsync(tree, subject).ConfigureAwait(false);
-                    Console.WriteLine($"trees: accepting `{session}` would {(plan.Form == "branch" ? "put its work on the branch" : "merge its work into")} `{plan.Target}` ({plan.Source}).");
+                    var plan = await landing.PlanAsync(tree, subject).ConfigureAwait(false);
+                    Console.WriteLine(Planned(session, plan));
                     return 0;
                 }
 
-                var landed = await trees.LandAsync(tree, subject).ConfigureAwait(false);
+                var landed = await landing.LandAsync(tree, subject).ConfigureAwait(false);
                 Console.WriteLine($"trees: {landed.Message}");
-                return landed.Landed ? 0 : 1;
+                // Kept where the conversation is kept, as the review's press keeps it (D100).
+                if (landed.Landed) events.Keep(session, LandingRules.Note(landed), line => Console.Error.WriteLine($"trees: {line}"));
+                // 1 where the step the rule asked for did not happen: refused, or the plugin did not push.
+                return landed.Landed && landed.Plugin is not { Failed: true } and not { Pushed: false } ? 0 : 1;
             }
 
             default:
@@ -144,7 +160,8 @@ internal static class TreesConsole
                 Console.Error.WriteLine("  clean lists every session branch with what it holds; --yes removes those");
                 Console.Error.WriteLine("  whose work is on a branch of yours, or that hold nothing (D88).");
                 Console.Error.WriteLine("  land accepts a session's work as the review's Accept does, by the workspace's");
-                Console.Error.WriteLine("  rule; --plan says where it would go and does nothing (D87).");
+                Console.Error.WriteLine("  rule; --plan says where it would go and does nothing (D87). A rule naming a");
+                Console.Error.WriteLine("  plugin hands the branch to it to push and open the pull request (D100).");
                 return 2;
         }
     }

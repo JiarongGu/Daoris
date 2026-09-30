@@ -13,18 +13,26 @@ const LANDINGS: RepositoryLanding[] = [
   { repository: 'tools', workspace: 'forge', form: 'merge', source: 'default' },
 ];
 
-const draw = (onSet = vi.fn()) => {
+const draw = (onSet = vi.fn(), landers: string[] = [], landings: RepositoryLanding[] = LANDINGS) => {
   render(
     <Tooltip.Provider>
       <LandingList
-        landings={LANDINGS}
+        landings={landings}
         workspaceLandings={[{ workspace: 'aurora', form: 'branch', pattern: 'feature/{quest}-{slug}' }]}
+        landers={landers}
         onSet={onSet}
       />
     </Tooltip.Provider>,
   );
   return onSet;
 };
+
+async function choose(name: string, option: string) {
+  const user = userEvent.setup();
+  screen.getByRole('combobox', { name }).focus();
+  await user.keyboard('{Enter}');
+  await user.click(await screen.findByRole('option', { name: option }));
+}
 
 describe('the landing card', () => {
   it('says each repository\'s rule and what said so, grouped by its workspace', () => {
@@ -79,6 +87,46 @@ describe('the landing card', () => {
     expect(game).toHaveValue('');
     expect(game).toHaveAttribute('placeholder', 'feature/{quest}-{slug}');
     expect(screen.getByRole('textbox', { name: 'The branch pattern for aurora' })).toHaveValue('feature/{quest}-{slug}');
+  });
+
+  /**
+   * WSR4 (D100): a branch rule may name the plugin that pushes it and opens the pull request — one of the
+   * plugins here that land work. With none installed nothing is offered, and a merge never names one.
+   */
+  it('offers the plugins here that land work on a branch rule, and sends the one chosen', async () => {
+    const onSet = draw(vi.fn(), ['github-pull-request']);
+    const user = userEvent.setup();
+    const forge = screen.getByRole('region', { name: 'forge' });
+
+    expect(screen.queryByRole('combobox', { name: 'Who pushes the branch for tools' })).toBeNull();
+    await user.click(within(screen.getByRole('radiogroup', { name: 'How work in tools lands' })).getByRole('radio', { name: 'branch' }));
+    await choose('Who pushes the branch for tools', 'plugin github-pull-request');
+    await user.click(within(forge).getAllByRole('button', { name: 'Set' })[1]!);
+
+    expect(onSet).toHaveBeenLastCalledWith({ repository: 'tools', form: 'branch', pattern: 'feature/{quest}-{slug}', plugin: 'github-pull-request' });
+
+    await choose('Who pushes the branch for tools', 'you push it');
+    await user.click(within(forge).getAllByRole('button', { name: 'Set' })[1]!);
+    expect(onSet).toHaveBeenLastCalledWith({ repository: 'tools', form: 'branch', pattern: 'feature/{quest}-{slug}' });
+  });
+
+  it('offers no plugin where none here lands work', async () => {
+    draw();
+    const user = userEvent.setup();
+
+    await user.click(within(screen.getByRole('radiogroup', { name: 'How work in tools lands' })).getByRole('radio', { name: 'branch' }));
+
+    expect(screen.queryByRole('combobox', { name: 'Who pushes the branch for tools' })).toBeNull();
+  });
+
+  it('says which plugin pushes where a rule names one', () => {
+    draw(vi.fn(), ['github-pull-request'], [
+      { repository: 'game', workspace: 'aurora', form: 'branch', pattern: 'feature/{quest}-{slug}', plugin: 'github-pull-request', source: 'repository' },
+    ]);
+
+    expect(screen.getByText(/pushes it and opens the pull request/)).toBeInTheDocument();
+    expect(screen.getByText('github-pull-request', { selector: 'code' })).toBeInTheDocument();
+    expect(screen.getByRole('combobox', { name: 'Who pushes the branch for game' })).toHaveTextContent('plugin github-pull-request');
   });
 
   it('does not send what already stands, and clears only where a rule is set', async () => {

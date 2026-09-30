@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { readFileSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { commandDriver, driverConfigPath, isBranchName, landingProblem, readDriverChoices } from '../src/driverconfig.ts';
 import { makeFixture, captureError } from './_fixture.ts';
@@ -289,6 +289,83 @@ test('landing refuses a rule that could not land work, and says what it needs', 
   assert.match(captureError(() => run(['landing', 'engine', 'branch'], at(fx))).message, /pattern/);
   assert.match(captureError(() => run(['landing', 'engine', 'push'], at(fx))).message, /a plugin's to do/);
   assert.match(captureError(() => run(['landing', 'engine'], at(fx))).message, /merge\|branch <pattern>\|--clear/);
+  fx.cleanup();
+});
+
+/**
+ * WSR4 (D100): a branch rule may name the plugin that pushes it and opens the pull request. Only a
+ * branch, and only an id — `LandingTests.cs` holds these cases, answer for answer.
+ */
+const PLUGIN_SHAPES: [string, string | undefined, string | undefined, RegExp | null][] = [
+  ['branch', 'feature/{quest}-{slug}', 'example.github-pull-request', null],
+  ['branch', 'feature/{quest}-{slug}', undefined, null],
+  ['merge', undefined, 'example.github-pull-request', /only a branch/],
+  ['branch', 'feature/{quest}-{slug}', 'Not An Id', /not a plugin id/],
+  ['branch', 'feature/{quest}-{slug}', '../elsewhere', /not a plugin id/],
+  ['push', undefined, undefined, /a plugin's to do/],
+];
+
+test('only a branch rule names a plugin, and only by an id', () => {
+  for (const [form, pattern, plugin, problem] of PLUGIN_SHAPES) {
+    const said = landingProblem({ form, ...(pattern ? { pattern } : {}), ...(plugin ? { plugin } : {}) });
+    if (problem === null) assert.equal(said, null, JSON.stringify([form, plugin]));
+    else assert.match(said ?? '', problem, JSON.stringify([form, plugin]));
+  }
+});
+
+/** A plugin folder under the fixture's home, which is where `driver.json` is (the driver's own reading). */
+function plugin(fx: { root: string }, id: string, points: string[]): void {
+  const folder = join(fx.root, 'plugins', id);
+  mkdirSync(folder, { recursive: true });
+  writeFileSync(join(folder, 'plugin.json'), JSON.stringify({ id, hooks: { command: ['node', '${plugin}/land.mjs'], points } }));
+}
+
+test('landing --plugin names a plugin on this machine that lands work, and says who pushes (D100)', () => {
+  const fx = makeFixture('driver-landing-plugin');
+  plugin(fx, 'example.github-pull-request', ['work/land']);
+
+  const said = run(['landing', '--workspace', 'aurora', 'branch', 'feature/{quest}-{slug}', '--plugin', 'example.github-pull-request'], at(fx));
+  assert.match(said.out, /plugin `example\.github-pull-request` pushes it and opens the pull request/);
+  assert.match(said.out, /Daoris itself never pushes/);
+  assert.deepEqual(readDriverChoices(at(fx)).workspaceLandings,
+    { aurora: { form: 'branch', pattern: 'feature/{quest}-{slug}', plugin: 'example.github-pull-request' } });
+  assert.match(run(['list'], at(fx)).out, /landing\s+workspace aurora\s+branch feature\/\{quest\}-\{slug\}, plugin example\.github-pull-request/);
+  fx.cleanup();
+});
+
+test('landing --plugin refuses a plugin missing, off, or landing nothing, each in its own sentence, and writes nothing', () => {
+  const fx = makeFixture('driver-landing-plugin-refused');
+  const set = (id: string) => () => run(['landing', 'engine', 'branch', 'feature/{quest}-{slug}', '--plugin', id], at(fx));
+
+  assert.match(captureError(set('example.nowhere')).message, /not installed/);
+
+  plugin(fx, 'example.watches', ['session/ended']);
+  assert.match(captureError(set('example.watches')).message, /`work\/land`/);
+
+  plugin(fx, 'example.off', ['work/land']);
+  writeFileSync(join(fx.root, 'plugins.json'), JSON.stringify({ disabled: ['example.off'] }));
+  assert.match(captureError(set('example.off')).message, /daoris plugin enable example\.off/);
+
+  plugin(fx, 'example.lands', ['work/land']);
+  assert.match(captureError(() => run(['landing', 'engine', 'merge', '--plugin', 'example.lands'], at(fx))).message, /only a branch/);
+  assert.match(captureError(() => run(['landing', 'engine', 'branch', 'feature/{quest}', '--plugin'], at(fx))).message, /--plugin <id>/);
+
+  assert.deepEqual(readDriverChoices(at(fx)).landings, {});
+  fx.cleanup();
+});
+
+test('a rule\'s plugin is read and kept as the driver keeps it, and a merge naming one is not read', () => {
+  const fx = makeFixture('driver-landing-plugin-preserve');
+  writeFileSync(at(fx), JSON.stringify({
+    landings: { odd: { form: 'merge', plugin: 'example.github-pull-request' } },
+    workspaceLandings: { aurora: { form: 'branch', pattern: 'review/{session}', plugin: 'example.github-pull-request' } },
+  }));
+
+  run(['cap', '3'], at(fx));
+
+  const choices = readDriverChoices(at(fx));
+  assert.deepEqual(choices.landings, {});
+  assert.deepEqual(choices.workspaceLandings, { aurora: { form: 'branch', pattern: 'review/{session}', plugin: 'example.github-pull-request' } });
   fx.cleanup();
 });
 

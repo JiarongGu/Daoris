@@ -138,6 +138,7 @@ public sealed class DriverModule : ModuleBase
                             pair.landing.Rule.Form,
                             pair.landing.Rule.Pattern,
                             pair.landing.Rule.Tidy,
+                            pair.landing.Rule.Plugin,
                             pair.landing.Source,
                         })
                         .ToArray(),
@@ -634,8 +635,16 @@ public sealed class DriverModule : ModuleBase
                 }
 
                 var rule = Optional(request, "form") is { } form
-                    ? new LandingRule(form, Optional(request, "pattern"), Flag(request, "tidy"))
+                    ? new LandingRule(form, Optional(request, "pattern"), Flag(request, "tidy"), Optional(request, "plugin"))
                     : null;
+                // The rule's plugin must be able to land work here, said as `daoris driver landing` says it (D100);
+                // the shape is the file's own question, asked first by the edit below.
+                if (rule is { Plugin: { } plugin } && LandingRules.Problem(rule) is null
+                    && LandingRules.PluginProblem(plugin, PluginCatalog.Load(_loop.Home, AdapterSet.Built().Names)) is { } problem)
+                {
+                    throw new DriverException(problem);
+                }
+
                 Change(config => workspace is not null
                     ? config.WithWorkspaceLanding(workspace, rule)
                     : config.WithLanding(repository!, rule));
@@ -1371,17 +1380,27 @@ public sealed class DriverModule : ModuleBase
         var subject = await LandingRules.SubjectAsync(
             id, questId, quest => service.FindQuestAsync(quest, cancellationToken),
             _loop.Events.Openings([id]).GetValueOrDefault(id));
-        var trees = new SessionTrees(_loop.Home);
+        // A rule's plugin says its lines on the console under its name, as a hook's do (D64 §4, D100).
+        var trees = new SessionTrees(_loop.Home, new LandingPlugins(
+            _loop.Home, say: (plugin, line) => _loop.Output.Append($"plugin:{plugin}", line)));
 
         if (request.Type == "LANDING")
         {
             var plan = await trees.PlanAsync(tree, subject, cancellationToken);
-            return new { Session = id, plan.Form, plan.Target, plan.Source };
+            return new { Session = id, plan.Form, plan.Target, plan.Source, plan.Plugin, plan.Problem };
         }
 
         var landed = await trees.LandAsync(tree, subject, cancellationToken);
+        // Kept where the conversation is kept, so the landing and the plugin's word outlast the press (D100).
+        if (landed.Landed) _loop.Events.Keep(id, LandingRules.Note(landed), line => _loop.Output.Append(id, line));
         _loop.Nudge();
-        return new { Session = id, Done = landed.Landed, landed.Message, landed.Branch };
+        return new
+        {
+            Session = id, Done = landed.Landed, landed.Message, landed.Branch,
+            Plugin = landed.Plugin is { } said
+                ? new { Id = said.Plugin, said.Pushed, said.PullRequest, said.Message, said.Failed }
+                : null,
+        };
     }
 
     /// <summary>
@@ -2106,9 +2125,9 @@ public sealed class DriverModule : ModuleBase
                 .Select(p => new { Workspace = p.Key, Branch = p.Value }).ToArray(),
             // The landing rules as set (WSR1), as rows for the same reason.
             Landings = config.Landings.OrderBy(p => p.Key, StringComparer.Ordinal)
-                .Select(p => new { Repository = p.Key, p.Value.Form, p.Value.Pattern, p.Value.Tidy }).ToArray(),
+                .Select(p => new { Repository = p.Key, p.Value.Form, p.Value.Pattern, p.Value.Tidy, p.Value.Plugin }).ToArray(),
             WorkspaceLandings = config.WorkspaceLandings.OrderBy(p => p.Key, StringComparer.Ordinal)
-                .Select(p => new { Workspace = p.Key, p.Value.Form, p.Value.Pattern, p.Value.Tidy }).ToArray(),
+                .Select(p => new { Workspace = p.Key, p.Value.Form, p.Value.Pattern, p.Value.Tidy, p.Value.Plugin }).ToArray(),
             Running = _loop.Processes.Running,
             // Who is driving Daoris's browser (BRW8): the running sessions handed a server that drives it.
             DrivingBrowser = _loop.Processes.DrivingBrowser,

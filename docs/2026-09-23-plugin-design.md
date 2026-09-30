@@ -87,7 +87,9 @@ repository names one, and a scratch run redirects it with everything else.
   the roster needs). `${plugin}` in a command is the plugin's install folder, because a plugin cannot
   work that out for itself (Yaorin's lesson, verbatim in its own SDK).
 - **`hooks`** names a process and the **points** it listens on. Nothing else about the process is
-  declared: what it does is spoken.
+  declared: what it does is spoken. *(D100: a plugin that lands work declares `work/land`, and a
+  workspace's branch rule names it; `examples/plugins/github-pull-request` and
+  `examples/plugins/azure-devops-pull-request` are two.)*
 - **`servers`** declares MCP servers **every session is handed**, beside Daoris's own knowledge host
   (D65 §1f): `name` is what the agent calls it, `command` runs it, `env` rides with it, and
   `${plugin}` is expanded in both. *(D77: so is `${data}`, the plugin's data folder, which is where
@@ -114,6 +116,7 @@ speaks, with the roles reversed: here Daoris is the caller and the plugin answer
 | `initialize` | Daoris → plugin | `{ protocolVersion: 1, plugin: id, home, data }`; the plugin answers `{ protocolVersion, points }` — the points it *actually* listens on, which must be a subset of what its manifest declared |
 | `hook/quest/consider` | Daoris → plugin | one consideration the planner marked *Start*: quest id, receiver, workspace, root. The answer is a **typed decision**: `{ "kind": "allow" }` or `{ "kind": "hold", "reason": "…" }` |
 | `hook/session/ended` | Daoris → plugin | what a tick concluded — session id, quest, repository, state, adapter, account — and expects `{}` |
+| `hook/work/land` | Daoris → plugin | *(D100)* a branch rule's landing, once Daoris has made the branch: repository, workspace, root, branch, base, title, quest, session, commits. The answer is `{ "pushed": bool, "pullRequest": "https://…"\|null, "message": "…" }` |
 | `shutdown` | Daoris → plugin | nothing; the process exits, and every registration with it |
 
 Three rules, each taken from a reference and stated once:
@@ -125,7 +128,11 @@ Three rules, each taken from a reference and stated once:
    driver spends real accounts and a policy that silently failed open is the one wrong result nobody
    would see. The person reads the sentence and disables the plugin; the driver never stops.
 2. **An observation point is contained.** `session/ended` cannot change anything; an error there is a
-   console line and the tick goes on. dsh's `tools/result`, one door over.
+   console line and the tick goes on. dsh's `tools/result`, one door over. *(D100: `work/land` is the
+   first point that acts, and it is contained the same way. It is spoken after the branch is made,
+   never instead, and whatever the plugin does or fails to do leaves the branch standing. It is spoken
+   by the landing, which starts the plugin's process for that one frame, and never by the loop, so a
+   plugin that speaks only there is not kept running.)*
 3. **Registrations are effects.** The hook process starts with the driver loop and is stopped with it;
    a plugin disabled between ticks is stopped at the next tick, and one enabled is started. There is
    nothing to unregister because there is nothing registered but a process — the host asks the

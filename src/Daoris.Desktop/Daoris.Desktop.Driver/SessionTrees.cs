@@ -44,8 +44,14 @@ public sealed record SessionTree(string Path, string Workspace, string Repositor
 /// tree → open → spawn: the ledger's open needs the tree path for the lock, so the id it would borrow
 /// does not exist yet. Short and random, like the id itself; the record ties the two together.</para>
 /// </remarks>
-public sealed class SessionTrees(string home)
+/// <param name="plugins">
+/// The plugin wire a branch rule's landing speaks (WSR4, D100) — the home's own plugins by default; the
+/// shell and the terminal hand one that says the plugin's lines where each says things.
+/// </param>
+public sealed class SessionTrees(string home, LandingPlugins? plugins = null)
 {
+    private readonly LandingPlugins _plugins = plugins ?? new LandingPlugins(home);
+
     /// <summary>Every tree this machine's Daoris has opened lives under here, and only here.</summary>
     public string TreesRoot => Path.Combine(home, "trees");
 
@@ -284,7 +290,10 @@ public sealed class SessionTrees(string home)
         var landing = LandingRules.Choose(Config(), repository, workspace);
         if (landing.Rule.Form == LandingForm.Branch)
         {
-            return new(LandingForm.Branch, LandingRules.Expand(landing.Rule.Pattern!, NamesOf(subject, repository)), landing.Source);
+            // Who pushes it, said before the press, and what would refuse the press where something would (D100).
+            var plugin = landing.Rule.Plugin;
+            return new(LandingForm.Branch, LandingRules.Expand(landing.Rule.Pattern!, NamesOf(subject, repository)), landing.Source,
+                plugin, plugin is null ? null : _plugins.Problem(plugin));
         }
 
         var (code, commonDir, _) = Directory.Exists(full)
@@ -301,8 +310,15 @@ public sealed class SessionTrees(string home)
 
     /// <summary>
     /// The press on a reviewed session (WSR1, D87): its work lands as its repository's rule says —
-    /// merged into the line (<see cref="MergeAsync"/>), or put on a new branch for the person to push.
+    /// merged into the line (<see cref="MergeAsync"/>), or put on a new branch for the person to push, or
+    /// for the plugin the rule names to push and open the pull request from (WSR4, D100).
     /// </summary>
+    /// <remarks>
+    /// 🔴 <b>The plugin is spoken to after the branch exists, and never instead of it.</b> A plugin the
+    /// press cannot use — gone, off, landing nothing — refuses the press before anything is made; one that
+    /// fails once the branch is made leaves the branch standing, and the sentence says its step failed and
+    /// how the person does it by hand. Nothing here pushes: the plugin's process does.
+    /// </remarks>
     public async Task<TreeLanding> LandAsync(string path, LandingSubject subject, CancellationToken ct = default)
     {
         var full = Path.GetFullPath(path);
@@ -316,8 +332,28 @@ public sealed class SessionTrees(string home)
         }
         else
         {
-            landed = await BranchAsync(full, workspace, repository,
-                LandingRules.Expand(landing.Rule.Pattern!, NamesOf(subject, repository)), ct).ConfigureAwait(false);
+            var plugin = landing.Rule.Plugin;
+            if (plugin is not null && _plugins.Problem(plugin) is { } problem)
+            {
+                return new(false, $"{problem} Nothing was landed: the rule hands the branch to that plugin, so fix the "
+                    + "plugin or the rule (`daoris driver landing`), then accept again.");
+            }
+
+            var branched = await BranchAsync(full, workspace, repository,
+                LandingRules.Expand(landing.Rule.Pattern!, NamesOf(subject, repository)), handedOn: plugin is not null, ct).ConfigureAwait(false);
+            landed = branched.Landing;
+            if (landed.Landed && plugin is not null)
+            {
+                var said = await _plugins.LandAsync(plugin, new LandingFrame(
+                    repository, workspace, branched.Root, landed.Branch!, branched.Base, subject.Title, subject.Quest,
+                    subject.Session, branched.Commits), ct).ConfigureAwait(false);
+                landed = landed with
+                {
+                    Plugin = said,
+                    // The plugin's word goes before the sentence about the tree, which a tidy may take out.
+                    Message = landed.Message.Replace(TreeStays, "", StringComparison.Ordinal) + " " + Said(said, landed.Branch!) + TreeStays,
+                };
+            }
         }
 
         // The tidy the person's rule asked for (D88): the tree and its branch go once the work lands, behind
@@ -498,6 +534,14 @@ public sealed class SessionTrees(string home)
     private static string Normal(string path) =>
         Path.GetFullPath(path).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
 
+    /// <summary>What the branch form made, and what a plugin is told of it (D100): where, from which line, which commits.</summary>
+    private sealed record Branched(TreeLanding Landing, string Root = "", string? Base = null, IReadOnlyList<LandingCommit>? Carried = null)
+    {
+        public IReadOnlyList<LandingCommit> Commits => Carried ?? [];
+
+        public static implicit operator Branched(TreeLanding refused) => new(refused);
+    }
+
     /// <summary>
     /// Put a session's work on a new branch, from the session's own branch, which grew from the line.
     /// </summary>
@@ -506,23 +550,25 @@ public sealed class SessionTrees(string home)
     /// checkout, so the root may be dirty and on any branch, and is left exactly so. A branch of that
     /// name already there is refused and never moved — it may be somebody's. Nothing pushes (D87).
     /// </remarks>
-    private async Task<TreeLanding> BranchAsync(string full, string workspace, string repository, string name, CancellationToken ct)
+    /// <param name="handedOn">A plugin pushes it next (D100), so the sentence does not tell the person to.</param>
+    private async Task<Branched> BranchAsync(
+        string full, string workspace, string repository, string name, bool handedOn, CancellationToken ct)
     {
         if (!Holds(full))
         {
-            return new(false, $"{full} is not a session tree — this lands only trees Daoris opened, under {TreesRoot}.");
+            return new TreeLanding(false, $"{full} is not a session tree — this lands only trees Daoris opened, under {TreesRoot}.");
         }
 
         if (!Directory.Exists(full))
         {
-            return new(false, $"there is no tree at {full}.");
+            return new TreeLanding(false, $"there is no tree at {full}.");
         }
 
         var (rootCode, commonDir, rootErr) = await WorkingTree.GitAsync(
             full, ["rev-parse", "--path-format=absolute", "--git-common-dir"], ct).ConfigureAwait(false);
         if (rootCode != 0)
         {
-            return new(false, $"{full} is not a working tree git recognises: {FirstLine(rootErr)}");
+            return new TreeLanding(false, $"{full} is not a working tree git recognises: {FirstLine(rootErr)}");
         }
 
         var root = Path.GetDirectoryName(commonDir.Trim())!;
@@ -530,36 +576,37 @@ public sealed class SessionTrees(string home)
         var branch = branchOut.Trim();
         if (branch is "" or "HEAD")
         {
-            return new(false, $"the tree at {full} is not on a branch, so there is nothing to land.");
+            return new TreeLanding(false, $"the tree at {full} is not on a branch, so there is nothing to land.");
         }
 
         // Uncommitted work would not travel with the branch — the same reason the merge door gives.
         var (_, dirty, _) = await WorkingTree.GitAsync(full, ["status", "--porcelain"], ct).ConfigureAwait(false);
         if (!string.IsNullOrWhiteSpace(dirty))
         {
-            return new(false,
+            return new TreeLanding(false,
                 $"the session's tree has uncommitted work — {dirty.Trim().Split('\n').Length} path(s) — which a "
                 + "branch would leave behind. Commit it in the tree first, or decide it is not wanted.");
         }
 
         var line = (await LineAsync(root, repository, workspace, ct).ConfigureAwait(false)).Branch;
         var against = line is null ? "HEAD" : await ComparableAsync(root, line, ct).ConfigureAwait(false) ?? line;
+        // Oldest first, each commit's id and subject: what a plugin writes a pull request from (D100).
         var (logCode, ahead, logErr) = await WorkingTree.GitAsync(
-            root, ["log", "--oneline", $"{against}..{branch}"], ct).ConfigureAwait(false);
+            root, ["log", "--reverse", "--format=%H%x09%s", $"{against}..{branch}"], ct).ConfigureAwait(false);
         if (logCode != 0)
         {
-            return new(false, $"git cannot compare `{branch}` with `{line ?? "HEAD"}` here: {FirstLine(logErr)} "
+            return new TreeLanding(false, $"git cannot compare `{branch}` with `{line ?? "HEAD"}` here: {FirstLine(logErr)} "
                 + "Fetch it, or set another line with `daoris driver line`.");
         }
 
         if (string.IsNullOrWhiteSpace(ahead))
         {
-            return new(false, $"`{branch}` holds nothing `{line ?? "HEAD"}` does not — nothing to land.");
+            return new TreeLanding(false, $"`{branch}` holds nothing `{line ?? "HEAD"}` does not — nothing to land.");
         }
 
         if (!BranchName.IsValid(name))
         {
-            return new(false, $"the landing rule names `{name}` for this session, which is not a branch name git "
+            return new TreeLanding(false, $"the landing rule names `{name}` for this session, which is not a branch name git "
                 + "would take. Change the pattern with `daoris driver landing`.");
         }
 
@@ -567,22 +614,45 @@ public sealed class SessionTrees(string home)
             root, ["rev-parse", "--verify", "--quiet", $"refs/heads/{name}"], ct).ConfigureAwait(false);
         if (exists == 0)
         {
-            return new(false, $"`{name}` is already a branch in `{repository}`, and Daoris does not move a branch it "
+            return new TreeLanding(false, $"`{name}` is already a branch in `{repository}`, and Daoris does not move a branch it "
                 + "did not make. Rename or delete it there, or change the pattern with `daoris driver landing`.");
         }
 
         var (code, _, err) = await WorkingTree.GitAsync(root, ["branch", name, branch], ct).ConfigureAwait(false);
         if (code != 0)
         {
-            return new(false, $"git would not make `{name}`: {FirstLine(err)}");
+            return new TreeLanding(false, $"git would not make `{name}`: {FirstLine(err)}");
         }
-
-        var count = ahead.Trim().Split('\n').Length;
-        return new(true,
-            $"put the work on `{name}` — {count} commit(s) from `{line ?? "HEAD"}`. Push it and open the pull request "
-            + $"from there: `git push -u origin {name}`. Nothing was merged and the checkout was not touched.{TreeStays}",
-            name);
+        var commits = ahead.Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Select(entry => entry.Split('\t', 2))
+            .Select(parts => new LandingCommit(parts[0], parts.Length > 1 ? parts[1] : ""))
+            .ToList();
+        var pushIt = handedOn ? "" : $" Push it and open the pull request from there: `git push -u origin {name}`.";
+        return new Branched(
+            new TreeLanding(true,
+                $"put the work on `{name}` — {commits.Count} commit(s) from `{line ?? "HEAD"}`.{pushIt} Nothing was merged "
+                + $"and the checkout was not touched.{TreeStays}",
+                name),
+            root, line, commits);
     }
+
+    /// <summary>
+    /// What the plugin's step came to, in the landing's words (D100). Anything short of a push says the
+    /// branch stands and how the person pushes it themselves.
+    /// </summary>
+    private static string Said(PluginLanding said, string branch)
+    {
+        var byHand = $"The branch stands — push it and open the pull request yourself: `git push -u origin {branch}`.";
+        if (said.Failed) return $"Plugin `{said.Plugin}`'s step failed — {Sentence(said.Message)} {byHand}";
+        if (!said.Pushed) return $"Plugin `{said.Plugin}` did not push it: {Sentence(said.Message)} {byHand}";
+
+        var opened = said.PullRequest is { } pr && !said.Message.Contains(pr, StringComparison.Ordinal) ? $" The pull request: {pr}" : "";
+        return $"Plugin `{said.Plugin}`: {Sentence(said.Message)}{opened}";
+    }
+
+    /// <summary>A plugin's words closed as a sentence, so the one after it does not run on.</summary>
+    private static string Sentence(string words) =>
+        words.TrimEnd() is var trimmed && trimmed.Length > 0 && ".!?".Contains(trimmed[^1]) ? trimmed : $"{trimmed}.";
 
     private DriverConfig Config() => DriverConfig.Load(Path.Combine(home, "driver.json"));
 

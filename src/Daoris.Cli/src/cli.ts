@@ -108,7 +108,10 @@ const USAGE = `daoris <command> [options]
                                                    how accepted work lands: into
                                                    the line, or on a branch you
                                                    push (--workspace <name> too;
-                                                   --tidy removes the tree after)
+                                                   --tidy removes the tree after;
+                                                   --plugin <id> on a branch: an
+                                                   installed plugin pushes it and
+                                                   opens the pull request)
                          notify on|off           say so when a session parks,
                                                    or ends without you asking
                          intake <adapter>|off      answer an ask the declarations

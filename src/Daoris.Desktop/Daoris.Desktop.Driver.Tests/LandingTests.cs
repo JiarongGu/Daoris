@@ -127,6 +127,66 @@ public sealed class LandingTests : IDisposable
     }
 
     /// <summary>
+    /// WSR4 (D100): a rule may name the plugin that pushes its branch and opens the pull request — only
+    /// the branch form, since the plugin starts from the branch Daoris made, and only an id a plugin
+    /// could have. The CLI's <c>driverconfig.test.ts</c> holds these cases, answer for answer.
+    /// </summary>
+    [Theory]
+    [InlineData("branch", "feature/{quest}-{slug}", "example.github-pull-request", null)]
+    [InlineData("branch", "feature/{quest}-{slug}", null, null)]
+    [InlineData("merge", null, "example.github-pull-request", "only a branch")]
+    [InlineData("branch", "feature/{quest}-{slug}", "Not An Id", "not a plugin id")]
+    [InlineData("branch", "feature/{quest}-{slug}", "../elsewhere", "not a plugin id")]
+    [InlineData("push", null, null, "a plugin's to do")]
+    public void Only_a_branch_rule_names_a_plugin_and_only_by_an_id(string form, string? pattern, string? plugin, string? problem)
+    {
+        var said = LandingRules.Problem(new LandingRule(form, pattern, Plugin: plugin));
+
+        if (problem is null) Assert.Null(said);
+        else Assert.Contains(problem, said);
+    }
+
+    [Fact]
+    public void A_rules_plugin_is_kept_in_driver_json_and_a_merge_naming_one_is_not_read()
+    {
+        var config = DriverConfig.Parse("""
+            {
+              "landings": { "odd": { "form": "merge", "plugin": "example.github-pull-request" } },
+              "workspaceLandings": { "aurora": { "form": "branch", "pattern": "feature/{quest}-{slug}", "plugin": "example.github-pull-request" } }
+            }
+            """);
+
+        Assert.False(config.Landings.ContainsKey("odd"));
+        Assert.Equal("example.github-pull-request", config.WorkspaceLandings["aurora"].Plugin);
+        Assert.Equal("example.github-pull-request", DriverConfig.Parse(config.ToJson()).WorkspaceLandings["aurora"].Plugin);
+        // Written only when named: a rule with none reads as it always has.
+        Assert.DoesNotContain("plugin", config.WithWorkspaceLanding("aurora", new LandingRule(LandingForm.Branch, "review/{session}")).ToJson());
+        Assert.Throws<DriverException>(() => config.WithLanding("engine", new LandingRule(LandingForm.Merge, Plugin: "example.github-pull-request")));
+    }
+
+    /// <summary>
+    /// A plugin the rule names must be on this machine, switched on, sound, and speak on the landing's
+    /// point — each refused in its own sentence, which both doors give when the rule is set and the
+    /// press gives again before anything is made.
+    /// </summary>
+    [Fact]
+    public void A_plugin_that_is_missing_off_refused_or_lands_nothing_is_each_named()
+    {
+        Plugin("example.lands", """{ "id": "example.lands", "hooks": { "command": ["node", "land.mjs"], "points": ["work/land"] } }""");
+        Plugin("example.watches", """{ "id": "example.watches", "hooks": { "command": ["node", "hooks.mjs"], "points": ["session/ended"] } }""");
+        Plugin("example.broken", """{ "id": "example.broken", "apiVersion": 99 }""");
+        Plugin("example.off", """{ "id": "example.off", "hooks": { "command": ["node", "land.mjs"], "points": ["work/land"] } }""");
+        PluginState.Disable(_home, "example.off");
+        var catalog = PluginCatalog.Load(_home);
+
+        Assert.Null(LandingRules.PluginProblem("example.lands", catalog));
+        Assert.Contains("not installed", LandingRules.PluginProblem("example.nowhere", catalog));
+        Assert.Contains("daoris plugin enable example.off", LandingRules.PluginProblem("example.off", catalog));
+        Assert.Contains("needs plugin API 99", LandingRules.PluginProblem("example.broken", catalog));
+        Assert.Contains("`work/land`", LandingRules.PluginProblem("example.watches", catalog));
+    }
+
+    /// <summary>
     /// The branch form writes nothing to the checkout: the root may be dirty and on any branch, and it
     /// is left exactly so. The new branch holds the session's work, from the line it grew from.
     /// </summary>
@@ -231,7 +291,19 @@ public sealed class LandingTests : IDisposable
         Assert.Contains("`feature/0fda18-fix`", branch);
         Assert.Contains("do not merge it, push it, or open a pull request", branch);
 
+        // A plugin pushes it once accepted (D100) — and the session still pushes nothing itself.
+        var handed = TargetPrompt.Compose(target with { LandsOn = new LandingPlan(LandingForm.Branch, "feature/0fda18-fix", LandingSource.Workspace, "example.github-pull-request") });
+        Assert.Contains("the person accepts it, this tree's branch is put on `feature/0fda18-fix`, pushed", handed);
+        Assert.Contains("do not merge it, push it, or open a pull request yourself", handed);
+
         Assert.Equal(TargetPrompt.Compose(target), TargetPrompt.Compose(target with { LandsOn = new LandingPlan(LandingForm.Merge, "main", LandingSource.Default) }));
+    }
+
+    private void Plugin(string id, string manifest)
+    {
+        var folder = Path.Combine(_home, "plugins", id);
+        Directory.CreateDirectory(folder);
+        File.WriteAllText(Path.Combine(folder, "plugin.json"), manifest);
     }
 
     private void Rule(LandingRule rule, bool workspace = false) =>

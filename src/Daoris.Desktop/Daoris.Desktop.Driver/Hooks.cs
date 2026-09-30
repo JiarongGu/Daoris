@@ -22,7 +22,17 @@ public static class HookPoints
     /// <summary>An observation: what a tick concluded. Contained — nothing a plugin says here changes anything.</summary>
     public const string SessionEnded = "session/ended";
 
-    public static readonly IReadOnlyList<string> All = [QuestConsider, SessionEnded];
+    /// <summary>
+    /// An act, after Daoris's own (WSR4, D100): a branch rule's landing has made its branch, and the plugin
+    /// the rule names pushes it and opens the pull request for its platform. Spoken by the landing, never
+    /// by the loop, and it can undo nothing: a failure here leaves the branch.
+    /// </summary>
+    public const string Land = "work/land";
+
+    public static readonly IReadOnlyList<string> All = [QuestConsider, SessionEnded, Land];
+
+    /// <summary>The points the driver loop asks at — a plugin that speaks on none of them is not kept running beside it.</summary>
+    public static readonly IReadOnlyList<string> Loop = [QuestConsider, SessionEnded];
 }
 
 /// <summary>
@@ -40,6 +50,9 @@ public interface IHookChannel : IAsyncDisposable
     Task<HookDecision> ConsiderAsync(object payload, CancellationToken ct);
 
     Task EndedAsync(object payload, CancellationToken ct);
+
+    /// <summary>The landing's one frame (D100): the branch Daoris made, answered with what the plugin did with it.</summary>
+    Task<PluginLanding> LandAsync(object payload, CancellationToken ct);
 }
 
 /// <summary>
@@ -164,6 +177,50 @@ public sealed class HookPeer(
 
     public async Task EndedAsync(object payload, CancellationToken ct) =>
         await RequestAsync($"hook/{HookPoints.SessionEnded}", payload, ct).ConfigureAwait(false);
+
+    /// <summary>
+    /// The landing's frame (D100), and its answer read by shape: <c>pushed</c> is required, a pull request
+    /// is an absolute web address or absent, and the plugin's sentence is words or absent. Anything else
+    /// is not an answer, and the landing says the plugin's step failed — never that the branch went.
+    /// </summary>
+    public async Task<PluginLanding> LandAsync(object payload, CancellationToken ct)
+    {
+        var answer = await RequestAsync($"hook/{HookPoints.Land}", payload, ct).ConfigureAwait(false);
+
+        DriverException NotAnAnswer() => new(
+            $"plugin `{plugin}` answered {Raw(answer)}, which is not a landing's answer — "
+            + "`{ \"pushed\": true, \"pullRequest\": \"https://…\", \"message\": \"…\" }`, the last two optional.");
+
+        if (answer.ValueKind != JsonValueKind.Object
+            || !answer.TryGetProperty("pushed", out var pushed)
+            || pushed.ValueKind is not (JsonValueKind.True or JsonValueKind.False))
+        {
+            throw NotAnAnswer();
+        }
+
+        string? pullRequest = null;
+        if (answer.TryGetProperty("pullRequest", out var opened) && opened.ValueKind != JsonValueKind.Null)
+        {
+            // Only a web page is said as a link: a pull request is somewhere a person goes to read.
+            if (opened.ValueKind != JsonValueKind.String
+                || !Uri.TryCreate(opened.GetString(), UriKind.Absolute, out var address)
+                || address.Scheme is not ("https" or "http"))
+            {
+                throw NotAnAnswer();
+            }
+
+            pullRequest = opened.GetString();
+        }
+
+        var message = "no sentence given";
+        if (answer.TryGetProperty("message", out var said) && said.ValueKind != JsonValueKind.Null)
+        {
+            if (said.ValueKind != JsonValueKind.String) throw NotAnAnswer();
+            if (said.GetString() is { Length: > 0 } words) message = words.Trim();
+        }
+
+        return new PluginLanding(plugin, pushed.GetBoolean(), pullRequest, message);
+    }
 
     /// <summary>Told to go, politely; whoever owns the process then makes sure it did.</summary>
     public async ValueTask DisposeAsync()
@@ -381,6 +438,8 @@ public sealed class HookProcess : IHookChannel
 
     public Task EndedAsync(object payload, CancellationToken ct) => _peer.EndedAsync(payload, ct);
 
+    public Task<PluginLanding> LandAsync(object payload, CancellationToken ct) => _peer.LandAsync(payload, ct);
+
     /// <summary>Shutdown said, a moment given, and then the process is ended — a plugin that will not leave is left no choice.</summary>
     public async ValueTask DisposeAsync()
     {
@@ -469,8 +528,10 @@ public sealed class HookSet(
         await _reconciling.WaitAsync(ct).ConfigureAwait(false);
         try
         {
+            // Only a plugin the loop has something to ask: one that speaks at a landing alone is started
+            // by the landing, for that landing (D100), and a process kept beside the ticks would idle.
             var wanted = catalog.Contributing
-                .Where(p => p.Manifest.Hooks is not null)
+                .Where(p => p.Manifest.Hooks is { } hooks && hooks.Points.Any(point => HookPoints.Loop.Contains(point, StringComparer.Ordinal)))
                 .ToDictionary(p => p.Manifest.Id, p => p, StringComparer.Ordinal);
 
             List<string> gone;
