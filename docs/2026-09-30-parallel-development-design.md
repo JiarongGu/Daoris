@@ -82,8 +82,12 @@ deployment rehearsal runs last, after `dotnet build-server shutdown`. `--plan` s
 merges nothing. Before merging, the tool prints which lanes of `tools/lanes.json` (§5, held to this
 table by a test) the branch touched, and never refuses on a lane. A commit check refuses a commit
 without its `Co-Authored-By:` line and work left uncommitted in the branch's worktree. When a
-`dotnet test` gate fails and every test it names is in a FLAKE1 class, each test is re-run alone once;
-if all pass, the gate reads FLAKE and the summary counts it. `--batch` is one merge at a time: git will
+`dotnet test` gate of the `Process` half fails and names every failure, each failed test is re-run
+alone once; if all pass, the gate reads FLAKE and the summary counts it. A rehearsal that died is run
+again once, whole (LEFT1): one whose exit is a process ending (a shell's 127, a signal, a Windows crash
+status) or that printed nothing of its own, as the family rehearsal once exited 127 with no transcript
+while three worktrees built. If the second run passes it reads FLAKE. A rehearsal that reported failed
+checks, or said why it stopped, has failed and is not run again. `--batch` is one merge at a time: git will
 not merge over an open merge and the tool never commits, so the parent commits each merge and
 `--continue` merges the next. The rehearsals run once, after the last. The brief is the local skill
 `dispatch-subagent`.

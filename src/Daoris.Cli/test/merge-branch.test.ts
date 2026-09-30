@@ -40,6 +40,8 @@ const tool = await import(
   flakeDecision: (output: string, isProcess?: (test: string) => boolean) => { rerun: string[]; reason?: string };
   rerunCommand: (run: string, test: string) => string;
   rerunPassed: (output: string) => boolean;
+  processExit: (code: number) => boolean;
+  rehearsalDecision: (log: string, code: number, command?: string) => { rerun: boolean; reason: string };
   globToRegExp: (glob: string) => RegExp;
   laneMatcher: (paths: string[]) => (path: string) => boolean;
   classify: (paths: string[], map: { lanes?: Lane[]; parent?: string[]; union?: string[]; laneless?: string[] }) => Classified;
@@ -421,13 +423,16 @@ test('every tracked file has a place, so a new path is placed on purpose, never 
 
 const planned = (name: string, run: string, before: string[] = []): Gate => ({ name, run, kind: 'suite', before });
 
-/** A step that answers each command from a function and records what it was asked, in order. */
+/**
+ * A step that answers each command from a function and records what it was asked, in order. It heads
+ * its output with the command, as `runStep` does, since a rehearsal's own output is read from there.
+ */
 function fakeStep(answer: (command: string) => { out: string; code: number }): { asked: string[]; step: Step } {
   const asked: string[] = [];
   const step: Step = async (command, _cwd, fd) => {
     asked.push(command);
     const { out, code } = answer(command);
-    writeSync(fd, out);
+    writeSync(fd, `$ ${command}\n${out}`);
     return code;
   };
   return { asked, step };
@@ -501,9 +506,100 @@ test('a real-process failure is re-run alone once: a pass alone is a FLAKE, a se
   assert.deepEqual(fake.asked, [fast.run], 'a failure outside the Process category is never re-run');
   assert.match(result.note, /outside the Process category, a failure is real and never re-run/);
 
-  // Only a .NET suite is read for flakes: a rehearsal that fails has failed.
+  // A rehearsal is not read for tests: one that said why it stopped has failed, and is not run again.
   fake = fakeStep(() => ({ out: PROCESS_FAILURE, code: 1 }));
   result = await tool.runGate(fx.root, planned('family', 'npm run rehearse:family'), fx.root, { step: fake.step });
+  assert.equal(result.verdict, 'FAIL');
+  assert.equal(fake.asked.length, 1);
+  fx.cleanup();
+});
+
+// ---------------------------------------------------------------------------------------------------
+// A rehearsal that died, rather than failed, is run again once (LEFT1)
+
+// What the tool and npm write around a rehearsal's own lines: none of it is the rehearsal speaking.
+const NPM_BANNER = '$ npm run rehearse:family\n\n> daoris-workspace@0.0.1 rehearse:family\n> node tools/family-rehearsal.mjs\n\n';
+const OK_LINES = '\n1. The example family\n  ok    the HTTP host builds\n  ok    engine is current and clean\n';
+
+test('a process-level exit is the shell, a signal or a Windows crash status, never an ordinary failure', () => {
+  // 127 and 126 are a POSIX shell's, 9009 is cmd's for a command it cannot find; 128 up is a signal (this
+  // tool reads one as 128); a crash status comes through cmd and npm unsigned, and in its signed form elsewhere.
+  for (const code of [126, 127, 9009, 128, 134, 255, 0xC0000142, 0xC0000409, -1073741819]) {
+    assert.equal(tool.processExit(code), true, `exit ${code}`);
+  }
+  for (const code of [1, 2, 3, 100]) assert.equal(tool.processExit(code), false, `exit ${code}`);
+});
+
+test('a failed rehearsal is run again only when it reached no verdict: its process ended, or it said nothing', () => {
+  // 2026-09-30: the family rehearsal exited 127 straight after building the HTTP host, with no transcript.
+  const died = tool.rehearsalDecision(`${NPM_BANNER}${OK_LINES}\n(exited 127)\n`, 127);
+  assert.equal(died.rerun, true);
+  assert.match(died.reason, /exit 127/);
+  assert.equal(tool.rehearsalDecision(`${NPM_BANNER}(exited 3221225794)\n`, 0xC0000142).rerun, true);
+
+  const silent = tool.rehearsalDecision(`${NPM_BANNER}\n(exited 1)\n`, 1);
+  assert.equal(silent.rerun, true);
+  assert.match(silent.reason, /nothing of its own/);
+  // A step before the gate is not the gate speaking: the build servers' shutdown says "shut down".
+  const deploy = '$ dotnet build-server shutdown\nshut down\n\n(exited 0)\n\n$ npm run rehearse:deploy\n\n'
+    + '> daoris-workspace@0.0.1 rehearse:deploy\n> node tools/deployment-rehearsal.mjs\n\n\n(exited 1)\n';
+  assert.equal(tool.rehearsalDecision(deploy, 1, 'npm run rehearse:deploy').rerun, true);
+
+  // A report is a verdict, whatever the exit that follows it.
+  const kit = `${NPM_BANNER}${OK_LINES}  FAIL  a quest is refused where it should be\n          409\n\n  299/301 checks passed\n`;
+  for (const code of [1, 127]) {
+    const failed = tool.rehearsalDecision(kit, code);
+    assert.equal(failed.rerun, false, `exit ${code}`);
+    assert.match(failed.reason, /reported failed checks/);
+  }
+  // The platform's own suites inside `test:web`: vitest's summary and a failed file, and Playwright's.
+  assert.equal(tool.rehearsalDecision(`${NPM_BANNER} FAIL  src/App.test.tsx > the frame\n      Tests  1 failed | 1712 passed (1713)\n`, 1).rerun, false);
+  assert.equal(tool.rehearsalDecision(`${NPM_BANNER}  1 failed\n    [chromium] › e2e/platform.spec.ts:10:5 › a quest\n  20 passed (1.2m)\n`, 1).rerun, false);
+
+  // Anything else said why it stopped: a thrown error is a failure, not a flake.
+  const thrown = tool.rehearsalDecision(`${NPM_BANNER}${OK_LINES}Error: take failed: 500\n    at file:///x.mjs:630:9\n`, 1);
+  assert.equal(thrown.rerun, false);
+  assert.match(thrown.reason, /said why it stopped/);
+});
+
+test('a rehearsal that died is run again once, with its steps: a pass is a FLAKE, a second death a FAIL', async () => {
+  const fx = makeFixture('merge-branch-rehearsal-reruns');
+  const family = planned('family', 'npm run rehearse:family');
+  let runs = 0;
+  let fake = fakeStep(() => (++runs === 1
+    ? { out: OK_LINES, code: 127 }
+    : { out: `${OK_LINES}\n  301/301 checks passed\n`, code: 0 }));
+  let result = await tool.runGate(fx.root, family, fx.root, { step: fake.step });
+  assert.equal(result.verdict, 'FLAKE');
+  assert.deepEqual(fake.asked, [family.run, family.run]);
+  assert.match(result.note, /exit 127.*passed when run again.*family\.rerun\.log/);
+  assert.match(readFileSync(join(fx.root, 'family.rerun.log'), 'utf8'), /301\/301 checks passed/);
+  assert.match(readFileSync(join(fx.root, 'family.log'), 'utf8'), /\(exited 127\)/, 'the first run keeps its own log');
+
+  fake = fakeStep(() => ({ out: '', code: 127 }));
+  result = await tool.runGate(fx.root, family, fx.root, { step: fake.step });
+  assert.equal(result.verdict, 'FAIL');
+  assert.equal(fake.asked.length, 2, 'run again once, not until it passes');
+  assert.match(result.note, /exit 127.*failed again.*family\.rerun\.log/);
+
+  // The deployment rehearsal's re-run shuts the build servers down first, as its first run did.
+  const deployment = planned('deployment', 'npm run rehearse:deploy', ['dotnet build-server shutdown']);
+  runs = 0;
+  fake = fakeStep((command) => (command.startsWith('dotnet') ? { out: 'shut down\n', code: 0 } : (++runs === 1 ? { out: '', code: 1 } : { out: '  70/70 checks passed\n', code: 0 })));
+  result = await tool.runGate(fx.root, deployment, fx.root, { step: fake.step });
+  assert.equal(result.verdict, 'FLAKE');
+  assert.deepEqual(fake.asked, ['dotnet build-server shutdown', deployment.run, 'dotnet build-server shutdown', deployment.run]);
+
+  // A rehearsal that reported failed checks is never run again.
+  fake = fakeStep(() => ({ out: `${OK_LINES}  FAIL  a quest closes done\n`, code: 1 }));
+  result = await tool.runGate(fx.root, family, fx.root, { step: fake.step });
+  assert.equal(result.verdict, 'FAIL');
+  assert.equal(fake.asked.length, 1);
+  assert.match(result.note, /reported failed checks/);
+
+  // The rule is the rehearsals': a suite that dies is read as it always was.
+  fake = fakeStep(() => ({ out: '', code: 127 }));
+  result = await tool.runGate(fx.root, planned('cli', 'npm run verify'), fx.root, { step: fake.step });
   assert.equal(result.verdict, 'FAIL');
   assert.equal(fake.asked.length, 1);
   fx.cleanup();
@@ -530,12 +626,15 @@ function git(cwd: string, ...args: string[]): string {
 const TRAILER = '\n\nCo-Authored-By: Fixture <fixture@example.test>';
 
 // Every gate appends its name to local/ran.txt and prints a thousand lines, so a test can read the order
-// the gates ran in and whether a log kept the whole output.
+// the gates ran in and whether a log kept the whole output. Given `once`, it exits with its code the first
+// time only, as a rehearsal that died under load and passes run again.
 const GATE = [
-  "import { appendFileSync } from 'node:fs';",
-  "const [name, code = '0'] = process.argv.slice(2);",
+  "import { appendFileSync, existsSync, writeFileSync } from 'node:fs';",
+  "const [name, code = '0', once] = process.argv.slice(2);",
   "appendFileSync('local/ran.txt', name + '\\n');",
   'for (let i = 1; i <= 1000; i++) console.log(`${name} line ${i}`);',
+  'if (once && existsSync(`local/${name}.once`)) process.exit(0);',
+  "if (once) writeFileSync(`local/${name}.once`, '');",
   'process.exit(Number(code));',
   '',
 ].join('\n');
@@ -732,8 +831,9 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
       { name: 'driver', run: 'dotnet test fake/Driver.Tests --settings fake/process.runsettings' },
       { name: 'deployment', run: 'npm run rehearse:deploy' },
     ], {
+      // The release rehearsal dies the first time with the shell's 127, through npm, and passes run again.
       'package.json': `${JSON.stringify({ name: 'scratch', private: true, scripts: {
-        rehearse: 'node gate.mjs rehearse', 'rehearse:deploy': 'node gate.mjs deployment',
+        rehearse: 'node gate.mjs rehearse 127 once', 'rehearse:deploy': 'node gate.mjs deployment',
       } }, null, 2)}\n`,
       // `rehearse` is the workflow's alone, as the release and family rehearsals are this repository's.
       '.github/workflows/release.yml': 'jobs:\n  release:\n    steps:\n      - run: npm run rehearse:deploy\n      - run: npm run rehearse\n',
@@ -756,16 +856,18 @@ describe('the tool, end to end in a scratch repository', { concurrency: true }, 
     // However the parent lands it, what --continue asks is that the branch's tip is in main's history.
     git(repo.root, 'merge', '--quiet', '--no-ff', '--no-edit', 'one');
 
-    // The second merge meets a real-process test that fails in the suite and passes alone.
+    // The second merge meets a real-process test that fails in the suite and passes alone, and a
+    // rehearsal that dies once.
     result = await repo.run(['--continue'], { FAKE_DOTNET: 'flake' });
     assert.equal(result.status, 0, result.out);
     assert.deepEqual(repo.ran(), [
       'dotnet-run', 'cli', 'dotnet-test',
       'dotnet-run', 'cli', 'dotnet-test', 'dotnet-test-alone FullyQualifiedName=N.ProcessJobTests.A_child',
-      'rehearse', 'build-server-shutdown', 'deployment',
+      'rehearse', 'rehearse', 'build-server-shutdown', 'deployment',
     ]);
     assert.match(result.out, /FLAKE\s+driver\s.*ProcessJobTests\.A_child.*driver\.rerun\.log/);
-    assert.match(result.out, /with 1 flake \(driver\)/);
+    assert.match(result.out, /FLAKE\s+rehearse\s.*exit 127.*passed when run again.*rehearse\.rerun\.log/);
+    assert.match(result.out, /with 2 flakes \(driver, rehearse\)/);
     const merged = git(repo.root, 'show', ':CHANGELOG.md');
     assert.match(merged, /\*\*One\*\*/);
     assert.match(merged, /\*\*Two\*\*/);

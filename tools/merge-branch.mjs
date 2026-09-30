@@ -41,6 +41,12 @@
  * failure outside those classes is never re-run, because a test that passes alone after failing in the
  * suite may be one test polluting another, and that is a defect.
  *
+ * A rehearsal that died is run again once, whole, with the steps before it (LEFT1): one whose exit is a
+ * process ending (a shell's 126 or 127, cmd's 9009, a signal, a Windows crash status), or that printed
+ * nothing of its own. The family rehearsal once exited 127 with no transcript while three worktrees
+ * built, and passed alone. If the second run passes, the gate reads FLAKE. A rehearsal that reported a
+ * failed check has failed whatever its exit, and so has one that said why it stopped; neither is run again.
+ *
  * ## A batch
  *
  * `--batch` names more branches. A merge left uncommitted blocks the next one (git refuses to merge over
@@ -270,6 +276,59 @@ export const rerunCommand = (run, test) => `${run.trim()} --no-build --filter "F
 export function rerunPassed(output) {
   const summary = testSummary(output);
   return summary.summaries > 0 && summary.failedCount === 0 && summary.passedCount > 0;
+}
+
+// ---------------------------------------------------------------------------------------------------
+// A rehearsal that died, rather than failed (LEFT1)
+
+/**
+ * An exit that says a process ended rather than that a gate judged: a POSIX shell that could not run the
+ * command (126, 127), cmd's for one it cannot find (9009), a signal (128 to 255; this tool reads one as
+ * 128), and a Windows crash status, which reaches this tool through cmd and npm unsigned (0xC0000142,
+ * a process that could not start under load, is 3221225794) and elsewhere in its signed form.
+ */
+export function processExit(code) {
+  return code === 126 || code === 127 || code === 9009 || (code >= 128 && code <= 255) || code >= 0xC0000000 || code < 0;
+}
+
+/**
+ * The lines of a gate's log that are the gate's own: after the steps before it (`command` names the
+ * gate's, and its output starts after the last `$ <command>` line), and without what this tool writes
+ * around a step (`$ …`, `(exited …)`, `could not start: …`), npm's lines around a script
+ * (`> pkg@version script`, `> command`, `npm error …`), and blank lines.
+ */
+export function ownOutput(log, command) {
+  const all = log.replace(/\r\n/g, '\n').split('\n');
+  const from = command === undefined ? -1 : all.lastIndexOf(`$ ${command}`);
+  return all.slice(from + 1).filter((line) => line.trim()
+    && !/^\$ /.test(line)
+    && !/^\(exited /.test(line)
+    && !/^could not start: /.test(line)
+    && !/^> /.test(line)
+    && !/^npm (?:error|ERR!|warn|WARN|notice)\b/.test(line));
+}
+
+/**
+ * A rehearsal's report of a failed check: the rehearsal kit's `FAIL` line (and vitest's for a failed
+ * file, inside `test:web`), vitest's summary, and Playwright's.
+ */
+const FAILED_CHECKS = [/^\s*FAIL\s/, /^\s*(?:Test Files|Tests)\s+\d+ failed\b/, /^\s*\d+ failed\s*$/];
+
+/**
+ * Whether a rehearsal that failed is run again, once. One that reported failed checks has failed,
+ * whatever exit follows the report. One whose process ended, or that printed nothing of its own, never
+ * reached a verdict: on 2026-09-30 the family rehearsal exited 127 straight after building the HTTP host,
+ * with no transcript, while three worktrees built beside it, and passed run alone (FLAKE1). Anything else
+ * said why it stopped, and has failed. `command` is the gate's, so a step before it is not its output.
+ */
+export function rehearsalDecision(log, code, command) {
+  const own = ownOutput(log, command);
+  if (own.some((line) => FAILED_CHECKS.some((pattern) => pattern.test(line)))) {
+    return { rerun: false, reason: 'it reported failed checks, so it is never run again' };
+  }
+  if (processExit(code)) return { rerun: true, reason: `exit ${code} ended its process before a verdict` };
+  if (own.length === 0) return { rerun: true, reason: 'it printed nothing of its own' };
+  return { rerun: false, reason: 'it said why it stopped and reported no failed check, so it is never run again' };
 }
 
 // ---------------------------------------------------------------------------------------------------
@@ -578,12 +637,10 @@ async function rerunAlone(root, gate, dir, tests, step) {
   return { passed, log };
 }
 
-/** One gate, its steps before it, and its flake re-run: a result with its verdict, note and log. */
-export async function runGate(root, gate, dir, { step = runStep } = {}) {
-  const log = join(dir, `${gate.name}.log`);
-  const started = Date.now();
+/** A gate's steps before it, then the gate, into one log: the gate's exit. */
+function runSteps(root, gate, log, step) {
   const cwd = gate.cwd ? join(root, gate.cwd) : root;
-  const code = await withLog(log, async (fd) => {
+  return withLog(log, async (fd) => {
     for (const before of gate.before) {
       const beforeCode = await step(before, root, fd);
       writeSync(fd, `\n(exited ${beforeCode}${beforeCode ? '; carried on: it only clears a server' : ''})\n\n`);
@@ -592,8 +649,29 @@ export async function runGate(root, gate, dir, { step = runStep } = {}) {
     writeSync(fd, `\n(exited ${exit})\n`);
     return exit;
   });
+}
+
+/** One gate, its steps before it, and its flake re-run: a result with its verdict, note and log. */
+export async function runGate(root, gate, dir, { step = runStep } = {}) {
+  const log = join(dir, `${gate.name}.log`);
+  const started = Date.now();
+  const code = await runSteps(root, gate, log, step);
   const result = { gate, code, log, verdict: code === 0 ? 'PASS' : 'FAIL', note: code === 0 ? '' : `exit ${code}` };
-  if (code !== 0 && /^dotnet test\b/.test(gate.run) && !isProcessGate(gate)) {
+  if (code !== 0 && gateKind(gate.run) === 'rehearsal') {
+    // A rehearsal that died is run again once, whole, into a log of its own beside the first (LEFT1).
+    const decision = rehearsalDecision(readFileSync(log, 'utf8'), code, gate.run);
+    if (!decision.rerun) {
+      result.note = `exit ${code}; ${decision.reason}`;
+    } else {
+      const again = join(dir, `${gate.name}.rerun.log`);
+      const second = await runSteps(root, gate, again, step);
+      if (second === 0) {
+        Object.assign(result, { verdict: 'FLAKE', flakes: [gate.name], note: `${decision.reason}, and it passed when run again; ${shown(root, again)}` });
+      } else {
+        result.note = `${decision.reason}; run again, it failed again (exit ${second}); ${shown(root, again)}`;
+      }
+    }
+  } else if (code !== 0 && /^dotnet test\b/.test(gate.run) && !isProcessGate(gate)) {
     result.note = `exit ${code}; outside the Process category, a failure is real and never re-run`;
   } else if (code !== 0 && /^dotnet test\b/.test(gate.run)) {
     const decision = flakeDecision(readFileSync(log, 'utf8'));

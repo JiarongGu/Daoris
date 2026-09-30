@@ -104,8 +104,9 @@ Follow the dispatch-subagent skill's subagent half.
      `--continue`, or run `git merge --abort`.
    - For several branches, run `<first> --batch <second> …`. Each merge gets the checks and suites.
      Commit it, then `--continue` merges the next. The rehearsals run once, after the last.
-   - A FLAKE line is a real-process test that failed in the suite and passed alone. Record it under
-     FLAKE1; never let it through unrecorded.
+   - A FLAKE line is a real-process test that failed in the suite and passed alone, or a rehearsal that
+     died (its process ended, or it printed nothing) and passed when run again. Record it under FLAKE1;
+     never let it through unrecorded.
 5. **Commit the merge yourself.** The tool never commits. Read `git diff --cached` and write the
    records: move the row from `TASKS.md` to the archive with the hand-back's outcome paragraph, add the
    changelog entry, and update the counts in `TASKS.md`'s State. Then commit as
