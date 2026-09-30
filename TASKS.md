@@ -21,7 +21,7 @@ lists.
 
 ## State
 
-**Counts, and this is their one home:** sixteen commands, **592 CLI tests, 619 service and 45 HTTP host, 1174 driver,
+**Counts, and this is their one home:** sixteen commands, **592 CLI tests, 620 service and 45 HTTP host, 1184 driver,
 385 desktop modules, 80 devkit, 1631 web unit, 21 Playwright**, 66/66 release rehearsal, **301/301
 family rehearsal** (it names its own phases when you run it), **67/67 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge
@@ -108,7 +108,7 @@ rather than designed.
 
 ## Backlog
 
-**Twenty-five rows are open**: the day's four (USE1's last part to confirm, HELP8, PLUG8, PLUG9),
+**Twenty-four rows are open**: the day's three (USE1's last part to confirm, PLUG8, PLUG9),
 first; the three REV3 left (DIST1, BUDGET1 and
 HOME1, the owner's); the in-app browser's one (BRW3); D85's one (TASKBAR1); the first
 goal's four (FG5, READACROSS1 and HELPREAD1 the owner's, and SEM2 on a trigger); D76's held file tools;
@@ -163,11 +163,6 @@ TASK.md and complete one by one"*).
   (`Harnesses.Apply`). Still confounded: the start (Git Bash hands on `PATH` upper-case with MSYS's
   variables; a normal start hands on `Path`) and the bundled Claude Code (2.1.274 in 0.79.0, 2.1.284
   in 0.84.0). The next session on the normal start answers it: read its snapshot's `export PATH`.
-- [ ] **HELP8 — Ask Daoris proposes a landing rule that names a plugin** (WSR4 left it, D100). Its
-  parser takes `branch <pattern>` and `--tidy` and reads the rest as the pattern. It should take
-  `--plugin <id>` in either order, refuse in `daoris driver landing`'s own words (not installed,
-  switched off, lands no work, a merge naming one), and the room should name the plugins that can land
-  work here, so the helper proposes one the route takes.
 
 ### Plugins Daoris makes (owner, 2026-09-30)
 

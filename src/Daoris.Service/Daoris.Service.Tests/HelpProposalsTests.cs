@@ -47,6 +47,19 @@ public sealed class HelpProposalsTests : IDisposable
         Assert.Equal("the person asked for work to land on feature branches", file.GetProperty("why").GetString());
     }
 
+    /// <summary>HELP8: a branch rule naming a plugin passes the shape; whether the plugin lands work here is the driver's to judge.</summary>
+    [Fact]
+    public void A_landing_naming_a_plugin_is_written_as_the_terminal_spells_it()
+    {
+        var (id, _) = Box().ProposeSetting(
+            new SettingChange("landing", Target: "engine", Workspace: null, Value: "branch feature/{quest}-{slug} --plugin example.lands"),
+            "the person wants a pull request opened for each landing", session: "h1e1p000", Now);
+
+        Assert.Equal("branch feature/{quest}-{slug} --plugin example.lands", Written(id!).GetProperty("value").GetString());
+        Assert.Contains("`--plugin <id>`", Box().ProposeSetting(
+            new SettingChange("landing", Target: "engine", Workspace: null, Value: "rebase"), "why", session: "h1e1p000", Now).Message);
+    }
+
     [Fact]
     public void An_ask_is_written_with_its_words_and_its_workspace()
     {

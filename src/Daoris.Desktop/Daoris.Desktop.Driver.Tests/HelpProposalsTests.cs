@@ -91,6 +91,55 @@ public sealed class HelpProposalsTests : IDisposable
         Assert.Null(plan.Apply);
     }
 
+    /// <summary>A plugin installed under the test's home, as `daoris plugin add` leaves one (D64).</summary>
+    private HelpMachineFacts WithPlugin(string id, string points = "\"work/land\"", bool enabled = true)
+    {
+        var folder = Path.Combine(_home, PluginCatalog.Folder, id);
+        Directory.CreateDirectory(folder);
+        System.IO.File.WriteAllText(Path.Combine(folder, PluginCatalog.ManifestName),
+            $$"""{ "id": "{{id}}", "hooks": { "command": ["node", "${plugin}/land.mjs"], "points": [{{points}}] } }""");
+        if (!enabled) PluginState.Disable(_home, id);
+        return Facts with { Plugins = PluginCatalog.Load(_home) };
+    }
+
+    /// <summary>HELP8: a landing rule naming a plugin (D100), proposed the way the terminal spells it.</summary>
+    [Theory]
+    [InlineData("branch feature/{quest}-{slug} --plugin example.lands --tidy")]
+    [InlineData("branch feature/{quest}-{slug} --tidy --plugin example.lands")]
+    public void A_landing_may_name_a_plugin_that_lands_work_here(string value)
+    {
+        var facts = WithPlugin("example.lands");
+
+        var plan = HelpProposals.Plan(Setting("landing", null, "work", value), DriverConfig.Empty, facts);
+
+        Assert.Null(plan.Refusal);
+        Assert.Equal($"daoris driver landing --workspace work {value}", plan.Terminal);
+        Assert.Contains("on a branch `feature/{quest}-{slug}`", plan.Describe);
+        Assert.Contains("plugin `example.lands` pushes it and opens the pull request", plan.Describe);
+        Assert.Equal(new LandingRule("branch", "feature/{quest}-{slug}", Tidy: true, Plugin: "example.lands"),
+            plan.Apply!(DriverConfig.Empty).WorkspaceLandings["work"]);
+    }
+
+    /// <summary>HELP8: what `daoris driver landing` refuses about a plugin, refused here in the same words.</summary>
+    [Theory]
+    [InlineData("branch feature/{quest} --plugin nowhere.lands", "", "not installed on this machine")]
+    [InlineData("branch feature/{quest} --plugin example.off", "off", "switched off")]
+    [InlineData("branch feature/{quest} --plugin example.quiet", "quiet", "does not land work")]
+    [InlineData("merge --plugin example.lands", "", "only a branch rule hands its work to a plugin")]
+    [InlineData("branch feature/{quest} --plugin", "", "`--plugin` needs the id of an installed plugin")]
+    [InlineData("branch feature/{quest} --plugin Not/An/Id", "", "is not a plugin id")]
+    public void A_landing_plugin_the_route_would_refuse_is_refused_in_its_words(string value, string install, string says)
+    {
+        var facts = WithPlugin("example.lands");
+        if (install == "off") facts = WithPlugin("example.off", enabled: false);
+        if (install == "quiet") facts = WithPlugin("example.quiet", points: "\"session/ended\"");
+
+        var plan = HelpProposals.Plan(Setting("landing", "engine", null, value), DriverConfig.Empty, facts);
+
+        Assert.Contains(says, plan.Refusal);
+        Assert.Null(plan.Apply);
+    }
+
     [Fact]
     public void An_ask_is_planned_as_the_ask_door_and_its_terminal_twin()
     {

@@ -8154,3 +8154,19 @@ and fake CLIs, never a network, and never run against a real platform. Ask Daori
 rule naming a plugin (HELP8).
 **Proven by:** driver 1174, modules 385, CLI 592, vitest 1631, Playwright 21, family 301/301,
 deployment 67/67.
+
+## HELP8 — Ask Daoris proposes a landing rule that names a plugin (2026-09-30)
+
+> - [ ] **HELP8 — Ask Daoris proposes a landing rule that names a plugin** (WSR4 left it, D100). Its
+>   parser takes `branch <pattern>` and `--tidy` and reads the rest as the pattern. …
+
+**Outcome.** The proposal's landing value is read as `daoris driver landing` reads it: the form, a
+branch's pattern, and `--tidy` and `--plugin <id>` in either order. A plugin that is not installed, is
+switched off, is refused or lands no work is refused in the landing route's own sentence
+(`LandingRules.PluginProblem`, against the catalogue the route reads), as is a merge naming one and a
+`--plugin` with no id; the card says the plugin pushes it and opens the pull request. The room names the
+plugins that can land work here, from the same check, or says none is installed and that installing
+one is the person's; the service twin's hint and the MCP tool's description name `--plugin <id>`.
+**Proven by:** `HelpProposalsTests` (both orders, six refusals), `HelpRoomTests` (the list and its
+source), the service twin's shape test; driver 1184, modules 385, service 620 + 45, CLI 592, family
+301/301.

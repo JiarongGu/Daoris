@@ -70,6 +70,9 @@ public sealed record HelpMachine
 
     /// <summary>The asks not closed, newest first (HELP6).</summary>
     public IReadOnlyList<HelpAsk> OpenAsks { get; init; } = [];
+
+    /// <summary>The plugins a branch rule may name here, by id (HELP8, D100).</summary>
+    public IReadOnlyList<string> LandingPlugins { get; init; } = [];
 }
 
 /// <summary>
@@ -167,7 +170,7 @@ public static class HelpRoom
     public static HelpMachine Describe(
         DriverConfig config, Snapshot snapshot, IReadOnlyList<RepositoryLine> lines,
         IReadOnlyList<HarnessReport> roster, Func<string, string?> product, int asks,
-        IReadOnlyList<AskView>? standing = null)
+        IReadOnlyList<AskView>? standing = null, PluginCatalog? plugins = null)
     {
         var lineOf = lines.ToDictionary(line => line.Repository, StringComparer.OrdinalIgnoreCase);
         bool Named(IReadOnlyList<string> list, string repository) => list.Contains(repository, StringComparer.OrdinalIgnoreCase);
@@ -201,8 +204,18 @@ public static class HelpRoom
                 Login = Spell(report.OwnLogin),
                 Accounts = [.. report.Profiles.Select(profile => new HelpAccount(profile.Name, Spell(profile.Login)))],
             })],
+            LandingPlugins = LandingPluginsOf(plugins ?? PluginCatalog.None),
         };
     }
+
+    /// <summary>
+    /// The plugins a branch rule may name on this machine (HELP8): each one the landing route itself
+    /// would take, so the room never lists one a proposal would then be refused for.
+    /// </summary>
+    public static IReadOnlyList<string> LandingPluginsOf(PluginCatalog catalog) =>
+        [.. catalog.Plugins.Select(plugin => plugin.Manifest.Id)
+            .Where(id => LandingRules.PluginProblem(id, catalog) is null)
+            .Order(StringComparer.Ordinal)];
 
     public static string Render(HelpMachine machine)
     {
@@ -269,6 +282,13 @@ public static class HelpRoom
         text.Append("A landing pattern may say `{quest}`, `{session}`, `{slug}` (the quest's title, as words) and\n");
         text.Append("`{repository}`. It needs `{quest}` or `{session}`, or every session's work would land on one branch,\n");
         text.Append("and git must take what it comes out as: `feature/{quest}-{slug}` is a pattern that works.\n\n");
+        // HELP8: a branch rule may name a plugin (D100), and the helper can only name one it can see.
+        text.Append("A branch rule may add `--plugin <id>`: once Daoris has made the branch, that plugin pushes it and\n");
+        text.Append("opens the pull request, as the person's own platform tools are signed in.\n");
+        text.Append(machine.LandingPlugins.Count > 0
+            ? $"Plugins that can land work here: {string.Join(", ", machine.LandingPlugins.Select(id => $"`{id}`"))}.\n\n"
+            : "No plugin that lands work is installed here: the person installs one (`daoris plugin add <folder>`,\n"
+              + "Settings → Plugins), so never propose a rule naming one.\n\n");
 
         // HELP6: the places a go may name, from the table the driver judges one by, so the two cannot disagree.
         text.Append("## Where you may take the person\n\n");

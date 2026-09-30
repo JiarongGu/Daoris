@@ -71,7 +71,7 @@ public sealed class HelpProposalBox(string? home)
                 if (door == "line") return string.IsNullOrWhiteSpace(value) ? "a line is a branch, or `--clear`." : null;
                 return value is "merge" or "--clear" or "merge --tidy" || (value?.StartsWith("branch ", StringComparison.Ordinal) ?? false)
                     ? null
-                    : "a landing is `merge`, `branch <pattern>` (with `--tidy` to remove the tree once landed), or `--clear`.";
+                    : "a landing is `merge`, `branch <pattern>` (with `--tidy` to remove the tree once landed, and `--plugin <id>` for an installed plugin that pushes it and opens the pull request), or `--clear`.";
             case "intake" or "helper":
                 return string.IsNullOrWhiteSpace(value) ? $"`{door}` is set to an agent, or `off`." : null;
             case "strikes":
