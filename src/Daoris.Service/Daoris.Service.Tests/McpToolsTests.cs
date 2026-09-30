@@ -197,6 +197,32 @@ public sealed class McpToolsTests : IAsyncLifetime
         Assert.Empty(await _quests.ListAsync());
     }
 
+    /// <summary>
+    /// HELP6: Ask Daoris's four further tools each write one proposal under the home, naming the
+    /// conversation its connector was handed — and a malformed one writes nothing, said in the agent's terms.
+    /// </summary>
+    [Fact]
+    public void Ask_Daoris_proposes_an_agent_action_a_delete_an_accounts_settings_and_a_screen()
+    {
+        var home = Path.Combine(_root, "help-home");
+        var tools = new KnowledgeTools(
+            _service, _quests, new QuestExchange(_service, _quests, files: _files),
+            new AmbientWorkspace(Path.Combine(_root, "family", "Asker")),
+            intake: new IntakeScope(null, "h1e1p000"), help: new HelpProposalBox(home));
+
+        Assert.Contains("Proposed", tools.ProposeAgent("pin", "claude-code", "the person wants that release", version: "2.1.300"));
+        Assert.Contains("Proposed", tools.ProposeDelete("made by mistake", quest: "q1a2b3c4"));
+        Assert.Contains("Proposed", tools.ProposeAgentSettings("claude-code", "work", "the person asked", effort: "high"));
+        Assert.Contains("Proposed", tools.ProposeGo("settings", "the person asked where accounts are", domain: "agents"));
+        Assert.Contains("Nothing was proposed", tools.ProposeDelete("no id at all"));
+
+        var written = Directory.GetFiles(HelpProposalBox.FolderOf(home))
+            .Select(path => JsonDocument.Parse(File.ReadAllText(path)).RootElement)
+            .ToList();
+        Assert.Equal(["account", "agent", "delete", "go"], written.Select(file => file.GetProperty("kind").GetString()).Order());
+        Assert.All(written, file => Assert.Equal("h1e1p000", file.GetProperty("by").GetProperty("session").GetString()));
+    }
+
     /// <summary>What an agent reading the list is told: what each quest carries, what follows it, what it follows.</summary>
     [Fact]
     public async Task The_list_says_what_a_quest_carries_what_follows_it_and_what_it_follows()

@@ -556,6 +556,88 @@ public sealed class KnowledgeTools(
         return box.ProposeAsk(sentence, workspace, why, intake?.Session, DateTimeOffset.UtcNow).Message;
     }
 
+    [McpServerTool(Name = "agent_propose")]
+    [Description(
+        "Ask Daoris only: propose updating an agent, or pinning it to one exact version, for the person to "
+        + "apply — the Agents & accounts screen's Update and Pin. Update is offered only where that screen "
+        + "offers it: a pinned agent moves its pin to the newest release, and an unpinned one runs its own "
+        + "updater. A pin names one exact release, like 2.1.300, never `latest`. The person sees a card with "
+        + "Apply and Not now; nothing runs until they press Apply, and their answer comes back as their next message.")]
+    public string ProposeAgent(
+        [Description("update, or pin.")]
+        string action,
+        [Description("The agent, as `daoris agent` spells it: claude-code, claude-code-acp, codex-acp or dsh, or one a plugin declares.")]
+        string agent,
+        [Description("Why: what the person asked, and what the change would do. The person decides on this.")]
+        string why,
+        [Description("For pin only: the exact version, such as 2.1.300.")]
+        string? version = null)
+    {
+        var box = help ?? HelpProposalBox.FromEnvironment();
+        return box.ProposeAgent(action, agent, version, why, intake?.Session, DateTimeOffset.UtcNow).Message;
+    }
+
+    [McpServerTool(Name = "delete_propose")]
+    [Description(
+        "Ask Daoris only: propose deleting a quest or an ask made by mistake — a duplicate or a test — for the "
+        + "person to apply. Only an open quest nobody has started on can go, and an ask goes with every quest it "
+        + "became, or not at all. Never a taken, done or declined quest: its record stays, and declining it with "
+        + "the reason is the way instead. The card says what goes; nothing is deleted until the person presses Apply.")]
+    public string ProposeDelete(
+        [Description("Why: what the person asked, and why the record was a mistake. The person decides on this.")]
+        string why,
+        [Description("The quest's id, for a quest. Name this or ask, not both.")]
+        string? quest = null,
+        [Description("The ask's id, for an ask — it goes with every quest asked by it.")]
+        string? ask = null)
+    {
+        var box = help ?? HelpProposalBox.FromEnvironment();
+        return box.ProposeDelete(quest, ask, why, intake?.Session, DateTimeOffset.UtcNow).Message;
+    }
+
+    [McpServerTool(Name = "agent_settings_propose")]
+    [Description(
+        "Ask Daoris only: propose an account's own model and effort, for the person to apply — the Agents & "
+        + "accounts screen's Model & effort, written to that tool's own settings for that account. Only for a tool "
+        + "whose settings Daoris knows, and only for one of Daoris's accounts, never the tool's own sign-in. The "
+        + "values are the tool's own: a model alias it names or a full model id, and an effort of low, medium, "
+        + "high or xhigh — `max` is for one conversation, never an account's default. `unset` returns either to "
+        + "the tool's own default. Nothing changes until the person presses Apply.")]
+    public string ProposeAgentSettings(
+        [Description("The agent, as `daoris agent` spells it; a door runs as its owner's accounts.")]
+        string agent,
+        [Description("The account's name, as the room lists it.")]
+        string account,
+        [Description("Why: what the person asked, and what the change would do. The person decides on this.")]
+        string why,
+        [Description("The model: one of the tool's aliases, a full model id, or `unset`. Omit to leave it.")]
+        string? model = null,
+        [Description("The effort: low, medium, high, xhigh, or `unset`. Omit to leave it.")]
+        string? effort = null)
+    {
+        var box = help ?? HelpProposalBox.FromEnvironment();
+        return box.ProposeAgentSettings(agent, account, model, effort, why, intake?.Session, DateTimeOffset.UtcNow).Message;
+    }
+
+    [McpServerTool(Name = "go_propose")]
+    [Description(
+        "Ask Daoris only: offer to take the person to a screen — a view, a domain of Settings, a part of it, or "
+        + "a step of the setup guide. It changes nothing: the card's Go opens the screen, where the person does "
+        + "what it is for. Use it when the answer is a place on the window; the room lists every place.")]
+    public string ProposeGo(
+        [Description("The view: overview, sessions, quests, projects, map, convergence, search or settings.")]
+        string view,
+        [Description("Why: what the person asked, and what they will find there.")]
+        string why,
+        [Description("For settings: the domain, as the room lists them (start, appearance, ai, workspace, driver, agents, permissions, plugins, browser).")]
+        string? domain = null,
+        [Description("A part of that domain or view, as the room lists them — a setup step under start, lines under workspace, add under projects.")]
+        string? part = null)
+    {
+        var box = help ?? HelpProposalBox.FromEnvironment();
+        return box.ProposeGo(view, domain, part, why, intake?.Session, DateTimeOffset.UtcNow).Message;
+    }
+
     [McpServerTool(Name = "knowledge_refresh")]
     [Description("Re-read every repository from disk and rebuild the index. Use after doctrine or decisions have changed; it takes about a second.")]
     public async Task<string> RefreshAsync(CancellationToken ct = default)

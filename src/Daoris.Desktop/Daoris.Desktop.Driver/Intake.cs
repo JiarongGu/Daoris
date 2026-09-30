@@ -25,6 +25,9 @@ public sealed record AskView(string Id, string Workspace, string Sentence, strin
 
     /// <summary>What the declarations tier proposed, best first — a word match, offered as one.</summary>
     public IReadOnlyList<string> Proposed { get; init; } = [];
+
+    /// <summary>Whether the service would delete it with its quests (D95). Absent is false.</summary>
+    public bool Deletable { get; init; }
 }
 
 public static class Asks

@@ -196,6 +196,11 @@ public sealed class HelpRoomTests : IDisposable
         // It proposes, and the person applies (HELP1c) — never PERM2's rule proposal, whose narrowing applies itself.
         Assert.Contains("mcp__daoris-knowledge__setting_propose", allowed);
         Assert.Contains("mcp__daoris-knowledge__ask_propose", allowed);
+        // HELP6: the four further kinds, each a card the person applies.
+        Assert.Contains("mcp__daoris-knowledge__agent_propose", allowed);
+        Assert.Contains("mcp__daoris-knowledge__delete_propose", allowed);
+        Assert.Contains("mcp__daoris-knowledge__agent_settings_propose", allowed);
+        Assert.Contains("mcp__daoris-knowledge__go_propose", allowed);
         Assert.DoesNotContain("mcp__daoris-knowledge__permission_propose", allowed);
         Assert.DoesNotContain(allowed, rule => rule.StartsWith("Bash", StringComparison.Ordinal)
             || rule.StartsWith("Edit", StringComparison.Ordinal) || rule.StartsWith("Write", StringComparison.Ordinal));
@@ -261,7 +266,13 @@ public sealed class HelpRoomTests : IDisposable
             new("codex", false, null, "not found", null, null, []),
         ];
 
-        var machine = HelpRoom.Describe(config, snapshot, lines, roster, adapter => adapter == "claude-code" ? "Claude Code" : null, asks: 1);
+        IReadOnlyList<AskView> standing =
+        [
+            new("a1", "work", "cap the chunk budget", "Proposed", "declarations"),
+            new("a2", "work", "stream the tiles", "Published", "named") { Quests = ["q1"] },
+        ];
+        var machine = HelpRoom.Describe(
+            config, snapshot, lines, roster, adapter => adapter == "claude-code" ? "Claude Code" : null, asks: 1, standing);
 
         var report = Assert.Single(machine.Repositories, repository => repository.Name == "console-ui");
         Assert.True(report.Drivable && report.OwnTree && report.Checkout && !report.Held);
@@ -271,6 +282,9 @@ public sealed class HelpRoomTests : IDisposable
         Assert.False(Assert.Single(machine.Repositories, repository => repository.Name == "engine").Checkout);
         Assert.Equal(1, machine.Waiting);
         Assert.Equal(1, machine.Asks);
+        // The asks by id (HELP6), with the quests each became.
+        Assert.Equal(["a1", "a2"], machine.OpenAsks.Select(ask => ask.Id));
+        Assert.Equal(["q1"], machine.OpenAsks[1].Quests);
         Assert.Equal(("claude-code", "claude-code-acp", "claude-code-acp", 4), (machine.Adapter, machine.Intake, machine.Helper, machine.Cap));
         var agent = Assert.Single(machine.Agents, agent => agent.Name == "claude-code");
         Assert.Equal(("Claude Code", "in"), (agent.Product, agent.Login));
@@ -279,6 +293,69 @@ public sealed class HelpRoomTests : IDisposable
         Assert.DoesNotContain("sk-", HelpRoom.Render(machine));
         Assert.DoesNotContain("/profiles/work", HelpRoom.Render(machine));
         Assert.DoesNotContain("/work/console-ui", HelpRoom.Render(machine));
+    }
+
+    /// <summary>
+    /// HELP6: every door built since HELP1c is a proposal too — an agent's update or pin, a delete of a
+    /// record made by mistake, an account's model and effort, and a screen to open — each named with its
+    /// tool and the rule its route judges it by, so the helper does not propose what would be refused.
+    /// </summary>
+    [Fact]
+    public void The_room_names_every_kind_it_may_propose_and_the_rule_each_is_judged_by()
+    {
+        var agents = HelpRoom.Render(Machine);
+
+        foreach (var tool in new[] { "`agent_propose`", "`delete_propose`", "`agent_settings_propose`", "`go_propose`" })
+        {
+            Assert.Contains(tool, agents);
+        }
+
+        // A delete: only what nobody has started on, and never a taken, done or declined quest.
+        Assert.Contains("Never propose deleting a taken, done or declined quest", agents);
+        Assert.Contains("the route refuses it, and declining it with the reason is the way instead", agents);
+        Assert.Contains("an ask goes with every quest it became, or not at all", agents);
+        // An agent: Update where the Agents screen offers it, a pin to one exact release.
+        Assert.Contains("a pin names one exact release, like 2.1.300, never `latest`", agents);
+        // An account: the tool's own values, and `max` never an account's default.
+        Assert.Contains("`max` is for one conversation, never an account's default", agents);
+        // The doors table carries the terminal twins of the new kinds (D50).
+        foreach (var command in new[]
+        {
+            "daoris agent update <agent>", "daoris agent pin <agent> <version>",
+            "daoris agent settings <agent> --account <name> model <model> effort <effort>",
+            "daoris-driver quest delete <id>", "daoris-driver ask --delete <id>",
+        })
+        {
+            Assert.Contains(command, agents);
+        }
+    }
+
+    /// <summary>
+    /// HELP6: the places `go_propose` may name are listed from the driver's own table, the one it judges a
+    /// go by — so the room and the judge cannot disagree about which screens exist.
+    /// </summary>
+    [Fact]
+    public void The_room_lists_every_place_a_go_may_name()
+    {
+        var agents = HelpRoom.Render(Machine);
+
+        Assert.Contains("## Where you may take the person", agents);
+        foreach (var (id, _) in HelpPlaces.Views) Assert.Contains($"`{id}`", agents);
+        foreach (var (id, name) in HelpPlaces.Domains) Assert.Contains($"`{id}` ({name})", agents);
+        foreach (var (_, id, name) in HelpPlaces.Parts) Assert.Contains($"`{id}` ({name})", agents);
+        Assert.Contains("changes nothing", agents);
+    }
+
+    /// <summary>HELP6: the asks not closed are listed by id, so a delete of one made by mistake can name it.</summary>
+    [Fact]
+    public void The_room_lists_the_asks_by_id()
+    {
+        var agents = HelpRoom.Render(Machine with
+        {
+            OpenAsks = [new HelpAsk("a1b2c3d4", "fix the chunk streamer's stall", "work", "Published", ["q1a2b3c4"])],
+        });
+
+        Assert.Contains("- `#a1b2c3d4` at `work`: “fix the chunk streamer's stall” (Published; quests `#q1a2b3c4`)", agents);
     }
 
     /// <summary>A twin (`twins.md`): the service's `SessionLedger.HelpRepository` and the page's spell it too.</summary>

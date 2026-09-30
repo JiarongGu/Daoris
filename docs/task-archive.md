@@ -8039,3 +8039,26 @@ beyond loopback does not start. A 500 is one `request.failed` line by route patt
 holds that every .NET test project is run by a declared gate. On main, its LAN example became a
 documentation address: the sensitive scan refuses a private network's.
 **Proven by:** 30 tests, each seen failing against a deliberately broken host; the service gate 632.
+
+## HELP6 — Ask Daoris reaches everything (2026-09-30)
+
+> - [ ] **HELP6 — Ask Daoris reaches everything** (owner, 2026-09-30: *"we need to have a good ui/ux or
+>   easy access for everything use ask daoris"*). … updating or pinning an agent (USE1a), deleting a
+>   quest or an ask made by mistake (QUEST1), an account's model and effort (AGT6), opening the setup
+>   guide at a step (SETUP1), and taking the person to any screen (*go*) …
+
+**Outcome** (built by a subagent in its own worktree, merged, then tried with a real helper on main).
+Four more connector tools, `agent_propose`, `delete_propose`, `agent_settings_propose` and `go_propose`,
+write the same proposal file as HELP1c, and the driver judges each by the rules of the screen that makes
+the same change: an update needs the roster's `updates` and a pin one exact release; a delete needs the
+service's own `deletable`, so a taken, done or declined quest never reaches a card; an account's
+settings need a tool whose settings Daoris knows, and `max` is refused; a *go* must be a place the
+page knows (`HelpPlaces`, twin of `help/places.ts`). Apply goes through each screen's own code (the
+harness action's start and the settings write are now one method each, shared by route and door; a
+delete is the drawer's `DELETE` route). The room names each kind's rule, the asks by id and every place.
+
+**Tried on the scratch window with the real helper:** *"take me to step 2 of the setup guide"* → the
+helper called `go_propose` at once (no tool search, HELP5's switch confirmed with a real agent), the
+turn took 10 s, and *go there* opened Settings → Get started at step 2 with the application recorded
+in the conversation. **Nit:** its words said *press Apply* where the card's button reads *go there*.
+**Proven by:** service 619, driver 1090, modules 351, vitest 1569, and the window.

@@ -20,6 +20,11 @@ export type HarnessRun = {
   /** Whether anything is on its way or running: one at a time, by construction. */
   busy: boolean;
   run: (harness: string, action: HarnessRunAction, profile?: string, version?: string, workspace?: string) => void;
+  /**
+   * Follow an action the machine already started for the person (HELP6: Ask Daoris's Apply of an update
+   * or a pin): its console shows under the tool doing it, and its end is said, as for one started here.
+   */
+  follow: (harness: string, action: 'update' | 'pin') => void;
 };
 
 const Runs = createContext<HarnessRun | null>(null);
@@ -106,7 +111,15 @@ function useRunState(notify: Notify): HarnessRun {
     });
   };
 
-  return { running, inFlight, runningProfile, signingInNew, busy: act.isPending || inFlight !== null, run };
+  // Already started, so nothing is sent: only the end is waited for, as a process started here waits.
+  const follow: HarnessRun['follow'] = (harness, action) => {
+    if (inFlight !== null) return;
+    setRunning(`${harness}:${action}`);
+    runningRef.current = `${harness}:${action}`;
+    setInFlight(`${harness}:${action}`);
+  };
+
+  return { running, inFlight, runningProfile, signingInNew, busy: act.isPending || inFlight !== null, run, follow };
 }
 
 /**
@@ -133,4 +146,12 @@ export function useHarnessRun(): HarnessRun {
   const held = useContext(Runs);
   if (!held) throw new Error('useHarnessRun needs HarnessRuns above it.');
   return held;
+}
+
+/**
+ * The running action held above, or null where nothing holds one — Ask Daoris's conversation drawn alone
+ * (a test, Quick Ask's box) still applies a card; it only has no Agents screen to show the console on.
+ */
+export function useHeldHarnessRun(): HarnessRun | null {
+  return useContext(Runs);
 }

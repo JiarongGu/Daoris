@@ -729,6 +729,14 @@ The first version: doctrine that installs, is checked, and flows back.
   *setup: n of 5* until the required steps are done. *Set up with Ask Daoris* opens the side bar on a
   first message asking to be walked through what is left. A question handed to Ask Daoris, from the
   palette too, is no longer asked again when its tab or Quick Ask's box is drawn again.
+- **Ask Daoris reaches every door** (HELP6). Beside settings and asks it now proposes an agent's
+  **update**, or a **pin** to one exact version, where the Agents screen offers them; an account's own
+  **model and effort**, in the tool's own words, never `max`; the **delete** of a quest or an ask made by
+  mistake, only where nothing stands on it, the card saying what goes; and **a screen to open**: any
+  view, Settings domain, card or setup step, a *go there* card that changes nothing. Each is checked
+  first by the rules of the screen that makes the same change, and applied through that screen's own
+  route when you press it. An update applied there runs as the Agents screen's own, its end said in the
+  conversation. Its room lists the asks by id and every place it may take you.
 - **The layout toggles are on the strip** (DOCK1c, SURF11). The panel and the right side bar each
   have a toggle beside the window controls on every view, and the session list on Sessions, pressed
   while shown, and an item in the View menu with VS Code's keys: `Ctrl+B`, `Ctrl+J`, `Ctrl+Alt+B`.

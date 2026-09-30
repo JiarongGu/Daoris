@@ -52,7 +52,8 @@ a `SessionTree`:
   the panel, the layout keys, and that the helper cannot see the window and asks rather than guesses.
   Added after it guessed at a menu that does not exist.
 - **`CLAUDE.md`** carrying `@AGENTS.md`, and **`.claude/settings.json`** allowing the family's read
-  tools, the connector's `setting_propose` and `ask_propose`, and nothing else. Over the protocol door
+  tools, the connector's `setting_propose` and `ask_propose` (and since HELP6 its four further
+  `*_propose` tools, §9.6), and nothing else. Over the protocol door
   a request for anything unlisted is refused by construction (D52), which is the point: it reads, and
   it proposes.
 
@@ -81,6 +82,11 @@ proposal the route would refuse is refused to the agent, in the route's words, a
 
 **Starting something.** `ask_propose {sentence, workspace}`: an ask, which the ordinary loop takes
 (D65). The helper never runs a session's work, and never publishes a quest itself.
+
+**Every door built since** (HELP6, §9.6): an agent's update or pin (`agent_propose`), an account's
+model and effort (`agent_settings_propose`), the delete of a quest or an ask made by mistake
+(`delete_propose`), and a screen to open (`go_propose`), each judged by the rules of the screen that
+makes the same change and applied through that screen's own route.
 
 **Never**: a push, a merge, a discard, a sign-in, a key. Those stay the person's own presses where
 they already are.
@@ -181,6 +187,49 @@ line git can name. With an agent named, a starter is also a first message.
      hides it. *Not settled:* a conversation opened ahead is a record whether or not anyone speaks in it,
      so after a restart the newest help record can be an empty one, shown ended in place of the last real
      conversation.
+6. **HELP6**: Ask Daoris reaches everything (2026-09-30). The owner: *"we need to have a good ui/ux or
+   easy access for everything use ask daoris"*. Doors built since HELP1c were not reachable from it.
+   *Plan:* four more kinds, each a connector tool writing the same file (§6), judged by the driver with
+   the rules of the route that serves the same screen, applied through that route's own code:
+   - **`agent_propose {action, agent, version?}`**: *update* where the roster's `updates` is `pin` or
+     `tool`, *pin* to one exact release where the door is pinnable; applied as `HARNESS_ACTION`'s
+     own start, one at a time, its end said into the conversation.
+   - **`delete_propose {quest | ask}`**: only where the service's `deletable` says the record may go
+     (D95); the card says what goes. Applied through the local host's `DELETE /api/quests/{id}` and
+     `DELETE /api/asks/{id}`, the drawer's routes. Not D95's rejected *delete over MCP*: the tool only
+     proposes, and the delete is the person's press.
+   - **`agent_settings_propose {agent, account, model?, effort?}`**: an account whose tool's settings
+     Daoris knows (D98), the values the tool's own, `max` refused; applied as `SET_AGENT_SETTINGS`.
+   - **`go_propose {view, domain?, part?}`**: a *go* card, applied by navigating the page as the
+     starters' doors do, nothing else changed; the places are a twin of the page's views, Settings
+     domains, their parts and the setup guide's steps.
+
+   *Built 2026-09-30, as planned*, with what building it settled:
+   - **The apply is the driver library's, and each door is the module's code for the screen's route**
+     (`HelpProposals.ApplyAsync` over `IHelpDoors`; `DriverModule.HelpDoors`). `HARNESS_ACTION`'s process
+     start and `SET_AGENT_SETTINGS`'s write became one method each, which the route and the door both
+     call, so the two cannot drift; a delete is `ServiceClient`'s call to the drawer's own route. Tests
+     hold each door with a stand-in that records the call, in both test projects.
+   - **Each kind is judged by its screen's rules, in that route's words.** An update: the agent is
+     installed and the roster's `updates` names one. A pin: the door declares a package or a channel,
+     and the version is one exact release (the channel's own `RefuseVersion`; for a package, an exact
+     semver, since npm would take a pointer). A delete: the service's own `deletable` on every quest
+     and ask, closed ones included, read only when a delete is pending; a refusal says what to do
+     instead, as D95's does. An account: a tool whose settings Daoris knows, one of its owner's accounts,
+     and the values through `AgentSettings.JudgeModel`/`JudgeEffort`, so `max` is refused in its words.
+     A go: `HelpPlaces`, the twin of the page's `help/places.ts`.
+   - **An agent action's end is said into the conversation after what the Apply did**, however soon it
+     comes: a pin already installed ends before its start is answered. The page's Agents screen follows
+     the started action (`HarnessRun.follow`), so its console and its end show there too. A busy slot is
+     the route's refusal and leaves the card for another press.
+   - **The room lists the asks by id** (the quests are the family's `quest_list`), says the rule each
+     kind is judged by, and lists every place a go may name from the driver's own table.
+   - **Left out:** a per-model effort (`--for <model>`), which the screen sets only where the file
+     already holds one; *unpin*, *install*, a sign-in and an API key, which stay the person's presses;
+     and a go to a place inside a view other than Projects' two drawers, since nothing else there has
+     a door that opens it.
+   - **What the gates do not cover:** a real helper choosing these tools, and the cards on the window
+     in both themes; both are the owner's look on the installed window.
 
 ## 10. Not chosen
 

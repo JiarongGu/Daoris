@@ -23,6 +23,12 @@ public sealed record QuestView(string Id, string From, string To, string Title, 
 
     /// <summary>What its close said — a done's note or a decline's reason. The answer a waiting session resumes with.</summary>
     public string? Note { get; init; }
+
+    /// <summary>
+    /// Whether the service would delete it (D95): its own reading, the one the drawer's Delete is shown by.
+    /// Absent is false — a host from before the delete door offers none.
+    /// </summary>
+    public bool Deletable { get; init; }
 }
 
 /// <summary>The session this machine last ran on a quest, and the tree it ran in (D79, D80).</summary>

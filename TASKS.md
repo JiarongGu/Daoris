@@ -21,8 +21,8 @@ lists.
 
 ## State
 
-**Counts, and this is their one home:** sixteen commands, **568 CLI tests, 602 service and 30 HTTP host, 1040 driver,
-345 desktop modules, 80 devkit, 1556 web unit, 21 Playwright**, 66/66 release rehearsal, **301/301
+**Counts, and this is their one home:** sixteen commands, **568 CLI tests, 619 service and 30 HTTP host, 1090 driver,
+351 desktop modules, 80 devkit, 1569 web unit, 21 Playwright**, 66/66 release rehearsal, **301/301
 family rehearsal** (it names its own phases when you run it), **67/67 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge
 documents, 5 skills, 7 packs. The always-loaded core is **22,492 of 26,000 bytes** — a span in
@@ -44,8 +44,8 @@ everything. **The day's rows landed** (all in the archive): HELP4–HELP5 (Ask D
 LOG1a–b (the machine log, D94), SHEN1 (Shenora 0.18), USE1a–f (what the window showed, one defect for
 the overflow and the side bar), QUEST1 (delete, D95), CONSOLE4 (a terminal, D96), SETUP1 (the setup
 guide, D97), AGT6 (model and effort, D98), CHR8 (one Chromium, D99), WORK1, DEPLOY5 and HTTP1, most
-built by subagents in their own worktrees and merged, rehearsed and looked at on main. **HELP6** (Ask
-Daoris proposes every new door) is being built.
+built by subagents in their own worktrees and merged, rehearsed and looked at on main, and HELP6 (Ask
+Daoris proposes every new door, tried with a real helper).
 - **The owner's ticket AR-2201 is landed** on its feature branch in the repository that owns it, not
   pushed; the pull request is theirs, and so are two calls the verify step raised (a rounding change
   in a shared helper, and a production config update). Two landed branches of the ticket before it
@@ -106,7 +106,7 @@ rather than designed.
 
 ## Backlog
 
-**Twenty-seven rows are open**: the owner's three of 2026-09-30 (USE1's last part to confirm, HELP6,
+**Twenty-six rows are open**: the owner's two of 2026-09-30 (USE1's last part to confirm,
 LOG1's last two), first; WSR4 from the first real workspace; the three REV3 left (DIST1, BUDGET1 and
 HOME1, the owner's); the in-app browser's three (BRW3, BRW7, BRW8); D85's one (TASKBAR1); the first
 goal's four (FG5, READACROSS1 and HELPREAD1 the owner's, and SEM2 on a trigger); D76's held file tools;
@@ -156,15 +156,6 @@ TASK.md and complete one by one"*).
   folders in each command. The session before it, on 0.79.0 and a normal start, committed with git.
   Check on a normal start before anything else, then decide whether the shell's environment or the
   adapter's release is the cause.
-- [ ] **HELP6 — Ask Daoris reaches everything** (owner, 2026-09-30: *"we need to have a good ui/ux or
-  easy access for everything use ask daoris"*). Ask Daoris proposes what the person confirms (HELP1c,
-  D89), but only for the doors it was built with: settings (drive, hold, landing, intake, helper,
-  strikes, timeout, notify) and an ask. Every door built since, and those being built now, should be
-  one it can propose through the same confirmed card: updating or pinning an agent (USE1a), deleting a
-  quest or an ask made by mistake (QUEST1), an account's model and effort (AGT6), opening the setup
-  guide at a step (SETUP1), and taking the person to any screen (*go*, which the panel already
-  carries). Each is the screen's own door, judged by the route that serves it, never a second path.
-  After those rows land.
 - [ ] **LOG1 — a log of what happens on this machine, to improve Daoris from.** Today nothing is
   written outside the session transcripts: the shell's, the driver loop's and the host's own lines go
   to a console nobody has once the application is installed, and an unhandled exception leaves no
