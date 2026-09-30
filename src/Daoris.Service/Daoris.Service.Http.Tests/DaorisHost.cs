@@ -108,6 +108,8 @@ public class DaorisHost : IDisposable
             [IntakeScope.SessionVariable] = null,
             ["DAORIS_WEB_ORIGIN"] = null,
             ["ASPNETCORE_URLS"] = null,
+            // An in-process host would watch the test runner's own input (LOG2a).
+            [Daoris.Knowledge.Http.InputEndStop.Variable] = null,
         });
 
         _factory = new Factory(WebRoot, settings ?? new Dictionary<string, string?>());

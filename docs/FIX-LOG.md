@@ -5,6 +5,33 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## The HTTP host never wrote its own stop (2026-09-30)
+
+**Symptom.** The usage report over the owner's first real machine log (LOG2): the `host` source had an
+`app.started` for every start of the application and not one `app.stopped`, while the shell's own
+starts and stops paired up.
+
+**Root cause.** `HostSupervisor.Stop` ended the host the shell started with
+`Kill(entireProcessTree: true)`. The host's `app.stopped` is written from
+`ApplicationStopping`, which a kill never reaches, so the lifetime's whole clean path (Kestrel's drain,
+the log line, the log's own close) was skipped on every close. LOG1a added the line and could not see it
+missing: the in-process test host is stopped by its factory, which runs the lifetime.
+
+**Fix.** The supervisor starts the host with its standard input redirected and
+`DAORIS_STOP_ON_INPUT_END=1` (`HostSupervisor.StartInfo`), and stops it by closing that input, waiting up
+to five seconds, and killing only a host still running then. The host (`InputEndStop`, wired on
+`ApplicationStarted`) reads its input to the end on a background thread only when the variable asks, and
+then calls `StopApplication`. No route: a door to stop the host would be pressable by any caller.
+
+**Verify.** `InputEndStopTests` starts the real `daoris-knowledge-http` with its input redirected and
+closes it: exit 0 and `app.stopped` with the uptime (it failed before the host was wired); unasked, the
+same close leaves it serving. `HostSupervisorTests` holds a stand-in host that honours the input
+(`HostStop.Exited`, failed as `Killed` against the old stop) and one that ignores it (killed after the
+bound). By hand: a starter killed outright left its host to see the pipe break and stop cleanly.
+
+**The trap.** A clean-stop hook proves nothing until the thing that stops the process runs it: a test
+host stopped by its own harness is not the process the shell stops.
+
 ## A question handed to Ask Daoris was asked again by its next drawing (2026-09-30)
 
 **Symptom.** Found building SETUP1b's hand-off, not reported: a question the palette handed Quick Ask

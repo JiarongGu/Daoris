@@ -184,6 +184,24 @@ the transcript beside it.
    §6's *As built* says what each reads and refuses.
 4. **LOG1d**: the report. **Landed** (2026-09-30): `tools/usage-report.mjs`, its summarising helpers
    tested over a fixture home (`usage-report.test.ts`); §6's *As built* says what it prints.
+5. **LOG2**: what the first real log showed, when the report was run on the owner's machine. Below.
+
+**As built (LOG2a): the host's stop is written.** The first real log held a host `app.started` for
+every start and no `app.stopped`: the shell ended the host it started by killing it, so nothing the
+host does on a clean stop ran. Now `HostSupervisor.StartInfo` starts the host with its standard input
+redirected and `DAORIS_STOP_ON_INPUT_END=1` (a twin of the host's `InputEndStop.Variable`); the host,
+asked, reads that input to its end on a background thread (reading nothing from it) and then stops
+through its lifetime, as on Ctrl+C, so `app.stopped` is written with the uptime and the host exits 0.
+The shell's stop closes the input, waits up to five seconds (`StopWithin`), and kills only a host still
+running then. A host started without the variable (from a terminal) never opens its input and is as it
+was; a host the shell adopted (HOSTID1) is not the shell's to stop, and stays running. **Not a route**:
+an HTTP door to stop the host is one any caller on the machine could press, where the input is held by
+the one process that started the host. Held by `InputEndStopTests` (the watcher, the variable table, and
+the real executable closed as the shell closes it) and `HostSupervisorTests` (a stand-in host that
+honours the input is let go, one that ignores it is killed after the bound, an adopted one is left).
+**Not gated**: a force-killed shell's host now stops too, because the pipe's writer dies with the shell
+and the host's read ends; observed by hand once (the host wrote `app.stopped`), and no gate kills a shell
+to see it.
 
 ## 8. Not chosen
 

@@ -284,6 +284,7 @@ Configuration is by environment, and every variable is optional — the defaults
 | `DAORIS_MODE` | HTTP host only: `local` (default) or `shared` — the team deployment (D47) |
 | `DAORIS_WORKSPACE` | HTTP host only: which circle a **shared** deployment serves (default: `default`). Refused on a local host, which holds every circle the machine wired |
 | `DAORIS_REMOTE_URL` / `DAORIS_REMOTE_KEY` | one workspace's remote, overriding the home's `remotes.json` **whole**; `DAORIS_REMOTE_WORKSPACE` names which circle the pair serves |
+| `DAORIS_STOP_ON_INPUT_END` | HTTP host only: `1` makes the host stop cleanly when its standard input ends, which is how the desktop stops a host it started (LOG2a). Set by the desktop alone; unset, standard input is never opened |
 
 Verified end to end against the real family with `nomic-embed-text`: **409 entries embedded in 34 s**,
 and a query whose words appear in none of the matching documents — *"stop the console from stealing
