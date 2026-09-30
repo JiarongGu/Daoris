@@ -58,21 +58,24 @@ public sealed class InAppBrowserServersTests
     {
         var browser = new Browser(() => "http://127.0.0.1:4810");
 
-        var (handed, notice) = await InAppBrowserServers.HandAsync([Knowledge], browser, CancellationToken.None);
+        var (handed, notice, drives) = await InAppBrowserServers.HandAsync([Knowledge], browser, CancellationToken.None);
 
         Assert.Equal(0, browser.Asked);
         Assert.Null(notice);
         Assert.Single(handed);
+        Assert.False(drives);
     }
 
     [Fact]
     public async Task A_host_with_no_browser_withholds_the_server_and_says_so()
     {
-        var (handed, notice) = await InAppBrowserServers.HandAsync([Knowledge, Attached], null, CancellationToken.None);
+        var (handed, notice, drives) = await InAppBrowserServers.HandAsync([Knowledge, Attached], null, CancellationToken.None);
 
         Assert.DoesNotContain(handed, server => server.Name == "browser");
         Assert.Contains("`browser`", notice);
         Assert.Contains("only the desktop shell", notice);
+        // Withheld is no hands on the page (BRW8).
+        Assert.False(drives);
     }
 
     [Fact]
@@ -80,10 +83,11 @@ public sealed class InAppBrowserServersTests
     {
         var browser = new Browser(() => throw new InvalidOperationException("the in-app browser was closed."));
 
-        var (handed, notice) = await InAppBrowserServers.HandAsync([Attached], browser, CancellationToken.None);
+        var (handed, notice, drives) = await InAppBrowserServers.HandAsync([Attached], browser, CancellationToken.None);
 
         Assert.Empty(handed);
         Assert.Contains("the in-app browser was closed.", notice);
+        Assert.False(drives);
     }
 
     [Fact]
@@ -91,10 +95,46 @@ public sealed class InAppBrowserServersTests
     {
         var browser = new Browser(() => "http://127.0.0.1:4810");
 
-        var (handed, notice) = await InAppBrowserServers.HandAsync([Knowledge, Attached], browser, CancellationToken.None);
+        var (handed, notice, drives) = await InAppBrowserServers.HandAsync([Knowledge, Attached], browser, CancellationToken.None);
 
         Assert.Equal(1, browser.Asked);
         Assert.Null(notice);
         Assert.Contains("http://127.0.0.1:4810", Assert.Single(handed, server => server.Name == "browser").Arguments);
+        // Its session has its hands on the page from here until it ends (BRW8).
+        Assert.True(drives);
+    }
+
+    // ——— Who is driving (BRW8): the registry names the running sessions handed the browser.
+
+    private static System.Diagnostics.Process Waiting() => System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+    {
+        FileName = "node",
+        ArgumentList = { "-e", "setTimeout(() => {}, 60000)" },
+        UseShellExecute = false,
+        CreateNoWindow = true,
+    })!;
+
+    [Fact]
+    public void A_session_handed_the_browser_is_named_as_driving_it_while_it_runs_and_no_longer_after()
+    {
+        var processes = new SessionProcesses();
+        using var driving = Waiting();
+        using var other = Waiting();
+        try
+        {
+            var handedIt = processes.Track("s1", driving, drivesBrowser: true);
+            using var notHanded = processes.Track("s2", other);
+
+            Assert.Equal(["s1"], processes.DrivingBrowser);
+            Assert.Equal(2, processes.Running.Count);
+
+            handedIt.Dispose();
+            Assert.Empty(processes.DrivingBrowser);
+        }
+        finally
+        {
+            SessionProcesses.EndIfRunning(driving);
+            SessionProcesses.EndIfRunning(other);
+        }
     }
 }

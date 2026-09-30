@@ -27,6 +27,8 @@ public sealed class DriverModuleTests : Bridge
         Assert.Empty(state.GetProperty("drivable").EnumerateArray());
         Assert.Empty(state.GetProperty("holds").EnumerateArray());
         Assert.Empty(state.GetProperty("running").EnumerateArray());
+        // Nobody has hands on Daoris's browser (BRW8).
+        Assert.Empty(state.GetProperty("drivingBrowser").EnumerateArray());
         // The path is answered so the page can tell a person which file its checkboxes edit.
         Assert.Equal(DriverConfigPath, state.GetProperty("configPath").GetString());
         Assert.Equal("claude-code", state.GetProperty("adapter").GetString());
@@ -606,6 +608,45 @@ public sealed class DriverModuleTests : Bridge
         finally
         {
             loop.Processes.Stop("i1");
+        }
+    }
+
+    /// <summary>
+    /// BRW8: the state names the running sessions handed Daoris's browser, which the strip's chip and
+    /// Settings → Browser read to say whose hands are on the page.
+    /// </summary>
+    [Fact]
+    public async Task The_state_names_the_sessions_driving_Daoris_browser()
+    {
+        var loop = Loop();
+        using var driving = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+        {
+            FileName = "node",
+            ArgumentList = { "-e", "setTimeout(() => {}, 60000)" },
+            UseShellExecute = false,
+            CreateNoWindow = true,
+        })!;
+        using var other = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+        {
+            FileName = "node",
+            ArgumentList = { "-e", "setTimeout(() => {}, 60000)" },
+            UseShellExecute = false,
+            CreateNoWindow = true,
+        })!;
+        using var handed = loop.Processes.Track("d1", driving, drivesBrowser: true);
+        using var notHanded = loop.Processes.Track("d2", other);
+
+        try
+        {
+            var state = await AnswerAsync(new DriverModule(Bus, loop), "STATE");
+
+            Assert.Equal(["d1"], state.GetProperty("drivingBrowser").EnumerateArray().Select(id => id.GetString()));
+            Assert.Equal(2, state.GetProperty("running").GetArrayLength());
+        }
+        finally
+        {
+            loop.Processes.Stop("d1");
+            loop.Processes.Stop("d2");
         }
     }
 

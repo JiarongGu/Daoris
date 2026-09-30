@@ -194,9 +194,51 @@ public sealed class DrivenSessionInputTests : IDisposable
         Assert.NotEqual("working", service.Session("s1")["state"]!.GetValue<string>());
     }
 
+    /// <summary>
+    /// BRW8: who is driving Daoris's browser is read from what the driver handed. A driven session given
+    /// a plugin server that drives the browser is named as driving it for as long as it runs; where the
+    /// server was withheld — no shell carries a browser — it is not.
+    /// </summary>
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task A_driven_session_handed_Daoris_browser_is_named_as_driving_it_while_it_runs(bool shell)
+    {
+        var plugin = Path.Combine(_home, "plugins", "in-app-browser");
+        Directory.CreateDirectory(plugin);
+        File.WriteAllText(Path.Combine(plugin, "plugin.json"), """
+            { "id": "in-app-browser", "servers": [
+                { "name": "browser", "command": ["npx", "-y", "@playwright/mcp@0.0.82", "--cdp-endpoint", "${browser}"] } ] }
+            """);
+        await using var service = StandInService.Start(_repository);
+        var processes = new SessionProcesses();
+        var driver = Driver(
+            "stub", Path.Combine(_home, "heard.txt"), service, processes,
+            browser: shell ? new AnsweringBrowser("http://127.0.0.1:4810") : null);
+
+        var tick = driver.TickAsync();
+        await Until(() => processes.Running.Contains("s1"));
+
+        string[] driving = shell ? ["s1"] : [];
+        Assert.Equal(driving, processes.DrivingBrowser);
+
+        Assert.True(processes.Stop("s1"));
+        await tick.WaitAsync(TimeSpan.FromSeconds(60));
+        Assert.Empty(processes.DrivingBrowser);
+    }
+
+    private sealed class AnsweringBrowser(string endpoint) : IInAppBrowser
+    {
+        public Task<string?> EnsureAsync(CancellationToken ct = default) => Task.FromResult<string?>(endpoint);
+
+        public void Show() { }
+
+        public void Open(string address) { }
+    }
+
     private Daoris.Driver.Driver Driver(
         string adapter, string heard, StandInService service, SessionProcesses processes, RemoteSyncSet? sync = null,
-        string turns = "quick")
+        string turns = "quick", IInAppBrowser? browser = null)
     {
         var config = DriverConfig.Empty with
         {
@@ -213,7 +255,7 @@ public sealed class DrivenSessionInputTests : IDisposable
         var adapters = AdapterSet.Built();
         return new Daoris.Driver.Driver(
             new ServiceClient(service.Url, null), config, adapters, _home, processes: processes, sync: sync,
-            harnesses: new HarnessRoster(adapters, Path.Combine(_home, "harnesses.json")));
+            harnesses: new HarnessRoster(adapters, Path.Combine(_home, "harnesses.json")), browser: browser);
     }
 
     /// <summary>The pipe door's stand-in: it answers the toolchain's two questions, then holds its turn.</summary>

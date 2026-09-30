@@ -30,6 +30,7 @@ import { useThemeChoice } from './theme';
 import { workspacesOf } from './workspaces';
 import type { StarterDoor } from './help/starters';
 import { GetStartedDomain } from './setupGuide';
+import type { BrowserDriver } from './work/browserDrivers';
 
 /**
  * Settings (D66): the application's own — how it looks, which language it speaks — and, on the
@@ -77,10 +78,15 @@ const SECTIONS: readonly { id: SettingsSection; machine: boolean }[] = [
  */
 export function SettingsView({
   notify, section = 'appearance', onSection, anchor = null, onAnchored, onGo = () => {}, onAskSetup,
+  browserDrivers = [], onAttend,
 }: {
   notify: Notify;
   section?: SettingsSection;
   onSection?: (section: SettingsSection) => void;
+  /** Who is driving Daoris's browser (BRW8), named by the application, which holds the caches that name them. */
+  browserDrivers?: readonly BrowserDriver[];
+  /** Open a session in Sessions — only a shell has it. */
+  onAttend?: (session: string) => void;
   /** Where a Get started step's door leads (SETUP1a): another domain, Projects, or one of its drawers. */
   onGo?: (door: StarterDoor) => void;
   /** Open Ask Daoris on a first message asking to be walked through the setup (SETUP1b). */
@@ -171,7 +177,7 @@ export function SettingsView({
           {shown === 'agents' && <HarnessRoster notify={notify} />}
           {shown === 'permissions' && <Rules notify={notify} />}
           {shown === 'plugins' && <Plugins notify={notify} />}
-          {shown === 'browser' && <BrowserDomain notify={notify} />}
+          {shown === 'browser' && <BrowserDomain notify={notify} drivers={browserDrivers} onAttend={onAttend} />}
         </div>
       </div>
     </section>
@@ -693,9 +699,14 @@ function WiringSettings({ notify }: { notify: Notify }) {
  * bar, and whether other software's Chrome extensions are offered or refused. The same two files
  * `daoris browser` edits (D50), which `daoris-browser` reads each time it starts, so the page says
  * that an edit shows at the next start rather than implying it shows now — except where the page's
- * links open (BRW7), which the page itself reads at each click, and says so.
+ * links open (BRW7), which the page itself reads at each click, and says so. Who is driving it (BRW8)
+ * leads the domain, as it does beside the strip's door.
  */
-function BrowserDomain({ notify }: { notify: Notify }) {
+function BrowserDomain({ notify, drivers, onAttend }: {
+  notify: Notify;
+  drivers: readonly BrowserDriver[];
+  onAttend?: (session: string) => void;
+}) {
   const { t } = useTranslation();
   const state = useBrowserSettings();
   const add = useAddFavorite();
@@ -749,6 +760,31 @@ function BrowserDomain({ notify }: { notify: Notify }) {
               })}
             />
           )}
+        />
+        {/* Whose hands are on it (BRW8): the running sessions handed it, each a door into Sessions. */}
+        <SettingRow
+          label={t('settings.browser.driving.label')}
+          hint={t('settings.browser.driving.hint')}
+          why={t('browser.driving.tip')}
+          control={drivers.length === 0
+            ? <span className="text-small text-ink-faint">{t('settings.browser.driving.none')}</span>
+            : (
+              <span className="flex min-w-0 flex-wrap justify-end gap-1.5">
+                {drivers.map((driver) => (onAttend
+                  ? (
+                    <Button
+                      key={driver.id}
+                      variant="ghost"
+                      aria-label={t('settings.browser.driving.open', { name: driver.name })}
+                      onClick={() => onAttend(driver.id)}
+                    >
+                      <Icon name="frameWork" size={12} />
+                      {driver.name}
+                    </Button>
+                  )
+                  : <span key={driver.id} className="text-small text-ink">{driver.name}</span>))}
+              </span>
+            )}
         />
         {data && !data.edgeFound && (
           <p className="mt-3 border-l-[3px] border-warn bg-raised px-3.5 py-2 text-body text-ink-soft">

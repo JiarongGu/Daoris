@@ -37,24 +37,36 @@ const QUEST = {
   status: 'Open', filed: '2026-09-01T00:00:00Z', updated: '2026-09-01T00:00:00Z', links: [TICKET],
 };
 
+/** A conversation in `engine`, running — the one the driver may say is driving the browser (BRW8). */
+const CHAT = {
+  id: 's1a2b3c4', quest: null, repository: 'engine', adapter: 'claude-code', kind: 'chat', state: 'working',
+  created: '2026-09-30T00:00:00Z', updated: '2026-09-30T00:01:00Z', workspace: 'default',
+};
+
 function respond(url: string): Response {
   if (url.startsWith('/api/registry')) {
     return Response.json([{ repository: 'engine', workspace: 'default', registered: true, adopted: true, owns: [], accepts: [], packs: [] }]);
   }
   if (url.startsWith('/api/status')) return Response.json({ semantic: false, tier: 'lexical', note: '' });
   if (url.startsWith('/api/quests')) return Response.json([QUEST]);
+  if (url.startsWith('/api/sessions')) return Response.json(url.includes('daoris%3Ahelp') ? [] : [CHAT]);
   if (url.startsWith('/api/sync')) return Response.json({ workspace: 'default', wired: false, ahead: 0, behind: [], conflicts: [] });
   return Response.json([]);
 }
 
-function machine(links: 'system' | 'daoris' | undefined) {
+function machine(links: 'system' | 'daoris' | undefined, drivingBrowser?: string[]) {
   vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => respond(String(input))));
   invoke.mockImplementation(async (module: string, type: string) => {
     if (module === 'DAORIS.BROWSER') return { favorites: [], extensions: 'offer', browser: 'daoris', edgeFound: true, ...(links ? { links } : {}) };
     if (module === 'DAORIS.WINDOWS') return { opened: true, windows: [] };
     if (module === 'DAORIS.REMOTES') return { path: 'remotes.json', fromEnvironment: false, remotes: [] };
     if (module !== 'DAORIS.DRIVER') return {};
-    if (type === 'STATE') return { drivable: ['engine'], holds: [], trees: [], running: [], notify: false, strikes: 3, forgiven: {} };
+    if (type === 'STATE') {
+      return {
+        drivable: ['engine'], holds: [], trees: [], running: [CHAT.id], notify: false, strikes: 3, forgiven: {},
+        ...(drivingBrowser ? { drivingBrowser } : {}),
+      };
+    }
     return {};
   });
 }
@@ -123,6 +135,36 @@ describe("Daoris's browser, from the window", () => {
     await waitFor(() => expect(fireEvent.click(link)).toBe(false));
 
     expect(opened()).toContainEqual(['DAORIS.WINDOWS', 'OPEN_BROWSER', { payload: { url: TICKET } }]);
+  });
+
+  /**
+   * BRW8: the strip says whose hands are on the browser beside its door — the session the driver says
+   * it handed the browser, by the name the rail gives it — and pressing it opens that session.
+   */
+  it('names the session driving the browser beside its door, and opens it on a press', async () => {
+    machine(undefined, [CHAT.id]);
+    start();
+
+    const chip = await screen.findByRole('button', { name: "Daoris's browser is driven by engine · conversation — open the session" });
+    expect(chip.closest('[data-strip-space="end"]')).not.toBeNull();
+    await userEvent.click(chip);
+
+    const bar = screen.getByRole('navigation', { name: 'Views' });
+    await waitFor(() => expect(within(bar).getByRole('button', { name: 'Sessions' })).toHaveAttribute('aria-current', 'page'));
+    expect(window.localStorage.getItem('daoris.attending')).toBe(CHAT.id);
+  });
+
+  it('says nothing beside the door while no session drives it, and on a shell too old to say', async () => {
+    for (const driving of [[], undefined]) {
+      machine(undefined, driving);
+      start();
+      await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'STATE', {}));
+      await screen.findByRole('button', { name: "open Daoris's browser" });
+
+      expect(screen.queryByText(/driven by/)).toBeNull();
+      cleanup();
+      invoke.mockReset();
+    }
   });
 
   it("leaves a link to the system's browser by default, and on a shell too old to say", async () => {

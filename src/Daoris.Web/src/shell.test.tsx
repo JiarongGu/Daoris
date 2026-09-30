@@ -840,6 +840,27 @@ describe('the browser domain', () => {
     await waitFor(() => expect(notify).toHaveBeenCalledWith("Links on the page open in Daoris's browser, from the next click."));
   });
 
+  /** BRW8: whose hands are on it, in its own domain too — each session a door into Sessions. */
+  it('names who is driving it, each opening its session, and says so when nobody is', async () => {
+    const onAttend = vi.fn();
+    const { unmount } = show(
+      <SettingsView
+        notify={() => {}}
+        section="browser"
+        browserDrivers={[{ id: 's1a2b3c4', name: 'engine · Read the ticket' }, { id: 'c0ffee00', name: 'game · conversation' }]}
+        onAttend={onAttend}
+      />,
+    );
+
+    expect(await screen.findByText('Driving it now')).toBeTruthy();
+    await userEvent.click(screen.getByRole('button', { name: 'open game · conversation' }));
+    expect(onAttend).toHaveBeenCalledWith('c0ffee00');
+    unmount();
+
+    show(<SettingsView notify={() => {}} section="browser" browserDrivers={[]} />);
+    expect(await screen.findByText('No session is driving it.')).toBeTruthy();
+  });
+
   it('with Edge chosen, says its profile, its account and its default profile, and whose favorites these are', async () => {
     invoke.mockImplementation(async (module: string) => (module === 'DAORIS.BROWSER' ? { ...BROWSER, browser: 'edge' } : DRIVER_STATE));
     show(<SettingsView notify={() => {}} section="browser" />);

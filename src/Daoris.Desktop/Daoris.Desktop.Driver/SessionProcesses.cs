@@ -31,6 +31,9 @@ public sealed class SessionProcesses(string? markers = null)
 
         /// <summary>Why a person's line is refused here, in the driver's words — null for a conversation.</summary>
         public string? RefusesInput;
+
+        /// <summary>Whether it was handed a server that drives Daoris's browser (BRW8).</summary>
+        public bool DrivesBrowser;
     }
 
     private readonly object _gate = new();
@@ -110,6 +113,23 @@ public sealed class SessionProcesses(string? markers = null)
         get
         {
             lock (_gate) return [.. _running.Keys];
+        }
+    }
+
+    /// <summary>
+    /// Who is driving Daoris's browser (BRW8): the running sessions handed a server that drives it, so a
+    /// person knows whose hands are on the page before typing into it. From the handing to the end —
+    /// whether the agent has used it yet is its own, and never reaches the driver.
+    /// </summary>
+    /// <remarks>
+    /// Only this registry's: a terminal's driver shares the home and holds its own processes, and has no
+    /// shell to hand it a browser, so every session that can drive this shell's browser is held here.
+    /// </remarks>
+    public IReadOnlyList<string> DrivingBrowser
+    {
+        get
+        {
+            lock (_gate) return [.. _running.Where(entry => entry.Value.DrivesBrowser).Select(entry => entry.Key)];
         }
     }
 
@@ -261,16 +281,17 @@ public sealed class SessionProcesses(string? markers = null)
     /// Why this session takes no person's line, in the driver's words — null for a conversation, the
     /// one kind that takes turns with a person.
     /// </param>
+    /// <param name="drivesBrowser">Whether it was handed a server that drives Daoris's browser (BRW8).</param>
     /// <remarks>
     /// 🔴 The process joins a job as it is tracked (ORPHAN1), and disposing the handle ends whatever is
     /// still in it — a dev server a session started from a background shell, found running after its
     /// session had ended. Called straight after the spawn by every site, so the job is joined before
     /// the harness has had time to start anything.
     /// </remarks>
-    public IDisposable Track(string sessionId, Process process, string? refusesInput = null)
+    public IDisposable Track(string sessionId, Process process, string? refusesInput = null, bool drivesBrowser = false)
     {
         var job = ProcessJob.Hold(process);
-        lock (_gate) _running[sessionId] = new Entry { Process = process, RefusesInput = refusesInput };
+        lock (_gate) _running[sessionId] = new Entry { Process = process, RefusesInput = refusesInput, DrivesBrowser = drivesBrowser };
         Mark(sessionId, process);
         return new Untrack(this, sessionId, job);
     }

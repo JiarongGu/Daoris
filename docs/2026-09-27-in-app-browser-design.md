@@ -51,6 +51,10 @@
 > **Amended by BRW7 (2026-09-30): a door on the strip, and links routed to it.** §3.2's doors gain a
 > third, the app strip's, and the settings file a `links` field, with its terminal door. §3c says what
 > was built and why the door is where it is.
+>
+> **Amended by BRW8 (2026-09-30): who is driving.** §3.2's *which tab an agent drives is the agent's*
+> stands, and Daoris now says whose hands are on the browser, beside its door and in Settings →
+> Browser. §3d says what it is read from.
 
 ## 0. Why the first answer is not enough
 
@@ -219,6 +223,34 @@ again, as it does coming back to the front.
 on the machine. The tab's placement and focus in the engine's window, and in Edge's, are the look
 after merging.
 
+## 3d. Who is driving (BRW8, 2026-09-30)
+
+An agent's current tab is the first page it found, not the one in front (§3.2, measured with BRW4),
+and neither the engine's window nor Edge's is Daoris's to draw in. So it is said in Daoris, before the
+person types into a page: beside the strip's door, and at the head of Settings → Browser.
+
+1. **Read from what the driver handed**, never from the page. `InAppBrowserServers.HandAsync` answers
+   whether a server that drives the browser was handed (`Drives`: an endpoint was answered and every
+   server that needs it got it). The session's registry entry keeps it beside the process
+   (`SessionProcesses.Track(…, drivesBrowser)`), on all three doors that hand servers: a driven
+   quest's session, an intake, and a conversation. Ask Daoris is handed no plugin servers, so it never
+   drives.
+2. **Driving lasts from the handing until the session ends**, whether or not the agent has used the
+   browser yet: that is its own, and never reaches the driver. The words say so in the tip.
+3. **`drivingBrowser` in the driver's state** is those ids, running. Only this registry's: a
+   terminal's driver has no shell to hand it a browser, so every session that can drive this shell's
+   browser is held here.
+4. **The page names each session as the rail does** (`browserDrivers`): its repository, then what it
+   is for (`sessionTitle`). A session the page has no record of — the list has not caught up, or it is
+   in a circle the window is not scoped to — is named by its id rather than left out.
+5. **On the strip**, one session is a chip, *driven by engine · Read the ticket*, that opens it in
+   Sessions; two or more are a count whose menu lists each. Nothing is said while nobody drives. In
+   words, never a mark alone (D41 §6), and the strip's room is why the door is there (§3c). **In
+   Settings → Browser**, *Driving it now* names each, a door into Sessions, or says no session is.
+
+**Not verified when it was written**: the chip's width beside the command center at a narrow window,
+and its look in both themes, are the look after merging.
+
 ## 4. What is deliberately not in it
 
 - **Downloads, devtools, history UI.** v1 was one page an agent and a person share; tabs came with
@@ -238,3 +270,4 @@ after merging.
 | **BRW2** | `${browser}` in a plugin server, expanded at hand-over from the shell's answer, and the server withheld where there is none. The driver brings the browser up before the spawn. The example plugin moves to it | driver tests with a stand-in browser host, the twin tests for the placeholder staying unexpanded at read, and a stub session handed the endpoint |
 | **BRW3** | The owner's machine: the plugin, the one sign-in in the in-app browser, `mcp__browser` allowed, and the first ask whose ticket the intake reads through it | the owner's run, FG5 |
 | **BRW7** | The strip's door, `links` in the settings file on both doors, `ExternalLink` as the one place a link opens, and `OPEN_BROWSER` with a `url` (§3c) | the twin tables, module tests with a stand-in browser, vitest over a mocked bridge (the helper, the Settings row, the whole window's door and a quest's link), and a look on the window after merging |
+| **BRW8** | Who is driving: `Drives` from the hand-over, kept in the registry, `drivingBrowser` in the driver's state, the strip's chip and Settings' row (§3d) | driver tests (the hand-over, the registry, a real tick's driven session and a real conversation, each with a stand-in browser and without), the module's state, vitest over a mocked bridge (no session, one, two, and the whole window) |

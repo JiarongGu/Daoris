@@ -37,6 +37,11 @@ export type DriverState = {
   trees: string[];
   /** Session ids with a live process right now — what "stop" can actually reach. */
   running: string[];
+  /**
+   * Who is driving Daoris's browser (BRW8): the running sessions the driver handed a server that drives
+   * it, from the handing until each ends. Absent on a shell older than it, which says nothing.
+   */
+  drivingBrowser?: string[];
   /** Whether this machine interrupts the person when a session parks or ends unasked (SURF5b). */
   notify: boolean;
   /** How many failed sessions park a quest (D58); `0` never parks. */

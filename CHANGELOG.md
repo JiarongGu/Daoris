@@ -305,6 +305,11 @@ The first version: doctrine that installs, is checked, and flows back.
   system's browser or in Daoris's (its own, or the person's Edge). Every link opens through one place,
   held by a test; a sign-in link always opens in the system's browser, and a browser with no bridge
   opens links as it always did.
+- **Daoris says who is driving its browser** (BRW8). A session handed a server that drives the browser
+  is named beside the strip's door, *driven by engine · Read the ticket*, from the handing until it
+  ends, and the chip opens it in Sessions; two or more are a count whose menu lists each. Settings →
+  Browser names them too. It is read from what the driver handed, on a driven quest, an intake and a
+  conversation alike, since the engine's window and Edge's are not Daoris's to draw in.
 - **A plugin is a folder that declares, and may speak** (D64). Under the home's `plugins/<id>/`, a
   `plugin.json` names what a plugin declares — configurations of the ACP door, so a fifth harness
   arrives as a file — and what it speaks. The catalogue reads the API version before anything else,

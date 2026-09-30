@@ -287,6 +287,7 @@ public sealed class ChatRunner(
         object? meta = null;
         IReadOnlyList<AcpMcpServer> pluginServers = [];
         string? browserNotice = null;
+        var drivesBrowser = false;
         try
         {
             await service.AdvanceAsync(sessionId, "starting", ct: ct).ConfigureAwait(false);
@@ -325,7 +326,7 @@ public sealed class ChatRunner(
             // for one that drives it (D78), or that one left out and the conversation told why.
             if (place.Plugins)
             {
-                (pluginServers, browserNotice) = await InAppBrowserServers.HandAsync(
+                (pluginServers, browserNotice, drivesBrowser) = await InAppBrowserServers.HandAsync(
                     PluginCatalog.Load(home, _harnesses.Adapters.Names).Servers, browser, ct).ConfigureAwait(false);
                 if (browserNotice is not null) Record(sessionId, new SessionEvent { Kind = SessionEventKind.Note, Text = browserNotice });
             }
@@ -393,7 +394,7 @@ public sealed class ChatRunner(
         void Measured(AcpUsage used) => _usage.Record(new UsageEntry(
             sessionId, place.Name, resolved.Name, selection.Profile, used.Used, used.Size, DateTimeOffset.UtcNow));
 
-        var watch = WatchAsync(sessionId, process, transcript, onEnded, Measured, rules, mapper, chat, native, servers);
+        var watch = WatchAsync(sessionId, process, transcript, onEnded, Measured, rules, mapper, chat, native, servers, drivesBrowser);
         _watching[sessionId] = watch;
         _ = watch.ContinueWith(
             _ => _watching.TryRemove(new KeyValuePair<string, Task>(sessionId, watch)), TaskScheduler.Default);
@@ -595,16 +596,17 @@ public sealed class ChatRunner(
     /// <param name="chat">The conversation's session on the protocol door (CONV3b), or null on the pipe.</param>
     /// <param name="native">The conversation's turns on the native door's structured wire (CONV4a), or null.</param>
     /// <param name="servers">The plugins' servers file handed on the pipe door, which goes when the conversation does.</param>
+    /// <param name="drivesBrowser">Whether it was handed a server that drives Daoris's browser (BRW8), kept beside its process.</param>
     private async Task WatchAsync(
         string sessionId, Process process, string transcript, Func<string, string, Task>? onEnded,
         Action<AcpUsage>? measured = null,
         string? rules = null, IStreamMapper? mapper = null, ProtocolChat? chat = null, NativeChat? native = null,
-        string? servers = null)
+        string? servers = null, bool drivesBrowser = false)
     {
         // Declared first, so it is disposed LAST — after the process is untracked and every map that
         // talks to it has let go (REV3: nothing disposed a conversation's process or its pipes).
         using var owned = process;
-        using var tracked = processes.Track(sessionId, process);
+        using var tracked = processes.Track(sessionId, process, drivesBrowser: drivesBrowser);
         using var talking = new Disposer(() =>
         {
             _talking.TryRemove(sessionId, out _);

@@ -62,10 +62,16 @@ public static class InAppBrowserServers
     /// Resolve against the shell's browser, bringing it up first when a server needs it — and the
     /// sentence the transcript carries when one could not be handed, or null when nothing was withheld.
     /// </summary>
-    public static async Task<(IReadOnlyList<AcpMcpServer> Handed, string? Notice)> HandAsync(
+    /// <returns>
+    /// And <c>Drives</c>: whether a server that drives Daoris's browser was handed, which puts the session's
+    /// hands on the page from its start until it ends (BRW8). The registry keeps it beside the process,
+    /// and the page says who is driving from it — what was handed, since whether the agent has touched a
+    /// page yet is its own and never reaches the driver.
+    /// </returns>
+    public static async Task<(IReadOnlyList<AcpMcpServer> Handed, string? Notice, bool Drives)> HandAsync(
         IReadOnlyList<AcpMcpServer> servers, IInAppBrowser? browser, CancellationToken ct)
     {
-        if (!servers.Any(Needs)) return (servers, null);
+        if (!servers.Any(Needs)) return (servers, null, false);
 
         string? endpoint = null;
         string? why = null;
@@ -94,6 +100,8 @@ public static class InAppBrowserServers
         return (handed, withheld.Count == 0
             ? null
             : $"— {string.Join(", ", withheld.Select(name => $"`{name}`"))} drives Daoris's own browser, and was "
-              + $"not handed: {why} (D78).");
+              + $"not handed: {why} (D78).",
+            // With an endpoint every server that needs it is handed; without one, none is.
+            endpoint is not null);
     }
 }

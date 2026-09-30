@@ -24,7 +24,7 @@ what was measured, and it stays a record of that moment. A *record* is append-on
 | `2026-09-20-remote-design.md` | contract | the remote (D47) | Current; its superseded list names what D68 replaced |
 | `2026-09-21-working-surface-design.md` | contract | the working surface (D51, D52) | Current, with D66 noted |
 | `2026-09-21-working-surface-components.md` | method | how a screen is built | Current: a story first, and a molecule imports no hook |
-| `2026-09-21-desktop-frame-design.md` | contract | the desktop's frame (D56) | Current, with D66, D75 and BRW7 (the browser's door on the strip) noted |
+| `2026-09-21-desktop-frame-design.md` | contract | the desktop's frame (D56) | Current, with D66, D75 and BRW7–BRW8 (the browser's door on the strip, and who is driving it) noted |
 | `2026-09-22-instruction-file-design.md` | contract | the always-loaded tier in `AGENTS.md` (D59) | Current |
 | `2026-09-22-toolchain-design.md` | contract | binaries, pins, accounts, usage (D57) | Current, with D63, D67 and D98 noted. The home of the resolution rule |
 | `2026-09-23-api-key-accounts.md` | contract | an account that is an API key (D67 §1) | Current |
@@ -34,7 +34,7 @@ what was measured, and it stays a record of that moment. A *record* is append-on
 | `2026-09-23-sync-design.md` | contract | the remote as a git remote (D68) | Current, with D69 and D95 (a delete travels as `deleted`) noted |
 | `2026-09-24-menus-design.md` | contract | the menus as setup domains (D75) | Current |
 | `2026-09-24-permission-scopes-design.md` | contract | what an agent may do (D72, D74) | Current |
-| `2026-09-27-in-app-browser-design.md` | contract | Daoris's own browser, driven over MCP (D78) | Current in its seam (`${browser}`, §3.4–§3.6). Its window is now `daoris-browser`, the engine's own (**D84**, **D85**, CHR3), since CHR8 the application started with `--daoris-browser` (**D99**), and its banner says what each section became. §3c is its door on the strip and where the page's links open (BRW7) |
+| `2026-09-27-in-app-browser-design.md` | contract | Daoris's own browser, driven over MCP (D78) | Current in its seam (`${browser}`, §3.4–§3.6). Its window is now `daoris-browser`, the engine's own (**D84**, **D85**, CHR3), since CHR8 the application started with `--daoris-browser` (**D99**), and its banner says what each section became. §3c is its door on the strip and where the page's links open (BRW7), §3d who is driving it (BRW8) |
 | `2026-09-27-ask-and-wait-design.md` | contract | A session asks another repository, waits, and is resumed with the answer (D79) | Current. ASK1–ASK3 built; §1 amended while building (the quest stays taken); §1.6 is D80, the carry-on after a cut-off |
 | `2026-09-28-chromium-host-design.md` | contract | Daoris's page and its browser on an embedded Chromium it ships, under Shenora's frame (D85) | Current. CHR1–CHR4 landed (the page on Shenora's Chromium, D92; the install's shape, D93), and CHR8 puts the browser on the same engine, as the application started with `--daoris-browser` (**D99**): one Chromium |
 | `2026-09-29-ask-daoris-design.md` | contract | Ask Daoris: a conversation about Daoris itself, which proposes and the person confirms (HELP1) | Built (HELP1a–d, D89); §2 records where it lives, one right region |

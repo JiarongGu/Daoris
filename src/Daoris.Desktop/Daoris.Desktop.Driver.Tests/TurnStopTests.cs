@@ -392,8 +392,9 @@ public sealed class TurnStopTests : IDisposable
         await using var service = StandInService.Start(Path.Combine(_home, "engine"));
         var adapters = AdapterSet.Built();
         using var client = new ServiceClient(service.Url, null);
+        var processes = new SessionProcesses(Path.Combine(_home, "sessions"));
         using var runner = new ChatRunner(
-            client, adapters, _home, new SessionProcesses(Path.Combine(_home, "sessions")),
+            client, adapters, _home, processes,
             harnesses: new HarnessRoster(adapters, Path.Combine(_home, "harnesses.json")),
             browser: shell ? new AnsweringBrowser("http://127.0.0.1:4810") : null);
         var config = DriverConfig.Empty with
@@ -411,9 +412,13 @@ public sealed class TurnStopTests : IDisposable
         Assert.DoesNotContain("${browser}", servers);
         if (shell) Assert.Contains("http://127.0.0.1:4810", servers);
         else Assert.DoesNotContain("@playwright/mcp", servers);
+        // BRW8: handed the browser, the conversation is named as driving it while it runs; withheld, it is not.
+        string[] driving = shell ? [id] : [];
+        Assert.Equal(driving, processes.DrivingBrowser);
 
         runner.Finish(id);
         await Until(() => service.State(id) is "completed" or "stopped");
+        await Until(() => processes.DrivingBrowser.Count == 0);
     }
 
     private sealed class AnsweringBrowser(string endpoint) : IInAppBrowser

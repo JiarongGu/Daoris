@@ -593,7 +593,7 @@ public sealed partial class Driver(
             // Daoris's home, and the file goes when the session does.
             // With Daoris's own browser brought up for a server that drives it (D78), or that server left
             // out and the transcript told why.
-            var (servers, browserNotice) = await InAppBrowserServers.HandAsync(_servers, browser, ct).ConfigureAwait(false);
+            var (servers, browserNotice, drivesBrowser) = await InAppBrowserServers.HandAsync(_servers, browser, ct).ConfigureAwait(false);
             var handed = SpawnServers.Hand(adapter, info, home, sessionId, servers);
 
             // What this session may do (PERM1, D72): the rules composed for its circle and repository,
@@ -612,6 +612,7 @@ public sealed partial class Driver(
                 ct: ct,
                 preamble: browserNotice,
                 handedServers: servers,
+                drivesBrowser: drivesBrowser,
                 conclude: async (exitCode, used, turnFailed) =>
                 {
                     if (used is not null)
@@ -876,11 +877,12 @@ public sealed partial class Driver(
         string cwd, string? harnessNotice, (string? File, object? Meta) rules, string? handed, string? refusesInput,
         Func<int?, AcpUsage?, string?, Task<T>> conclude, CancellationToken ct,
         IReadOnlyDictionary<string, string>? scope = null, string? preamble = null,
-        IReadOnlyList<AcpMcpServer>? handedServers = null)
+        IReadOnlyList<AcpMcpServer>? handedServers = null, bool drivesBrowser = false)
     {
         using var process = Process.Start(info)
             ?? throw new DriverException($"the {adapter.Name} adapter's process did not start");
-        using var tracked = _processes.Track(sessionId, process, refusesInput);
+        // Kept beside the process, so who is driving Daoris's browser lasts exactly as long as it (BRW8).
+        using var tracked = _processes.Track(sessionId, process, refusesInput, drivesBrowser);
         using var reaper = new Disposer(() => SessionProcesses.EndIfRunning(process));
         using var servers = new Disposer(() => SpawnServers.Remove(handed));
         using var ruled = new Disposer(() => SpawnSettings.Remove(rules.File));

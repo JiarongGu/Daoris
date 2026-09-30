@@ -35,6 +35,7 @@ import {
 } from './shell';
 import { LinkOpener } from './links';
 import { BrowserDoor } from './work/BrowserDoor';
+import { browserDrivers } from './work/browserDrivers';
 import { appMenus, menuAction } from './work/appMenus';
 import type { TrustHold } from './signals';
 import { TrustAsk } from './work/TrustAsk';
@@ -287,6 +288,9 @@ export function App() {
   // Titles for the quests in conflict, from the cache the Quests view fills anyway; one it has not
   // loaded is named by its id alone.
   const everything = useQuests(null, true);
+  // Who is driving Daoris's browser (BRW8), named from the caches the frame already fills: the driver's
+  // ids, the sessions, and the quests they serve. Said beside the browser's door and in its Settings.
+  const driving = browserDrivers(driver.data?.drivingBrowser, running.data ?? [], everything.data ?? []);
   const wired = standing.data
     ? standing.data.wired
     : remotes.data && circle
@@ -527,6 +531,9 @@ export function App() {
             onGo={go}
             // Ask Daoris is the shell's (HELP1): a browser's guide offers no hand-off.
             onAskSetup={attached ? askSetup : undefined}
+            // Who is driving Daoris's browser (BRW8), for its domain, each a door into Sessions.
+            browserDrivers={driving}
+            onAttend={attached ? openInWork : undefined}
           />
         )}
       </div>
@@ -615,7 +622,7 @@ export function App() {
         // of the application's, one press from every view, where View → Browser was the only one.
         trailing={attached ? (
           <div className="flex items-center gap-2">
-            <BrowserDoor onOpen={() => openBrowser.mutate()} />
+            <BrowserDoor onOpen={() => openBrowser.mutate()} drivers={driving} onAttend={openInWork} />
             <LayoutToggles
               regions={view === 'sessions' ? ['rail', 'panel', 'right'] : ['panel', 'right']}
               closed={{ rail: closings.rail, panel: closings.panel, right: closings.dock }}
