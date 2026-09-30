@@ -32,7 +32,7 @@
   "help.proposal.plugin.problem": "按目前的样子它不起作用：{{problem}}",
   "help.proposal.titleHand": "问道衍提议交接一个分支",
   "help.proposal.handNote": "应用会把分支交给插件，由它以你的身份把分支推送到它的远程并打开拉取请求。道衍自己不推送任何东西；插件没有推送时什么都不会改变。",
-  "help.proposal.plugin.change": "它的{{what}}：{{was}} → {{now}}",
+  "help.proposal.plugin.change": "{{what}}：{{was}} → {{now}}",
   "help.proposal.plugin.needs": "需要：{{need}}",
   "help.proposal.plugin.replaced": "应用会从它的来处替换它的文件夹，它保存的内容留下。按下时不会启动它运行的任何东西：驱动会在下一次查看时重新启动它。",
   "help.proposal.titleSync": "问道衍提议同步到最新",

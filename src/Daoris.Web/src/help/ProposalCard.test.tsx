@@ -329,7 +329,7 @@ describe('the kinds that reach every door', () => {
     const runs = within(screen.getByRole('list', { name: 'what the plugin runs' }));
     expect(runs.getByText('1.0.0', { selector: 'code' })).toBeInTheDocument();
     expect(runs.getByText('1.1.0', { selector: 'code' })).toBeInTheDocument();
-    expect(runs.getByText(/its servers/)).toBeInTheDocument();
+    expect(runs.getByText(/^Servers: /)).toBeInTheDocument();
     expect(screen.getByText(/replaces its folder from where it came from/)).toBeInTheDocument();
     expect(screen.queryByText(/copies its folder/)).not.toBeInTheDocument();
   });
@@ -356,7 +356,7 @@ describe('the kinds that reach every door', () => {
       // PLUG9 (c) and (d): what an offer needs and what an update changes, the chrome in 中文.
       render(<ul><ProposalCard proposal={PLUGIN_OFFER} onApply={vi.fn()} onDismiss={vi.fn()} /><ProposalCard proposal={PLUGIN_UPDATE} onApply={vi.fn()} onDismiss={vi.fn()} /></ul>);
       expect(screen.getByText(/^需要：/)).toBeInTheDocument();
-      expect(screen.getByText(/它的版本/)).toBeInTheDocument();
+      expect(screen.getByText(/^版本：/)).toBeInTheDocument();
       expect(screen.getByText(/从它的来处替换它的文件夹/)).toBeInTheDocument();
       cleanup();
       // HELP10: bringing up to date's chrome, the look's word the screen's own.

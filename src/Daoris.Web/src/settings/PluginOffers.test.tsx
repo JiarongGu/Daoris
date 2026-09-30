@@ -113,7 +113,7 @@ describe('what an update changes', () => {
     const changes = within(screen.getByRole('region', { name: 'What an update changes' }));
     expect(changes.getByText('1.0.0', { selector: 'code' })).toBeInTheDocument();
     expect(changes.getByText('1.1.0', { selector: 'code' })).toBeInTheDocument();
-    expect(changes.getByText('agents')).toBeInTheDocument();
+    expect(changes.getByText('Agents')).toBeInTheDocument();
     expect(changes.getByText('(none)')).toBeInTheDocument();
     expect(changes.getByText(/what it kept stays/)).toBeInTheDocument();
 
@@ -164,7 +164,7 @@ describe('in 中文', () => {
       expect(screen.getByRole('button', { name: '安装 github-pull-request' })).toBeInTheDocument();
       expect(screen.getByText('gh auth login', { selector: 'code' })).toBeInTheDocument();
       expect(screen.getByText(/没有它来自哪里的记录/)).toBeInTheDocument();
-      expect(screen.getByRole('region', { name: '更新会改变什么' })).toBeInTheDocument();
+      expect(screen.getByRole('region', { name: '更新内容' })).toBeInTheDocument();
       expect(screen.getByRole('button', { name: '立即更新' })).toBeInTheDocument();
     } finally {
       cleanup();
