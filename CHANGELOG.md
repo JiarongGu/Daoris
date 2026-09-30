@@ -848,6 +848,11 @@ The first version: doctrine that installs, is checked, and flows back.
   it: the desktop or a headless loop, its process id, and since when. `--share` runs beside it on
   purpose. A lock whose process is gone never blocks. The desktop's loop takes the same lock, and where
   a headless loop holds it, says so once and starts when that one stops.
+- **A take a shutdown or the orphan sweep cut off is carried on** (DRV8, D104). Both ended the session's
+  record `stopped`, and only a failed or answered take was carried on, so the quest sat taken with
+  nothing to move it. Such a stop is now recorded as interrupted, a field of its own on the record, and
+  its take is carried on in its tree like a cut-off, counting as a strike, the third parking it. The
+  person's own stop is theirs, and is never carried on.
 - **A plugin can push the branch and open the pull request** (WSR4, D100). A branch landing rule may
   name an installed plugin (`daoris driver landing … branch <pattern> --plugin <id>`, or the *who
   pushes it* chooser in Settings → Workspace → *How work lands*). Once accepting has made the branch,

@@ -35,7 +35,8 @@ public sealed class StrikeTests
 
     /// <summary>
     /// Every other ending is NOT a strike, and each for its own reason: a stand-down is the race
-    /// resolving as designed, a decline is a real answer, a stop was the person, and a session still
+    /// resolving as designed, a decline is a real answer, a stop the person made was theirs (one that was
+    /// not is below), and a session still
     /// working has not ended at all. Counting any of them would park a quest for succeeding.
     /// </summary>
     [Theory]
@@ -47,6 +48,40 @@ public sealed class StrikeTests
     public void Nothing_but_a_failure_counts(string quest)
     {
         Assert.DoesNotContain(quest, ServiceClient.ReadStrikes(Records).Keys);
+    }
+
+    /// <summary>
+    /// D104: a stop that was not the person's — the orphan sweep's, or a shutdown's — is a cut-off, and
+    /// counts as one. The person's own stop, said or unsaid, never does.
+    /// </summary>
+    [Fact]
+    public void An_interrupted_stop_is_a_strike_and_the_persons_stop_is_not()
+    {
+        var strikes = ServiceClient.ReadStrikes("""
+            [{ "id": "s1", "quest": "q1", "repository": "Game", "state": "stopped", "interrupted": true },
+             { "id": "s2", "quest": "q1", "repository": "Game", "state": "failed" },
+             { "id": "s3", "quest": "q2", "repository": "Game", "state": "stopped" },
+             { "id": "s4", "quest": "q3", "repository": "Game", "state": "stopped", "interrupted": false },
+             { "id": "s5", "quest": "q4", "repository": "Game", "state": "completed", "interrupted": true }]
+            """);
+
+        Assert.Equal(2, strikes["q1"]);
+        Assert.Equal(["q1"], strikes.Keys);
+    }
+
+    /// <summary>The last run says whether its stop was interrupted — what the planner carries on from.</summary>
+    [Fact]
+    public void The_last_run_says_whether_its_stop_was_interrupted()
+    {
+        var last = ServiceClient.ReadLastRun("""
+            [{ "id": "s1", "quest": "q1", "state": "stopped", "interrupted": true, "note": "nothing ran it.",
+               "tree": "D:/trees/s1", "created": "2026-09-30T10:00:00Z" },
+             { "id": "s2", "quest": "q2", "state": "stopped", "note": "the person stopped it.",
+               "created": "2026-09-30T10:00:00Z" }]
+            """);
+
+        Assert.Equal(new PriorSession("s1", "D:/trees/s1", "stopped", "nothing ran it.", Interrupted: true), last["q1"]);
+        Assert.False(last["q2"].Interrupted);
     }
 
     /// <summary>A record from a service older than the state field is no evidence, not a failure.</summary>

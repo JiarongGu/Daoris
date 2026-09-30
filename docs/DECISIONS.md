@@ -2113,6 +2113,9 @@ a parked quest freely. **Absent `strikes` means the default, not off** — the o
 driving unattended longest. And the limit is per quest rather than per repository: a repository with
 one broken quest must keep working the rest.
 
+*Amended by D104 (DRV8, 2026-09-30): a `stopped` record that says it was interrupted — the orphan sweep's
+or a shutdown's, not the person's — counts as a strike too. The person's own stop still never does.*
+
 ## D59 — The always-loaded tier lives in `AGENTS.md`, inside a region Daoris owns (2026-09-22)
 
 **Decision.** `sync` stops writing `.claude/rules/` and writes the core rules into a marked region of
@@ -3547,6 +3550,9 @@ ended the same way, on an account limit (ACPEND1).
 - **Carrying on a clean exit with the quest still taken** (a stand-down). That shape includes
   somebody else having the quest, and the driver cannot tell the two apart.
 
+*Amended by D104 (DRV8, 2026-09-30): a last session that ended `stopped` and interrupted — by the orphan
+sweep or the driver's shutdown, not the person — is a cut-off too, carried on and counted the same way.*
+
 ## D81 — A driven session works in its harness's own judged mode, as a regular session would (2026-09-27)
 
 **Decision.** On the protocol door, Claude Code sessions drive in `auto`, the harness's own mode in
@@ -4539,7 +4545,8 @@ at on the window.
   asking for it is refused, and the store adds its column by `SchemaColumns`, so a record from before
   it reads false, the old reading. The sweep sets it on every record it ends. A driven session's
   shutdown sets it: the driver closing under it, from the desktop's close or Ctrl+C in a terminal. A
-  person's stop never sets it, their stop on an orphan included, since they asked about that one.
+  person's stop never sets it, their stop on an orphan included, since they asked about that one. A
+  conversation or an intake the application closes is not marked, since nothing carries either on.
 - **An interrupted take is carried on like a cut-off (D80).** The ledger opens a session on a taken
   quest whose last session here ended `stopped` and interrupted, as it does after `failed`. The driver
   counts it as a strike, and the planner carries it on in the tree it worked in, telling it what the
@@ -4568,9 +4575,9 @@ planner and the ledger need.
 - **A door that releases the take to *Open*.** D79's and D80's rejected draft: anyone could take it
   fresh, without its tree.
 - **Locking only the watch mode.** A one-tick run starts sessions too, and races the desktop the same way.
-- **An operating system's file lock held open for the process's life.** It is exclusive only on
-  Windows, where the headless driver is not the only case, and a refusal has to read the holder's name
-  from the file.
+- **An operating system's file lock held open for the process's life.** It is advisory on the other
+  systems the headless driver runs on, and where it is exclusive it keeps the holder's name from the
+  loop that has to be refused with it.
 - **The desktop refusing to come up beside a headless loop.** Its host, page and conversations race
   nobody for a quest; only its loop waits.
 

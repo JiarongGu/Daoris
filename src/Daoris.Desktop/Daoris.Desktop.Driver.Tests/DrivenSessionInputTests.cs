@@ -104,6 +104,33 @@ public sealed class DrivenSessionInputTests : IDisposable
         Assert.True(processes.Stop("s1"));
         await tick;
         Assert.Equal("stopped", service.Session("s1")["state"]!.GetValue<string>());
+        // The person's stop is theirs (D104): never marked interrupted, so never carried on.
+        Assert.Null(service.Session("s1")["interrupted"]);
+    }
+
+    /// <summary>
+    /// D104: the driver shut down under a session — the desktop closing, Ctrl+C at a terminal — ends its
+    /// record `stopped` and says it was interrupted, not the person's stop, so a take it held is carried
+    /// on at the next start.
+    /// </summary>
+    [Fact]
+    public async Task A_session_the_driver_shuts_down_under_is_recorded_stopped_and_interrupted()
+    {
+        await using var service = StandInService.Start(_repository);
+        var processes = new SessionProcesses();
+        var driver = Driver("stub", Path.Combine(_home, "heard.txt"), service, processes);
+        using var closing = new CancellationTokenSource();
+
+        var tick = driver.TickAsync(closing.Token);
+        await Until(() => processes.Running.Contains("s1"));
+        closing.Cancel();
+        try { await tick.WaitAsync(TimeSpan.FromSeconds(90)); }
+        catch (OperationCanceledException) { }
+
+        var record = service.Session("s1");
+        Assert.Equal("stopped", record["state"]!.GetValue<string>());
+        Assert.True(record["interrupted"]?.GetValue<bool>(), record.ToJsonString());
+        Assert.Contains("the driver was stopped", record["note"]!.GetValue<string>());
     }
 
     /// <summary>
@@ -526,6 +553,7 @@ public sealed class DrivenSessionInputTests : IDisposable
                         var session = _sessions.Single(s => s["id"]!.GetValue<string>() == id);
                         session["state"] = body["state"]!.GetValue<string>();
                         if (body["note"] is { } note) session["note"] = note.GetValue<string>();
+                        if (body["interrupted"] is { } interrupted) session["interrupted"] = interrupted.GetValue<bool>();
                         return (200, new JsonObject { ["session"] = session.DeepClone(), ["message"] = "moved" }.ToJsonString());
                     }
 

@@ -366,9 +366,13 @@ public sealed class SessionLedger(
         // record never counts, because either means the take is somebody else's.
         // And the person's answer to one that parked to ask them (STANDDOWN2): its record ended
         // `completed` with their words kept, and the quest it held is carried on the same way.
+        // And a stop that was not the person's (D104): the sweep found nothing running it, or the driver
+        // shut down under it. The person's own stop is their decision, and is never carried on.
         var carriesOn = quest is { Status: QuestStatus.Taken } && question is null
             && await sessions.LastOwnForQuestAsync(quest.Id, ct).ConfigureAwait(false)
-                is { State: SessionState.Failed } or { State: SessionState.Completed, Answer: not null };
+                is { State: SessionState.Failed }
+                or { State: SessionState.Completed, Answer: not null }
+                or { State: SessionState.Stopped, Interrupted: true };
 
         if (quest.Status != QuestStatus.Open && !resumes && !carriesOn)
         {
@@ -414,9 +418,13 @@ public sealed class SessionLedger(
     /// HTTP in the design's spelling — `awaiting-person`, `stood-down` — and a door should accept what
     /// it prints.
     /// </summary>
+    /// <param name="interrupted">
+    /// That a stop was not the person's (D104): the orphan sweep's, or the driver's shutdown. Only a move
+    /// to <c>stopped</c> may say so, since it says whose decision a stop was.
+    /// </param>
     public async Task<SessionAdvanceOutcome> AdvanceAsync(
         string id, string state, string? note, string? evidence, string? transcript,
-        DateTimeOffset now, CancellationToken ct = default)
+        DateTimeOffset now, CancellationToken ct = default, bool interrupted = false)
     {
         var target = Parse(state);
         if (target is null or SessionState.Queued)
@@ -425,6 +433,15 @@ public sealed class SessionLedger(
             return new(
                 SessionAdvanceRefusal.UnknownState,
                 $"Unknown state '{state}' — one of: {AdvanceTargets}.",
+                Session: null);
+        }
+
+        if (interrupted && target != SessionState.Stopped)
+        {
+            return new(
+                SessionAdvanceRefusal.InvalidMove,
+                $"Only a move to stopped can be interrupted — it says a stop was not the person's, and "
+                + $"session `{id}` was asked to move to {Spell(target.Value)}.",
                 Session: null);
         }
 
@@ -455,7 +472,7 @@ public sealed class SessionLedger(
                     Session: null);
             }
 
-            var moved = await sessions.SetStateAsync(id, target.Value, note, evidence, transcript, now, inside)
+            var moved = await sessions.SetStateAsync(id, target.Value, note, evidence, transcript, now, inside, interrupted)
                 .ConfigureAwait(false);
 
             return new SessionAdvanceOutcome(

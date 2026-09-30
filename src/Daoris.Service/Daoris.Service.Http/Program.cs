@@ -766,7 +766,8 @@ app.MapPost("/api/sessions/{id}/state", async (
     ComposedService s, HttpContext http, string id, AdvanceSessionRequest body, CancellationToken ct) =>
 {
     var outcome = await s.Ledger.AdvanceAsync(
-        id, body.State ?? "", body.Note, body.Evidence, body.Transcript, DateTimeOffset.UtcNow, ct);
+        id, body.State ?? "", body.Note, body.Evidence, body.Transcript, DateTimeOffset.UtcNow, ct,
+        interrupted: body.Interrupted == true);
 
     return outcome.Refusal switch
     {
@@ -1339,7 +1340,8 @@ static SessionResponse ToSession(Session s, bool loopback) => new(
     Ask: s.Ask,
     Took: s.Took,
     // The person's own words, which may name anything on this machine: answered to it only, like a transcript.
-    Answer: loopback ? s.Answer : null);
+    Answer: loopback ? s.Answer : null,
+    Interrupted: s.Interrupted);
 
 // A caller on this machine — which is what "the root never leaves the machine" means in practice. A
 // null remote address is the in-process test server, which is this process and therefore local.

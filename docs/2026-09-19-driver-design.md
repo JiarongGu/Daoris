@@ -94,7 +94,12 @@ and the driver keys sessions by quest id and never re-opens closed quests.
 | `declined` | Exited; its quest reached `Declined`, with the reason |
 | `stood-down` | Exited without working; the quest was already taken or closed by someone else |
 | `failed` | Exited with the quest still `Open`/`Taken` and no explanation, or the process died |
-| `stopped` | The person cancelled it |
+| `stopped` | The person cancelled it — or, with `interrupted`, the orphan sweep or the driver's shutdown ended it (D104) |
+
+*Amended by D104 (DRV8, 2026-09-30).* A `stopped` record says whether it was **interrupted**: the orphan
+sweep found nothing running it, or the driver shut down under it. The person's stop never says so. A
+take ended so is carried on like a `failed` one (D80) and counts as a strike; a person's stop stays their
+decision. The note stays a sentence for a person, and nothing is decided from it.
 
 **Transitions are observations, not reports.** The driver moves a session by what it can see — process
 lifetime from the spawn, quest transitions from the store — rather than trusting an in-band status

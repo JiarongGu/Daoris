@@ -557,6 +557,45 @@ public sealed class PlannerTests
         Assert.Contains("Signed in; go ahead.", only.Reason);
     }
 
+    // ── a take the sweep or a shutdown cut off (D104) ─────────────────────────────────────────────
+    //
+    // Found running the owner's ticket: the orphan sweep ended the take's record `stopped`, and a
+    // stopped take was never carried on, so the quest sat taken with nothing to move it. A stop that was
+    // not the person's is a cut-off; the person's own stop is their decision.
+
+    [Theory]
+    [InlineData(Orphans.Note)]
+    [InlineData("the driver was stopped while this ran; the session's process was ended with it.")]
+    public void A_taken_quest_whose_last_session_here_was_interrupted_is_carried_on_from_that_session(string note)
+    {
+        var prior = new PriorSession("s1", "D:/trees/s1", "stopped", note, Interrupted: true);
+
+        var only = Assert.Single(Planner.Plan(Ran([Quest(status: "Taken")], ("q1", prior)), Config()));
+
+        Assert.Equal(StartVerdict.Start, only.Verdict);
+        Assert.Equal(prior, only.Resumes);
+        Assert.Contains("s1", only.Reason);
+        Assert.Contains(note, only.Reason);
+    }
+
+    /// <summary>An interrupted take counts against the strikes like any cut-off, and the third parks it.</summary>
+    [Fact]
+    public void Carrying_on_an_interrupted_take_is_bounded_by_the_strikes()
+    {
+        var snapshot = Ran([Quest(status: "Taken")], ("q1", new PriorSession("s3", null, "stopped", Orphans.Note, Interrupted: true)))
+            with { Strikes = new Dictionary<string, int> { ["q1"] = 3 } };
+
+        Assert.Equal(StartVerdict.Exhausted, Assert.Single(Planner.Plan(snapshot, Config() with { Strikes = 3 })).Verdict);
+    }
+
+    /// <summary>🔴 The person's stop is their decision: a take they stopped is never carried on.</summary>
+    [Fact]
+    public void A_taken_quest_the_person_stopped_is_not_carried_on()
+    {
+        Assert.Empty(Planner.Plan(
+            Ran([Quest(status: "Taken")], ("q1", new PriorSession("s1", "D:/trees/s1", "stopped", "the person stopped it."))), Config()));
+    }
+
     [Fact]
     public void A_taken_quest_whose_last_session_here_ended_well_is_not_carried_on()
     {

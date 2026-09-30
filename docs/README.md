@@ -15,7 +15,7 @@ what was measured, and it stays a record of that moment. A *record* is append-on
 |---|---|---|---|
 | `2026-08-04-daoris-design.md` | contract | the CLI | Current. Its notes carry D54 and D59 where they changed it |
 | `2026-08-05-knowledge-service-design.md` | contract | the service | Built. Its banner names what later decisions answered; §3–§4, the disclosure classes, still bind |
-| `2026-09-19-driver-design.md` | contract | the driver (D45, D46) | Current, with D72's permission change noted |
+| `2026-09-19-driver-design.md` | contract | the driver (D45, D46) | Current, with D72's permission change and D104's interrupted stop noted |
 | `2026-09-19-platform-design.md` | contract | the platform (D38) | Current in shape; the views it names have moved since (D55, D66, D75) |
 | `2026-09-19-platform-ux.md` | contract | the design language (D41, D56) | Current. §4 records what each looking pass settled; read it before changing anything a person looks at |
 | `2026-09-19-frontend-architecture.md` | method | the platform's stack and tests (D42) | Current |

@@ -415,9 +415,13 @@ public sealed class ServiceClient : IDisposable
     }
 
     /// <summary>Move a session's record. The ledger judges; the driver reports what it observed.</summary>
+    /// <param name="interrupted">
+    /// That a stop was not the person's (D104): the orphan sweep's, or this driver's shutdown — so a take it
+    /// ended is carried on. A host older than the field ignores it, and the stop reads as the person's.
+    /// </param>
     public async Task<string> AdvanceAsync(
         string id, string state, string? note = null, string? evidence = null, string? transcript = null,
-        CancellationToken ct = default)
+        CancellationToken ct = default, bool interrupted = false)
     {
         var body = WriteJson(writer =>
         {
@@ -426,6 +430,7 @@ public sealed class ServiceClient : IDisposable
             if (note is not null) writer.WriteString("note", note);
             if (evidence is not null) writer.WriteString("evidence", evidence);
             if (transcript is not null) writer.WriteString("transcript", transcript);
+            if (interrupted) writer.WriteBoolean("interrupted", true);
             writer.WriteEndObject();
         });
 
@@ -608,10 +613,11 @@ public sealed class ServiceClient : IDisposable
     /// How often each quest has been failed, from the records themselves (DRV6).
     /// </summary>
     /// <remarks>
-    /// 🔴 <b>Only <c>failed</c> counts.</b> A <c>stood-down</c> session means somebody else took the
+    /// 🔴 <b>Only <c>failed</c> counts — and a stop that was not the person's</b> (D104), which is a
+    /// cut-off by the sweep or a shutdown. A <c>stood-down</c> session means somebody else took the
     /// quest first — the race resolving as designed, not a failure. A <c>declined</c> one is a real
-    /// answer and closes the quest anyway. A <c>stopped</c> one was the person. Counting any of those
-    /// would park quests for succeeding.
+    /// answer and closes the quest anyway. A <c>stopped</c> one the person stopped was theirs. Counting
+    /// any of those would park quests for succeeding.
     /// </remarks>
     internal static IReadOnlyDictionary<string, int> ReadStrikes(string json)
     {
@@ -622,7 +628,10 @@ public sealed class ServiceClient : IDisposable
             // A strike is this driver's own judgement of its own attempts: a teammate's failure there
             // says nothing about whether THIS machine's next try would fail.
             if (IsTeams(session)) continue;
-            if (!string.Equals(Text(session, "state"), "failed", StringComparison.OrdinalIgnoreCase)) continue;
+            var state = Text(session, "state");
+            var cutOff = string.Equals(state, "failed", StringComparison.OrdinalIgnoreCase)
+                         || (string.Equals(state, "stopped", StringComparison.OrdinalIgnoreCase) && Interrupted(session));
+            if (!cutOff) continue;
             if (Text(session, "quest") is not { Length: > 0 } quest) continue;
 
             strikes[quest] = strikes.TryGetValue(quest, out var seen) ? seen + 1 : 1;
@@ -653,11 +662,15 @@ public sealed class ServiceClient : IDisposable
             if (last.TryGetValue(quest, out var seen) && seen.At > at) continue;
             last[quest] = (new PriorSession(
                 Text(session, "id") ?? "", Text(session, "tree"), Text(session, "state") ?? "", Text(session, "note"),
-                Text(session, "repository"), Text(session, "answer")), at);
+                Text(session, "repository"), Text(session, "answer"), Interrupted(session)), at);
         }
 
         return last.ToDictionary(pair => pair.Key, pair => pair.Value.Session, StringComparer.OrdinalIgnoreCase);
     }
+
+    /// <summary>Whether a record says its stop was not the person's (D104) — absent is false, the old reading.</summary>
+    private static bool Interrupted(JsonElement session) =>
+        session.TryGetProperty("interrupted", out var interrupted) && interrupted.ValueKind == JsonValueKind.True;
 
     /// <summary>A record that came down from the team — keyed `origin/id`, the id this machine's own never has.</summary>
     internal static bool IsTeams(JsonElement session) => Text(session, "id")?.Contains('/') == true;
