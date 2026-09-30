@@ -22,7 +22,7 @@ describe('the chain line', () => {
     render(<ChainLine chain={buildChain('b', QUESTS, [])} onExpand={() => {}} />);
 
     const line = screen.getByRole('navigation', { name: 'How this work ran' });
-    expect(line.textContent).toMatch(/ask #abc123.*Develop it.*Done.*this quest.*Taken.*next: engine/);
+    expect(line.textContent).toMatch(/ask #abc123.*Develop it.*done.*this quest.*taken.*next: engine/);
     // The head already says this quest's title: the line does not say it again.
     expect(within(line).queryByText('Verify it')).toBeNull();
   });

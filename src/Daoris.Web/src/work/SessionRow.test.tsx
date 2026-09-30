@@ -198,7 +198,7 @@ describe('a session row', () => {
     await i18n.changeLanguage('zh');
     render(<SessionRow session={session({ kind: 'chat', quest: null, state: 'awaiting-person' })} />);
 
-    expect(screen.getByText('等待人工')).toBeInTheDocument();
+    expect(screen.getByText('等你处理')).toBeInTheDocument();
     expect(screen.getAllByText('聊天').length).toBeGreaterThan(0);
     await i18n.changeLanguage('en');
   });

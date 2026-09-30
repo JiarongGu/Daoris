@@ -199,12 +199,12 @@ describe('the composer', () => {
     const log = new File(['exit 3'], 'run.log', { type: 'text/plain' });
     const shot = new File(['png'], 'shot.png', { type: 'image/png' });
 
-    await userEvent.upload(screen.getByLabelText('choose files…'), [log, shot]);
+    await userEvent.upload(screen.getByLabelText('Choose files…'), [log, shot]);
     const attached = screen.getByRole('list', { name: 'attached' });
     expect(within(attached).getAllByRole('listitem').map((item) => item.textContent)).toEqual(
       [expect.stringContaining('run.log'), expect.stringContaining('shot.png')]);
 
-    await userEvent.click(screen.getByRole('button', { name: 'remove shot.png' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Remove shot.png' }));
     await userEvent.type(box(), 'what does this say?');
     await userEvent.click(screen.getByRole('button', { name: 'Send' }));
 
@@ -218,7 +218,7 @@ describe('the composer', () => {
     const shot = new File(['png'], 'shot.png', { type: 'image/png' });
 
     expect(screen.getByRole('button', { name: 'Send' })).toBeDisabled();
-    await userEvent.upload(screen.getByLabelText('choose files…'), shot);
+    await userEvent.upload(screen.getByLabelText('Choose files…'), shot);
     await userEvent.click(screen.getByRole('button', { name: 'Send' }));
 
     expect(send).toHaveBeenCalledWith('', [shot]);
@@ -228,7 +228,7 @@ describe('the composer', () => {
     show();
     const files = Array.from({ length: 11 }, (_, i) => new File([`${i}`], `f${i}.txt`));
 
-    await userEvent.upload(screen.getByLabelText('choose files…'), files);
+    await userEvent.upload(screen.getByLabelText('Choose files…'), files);
 
     expect(within(screen.getByRole('list', { name: 'attached' })).getAllByRole('listitem')).toHaveLength(10);
     expect(screen.getByRole('status')).toHaveTextContent('At most 10 files travel together.');

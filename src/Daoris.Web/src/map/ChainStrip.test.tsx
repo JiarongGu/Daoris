@@ -26,8 +26,8 @@ describe('the chain strip', () => {
     const steps = within(screen.getByRole('region', { name: 'How this work ran' })).getAllByRole('listitem');
     expect(steps.map((step) => step.textContent)).toEqual([
       expect.stringContaining('ask #abc123'),
-      expect.stringMatching(/Develop it.*Done/),
-      expect.stringMatching(/Verify it.*Open.*this quest/),
+      expect.stringMatching(/Develop it.*done/),
+      expect.stringMatching(/Verify it.*open.*this quest/),
       expect.stringMatching(/→ engine.*Report back.*not published yet/),
     ]);
   });

@@ -122,7 +122,7 @@ describe('QuestsView', () => {
     const dialog = await screen.findByRole('dialog');
     const conflicts = within(dialog).getByRole('region', { name: 'Conflicts' });
 
-    expect(within(conflicts).getByText(/Machine b7f2c9d1 tried to mark it Taken/)).toBeInTheDocument();
+    expect(within(conflicts).getByText(/Machine b7f2c9d1 tried to mark it taken/)).toBeInTheDocument();
     expect(within(conflicts).getByText('machine b, offline')).toBeInTheDocument();
     expect(within(conflicts).getByText(/nothing was merged/)).toBeInTheDocument();
   });
@@ -312,8 +312,8 @@ describe('QuestsView', () => {
       const composer = await screen.findByRole('dialog', { name: 'Ask the workspace' });
       expect(within(composer).getByText('Asked in workspace default')).toBeInTheDocument();
       await userEvent.type(within(composer).getByLabelText('What is wanted, and why'), 'Cap the hydration per frame.');
-      fireEvent.change(within(composer).getByLabelText(/links — a ticket/), { target: { value: 'https://tickets.example/T-42' } });
-      await userEvent.upload(within(composer).getByLabelText('choose files…'), new File(['pixels'], 'trace.log'));
+      fireEvent.change(within(composer).getByLabelText(/Links — a ticket/), { target: { value: 'https://tickets.example/T-42' } });
+      await userEvent.upload(within(composer).getByLabelText('Choose files…'), new File(['pixels'], 'trace.log'));
       await userEvent.click(within(composer).getByRole('button', { name: 'Ask' }));
 
       await waitFor(() => expect(posted).toHaveLength(1));
@@ -603,8 +603,8 @@ describe('QuestsView', () => {
     fireEvent.change(within(dialog).getByLabelText('What is wanted, in one line'), { target: { value: 'Use the media config' } });
     fireEvent.change(within(dialog).getByLabelText('Why, and the evidence'), { target: { value: 'Field names are hard-coded.' } });
     fireEvent.change(
-      within(dialog).getByLabelText(/^links/), { target: { value: 'https://tickets.example/T-1\nhttps://docs.example/media' } });
-    await userEvent.upload(within(dialog).getByLabelText('choose files…'), new File(['pixels'], 'before.png'));
+      within(dialog).getByLabelText(/^Links/), { target: { value: 'https://tickets.example/T-1\nhttps://docs.example/media' } });
+    await userEvent.upload(within(dialog).getByLabelText('Choose files…'), new File(['pixels'], 'before.png'));
 
     expect(within(dialog).getByText('before.png')).toBeInTheDocument();
     await userEvent.click(within(dialog).getByRole('button', { name: 'Publish quest' }));
@@ -633,7 +633,7 @@ describe('QuestsView', () => {
     });
     expect(await within(dialog).findByText('trace.log')).toBeInTheDocument();
 
-    await userEvent.click(within(dialog).getByRole('button', { name: 'remove trace.log' }));
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Remove trace.log' }));
     expect(within(dialog).queryByText('trace.log')).not.toBeInTheDocument();
   });
 
@@ -642,7 +642,7 @@ describe('QuestsView', () => {
     const dialog = await screen.findByRole('dialog');
     const eleven = Array.from({ length: 11 }, (_, i) => new File([`${i}`], `f${i}.txt`));
 
-    await userEvent.upload(within(dialog).getByLabelText('choose files…'), eleven);
+    await userEvent.upload(within(dialog).getByLabelText('Choose files…'), eleven);
 
     expect(within(dialog).getByText('At most 10 files travel together.')).toBeInTheDocument();
     expect(within(dialog).queryByText('f10.txt')).not.toBeInTheDocument();

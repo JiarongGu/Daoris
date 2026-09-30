@@ -942,7 +942,7 @@ describe('starting and holding a conversation', () => {
     const notify = vi.fn();
 
     show('c0ffee11', notify);
-    await userEvent.upload(await screen.findByLabelText('choose files…'), new File(['exit 3'], 'run.log', { type: 'text/plain' }));
+    await userEvent.upload(await screen.findByLabelText('Choose files…'), new File(['exit 3'], 'run.log', { type: 'text/plain' }));
     const box = screen.getByLabelText('Message');
     await userEvent.type(box, 'a long paragraph worth keeping');
     await userEvent.click(screen.getByRole('button', { name: 'Send' }));
@@ -1129,7 +1129,7 @@ describe('starting and holding a conversation', () => {
     });
 
     show('c0ffee11');
-    await userEvent.upload(await screen.findByLabelText('choose files…'), new File(['exit 3'], 'run.log', { type: 'text/plain' }));
+    await userEvent.upload(await screen.findByLabelText('Choose files…'), new File(['exit 3'], 'run.log', { type: 'text/plain' }));
     await userEvent.type(screen.getByLabelText('Message'), 'what does this say?');
     await userEvent.click(screen.getByRole('button', { name: 'Send' }));
 

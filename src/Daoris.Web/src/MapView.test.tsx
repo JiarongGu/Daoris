@@ -155,7 +155,7 @@ describe('the workspace map', () => {
 
     expect(screen.getByText('game → engine')).toBeTruthy();
     expect(screen.getByText('Expose a streaming budget')).toBeTruthy();
-    expect(screen.getByText('Done')).toBeTruthy();
+    expect(screen.getByText('done')).toBeTruthy();
   });
 
   // ——— MAP4b: asks and chains, each its own kind of line, and a person chooses which are drawn.

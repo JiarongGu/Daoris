@@ -59,7 +59,7 @@ describe('a stream tile', () => {
   it('wears the attention mark when a session is waiting on a person', () => {
     render(<StreamTile session={session({ state: 'awaiting-person' })} />);
 
-    expect(screen.getByText('awaiting person')).toBeInTheDocument();
+    expect(screen.getByText('waiting on you')).toBeInTheDocument();
   });
 
   /** UX5 U17: the monitor reads a live chat between turns as idle, as the main window does. */

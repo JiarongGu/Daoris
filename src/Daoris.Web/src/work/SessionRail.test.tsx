@@ -117,7 +117,7 @@ describe('the session rail', () => {
     const rows = within(strip).getAllByRole('button');
     expect(rows.map((row) => row.getAttribute('aria-label'))).toEqual([
       'Expose a streaming budget on the chunk API · engine · working',
-      'Chat · tools · awaiting person',
+      'Chat · tools · waiting on you',
       'Chat · tools · working',
     ]);
     expect(rows.map((row) => row.textContent)).toEqual(['e', 't', 't']);
@@ -308,7 +308,7 @@ describe('the session rail', () => {
     show(<SessionRail notify={() => {}} />);
 
     const tools = (await screen.findByText('tools')).closest('section')!;
-    expect(within(rows(tools)[0]!).getByText('awaiting person')).toBeInTheDocument();
+    expect(within(rows(tools)[0]!).getByText('waiting on you')).toBeInTheDocument();
   });
 
   it('marks the attended row and reports a choice, holding neither itself', async () => {

@@ -201,7 +201,7 @@ describe('AskRecord', () => {
     const { drawer } = record(INTAKE_ASKED, { intake: INTAKE_PARKED, onAttend });
     const line = within(drawer).getByRole('region', { name: 'Intake session' });
 
-    expect(within(line).getByText('awaiting person')).toBeInTheDocument();
+    expect(within(line).getByText('waiting on you')).toBeInTheDocument();
     await userEvent.click(within(line).getByRole('button', { name: 'claude-code · 2.1.4' }));
     expect(onAttend).toHaveBeenCalledWith('i9n8t7k6a5b4');
   });
@@ -326,9 +326,9 @@ describe('AskComposer', () => {
     render(<Holder fixed="aurora" circles={['aurora']} />);
     const drawer = screen.getByRole('dialog');
 
-    await userEvent.upload(within(drawer).getByLabelText('choose files…'), new File(['x'], 'trace.log'));
+    await userEvent.upload(within(drawer).getByLabelText('Choose files…'), new File(['x'], 'trace.log'));
     expect(within(drawer).getByText('trace.log')).toBeInTheDocument();
-    expect(within(drawer).getByText(/links — a ticket/)).toBeInTheDocument();
+    expect(within(drawer).getByText(/Links — a ticket/)).toBeInTheDocument();
   });
 });
 

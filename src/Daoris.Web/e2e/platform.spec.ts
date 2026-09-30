@@ -332,7 +332,7 @@ test('an ask waiting on a person is in What needs you, and its record names its 
 
   await asking.click();
   const intake = page.getByRole('dialog', { name: sentence }).getByRole('region', { name: 'Intake session' });
-  await expect(intake.getByText('awaiting person')).toBeVisible();
+  await expect(intake.getByText('waiting on you')).toBeVisible();
   await expect(intake.getByText('stub', { exact: true })).toBeVisible();
   await expect(intake.getByRole('button')).toHaveCount(0);
 
