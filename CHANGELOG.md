@@ -911,6 +911,8 @@ The first version: doctrine that installs, is checked, and flows back.
   edit's path opens scrolled to its first hunk; a whole-file read marks nothing. Opening a preview is a
   line in the machine log. The Daoris home's hint also knows a home named for one start alone, and a
   session can no longer start in a tree while *Bring up to date* replays it.
+- **A dock tab shows its whole name or its icon** (TABS1). In a narrow side bar or panel, the tabs you are
+  not looking at become icons, named in their tips, instead of names cut to one character.
 - **A plugin can push the branch and open the pull request** (WSR4, D100). A branch landing rule may
   name an installed plugin (`daoris driver landing … branch <pattern> --plugin <id>`, or the *who
   pushes it* chooser in Settings → Workspace → *How work lands*). Once accepting has made the branch,

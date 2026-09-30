@@ -1,11 +1,12 @@
 import type { ReactElement } from 'react';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { fireEvent, render as rtlRender, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import i18n from '../i18n';
 import { en, zh } from '../locales';
 import { SessionConsole } from '../SessionConsole';
+import { layTabs } from '../test/tabRoom';
 import { SESSION_ACTIVE } from '../ui';
 import { ActivityBar, AppStrip, OutputPanel, type PanelTab, Splitter, StatusBar } from './frame';
 
@@ -544,5 +545,44 @@ describe('the output panel', () => {
     render(<OutputPanel console={<p>the console</p>} height={180} collapsed={false} onResize={() => {}} onToggle={() => {}} views={[]} />);
     expect(screen.getByText(/Nothing is here now/)).toBeTruthy();
     expect(screen.queryByText('the console')).toBeNull();
+  });
+
+  // TABS1: the side bar's rule, a size down — a view's tab is its whole name or its icon, never a name
+  // cut to one character (控…).
+  describe('its views\' tabs', () => {
+    let room: ReturnType<typeof layTabs> | undefined;
+    afterEach(() => {
+      room?.restore();
+      room = undefined;
+    });
+    const panel = () => (
+      <OutputPanel
+        console={<p>the console</p>} height={180} collapsed={false} onResize={() => {}} onToggle={() => {}}
+        views={['console', 'terminal']} view="console" onView={() => {}}
+      />
+    );
+    const shown = () => Array.from(screen.getByRole('tablist', { name: 'views in the panel' }).querySelectorAll('[role="tab"]'))
+      .map((tab) => [tab.getAttribute('aria-label'), tab.getAttribute('title'), tab.textContent]);
+
+    it('keeps every name whole while the header holds them', () => {
+      room = layTabs(900, { buttons: 130 });
+      render(panel());
+      expect(shown()).toEqual([['Console', 'Console', 'Console'], ['Terminal', 'Terminal', 'Terminal']]);
+    });
+
+    it('draws the unselected as its icon when the header cannot hold every name whole, named still', () => {
+      // Console and Terminal need 268px, and a 300px header less its buttons holds 170.
+      room = layTabs(300, { buttons: 130 });
+      render(panel());
+
+      expect(shown()).toEqual([['Console', 'Console', 'Console'], ['Terminal', 'Terminal', '']]);
+      for (const tab of screen.getAllByRole('tab')) {
+        expect(tab).toHaveClass('shrink-0');
+        expect(tab.querySelector('.truncate')).toBeNull();
+      }
+
+      room.resize(400);
+      expect(shown()).toEqual([['Console', 'Console', 'Console'], ['Terminal', 'Terminal', 'Terminal']]);
+    });
   });
 });

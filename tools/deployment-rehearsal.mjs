@@ -476,7 +476,9 @@ async function main() {
   section('1. Publish the artefact');
   stopAll(shellExe);      // a previous run's window would hold its own executable open
   await sleep(300);
-  rmSync(scratch, { recursive: true, force: true });
+  // A run that died leaves its processes winding down for a few seconds; the removal waits them out rather
+  // than refusing with EPERM (TEST1: the merge tool's re-run of a crashed rehearsal met exactly that).
+  rmSync(scratch, { recursive: true, force: true, maxRetries: 20, retryDelay: 500 });
   mkdirSync(scratch, { recursive: true });
 
   const published = run(

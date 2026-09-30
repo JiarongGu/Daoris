@@ -5363,7 +5363,6 @@ The screen's section is held by the vitest loop over a mocked bridge, not looked
 branch rebased by hand keeps a record it no longer matches, and no door re-records it. An Ask Daoris proposal
 for this press was not built: it would reach into the service's proposal kinds and the page's cards. *(HELP10
 built it since: the `sync` kind, a card whose first press is the look; see D110.)*
-for this press was not built: it would reach into the service's proposal kinds and the page's cards.
 
 *Amended by LEFT2 (2026-10-01): the window between the list and the replay is closed. A repository's trees
 have a lock under the home (`locks/trees/<workspace>/<repository>.lock`, `TreeLock`), taken by the file

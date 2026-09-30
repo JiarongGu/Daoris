@@ -22,7 +22,7 @@ lists.
 ## State
 
 **Counts, and this is their one home:** sixteen commands, **667 CLI tests, 697 service and 46 HTTP host, 1630 driver,
-436 desktop modules, 80 devkit, 1778 web unit, 21 Playwright**, 66/66 release rehearsal, **301/301
+436 desktop modules, 80 devkit, 1803 web unit, 21 Playwright**, 66/66 release rehearsal, **305/305
 family rehearsal** (it names its own phases when you run it), **70/70 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge
 documents, 5 skills, 7 packs. The always-loaded core is **22,672 of 26,000 bytes** — a span in
@@ -58,8 +58,8 @@ test that caught WSR6's new control on its first merge), PREVIEW1 (D111: a file'
 bar), WSR6 (D109: one press brings a repository up to date after its pull request merges) and LEFT1,
 each merged with every gate; then HELP10 (Ask Daoris's owed doors, under D110). **The look at the
 republished install** (2026-10-01) found WSR7, REVIEW2 and TABS1 on the owner's real workspace. **In
-flight:** LEFT2 and TABS1 merging; WSR7 (D112) and REVIEW2 (D113) building, each a subagent in its own
-worktree. **Next:** merge them and look again on the install; then nothing workable is left without the
+flight:** WSR7 (D112) and REVIEW2 (D113), built by subagents in their own worktrees, merging; LEFT2 and TABS1
+are in. **Next:** merge them and look again on the install; then nothing workable is left without the
 owner — the rows below are theirs or parked. Dispatch through the `dispatch-subagent` skill and merge with `tools/merge-branch.mjs`. The
 kit's own relay (Shenora.Chromium 0.18.0) leaves a pump unobserved as Daoris's did: a request for the
 kit's owner, not Daoris's to change (LOG2b).
@@ -129,8 +129,8 @@ rather than designed.
 
 ## Backlog
 
-**Twenty rows are open** (triaged 2026-09-30, when the owner asked to go faster; 2026-10-01 after the night's merges and the look):
-- **Building or merging (four):** LEFT2 and TABS1 merging; WSR7 and REVIEW2 building, found looking.
+**Eighteen rows are open** (triaged 2026-09-30, when the owner asked to go faster; 2026-10-01 after the night's merges and the look):
+- **Merging (two):** WSR7 and REVIEW2, found looking.
 - **Waiting on the owner (six):** BUDGET1 and PLUGREPO1 (their calls), TRUST2 and AGT2c (a grant, two
   downloads), FG5 and BRW3 (the owner present).
 - **Parked on a trigger (ten):** TOOL4, TOOL5, PLUG7, SEM2, CANON9, HARNESS1, REH1, D76's held file tree,
@@ -167,10 +167,6 @@ repositories, which no fixture has:
   opened one), show the changes from the landed branch (`from..branch`), and offer the hand-off rather than
   Accept. Its preview (`PREVIEW_NO_TREE` today) reads the file from the landed branch, saying so. Since a
   finished session is usually a landed one, today's preview of it is always empty.
-- [ ] **TABS1 — a dock tab shows its whole name or its icon.** At a 430 px side bar the four tabs need 367 of
-  349 px, so each unselected tab loses about 6 px, and a three-character name reads as one character and an
-  ellipsis (时…, 改…, 问…). An unselected tab that cannot show its whole name shows its icon alone, its name
-  in the tip as now. The panel's tabs get the same.
 
 ### Plugins Daoris makes (owner, 2026-09-30)
 
@@ -375,12 +371,18 @@ TDD, looked at on the window, and the ones that touch a real session use one (au
   (a process-level exit, or nothing printed of its own) once more and reads FLAKE if it passes; one that
   reported a failed check has failed. The three merges after it (PREVIEW1, WSR6, LEFT1) needed no re-run.
 
-- [ ] **TEST1 — the Playwright suite aborts a worker with `0xC0000409`: seen twice now.** The
+- [ ] **TEST1 — a Node process aborts with `0xC0000409`: seen three times now, once outside Playwright.** The
   second sighting was its trigger. Both runs died with `worker process exited unexpectedly
   (code=3221226505)`, Windows `__fastfail`: no output, no stack, no WER entry.
   - 2026-09-21, during SURF2, mid-suite. The identical run passed after.
   - 2026-09-25, during CONV4b's gate, at test 4 (*a chain moves on when its quest closes done*),
     0 ms in, after three passed; the other 17 did not run. CONV4b changed no e2e path or host code.
+  - 2026-10-01, **outside Playwright for the first time**: the deployment rehearsal's own process exited
+    `3221226505` in phase 6 (closing the deployed shell), merging TABS1 after a night of parallel builds.
+    LEFT1's re-run rule ran it again, which then refused at its first step with EPERM on the scratch folder
+    the dying run's processes still held; the rehearsal's removal now waits them out (`maxRetries`). Alone,
+    straight after, it passed 70/70. So it is not the test runner's: the common factor is a Node process on
+    Windows ending while its children are killed, as the sibling's reproducer says.
 
   **A family sibling documents the same abort** at about 1.5% of e2e runs, with a standing
   reproducer (spawn a server, poll it, kill it: about 1 in 300 rounds, 4-way concurrent). The row
