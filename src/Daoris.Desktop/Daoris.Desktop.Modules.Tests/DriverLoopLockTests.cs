@@ -9,6 +9,7 @@ namespace Daoris.Desktop.Modules.Tests;
 /// The desktop's loop takes the same home lock a terminal's does (DRV8a, D104). A stray headless loop took
 /// a quest two seconds before the desktop's own; one live driver per home is the rule for both doors.
 /// </summary>
+[Trait(Category.Name, Category.Process)]
 public sealed class DriverLoopLockTests : Bridge
 {
     private string LockFile => Path.Combine(Home, "driver.lock");

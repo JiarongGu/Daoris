@@ -7,6 +7,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// handed its servers, from the shell's answer — and where there is no answer, the server is not handed
 /// and the session is told why, never handed a placeholder that fails inside the harness unexplained.
 /// </summary>
+[Trait(Category.Name, Category.Process)]
 public sealed class InAppBrowserServersTests
 {
     private static readonly AcpMcpServer Knowledge =

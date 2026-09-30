@@ -2,7 +2,7 @@
 
 > The owner, 2026-09-30: *"since daoris is getting more and more complex we should modulize this
 > project properly so that paralle development with subagent can run smoothly"*. The contract for the
-> MOD rows in `TASKS.md`. Status: **MOD1–MOD7 and MOD9 built** (D106 for MOD1); MOD8 open.
+> MOD rows in `TASKS.md`. Status: **MOD1–MOD9 built** (D106 for MOD1).
 
 ## 1. What was measured
 
@@ -64,7 +64,9 @@ that hold today's behaviour are what prove it.
    one home in `TASKS.md`'s State.
 5. **Fast suites in the worktree, process suites in the parent.** Tests that start real processes or run
    real ticks carry a category (`Process`) and run serially in the parent's merge. A subagent runs the
-   rest. FLAKE1's classes are exactly the ones that fail under another worktree's load.
+   rest. FLAKE1's classes are exactly the ones that fail under another worktree's load. Built (MOD8):
+   the trait is on the class, each desktop suite is two declared gates (`--filter Category!=Process`,
+   and `--settings src/Daoris.Desktop/process.runsettings`, serial), and a dogfood test holds the pair.
 6. **One merge tool.** `tools/merge-branch.mjs` merges `--no-ff --no-commit`, stops on a conflict it
    cannot resolve and names the files, then runs the declared gates in order, fast first. It keeps
    every gate's whole output under `local/scratch/`. This replaces the hand-typed chains, one of which

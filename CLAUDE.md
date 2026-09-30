@@ -214,8 +214,7 @@ Run every command from the **workspace root**, not from a package directory.
   machines crossing a shared host, which commit a feed speaks for, a conversation and a credential
   profile from a terminal — ending at **the protocol door** (D53/ACP1), where a quest is carried to
   done over ACP by a stub agent that speaks the wire and nothing else. **It names its own phases when
-  you run it**, so they are not restated here; the reasoning is in `docs/DECISIONS.md` and the
-  archive. No model, no account and no credential anywhere in the gate. Run when touching
+  you run it**; the reasoning is in `docs/DECISIONS.md` and the archive. Run when touching
   the service, `connect`, the driver, the remote, the toolchain, or the canon's shape —
   **a canon change must re-sync `examples/` in the same commit**, and this gate enforces it.
 - **`npm run test:web`** — the "does the platform work?" gate (D42). Playwright drives the shipped
@@ -235,10 +234,12 @@ Run every command from the **workspace root**, not from a package directory.
   with `dry_run` defaulting to true; it runs **every gate `daoris.gates.json` declares** plus both
   rehearsals on Linux before publishing, and builds the service binaries and builds-and-tests the
   devkit on Linux, Windows and macOS. Nothing runs on push — **a gate
-  you did not run locally has not been run.** Development happens on Windows and the release gates on
-  Linux, which is exactly the gap that hid D25's line-ending assumption. **The declared set and the
-  workflow are two lists that must agree**, and a dogfood test holds them together: a rehearsal of
-  the same code is no substitute for the tests underneath.
+  you did not run locally has not been run.** Development is on Windows and release gates on Linux:
+  the gap that hid D25's line-ending assumption. **The declared set and the workflow are two lists
+  that must agree**, and a dogfood test holds them together: a rehearsal is no substitute for the
+  tests underneath.
+- **Desktop suites have two halves** (MOD8): a worktree runs `--filter Category!=Process`; the
+  real-process half (`process.runsettings`, serial) runs only at the parent's merge (FLAKE1).
 - **Changing what `sync` does with a file? Read `docs/DECISIONS.md` D19 first.** That state space is
   lock × disk × canon and is enumerated there; it was corrected four times before it was written down.
 - **`npm run desktop -- <doctor|build|run|shot|eval|click|restart|kill>`** — the shell's dev loop, and

@@ -15,6 +15,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// over either door, and the probe that asks its version and login state. An UNPINNED binary is the
 /// machine's, and its updates are the machine's business — it gains nothing (D48 §2a, byte for byte).
 /// </remarks>
+[Trait(Category.Name, Category.Process)]
 public sealed class PinnedUpdatesTests : IDisposable
 {
     private readonly string _home = Path.Combine(

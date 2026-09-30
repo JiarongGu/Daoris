@@ -15,6 +15,7 @@ namespace Daoris.Desktop.Modules.Tests;
 /// 🔴 <b>No real agent runs here.</b> An update runs a stand-in script as the agent's command, and the
 /// service is a stand-in handler that records what it was asked.
 /// </remarks>
+[Trait(Category.Name, Category.Process)]
 public sealed class HelpDoorsTests : Bridge
 {
     private DriverModule Module() => new(Bus, new DriverLoop(Bus, new HostSupervisor("http://localhost:0"), "http://localhost:0"));

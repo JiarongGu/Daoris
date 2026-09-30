@@ -16,6 +16,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// own folder, and the one that runs git runs it where the kit's sample frame says the repository is: an
 /// empty scratch folder git is told holds none.
 /// </remarks>
+[Trait(Category.Name, Category.Process)]
 public sealed class PluginKitTests : IDisposable
 {
     private readonly string _scratch = Path.Combine(

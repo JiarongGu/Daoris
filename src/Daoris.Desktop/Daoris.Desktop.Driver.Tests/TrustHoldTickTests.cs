@@ -20,6 +20,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// questions — under a NAMED profile, so the file the hold reads is a fixture in this test's home and
 /// never the machine's real one. No model anywhere, and no account.</para>
 /// </remarks>
+[Trait(Category.Name, Category.Process)]
 public sealed class TrustHoldTickTests : IDisposable
 {
     private readonly string _home = Path.Combine(

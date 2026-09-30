@@ -10,6 +10,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// is asserted is what the harness would have been handed — on each door — and that the file goes when
 /// the session does. No model anywhere, and no account.
 /// </summary>
+[Trait(Category.Name, Category.Process)]
 public sealed class PermissionSpawnTests : IDisposable
 {
     private readonly string _home = Path.Combine(

@@ -7,6 +7,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// WSR3 (D88): a session branch goes once git proves its work is on a branch of the person's — by
 /// the person's press, or by a tidy rule they set, and never otherwise. Real git throughout.
 /// </summary>
+[Trait(Category.Name, Category.Process)]
 public sealed class SweepTests : IDisposable
 {
     private readonly string _scratch;

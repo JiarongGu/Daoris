@@ -16,6 +16,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <para>A real process (node) speaking the wire, and a stand-in service on a loopback port. No model,
 /// no account.</para>
 /// </remarks>
+[Trait(Category.Name, Category.Process)]
 public sealed class ProtocolChatTests : IDisposable
 {
     private readonly string _home = Path.Combine(

@@ -20,6 +20,7 @@ namespace Daoris.Desktop.Modules.Tests;
 /// tests are below). Adding a profile makes a
 /// DIRECTORY; what lands inside it is the harness's own login flow's, and nothing here reads it.</para>
 /// </remarks>
+[Trait(Category.Name, Category.Process)]
 public sealed class HarnessProfileTests : Bridge
 {
     private DriverLoop Loop() => new(Bus, new HostSupervisor("http://localhost:0"), "http://localhost:0");

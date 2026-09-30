@@ -21,6 +21,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// needs — spawned by the executor against a stand-in service on a loopback port. The spawn, the door
 /// and the registry entry are exactly what a fake would get wrong. No model anywhere, and no account.</para>
 /// </remarks>
+[Trait(Category.Name, Category.Process)]
 public sealed class DrivenSessionInputTests : IDisposable
 {
     private readonly string _home = Path.Combine(

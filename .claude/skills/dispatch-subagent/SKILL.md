@@ -50,8 +50,11 @@ Follow the dispatch-subagent skill's subagent half.
 - **You may run** `npm run verify` at the root (`npm ci` first in a fresh worktree), `node --test` in
   `src/Daoris.Cli`, the web's vitest loop (`npm --prefix src/Daoris.Web run test`, after
   `npm --prefix src/Daoris.Web ci`) when your lane is the web, and `dotnet test` on the .NET project
-  your lane changes, one suite at a time.
+  your lane changes, one suite at a time. A desktop suite runs its fast half only:
+  `dotnet test src/Daoris.Desktop/<project> --filter Category!=Process` (MOD8).
 - **Never run** any of these:
+  - a desktop suite's `Process` half (`--settings src/Daoris.Desktop/process.runsettings`): the test
+    classes that start real processes or run real ticks
   - the rehearsals (`npm run rehearse`, `rehearse:family`, `rehearse:deploy`) or `test:web`
   - the desktop window (`npm run desktop -- run|shot|eval|click|restart|kill`)
   - `publish:desktop` or `publish:service`

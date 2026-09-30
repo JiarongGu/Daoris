@@ -17,6 +17,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <para>What stays the door's own: its <b>pin</b>. A door is a different package at a different
 /// version (ACP2), and one pin for both would install the wrong thing under a trusted name.</para>
 /// </remarks>
+[Trait(Category.Name, Category.Process)]
 public sealed class DoorAccountTests : IDisposable
 {
     private readonly string _home = Path.Combine(

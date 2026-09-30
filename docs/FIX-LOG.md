@@ -5,6 +5,30 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## The long-path test failed in every git worktree, because its depth assumed where the checkout sits (2026-09-30)
+
+**Symptom.** `SessionTreesTests.A_tracked_path_that_fits_the_root_but_not_a_trees_longer_prefix_still_opens`
+failed in every subagent's worktree and passed in the main checkout, so every hand-back had to name it
+(`docs/2026-09-30-parallel-development-design.md` §1). It failed at its last assertion: the tree held
+no deep file.
+
+**Root cause.** The fixture's deep path was a constant, 17 `component` folders, sized so that it fitted
+under a repository made in the main checkout's `_fixtures/` and crossed 260 characters under a session
+tree. A worktree sits under `.claude/worktrees/<name>/`, 37 characters deeper, so the path crossed the
+limit under the fixture repository already. Its own `git add` failed without `core.longpaths`, the test
+ignored that exit code, the commit held no deep file, and the tree had nothing to find. The test
+measured where the repository sat, not the driver.
+
+**Fix.** MOD8. The test makes its repository and home under a short root of its own (`daoris-lp-*` in
+OS temp, as many of this assembly's fixtures are), sizes the deep path from that root (at most 240
+characters under it, so 267 to 276 under the tree), and asserts that the fixture's `git add` succeeded,
+so a fixture that does not fit says so.
+
+**Verify.** `SessionTreesTests` 14/14 in a worktree whose root is 64 characters, where it failed before.
+With the driver's `-c core.longpaths=true` turned off, the test fails on git's *cannot create
+directory*, so it still proves the fix it was written for. **The trap:** a fixture sized by a constant
+against a limit measures the machine it was written on. Size it from the prefix actually in play.
+
 ## `daoris toString` crashed with a stack trace and exit 1 (2026-09-30)
 
 **Symptom.** Found while MOD7 made the CLI's commands a table: `daoris toString` and

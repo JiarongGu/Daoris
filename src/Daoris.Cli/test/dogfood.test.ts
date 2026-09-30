@@ -208,6 +208,36 @@ test('every .NET test project is run by a declared gate', () => {
 });
 
 /**
+ * One level further in again (MOD8). A desktop suite runs as two gates: the tests that start real
+ * processes or run real ticks carry the `Process` category, a subagent's worktree runs the rest, and
+ * the parent runs these one class at a time, by a run settings file. The test above counts a suite as
+ * reached by either half, so losing the Process half would leave those tests run by no gate while
+ * every check stayed green.
+ */
+test('a suite gated without its Process tests has a gate that runs them, one class at a time', () => {
+  const gates = JSON.parse(readText(join(repoRoot, 'daoris.gates.json'))) as {
+    gates: { name: string; run: string }[];
+  };
+  const fast = gates.gates
+    .map((gate) => /^dotnet test (\S+) --filter Category!=Process$/.exec(gate.run)?.[1])
+    .filter((target): target is string => target !== undefined);
+  const serial = gates.gates
+    .map((gate) => /^dotnet test (\S+) --settings (\S+)$/.exec(gate.run))
+    .filter((half): half is RegExpExecArray => half !== null)
+    .map(([, target, settings]) => ({ target: target!, settings: readText(join(repoRoot, settings!)) }));
+
+  assert.ok(fast.length >= 2, `${fast.length} gates leave the Process category out — this test has stopped reading the gates`);
+  for (const target of fast) {
+    const half = serial.find((gate) => gate.target === target);
+    assert.ok(half, `${target} is gated without its Process tests, and no gate runs them`);
+    assert.match(half.settings, /<TestCaseFilter>Category=Process<\/TestCaseFilter>/,
+      `${target}'s settings gate does not run the Process tests`);
+    assert.match(half.settings, /<ParallelizeTestCollections>false<\/ParallelizeTestCollections>/,
+      `${target}'s Process tests are gated in parallel — load is what fails them (FLAKE1)`);
+  }
+});
+
+/**
  * The release commit stages what release-prep rewrote, by a pathspec the workflow spells out — a
  * second list of the same files (REV3 CLEAN1). It had already missed the example manifests once, and
  * `verify` went red on main after a release. release-prep says what it writes; this holds the

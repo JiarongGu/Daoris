@@ -12,6 +12,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// 🔴 <b>Nothing here reaches a network.</b> The plugins are fakes, `origin` is a bare repository under the
 /// scratch folder, and the only push is the test's own, to it.
 /// </remarks>
+[Trait(Category.Name, Category.Process)]
 public sealed class HandOffTests : LandedFixture
 {
     private const string Id = "example.lands";

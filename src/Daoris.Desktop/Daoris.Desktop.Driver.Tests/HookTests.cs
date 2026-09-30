@@ -10,6 +10,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// — and once against a real process, because the environment a plugin is started with is the one
 /// thing a fake cannot prove.
 /// </summary>
+[Trait(Category.Name, Category.Process)]
 public sealed class HookTests : IDisposable
 {
     private readonly string _home = Path.Combine(

@@ -7,6 +7,7 @@ namespace Daoris.Desktop.Modules.Tests;
 /// This machine's agents over the bridge (`DriverModule.Agents.cs`, MOD5): the roster, a harness's
 /// actions and their console, and usage.
 /// </summary>
+[Trait(Category.Name, Category.Process)]
 public sealed class DriverModuleAgentsTests : DriverModuleBridge
 {
     /// <summary>

@@ -16,6 +16,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// semantics are git's, and a mock that agrees with a guess about them proves only that the guess is
 /// self-consistent. Fixtures live under the repository's gitignored `_fixtures/`.</para>
 /// </remarks>
+[Trait(Category.Name, Category.Process)]
 public sealed class TreeMergeTests : IDisposable
 {
     private readonly string _scratch;

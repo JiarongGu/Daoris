@@ -8,6 +8,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// into the line, or put on a branch named by a pattern for the person to push. Daoris never pushes.
 /// Real git for the door, as the other tree tests use it.
 /// </summary>
+[Trait(Category.Name, Category.Process)]
 public sealed class LandingTests : IDisposable
 {
     private readonly string _scratch;

@@ -12,6 +12,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// A lock naming THIS test process is a live driver as far as any acquisition can tell — which is what a
 /// loop elsewhere on the machine looks like, without spawning one.
 /// </remarks>
+[Trait(Category.Name, Category.Process)]
 public sealed class DriverLockTests : IDisposable
 {
     private readonly string _home = Path.Combine(

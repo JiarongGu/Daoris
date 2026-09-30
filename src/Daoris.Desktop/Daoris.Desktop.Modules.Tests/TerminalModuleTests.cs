@@ -12,6 +12,7 @@ namespace Daoris.Desktop.Modules.Tests;
 /// CONSOLE4a (D96): <c>DAORIS.TERMINAL</c>, the page's door onto the person's own shells. The module's logic
 /// is held over a fake factory, so every case is reachable without a shell; one round trip runs a real one.
 /// </summary>
+[Trait(Category.Name, Category.Process)]
 public sealed class TerminalModuleTests : Bridge
 {
     private static readonly TerminalShell Pwsh = new(TerminalShells.Pwsh, @"C:\seven\pwsh.exe", ["-NoLogo"]);

@@ -8,6 +8,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// console window does. Every test here runs a real process, as the rest of this suite does: a pseudo-console
 /// is a few Win32 calls whose whole value is what a real console program does under them.
 /// </summary>
+[Trait(Category.Name, Category.Process)]
 public sealed class PseudoConsoleTests : IDisposable
 {
     private readonly string _folder = Path.Combine(

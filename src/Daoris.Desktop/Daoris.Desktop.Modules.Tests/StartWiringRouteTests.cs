@@ -8,6 +8,7 @@ namespace Daoris.Desktop.Modules.Tests;
 /// <b>The wiring panel's route</b> (MAP1b): for each workspace the page names, what a driven start
 /// would run on and where each part came from — the driver's <c>WiringAsync</c>, carried as names.
 /// </summary>
+[Trait(Category.Name, Category.Process)]
 public sealed class StartWiringRouteTests : Bridge
 {
     private DriverModule Module()
