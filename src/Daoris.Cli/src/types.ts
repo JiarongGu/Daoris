@@ -6,6 +6,7 @@
  * the lock, the manifest and the plan are the three things `sync` reasons about at once (D19), and
  * that state space is exactly where a wrong shape would be expensive.
  */
+import type { ExitCode } from './errors.ts';
 
 /** Where a document lives in the canon and where it lands in a repository. */
 export interface CanonFile {
@@ -355,4 +356,25 @@ export interface CommandArgs {
   argv: string[];
   write: (line: string) => void;
   packageRoot: string;
+}
+
+/**
+ * One row of the dispatcher's table (MOD7), exported by its module under `cli/` as `command`. It lives
+ * here rather than in the dispatcher so that no row has to import the dispatcher (`cli.ts` says why).
+ */
+export interface CliCommand {
+  /** The verb a person types, and the module's file name under `cli/`. */
+  readonly name: string;
+  /**
+   * Offline and gate-safe, or opt-in (D35, D50). A doctrine command's module is walked by the test
+   * that holds the network and the spawning primitives away from every gate.
+   */
+  readonly kind: 'doctrine' | 'management';
+  /** Its lines in `daoris --help`, exactly as printed, the first naming the verb. */
+  readonly usage: readonly string[];
+  /** Its lines under `Options:`, for a flag it owns. They print in the table's order. */
+  readonly options?: readonly string[];
+  /** Verbs it was once called. Each says where it went, once, and fails like any unknown command (AGT1). */
+  readonly formerly?: readonly string[];
+  readonly run: (args: CommandArgs) => ExitCode | Promise<ExitCode>;
 }

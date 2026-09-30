@@ -5,7 +5,44 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
-## A second or moved install ran on the first one's home (2026-09-30)
+## `daoris toString` crashed with a stack trace and exit 1 (2026-09-30)
+
+**Symptom.** Found while MOD7 made the CLI's commands a table: `daoris toString` and
+`daoris constructor` printed Node's `ERR_INVALID_ARG_TYPE` stack trace and exited 1, the policy code a
+build gate reads as "the doctrine is wrong". `daoris __proto__` and `daoris hasOwnProperty` printed a
+TypeError's message.
+
+**Root cause.** The dispatcher looked a verb up in a plain object literal (`commands[command]`), which
+also answers for the members of `Object.prototype`. `toString` and `constructor` ran as handlers, and
+their return (a string, the arguments object) reached `process.exit` in `bin/daoris.mjs`, which threw
+outside `runCli`'s catch. REV3 F9 had closed the other road to a stack trace; this one was never an
+error, so nothing caught it.
+
+**Fix.** The table is looked up by its own verbs (`COMMANDS.find(...)` in `cli.ts`), so each of these
+gets the unknown-command refusal with exit 2. Kept out of the MOD7 refactor commit, which reproduces
+the old lookup byte for byte.
+
+**Verification.** `a verb named like a member of Object is an unknown command` in `cli.test.ts`, red on
+the object lookup for `toString`, then green for all five names. The published entry
+(`node bin/daoris.mjs toString`) exits 2 with one line. Commit `b5cfa46`.
+
+## The usage said *circle* for a workspace, and the one-word test could not see it (2026-09-30)
+
+**Symptom.** Found by MOD7: once each usage line became a string literal of its own, `one-word.test.ts`
+failed on `import`'s line, *unless --workspace W names the circle they land in*. D75 §4 made
+*workspace* the one word every sentence the CLI prints uses.
+
+**Root cause.** The test reads source files line by line and matches string literals opened and closed
+on one line. The usage was one multi-line template literal, so its middle lines carried no quote and
+the scan passed over them. That blind spot remains for any other multi-line literal: a TypeScript
+template literal, or a C# verbatim or raw string.
+
+**Fix.** The word, in `cli.ts` and the golden usage, as its own commit (`cb644ae`) ahead of the
+refactor. MOD7's rows keep one literal per line, so the usage is inside the scan from now on. The scan
+itself is unchanged.
+
+**Verification.** The one-word test is green, and it failed on the row before the word changed.
+
 
 **Symptom.** Found by reading (REV3 modules F4), not on a machine: an install published to a second
 folder, or the first one moved, would run on the first install's `data/` (its registry, its quests,

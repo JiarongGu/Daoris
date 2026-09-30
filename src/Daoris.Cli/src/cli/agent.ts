@@ -1,0 +1,63 @@
+import type { CliCommand } from '../types.ts';
+import { commandHarness } from '../toolchain.ts';
+import { releaseFetcher } from '../service.ts';
+
+export const command: CliCommand = {
+  name: 'agent',
+  kind: 'management',
+  // The tools a session runs are agents to a person; `harness` stays the code's word (AGT1).
+  formerly: ['harness'],
+  usage: [
+    "  agent [verb]         this machine's agents — Claude Code, Codex, dsh — and the",
+    "                       accounts they run as. A sign-in stays the tool's:",
+    '                         list                      installed? version? accounts?',
+    '                         install <agent>           its OWN installer, never auto',
+    '                         update <agent> [--workspace W]',
+    '                                                   pinned: the pin moves to the',
+    '                                                   newest release, resolved to',
+    '                                                   one exact version; unpinned:',
+    "                                                   the agent's own updater",
+    '                         login <agent> [--profile P]',
+    '                                                   its own login flow, run INTO',
+    "                                                   an account's directory",
+    '                         login <agent> --new       sign in to another account:',
+    '                                                   kept only if it finished;',
+    '                                                   list names who signed in',
+    '                         key <agent>               an account that is an API key,',
+    '                                                   read from stdin; Daoris keeps it',
+    '                         profile list|add|remove <agent> <profile>',
+    '                                                   remove deletes the account,',
+    '                                                   sign-in and all',
+    '                         profile default <agent> <profile> [--workspace W]',
+    '                         pin <agent> <version> [--workspace W]',
+    '                                                   install that version somewhere',
+    '                                                   Daoris owns, and run it. Claude',
+    '                                                   Code and Codex come from their',
+    "                                                   makers' own channels, verified",
+    '                         unpin <agent> [--workspace W]',
+    '                                                   back to whatever is on PATH',
+    '                         trust <agent> <folder> [--profile P] --yes',
+    '                                                   what the agent asks the first',
+    '                                                   time it runs in a folder, granted',
+    '                                                   in its own file; without --yes,',
+    '                                                   the question and nothing written',
+    '                         settings <agent> [--account A] [model M] [effort E [--for M]]',
+    "                                                   an account's own model and",
+    "                                                   effort, in the tool's own",
+    '                                                   settings file; unset clears,',
+    '                                                   and given neither, it prints them',
+    '                         rules [allow|ask|deny|remove <rule>]',
+    '                               [--workspace W | --repository R]',
+    '                                                   what a session Daoris starts may',
+    '                                                   do; rules default <id> on|off',
+    '                         rules proposals|accept|decline <id>',
+    '                                                   what agents asked to change',
+  ],
+  options: [
+    '  --profile <name>     which account to act on (agent login) — a named,',
+    '                       isolated configuration home for that agent',
+  ],
+  // `pin` and a pinned `update` fetch a maker's release (AGT2b, USE1a) through the one module that may
+  // reach a network, handed in here so the toolchain never holds a socket of its own.
+  run: (args) => commandHarness(args, releaseFetcher()),
+};
