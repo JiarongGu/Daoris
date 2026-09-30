@@ -6470,3 +6470,108 @@ Each row that builds a piece notes the amendment where it lands.
 
 `verify` checks the records' shape, budgets and duplicates, and none of these words. The design's §6 says what a
 rehearsal can prove and what waits for TOOLS11's real downloads.
+## D120 — Plugins leave the repository: a workshop in the home makes them, Daoris.Plugins keeps Daoris's own, and NuGet is where they are found (2026-10-01)
+
+**Decision (PLUGREPO2, PLUGDIST1).** The owner made an empty folder, Daoris.Plugins, beside this repository, for
+the default plugins' development, *"later will be release to nuget so we can use nuget as plugin site … (or we
+can use npm, you can decide …)"*. They then answered where a plugin Daoris makes should live: by default in the
+Daoris home, or in a place the person sets, with no repository needed. Daoris.Plugins is where Daoris's own
+plugins are developed and what is published, and a plugin made in the home may be handed over to it.
+`docs/2026-10-01-plugin-distribution-design.md` is the contract. It settles:
+
+1. **A machine has a plugin workshop**, where Daoris makes a plugin a person asks for.
+   - **Its kinds**: the home (the default, `<home>/plugins/.workshop/`), a folder outside any checkout, or a
+     registered repository.
+   - **It is stored in `<home>/plugin-sources.json`**, a new file with no older writer.
+   - **It has two doors and a setting door**: `daoris plugin workshop …`, Settings → Driver, and Ask Daoris's
+     `workshop`.
+   - **A workshop is a small git repository Daoris owns.** A workshop session works there on an ask addressed to
+     `workshop`: one session at a time, with its room rendered like the intake's. Its record is concluded from its
+     exit, then the plugin's own tests and the kit's trial, run by the driver.
+   - **Nothing in a workshop runs on the loop** until the person installs it. It installs from the workshop as a
+     folder source.
+2. **A plugin moves to a repository through that repository's own door.** *Send to a repository…* publishes a
+   quest with the plugin as one zip. That repository's session writes it and lands it by its rule. D103's update
+   gains a source the person names, `--from <folder>|package`, shown before the press.
+3. **Daoris.Plugins is a repository with an agent of its own**:
+   - one folder per plugin under `plugins/`, as the kit makes it;
+   - its own brief and gate (`node --test`, needing nothing of Daoris's);
+   - D117's `agents` layout with `windows-machine`;
+   - registered, drivable, with trees on and landing by `merge`.
+   The parent sets it up (§3.4 of the design, after LAYOUT3), and every plugin after that is an ask its own
+   session takes. The two landing plugins and `in-app-browser` move there. `hold-by-title` and `browser` stay in
+   `examples/` as the rehearsals' contract.
+4. **The package source is NuGet.**
+   - **The package**: a Daoris plugin is a package of the custom type `DaorisPlugin`, whose type version is the
+     wire's `apiVersion`, with the plugin folder under `plugin/` and no dependencies.
+   - **The reader** searches with `packageType=DaorisPlugin`, reads the `.nuspec` before a download, downloads
+     from the flat container over plain HTTPS, and checks the package's SHA-512 against the catalog leaf's
+     `packageHash`, with no NuGet client.
+   - **Where it lives**: in the driver, behind `daoris-driver plugins find|show|install|update`. Only `service.ts`
+     may reach a network in the CLI, and a package source is not a knowledge service.
+   - **The record**: a package source's record is `{ package, version, sha512, source }`.
+   - **Another publisher's plugin installs off.** *Daoris's own* is decided by the owner account, and by
+     `verified` once the prefix is reserved, never by a name.
+5. **The offers come from pinned packages** once the three are published. `plugin-offers.json` holds each
+   `{ package, version, sha512 }`, the publish checks each, and a republish works from a cache.
+6. **The Plugins view gains *Find plugins*** (D119): a *Find* mode in its list, a package's page with its trust,
+   what it runs, what it needs and its versions, and two doors and Ask Daoris's doors for every new act.
+7. **Publishing is the owner's.** The workflow is manual, a dry run by default, by trusted publishing. The account,
+   the prefix reservation and every push are the owner's press.
+
+**Why a workshop in the home.** The owner's answer, and PLUG9's gap: with no plugins repository, making a plugin
+had nowhere to go. A plugin a person asks for is often theirs alone, such as a server for their own tool or a
+rule for their own access, and needs no repository to be made, tested and installed. The workshop keeps every
+property that made making a plugin *work* (D101): a session, tests, a diff, and a press to install. Daoris owns
+the folder, so it reaches into nothing.
+
+**Why NuGet.**
+- **Its filter names what a package is.** A custom package type is a declaration of intended use, filtered
+  exactly by the server (observed on two types). Its version carries the wire's `apiVersion`, readable before a
+  download, and Visual Studio and nuget.exe will not put the package into a project.
+- **Its rules match a plugin's.** No dependencies, and no installer run.
+- **Its search result says who published**: `owners` are accounts, and `verified` is an identity-reviewed
+  prefix.
+- **Integrity takes HTTPS and SHA-512.** The catalog's hash matched a served package when checked.
+- **The owner leaned to it**, and the reader is .NET.
+
+**What it amends, when built**, each row noting it where it lands:
+- **D64 §7 and D119 §8**: *no registry, no marketplace, no catalogue of third-party plugins* becomes *Daoris runs
+  no registry and loads no code, and reads a public package source whose plugins land as folders by a person's
+  press*. D24's and D57's registry was one Daoris would keep, and this is someone else's index.
+- **PLUG9** (Ask Daoris design §9.7): a plugin is made at the machine's workshop, and at a repository only when
+  the workshop names one. An ask to a repository carries the kit's scaffold.
+- **D103**: an update may take a source the person names, and a package source is a source.
+- **D101's gap**: a real plugins repository exists.
+- **The offers' twins** (`OFFERED_PLUGINS`, `layOffers`, `PluginOfferTests`): from pinned packages.
+
+**Rejected.**
+- **npm.** Its `keywords:` qualifier filtered exactly when observed, so the backlog's *less precise* did not
+  survive checking. But a keyword has no version and no meaning, and a package on npm is an ordinary dependency
+  whose install-time machinery Daoris would not run. npm is stronger on integrity (inline SRI, ECDSA registry
+  signatures, provenance) and on namespaces (a free, immediate scope). D120 answers with the pinned hash, the
+  owner account, and a held signature check (PLUGDIST1h).
+- **Both npm and NuGet**: two readers, two records and two trust rules, for no plugin that needs the second.
+- **A release asset listing Daoris's own**, a sibling's way: one publisher, no search, and a trust by address
+  alone.
+- **An index Daoris runs**: a registry to operate (D24, D57).
+- **The workshop's setting in `driver.json` or `plugins.json`**: older writers drop a field they do not know.
+- **Installing another publisher's plugin on**: its code would run before the person read its page.
+- **The workshop writing into a repository**, or a button that copies into a checkout: D32.
+- **Trusting `Daoris.*` by name** before the prefix is reserved: anyone may publish under an unreserved prefix.
+- **Checking the repository signature in the first build**: it needs a CMS reader and NuGet's signed-content
+  rules, and is held as PLUGDIST1h.
+
+**What the gates do not cover.** This is a design, and nothing is built.
+- **Read from the code at `d618cbb`**: the examples, the offers, the tests that read them, and the source record.
+- **The two siblings' repositories were read, not run.** The design names them only as *the first* and *the
+  second*.
+- **NuGet's and npm's facts** are their makers' documents, cited in the design. The observations were live
+  queries on 2026-10-01:
+  - search counts for two types and an unknown one;
+  - a custom type on an unlisted package;
+  - one package's served SHA-512 equal to its catalog hash;
+  - npm's `keywords:` answers.
+- **No custom type with a listed package was queried.** The first publish is that proof.
+- **The workshop, the reader, *Find* and the pack** exist only as rows. `verify` checks this document's links
+  and the log's shape, and none of its words.
