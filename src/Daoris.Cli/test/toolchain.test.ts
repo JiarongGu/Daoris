@@ -7,9 +7,9 @@ import { gzipSync } from 'node:zlib';
 import {
   TOOLCHAINS, addKeyAccount, commandHarness, harnessesPath, keyOf, managedBinary, managedHome,
   nextAccount, profileHome, profiles, probe, readHarnessSettings, removeProfile, resolveProfile,
-  resolveVersion, signInNew, versionFromNpm, writeHarnessSettings,
+  resolveVersion, signInNew, versionFromNpm, withDefault, writeHarnessSettings,
 } from '../src/toolchain.ts';
-import type { Toolchain } from '../src/toolchain.ts';
+import type { HarnessSettings, Toolchain } from '../src/toolchain.ts';
 import { CLAUDE_LATEST, CODEX_LATEST, CODEX_RELEASES, codexTarget } from '../src/channels.ts';
 import type { Fetcher } from '../src/channels.ts';
 import { makeFixture } from './_fixture.ts';
@@ -250,6 +250,78 @@ test('`profile default` sets the machine’s, and `--workspace` sets one circle�
   const settings = readHarnessSettings(at(fx));
   assert.equal(resolveProfile(settings, 'claude-code', 'aurora', null), 'work');
   assert.equal(resolveProfile(settings, 'claude-code', 'tools', null), 'personal');
+  fx.cleanup();
+});
+
+/**
+ * 🔴 The twin's table (LEFT3 e): an account's default, set and cleared, as `HARNESS_ACTION`'s `profile-default` writes
+ * it for the screen. `ProfileDefaultTwinTests` in the desktop modules holds the same rows with the same answers:
+ * change one and the other changes with it. A clear removes the one entry, the machine's or one workspace's; a
+ * workspace left with none is dropped; nothing else moves, and clearing what is not set changes nothing.
+ */
+const DEFAULT_EDITS: [why: string, before: Pick<HarnessSettings, 'defaults' | 'workspaces'>, owner: string,
+  profile: string | null, workspace: string | null, after: Pick<HarnessSettings, 'defaults' | 'workspaces'>][] = [
+  ['a machine default set', { defaults: {}, workspaces: {} }, 'claude-code', 'work', null,
+    { defaults: { 'claude-code': 'work' }, workspaces: {} }],
+  ['a machine default cleared, another agent\'s kept', { defaults: { 'claude-code': 'work', codex: 'play' }, workspaces: {} },
+    'claude-code', null, null, { defaults: { codex: 'play' }, workspaces: {} }],
+  ['a workspace default set, the machine\'s kept', { defaults: { 'claude-code': 'play' }, workspaces: {} },
+    'claude-code', 'work', 'aurora', { defaults: { 'claude-code': 'play' }, workspaces: { aurora: { 'claude-code': 'work' } } }],
+  ['a workspace default cleared, another agent\'s there kept',
+    { defaults: {}, workspaces: { aurora: { 'claude-code': 'work', codex: 'play' } } }, 'claude-code', null, 'aurora',
+    { defaults: {}, workspaces: { aurora: { codex: 'play' } } }],
+  ['a workspace left with none is dropped, the machine\'s default kept',
+    { defaults: { 'claude-code': 'play' }, workspaces: { aurora: { 'claude-code': 'work' }, lab: { codex: 'play' } } },
+    'claude-code', null, 'aurora', { defaults: { 'claude-code': 'play' }, workspaces: { lab: { codex: 'play' } } }],
+  ['clearing what is not set changes nothing', { defaults: { codex: 'play' }, workspaces: {} }, 'claude-code', null, 'aurora',
+    { defaults: { codex: 'play' }, workspaces: {} }],
+];
+
+test('an account\'s default is set and cleared as the screen\'s own write sets and clears it (the twin\'s table)', () => {
+  for (const [why, before, owner, profile, workspace, after] of DEFAULT_EDITS) {
+    const edited = withDefault({ ...before, versions: {}, workspaceVersions: {}, rest: {} }, owner, profile, workspace);
+    assert.deepEqual({ defaults: edited.defaults, workspaces: edited.workspaces }, after, why);
+  }
+});
+
+/**
+ * D50's two doors (LEFT3 e): the screen's *Make default* on the tool's own row clears an account's default, and until
+ * now no terminal verb could. `--clear` writes what the screen writes: the machine's, or one workspace's, gone.
+ */
+test('`profile default --clear` clears the machine’s default, or one workspace’s, and says what sessions run as now', () => {
+  const fx = makeFixture('harness-default-clear');
+  run(['profile', 'add', 'claude-code', 'personal'], at(fx));
+  run(['profile', 'add', 'claude-code', 'work'], at(fx));
+  run(['profile', 'default', 'claude-code', 'personal'], at(fx));
+  run(['profile', 'default', 'claude-code', 'work', '--workspace', 'aurora'], at(fx));
+
+  const scoped = run(['profile', 'default', 'claude-code', '--clear', '--workspace', 'aurora'], at(fx));
+
+  assert.equal(scoped.code, 0);
+  assert.match(scoped.out, /`aurora` names no account for `claude-code` now: its sessions run as the machine's default, `personal`/);
+  assert.equal(resolveProfile(readHarnessSettings(at(fx)), 'claude-code', 'aurora', null), 'personal');
+  assert.deepEqual(readHarnessSettings(at(fx)).workspaces, {});
+
+  const machine = run(['profile', 'default', 'claude-code', '--clear'], at(fx));
+
+  assert.match(machine.out, /this machine runs `claude-code` in its own configuration home again/);
+  assert.equal(resolveProfile(readHarnessSettings(at(fx)), 'claude-code', 'aurora', null), null);
+  // The accounts stay: a default cleared deletes nothing.
+  assert.deepEqual(profiles(fx.root, 'claude-code'), ['personal', 'work']);
+  fx.cleanup();
+});
+
+test('`profile default --clear` on a door clears its owner’s, and refuses a profile named beside it', () => {
+  const fx = makeFixture('harness-default-clear-door');
+  run(['profile', 'add', 'claude-code', 'work'], at(fx));
+  run(['profile', 'default', 'claude-code', 'work'], at(fx));
+
+  const cleared = run(['profile', 'default', 'claude-code-acp', '--clear'], at(fx));
+
+  assert.match(cleared.out, /runs as `claude-code`/);
+  assert.equal(readHarnessSettings(at(fx)).defaults['claude-code'], undefined);
+  const error = captureError(() => run(['profile', 'default', 'claude-code', 'work', '--clear'], at(fx)));
+  assert.match(error.message, /`--clear` names no account/);
   fx.cleanup();
 });
 

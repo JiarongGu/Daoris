@@ -21,8 +21,8 @@ lists.
 
 ## State
 
-**Counts, and this is their one home:** sixteen commands, **667 CLI tests, 697 service and 46 HTTP host, 1690 driver,
-445 desktop modules, 80 devkit, 1856 web unit, 21 Playwright**, 66/66 release rehearsal, **305/305
+**Counts, and this is their one home:** sixteen commands, **671 CLI tests, 697 service and 46 HTTP host, 1695 driver,
+458 desktop modules, 80 devkit, 1861 web unit, 21 Playwright**, 66/66 release rehearsal, **305/305
 family rehearsal** (it names its own phases when you run it), **70/70 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge
 documents, 5 skills, 7 packs. The always-loaded core is **22,672 of 26,000 bytes** — a span in
@@ -78,7 +78,7 @@ kit's owner, not Daoris's to change (LOG2b).
 - **Load makes flakes**: FLAKE1's real-tick classes fail under parallel builds and pass alone. Run the
   rehearsals when nothing else builds.
 - **Open and the owner's:** BUDGET1, PLUGREPO1, TRUST2, AGT2c, FG5, BRW3; on a trigger: TOOL4, TOOL5,
-  PLUG7, SEM2, CANON9, HARNESS1, REH1. **A new direction from the owner outranks all of them.**
+  PLUG7, SEM2, CANON9, REH1. **A new direction from the owner outranks all of them.**
 
 **Start by reading the contract the item cites** — every backlog row names one, and
 `docs/README.md` says which documents are current. `CLAUDE.md` carries the standing rules and the
@@ -132,12 +132,12 @@ rather than designed.
 
 ## Backlog
 
-**Twenty-three rows are open** (triaged 2026-09-30, when the owner asked to go faster; 2026-10-01 after the night's merges, the look, and the owner's round):
-- **Building (one):** LEFT3.
-- **Next, the owner's round (six):** NAME1 and DEV1 building (their design halves); FRAME1, PLUGUI1, LOOK1 and LOOK2.
+**Twenty-two rows are open** (triaged 2026-09-30, when the owner asked to go faster; 2026-10-01 after the night's merges, the look, and the owner's round):
+- **Merging next:** DEV1's design (its build rows DEV2–DEV11 file with it).
+- **Next, the owner's round (six):** NAME1 and LAYOUT1 building (their design halves), LOOK1 and LOOK2 building; FRAME1 and PLUGUI1.
 - **Waiting on the owner (six):** BUDGET1 and PLUGREPO1 (their calls), TRUST2 and AGT2c (a grant, two
   downloads), FG5 and BRW3 (the owner present).
-- **Parked on a trigger (ten):** TOOL4, TOOL5, PLUG7, SEM2, CANON9, HARNESS1, REH1, D76's held file tree,
+- **Parked on a trigger (nine):** TOOL4, TOOL5, PLUG7, SEM2, CANON9, REH1, D76's held file tree,
   and FLAKE1 and TEST1, which wait for their next sighting (the Process category runs serially since MOD8,
   and the final serial run was clean). None is work until its trigger arrives.
 
@@ -152,16 +152,6 @@ rule it also ships. A heading below holds open rows only.
 **Found looking at the republished install (2026-10-01)**, each on the owner's real workspace of 29
 repositories, which no fixture has:
 
-- [ ] **LEFT3 — the leftovers of HELP10, LEFT2, WSR7 and REVIEW2** (building, D114), each a "left out" in a hand-back:
-  `HANDOFF` and `LAND_SESSION_TREE` still wait the bridge's default 30 s, though a plugin that pushes and
-  opens a pull request may take minutes (pass WSR7's `pluginBound`; two `WorkFrame.test.tsx` assertions pin
-  the calls' shape); Ask Daoris's sync card says what was not fetched, and the repositories left apart, only
-  in its message, not on the card (`help/ProposalCard.tsx`); the page logs `proposal.settled` for a sync
-  card's look, which settles nothing; HELP10's guard that an applied default starts no agent action has no
-  test; clearing an account's default back to the tool's own has a screen control and no terminal verb (D50);
-  `tools/usage-report.mjs` does not summarise `preview.opened`; and a merged session records no landing, so
-  once tidied its review reads `SESSION_TREE_GONE` with nothing to show, while `landings.json`'s traces of
-  gone branches are never pruned.
 
 ### One product, not a set of screens (owner, 2026-10-01) — after the night's in-flight work
 
@@ -229,6 +219,36 @@ install in both themes and both languages.
     (D37), and everything irreversible still theirs.
   Then the phased build, Daoris's own development its first user, and any adopter with lanes the second.
   The contract starts from `docs/2026-09-30-parallel-development-design.md`.
+- [ ] **LAYOUT1 — one repository, every agent (the design half building: D117): the `.agents/` layout, here and in every repository Daoris
+  manages** (owner, 2026-10-01: *"the agent/claude file/folder we should follow [deepseek-harness] which
+  make repo compatible to different agents we should apply this to current repo also find a way to apply
+  this to daoris managed repo too … we should have a way to initallize the set setup"*). The reference is
+  dsh's own repository (public; D53 adopted dsh as a protocol). Its layout: `AGENTS.md` is the one
+  instruction file, at the root and nested per package; `CLAUDE.md` is a symlink to it; skills live in
+  `.agents/skills/` with `.claude/skills` a symlink to them; decision notes live in `.agents/notes/` by
+  lifecycle, in both languages. **What that leaves Daoris short of:** D59 moved only the always-loaded rules
+  into `AGENTS.md`; knowledge and skills still live under `.claude/`, which codex and dsh do not read; and this
+  repository's own `CLAUDE.md` carries the project's whole brief, which only Claude reads. **A trap measured
+  on this machine:** `core.symlinks` is false here, and dsh's checkout has `CLAUDE.md` as a 9-byte file that
+  reads `AGENTS.md`, so on Windows a symlink layout silently hands Claude the literal path. Design first,
+  as a contract extending `docs/2026-09-22-instruction-file-design.md` and D59, with its decision:
+  - (a) **The layout**: what is canonical under `.agents/` (skills, knowledge, and whether decision notes
+    move there), what each agent's entry point is (`CLAUDE.md`'s one-line `@AGENTS.md`, a `.claude/skills`
+    mirror, others as measured), and nested `AGENTS.md` per package or lane (which DEV1's lanes can be told).
+    Everything must work without symlinks: a mirror Daoris materializes and tracks in the lock, measured
+    against the lock as D13 says, never a symlink a Windows checkout turns into text.
+  - (b) **This repository first**: move the project brief from `CLAUDE.md` into `AGENTS.md` outside
+    Daoris's region, the canon's skills and knowledge to `.agents/`, and a nested `AGENTS.md` per artefact.
+  - (c) **The canon's materialization** (`sync`, `init`, `upstream`, `check`, `inspect`): the new locations,
+    the mirrors, and the move of every adopted repository's existing files. Read D19 first, since the state
+    space is lock × disk × canon, and a move is new territory in it; the rehearsals must carry an upgrade
+    from today's layout.
+  - (d) **Setting up a repository Daoris manages**: never by writing into it (D32). A repository in a
+    workspace gets *Set up for agents* on the screen, a terminal verb and an Ask Daoris proposal. Each
+    publishes a quest to that repository, whose own session runs `daoris init`/`sync` on a branch and lands
+    it by the workspace's rule. The adoption knowledge document says the adopter's agent runs the flow;
+    this is that flow, driven.
+  HARNESS1 (a second harness layout) is absorbed here: its trigger has arrived.
 - [ ] **LOOK2 — what the post-merge look found** (2026-10-01, the install at `66efbf7`). (a) Right after a
   start, Settings → Workspace's Line and landing cards said no repository here has a line: `LINES` answered
   from the driver's snapshot before the service held its registry, and the page kept that empty answer until
@@ -237,6 +257,10 @@ install in both themes and both languages.
   reads it in the first seconds. (b) The session list still says where a session's tree was (*位于
   s-2394e5d9*) after the landing tidied it and its branch went; it should say where the work landed, as
   REVIEW2's review now does.
+  (c) **The Agents screen's "use for a workspace" on the tool's own row** removes the workspace's entry,
+  which falls back to the machine's default, not the tool's own home, when a machine default is set (found
+  by LEFT3; the terminal's `--clear --workspace` does the same, as its twin must, and says what sessions run
+  as). The screen's wording promises more than it does: say what it falls back to, or offer both.
 - [ ] **LOOK1 — `shot --theme` says when it cannot take.** It emulates the system's colour scheme, which
   the page follows only while the viewer's theme choice is *system*. On the install the choice was dark, so
   `--theme light` silently photographed dark (`tools/desktop.mjs`, `theme.ts`'s `effectiveDark`). Set the
@@ -444,6 +468,10 @@ TDD, looked at on the window, and the ones that touch a real session use one (au
   built beside it. It passed 301/301 run alone. **Since LEFT1 the merge tool runs a rehearsal that died**
   (a process-level exit, or nothing printed of its own) once more and reads FLAKE if it passes; one that
   reported a failed check has failed. The three merges after it (PREVIEW1, WSR6, LEFT1) needed no re-run.
+  **Two more at LEFT3's merge (2026-10-01)**, with three subagents building beside it, each failing in the full
+  serial run and passing alone: `TurnStopTests.A_conversation_on_the_native_door_is_handed_the_plugins_servers`
+  (driver, 571/572) and `DriverModulePluginsTests.The_kit_makes_a_plugin_where_the_person_names_and_tries_it_or_an_installed_one`
+  (modules, 113/114). Both spawn real processes; load is again the common factor.
 
 - [ ] **TEST1 — a Node process aborts with `0xC0000409`: seen three times now, once outside Playwright.** The
   second sighting was its trigger. Both runs died with `worker process exited unexpectedly
@@ -483,10 +511,6 @@ TDD, looked at on the window, and the ones that touch a real session use one (au
   below the two-repository bar, which is the whole reason the canon is trustworthy. Leave it local until
   a second repository needs the same thing.
 
-- [ ] **HARNESS1 — a second harness layout.** `src/harness.ts` holds the signals and contract checks; a
-  second implementation slots in beside the Claude one. Do not start until a repository actually wants
-  it — the layout, always-loaded semantics and trigger mechanism all differ, and guessing produces
-  doctrine nobody chose in a format nobody verified.
 
 ## How to work a task
 

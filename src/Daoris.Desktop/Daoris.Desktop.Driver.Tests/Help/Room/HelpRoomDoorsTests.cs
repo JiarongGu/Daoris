@@ -28,7 +28,8 @@ public sealed class HelpRoomDoorsTests
             "daoris driver across <repository> read on|off|--clear", "daoris driver across <repository> write-to <other> [--clear]",
             // HELP9: every `daoris driver` verb that changes something, and the doors Ask Daoris owes, named where they are.
             "daoris driver retry <quest>", "daoris driver cap <n>", "daoris driver adapter <agent>",
-            "daoris agent profile default <agent> <profile> [--workspace <name>]",
+            // LEFT3: the screen's clear has its terminal door, which Ask Daoris still owes.
+            "daoris agent profile default <agent> <profile>|--clear [--workspace <name>]",
             "daoris browser use daoris|edge", "daoris browser links system|daoris",
         })
         {

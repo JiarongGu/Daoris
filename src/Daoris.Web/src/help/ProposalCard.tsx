@@ -1,4 +1,5 @@
 import { useTranslation } from 'react-i18next';
+import { ago } from '../format';
 import { Button, Inline } from '../ui';
 
 /**
@@ -45,11 +46,17 @@ export type HelpProposal = {
 
 /**
  * What a bring-up-to-date card shows (HELP10, WSR6): whether the person has looked — the press that fetches (D109) —
- * and each row the look listed, in the terminal's words, and whether the press moves it.
+ * and each row the look listed, in the terminal's words, and whether the press moves it. Since LEFT3, what the rows do
+ * not say, kept by the look (WSR7, D112): each repository whose line was not fetched, and those left apart. A host
+ * older than LEFT3 answers neither.
  */
 export type HelpSyncShown = {
   looked: boolean;
   rows: { key: string; step: 'line' | 'replay' | 'delete'; moves: boolean; says: string }[];
+  /** Each repository whose line the look did not fetch: git's reason, when it last heard from origin (never, as none), and how origin is reached. */
+  notFetched?: { repository: string; fetch: string; lastFetch?: string | null; reach?: string | null }[];
+  /** The repositories with a checkout here that the look left apart, holding no branch of Daoris's. */
+  apart?: string[];
 };
 
 /** A command as a terminal takes it: a word holding a space quoted, as the driver spells it. */
@@ -91,6 +98,54 @@ function PluginRuns({ plugin }: { plugin: HelpPluginShown }) {
 }
 
 /**
+ * What a sync card's look did not fetch (LEFT3 b, WSR7), said once, after the rows, as the screen's note says it: how
+ * many of the lines it looked at, grouped by git's reason, when each last heard from origin — which its row is judged
+ * against — and what the git Daoris runs needs to reach an origin over SSH or HTTPS. Git's words are content.
+ */
+function SyncNotFetched({ failed, lines }: { failed: NonNullable<HelpSyncShown['notFetched']>; lines: number }) {
+  const { t } = useTranslation();
+  const reasons = [...new Set(failed.map((line) => line.fetch))];
+  const when = (line: (typeof failed)[number]) => (line.lastFetch
+    ? t('settings.sync.notFetched.when', { repository: line.repository, when: ago(line.lastFetch) })
+    : t('settings.sync.notFetched.never', { repository: line.repository }));
+  return (
+    <div role="note" aria-label={t('settings.sync.notFetched.label')} className="m-0 mt-1 text-meta text-ink-soft">
+      <p className="m-0">{t('settings.sync.notFetched.head', { count: failed.length, total: Math.max(lines, failed.length) })}</p>
+      <ul className="m-0 list-none p-0">
+        {reasons.map((reason) => (
+          <li key={reason} className="m-0 mt-0.5">
+            <span className="break-words"><Inline text={reason} /></span>
+            <span className="block">{failed.filter((line) => line.fetch === reason).map(when).join(' · ')}</span>
+          </li>
+        ))}
+      </ul>
+      {failed.some((line) => line.reach === 'ssh') && (
+        <p className="m-0 mt-0.5"><Inline text={t('settings.sync.notFetched.ssh')} /></p>
+      )}
+      {failed.some((line) => line.reach === 'https' || line.reach === 'http') && (
+        <p className="m-0 mt-0.5">{t('settings.sync.notFetched.https')}</p>
+      )}
+    </div>
+  );
+}
+
+/**
+ * The repositories a sync card's look left apart (LEFT3 b, D112), collapsed as the screen's list is: they hold no branch
+ * of Daoris's, so nothing of theirs was fetched or moves, and a card cannot tick one, so it says how one is included.
+ */
+function SyncApart({ apart }: { apart: string[] }) {
+  const { t } = useTranslation();
+  return (
+    <details role="group" aria-label={t('settings.sync.apart.label')} className="m-0 mt-1 text-meta text-ink-soft">
+      <summary className="cursor-pointer">{t('settings.sync.apart.summary', { count: apart.length })}</summary>
+      <p className="m-0 mt-0.5">
+        <Inline text={t('help.proposal.syncApart', { names: apart.map((name) => `\`${name}\``).join(', ') })} />
+      </p>
+    </details>
+  );
+}
+
+/**
  * One change Ask Daoris proposes (HELP1c, D89): what it changes, the terminal command that does the same
  * (D50), and why — with **apply** and **not now**, since every change is the person's press.
  *
@@ -106,7 +161,8 @@ function PluginRuns({ plugin }: { plugin: HelpPluginShown }) {
  *
  * **Bringing up to date has the screen's two presses** (HELP10, D109): looking fetches as the person, so the
  * card's first press is *look for updates*, and only once the driver has listed what the press would do does it
- * show those rows, each as the terminal says it, with Apply, which does only the rows that move.
+ * show those rows, each as the terminal says it, with Apply, which does only the rows that move. Beside them it says
+ * what they do not (LEFT3): the lines the look could not fetch, and the repositories it left apart (D112).
  */
 export function ProposalCard({ proposal, pending = false, onApply, onDismiss }: {
   proposal: HelpProposal;
@@ -150,6 +206,11 @@ export function ProposalCard({ proposal, pending = false, onApply, onDismiss }: 
               </li>
             ))}
           </ul>
+          {/* LEFT3 b: what the rows do not say, on the card itself, as the look's message says it too. */}
+          {(syncing.notFetched ?? []).length > 0 && (
+            <SyncNotFetched failed={syncing.notFetched!} lines={syncing.rows.filter((row) => row.step === 'line').length} />
+          )}
+          {(syncing.apart ?? []).length > 0 && <SyncApart apart={syncing.apart!} />}
           <p className="m-0 mt-1 text-meta text-ink-soft">{t('help.proposal.syncNote')}</p>
         </>
       )}

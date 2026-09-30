@@ -265,6 +265,55 @@ describe('the kinds that reach every door', () => {
     expect(screen.getByText(LOOKED.terminal, { selector: 'code' })).toBeInTheDocument();
   });
 
+  // LEFT3 b: what the rows do not say, said on the card itself and not only in the look's message (WSR7, D112).
+  const unreadable = 'fatal: Could not read from remote repository.';
+  const yesterday = new Date(Date.now() - 26 * 3_600_000).toISOString();
+  const OFFLINE: HelpProposal = {
+    ...LOOKED,
+    sync: {
+      ...LOOKED.sync!,
+      rows: [
+        ...LOOKED.sync!.rows,
+        { key: 'game:main', step: 'line', moves: false, says: 'game  main  up to date with `origin/main` (not fetched)' },
+        { key: 'tools:main', step: 'line', moves: false, says: 'tools  main  up to date with `origin/main` (not fetched)' },
+      ],
+      notFetched: [
+        { repository: 'game', fetch: unreadable, lastFetch: yesterday, reach: 'ssh' },
+        { repository: 'tools', fetch: unreadable, lastFetch: null, reach: 'ssh' },
+      ],
+      apart: ['docs', 'site'],
+    },
+  };
+
+  it('once looked, says on the card what was not fetched, by reason and since when, and what git needs to reach origin', () => {
+    render(<ul><ProposalCard proposal={OFFLINE} onApply={vi.fn()} onDismiss={vi.fn()} /></ul>);
+
+    const note = screen.getByRole('note', { name: 'Not fetched' });
+    const said = within(note);
+    expect(said.getByText(/^2 of 3 repositories were not fetched, so each is judged against what origin said/)).toBeInTheDocument();
+    expect(said.getByText(unreadable)).toBeInTheDocument();
+    expect(said.getByText('game: last fetched 1d ago · tools: never fetched')).toBeInTheDocument();
+    expect(note.textContent).toMatch(/needs a key its own ssh reads, or core\.sshCommand/);
+    expect(note.textContent).not.toMatch(/credential helper/);
+  });
+
+  it('once looked, names on the card the repositories it left apart, and how a proposal includes one', () => {
+    render(<ul><ProposalCard proposal={OFFLINE} onApply={vi.fn()} onDismiss={vi.fn()} /></ul>);
+
+    const apart = within(screen.getByRole('group', { name: 'Repositories not looked at' }));
+    expect(apart.getByText('2 other repositories with a checkout here hold no branch of Daoris\'s')).toBeInTheDocument();
+    expect(apart.getByText('docs', { selector: 'code' })).toBeInTheDocument();
+    expect(apart.getByText('site', { selector: 'code' })).toBeInTheDocument();
+    expect(apart.getByText(/A proposal naming one looks at it/)).toBeInTheDocument();
+  });
+
+  it('says nothing besides its rows where every line was fetched and nothing was left apart, or before the look', () => {
+    render(<ul><ProposalCard proposal={LOOKED} onApply={vi.fn()} onDismiss={vi.fn()} /><ProposalCard proposal={{ ...SYNC, sync: { ...OFFLINE.sync!, looked: false } }} onApply={vi.fn()} onDismiss={vi.fn()} /></ul>);
+
+    expect(screen.queryByRole('note', { name: 'Not fetched' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('group', { name: 'Repositories not looked at' })).not.toBeInTheDocument();
+  });
+
   it('one of the install\'s own plugins says what it needs, in its README\'s words, before Apply', async () => {
     await press(PLUGIN_OFFER, 'apply');
 
@@ -314,6 +363,11 @@ describe('the kinds that reach every door', () => {
       render(<ul><ProposalCard proposal={SYNC} onApply={vi.fn()} onDismiss={vi.fn()} /></ul>);
       expect(screen.getByText('问道衍提议同步到最新')).toBeInTheDocument();
       expect(screen.getByRole('button', { name: '查看更新' })).toBeInTheDocument();
+      cleanup();
+      // LEFT3 b: what the look did not fetch and left apart, the chrome in 中文 and git's words as git said them.
+      render(<ul><ProposalCard proposal={OFFLINE} onApply={vi.fn()} onDismiss={vi.fn()} /></ul>);
+      expect(within(screen.getByRole('note', { name: '未获取' })).getByText(unreadable)).toBeInTheDocument();
+      expect(within(screen.getByRole('group', { name: '未查看的仓库' })).getByText(/点名其中一个的提议会查看它/)).toBeInTheDocument();
     } finally {
       cleanup();
       await i18n.changeLanguage('en');

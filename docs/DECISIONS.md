@@ -4072,6 +4072,13 @@ and runs anyway; a write that fails is dropped, never thrown.
 - **A logging library.** A file a day and a catalogue are each artefact's own few lines, and a library's
   configuration is one more thing an install carries.
 
+*Amended by LEFT3 (2026-10-01): `proposal.settled` is written once a press settled the proposal. Ask Daoris's sync
+card has two presses, and its first, the look, settles nothing: `HELP_APPLY` answers that the card `stands`, and the
+page writes no line for it. No event of its own was added for a look: it is a step of one proposal whose settling is
+still written, by its press or its Not now, and a look that found nothing to do settled the card and is written as
+any Apply is. And `tools/usage-report.mjs` summarises LEFT2's `preview.opened` under what was used most: how many
+previews, in how many sessions, and of what kind by extension, never the path.*
+
 ## D95 — A quest nobody has started on can be deleted, and the delete travels as an operation (2026-09-30)
 
 **Decision (QUEST1).** The owner: *"we do need way to clear or delete quest"*. Clearing is what the
@@ -5157,6 +5164,14 @@ Until then the room names each one's screen and command.
 
 Nothing here needed a decision of its own: each door is this section's, and the look is D109's rule applied to a card.
 
+*Amended by LEFT3 (2026-10-01): clearing an account's default, which the screen's *Make default* on the tool's own row
+does and no terminal verb could (D50), is `daoris agent profile default <agent> --clear [--workspace <name>]`, a twin of
+`HARNESS_ACTION`'s `profile-default` held by a table on each side. Clearing a workspace's default falls back to the
+machine's, as the screen's does, and the verb says which account its sessions run as now. Ask Daoris proposing a clear
+is a door owed: the `agent` kind's `default` door takes an account and no clear, and taking one waits on the
+service's `agent_propose` and the driver's judge. `HelpCoverageTests` holds it as a form owed, and the room names the
+command meanwhile.*
+
 **Why.** HELP6 and HELP8 each found a door built since the last pass that Ask Daoris could not reach, and
 READ1 left one the room already promised. A list kept by hand drifts; a list a test derives from the doors'
 own sources does not.
@@ -5474,8 +5489,14 @@ press including a repository only where a listed row names it, and `--all` are `
 over a mocked bridge, and was not looked at on the window. The card's words are held by `HelpSyncProposalsTests`, and
 that every modules door's press hands the sessions in use again is a source-reading test, since only a live driver
 opens a session between a look and its press.
-for this press was not built: it would reach into the service's proposal kinds and the page's cards. *(HELP10
-built it since: the `sync` kind, a card whose first press is the look; see D110.)*
+
+*Amended by LEFT3 (2026-10-01): Ask Daoris's sync card says what was not fetched and which repositories were left
+apart on the card itself, not only in its look's words. The look keeps both in the proposal's file beside its rows
+(`notFetched`: each line not fetched, with git's reason, when it last heard from origin and how origin is reached;
+`apart`: the repositories' names), and the card says them as the screen does: a note of what was not fetched, grouped
+by reason, with what the git on the path needs, and the repositories left apart collapsed, with how a proposal
+includes one. A file a look kept before LEFT3 holds neither, and its card says nothing more. Held by
+`HelpSyncProposalsTests`, `DriverModuleHelpTests` and the card's vitest cases; not looked at on the window.*
 ## D113 — A landed session reads as landed: its review and preview read the landed branch once the tree is gone (2026-10-01)
 
 **Decision (REVIEW2, found by the parent looking at the installed window).** A session accepted under a branch rule
@@ -5587,3 +5608,18 @@ in the `Process` half, written in the branch and not run there (MOD8). The same 
 this build's library in a scratch repository (a probe, not committed), and each answered as written. The terminal's
 twin was not run: it needs a service. **Nothing has looked at the window**: the note in both themes, at the side
 bar's 300px floor, and 中文.
+
+*Amended by LEFT3 (2026-10-01): the traces are bounded. Each repository keeps its newest 50
+(`LandedBranches.TracesKept`), by when each went, dropped at the record's next write; a standing entry is never
+dropped. A count per repository rather than a span: the file grows with landings, not with the clock, and a person
+back after a month away still reviews last month's sessions, while a busy repository cannot push a quiet one's
+traces out. A session whose trace was dropped reads `SESSION_TREE_GONE` once its tree is gone, as one merged does.
+Held by `LandedTracesTests` in the fast half.*
+
+*A merge's own record was considered again (LEFT3) and is still not built, for §5's reason and one found looking:
+a merge's "branch" is the line itself, and every reader of the record treats an entry as a branch Daoris made. The
+clean-up deletes a recorded branch whose work reads on the line (`git branch -D`), bringing up to date replays one
+and counts its repository as holding Daoris's branches (D112), and the hand-off pushes one. A merge entry that
+reached any of them would delete, move or push the person's line. Building it is a change to what a landing record
+is: an entry of its own kind that `All()` never returns, the review reading the merge's own range (its first parent
+up to the merge commit) and the preview reading at that commit rather than at the line's tip, each with its test.*

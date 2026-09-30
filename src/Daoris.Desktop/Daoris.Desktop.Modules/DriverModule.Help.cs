@@ -101,16 +101,26 @@ public sealed partial class DriverModule
                         Changes = ChangesOf(plugin.Changes),
                     }
                     : null,
-                // Bringing up to date (HELP10): whether the person has looked, and every row the look listed, in the
-                // terminal's words, for the card to show before Apply.
-                Sync = plan.Sync is { } sync
-                    ? new { sync.Looked, Rows = sync.Rows.Select(row => new { row.Key, row.Step, row.Moves, row.Says }).ToArray() }
-                    : null,
+                Sync = SyncShown(plan.Sync),
             });
         }
 
         return new { Session = session, Proposals = shown.ToArray() };
     }
+
+    /// <summary>
+    /// What a bring-up-to-date card shows (HELP10), the page's <c>HelpSyncShown</c>: whether the person has looked, every
+    /// row the look listed in the terminal's words, and what the rows do not say (LEFT3 b) — each repository not fetched,
+    /// with git's reason, when it last heard from origin and how origin is reached, and the repositories left apart.
+    /// Null for every other kind.
+    /// </summary>
+    public static object? SyncShown(HelpSyncPlan? sync) => sync is null ? null : new
+    {
+        sync.Looked,
+        Rows = sync.Rows.Select(row => new { row.Key, row.Step, row.Moves, row.Says }).ToArray(),
+        NotFetched = sync.Besides.NotFetched.Select(line => new { line.Repository, line.Fetch, line.LastFetch, line.Reach }).ToArray(),
+        Apart = sync.Besides.Apart.ToArray(),
+    };
 
     // The person's Apply: made through the door the screen's own route uses (HELP6), judged again
     // first, since the machine may have moved since the card was drawn. The result goes back into
@@ -136,19 +146,28 @@ public sealed partial class DriverModule
             _loop.Home, proposal, plan, HelpDoors(service), Say, cancellationToken).ConfigureAwait(false);
         if (proposal.Kind is "ask" or "delete") _loop.Nudge();
 
-        return new
-        {
-            Message = applied.Told,
-            applied.Applied,
-            // Where a go takes the person: the page navigates, as its starters' doors do (HELP6).
-            Go = applied.Go is { } place ? new { place.View, place.Domain, place.Part } : null,
-            // The action an update or a pin started, so the Agents screen follows its console and its end. A default
-            // (HELP10) is a file edit that starts nothing, so there is nothing to follow.
-            HarnessAction = applied.Applied && proposal.Kind == "agent" && proposal.Door is "update" or "pin"
-                ? new { Harness = proposal.Target!.Trim(), Action = proposal.Door }
-                : null,
-        };
+        return ApplyAnswer(proposal, applied);
     }
+
+    /// <summary>
+    /// What an Apply answers the page (HELP1c, HELP6), the page's <c>HelpSettled</c>: the driver's sentence, whether it was
+    /// applied, where a go takes the person, and the agent action the Agents screen follows. Public so the fast half holds
+    /// the answer without a service (LEFT3 d), as it holds a conversation's options.
+    /// </summary>
+    public static object ApplyAnswer(HelpProposal proposal, HelpApplied applied) => new
+    {
+        Message = applied.Told,
+        applied.Applied,
+        // Where a go takes the person: the page navigates, as its starters' doors do (HELP6).
+        Go = applied.Go is { } place ? new { place.View, place.Domain, place.Part } : null,
+        // The action an update or a pin started, so the Agents screen follows its console and its end. A default
+        // (HELP10) is a file edit that starts nothing, so there is nothing to follow.
+        HarnessAction = applied.Applied && proposal.Kind == "agent" && proposal.Door is "update" or "pin"
+            ? new { Harness = proposal.Target!.Trim(), Action = proposal.Door }
+            : null,
+        // The card stands for another press (LEFT3 c): a sync card's look settles nothing, so the page logs no settlement.
+        applied.Stands,
+    };
 
     // The person's Not now: nothing changes, and the agent is told so.
     [DriverRoute("HELP_DISMISS")]
