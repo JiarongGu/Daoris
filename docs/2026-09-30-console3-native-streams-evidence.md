@@ -69,4 +69,5 @@ itself. The async subagent finished before the result; the turn did not end whil
 - One binary version, one async subagent, one backgrounded command. A synchronous subagent (with
   `parent_tool_use_id` but no task), a nested one, and a failed one were not seen.
 - A conversation on this door (`--input-format stream-json`), which keeps its process between turns,
-  was not probed: whether its background work outlives a turn there is open.
+  was not probed: whether its background work outlives a turn there is open, and D105 bounds it: it
+  ends with the session, as a driven session's does.

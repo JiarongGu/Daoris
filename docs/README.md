@@ -13,7 +13,7 @@ what was measured, and it stays a record of that moment. A *record* is append-on
 
 | Document | Kind | For | Where it stands |
 |---|---|---|---|
-| `2026-08-04-daoris-design.md` | contract | the CLI | Current. Its notes carry D54 and D59 where they changed it |
+| `2026-08-04-daoris-design.md` | contract | the CLI | Current. Its notes carry D54, D59 and D105 where they changed it |
 | `2026-08-05-knowledge-service-design.md` | contract | the service | Built. Its banner names what later decisions answered; §3–§4, the disclosure classes, still bind |
 | `2026-09-19-driver-design.md` | contract | the driver (D45, D46) | Current, with D72's permission change noted |
 | `2026-09-19-platform-design.md` | contract | the platform (D38) | Current in shape; the views it names have moved since (D55, D66, D75) |
@@ -60,7 +60,7 @@ what was measured, and it stays a record of that moment. A *record* is append-on
 | `2026-09-25-stream-json-evidence.md` | evidence | D76, CONV3a, CONV5 |
 | `2026-09-25-message-content-evidence.md` | evidence | D76, CONV4c, CONV4d |
 | `2026-09-27-first-goal-study.md` | study | D77, the first goal: what INT6 would have met, the references, Lyntai's storage |
-| `2026-09-28-console2-streams-evidence.md` | evidence | CONSOLE2: a subagent, a background task and a command's output on the protocol door, once declared |
+| `2026-09-28-console2-streams-evidence.md` | evidence | CONSOLE2: a subagent, a background task and a command's output on the protocol door, once declared. What it left open, whether a driven session waits for its background work, is D105's |
 | `2026-09-30-console3-native-streams-evidence.md` | evidence | CONSOLE3c: the same on the native door's `stream-json`: a subagent's lines by `parent_tool_use_id`, tasks on `system` lines, and background work ended with the turn |
 | `2026-09-28-after-the-first-workspace.md` | study | WSR1–WSR3, SESS1, MAP4, HELP1: what the first real workspace showed Daoris lacks. §3 is decided by D86 (WSR2 landed), §1 by D87 (WSR1 landed), D100 (WSR4 landed) and D102 (WSR5b landed), §2 by D88 (WSR3 landed) and D102 (WSR5a landed) |
 | `2026-09-28-managed-edge-evidence.md` | evidence | D84: a real browser started by Daoris, its tabs, its sign-ins, and the account a fresh Edge profile brings |

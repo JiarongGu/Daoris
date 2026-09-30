@@ -57,7 +57,10 @@ export function commandInit(
   const canon = readCanon(resolveCanonRoot(packageRoot));
 
   writeManifest(root, {
-    source: `github:JiarongGu/Daoris#v${canon.version}`,
+    // The npm package the canon shipped in, at the canon's version (DIST1, D105): provenance, and the
+    // command to re-run as `npx <source> sync` (D11). A git ref could not run: the repository's root
+    // package is a private workspace with no `bin`.
+    source: `daoris@${canon.version}`,
     packs: [],
     target: DEFAULT_TARGET,
     coreBudgetBytes: 30000,

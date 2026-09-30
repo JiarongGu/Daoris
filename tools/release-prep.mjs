@@ -26,7 +26,17 @@ const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 const read = (rel) => readFileSync(join(repoRoot, rel), 'utf8');
 const write = (rel, text) => writeFileSync(join(repoRoot, rel), text, 'utf8');
 
-const REPO_REF = 'github:JiarongGu/Daoris#v';
+/**
+ * How a consumer installs the CLI (DIST1, D105): the npm package the release publishes, at a version —
+ * `npx daoris@X init` in the README, `"source": "daoris@X"` in a manifest. The git ref every reference
+ * named before could not run: the root package is a private workspace with no `bin`.
+ */
+const PACKAGE_REF = 'daoris@';
+const atVersion = (version) => `${PACKAGE_REF}${version}`;
+/** A manifest's `source`, and only that field: a manifest's prose is not a reference. */
+const SOURCE = /("source":\s*")daoris@\d+\.\d+\.\d+"/;
+/** The spelling that could not run. Nothing rewrites it any more, so a leftover is reported, never kept. */
+const GIT_REF = /github:[^\s"'`]*#v\d/;
 
 /**
  * The example family's manifests carry the same pin as the real one — a stale example teaches the
@@ -78,14 +88,15 @@ function stampChangelog(rel, heading) {
 }
 
 /** Each file the version lives in, and how it is rewritten to carry `version`. */
-const rewrites = (version) => [
+export const rewrites = (version) => [
   [CLI_PKG, (text) => text.replace(/"version": "[^"]+"/, `"version": "${version}"`)],
   ['canon/canon.json', () => `{\n  "version": "${version}"\n}\n`],
-  ['daoris.json', (text) => text.replace(/github:[^"#]+#v[\d.]+/, `${REPO_REF}${version}`)],
-  ['README.md', (text) => text.replace(/github:JiarongGu\/Daoris#v[\d.]+/g, `${REPO_REF}${version}`)],
+  ['daoris.json', (text) => text.replace(SOURCE, `$1${atVersion(version)}"`)],
+  // Every mention of the package at a version: the install lines and the manifest example.
+  ['README.md', (text) => text.replace(/\bdaoris@\d+\.\d+\.\d+/g, atVersion(version))],
   [DEVKIT, (text) => text.replace(DEVKIT_VERSION, `public const string DevkitVersion = "${version}";`)],
   ...exampleManifests().map((rel) =>
-    [rel, (text) => text.replace(/github:[^"#]+#v[\d.]+/, `${REPO_REF}${version}`)]),
+    [rel, (text) => text.replace(SOURCE, `$1${atVersion(version)}"`)]),
 ];
 
 /** The changelogs a release stamps: the release-facing one first, then the canon's. */
@@ -112,27 +123,45 @@ function setVersion(version, today) {
   console.log(`release-prep: stamped CHANGELOG.md and canon/CHANGELOG.md`);
 }
 
+/**
+ * Every way the shipped references disagree with the package's version, read through `readRel` —
+ * the tree by default, a rewritten copy in the test that holds the rewrite and this together.
+ */
+export function disagreements(readRel = read) {
+  const version = JSON.parse(readRel(CLI_PKG)).version;
+  const problems = [];
+
+  if (JSON.parse(readRel('canon/canon.json')).version !== version) {
+    problems.push(`canon/canon.json is not ${version}`);
+  }
+  for (const rel of ['daoris.json', ...exampleManifests()]) {
+    const source = JSON.parse(readRel(rel)).source;
+    if (source !== atVersion(version)) problems.push(`${rel} pins ${source}, not ${atVersion(version)}`);
+  }
+
+  const readme = readRel('README.md');
+  // A README whose install lines went would otherwise pass: no reference, nothing to disagree with.
+  if (![...readme.matchAll(/npx daoris@\d+\.\d+\.\d+ /g)].length) {
+    problems.push(`README names no \`npx ${atVersion(version)}\` install line`);
+  }
+  for (const [, ref] of readme.matchAll(/\bdaoris@(\d+\.\d+\.\d+)/g)) {
+    if (ref !== version) problems.push(`README pins ${ref}, not ${version}`);
+  }
+  for (const [rel, text] of [['README', readme], ...['daoris.json', ...exampleManifests()].map((r) => [r, readRel(r)])]) {
+    if (GIT_REF.test(text)) {
+      problems.push(`${rel} names a git ref (github:…#v…), which cannot run — the CLI installs as ${atVersion(version)} (D105)`);
+    }
+  }
+
+  const devkit = DEVKIT_VERSION.exec(readRel(DEVKIT))?.[1];
+  if (devkit !== version) problems.push(`${DEVKIT} says ${devkit ?? 'no version'}, not ${version}`);
+  return problems;
+}
+
 /** Assert every place agrees. The release gate runs this; it never rewrites. */
 function checkAgreement() {
   const version = JSON.parse(read(CLI_PKG)).version;
-  const problems = [];
-
-  if (JSON.parse(read('canon/canon.json')).version !== version) {
-    problems.push(`canon/canon.json is not ${version}`);
-  }
-  if (!JSON.parse(read('daoris.json')).source.endsWith(`#v${version}`)) {
-    problems.push(`daoris.json does not pin ${version}`);
-  }
-  for (const ref of [...read('README.md').matchAll(/Daoris#v([\d.]+)/g)].map((m) => m[1])) {
-    if (ref !== version) problems.push(`README pins ${ref}, not ${version}`);
-  }
-  for (const rel of exampleManifests()) {
-    if (!JSON.parse(read(rel)).source.endsWith(`#v${version}`)) {
-      problems.push(`${rel} does not pin ${version}`);
-    }
-  }
-  const devkit = DEVKIT_VERSION.exec(read(DEVKIT))?.[1];
-  if (devkit !== version) problems.push(`${DEVKIT} says ${devkit ?? 'no version'}, not ${version}`);
+  const problems = disagreements();
   if (problems.length) fail(`version drift:\n  ${problems.join('\n  ')}`);
   console.log(`release-prep: ${version} agrees across every shipped reference`);
 }

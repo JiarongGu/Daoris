@@ -7,12 +7,20 @@ namespace Daoris.Desktop;
 /// <param name="SetForUser">True when the user's environment gained the variable — this start, not any earlier one.</param>
 /// <param name="Moved">The entries that moved in from a `~/.daoris` of before D63, by name.</param>
 /// <param name="Failed">The entries that should have moved and could not — still where they were, named with the reason.</param>
-/// <param name="Notice">One sentence for the person, naming the home and anything that moved or could not.</param>
+/// <param name="Notice">One sentence for the person, naming the home and anything that moved, could not, or was overridden.</param>
+/// <param name="Overrode">
+/// The home this start inherited from the account and did not use (HOME1, D105): another install's
+/// `data/`, or this one's before it moved. Null when nothing was inherited, or it was this install's own.
+/// </param>
 public sealed record HomeEstablished(
-    string Home, bool SetForUser, IReadOnlyList<string> Moved, IReadOnlyList<string> Failed, string Notice)
+    string Home, bool SetForUser, IReadOnlyList<string> Moved, IReadOnlyList<string> Failed, string Notice,
+    string? Overrode = null)
 {
-    /// <summary>True when the person should hear about it: something moved, something could not, or their account's environment changed.</summary>
-    public bool Worth => SetForUser || Moved.Count > 0 || Failed.Count > 0;
+    /// <summary>
+    /// True when the person should hear about it: something moved, something could not, their
+    /// account's environment changed, or the home their account names is not the one this window runs on.
+    /// </summary>
+    public bool Worth => SetForUser || Overrode is not null || Moved.Count > 0 || Failed.Count > 0;
 }
 
 /// <summary>
@@ -24,6 +32,10 @@ public sealed record HomeEstablished(
 /// <remarks>
 /// <para>Runs before anything else the shell constructs, because <see cref="DriverConfig"/> and the
 /// harness roster capture their path at construction — the home has to exist before they ask.</para>
+///
+/// <para><b>The install's own `data/` wins over a home inherited from the account</b> (HOME1, D105): a
+/// second or moved install runs on its own, leaves the account's variable as it is, and says so. A
+/// home named for this start alone — not the account's — is still respected whole.</para>
 ///
 /// <para>A workspace build is not an install and is left alone: the dev loop names its scratch home
 /// itself, and a gate that redirected everything but this would still write into a real folder.
@@ -69,8 +81,10 @@ public static class InstallHome
     }
 
     /// <summary>
-    /// Establish the home for an install, or answer null when this is not one — or when the
-    /// environment already names a home, which is respected whole.
+    /// Establish the home for an install, or answer null when this is not one, when the environment
+    /// already names this install's own home, or when it names a home for this start alone — which is
+    /// respected whole. A home the environment only inherited from the account, naming another folder,
+    /// is overridden: the install's own `data/` wins (HOME1, D105).
     /// </summary>
     public static HomeEstablished? Establish(
         string baseDirectory,
@@ -82,16 +96,32 @@ public static class InstallHome
     {
         var root = RootOf(baseDirectory);
         if (!File.Exists(Path.Combine(root, Marker))) return null;
-        if (DaorisHome.Resolve(processEnvironment) is not null) return null;
 
         var home = Path.Combine(root, Folder);
+        var account = userEnvironment();
+        string? overrode = null;
+        if (DaorisHome.Resolve(processEnvironment) is { } named)
+        {
+            if (SamePath(named, home)) return null;
+
+            // 🔴 HOME1: the account's variable reaches every process the person starts, so a second or
+            // moved install inherited the first one's home and ran on it without a word. A value that
+            // equals the account's was inherited, and the install's own `data/` wins over it. A value
+            // that differs was named for this start alone — a gate's scratch home, a terminal's
+            // one-off — and is respected, or no gate could keep an install off the real machine.
+            if (!SamePath(named, account)) return null;
+            overrode = named;
+        }
+
         Directory.CreateDirectory(home);
         setProcess(DaorisHome.Variable, home);
 
         // Once, and never over one the person set themselves: a user variable is theirs to change,
-        // and a shell that reset it on every start would make the setting impossible to keep.
+        // and a shell that reset it on every start would make the setting impossible to keep. That
+        // holds for an overridden one too (D105): rewriting it would move every terminal to whichever
+        // install was opened last, so it is left, and the notice says a terminal still reads it.
         var setForUser = false;
-        if (string.IsNullOrWhiteSpace(userEnvironment()))
+        if (string.IsNullOrWhiteSpace(account))
         {
             setUser(home);
             setForUser = true;
@@ -100,11 +130,37 @@ public static class InstallHome
         var (moved, failed) = HasState(home) ? ([], []) : MoveIn(legacy, home);
 
         var notice = $"Daoris home: {home}";
+        if (overrode is not null)
+        {
+            notice += $" — this install's own data folder, not {overrode}, which {DaorisHome.Variable} names for your "
+                + $"account; that variable is left as it is, so a terminal's daoris still reads {overrode} until you change it";
+        }
         if (moved.Count > 0) notice += $" — moved in from {legacy}: {string.Join(", ", moved)}";
         if (failed.Count > 0) notice += $" — could not move {string.Join(", ", failed)}; still at {legacy}";
         if (setForUser) notice += $" — {DaorisHome.Variable} set for your account, so a terminal's daoris sees the same machine";
 
-        return new HomeEstablished(home, setForUser, moved, failed, notice + ".");
+        return new HomeEstablished(home, setForUser, moved, failed, notice + ".", overrode);
+    }
+
+    /// <summary>
+    /// Two spellings of one folder: full, without a trailing separator, and without regard to case
+    /// where the file system has none — a variable a person typed need not match the path this built.
+    /// </summary>
+    private static bool SamePath(string a, string? b)
+    {
+        if (string.IsNullOrWhiteSpace(b)) return false;
+        try
+        {
+            return string.Equals(
+                Path.TrimEndingDirectorySeparator(Path.GetFullPath(a.Trim())),
+                Path.TrimEndingDirectorySeparator(Path.GetFullPath(b.Trim())),
+                OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal);
+        }
+        catch (Exception error) when (error is ArgumentException or NotSupportedException or PathTooLongException)
+        {
+            // A value that is no path at all is not this folder.
+            return false;
+        }
     }
 
     /// <summary>The same, against this process, this user, and the profile directory a previous version used.</summary>

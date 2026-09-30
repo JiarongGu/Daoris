@@ -12,7 +12,8 @@ namespace Daoris.Desktop;
 /// </summary>
 /// <param name="home">
 /// What establishing the install's home did (D63), when this shell is an install and something is
-/// worth saying — state moved in, or the variable set for the person's account. Null otherwise.
+/// worth saying — state moved in, the variable set for the person's account, or the account's home
+/// overridden by the install's own (D105). Null otherwise.
 /// </param>
 public sealed class DriverLoop(
     IEventBus eventBus, HostSupervisor supervisor, string serviceUrl, HomeEstablished? home = null,
@@ -98,7 +99,9 @@ public sealed class DriverLoop(
 
     /// <summary>
     /// What establishing the home did on this start, when it is worth a person's attention — state
-    /// moved in from a profile directory, or the account's environment gaining the variable. Carried
+    /// moved in from a profile directory, the account's environment gaining the variable, or the
+    /// account's home set aside for this install's own (D105), which lasts as long as the variable
+    /// names the other folder, so it is said on every such start. Carried
     /// in the state as well as raised once, because the page subscribes only after the host answers,
     /// and a one-time sentence raised before that is a sentence nobody read.
     /// </summary>
@@ -221,9 +224,10 @@ public sealed class DriverLoop(
                 .ConfigureAwait(false);
         }
 
-        // The home's own one-time news (D63) on the same channel, for the same reason: a `~/.daoris`
-        // that just moved into the install, or a variable just set for the account, is something the
-        // person acts on once — a terminal opened before it was set does not see it.
+        // The home's own news (D63) on the same channel, for the same reason: a `~/.daoris` that just
+        // moved into the install, or a variable just set for the account, is something the person acts
+        // on once — a terminal opened before it was set does not see it. And an account's home this
+        // install set aside for its own (D105): a terminal still reads the other folder.
         if (home is { Worth: true })
         {
             await eventBus.EmitAsync("DAORIS", "DRIVER_ERROR", new { Message = home.Notice })

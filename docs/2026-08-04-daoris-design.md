@@ -117,6 +117,8 @@ its files) and a per-repo vendored shim (the drift checker would itself be drift
 `source` is written by `daoris init`, so no repo hand-writes it and no absolute path can end up in a
 tracked file. The pinned ref is what stops a silent upgrade.
 
+*D105: `source` is npm's `daoris@<version>`.*
+
 **How the canon is obtained — resolved during implementation:** it isn't. The canon **ships inside the
 package**, so the pinned ref in `source` selects the canon by selecting which package version `npx` runs.
 `source` is therefore a record of provenance and the command to re-run, not something the tool fetches.

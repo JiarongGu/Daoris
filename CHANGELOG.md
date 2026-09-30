@@ -44,8 +44,9 @@ The first version: doctrine that installs, is checked, and flows back.
   that failed a build would be worse than the duplication. Validated against the real case, where it
   independently finds a 58% overlap that previously took a manual read to notice.
 - **Zero runtime dependencies.** Node ≥ 22, ESM, `node:test`. Nothing to install — every command runs
-  through `npx` against a pinned reference.
-- **The canon ships inside the package**, so the pinned reference *is* the version pin. No command
+  as `npx daoris@<version>`, the npm package the release publishes, and `init` writes that as the
+  manifest's `source` (D105).
+- **The canon ships inside the package**, so the pinned version *is* the doctrine's version. No command
   fetches anything, which is what makes `check` offline by construction rather than by discipline —
   asserted by a test that deletes the canon and requires a clean exit.
 - **Three layers.** Core installs everywhere, except a row a pack offers off and the repository
@@ -358,7 +359,9 @@ The first version: doctrine that installs, is checked, and flows back.
   binaries — lives under `DAORIS_HOME`, and every default in the CLI, the hosts and the driver derives
   from that one variable. The installed desktop sets it to its own `data/` for itself and every
   session it spawns, and once for the account when it has none, so a terminal's `daoris` meets the
-  same machine; a `~/.daoris` from before moves in on the first start and the shell says so once.
+  same machine; a `~/.daoris` from before moves in on the first start and the shell says so once. A
+  second or moved install runs on its own `data/` even when the account's variable names another
+  folder, leaves that variable as it is, and says so on Settings' home row (D105).
   With no home set the management commands and the hosts refuse in a sentence naming it, rather than
   writing somewhere nobody pointed them. `publish:service --install` lands the hosts under the home's
   `bin/` and prints the `.mcp.json` snippet with the home filled in.
