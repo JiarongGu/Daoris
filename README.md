@@ -63,6 +63,7 @@ no command fetches anything, and `check` works offline.
 | `driver` | What this machine drives, and how: `drive`/`hold`, `line`, `landing`, `helper` and more (`driver list`). **Edits one file under the Daoris home** |
 | `plugin` | This machine's plugins: `list`, `add <folder>`, `remove <id>`, `enable`/`disable <id>`. **Edits under the home's `plugins/`; loads no code** |
 | `browser` | Daoris's browser: `favorite list\|add\|remove`, `extensions offer\|refuse`, `use daoris\|edge`. **Edits files under the home** |
+| `tool` | Which Git, Node.js, PowerShell, GitHub CLI and Azure CLI Daoris runs. **One file under the home** |
 
 
 `sync` accepts `--dry-run` (print the plan, write nothing) and `--force`. `upstream` accepts `--all` to
@@ -96,7 +97,7 @@ has never been trusted in refuses **naming the action that fixes it**.
 `docs/2026-09-22-toolchain-design.md` is the contract.
 
 **`connect`, `retire` and `import` are the management commands** — opt-in, they talk to a service, and
-no gate ever runs them. `remote`, `agent`, `driver` and `plugin` are management too; they edit files under
+no gate ever runs them. `remote`, `agent`, `driver`, `plugin`, `browser` and `tool` are management too; they edit files under
 **the Daoris home** (`DAORIS_HOME` — the installed application's own `data/`, set once for your
 account, never your profile; D63), refusing with none set. `agent` runs each agent's own installer,
 updater or login flow, `agent pin` fetches from a maker's verified channel, and `agent trust --yes`

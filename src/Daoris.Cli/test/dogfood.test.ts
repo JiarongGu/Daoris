@@ -499,13 +499,27 @@ function reachableFrom(entry: string): Set<string> {
  * append to without thinking.
  */
 test('the file-local management verbs reach no network module either', () => {
-  for (const entry of ['remotes.ts', 'remotemap.ts', 'toolchain.ts', 'driverconfig.ts', 'plugins.ts']) {
+  for (const entry of ['remotes.ts', 'remotemap.ts', 'toolchain.ts', 'driverconfig.ts', 'plugins.ts', 'tools.ts']) {
     const seen = reachableFrom(entry);
 
     assert.equal(
       seen.has(SERVICE_CLIENT), false,
       `${entry} reaches the service client through: ${[...seen].sort().join(', ')}`);
     assert.ok(seen.size > 1, `the walk from ${entry} found nothing, so it proved nothing`);
+  }
+});
+
+/**
+ * `tools.ts` answers "which program" and edits one file (TOOLS2, D121 §4.2): it stays pure. A tool's
+ * version is asked where spawning lives, and a download reaches the network through the fetcher the
+ * dispatcher hands in (TOOLS4) — so the module that holds the file's rules reaches neither on its own.
+ */
+test('the tools file reaches neither the toolchain nor the service client', () => {
+  for (const entry of ['tools.ts', 'cli/tool.ts']) {
+    const seen = reachableFrom(entry);
+    assert.equal(seen.has(SPAWNS), false, `${entry} reaches the harness toolchain through: ${[...seen].sort().join(', ')}`);
+    assert.equal(seen.has(SERVICE_CLIENT), false, `${entry} reaches the service client through: ${[...seen].sort().join(', ')}`);
+    assert.ok(seen.has('tools.ts') && seen.size > 1, `the walk from ${entry} found nothing, so it proved nothing`);
   }
 });
 
