@@ -21,7 +21,7 @@ lists.
 
 ## State
 
-**Counts, and this is their one home:** sixteen commands, **622 CLI tests, 652 service and 46 HTTP host, 1416 driver,
+**Counts, and this is their one home:** sixteen commands, **629 CLI tests, 652 service and 46 HTTP host, 1416 driver,
 399 desktop modules, 80 devkit, 1683 web unit, 21 Playwright**, 66/66 release rehearsal, **301/301
 family rehearsal** (it names its own phases when you run it), **70/70 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge
@@ -112,9 +112,9 @@ rather than designed.
 
 ## Backlog
 
-**Twenty-four rows are open, in three kinds** (triaged 2026-09-30, when the owner asked to go faster):
-- **Workable now, by the parent or subagents (ten):** the parallel-development arc's six
-  (MOD2–MOD9, the owner's newest; three in flight), READ1, TASKBAR1, TEST1, and FLAKE1 (which MOD8
+**Twenty-three rows are open, in three kinds** (triaged 2026-09-30, when the owner asked to go faster):
+- **Workable now, by the parent or subagents (nine):** the parallel-development arc's five
+  (MOD2–MOD9, the owner's newest; MOD2–4 merging, MOD5 and MOD6 in flight), READ1, TASKBAR1, TEST1, and FLAKE1 (which MOD8
   absorbs).
 - **Waiting on the owner (six):** BUDGET1 and PLUGREPO1 (their calls), TRUST2 and AGT2c (a grant, two
   downloads), FG5 and BRW3 (the owner present).
@@ -140,7 +140,6 @@ order. Every split is behaviour-preserving and proven by the gates as they stand
   table each adds to.
 - [ ] **MOD6 — the room and the proposals by feature**: a room section or door row per file, a judge per
   proposal kind behind one interface, the service twin mirroring it.
-- [ ] **MOD7 — the CLI's commands as a table**: one module per command, registering its verb and usage.
 - [ ] **MOD8 — tests follow their code, and a `Process` category** run serially in the parent; the
   worktree path-length failure fixed at its cause.
 - [ ] **MOD9 — one merge tool and a dispatch skill**: `tools/merge-branch.mjs` (merge, stop on a

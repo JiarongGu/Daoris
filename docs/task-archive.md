@@ -8344,3 +8344,19 @@ The merge found one miss the branch could not see: the family rehearsal's helper
 `ask` and `quest delete` too, failing fourteen checks, fixed on main.
 **Proven by:** driver 1416 (one load flake, green alone), modules 399, service 652 + 46, CLI 622,
 Playwright 21, family 301/301, deployment 70/70.
+
+
+## MOD7 — the CLI's commands as a table (2026-09-30)
+
+> - [ ] **MOD7 — the CLI's commands as a table**: one module per command, registering its verb and usage.
+
+**Outcome** (built by a subagent in its own worktree, merged on main): the CLI's commands are a table, 16
+row modules under `src/Daoris.Cli/src/cli/`, each carrying its verb, whether it is doctrine or management,
+its usage and option lines, any former name and its handler. `cli.ts` (257 → 126 lines) lists the rows,
+builds `--help` from them and dispatches through them. Proven byte-for-byte by a golden of `--help` and 24
+refusals captured before the split. The import boundaries hold with no lazy import: no row imports the
+dispatcher, and the offline-boundary walk covers every doctrine row read from the table. Two defects the
+split surfaced, fixed in their own commits: a D75 "circle" in `import`'s usage that the line-by-line
+one-word test could not see inside a template literal, and prototype-named verbs (`toString`,
+`constructor`) that crashed with exit 1; both now get *unknown command*, exit 2.
+**Proven by:** CLI 629; the release and family rehearsals run with the next merge (MOD2–4).
