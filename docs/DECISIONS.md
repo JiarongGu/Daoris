@@ -5351,3 +5351,12 @@ press leaving a repository a session is starting in, and seeing one opened since
 `TreeSyncTests` case in the `Process` half, written in the branch and not run there (MOD8). No driver tick
 was run against a held repository. A caller of the press that hands no fresh look at the sessions in use
 (both doors hand one) is still judged by the list's look inside the hold.*
+
+*A family-rehearsal check (LEFT2) drives the terminal's door over the example family's newcomer: a session's
+work put on a branch by a branch rule, pushed to a bare `origin` in scratch and squash-merged there, the
+session carried on in its tree with one commit; then `daoris-driver trees sync --repository newcomer` lists,
+and `--yes` fast-forwards the line, replays the session branch with only its own commit (the squashed one
+dropped as already on the line), and deletes the landed branch, pushing nothing. It was written in the
+branch and not run there; the git sequence it relies on (the squashed commit dropped, the proof's diff
+empty) was run by hand in scratch repositories. It stays with `--repository`, since the examples'
+registered roots are not repositories of their own and git walks up from a folder that is not one.*
