@@ -230,12 +230,12 @@ public sealed partial class HelpCoverageTests
 
     /// <summary>
     /// HELP10: WSR6's <c>daoris-driver trees sync</c> (D109), a verb of the headless host rather than the CLI's table, is
-    /// the <c>sync</c> kind's door while the host's usage still spells it.
+    /// the <c>sync</c> kind's door while the host's usage still spells it (with WSR7's `--all`, D112).
     /// </summary>
     [Fact]
     public void The_headless_hosts_trees_sync_is_the_sync_kinds_door()
     {
-        Assert.Contains("sync [--repository <name>] [--yes]", DriverCommand.Usage);
+        Assert.Contains("sync [--repository <name>] [--all] [--yes]", DriverCommand.Usage);
         Assert.Contains("sync", HelpProposalKinds.Find("sync")!.Doors);
     }
 

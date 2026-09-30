@@ -2,7 +2,7 @@ import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import { describe, expect, it, vi } from 'vitest';
-import { SyncSection, type LinePull, type RebaseBranch, type SyncPlan } from './Sync';
+import { SyncSection, type LinePull, type RebaseBranch, type SyncPlan, type SyncRepository } from './Sync';
 import type { LandedBranch } from './Sweep';
 
 // WSR6 (D109): after a pull request merges — each line pulled by a fast-forward, the branches still at work
@@ -56,7 +56,60 @@ describe('bringing repositories up to date', () => {
     expect(screen.queryByRole('listitem')).toBeNull();
     expect(screen.getByText(/never pushes/)).toBeInTheDocument();
     await userEvent.click(screen.getByRole('button', { name: 'Look for updates' }));
-    expect(onLook).toHaveBeenCalledOnce();
+    expect(onLook).toHaveBeenCalledWith([]);
+  });
+
+  describe('which repositories it takes (D112)', () => {
+    const SCOPE: SyncRepository[] = [
+      { repository: 'engine', workspace: 'aurora', holds: true },
+      { repository: 'alpha', workspace: 'aurora', holds: false },
+      { repository: 'beta', workspace: 'aurora', holds: false },
+    ];
+
+    it('says before a look how many repositories hold Daoris\'s branches, and lists the rest apart, collapsed', () => {
+      draw({ plan: undefined, scope: SCOPE });
+
+      expect(screen.getByText(/A look fetches the 1 repository that holds a branch of Daoris's/)).toBeInTheDocument();
+      const summary = screen.getByText("2 other repositories with a checkout here hold no branch of Daoris's");
+      expect(summary.closest('details')).not.toHaveAttribute('open');
+    });
+
+    it('looks at the ticked ones beside the default, and at every one when all are ticked', async () => {
+      const { onLook } = draw({ plan: undefined, scope: SCOPE });
+
+      await userEvent.click(screen.getByText("2 other repositories with a checkout here hold no branch of Daoris's"));
+      expect(screen.getByRole('button', { name: 'Include and look (0)' })).toBeDisabled();
+      await userEvent.click(screen.getByRole('checkbox', { name: 'beta' }));
+      await userEvent.click(screen.getByRole('button', { name: 'Include and look (1)' }));
+      expect(onLook).toHaveBeenLastCalledWith(['beta']);
+
+      await userEvent.click(screen.getByRole('checkbox', { name: 'All 2' }));
+      await userEvent.click(screen.getByRole('button', { name: 'Include and look (2)' }));
+      expect(onLook).toHaveBeenLastCalledWith('all');
+    });
+
+    it('keeps what was included when it looks again, and lists apart only what the look left', async () => {
+      const { onLook } = draw({
+        plan: { ...PLAN, looked: [SCOPE[0], SCOPE[2]], apart: [SCOPE[1]] }, scope: SCOPE, included: ['beta'],
+      });
+
+      expect(screen.getByText("1 other repository with a checkout here holds no branch of Daoris's")).toBeInTheDocument();
+      await userEvent.click(screen.getByRole('button', { name: 'Look again' }));
+      expect(onLook).toHaveBeenLastCalledWith(['beta']);
+
+      await userEvent.click(screen.getByText("1 other repository with a checkout here holds no branch of Daoris's"));
+      await userEvent.click(screen.getByRole('checkbox', { name: 'alpha' }));
+      await userEvent.click(screen.getByRole('button', { name: 'Include and look (1)' }));
+      // Ticking each by name asks for those by name: only the box for all of them asks for every one.
+      expect(onLook).toHaveBeenLastCalledWith(['beta', 'alpha']);
+    });
+
+    it('says so when no repository holds a branch of Daoris\'s', () => {
+      draw({ plan: { lines: [], rebases: [], deletes: [], looked: [], apart: [SCOPE[1]] } });
+
+      expect(screen.getByText(/No repository here holds a branch of Daoris's, so there was nothing/)).toBeInTheDocument();
+      expect(screen.queryByText('Everything here is up to date.')).toBeNull();
+    });
   });
 
   it('lists each line, each branch and each landed branch with what the press would do', () => {
@@ -94,14 +147,117 @@ describe('bringing repositories up to date', () => {
   it('names a fetch that did not happen, in git\'s words', () => {
     draw({ plan: { lines: [pull({ kind: 'up-to-date', fetch: 'there is no `origin` remote here' })], rebases: [], deletes: [] } });
 
-    expect(screen.getByText(/Not fetched/)).toBeInTheDocument();
-    expect(screen.getByText('origin', { selector: 'code' })).toBeInTheDocument();
+    const note = within(screen.getByRole('note', { name: 'Not fetched' }));
+    expect(note.getByText('origin', { selector: 'code' })).toBeInTheDocument();
+    expect(within(screen.getByRole('listitem', { name: 'main' })).getByText('not fetched')).toBeInTheDocument();
+  });
+
+  /**
+   * WSR7: every fetch failed on the owner's workspace (the git on the path could not reach its SSH remotes), and the
+   * look said so only at the end of each row. It is said once, first: how many, grouped by git's reason, when each
+   * last heard from origin, and what that git needs — with a short mark on each row.
+   */
+  it('says once, before the rows, what was not fetched, by reason, since when, and what git needs to reach origin', () => {
+    const unreadable = 'fatal: Could not read from remote repository.';
+    const yesterday = new Date(Date.now() - 26 * 3_600_000).toISOString();
+    draw({
+      plan: {
+        lines: [
+          pull({ kind: 'up-to-date', fetch: unreadable, lastFetch: yesterday, reach: 'ssh' }),
+          pull({ repository: 'game', kind: 'up-to-date', fetch: unreadable, reach: 'ssh' }),
+          pull({ repository: 'tools', kind: 'fast-forward', commits: 1, moves: true }),
+        ],
+        rebases: [],
+        deletes: [],
+      },
+    });
+
+    const note = screen.getByRole('note', { name: 'Not fetched' });
+    const said = within(note);
+    expect(said.getByText(/^2 of 3 repositories were not fetched, so each is judged against what origin said/)).toBeInTheDocument();
+    expect(said.getByText(unreadable)).toBeInTheDocument();
+    expect(said.getByText('engine: last fetched 1d ago · game: never fetched')).toBeInTheDocument();
+    expect(note.textContent).toMatch(/needs a key its own ssh reads, or core\.sshCommand/);
+    expect(note.textContent).not.toMatch(/credential helper/);
+    // Said once, before the rows: the rows carry a short mark, not the sentence.
+    expect(note.compareDocumentPosition(screen.getByRole('group', { name: 'engine' })) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
+    expect(screen.getAllByText(unreadable)).toHaveLength(1);
+    expect(screen.getAllByText('not fetched')).toHaveLength(2);
+  });
+
+  it('says what the git on the path needs for an origin over HTTPS, and nothing where every fetch landed', () => {
+    const { unmount } = render(
+      <Tooltip.Provider>
+        <SyncSection
+          plan={{ lines: [pull({ kind: 'up-to-date', fetch: 'fatal: could not read Username', reach: 'https' })], rebases: [], deletes: [] }}
+          onLook={vi.fn()} onSync={vi.fn()} />
+      </Tooltip.Provider>,
+    );
+    expect(screen.getByRole('note', { name: 'Not fetched' }).textContent).toMatch(/credential helper that answers without asking/);
+    unmount();
+
+    draw();
+    expect(screen.queryByRole('note', { name: 'Not fetched' })).toBeNull();
   });
 
   it('holds both presses while one is under way', () => {
-    draw({ busy: true });
+    draw({ bringing: true });
 
-    expect(screen.getByRole('button', { name: /Bring up to date/ })).toBeDisabled();
+    expect(screen.getByRole('button', { name: /Bring/ })).toBeDisabled();
     expect(screen.getByRole('button', { name: 'Look again' })).toBeDisabled();
+  });
+
+  describe('while it works, and when the page stops waiting (WSR7)', () => {
+    it('says how many repositories a look is fetching, and its button reads as busy', () => {
+      draw({ plan: undefined, looking: true, lookingAt: 7 });
+
+      expect(screen.getByRole('status').textContent).toBe('Looking at 7 repositories: fetching each from origin, a few at a time.');
+      const button = screen.getByRole('button', { name: 'Looking…' });
+      expect(button).toBeDisabled();
+      expect(button).toHaveAttribute('aria-busy', 'true');
+    });
+
+    it('still says it is looking where it does not know how many', () => {
+      draw({ plan: undefined, looking: true });
+
+      expect(screen.getByRole('status').textContent).toMatch(/^Looking: fetching each repository/);
+    });
+
+    it('holds the last answer, dimmed, while it looks again', () => {
+      draw({ looking: true, lookingAt: 2 });
+
+      expect(screen.getByRole('group', { name: 'engine' })).toHaveClass('opacity-60');
+    });
+
+    it('says a press is under way on its own button', () => {
+      draw({ bringing: true });
+
+      expect(screen.getByRole('status').textContent).toMatch(/judged again right before it moves/);
+      expect(screen.getByRole('button', { name: 'Bringing up to date…' })).toHaveAttribute('aria-busy', 'true');
+    });
+
+    it('says in the section that the page stopped waiting, for a look and for a press', () => {
+      const { rerender } = render(
+        <Tooltip.Provider>
+          <SyncSection plan={undefined} stopped="look" onLook={vi.fn()} onSync={vi.fn()} />
+        </Tooltip.Provider>,
+      );
+      expect(screen.getByRole('alert').textContent).toMatch(/stopped waiting before the look answered/);
+
+      rerender(
+        <Tooltip.Provider>
+          <SyncSection plan={PLAN} stopped="press" onLook={vi.fn()} onSync={vi.fn()} />
+        </Tooltip.Provider>,
+      );
+      expect(screen.getByRole('alert').textContent).toMatch(/stopped waiting before the press answered/);
+
+      // A look under way is the answer to it, so the sentence goes while it runs.
+      rerender(
+        <Tooltip.Provider>
+          <SyncSection plan={PLAN} stopped="look" looking onLook={vi.fn()} onSync={vi.fn()} />
+        </Tooltip.Provider>,
+      );
+      expect(screen.queryByRole('alert')).toBeNull();
+    });
   });
 });

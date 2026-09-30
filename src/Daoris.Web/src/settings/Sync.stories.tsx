@@ -65,8 +65,47 @@ export const EveryReasonToStay: Story = {
   },
 };
 
+/**
+ * The owner's workspace after the look (WSR7): the git on the path could not reach any SSH origin, while their own Git
+ * client could. Said once, first, with when each last heard from origin; each row carries a short mark.
+ */
+export const NothingFetched: Story = {
+  args: {
+    plan: {
+      lines: [
+        pull({ kind: 'up-to-date', fetch: 'fatal: Could not read from remote repository.', reach: 'ssh', lastFetch: '2026-09-29T09:12:00Z' }),
+        pull({ repository: 'game', kind: 'up-to-date', fetch: 'fatal: Could not read from remote repository.', reach: 'ssh', lastFetch: '2026-09-30T16:40:00Z' }),
+        pull({ repository: 'tools', kind: 'up-to-date', fetch: 'fatal: Could not read from remote repository.', reach: 'ssh' }),
+      ],
+      rebases: [rebase({ branch: 'daoris/s-3c4d5e6f', kind: 'up-to-date' })],
+      deletes: [],
+    },
+  },
+};
+
+/**
+ * The owner's workspace (WSR7, D112): three repositories hold Daoris's branches and the look fetches those; the rest
+ * are listed apart, collapsed, to be ticked and included.
+ */
+export const RepositoriesApart: Story = {
+  args: {
+    plan: undefined,
+    scope: [
+      ...['engine', 'game', 'tools'].map((repository) => ({ repository, workspace: 'aurora', holds: true })),
+      ...['atlas', 'beacon', 'cinder', 'delta', 'ember', 'fjord', 'grove'].map((repository) => ({ repository, workspace: 'aurora', holds: false })),
+    ],
+  },
+};
+
 export const UpToDate: Story = {
   args: { plan: { lines: [pull({ kind: 'up-to-date' })], rebases: [rebase({ branch: 'daoris/s-1f2e3d4c', kind: 'up-to-date' })], deletes: [] } },
 };
 
-export const Working: Story = { args: { ...AfterASquashMerge.args, busy: true } };
+/** A press under way: its button reads as busy, and the section says what it is doing. */
+export const Working: Story = { args: { ...AfterASquashMerge.args, bringing: true } };
+
+/** A look under way (WSR7): how many repositories it is fetching, said where the person pressed. */
+export const Looking: Story = { args: { ...RepositoriesApart.args, looking: true, lookingAt: 3 } };
+
+/** A look the page stopped waiting for, said in the section rather than only in a toast. */
+export const StoppedWaiting: Story = { args: { ...RepositoriesApart.args, stopped: 'look' } };

@@ -8656,3 +8656,22 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > in the tip as now. The panel's tabs get the same.
 
 **Outcome** (built by a subagent, merged with `tools/merge-branch.mjs`, every gate; no decision): A dock tab now shows its whole name or its icon, never a name cut to one character. `useTabFit` (`work/tabFit.ts`) measures the row. With the names drawn it checks whether the row's tab lists overflow and remembers the width they need; with icons drawn it compares the row's width with that need. It re-measures when the names, a preview, the language or the neighbouring buttons change, and on a `ResizeObserver`, switching before paint with no loop. In the right side bar the selected tab keeps its whole name. The others keep theirs while the row holds every one and become icons alone when it does not, still named by their label and tip; only then does the row scroll. A shown preview keeps its `max-w-52` cap and may be cut. The panel's view tabs (控制台, 终端) follow the same rule, counting the console's streams, which share the header. Tests stub the two widths the hook reads (`test/tabRoom.ts`). The rule is in platform-ux §4, and the dock design's DOCK1c note records the change. Checked by the subagent in a real Chromium through Storybook, in both languages (English: icons at 430 and 460 px, names from 520 px up, both ways).
+
+
+## WSR7 — Bring up to date on a real workspace (2026-10-01)
+
+> - [ ] **WSR7 — *Bring up to date* on a real workspace.** (a) **The window never shows the look.** The page's
+> bridge gives up after its default 30 s, and the look fetches every repository with a checkout (48 s from a
+> terminal, minutes from the window), so the section shows nothing and the host finishes unheard. Nothing is
+> logged, because a client's timeout is not a refusal. Every long route needs a timeout matched to its own
+> bound: `TREES_SYNC_PLAN`, `TREES_SYNC`, `HANDOFF` and a plugin landing, and Ask Daoris's sync look through
+> `HELP_APPLY`. The look also needs a sentence while it runs, since its button does not show it is busy.
+> (b) **Every fetch failed** (`Could not read from remote repository`): the `git` on `PATH` cannot reach this
+> machine's SSH remotes, while the person's own Git client can. The look still judged against the last fetch,
+> as it should, but said so only at the end of each of 29 rows. Say it once, first: how many repositories
+> were not fetched, that each is judged against what origin said at its last fetch, and what the person's
+> git needs (a key it reads, or `core.sshCommand`). (c) **Scope.** After one pull request merged, the look
+> proposed fast-forwarding seven repositories Daoris has no work in. Decide, and record it as a decision,
+> whether the default is the repositories holding Daoris's branches, with the rest listed and opt-in.
+
+**Outcome** (built by a subagent, merged with `tools/merge-branch.mjs`, every gate; **D112**): *Bring up to date* works on a real workspace. D112 makes a look and a press take only the repositories holding Daoris's branches (a session branch, or a branch a landing recorded that still stands). Every other repository with a checkout is listed apart, collapsed, not fetched and not moved, and the person includes it by a tick (each or all), `--all`, or by naming it. The press takes each repository a listed row names. `TREES_SYNC_SCOPE` says which repositories a look takes, read on the machine. The driver fetches four at a time, and the page waits as long as the host may work (`call`'s bound, with `hostBounds` a twin of `SyncBounds`, held by `SyncBoundsTests`) on `TREES_SYNC_PLAN`, `TREES_SYNC` and a sync card's `HELP_APPLY`. The section says how many repositories a look is fetching, its buttons read as busy, and a timeout is said in place. What was not fetched is said once, first, on every door: grouped by reason, with each repository's last fetch and what the git on the path needs for SSH (a key its ssh reads, or `core.sshCommand`) or HTTPS. The fetch writes no `FETCH_HEAD` (`--no-write-fetch-head`, git 2.29+), since a failed fetch had emptied it and destroyed the person's own last-fetch time. Ask Daoris's sync press now asks the sessions in use again (`inUseNow`), and its room names `--all`. `HANDOFF` and `LAND_SESSION_TREE` keep the default wait until the work frame's tests allow the bound, and the `Process`-half cases were written in the branch and run at the merge.

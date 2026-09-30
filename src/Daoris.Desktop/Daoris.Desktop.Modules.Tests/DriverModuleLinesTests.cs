@@ -126,7 +126,42 @@ public sealed class DriverModuleLinesTests : DriverModuleBridge
     public async Task Bringing_up_to_date_before_the_driver_is_up_is_a_sentence()
     {
         Assert.Contains(Refusals.DriverNotReady, await RefusalAsync(Module(), "TREES_SYNC_PLAN"));
+        Assert.Contains(Refusals.DriverNotReady, await RefusalAsync(Module(), "TREES_SYNC_PLAN", new { also = new[] { "game" } }));
+        Assert.Contains(Refusals.DriverNotReady, await RefusalAsync(Module(), "TREES_SYNC_PLAN", new { all = true }));
         Assert.Contains(Refusals.DriverNotReady, await RefusalAsync(Module(), "TREES_SYNC", new { only = new[] { "engine:main" } }));
+        // Which repositories a look would take (WSR7, D112) is read off the registry's checkouts too.
+        Assert.Contains(Refusals.DriverNotReady, await RefusalAsync(Module(), "TREES_SYNC_SCOPE"));
+    }
+
+    /// <summary>
+    /// Every door's press asks the sessions in use again inside each repository's hold (LEFT2), so a session a driver
+    /// opened since the look is seen: Settings' *Bring up to date* and Ask Daoris's sync card alike (WSR7 d). Read from
+    /// the modules' sources, as a reviewer would, since only a live driver can open a session between the two.
+    /// </summary>
+    [Fact]
+    public void Every_press_of_bringing_up_to_date_asks_the_sessions_in_use_again()
+    {
+        var modules = Path.Combine(WorkspaceRoot(), "src", "Daoris.Desktop", "Daoris.Desktop.Modules");
+        var presses = Directory.EnumerateFiles(modules, "DriverModule*.cs")
+            .SelectMany(path =>
+            {
+                var source = File.ReadAllText(path);
+                return System.Text.RegularExpressions.Regex.Matches(source, @"\.SyncAsync\(repositories\b")
+                    .Select(press => (File: Path.GetFileName(path), Call: source[press.Index..source.IndexOf(';', press.Index)]));
+            })
+            .ToList();
+
+        Assert.Contains(presses, press => press.File == "DriverModule.Lines.cs");
+        Assert.Contains(presses, press => press.File == "DriverModule.Help.cs");
+        Assert.All(presses, press => Assert.True(press.Call.Contains("inUseNow:", StringComparison.Ordinal),
+            $"{press.File} presses bringing up to date without asking the sessions in use again: {press.Call}"));
+    }
+
+    private static string WorkspaceRoot()
+    {
+        var at = new DirectoryInfo(AppContext.BaseDirectory);
+        while (at is not null && !File.Exists(Path.Combine(at.FullName, "daoris.json"))) at = at.Parent;
+        return at?.FullName ?? throw new InvalidOperationException("no workspace root above the test binary");
     }
 
     /// <summary>What each repository's line is needs the registry's checkouts, so before the driver is up it is the cold-start sentence.</summary>

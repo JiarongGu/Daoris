@@ -1,12 +1,15 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { type QueryClient, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useShenora } from '@shenora/react';
 import { keys } from '../queries';
 import type { LineChange, RepositoryLine } from '../settings/Lines';
 import type { LandingChange, RepositoryLanding } from '../settings/Landings';
 import type { LandedBranch, SweepBranch } from '../settings/Sweep';
-import type { LinePull, RebaseBranch, SyncPlan } from '../settings/Sync';
-import { call } from './call';
+import type { LinePull, RebaseBranch, SyncInclude, SyncPlan, SyncRepository } from '../settings/Sync';
+import { call, lookBound, pressBound } from './call';
 import type { DriverState } from './driver';
+
+// Whether a look or a press ended because the page stopped waiting (WSR7): the section says so where it was asked.
+export { stoppedWaiting } from './call';
 
 // Each repository's line, how work lands in it, the clean-up of the branches sessions left, and bringing it up
 // to date after a pull request merged (MOD3): the Workspace domain's machine half (WSR1, WSR2, WSR3, WSR6).
@@ -69,6 +72,8 @@ export const useSweep = () => {
     onSuccess: () => {
       void client.invalidateQueries({ queryKey: keys.sweep });
       void client.invalidateQueries({ queryKey: keys.allSessions });
+      // A session branch gone may leave its repository holding nothing of Daoris's (D112).
+      void client.invalidateQueries({ queryKey: treesSyncScopeKey });
     },
   });
 };
@@ -76,21 +81,106 @@ export const useSweep = () => {
 /** Where the last look at bringing repositories up to date is kept (WSR6). */
 const treesSyncKey = ['driver', 'trees-sync'] as const;
 
+/** What the last look was asked to take beyond the repositories holding Daoris's branches (WSR7, D112). */
+const treesSyncAskedKey = ['driver', 'trees-sync-asked'] as const;
+
+/** Which repositories hold Daoris's branches, and which have a checkout and hold none (D112). */
+const treesSyncScopeKey = ['driver', 'trees-sync-scope'] as const;
+
+/** What a look was asked to take beyond the repositories holding Daoris's branches, and how many it takes in all where known. */
+export type SyncAsked = { include: SyncInclude; count: number | null };
+
+/** How many repositories a look's bound allows for when the machine's reading of how many it takes is not in yet. */
+const UNKNOWN_COUNT = 32;
+
 /**
- * Bringing each repository with a checkout here up to date after a pull request merged (WSR6): the driver fetches
- * each line, then says what a press would do. Asked for, never on its own — looking reaches the network, as the
- * person — so it waits for `refetch`, which the card's *Look for updates* is.
+ * How many repositories a look takes (D112): those holding Daoris's branches and those `include` names, from the
+ * machine's last reading; null where that reading is not in yet.
  */
-export const useTreesSyncPlan = () => useQuery({
-  queryKey: treesSyncKey,
-  queryFn: () => call<SyncPlan>('TREES_SYNC_PLAN'),
-  enabled: false,
-  staleTime: Infinity,
-});
+const lookCount = (client: QueryClient, include: SyncInclude): number | null => {
+  const scope = client.getQueryData<{ repositories?: SyncRepository[] }>(treesSyncScopeKey)?.repositories;
+  return Array.isArray(scope)
+    ? scope.filter((each) => each.holds || include === 'all' || include.includes(each.repository)).length
+    : null;
+};
+
+/**
+ * How long a look may take (WSR7): a few repositories at a time, each within a fetch's bound, for as many as it takes —
+ * Ask Daoris's sync card's look as well as the screen's (`bridge/help.ts`).
+ */
+export const syncLookBound = (client: QueryClient, include: SyncInclude = []) =>
+  lookBound(lookCount(client, include) ?? UNKNOWN_COUNT);
+
+/** The payload that asks a look to take `include` beside the default (D112): every one, or the ones named. */
+const scopePayload = (include: SyncInclude): Record<string, unknown> | undefined =>
+  include === 'all' ? { all: true } : include.length > 0 ? { also: include } : undefined;
+
+/**
+ * Every repository with a checkout here, and whether it holds a branch of Daoris's (WSR7, D112): what a look takes by
+ * default, and the rest, listed apart for the person to include. Read on the machine, never fetched, so it is asked
+ * when the section shows. Desktop-only, like every look at this machine's checkouts.
+ */
+export const useTreesSyncScope = () => {
+  const { isAvailable } = useShenora();
+  return useQuery({
+    queryKey: treesSyncScopeKey,
+    queryFn: () => call<{ repositories: SyncRepository[] }>('TREES_SYNC_SCOPE'),
+    enabled: isAvailable,
+    // It asks git once in every repository with a checkout here, as the clean-up's list does.
+    staleTime: 60_000,
+  });
+};
+
+/**
+ * Bringing repositories up to date after a pull request merged (WSR6): the driver fetches each line, then says what a
+ * press would do. It takes the repositories holding Daoris's branches, and those `look` is told to include (D112).
+ * Asked for, never on its own — looking reaches the network, as the person — so it waits for `look`, which the
+ * section's *Look for updates* is.
+ *
+ * @remarks
+ * What the look was asked to take is kept beside its answer, so looking again keeps what the person included, and a
+ * section drawn again mid-look still says how many repositories it is looking at.
+ *
+ * **It waits as long as the host may fetch** (WSR7): a few repositories at a time, each within a fetch's bound. The
+ * bridge's default 30 seconds gave up on a look that ran for minutes, and the host's answer reached nobody. Where the
+ * machine's reading of how many it takes is not in yet, the bound is a workspace's worth.
+ */
+export const useTreesSyncPlan = () => {
+  const client = useQueryClient();
+  const plan = useQuery({
+    queryKey: treesSyncKey,
+    queryFn: () => {
+      const asked = client.getQueryData<SyncAsked>(treesSyncAskedKey);
+      return call<SyncPlan>('TREES_SYNC_PLAN', scopePayload(asked?.include ?? []), {
+        timeoutMs: lookBound(asked?.count ?? UNKNOWN_COUNT),
+      });
+    },
+    // A look is asked by a press, and one the page stopped waiting for is said, not asked again behind the person.
+    retry: false,
+    enabled: false,
+    staleTime: Infinity,
+  });
+  const asked = useQuery({
+    queryKey: treesSyncAskedKey,
+    queryFn: () => client.getQueryData<SyncAsked>(treesSyncAskedKey) ?? null,
+    enabled: false,
+    staleTime: Infinity,
+  });
+  return {
+    ...plan,
+    asked: asked.data ?? undefined,
+    /** Look: the default, and what `include` names beside it. */
+    look: (include: SyncInclude) => {
+      client.setQueryData<SyncAsked>(treesSyncAskedKey, { include, count: lookCount(client, include) });
+      return plan.refetch();
+    },
+  };
+};
 
 /**
  * The press: only the rows the list showed, each judged again by the driver, which does not fetch again. The
- * branches it moved or deleted change the clean-up's list and the sessions' trees, so those are asked again.
+ * branches it moved or deleted change the clean-up's list, the sessions' trees and which repositories hold Daoris's
+ * branches, so those are asked again. It waits for each row's replay, one after another (WSR7).
  */
 export const useTreesSync = () => {
   const client = useQueryClient();
@@ -101,10 +191,11 @@ export const useTreesSync = () => {
         rebases: { branch: RebaseBranch; replayed: boolean; message: string }[];
         deletes: { branch: LandedBranch; removed: boolean; message: string }[];
         changed: number;
-      }>('TREES_SYNC', { only }),
+      }>('TREES_SYNC', { only }, { timeoutMs: pressBound(only.length) }),
     onSuccess: () => {
       void client.invalidateQueries({ queryKey: keys.sweep });
       void client.invalidateQueries({ queryKey: keys.allSessions });
+      void client.invalidateQueries({ queryKey: treesSyncScopeKey });
     },
   });
 };
