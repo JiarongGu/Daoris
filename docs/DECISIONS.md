@@ -5574,10 +5574,10 @@ bar's 300px floor, and 中文.
 
 **Decision (NAME1a, the owner's round).** The owner: names in Settings and every other display must be named
 properly in both English and Chinese, *"since this is not just translation this is part of the ui element"*. Read
-where each of the 1,699 keys renders, 773 are names; many Chinese ones are English names translated (Settings'
+where each of the 1,699 keys renders, 772 are names; many Chinese ones are English names translated (Settings'
 「Daoris 自身的 AI」, 「智能体与账户」), sixteen concepts wear two or more words across screens (项目 and 仓库 for one
 view's rows, 同归 and 汇聚 for one view, 加入, 采用 and 接入 for *adopt*, 同步 for both *sync* and *bring up to
-date*), and English buttons split 78 lower-case to 32 capitalised. `docs/2026-10-01-naming-design.md` is the
+date*), and English buttons split 133 lower-case to 50 capitalised. `docs/2026-10-01-naming-design.md` is the
 contract. So:
 
 ### 1. What a name is

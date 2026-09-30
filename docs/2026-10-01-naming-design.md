@@ -20,9 +20,9 @@ D56; `docs/2026-09-29-dock-design.md`; the type tokens), and it follows UX5's me
 
 ## 1. What was found
 
-The catalogues hold 1,699 keys in 66 areas per language. Read where each renders, 773 are names a person
-reads as a label; the rest are sentences, tooltips, a row's meta fragments and screen-reader names. The drift is of three kinds, and the owner's examples are
-one of each:
+The catalogues hold 1,699 keys in 66 areas per language. Read where each renders, 772 are names a person
+reads as a label; the rest are sentences, tooltips, a row's meta fragments and screen-reader names. The
+drift is of three kinds, and the owner's examples are one of each:
 
 1. **A name translated instead of named.** Settings' own domains: *Daoris's own AI* is 「Daoris 自身的 AI」
    and *Agents & accounts* 「智能体与账户」, a possessive and a conjunction carried word for word into a
@@ -50,10 +50,11 @@ one of each:
    | park, and hold | *park*, *hold* | 暂停 for both |
    | a start that cannot run | *held* | 受阻, while *held* is also a repository the person paused |
 
-3. **English drift, which reads as two voices on one card.** Buttons: 78 start lower-case and 32
-   capitalised, so Agents & accounts shows *install · update · look again* beside *Log in · Make default ·
-   Remove*. Every other kind has settled: menu items 32 of 33 capitalised, section titles 30 of 35,
-   setting rows 18 of 18, empty-state headlines 16 of 17, pills 20 of 21 lower-case. And Chinese leaves
+3. **English drift, which reads as two voices on one card.** Buttons: of the 183 names of acts, 133
+   start lower-case and 50 capitalised, so Agents & accounts shows *install · update · look again* beside
+   *Log in · Make default · Remove*. Every other kind has settled, counted where a key renders as that
+   element's text: menu items 32 of 33 capitalised, section titles 30 of 35, setting rows 18 of 18,
+   empty-state headlines 16 of 17, pills 20 of 21 lower-case. And Chinese leaves
    concept words in English inside a sentence: 「本 quest」, 「自己的 agent」, 「以及 Ask Daoris」.
 
 ## 2. What a name is
@@ -114,7 +115,7 @@ room reported every row.)
   quest*, *Manage engine*). A `tab` is one noun. A `section` is a noun phrase naming what the section
   holds; the house's embedded question (*What needs you*, *How work lands*) stays where the noun would be
   jargon. A `field` is a noun phrase naming the value (*Theme*, *Daoris home*); a switch's label says what
-  on does (*Tell me when a session parks*). A `button` is a verb first, in the imperative, with its object
+  on does (*Notify me when a session parks*). A `button` is a verb first, in the imperative, with its object
   named as the glossary names it (*Publish quest*, *Discard tree*), and never a pronoun where the object
   can be named (*Register it*, *Stop it*, *Import them*). A `status` is a past participle for an outcome
   (*done*, *declined*), *-ing* for a state in progress (*working*), an adjective for a condition (*idle*,
@@ -133,14 +134,15 @@ room reported every row.)
 
 - **Grammar.** A `nav` is one noun of two to four characters, with no 的, no 与 or 和, and no possessive
   (「智能体」, not 「智能体与账户」). A `tab` is the same. A `section` is a noun phrase that names what the
-  part holds (「落地方式」, 「账户用量」); **a Chinese title is never an English question carried over**
+  part holds (「落地方式」, 「启动配置」); **a Chinese title is never an English question carried over**
   (「各账户各自承担了多少」 is a translation of *What each account has carried*, and reads as one). A
   `field` is a noun phrase; a switch's label is a short clause of what on does.
 - **A button is verb and object (动宾).** The verb alone where the button sits in its object's own
   drawer or card (「接下」 in a quest's drawer); the verb and the glossary's object otherwise
   (「发布委托」, 「丢弃工作树」). Two-character verbs where one exists (发布, 采纳, 退回, 丢弃, 清理,
   移除, 删除); a four-character phrase where it is the natural one (重新检查, 立即同步). **Never a
-  pronoun** (它, 它们, 这个): name the object or drop it. Never 了, 吧 or 呢. The confirming second
+  pronoun standing for the object** (它, 它们): name the object or drop it; 这个 before the object's name
+  (「信任这个文件夹」) names it. Never 了, 吧 or 呢. The confirming second
   press is 确认 and the verb (「确认删除」); the back-out is 「取消」, not 「算了」, which reads as a shrug
   where English's *Never mind* reads as courtesy. A door is 打开 and the place's name (「打开会话」),
   except in a menu, which is a door already.
@@ -295,7 +297,7 @@ door whose destination moved. Those are named in the audit's rows, and they are 
 - **Failing the build now.** See §6: a gate red before its renames is switched off, not obeyed.
 - **Title Case for buttons and menus.** Windows, where the platform runs, writes sentence case, and so
   does every other kind on the page already.
-- **Lower case for every button**, the majority today. It keeps 78 strings and changes 32, and leaves a
+- **Lower case for every button**, the majority today. It keeps 133 names and changes 50, and leaves a
   button's name in a different case from the section title above it and the menu item that does the same
   act.
 - **One word for chat and conversation.** A chat is a kind of session, started by the person to talk;
