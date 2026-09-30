@@ -26,6 +26,9 @@ public sealed class HelpSettingProposalsTests : HelpProposalsFixture
     [InlineData("across", "game", null, "write-to engine --clear", "daoris driver across game write-to engine --clear", "no longer write into `engine`")]
     [InlineData("cap", null, null, "3", "daoris driver cap 3", "at most 3 sessions at once")]
     [InlineData("adapter", null, null, "claude-code-acp", "daoris driver adapter claude-code-acp", "`claude-code-acp`")]
+    // HELP10: a quest its strikes parked, started again as the drawer's Retry and `daoris driver retry` do, `#` or not.
+    [InlineData("retry", "q1a2b3c4", null, null, "daoris driver retry q1a2b3c4", "`#q1a2b3c4` may be started again")]
+    [InlineData("retry", "#q1a2b3c4", null, null, "daoris driver retry q1a2b3c4", "what already happened is still in the records")]
     public void A_setting_is_planned_as_what_it_changes_and_the_command_that_does_the_same(
         string door, string? target, string? workspace, string? value, string terminal, string says)
     {
@@ -75,6 +78,21 @@ public sealed class HelpSettingProposalsTests : HelpProposalsFixture
     }
 
     /// <summary>
+    /// HELP10: a retry is the edit <c>RETRY_QUEST</c> and <c>daoris driver retry</c> make — the quest forgiven at the
+    /// strike limit as it stands when applied, not erased, so the next failures park it again.
+    /// </summary>
+    [Fact]
+    public void Applying_a_retry_marks_the_quest_forgiven_at_the_strike_limit_as_the_drawers_route_does()
+    {
+        var plan = HelpProposals.Plan(Setting("retry", "#q1a2b3c4"), DriverConfig.Empty.WithStrikes(3), Facts);
+
+        var config = plan.Apply!(DriverConfig.Empty.WithStrikes(5));
+
+        Assert.Equal(5, config.ForgivenAt("q1a2b3c4"));
+        Assert.Contains("5 more failure(s) will park it again", HelpProposals.Plan(Setting("retry", "q1a2b3c4"), config, Facts).Describe);
+    }
+
+    /// <summary>
     /// HELP9: every door the kind names is one it plans, so the doors Ask Daoris's coverage is held against
     /// (<c>HelpCoverageTests</c>) are doors a proposal can take, and none is named that falls to the refusal.
     /// </summary>
@@ -86,8 +104,8 @@ public sealed class HelpSettingProposalsTests : HelpProposalsFixture
             ("drive", "engine", null, null), ("undrive", "engine", null, null), ("hold", "engine", null, null),
             ("resume", "engine", null, null), ("trees", "engine", null, "off"), ("line", "engine", null, "main"),
             ("landing", "engine", null, "merge"), ("across", "engine", null, "read on"), ("intake", null, null, "off"),
-            ("helper", null, null, "claude-code"), ("strikes", null, null, "0"), ("timeout", null, null, "30"),
-            ("notify", null, null, "on"), ("cap", null, null, "1"), ("adapter", null, null, "claude-code"),
+            ("helper", null, null, "claude-code"), ("strikes", null, null, "0"), ("retry", "q1a2b3c4", null, null),
+            ("timeout", null, null, "30"), ("notify", null, null, "on"), ("cap", null, null, "1"), ("adapter", null, null, "claude-code"),
         ];
 
         Assert.Equal(new HelpSettingProposals().Doors, samples.Select(sample => sample.Door));
@@ -115,6 +133,10 @@ public sealed class HelpSettingProposalsTests : HelpProposalsFixture
     [InlineData("across", "engine", null, "peek", "`across` sets `read on|off|--clear` or `write-to <other> [--clear]`")]
     [InlineData("cap", null, null, "0", "`cap 0` is not a change the driver makes")]
     [InlineData("adapter", null, null, "gpt-agent", "no agent `gpt-agent`")]
+    // HELP10: a quest id a helper can invent, or one not parked, which forgiven would run past its strikes (D110).
+    [InlineData("retry", "q9none00", null, null, "`#q9none00` is not parked")]
+    [InlineData("retry", "engine", null, null, "`#engine` is not parked")]
+    [InlineData("retry", null, null, null, "`retry` names the quest its failed sessions parked")]
     public void What_the_route_would_refuse_is_refused_in_its_words(
         string door, string? target, string? workspace, string? value, string says)
     {

@@ -148,15 +148,18 @@ did not start*. A malformed rule, a scope with no name or an empty reason is ref
 written. With no home at all, every proposal is refused.
 
 **Ask Daoris proposes the same way, and never applies** (HELP1c, D89). Its conversation's connector
-offers `setting_propose` (one of the `daoris driver` doors: drive, undrive, hold, resume, trees,
-line, landing, intake, helper, strikes, timeout, notify) and `ask_propose` (something to start, as
+offers `setting_propose` (one of the `daoris driver` doors: every verb but `list`, since HELP9 and HELP10
+`across`, `cap`, `adapter` and `retry` among them) and `ask_propose` (something to start, as
 an ask at a workspace), and since HELP6 `agent_propose` (an agent's update, or a pin to one exact
-version), `delete_propose` (a quest or an ask made by mistake), `agent_settings_propose` (an account's
+version; since HELP10 also the account it runs as by default), `delete_propose` (a quest or an ask made by mistake), `agent_settings_propose` (an account's
 own model and effort) and `go_propose` (a screen to open, changing nothing), and since PLUG9
 `plugin_propose` (a plugin that has landed, added from its folder in a repository's checkout, or one
 installed here switched on or off; since D103 also one of the install's own plugins by its id in
 `offer`, or an `update` of an installed one from where it came from), and since WSR5b `hand_propose` (a
-branch a landing made, handed to a landing plugin that pushes it and opens the pull request). Each writes
+branch a landing made, handed to a landing plugin that pushes it and opens the pull request), and since
+HELP10 `browser_propose` (Daoris's browser's settings and favorites, as Settings → Browser sets them) and
+`sync_propose` (bringing repositories up to date after a pull request merged; the driver's card looks first, which
+fetches, and only then offers the press). Each writes
 one file under
 `<home>/help/proposals/`, the same home as the rules proposals, checked here for its shape only:
 whether the route would take it is the driver's, which judges it with the route's own rules before

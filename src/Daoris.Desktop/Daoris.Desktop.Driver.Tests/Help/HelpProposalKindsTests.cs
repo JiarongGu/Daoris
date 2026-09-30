@@ -28,6 +28,8 @@ public sealed partial class HelpProposalKindsTests
         ("go", "go_propose"),
         ("plugin", "plugin_propose"),
         ("hand", "hand_propose"),
+        ("browser", "browser_propose"),
+        ("sync", "sync_propose"),
     ];
 
     internal static string RepositoryRoot()

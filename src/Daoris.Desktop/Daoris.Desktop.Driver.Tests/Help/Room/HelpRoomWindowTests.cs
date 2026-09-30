@@ -32,4 +32,19 @@ public sealed class HelpRoomWindowTests
         // It cannot see the window: what it is told of it comes with the message, and otherwise it asks.
         Assert.Contains("You cannot see the window", agents);
     }
+
+    /// <summary>
+    /// HELP10: PREVIEW1's file preview (D111) — its two doors, where it opens, that it reads and never writes — so the
+    /// helper asked how to read a file an agent touched points at it rather than at an editor there is none of.
+    /// </summary>
+    [Fact]
+    public void The_room_says_a_file_opens_in_a_preview_in_the_right_side_bar()
+    {
+        var window = new HelpRoomWindow().Render(HelpRoomFixture.Machine);
+
+        Assert.Contains("A file path in a session's tool card, or a file's button in the review's list, opens a preview", window);
+        Assert.Contains("a tab of the right side bar", window);
+        Assert.Contains("as it is on disk now, read-only", window);
+        Assert.Contains("In this conversation a path is plain text.", window);
+    }
 }

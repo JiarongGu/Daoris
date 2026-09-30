@@ -53,7 +53,8 @@ a `SessionTree`:
   Added after it guessed at a menu that does not exist.
 - **`CLAUDE.md`** carrying `@AGENTS.md`, and **`.claude/settings.json`** allowing the family's read
   tools, the connector's `setting_propose` and `ask_propose` (and since HELP6 its four further
-  `*_propose` tools, §9.6, since PLUG9 `plugin_propose`, §9.7, and since WSR5b `hand_propose`, §9.8), and nothing else. Over the protocol door
+  `*_propose` tools, §9.6, since PLUG9 `plugin_propose`, §9.7, since WSR5b `hand_propose`, §9.8, and since HELP10
+  `browser_propose` and `sync_propose`, §9.10), and nothing else. Over the protocol door
   a request for anything unlisted is refused by construction (D52), which is the point: it reads, and
   it proposes.
 
@@ -100,8 +101,16 @@ never a proposal of this kind: it is an ask at that repository's workspace, sinc
 person and is made with tests and reviewed like any other work.
 
 **Reading and writing across, a cap, an adapter** (HELP9, §9.9, D110): `across`, `cap` and `adapter` are
-setting doors, so every `daoris driver` verb but `list` and `retry` is one. A write-to's card says applying it
-is the person's standing say-so for writing across.
+setting doors, and since HELP10 (§9.10) `retry` of a quest the driver parked, so every `daoris driver` verb but
+`list` is one. A write-to's card says applying it is the person's standing say-so for writing across.
+
+**The browser's settings** (HELP10, §9.10): which browser sessions and the person use, where the page's links
+open, other software's extensions, and a favorite kept or dropped (`browser_propose`), applied through the
+Browser screen's own edits.
+
+**Bringing repositories up to date** (HELP10, §9.10, D109): `sync_propose`, a card with the screen's two presses,
+since looking fetches as the person: *look for updates* lists what the press would do on the card, and *apply*
+does those rows only.
 
 **A hand-off** (WSR5b, §9.8, D102): a branch a landing made and recorded, handed to a landing plugin
 (`hand_propose`), applied through the review's own door. It is the one card whose press leads to a push:
@@ -324,6 +333,44 @@ line git can name. With an agent named, a starter is also a first message.
      that changes something is a row of its doors table.
    - **What the gates do not cover:** a real helper choosing `across`, `cap` or `adapter`, and the write-to card
      on the window in both themes.
+10. **HELP10**: the doors HELP9 left owed, and the ones built since (2026-09-30, D110 applied). *Built:*
+   - **Retry a parked quest.** `retry` is a setting door, its target the quest by id (`#` or not), so every
+     `daoris driver` verb but `list` is one. The loop keeps what each tick parked by its strikes
+     (`ParkedQuests`, beside the trust holds, replaced whole each tick), which is the verdict the quest's drawer
+     shows its Retry by; the facts carry it (`HelpMachineFacts.Parked`) and a quest not on it is refused, since a
+     helper can invent an id and forgiving one not parked lets it run past its strikes. Applied as `RETRY_QUEST`'s
+     own edit, forgiven at the strike limit standing at the press. The room lists the parked quests by id and
+     repository, none said as none.
+   - **Make an account the default.** `agent_propose` takes a third door, `default`: the account (as the file's
+     `value`) an agent runs as, for the machine or one workspace, judged as `daoris agent profile default` judges it
+     (an account that exists, a workspace this machine has). A door's default is its owner's (AGT7), so the card and
+     its command name the owner. Applied through `IHelpDoors.SetDefaultAccountAsync`, which is `HARNESS_ACTION`'s own
+     `profile-default` (one method the route and the door call) and asks the roster again, as the route does.
+     *Left out:* clearing a default back to the tool's own home, which the screen offers and no terminal verb does.
+   - **The browser's settings.** A ninth kind, `browser_propose {door, value, address?, title?}`: the `daoris
+     browser` verbs that change something (`use`, `links`, `extensions`, `favorite add|remove`), a favorite's address
+     as the file's target. The files are the desktop modules', so the facts carry what `BrowserModule.HelpFacts`
+     read of them, with its own reader of an address, and none read is no proposal. Judged by the Browser screen's
+     routes: the values each takes, a favorite that is a web page, one removed that is kept, and a file it could not
+     read never written over, each in the route's words; Edge where none is installed says so before Apply, as the
+     screen does. Applied through `IHelpDoors.ChangeBrowser`, which is `BrowserModule`'s own edit (each route now one
+     method the route and the door call). The room says how the browser is set and the favorites it keeps.
+   - **A go to Permissions → *Reading and writing across*.** A part of `permissions` on both twins (`HelpPlaces`,
+     `help/places.ts`), found by the `settings-across` id the card has carried since READ1, now a `SettingsAnchor`.
+   - **The room says PREVIEW1's file preview exists** (D111), in *The window*: a path in a session's tool card, or a
+     file's button in the review, opens a read-only preview as a tab of the right side bar, and in Ask Daoris's own
+     conversation a path is plain text.
+   - **Bring up to date** (WSR6, D109). A tenth kind, `sync_propose {repository?}`, for one repository or every one
+     with a checkout here. D109 fetches nothing until the person presses (looking reaches the network as them), so
+     the helper's proposal lists nothing: **the card has the screen's two presses.** Its first, *look for updates*,
+     is an Apply that runs `TREES_SYNC_PLAN`'s own list through `IHelpDoors.SyncPlanAsync` (the same checkouts and
+     sessions, fetching each line) and keeps every row in the proposal's file (`listed`: its key as `TREES_SYNC`'s
+     `only` takes it, its step, whether it moves, the terminal's sentence), and the card stays; a look with nothing
+     to do settles it, and says so. Its second, *apply*, is `TREES_SYNC`'s own press through `IHelpDoors.SyncAsync`,
+     on the listed rows that move and nothing else, fetching nothing and judging each again; what did not happen is
+     said as the terminal says it. The rows are the screen's selection (a line that moves, a branch that replays, a
+     landed branch that may go). The room names the kind and the card's two buttons, and a delete card's own word,
+     which it had given as *apply*.
 
 ## 10. Not chosen
 

@@ -18,13 +18,16 @@ namespace Daoris.Desktop;
 ///
 /// <para><b>Shell-only, like every machine domain</b> (D47 §4): the service has no door onto these
 /// files, and a browser over a keyed remote learns nothing of them.</para>
+///
+/// <para><b>Each change is one method</b> (HELP10) that its route and Ask Daoris's door both call, so the
+/// two cannot drift: the same check, the same refusal for a file it could not read, the same write.</para>
 /// </remarks>
 public sealed class BrowserModule(IEventBus events) : ModuleBase(events: events)
 {
     public override string ModuleName => "DAORIS.BROWSER";
 
     /// <summary>The home, resolved per call: the person may edit the files by hand between calls.</summary>
-    private static string Home => Path.GetDirectoryName(DaorisHome.Require("browser"))!;
+    public static string Home => Path.GetDirectoryName(DaorisHome.Require("browser"))!;
 
     protected override Task<object?> RouteMessageAsync(
         IpcRequest request, IModuleContext context, CancellationToken cancellationToken)
@@ -36,83 +39,116 @@ public sealed class BrowserModule(IEventBus events) : ModuleBase(events: events)
                 return Task.FromResult<object?>(State(home));
 
             case "ADD_FAVORITE":
-            {
-                var address = PayloadHelper.GetRequiredValue<string>(request.Payload, "address");
-                var title = PayloadHelper.GetOptionalValue<string>(request.Payload, "title");
-                if (BrowserFavorites.Address(address) is null)
-                {
-                    throw Refusals.Because(
-                        Refusals.BrowserNotAPage,
-                        $"`{address}` is not a web page, so it cannot be a favorite.",
-                        ("address", address));
-                }
-
-                Unreadable(BrowserFavorites.Read(home).Problem, BrowserFavorites.FilePath(home));
-                BrowserFavorites.Add(home, address, title);
+                AddFavorite(
+                    home, PayloadHelper.GetRequiredValue<string>(request.Payload, "address"),
+                    PayloadHelper.GetOptionalValue<string>(request.Payload, "title"));
                 return Task.FromResult<object?>(State(home));
-            }
 
             case "REMOVE_FAVORITE":
-            {
-                var address = PayloadHelper.GetRequiredValue<string>(request.Payload, "address");
-                Unreadable(BrowserFavorites.Read(home).Problem, BrowserFavorites.FilePath(home));
-                BrowserFavorites.Remove(home, address);
+                RemoveFavorite(home, PayloadHelper.GetRequiredValue<string>(request.Payload, "address"));
                 return Task.FromResult<object?>(State(home));
-            }
 
             case "SET_EXTENSIONS":
-            {
-                var extensions = PayloadHelper.GetRequiredValue<string>(request.Payload, "extensions");
-                if (extensions is not (ExtensionsSetting.Offer or ExtensionsSetting.Refuse))
-                {
-                    throw Refusals.Because(
-                        Refusals.BrowserSettingUnknown,
-                        $"The extensions setting is `offer` or `refuse`, not `{extensions}`.",
-                        ("value", extensions));
-                }
-
-                Unreadable(BrowserSettings.Read(home).Problem, BrowserSettings.FilePath(home));
-                BrowserSettings.SetExtensions(home, extensions);
+                SetExtensions(home, PayloadHelper.GetRequiredValue<string>(request.Payload, "extensions"));
                 return Task.FromResult<object?>(State(home));
-            }
 
             case "SET_BROWSER":
-            {
-                var browser = PayloadHelper.GetRequiredValue<string>(request.Payload, "browser");
-                if (browser is not (BrowserChoice.Daoris or BrowserChoice.Edge))
-                {
-                    throw Refusals.Because(
-                        Refusals.BrowserChoiceUnknown,
-                        $"The browser is `daoris` or `edge`, not `{browser}`.",
-                        ("value", browser));
-                }
-
-                Unreadable(BrowserSettings.Read(home).Problem, BrowserSettings.FilePath(home));
-                BrowserSettings.SetBrowser(home, browser);
+                SetBrowser(home, PayloadHelper.GetRequiredValue<string>(request.Payload, "browser"));
                 return Task.FromResult<object?>(State(home));
-            }
 
             // Where the page's links open (BRW7): the page reads the answer back and routes each click
             // by it, so this one holds at once rather than at the browser's next start.
             case "SET_LINKS":
-            {
-                var links = PayloadHelper.GetRequiredValue<string>(request.Payload, "links");
-                if (links is not (LinksSetting.System or LinksSetting.Daoris))
-                {
-                    throw Refusals.Because(
-                        Refusals.BrowserLinksUnknown,
-                        $"Links open in `system` or `daoris`, not `{links}`.",
-                        ("value", links));
-                }
-
-                Unreadable(BrowserSettings.Read(home).Problem, BrowserSettings.FilePath(home));
-                BrowserSettings.SetLinks(home, links);
+                SetLinks(home, PayloadHelper.GetRequiredValue<string>(request.Payload, "links"));
                 return Task.FromResult<object?>(State(home));
-            }
 
             default:
                 throw UnknownType(request);
         }
+    }
+
+    /// <summary>Keep a page: <c>ADD_FAVORITE</c>'s check and write, and Ask Daoris's door's (HELP10).</summary>
+    public static void AddFavorite(string home, string address, string? title)
+    {
+        if (BrowserFavorites.Address(address) is null)
+        {
+            throw Refusals.Because(
+                Refusals.BrowserNotAPage,
+                $"`{address}` is not a web page, so it cannot be a favorite.",
+                ("address", address));
+        }
+
+        Unreadable(BrowserFavorites.Read(home).Problem, BrowserFavorites.FilePath(home));
+        BrowserFavorites.Add(home, address, title);
+    }
+
+    /// <summary>Stop keeping a page: <c>REMOVE_FAVORITE</c>'s write, and Ask Daoris's door's (HELP10).</summary>
+    public static void RemoveFavorite(string home, string address)
+    {
+        Unreadable(BrowserFavorites.Read(home).Problem, BrowserFavorites.FilePath(home));
+        BrowserFavorites.Remove(home, address);
+    }
+
+    /// <summary>Offer or refuse other software's extensions: <c>SET_EXTENSIONS</c>'s check and write, and Ask Daoris's door's (HELP10).</summary>
+    public static void SetExtensions(string home, string extensions)
+    {
+        if (extensions is not (ExtensionsSetting.Offer or ExtensionsSetting.Refuse))
+        {
+            throw Refusals.Because(
+                Refusals.BrowserSettingUnknown,
+                $"The extensions setting is `offer` or `refuse`, not `{extensions}`.",
+                ("value", extensions));
+        }
+
+        Unreadable(BrowserSettings.Read(home).Problem, BrowserSettings.FilePath(home));
+        BrowserSettings.SetExtensions(home, extensions);
+    }
+
+    /// <summary>Choose the browser (BRW12): <c>SET_BROWSER</c>'s check and write, and Ask Daoris's door's (HELP10).</summary>
+    public static void SetBrowser(string home, string browser)
+    {
+        if (browser is not (BrowserChoice.Daoris or BrowserChoice.Edge))
+        {
+            throw Refusals.Because(
+                Refusals.BrowserChoiceUnknown,
+                $"The browser is `daoris` or `edge`, not `{browser}`.",
+                ("value", browser));
+        }
+
+        Unreadable(BrowserSettings.Read(home).Problem, BrowserSettings.FilePath(home));
+        BrowserSettings.SetBrowser(home, browser);
+    }
+
+    /// <summary>Choose where the page's links open (BRW7): <c>SET_LINKS</c>'s check and write, and Ask Daoris's door's (HELP10).</summary>
+    public static void SetLinks(string home, string links)
+    {
+        if (links is not (LinksSetting.System or LinksSetting.Daoris))
+        {
+            throw Refusals.Because(
+                Refusals.BrowserLinksUnknown,
+                $"Links open in `system` or `daoris`, not `{links}`.",
+                ("value", links));
+        }
+
+        Unreadable(BrowserSettings.Read(home).Problem, BrowserSettings.FilePath(home));
+        BrowserSettings.SetLinks(home, links);
+    }
+
+    /// <summary>
+    /// What Ask Daoris judges a browser proposal by (HELP10): the two files as <c>STATE</c> reads them, why either could
+    /// not be read, whether an Edge is installed, and this module's own reader of an address.
+    /// </summary>
+    public static HelpBrowserFacts HelpFacts(string home)
+    {
+        var favorites = BrowserFavorites.Read(home);
+        var settings = BrowserSettings.Read(home);
+        return new HelpBrowserFacts(settings.Browser, settings.Links, settings.Extensions, [.. favorites.Favorites.Select(favorite => favorite.Url)])
+        {
+            Problem = settings.Problem,
+            FavoritesProblem = favorites.Problem,
+            EdgeFound = EdgeBrowser.Locate() is not null,
+            Page = BrowserFavorites.Address,
+        };
     }
 
     /// <summary>A file this could not read is never written over, and the page says which, and why.</summary>

@@ -47,6 +47,9 @@ internal interface IHelpProposalKind
 /// <summary>What a kind's Apply is handed (MOD6): the proposal, its plan, the doors, and the conversation for what comes after.</summary>
 internal sealed class HelpApplying(string home, HelpProposal proposal, HelpPlan plan, IHelpDoors doors, Action<string> later)
 {
+    /// <summary>The Daoris home the proposal's file is under, for a kind that keeps what its first press found (HELP10).</summary>
+    public string Home => home;
+
     public HelpProposal Proposal => proposal;
 
     public HelpPlan Plan => plan;
@@ -82,6 +85,8 @@ internal static class HelpProposalKinds
         new HelpGoProposals(),
         new HelpPluginProposals(),
         new HelpHandProposals(),
+        new HelpBrowserProposals(),
+        new HelpSyncProposals(),
     ];
 
     /// <summary>The class that judges a kind, matched exactly as the file spells it; null for a kind none judges.</summary>

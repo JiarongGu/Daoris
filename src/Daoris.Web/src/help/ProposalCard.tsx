@@ -29,15 +29,27 @@ export type HelpPluginShown = {
  * Since HELP6 a kind for each door built since: an agent's update or pin, an account's model and effort, a
  * delete of a record made by mistake, and a go to a screen, which has no command since it changes nothing.
  * Since PLUG9 a plugin that has landed, added from its folder, or one switched on or off, with what it runs.
- * Since WSR5b a branch a landing made, handed to a landing plugin, which pushes it.
+ * Since WSR5b a branch a landing made, handed to a landing plugin, which pushes it. Since HELP10 Daoris's
+ * browser's settings, a card as a setting's is, and bringing repositories up to date, which is looked at first.
  */
 export type HelpProposal = {
   id: string;
-  kind: 'setting' | 'ask' | 'agent' | 'account' | 'delete' | 'go' | 'plugin' | 'hand';
+  kind: 'setting' | 'ask' | 'agent' | 'account' | 'delete' | 'go' | 'plugin' | 'hand' | 'browser' | 'sync';
   describe: string;
   terminal: string;
   why: string;
   plugin?: HelpPluginShown | null;
+  /** Bringing up to date (HELP10): whether the person has looked, and every row the look listed. */
+  sync?: HelpSyncShown | null;
+};
+
+/**
+ * What a bring-up-to-date card shows (HELP10, WSR6): whether the person has looked — the press that fetches (D109) —
+ * and each row the look listed, in the terminal's words, and whether the press moves it.
+ */
+export type HelpSyncShown = {
+  looked: boolean;
+  rows: { key: string; step: 'line' | 'replay' | 'delete'; moves: boolean; says: string }[];
 };
 
 /** A command as a terminal takes it: a word holding a space quoted, as the driver spells it. */
@@ -91,6 +103,10 @@ function PluginRuns({ plugin }: { plugin: HelpPluginShown }) {
  * it carries no command and its press is *go there*. A plugin (PLUG9) shows what will run before Apply,
  * and an add says its folder is copied in and that nothing starts at the press. A hand-off (WSR5b) says
  * before Apply that its plugin pushes the branch as the person, the one card whose press leads to a push.
+ *
+ * **Bringing up to date has the screen's two presses** (HELP10, D109): looking fetches as the person, so the
+ * card's first press is *look for updates*, and only once the driver has listed what the press would do does it
+ * show those rows, each as the terminal says it, with Apply, which does only the rows that move.
  */
 export function ProposalCard({ proposal, pending = false, onApply, onDismiss }: {
   proposal: HelpProposal;
@@ -103,6 +119,8 @@ export function ProposalCard({ proposal, pending = false, onApply, onDismiss }: 
   const going = proposal.kind === 'go';
   const plugin = proposal.kind === 'plugin' ? proposal.plugin ?? null : null;
   const handing = proposal.kind === 'hand';
+  const syncing = proposal.kind === 'sync' ? proposal.sync ?? { looked: false, rows: [] } : null;
+  const looking = syncing !== null && !syncing.looked;
 
   return (
     <li className={deleting
@@ -113,10 +131,28 @@ export function ProposalCard({ proposal, pending = false, onApply, onDismiss }: 
         {t(deleting ? 'help.proposal.titleDelete'
           : going ? 'help.proposal.titleGo'
             : proposal.kind === 'plugin' ? 'help.proposal.titlePlugin'
-              : handing ? 'help.proposal.titleHand' : 'help.proposal.title')}
+              : handing ? 'help.proposal.titleHand'
+                : syncing ? 'help.proposal.titleSync' : 'help.proposal.title')}
       </p>
       <p className="m-0 mt-1 text-small text-ink"><Inline text={proposal.describe} /></p>
       {plugin && <PluginRuns plugin={plugin} />}
+      {looking && <p className="m-0 mt-1 text-meta text-ink-soft">{t('help.proposal.syncLook')}</p>}
+      {syncing?.looked && (
+        <>
+          <ul aria-label={t('help.proposal.syncRows')} className="m-0 mt-1 flex list-none flex-col gap-0.5 p-0">
+            {syncing.rows.map((row) => (
+              <li key={`${row.step}:${row.key}`} className="m-0 text-meta text-ink-soft">
+                <span className={row.moves ? 'font-semibold text-accent' : 'text-ink-faint'}>
+                  {t(row.moves ? 'settings.sync.moves' : 'settings.sync.stays')}
+                </span>{' '}
+                {/* The driver's sentence, the terminal's, carried as it said it. */}
+                <Inline text={row.says} />
+              </li>
+            ))}
+          </ul>
+          <p className="m-0 mt-1 text-meta text-ink-soft">{t('help.proposal.syncNote')}</p>
+        </>
+      )}
       {plugin?.copied && <p className="m-0 mt-1 text-meta text-ink-faint">{t('help.proposal.plugin.copied')}</p>}
       {plugin?.replaced && <p className="m-0 mt-1 text-meta text-ink-faint">{t('help.proposal.plugin.replaced')}</p>}
       {/* The catalogue's sentence, carried through as a value: one copy of it, the driver's. */}
@@ -133,7 +169,7 @@ export function ProposalCard({ proposal, pending = false, onApply, onDismiss }: 
       {proposal.why && <p className="m-0 mt-1 text-small text-ink-soft"><Inline text={t('help.proposal.why', { why: proposal.why })} /></p>}
       <div className="mt-2 flex flex-wrap gap-2">
         <Button variant={deleting ? 'danger' : 'primary'} disabled={pending} onClick={() => onApply(proposal.id)}>
-          {t(deleting ? 'help.proposal.delete' : going ? 'help.proposal.go' : 'help.proposal.apply')}
+          {t(deleting ? 'help.proposal.delete' : going ? 'help.proposal.go' : looking ? 'help.proposal.look' : 'help.proposal.apply')}
         </Button>
         <Button variant="ghost" disabled={pending} onClick={() => onDismiss(proposal.id)}>{t('help.proposal.dismiss')}</Button>
       </div>

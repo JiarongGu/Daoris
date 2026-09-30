@@ -8619,3 +8619,16 @@ an install that is a `Daoris.exe` launcher, the application under `app/` and the
 (CHR4, D93). Agents open tabs in it through a relay, and Daoris's favorites
 and the extensions setting are in Settings → Browser and `daoris browser`
 (`docs/2026-09-28-chromium-embedding-evidence.md`).
+
+
+## HELP10 — the doors HELP9 left owed, and the two built since (2026-10-01)
+
+> - [ ] **HELP10 — the doors HELP9 left owed, and the two built since** (building, D112; D110 names them). Retrying a
+> parked quest (the facts must say which quests are parked, `HelpFactsAsync`), making an account the default
+> (a door on `IHelpDoors` that `ScreenDoors` makes with `HARNESS_ACTION`'s own profile-default), and the
+> browser's settings (a `BrowserModule` door); then Ask Daoris proposing WSR6's *Bring up to date* (a kind,
+> with the plan shown before Apply) and the room saying PREVIEW1's file preview exists; and a go to
+> Permissions → *Reading and writing across* (a `settings-across` anchor). `HelpCoverageTests` moves each
+> from owed to a door.
+
+**Outcome** (built by a subagent, merged with `tools/merge-branch.mjs`, every gate; no decision, a note under D110): HELP10 (2026-10-01): the three doors HELP9 left owed, and the two built since, are now Ask Daoris proposals. `retry` is a setting door, judged against the quests the loop's last tick parked (`ParkedQuests`, the verdict the drawer shows Retry by) and applied as `RETRY_QUEST`'s own edit. The agent kind's `default` makes an account the one an agent runs as, through `HARNESS_ACTION`'s own `profile-default`. The new `browser` kind sets Daoris's browser and its favorites through `BrowserModule`'s own edits. A go reaches Permissions → *Reading and writing across* through the new `settings-across` anchor, and the room describes PREVIEW1's file preview. WSR6's *Bring up to date* is the new `sync` kind: its card keeps the screen's two presses, because D109 fetches only on the person's press. The first press lists `TREES_SYNC_PLAN`'s rows onto the card; the second applies `TREES_SYNC` to those rows only. `HelpCoverageTests` now holds every owed control as a door, and holds `daoris-driver trees sync` to the sync kind. No new decision was needed; a note under D110 records the work. The window look in both themes, a real helper choosing the tools, and the Process-half test for the default are still to do.

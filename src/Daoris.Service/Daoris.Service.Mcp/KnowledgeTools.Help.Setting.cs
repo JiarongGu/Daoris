@@ -12,15 +12,16 @@ public sealed partial class KnowledgeTools
         + "apply. It becomes a card saying what it changes and the terminal command that does the same, with "
         + "Apply and Not now; nothing changes until the person presses Apply, and their answer comes back as "
         + "their next message. Each door is a `daoris driver` verb: drive, undrive, hold, resume, trees, line, "
-        + "landing, across, intake, helper, strikes, timeout, notify, cap, adapter. An `across` write-to is the "
-        + "person's standing say-so for one repository's sessions to write into another. Never for a push, a merge, "
-        + "a discard, a sign-in or a key: those stay the person's own presses.")]
+        + "landing, across, intake, helper, strikes, retry, timeout, notify, cap, adapter. An `across` write-to is the "
+        + "person's standing say-so for one repository's sessions to write into another; `retry` starts a quest its "
+        + "failed sessions parked, one the room lists. Never for a push, a merge, a discard, a sign-in or a key: those "
+        + "stay the person's own presses.")]
     public string ProposeSetting(
-        [Description("The door, as `daoris driver` spells it: drive, undrive, hold, resume, trees, line, landing, across, intake, helper, strikes, timeout, notify, cap or adapter.")]
+        [Description("The door, as `daoris driver` spells it: drive, undrive, hold, resume, trees, line, landing, across, intake, helper, strikes, retry, timeout, notify, cap or adapter.")]
         string door,
         [Description("Why: what the person asked, and what the change would do. The person decides on this.")]
         string why,
-        [Description("The repository, for drive, undrive, hold, resume, trees, across, and a line or a landing set for one repository.")]
+        [Description("The repository, for drive, undrive, hold, resume, trees, across, and a line or a landing set for one repository; for retry, the quest's id, as the room lists the parked ones.")]
         string? target = null,
         [Description("The workspace, for a line, a landing or `across … read` set for every repository in it. Name this or target, not both.")]
         string? workspace = null,
