@@ -118,14 +118,14 @@ describe('a session row', () => {
   it('says an intake is one, serving its ask — not a chat', () => {
     render(<SessionRow session={session({ kind: 'chat', repository: 'ask #0fda18', ask: '0fda18' })} />);
 
-    expect(screen.getByText('intake for ask #0fda18')).toBeInTheDocument();
+    expect(screen.getByText('Intake for ask #0fda18')).toBeInTheDocument();
     expect(screen.getByText(/^intake · moved/)).toBeInTheDocument();
     expect(screen.queryByText(/chat/)).toBeNull();
   });
 
   it('names a session with no quest by its derived identity rather than by nothing', () => {
     render(<SessionRow session={session({ kind: 'chat', quest: null })} />);
-    expect(screen.getByText('conversation')).toBeInTheDocument();
+    expect(screen.getByText('Chat')).toBeInTheDocument();
   });
 
   /**
@@ -199,7 +199,7 @@ describe('a session row', () => {
     render(<SessionRow session={session({ kind: 'chat', quest: null, state: 'awaiting-person' })} />);
 
     expect(screen.getByText('等待人工')).toBeInTheDocument();
-    expect(screen.getAllByText('对话').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('聊天').length).toBeGreaterThan(0);
     await i18n.changeLanguage('en');
   });
 });
@@ -227,7 +227,7 @@ describe('a conversation\'s row', () => {
     screen.getByRole('button', { name: 'more for Cap the hydration' }).focus();
     await user.keyboard('{Enter}');
     expect(screen.getAllByRole('menuitem').map((item) => item.textContent))
-      .toEqual(['Open in its own window', 'Review its work', 'Copy its id']);
+      .toEqual(['Open in its own window', 'Review', 'Copy session ID']);
     expect(screen.queryByRole('menuitem', { name: /stop|finish/i })).toBeNull();
 
     await user.keyboard('{Enter}');

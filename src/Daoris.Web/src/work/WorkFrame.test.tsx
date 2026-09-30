@@ -258,7 +258,7 @@ describe('the Work frame', () => {
     // Its session views say whose they are, since nothing else on this screen does, and lead back.
     const side = screen.getByRole('complementary', { name: 'right side bar' });
     expect(await within(side).findByText('Attending Expose a streaming budget')).toBeInTheDocument();
-    await userEvent.click(within(side).getByRole('button', { name: 'open in Sessions' }));
+    await userEvent.click(within(side).getByRole('button', { name: 'Open in Sessions' }));
     expect(onOpenSessions).toHaveBeenCalled();
 
     expect(await screen.findByRole('heading', { level: 1, name: 'Overview' })).toBeInTheDocument();
@@ -427,7 +427,7 @@ describe('the Work frame', () => {
 
     // The conversation's own width is ConversationView's, held beside its other tests.
     const head = (await screen.findByRole('heading', { level: 2 })).closest('article')!;
-    const composer = screen.getByRole('textbox', { name: 'message' }).closest('form')!;
+    const composer = screen.getByRole('textbox', { name: 'Message' }).closest('form')!;
     expect(head.className).not.toMatch(/max-w-/);
     expect(composer.className).not.toMatch(/max-w-/);
   });
@@ -457,7 +457,7 @@ describe('the Work frame', () => {
     const user = userEvent.setup();
     screen.getByRole('button', { name: 'more for Cap the hydration per frame' }).focus();
     await user.keyboard('{Enter}');
-    await user.click(screen.getByRole('menuitem', { name: 'Review its work' }));
+    await user.click(screen.getByRole('menuitem', { name: 'Review' }));
     expect(onSelect).toHaveBeenCalledWith('c0ffee11');
     expect(screen.getByRole('tab', { name: 'Review' })).toHaveAttribute('aria-selected', 'true');
   });
@@ -779,19 +779,19 @@ describe('starting and holding a conversation', () => {
     );
 
     expect(await screen.findByRole('dialog')).toBeTruthy();
-    expect(await screen.findByLabelText('repository')).toBeTruthy();
+    expect(await screen.findByLabelText('Repository')).toBeTruthy();
   });
 
   it('keeps the form behind one control, and the rail a list of sessions', async () => {
     show(null);
-    await screen.findByRole('navigation', { name: 'sessions' });
+    await screen.findByRole('navigation', { name: 'Sessions' });
 
-    expect(screen.queryByLabelText('repository')).toBeNull();
-    expect(screen.queryByRole('button', { name: 'start' })).toBeNull();
+    expect(screen.queryByLabelText('Repository')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Start' })).toBeNull();
 
     await openStart();
-    expect(screen.getByLabelText('repository')).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'start' })).toBeTruthy();
+    expect(screen.getByLabelText('Repository')).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Start' })).toBeTruthy();
   });
 
   it('closes the form on the session it opened — and keeps it up on a refusal', async () => {
@@ -806,12 +806,12 @@ describe('starting and holding a conversation', () => {
 
     show(null);
     await openStart();
-    await userEvent.click(screen.getByRole('button', { name: 'start' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Start' }));
     // A refusal leaves the form open: the choices are still on screen to correct.
     expect(screen.getByRole('dialog')).toBeTruthy();
 
     refuse = false;
-    await userEvent.click(screen.getByRole('button', { name: 'start' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Start' }));
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
   });
 
@@ -824,7 +824,7 @@ describe('starting and holding a conversation', () => {
 
     const { onSelect } = show(null);
     await openStart();
-    await userEvent.click(await screen.findByRole('button', { name: 'start' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Start' }));
 
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'START_CHAT', {
       payload: { repository: 'engine' },
@@ -846,12 +846,12 @@ describe('starting and holding a conversation', () => {
     show(null);
     await openStart();
     // The platform's own select (UX5 U5), opened from the keyboard as StartSession's tests explain.
-    (await screen.findByRole('combobox', { name: 'account' })).focus();
+    (await screen.findByRole('combobox', { name: 'Account' })).focus();
     await userEvent.keyboard('{Enter}');
     // Signed out, so labelled so (the spawn's refusal then names the login action).
     await userEvent.click(await screen.findByRole('option', { name: /^work/ }));
-    await userEvent.click(screen.getByRole('checkbox', { name: 'in a working tree of its own' }));
-    await userEvent.click(screen.getByRole('button', { name: 'start' }));
+    await userEvent.click(screen.getByRole('checkbox', { name: 'In a tree of its own' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Start' }));
 
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'START_CHAT', {
       payload: { repository: 'engine', profile: 'work', ownTree: true },
@@ -879,7 +879,7 @@ describe('starting and holding a conversation', () => {
       </QueryClientProvider>,
     );
     await openStart();
-    await userEvent.click(await screen.findByRole('button', { name: 'start' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Start' }));
 
     // UX5 U68: in the drawer, where start was pressed, not a corner toast cut mid-sentence.
     expect(await within(screen.getByRole('dialog')).findByRole('alert'))
@@ -896,9 +896,9 @@ describe('starting and holding a conversation', () => {
     });
 
     show('c0ffee11');
-    const box = await screen.findByLabelText('message');
+    const box = await screen.findByLabelText('Message');
     await userEvent.type(box, 'what is this repository for?');
-    await userEvent.click(screen.getByRole('button', { name: 'send' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Send' }));
 
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_INPUT', {
       payload: { id: 'c0ffee11', text: 'what is this repository for?' },
@@ -918,8 +918,8 @@ describe('starting and holding a conversation', () => {
     });
 
     show('c0ffee11');
-    await userEvent.type(await screen.findByLabelText('message'), 'what is this repository for?');
-    await userEvent.click(screen.getByRole('button', { name: 'send' }));
+    await userEvent.type(await screen.findByLabelText('Message'), 'what is this repository for?');
+    await userEvent.click(screen.getByRole('button', { name: 'Send' }));
 
     const logged = invoke.mock.calls.filter(([module]) => module === 'DAORIS.LOG');
     expect(logged).toEqual([['DAORIS.LOG', 'EVENT', {
@@ -943,9 +943,9 @@ describe('starting and holding a conversation', () => {
 
     show('c0ffee11', notify);
     await userEvent.upload(await screen.findByLabelText('choose files…'), new File(['exit 3'], 'run.log', { type: 'text/plain' }));
-    const box = screen.getByLabelText('message');
+    const box = screen.getByLabelText('Message');
     await userEvent.type(box, 'a long paragraph worth keeping');
-    await userEvent.click(screen.getByRole('button', { name: 'send' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Send' }));
 
     expect(await screen.findByText(/went nowhere/)).toBeTruthy();
     await waitFor(() => expect((box as HTMLTextAreaElement).value).toBe('a long paragraph worth keeping'));
@@ -974,7 +974,7 @@ describe('starting and holding a conversation', () => {
     const notify = vi.fn();
 
     show('c0ffee11', notify);
-    await userEvent.click(await screen.findByRole('button', { name: 'stop' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Stop' }));
 
     await waitFor(() => expect(notify).toHaveBeenCalledWith(sentence));
   });
@@ -987,10 +987,10 @@ describe('starting and holding a conversation', () => {
     });
 
     show('c0ffee11');
-    await userEvent.click(await screen.findByRole('button', { name: 'finish' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Finish' }));
 
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'END_CHAT', { payload: { id: 'c0ffee11' } });
-    expect(screen.getByRole('button', { name: 'stop' })).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'Stop' })).toBeTruthy();
   });
 
   /**
@@ -1011,11 +1011,11 @@ describe('starting and holding a conversation', () => {
     show('c0ffee11', notify);
     const waiting = await screen.findByRole('list', { name: 'waiting for this turn to end' });
     expect(waiting.textContent).toBe('and then test it');
-    await userEvent.type(screen.getByLabelText('message'), 'and push nothing');
-    await userEvent.click(await screen.findByRole('button', { name: 'stop turn' }));
+    await userEvent.type(screen.getByLabelText('Message'), 'and push nothing');
+    await userEvent.click(await screen.findByRole('button', { name: 'Stop turn' }));
 
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'CANCEL_TURN', { payload: { id: 'c0ffee11' } });
-    await waitFor(() => expect(screen.getByLabelText('message')).toHaveValue('and then test it\n\nand push nothing'));
+    await waitFor(() => expect(screen.getByLabelText('Message')).toHaveValue('and then test it\n\nand push nothing'));
     expect(notify).toHaveBeenCalledWith(
       'Asked the agent to stop this turn; the conversation stays open. 1 waiting message came back to the box, unsent.');
   });
@@ -1087,7 +1087,7 @@ describe('starting and holding a conversation', () => {
     });
 
     const { unmount } = show('c0ffee11');
-    await screen.findByLabelText('message');
+    await screen.findByLabelText('Message');
     await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_OPTIONS', { payload: { id: 'c0ffee11' } }));
     expect(screen.queryByRole('combobox', { name: "this conversation's Model" })).not.toBeInTheDocument();
     unmount();
@@ -1130,8 +1130,8 @@ describe('starting and holding a conversation', () => {
 
     show('c0ffee11');
     await userEvent.upload(await screen.findByLabelText('choose files…'), new File(['exit 3'], 'run.log', { type: 'text/plain' }));
-    await userEvent.type(screen.getByLabelText('message'), 'what does this say?');
-    await userEvent.click(screen.getByRole('button', { name: 'send' }));
+    await userEvent.type(screen.getByLabelText('Message'), 'what does this say?');
+    await userEvent.click(screen.getByRole('button', { name: 'Send' }));
 
     await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_INPUT', {
       payload: { id: 'c0ffee11', text: 'what does this say?', files: [{ name: 'run.log', content: btoa('exit 3') }] },
@@ -1150,14 +1150,14 @@ describe('starting and holding a conversation', () => {
     });
 
     show('c0ffee11');
-    await userEvent.type(await screen.findByLabelText('message'), 'look at ');
+    await userEvent.type(await screen.findByLabelText('Message'), 'look at ');
     expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_FILES', expect.anything());
 
-    await userEvent.type(screen.getByLabelText('message'), '@eng');
+    await userEvent.type(screen.getByLabelText('Message'), '@eng');
     await userEvent.click(await screen.findByRole('option', { name: 'src/engine.cs' }));
 
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_FILES', { payload: { id: 'c0ffee11' } });
-    expect(screen.getByLabelText('message')).toHaveValue('look at @src/engine.cs ');
+    expect(screen.getByLabelText('Message')).toHaveValue('look at @src/engine.cs ');
   });
 
   /**
@@ -1241,7 +1241,7 @@ describe('starting and holding a conversation', () => {
     });
 
     show('c0ffee11');
-    await userEvent.type(await screen.findByLabelText('message'), '@eng');
+    await userEvent.type(await screen.findByLabelText('Message'), '@eng');
 
     expect(await screen.findByText(/A path you type after @ still reaches the agent/)).toBeInTheDocument();
   });
@@ -1261,11 +1261,11 @@ describe('starting and holding a conversation', () => {
     });
 
     show('c0ffee11', notify);
-    await userEvent.click(await screen.findByRole('button', { name: 'stop turn' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Stop turn' }));
 
     await waitFor(() => expect(notify).toHaveBeenCalledWith(
       '1 waiting message came back to the box, unsent. Not sent with it: plan.md, shot.png — attach them again.'));
-    expect(screen.getByLabelText('message')).toHaveValue('then this');
+    expect(screen.getByLabelText('Message')).toHaveValue('then this');
   });
 
   /** CONV4b: the stop is there while the driver says a turn is in flight, and the send button says *queue*. */
@@ -1278,16 +1278,16 @@ describe('starting and holding a conversation', () => {
     });
 
     show('c0ffee11');
-    expect(await screen.findByRole('button', { name: 'send' })).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'stop turn' })).not.toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: 'Send' })).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Stop turn' })).not.toBeInTheDocument();
 
     await waitFor(() => expect(eventHandlers.has('DAORIS.SESSION_QUEUED')).toBe(true));
     act(() => eventHandlers.get('DAORIS.SESSION_QUEUED')!({ session: 'c0ffee11', queued: [], taking: true }));
-    expect(await screen.findByRole('button', { name: 'stop turn' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'queue' })).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: 'Stop turn' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Queue' })).toBeInTheDocument();
 
     act(() => eventHandlers.get('DAORIS.SESSION_QUEUED')!({ session: 'c0ffee11', queued: [], taking: false }));
-    await waitFor(() => expect(screen.queryByRole('button', { name: 'stop turn' })).not.toBeInTheDocument());
+    await waitFor(() => expect(screen.queryByRole('button', { name: 'Stop turn' })).not.toBeInTheDocument());
   });
 
   /**
@@ -1304,7 +1304,7 @@ describe('starting and holding a conversation', () => {
     });
 
     show('c0ffee11');
-    const rail = await screen.findByRole('navigation', { name: 'sessions' });
+    const rail = await screen.findByRole('navigation', { name: 'Sessions' });
     await waitFor(() => expect(within(rail).getByText('idle')).toBeInTheDocument());
     const head = screen.getByRole('heading', { level: 2 }).parentElement!;
     expect(within(head).getByText('idle')).toBeInTheDocument();
@@ -1313,7 +1313,7 @@ describe('starting and holding a conversation', () => {
     await waitFor(() => expect(within(rail).getByText('working')).toBeInTheDocument());
     expect(within(head).getByText('working')).toBeInTheDocument();
     // The composer follows the same answer: a turn in flight offers its stop.
-    expect(screen.getByRole('button', { name: 'stop turn' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Stop turn' })).toBeInTheDocument();
   });
 
   /** CONV4b: each conversation keeps its own draft as the person moves between them. */
@@ -1321,7 +1321,7 @@ describe('starting and holding a conversation', () => {
     const OTHER = { ...CHAT, id: 'decaf222', repository: 'game' };
     SESSIONS = [CHAT, OTHER];
     const view = show('c0ffee11');
-    await userEvent.type(await screen.findByLabelText('message'), 'half a thought for the engine');
+    await userEvent.type(await screen.findByLabelText('Message'), 'half a thought for the engine');
 
     view.rerender(
       <QueryClientProvider client={view.client}>
@@ -1330,7 +1330,7 @@ describe('starting and holding a conversation', () => {
         </Tooltip.Provider>
       </QueryClientProvider>,
     );
-    await waitFor(() => expect(screen.getByLabelText('message')).toHaveValue(''));
+    await waitFor(() => expect(screen.getByLabelText('Message')).toHaveValue(''));
 
     view.rerender(
       <QueryClientProvider client={view.client}>
@@ -1339,7 +1339,7 @@ describe('starting and holding a conversation', () => {
         </Tooltip.Provider>
       </QueryClientProvider>,
     );
-    await waitFor(() => expect(screen.getByLabelText('message')).toHaveValue('half a thought for the engine'));
+    await waitFor(() => expect(screen.getByLabelText('Message')).toHaveValue('half a thought for the engine'));
   });
 
   /**
@@ -1350,7 +1350,7 @@ describe('starting and holding a conversation', () => {
     show('s1a2b3c4');
 
     await screen.findByRole('heading', { level: 2, name: 'Expose a streaming budget' });
-    expect(screen.queryByLabelText('message')).toBeNull();
+    expect(screen.queryByLabelText('Message')).toBeNull();
   });
 
   /**
@@ -1369,25 +1369,25 @@ describe('starting and holding a conversation', () => {
     const notify = vi.fn();
     show('s1a2b3c4', notify);
 
-    const box = await screen.findByLabelText('message');
+    const box = await screen.findByLabelText('Message');
     expect(box).toHaveAttribute('placeholder', expect.stringMatching(/tell it something while it works/));
     await userEvent.type(box, 'the budget is in level.json');
-    await userEvent.click(screen.getByRole('button', { name: 'queue' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Queue' }));
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_INPUT', { payload: { id: 's1a2b3c4', text: 'the budget is in level.json' } });
 
     // What the driver holds shows as waiting, and only then can it be sent now.
-    expect(screen.queryByRole('button', { name: 'send now' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Send now' })).toBeNull();
     queue = { session: 's1a2b3c4', queued: [{ text: 'the budget is in level.json', files: [] }], taking: true, listening: true };
     await act(async () => { eventHandlers.get('DAORIS.SESSION_QUEUED')!(queue); });
     expect(screen.getByText('the budget is in level.json')).toBeInTheDocument();
 
-    await userEvent.click(screen.getByRole('button', { name: 'send now' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Send now' }));
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'CANCEL_TURN', { payload: { id: 's1a2b3c4' } });
     await waitFor(() => expect(notify).toHaveBeenCalledWith('Stopping its turn: what you added goes next.'));
 
     // It stops listening as it ends: the box goes.
     await act(async () => { eventHandlers.get('DAORIS.SESSION_QUEUED')!({ session: 's1a2b3c4', queued: [], taking: false, listening: false }); });
-    expect(screen.queryByLabelText('message')).toBeNull();
+    expect(screen.queryByLabelText('Message')).toBeNull();
   });
 
   it('offers no box to a driven session the driver says nothing could hear', async () => {
@@ -1398,7 +1398,7 @@ describe('starting and holding a conversation', () => {
 
     await screen.findByRole('heading', { level: 2, name: 'Expose a streaming budget' });
     await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_QUEUE', { payload: { id: 's1a2b3c4' } }));
-    expect(screen.queryByLabelText('message')).toBeNull();
+    expect(screen.queryByLabelText('Message')).toBeNull();
   });
 });
 
@@ -1430,15 +1430,16 @@ describe('clearing a parked session', () => {
   it('answers a parked driven session from the box at the foot, and the card says the box carries it on', async () => {
     show('p4rk3d00');
 
-    const box = await screen.findByLabelText('message');
-    expect(screen.queryByRole('button', { name: 'answer and carry on…' })).toBeNull();
+    const box = await screen.findByLabelText('Message');
+    expect(screen.queryByRole('button', { name: 'Answer and carry on…' })).toBeNull();
     expect(screen.getByText(/Answering it in the box below lets it carry on/)).toBeInTheDocument();
-    // An answer is words: nothing to attach, and no ending of the box's own (the card holds those).
-    expect(screen.queryByRole('button', { name: 'attach files' })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'finish' })).toBeNull();
+    // An answer is words: nothing to attach, and no ending of the box's own (the card holds those, and
+    // since NAME1b the card's Finish and the box's are one name for one act, so the box is asked).
+    expect(screen.queryByRole('button', { name: 'Attach files' })).toBeNull();
+    expect(within(box.closest('form')!).queryByRole('button', { name: 'Finish' })).toBeNull();
 
     await userEvent.type(box, 'go ahead with the PUT');
-    await userEvent.click(screen.getByRole('button', { name: 'carry on with this answer' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Carry on with this answer' }));
 
     await waitFor(() => expect(vi.mocked(fetch)).toHaveBeenCalledWith(
       '/api/sessions/p4rk3d00/answer', expect.objectContaining({ method: 'POST' })));
@@ -1450,9 +1451,9 @@ describe('clearing a parked session', () => {
     show('p4rk3d00');
 
     expect(await screen.findByText(/I recommend the second/)).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'finish it' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'decline…' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'stop it' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Finish' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Decline…' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Stop session' })).toBeInTheDocument();
   });
 
   /**
@@ -1465,25 +1466,30 @@ describe('clearing a parked session', () => {
     SESSIONS = [{ ...PARKED, kind: 'chat' }];
     show('p4rk3d00');
 
-    await screen.findByRole('button', { name: 'finish it' });
-    expect(screen.getByRole('button', { name: 'send' })).toBeInTheDocument();
+    // The band's Finish and the composer's are one name for one act (NAME1b), so the box is asked.
+    const box = () => screen.getByLabelText('Message').closest('form')!;
+    await screen.findByRole('button', { name: 'Finish' });
+    expect(screen.getByRole('button', { name: 'Send' })).toBeInTheDocument();
     // The band's verbs, and only the band's.
-    expect(screen.queryByRole('button', { name: 'finish' })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'stop' })).toBeNull();
+    expect(screen.getAllByRole('button', { name: 'Finish' })).toHaveLength(1);
+    expect(within(box()).queryByRole('button', { name: 'Finish' })).toBeNull();
+    expect(within(box()).queryByRole('button', { name: 'Stop' })).toBeNull();
 
     // Working again: no band, and the composer owns both endings.
     SESSIONS = [{ ...PARKED, kind: 'chat', state: 'working' }];
     cleanup();
     show('p4rk3d00');
 
-    await screen.findByRole('button', { name: 'finish' });
-    expect(screen.getByRole('button', { name: 'stop' })).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'finish it' })).toBeNull();
+    await within(await screen.findByLabelText('Message').then((field) => field.closest('form')!))
+      .findByRole('button', { name: 'Finish' });
+    expect(within(box()).getByRole('button', { name: 'Stop' })).toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: 'Finish' })).toHaveLength(1);
+    expect(screen.queryByRole('button', { name: 'Stop session' })).toBeNull();
   });
 
   it('finishes it over the driver, with no note the person did not write', async () => {
     show('p4rk3d00');
-    await userEvent.click(await screen.findByRole('button', { name: 'finish it' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Finish' }));
 
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'RESOLVE_SESSION', {
       payload: { id: 'p4rk3d00', state: 'completed' },
@@ -1492,9 +1498,9 @@ describe('clearing a parked session', () => {
 
   it('carries the reason a decline was given', async () => {
     show('p4rk3d00');
-    await userEvent.click(await screen.findByRole('button', { name: 'decline…' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Decline…' }));
     await userEvent.type(screen.getByLabelText(/the reason/), 'the chunk API is being replaced');
-    await userEvent.click(screen.getByRole('button', { name: 'decline with this reason' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Decline with this reason' }));
 
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'RESOLVE_SESSION', {
       payload: { id: 'p4rk3d00', state: 'declined', note: 'the chunk API is being replaced' },
@@ -1518,7 +1524,7 @@ describe('clearing a parked session', () => {
         </Tooltip.Provider>
       </QueryClientProvider>,
     );
-    await userEvent.click(await screen.findByRole('button', { name: 'finish it' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Finish' }));
 
     await vi.waitFor(() => expect(notify)
       .toHaveBeenCalledWith(expect.stringContaining('Declining needs a reason'), 'error'));
@@ -1534,10 +1540,10 @@ describe('clearing a parked session', () => {
     show('person@machine-b/p4rk3d00');
 
     expect((await screen.findAllByText(/I recommend the second/)).length).toBeGreaterThan(0);
-    expect(screen.queryByRole('button', { name: 'finish it' })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'stop it' })).toBeNull();
-    expect(screen.queryByLabelText('message')).toBeNull();
-    expect(screen.queryByRole('button', { name: 'send' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Finish' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Stop session' })).toBeNull();
+    expect(screen.queryByLabelText('Message')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Send' })).toBeNull();
   });
 
   /**
@@ -1557,18 +1563,18 @@ describe('clearing a parked session', () => {
       </QueryClientProvider>,
     );
 
-    await userEvent.click(await screen.findByRole('button', { name: 'answer ask #0fda18' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Answer ask #0fda18' }));
     expect(onAnswerAsk).toHaveBeenCalledWith('0fda18');
-    expect(screen.queryByRole('button', { name: 'finish it' })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'send' })).toBeNull();
-    expect(screen.queryByLabelText('message')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Finish' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Send' })).toBeNull();
+    expect(screen.queryByLabelText('Message')).toBeNull();
   });
 
   /** Stopping stays: the person may end the intake and settle the ask later, as a proposal. */
   it('stops a parked intake over the driver, and nothing more', async () => {
     SESSIONS = [PARKED_INTAKE];
     show('i9n8t7k6');
-    await userEvent.click(await screen.findByRole('button', { name: 'stop it' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Stop session' }));
 
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'RESOLVE_SESSION', {
       payload: { id: 'i9n8t7k6', state: 'stopped' },
@@ -1594,11 +1600,11 @@ describe('clearing a parked session', () => {
     );
 
     expect(await screen.findByText(/takes no messages/)).toBeInTheDocument();
-    expect(screen.queryByLabelText('message')).toBeNull();
-    expect(screen.queryByRole('button', { name: 'send' })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'finish' })).toBeNull();
+    expect(screen.queryByLabelText('Message')).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Send' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Finish' })).toBeNull();
 
-    await userEvent.click(screen.getByRole('button', { name: 'open ask #0fda18' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Open ask #0fda18' }));
     expect(onAnswerAsk).toHaveBeenCalledWith('0fda18');
   });
 
@@ -1606,7 +1612,7 @@ describe('clearing a parked session', () => {
   it('stops a running intake over the driver', async () => {
     SESSIONS = [RUNNING_INTAKE];
     show('r7n8t7k6');
-    await userEvent.click(await screen.findByRole('button', { name: 'stop it' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Stop session' }));
 
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'STOP_SESSION', { payload: { id: 'r7n8t7k6' } });
   });
@@ -1616,7 +1622,7 @@ describe('clearing a parked session', () => {
     SESSIONS = [{ ...RUNNING_INTAKE, id: 'c0nv0000', ask: undefined, repository: 'engine' }];
     show('c0nv0000');
 
-    expect(await screen.findByLabelText('message')).toBeInTheDocument();
+    expect(await screen.findByLabelText('Message')).toBeInTheDocument();
     expect(screen.queryByText(/takes no messages/)).toBeNull();
   });
 
@@ -1626,7 +1632,7 @@ describe('clearing a parked session', () => {
     show('s1a2b3c4');
 
     await screen.findByRole('heading', { level: 2, name: 'Expose a streaming budget' });
-    expect(screen.queryByRole('button', { name: 'finish it' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Finish' })).toBeNull();
   });
 });
 
@@ -1683,12 +1689,12 @@ describe('reviewing what a session landed', () => {
     await userEvent.click(await screen.findByRole('tab', { name: 'Review' }));
     await userEvent.click(await screen.findByText('src/chunk.ts'));
 
-    const layout = screen.getByRole('radiogroup', { name: 'layout' });
-    expect(within(layout).getByRole('radio', { name: 'unified' })).toHaveAttribute('aria-checked', 'true');
+    const layout = screen.getByRole('radiogroup', { name: 'Layout' });
+    expect(within(layout).getByRole('radio', { name: 'Unified' })).toHaveAttribute('aria-checked', 'true');
     expect(within(screen.getAllByRole('row')[0]!).getAllByRole('cell').map((cell) => cell.textContent))
       .toEqual(['1', '', '−', 'old']);
 
-    await userEvent.click(within(layout).getByRole('radio', { name: 'side by side' }));
+    await userEvent.click(within(layout).getByRole('radio', { name: 'Side by side' }));
     expect(within(screen.getAllByRole('row')[0]!).getAllByRole('cell').map((cell) => cell.textContent))
       .toEqual(['1', 'old', '1', 'new']);
     expect(window.localStorage.getItem('daoris.reviewLayout')).toBe('split');
@@ -1843,10 +1849,10 @@ describe('acting on what a session landed', () => {
     });
 
     await review();
-    await userEvent.click(screen.getByRole('button', { name: 'accept' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Accept' }));
 
     expect(await screen.findByText(/Plugin `github-pull-request`: pushed it/)).toBeTruthy();
-    expect(screen.getByRole('link', { name: 'open the pull request' })).toHaveAttribute('href', 'https://example.test/example-org/engine/pull/7');
+    expect(screen.getByRole('link', { name: 'Open the pull request' })).toHaveAttribute('href', 'https://example.test/example-org/engine/pull/7');
   });
 
   /**
@@ -1873,12 +1879,12 @@ describe('acting on what a session landed', () => {
 
     expect(await screen.findByText(/can push it and open the pull request/)).toBeTruthy();
     expect(screen.getByText('feature/0fda18-fix', { selector: 'code' })).toBeTruthy();
-    await userEvent.click(screen.getByRole('button', { name: 'hand it to github-pull-request' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Hand to github-pull-request' }));
 
     // LEFT3 a: a hand-off waits as long as its plugin may (`pluginBound`, six minutes), not the bridge's 30 seconds.
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HANDOFF', { payload: { id: 's1a2b3c4' }, timeoutMs: 6 * 60_000 });
     expect(await screen.findByText(/Plugin `github-pull-request`: pushed it/)).toBeTruthy();
-    expect(screen.getByRole('link', { name: 'open the pull request' })).toHaveAttribute('href', 'https://example.test/example-org/engine/pull/8');
+    expect(screen.getByRole('link', { name: 'Open the pull request' })).toHaveAttribute('href', 'https://example.test/example-org/engine/pull/8');
   });
 
   /** WSR5b: what stands in the way is said, and the press that could only be refused is not offered (UX5 U66). */
@@ -1897,7 +1903,7 @@ describe('acting on what a session landed', () => {
     await review();
 
     expect(await screen.findByText(/already on its remote at this commit/)).toBeTruthy();
-    expect(screen.getByRole('button', { name: 'hand it to github-pull-request' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Hand to github-pull-request' })).toBeDisabled();
   });
 
   /** WSR5b: a session whose landing made no branch, or whose rule names no plugin, has nothing to hand on. */
@@ -1910,14 +1916,14 @@ describe('acting on what a session landed', () => {
     });
 
     await review();
-    await screen.findByRole('button', { name: 'accept' });
-    expect(screen.queryByRole('button', { name: /hand it to/ })).toBeNull();
+    await screen.findByRole('button', { name: 'Accept' });
+    expect(screen.queryByRole('button', { name: /Hand to/ })).toBeNull();
     cleanup();
 
     plan = { session: 's1a2b3c4', branch: 'feature/0fda18-fix', repository: 'engine', plugin: null, problem: 'no plugin is named', commits: 1 };
     await review();
-    await screen.findByRole('button', { name: 'accept' });
-    expect(screen.queryByRole('button', { name: /hand it to/ })).toBeNull();
+    await screen.findByRole('button', { name: 'Accept' });
+    expect(screen.queryByRole('button', { name: /Hand to/ })).toBeNull();
   });
 
   /** WSR5b: a tidied landing leaves no tree, and its branch can still be handed on. */
@@ -1933,8 +1939,8 @@ describe('acting on what a session landed', () => {
 
     await review();
 
-    expect(await screen.findByRole('button', { name: 'hand it to github-pull-request' })).toBeEnabled();
-    expect(screen.queryByRole('button', { name: 'accept' })).toBeNull();
+    expect(await screen.findByRole('button', { name: 'Hand to github-pull-request' })).toBeEnabled();
+    expect(screen.queryByRole('button', { name: 'Accept' })).toBeNull();
   });
 
   /** SESS1 S10: the head finds its branch in the clean-up's list by the tree's folder, on a Windows path too. */
@@ -1965,7 +1971,7 @@ describe('acting on what a session landed', () => {
     });
 
     await review();
-    await userEvent.click(screen.getByRole('button', { name: 'accept' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Accept' }));
 
     // LEFT3 a: a landing may hand its branch to a plugin, so it waits as long as the plugin may (`pluginBound`).
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'LAND_SESSION_TREE', {
@@ -1992,7 +1998,7 @@ describe('acting on what a session landed', () => {
     });
 
     await review();
-    await userEvent.click(screen.getByRole('button', { name: 'accept' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Accept' }));
 
     expect(await screen.findByText(/not clean \(2 paths\)/)).toBeTruthy();
   });
@@ -2019,14 +2025,14 @@ describe('acting on what a session landed', () => {
     });
 
     await review();
-    await userEvent.click(screen.getByRole('button', { name: 'discard the tree' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Discard tree' }));
 
     // No `force` anywhere in the first call.
     expect(forced).toEqual({ id: 's1a2b3c4' });
     // The host's warning is what the person now reads, naming what would go.
     expect(await screen.findByText(/has not taken/)).toBeTruthy();
     // And only now is the destructive press available.
-    const again = screen.getByRole('button', { name: 'discard it anyway' });
+    const again = screen.getByRole('button', { name: 'Discard anyway' });
 
     await userEvent.click(again);
     expect(forced).toEqual({ id: 's1a2b3c4', force: true });
@@ -2051,12 +2057,12 @@ describe('acting on what a session landed', () => {
     );
 
     const { rerender } = render(pane('s1a2b3c4'));
-    await userEvent.click(await screen.findByRole('button', { name: 'discard the tree' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Discard tree' }));
     rerender(pane('s9f8e7d6'));
-    await screen.findByRole('button', { name: 'discard the tree' });
+    await screen.findByRole('button', { name: 'Discard tree' });
     await act(async () => answer({ session: 's1a2b3c4', done: false, message: 'the tree holds commits `main` has not taken.' }));
 
-    expect(screen.queryByRole('button', { name: 'discard it anyway' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Discard anyway' })).toBeNull();
     expect(screen.queryByText(/has not taken/)).toBeNull();
   });
 
@@ -2070,11 +2076,11 @@ describe('acting on what a session landed', () => {
     });
 
     await review();
-    await userEvent.click(screen.getByRole('button', { name: 'discard the tree' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Discard tree' }));
     await userEvent.click(await screen.findByRole('button', { name: 'Never mind' }));
 
-    expect(screen.queryByRole('button', { name: 'discard it anyway' })).toBeNull();
-    expect(screen.getByRole('button', { name: 'discard the tree' })).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Discard anyway' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Discard tree' })).toBeTruthy();
   });
 
   /** Sending it back is a door into the platform's own composer, never a second publish path. */
@@ -2092,7 +2098,7 @@ describe('acting on what a session landed', () => {
       </QueryClientProvider>,
     );
     await userEvent.click(await screen.findByRole('tab', { name: 'Review' }));
-    await userEvent.click(await screen.findByRole('button', { name: 'send it back…' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Send back…' }));
 
     expect(onSendBack).toHaveBeenCalledWith('engine');
   });
@@ -2102,7 +2108,7 @@ describe('acting on what a session landed', () => {
       (type === 'SESSION_DIFF' ? DIFF : DRIVER_STATE));
 
     await review();
-    expect(screen.queryByRole('button', { name: 'send it back…' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Send back…' })).toBeNull();
   });
 
   /**
@@ -2117,8 +2123,8 @@ describe('acting on what a session landed', () => {
 
     await review();
 
-    expect(screen.queryByRole('button', { name: 'accept' })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'discard the tree' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Accept' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Discard tree' })).toBeNull();
     // The diff itself is still readable — seeing the work never depended on holding the tree.
     expect(screen.getByText('src/chunk.ts')).toBeTruthy();
   });
@@ -2144,9 +2150,9 @@ describe('acting on what a session landed', () => {
     await userEvent.click(await screen.findByRole('tab', { name: 'Review' }));
     await screen.findByText('src/chunk.ts');
 
-    expect(screen.queryByRole('button', { name: 'accept' })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'discard the tree' })).toBeNull();
-    await userEvent.click(screen.getByRole('button', { name: 'send it back…' }));
+    expect(screen.queryByRole('button', { name: 'Accept' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Discard tree' })).toBeNull();
+    await userEvent.click(screen.getByRole('button', { name: 'Send back…' }));
     expect(onSendBack).toHaveBeenCalledWith('engine');
   });
 });
@@ -2196,7 +2202,7 @@ describe('the frame\'s geometry (FRAME6)', () => {
     await userEvent.click(await screen.findByRole('button', { name: 'Hide the session list' }));
 
     expect(screen.queryByRole('separator', { name: 'rail width' })).toBeNull();
-    await userEvent.click(await screen.findByRole('button', { name: 'conversation · engine · working' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Chat · engine · working' }));
     expect(onSelect).toHaveBeenCalledWith('c0ffee11');
 
     // A wider window is not the person asking for it back.
@@ -2211,7 +2217,7 @@ describe('the frame\'s geometry (FRAME6)', () => {
   it('draws the rail as a strip in a narrow window, and gives it back when the window widens', async () => {
     widen(1000);
     show('s1a2b3c4');
-    expect(await screen.findByRole('button', { name: 'conversation · engine · working' })).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: 'Chat · engine · working' })).toBeInTheDocument();
     expect(screen.queryByRole('separator', { name: 'rail width' })).toBeNull();
 
     widen(1600);

@@ -1,9 +1,9 @@
 {
-  "chain.title": "这件工作如何流转",
+  "chain.title": "工作流转",
   "chain.show": "展开流转详情",
   "chain.hide": "收起流转详情",
   "chain.next": "下一步：{{to}}",
-  "chain.ask": "请求 #{{id}}",
+  "chain.ask": "需求 #{{id}}",
   "chain.askHint": "在工作区提出",
   "chain.unseen": "本页未载入的上一步",
   "chain.current": "当前委托",

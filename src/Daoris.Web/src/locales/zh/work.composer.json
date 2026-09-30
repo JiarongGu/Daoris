@@ -2,7 +2,7 @@
   "work.composer.label": "消息",
   "work.composer.placeholder": "你想让这个仓库的智能体做什么？回车发送，Shift+回车换行，@ 引用文件。",
   "work.composer.send": "发送",
-  "work.composer.finish": "结束",
+  "work.composer.finish": "完成",
   "work.composer.finishTip": "关闭输入，让智能体自行收尾——记录会以「已完成」结束。",
   "work.composer.stop": "停止",
   "work.composer.stopTip": "立即中断——记录会写明是人终止的。",

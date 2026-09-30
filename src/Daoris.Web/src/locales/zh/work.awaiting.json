@@ -1,10 +1,10 @@
 {
   "work.awaiting.hint": "只有人能了结它。你的选择会写进记录，而备注是之后读到这条记录的人唯一能凭借的东西。",
-  "work.awaiting.finish": "就此完成",
+  "work.awaiting.finish": "完成",
   "work.awaiting.decline": "谢绝…",
   "work.awaiting.declineConfirm": "以此理由谢绝",
   "work.awaiting.declinePlaceholder": "理由——之后读到这条记录的人能据以行动的部分",
-  "work.awaiting.stop": "停止它",
+  "work.awaiting.stop": "停止会话",
   "work.awaiting.resolved": "会话 {{id}} 现在是{{state}}。",
   "work.awaiting.answer": "在下面的框里回答它，它就会继续——那是发消息，不在这三项之内。",
   "work.awaiting.carryOn": "回答并继续…",

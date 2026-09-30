@@ -1,7 +1,7 @@
 {
-  "work.rail.label": "会话列表",
+  "work.rail.label": "会话",
   "work.rail.menu.label": "{{title}} 的更多操作",
-  "work.rail.menu.review": "查看它的改动",
+  "work.rail.menu.review": "审阅",
   "work.rail.menu.copy": "复制会话 ID",
   "work.rail.menu.copied": "已复制 {{id}}。",
   "work.rail.search.label": "搜索会话",

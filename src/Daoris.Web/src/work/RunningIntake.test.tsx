@@ -28,7 +28,7 @@ describe('a running intake', () => {
     const onOpen = vi.fn();
     show({ onOpen });
 
-    await userEvent.click(screen.getByRole('button', { name: 'open ask #0fda18' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Open ask #0fda18' }));
     expect(onOpen).toHaveBeenCalledWith('0fda18');
   });
 
@@ -37,15 +37,15 @@ describe('a running intake', () => {
     show({ onStop });
 
     expect(screen.getByText(/the ask stays a proposal/)).toBeInTheDocument();
-    await userEvent.click(screen.getByRole('button', { name: 'stop it' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Stop session' }));
     expect(onStop).toHaveBeenCalledTimes(1);
   });
 
   it('holds the stop while it is in flight, and never the door', () => {
     show({ pending: true });
 
-    expect(screen.getByRole('button', { name: 'stop it' })).toBeDisabled();
-    expect(screen.getByRole('button', { name: 'open ask #0fda18' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: 'Stop session' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Open ask #0fda18' })).toBeEnabled();
   });
 
   /** Where nothing can act (a story, a record mirrored from another machine), it still says why. */
@@ -60,7 +60,7 @@ describe('a running intake', () => {
   it('speaks the active catalog', async () => {
     await i18n.changeLanguage('zh');
     show();
-    expect(screen.getByRole('button', { name: '打开请求 #0fda18' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '打开需求 #0fda18' })).toBeInTheDocument();
     await i18n.changeLanguage('en');
   });
 });

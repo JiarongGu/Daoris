@@ -46,7 +46,7 @@ describe('starting a session', () => {
     await userEvent.click(await screen.findByRole('option', { name: option }));
   };
   const accountNames = async () => {
-    const options = await open('account');
+    const options = await open('Account');
     const names = options.map((option) => option.textContent);
     await userEvent.keyboard('{Escape}');
     return names;
@@ -54,16 +54,16 @@ describe('starting a session', () => {
 
   it('offers the accounts of the harness chosen, and the default harness\'s when none is', async () => {
     show();
-    expect(await accountNames()).toEqual(['whatever this machine already decided', 'personal']);
+    expect(await accountNames()).toEqual(['As already set', 'personal']);
 
-    await choose('agent tool', 'codex');
-    expect(await accountNames()).toEqual(['whatever this machine already decided', 'team@example.com']);
+    await choose('Agent', 'codex');
+    expect(await accountNames()).toEqual(['As already set', 'team@example.com']);
   });
 
   it('forgets an account chosen for another harness when the harness changes', async () => {
     const onStart = show();
-    await choose('account', 'personal');
-    await choose('agent tool', 'codex');
+    await choose('Account', 'personal');
+    await choose('Agent', 'codex');
 
     await userEvent.click(screen.getByRole('button', { name: /start/i }));
 
@@ -80,9 +80,9 @@ describe('starting a session', () => {
     // Radix keeps a hidden native select for the form, which nobody sees; a VISIBLE one is the defect.
     expect(document.querySelector('select:not([aria-hidden="true"]), input[type="checkbox"]:not([aria-hidden="true"])')).toBeNull();
 
-    await choose('agent tool', 'codex');
-    await choose('agent tool', 'this machine\'s default: claude-code');
-    await userEvent.click(screen.getByRole('checkbox', { name: /working tree of its own/ }));
+    await choose('Agent', 'codex');
+    await choose('Agent', 'This machine\'s default: claude-code');
+    await userEvent.click(screen.getByRole('checkbox', { name: /tree of its own/ }));
     await userEvent.click(screen.getByRole('button', { name: /start/i }));
 
     expect(onStart).toHaveBeenCalledWith({
@@ -113,8 +113,8 @@ describe('starting a session', () => {
       </Tooltip.Provider>,
     );
 
-    expect((await open('agent tool')).map((option) => option.textContent)).toEqual([
-      "this machine's default: Claude Code — direct (claude-code)",
+    expect((await open('Agent')).map((option) => option.textContent)).toEqual([
+      "This machine's default: Claude Code — direct (claude-code)",
       'Claude Code — direct (claude-code)',
       'Claude Code — protocol (claude-code-acp)',
     ]);
@@ -135,13 +135,13 @@ describe('starting a session', () => {
       </Tooltip.Provider>,
     );
 
-    expect(screen.getByRole('combobox', { name: 'repository' })).toHaveTextContent('game');
+    expect(screen.getByRole('combobox', { name: 'Repository' })).toHaveTextContent('game');
     expect(screen.queryByText(/has an active session/)).toBeNull();
 
-    await choose('repository', 'engine · busy');
+    await choose('Repository', 'engine · busy');
     expect(screen.getByText(/engine has an active session in its checkout/)).toBeInTheDocument();
 
-    await userEvent.click(screen.getByRole('checkbox', { name: /working tree of its own/ }));
+    await userEvent.click(screen.getByRole('checkbox', { name: /tree of its own/ }));
     expect(screen.queryByText(/has an active session/)).toBeNull();
   });
 

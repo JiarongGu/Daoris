@@ -34,7 +34,7 @@ describe('the chain line', () => {
 
     fireEvent.click(screen.getByRole('button', { name: 'Develop it' }));
     expect(onQuest).toHaveBeenCalledWith(QUESTS[0]);
-    fireEvent.click(screen.getByRole('button', { name: 'show how it ran' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Show how it ran' }));
     expect(onExpand).toHaveBeenCalled();
   });
 });

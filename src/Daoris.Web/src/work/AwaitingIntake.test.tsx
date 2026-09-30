@@ -24,7 +24,7 @@ describe('a parked intake', () => {
     const onAnswer = vi.fn();
     show({ onAnswer });
 
-    await userEvent.click(screen.getByRole('button', { name: 'answer ask #0fda18' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Answer ask #0fda18' }));
     expect(onAnswer).toHaveBeenCalledWith('0fda18');
   });
 
@@ -36,8 +36,8 @@ describe('a parked intake', () => {
   it('offers none of the moves that end the record without answering the ask', () => {
     show();
 
-    expect(screen.queryByRole('button', { name: 'finish it' })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'decline…' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Finish' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Decline…' })).toBeNull();
     // Nothing is listening: an intake is one turn, and a parked one has no process left.
     expect(screen.queryByText(/Answering it in the box below/)).toBeNull();
   });
@@ -47,15 +47,15 @@ describe('a parked intake', () => {
     show({ onStop });
 
     expect(screen.getByText(/the ask stays a proposal/)).toBeInTheDocument();
-    await userEvent.click(screen.getByRole('button', { name: 'stop it' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Stop session' }));
     expect(onStop).toHaveBeenCalledTimes(1);
   });
 
   it('holds the stop while a move is in flight, and never the door', () => {
     show({ pending: true });
 
-    expect(screen.getByRole('button', { name: 'stop it' })).toBeDisabled();
-    expect(screen.getByRole('button', { name: 'answer ask #0fda18' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: 'Stop session' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Answer ask #0fda18' })).toBeEnabled();
   });
 
   /** Where nothing can open the ask or stop the session, it still says where the answer lives. */
@@ -68,13 +68,13 @@ describe('a parked intake', () => {
 
   it('renders with nothing said — a park with no words is still waiting on the ask', () => {
     show({ note: null });
-    expect(screen.getByRole('button', { name: 'answer ask #0fda18' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Answer ask #0fda18' })).toBeInTheDocument();
   });
 
   it('speaks the active catalog', async () => {
     await i18n.changeLanguage('zh');
     show();
-    expect(screen.getByRole('button', { name: '答复请求 #0fda18' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '答复需求 #0fda18' })).toBeInTheDocument();
     await i18n.changeLanguage('en');
   });
 });

@@ -89,7 +89,7 @@ describe('the session rail', () => {
 
     // The repository groups' headings — not the ended section's, which is a peer of the groups
     // rather than one of them, and lists what is no longer running.
-    const ended = await screen.findByRole('region', { name: 'ended' });
+    const ended = await screen.findByRole('region', { name: 'Ended' });
     const headings = screen.getAllByRole('heading', { level: 3 })
       .filter((heading) => !ended.contains(heading));
     expect(headings.map((heading) => heading.textContent)).toEqual(['engine', 'tools']);
@@ -112,13 +112,13 @@ describe('the session rail', () => {
       </QueryClientProvider>,
     );
 
-    const strip = await screen.findByRole('navigation', { name: 'sessions' });
+    const strip = await screen.findByRole('navigation', { name: 'Sessions' });
     await within(strip).findAllByRole('button');
     const rows = within(strip).getAllByRole('button');
     expect(rows.map((row) => row.getAttribute('aria-label'))).toEqual([
       'Expose a streaming budget on the chunk API · engine · working',
-      'conversation · tools · awaiting person',
-      'conversation · tools · working',
+      'Chat · tools · awaiting person',
+      'Chat · tools · working',
     ]);
     expect(rows.map((row) => row.textContent)).toEqual(['e', 't', 't']);
     expect(rows[2]).toHaveAttribute('aria-current', 'true');
@@ -171,13 +171,13 @@ describe('the session rail', () => {
       await screen.findByText('Cap the hydration per frame');
 
       await userEvent.type(screen.getByRole('searchbox', { name: 'search sessions' }), 'hydration');
-      const byName = await screen.findByRole('region', { name: 'by name' });
+      const byName = await screen.findByRole('region', { name: 'By name' });
       expect(within(byName).getByText('Cap the hydration per frame')).toBeInTheDocument();
       expect(screen.queryByRole('heading', { name: 'engine' })).toBeNull();
 
       await userEvent.clear(screen.getByRole('searchbox', { name: 'search sessions' }));
       await userEvent.type(screen.getByRole('searchbox', { name: 'search sessions' }), 'streamer');
-      const said = await screen.findByRole('region', { name: 'in what was said' });
+      const said = await screen.findByRole('region', { name: 'In what was said' });
       expect(within(said).getByText('streamer').tagName).toBe('MARK');
       // Its tint adds no space beside the word (UX5 U61).
       expect(within(said).getByText('streamer')).toHaveClass('-mx-0.5');
@@ -267,7 +267,7 @@ describe('the session rail', () => {
     const engine = screen.getByText('engine').closest('section')!;
     expect(rows(engine)).toHaveLength(1);
     // …it is in the ended section, reachable from a fresh window with nothing selected.
-    const ended = screen.getByRole('region', { name: 'ended' });
+    const ended = screen.getByRole('region', { name: 'Ended' });
     expect(within(ended).getByText('completed')).toBeInTheDocument();
     expect(rows(ended)).toHaveLength(1);
   });
@@ -276,7 +276,7 @@ describe('the session rail', () => {
     const onSelect = vi.fn();
     show(<SessionRail notify={() => {}} onSelect={onSelect} />);
 
-    const ended = await screen.findByRole('region', { name: 'ended' });
+    const ended = await screen.findByRole('region', { name: 'Ended' });
     await userEvent.click(rows(ended)[0]!);
     expect(onSelect).toHaveBeenCalledWith('d4e5f6a7');
   });
@@ -286,7 +286,7 @@ describe('the session rail', () => {
     SESSIONS = LIVE.filter((s) => (s as { state: string }).state === 'completed');
     show(<SessionRail notify={() => {}} />);
 
-    await screen.findByRole('region', { name: 'ended' });
+    await screen.findByRole('region', { name: 'Ended' });
     expect(screen.queryByText(/Sessions appear here/)).not.toBeInTheDocument();
     expect(screen.getByText('Nothing is running')).toBeInTheDocument();
   });

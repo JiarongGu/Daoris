@@ -156,7 +156,7 @@ describe('the side bar\'s tabs', () => {
 
       const tab = screen.getByRole('tab', { name: 'Preview: chunk.rs' });
       expect(tab.textContent).toBe('');
-      expect(screen.getByRole('button', { name: 'close the preview' })).toBeTruthy();
+      expect(screen.getByRole('button', { name: 'Close the preview' })).toBeTruthy();
       await userEvent.hover(tab);
       expect(await screen.findByRole('tooltip')).toHaveTextContent('Preview: src/world/streaming/chunk.rs');
     });

@@ -40,7 +40,7 @@ describe('LandedNote', () => {
   it('offers the pull request a plugin opened as a link', () => {
     show({ ...LANDED, plugin: 'example.lands', pushed: true, pullRequest: 'https://example.test/org/engine/pull/7' });
 
-    expect(screen.getByRole('link', { name: 'open the pull request' })).toHaveAttribute('href', 'https://example.test/org/engine/pull/7');
+    expect(screen.getByRole('link', { name: 'Open the pull request' })).toHaveAttribute('href', 'https://example.test/org/engine/pull/7');
   });
 
   it('says a standing branch whose tree is still here is not accepted again', () => {

@@ -120,7 +120,7 @@ describe('a file\'s preview in the side bar (PREVIEW1)', () => {
       .toEqual([10, 11, 12, 13, 14, 15, 16, 17, 18, 19]);
     expect(within(preview).getByText('lines 10–19, as the call named them')).toBeInTheDocument();
     // The review has not been asked for, so the preview says nothing of changes and asks git for none.
-    expect(within(preview).queryByRole('radiogroup', { name: 'show' })).toBeNull();
+    expect(within(preview).queryByRole('radiogroup', { name: 'Show' })).toBeNull();
     expect(asked('SESSION_DIFF')).toEqual([]);
   });
 
@@ -130,7 +130,7 @@ describe('a file\'s preview in the side bar (PREVIEW1)', () => {
     await userEvent.click(await screen.findByRole('button', { name: 'preview src/chunk.ts, lines 10–19' }));
     const side = screen.getByRole('complementary', { name: 'right side bar' });
 
-    await userEvent.click(within(side).getByRole('button', { name: 'close the preview' }));
+    await userEvent.click(within(side).getByRole('button', { name: 'Close the preview' }));
 
     expect(within(side).queryByRole('tab', { name: 'Preview: chunk.ts' })).toBeNull();
     expect(within(side).getByRole('tab', { name: 'Timeline', selected: true })).toBeInTheDocument();
@@ -151,7 +151,7 @@ describe('a file\'s preview in the side bar (PREVIEW1)', () => {
     const side = screen.getByRole('complementary', { name: 'right side bar' });
     expect(within(side).getAllByRole('tab').map((tab) => tab.getAttribute('aria-label'))).toEqual(['Preview: chunk.ts']);
 
-    await userEvent.click(within(side).getByRole('button', { name: 'close the preview' }));
+    await userEvent.click(within(side).getByRole('button', { name: 'Close the preview' }));
     expect(screen.queryByRole('complementary', { name: 'right side bar' })).toBeNull();
   });
 
@@ -177,7 +177,7 @@ describe('a file\'s preview in the side bar (PREVIEW1)', () => {
     expect(asked('SESSION_DIFF')).toHaveLength(1);
 
     // And back to the review it covered.
-    await userEvent.click(within(side).getByRole('button', { name: 'close the preview' }));
+    await userEvent.click(within(side).getByRole('button', { name: 'Close the preview' }));
     expect(within(side).getByRole('tab', { name: 'Review', selected: true })).toBeInTheDocument();
   });
 

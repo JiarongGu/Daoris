@@ -1,5 +1,5 @@
 {
-  "work.relations.title": "它与谁协作",
+  "work.relations.title": "协作关系",
   "work.relations.askedBy": "发起者",
   "work.relations.session": "{{repository}} 中的会话 {{id}}",
   "work.relations.elsewhere": "会话 {{id}}，本机没有它的记录",

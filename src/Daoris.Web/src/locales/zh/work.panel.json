@@ -9,7 +9,7 @@
   "work.panel.tabs": "正在运行的",
   "work.panel.tab.session": "会话",
   "work.panel.tab.own": "会话自己的控制台",
-  "work.panel.stream.subagent": "子代理",
+  "work.panel.stream.subagent": "子智能体",
   "work.panel.stream.task": "后台",
   "work.panel.stream.live": "运行中",
   "work.panel.stream.ended": "已结束",

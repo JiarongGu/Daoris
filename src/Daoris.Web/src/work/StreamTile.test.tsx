@@ -103,6 +103,6 @@ describe('a stream tile', () => {
     await i18n.changeLanguage('zh');
     render(<StreamTile session={session({ kind: 'chat', quest: undefined })} />);
 
-    expect(screen.getByText('对话')).toBeInTheDocument();
+    expect(screen.getByText('聊天')).toBeInTheDocument();
   });
 });

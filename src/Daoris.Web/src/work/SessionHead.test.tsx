@@ -58,12 +58,12 @@ describe('the attended session\'s head', () => {
   it('starts each parked session\'s decline empty — a reason written for one never carries to another', () => {
     const parked: Partial<Session> = { state: 'awaiting-person', note: 'needs a person' };
     const { rerender } = render(<SessionHead session={session(parked)} onResolve={vi.fn()} />);
-    fireEvent.click(screen.getByRole('button', { name: 'decline…' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Decline…' }));
     fireEvent.change(screen.getByLabelText(/the reason/), { target: { value: 'the chunk API is being replaced' } });
 
     rerender(<SessionHead session={session({ ...parked, id: 's9f8e7d6' })} onResolve={vi.fn()} />);
     expect(screen.queryByLabelText(/the reason/)).toBeNull();
-    expect(screen.getByRole('button', { name: 'decline…' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Decline…' })).toBeInTheDocument();
   });
 
   /** SESS1 S10: what its own tree left — the branch, and whether its work is on a branch of the person's. */
@@ -82,7 +82,7 @@ describe('the attended session\'s head', () => {
     expect(screen.getByText('landed on feature/0fda18-fix')).toBeInTheDocument();
 
     rerender(<SessionHead session={session({ state: 'completed' })} />);
-    expect(screen.queryByText('its work')).toBeNull();
+    expect(screen.queryByText('Its work')).toBeNull();
   });
 
   it('is the record: identity, state, and what the session ran on and as', () => {
@@ -120,12 +120,12 @@ describe('the attended session\'s head', () => {
 
   it('measures a running session to now and a finished one to where it ended', () => {
     const { unmount } = render(<SessionHead session={session()} />);
-    expect(screen.getByText('running')).toBeInTheDocument();
+    expect(screen.getByText('Running for')).toBeInTheDocument();
     expect(screen.getByText('2h 14m')).toBeInTheDocument();
     unmount();
 
     render(<SessionHead session={session({ state: 'completed' })} />);
-    expect(screen.getByText('ran for')).toBeInTheDocument();
+    expect(screen.getByText('Ran for')).toBeInTheDocument();
   });
 
   /**
@@ -151,14 +151,14 @@ describe('the attended session\'s head', () => {
     render(<SessionHead session={session({ tree: null, profile: null, quest: null })} />);
 
     expect(screen.queryByText('tree')).not.toBeInTheDocument();
-    expect(screen.queryByText('quest')).not.toBeInTheDocument();
+    expect(screen.queryByText('Quest')).not.toBeInTheDocument();
     expect(screen.getByText('claude-code · 2.1.4')).toBeInTheDocument();
   });
 
   it('names the machine when the record came from another one', () => {
     render(<SessionHead session={session({ id: 'person@machine-a/s1a2b3c4' })} />);
 
-    expect(screen.getByText('machine')).toBeInTheDocument();
+    expect(screen.getByText('Machine')).toBeInTheDocument();
     expect(screen.getByText('person@machine-a')).toBeInTheDocument();
   });
 
@@ -188,14 +188,14 @@ describe('the attended session\'s head', () => {
     const { unmount } = render(<SessionHead session={session({ state: 'failed', note: 'the process exited 1' })} />);
     expect(screen.queryByText('This one is waiting on you')).not.toBeInTheDocument();
     expect(screen.getByText('the process exited 1')).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'show all' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Show all' })).toBeNull();
     unmount();
 
     const long = `the agent's turn failed with the quest still taken: ${'the ACP agent refused the call. '.repeat(12)}`;
     const second = render(<SessionHead session={session({ state: 'failed', note: long })} />);
     expect(screen.getByText(long.trim(), { collapseWhitespace: false, exact: false }).className).toContain('line-clamp-3');
-    fireEvent.click(screen.getByRole('button', { name: 'show all' }));
-    expect(screen.getByRole('button', { name: 'show less' })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: 'Show all' }));
+    expect(screen.getByRole('button', { name: 'Show less' })).toBeInTheDocument();
     second.unmount();
 
     render(<SessionHead session={session({ state: 'working', note: 'reached working' })} />);
@@ -213,7 +213,7 @@ describe('the attended session\'s head', () => {
       />,
     );
     expect(screen.getByText('daoris/s-43c14a70')).toBeInTheDocument();
-    fireEvent.click(screen.getByRole('button', { name: 'review' }));
+    fireEvent.click(screen.getByRole('button', { name: 'Review' }));
     expect(onReview).toHaveBeenCalledOnce();
     unmount();
 
@@ -224,7 +224,7 @@ describe('the attended session\'s head', () => {
         onReview={onReview}
       />,
     );
-    expect(screen.queryByRole('button', { name: 'review' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Review' })).toBeNull();
   });
 
   /**
@@ -234,11 +234,11 @@ describe('the attended session\'s head', () => {
   it('names an intake\'s ask and room rather than a repository and a tree', () => {
     render(<SessionHead session={session({ ...INTAKE, state: 'working' })} />);
 
-    expect(screen.getByRole('heading', { name: 'intake for ask #0fda18' })).toBeInTheDocument();
-    expect(screen.getByText('ask')).toBeInTheDocument();
+    expect(screen.getByRole('heading', { name: 'Intake for ask #0fda18' })).toBeInTheDocument();
+    expect(screen.getByText('Ask')).toBeInTheDocument();
     // Its room's path is the ask's on hover (SESS2 H3), never a repository's tree.
     expect(screen.getByText('#0fda18')).toHaveAttribute('title', INTAKE.tree);
-    expect(screen.queryByText('repository')).toBeNull();
+    expect(screen.queryByText('Repository')).toBeNull();
     expect(screen.queryByText('tree')).toBeNull();
   });
 
@@ -257,9 +257,9 @@ describe('the attended session\'s head', () => {
     );
 
     expect(screen.getByText('published nothing: it asks you rather than guess.')).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'finish it' })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'decline…' })).toBeNull();
-    fireEvent.click(screen.getByRole('button', { name: 'answer ask #0fda18' }));
+    expect(screen.queryByRole('button', { name: 'Finish' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Decline…' })).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: 'Answer ask #0fda18' }));
     expect(onAnswerAsk).toHaveBeenCalledWith('0fda18');
   });
 

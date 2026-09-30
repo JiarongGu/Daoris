@@ -145,7 +145,7 @@ describe("Daoris's browser, from the window", () => {
     machine(undefined, [CHAT.id]);
     start();
 
-    const chip = await screen.findByRole('button', { name: "Daoris's browser is driven by engine · conversation — open the session" });
+    const chip = await screen.findByRole('button', { name: "Daoris's browser is driven by engine · Chat — open the session" });
     expect(chip.closest('[data-strip-space="end"]')).not.toBeNull();
     await userEvent.click(chip);
 
