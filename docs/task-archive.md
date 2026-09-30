@@ -8418,3 +8418,27 @@ per domain. `MERGE_SESSION_TREE` turned out to be called by neither the page nor
 held by a test, and retiring it is a question for later.
 **Proven by:** driver 1431, modules 406, service 655 + 46, vitest 1700, CLI 629, release 66/66, family 301/301,
 Playwright 21, deployment 70/70.
+
+
+## MOD9 — one merge tool and a dispatch skill (2026-09-30)
+
+> - [ ] **MOD9 — one merge tool and a dispatch skill**: `tools/merge-branch.mjs` (merge, stop on a
+> conflict it cannot resolve, EVERY declared gate in order whatever the branch's lane — MOD2 moved the
+> web's catalogues and two C# tests that read them broke unseen, because the batch skipped the .NET
+> suites as "web only" — whole outputs kept) and a repository skill
+> holding the brief every subagent gets.
+
+**Outcome** (built by a subagent in its own worktree, merged on main). `tools/merge-branch.mjs` replaces the
+hand-typed gate chains: it merges a branch `--no-ff --no-commit` into a clean main, stops on a conflict and
+names the files, then runs every gate `daoris.gates.json` declares plus the release workflow's rehearsals,
+in a fixed order (checks, suites, rehearsals, the deployment rehearsal last after `dotnet build-server
+shutdown`), whatever the branch touched, keeping each gate's whole output under
+`local/scratch/merge-<branch>/`. It never commits. A `dotnet test` failure confined to FLAKE1's classes is
+re-run alone once and reported as FLAKE. `--batch` goes one merge at a time with `--continue` after each
+commit, and runs the rehearsals once after the last. `tools/lanes.json` makes the design's lane map
+checkable, and the tool reports the lanes a branch touched without refusing on them. The repository-local
+`dispatch-subagent` skill holds the brief every subagent got, so a dispatch names only the task, the lane,
+the files not to touch and the reserved decision number. Its index row grew the always-loaded core to 22,672
+bytes.
+**Proven by:** CLI 654 (four end-to-end scenarios in scratch repositories), `verify`, the code map; the
+rehearsals run with the next merge, the tool's first real use.
