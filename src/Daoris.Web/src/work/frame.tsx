@@ -249,8 +249,8 @@ export type DriverPresence = 'running' | 'stopped' | 'absent';
  * foot ever did. The tier's sentence stays the service's own, verbatim, in its tooltip.
  */
 export function StatusBar({
-  driver, sessions, workspace, remote, sync, tier, indexed, scope,
-  onDriver, onSessions, onRemote, onIndex, onTier,
+  driver, sessions, workspace, remote, sync, tier, indexed, scope, setup,
+  onDriver, onSessions, onRemote, onIndex, onTier, onSetup,
 }: {
   driver: DriverPresence;
   sessions: number;
@@ -279,6 +279,13 @@ export function StatusBar({
   onIndex?: () => void;
   /** Where the tier is explained and changed — Daoris's own AI, on Settings (AGT6). */
   onTier?: () => void;
+  /**
+   * How many of the setup's required steps are done (SETUP1b, D97), stated until they all are — or
+   * absent where that is not known, a browser or a machine still being read.
+   */
+  setup?: { done: number; of: number };
+  /** Where the setup is done: Get started, on Settings. */
+  onSetup?: () => void;
 }) {
   const { t } = useTranslation();
   const tone = driver === 'running' ? 'live' : driver === 'stopped' ? 'parked' : 'idle';
@@ -342,6 +349,15 @@ export function StatusBar({
           <span className="text-ink">
             {remote ? t('work.status.remoteWired') : t('work.status.remoteLocal')}
           </span>
+        </StatusItem>
+      )}
+
+      {/* Until the setup's required steps are done, and then gone: an always-there all-clear is not
+          read. Waiting on the person, so the mark wears open's hue (platform-ux §3). */}
+      {setup && setup.done < setup.of && (
+        <StatusItem onPress={onSetup} tip={t('work.status.setupTip')} label={t('work.status.setupLabel')}>
+          <Icon name="plan" size={12} className="text-st-open" />
+          <span className="tabular-nums text-ink">{t('work.status.setup', setup)}</span>
         </StatusItem>
       )}
 

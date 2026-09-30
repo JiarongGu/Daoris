@@ -66,7 +66,27 @@ the palette (*Set up Daoris*) and Ask Daoris's starters all lead to it. The stat
      both a browser's too; and Ask Daoris's starters end with *set up Daoris step by step: n of 5 done*
      while the required steps are not all done.
 2. **SETUP1b**: opening at start, *Don't open at start*, the status bar's count, and *Set up with Ask
-   Daoris*.
+   Daoris*. *Built 2026-09-30*, with what building it settled:
+   - **Opening at start is decided once, when the machine has been read** (`useSetupAtStart`): before
+     the roster answers, a machine with an agent reads as one without. Whatever was decided, nothing
+     reopens it that start, and a view the person chose before the reading settled is kept. The view
+     it watches is the one chosen, not the one shown, since a remembered Sessions stands in as Overview
+     until the shell answers. A browser never opens it: its steps are the desktop's.
+   - ***Don't open at start*** is a checkbox at the guide's foot, kept in this browser's storage
+     (`daoris.setup.atStart`), read and written through the guarded `stored`/`store`; refused storage
+     reads as not chosen, so the guide still opens.
+   - **The status bar's *setup: n of 5*** sits after the workspace and the remote, its mark in open's
+     hue, leading to Get started; it waits for the reading, and goes once the five are done.
+   - ***Set up with Ask Daoris*** opens the side bar on a first message naming the steps not yet done,
+     numbered, the optional one marked, in the reader's language (they are the person's words). With
+     no agent named, the head says step 2 comes first and offers no hand-off that could not run.
+   - 🔴 **A question handed to Ask Daoris is let go once it is sent.** The side bar's Ask Daoris is
+     drawn again with its tab, and Quick Ask's with its box, so an opening still held was asked again
+     by every new drawing — true of the palette's question too since DOCK1d. The conversation says it
+     sent one (`onOpened`, from its effect), the application clears it, and ids come from one counter
+     so a cleared one is never reused.
+   - **The room names the guide** (`Help.cs`'s doors table): the preface says *Settings → Get started*,
+     and a helper that did not know the domain would guess at it, as it once guessed at a menu.
 
 ## 4. Not chosen
 

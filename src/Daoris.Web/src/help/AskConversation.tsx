@@ -46,6 +46,11 @@ export function useAskConversation(
   opening?: { text: string; id: number } | null,
   /** The agent Ask Daoris runs on, or null: with none named, nothing is opened ahead of the person. */
   helper: string | null = null,
+  /**
+   * Told once an opening has been sent (SETUP1b), so its holder lets it go: this organism is drawn again
+   * with its tab or its box, and a question still held would be asked again by the next drawing.
+   */
+  onOpened?: () => void,
 ) {
   const { t } = useTranslation();
   const sessions = useHelpSessions();
@@ -209,6 +214,8 @@ export function useAskConversation(
     if (!opening || opened.current === opening.id) return;
     opened.current = opening.id;
     onSend(opening.text, []);
+    // From the effect, never the render (frontend-architecture §4b): the holder clears what was sent.
+    onOpened?.();
     // Only a new opening asks; `onSend` reads this render's session and is not a reason to ask again.
   }, [opening?.id]);
 

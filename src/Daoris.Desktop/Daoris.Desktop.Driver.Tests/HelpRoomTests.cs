@@ -105,6 +105,8 @@ public sealed class HelpRoomTests : IDisposable
         // What a landing pattern may say, as `LandingRules` reads it — the first real conversation had to guess.
         foreach (var token in new[] { "{quest}", "{session}", "{slug}", "{repository}" }) Assert.Contains(token, agents);
         Assert.Contains("Settings → Daoris's own AI", agents);
+        // SETUP1b: the setup guide the person may be walked through, by the names the window gives it.
+        Assert.Contains("Settings → Get started (the Daoris menu's *Set up Daoris*)", agents);
         // It reads and advises; the moves that stay the person's are named as never its own.
         Assert.Contains("You change nothing yourself", agents);
         // It proposes (HELP1c): a card the person applies, through the connector's two tools.

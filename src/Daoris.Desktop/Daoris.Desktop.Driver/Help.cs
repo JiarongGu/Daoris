@@ -295,6 +295,11 @@ public static class HelpRoom
     /// <summary>What each change is, where it is on the screen, and the command that does the same (D50).</summary>
     private static readonly (string To, string Screen, string Terminal)[] Doors =
     [
+        // SETUP1b: the page hands the helper a first message asking to be walked through it, naming the
+        // steps by these titles, so it is told the guide exists and what each step is done on.
+        ("walk through setting this machine up: an agent, Daoris's own agent, a workspace and its repositories, "
+            + "what is driven, how work lands, what agents may do", "Settings → Get started (the Daoris menu's *Set up Daoris*)",
+            "(each step shows its own command there)"),
         ("drive a repository, or stop", "Projects", "`daoris driver drive|undrive <repository>`"),
         ("pause one, or release it", "Projects", "`daoris driver hold|resume <repository>`"),
         ("give its sessions their own tree", "Projects", "`daoris driver trees <repository> on|off`"),

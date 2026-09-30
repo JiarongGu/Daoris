@@ -14,12 +14,17 @@ import { attendedOf, type HelpWhere } from './where';
  * it is this machine's, which a browser may not learn (D47 §4).
  */
 export function AskDaoris({
-  where, attending = null, framed = true, opening, width, range, onResize, onResetWidth, onGo, onClose,
+  where, attending = null, framed = true, opening, onOpened, width, range, onResize, onResetWidth, onGo, onClose,
 }: {
   /** What is on the screen, told to the conversation ahead of the person's words (HELP1b). */
   where?: Omit<HelpWhere, 'session'>;
-  /** A question already asked, from the palette (DOCK1d): sent once per id, as a typed one is. */
+  /**
+   * A question already asked, from the palette (DOCK1d) or the setup guide (SETUP1b): sent once per id,
+   * as a typed one is.
+   */
   opening?: { text: string; id: number } | null;
+  /** Told once the opening is sent, so its holder lets it go and a later drawing does not send it again. */
+  onOpened?: () => void;
   /** The session attended, found here among every session — an ended one is still what the person reads. */
   attending?: string | null;
   /** Its own region (true), or a tab of Sessions' right dock, whose frame and close are the dock's. */
@@ -38,7 +43,7 @@ export function AskDaoris({
   const helper = machine.helper;
   const conversation = useAskConversation(
     scroller, where ? { ...where, session: attendedOf(attending, everything.data ?? []) } : undefined, opening,
-    helper);
+    helper, onOpened);
 
   const found = starters(machine);
   // The setup guide's standing, from the same reading (D97): the starters lead to it while it is not done.

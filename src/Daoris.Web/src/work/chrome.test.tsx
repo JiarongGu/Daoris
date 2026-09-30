@@ -294,6 +294,26 @@ describe('StatusBar', () => {
   });
 
   /**
+   * SETUP1b (D97 §2): a small *setup: n of 5* until the required steps are done, leading to Get started
+   * — and nothing once they are, since an always-there all-clear is not read.
+   */
+  it('counts the setup until it is done, and leads to Get started', async () => {
+    const onSetup = vi.fn();
+    const { rerender } = render(
+      <StatusBar driver="running" sessions={0} workspace={null} remote={null} setup={{ done: 2, of: 5 }} onSetup={onSetup} />,
+    );
+
+    await userEvent.click(screen.getByRole('button', { name: /setup/ }));
+    expect(onSetup).toHaveBeenCalledOnce();
+    expect(screen.getByText('setup: 2 of 5')).toBeTruthy();
+
+    rerender(<StatusBar driver="running" sessions={0} workspace={null} remote={null} setup={{ done: 5, of: 5 }} onSetup={onSetup} />);
+    expect(screen.queryByText(/setup:/)).toBeNull();
+    rerender(<StatusBar driver="running" sessions={0} workspace={null} remote={null} onSetup={onSetup} />);
+    expect(screen.queryByText(/setup:/)).toBeNull();
+  });
+
+  /**
    * The absent driver is a browser, which has no driver and never will (D55). Offering to take a
    * person to the machine's driver settings from a window that has no machine is a promise the
    * frame cannot keep, so the item stays text there however it was wired.

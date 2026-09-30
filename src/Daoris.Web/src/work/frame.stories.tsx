@@ -22,7 +22,8 @@ export const Statuses: StoryObj = {
     <Tooltip.Provider>
       <div className="grid gap-3">
         <StatusBar driver="running" sessions={2} workspace="default" remote onDriver={() => {}} />
-        <StatusBar driver="running" sessions={0} workspace={null} remote={false} />
+        {/* A first start (SETUP1b): the setup's count, until its required steps are done. */}
+        <StatusBar driver="running" sessions={0} workspace={null} remote={false} setup={{ done: 1, of: 5 }} onSetup={() => {}} />
         {/* A shell whose driver did not answer — different from having none, and it says so. */}
         <StatusBar driver="stopped" sessions={0} workspace="aurora" remote />
         {/* A browser: no driver, and the remote question is not one it can be asked. */}

@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { cleanup, render, screen, within } from '@testing-library/react';
+import { cleanup, render, renderHook, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Tooltip from '@radix-ui/react-tooltip';
@@ -21,6 +21,7 @@ vi.mock('@shenora/react', () => ({
 
 import './i18n';
 import { SettingsView } from './SettingsView';
+import { AT_START, useSetupAtStart } from './setupGuide';
 
 type World = {
   registry: { repository: string; workspace?: string }[];
@@ -59,12 +60,12 @@ function machine(next: World) {
   });
 }
 
-function show(onGo = vi.fn()) {
+function show(onGo = vi.fn(), onAskSetup = vi.fn()) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   render(
     <QueryClientProvider client={client}>
       <Tooltip.Provider>
-        <SettingsView notify={() => {}} section="start" onGo={onGo} />
+        <SettingsView notify={() => {}} section="start" onGo={onGo} onAskSetup={onAskSetup} />
       </Tooltip.Provider>
     </QueryClientProvider>,
   );
@@ -77,6 +78,7 @@ describe('Get started, on the desktop', () => {
     cleanup();
     vi.unstubAllGlobals();
     invoke.mockReset();
+    window.localStorage.clear();
   });
 
   it('leads the list of domains', async () => {
@@ -114,5 +116,88 @@ describe('Get started, on the desktop', () => {
     expect(within(within(steps).getByRole('listitem', { name: '1. An agent' })).getByText('done')).toBeInTheDocument();
     expect(within(within(steps).getByRole('listitem', { name: '3. A workspace and its repositories' })).getByText('done'))
       .toBeInTheDocument();
+  });
+
+  /** SETUP1b: *Don't open at start* is the viewer's own convenience, kept in this browser's storage. */
+  it('keeps "Don\'t open at start" as this viewer\'s choice', async () => {
+    show();
+
+    const box = await screen.findByRole('checkbox', { name: "Don't open at start" });
+    expect(box).not.toBeChecked();
+    await userEvent.click(box);
+    expect(window.localStorage.getItem(AT_START)).toBe('off');
+    expect(box).toBeChecked();
+    await userEvent.click(box);
+    expect(window.localStorage.getItem(AT_START)).toBeNull();
+  });
+
+  /** SETUP1b: the head hands Ask Daoris a first message, once it has an agent to run on. */
+  it('hands Ask Daoris the steps not yet done, once it has an agent', async () => {
+    machine({ ...FRESH, state: { ...FRESH.state, helperAdapter: 'claude-code-acp' } });
+    const onAskSetup = vi.fn();
+    show(vi.fn(), onAskSetup);
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Set up with Ask Daoris' }));
+    expect(onAskSetup).toHaveBeenCalledWith(expect.stringMatching(
+      /^Walk me through setting up Daoris on this machine, one step at a time\. Not done yet: 1\. An agent; 3\. A workspace/));
+  });
+});
+
+/**
+ * SETUP1b (D97 §2): a machine missing any of the first three steps opens on Get started at start —
+ * once per start, when the machine has been read, and never pulling the person from where they went.
+ */
+describe('opening at start', () => {
+  afterEach(() => window.localStorage.clear());
+
+  const hook = (initial: { settled: boolean; needed: boolean; view: string }) => {
+    const open = vi.fn();
+    const result = renderHook((props: typeof initial) => useSetupAtStart({ ...props, open }), { initialProps: initial });
+    return { open, rerender: result.rerender };
+  };
+
+  it('opens once the machine is read, and never again that start', () => {
+    const { open, rerender } = hook({ settled: false, needed: true, view: 'overview' });
+    expect(open).not.toHaveBeenCalled();
+
+    rerender({ settled: true, needed: true, view: 'overview' });
+    expect(open).toHaveBeenCalledOnce();
+
+    // The person leaves it, and it stays left: nothing brings them back.
+    rerender({ settled: true, needed: true, view: 'quests' });
+    rerender({ settled: true, needed: true, view: 'overview' });
+    expect(open).toHaveBeenCalledOnce();
+  });
+
+  it('does not open where the first steps are done, nor later that start when one comes undone', () => {
+    const { open, rerender } = hook({ settled: true, needed: false, view: 'overview' });
+    rerender({ settled: true, needed: true, view: 'overview' });
+    expect(open).not.toHaveBeenCalled();
+  });
+
+  it('never pulls the person from where they went before the machine was read', () => {
+    const { open, rerender } = hook({ settled: false, needed: true, view: 'overview' });
+    rerender({ settled: false, needed: true, view: 'projects' });
+    rerender({ settled: true, needed: true, view: 'projects' });
+    expect(open).not.toHaveBeenCalled();
+  });
+
+  it('does not open for a viewer who turned it off', () => {
+    window.localStorage.setItem(AT_START, 'off');
+    const { open, rerender } = hook({ settled: false, needed: true, view: 'overview' });
+    rerender({ settled: true, needed: true, view: 'overview' });
+    expect(open).not.toHaveBeenCalled();
+  });
+
+  /** Storage is a convenience: refused, the guide still opens as though nothing was chosen. */
+  it('opens where storage is refused, as though nothing was chosen', () => {
+    const refuse = vi.spyOn(Storage.prototype, 'getItem').mockImplementation(() => { throw new Error('refused'); });
+    try {
+      const { open, rerender } = hook({ settled: false, needed: true, view: 'overview' });
+      rerender({ settled: true, needed: true, view: 'overview' });
+      expect(open).toHaveBeenCalledOnce();
+    } finally {
+      refuse.mockRestore();
+    }
   });
 });

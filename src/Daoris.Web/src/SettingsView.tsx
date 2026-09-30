@@ -74,12 +74,16 @@ const SECTIONS: readonly { id: SettingsSection; machine: boolean }[] = [
  * Every domain is cards the page already held. The two doors are unchanged (D50): each row is still
  * the file a terminal edits.
  */
-export function SettingsView({ notify, section = 'appearance', onSection, anchor = null, onAnchored, onGo = () => {} }: {
+export function SettingsView({
+  notify, section = 'appearance', onSection, anchor = null, onAnchored, onGo = () => {}, onAskSetup,
+}: {
   notify: Notify;
   section?: SettingsSection;
   onSection?: (section: SettingsSection) => void;
   /** Where a Get started step's door leads (SETUP1a): another domain, Projects, or one of its drawers. */
   onGo?: (door: StarterDoor) => void;
+  /** Open Ask Daoris on a first message asking to be walked through the setup (SETUP1b). */
+  onAskSetup?: (message: string) => void;
   /**
    * The part of the domain a menu item named, brought into view once it is drawn (UX5 U72): the
    * Agents menu's *Usage* opened its domain at the top, a screen above the usage.
@@ -149,7 +153,7 @@ export function SettingsView({ notify, section = 'appearance', onSection, anchor
         </nav>
         {/* A card stacked under another keeps its own top margin; the first in a domain does not. */}
         <div className="min-w-0 [&>*:first-child]:mt-0">
-          {shown === 'start' && <GetStartedDomain onGo={onGo} />}
+          {shown === 'start' && <GetStartedDomain attached={attached} onGo={onGo} onAsk={onAskSetup} />}
           {shown === 'appearance' && <Appearance />}
           {shown === 'ai' && <OwnAi attached={attached} notify={notify} />}
           {shown === 'workspace' && (

@@ -361,7 +361,10 @@ controls are in the frame design's §3.
   - **Get started** (D97): the six setup steps in order, each a row with its state pill (done's hue,
     open's for *to do*, neutral for optional), what done means, its commands with a copy each, and the
     doors to the screens that do it at the right; a done step's doors are quiet, a step to do's are
-    buttons. A browser lists the one step it can know and says the rest is the desktop's.
+    buttons. *Set up with Ask Daoris* is the head's one primary control, present only where Ask Daoris
+    has an agent, and *Don't open at start* sits at the foot. A browser lists the one step it can know
+    and says the rest is the desktop's, with neither control. The status bar's *setup: n of 5* leads
+    here until the required steps are done.
   - *Appearance*: the theme and the language, each a segmented choice.
   - **Daoris's own AI** (AGT6), for everyone, because which tier answers search is the service's
     answer and given to every browser: search and convergence with the service's tier and note
