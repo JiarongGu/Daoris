@@ -51,7 +51,7 @@ describe('the domain list, in a shell', () => {
     expect(within(domains).getAllByRole('button')[0]?.textContent).toBe('Setup');
     // Daoris's browser (CHR5, CHR7) and the machine log (LOG1c) are a machine's domains, last in the list.
     expect(within(domains).getAllByRole('button').slice(-2).map((button) => button.textContent)).toEqual(['Browser', 'Machine log']);
-    expect(await screen.findByLabelText('Park a quest after this many failed sessions')).toBeTruthy();
+    expect(await screen.findByLabelText('Failures before a quest parks')).toBeTruthy();
     // A card alone in its domain does not say the domain's name again: the list already has.
     expect(screen.getAllByText('Driver')).toHaveLength(1);
     // Another domain's cards are not on the page at all.
