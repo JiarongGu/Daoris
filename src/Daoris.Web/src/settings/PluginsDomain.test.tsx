@@ -67,12 +67,15 @@ describe('the plugins card', () => {
     expect(serviceCalls()).toEqual([]);
   });
 
-  /** PLUG10 (P9): running is a state, not an outcome, so its pill never wears done's green. */
-  it('the running pill wears the in-progress hue, never done\'s', async () => {
+  /**
+   * PLUG10 (P9): running is a state, not an outcome, so its pill never wears done's green. It is the quiet
+   * neutral D119 §2 gives it: a plugin process between calls is like a chat between turns (D41 §3).
+   */
+  it('the running pill is neutral, never done\'s green', async () => {
     show(<SettingsView notify={() => {}} section="plugins" />);
 
     const pill = await screen.findByText('running');
-    expect(pill.className).toMatch(/\bborder-st-taken\b/);
+    expect(pill.className).toMatch(/\bborder-line\b/);
     expect(pill.className).not.toMatch(/st-done/);
   });
 

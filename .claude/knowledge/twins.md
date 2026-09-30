@@ -51,7 +51,6 @@ map found this first (WSP3), and every twin since was built the same way for the
 | An account's default set, and cleared back to the next one down, in `harnesses.json` (D49 §4, LEFT3) | `toolchain.ts` (`withDefault`, which `agent profile default <agent> <profile>\|--clear` writes); `toolchain.test.ts`'s `DEFAULT_EDITS` | the modules' `DriverModule.DefaultEdited`, which `HARNESS_ACTION`'s `profile-default` writes for the screen; `ProfileDefaultTwinTests` holds the same rows | — |
 | A maker's release channel (AGT2b) | `channels.ts` | `ReleaseChannel.cs` | — |
 | Permission rules (D72), and which form of a push the defaults deny (UNBLOCK4) | `permissions.ts`; `permissions.test.ts` holds the push forms and a model of the harness's Bash matching, checked against the maker's rows | `Permissions.cs`; `PermissionRulesTests` holds the same push forms, `BashRuleTests` the model and the maker's rows. The classifier's `hard_deny` sentence is the driver's alone: only it writes the spawn file | — |
-| Rule proposals (D74) | `ruleproposals.ts` | `RuleProposals.cs` | `RuleProposals.cs` |
 | Permission rules (D72) | `permissions.ts` | `Permissions.cs` | — |
 | Rule proposals (D74) | `ruleproposals.ts`; and `tools/usage-report.mjs`'s `readProposals` (UNBLOCK5), which reads only the id, the time and the state, by the same rules: `usage-report.test.ts`'s `PROPOSAL_FILES` | `RuleProposals.cs` | `RuleProposals.cs` |
 | A folder's trust (D73) | `trust.ts` | `ClaudeTrust.cs` | — |

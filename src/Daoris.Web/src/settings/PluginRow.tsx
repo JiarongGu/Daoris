@@ -70,7 +70,7 @@ export function PluginRow({
           {plugin.version && <span className="font-mono text-small text-ink-faint">{plugin.version}</span>}
           {/* PLUG10 (P9): running is a state, not an outcome, so it wears the palette's in-progress hue,
               as a working session's pill does. It wore done's green, an outcome's (D41 §3). */}
-          {plugin.running && <Pill tone="taken">{t('plugin.running')}</Pill>}
+          {plugin.running && <Pill>{t('plugin.running')}</Pill>}
           {!plugin.enabled && <Pill tone="neutral">{t('plugin.off')}</Pill>}
         </span>
       )}
