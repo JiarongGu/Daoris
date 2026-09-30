@@ -65,6 +65,10 @@ closings lifted out of the Work frame.
    lost its own strip button, since its region's toggle, `F1` and `Ctrl+Alt+I` open it; and the dock's
    tabs shrink as a browser's do, the selected one whole and the rest cut to their icons, since a third
    tab clipped the dock's close at its floor. The list for tabs that do not fit came with DOCK1b.
+   *Amended by TABS1 (2026-10-01):* the rest gave way by shrinking, each cut with an ellipsis, until
+   时间线 read as 时…. A tab is now its whole name or its icon, measured (`work/tabFit.ts`), by the rule
+   in `2026-09-19-platform-ux.md` §4; the shown preview alone may still be cut at its cap, and the
+   panel's views follow the same rule.
 2. **DOCK1b**: *Move to* for Ask Daoris and the console, between the right region and the panel;
    remembered; *Reset layout*. *Built 2026-09-29, ahead of DOCK1a* for the toggles' reason: it is
    what a person uses, and it needs no hoist. As built:

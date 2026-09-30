@@ -212,6 +212,10 @@ controls are in the frame design's §3.
   A file this machine does not hold says *kept on the machine that published it*.
 - **A sentence's backticks are code** (`Inline`): the words are unchanged, so a service's sentence is
   still verbatim, and a command reads as one. A sentence with a command in it is not monospace.
+- **A tab is its whole name or its icon, never a name cut** (TABS1): a 430px side bar cut 时间线 to
+  时… and saved six pixels. When a region's row cannot hold every tab's name, the selected tab keeps its
+  name and the rest are their icons, each named by its tip and its label; only then does the row
+  scroll. A file's name is the exception, since it is long and its tip carries the path.
 - **A card's heading is not its first row's label**, and a card alone in its settings domain carries
   no title, because the list names it (U57). **Labels are a column**: a label beside wrapping chips
   sits in its own column. **A label never repeats its value's first word**, and a record's title is its
