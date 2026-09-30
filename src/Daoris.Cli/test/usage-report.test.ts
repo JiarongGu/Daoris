@@ -27,7 +27,7 @@ type Report = {
   lines: number;
   skipped: number;
   lifecycle: { source: string; starts: number; stops: number; uptimeSeconds: number; versions: string[] }[];
-  used: { views: Counted[]; commands: Counted[]; panels: Counted[] };
+  used: { views: Counted[]; commands: Counted[]; panels: Counted[]; previews: { opened: number; sessions: number; byKind: Counted[] } };
   sessions: {
     started: number; byKind: Counted[]; byAdapter: Counted[];
     opened: Timing; answered: Timing;
@@ -125,6 +125,12 @@ function week(): string {
     line('2026-09-30T08:17:00.000Z', 'desktop', 'info', 'proposal.settled', { applied: true }),
     line('2026-09-30T08:18:00.000Z', 'desktop', 'info', 'proposal.settled', { applied: false }),
     line('2026-09-30T08:19:00.000Z', 'desktop', 'info', 'message.sent', { kind: 'help', length: 10, files: 1 }),
+    // LEFT2's preview.opened: a file read for its preview in the side bar, by session and path within the tree.
+    line('2026-09-30T08:20:00.000Z', 'desktop', 'info', 'preview.opened', { session: 's3', path: 'src/chunk.ts' }),
+    line('2026-09-30T08:21:00.000Z', 'desktop', 'info', 'preview.opened', { session: 's3', path: 'README.MD' }),
+    line('2026-09-30T08:22:00.000Z', 'desktop', 'info', 'preview.opened', { session: 's2', path: 'src/api/routes.ts' }),
+    line('2026-09-30T08:23:00.000Z', 'desktop', 'info', 'preview.opened', { session: 's2', path: 'Makefile' }),
+    line('2026-09-30T08:24:00.000Z', 'desktop', 'info', 'preview.opened', { session: 's2', path: 'docs/guide.md' }),
   ]);
   file('2026-09-30.host.jsonl', [
     line('2026-09-30T07:59:00.000Z', 'host', 'info', 'app.started', { version: '0.0.2+1234567890abcdef', mode: 'local' }),
@@ -152,7 +158,7 @@ test('the logs are every source\'s lines in the period, merged by time, with wha
     const read = readLogs(join(home, 'logs'), { since });
 
     assert.equal(read.skipped, 1);
-    assert.equal(read.lines.length, 38);
+    assert.equal(read.lines.length, 43);
     const times = read.lines.map((each: { time: number }) => each.time);
     assert.deepEqual(times, [...times].sort((a, b) => a - b));
     // The host's start lands between the two desktop days, and the week-old file is never read.
@@ -184,6 +190,24 @@ test('what was used most: views, commands and panel moves, most first', () => {
     assert.deepEqual(used.views, [{ name: 'sessions', count: 2 }, { name: 'overview', count: 1 }]);
     assert.deepEqual(used.commands, [{ name: 'go.quests', count: 1 }]);
     assert.deepEqual(used.panels, [{ name: 'console → right', count: 1 }]);
+  });
+});
+
+/**
+ * LEFT3 f: whether the side bar's reading room is used (LEFT2, D111): how many previews opened, in how many sessions,
+ * and what kinds of file, by extension. Never which file: a kind says what is read, and a path says nothing more a
+ * development session needs.
+ */
+test('what was previewed: how many files, in how many sessions, and of what kind', () => {
+  withWeek((home) => {
+    const { used } = reportOf(home);
+
+    // A kind is the extension, whatever its case, and a file with none is `(none)`.
+    assert.deepEqual(used.previews, {
+      opened: 5,
+      sessions: 2,
+      byKind: [{ name: '.md', count: 2 }, { name: '.ts', count: 2 }, { name: '(none)', count: 1 }],
+    });
   });
 });
 
@@ -244,7 +268,7 @@ test('the lifecycle: starts, stops, uptime and the versions each process ran', (
       { source: 'desktop', starts: 2, stops: 1, uptimeSeconds: 3600, versions: ['0.0.1+abcdef12', '0.0.2+12345678'] },
       { source: 'host', starts: 1, stops: 0, uptimeSeconds: 0, versions: ['0.0.2+12345678'] },
     ]);
-    assert.deepEqual([lines, skipped], [38, 1]);
+    assert.deepEqual([lines, skipped], [43, 1]);
     assert.deepEqual(period, { from: '2026-09-23T12:00:00.000Z', to: '2026-09-30T12:00:00.000Z', days: 7 });
   });
 });
@@ -257,6 +281,8 @@ test('the text report says each section, and never prints a message beyond the l
       assert.match(text, new RegExp(`^${heading}$`, 'm'), heading);
     }
     assert.match(text, /views\s+sessions 2 · overview 1/);
+    assert.match(text, /previews\s+5 opened in 2 sessions — \.md 2 · \.ts 2 · \(none\) 1/);
+    assert.equal(text.includes('src/chunk.ts'), false);
     assert.match(text, /opening\s+median 6\.0 s · slowest 10\.0 s \(s3\) · 3 timed/);
     assert.match(text, /turns\s+3 ended — end_turn 2 · cancelled 1; median 1m 0s · slowest 1m 10s \(s3\) · 2 timed/);
     assert.match(text, /DRIVER_REFUSED\s+2\s+DAORIS\.DRIVER\.START_CHAT/);
@@ -271,6 +297,7 @@ test('an empty period says so in every section rather than printing nothing', ()
   const text: string = render(summarise([], { from: since, to: NOW, skipped: 0 }), 'logs');
   assert.match(text, /No lines in this period\./);
   assert.match(text, /^Refused\n {2}none$/m);
+  assert.match(text, /^Used most\n {2}none$/m);
 });
 
 test('the arguments: a home, or an install\'s data folder, a number of days, and JSON', () => {

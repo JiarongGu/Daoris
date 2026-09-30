@@ -1875,7 +1875,8 @@ describe('acting on what a session landed', () => {
     expect(screen.getByText('feature/0fda18-fix', { selector: 'code' })).toBeTruthy();
     await userEvent.click(screen.getByRole('button', { name: 'hand it to github-pull-request' }));
 
-    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HANDOFF', { payload: { id: 's1a2b3c4' } });
+    // LEFT3 a: a hand-off waits as long as its plugin may (`pluginBound`, six minutes), not the bridge's 30 seconds.
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HANDOFF', { payload: { id: 's1a2b3c4' }, timeoutMs: 6 * 60_000 });
     expect(await screen.findByText(/Plugin `github-pull-request`: pushed it/)).toBeTruthy();
     expect(screen.getByRole('link', { name: 'open the pull request' })).toHaveAttribute('href', 'https://example.test/example-org/engine/pull/8');
   });
@@ -1966,8 +1967,10 @@ describe('acting on what a session landed', () => {
     await review();
     await userEvent.click(screen.getByRole('button', { name: 'accept' }));
 
+    // LEFT3 a: a landing may hand its branch to a plugin, so it waits as long as the plugin may (`pluginBound`).
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'LAND_SESSION_TREE', {
       payload: { id: 's1a2b3c4' },
+      timeoutMs: 6 * 60_000,
     });
     expect(await screen.findByText(/merged `daoris\/x` into `main`/)).toBeTruthy();
   });

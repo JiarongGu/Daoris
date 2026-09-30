@@ -56,10 +56,12 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
             "`daoris driver across <repository> read on|off|--clear` (`--workspace <name>` for a whole workspace), "
             + "`daoris driver across <repository> write-to <other> [--clear]`"),
         ("sign an agent in, or add an account", "Settings → Agents & accounts", "`daoris agent login <agent>`"),
-        // HELP9 named it while Ask Daoris owed it (D110); HELP10 proposes it as an agent's `default`.
+        // HELP9 named it while Ask Daoris owed it (D110); HELP10 proposes it as an agent's `default`. LEFT3 gave the
+        // screen's clear its terminal door, which Ask Daoris still owes (HelpCoverageTests' Forms).
         ("choose which account an agent's sessions use, for the machine or a workspace",
             "Settings → Agents & accounts → Make default, use for a workspace",
-            "`daoris agent profile default <agent> <profile> [--workspace <name>]`"),
+            "`daoris agent profile default <agent> <profile>|--clear [--workspace <name>]` (`--clear` names none again: "
+            + "the tool's own home, or for a workspace the machine's default)"),
         // HELP6: the doors built since, which the helper now proposes too.
         ("update an agent, or pin it to one version", "Settings → Agents & accounts → Update, Pin a version",
             "`daoris agent update <agent>`, `daoris agent pin <agent> <version>`"),

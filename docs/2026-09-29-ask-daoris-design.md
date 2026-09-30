@@ -347,6 +347,8 @@ line git can name. With an agent named, a starter is also a first message.
      its command name the owner. Applied through `IHelpDoors.SetDefaultAccountAsync`, which is `HARNESS_ACTION`'s own
      `profile-default` (one method the route and the door call) and asks the roster again, as the route does.
      *Left out:* clearing a default back to the tool's own home, which the screen offers and no terminal verb does.
+     *LEFT3 built the verb*, `daoris agent profile default <agent> --clear [--workspace <name>]`, a twin of the screen's
+     write; proposing a clear is a door owed (`HelpCoverageTests`' forms), and the room names the command meanwhile.
    - **The browser's settings.** A ninth kind, `browser_propose {door, value, address?, title?}`: the `daoris
      browser` verbs that change something (`use`, `links`, `extensions`, `favorite add|remove`), a favorite's address
      as the file's target. The files are the desktop modules', so the facts carry what `BrowserModule.HelpFacts`
@@ -370,7 +372,9 @@ line git can name. With an agent named, a starter is also a first message.
      on the listed rows that move and nothing else, fetching nothing and judging each again; what did not happen is
      said as the terminal says it. The rows are the screen's selection (a line that moves, a branch that replays, a
      landed branch that may go). The room names the kind and the card's two buttons, and a delete card's own word,
-     which it had given as *apply*.
+     which it had given as *apply*. *Since LEFT3* the look keeps beside its rows what they do not say, and the card
+     says it as the screen does: the lines it could not fetch, by git's reason and since when, and the repositories it
+     left apart (D112), collapsed, with how a proposal includes one.
 
 ## 10. Not chosen
 
