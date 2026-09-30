@@ -14,10 +14,28 @@ public sealed class HelpRoomMayProposeTests
     {
         var agents = HelpRoom.Render(HelpRoomFixture.Machine);
 
-        Assert.Contains("every card but a go reads **apply** and **not now**", agents);
+        Assert.Contains("every other card reads **apply** and **not now**", agents);
         Assert.Contains("a go card reads **go there** and **not now**", agents);
         Assert.Contains("**应用**", agents);
         Assert.Contains("**前往**", agents);
+        // HELP10: a delete's press is its own word, as its card labels it, and a bring-up-to-date card's first is the look.
+        Assert.Contains("a delete card **delete** and **not now** (in 中文 **删除** and **暂不**)", agents);
+        Assert.Contains("a bring-up-to-date card **look for updates** until the person has looked, then **apply**", agents);
+        Assert.Contains("**查看更新**", agents);
+    }
+
+    /// <summary>
+    /// HELP10: WSR6's *Bring up to date* (D109) is proposed, and the room says its card's two presses: the look, which is
+    /// the person's and fetches, and the Apply, on the rows the look listed only.
+    /// </summary>
+    [Fact]
+    public void The_room_says_how_bringing_repositories_up_to_date_is_proposed()
+    {
+        var proposes = new HelpRoomMayPropose().Render(HelpRoomFixture.Machine);
+
+        Assert.Contains("- `sync_propose`: bring repositories up to date after a pull request merged", proposes);
+        Assert.Contains("Its card asks the person to look first, which fetches each line as them", proposes);
+        Assert.Contains("apply acts on those rows only. Daoris never pushes.", proposes);
     }
 
     /// <summary>

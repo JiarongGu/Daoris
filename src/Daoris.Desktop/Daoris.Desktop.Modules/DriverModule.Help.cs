@@ -101,6 +101,11 @@ public sealed partial class DriverModule
                         Changes = ChangesOf(plugin.Changes),
                     }
                     : null,
+                // Bringing up to date (HELP10): whether the person has looked, and every row the look listed, in the
+                // terminal's words, for the card to show before Apply.
+                Sync = plan.Sync is { } sync
+                    ? new { sync.Looked, Rows = sync.Rows.Select(row => new { row.Key, row.Step, row.Moves, row.Says }).ToArray() }
+                    : null,
             });
         }
 
@@ -204,6 +209,23 @@ public sealed partial class DriverModule
                 ?? throw new DriverException($"Daoris manages no toolchain for `{harness}` — its accounts are its own tooling's.");
             module.ProfileDefault(toolchain.Owner(harness), account, workspace);
             await module._loop.Harnesses.RosterAsync(config, refresh: true, ct).ConfigureAwait(false);
+        }
+
+        // TREES_SYNC_PLAN's own list (HELP10, WSR6): the same checkouts and sessions, and each line fetched as the person,
+        // whose press this is — the look on Ask Daoris's card, never its proposal (D109).
+        public async Task<SyncPlan> SyncPlanAsync(string? repository, CancellationToken ct)
+        {
+            var (repositories, inUse) = await module.CheckoutsAndSessionsAsync(repository, ct).ConfigureAwait(false);
+            return await new SessionTrees(module._loop.Home).SyncPlanAsync(repositories, inUse, fetch: true, ct).ConfigureAwait(false);
+        }
+
+        // TREES_SYNC's own press: only the rows the look listed, fetching nothing, then the loop asked to look.
+        public async Task<SyncDone> SyncAsync(string? repository, IReadOnlySet<string> only, CancellationToken ct)
+        {
+            var (repositories, inUse) = await module.CheckoutsAndSessionsAsync(repository, ct).ConfigureAwait(false);
+            var done = await new SessionTrees(module._loop.Home).SyncAsync(repositories, inUse, only, fetch: false, ct).ConfigureAwait(false);
+            module._loop.Nudge();
+            return done;
         }
 
         // BrowserModule's own edits (HELP10): the same check, the same refusal for a file it could not read, the

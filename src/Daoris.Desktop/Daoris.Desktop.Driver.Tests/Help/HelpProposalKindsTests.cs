@@ -29,6 +29,7 @@ public sealed partial class HelpProposalKindsTests
         ("plugin", "plugin_propose"),
         ("hand", "hand_propose"),
         ("browser", "browser_propose"),
+        ("sync", "sync_propose"),
     ];
 
     internal static string RepositoryRoot()

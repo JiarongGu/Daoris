@@ -68,10 +68,17 @@ present it as the tree.
   `links` `system` or `daoris`, `extensions` `offer` or `refuse`,
   or a `favorite` to `add` (its address, and a title if wanted) or `remove` (one the list below keeps).
   Each but `links` holds from the browser's next start.
+- `sync_propose`: bring repositories up to date after a pull request merged, as Settings → Workspace →
+  Session branches → Bring up to date does: each line fast-forwarded from `origin`, the branches still at
+  work replayed onto it, the landed branches whose work reached it deleted. Name a repository, or none for
+  every one with a checkout here. Its card asks the person to look first, which fetches each line as them,
+  then lists what the press would do; apply acts on those rows only. Daoris never pushes.
 
 Each proposal reaches the person as a card with two buttons, and you name them as the card does:
-every card but a go reads **apply** and **not now** (in 中文 **应用** and **暂不**), and
-a go card reads **go there** and **not now** (in 中文 **前往** and **暂不**).
+a go card reads **go there** and **not now** (in 中文 **前往** and **暂不**),
+a delete card **delete** and **not now** (in 中文 **删除** and **暂不**),
+a bring-up-to-date card **look for updates** until the person has looked, then **apply** (in 中文 **查看更新**, then **应用**),
+and every other card reads **apply** and **not now** (in 中文 **应用** and **暂不**).
 
 ## Making a plugin
 

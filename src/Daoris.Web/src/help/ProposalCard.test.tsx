@@ -223,6 +223,48 @@ describe('the kinds that reach every door', () => {
     expect(screen.getByText(BROWSER.terminal, { selector: 'code' })).toBeInTheDocument();
   });
 
+  // HELP10: bringing up to date (WSR6, D109), the screen's two presses on one card: the look, which fetches and so is
+  // the person's, then Apply on the rows the look listed.
+  const SYNC: HelpProposal = {
+    id: 'p11', kind: 'sync',
+    describe: 'Bring `engine` up to date after a pull request merged. Look for updates first: Daoris fetches each line from `origin`, as you.',
+    terminal: 'daoris-driver trees sync --repository engine',
+    why: 'the person\'s pull request merged',
+    sync: { looked: false, rows: [] },
+  };
+  const LOOKED: HelpProposal = {
+    ...SYNC,
+    describe: 'Bring `engine` up to date: 1 thing(s) change, only the rows below that move, each judged again right before it acts.',
+    terminal: 'daoris-driver trees sync --repository engine --yes',
+    sync: {
+      looked: true,
+      rows: [
+        { key: 'engine:main', step: 'line', moves: true, says: 'engine  main  fast-forwards 1 commit(s) to `origin/main`' },
+        { key: 'engine:daoris/s-busy', step: 'replay', moves: false, says: 'engine  daoris/s-busy  a session still running or waiting holds its tree' },
+      ],
+    },
+  };
+
+  it('bringing up to date asks the person to look first, the press that fetches, and lists nothing yet', async () => {
+    await press(SYNC, 'look for updates');
+
+    expect(screen.getByText('Ask Daoris proposes bringing repositories up to date')).toBeInTheDocument();
+    expect(screen.getByText(/Looking fetches each line from origin, as you/)).toBeInTheDocument();
+    expect(screen.queryByRole('list', { name: 'what the press would do' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'apply' })).not.toBeInTheDocument();
+  });
+
+  it('once looked, it lists what the press would do in the terminal\'s words, and Apply does only what moves', async () => {
+    await press(LOOKED, 'apply');
+
+    const rows = within(screen.getByRole('list', { name: 'what the press would do' }));
+    expect(rows.getByText('moves')).toBeInTheDocument();
+    expect(rows.getByText('stays')).toBeInTheDocument();
+    expect(rows.getByText('origin/main', { selector: 'code' })).toBeInTheDocument();
+    expect(screen.getByText(/Apply does only the rows that move/)).toBeInTheDocument();
+    expect(screen.getByText(LOOKED.terminal, { selector: 'code' })).toBeInTheDocument();
+  });
+
   it('one of the install\'s own plugins says what it needs, in its README\'s words, before Apply', async () => {
     await press(PLUGIN_OFFER, 'apply');
 
@@ -267,6 +309,11 @@ describe('the kinds that reach every door', () => {
       expect(screen.getByText(/^需要：/)).toBeInTheDocument();
       expect(screen.getByText(/它的版本/)).toBeInTheDocument();
       expect(screen.getByText(/从它的来处替换它的文件夹/)).toBeInTheDocument();
+      cleanup();
+      // HELP10: bringing up to date's chrome, the look's word the screen's own.
+      render(<ul><ProposalCard proposal={SYNC} onApply={vi.fn()} onDismiss={vi.fn()} /></ul>);
+      expect(screen.getByText('问道衍提议同步到最新')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: '查看更新' })).toBeInTheDocument();
     } finally {
       cleanup();
       await i18n.changeLanguage('en');

@@ -62,6 +62,20 @@ public sealed class HelpFileDoorsTests : Bridge
         Assert.Equal("{ not json", File.ReadAllText(BrowserSettings.FilePath(Home)));
     }
 
+    /// <summary>
+    /// HELP10: bringing up to date is <c>TREES_SYNC_PLAN</c>'s list and <c>TREES_SYNC</c>'s press (WSR6), which read the
+    /// registry and the running sessions, so before the driver is up both are the cold-start sentence and nothing is fetched.
+    /// </summary>
+    [Fact]
+    public async Task Bringing_up_to_date_before_the_driver_is_up_is_the_cold_start_sentence()
+    {
+        var doors = Module().HelpDoors(null);
+
+        Assert.Contains("still coming up", (await Assert.ThrowsAnyAsync<Exception>(() => doors.SyncPlanAsync(null, CancellationToken.None))).Message);
+        Assert.Contains("still coming up",
+            (await Assert.ThrowsAnyAsync<Exception>(() => doors.SyncAsync("engine", new HashSet<string> { "engine:main" }, CancellationToken.None))).Message);
+    }
+
     /// <summary>HELP10: what a browser proposal is judged against is the files as the Browser screen reads them, and the route's reader of an address.</summary>
     [Fact]
     public void The_browsers_facts_are_its_files_as_the_screen_reads_them()

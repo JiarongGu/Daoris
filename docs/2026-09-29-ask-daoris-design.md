@@ -54,7 +54,7 @@ a `SessionTree`:
 - **`CLAUDE.md`** carrying `@AGENTS.md`, and **`.claude/settings.json`** allowing the family's read
   tools, the connector's `setting_propose` and `ask_propose` (and since HELP6 its four further
   `*_propose` tools, §9.6, since PLUG9 `plugin_propose`, §9.7, since WSR5b `hand_propose`, §9.8, and since HELP10
-  `browser_propose`, §9.10), and nothing else. Over the protocol door
+  `browser_propose` and `sync_propose`, §9.10), and nothing else. Over the protocol door
   a request for anything unlisted is refused by construction (D52), which is the point: it reads, and
   it proposes.
 
@@ -107,6 +107,10 @@ setting doors, and since HELP10 (§9.10) `retry` of a quest the driver parked, s
 **The browser's settings** (HELP10, §9.10): which browser sessions and the person use, where the page's links
 open, other software's extensions, and a favorite kept or dropped (`browser_propose`), applied through the
 Browser screen's own edits.
+
+**Bringing repositories up to date** (HELP10, §9.10, D109): `sync_propose`, a card with the screen's two presses,
+since looking fetches as the person: *look for updates* lists what the press would do on the card, and *apply*
+does those rows only.
 
 **A hand-off** (WSR5b, §9.8, D102): a branch a landing made and recorded, handed to a landing plugin
 (`hand_propose`), applied through the review's own door. It is the one card whose press leads to a push:
@@ -356,6 +360,17 @@ line git can name. With an agent named, a starter is also a first message.
    - **The room says PREVIEW1's file preview exists** (D111), in *The window*: a path in a session's tool card, or a
      file's button in the review, opens a read-only preview as a tab of the right side bar, and in Ask Daoris's own
      conversation a path is plain text.
+   - **Bring up to date** (WSR6, D109). A tenth kind, `sync_propose {repository?}`, for one repository or every one
+     with a checkout here. D109 fetches nothing until the person presses (looking reaches the network as them), so
+     the helper's proposal lists nothing: **the card has the screen's two presses.** Its first, *look for updates*,
+     is an Apply that runs `TREES_SYNC_PLAN`'s own list through `IHelpDoors.SyncPlanAsync` (the same checkouts and
+     sessions, fetching each line) and keeps every row in the proposal's file (`listed`: its key as `TREES_SYNC`'s
+     `only` takes it, its step, whether it moves, the terminal's sentence), and the card stays; a look with nothing
+     to do settles it, and says so. Its second, *apply*, is `TREES_SYNC`'s own press through `IHelpDoors.SyncAsync`,
+     on the listed rows that move and nothing else, fetching nothing and judging each again; what did not happen is
+     said as the terminal says it. The rows are the screen's selection (a line that moves, a branch that replays, a
+     landed branch that may go). The room names the kind and the card's two buttons, and a delete card's own word,
+     which it had given as *apply*.
 
 ## 10. Not chosen
 

@@ -82,10 +82,7 @@ public sealed partial class HelpCoverageTests
 
         ("workspace", "useSetLine", null, new Door("setting", "line")),
         ("workspace", "useSetLanding", null, new Door("setting", "landing")),
-        ("workspace", "useTreesSync", null, new Owed(
-            "bringing a repository up to date after its pull request merges (WSR6, D109) is a press Ask Daoris could "
-            + "propose, its card showing the plan `TREES_SYNC_PLAN` lists before Apply acts on those rows only; the kind "
-            + "is HELP10's, and until then the room names Settings → Workspace → Session branches → Bring up to date.")),
+        ("workspace", "useTreesSync", null, new Door("sync", "sync")),
         ("workspace", "useSweep", null, new Exempt(
             "it removes session trees and branches whose work landed, a discard, which stays the person's own press "
             + "(D89); the room names Settings → Workspace → Session branches.")),
@@ -229,6 +226,17 @@ public sealed partial class HelpCoverageTests
         {
             Assert.True(reason.Length >= 40 && reason.EndsWith('.'), $"a reason is a sentence that says why: `{reason}`.");
         }
+    }
+
+    /// <summary>
+    /// HELP10: WSR6's <c>daoris-driver trees sync</c> (D109), a verb of the headless host rather than the CLI's table, is
+    /// the <c>sync</c> kind's door while the host's usage still spells it.
+    /// </summary>
+    [Fact]
+    public void The_headless_hosts_trees_sync_is_the_sync_kinds_door()
+    {
+        Assert.Contains("sync [--repository <name>] [--yes]", DriverCommand.Usage);
+        Assert.Contains("sync", HelpProposalKinds.Find("sync")!.Doors);
     }
 
     /// <summary>DRV8's <c>--share</c>, decided (D110): exempt, while the headless loop's usage still names it.</summary>

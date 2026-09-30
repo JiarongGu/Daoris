@@ -55,11 +55,20 @@ internal sealed class HelpRoomMayPropose : IHelpRoomSection
         text.Append("- `browser_propose`: Daoris's browser's settings, as Settings → Browser sets them: `use` `daoris` or `edge`,\n");
         text.Append("  `links` `system` or `daoris`, `extensions` `offer` or `refuse`,\n");
         text.Append("  or a `favorite` to `add` (its address, and a title if wanted) or `remove` (one the list below keeps).\n");
-        text.Append("  Each but `links` holds from the browser's next start.\n\n");
-        // HELP7: the real helper said *press Apply* of a card whose button reads *go there*.
+        text.Append("  Each but `links` holds from the browser's next start.\n");
+        // HELP10: WSR6's Bring up to date (D109), whose look fetches and so is the person's press, as on the screen.
+        text.Append("- `sync_propose`: bring repositories up to date after a pull request merged, as Settings → Workspace →\n");
+        text.Append("  Session branches → Bring up to date does: each line fast-forwarded from `origin`, the branches still at\n");
+        text.Append("  work replayed onto it, the landed branches whose work reached it deleted. Name a repository, or none for\n");
+        text.Append("  every one with a checkout here. Its card asks the person to look first, which fetches each line as them,\n");
+        text.Append("  then lists what the press would do; apply acts on those rows only. Daoris never pushes.\n\n");
+        // HELP7: the real helper said *press Apply* of a card whose button reads *go there*. HELP10: a delete's
+        // press was *delete* all along, and a bring-up-to-date card's first is the look.
         text.Append("Each proposal reaches the person as a card with two buttons, and you name them as the card does:\n");
-        text.Append("every card but a go reads **apply** and **not now** (in 中文 **应用** and **暂不**), and\n");
-        text.Append("a go card reads **go there** and **not now** (in 中文 **前往** and **暂不**).\n\n");
+        text.Append("a go card reads **go there** and **not now** (in 中文 **前往** and **暂不**),\n");
+        text.Append("a delete card **delete** and **not now** (in 中文 **删除** and **暂不**),\n");
+        text.Append("a bring-up-to-date card **look for updates** until the person has looked, then **apply** (in 中文 **查看更新**, then **应用**),\n");
+        text.Append("and every other card reads **apply** and **not now** (in 中文 **应用** and **暂不**).\n\n");
         return text.ToString();
     }
 }
