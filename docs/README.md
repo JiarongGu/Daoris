@@ -47,6 +47,7 @@ what was measured, and it stays a record of that moment. A *record* is append-on
 | `2026-10-01-agent-layout-design.md` | contract | One repository, every agent: knowledge and skills under `.agents/`, a skills mirror and imports instead of links, rooms, and a repository set up by its own session (LAYOUT1) | Designed (D117); nothing built. §1 is what each agent reads, measured and not, §5.4 the move's cells, §7 the phased build LAYOUT2–LAYOUT10, §8 what only a real adopter can prove |
 | `2026-10-01-frame-model-design.md` | contract | One frame for every view: the list pane and the main area each view owns, what each view puts in them, and the build (FRAME1, D118) | Designed (FRAME1a); built as FRAME1b–i, and PLUGUI1's screen on it |
 | `2026-10-01-naming-design.md` | contract | Names: a name is a UI element, designed in each language; the kinds, their rules and budgets, the glossary and the check (NAME1, D116) | Current. NAME1a wrote it with the glossary and the check in report mode; the renames are NAME1b's |
+| `2026-10-01-development-documents-design.md` | contract | The development documents every repository keeps for code generation, and fewer asks: the safe work a repository declares and how each agent is handed it (DOC1, UNBLOCK1) | Designed (D122); nothing built. §1 is the study, §2 the standard, §3 fewer asks, §6 the build DOC2–DOC7 and UNBLOCK2–UNBLOCK8 |
 
 ## Studies and evidence
 
