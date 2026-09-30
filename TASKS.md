@@ -21,8 +21,8 @@ lists.
 
 ## State
 
-**Counts, and this is their one home:** sixteen commands, **568 CLI tests, 619 service and 30 HTTP host, 1090 driver,
-351 desktop modules, 80 devkit, 1569 web unit, 21 Playwright**, 66/66 release rehearsal, **301/301
+**Counts, and this is their one home:** sixteen commands, **584 CLI tests, 619 service and 30 HTTP host, 1140 driver,
+376 desktop modules, 80 devkit, 1625 web unit, 21 Playwright**, 66/66 release rehearsal, **301/301
 family rehearsal** (it names its own phases when you run it), **67/67 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge
 documents, 5 skills, 7 packs. The always-loaded core is **22,492 of 26,000 bytes** — a span in
@@ -41,11 +41,13 @@ mechanics drafted at `docs/adoption/shenora-repo-mechanics.md`, budget 40,000, `
 🔴 **Where 2026-09-30 left it.** The owner's direction: *Daoris is the master development tool, doctrine
 and knowledge sharing*; their ticket work runs through the local Daoris, and Ask Daoris should reach
 everything. **The day's rows landed** (all in the archive): HELP4–HELP5 (Ask Daoris honest and faster),
-LOG1a–b (the machine log, D94), SHEN1 (Shenora 0.18), USE1a–f (what the window showed, one defect for
-the overflow and the side bar), QUEST1 (delete, D95), CONSOLE4 (a terminal, D96), SETUP1 (the setup
-guide, D97), AGT6 (model and effort, D98), CHR8 (one Chromium, D99), WORK1, DEPLOY5 and HTTP1, most
-built by subagents in their own worktrees and merged, rehearsed and looked at on main, and HELP6 (Ask
-Daoris proposes every new door, tried with a real helper).
+LOG1 whole (the machine log, D94, read back at two doors and summarised by `tools/usage-report.mjs`),
+SHEN1 (Shenora 0.18), USE1a–f (what the window showed, one defect for the overflow and the side bar),
+QUEST1 (delete, D95), CONSOLE4 (a terminal, D96), SETUP1 (the setup guide, D97), AGT6 (model and
+effort, D98), CHR8 (one Chromium, D99), BRW7–8 (the browser's door, link routing, who drives), HELP6
+(Ask Daoris proposes every new door, tried with a real helper), WORK1, DEPLOY5 and HTTP1 — most built
+by subagents in their own worktrees and merged, rehearsed and looked at on main. **Next:** LOG2 and
+HELP7 (what the log and the helper showed), then the owner's calls.
 - **The owner's ticket AR-2201 is landed** on its feature branch in the repository that owns it, not
   pushed; the pull request is theirs, and so are two calls the verify step raised (a rounding change
   in a shared helper, and a production config update). Two landed branches of the ticket before it
