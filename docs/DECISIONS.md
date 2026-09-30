@@ -4762,6 +4762,17 @@ deployment rehearsal starts its install with a scratch home, the respected case,
 the override. The row's hint (`settings.home.hint`) still says a terminal reads the same folder; the
 notice under it says when one does not, and qualifying the hint in both catalogues is left open.
 
+*Amended by LEFT1 (2026-09-30) and LEFT2 (2026-10-01): the hint is qualified. LEFT1 read the override from the
+notice's English; LEFT2 makes it a field of the driver's state, `homeAccount`, which
+`InstallHome.AccountOf` answers from the home, what establishing it did, and the account's variable:
+`same` (the account names this home: the hint says a terminal reads it), `overridden` (the hint points
+at the notice, which names the folder a terminal reads), or `this-start`, a home named for this start
+alone, which D105 respects without a notice and which the notice could therefore never tell; the hint
+then says a terminal does not read this folder. A shell older than the field keeps the old hint.
+`InstallHomeTests` hold the three, the vitest loop the hint for each over a mocked bridge, and a
+`DriverModuleDriverTests` case, in the `Process` half and not run in the branch, the state carrying
+it. Nothing has looked at the row on the window.*
+
 ### 2. DIST1 — a consumer installs the CLI from npm, `daoris@<version>`
 
 The owner's call: **npm's `daoris@X`**. REV3 found the defect (docs F1): the README's `npx

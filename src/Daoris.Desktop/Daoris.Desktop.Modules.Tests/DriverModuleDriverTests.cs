@@ -50,6 +50,24 @@ public sealed class DriverModuleDriverTests : DriverModuleBridge
     }
 
     /// <summary>
+    /// How the home stands to the account's DAORIS_HOME rides the state as a field (LEFT2), so the page's hint reads
+    /// it rather than a sentence: here a home the account names, and one named for this start alone, which D105
+    /// respects without a notice.
+    /// </summary>
+    [Fact]
+    public async Task How_the_home_stands_to_the_account_is_a_field_of_the_state()
+    {
+        async Task<string?> StandingAsync(string? account) =>
+            (await AnswerAsync(new DriverModule(Bus, new DriverLoop(
+                Bus, new HostSupervisor("http://localhost:0"), "http://localhost:0", account: () => account)), "STATE"))
+            .GetProperty("homeAccount").GetString();
+
+        Assert.Equal(HomeAccount.Same, await StandingAsync(Home));
+        Assert.Equal(HomeAccount.ThisStart, await StandingAsync(Path.Combine(Home, "another")));
+        Assert.Equal(HomeAccount.ThisStart, await StandingAsync(null));
+    }
+
+    /// <summary>
     /// *Sync now* (SYNC6b) runs the loop's own sync set — so before the loop is up there is no pass to
     /// run, and the answer is the cold-start sentence rather than a pass that quietly did nothing.
     /// </summary>

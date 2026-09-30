@@ -20,7 +20,10 @@ public sealed class DriverLoop(
     // Daoris's own browser (D78): the shell's window, asked for by a plugin server that drives it.
     IInAppBrowser? browser = null,
     // The shell's machine log (LOG1b, D94): what the person runs and how long it takes. Null writes none.
-    MachineLog? log = null) : IDisposable
+    MachineLog? log = null,
+    // The account's own DAORIS_HOME, which a terminal reads (LEFT2); the user environment's by default, and a
+    // test's stand-in so a test never reads the machine's.
+    Func<string?>? account = null) : IDisposable
 {
     private readonly CancellationTokenSource _stopping = new();
     private readonly TaskCompletionSource<bool> _hostReady = new();
@@ -112,6 +115,14 @@ public sealed class DriverLoop(
     /// and a one-time sentence raised before that is a sentence nobody read.
     /// </summary>
     public string? HomeNotice => home is { Worth: true } ? home.Notice : null;
+
+    /// <summary>
+    /// How <see cref="Home"/> stands to the account's DAORIS_HOME (LEFT2), a <see cref="Desktop.HomeAccount"/> value: the
+    /// same folder, overridden by this install's own, or named for this start alone. Settings → Driver's home hint
+    /// reads it to say whether a terminal's daoris reads this folder, where it read the notice's English before —
+    /// and a start named for itself alone has no notice at all.
+    /// </summary>
+    public string HomeAccount => InstallHome.AccountOf(Home, home, (account ?? InstallHome.AccountVariable)());
 
     /// <summary>
     /// The host the shell adopted is serving a page that is not this install's (case study 4d), or
