@@ -101,6 +101,39 @@ describe("the workspace domain: the machine's wiring", () => {
   });
 
   /**
+   * WSR6: bringing repositories up to date is asked for, never fetched on its own — looking reaches the network,
+   * as the person. Opening the domain asks nothing; *Look for updates* asks the driver, and the press sends only
+   * the rows the look listed.
+   */
+  it('looks for updates only when asked, then brings up to date only what it listed', async () => {
+    const plan = {
+      lines: [{ repository: 'engine', workspace: 'aurora', line: 'main', kind: 'fast-forward', commits: 1, moves: true }],
+      rebases: [{ repository: 'engine', workspace: 'aurora', branch: 'daoris/s-step', landed: false, kind: 'replay', onto: 'main', commits: 1, replays: true }],
+      deletes: [],
+    };
+    invoke.mockImplementation(async (module: string, type: string) => {
+      if (module !== 'DAORIS.DRIVER') return WIRING;
+      if (type === 'TREES_SYNC_PLAN') return plan;
+      if (type === 'TREES_SYNC') return { lines: [], rebases: [], deletes: [], changed: 2 };
+      if (type === 'SWEEP_PLAN') return { branches: [], landed: [] };
+      return DRIVER_STATE;
+    });
+    const notify = vi.fn();
+    show(<SettingsView notify={notify} section="workspace" />);
+    await screen.findByText('aurora');
+
+    const button = await screen.findByRole('button', { name: 'Look for updates' });
+    expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'TREES_SYNC_PLAN', expect.anything());
+    await userEvent.click(button);
+    await userEvent.click(await screen.findByRole('button', { name: 'Bring up to date: 2 changes' }));
+
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'TREES_SYNC_PLAN', {});
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'TREES_SYNC', { payload: { only: ['engine:main', 'engine:daoris/s-step'] } });
+    expect(notify).toHaveBeenCalledWith('2 of 2 done. What did not happen is still listed, with why.');
+    expect(serviceCalls()).toEqual([]);
+  });
+
+  /**
    * With the environment pair set no loader reads the file, so the surface must say which source
    * decided — otherwise it reports its own last edit as though it were the machine's wiring.
    */
