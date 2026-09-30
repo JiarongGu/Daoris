@@ -3,6 +3,7 @@ import { join } from 'node:path';
 import { readText, writeTextAtomic } from './fsx.ts';
 import { DaorisError } from './errors.ts';
 import { DEFAULT_HARNESS, resolveHarness } from './harness.ts';
+import { checkRooms, checkTarget } from './layout.ts';
 import type { Lock, Manifest } from './types.ts';
 
 export const MANIFEST_FILE = 'daoris.json';
@@ -10,8 +11,8 @@ const LOCK_FILE = 'daoris.lock';
 const LOCK_VERSION = 1;
 
 // `harness` names which agent layout to generate. It defaults rather than being required, because a
-// manifest written before harnesses existed must keep working — and because there is one supported
-// value today (D23), so demanding it would be ceremony.
+// manifest written before harnesses existed must keep working: absent is `claude-code`, the older
+// layout, and `agents` is chosen by name (D117).
 /**
  * `coreBudgetBytes` is what a repository is willing to pay, in always-loaded bytes, on every task.
  *
@@ -94,7 +95,10 @@ export function readManifest(root: string): Manifest {
   // Resolve here so an unknown name fails at the edge, naming what exists, rather than deeper down
   // where the message would be about a missing directory.
   manifest.harnessDescriptor = resolveHarness(manifest.harness);
-  manifest.target ??= manifest.harnessDescriptor.defaultTarget;
+  // D18 over the roots the descriptor declares and the rooms the manifest does (D117 §5.1): refused at
+  // the edge, before a single path is planned, rather than corrected somewhere a reviewer never sees.
+  manifest.target = checkTarget(manifest.target ?? manifest.harnessDescriptor.defaultTarget, manifest.harnessDescriptor);
+  manifest.rooms = checkRooms((parsed as Record<string, unknown>).rooms, manifest.target, manifest.harnessDescriptor);
   return manifest;
 }
 
@@ -121,6 +125,13 @@ export function writeLock(root: string, lock: Lock): void {
     ...(lock.switchedOff?.length
       ? { switchedOff: [...lock.switchedOff].sort((a, b) => a.target.localeCompare(b.target)) }
       : {}),
+    // The same for the layout (D117 §5.1): absent means the older one, so a lock on it is unchanged.
+    ...(lock.harness !== undefined ? { harness: lock.harness } : {}),
+    ...(lock.target !== undefined ? { target: lock.target } : {}),
+    ...(lock.mirrors?.length
+      ? { mirrors: [...lock.mirrors].sort((a, b) => a.path.localeCompare(b.path)) }
+      : {}),
+    ...(lock.rooms?.length ? { rooms: [...lock.rooms].sort((a, b) => a.localeCompare(b)) } : {}),
   };
   writeTextAtomic(join(root, LOCK_FILE), `${JSON.stringify(sorted, null, 2)}\n`);
 }

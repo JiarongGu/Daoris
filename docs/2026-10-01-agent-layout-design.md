@@ -4,7 +4,7 @@
 > file and folder layout of dsh's own repository (`github.com/deepseek-ai/deepseek-harness`, public;
 > D53 adopted dsh as a protocol), apply it to this repository and to every repository Daoris manages,
 > and give Daoris a way to set one up. This is the contract for the LAYOUT rows, and its decision is
-> **D117**. Status: **designed; nothing is built.** It extends
+> **D117**. Status: **designed; the CLI's half (LAYOUT3: §2, §3, §5.1–§5.4) and the service's (LAYOUT4: §5.5) are built.** It extends
 > `docs/2026-09-22-instruction-file-design.md` (D59), which moved only the always-loaded tier into
 > `AGENTS.md` and left knowledge and skills under `.claude/`, and it enumerates D19's state space
 > again for a move. Read with **D3** (no links), **D5**, **D13**, **D14**, **D18**, **D23**, **D32**,
@@ -32,7 +32,7 @@ Three things found by reading, which the build must carry:
 - 🔴 **The service's `RepositoryScanner` reads `.claude/` whatever the manifest says**
   (`var target = ".claude"`), while `DaorisLock` reads the manifest's `target` to resolve the lock.
   A repository with any other target would have its knowledge and skills unread. Nothing has another
-  target today, so nothing has shown it.
+  target today, so nothing has shown it. (LAYOUT4 fixed it, §5.5.)
 - **57 tracked files name `.claude/knowledge/` or `.claude/skills/`**: documents, code comments that
   point at `twins.md`, the examples' regions, and tests that use the paths as fixtures of today's
   layout. The fixtures stay, since that layout stays supported; the rest follow the move.

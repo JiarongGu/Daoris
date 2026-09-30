@@ -108,6 +108,85 @@ export interface Harness {
   tiers: Record<string, HarnessTier>;
   /** Where the provenance line goes — under the frontmatter, because it is only frontmatter at byte 0 (D14). */
   headerPlacement: 'top' | 'below-frontmatter';
+  /**
+   * A tier copied to a second root for a harness that reads only there (D117 §3.2): where a reference
+   * layout links a folder, Daoris writes files, since a checkout without links holds a link as text.
+   * The descriptor's data, so the day that harness reads the target itself, the entry goes and `sync`
+   * retires every mirror.
+   */
+  mirror?: {
+    /** The tier copied, by its canon name. */
+    tier: string;
+    /** Where the copies go, relative to the repository root. */
+    root: string;
+    /** The harness the copies are for, as a reader names it. */
+    reader: string;
+    /** Folders inside each unit that are never copied: per-agent metadata another agent writes. */
+    skip: readonly string[];
+  };
+  /**
+   * The root a repository on the older layout keeps its on-demand tiers in, so the documents left
+   * there can be named with the move that fixes them (D117 §5.2).
+   */
+  formerly?: string;
+}
+
+/** One file of a mirror, as `sync` would write it and the lock records it (D117 §3.2). */
+export interface MirrorEntry {
+  /** The copy, relative to the repository root. */
+  path: string;
+  /** The source it copies, relative to the repository root. */
+  of: string;
+  sha256: string;
+}
+
+/** What `sync` decided about one mirror file. */
+export interface MirrorWrite extends MirrorEntry {
+  /** Text for a `SKILL.md` (it carries the mirror header), bytes for every other file. */
+  content: string | Buffer;
+  state: 'create' | 'update' | 'unchanged';
+}
+
+/** The mirror table of D117 §5.4, decided. */
+export interface MirrorPlan {
+  writes: MirrorWrite[];
+  /** In the lock, as the lock, source gone: deleted. */
+  retire: string[];
+  /** In the lock, absent, source gone: the entry is dropped. */
+  drop: string[];
+  /** In the lock and edited here. `sourceEdited` when its canonical source drifted too. */
+  edited: { path: string; of: string; canonical: boolean; sourceEdited: boolean }[];
+  /** Not in the lock and not what would be written: the repository's own file at a mirror path. */
+  collisions: string[];
+  /** Edited, and the skill it mirrors went: nothing can receive the edit. */
+  editedGone: string[];
+}
+
+/** The pointer table of D117 §5.4, decided: each room's `CLAUDE.md`. */
+export interface RoomPlan {
+  pointers: { room: string; path: string; state: 'create' | 'append' | 'unchanged'; content: string | null }[];
+  /** Undeclared rooms whose region comes out; `content` null when the region was all of the file. */
+  unpoint: { room: string; path: string; content: string | null }[];
+  /** Undeclared rooms with no region: only the lock forgets them. */
+  drop: string[];
+  /** Declared with no instructions of their own: refused. */
+  missing: string[];
+  /** What the lock records once the sync lands. */
+  records: string[];
+}
+
+/** A path Daoris would write that is a link, or a link checked out as text (D117 §5.4). */
+export interface LinkProblem {
+  path: string;
+  kind: 'link' | 'text' | 'file';
+}
+
+/** One canonical document moving from the lock's root to the manifest's (D117 §5.4). */
+export interface Move {
+  target: string;
+  /** Both relative to the repository root. */
+  from: string;
+  to: string;
 }
 
 /** A harness this repository shows a sign of, and the files that said so. */
@@ -131,6 +210,26 @@ export interface DriftReport {
   switchedOff: { target: string; by: string }[];
   /** Rows the manifest and the lock disagree about: a fact, so it fails like a stale pack. */
   staleSwitches: string[];
+  /** The manifest names a layout the files were not written under: a move `sync` has not made yet. */
+  staleLayout: string | null;
+  /** Mirrors edited here, each with its source (D117 §3.3). */
+  mirrorsDrifted: { path: string; of: string }[];
+  /** Mirrors the lock records and the disk lacks, or a source has and the lock does not. */
+  mirrorsMissing: string[];
+  /** Mirrors as the lock says, whose source has moved on since. */
+  mirrorsBehind: string[];
+  /** Declared rooms with no `AGENTS.md`. */
+  roomsWithoutInstructions: string[];
+  /** Declared rooms whose `CLAUDE.md` does not import it. */
+  roomPointersMissing: string[];
+  /** Paths Daoris writes that are a link, or a link held as text. */
+  links: LinkProblem[];
+  /** The root instruction file's whole size — reported against the smallest limit measured, never failed on. */
+  agentsBytes: number;
+  /** The repository's own documents in a tier the index no longer lists, with the move that fixes each. */
+  unlisted: { path: string; move: string }[];
+  /** The repository's own skills under the mirror root, read by that harness alone. */
+  readAlone: string[];
   ok: boolean;
 }
 
@@ -188,6 +287,12 @@ export interface Manifest {
    * selected pack offers is refused — a repository alone still cannot drop core (D4).
    */
   switchedOff?: Record<string, string>;
+  /**
+   * Folders with an `AGENTS.md` of their own (D117 §2.2): declared, never found, since a walk of the
+   * tree meets build output and worktrees. Relative to the repository, with forward slashes; empty
+   * when none are declared.
+   */
+  rooms: string[];
   /** Resolved at read time so an unknown name fails at the edge, naming what exists. */
   harnessDescriptor: Harness;
 }
@@ -226,6 +331,18 @@ export interface Lock {
    * name them without reading any pack. Absent when nothing is off, so an ordinary lock is unchanged.
    */
   switchedOff?: { target: string; by: string }[];
+  /**
+   * The descriptor and root the entries were written under (D117 §5.1). Absent means `claude-code`
+   * and `.claude`, the only layout written before, so a lock on that layout is unchanged byte for byte.
+   * 🔴 The lock, not the manifest, says where the files are: between a manifest's flip and the sync
+   * that moves them, the manifest names the new root and the files are still at the old.
+   */
+  harness?: string;
+  target?: string;
+  /** Every mirror file `sync` wrote, and what it hashed to (D117 §3.2). Absent when there are none. */
+  mirrors?: MirrorEntry[];
+  /** The rooms whose pointers `sync` keeps, so a room taken out of the manifest loses its pointer. */
+  rooms?: string[];
 }
 
 /**
@@ -293,6 +410,24 @@ export interface SyncPlan {
    * edited retirement: the canonical file still exists, so `upstream` can still save the edit.
    */
   editedSwitchedOff: string[];
+  /**
+   * The layout the lock was written under, and the one the manifest names (D117 §5.1). A move when
+   * the two targets differ: files are read and deleted at `from`, written at `to`.
+   */
+  layout: { from: { harness: string; target: string }; to: { harness: string; target: string } };
+  /** Canonical documents whose old file goes once the new one is written: moved, or a move finished. */
+  moves: Move[];
+  /** The repository's own file where a move would write (repository-relative), and what was moving there. */
+  moveCollisions: { from: string | null; to: string }[];
+  /** The repository's own documents in an old on-demand tier: each refuses the move (D117 §5.4). */
+  leftBehind: { path: string; move: string }[];
+  /** The same own document under both roots: which one is meant is the repository's call. */
+  bothRoots: { old: string; neu: string }[];
+  /** Own always-loaded files in an old `rules/` directory: reported, never refused. */
+  keptRules: string[];
+  mirrors: MirrorPlan;
+  rooms: RoomPlan;
+  links: LinkProblem[];
 }
 
 /** One canon changelog section: which version, and what it said. */

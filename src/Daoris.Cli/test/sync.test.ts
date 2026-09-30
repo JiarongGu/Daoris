@@ -308,6 +308,16 @@ test('a lock entry cannot reach outside the target directory', () => {
     switchedOff: [],
     offers: [],
     editedSwitchedOff: [],
+    // Nothing moves, mirrors or points: a plan on the older layout (D117).
+    layout: { from: { harness: 'claude-code', target: '.claude' }, to: { harness: 'claude-code', target: '.claude' } },
+    moves: [],
+    moveCollisions: [],
+    leftBehind: [],
+    bothRoots: [],
+    keptRules: [],
+    mirrors: { writes: [], retire: [], drop: [], edited: [], collisions: [], editedGone: [] },
+    rooms: { pointers: [], unpoint: [], drop: [], missing: [], records: [] },
+    links: [],
   };
   const error = captureError(() =>
     applySync({

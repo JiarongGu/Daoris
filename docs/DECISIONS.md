@@ -552,6 +552,16 @@ for it:
 A switched-off row is never paired as a rename with the pack's replacement, however alike they read.
 A switch is a decision the manifest names, not a move, and reporting it as one would hide the decision.
 
+*Amended by D117 (LAYOUT3, 2026-10-01): a move, and three things `sync` writes that are not canon files.* The
+table above is lock × disk × canon at ONE root. A **move** is a manifest naming a root its lock was not written
+under, and **the lock, not the manifest, says where the files are**: every row above is read and deleted at the
+lock's root and written at the manifest's. The cells a move adds — a canonical document under the old root, the
+repository's own documents in an old tier, a skills mirror, a room's pointer, a link or a link held as text — are
+enumerated in `docs/2026-10-01-agent-layout-design.md` §5.4, one `node --test` case each (`layout-move`,
+`layout-mirror`, `layout-rooms`, `layout-links`). Two readings carry over unchanged: an old file whose body is the
+canon's now is untouched (the state after `upstream`), and a mirror, too, is drift only when it differs from the
+lock.
+
 ## D18 — Every path daoris touches must resolve inside the target directory (2026-08-05)
 
 **Decision.** `sync` resolves every write and delete against the target directory and **refuses** any
@@ -2166,6 +2176,16 @@ and keeps meaning the same thing.
 **refused, never guessed at** — the file on the other side of that guess is the adopter's own
 doctrine, and `file-tool-discipline` already states why computed boundaries take the rest of a file
 with them when they are wrong.
+
+*Amended by D117 (LAYOUT3, 2026-10-01): the region stays, and what surrounds it moves.* Under the `agents`
+descriptor, knowledge and skills live under `.agents/` rather than `.claude/`; the region, its per-rule
+provenance and the root pointer are unchanged. Three things join the file-and-region states of the
+instruction-file design's §4: each declared room gets the same pointer, `<room>/CLAUDE.md` holding the import
+region (removed, and the file with it when the region was all of it, once the room is undeclared); the roster
+gains the mirror sentence and a *Rooms* table, each only when there is a mirror or a room, so a region without
+them is byte for byte what it was; and an `AGENTS.md` or `CLAUDE.md` that is a link, or a link held as text, is
+refused and never written through, on both descriptors. That last refusal is this decision's *never guess at a
+boundary* in another shape.
 
 ## D60 — The deployed artefact gets a gate, and it names the host it found rather than pinning it (2026-09-22)
 
@@ -5820,20 +5840,44 @@ staging. Its statements about the reference are the parent's measurement on the 
 design did not read. Three cells of its §1 are observations from its own session, one build of one harness; the
 rest are marked *not measured*, for LAYOUT2. `verify` checks the records' shape and budgets, and none of those
 words.
-*Amended by LEFT3 (2026-10-01): the traces are bounded. Each repository keeps its newest 50
-(`LandedBranches.TracesKept`), by when each went, dropped at the record's next write; a standing entry is never
-dropped. A count per repository rather than a span: the file grows with landings, not with the clock, and a person
-back after a month away still reviews last month's sessions, while a busy repository cannot push a quiet one's
-traces out. A session whose trace was dropped reads `SESSION_TREE_GONE` once its tree is gone, as one merged does.
-Held by `LandedTracesTests` in the fast half.*
 
-*A merge's own record was considered again (LEFT3) and is still not built, for §5's reason and one found looking:
-a merge's "branch" is the line itself, and every reader of the record treats an entry as a branch Daoris made. The
-clean-up deletes a recorded branch whose work reads on the line (`git branch -D`), bringing up to date replays one
-and counts its repository as holding Daoris's branches (D112), and the hand-off pushes one. A merge entry that
-reached any of them would delete, move or push the person's line. Building it is a change to what a landing record
-is: an entry of its own kind that `All()` never returns, the review reading the merge's own range (its first parent
-up to the merge commit) and the preview reading at that commit rather than at the line's tip, each with its test.*
+*Built by LAYOUT3 (2026-10-01): the agents layout in the CLI, the design's §2, §3 and §5.1–§5.4. `agents` is a second
+descriptor in `src/harness.ts` carrying its mirror (`skills` to `.claude/skills` for Claude Code, each skill's
+`agents/` folder left out) and the root it moves from (`formerly`). The lock gains `harness`, `target`, `mirrors` and
+`rooms`, each only when there is one, so a lock on the older layout is unchanged byte for byte; `layout.ts` answers
+where the files are from the lock. Every cell of §5.4 is a `node --test` case, written first and watched failing.
+Five choices the design left open, each held by a test: (1) `init` keeps writing `claude-code` and takes
+`--harness agents`, since the family and deployment rehearsals' newcomers write `.claude/knowledge/` after `init`
+and the service reads `.claude` until LAYOUT4; flipping the default belongs with LAYOUT4/LAYOUT5. (2) Rooms and the
+link refusals apply on both descriptors, since both write `AGENTS.md` and a `CLAUDE.md` pointer. (3) A mirror's
+`SKILL.md` carries the mirror header in place of the source's provenance line, one instruction rather than two;
+any other file is copied as its bytes, hashed as text unless it holds a NUL. (4) A link held as text is a file
+whose whole content is one token naming its partner (`AGENTS.md` for `CLAUDE.md`), starting `./` or `../`, or
+resolving beside it; a file where a folder must go refuses either way. (5) The repository's own documents left
+in an old tier refuse even `--force`, as links and a room with no instructions do: `--force` discards an edit, and
+none of those is one. The index names a room by its first heading. `check` reports `AGENTS.md` against codex's
+32,768 bytes, LAYOUT2's smallest measured limit, and never fails on it (D54). Not built here: `analyze` and
+`status` naming what reaches each harness (LAYOUT7's table and its twin), the service's half (LAYOUT4), the
+lanes' rooms (LAYOUT9). The release rehearsal's move phase is written and was not run in the branch.*
+
+*Built by LAYOUT4 (2026-10-01): the service reads the layout, the design's §5.5, and the scanner no longer assumes
+`.claude`. `DaorisLock` reads the lock's `harness`, `target` and `mirrors` and resolves its root by the CLI's
+`lockLayout`, row for row: the lock's target, else the manifest's while both are on the older layout, else the
+descriptor's. `RepositoryLayout` says where the scanner reads: at the lock's root and, for a layout that moved, the
+root it moved from, where a skill kept for one agent sits beside the mirrors; with no lock, at the manifest's root
+and both `.agents` and `.claude`. The lock's mirrors are never indexed, so a skill is found once, at its source.
+Each declared room's `AGENTS.md` is a local knowledge entry named by its folder. `RepositoryLinks` skips a link, a
+junction or a link held as text, by the CLI's `heldAsText` cases, and never follows one. Four choices, each held by
+a test: (1) the reader's answer where the CLI refuses: a lock whose target leaves the repository, or whose
+descriptor it does not know, reads as no lock, everything local; a room the CLI refuses is not read, and the good
+rooms beside it still are. Never outside the repository, and never the whole corpus for one repository's file.
+(2) Rooms are the manifest's, not the lock's: a room's `AGENTS.md` is the repository's own file, and the lock's
+`rooms` record pointers, one import line each. (3) The link rule covers every file the scanner reads, the logs and
+the region's file included, and a region file the lock names outside the repository is not read (D18). (4) A room
+whose file a tier already yielded is one entry. A repository on the older layout indexes exactly as before: a golden
+test was run against the scanner before this change and after it. The CLI still writes `claude-code` from `init`;
+the service no longer holds that default back (LAYOUT3's choice 1). Not run in the branch: the family rehearsal's
+*each document indexed once* (§5.6), the parent's at merge.*
 
 ## D118 — Every view has the same frame: its own list pane and main area, beside the frame's side bar and panel (2026-10-01)
 

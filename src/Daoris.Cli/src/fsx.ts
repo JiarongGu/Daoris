@@ -67,6 +67,25 @@ export function sha256(text: string): string {
   return createHash('sha256').update(normalize(text), 'utf8').digest('hex');
 }
 
+/**
+ * A file's hash as the lock records it: text hashed as `sha256` hashes it, so a checkout that converted
+ * line endings is not an edit, and a binary file (a NUL in it, as git decides) by its exact bytes, which
+ * a text decoding would blur.
+ */
+export function digestBytes(bytes: Buffer): string {
+  return bytes.includes(0)
+    ? createHash('sha256').update(bytes).digest('hex')
+    : sha256(bytes.toString('utf8'));
+}
+
+/** `writeTextAtomic` for bytes copied as they are: a mirror of a file that is not its skill's entry (D117 §3.2). */
+export function writeBytesAtomic(file: string, bytes: Buffer): void {
+  mkdirSync(dirname(file), { recursive: true });
+  const tmp = `${file}.daoris-tmp`;
+  writeFileSync(tmp, bytes);
+  renameSync(tmp, file);
+}
+
 /** Sorted, '/'-separated, recursive. An absent directory yields []. */
 export function listFiles(dir: string, keep: (name: string) => boolean = () => true): string[] {
   if (!existsSync(dir)) return [];
