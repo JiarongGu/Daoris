@@ -35,10 +35,10 @@ type Glossary = {
 const loaded = Object.values(import.meta.glob<Glossary>('./glossary.json', { eager: true, import: 'default' }));
 const glossary = loaded[0] as Glossary;
 
-/** The design's thirteen kinds, in its order (§3). */
+/** The design's fourteen kinds, in its order (§3). */
 const KINDS = [
-  'nav', 'title', 'tab', 'section', 'field', 'choice', 'button', 'status', 'menu', 'headline', 'placeholder',
-  'toast', 'sentence',
+  'nav', 'title', 'tab', 'section', 'field', 'choice', 'button', 'status', 'menu', 'command', 'headline',
+  'placeholder', 'toast', 'sentence',
 ];
 
 /** A pattern's reach: its own key, or every key under its prefix. */
@@ -50,7 +50,7 @@ describe('the glossary', () => {
     expect(loaded).toHaveLength(1);
   });
 
-  it('holds the thirteen kinds of the naming design, each with its budget in both languages', () => {
+  it('holds the fourteen kinds of the naming design, each with its budget in both languages', () => {
     expect(Object.keys(glossary.kinds)).toEqual(KINDS);
     for (const [name, kind] of Object.entries(glossary.kinds)) {
       expect(kind.what, name).toMatch(/\S/);

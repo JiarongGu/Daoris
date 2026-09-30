@@ -20,8 +20,8 @@ D56; `docs/2026-09-29-dock-design.md`; the type tokens), and it follows UX5's me
 
 ## 1. What was found
 
-The catalogues hold 1,699 keys in 63 areas per language. Read where each renders, about 700 are names a
-person reads as a label; the rest are sentences. The drift is of three kinds, and the owner's examples are
+The catalogues hold 1,699 keys in 66 areas per language. Read where each renders, 773 are names a person
+reads as a label; the rest are sentences, tooltips, a row's meta fragments and screen-reader names. The drift is of three kinds, and the owner's examples are
 one of each:
 
 1. **A name translated instead of named.** Settings' own domains: *Daoris's own AI* is 「Daoris 自身的 AI」
@@ -79,8 +79,10 @@ name that moves under it is what NAME1b does.
 
 ## 3. The kinds, and their rules in each language
 
-Thirteen kinds. **An element's accessible name and its tooltip take the kind of the control they name**:
-an icon-only close button's name is a button's name.
+Fourteen kinds. **An element's accessible name and its tooltip take the kind of the control they name**:
+an icon-only close button's name is a button's name. (The fourteenth, `command`, was found building the
+check: a palette row is a name, a dash and a gloss in a 34rem dialog, and measuring it by a strip menu's
+room reported every row.)
 
 | Kind | What it is | Where it renders |
 |---|---|---|
@@ -92,16 +94,17 @@ an icon-only close button's name is a button's name.
 | `choice` | one of the values offered | a segmented option, a select's option |
 | `button` | an act | `Button`, an icon-only control's name, a link that acts |
 | `status` | a word for a state | `Pill`, a dot's word, a `Chip`, the status bar's nouns and values |
-| `menu` | an item in a menu or the palette | the strip's menus, a tab list's menu, a row's menu, the command palette |
+| `menu` | an item in a menu | the strip's menus, a tab list's menu, a row's menu, the map's menus |
+| `command` | a row of the command palette | a command's name, then a dash and its gloss, which is a sentence |
 | `headline` | an empty state's one line | `EmptyState`'s headline |
 | `placeholder` | the hint inside an empty field | an input's or a select's placeholder |
 | `toast` | an act's outcome, said once | `notify(…)` |
-| `sentence` | the platform explaining itself | a hint, a tip, a body, a description |
+| `sentence` | the platform explaining itself | a hint, a tip, a body, a description, and a row's meta fragments (*filed 2d ago*) |
 
 ### 3a. English
 
-- **Case.** Sentence case for `nav`, `title`, `tab`, `section`, `field`, `choice`, `button`, `menu` and
-  `headline`: the first word capitalised, the rest lower-case but for a proper name (*Daoris*, *Ask
+- **Case.** Sentence case for `nav`, `title`, `tab`, `section`, `field`, `choice`, `button`, `menu`,
+  `command` and `headline`: the first word capitalised, the rest lower-case but for a proper name (*Daoris*, *Ask
   Daoris*, *Quick Ask*, *Claude Code*, *Edge*, *Git*, *PATH*). Lower case for `status` and
   `placeholder`. A `toast` and a `sentence` are sentences. **The buttons are the drift**: the
   lower-case majority was never decided, and every other kind that names something on the page is
@@ -192,6 +195,7 @@ the pill's mono face 6.6 and 11).
 | `button` | two buttons side by side in the side bar at its floor: about 110px of `text-body` each | 20 | 8 |
 | `status` | a pill beside its row's title: about 100px of `text-meta` mono | 16 | 5 |
 | `menu` | a strip menu at its 224px minimum, less the check, icon and shortcut columns: about 140px of `text-small` | 24 | 10 |
+| `command` | the palette's 34rem less its padding and the row's icon, about 470px of `text-body`; the name before the dash is measured | 40 | 16 |
 | `headline` | an empty state in the side bar at its floor: about 270px of `text-body`, semibold | 40 | 16 |
 | `placeholder` | inside a field in a 309px row: about 250px of `text-body` | 40 | 16 |
 | `toast` | the 26rem toast, clamped to two lines: about 720px of `text-body`; past it the sentence is cut | 110 | 55 |
@@ -219,7 +223,7 @@ It holds three things:
   English is recognised in a key's value, so the check knows which keys name it. A code word that is
   never shown on the window (`harness`, `profile`, `strike`) is an entry whose `use` points at the term
   that is.
-- **`kinds`**: the thirteen kinds of §3, each with its budget, its room, its case, and **the keys of that
+- **`kinds`**: the fourteen kinds of §3, each with its budget, its room, its case, and **the keys of that
   kind**. A kind lists keys and key prefixes (`nav.*`, `work.status.*`), and a key takes the most specific
   entry that holds it: its own key before any prefix, a longer prefix before a shorter one. A plural
   form (`_other`) takes its stem's kind. A key no kind names is a `sentence`. This is the simplest
@@ -237,9 +241,13 @@ reason each was chosen rather than translated, and what it must not be called.
 reads the glossary and both catalogues and reports, per key:
 
 1. **Glossary conformance.** A label whose English names a term (by `match`) says the term's Chinese
-   name, and neither language uses a word the term must not be called.
+   name or one of its short forms, and neither language uses a word the term must not be called. With
+   `--all` it reads every sentence, tooltip and toast too, for the forbidden words only: a sentence may
+   say a thing its own way, and holding it to the term's name reported a verb (*Daoris owns this
+   location*) as the declaration's *owns*.
 2. **Budgets.** A label longer than its kind's budget, in either language. A placeholder counts as its
-   typical value: a number two characters, anything else ten.
+   typical value: a number two characters, anything else ten. A menu item and a palette row are measured
+   by their name, before the dash.
 3. **Form.** Case by kind; no full stop or colon closing a label; `...` or 「……」 where `…` belongs; a
    Chinese button that says 它; Latin punctuation inside Chinese; a Latin word or number not set apart
    from Chinese.
@@ -263,6 +271,10 @@ The audit is `docs/2026-10-01-naming-audit.md`: every label key, grouped by wher
 domains and section titles first. Each row has the element's kind, today's English and 中文, the proposed
 English and 中文, and a one-line reason where either changes. The glossary's kind map is the audit's
 kind column.
+
+**The proposals obey the rules they propose.** Applied to the catalogues in memory and checked, they leave
+no glossary, form or door finding, and every placeholder where it was; what remains is the budgets'
+report, which the audit's §1 describes.
 
 **NAME1b is the renames**, after the owner reads the proposals: the catalogue values, the tests and
 stories that pin a value, and the check turned to `--strict`. Some renames touch a component: a

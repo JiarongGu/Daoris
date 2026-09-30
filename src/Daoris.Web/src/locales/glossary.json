@@ -1,5 +1,5 @@
 {
-  "_why": "The authority names are checked against (NAME1, D116; docs/2026-10-01-naming-design.md). A name is part of its element, designed in each language: `terms` holds one name per concept in each language, chosen as a name rather than translated, with what it must not be called; `kinds` holds the thirteen kinds of element with their budgets and the keys of each kind, the most specific entry winning and a key no kind names a sentence; `doors` pairs each door with the key naming its destination. It sits beside the language folders and in neither, so it is never merged into a catalogue. scripts/names-check.mjs reads it and reports; NAME1b turns the facts' half to a gate.",
+  "_why": "The authority names are checked against (NAME1, D116; docs/2026-10-01-naming-design.md). A name is part of its element, designed in each language: `terms` holds one name per concept in each language, chosen as a name rather than translated, with what it must not be called; `kinds` holds the fourteen kinds of element with their budgets and the keys of each kind, the most specific entry winning and a key no kind names a sentence; `doors` pairs each door with the key naming its destination. It sits beside the language folders and in neither, so it is never merged into a catalogue. scripts/names-check.mjs reads it and reports; NAME1b turns the facts' half to a gate.",
 
   "measure": {
     "_why": "English is counted in characters; Chinese in units, a Chinese character or full-width mark 1 and anything else 1/2, since the system's Latin face averages half an em. A placeholder counts as its typical value.",
@@ -235,13 +235,20 @@
       "budget": { "en": 24, "zh": 10 },
       "case": "sentence",
       "keys": [
-        "command.*", "layout.menu.*", "map.fit", "map.kind.*", "map.lines", "map.when.all", "map.when.month",
+        "layout.menu.*", "map.fit", "map.kind.*", "map.lines", "map.when.all", "map.when.month",
         "map.when.open", "map.when.week", "map.zoomIn", "map.zoomOut", "menu.about", "menu.agents.*",
         "menu.driver", "menu.language", "menu.plugins", "menu.refresh", "menu.settings", "menu.setup",
         "menu.workspace.*", "work.menu.*", "work.monitor.detach", "work.rail.menu.copy",
         "work.rail.menu.review", "work.sync.now", "work.sync.remotes", "work.sync.syncing", "work.views.reset",
         "work.views.toPanel", "work.views.toRight"
       ]
+    },
+    "command": {
+      "what": "A row of the command palette: a command's name, then a dash and its gloss, which is a sentence.",
+      "room": "The palette's 34rem less its padding and the row's icon, about 470px of text-body; the name before the dash is measured.",
+      "budget": { "en": 40, "zh": 16 },
+      "case": "sentence",
+      "keys": ["command.*"]
     },
     "headline": {
       "what": "An empty state's one line.",
@@ -340,7 +347,7 @@
     { "term": "chat", "en": "chat", "zh": "聊天", "means": "A session the person started to talk with its agent, rather than one the driver started for a quest.", "why": "VS Code's zh-CN names its Chat view 聊天; 对话 is the conversation every structured session keeps.", "match": "\\bchats?\\b", "avoid": { "en": [], "zh": ["对话"] } },
     { "term": "conversation", "en": "conversation", "zh": "对话", "means": "What a session and its person said, kept as typed events and shown in Sessions' centre.", "match": "\\bconversations?\\b", "avoid": { "en": [], "zh": ["聊天"] } },
     { "term": "quest", "en": "quest", "zh": "委托", "means": "A request from one repository to another, published to the service and taken by whoever owns that code.", "why": "任务 is the family's word for a task, which a quest is not (POLISH4).", "match": "\\bquests?\\b", "avoid": { "en": [], "zh": ["任务"] } },
-    { "term": "ask", "en": "ask", "zh": "需求", "means": "What a person asks of a workspace; the declarations or its intake turn it into quests.", "why": "请求 is every request's word (a pull request's, an HTTP request's, an agent's for more); 需求 names what a person wants made. The owner's call.", "match": "\\basks?\\b(?! Daoris)", "pair": false, "avoid": { "en": [], "zh": ["请求"] } },
+    { "term": "ask", "en": "ask", "zh": "需求", "means": "What a person asks of a workspace; the declarations or its intake turn it into quests.", "why": "请求 is every request's word (a pull request's, an HTTP request's, an agent's for more); 需求 names what a person wants made. The owner's call.", "match": "\\bask #|\\b(an|the|this|your|each|no) asks?\\b|^asks?\\b(?! Daoris)|\\b(close|delete) ask\\b", "pair": false, "avoid": { "en": [], "zh": ["请求"] } },
     { "term": "request", "use": "quest", "means": "Not a name on the window: a request to a repository is a quest, and one to a workspace an ask.", "avoid": { "en": [], "zh": [] } },
     { "term": "intake", "en": "intake", "zh": "受理", "means": "What reads an ask and decides which repositories it becomes quests for: the declarations, or a session on an agent.", "match": "\\bintakes?\\b", "avoid": { "en": [], "zh": [] } },
     { "term": "receiver", "en": "receiver", "zh": "受托方", "means": "The repository a quest is addressed to.", "why": "It pairs with the asker's 委托方, both built on 委托.", "match": "\\breceivers?\\b|\\baddressed to\\b", "avoid": { "en": ["addressed to"], "zh": ["接收方"] } },
@@ -383,7 +390,7 @@
     { "term": "pull request", "en": "pull request", "zh": "拉取请求", "means": "A code host's request to merge a branch, which a plugin may open.", "why": "The code host's own Chinese name for it.", "match": "\\bpull requests?\\b", "avoid": { "en": [], "zh": ["合并请求"] } },
     { "term": "git remote", "en": "git remote", "zh": "远程仓库", "means": "A repository's own git remote, such as origin; not the workspace's remote.", "match": "\\bgit remotes?\\b|\\bits remote\\b", "avoid": { "en": [], "zh": ["远端"] } },
     { "term": "remote", "en": "remote", "zh": "远端", "means": "A shared Daoris deployment a workspace is wired to, where its quests and records sync.", "why": "Kept apart from a git remote (远程仓库).", "match": "\\b(?<!its )remotes?\\b", "avoid": { "en": [], "zh": ["远程"] } },
-    { "term": "wire", "en": "wire", "zh": "接线", "means": "Connect a workspace to a remote, with the deployment's address and a key.", "match": "\\b(wire it|wire a workspace|wire workspace|wire to|wired|wiring|unwire)\\b", "avoid": { "en": [], "zh": ["接入"] } },
+    { "term": "wire", "en": "wire", "zh": "接线", "means": "Connect a workspace to a remote, with the deployment's address and a key.", "match": "\\b(wire it|wire a workspace|wire workspace|wire to|wired|wiring)\\b", "avoid": { "en": [], "zh": ["接入"] } },
     { "term": "deployment", "en": "deployment", "zh": "部署", "means": "A running Daoris service, which a remote points at.", "match": "\\bdeployments?\\b", "avoid": { "en": [], "zh": [] } },
     { "term": "sync", "en": "sync", "zh": "同步", "means": "Exchange a workspace's quests and records with its remote.", "match": "\\bsync(s|ed|ing)?\\b", "avoid": { "en": [], "zh": [] } },
     { "term": "service", "en": "service", "zh": "服务", "means": "Daoris's knowledge service, which holds the quests, the asks and the index.", "match": "\\bservice\\b", "avoid": { "en": [], "zh": [] } },
@@ -391,7 +398,7 @@
     { "term": "recall", "en": "recall", "zh": "检索", "means": "How search answers, by words or by meaning too; the tier that answered is said on every screen.", "match": "\\brecall\\b", "avoid": { "en": [], "zh": [] } },
     { "term": "convergence", "en": "convergence", "zh": "同归", "means": "Where two repositories learned the same thing in different words, found by the index.", "why": "殊途同归: different roads, one destination.", "match": "\\bconverg(e|es|ed|ence|ent)\\b", "avoid": { "en": [], "zh": ["汇聚", "趋同"] } },
     { "term": "search", "en": "search", "zh": "搜索", "means": "Finding knowledge across the family by words, or by meaning where a model is set.", "match": "\\bsearch(es|ed|ing)?\\b", "avoid": { "en": [], "zh": [] } },
-    { "term": "map", "en": "map", "zh": "地图", "means": "A workspace drawn: its repositories, the quests between them and what they learned in common.", "match": "\\bmaps?\\b", "avoid": { "en": [], "zh": [] } },
+    { "term": "map", "en": "map", "zh": "地图", "means": "A workspace drawn: its repositories, the quests between them and what they learned in common.", "match": "\\b(?<!remotes )maps?\\b", "avoid": { "en": [], "zh": [] } },
     { "term": "code map", "en": "code map", "zh": "代码地图", "means": "A repository's modules drawn in layers, from the map it keeps.", "match": "\\bcode maps?\\b", "avoid": { "en": [], "zh": [] } },
     { "term": "connection", "en": "connection", "zh": "连线", "means": "What the map draws between two repositories: quests, asks, a chain, a dependency, or the same thing learned.", "why": "*Lines* was also Settings' lines (主线).", "match": "\\bconnections?\\b", "avoid": { "en": [], "zh": ["线条"] } },
     { "term": "knowledge", "en": "knowledge", "zh": "知识", "means": "What a repository has written down for others: its rules, knowledge documents, skills and decisions.", "match": "\\bknowledge\\b", "avoid": { "en": [], "zh": [] } },
@@ -427,12 +434,12 @@
     { "term": "driver", "en": "driver", "zh": "驱动", "means": "The part of Daoris that starts and watches sessions on this machine.", "why": "驱动器 is a disk drive.", "match": "\\bdrivers?\\b", "avoid": { "en": [], "zh": ["驱动器", "驱动程序"] } },
     { "term": "loop", "en": "driver loop", "zh": "驱动循环", "zhForms": ["一轮"], "means": "The driver's rounds of looking at what to start, every few seconds while Daoris runs; one round is its look (一轮).", "match": "\\bloop\\b|\\bdriver's (next )?look\\b", "avoid": { "en": [], "zh": ["周期"] } },
     { "term": "tick", "use": "loop", "means": "The code's word for one round of the driver loop; the window says the driver's next look, 一轮.", "avoid": { "en": ["tick", "ticks"], "zh": ["周期"] } },
-    { "term": "hold", "en": "hold", "zh": "暂停", "means": "The person stops the driver starting sessions in a repository, until they resume it (恢复).", "match": "\\b(hold|holds|held)\\b", "avoid": { "en": [], "zh": [] } },
+    { "term": "hold", "en": "hold", "zh": "暂停", "means": "The person stops the driver starting sessions in a repository, until they resume it (恢复).", "match": "^(hold|held)$", "avoid": { "en": [], "zh": [] } },
     { "term": "park", "en": "park", "zh": "挂起", "means": "A session stops at a checkpoint for its person, or a quest stops after too many failed sessions, until the person answers.", "why": "暂停 is hold's word, and 搁置 a quest sitting.", "match": "\\bpark(s|ed|ing)?\\b", "avoid": { "en": [], "zh": ["暂停"] } },
     { "term": "sitting", "en": "sitting", "zh": "搁置", "means": "A quest open and not started, with the driver's reason.", "match": "\\b(sitting|sat)\\b", "avoid": { "en": [], "zh": [] } },
     { "term": "failed session", "en": "failed session", "zh": "失败的会话", "zhForms": ["失败"], "means": "A session that ended in failure, counted against its quest until the quest parks.", "match": "\\bfailed sessions?\\b|\\bfailures\\b", "avoid": { "en": [], "zh": [] } },
     { "term": "strike", "use": "failed session", "means": "The code's word for a failed session counted against its quest; never on the window.", "avoid": { "en": ["strike", "strikes"], "zh": [] } },
-    { "term": "waiting on you", "en": "waiting on you", "zh": "等你处理", "means": "What waits for the person: a parked session, a proposal, an ask its intake asked about; everything What needs you lists.", "match": "\\bwaiting (on|for) you\\b|\\bawaiting person\\b", "avoid": { "en": ["awaiting person"], "zh": ["等待人工", "等你决定"] } },
+    { "term": "waiting on you", "en": "waiting on you", "zh": "等你处理", "zhForms": ["等你"], "means": "What waits for the person: a parked session, a proposal, an ask its intake asked about; everything What needs you lists.", "match": "\\bwaiting (on|for) you\\b|\\bawaiting person\\b", "avoid": { "en": ["awaiting person"], "zh": ["等待人工", "等你决定"] } },
     { "term": "trust", "en": "trust", "zh": "信任", "means": "An agent's own permission to work in a folder, which the person grants.", "match": "\\btrust(ed)?\\b", "avoid": { "en": [], "zh": [] } },
     { "term": "permissions", "en": "permissions", "zh": "权限", "means": "What an agent may do: the allow, ask and deny lists handed to every session.", "match": "\\bpermissions?\\b", "avoid": { "en": [], "zh": [] } },
     { "term": "proposal", "en": "proposal", "zh": "提议", "means": "A change an agent or Ask Daoris proposes; nothing applies until the person accepts or applies it.", "match": "\\bpropos(al|als|ed|es|e)\\b", "avoid": { "en": [], "zh": [] } },

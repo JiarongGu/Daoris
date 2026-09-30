@@ -5574,7 +5574,7 @@ bar's 300px floor, and 中文.
 
 **Decision (NAME1a, the owner's round).** The owner: names in Settings and every other display must be named
 properly in both English and Chinese, *"since this is not just translation this is part of the ui element"*. Read
-where each of the 1,699 keys renders, about 700 are names; many Chinese ones are English names translated (Settings'
+where each of the 1,699 keys renders, 773 are names; many Chinese ones are English names translated (Settings'
 「Daoris 自身的 AI」, 「智能体与账户」), sixteen concepts wear two or more words across screens (项目 and 仓库 for one
 view's rows, 同归 and 汇聚 for one view, 加入, 采用 and 接入 for *adopt*, 同步 for both *sync* and *bring up to
 date*), and English buttons split 78 lower-case to 32 capitalised. `docs/2026-10-01-naming-design.md` is the
@@ -5586,9 +5586,10 @@ contract. So:
   language's name and never a sentence. It is decided by the concept it names (the glossary), the kind of element
   (its form) and the room the frame gives it (its budget). Chrome is named; content is not, as `translation-parity`
   already says, and a key stays structural: renaming a name never renames its key.
-- **Thirteen kinds**, each with its rules in each language: `nav`, `title`, `tab`, `section`, `field`, `choice`,
-  `button`, `status`, `menu`, `headline`, `placeholder`, `toast`, `sentence`. An accessible name or a tooltip takes
-  the kind of the control it names.
+- **Fourteen kinds**, each with its rules in each language: `nav`, `title`, `tab`, `section`, `field`, `choice`,
+  `button`, `status`, `menu`, `command`, `headline`, `placeholder`, `toast`, `sentence`. An accessible name or a
+  tooltip takes the kind of the control it names. `command`, a palette row, was found building the check: a name, a
+  dash and a gloss in a 34rem dialog, which a strip menu's room reported row by row.
 - **English is sentence case for every name but a status word and a placeholder**, which are lower case. Buttons were
   the drift; every other kind had settled, and Windows writes sentence case.
 - **Chinese names are nouns and verb-object phrases chosen as names**: a place is one noun of two to four
@@ -5614,8 +5615,9 @@ the window (`harness`, `profile`, `strike`, `tick`) is a term that points at the
 
 `scripts/names-check.mjs` (`npm --prefix src/Daoris.Web run names:check`) reports glossary conformance, budgets,
 form and doors per key, and exits 0; it exits 2 only when the glossary is malformed, since a glossary that cannot be
-read has stopped checking anything. **NAME1b turns on what is a fact**: conformance, form and doors gate through
-`--strict` in the web's build once the renames land. **The budgets stay a report** (D54: a fact gates, a judgement
+read has stopped checking anything. A label is held to the term's name; with `--all`, a sentence, a tooltip or a toast
+is held only to the words a term must not be called, since a sentence may say a thing its own way. **NAME1b turns on
+what is a fact**: conformance, form and doors gate through `--strict` in the web's build once the renames land. **The budgets stay a report** (D54: a fact gates, a judgement
 reports): a character count estimates a width, and the window is where a width is a fact. This reads the NAME1 row's
 *"so drift fails a gate"* as the facts' half, and says so for the owner to overrule.
 
@@ -5638,6 +5640,11 @@ No catalogue value or key changes and no component is touched; the proposals are
 
 ### What the gates do not cover
 
-The check's rules, the glossary's shape and the kind map's resolution are held by `src/locales/glossary.test.ts` in
-the web's vitest loop. That the budgets match the rooms is a claim about the window, derived from the tokens and the
-frame's constants in design §4 and **not measured here**: nothing looked at the window in this branch.
+The glossary's shape is held by `src/locales/glossary.test.ts`, and the check's rules, the kind map's resolution,
+the measure and report mode by `src/locales/names.test.ts`, both in the web's vitest loop. That the audit's proposals
+obey the rules they propose (none left on the facts' half once applied, and every placeholder where it was) was
+checked by a scratch run over the catalogues in memory, not by a gate: NAME1b's `--strict` is that gate. The check
+does not hold placeholders, which the parity gate does, and cannot see a sentence the driver writes (English
+`{{why}}`); the audit lists those it read by hand. That the budgets match the rooms is a claim about the window,
+derived from the tokens and the frame's constants in design §4 and **not measured here**: nothing looked at the
+window in this branch.
