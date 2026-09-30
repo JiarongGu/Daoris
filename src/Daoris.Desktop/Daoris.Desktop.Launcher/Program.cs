@@ -10,9 +10,13 @@ namespace Daoris.Desktop.Launcher;
 /// (<c>InstallHome.RootOf</c>), so nothing is handed over but the arguments and the environment.
 /// </summary>
 /// <remarks>
-/// A twin of the publish script's <c>SHELL_HOME</c> and <c>SHELL_EXE</c> (<c>tools/desktop-publish.mjs</c>)
+/// <para>A twin of the publish script's <c>SHELL_HOME</c> and <c>SHELL_EXE</c> (<c>tools/desktop-publish.mjs</c>)
 /// and of the application's assembly name: the script lays the application out where this looks, and a
-/// test reads this file for the names.
+/// test reads this file for the names.</para>
+///
+/// <para>And of the application's <c>TaskbarIdentity</c> (TASKBAR1, D108): this file's name is what an
+/// install's window names as the command a pin starts, and <see cref="AppId"/> is the id the window
+/// carries. <c>TaskbarIdentityTests</c> reads this file and its project for both.</para>
 /// </remarks>
 public static class Launcher
 {
@@ -22,9 +26,20 @@ public static class Launcher
     /// <summary>The application: Chromium's launcher, named from the app's assembly less <c>.App</c>.</summary>
     public const string ShellExe = "Daoris.Desktop.exe";
 
+    /// <summary>
+    /// The application id Windows groups Daoris's taskbar button by (D108): the same as the window's,
+    /// because a launcher and the process it starts are one application to Windows, and so a refusal
+    /// below sits with the person's pinned Daoris rather than on a button of its own.
+    /// </summary>
+    public const string AppId = "Daoris.Desktop";
+
     [STAThread]
     public static int Main(string[] args)
     {
+        // Before anything is shown: Windows reads a process's id when it first presents something. A
+        // failure changes nothing a person can see but where a refusal's button goes.
+        _ = SetCurrentProcessExplicitAppUserModelID(AppId);
+
         var shell = Path.Combine(AppContext.BaseDirectory, AppFolder, ShellExe);
         if (!File.Exists(shell))
         {
@@ -58,4 +73,7 @@ public static class Launcher
 
     [DllImport("user32.dll", CharSet = CharSet.Unicode)]
     private static extern int MessageBoxW(IntPtr owner, string text, string caption, uint type);
+
+    [DllImport("shell32.dll", CharSet = CharSet.Unicode)]
+    private static extern int SetCurrentProcessExplicitAppUserModelID(string appId);
 }

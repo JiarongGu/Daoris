@@ -21,8 +21,8 @@ lists.
 
 ## State
 
-**Counts, and this is their one home:** sixteen commands, **661 CLI tests, 655 service and 46 HTTP host, 1480 driver,
-410 desktop modules, 80 devkit, 1713 web unit, 21 Playwright**, 66/66 release rehearsal, **301/301
+**Counts, and this is their one home:** sixteen commands, **661 CLI tests, 655 service and 46 HTTP host, 1482 driver,
+418 desktop modules, 80 devkit, 1713 web unit, 21 Playwright**, 66/66 release rehearsal, **301/301
 family rehearsal** (it names its own phases when you run it), **70/70 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge
 documents, 5 skills, 7 packs. The always-loaded core is **22,672 of 26,000 bytes** — a span in
@@ -117,8 +117,8 @@ rather than designed.
 
 ## Backlog
 
-**Seventeen rows are open, in three kinds** (triaged 2026-09-30, when the owner asked to go faster):
-- **Workable now, by the parent or subagents (three):** READ1, TASKBAR1, TEST1, and FLAKE1 (which MOD8
+**Sixteen rows are open, in three kinds** (triaged 2026-09-30, when the owner asked to go faster):
+- **Workable now, by the parent or subagents (two):** READ1, TASKBAR1, TEST1, and FLAKE1 (which MOD8
   absorbs).
 - **Waiting on the owner (six):** BUDGET1 and PLUGREPO1 (their calls), TRUST2 and AGT2c (a grant, two
   downloads), FG5 and BRW3 (the owner present).
@@ -259,13 +259,6 @@ an install that is a `Daoris.exe` launcher, the application under `app/` and the
 (CHR4, D93). Agents open tabs in it through a relay, and Daoris's favorites
 and the extensions setting are in Settings → Browser and `daoris browser`
 (`docs/2026-09-28-chromium-embedding-evidence.md`).
-- [ ] **TASKBAR1 — one taskbar button for a pinned Daoris** (D93). The window belongs to
-  `app/Daoris.Desktop.exe` and a person pins `Daoris.exe`, the launcher, and Windows groups a button by
-  its process's executable unless the window names an application id. Expected, not yet seen: a pinned
-  launcher beside a second button for the running window, and pinning the running window pins the app
-  in `app/`, which the next publish moves under it. The window's property store can name the id and
-  the relaunch command (`System.AppUserModel.ID`, `RelaunchCommand` pointing at the root launcher, its
-  display name and icon); look on the owner's machine before and after.
 ### The first goal — a real workspace, a ticket, a task started (owner, 2026-09-27 → D77)
 
 > *"I think we still does not meet the first goal: setup [the named workspace] as workspace and use

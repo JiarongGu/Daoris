@@ -48,6 +48,10 @@ public sealed class SecondaryForm : OptimizedForm
         Text = name == SecondaryWindow.Monitor ? "Daoris — Monitor" : $"Daoris — {name}";
         StartPosition = FormStartPosition.CenterScreen;
 
+        // The main window's taskbar identity (TASKBAR1, D108), or this window would be a button of its
+        // own beside the main one's, grouped by the executable the main one no longer is.
+        TaskbarWindow.Wear(this);
+
         // The OS theme, until the page says which one it is in (WINDOW2: `FollowPage`, over
         // `DAORIS.WINDOWS`). Shenora's window commands route a second window's `SET_THEME` nowhere,
         // so the page tells this form by its name instead. Before it has spoken — the moments while

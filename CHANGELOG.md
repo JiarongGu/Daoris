@@ -878,6 +878,10 @@ The first version: doctrine that installs, is checked, and flows back.
   switched off per repository or per workspace, and writing into another repository is allowed only
   toward one you declare (`daoris driver across plugins write-to engine`), in one direction. Both doors:
   `daoris driver across …` and Settings → Permissions → *Reading and writing across repositories*.
+- **A pinned Daoris is one taskbar button** (TASKBAR1, D108). An install's windows name one taskbar id and
+  relaunch `Daoris.exe` at the install's root, so a pin made from the running window survives a republish and
+  later windows, a second one included, join it. Pin from the running button; a pin made on `Daoris.exe` in
+  Explorer carries no id and still shows a second button.
 - **A plugin can push the branch and open the pull request** (WSR4, D100). A branch landing rule may
   name an installed plugin (`daoris driver landing … branch <pattern> --plugin <id>`, or the *who
   pushes it* chooser in Settings → Workspace → *How work lands*). Once accepting has made the branch,

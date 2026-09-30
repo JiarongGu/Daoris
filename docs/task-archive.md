@@ -8486,3 +8486,24 @@ the main checkout, and now builds under a short root of its own (FIX-LOG). Five 
 sources. The merge tool still names six flake classes by hand; its rule moves to the category next.
 **Proven by:** driver 1480, modules 410, service 655 + 46, CLI 661, release 66/66, family 301/301, Playwright 21,
 deployment 70/70.
+
+
+## TASKBAR1 — one taskbar button for a pinned Daoris (2026-09-30)
+
+> - [ ] **TASKBAR1 — one taskbar button for a pinned Daoris** (D93). The window belongs to
+> `app/Daoris.Desktop.exe` and a person pins `Daoris.exe`, the launcher, and Windows groups a button by
+> its process's executable unless the window names an application id. Expected, not yet seen: a pinned …
+
+**Outcome** (built by a subagent in its own worktree, dispatched through the `dispatch-subagent` skill, merged with
+`tools/merge-branch.mjs`: thirteen gates, the serial Process halves among them, all passing): **D108**. An
+install's windows name Daoris's taskbar id, `Daoris.Desktop`, in their own property store, with a relaunch
+command, display name and icon that start `Daoris.exe` at the install's root, so a pin made from the running
+window is the launcher, which a republish never moves, and later windows join it. The main window and every
+secondary window wear it (`TaskbarWindow`, written as each handle is created, emptied as it is destroyed). A
+workspace build, or an install with no launcher, wears nothing (`TaskbarIdentity.For`). The launcher gives its
+own process the same id. `TaskbarIdentityTests` (8) hold the id, the command built from an install root, the
+cases where nothing is worn, the launcher twin and that both forms wear it. **Not yet seen on a taskbar:** it is
+the owner's to look after the republish, pinning from the running button; a pin made on `Daoris.exe` in Explorer
+carries no id, and the browser's own button is left for that look.
+**Proven by:** modules 418, driver 1482, CLI 661, service 655 + 46, release 66/66, family 301/301, Playwright 21,
+deployment 70/70.

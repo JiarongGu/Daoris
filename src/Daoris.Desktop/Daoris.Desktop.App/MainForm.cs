@@ -71,6 +71,11 @@ public sealed class MainForm : OptimizedForm
         // Still set: it is the taskbar's label and the caption of the one MessageBox left.
         Text = "Daoris (道衍)";
 
+        // One taskbar button for a pinned Daoris (TASKBAR1, D108): an install's window names Daoris's
+        // id and a relaunch command that starts the root launcher, so it groups under the person's pin
+        // and a pin made from it survives a republish. A workspace build wears nothing.
+        TaskbarWindow.Wear(this);
+
         // 🔴 The WINDOW's icon, which a WinForms form does not take from anywhere by itself: it opens
         // wearing the framework's default unless told. Read from the `daoris.ico` the build copies
         // beside this assembly (D92): the running executable is CEF's launcher now, and wears CEF's

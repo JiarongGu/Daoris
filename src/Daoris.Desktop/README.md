@@ -10,7 +10,7 @@ got its shape is in `docs/DECISIONS.md` and `docs/task-archive.md`, not here.
 | `Daoris.Desktop.Driver.Host` | `daoris-driver`, the headless door onto the same library: the loop by its verb, `drive [--once \| --until-idle] [--share]` (DRV8a, D104: with no verb it prints its usage and exits 2, and a loop refuses a home another live driver holds, naming it, unless `--share`), chat, ask, trees and sync, deleting a quest or an ask made by mistake (`quest delete`, `ask --delete`, D95), and the machine log read back (`logs [--since <30m\|2h\|3d>] [--source <name>] [--event <name>] [--level <warn\|error>] [--json]`, LOG1c): every source's files under the home merged by time, one readable line each or as written with `--json`, a line that cannot be read skipped and counted on standard error |
 | `Daoris.Desktop.Modules` | The shell's head: the loop, the host supervisor, every IPC module the page talks to, and `Refusals`, where a refusal is declared once as a code the page translates. Plain `net10.0`, with its own tests and gate |
 | `Daoris.Desktop.App` | `Daoris.Desktop.exe`, the window, on Shenora 0.18's own Chromium (`ChromiumView`, D92): CEF's launcher, laid out beside the engine by the build, wearing Daoris's icon and name, which the kit copies from the app's assembly (SHEN1). **And `daoris-browser`, Daoris's own browser** (D85, CHR3, since CHR8 D99): the same executable started with `--daoris-browser` first, which `Main` hands to the kit's `ChromiumBrowserProcess.Run` before anything else (`BrowserProcess`). A process of its own because the engine's debug port reaches every page in its process; it shows Chromium's own window, made over its port, and answers `${browser}` on that port, a relay of the kit's that calls a new tab a `page`. It ends when its last window closes or the shell does. The shell starts it with `ChromiumBrowserProcess.Start` (`EngineBrowserHost`), so an install carries one Chromium |
-| `Daoris.Desktop.Launcher` | `Daoris.exe`, the one thing at an install's root (D93): it starts `app/Daoris.Desktop.exe` with its arguments and exits. Framework-dependent, single-file, referencing nothing |
+| `Daoris.Desktop.Launcher` | `Daoris.exe`, the one thing at an install's root (D93): it starts `app/Daoris.Desktop.exe` with its arguments and exits, its process carrying Daoris's taskbar id (D108). Framework-dependent, single-file, referencing nothing |
 
 The adapters are the stub, `acp-stub` (the protocol door with no model in it), `claude-code`, and the
 protocol door's configurations `claude-code-acp`, `codex-acp` and `dsh`. A session's record is
@@ -100,6 +100,10 @@ starts the driver loop.** The publish refuses a folder it did not
 write; `--beside` installs next to whatever is there — the repositories it drives, typically — and
 still refuses to write over a name it did not write. `npm run desktop -- run --install <folder>`
 starts that install with the debug port attached, so the instruments below reach it.
+**Pin it from its running button** (D108): an install's windows name Daoris's taskbar id and a
+relaunch command that starts `Daoris.exe` at the root, so that pin is the launcher and every later
+window joins it. A pin made on `Daoris.exe` in Explorer carries no id, and Windows cannot relate the
+window to it. A workspace build's window names nothing and keeps its own button.
 `docs/2026-09-22-first-deployment-case-study.md` is what deploying found, and `docs/FIX-LOG.md`
 what deploying again found.
 
