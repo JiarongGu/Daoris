@@ -84,6 +84,8 @@ export type HelpSettled = {
   applied?: boolean;
   go?: HelpPlace | null;
   harnessAction?: { harness: string; action: 'update' | 'pin' } | null;
+  /** The card still stands for another press: a sync card's look, which settles nothing (LEFT3). A host before it answers none. */
+  stands?: boolean;
 };
 
 /**
@@ -110,9 +112,10 @@ export const useSettleHelp = () => {
         settle.apply ? { timeoutMs: settleBound(client, settle.id) } : undefined),
     // An Apply the page stopped waiting for may still be at work on the host: it is said, never pressed again.
     retry: false,
-    onSuccess: (_answer, settle) => {
-      // Whether Ask Daoris's proposals help (LOG1b): the person's Apply or Not now, once it landed.
-      logEvent('proposal.settled', { applied: settle.apply });
+    onSuccess: (answer, settle) => {
+      // Whether Ask Daoris's proposals help (LOG1b): the person's Apply or Not now, once it landed and settled the
+      // proposal. A sync card's look settles nothing, and its card stands for the press that does (LEFT3).
+      if (!answer?.stands) logEvent('proposal.settled', { applied: settle.apply });
       void client.invalidateQueries({ queryKey: ['help-proposals'] });
       // What an Apply changed: the driver's file, and an ask it made…
       void client.invalidateQueries({ queryKey: keys.driver });

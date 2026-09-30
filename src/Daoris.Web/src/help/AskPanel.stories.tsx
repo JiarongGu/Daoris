@@ -155,6 +155,24 @@ export const ProposingEveryKind: Story = {
                 ],
               },
             },
+            // LEFT3 b: a look where a line could not be fetched and other repositories were left apart, said on the card.
+            {
+              id: 'y3', kind: 'sync' as const,
+              describe: 'Bring every repository with a checkout here up to date: 1 thing(s) change, only the rows below that move, each judged again right before it acts. Daoris fetches nothing more, and never pushes.',
+              terminal: 'daoris-driver trees sync --yes', why: 'your pull request merged',
+              sync: {
+                looked: true,
+                rows: [
+                  { key: 'engine:main', step: 'line' as const, moves: true, says: 'engine  main  fast-forwards 1 commit(s) to `origin/main`' },
+                  { key: 'game:main', step: 'line' as const, moves: false, says: 'game  main  up to date with `origin/main` (not fetched)' },
+                ],
+                notFetched: [{
+                  repository: 'game', fetch: 'fatal: Could not read from remote repository.',
+                  lastFetch: new Date(Date.now() - 2 * 86_400_000).toISOString(), reach: 'ssh',
+                }],
+                apart: ['docs', 'site', 'tools'],
+              },
+            },
           ].map((proposal) => <ProposalCard key={proposal.id} proposal={proposal} onApply={() => {}} onDismiss={() => {}} />)}
         </ul>
       ),

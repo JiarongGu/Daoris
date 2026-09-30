@@ -40,6 +40,7 @@
   "help.proposal.syncRows": "what the press would do",
   "help.proposal.syncNote": "Apply does only the rows that move, each judged again right before it acts. Daoris fetches nothing more, and never pushes.",
   "help.proposal.look": "look for updates",
+  "help.proposal.syncApart": "{{names}}: not fetched, and nothing of theirs moves. A proposal naming one looks at it.",
   "help.placeholder": "ask about Daoris on this machine. Enter sends, Shift+Enter makes a newline.",
   "help.ended": "This conversation has ended. A message starts a new one.",
   "help.notSent": "Ask Daoris ended before this reached it. It is back in the box: send it again to start a new conversation.",

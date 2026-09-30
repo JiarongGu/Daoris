@@ -101,7 +101,7 @@ public sealed class HelpRoomMayProposeTests
 
         Assert.Contains("or which of its accounts it runs as by default, for the machine or one workspace", agents);
         Assert.Contains("the account one the room lists under that agent", agents);
-        Assert.Contains("`daoris agent profile default <agent> <profile> [--workspace <name>]`", agents);
+        Assert.Contains("`daoris agent profile default <agent> <profile>|--clear [--workspace <name>]`", agents);
     }
 
     /// <summary>HELP10: the browser's settings, each named as the terminal spells it, and when each holds.</summary>

@@ -48,7 +48,8 @@ public sealed record LandedBranch(
 
 /// <summary>
 /// The branches this machine's landings made (WSR5): <c>&lt;home&gt;/landings.json</c>. Written at the
-/// landing, read by the clean-up and the hand-off, and kept as a trace once the branch is gone (REVIEW2, D113).
+/// landing, read by the clean-up and the hand-off, and kept as a trace once the branch is gone (REVIEW2, D113), each
+/// repository's newest <see cref="TracesKept"/> traces (LEFT3).
 /// </summary>
 /// <remarks>
 /// <para><b>Machine-local, under the home (D63), never in the repository.</b> Which branches a landing on
@@ -66,6 +67,13 @@ public sealed record LandedBranch(
 public sealed class LandedBranches(string home)
 {
     public const string FileName = "landings.json";
+
+    /// <summary>
+    /// How many traces of gone branches each repository keeps (LEFT3): the newest, by when each went. A standing entry
+    /// is never dropped. Every reader parses the whole file, and a trace is kept only so a session's review can say where
+    /// its work went, which is asked of recent sessions.
+    /// </summary>
+    public const int TracesKept = 50;
 
     // One writer at a time in this process: two presses in one shell would otherwise read the same file and
     // the second write would drop the first's branch.
@@ -156,8 +164,24 @@ public sealed class LandedBranches(string home)
         {
             Directory.CreateDirectory(home);
             // Every entry, traces included: a write that read only the standing ones would drop every trace (D113).
-            AtomicFile.WriteText(FilePath, ToJson(change(Everything())));
+            AtomicFile.WriteText(FilePath, ToJson(Bounded(change(Everything()))));
         }
+    }
+
+    /// <summary>
+    /// The entries with each repository's traces beyond its newest <see cref="TracesKept"/> dropped (LEFT3), the one that
+    /// went first first, whatever its place in the file; the rest keep the order they landed in.
+    /// </summary>
+    private static IReadOnlyList<LandedBranch> Bounded(IReadOnlyList<LandedBranch> entries)
+    {
+        var dropped = entries
+            .Select((entry, at) => (Entry: entry, At: at))
+            .Where(each => each.Entry.GoneAt is not null)
+            .GroupBy(each => each.Entry.Repository, StringComparer.OrdinalIgnoreCase)
+            .SelectMany(traces => traces.OrderByDescending(each => each.Entry.GoneAt).ThenByDescending(each => each.At).Skip(TracesKept))
+            .Select(each => each.At)
+            .ToHashSet();
+        return dropped.Count == 0 ? entries : [.. entries.Where((_, at) => !dropped.Contains(at))];
     }
 
     private static bool Same(LandedBranch entry, string repository, string branch) =>

@@ -1,13 +1,17 @@
-import { QueryClient } from '@tanstack/react-query';
+import { createElement, type ReactNode } from 'react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { act, renderHook } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
+
+const { invoke } = vi.hoisted(() => ({ invoke: vi.fn() }));
 
 vi.mock('@shenora/react', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@shenora/react')>()),
-  getBridge: () => ({ invoke: vi.fn() }),
+  getBridge: () => ({ invoke, isAvailable: true }),
 }));
 
 import type { HelpProposal } from '../help/ProposalCard';
-import { settleBound } from './help';
+import { settleBound, useSettleHelp, type HelpSettled } from './help';
 
 /**
  * WSR7: Ask Daoris's sync card fetches on its first Apply and replays on its second, each as long as the screen's own
@@ -56,5 +60,35 @@ describe('how long an Apply may take', () => {
 
   it('waits for the press one replay after another, for the rows the look listed as moving', () => {
     expect(minutes(settleBound(client(), 'p3'))).toBe(12);
+  });
+});
+
+/**
+ * LOG1b's `proposal.settled` is the person's Apply or Not now once the proposal settled (D94). A sync card's look
+ * settles nothing: the card stands for its press, and the host says so (LEFT3 c), so the look writes no line. A look
+ * that found nothing to do settled the card, and is written as any Apply is.
+ */
+describe('what settling a proposal writes to the machine log', () => {
+  const settle = async (answer: HelpSettled, apply = true) => {
+    invoke.mockReset();
+    invoke.mockImplementation(async (module: string) => (module === 'DAORIS.DRIVER' ? answer : undefined));
+    const client = new QueryClient();
+    const wrapper = ({ children }: { children: ReactNode }) => createElement(QueryClientProvider, { client }, children);
+    const { result } = renderHook(() => useSettleHelp(), { wrapper });
+    await act(async () => { await result.current.mutateAsync({ id: 'p11', apply }); });
+    return invoke.mock.calls
+      .filter(([module]) => module === 'DAORIS.LOG')
+      .map(([, , request]) => (request as { payload: unknown }).payload);
+  };
+
+  it('writes proposal.settled for an Apply and a Not now that settled the proposal', async () => {
+    expect(await settle({ message: 'Applied.', applied: true })).toEqual([{ event: 'proposal.settled', data: { applied: true } }]);
+    expect(await settle({ message: 'Not now.' }, false)).toEqual([{ event: 'proposal.settled', data: { applied: false } }]);
+    expect(await settle({ message: 'Looked: nothing to bring up to date.', applied: false, stands: false }))
+      .toEqual([{ event: 'proposal.settled', data: { applied: true } }]);
+  });
+
+  it('writes nothing for a sync card\'s look, which leaves the card standing for its press', async () => {
+    expect(await settle({ message: 'Looked for updates: 3 thing(s) would change.', applied: false, stands: true })).toEqual([]);
   });
 });
