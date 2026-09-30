@@ -15,7 +15,7 @@ what was measured, and it stays a record of that moment. A *record* is append-on
 |---|---|---|---|
 | `2026-08-04-daoris-design.md` | contract | the CLI | Current. Its notes carry D54, D59 and D105 where they changed it |
 | `2026-08-05-knowledge-service-design.md` | contract | the service | Built. Its banner names what later decisions answered; §3–§4, the disclosure classes, still bind |
-| `2026-09-19-driver-design.md` | contract | the driver (D45, D46) | Current, with D72's permission change and D104's interrupted stop noted |
+| `2026-09-19-driver-design.md` | contract | the driver (D45, D46) | Current, with D72's permission change, D104's interrupted stop, and PAR1's sessions side by side in trees (§9) noted |
 | `2026-09-19-platform-design.md` | contract | the platform (D38) | Current in shape; the views it names have moved since (D55, D66, D75) |
 | `2026-09-19-platform-ux.md` | contract | the design language (D41, D56) | Current. §4 records what each looking pass settled; read it before changing anything a person looks at |
 | `2026-09-19-frontend-architecture.md` | method | the platform's stack and tests (D42) | Current |
@@ -42,7 +42,8 @@ what was measured, and it stays a record of that moment. A *record* is append-on
 | `2026-09-30-machine-log-design.md` | contract | The machine log: what happens on this machine, without anyone's words, to improve Daoris from (LOG1, D94) | Built (LOG1a–d, §7); §4 and §6 say, as built, what each line measures and what each door reads |
 | `2026-09-30-terminal-design.md` | contract | The terminal: a real shell of the person's own in the console panel (CONSOLE4, D96) | Built (CONSOLE4a–c, §4); the look on the window in both themes is still to take |
 | `2026-09-30-setup-guide-design.md` | contract | The setup guide: what a first start walks through, on the facts Ask Daoris's starters read (SETUP1, D97) | Current; SETUP1a–b in its §3 order |
-| `2026-09-30-parallel-development-design.md` | contract | Parallel development: what eighteen merges collided on, the rules, the splits and the lane map (MOD1–MOD9) | Built (MOD1–MOD9, D106); §3 rule 5 says how a desktop suite's `Process` half runs; LEFT1 re-runs a rehearsal that died (§3) and gives every tracked file a place in the lane map (§5) |
+| `2026-09-30-parallel-development-design.md` | contract | Parallel development: what eighteen merges collided on, the rules, the splits and the lane map (MOD1–MOD9) | Built (MOD1–MOD9, D106); §3 rule 5 says how a desktop suite's `Process` half runs; LEFT1 re-runs a rehearsal that died (§3) and gives every tracked file a place in the lane map (§5); D115 designs its successor, the driver's own cycle |
+| `2026-10-01-self-development-design.md` | contract | Daoris develops Daoris: lanes a repository declares, sessions side by side, a merge queue as a landing form, a steward that keeps the records (DEV1) | Designed (D115); nothing built. §0 is what the code does today, §7 the phased build DEV2–DEV11, §9 what only a real run can prove |
 
 ## Studies and evidence
 
