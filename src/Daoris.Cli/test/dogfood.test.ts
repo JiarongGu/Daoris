@@ -389,9 +389,8 @@ test('only the service client may touch the network', () => {
  * Walked from every DOCTRINE command's entry point, not only `check`'s: they all run offline, and a
  * test that named one of them would be silent the day `sync` grew a "just ask the service" shortcut.
  *
- * Since the commands became a table (MOD7), each doctrine command's row module under `cli/` is an
- * entry point too, read from the table rather than listed: a row that reached the dispatcher, or a
- * management row, would reach the whole management class through it.
+ * Since the commands became a table (MOD7), each doctrine command's row under `cli/` is an entry point
+ * too, read from the table rather than listed, so a new doctrine verb is walked the day it lands.
  */
 const DOCTRINE_ROWS = COMMANDS.filter((command) => command.kind === 'doctrine').map((command) => `cli/${command.name}.ts`);
 const DOCTRINE = [

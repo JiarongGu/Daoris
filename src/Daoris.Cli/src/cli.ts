@@ -25,9 +25,12 @@ export const packageRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 
 /**
  * The commands, in the order `daoris --help` prints them (MOD7). Each is a module of its own under
- * `cli/` carrying its verb, its usage lines and its handler, so a new verb is a new file and one row
- * here. Only this file imports them: a command module that reached the table would reach every other
- * command, the management class's network and spawning included, through it.
+ * `cli/` carrying its verb, its usage lines and its handler, so a new verb is a new file, one row here,
+ * and its lines in the golden usage (`test/fixtures/cli-usage/help.txt`).
+ *
+ * Only this file imports the rows, and no row imports this file: a row that reached the table would
+ * reach every other command through it, and a doctrine command would then reach the management
+ * class's network and spawning. `cli.test.ts` and `dogfood.test.ts` hold both halves.
  */
 export const COMMANDS: readonly CliCommand[] = [
   analyze,

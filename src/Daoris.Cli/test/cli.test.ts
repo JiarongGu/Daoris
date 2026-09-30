@@ -128,8 +128,7 @@ test('every module under cli/ is one registered row, named as its file, and none
     const { command } = await import(pathToFileURL(join(folder, file)).href) as { command?: CliCommand };
     assert.equal(command?.name, file.replace(/\.ts$/, ''), `cli/${file} does not export the command it is named for`);
     assert.ok(COMMANDS.includes(command!), `cli/${file} is not registered in the table in cli.ts`);
-    // A row that imported the dispatcher would reach every other row through it — for a doctrine
-    // command, the management class's network and spawning (dogfood.test.ts holds the walk).
+    // Why is on the table in cli.ts; dogfood.test.ts walks what each doctrine row reaches.
     assert.doesNotMatch(readFileSync(join(folder, file), 'utf8'), /['"]\.\.\/cli\.ts['"]/,
       `cli/${file} imports the dispatcher`);
   }

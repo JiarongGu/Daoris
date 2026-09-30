@@ -359,11 +359,8 @@ export interface CommandArgs {
 }
 
 /**
- * One row of the dispatcher's table (MOD7). Each command is a module of its own under `cli/`, so a new
- * verb adds a file and a row rather than editing the usage text and a switch every other verb shares.
- *
- * The type lives here and never in the dispatcher: a command module that imported the dispatcher would
- * reach every other command through it, a doctrine command's the management class's included.
+ * One row of the dispatcher's table (MOD7), exported by its module under `cli/` as `command`. It lives
+ * here rather than in the dispatcher so that no row has to import the dispatcher (`cli.ts` says why).
  */
 export interface CliCommand {
   /** The verb a person types, and the module's file name under `cli/`. */
