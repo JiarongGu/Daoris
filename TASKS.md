@@ -22,7 +22,7 @@ lists.
 ## State
 
 **Counts, and this is their one home:** sixteen commands, **629 CLI tests, 655 service and 46 HTTP host, 1431 driver,
-399 desktop modules, 80 devkit, 1700 web unit, 21 Playwright**, 66/66 release rehearsal, **301/301
+406 desktop modules, 80 devkit, 1700 web unit, 21 Playwright**, 66/66 release rehearsal, **301/301
 family rehearsal** (it names its own phases when you run it), **70/70 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge
 documents, 5 skills, 7 packs. The always-loaded core is **22,492 of 26,000 bytes** — a span in
@@ -79,6 +79,11 @@ rather than designed.
   message reaches nobody — the host maps it to a generic code carrying only the exception type, which
   is why every module sentence was invisible until REV2 (`docs/FIX-LOG.md`). `DriverException` is the
   one exemption and it is mapped once, at the module boundary, so the driver's own wording travels.
+- **Adding a `DAORIS.DRIVER` door is three things since MOD5**, and `DriverModuleRoutesTests` checks all
+  three: a handler marked `[DriverRoute("NAME")]` in `DriverModule.<Domain>.cs` (the domain named as the
+  page's `bridge/<domain>.ts` that calls it), its name in that domain's row of the Desktop README, and a
+  call from the bridge or a test. A proposal kind, a room section, a CLI verb, a catalogue area and a
+  Settings domain are each a file and a registry line the same way (MOD2–MOD7).
 - **The modules tests are serialized on purpose** (`Parallelism.cs`): those modules resolve every path
   from process-global environment variables, so two test classes at once trample each other. Found by
   a second class turning two passing tests red.
@@ -112,9 +117,9 @@ rather than designed.
 
 ## Backlog
 
-**Twenty-one rows are open, in three kinds** (triaged 2026-09-30, when the owner asked to go faster):
-- **Workable now, by the parent or subagents (seven):** the parallel-development arc's three
-  (MOD5, MOD8, MOD9, the owner's newest; MOD5 in flight), READ1, TASKBAR1, TEST1, and FLAKE1 (which MOD8
+**Twenty rows are open, in three kinds** (triaged 2026-09-30, when the owner asked to go faster):
+- **Workable now, by the parent or subagents (six):** the parallel-development arc's two
+  (MOD8, MOD9, the owner's newest; MOD9 in flight), READ1, TASKBAR1, TEST1, and FLAKE1 (which MOD8
   absorbs).
 - **Waiting on the owner (six):** BUDGET1 and PLUGREPO1 (their calls), TRUST2 and AGT2c (a grant, two
   downloads), FG5 and BRW3 (the owner present).
@@ -132,8 +137,6 @@ rule it also ships. A heading below holds open rows only.
 `docs/2026-09-30-parallel-development-design.md` is the contract: what eighteen merges collided on,
 the two kinds of collision (a shared record, a god file), the rules, the splits, the lane map and the
 order. Every split is behaviour-preserving and proven by the gates as they stand.
-- [ ] **MOD5 — the driver module by domain**: `DriverModule.cs` → a partial per domain and a route
-  table each adds to.
 - [ ] **MOD8 — tests follow their code, and a `Process` category** run serially in the parent; the
   worktree path-length failure fixed at its cause.
 - [ ] **MOD9 — one merge tool and a dispatch skill**: `tools/merge-branch.mjs` (merge, stop on a
