@@ -86,6 +86,22 @@ public static class Refusals
     public const string SessionTreeUnlisted = "SESSION_TREE_UNLISTED";
 
     /// <summary>
+    /// A file asked for its preview (PREVIEW1, D111) that the preview does not read: a path outside the
+    /// session's tree, a path through a link inside the tree that leads out of it, or a path under `.git`,
+    /// which is git's own. Three codes, since each is a different fact about the path.
+    /// </summary>
+    public const string PreviewOutsideTree = "PREVIEW_OUTSIDE_TREE";
+    public const string PreviewLinkLeavesTree = "PREVIEW_LINK_LEAVES_TREE";
+    public const string PreviewGitFolder = "PREVIEW_GIT_FOLDER";
+
+    /// <summary>
+    /// A preview asked for where there is nothing to read: the record names no tree on this machine or the
+    /// tree is gone, or the path is not a file now. INFORMATION, in the review's class.
+    /// </summary>
+    public const string PreviewNoTree = "PREVIEW_NO_TREE";
+    public const string PreviewNotAFile = "PREVIEW_NOT_A_FILE";
+
+    /// <summary>
     /// A window name this build does not open (SURF8). Refused rather than sanitised: the name
     /// becomes both an address and a filename, and "nearly a window name" is not one.
     /// </summary>

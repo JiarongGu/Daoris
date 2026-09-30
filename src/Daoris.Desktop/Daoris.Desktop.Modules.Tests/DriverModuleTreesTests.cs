@@ -45,6 +45,84 @@ public sealed class DriverModuleTreesTests : DriverModuleBridge
         await Assert.ThrowsAnyAsync<Exception>(() => AnswerAsync(Module(), "SESSION_FILES", new { }));
     }
 
+    /// <summary>
+    /// A file's preview (PREVIEW1, D111) is found through the session's record, as its review is, so on a cold
+    /// start it is the same sentence; and a preview of no file is a malformed call.
+    /// </summary>
+    [Fact]
+    public async Task Reading_a_file_for_its_preview_before_the_driver_is_up_is_a_sentence()
+    {
+        var refusal = await RefusalAsync(Module(), "SESSION_FILE", new { id = "s1a2b3c4", path = "src/chunk.ts" });
+
+        Assert.Contains(Refusals.DriverNotReady, refusal);
+        Assert.Contains("still coming up", refusal);
+        await Assert.ThrowsAnyAsync<Exception>(() => AnswerAsync(Module(), "SESSION_FILE", new { id = "s1a2b3c4" }));
+    }
+
+    /// <summary>What the page receives for a file read: the path it asked for, its size, and its text — camelCase, as serialized.</summary>
+    [Fact]
+    public async Task A_file_read_for_its_preview_is_answered_with_its_path_its_size_and_its_text()
+    {
+        var tree = Path.Combine(Home, "trees", "engine");
+        Directory.CreateDirectory(Path.Combine(tree, "src"));
+        File.WriteAllText(Path.Combine(tree, "src", "chunk.ts"), "export const a = 1;\n");
+
+        var answer = JsonSerializer.SerializeToElement(
+            await DriverModule.PreviewAsync("s1a2b3c4", tree, "src/chunk.ts", CancellationToken.None),
+            new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
+
+        Assert.Equal("s1a2b3c4", answer.GetProperty("session").GetString());
+        Assert.Equal("src/chunk.ts", answer.GetProperty("path").GetString());
+        Assert.Equal(20, answer.GetProperty("size").GetInt64());
+        Assert.False(answer.GetProperty("binary").GetBoolean());
+        Assert.False(answer.GetProperty("truncated").GetBoolean());
+        Assert.Equal("export const a = 1;\n", answer.GetProperty("text").GetString());
+        // The tree's own path never goes back to the page (D47 §4; platform language §4).
+        Assert.DoesNotContain(tree, answer.GetRawText().Replace("\\\\", "\\"));
+    }
+
+    /// <summary>
+    /// The three refusals PREVIEW1 names, and its two pieces of information, each a code of its own: the
+    /// page renders each from the catalogue, and a person's next move differs for each.
+    /// </summary>
+    [Theory]
+    [InlineData(FilePreviewRefusal.Outside, "PREVIEW_OUTSIDE_TREE")]
+    [InlineData(FilePreviewRefusal.LinkLeaves, "PREVIEW_LINK_LEAVES_TREE")]
+    [InlineData(FilePreviewRefusal.GitFolder, "PREVIEW_GIT_FOLDER")]
+    [InlineData(FilePreviewRefusal.NoTree, "PREVIEW_NO_TREE")]
+    [InlineData(FilePreviewRefusal.NotAFile, "PREVIEW_NOT_A_FILE")]
+    public void Each_reason_a_file_was_not_read_is_a_refusal_of_its_own(FilePreviewRefusal why, string code)
+    {
+        var error = Assert.Throws<Shenora.Core.Ipc.ShenoraException>(
+            () => DriverModule.FileAnswer("s1a2b3c4", "../other/secret.txt", FilePreviewResult.Refused(why)));
+
+        Assert.Equal(code, error.Code);
+        Assert.Contains(code, Refusals.All);
+        // Each names what was asked for, in the words the page sent — never a machine path it was not told.
+        Assert.Equal("../other/secret.txt", error.Parameters!["path"]);
+    }
+
+    /// <summary>Over a real tree: a path outside it and one under `.git` are refused by the route's own reading.</summary>
+    [Fact]
+    public async Task A_path_outside_the_tree_or_under_git_is_refused_by_the_route_s_reading()
+    {
+        var tree = Path.Combine(Home, "trees", "engine");
+        Directory.CreateDirectory(Path.Combine(tree, ".git"));
+        File.WriteAllText(Path.Combine(tree, ".git", "config"), "[core]\n");
+        File.WriteAllText(Path.Combine(Home, "driver.json"), "{}");
+
+        var outside = await Assert.ThrowsAsync<Shenora.Core.Ipc.ShenoraException>(
+            () => DriverModule.PreviewAsync("s1a2b3c4", tree, "../../driver.json", CancellationToken.None));
+        var git = await Assert.ThrowsAsync<Shenora.Core.Ipc.ShenoraException>(
+            () => DriverModule.PreviewAsync("s1a2b3c4", tree, ".git/config", CancellationToken.None));
+        var none = await Assert.ThrowsAsync<Shenora.Core.Ipc.ShenoraException>(
+            () => DriverModule.PreviewAsync("s1a2b3c4", null, "src/chunk.ts", CancellationToken.None));
+
+        Assert.Equal(Refusals.PreviewOutsideTree, outside.Code);
+        Assert.Equal(Refusals.PreviewGitFolder, git.Code);
+        Assert.Equal(Refusals.PreviewNoTree, none.Code);
+    }
+
     /// <summary>A plan or a press reads the session's record, so before the driver is up each is the cold-start sentence.</summary>
     [Fact]
     public async Task Landing_before_the_driver_is_up_is_a_sentence()

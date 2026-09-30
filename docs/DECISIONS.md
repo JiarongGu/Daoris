@@ -5037,3 +5037,65 @@ set in does not matter or is the right one; and what a pin made from Explorer sh
 - **The launcher handing its shortcut on to the application** (`STARTF_TITLEISLINKNAME`), so the window
   would take the pin's identity. That is undocumented as a way to group, and it would conflict with the
   pin made from the window.
+
+## D111 — A file's preview is a tab of the side bar, read from the session's tree and never written (2026-09-30)
+
+**Decision (PREVIEW1, D76's held file tools, their trigger met).** The conversation's tool cards and
+the review name files: a read, an edit, a file written, the review's changed files. A person wants to
+read one without leaving the window. D76 held *a file tree and a document preview* until after the
+conversation; this is the preview. D55 still binds: there is no editor, so this reads and never writes.
+
+### 1. Where it opens
+
+- **A tab of the right side bar**, after the views standing there, named for the file and closed by its
+  own ×, which goes back to the tab it covered. It is keyed to the attended session, as the dock's tab
+  is (FRAME6): each session keeps its own preview while the window is open, and none across a launch.
+  One preview a session: opening another file replaces it, as VS Code's preview tab does.
+- **It is not a view that moves** (DOCK1b). A view is a place that exists before anyone asks for it;
+  a preview exists only after a click, and it goes where the reading room is, which is the side bar.
+- **Two doors.** A file path in a tool card (the call's location, or an edit's file), and a file's
+  button in the review's list, whose row still opens its patch in place as before. **A door that could
+  only refuse is not offered** (UX5 U66): a path the page can see is outside the session's tree stays
+  text, and a file the review lists as deleted has no button. With no opener (a browser, a detached
+  session's window, Ask Daoris) a path is text, as a link is text with no link opener (BRW7).
+
+### 2. What it reads
+
+- **The file on disk now, in the tree the session's record names**: its own tree, or the repository's
+  checkout for a conversation in it, since the record names the checkout then (D51). One route,
+  `SESSION_FILE`, read-only and desktop-only, like the diff (D47 §4). It never crosses HTTP.
+- **Three refusals, each a code** (`Refusals`, both catalogues, a throw site): a path outside the tree;
+  a link inside the tree that leads out of it, followed segment by segment, since the string is inside
+  and the bytes are not; and a path under `.git`, which is git's and not the work's. Two answers are
+  information, in the review's class: the record names no tree here or the tree is gone, and the path
+  is not a file now (deleted, moved, or a folder).
+- **A bound, stated.** The first 256 KiB, cut at a line's end, and a sentence saying how much the file
+  holds and that the file on disk has the rest (design §5's rule). **A binary file is said in a
+  sentence** with its size: a NUL byte in its first 8,000 bytes, which is git's own test.
+
+### 3. What it shows
+
+- **The path relative to the tree**, never the machine's path (platform language §4). A line-numbered
+  monospace view, highlighted in the file's language only where the highlighter ships it (REVIEW2).
+- **The lines a tool call named, marked and scrolled to, where the card knows them**: a read's `offset`
+  and `limit`, from the call's own input as the wire carried it, on both doors. Nothing is inferred
+  from a title, an edit's text or the output.
+- **The file's changes against the line where the review already holds them**, one press away (*File ·
+  Changes*): the review's own patch for that path, drawn by `PatchView`. The preview asks git for
+  nothing: it reads the review's answer when the review has one, and says nothing of changes when it
+  has none.
+
+### Rejected
+
+- **A view that moves**, beside the timeline and the review. A place that is empty until a click is a
+  tab that says nothing until then, and every region's tab list would carry it.
+- **Opening the file in the system's editor.** It leaves the window, which is the whole ask, and hands
+  an agent's file to whatever the system opens that extension with.
+- **A drawer** (D41 §4). It covers the conversation that named the file, and the two are read together.
+- **Reading the file from git** (`HEAD`) rather than the disk. A live session's last edit is not
+  committed yet; the preview says what the file is now, and the review's patch says what was committed.
+- **Asking git for the file's diff from the preview.** The review already computes it, bounded and
+  stated; a second path to the same answer is a second answer to keep in step.
+- **The line an ACP location carries** (`locations[].line`). The driver keeps a location's path and
+  drops its line today; carrying it changes the event's shape on both doors, and a read's input already
+  says which lines it read.
