@@ -30,8 +30,14 @@ export const Waiting: Story = {
   args: { label: 'Expose a streaming budget · engine · waiting on you', tone: 'parked' },
 };
 
-/** Off: a plugin switched off, or a session that ended — nothing happening, in no outcome's hue. */
-export const Off: Story = { args: { label: 'lint-on-save · off', initialOf: 'lint-on-save', tone: 'idle' } };
+/** Idle: a conversation between turns, a quiet mark in no outcome's hue. */
+export const Idle: Story = { args: { label: 'Cap the hydration per frame · engine · idle', tone: 'idle' } };
+
+/** On, with no mark: a plugin that is simply running (D119). */
+export const Unmarked: Story = { args: { label: 'lint-on-save · on', initialOf: 'lint-on-save', tone: undefined } };
+
+/** Off: a plugin switched off, its initial faint and no mark (D119). */
+export const Off: Story = { args: { label: 'lint-on-save · off', initialOf: 'lint-on-save', tone: undefined, dimmed: true } };
 
 /** A name in 中文: its first character, whole. */
 export const ChineseName: Story = { args: { label: '引擎 · 工作中', initialOf: '引擎' } };

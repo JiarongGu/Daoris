@@ -342,12 +342,15 @@ export function DotMark({ tone = 'idle', className }: { tone?: keyof typeof DOT_
  * The first character is taken whole, by code point, so a 中文 name shows its first character rather than
  * half of one.
  */
-export function StripMark({ label, initialOf, tone = 'idle', current = false, onPress }: {
+export function StripMark({ label, initialOf, tone, dimmed = false, current = false, onPress }: {
   /** Its accessible name and its tip: what it is and how it stands. */
   label: string;
   /** The name whose first character the strip shows. */
   initialOf: string;
+  /** Its mark; absent, it wears none, as a plugin that is simply on does (D119). */
   tone?: keyof typeof DOT_TONE;
+  /** Its initial drawn faint: a plugin switched off (D119). */
+  dimmed?: boolean;
   /** The one chosen in the list, marked as the activity bar marks its current place. */
   current?: boolean;
   onPress?: () => void;
@@ -367,8 +370,10 @@ export function StripMark({ label, initialOf, tone = 'idle', current = false, on
         >
           {/* The same 2px accent rail the activity bar gives its current place. */}
           {current && <span aria-hidden className="absolute inset-y-1 left-0 w-0.5 rounded-full bg-accent" />}
-          <span aria-hidden className="text-small font-semibold uppercase">{Array.from(initialOf)[0] ?? '?'}</span>
-          <DotMark tone={tone} className="absolute right-1 top-1" />
+          <span aria-hidden className={cn('text-small font-semibold uppercase', dimmed && 'text-ink-faint')}>
+            {Array.from(initialOf)[0] ?? '?'}
+          </span>
+          {tone && <DotMark tone={tone} className="absolute right-1 top-1" />}
         </button>
       </Tip>
     </li>

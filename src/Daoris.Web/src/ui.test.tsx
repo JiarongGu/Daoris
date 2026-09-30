@@ -185,6 +185,13 @@ describe('the strip mark', () => {
     expect(container.querySelector('li')).toHaveAttribute('data-list-row');
   });
 
+  /** D119: a plugin that is simply on wears no mark, and one switched off a faint initial. */
+  it('wears no mark where it is given none, and a faint initial where it is dimmed', () => {
+    const { container } = inStrip(<StripMark label="lint-on-save · off" initialOf="lint-on-save" dimmed />);
+    expect(container.querySelector('.size-1\\.5')).toBeNull();
+    expect(screen.getByText('l')).toHaveClass('text-ink-faint');
+  });
+
   it('takes a 中文 name\'s first character whole', () => {
     inStrip(<StripMark label="引擎" initialOf="引擎" tone="parked" />);
     expect(screen.getByRole('button', { name: '引擎' })).toHaveTextContent('引');
