@@ -48,6 +48,38 @@ public sealed class DriverModuleHelpTests : DriverModuleBridge
         Assert.Contains(Refusals.DriverNotReady, await RefusalAsync(module, "HELP_APPLY", new { id = "p1a2b3c4" }));
     }
 
+    /// <summary>
+    /// LEFT3 b: a looked-at sync card carries, beside its rows, what they do not say, in the shape the page's
+    /// <c>HelpSyncShown</c> reads: each repository not fetched with git's reason, when it last heard from origin and how
+    /// origin is reached, and the repositories the look left apart. Before a look, both are empty.
+    /// </summary>
+    [Fact]
+    public void A_sync_card_carries_what_was_not_fetched_and_the_repositories_left_apart_in_the_pages_shape()
+    {
+        var camel = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase };
+        var then = new DateTimeOffset(2026, 9, 29, 8, 0, 0, TimeSpan.Zero);
+        var looked = new HelpSyncPlan(true, [new HelpSyncRow("engine:main", "line", true, "engine  main  fast-forwards 1 commit(s)")])
+        {
+            Besides = new HelpSyncBesides([new HelpSyncUnfetched("engine", "fatal: Could not read from remote repository.", then, "ssh")], ["docs"]),
+        };
+
+        var shown = JsonSerializer.SerializeToElement(DriverModule.SyncShown(looked), camel);
+
+        Assert.True(shown.GetProperty("looked").GetBoolean());
+        Assert.Equal("engine:main", shown.GetProperty("rows")[0].GetProperty("key").GetString());
+        var line = Assert.Single(shown.GetProperty("notFetched").EnumerateArray());
+        Assert.Equal(
+            ("engine", "fatal: Could not read from remote repository.", then, "ssh"),
+            (line.GetProperty("repository").GetString(), line.GetProperty("fetch").GetString(), line.GetProperty("lastFetch").GetDateTimeOffset(),
+                line.GetProperty("reach").GetString()));
+        Assert.Equal(["docs"], shown.GetProperty("apart").EnumerateArray().Select(name => name.GetString()));
+
+        var before = JsonSerializer.SerializeToElement(DriverModule.SyncShown(new HelpSyncPlan(false, [])), camel);
+        Assert.Empty(before.GetProperty("notFetched").EnumerateArray());
+        Assert.Empty(before.GetProperty("apart").EnumerateArray());
+        Assert.Null(DriverModule.SyncShown(null));
+    }
+
     [Fact]
     public async Task Ask_Daoris_asked_for_before_the_loop_is_up_says_so()
     {

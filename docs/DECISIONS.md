@@ -5458,3 +5458,11 @@ that every modules door's press hands the sessions in use again is a source-read
 opens a session between a look and its press.
 for this press was not built: it would reach into the service's proposal kinds and the page's cards. *(HELP10
 built it since: the `sync` kind, a card whose first press is the look; see D110.)*
+
+*Amended by LEFT3 (2026-10-01): Ask Daoris's sync card says what was not fetched and which repositories were left
+apart on the card itself, not only in its look's words. The look keeps both in the proposal's file beside its rows
+(`notFetched`: each line not fetched, with git's reason, when it last heard from origin and how origin is reached;
+`apart`: the repositories' names), and the card says them as the screen does: a note of what was not fetched, grouped
+by reason, with what the git on the path needs, and the repositories left apart collapsed, with how a proposal
+includes one. A file a look kept before LEFT3 holds neither, and its card says nothing more. Held by
+`HelpSyncProposalsTests`, `DriverModuleHelpTests` and the card's vitest cases; not looked at on the window.*

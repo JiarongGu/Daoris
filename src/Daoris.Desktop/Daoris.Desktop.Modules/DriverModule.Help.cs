@@ -101,16 +101,26 @@ public sealed partial class DriverModule
                         Changes = ChangesOf(plugin.Changes),
                     }
                     : null,
-                // Bringing up to date (HELP10): whether the person has looked, and every row the look listed, in the
-                // terminal's words, for the card to show before Apply.
-                Sync = plan.Sync is { } sync
-                    ? new { sync.Looked, Rows = sync.Rows.Select(row => new { row.Key, row.Step, row.Moves, row.Says }).ToArray() }
-                    : null,
+                Sync = SyncShown(plan.Sync),
             });
         }
 
         return new { Session = session, Proposals = shown.ToArray() };
     }
+
+    /// <summary>
+    /// What a bring-up-to-date card shows (HELP10), the page's <c>HelpSyncShown</c>: whether the person has looked, every
+    /// row the look listed in the terminal's words, and what the rows do not say (LEFT3 b) — each repository not fetched,
+    /// with git's reason, when it last heard from origin and how origin is reached, and the repositories left apart.
+    /// Null for every other kind.
+    /// </summary>
+    public static object? SyncShown(HelpSyncPlan? sync) => sync is null ? null : new
+    {
+        sync.Looked,
+        Rows = sync.Rows.Select(row => new { row.Key, row.Step, row.Moves, row.Says }).ToArray(),
+        NotFetched = sync.Besides.NotFetched.Select(line => new { line.Repository, line.Fetch, line.LastFetch, line.Reach }).ToArray(),
+        Apart = sync.Besides.Apart.ToArray(),
+    };
 
     // The person's Apply: made through the door the screen's own route uses (HELP6), judged again
     // first, since the machine may have moved since the card was drawn. The result goes back into

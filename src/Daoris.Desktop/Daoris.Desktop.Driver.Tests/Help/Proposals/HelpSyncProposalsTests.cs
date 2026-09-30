@@ -120,6 +120,59 @@ public sealed class HelpSyncProposalsTests : HelpProposalsFixture
         Assert.DoesNotContain("trees:", looked.Told);
     }
 
+    /// <summary>
+    /// LEFT3 b: the card itself says what its rows do not, not only the look's words: each repository not fetched with
+    /// git's reason, when it last heard from origin and how origin is reached, and the repositories the look left apart
+    /// (D112). They are kept in the proposal's file beside the rows, so a card drawn again still says them.
+    /// </summary>
+    [Fact]
+    public async Task A_look_keeps_what_was_not_fetched_and_the_repositories_left_apart_for_the_card()
+    {
+        var then = DateTimeOffset.Parse("2026-09-29T08:00:00+00:00", System.Globalization.CultureInfo.InvariantCulture);
+        var offline = new SyncPlan(
+            [
+                new LinePull("engine", "work", "main", PullKind.FastForward, "aaaaaaaa", "bbbbbbbb", 1, "fatal: Could not read from remote repository.", null)
+                    { Reach = "ssh", LastFetch = then },
+                new LinePull("game", "work", "main", PullKind.UpToDate, "cccccccc", "cccccccc", 0, "fatal: unable to access origin", null)
+                    { Reach = "https" },
+                new LinePull("tools", "work", "main", PullKind.UpToDate, "dddddddd", "dddddddd", 0, null, null),
+            ],
+            [], [])
+        {
+            Apart = [new SyncRepository("docs", "work", Holds: false), new SyncRepository("site", "work", Holds: false)],
+        };
+
+        await ApplyAsync(Sync(), new HelpStandInDoors { Listed = offline });
+        var kept = HelpProposals.Find(_home, "p11")!;
+        var besides = HelpProposals.Plan(kept, DriverConfig.Empty, Facts).Sync!.Besides;
+
+        Assert.Equal(
+            [
+                new HelpSyncUnfetched("engine", "fatal: Could not read from remote repository.", then, "ssh"),
+                new HelpSyncUnfetched("game", "fatal: unable to access origin", null, "https"),
+            ],
+            besides.NotFetched);
+        Assert.Equal(["docs", "site"], besides.Apart);
+    }
+
+    /// <summary>Before a look, and in a file a look kept before LEFT3, the card has nothing besides its rows to say.</summary>
+    [Fact]
+    public void A_card_not_looked_at_or_kept_before_LEFT3_says_nothing_besides_its_rows()
+    {
+        Assert.Equal(HelpSyncBesides.None, HelpProposals.Plan(Sync(), DriverConfig.Empty, Facts).Sync!.Besides);
+
+        System.IO.File.WriteAllText(Path.Combine(HelpProposals.FolderOf(_home), "p12.json"), """
+            { "id": "p12", "proposed": "2026-09-30T10:00:00Z", "by": { "session": "h1" }, "kind": "sync", "door": "sync",
+              "target": null, "why": "merged", "state": "proposed",
+              "listed": [ { "key": "engine:main", "step": "line", "moves": true, "says": "engine  main  fast-forwards 1 commit(s)" } ] }
+            """);
+        var plan = HelpProposals.Plan(HelpProposals.Find(_home, "p12")!, DriverConfig.Empty, Facts);
+
+        Assert.True(plan.Sync!.Looked);
+        Assert.Empty(plan.Sync.Besides.NotFetched);
+        Assert.Empty(plan.Sync.Besides.Apart);
+    }
+
     /// <summary>A look that takes no repository, since none holds a branch of Daoris's (D112), says so rather than "no checkout".</summary>
     [Fact]
     public async Task A_look_where_no_repository_holds_Daoris_branches_says_so()

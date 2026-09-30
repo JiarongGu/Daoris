@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using static Daoris.Driver.HelpProposals;
@@ -32,7 +33,11 @@ internal sealed class HelpSyncProposals : IHelpProposalKind
 
     public HelpProposal Read(HelpProposal proposal, JsonElement file)
     {
-        if (!file.TryGetProperty("listed", out var listed) || listed.ValueKind != JsonValueKind.Array) return proposal with { Listed = null };
+        if (!file.TryGetProperty("listed", out var listed) || listed.ValueKind != JsonValueKind.Array)
+        {
+            return proposal with { Listed = null, Besides = HelpSyncBesides.None };
+        }
+
         var rows = new List<HelpSyncRow>();
         foreach (var row in listed.EnumerateArray())
         {
@@ -40,7 +45,31 @@ internal sealed class HelpSyncProposals : IHelpProposalKind
             rows.Add(new HelpSyncRow(key, step, row.TryGetProperty("moves", out var moves) && moves.ValueKind == JsonValueKind.True, Text(row, "says") ?? ""));
         }
 
-        return proposal with { Listed = rows };
+        return proposal with { Listed = rows, Besides = BesidesOf(file) };
+    }
+
+    /// <summary>
+    /// What a look kept beside its rows (LEFT3 b): each repository not fetched, and the repositories left apart. A file a
+    /// look kept before LEFT3 has neither, which is nothing to say, and a field that does not read is skipped.
+    /// </summary>
+    private static HelpSyncBesides BesidesOf(JsonElement file)
+    {
+        var notFetched = new List<HelpSyncUnfetched>();
+        if (file.TryGetProperty("notFetched", out var failed) && failed.ValueKind == JsonValueKind.Array)
+        {
+            foreach (var line in failed.EnumerateArray())
+            {
+                if (Text(line, "repository") is not { } repository || Text(line, "fetch") is not { } fetch) continue;
+                DateTimeOffset? last = DateTimeOffset.TryParse(Text(line, "lastFetch"), CultureInfo.InvariantCulture, DateTimeStyles.None, out var at)
+                    ? at : null;
+                notFetched.Add(new HelpSyncUnfetched(repository, fetch, last, Text(line, "reach")));
+            }
+        }
+
+        IReadOnlyList<string> apart = file.TryGetProperty("apart", out var names) && names.ValueKind == JsonValueKind.Array
+            ? [.. names.EnumerateArray().Where(name => name.ValueKind == JsonValueKind.String).Select(name => name.GetString()!)]
+            : [];
+        return notFetched.Count == 0 && apart.Count == 0 ? HelpSyncBesides.None : new HelpSyncBesides(notFetched, apart);
     }
 
     public HelpPlan Plan(HelpProposal proposal, DriverConfig config, HelpMachineFacts facts)
@@ -65,7 +94,7 @@ internal sealed class HelpSyncProposals : IHelpProposalKind
         return new HelpPlan(null,
             $"Bring {scope} up to date: {rows.Count(row => row.Moves)} thing(s) change, only the rows below that move, each judged "
             + "again right before it acts. Daoris fetches nothing more, and never pushes.",
-            $"{terminal} --yes", null) { Sync = new HelpSyncPlan(true, rows) };
+            $"{terminal} --yes", null) { Sync = new HelpSyncPlan(true, rows) { Besides = proposal.Besides } };
     }
 
     public async Task<HelpApplied> ApplyAsync(HelpApplying applying, CancellationToken ct)
@@ -106,7 +135,7 @@ internal sealed class HelpSyncProposals : IHelpProposalKind
             return applying.Settled(false, $"Looked for updates (`#{id}`): {Nothing} — {why}.{Besides(listed)}", Nothing);
         }
 
-        Keep(applying.Home, id, rows);
+        Keep(applying.Home, id, rows, listed);
         return new HelpApplied(false,
             $"Looked for updates (`#{id}`): {moving.Count} thing(s) would change — {string.Join("; ", moving.Select(row => row.Says))}. "
             + $"The card now lists them; nothing moves until the person applies it.{Besides(listed)}");
@@ -177,8 +206,12 @@ internal sealed class HelpSyncProposals : IHelpProposalKind
         .. plan.Deletes.Select(item => new HelpSyncRow($"{item.Repository}:{item.Branch}", "delete", item.Removable, LandedWords.Describe(item))),
     ];
 
-    /// <summary>The rows a look listed, kept in the proposal's file beside every field the service wrote, written beside and renamed.</summary>
-    private static void Keep(string home, string id, IReadOnlyList<HelpSyncRow> rows)
+    /// <summary>
+    /// The rows a look listed, kept in the proposal's file beside every field the service wrote, written beside and
+    /// renamed; and what the rows do not say (LEFT3 b), so the card says it too: each line not fetched, with git's reason,
+    /// when it last heard from origin and how origin is reached, and the repositories the look left apart (D112).
+    /// </summary>
+    private static void Keep(string home, string id, IReadOnlyList<HelpSyncRow> rows, SyncPlan listed)
     {
         var path = Path.Combine(FolderOf(home), $"{id}.json");
         var node = JsonNode.Parse(File.ReadAllText(path))!.AsObject();
@@ -186,6 +219,12 @@ internal sealed class HelpSyncProposals : IHelpProposalKind
         {
             ["key"] = row.Key, ["step"] = row.Step, ["moves"] = row.Moves, ["says"] = row.Says,
         })]);
+        node["notFetched"] = new JsonArray([.. listed.Lines.Where(pull => pull.Fetch is not null).Select(pull => (JsonNode)new JsonObject
+        {
+            ["repository"] = pull.Repository, ["fetch"] = pull.Fetch,
+            ["lastFetch"] = pull.LastFetch?.ToString("O", CultureInfo.InvariantCulture), ["reach"] = pull.Reach,
+        })]);
+        node["apart"] = new JsonArray([.. listed.Apart.Select(each => (JsonNode)JsonValue.Create(each.Repository))]);
         AtomicFile.WriteText(path, node.ToJsonString(new JsonSerializerOptions { WriteIndented = true }).Replace("\r\n", "\n") + "\n");
     }
 
@@ -199,12 +238,35 @@ internal sealed class HelpSyncProposals : IHelpProposalKind
 public sealed record HelpSyncRow(string Key, string Step, bool Moves, string Says);
 
 /// <summary>What a sync card shows (HELP10): whether the person has looked, and the rows the look listed.</summary>
-public sealed record HelpSyncPlan(bool Looked, IReadOnlyList<HelpSyncRow> Rows);
+public sealed record HelpSyncPlan(bool Looked, IReadOnlyList<HelpSyncRow> Rows)
+{
+    /// <summary>What the rows do not say (LEFT3 b), kept by the look; nothing before it.</summary>
+    public HelpSyncBesides Besides { get; init; } = HelpSyncBesides.None;
+}
+
+/// <summary>
+/// What a look's rows do not say (WSR7, LEFT3 b), for the card to say itself: each repository whose line was not fetched,
+/// since a row carries only a mark, and the repositories left apart, holding no branch of Daoris's (D112).
+/// </summary>
+/// <param name="Apart">The repositories' names, as the look listed them.</param>
+public sealed record HelpSyncBesides(IReadOnlyList<HelpSyncUnfetched> NotFetched, IReadOnlyList<string> Apart)
+{
+    public static HelpSyncBesides None { get; } = new([], []);
+}
+
+/// <summary>One repository whose line a look did not fetch (WSR7), as the screen's note says it.</summary>
+/// <param name="Fetch">Why, in git's words.</param>
+/// <param name="LastFetch">When this checkout last heard from origin, which its row is judged against; null for never.</param>
+/// <param name="Reach">How origin is reached: `ssh`, `https`, `http`, `git` or `file`.</param>
+public sealed record HelpSyncUnfetched(string Repository, string Fetch, DateTimeOffset? LastFetch, string? Reach);
 
 public sealed partial record HelpProposal
 {
     /// <summary>The rows a sync proposal's look listed (HELP10), kept in its file; null before the person looked.</summary>
     public IReadOnlyList<HelpSyncRow>? Listed { get; init; }
+
+    /// <summary>What a sync proposal's look kept beside its rows (LEFT3 b); nothing before the person looked.</summary>
+    public HelpSyncBesides Besides { get; init; } = HelpSyncBesides.None;
 }
 
 public sealed partial record HelpPlan

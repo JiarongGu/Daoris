@@ -370,7 +370,9 @@ line git can name. With an agent named, a starter is also a first message.
      on the listed rows that move and nothing else, fetching nothing and judging each again; what did not happen is
      said as the terminal says it. The rows are the screen's selection (a line that moves, a branch that replays, a
      landed branch that may go). The room names the kind and the card's two buttons, and a delete card's own word,
-     which it had given as *apply*.
+     which it had given as *apply*. *Since LEFT3* the look keeps beside its rows what they do not say, and the card
+     says it as the screen does: the lines it could not fetch, by git's reason and since when, and the repositories it
+     left apart (D112), collapsed, with how a proposal includes one.
 
 ## 10. Not chosen
 
