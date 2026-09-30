@@ -196,6 +196,31 @@ internal static class TreesConsole
             {
                 using var service = ServiceClient.FromEnvironment();
                 var (tree, _) = await service.SessionGroundAsync(session).ConfigureAwait(false);
+
+                // A session whose review reads as landed (REVIEW2, D113) — its landed branch stands, or its tree is gone —
+                // is said as the review says it, and lands nothing again: the review offers no Accept there at all.
+                var landedBefore = trees.Recorded.Landing(session);
+                LandedReview? before = null;
+                var gone = SessionTrees.TreeGone(tree);
+                if (landedBefore is not null)
+                {
+                    var checkout = (await service.RegistryAsync().ConfigureAwait(false))
+                        .FirstOrDefault(row => string.Equals(row.Repository, landedBefore.Repository, StringComparison.OrdinalIgnoreCase))?.Root;
+                    before = await trees.LandedReviewAsync(
+                        string.IsNullOrWhiteSpace(checkout) || !Directory.Exists(checkout) ? null : checkout, landedBefore, changes: false).ConfigureAwait(false);
+                    if (before.ReadsAsLanded(gone))
+                    {
+                        if (args.Contains("--plan"))
+                        {
+                            Console.WriteLine($"trees: {LandedReviewWords.Describe(session, before)}");
+                            return 0;
+                        }
+
+                        Console.WriteLine($"trees: {LandedReviewWords.NotAgain(session, before, gone)}");
+                        return 1;
+                    }
+                }
+
                 if (string.IsNullOrWhiteSpace(tree))
                 {
                     Console.Error.WriteLine($"trees: session `{session}` names no working tree on this machine, so there is nothing here to land.");
@@ -215,6 +240,8 @@ internal static class TreesConsole
                 {
                     var plan = await landing.PlanAsync(tree, subject).ConfigureAwait(false);
                     Console.WriteLine(Planned(session, plan));
+                    // Landed before, its branch gone since, its tree still here: said, as the review's note says it.
+                    if (before is not null) Console.WriteLine($"trees: {LandedReviewWords.Describe(session, before)}");
                     return 0;
                 }
 
@@ -292,7 +319,9 @@ internal static class TreesConsole
                 Console.Error.WriteLine("  branch a landing made whose files read on the line as it left them (WSR5).");
                 Console.Error.WriteLine("  land accepts a session's work as the review's Accept does, by the workspace's");
                 Console.Error.WriteLine("  rule; --plan says where it would go and does nothing (D87). A rule naming a");
-                Console.Error.WriteLine("  plugin hands the branch to it to push and open the pull request (D100).");
+                Console.Error.WriteLine("  plugin hands the branch to it to push and open the pull request (D100). A session");
+                Console.Error.WriteLine("  that already landed, while its branch stands or once its tree is gone, is said");
+                Console.Error.WriteLine("  as its review says it, and lands nothing again (D113).");
                 Console.Error.WriteLine("  hand gives a branch a landing made to a landing plugin afterwards — the one");
                 Console.Error.WriteLine("  --plugin names, else the rule's — to push and open the pull request (WSR5).");
                 Console.Error.WriteLine("  sync brings each repository up to date after a pull request merged: it fetches");

@@ -143,7 +143,7 @@ public static class WorkingTree
     }
 
     /// <summary>A full or abbreviated commit id: hex, and long enough to mean one commit.</summary>
-    private static bool IsCommitId(string text) =>
+    internal static bool IsCommitId(string text) =>
         text.Length is >= 7 and <= 64 && text.All(char.IsAsciiHexDigit);
 
     /// <summary>Clean means: a git repository, with nothing uncommitted.</summary>
@@ -262,14 +262,42 @@ public static class WorkingTree
 
         if (!await IsTopLevelAsync(root, ct).ConfigureAwait(false)) return null;
 
+        return await RangeAsync(root, before, $"{before}..HEAD", "`git diff` in the tree has all of it.", ct).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// What changed between two commits of the repository at <paramref name="root"/> (REVIEW2, D113): a landed
+    /// session's work, read from its branch in the repository's own checkout once its tree is gone.
+    /// </summary>
+    /// <remarks>
+    /// 🔴 <b>A read of two commits, and nothing else.</b> <c>git diff &lt;from&gt; &lt;to&gt;</c> compares two trees
+    /// git already holds: it reads no working tree and no index, so the person's checkout is untouched whatever state
+    /// it is in. Both ends must be commit ids, since the record's words become git's arguments. Null where git
+    /// cannot answer, and where <paramref name="root"/> is not the top of a repository of its own (git walks UP).
+    /// </remarks>
+    public static async Task<TreeDiff?> DiffBetweenAsync(string root, string from, string to, CancellationToken ct = default)
+    {
+        if (!IsCommitId(from) || !IsCommitId(to)) return null;
+
+        if (!await IsTopLevelAsync(root, ct).ConfigureAwait(false)) return null;
+
+        return await RangeAsync(root, from, $"{from}..{to}", $"`git diff {Short(from)} {Short(to)}` in the repository's checkout has all of it.", ct)
+            .ConfigureAwait(false);
+    }
+
+    private static string Short(string commit) => commit.Length > 8 ? commit[..8] : commit;
+
+    /// <summary>The files and patches of one range, bounded; <paramref name="rest"/> says where the rest is when the bound drops some.</summary>
+    private static async Task<TreeDiff?> RangeAsync(string root, string before, string range, string rest, CancellationToken ct)
+    {
         // `--numstat` and `--name-status` in one pass would need parsing two formats out of one
         // stream; two cheap calls read plainly and cannot mis-align, because each is keyed by path.
         var (statusCode, statusOut, _) = await GitAsync(
-            root, ["diff", "--name-status", "-M", $"{before}..HEAD"], ct).ConfigureAwait(false);
+            root, ["diff", "--name-status", "-M", range], ct).ConfigureAwait(false);
         if (statusCode != 0) return null;
 
         var (numCode, numOut, _) = await GitAsync(
-            root, ["diff", "--numstat", "-M", $"{before}..HEAD"], ct).ConfigureAwait(false);
+            root, ["diff", "--numstat", "-M", range], ct).ConfigureAwait(false);
 
         var counts = new Dictionary<string, (int? Added, int? Removed)>(StringComparer.Ordinal);
         if (numCode == 0)
@@ -312,7 +340,7 @@ public static class WorkingTree
             if (spent < PatchBudget)
             {
                 var (patchCode, patchOut, _) = await GitAsync(
-                    root, ["diff", "-M", $"{before}..HEAD", "--", path], ct).ConfigureAwait(false);
+                    root, ["diff", "-M", range, "--", path], ct).ConfigureAwait(false);
                 if (patchCode == 0 && patchOut.Length > 0)
                 {
                     patch = patchOut.Length > PatchCap
@@ -331,8 +359,7 @@ public static class WorkingTree
 
         var truncated = dropped == 0
             ? null
-            : $"{dropped} more file{(dropped == 1 ? "" : "s")} changed; their patches are not shown here. "
-              + "`git diff` in the tree has all of it.";
+            : $"{dropped} more file{(dropped == 1 ? "" : "s")} changed; their patches are not shown here. {rest}";
 
         return new TreeDiff(files, truncated, before);
     }
@@ -405,8 +432,10 @@ public static class WorkingTree
     /// to BE this path also rejects a subdirectory, which the driver never passes and which would
     /// silently narrow the answer if it ever did.
     /// </remarks>
-    private static async Task<bool> IsTopLevelAsync(string root, CancellationToken ct)
+    internal static async Task<bool> IsTopLevelAsync(string root, CancellationToken ct)
     {
+        // A folder that is not there: git would refuse to start in it, and nothing here is asked of the one above.
+        if (string.IsNullOrWhiteSpace(root) || !Directory.Exists(root)) return false;
         var (code, stdout, _) = await GitAsync(root, ["rev-parse", "--show-toplevel"], ct).ConfigureAwait(false);
         return code == 0 && SamePath(stdout.Trim(), root);
     }
@@ -501,6 +530,77 @@ public static class WorkingTree
         catch (Exception error) when (error is not OperationCanceledException)
         {
             return (-1, "", error.Message);
+        }
+        finally
+        {
+            process?.Dispose();
+        }
+    }
+
+    /// <summary>
+    /// The first <paramref name="limit"/> bytes git writes, as bytes (REVIEW2): a blob read for a preview, which may be
+    /// binary and may be larger than any preview shows. Null where git failed or would not start.
+    /// </summary>
+    /// <remarks>
+    /// Bytes rather than <see cref="GitAsync(string, IReadOnlyList{string}, CancellationToken)"/>'s text, since a blob
+    /// decoded as UTF-8 on its way in is no longer the blob; and bounded, since a file has no upper size. Once the bound
+    /// is read, git is stopped rather than drained: the rest is only counted, from what git said of the blob's size.
+    /// </remarks>
+    internal static async Task<(byte[] Bytes, int Count)?> GitBytesAsync(
+        string root, IReadOnlyList<string> arguments, int limit, CancellationToken ct)
+    {
+        var info = new ProcessStartInfo
+        {
+            FileName = "git",
+            WorkingDirectory = root,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            UseShellExecute = false,
+            CreateNoWindow = true, // as every git call here: from a window it must not flash a console
+            // The blob is read as bytes off the stream beneath; git's own words on the error stream are UTF-8.
+            StandardOutputEncoding = Encoding.UTF8,
+            StandardErrorEncoding = Encoding.UTF8,
+        };
+        info.ArgumentList.Add("-c");
+        info.ArgumentList.Add("core.longpaths=true");
+        foreach (var argument in arguments) info.ArgumentList.Add(argument);
+
+        Process? process = null;
+        try
+        {
+            process = Process.Start(info) ?? throw new DriverException("git did not start");
+            var stderr = process.StandardError.ReadToEndAsync(ct);
+            var buffer = new byte[Math.Max(0, limit)];
+            var count = 0;
+            var stream = process.StandardOutput.BaseStream;
+            while (count < buffer.Length)
+            {
+                var got = await stream.ReadAsync(buffer.AsMemory(count), ct).ConfigureAwait(false);
+                if (got == 0) break;
+                count += got;
+            }
+
+            // More than the bound is waiting: git would block on a full pipe, so it is stopped. What it wrote is whole.
+            var bounded = count == buffer.Length && await stream.ReadAsync(new byte[1], ct).ConfigureAwait(false) > 0;
+            if (bounded)
+            {
+                try
+                {
+                    process.Kill(entireProcessTree: true);
+                }
+                catch (Exception kill) when (kill is InvalidOperationException or System.ComponentModel.Win32Exception)
+                {
+                    // Gone already.
+                }
+            }
+
+            await process.WaitForExitAsync(ct).ConfigureAwait(false);
+            await stderr.ConfigureAwait(false);
+            return bounded || process.ExitCode == 0 ? (buffer, count) : null;
+        }
+        catch (Exception error) when (error is not OperationCanceledException)
+        {
+            return null;
         }
         finally
         {
