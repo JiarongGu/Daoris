@@ -1,0 +1,18 @@
+{
+  "work.tool.untitled": "a tool call",
+  "work.tool.lines": "{{count}} line",
+  "work.tool.lines_other": "{{count}} lines",
+  "work.tool.continued": "a call begun earlier",
+  "work.tool.status.pending": "waiting",
+  "work.tool.status.in_progress": "running",
+  "work.tool.status.completed": "done",
+  "work.tool.status.failed": "failed",
+  "work.tool.status.refused": "not allowed here",
+  "work.tool.status.stopped": "stopped",
+  "work.tool.status.cancelled": "cancelled",
+  "work.tool.status.disconnected": "disconnected",
+  "work.tool.status.session-ended": "ended with its session",
+  "work.tool.input": "input",
+  "work.tool.output": "output",
+  "work.tool.terminal": "terminal {{id}}"
+}

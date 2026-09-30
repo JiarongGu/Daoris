@@ -4,8 +4,7 @@ import { fireEvent, render as rtlRender, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import i18n from '../i18n';
-import en from '../locales/en.json';
-import zh from '../locales/zh.json';
+import { en, zh } from '../locales';
 import { SessionConsole } from '../SessionConsole';
 import { SESSION_ACTIVE } from '../ui';
 import { ActivityBar, AppStrip, OutputPanel, type PanelTab, Splitter, StatusBar } from './frame';
@@ -231,7 +230,7 @@ describe('StatusBar', () => {
    */
   it('names the sessions it counts: a parked one is active and never running', () => {
     expect(SESSION_ACTIVE.has('awaiting-person')).toBe(true);
-    for (const catalogue of [en, zh] as Record<string, string>[]) {
+    for (const catalogue of [en, zh]) {
       expect(catalogue['work.status.sessionsLabel']).not.toMatch(/running|运行中/);
       expect(catalogue['work.status.sessionsTip']).toMatch(/waiting on you|等你/);
     }

@@ -1,0 +1,6 @@
+{
+  "status.Open": "待接",
+  "status.Taken": "进行中",
+  "status.Done": "已完成",
+  "status.Declined": "已谢绝"
+}

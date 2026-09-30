@@ -1,0 +1,6 @@
+{
+  "statusHint.Open": "published — nobody has taken it",
+  "statusHint.Taken": "a repository's agent has accepted it",
+  "statusHint.Done": "finished",
+  "statusHint.Declined": "turned down — the note is the part the asker can act on"
+}

@@ -1,0 +1,19 @@
+{
+  "work.sync.label": "sync",
+  "work.sync.tip": "where {{workspace}} stands with its deployment. Opens the detail and Sync now.",
+  "work.sync.level": "synced",
+  "work.sync.never": "not synced yet",
+  "work.sync.walled": "unreachable",
+  "work.sync.syncedAt": "Synced {{when}}",
+  "work.sync.lastTry": "The last try, {{when}}:",
+  "work.sync.aheadLine": "{{count}} change not yet pushed",
+  "work.sync.aheadLine_other": "{{count}} changes not yet pushed",
+  "work.sync.behindLine": "{{count}} quest behind",
+  "work.sync.behindLine_other": "{{count}} quests behind",
+  "work.sync.inConflict": "In conflict",
+  "work.sync.untitled": "a quest this page has not loaded",
+  "work.sync.now": "Sync now",
+  "work.sync.syncing": "Syncing…",
+  "work.sync.remotes": "Remotes…",
+  "work.sync.done": "{{workspace}} synced."
+}

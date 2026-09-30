@@ -1,0 +1,19 @@
+{
+  "work.sync.label": "同步",
+  "work.sync.tip": "{{workspace}} 与其部署的同步状态。点击查看详情或立即同步。",
+  "work.sync.level": "已同步",
+  "work.sync.never": "尚未同步",
+  "work.sync.walled": "无法连接",
+  "work.sync.syncedAt": "{{when}} 已同步",
+  "work.sync.lastTry": "上次尝试（{{when}}）：",
+  "work.sync.aheadLine": "{{count}} 项改动未推送",
+  "work.sync.aheadLine_other": "{{count}} 项改动未推送",
+  "work.sync.behindLine": "{{count}} 个委托落后",
+  "work.sync.behindLine_other": "{{count}} 个委托落后",
+  "work.sync.inConflict": "冲突",
+  "work.sync.untitled": "此页面尚未加载的委托",
+  "work.sync.now": "立即同步",
+  "work.sync.syncing": "同步中…",
+  "work.sync.remotes": "远端接线…",
+  "work.sync.done": "{{workspace}} 已同步。"
+}

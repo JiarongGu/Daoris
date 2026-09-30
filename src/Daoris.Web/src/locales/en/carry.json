@@ -1,0 +1,8 @@
+{
+  "carry.linksLabel": "links — a ticket, a page, a document; one per line",
+  "carry.drop": "Drop files here, or paste a screenshot",
+  "carry.choose": "choose files…",
+  "carry.remove": "remove {{name}}",
+  "carry.tooMany": "At most {{max}} files travel together.",
+  "carry.tooLarge": "The files come to at most {{size}} together — carry a link to the large ones instead."
+}

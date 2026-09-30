@@ -1,0 +1,10 @@
+{
+  "browser.door.open": "open Daoris's browser",
+  "browser.driving.one": "driven by {{name}}",
+  "browser.driving.several": "driven by {{count}} sessions",
+  "browser.driving.oneLabel": "Daoris's browser is driven by {{name}} — open the session",
+  "browser.driving.severalLabel": "Daoris's browser is driven by {{count}} sessions",
+  "browser.driving.tip": "Handed Daoris's browser and still running: its agent may act on any page there, between your keystrokes. It counts from the handing until the session ends, whether or not it has used it yet.",
+  "browser.driving.menu": "Sessions driving Daoris's browser",
+  "browser.driving.unknown": "session {{id}}"
+}

@@ -1,0 +1,20 @@
+{
+  "code.title": "{{repository}}: its code",
+  "code.description": "The modules this repository says it is made of, and what each depends on, from a file it keeps itself.",
+  "code.back": "Back to the workspace",
+  "code.canvas": "the code map of {{repository}}",
+  "code.moduleLabel": "{{id}}, depends on {{count}}",
+  "code.moduleLabel_other": "{{id}}, depends on {{count}}",
+  "code.legend": "Each arrow points from a module to what it depends on; what uses a module sits above it.",
+  "code.file": "Read from {{file}}, which the repository keeps and Daoris never writes.",
+  "code.fed": "Read from {{file}} at {{commit}} on {{branch}}, fed {{when}} by {{origin}}, and brought here by the sync. The repository keeps it; Daoris never writes it.",
+  "code.fedUnknownOrigin": "an unnamed machine",
+  "code.none.fedBody": "The workspace's deployment holds commit {{commit}}, which keeps none. The repository draws its own and commits it, like its decisions log.",
+  "code.refused": "Its code map was refused, whole:",
+  "code.none.headline": "{{repository}} keeps no code map",
+  "code.none.body": "A repository draws its own: docs/code-map.json, committed like its decisions log. Daoris reads it and never writes it.",
+  "code.detail.hint": "Choose a module to see what it depends on and what uses it.",
+  "code.detail.none": "none",
+  "code.detail.dependsOn": "depends on",
+  "code.detail.usedBy": "used by"
+}

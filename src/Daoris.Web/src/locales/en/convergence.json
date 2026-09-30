@@ -1,0 +1,21 @@
+{
+  "convergence.title": "Convergence",
+  "convergence.description": "Where two repositories reached the same conclusion independently — read them and decide. The knowledge half's lead view.",
+  "convergence.threshold": "Similarity ≥",
+  "convergence.hintSemantic": "Lower it to see weaker overlaps. Worth sweeping rather than trusting one number — the right value depends on the corpus.",
+  "convergence.hintLexical": "Without an embedding endpoint this finds copies and restatements only. Two repositories that reached the same conclusion in different words will not appear.",
+  "convergence.comparing": "comparing…",
+  "convergence.empty": "Nothing converges at {{value}} or above",
+  "convergence.emptyBody": "A lower similarity finds weaker likenesses — and, lower still, documents that only share words.",
+  "convergence.emptyFloor": "{{value}} is the lowest it goes: below it, two documents would only share words. Nothing here converges.",
+  "convergence.lower": "lower it to {{value}}",
+  "convergence.methods.Convergent.label": "Same lesson, different words",
+  "convergence.methods.Convergent.hint": "The finding no text comparison can make — and the reason the semantic tier exists.",
+  "convergence.methods.Restatement.label": "Substantially the same words",
+  "convergence.methods.Restatement.hint": "Usually a copy that has since drifted.",
+  "convergence.methods.Identical.label": "The same document, pasted",
+  "convergence.methods.Identical.hint": "A copy, not a coincidence.",
+  "convergence.count": "{{count}} group",
+  "convergence.count_other": "{{count}} groups",
+  "convergence.cappedAt": "first {{count}} — more found, so raise the similarity"
+}

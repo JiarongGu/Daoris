@@ -1,0 +1,8 @@
+{
+  "kind.Rule": "规则",
+  "kind.Knowledge": "知识",
+  "kind.Skill": "技能",
+  "kind.Decision": "决策",
+  "kind.Fix": "修复",
+  "kind.TaskOutcome": "任务结果"
+}

@@ -1,0 +1,6 @@
+{
+  "console.label": "控制台",
+  "console.live": "实时",
+  "console.dropped": "更早的 {{count}} 行已滑出窗口——驱动机上的完整记录仍在",
+  "console.dropped_other": "更早的 {{count}} 行已滑出窗口——驱动机上的完整记录仍在"
+}

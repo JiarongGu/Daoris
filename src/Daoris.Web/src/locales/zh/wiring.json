@@ -1,0 +1,23 @@
+{
+  "wiring.title": "启动时用什么",
+  "wiring.body": "每个工作区：驱动会话启动时会用的智能体、账户与版本——为受理指定了智能体后，受理也一样——以及各由哪项设置决定。驱动读取的正是同一个答案。",
+  "wiring.row": "{{workspace}} 中的启动",
+  "wiring.rowIntake": "{{workspace}} 中的受理",
+  "wiring.job.work": "会话",
+  "wiring.job.intake": "受理",
+  "wiring.ready": "就绪",
+  "wiring.held": "受阻",
+  "wiring.agent": "智能体",
+  "wiring.account": "账户",
+  "wiring.version": "版本",
+  "wiring.versionUnknown": "未知",
+  "wiring.accountFrom.picked": "本次会话所选",
+  "wiring.accountFrom.workspace": "本工作区的默认",
+  "wiring.accountFrom.machine": "本机的默认",
+  "wiring.accountFrom.unset": "未设默认",
+  "wiring.versionFrom.picked": "本次会话所选",
+  "wiring.versionFrom.workspace": "本工作区固定",
+  "wiring.versionFrom.machine": "本机固定",
+  "wiring.versionFrom.unset": "取自 PATH",
+  "wiring.versionFrom.commanded": "driver.json 指定的命令"
+}

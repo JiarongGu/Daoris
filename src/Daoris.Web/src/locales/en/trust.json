@@ -1,0 +1,10 @@
+{
+  "trust.title": "Trust this folder for the agent?",
+  "trust.what": "This is the question the agent asks the first time it runs in a folder. Once you trust it, the folder's own settings and permissions.allow apply there, and the driver can start what it is holding.",
+  "trust.holding.quest": "The driver is holding quest #{{id}} for it.",
+  "trust.holding.ask": "The driver is holding the intake for ask #{{id}} for it.",
+  "trust.file": "Daoris writes one flag in the agent's own file, and nothing else in it:",
+  "trust.grant": "trust this folder",
+  "trust.cancel": "not now",
+  "trust.open": "trust this folder…"
+}

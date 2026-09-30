@@ -1,0 +1,18 @@
+{
+  "settings.lines.title": "主线",
+  "settings.lines.body": "每个仓库的工作从哪条分支长出、又落回哪条分支：会话的独立工作树从这里开始，合并落在这里，同步也从这里向索引供给。未设置时沿用 git 自己的推断——origin/HEAD，否则 main，否则 master。",
+  "settings.lines.none": "本机没有可设置主线的仓库。",
+  "settings.lines.workspaceHint": "该工作区中未自行设置主线的仓库所用的默认值。",
+  "settings.lines.workspaceField": "{{workspace}} 的主线",
+  "settings.lines.repositoryField": "{{repository}} 的主线",
+  "settings.lines.eachCheckout": "各检出自己的",
+  "settings.lines.unnamed": "未指明",
+  "settings.lines.from.repository": "`{{branch}}`，为该仓库设置。",
+  "settings.lines.from.workspace": "`{{branch}}`，为工作区 {{workspace}} 设置。",
+  "settings.lines.from.checkout": "`{{branch}}`，检出自己的。",
+  "settings.lines.from.none": "没有主线：既未设置，git 在此也未指明。",
+  "settings.lines.set": "设置",
+  "settings.lines.clear": "清除",
+  "settings.lines.saved": "{{name}} 的工作现在从 `{{branch}}` 长出并落回其上。已在运行的会话保持原样。",
+  "settings.lines.cleared": "{{name}} 重新沿用其上层的主线。"
+}

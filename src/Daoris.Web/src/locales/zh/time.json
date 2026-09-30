@@ -1,0 +1,6 @@
+{
+  "time.justNow": "刚刚",
+  "time.minutes": "{{count}} 分钟前",
+  "time.hours": "{{count}} 小时前",
+  "time.days": "{{count}} 天前"
+}

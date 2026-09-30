@@ -1,0 +1,6 @@
+{
+  "status.Open": "Open",
+  "status.Taken": "Taken",
+  "status.Done": "Done",
+  "status.Declined": "Declined"
+}

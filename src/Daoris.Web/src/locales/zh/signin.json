@@ -1,0 +1,20 @@
+{
+  "signin.title": "正在登录 {{profile}}",
+  "signin.titleNew": "正在登录另一个 {{harness}} 账户",
+  "signin.readyNew": "登录完成后，账户会以登录者的名字出现在上方。如果没有完成，什么也不会保留。",
+  "signin.cancel": "取消",
+  "signin.step.open": "在打开的页面中登录。",
+  "signin.step.openHint": "浏览器没有打开？把链接复制到浏览器里。",
+  "signin.waiting": "等待工具打开登录页面…",
+  "signin.opened": "工具已打开你的浏览器——在那里完成登录，这一行会随之更新。",
+  "signin.copy": "复制链接",
+  "signin.copied": "已复制",
+  "signin.step.code": "如果页面显示了代码，把它粘贴到这里。",
+  "signin.codeLater": "工具要求代码时输入框才会出现——大多数登录在浏览器里就完成了。",
+  "signin.codeLabel": "登录代码",
+  "signin.codePlaceholder": "页面上的代码",
+  "signin.continue": "继续",
+  "signin.sent": "代码已发送——工具正在完成登录。",
+  "signin.ready": "当这一行显示“已登录”，这个账户就可用了。",
+  "signin.output": "工具自身的输出"
+}

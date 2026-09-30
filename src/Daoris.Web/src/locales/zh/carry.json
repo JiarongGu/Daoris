@@ -1,0 +1,8 @@
+{
+  "carry.linksLabel": "链接——工单、页面、文档；每行一个",
+  "carry.drop": "把文件拖到这里，或粘贴截图",
+  "carry.choose": "选择文件…",
+  "carry.remove": "移除 {{name}}",
+  "carry.tooMany": "最多同时携带 {{max}} 个文件。",
+  "carry.tooLarge": "文件合计最多 {{size}}——大文件请改为附上链接。"
+}

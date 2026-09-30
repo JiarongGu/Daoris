@@ -1,0 +1,8 @@
+{
+  "duration.seconds": "{{seconds}} 秒",
+  "duration.minuteSeconds": "{{minutes}} 分 {{seconds}} 秒",
+  "duration.under": "不到一分钟",
+  "duration.minutes": "{{count}} 分钟",
+  "duration.hours": "{{hours}} 小时 {{minutes}} 分",
+  "duration.days": "{{days}} 天 {{hours}} 小时"
+}
