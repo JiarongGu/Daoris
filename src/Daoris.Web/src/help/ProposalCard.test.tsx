@@ -28,13 +28,13 @@ describe('a proposal of Ask Daoris\'s', () => {
     const onDismiss = vi.fn();
     const { rerender } = render(<ul><ProposalCard proposal={LANDING} onApply={onApply} onDismiss={onDismiss} /></ul>);
 
-    await userEvent.click(screen.getByRole('button', { name: 'apply' }));
-    await userEvent.click(screen.getByRole('button', { name: 'not now' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Apply' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Not now' }));
     expect(onApply).toHaveBeenCalledWith('p1a2b3c4');
     expect(onDismiss).toHaveBeenCalledWith('p1a2b3c4');
 
     rerender(<ul><ProposalCard proposal={LANDING} pending onApply={onApply} onDismiss={onDismiss} /></ul>);
-    expect(screen.getByRole('button', { name: 'apply' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Apply' })).toBeDisabled();
   });
 });
 
@@ -122,14 +122,14 @@ const press = async (proposal: HelpProposal, apply: string) => {
   const onDismiss = vi.fn();
   render(<ul><ProposalCard proposal={proposal} onApply={onApply} onDismiss={onDismiss} /></ul>);
   await userEvent.click(screen.getByRole('button', { name: apply }));
-  await userEvent.click(screen.getByRole('button', { name: 'not now' }));
+  await userEvent.click(screen.getByRole('button', { name: 'Not now' }));
   expect(onApply).toHaveBeenCalledWith(proposal.id);
   expect(onDismiss).toHaveBeenCalledWith(proposal.id);
 };
 
 describe('the kinds that reach every door', () => {
   it('an agent\'s update says what moves and the command, with Apply and Not now', async () => {
-    await press(UPDATE, 'apply');
+    await press(UPDATE, 'Apply');
 
     expect(screen.getByText('Ask Daoris proposes')).toBeInTheDocument();
     expect(screen.getByText('claude-code-acp', { selector: 'code' })).toBeInTheDocument();
@@ -137,7 +137,7 @@ describe('the kinds that reach every door', () => {
   });
 
   it('an account\'s model and effort say the values in the tool\'s own words, with Apply and Not now', async () => {
-    await press(ACCOUNT, 'apply');
+    await press(ACCOUNT, 'Apply');
 
     expect(screen.getByText('opus', { selector: 'code' })).toBeInTheDocument();
     expect(screen.getByText('high', { selector: 'code' })).toBeInTheDocument();
@@ -145,7 +145,7 @@ describe('the kinds that reach every door', () => {
   });
 
   it('a delete says what goes and that it cannot be undone, and its Apply is a delete', async () => {
-    await press(DELETE, 'delete');
+    await press(DELETE, 'Delete');
 
     expect(screen.getByText('Ask Daoris proposes a delete')).toBeInTheDocument();
     expect(screen.getByText('#q1a2b3c4', { selector: 'code' })).toBeInTheDocument();
@@ -154,7 +154,7 @@ describe('the kinds that reach every door', () => {
   });
 
   it('a go names the place, carries no command since it changes nothing, and its Apply is a go', async () => {
-    await press(GO, 'go there');
+    await press(GO, 'Go there');
 
     expect(screen.getByText('Ask Daoris suggests a screen')).toBeInTheDocument();
     expect(screen.getByText(GO.describe)).toBeInTheDocument();
@@ -163,7 +163,7 @@ describe('the kinds that reach every door', () => {
   });
 
   it('a plugin to add shows what will run before Apply: its id, its command as written, its points, harnesses and servers', async () => {
-    await press(PLUGIN_ADD, 'apply');
+    await press(PLUGIN_ADD, 'Apply');
 
     expect(screen.getByText('Ask Daoris proposes a plugin')).toBeInTheDocument();
     const runs = within(screen.getByRole('list', { name: 'what the plugin runs' }));
@@ -199,7 +199,7 @@ describe('the kinds that reach every door', () => {
   };
 
   it('a hand-off says a plugin pushes the branch, signed in as the person, before Apply', async () => {
-    await press(HAND, 'apply');
+    await press(HAND, 'Apply');
 
     expect(screen.getByText('Ask Daoris proposes handing a branch on')).toBeInTheDocument();
     expect(screen.getByText('feature/q2-second', { selector: 'code' })).toBeInTheDocument();
@@ -216,7 +216,7 @@ describe('the kinds that reach every door', () => {
   };
 
   it('a browser setting says what changes and the command that does the same, with Apply and Not now', async () => {
-    await press(BROWSER, 'apply');
+    await press(BROWSER, 'Apply');
 
     expect(screen.getByText('Ask Daoris proposes')).toBeInTheDocument();
     expect(screen.getByText(BROWSER.describe)).toBeInTheDocument();
@@ -246,16 +246,16 @@ describe('the kinds that reach every door', () => {
   };
 
   it('bringing up to date asks the person to look first, the press that fetches, and lists nothing yet', async () => {
-    await press(SYNC, 'look for updates');
+    await press(SYNC, 'Look for updates');
 
     expect(screen.getByText('Ask Daoris proposes bringing repositories up to date')).toBeInTheDocument();
     expect(screen.getByText(/Looking fetches each line from origin, as you/)).toBeInTheDocument();
     expect(screen.queryByRole('list', { name: 'what the press would do' })).not.toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: 'apply' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: 'Apply' })).not.toBeInTheDocument();
   });
 
   it('once looked, it lists what the press would do in the terminal\'s words, and Apply does only what moves', async () => {
-    await press(LOOKED, 'apply');
+    await press(LOOKED, 'Apply');
 
     const rows = within(screen.getByRole('list', { name: 'what the press would do' }));
     expect(rows.getByText('moves')).toBeInTheDocument();
@@ -315,7 +315,7 @@ describe('the kinds that reach every door', () => {
   });
 
   it('one of the install\'s own plugins says what it needs, in its README\'s words, before Apply', async () => {
-    await press(PLUGIN_OFFER, 'apply');
+    await press(PLUGIN_OFFER, 'Apply');
 
     const runs = within(screen.getByRole('list', { name: 'what the plugin runs' }));
     expect(runs.getByText('gh auth login', { selector: 'code' })).toBeInTheDocument();
@@ -324,7 +324,7 @@ describe('the kinds that reach every door', () => {
   });
 
   it('an update says what changes, as the manifests write it, and that its folder is replaced keeping what it kept', async () => {
-    await press(PLUGIN_UPDATE, 'apply');
+    await press(PLUGIN_UPDATE, 'Apply');
 
     const runs = within(screen.getByRole('list', { name: 'what the plugin runs' }));
     expect(runs.getByText('1.0.0', { selector: 'code' })).toBeInTheDocument();
@@ -361,8 +361,8 @@ describe('the kinds that reach every door', () => {
       cleanup();
       // HELP10: bringing up to date's chrome, the look's word the screen's own.
       render(<ul><ProposalCard proposal={SYNC} onApply={vi.fn()} onDismiss={vi.fn()} /></ul>);
-      expect(screen.getByText('问道衍提议同步到最新')).toBeInTheDocument();
-      expect(screen.getByRole('button', { name: '查看更新' })).toBeInTheDocument();
+      expect(screen.getByText('问道衍提议把仓库更新到最新')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: '检查更新' })).toBeInTheDocument();
       cleanup();
       // LEFT3 b: what the look did not fetch and left apart, the chrome in 中文 and git's words as git said them.
       render(<ul><ProposalCard proposal={OFFLINE} onApply={vi.fn()} onDismiss={vi.fn()} /></ul>);
