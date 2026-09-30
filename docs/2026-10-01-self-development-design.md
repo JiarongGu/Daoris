@@ -4,7 +4,7 @@
 > cross darois development … daoris itself need to have a proper develpment cycle too, this also need
 > to be designed properly"*. Other repositories will rely on Daoris to make their development smooth,
 > so Daoris's own cycle is the first thing it has to run. This is the contract for the DEV rows in
-> `TASKS.md`, and its decision is **D115**. Status: **designed; nothing is built.** It starts from
+> `TASKS.md`, and its decision is **D115**. Status: **designed; DEV2 built §2.1's file.** It starts from
 > `docs/2026-09-30-parallel-development-design.md` (MOD1–MOD9, D106).
 
 ## 0. What exists today, read from the code
@@ -116,6 +116,11 @@ queue and `connect` read. A repository with no such file has no lanes.
 For Daoris the file carries today's seven lanes under ids (`web-shell`, `web-settings`, `driver`,
 `modules`, `service`, `cli`, `tools`) and an eighth, the steward's `records`. *Tools and records*
 becomes *Tools*, since the records now have their own lane.
+
+*Built by DEV2: the file is at the root with those eight lanes, and `tools/merge-branch.mjs` reads it,
+by §2.1's rules, for its lane report. The docs' laneless group carves the steward's archive out
+(`!docs/task-archive.md`), so no tracked file has two places. Nothing else reads it yet: the registry
+is DEV4's, the driver's reader DEV6's, and `gates` waits for the queue (DEV5).*
 
 ### 2.2 A quest addresses a lane
 

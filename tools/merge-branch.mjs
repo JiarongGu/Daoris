@@ -13,8 +13,9 @@
  * ## What it does
  *
  * 1. Refuses unless the checkout is on `main` with a clean tree, and the branch exists and adds commits.
- * 2. Prints the lanes the branch touched (`tools/lanes.json`, the design's §5). It informs; it never
- *    refuses on a lane.
+ * 2. Prints the lanes the branch touched, by id and title, from the repository's `daoris.lanes.json`
+ *    (D115 §2.1, the design's §5), and names the steward's records if it edited them. It informs; it
+ *    never refuses on a lane.
  * 3. The commit check: every commit the branch adds carries its `Co-Authored-By:` line (a merge of main
  *    into the branch needs none), and the branch's worktree, if it has one, holds nothing uncommitted
  *    (work a hand-back calls done and left out of the merge). `--no-commit-check` skips it.
@@ -370,18 +371,77 @@ export function laneMatcher(paths) {
   return (path) => include.some((pattern) => pattern.test(path)) && !exclude.some((pattern) => pattern.test(path));
 }
 
+/** The repository's lanes, at its root beside `daoris.json` and `daoris.gates.json` (D115 §2.1, DEV2). */
+export const LANES_FILE = 'daoris.lanes.json';
+
+/** How a quest will address a lane (`repository:lane`), so an id is one word of a known alphabet. */
+const LANE_ID = /^[a-z][a-z0-9-]*$/;
+
 /**
- * `tools/lanes.json`, or null where a repository has none. `laneless` is read flat: its groups are for
- * the person reading the map, each saying why its paths have no lane.
+ * Why a parsed lanes file cannot be read, one line each, or none. Absence is a rule (D115 §2.1): no
+ * `lanes` and an empty list both mean no lanes. A malformed or repeated id, a lane that owns nothing,
+ * two stewards, and a `gates` entry naming no gate in `gateNames` (the declared set) each make it
+ * unreadable. Fields it has no rule for are left alone.
+ */
+export function lanesProblems(parsed, gateNames = []) {
+  if (parsed === null || typeof parsed !== 'object' || Array.isArray(parsed)) return ['the file is not a JSON object'];
+  const problems = [];
+  if (parsed.laneless !== undefined && !Array.isArray(parsed.laneless)) problems.push("'laneless' is not a list");
+  if (parsed.lanes === undefined) return problems;
+  if (!Array.isArray(parsed.lanes)) return [...problems, "'lanes' is not a list"];
+  const seen = new Set();
+  parsed.lanes.forEach((lane, i) => {
+    const id = lane?.id;
+    const name = typeof id === 'string' ? `lane '${id}'` : `lane ${i + 1}`;
+    if (typeof id !== 'string' || !LANE_ID.test(id)) {
+      problems.push(`${name}: its id must be lower-case letters, digits and dashes, starting with a letter`);
+    } else if (seen.has(id)) problems.push(`${name}: the id is used twice`);
+    else seen.add(id);
+    const paths = Array.isArray(lane?.paths) ? lane.paths : [];
+    if (!paths.some((path) => typeof path === 'string' && path && !path.startsWith('!'))) problems.push(`${name}: it has no paths`);
+    if (lane?.gates !== undefined) {
+      if (!Array.isArray(lane.gates)) problems.push(`${name}: 'gates' is not a list`);
+      else {
+        for (const gate of lane.gates.filter((entry) => !gateNames.includes(entry))) {
+          problems.push(`${name}: its gate '${gate}' is not declared in daoris.gates.json`);
+        }
+      }
+    }
+  });
+  const stewards = parsed.lanes
+    .map((lane, i) => (lane?.steward === true ? (typeof lane.id === 'string' ? lane.id : `lane ${i + 1}`) : null))
+    .filter(Boolean);
+  if (stewards.length > 1) problems.push(`two stewards (${stewards.join(', ')}): at most one lane keeps the records`);
+  return problems;
+}
+
+/**
+ * `daoris.lanes.json`, or null where a repository has none. An unreadable file is refused, naming each
+ * problem. `laneless` is read flat: its groups are for the person reading the map, each saying why its
+ * paths have no lane.
  */
 export function readLanes(root) {
-  const file = join(root, 'tools', 'lanes.json');
+  const file = join(root, LANES_FILE);
   if (!existsSync(file)) return null;
-  const parsed = JSON.parse(readFileSync(file, 'utf8'));
+  let parsed;
+  try {
+    parsed = JSON.parse(readFileSync(file, 'utf8'));
+  } catch (error) {
+    throw new Refusal(`${LANES_FILE} is not valid JSON: ${error.message}`);
+  }
+  const gateNames = existsSync(join(root, 'daoris.gates.json')) ? readDeclared(root).map((gate) => gate.name) : [];
+  const problems = lanesProblems(parsed, gateNames);
+  if (problems.length) throw new Refusal(`${LANES_FILE} cannot be read:\n${problems.map((problem) => `  ${problem}`).join('\n')}`);
   return {
-    lanes: (parsed.lanes ?? []).map((lane) => ({ title: lane.title, paths: lane.paths ?? [] })),
-    parent: parsed.parent ?? [],
-    laneless: (parsed.laneless ?? []).flatMap((group) => group.paths ?? []),
+    lanes: (parsed.lanes ?? []).map((lane) => ({
+      id: lane.id,
+      title: typeof lane.title === 'string' ? lane.title : '',
+      summary: typeof lane.summary === 'string' ? lane.summary : '',
+      steward: lane.steward === true,
+      paths: lane.paths,
+      ...(lane.gates ? { gates: lane.gates } : {}),
+    })),
+    laneless: (parsed.laneless ?? []).flatMap((group) => group?.paths ?? []),
   };
 }
 
@@ -400,19 +460,23 @@ const attributePattern = (pattern) => (pattern.includes('/')
   : new RegExp(`^(?:.*/)?${globToRegExp(pattern).source.slice(1)}`));
 
 /**
- * Where each changed path belongs: the parent's records first (a subagent never edits them), then the
- * records that merge by union, then the first lane that owns it, then the paths the map declares
- * laneless (the docs and records, the doctrine), else outside every lane: a path the map does not
- * place, which the lanes test refuses (LEFT1). Lanes come back in the map's order, only those touched.
+ * Where each changed path belongs, in D115 §2.3's order: the steward's lane first (its records, which a
+ * subagent never edits, the parent's list before DEV2), then the records that merge by union, then the
+ * first other lane that owns it, then the paths the map declares laneless (the docs, the doctrine),
+ * else outside every lane: a path the map does not place, which the lanes test refuses (LEFT1). Lanes
+ * come back by id and title in the map's order, only those touched; the steward's paths come back on
+ * their own, where the parent's did.
  */
-export function classify(paths, { lanes = [], parent = [], union = [], laneless = [] } = {}) {
-  const lanePatterns = lanes.map((lane) => ({ title: lane.title, owns: laneMatcher(lane.paths), files: [] }));
-  const parentPatterns = parent.map(globToRegExp);
+export function classify(paths, { lanes = [], union = [], laneless = [] } = {}) {
+  const steward = lanes.find((lane) => lane.steward);
+  const stewardOwns = steward ? laneMatcher(steward.paths) : () => false;
+  const lanePatterns = lanes.filter((lane) => lane !== steward)
+    .map((lane) => ({ id: lane.id, title: lane.title, owns: laneMatcher(lane.paths), files: [] }));
   const unionPatterns = union.map(attributePattern);
   const declared = laneMatcher(laneless);
-  const placed = { lanes: [], parent: [], shared: [], laneless: [], outside: [] };
+  const placed = { lanes: [], steward: [], shared: [], laneless: [], outside: [] };
   for (const path of paths) {
-    if (parentPatterns.some((pattern) => pattern.test(path))) placed.parent.push(path);
+    if (stewardOwns(path)) placed.steward.push(path);
     else if (unionPatterns.some((pattern) => pattern.test(path))) placed.shared.push(path);
     else {
       const lane = lanePatterns.find((candidate) => candidate.owns(path));
@@ -421,7 +485,7 @@ export function classify(paths, { lanes = [], parent = [], union = [], laneless 
       else placed.outside.push(path);
     }
   }
-  placed.lanes = lanePatterns.filter((lane) => lane.files.length).map(({ title, files }) => ({ title, files }));
+  placed.lanes = lanePatterns.filter((lane) => lane.files.length).map(({ id, title, files }) => ({ id, title, files }));
   return placed;
 }
 
@@ -724,22 +788,28 @@ function clearLogs(dir) {
 // ---------------------------------------------------------------------------------------------------
 // Reports
 
+/** A lane's row label: its id, then its title, so a lane reads as a dispatch prompt names it. */
+const laneLabel = (lane) => `${pad(lane.id, 14)}${lane.title}`;
+
 function laneReport(root, branch) {
   const changed = lines(git(root, ['diff', '--name-only', `HEAD...${branch}`]).out);
   const map = readLanes(root);
   const out = [`lanes: ${branch} changes ${count(changed.length, 'file')}`];
-  if (!map) {
-    out.push('  (no tools/lanes.json here)');
+  if (!map || map.lanes.length === 0) {
+    out.push(`  (${map ? `${LANES_FILE} declares no lanes` : `no ${LANES_FILE} here`})`);
     return out;
   }
   const placed = classify(changed, { ...map, union: unionRecords(root) });
+  const steward = map.lanes.find((lane) => lane.steward);
+  const row = (label, text) => `  ${pad(label, 32)} ${text}`;
   const list = (files, max = 6) => `${files.slice(0, max).join(', ')}${files.length > max ? `, … ${files.length - max} more` : ''}`;
-  for (const lane of placed.lanes) out.push(`  ${pad(lane.title, 20)} ${count(lane.files.length, 'file')}`);
-  if (placed.shared.length) out.push(`  ${pad('shared records', 20)} ${count(placed.shared.length, 'file')}: ${list(placed.shared)} (merge by union)`);
-  if (placed.laneless.length) out.push(`  ${pad('no lane', 20)} ${count(placed.laneless.length, 'file')}: ${list(placed.laneless)} (the map declares them laneless)`);
-  if (placed.outside.length) out.push(`  ${pad('outside every lane', 20)} ${count(placed.outside.length, 'file')}: ${list(placed.outside)} (the map places no such path; the lanes test refuses it)`);
+  for (const lane of placed.lanes) out.push(row(laneLabel(lane), count(lane.files.length, 'file')));
+  if (placed.steward.length) out.push(row(laneLabel(steward), `${count(placed.steward.length, 'file')} (the steward's)`));
+  if (placed.shared.length) out.push(row('shared records', `${count(placed.shared.length, 'file')}: ${list(placed.shared)} (merge by union)`));
+  if (placed.laneless.length) out.push(row('no lane', `${count(placed.laneless.length, 'file')}: ${list(placed.laneless)} (the map declares them laneless)`));
+  if (placed.outside.length) out.push(row('outside every lane', `${count(placed.outside.length, 'file')}: ${list(placed.outside)} (the map places no such path; the lanes test refuses it)`));
   if (placed.lanes.length > 1) out.push(`  note: it crosses ${placed.lanes.length} lanes`);
-  if (placed.parent.length) out.push(`  note: it edits the parent's records (${placed.parent.join(', ')}); a subagent never does`);
+  if (placed.steward.length) out.push(`  note: it edits the steward's records (${placed.steward.join(', ')}); a subagent never does`);
   return out;
 }
 
