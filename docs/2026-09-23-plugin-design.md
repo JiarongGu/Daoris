@@ -116,7 +116,7 @@ speaks, with the roles reversed: here Daoris is the caller and the plugin answer
 | `initialize` | Daoris → plugin | `{ protocolVersion: 1, plugin: id, home, data }`; the plugin answers `{ protocolVersion, points }` — the points it *actually* listens on, which must be a subset of what its manifest declared |
 | `hook/quest/consider` | Daoris → plugin | one consideration the planner marked *Start*: quest id, receiver, workspace, root. The answer is a **typed decision**: `{ "kind": "allow" }` or `{ "kind": "hold", "reason": "…" }` |
 | `hook/session/ended` | Daoris → plugin | what a tick concluded — session id, quest, repository, state, adapter, account — and expects `{}` |
-| `hook/work/land` | Daoris → plugin | *(D100)* a branch rule's landing, once Daoris has made the branch: repository, workspace, root, branch, base, title, quest, session, commits. The answer is `{ "pushed": bool, "pullRequest": "https://…"\|null, "message": "…" }` |
+| `hook/work/land` | Daoris → plugin | *(D100)* a branch rule's landing, once Daoris has made the branch: repository, workspace, root, branch, base, title, quest, session, commits. The answer is `{ "pushed": bool, "pullRequest": "https://…"\|null, "message": "…" }`. *(D102: the same frame for a branch a landing made and recorded, handed on after the landing by the person's press, as it stands then)* |
 | `shutdown` | Daoris → plugin | nothing; the process exits, and every registration with it |
 
 Three rules, each taken from a reference and stated once:

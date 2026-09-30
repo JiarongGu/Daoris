@@ -186,6 +186,13 @@ public static class LandingRules
     public static SessionEvent Note(TreeLanding landed) =>
         new() { Kind = SessionEventKind.Note, Text = $"the person accepted this work: {landed.Message}" };
 
+    /// <summary>
+    /// What the conversation's record keeps of a hand-off after the landing (WSR5b): the whole sentence, the
+    /// plugin's part in it — kept where the landing's own note is, and for the same reason (D100).
+    /// </summary>
+    public static SessionEvent HandNote(TreeHand handed) =>
+        new() { Kind = SessionEventKind.Note, Text = $"the person handed this work on: {handed.Message}" };
+
     /// <summary>What is wrong with a branch pattern, in a sentence, or null when it names one branch per session.</summary>
     public static string? Problem(string pattern)
     {

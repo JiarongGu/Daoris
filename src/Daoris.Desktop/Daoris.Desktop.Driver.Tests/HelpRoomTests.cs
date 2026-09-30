@@ -218,6 +218,8 @@ public sealed class HelpRoomTests : IDisposable
         Assert.Contains("mcp__daoris-knowledge__go_propose", allowed);
         // PLUG9: adding a landed plugin, or switching one, a card the person applies like the rest.
         Assert.Contains("mcp__daoris-knowledge__plugin_propose", allowed);
+        // WSR5b: handing a landed branch to its plugin, a card the person applies like the rest.
+        Assert.Contains("mcp__daoris-knowledge__hand_propose", allowed);
         Assert.DoesNotContain("mcp__daoris-knowledge__permission_propose", allowed);
         Assert.DoesNotContain(allowed, rule => rule.StartsWith("Bash", StringComparison.Ordinal)
             || rule.StartsWith("Edit", StringComparison.Ordinal) || rule.StartsWith("Write", StringComparison.Ordinal));
@@ -483,6 +485,42 @@ public sealed class HelpRoomTests : IDisposable
         {
             try { Directory.Delete(home, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
         }
+    }
+
+    /// <summary>
+    /// WSR5b: the room lists the branches landings made here, so a hand-off names one the record holds, and
+    /// says what `hand_propose` does and its doors.
+    /// </summary>
+    [Fact]
+    public void The_room_lists_the_branches_landings_made_and_how_one_is_handed_on()
+    {
+        var some = HelpRoom.Render(Machine with
+        {
+            Landed =
+            [
+                new HelpLanded("engine", "feature/q2-second", "s2a3b4c5", Pushed: false, PullRequest: null),
+                new HelpLanded("game", "feature/q3-third", "s3", Pushed: true, PullRequest: "https://example.test/pr/3"),
+            ],
+        });
+
+        Assert.Contains("- Branches landings made: `feature/q2-second` in `engine` (session `s2a3b4c5`, not pushed), "
+            + "`feature/q3-third` in `game` (session `s3`, pushed, pull request https://example.test/pr/3).", some);
+        Assert.Contains("- Branches landings made: none recorded.", HelpRoom.Render(Machine));
+        Assert.Contains("`hand_propose`", some);
+        Assert.Contains("`daoris-driver trees hand <session|branch> [--plugin <id>]`", some);
+    }
+
+    [Fact]
+    public void The_branches_landings_made_are_described_from_the_record()
+    {
+        var landed = new LandedBranch("engine", "work", "feature/q2-second", "main", "abc1234", "s2a3b4c5", "q2", "Second", DateTimeOffset.UnixEpoch)
+        {
+            Pushed = true, PullRequest = "https://example.test/pr/9",
+        };
+
+        var machine = HelpRoom.Describe(DriverConfig.Empty, new Snapshot([], [], []), [], [], _ => null, asks: 0, landed: [landed]);
+
+        Assert.Equal(new HelpLanded("engine", "feature/q2-second", "s2a3b4c5", true, "https://example.test/pr/9"), Assert.Single(machine.Landed));
     }
 
     /// <summary>A twin (`twins.md`): the service's `SessionLedger.HelpRepository` and the page's spell it too.</summary>

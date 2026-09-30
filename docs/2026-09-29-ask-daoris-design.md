@@ -53,7 +53,7 @@ a `SessionTree`:
   Added after it guessed at a menu that does not exist.
 - **`CLAUDE.md`** carrying `@AGENTS.md`, and **`.claude/settings.json`** allowing the family's read
   tools, the connector's `setting_propose` and `ask_propose` (and since HELP6 its four further
-  `*_propose` tools, §9.6, and since PLUG9 `plugin_propose`, §9.7), and nothing else. Over the protocol door
+  `*_propose` tools, §9.6, since PLUG9 `plugin_propose`, §9.7, and since WSR5b `hand_propose`, §9.8), and nothing else. Over the protocol door
   a request for anything unlisted is refused by construction (D52), which is the point: it reads, and
   it proposes.
 
@@ -93,8 +93,13 @@ repository that holds it (`plugin_propose`), or one installed here switched on o
 never a proposal of this kind: it is an ask at that repository's workspace, since a plugin runs as the
 person and is made with tests and reviewed like any other work.
 
-**Never**: a push, a merge, a discard, a sign-in, a key. Those stay the person's own presses where
-they already are.
+**A hand-off** (WSR5b, §9.8, D102): a branch a landing made and recorded, handed to a landing plugin
+(`hand_propose`), applied through the review's own door. It is the one card whose press leads to a push:
+the plugin's, signed in as the person, which the card says before Apply, exactly as the review's *hand it
+to* would.
+
+**Never**: a push of Daoris's own, a merge, a discard, a sign-in, a key. Those stay the person's own
+presses where they already are; a hand-off's push is the plugin the person named, on their Apply.
 
 ## 6. The confirmation
 
@@ -265,6 +270,21 @@ line git can name. With an agent named, a starter is also a first message.
    - **What the gates do not cover:** whether the folder's contents have landed on the repository's line
      (the checkout is copied as it stands), a real helper choosing the tool, and the card on the window in
      both themes.
+8. **WSR5b**: Ask Daoris proposes handing a landed branch to its plugin (2026-09-30, D102). *Built:*
+   - **`hand_propose {target, repository?, plugin?}`**: the session that landed the branch, or the branch;
+     the repository only where a branch's name is in several; a plugin only where the repository's landing
+     rule names none. The service checks the shape (one word each, a plugin id's shape).
+   - **Judged against the landing record** (`<home>/landings.json`, D102): a branch the record holds, one
+     repository, and a plugin, named or the rule's, that can land work here (D100's refusals). What only
+     the checkout can answer (the branch standing, moved since its push, already on the line) is the door's
+     at the press, in its words, which settle the card refused.
+   - **The card** says a plugin pushes the branch to its remote, signed in as the person, before Apply, and
+     carries `daoris-driver trees hand <branch> --repository <name>` as its terminal twin. Apply is
+     `HANDOFF`'s own press, and the note it keeps in the landing's conversation is the review's.
+   - **The room** lists the branches landings made, by name, repository and session, and whether a plugin
+     pushed each, with its pull request.
+   - **What the gates do not cover:** a real helper choosing the tool, a real platform's push, and the card
+     on the window in both themes.
 
 ## 10. Not chosen
 

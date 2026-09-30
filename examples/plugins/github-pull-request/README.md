@@ -43,7 +43,8 @@ default branch. The pull request's address `gh` prints comes back to the review 
 The branch Daoris made **always stands**. A push that fails answers *not pushed* with git's reason; a
 `gh` that fails after the push answers *pushed*, with `gh`'s reason and no pull request. Either way
 the review and `daoris-driver trees land` say the plugin's step did not finish and how to push the
-branch yourself. On Windows, a `gh` that is a `.cmd` script is run through `cmd`, so a title's double
+branch yourself, and once the cause is fixed the review's *hand it to* or `daoris-driver trees hand
+<session>` gives the branch to the plugin again. On Windows, a `gh` that is a `.cmd` script is run through `cmd`, so a title's double
 quotes become single ones and a percent sign is spelled out.
 
 No remote, organisation or repository is named here: `gh` takes them from the checkout's `origin`.

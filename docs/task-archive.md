@@ -8218,3 +8218,41 @@ characters with the side bar open. Try's scratch folder is under the system's te
 removed within the call; D101 records it.
 **Proven by:** driver 1294, modules 388, service 632 + 45, vitest 1653, CLI 593, family 301/301, Playwright 21,
 deployment 67/67.
+
+
+## USE1 (f) and (g) — the last of what the owner met on the installed window (2026-09-30)
+
+> - [ ] **USE1 — what the owner met on the installed window, 2026-09-30** (*"since I tried to use update
+> but got error message no updater"*; *"委托 screen box is overflowing the window, also completed quest
+> not been cleared, also new request is not auto firing"*). (a) **Update on a door with no updater**: …
+
+**Outcome.** (a)–(f) were archived as they landed. (g) is answered: the first driven session on a normal
+start with `claude-code-acp` 0.84.0 (the ticket's follow-up, 05:47 UTC) had a POSIX `PATH` in Claude
+Code's shell snapshot and met no *command not found*. The session that lacked `git`, `tr` and `head`
+ran under the dev tool's `run --install` started from Git Bash: its snapshot held `PATH` in Windows form
+(`C:…;C:…`), which bash could not read. So the cause is that start's environment, not the adapter's
+release. The handover already says to start the install the normal way; it now says why.
+**Proven by:** the two snapshots, side by side, and the session's own record.
+
+
+## WSR5 — what a landed branch needs after its pull request (2026-09-30)
+
+> - [ ] **WSR5 — what a landed branch needs after its pull request** (owner, 2026-09-30: *"we still
+> have so many branch need to clean up"*; *"if you want to open pr is the azure plugin ready"*). …
+
+**Outcome** (built by a subagent in its own worktree, merged, then rehearsed on main): **D102**, amending
+D88 and D100. **(a)** A landing now records the branch it makes in `<home>/landings.json`.
+Settings → Workspace → Session branches and `daoris-driver trees clean` list those branches in their own
+group, and the same press removes each one whose work reached the line. The proof is by content: every
+file the branch changed since leaving the line reads the same on the line or on `origin/<line>`,
+deletions and both paths of a rename included, compared as blobs; a branch inside another that passes
+goes too. Checked-out branches, pushed-then-moved ones, ones a kept session branch still needs, and
+anything uncertain are kept and named. Only recorded branches are judged, so landings from before the
+record, and people's own branches, are never touched: the owner's two AR-2202 branches still go by hand,
+once. **(b)** A recorded branch can be handed to a landing plugin after its landing: `daoris-driver trees
+hand`, the review's *hand it to <plugin>*, or an Ask Daoris `hand` card. The plugin gets D100's frame for
+the branch as it stands; a hand-off whose plugin does not push changes nothing. Not yet seen on the window,
+and no platform's squash merge or push was exercised (a local squash and a bare origin stand in).
+**Proven by:** driver 1331, modules 390, service 639 + 45, vitest 1662, CLI 593, family 301/301,
+Playwright 21, deployment 67/67 (a first run failed publishing: a long-lived MSBuild server carried a
+broken environment, and `dotnet build-server shutdown` cleared it).

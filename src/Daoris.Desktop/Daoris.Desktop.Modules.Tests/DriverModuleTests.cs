@@ -297,6 +297,14 @@ public sealed class DriverModuleTests : Bridge
         Assert.Contains(Refusals.DriverNotReady, await RefusalAsync(Module(), "LAND_SESSION_TREE", new { id = "s1a2b3c4" }));
     }
 
+    /// <summary>A hand-off (WSR5b) reads the registry's checkouts, so before the driver is up each route is the cold-start sentence.</summary>
+    [Fact]
+    public async Task A_hand_off_before_the_driver_is_up_is_a_sentence()
+    {
+        Assert.Contains(Refusals.DriverNotReady, await RefusalAsync(Module(), "HANDOFF_PLAN", new { id = "s1a2b3c4" }));
+        Assert.Contains(Refusals.DriverNotReady, await RefusalAsync(Module(), "HANDOFF", new { id = "s1a2b3c4", plugin = "example.lands" }));
+    }
+
     /// <summary>What each repository's line is needs the registry's checkouts, so before the driver is up it is the cold-start sentence.</summary>
     [Fact]
     public async Task Asking_the_lines_before_the_driver_is_up_is_a_sentence()

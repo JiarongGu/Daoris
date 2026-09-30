@@ -48,7 +48,8 @@ JSON `az` prints and comes back to the review and the terminal.
 The branch Daoris made **always stands**. A push that fails answers *not pushed* with git's reason; an
 `az` that fails after the push answers *pushed*, with `az`'s reason and no pull request. Either way the
 review and `daoris-driver trees land` say the plugin's step did not finish and how to push the branch
-yourself. On Windows `az` is a `.cmd` script, so it is run through `cmd`: a title's or a line's double
+yourself, and once the cause is fixed the review's *hand it to* or `daoris-driver trees hand <session>`
+gives the branch to the plugin again. On Windows `az` is a `.cmd` script, so it is run through `cmd`: a title's or a line's double
 quotes become single ones and a percent sign is spelled out, because cmd would read them.
 
 `land.mjs` is the whole of it; `src/Daoris.Cli/test/landing-plugins.test.ts` drives it against a bare

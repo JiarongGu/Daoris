@@ -3815,6 +3815,11 @@ work unlanded forever, and a person forcing removals by hand is the risk the pro
   branch landed on a feature branch would stay, and one merged into whatever the checkout happens to
   be on would go.
 
+*Amended by D102 (WSR5a, 2026-09-30): the clean-up also lists the branches landings made and recorded,
+in a group of their own, and the same press removes those whose work reads on the line by content, or
+that are inside another that does. The session branches go first, since this proof may count a landed
+branch as holding their commits.*
+
 ## D89 — Ask Daoris is a session that proposes, on an agent of its own choosing, and every change is confirmed (2026-09-29)
 
 **Decision (HELP1, the owner's calls on `docs/2026-09-29-ask-daoris-design.md` §8).** Ask Daoris is a
@@ -4326,6 +4331,11 @@ this is enough for `az.cmd`'s own `%*` was reasoned from how cmd parses, not mea
 `az`. Ask Daoris cannot yet propose a rule naming a plugin: its parser takes `branch <pattern>` and
 `--tidy`, and refuses the rest as a pattern.
 
+*Amended by D102 (WSR5b, 2026-09-30): a branch a landing made and recorded can be handed to a landing
+plugin after the landing, by the person's press (`daoris-driver trees hand`, the review's *hand it to*, or
+an Ask Daoris card), told this frame for the branch as it stands. A hand-off the plugin does not complete
+changes nothing.*
+
 ## D101 — A plugin is made with the driver's kit: a folder that tests itself, and a trial as the driver would run it (2026-09-30)
 
 **Decision (PLUG8).** The owner wants Daoris able to make plugins, eventually by asking Ask Daoris. The
@@ -4410,3 +4420,93 @@ PATH, and a person can try the result as the driver would before adding it.
 needs Node 21 or later. No real plugins repository exists yet, and no session has made a plugin in one
 (PLUG9 proposes that ask). The screen's New and Try were checked by the vitest loop over a mocked bridge
 and by the module tests, not yet by looking at the window.
+
+## D102 — A branch a landing made is recorded, goes once its work reads on the line, and can be handed to its plugin afterwards (2026-09-30)
+
+**Decision (WSR5, amending D88 and D100).** The first real ticket's pull request was completed as a squash merge,
+and it left the two branches its landings had made. Git calls both unmerged, since no commit of theirs is
+on the line, and D88 never looked at them, since they are not `daoris/`. So:
+
+- **A landing records the branch it makes**, the moment it exists: `<home>/landings.json` holds the
+  repository, workspace, branch, the line it grew from, the commit it was made at, and the session, quest
+  and title it was made for; and, once a plugin answers that it pushed the branch, the plugin, its pull
+  request and the commit it pushed. Machine-local under the home (D63), never in the repository. An entry
+  is forgotten once its branch is gone, or no longer holds the commit the landing made it at. A file that
+  does not read is no record, and the landing still lands.
+- **Only a recorded branch is judged.** Landings before the record are left out. Recognising them by the
+  pattern would judge people's own branches, since `feature/{quest}-{slug}` is how people name them, and
+  the one trace such a landing left is the note in the conversation, a sentence, which D48 §6 refuses to
+  classify by. Those are the person's to delete once, by hand. A branch that took a recorded name since,
+  whose history does not hold the recorded commit, is the person's and is never judged.
+- **The proof, by content.** The line is the repository's line (D86) in both forms: its local branch and
+  `origin/<line>`. A branch whose every commit is on the line is merged. Otherwise every file it changed
+  since it left the line must read on the line as the branch left it, in one form of the line: the paths
+  are `git diff --no-renames --name-only` from its merge-base with that form, so a deletion is a path the
+  line must not hold and a rename is both its paths, and they are compared as blobs, by `git diff` between
+  the branch and the line. A branch whose commits change no file is not proven. **Inside another:** a
+  branch whose history is inside another recorded branch that passed is proven through it, judged over
+  the whole set before anything goes.
+- **What keeps one**, whatever its files say, each named: checked out in any working tree, the
+  repository's own checkout included; commits its remote-tracking branch (its upstream, else
+  `origin/<branch>`) does not have, pushed and then moved, unless every commit is on the line; a session
+  branch that stays and shares commits with it that the line does not hold, since D88's proof for that
+  session counts this branch as holding them; and anything git could not answer.
+- **The same list and the same press as D88.** Settings → Workspace → Session branches lists them in a
+  group of their own, *Branches landings made*, and `daoris-driver trees clean` after the session
+  branches. One press removes both. The session branches go first, since their proof may count a landed
+  branch as holding their commits; then the landed ones, those inside another before the one they are
+  inside. Each is judged again over the whole set right before it goes, and removed only while its tip is
+  still the commit it was judged at: `git branch -D` of that one branch in the repository's own checkout.
+  No working tree, no other ref, and never a remote branch.
+
+- **A recorded branch can be handed to a landing plugin afterwards (WSR5b).** Until now the plugin ran
+  only inside the landing, and pressing Accept again was refused because the branch exists, so a ticket
+  landed before its workspace named a plugin, or one whose plugin failed, had no door but a hand push.
+  The doors: `daoris-driver trees hand <session|branch> [--repository <name>] [--plugin <id>] [--plan]`,
+  *hand it to <plugin>* on the review of the session that landed it (shown whether or not its tree is
+  still there, since a tidy removes it), and an Ask Daoris proposal of its own kind, `hand`
+  (`hand_propose`), applied through the review's door. The plugin is the one named, else the
+  repository's landing rule's. It is told exactly D100's frame for the branch as it stands: the line as
+  `base`, the branch's commits the line lacks as `commits`, oldest first, and the quest, session and
+  title the landing recorded. Its answer is said as a landing says it, and kept as a note in the
+  conversation's record; a push is kept on the record, with its pull request and the commit it pushed.
+- **What a hand-off refuses, each in its own sentence, speaking to no plugin:** a branch the record does
+  not hold; one gone, or no longer holding the recorded commit; no plugin named; a plugin that cannot
+  land work here (D100's four); nothing beyond the line; work that already reads on the line, which is
+  the clean-up's; and a branch already on its remote at this very commit with a pull request answered
+  for it. **A hand-off the plugin does not complete changes nothing**: the branch, the record and the
+  remote stay as they were, and the sentence says how to push by hand.
+
+This amends **D88**: its proof is unchanged for session branches, and a second one, by content, serves the
+branches landings made. It amends **D100**: the plugin a branch rule names may also be spoken to after the
+landing, by the person's press, for a branch the landing made.
+
+**Why.** D88's proof is ancestry: every commit on a branch of the person's. A squash merge makes one new
+commit on the line from the branch's content, so ancestry calls the branch unmerged forever and `git
+branch -d` refuses it. What reached the line is the content, so the content is what is compared. The
+first real workspace's owner, after the ticket: *"we still have so many branch need to clean up"*. And
+of the push: *"if you want to open pr is the azure plugin ready"* — and a ticket landed before a plugin
+was named has no door to one but the person's own terminal.
+
+**Rejected.**
+- **A branch whose remote branch is gone** (`git fetch --prune`, then `[gone]`). A platform deletes a
+  branch when a pull request completes, when it is abandoned, and when a person deletes it by hand: gone
+  says nothing about where the work went.
+- **Asking the platform whether the pull request completed.** A network call and a platform's API in
+  core, which D87 left to plugins.
+- **Patch equivalence** (`git cherry`). A squash of several commits matches none of them.
+- **Judging by the pattern.** As above: it judges the person's own branches.
+- **Pressing Accept again for a hand-off.** Accept makes a branch, and one standing is refused so a branch
+  Daoris did not make is never moved (D87). The hand-off is its own act on the branch the landing made.
+- **Asking the platform whether a pull request is open before handing on.** A network call in core again;
+  the record's answer and the remote-tracking branch are what this machine knows, and the plugin, which
+  speaks for its platform, answers for the rest.
+
+**What the gates do not cover.** The real case's two branches predate the record, so this build never
+judges them, nor hands them on. Every squash in the tests is `git merge --squash` in a scratch
+repository, on the local line or on a clone of a local bare `origin`; no platform's squash was run. A
+branch rebased before its pull request no longer holds the recorded commit, so it is never judged: the
+safe side. The hand-off's plugins in the tests are fakes on the wire's channel; its frame is D100's, which
+the examples' own tests drive against a bare repository, but no hand-off has run against a real platform.
+The review's button and Ask Daoris's card are held by the page's tests over a mocked bridge, not yet looked
+at on the window.

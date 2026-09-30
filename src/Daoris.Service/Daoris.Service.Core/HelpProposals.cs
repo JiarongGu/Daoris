@@ -16,13 +16,13 @@ public sealed record SettingChange(string Door, string? Target, string? Workspac
 /// the person to apply or not.
 /// </summary>
 /// <remarks>
-/// <para><b>Seven kinds</b>, each a door a screen or a terminal already has: a <c>setting</c> and an
+/// <para><b>Eight kinds</b>, each a door a screen or a terminal already has: a <c>setting</c> and an
 /// <c>ask</c> (HELP1c); an <c>agent</c>'s update or pin, a <c>delete</c> of a quest or an ask, an
 /// <c>account</c>'s model and effort, and a <c>go</c> to a screen (HELP6); a <c>plugin</c> added from its
-/// folder, or switched on or off (PLUG9). Every file carries <c>target</c>, <c>workspace</c>,
-/// <c>value</c> and <c>sentence</c>, null where the kind has none; an account adds <c>account</c>,
-/// <c>model</c> and <c>effort</c>, a go <c>domain</c> and <c>part</c>, and a plugin <c>repository</c> and
-/// <c>folder</c>.</para>
+/// folder, or switched on or off (PLUG9); and a <c>hand</c>-off of a landed branch to a landing plugin
+/// (WSR5b). Every file carries <c>target</c>, <c>workspace</c>, <c>value</c> and <c>sentence</c>, null where
+/// the kind has none; an account adds <c>account</c>, <c>model</c> and <c>effort</c>, a go <c>domain</c>
+/// and <c>part</c>, a plugin <c>repository</c> and <c>folder</c>, and a hand-off <c>repository</c>.</para>
 ///
 /// <para><b>PERM2's shape</b> (<see cref="RuleProposalBox"/>): a file under the home, never a row in the
 /// store, since what it would change is machine-local; one file per proposal, so two never collide.</para>
@@ -276,6 +276,42 @@ public sealed class HelpProposalBox(string? home)
             Nullable(writer, "folder", door == "add" ? where : null);
         }, why, session, at);
     }
+
+    /// <summary>
+    /// Write one hand-off proposal (WSR5b): a branch a landing made, handed to a landing plugin afterwards —
+    /// the review's <i>hand it to</i> and <c>daoris-driver trees hand</c>. Whether the record holds that branch,
+    /// and whether the plugin can land work there, is the driver's.
+    /// </summary>
+    /// <param name="target">The session that landed the branch, or the branch.</param>
+    /// <param name="repository">The repository it is in, where a branch's name alone is in several; null otherwise.</param>
+    /// <param name="plugin">The plugin to hand it to, where the repository's landing rule names none; null for the rule's.</param>
+    public (string? Id, string Message) ProposeHand(string target, string? repository, string? plugin, string why, string? session, DateTimeOffset at)
+    {
+        var named = Blank(target);
+        var holder = Blank(repository);
+        var to = Blank(plugin);
+        if (string.IsNullOrWhiteSpace(why)) return NoReason;
+        var refused = named is null ? "a hand-off names the session that landed the branch, or the branch itself."
+            : Word(named, "a session or a branch") ?? (holder is null ? null : Word(holder, "a repository"))
+              ?? (to is null || PluginId.IsMatch(to) ? null
+                  : $"`{to}` is not a plugin id — one is lowercase letters, digits, dots and dashes, as the room lists the plugins installed here.");
+        if (refused is not null) return (null, $"{Capital(refused)} Nothing was proposed.");
+
+        return Write(writer =>
+        {
+            writer.WriteString("kind", "hand");
+            writer.WriteString("door", "hand");
+            writer.WriteString("target", named);
+            writer.WriteNull("workspace");
+            Nullable(writer, "value", to);
+            writer.WriteNull("sentence");
+            Nullable(writer, "repository", holder);
+        }, why, session, at);
+    }
+
+    /// <summary>What a plugin's id may be — the catalogue's own shape (the driver's <c>LandingRules</c> holds the same).</summary>
+    private static readonly System.Text.RegularExpressions.Regex PluginId =
+        new("^[a-z0-9][a-z0-9.-]*$", System.Text.RegularExpressions.RegexOptions.CultureInvariant);
 
     /// <summary>Why an add is not an add's shape: a folder, no id, and a repository's checkout it stays inside.</summary>
     private static string? AddRefusal(string? id, string? folder, string? repository)

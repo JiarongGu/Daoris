@@ -1,5 +1,5 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { SweepList, type SweepBranch } from './Sweep';
+import { SweepList, type LandedBranch, type SweepBranch } from './Sweep';
 
 // Session branches (WSR3, D88), in the shape the driver's SWEEP_PLAN answer takes: every kind a
 // branch can be, and a machine with none.
@@ -25,6 +25,27 @@ export const EveryKind: Story = {
       branch({ branch: 'daoris/s-9e0f1a2b', kind: 'unlanded', commits: 2, detail: 'a1b2c3d the work\ne4f5a6b more work' }),
       branch({ branch: 'daoris/s-3c4d5e6f', kind: 'dirty', detail: '3 path(s) uncommitted' }),
       branch({ repository: 'game', branch: 'daoris/s-7a8b9c0d', kind: 'in-use' }),
+    ],
+  },
+};
+
+const landed = (extra: Partial<LandedBranch> & Pick<LandedBranch, 'branch' | 'kind'>): LandedBranch => ({
+  repository: 'engine', workspace: 'aurora', files: [], commits: 1, removable: false, ...extra,
+});
+
+/** WSR5: the branches landings made, beside the session branches — every kind one can be. */
+export const WithLandedBranches: Story = {
+  args: {
+    ...EveryKind.args,
+    landed: [
+      landed({ branch: 'feature/0fda18-fix-the-api-gap', kind: 'on-line', where: 'origin/main', removable: true }),
+      landed({ branch: 'feature/0fda17-first-part', kind: 'inside', where: 'feature/0fda18-fix-the-api-gap', removable: true }),
+      landed({ branch: 'feature/0fda19-merged', kind: 'merged', where: 'main', removable: true }),
+      landed({ branch: 'feature/0fda20-still-open', kind: 'differs', where: 'main', files: ['src/report.ts', 'src/report.test.ts'] }),
+      landed({ repository: 'game', branch: 'feature/0fda21-checked-out', kind: 'checked-out' }),
+      landed({ repository: 'game', branch: 'feature/0fda22-pushed-then-moved', kind: 'ahead-of-remote', commits: 2 }),
+      landed({ repository: 'game', branch: 'feature/0fda23-leaned-on', kind: 'leaned-on', where: 'daoris/s-7a8b9c0d' }),
+      landed({ repository: 'game', branch: 'feature/0fda24-unknown', kind: 'unknown', detail: 'there is no `develop` here, nor `origin/develop`, to compare it with' }),
     ],
   },
 };

@@ -2,7 +2,7 @@ import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import { describe, expect, it, vi } from 'vitest';
-import { SweepList, type SweepBranch } from './Sweep';
+import { SweepList, type LandedBranch, type SweepBranch } from './Sweep';
 
 // WSR3 (D88): every session branch with what it holds, listed first — then one press removes those
 // whose work is on a branch of the person's, or that hold nothing, and only those it listed to go.
@@ -59,5 +59,56 @@ describe('the session branches card', () => {
   it('names a machine with no session branch', () => {
     draw({ branches: [] });
     expect(screen.getByText(/No session branches/)).toBeInTheDocument();
+  });
+});
+
+// WSR5a: the branches landings made, in a group of their own — each goes once every file it changed reads
+// on the line as it left it, or it is inside another that does — and by the same press.
+
+const landed = (extra: Partial<LandedBranch> & Pick<LandedBranch, 'branch' | 'kind'>): LandedBranch => ({
+  repository: 'engine', workspace: 'aurora', files: [], commits: 1, removable: false, ...extra,
+});
+
+const LANDED: LandedBranch[] = [
+  landed({ branch: 'feature/q2-second', kind: 'on-line', where: 'origin/main', removable: true }),
+  landed({ branch: 'feature/q1-first', kind: 'inside', where: 'feature/q2-second', removable: true }),
+  landed({ branch: 'feature/q3-third', kind: 'differs', where: 'main', files: ['shared.txt', 'b.txt'] }),
+  landed({ repository: 'game', branch: 'feature/q4-fourth', kind: 'checked-out' }),
+  landed({ repository: 'game', branch: 'feature/q5-fifth', kind: 'ahead-of-remote', commits: 2 }),
+  landed({ repository: 'game', branch: 'feature/q6-sixth', kind: 'leaned-on', where: 'daoris/s-1' }),
+];
+
+describe('the landed branches in the session branches card', () => {
+  it('lists each branch a landing made in its own group, with what it holds', () => {
+    draw({ landed: LANDED });
+
+    const group = screen.getByRole('region', { name: 'Branches landings made' });
+    const row = (name: string) => within(group).getByRole('listitem', { name });
+    expect(within(row('feature/q2-second')).getByText('goes')).toBeInTheDocument();
+    expect(within(row('feature/q2-second')).getByText('origin/main', { selector: 'code' })).toBeInTheDocument();
+    expect(within(row('feature/q1-first')).getByText('feature/q2-second', { selector: 'code' })).toBeInTheDocument();
+    expect(within(row('feature/q3-third')).getByText('kept')).toBeInTheDocument();
+    expect(within(row('feature/q3-third')).getByText(/2 files still differ on the line/)).toBeInTheDocument();
+    expect(within(row('feature/q3-third')).getByText('shared.txt, b.txt')).toBeInTheDocument();
+    expect(within(row('feature/q4-fourth')).getByText(/Checked out/)).toBeInTheDocument();
+    expect(within(row('feature/q5-fifth')).getByText(/2 commits its remote does not have/)).toBeInTheDocument();
+    expect(within(row('feature/q6-sixth')).getByText('daoris/s-1', { selector: 'code' })).toBeInTheDocument();
+    // Grouped by repository within its own group.
+    expect(within(group).getByRole('group', { name: 'game' })).toBeInTheDocument();
+  });
+
+  it('removes what both groups listed to go, on the one press', async () => {
+    const onClean = draw({ landed: LANDED });
+
+    await userEvent.click(screen.getByRole('button', { name: 'Clean up 4 branches' }));
+
+    expect(onClean).toHaveBeenCalledWith([
+      'engine:daoris/s-empty', 'engine:daoris/s-landed', 'engine:feature/q2-second', 'engine:feature/q1-first',
+    ]);
+  });
+
+  it('draws no group where no landing made a branch', () => {
+    draw({ landed: [] });
+    expect(screen.queryByRole('region', { name: 'Branches landings made' })).not.toBeInTheDocument();
   });
 });

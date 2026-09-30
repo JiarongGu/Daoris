@@ -23,10 +23,11 @@ export type HelpPluginShown = {
  * Since HELP6 a kind for each door built since: an agent's update or pin, an account's model and effort, a
  * delete of a record made by mistake, and a go to a screen, which has no command since it changes nothing.
  * Since PLUG9 a plugin that has landed, added from its folder, or one switched on or off, with what it runs.
+ * Since WSR5b a branch a landing made, handed to a landing plugin, which pushes it.
  */
 export type HelpProposal = {
   id: string;
-  kind: 'setting' | 'ask' | 'agent' | 'account' | 'delete' | 'go' | 'plugin';
+  kind: 'setting' | 'ask' | 'agent' | 'account' | 'delete' | 'go' | 'plugin' | 'hand';
   describe: string;
   terminal: string;
   why: string;
@@ -73,7 +74,8 @@ function PluginRuns({ plugin }: { plugin: HelpPluginShown }) {
  * **Each kind says what its press does** (HELP6): a delete is titled as one, says it cannot be undone as
  * the drawer's own confirmation does, and its press is *delete*; a go is a suggestion, not a change, so
  * it carries no command and its press is *go there*. A plugin (PLUG9) shows what will run before Apply,
- * and an add says its folder is copied in and that nothing starts at the press.
+ * and an add says its folder is copied in and that nothing starts at the press. A hand-off (WSR5b) says
+ * before Apply that its plugin pushes the branch as the person, the one card whose press leads to a push.
  */
 export function ProposalCard({ proposal, pending = false, onApply, onDismiss }: {
   proposal: HelpProposal;
@@ -85,6 +87,7 @@ export function ProposalCard({ proposal, pending = false, onApply, onDismiss }: 
   const deleting = proposal.kind === 'delete';
   const going = proposal.kind === 'go';
   const plugin = proposal.kind === 'plugin' ? proposal.plugin ?? null : null;
+  const handing = proposal.kind === 'hand';
 
   return (
     <li className={deleting
@@ -94,7 +97,8 @@ export function ProposalCard({ proposal, pending = false, onApply, onDismiss }: 
       <p className={deleting ? 'm-0 text-small font-semibold text-st-declined' : 'm-0 text-small font-semibold text-accent'}>
         {t(deleting ? 'help.proposal.titleDelete'
           : going ? 'help.proposal.titleGo'
-            : proposal.kind === 'plugin' ? 'help.proposal.titlePlugin' : 'help.proposal.title')}
+            : proposal.kind === 'plugin' ? 'help.proposal.titlePlugin'
+              : handing ? 'help.proposal.titleHand' : 'help.proposal.title')}
       </p>
       <p className="m-0 mt-1 text-small text-ink"><Inline text={proposal.describe} /></p>
       {plugin && <PluginRuns plugin={plugin} />}
@@ -105,6 +109,7 @@ export function ProposalCard({ proposal, pending = false, onApply, onDismiss }: 
       )}
       {deleting && <p className="m-0 mt-1 text-meta text-st-declined">{t('help.proposal.deleteNote')}</p>}
       {going && <p className="m-0 mt-1 text-meta text-ink-faint">{t('help.proposal.goNote')}</p>}
+      {handing && <p className="m-0 mt-1 text-meta text-ink-soft">{t('help.proposal.handNote')}</p>}
       {proposal.terminal && (
         <p className="m-0 mt-1 text-meta text-ink-faint"><Inline text={t('help.proposal.command', { command: proposal.terminal })} /></p>
       )}

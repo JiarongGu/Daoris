@@ -248,6 +248,31 @@ public sealed class McpToolsTests : IAsyncLifetime
             (file.GetProperty("kind").GetString(), file.GetProperty("by").GetProperty("session").GetString())));
     }
 
+    /// <summary>
+    /// WSR5b: Ask Daoris proposes handing a branch a landing made to a landing plugin; the file names the
+    /// conversation, and a malformed one writes nothing.
+    /// </summary>
+    [Fact]
+    public void Ask_Daoris_proposes_handing_a_landed_branch_on()
+    {
+        var home = Path.Combine(_root, "help-hand-home");
+        var tools = new KnowledgeTools(
+            _service, _quests, new QuestExchange(_service, _quests, files: _files),
+            new AmbientWorkspace(Path.Combine(_root, "family", "Asker")),
+            intake: new IntakeScope(null, "h1e1p000"), help: new HelpProposalBox(home));
+
+        Assert.Contains("Proposed", tools.ProposeHand("s2a3b4c5", "the person wants its pull request opened"));
+        Assert.Contains("Proposed", tools.ProposeHand("feature/q2-second", "the rule names none yet", repository: "engine", plugin: "example.lands"));
+        Assert.Contains("Nothing was proposed", tools.ProposeHand("", "no branch named"));
+
+        var written = Directory.GetFiles(HelpProposalBox.FolderOf(home))
+            .Select(path => JsonDocument.Parse(File.ReadAllText(path)).RootElement)
+            .ToList();
+        Assert.Equal(["feature/q2-second", "s2a3b4c5"], written.Select(file => file.GetProperty("target").GetString()).Order());
+        Assert.All(written, file => Assert.Equal(("hand", "h1e1p000"),
+            (file.GetProperty("kind").GetString(), file.GetProperty("by").GetProperty("session").GetString())));
+    }
+
     /// <summary>What an agent reading the list is told: what each quest carries, what follows it, what it follows.</summary>
     [Fact]
     public async Task The_list_says_what_a_quest_carries_what_follows_it_and_what_it_follows()

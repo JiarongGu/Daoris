@@ -21,8 +21,8 @@ lists.
 
 ## State
 
-**Counts, and this is their one home:** sixteen commands, **593 CLI tests, 632 service and 45 HTTP host, 1294 driver,
-388 desktop modules, 80 devkit, 1653 web unit, 21 Playwright**, 66/66 release rehearsal, **301/301
+**Counts, and this is their one home:** sixteen commands, **593 CLI tests, 639 service and 45 HTTP host, 1331 driver,
+390 desktop modules, 80 devkit, 1662 web unit, 21 Playwright**, 66/66 release rehearsal, **301/301
 family rehearsal** (it names its own phases when you run it), **67/67 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge
 documents, 5 skills, 7 packs. The always-loaded core is **22,492 of 26,000 bytes** — a span in
@@ -59,7 +59,7 @@ owner, not Daoris's to change (LOG2b).
   notes name them.
 - **The install** runs main at PLUG8 (republished 2026-09-30; its host logged its own stop on the close before); republishing is the session's own call, never while a session
   on it runs. Start it the normal way, not through the dev tool, unless the instruments are needed
-  (USE1g is a session shell's PATH seen once under a dev-tool start).
+  (USE1g, confirmed: a start from Git Bash hands sessions a `PATH` their shell cannot read).
 - **Load makes flakes**: FLAKE1's real-tick classes fail under parallel builds and pass alone. Run the
   rehearsals when nothing else builds.
 - **Open and the owner's:** READACROSS1, HELPREAD1, TRUST2, AGT2c, DIST1, BUDGET1, HOME1; on a trigger:
@@ -112,13 +112,39 @@ rather than designed.
 
 ## Backlog
 
-**Twenty-four rows are open**: the day's three (USE1's last part to confirm, WSR5, PLUG9's last two parts),
+**Thirty rows are open**: the parallel-development arc's seven (MOD1–MOD9, the owner's newest), then the day's two (DRV8, PLUG9's last two parts),
 first; the three REV3 left (DIST1, BUDGET1 and
 HOME1, the owner's); the in-app browser's one (BRW3); D85's one (TASKBAR1); the first
 goal's four (FG5, READACROSS1 and HELPREAD1 the owner's, and SEM2 on a trigger); D76's held file tools;
 three leftovers (CONSOLE3, FLAKE1, TEST1); two on the owner (TRUST2, AGT2c); REH1; and the rest on a
 trigger (TOOL4, TOOL5, PLUG7, CANON9, HARNESS1). Every closed one is in `docs/task-archive.md`, and
 this file holds no ticked rows, by the `task-lifecycle` rule it also ships. A heading below holds open rows only.
+
+### Parallel development (owner, 2026-09-30) — the next arc
+
+> *"since daoris is getting more and more complex we should modulize this project properly so that
+> paralle development with subagent can run smoothly"*
+
+`docs/2026-09-30-parallel-development-design.md` is the contract: what eighteen merges collided on,
+the two kinds of collision (a shared record, a god file), the rules, the splits, the lane map and the
+order. Every split is behaviour-preserving and proven by the gates as they stand.
+- [ ] **MOD1 — the records stop colliding** (design §3, §6.1; by the parent, first). Union merge for
+  the append-only records, decision numbers reserved at dispatch, no moving counters in `CLAUDE.md`, a
+  docs check that refuses a duplicated table row or heading.
+- [ ] **MOD2 — catalogues by area**: `locales/{en,zh}.json` → one file per area, merged at load, parity
+  held per file. **MOD3 — the bridge by domain**: `shell.ts` → `bridge/<domain>.ts`, `shell.ts` the
+  barrel. **MOD4 — Settings by domain**: one file per domain, the domain list the registry. One web
+  lane, one branch, in that order.
+- [ ] **MOD5 — the driver module by domain**: `DriverModule.cs` → a partial per domain and a route
+  table each adds to.
+- [ ] **MOD6 — the room and the proposals by feature**: a room section or door row per file, a judge per
+  proposal kind behind one interface, the service twin mirroring it.
+- [ ] **MOD7 — the CLI's commands as a table**: one module per command, registering its verb and usage.
+- [ ] **MOD8 — tests follow their code, and a `Process` category** run serially in the parent; the
+  worktree path-length failure fixed at its cause.
+- [ ] **MOD9 — one merge tool and a dispatch skill**: `tools/merge-branch.mjs` (merge, stop on a
+  conflict it cannot resolve, the declared gates in order, whole outputs kept) and a repository skill
+  holding the brief every subagent gets.
 
 ### Watch it, type into it, set it up (owner, 2026-09-30) — in this order
 
@@ -132,56 +158,17 @@ Logging went first (LOG1a landed); then the owner's later asks the same day came
 it: their own workspace's work (WORK1), then the kit (SHEN1), both archived; then what they met on the window.
 Each row's parts land and are archived one by one (*"for all my request you can set them into
 TASK.md and complete one by one"*).
-- [ ] **USE1 — what the owner met on the installed window, 2026-09-30** (*"since I tried to use update
-  but got error message no updater"*; *"委托 screen box is overflowing the window, also completed quest
-  not been cleared, also new request is not auto firing"*). (a) **Update on a door with no updater**:
-  the Agents surface offers *Update* on every present door, and `claude-code-acp` (an npm package
-  Daoris pins) declares none, so the only outcome was the refusal. Update should do what it says:
-  the tool's own updater where it has one, the pin moved to the newest release where Daoris pins it,
-  and no button where neither applies. (b) **The Quests view overflows the window.** (c) **A completed
-  quest is not cleared** from the view. (d) **A new request does not start on its own.** Each is read
-  off the install before it is fixed. *Read, 2026-09-30:* (b) is the desktop only: every view other
-  than Sessions is drawn inside the work frame, whose root is a flex item with no `min-w-0`, so a long
-  title that should truncate widens the frame past the window; a browser draws the view outside the
-  frame and fits. (c) is the asks: an ask stays *published* after every quest it became has closed,
-  so the list never empties. (d) is a hold: both quests were addressed to a held repository, and
-  nothing on the quest's card says so (the drawer does). (e) *Added the same day:* **the right side
-  bar's size breaks after Ask Daoris is moved to the panel and back** (*"after dock "ask daoris" from
-  right to bottom and back to right the sizing of right panel is broken"*) — reproduced on the scratch
-  window before it is fixed; (b)'s frame overflow is the first suspect. *(b), (d) and (e) landed
-  2026-09-30 (one defect for (b) and (e)), then (a), (f) and (c), all in the archive; (g) is to confirm.* (f) *Found the same
-  day, holding the ticket's verify step:* **the desktop does not find an npm-installed agent on
-  `PATH`.** The owner updated `claude-code-acp` with npm (0.84.0, `claude-agent-acp.cmd` in the Node
-  folder) and unpinned it; the CLI's `agent list` found it, and the desktop's driver held every start
-  with *"claude-code-acp is not installed on this machine"*, because it starts the bare command and
-  Windows then looks for an `.exe` only. The plugin door already resolves `PATHEXT` (`Plugins.cs`);
-  the harness door must too, for the probe and the spawn. Unblocked for now by pinning 0.84.0.
-  (g) *Seen once, to confirm:* **a driven session's own shell had no `git`, `tr` or `head` on its
-  `PATH`** (the ticket's verify session on `claude-code-acp` 0.84.0, the install started by
-  `desktop -- run --install` from a Git Bash shell): its agent worked round it by exporting Git's
-  folders in each command. The session before it, on 0.79.0 and a normal start, committed with git.
-  Check on a normal start before anything else, then decide whether the shell's environment or the
-  adapter's release is the cause. *Narrowed, 2026-09-30:* Claude Code's own shell snapshot for that
-  session holds `PATH` in **Windows form** (`C:\…;C:\…`) in a bash `export`, so no entry resolved,
-  not even System32; the two sessions before it hold POSIX form. The driver sets no `PATH`
-  (`Harnesses.Apply`). Still confounded: the start (Git Bash hands on `PATH` upper-case with MSYS's
-  variables; a normal start hands on `Path`) and the bundled Claude Code (2.1.274 in 0.79.0, 2.1.284
-  in 0.84.0). The next session on the normal start answers it: read its snapshot's `export PATH`.
-- [ ] **WSR5 — what a landed branch needs after its pull request** (owner, 2026-09-30: *"we still
-  have so many branch need to clean up"*; *"if you want to open pr is the azure plugin ready"*).
-  (a) **A landed branch whose work reached the line is cleaned up by the same press as a session's**
-  (D88 extended). The first real ticket left two branches the landing made, merged by a squash pull
-  request. Git calls them unmerged, since no commit of theirs is on the line, and D88 never looks at
-  them because they are not `daoris/`. The proof is by content: every file the branch changed since
-  it left the line reads on the line as the branch left it, or the branch is inside another landed
-  branch the proof clears. It is only for branches a landing made and recorded; a person's own
-  branch is never judged. The doors are Settings → Workspace → Session branches and
-  `daoris-driver trees clean`, listed first, and removed by the person's press. (b) **A landed
-  branch can be handed to its landing plugin afterwards.** Today the plugin runs only inside the
-  landing, and pressing again is refused because the branch exists. So a ticket landed before its
-  workspace named a plugin, or one whose plugin failed, has no door but a hand push. The hand-off
-  speaks the same `work/land` frame for the branch as it stands, with its record, on the review and
-  `daoris-driver trees`, and Ask Daoris can propose it.
+- [ ] **DRV8 — what a stray driver loop showed** (2026-09-30, found running the owner's ticket). (a) **A
+  bare `daoris-driver` starts a loop beside a running desktop.** Run with no verb to read its usage, it
+  started a headless loop on the install's home, and that loop took a fresh quest two seconds before the
+  desktop's own. The quest lock held and the desktop stood its session down, but a second loop on one
+  home is almost never meant. A bare invocation should print its usage, and a loop should refuse a home
+  another live driver is already driving, naming it, unless it is asked to share. (b) **A take whose
+  session was swept or shut down is never carried on.** The orphan sweep and a shutdown both end a
+  record `stopped`, and the planner carries on only `failed` and answered takes, so the quest stays
+  Taken with nothing to move it. A person's stop is their decision; a swept or shut-down session's is
+  not. It should be carried on like a cut-off (D80), counted against the strikes, or the person should
+  get a door that releases the take. Here the quest was declined with the reason and re-issued by hand.
 
 ### Plugins Daoris makes (owner, 2026-09-30)
 

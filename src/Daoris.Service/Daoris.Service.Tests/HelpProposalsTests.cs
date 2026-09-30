@@ -246,6 +246,48 @@ public sealed class HelpProposalsTests : IDisposable
         Assert.False(Directory.Exists(Path.Combine(_home, "help", "proposals")));
     }
 
+    /// <summary>
+    /// WSR5b: a branch a landing made, handed to a landing plugin afterwards — named by the session that landed it
+    /// or the branch, with its repository where a name is in several, and a plugin only where the rule names none.
+    /// The driver judges it against its record; here only the shape is checked.
+    /// </summary>
+    [Fact]
+    public void A_hand_off_is_written_with_its_session_or_branch_its_repository_and_its_plugin()
+    {
+        var (bySession, message) = Box().ProposeHand("s2a3b4c5", repository: null, plugin: null, "the person wants it pushed", "h1", Now);
+        var (byBranch, _) = Box().ProposeHand(" feature/q2-second ", "engine", "example.lands", "the rule names no plugin yet", "h1", Now);
+
+        Assert.Contains($"#{bySession}", message);
+        var first = Written(bySession!);
+        Assert.Equal(("hand", "hand", "s2a3b4c5"),
+            (first.GetProperty("kind").GetString(), first.GetProperty("door").GetString(), first.GetProperty("target").GetString()));
+        Assert.Equal(JsonValueKind.Null, first.GetProperty("value").ValueKind);
+        Assert.Equal(JsonValueKind.Null, first.GetProperty("repository").ValueKind);
+        var second = Written(byBranch!);
+        Assert.Equal(("feature/q2-second", "engine", "example.lands"),
+            (second.GetProperty("target").GetString(), second.GetProperty("repository").GetString(), second.GetProperty("value").GetString()));
+    }
+
+    /// <summary>WSR5b: a hand-off's shape, checked here and nothing more; the driver's twin table holds what the record says.</summary>
+    [Theory]
+    [InlineData("", "", "", "names the session that landed the branch, or the branch")]
+    [InlineData("two words", "", "", "one word")]
+    [InlineData("s2a3b4c5", "two words", "", "one word")]
+    [InlineData("s2a3b4c5", "", "Not An Id", "is not a plugin id")]
+    [InlineData("s2a3b4c5", "", "../elsewhere", "is not a plugin id")]
+    public void A_malformed_hand_off_is_refused_with_nothing_written(string target, string repository, string plugin, string says)
+    {
+        static string? Named(string field) => field.Length == 0 ? null : field;
+
+        var (written, message) = Box().ProposeHand(target, Named(repository), Named(plugin), "a reason", "h1", Now);
+
+        Assert.Null(written);
+        Assert.Contains(says, message);
+        Assert.Contains("Nothing was proposed", message);
+        Assert.False(Directory.Exists(Path.Combine(_home, "help", "proposals")));
+        Assert.Null(Box().ProposeHand("s2a3b4c5", null, null, " ", "h1", Now).Id);
+    }
+
     /// <summary>PLUG9: a folder in a repository is written from its checkout's root, never as a whole path.</summary>
     [Fact]
     public void A_folder_in_a_repository_is_never_a_whole_path()

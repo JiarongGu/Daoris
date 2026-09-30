@@ -18,7 +18,7 @@ import type { WiringAnswer } from './map/wiring';
 import type { AgentRulesState, RuleListName, RuleScopeName } from './settings/AgentRules';
 import type { LineChange, RepositoryLine } from './settings/Lines';
 import type { LandingChange, LandingRule, RepositoryLanding } from './settings/Landings';
-import type { SweepBranch } from './settings/Sweep';
+import type { LandedBranch, SweepBranch } from './settings/Sweep';
 import type { LogFilters, LogReading } from './settings/Logs';
 import type { KitPoint, NewPlugin, PluginTrialResult } from './settings/PluginKit';
 import type { OpenTerminal, TerminalOpening, TerminalShellChoice, Terminals } from './work/terminals';
@@ -378,14 +378,15 @@ export const useSetLanding = () => {
 };
 
 /**
- * Every session branch here with what it holds (WSR3, D88) — the clean-up's list. Desktop-only: it is
- * read off this machine's checkouts.
+ * Every session branch here with what it holds (WSR3, D88) — the clean-up's list — and every branch a
+ * landing made, judged against the line (WSR5). Desktop-only: it is read off this machine's checkouts.
+ * A shell older than WSR5 answers no `landed`.
  */
 export const useSweepPlan = () => {
   const { isAvailable } = useShenora();
   return useQuery({
     queryKey: keys.sweep,
-    queryFn: () => call<{ branches: SweepBranch[] }>('SWEEP_PLAN'),
+    queryFn: () => call<{ branches: SweepBranch[]; landed?: LandedBranch[] }>('SWEEP_PLAN'),
     enabled: isAvailable,
     // It asks git in every repository with a checkout here: a minute is fresh enough to read a session by.
     staleTime: 60_000,
@@ -397,7 +398,11 @@ export const useSweep = () => {
   const client = useQueryClient();
   return useMutation({
     mutationFn: (only: string[]) =>
-      call<{ results: { branch: SweepBranch; removed: boolean; message: string }[]; removed: number }>('SWEEP', { only }),
+      call<{
+        results: { branch: SweepBranch; removed: boolean; message: string }[];
+        landed?: { branch: LandedBranch; removed: boolean; message: string }[];
+        removed: number;
+      }>('SWEEP', { only }),
     onSuccess: () => {
       void client.invalidateQueries({ queryKey: keys.sweep });
       void client.invalidateQueries({ queryKey: keys.allSessions });
@@ -1931,7 +1936,38 @@ export const useLandSessionTree = () => {
       if (result.done) {
         void client.invalidateQueries({ queryKey: keys.diff(result.session) });
         void client.invalidateQueries({ queryKey: keys.allSessions });
+        // A branch just made may now be handed on (WSR5b) — its plugin failed, or the rule names none.
+        void client.invalidateQueries({ queryKey: keys.handOff(result.session) });
       }
+    },
+  });
+};
+
+/**
+ * Whether the branch this session's landing made can be handed to a landing plugin now (WSR5b): the
+ * branch, the plugin it would go to (the rule's), and the sentence a press would be refused with. A
+ * session whose landing made no branch answers none. Shell-only: it reads this machine's record and checkout.
+ */
+export const useHandOff = (id: string | null) => {
+  const { isAvailable } = useShenora();
+  return useQuery({
+    queryKey: keys.handOff(id ?? ''),
+    queryFn: () => call<{
+      session: string; branch?: string | null; repository?: string; plugin?: string | null;
+      problem?: string | null; pullRequest?: string | null; commits?: number;
+    }>('HANDOFF_PLAN', { id }),
+    enabled: isAvailable && id !== null,
+  });
+};
+
+/** Hand a session's landed branch to its plugin (WSR5b): the plugin pushes and opens the pull request; a refusal is an answer. */
+export const useHandOffPress = () => {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => call<TreeAct & { branch?: string | null; plugin?: PluginLanding | null }>('HANDOFF', { id }),
+    onSuccess: (result) => {
+      void client.invalidateQueries({ queryKey: keys.handOff(result.session) });
+      void client.invalidateQueries({ queryKey: keys.sweep });
     },
   });
 };

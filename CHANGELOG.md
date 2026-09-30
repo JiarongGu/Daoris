@@ -822,6 +822,24 @@ The first version: doctrine that installs, is checked, and flows back.
   of a long record; your answer is kept in its record beneath the question and opens the session that
   carries on. Overview's *what needs you* rows say where each goes (*open it to answer*) and keep an
   analysis to two lines.
+- **A branch a landing made goes once its pull request's work is on the line** (WSR5, D102). A squash
+  merge puts none of the branch's commits on the line, so git calls it unmerged and the session-branch
+  clean-up never looked at it. A landing now records the branch it makes, under the Daoris home, and
+  Settings → Workspace → *Session branches* and `daoris-driver trees clean` list those branches in a
+  group of their own. The same press removes each whose changed files all read on the line (or on
+  `origin/<line>`) as it left them, and each inside another that does. One checked out anywhere, one with
+  commits its remote lacks, one a kept session branch still needs, and one whose files differ are kept,
+  with the files named. Only branches a landing made here are judged; landings from before the record,
+  and your own branches, are never touched.
+- **A landed branch can be handed to its plugin afterwards** (WSR5, D102). A ticket landed before its
+  workspace named a plugin, or one whose plugin failed, had no door but a hand push: pressing Accept again
+  is refused while the branch stands. The review of the session that landed it now offers *hand it to
+  <plugin>* (its tree may be gone), `daoris-driver trees hand <session|branch>` does the same from a
+  terminal (`--plugin <id>` where the rule names none, `--plan` to see it first), and Ask Daoris can
+  propose it as a card. The plugin is told the same frame a landing tells it, for the branch as it stands,
+  and its answer is said and kept the same way. A branch no landing made, one moved away from what the
+  landing made, one whose work is already on the line, and one already on its remote at this commit with a
+  pull request are refused, and a hand-off whose plugin does not push changes nothing.
 - **A plugin can push the branch and open the pull request** (WSR4, D100). A branch landing rule may
   name an installed plugin (`daoris driver landing … branch <pattern> --plugin <id>`, or the *who
   pushes it* chooser in Settings → Workspace → *How work lands*). Once accepting has made the branch,

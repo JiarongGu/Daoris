@@ -576,6 +576,7 @@ function SweepSettings({ notify }: { notify: Notify }) {
   return (
     <SweepList
       branches={Array.isArray(plan.data?.branches) ? plan.data.branches : undefined}
+      landed={Array.isArray(plan.data?.landed) ? plan.data.landed : undefined}
       busy={sweep.isPending || plan.isFetching}
       onLook={() => void plan.refetch()}
       onClean={(only) => sweep.mutate(only, {

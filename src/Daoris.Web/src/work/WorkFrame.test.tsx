@@ -1849,6 +1849,93 @@ describe('acting on what a session landed', () => {
     expect(screen.getByRole('link', { name: 'open the pull request' })).toHaveAttribute('href', 'https://example.test/example-org/engine/pull/7');
   });
 
+  /**
+   * WSR5b: a session whose work already landed on a branch can hand that branch to a landing plugin
+   * afterwards — the rule's, named before the press — and the pane renders what the driver says back.
+   */
+  it('hands the branch its landing made to the plugin, and renders what it says back', async () => {
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'SESSION_DIFF') return DIFF;
+      if (type === 'HANDOFF_PLAN') {
+        return { session: 's1a2b3c4', branch: 'feature/0fda18-fix', repository: 'engine', plugin: 'github-pull-request', problem: null, commits: 1 };
+      }
+      if (type === 'HANDOFF') {
+        return {
+          session: 's1a2b3c4', done: true, branch: 'feature/0fda18-fix',
+          message: 'handed `feature/0fda18-fix` to plugin `github-pull-request`. Plugin `github-pull-request`: pushed it.',
+          plugin: { id: 'github-pull-request', pushed: true, pullRequest: 'https://example.test/example-org/engine/pull/8', message: 'pushed it.', failed: false },
+        };
+      }
+      return DRIVER_STATE;
+    });
+
+    await review();
+
+    expect(await screen.findByText(/can push it and open the pull request/)).toBeTruthy();
+    expect(screen.getByText('feature/0fda18-fix', { selector: 'code' })).toBeTruthy();
+    await userEvent.click(screen.getByRole('button', { name: 'hand it to github-pull-request' }));
+
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HANDOFF', { payload: { id: 's1a2b3c4' } });
+    expect(await screen.findByText(/Plugin `github-pull-request`: pushed it/)).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'open the pull request' })).toHaveAttribute('href', 'https://example.test/example-org/engine/pull/8');
+  });
+
+  /** WSR5b: what stands in the way is said, and the press that could only be refused is not offered (UX5 U66). */
+  it('says what stands in the way of a hand-off, and offers no press that could only be refused', async () => {
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'SESSION_DIFF') return DIFF;
+      if (type === 'HANDOFF_PLAN') {
+        return {
+          session: 's1a2b3c4', branch: 'feature/0fda18-fix', repository: 'engine', plugin: 'github-pull-request', commits: 1,
+          problem: '`feature/0fda18-fix` is already on its remote at this commit, and its pull request was answered: https://example.test/pr/8 Nothing to hand on.',
+        };
+      }
+      return DRIVER_STATE;
+    });
+
+    await review();
+
+    expect(await screen.findByText(/already on its remote at this commit/)).toBeTruthy();
+    expect(screen.getByRole('button', { name: 'hand it to github-pull-request' })).toBeDisabled();
+  });
+
+  /** WSR5b: a session whose landing made no branch, or whose rule names no plugin, has nothing to hand on. */
+  it('offers no hand-off where the landing made no branch or no plugin is named', async () => {
+    let plan: Record<string, unknown> = { session: 's1a2b3c4', branch: null };
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'SESSION_DIFF') return DIFF;
+      if (type === 'HANDOFF_PLAN') return plan;
+      return DRIVER_STATE;
+    });
+
+    await review();
+    await screen.findByRole('button', { name: 'accept' });
+    expect(screen.queryByRole('button', { name: /hand it to/ })).toBeNull();
+    cleanup();
+
+    plan = { session: 's1a2b3c4', branch: 'feature/0fda18-fix', repository: 'engine', plugin: null, problem: 'no plugin is named', commits: 1 };
+    await review();
+    await screen.findByRole('button', { name: 'accept' });
+    expect(screen.queryByRole('button', { name: /hand it to/ })).toBeNull();
+  });
+
+  /** WSR5b: a tidied landing leaves no tree, and its branch can still be handed on. */
+  it('offers the hand-off for a session whose tree the landing tidied away', async () => {
+    SESSIONS = [DRIVEN];
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'SESSION_DIFF') return DIFF;
+      if (type === 'HANDOFF_PLAN') {
+        return { session: 's1a2b3c4', branch: 'feature/0fda18-fix', repository: 'engine', plugin: 'github-pull-request', problem: null, commits: 1 };
+      }
+      return DRIVER_STATE;
+    });
+
+    await review();
+
+    expect(await screen.findByRole('button', { name: 'hand it to github-pull-request' })).toBeEnabled();
+    expect(screen.queryByRole('button', { name: 'accept' })).toBeNull();
+  });
+
   /** SESS1 S10: the head finds its branch in the clean-up's list by the tree's folder, on a Windows path too. */
   it('names the branch its tree left and whether its work landed, in the head', async () => {
     SESSIONS = [{ ...IN_A_TREE, tree: 'C:\\somewhere\\.daoris\\trees\\default\\engine\\s-abc12345' }];

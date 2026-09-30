@@ -124,6 +124,11 @@ export const ProposingEveryKind: Story = {
                 harnesses: [], servers: [{ name: 'browser', command: ['npx', '-y', '@playwright/mcp@latest'] }], copied: true,
               },
             },
+            {
+              id: 'h1', kind: 'hand' as const,
+              describe: 'Hand `feature/0fda18-fix-the-api-gap` (in `engine`) to plugin `example.github-pull-request`: it pushes the branch and opens the pull request against the line, signed in as you, for the work landed from session `s1a2b3c4` “Fix the API gap”.',
+              terminal: 'daoris-driver trees hand feature/0fda18-fix-the-api-gap --repository engine', why: 'you want its pull request opened',
+            },
           ].map((proposal) => <ProposalCard key={proposal.id} proposal={proposal} onApply={() => {}} onDismiss={() => {}} />)}
         </ul>
       ),
