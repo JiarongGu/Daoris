@@ -114,6 +114,16 @@ export const ProposingEveryKind: Story = {
               id: 'g1', kind: 'go' as const, describe: 'Open Settings → Get started at step 2, Daoris\'s own agent.', terminal: '',
               why: 'you asked where to name its agent',
             },
+            {
+              id: 'x1', kind: 'plugin' as const,
+              describe: 'Add plugin `acme.quiet-hours` (Quiet hours 1.0.0) from `quiet-hours` in `house-plugins`, copied into Daoris\'s home under its id; the driver starts what it runs at its next look.',
+              terminal: 'daoris plugin add /checkouts/house-plugins/quiet-hours', why: 'you want quests held overnight',
+              plugin: {
+                id: 'acme.quiet-hours', name: 'Quiet hours', version: '1.0.0',
+                command: ['node', '${plugin}/hooks.mjs'], points: ['quest/consider'],
+                harnesses: [], servers: [{ name: 'browser', command: ['npx', '-y', '@playwright/mcp@latest'] }], copied: true,
+              },
+            },
           ].map((proposal) => <ProposalCard key={proposal.id} proposal={proposal} onApply={() => {}} onDismiss={() => {}} />)}
         </ul>
       ),

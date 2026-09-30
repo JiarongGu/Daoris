@@ -149,7 +149,9 @@ offers `setting_propose` (one of the `daoris driver` doors: drive, undrive, hold
 line, landing, intake, helper, strikes, timeout, notify) and `ask_propose` (something to start, as
 an ask at a workspace), and since HELP6 `agent_propose` (an agent's update, or a pin to one exact
 version), `delete_propose` (a quest or an ask made by mistake), `agent_settings_propose` (an account's
-own model and effort) and `go_propose` (a screen to open, changing nothing). Each writes one file under
+own model and effort) and `go_propose` (a screen to open, changing nothing), and since PLUG9
+`plugin_propose` (a plugin that has landed, added from its folder in a repository's checkout, or one
+installed here switched on or off). Each writes one file under
 `<home>/help/proposals/`, the same home as the rules proposals, checked here for its shape only:
 whether the route would take it is the driver's, which judges it with the route's own rules before
 the person sees a card, and settles it when they press Apply or Not now. Every connector carries the

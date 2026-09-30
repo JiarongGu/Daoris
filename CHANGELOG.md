@@ -765,6 +765,15 @@ The first version: doctrine that installs, is checked, and flows back.
   first by the rules of the screen that makes the same change, and applied through that screen's own
   route when you press it. An update applied there runs as the Agents screen's own, its end said in the
   conversation. Its room lists the asks by id and every place it may take you.
+- **Ask Daoris makes a plugin by asking for it, and installs one by your press** (PLUG9). A plugin runs
+  as you, so it never writes one: it proposes an ask at the workspace of the repository that holds your
+  plugins, saying what the plugin should do and the point it speaks on, and the session there makes it
+  with its tests; with no such repository, where plugins live is yours to decide. Once it has landed, a
+  **plugin** card adds it from its folder in that checkout, or switches one installed here on or off.
+  The card shows what will run before you press **apply**: the plugin's id, the command it starts as
+  its manifest writes it, the points it speaks on, and the agents and servers it declares. Adding
+  copies the folder into Daoris's home under its id, as `daoris plugin add` does, and never replaces an
+  installed plugin; nothing it runs starts at the press.
 - **The layout toggles are on the strip** (DOCK1c, SURF11). The panel and the right side bar each
   have a toggle beside the window controls on every view, and the session list on Sessions, pressed
   while shown, and an item in the View menu with VS Code's keys: `Ctrl+B`, `Ctrl+J`, `Ctrl+Alt+B`.

@@ -17,6 +17,7 @@ public sealed class HelpProposalsTests : IDisposable
     public void Dispose()
     {
         try { Directory.Delete(_home, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
+        try { Directory.Delete(Checkouts, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
     }
 
     private static readonly HelpMachineFacts Facts = new(
@@ -391,6 +392,17 @@ public sealed class HelpProposalsTests : IDisposable
     {
         public List<string> Calls { get; } = [];
 
+        /// <summary>What the plugin door refuses in its own words, for a plugin that moved since the card was drawn.</summary>
+        public string? PluginRefusal { get; init; }
+
+        public void AddPlugin(string folder)
+        {
+            Calls.Add($"PLUGIN_ADD {folder}");
+            if (PluginRefusal is { } refused) throw new DriverException(refused);
+        }
+
+        public void SwitchPlugin(string id, bool on) => Calls.Add($"PLUGIN_ACTION {(on ? "enable" : "disable")} {id}");
+
         public (bool Ok, string Message) Deleted { get; set; } = (true, "Deleted it.");
 
         public DriverConfig Config { get; private set; } = DriverConfig.Empty;
@@ -440,12 +452,13 @@ public sealed class HelpProposalsTests : IDisposable
         }
     }
 
-    private async Task<(HelpApplied Applied, Doors Doors, List<string> Later)> ApplyAsync(HelpProposal proposal, Doors? doors = null)
+    private async Task<(HelpApplied Applied, Doors Doors, List<string> Later)> ApplyAsync(
+        HelpProposal proposal, Doors? doors = null, HelpMachineFacts? facts = null)
     {
         File(proposal.Id, proposal.Kind, proposal.Door, proposal.Target, proposal.Workspace, proposal.Value, proposal.Sentence);
         doors ??= new Doors();
         var later = new List<string>();
-        var plan = HelpProposals.Plan(proposal, doors.Config, Machine);
+        var plan = HelpProposals.Plan(proposal, doors.Config, facts ?? Machine);
         var applied = await HelpProposals.ApplyAsync(_home, proposal, plan, doors, later.Add, CancellationToken.None);
         return (applied, doors, later);
     }
@@ -611,5 +624,220 @@ public sealed class HelpProposalsTests : IDisposable
         Assert.Equal(("work", "opus", "high"), (account.Account, account.Model, account.Effort));
         Assert.Equal(("start", "helper"), (go.Domain, go.Part));
         Assert.Null(go.Account);
+    }
+
+    // ── PLUG9: a plugin that has landed, added from its folder, or one installed here switched ──────
+
+    /// <summary>Checkouts beside the home, never inside it: where a repository that holds plugins lands them.</summary>
+    private string Checkouts => _home + "-checkouts";
+
+    private string HousePlugins => Path.Combine(Checkouts, "house-plugins");
+
+    private const string QuietHours = """
+        { "id": "acme.quiet-hours", "name": "Quiet hours", "version": "1.0.0",
+          "hooks": { "command": ["node", "${plugin}/hooks.mjs"], "points": ["quest/consider", "session/ended"] },
+          "harnesses": [ { "name": "acme-agent", "command": ["acme-agent", "--acp"] } ],
+          "servers": [ { "name": "browser", "command": ["npx", "-y", "@playwright/mcp@latest"] } ] }
+        """;
+
+    /// <summary>A folder in the plugins repository's checkout, as a session there would land one.</summary>
+    private string Landed(string folder, string? manifest)
+    {
+        var path = Path.Combine(HousePlugins, folder);
+        Directory.CreateDirectory(path);
+        if (manifest is not null) System.IO.File.WriteAllText(Path.Combine(path, PluginCatalog.ManifestName), manifest);
+        return path;
+    }
+
+    /// <summary>
+    /// The machine a plugin proposal is judged against: the home, each repository's checkout, the harness
+    /// names this build carries, and the catalogue — `example.lands` on and `example.off` off.
+    /// </summary>
+    private HelpMachineFacts PluginMachine()
+    {
+        WithPlugin("example.lands");
+        var facts = WithPlugin("example.off", enabled: false);
+        Landed("quiet-hours", QuietHours);
+        Landed("no-manifest", null);
+        Landed("bad-manifest", """{ "id": "acme.bad", "apiVersion": "one" }""");
+        Landed("newer", """{ "id": "acme.newer", "apiVersion": 2 }""");
+        Landed("shadow", """{ "id": "acme.shadow", "harnesses": [ { "name": "claude-code", "command": ["x"] } ] }""");
+        Landed("lands", """{ "id": "example.lands", "hooks": { "command": ["node", "${plugin}/land.mjs"], "points": ["work/land"] } }""");
+        Directory.CreateDirectory(Path.Combine(Checkouts, "outside"));
+        return facts with
+        {
+            Repositories = [.. Facts.Repositories, "house-plugins"],
+            Home = _home,
+            Checkouts = new Dictionary<string, string?>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["house-plugins"] = HousePlugins, ["game"] = Path.Combine(Checkouts, "game"), ["engine"] = null,
+            },
+            Reserved = AdapterSet.Built().Names,
+        };
+    }
+
+    private static HelpProposal PluginAdd(string? repository, string? folder) =>
+        Of("plugin", "add") with { Repository = repository, Folder = folder };
+
+    private static string Spelled(string folder) => folder.Contains(' ') ? $"\"{folder}\"" : folder;
+
+    [Fact]
+    public void A_landed_plugin_is_added_from_its_folder_and_the_plan_says_what_it_runs()
+    {
+        var facts = PluginMachine();
+        var folder = Path.Combine(HousePlugins, "quiet-hours");
+
+        var plan = HelpProposals.Plan(PluginAdd("house-plugins", "quiet-hours"), DriverConfig.Empty, facts);
+
+        Assert.Null(plan.Refusal);
+        Assert.Equal($"daoris plugin add {Spelled(folder)}", plan.Terminal);
+        Assert.Equal(folder, plan.Source);
+        Assert.Null(plan.Apply);
+        Assert.Contains("Add plugin `acme.quiet-hours` (Quiet hours 1.0.0) from `quiet-hours` in `house-plugins`", plan.Describe);
+        Assert.Contains("copied into Daoris's home under its id", plan.Describe);
+        // What it runs, as its manifest writes it: `${plugin}` stays, and no machine path is in the sentence.
+        Assert.Contains("It runs `node ${plugin}/hooks.mjs`, speaking on `quest/consider`, `session/ended`.", plan.Describe);
+        Assert.Contains("It declares harness `acme-agent` (`acme-agent --acp`).", plan.Describe);
+        Assert.Contains("It hands every session server `browser` (`npx -y @playwright/mcp@latest`).", plan.Describe);
+        Assert.DoesNotContain(Checkouts, plan.Describe);
+        var shown = plan.Plugin!;
+        Assert.Equal(("acme.quiet-hours", "Quiet hours", "1.0.0", true), (shown.Id, shown.Name, shown.Version, shown.Copied));
+        Assert.Equal(["node", "${plugin}/hooks.mjs"], shown.Command);
+        Assert.Equal(["quest/consider", "session/ended"], shown.Points);
+        var harness = Assert.Single(shown.Harnesses);
+        Assert.Equal("acme-agent", harness.Name);
+        Assert.Equal(["acme-agent", "--acp"], harness.Command);
+        var server = Assert.Single(shown.Servers);
+        Assert.Equal("browser", server.Name);
+        Assert.Equal(["npx", "-y", "@playwright/mcp@latest"], server.Command);
+    }
+
+    /// <summary>A whole path is taken where the person gave one and named no repository.</summary>
+    [Fact]
+    public void A_plugin_is_added_from_a_whole_path_the_person_gave()
+    {
+        var facts = PluginMachine();
+        var folder = Path.Combine(HousePlugins, "quiet-hours");
+
+        var plan = HelpProposals.Plan(PluginAdd(null, folder), DriverConfig.Empty, facts);
+
+        Assert.Null(plan.Refusal);
+        Assert.Equal(folder, plan.Source);
+        Assert.Contains($"from `{folder}`", plan.Describe);
+    }
+
+    /// <summary>
+    /// What `daoris plugin add` would refuse, the catalogue's own reader first, and what Ask Daoris never
+    /// proposes: an installed plugin replaced, a folder outside the checkout it names, one it cannot see.
+    /// </summary>
+    [Theory]
+    [InlineData("house-plugins", "no-manifest", "no `plugin.json`")]
+    [InlineData("house-plugins", "bad-manifest", "`apiVersion` must be an integer")]
+    [InlineData("house-plugins", "newer", "needs plugin API 2")]
+    [InlineData("house-plugins", "shadow", "which this build already carries")]
+    [InlineData("house-plugins", "lands", "`example.lands` is already installed on this machine")]
+    [InlineData("house-plugins", "nowhere", "there is no folder `nowhere` in `house-plugins`")]
+    [InlineData("house-plugins", "../outside", "leaves `house-plugins`'s checkout")]
+    [InlineData("house-plugins", "", "names the plugin's folder")]
+    [InlineData("nobody", "quiet-hours", "`nobody` is not registered on this machine")]
+    [InlineData("engine", "quiet-hours", "`engine` has no checkout on this machine")]
+    [InlineData(null, "quiet-hours", "the repository whose checkout holds it")]
+    public void A_plugin_the_catalogue_would_refuse_is_never_proposed(string? repository, string folder, string says)
+    {
+        var plan = HelpProposals.Plan(PluginAdd(repository, folder), DriverConfig.Empty, PluginMachine());
+
+        Assert.Contains(says, plan.Refusal);
+        Assert.Null(plan.Source);
+        Assert.Null(plan.Plugin);
+    }
+
+    [Fact]
+    public void A_folder_inside_Daoris_s_home_or_holding_it_is_refused()
+    {
+        var facts = PluginMachine();
+
+        Assert.Contains("inside Daoris's home",
+            HelpProposals.Plan(PluginAdd(null, Path.Combine(_home, PluginCatalog.Folder, "example.lands")), DriverConfig.Empty, facts).Refusal);
+        Assert.Contains("holds Daoris's home",
+            HelpProposals.Plan(PluginAdd(null, Path.GetDirectoryName(_home)), DriverConfig.Empty, facts).Refusal);
+    }
+
+    [Fact]
+    public void An_installed_plugin_is_switched_on_or_off_and_the_plan_says_what_it_runs()
+    {
+        var facts = PluginMachine();
+
+        var on = HelpProposals.Plan(Of("plugin", "enable", "example.off"), DriverConfig.Empty, facts);
+        var off = HelpProposals.Plan(Of("plugin", "disable", "example.lands"), DriverConfig.Empty, facts);
+
+        Assert.Null(on.Refusal);
+        Assert.Equal("daoris plugin enable example.off", on.Terminal);
+        Assert.Contains("Switch plugin `example.off` on", on.Describe);
+        Assert.Contains("It runs `node ${plugin}/land.mjs`, speaking on `work/land`.", on.Describe);
+        Assert.Equal(["node", "${plugin}/land.mjs"], on.Plugin!.Command);
+        Assert.False(on.Plugin.Copied);
+        Assert.Null(off.Refusal);
+        Assert.Equal("daoris plugin disable example.lands", off.Terminal);
+        Assert.Contains("Switch plugin `example.lands` off", off.Describe);
+        Assert.Contains("stays installed", off.Describe);
+    }
+
+    [Theory]
+    [InlineData("enable", "nowhere.lands", "no plugin `nowhere.lands` on this machine")]
+    [InlineData("enable", "example.lands", "`example.lands` is already on")]
+    [InlineData("disable", "example.off", "`example.off` is already off")]
+    [InlineData("remove", "example.lands", "`add`, `enable` or `disable`")]
+    public void A_switch_the_catalogue_would_refuse_is_never_proposed(string door, string id, string says)
+    {
+        var plan = HelpProposals.Plan(Of("plugin", door, id), DriverConfig.Empty, PluginMachine());
+
+        Assert.Contains(says, plan.Refusal);
+    }
+
+    [Fact]
+    public async Task A_plugin_is_added_or_switched_through_the_screens_own_doors()
+    {
+        var facts = PluginMachine();
+
+        var (added, doors, _) = await ApplyAsync(PluginAdd("house-plugins", "quiet-hours"), facts: facts);
+        var (switched, switching, _) = await ApplyAsync(Of("plugin", "disable", "example.lands") with { Id = "p7" }, facts: facts);
+
+        Assert.True(added.Applied);
+        Assert.Equal([$"PLUGIN_ADD {Path.Combine(HousePlugins, "quiet-hours")}"], doors.Calls);
+        Assert.StartsWith("Applied: `#p6` — Add plugin `acme.quiet-hours`", added.Told);
+        Assert.True(switched.Applied);
+        Assert.Equal(["PLUGIN_ACTION disable example.lands"], switching.Calls);
+        Assert.Equal("applied", HelpProposals.Find(_home, "p7")!.State);
+    }
+
+    [Fact]
+    public async Task A_plugin_doors_refusal_settles_it_refused_in_its_words()
+    {
+        var doors = new Doors { PluginRefusal = "plugin `acme.quiet-hours` is already installed on this machine." };
+
+        var (applied, _, _) = await ApplyAsync(PluginAdd("house-plugins", "quiet-hours"), doors, PluginMachine());
+
+        Assert.False(applied.Applied);
+        Assert.Contains("is already installed", applied.Told);
+        Assert.Equal("refused", HelpProposals.Find(_home, "p6")!.State);
+    }
+
+    /// <summary>A plugin's fields, read from the file the service's box writes — the twin's shape.</summary>
+    [Fact]
+    public void A_plugins_repository_and_folder_are_read_from_the_file()
+    {
+        var node = new JsonObject
+        {
+            ["id"] = "k3", ["proposed"] = "2026-09-30T10:00:00.0000000+00:00", ["by"] = new JsonObject { ["session"] = "h1" },
+            ["kind"] = "plugin", ["door"] = "add", ["target"] = null, ["workspace"] = null, ["value"] = null,
+            ["sentence"] = null, ["repository"] = "house-plugins", ["folder"] = "plugins/quiet-hours",
+            ["why"] = "the person asked", ["state"] = "proposed", ["note"] = null,
+        };
+        System.IO.File.WriteAllText(Path.Combine(HelpProposals.FolderOf(_home), "k3.json"), node.ToJsonString());
+
+        var plugin = HelpProposals.Find(_home, "k3")!;
+
+        Assert.Equal(("plugin", "add", "house-plugins", "plugins/quiet-hours"), (plugin.Kind, plugin.Door, plugin.Repository, plugin.Folder));
+        Assert.Null(plugin.Target);
     }
 }

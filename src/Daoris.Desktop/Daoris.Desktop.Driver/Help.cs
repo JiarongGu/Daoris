@@ -44,6 +44,14 @@ public sealed record HelpAccount(string Name, string Login);
 /// <summary>An ask not closed, as the room lists it (HELP6): by id, so a delete of one made by mistake can name it.</summary>
 public sealed record HelpAsk(string Id, string Sentence, string Workspace, string State, IReadOnlyList<string> Quests);
 
+/// <summary>A plugin installed here, as the room lists it (PLUG9): by id and state, so a switch names one the catalogue holds.</summary>
+/// <param name="Points">The points it speaks on; empty where it speaks on none, or is refused.</param>
+public sealed record HelpPlugin(string Id, bool Enabled, IReadOnlyList<string> Points)
+{
+    /// <summary>Why it contributes nothing, in the catalogue's words; null when sound.</summary>
+    public string? Problem { get; init; }
+}
+
 /// <summary>What the room says this machine holds now: names and states, never a key, never a path.</summary>
 public sealed record HelpMachine
 {
@@ -73,6 +81,9 @@ public sealed record HelpMachine
 
     /// <summary>The plugins a branch rule may name here, by id (HELP8, D100).</summary>
     public IReadOnlyList<string> LandingPlugins { get; init; } = [];
+
+    /// <summary>Every plugin installed here, sound or not, in the catalogue's order (PLUG9).</summary>
+    public IReadOnlyList<HelpPlugin> Plugins { get; init; } = [];
 }
 
 /// <summary>
@@ -132,6 +143,8 @@ public static class HelpRoom
         $"mcp__{KnowledgeConnector.ServerName}__delete_propose",
         $"mcp__{KnowledgeConnector.ServerName}__agent_settings_propose",
         $"mcp__{KnowledgeConnector.ServerName}__go_propose",
+        // PLUG9: adding a plugin that has landed, or switching one; making one is an ask, never this.
+        $"mcp__{KnowledgeConnector.ServerName}__plugin_propose",
     ];
 
     public static string PathOf(string home) => Path.Combine(home, Folder);
@@ -205,6 +218,8 @@ public static class HelpRoom
                 Accounts = [.. report.Profiles.Select(profile => new HelpAccount(profile.Name, Spell(profile.Login)))],
             })],
             LandingPlugins = LandingPluginsOf(plugins ?? PluginCatalog.None),
+            Plugins = [.. (plugins ?? PluginCatalog.None).Plugins.Select(entry =>
+                new HelpPlugin(entry.Manifest.Id, entry.Enabled, entry.Manifest.Hooks?.Points ?? []) { Problem = entry.Problem })],
         };
     }
 
@@ -267,11 +282,29 @@ public static class HelpRoom
         text.Append("  ask's record delete them. Only an open quest nobody has started on can go, and an ask goes with every quest it became, or not at all.\n");
         text.Append("  Never propose deleting a taken, done or declined quest: its record stays,\n");
         text.Append("  the route refuses it, and declining it with the reason is the way instead. A delete cannot be undone.\n");
-        text.Append("- `go_propose`: take the person to a place on the window, from the list below. It changes nothing.\n\n");
+        text.Append("- `go_propose`: take the person to a place on the window, from the list below. It changes nothing.\n");
+        text.Append("- `plugin_propose`: add a plugin that has landed, from its folder in the checkout of the repository that\n");
+        text.Append("  holds it (name the repository and the folder there), or switch one installed here on or off. Daoris copies\n");
+        text.Append("  an added plugin into its home under its id, and never replaces one already installed.\n\n");
         // HELP7: the real helper said *press Apply* of a card whose button reads *go there*.
         text.Append("Each proposal reaches the person as a card with two buttons, and you name them as the card does:\n");
         text.Append("every card but a go reads **apply** and **not now** (in 中文 **应用** and **暂不**), and\n");
         text.Append("a go card reads **go there** and **not now** (in 中文 **前往** and **暂不**).\n\n");
+
+        // PLUG9: a plugin runs as the person, so its making is a repository's work, tested and reviewed,
+        // and only its installing is a card here. The points come from the wire's own list.
+        text.Append("## Making a plugin\n\n");
+        text.Append("A plugin runs on this machine as the person (one that lands work pushes with their sign-in), so making\n");
+        text.Append("one is work, not a setting: never write one yourself. Propose it\n");
+        text.Append("as an ask (`ask_propose`) at the workspace of the repository that holds plugins, addressed to it by name:\n");
+        text.Append("what the plugin should do, and the point it speaks on ("
+            + string.Join("; ", HookPoints.All.Select(point => PointSaid.TryGetValue(point, out var said) ? $"`{point}`, {said}" : $"`{point}`"))
+            + ").\n");
+        text.Append("The session there makes it with its tests, and the person reviews and lands it. Find that repository\n");
+        text.Append("in `registry` by what it says it owns. If none says so,\n");
+        text.Append("the person decides where plugins live (a repository of their own, connected like any other), so ask\n");
+        text.Append("rather than pick one. Once it has landed, propose adding it with `plugin_propose`, from the folder the\n");
+        text.Append("session named; never propose adding one that has not landed.\n\n");
 
         text.Append("## The doors\n\n");
         text.Append("| To | On the screen | At a terminal |\n");
@@ -338,7 +371,11 @@ public static class HelpRoom
             : "- The intake: no agent answers asks, so an ask the declarations do not settle waits for the person.\n");
         if (machine.Helper is { Length: > 0 } helper) text.Append($"- Ask Daoris: you, on `{helper}`.\n");
         text.Append($"- {Count(machine.Waiting, "session waits", "sessions wait")} on the person; "
-            + $"{Count(machine.Asks, "ask waits", "asks wait")} for an answer.\n\n");
+            + $"{Count(machine.Asks, "ask waits", "asks wait")} for an answer.\n");
+        // PLUG9: by id and state, so a switch names one the catalogue holds.
+        text.Append(machine.Plugins.Count > 0
+            ? $"- Plugins: {string.Join(", ", machine.Plugins.Select(PluginLine))}.\n\n"
+            : "- Plugins: none installed.\n\n");
 
         if (machine.Repositories.Count == 0)
         {
@@ -417,9 +454,29 @@ public static class HelpRoom
             "`daoris agent settings <agent> --account <name> model <model> effort <effort>`"),
         ("delete a quest or an ask made by mistake", "Quests → the quest's drawer, or the ask's record → delete",
             "`daoris-driver quest delete <id>`, `daoris-driver ask --delete <id>`"),
+        // PLUG9: the card installs one that landed; the screen switches one installed.
+        ("add a plugin that has landed, or switch one on or off", "Settings → Plugins (its switch)",
+            "`daoris plugin add <folder>`, `daoris plugin enable|disable <id>`"),
         ("start a task", "Quests → ask for something", "`daoris-driver ask --workspace <name> \"…\"`"),
         ("answer what waits on the person", "Sessions, and what needs you", "`daoris-driver answer`"),
     ];
+
+    /// <summary>What each point a plugin speaks on is for, said where the room tells how a plugin is made (PLUG9).</summary>
+    private static readonly IReadOnlyDictionary<string, string> PointSaid = new Dictionary<string, string>(StringComparer.Ordinal)
+    {
+        [HookPoints.QuestConsider] = "to hold a quest before it starts",
+        [HookPoints.SessionEnded] = "to hear how a session ended",
+        [HookPoints.Land] = "to push a branch Daoris made and open its pull request",
+    };
+
+    private static string PluginLine(HelpPlugin plugin)
+    {
+        if (!plugin.Enabled) return $"`{plugin.Id}` (off)";
+        if (plugin.Problem is { } problem) return $"`{plugin.Id}` (on, contributes nothing: {problem})";
+        return plugin.Points.Count > 0
+            ? $"`{plugin.Id}` (on, speaks on {string.Join(", ", plugin.Points.Select(point => $"`{point}`"))})"
+            : $"`{plugin.Id}` (on)";
+    }
 
     private static string Driven(HelpRepository repository)
     {

@@ -450,6 +450,8 @@ export function commandPlugin({ argv, write }: CommandArgs): ExitCode {
     }
 
     case 'add': {
+      // Twin: the driver's `PluginInstall.cs`, which Ask Daoris's plugin card applies (PLUG9). Same
+      // refusals, same staged copy; it adds and never replaces, where this replaces wholesale.
       const home = requireHome();
       const source = argv[1];
       if (!source || source.startsWith('--')) {

@@ -4,13 +4,16 @@ using System.Text.Json.Nodes;
 
 namespace Daoris.Driver;
 
-/// <summary>One of Ask Daoris's proposals, as the connector wrote it (HELP1c, D89; HELP6).</summary>
-/// <param name="Kind">`setting`, `ask`, `agent`, `delete`, `account` or `go`.</param>
+/// <summary>One of Ask Daoris's proposals, as the connector wrote it (HELP1c, D89; HELP6; PLUG9).</summary>
+/// <param name="Kind">`setting`, `ask`, `agent`, `delete`, `account`, `go` or `plugin`.</param>
 /// <param name="Door">
 /// The `daoris driver` verb for a setting; `ask` for an ask; `update` or `pin` for an agent; `quest` or
-/// `ask` for a delete; `settings` for an account; `go` for a go.
+/// `ask` for a delete; `settings` for an account; `go` for a go; `add`, `enable` or `disable` for a plugin.
 /// </param>
-/// <param name="Target">The repository a setting is for; the agent of an agent or an account; the id a delete names; a go's view.</param>
+/// <param name="Target">
+/// The repository a setting is for; the agent of an agent or an account; the id a delete names; a go's
+/// view; the id of a plugin switched on or off.
+/// </param>
 /// <param name="Value">A setting's value; a pin's version.</param>
 /// <param name="Session">The conversation that proposed it.</param>
 /// <param name="State">`proposed`, then `applied`, `dismissed` or `refused`.</param>
@@ -32,6 +35,12 @@ public sealed record HelpProposal(
 
     /// <summary>A go's part of its domain or view — a card, a setup step, a drawer — or null.</summary>
     public string? Part { get; init; }
+
+    /// <summary>The repository whose checkout holds a plugin to add (PLUG9), or null for a whole path the person gave.</summary>
+    public string? Repository { get; init; }
+
+    /// <summary>A plugin's folder to add from: from that checkout's root, or a whole path (PLUG9).</summary>
+    public string? Folder { get; init; }
 }
 
 /// <summary>What the machine holds that a proposal is judged against: names only.</summary>
@@ -47,8 +56,17 @@ public sealed record HelpMachineFacts(
     /// <summary>The asks, closed ones included, each with the service's own reading of whether it may be deleted.</summary>
     public IReadOnlyList<HelpAskFacts> Asks { get; init; } = [];
 
-    /// <summary>This machine's plugins, for a landing rule that names one (HELP8, D100).</summary>
+    /// <summary>This machine's plugins, for a landing rule that names one (HELP8, D100), and a plugin proposal (PLUG9).</summary>
     public PluginCatalog Plugins { get; init; } = PluginCatalog.None;
+
+    /// <summary>The Daoris home, which a plugin is never added from (PLUG9); null where none was named.</summary>
+    public string? Home { get; init; }
+
+    /// <summary>Each registered repository's checkout on this machine, or null where it has none (PLUG9).</summary>
+    public IReadOnlyDictionary<string, string?> Checkouts { get; init; } = new Dictionary<string, string?>();
+
+    /// <summary>The harness names this build carries, which a plugin may not declare (PLUG9, D64 §5).</summary>
+    public IReadOnlyCollection<string> Reserved { get; init; } = [];
 }
 
 /// <summary>One door as the Agents screen reads it (HELP6): what its Update does, whether it pins, whose accounts it runs as.</summary>
@@ -104,7 +122,33 @@ public sealed record HelpPlan(string? Refusal, string Describe, string Terminal,
 {
     /// <summary>Where a go takes the person, for one the window has; null for every other kind.</summary>
     public HelpPlace? Go { get; init; }
+
+    /// <summary>What a plugin proposal's plugin runs, as its manifest writes it (PLUG9); null for every other kind.</summary>
+    public HelpPluginView? Plugin { get; init; }
+
+    /// <summary>The folder a plugin is added from, resolved on this machine (PLUG9); null for every other plan.</summary>
+    public string? Source { get; init; }
 }
+
+/// <summary>
+/// What a plugin proposal's card shows (PLUG9): the plugin's id, the command it starts, the points it
+/// speaks on, the harnesses it declares and the servers it hands every session, each as its manifest
+/// writes it, so the person sees what will run before Apply.
+/// </summary>
+/// <param name="Command">Its hook process, `${plugin}` as written; null where it speaks on no point.</param>
+public sealed record HelpPluginView(
+    string Id, string Name, string Version, IReadOnlyList<string>? Command, IReadOnlyList<string> Points,
+    IReadOnlyList<HelpPluginPart> Harnesses, IReadOnlyList<HelpPluginPart> Servers)
+{
+    /// <summary>Whether Apply copies it into the home under its id (an add), rather than switching one installed.</summary>
+    public bool Copied { get; init; }
+
+    /// <summary>Why an installed plugin contributes nothing as it stands, in the catalogue's words; null when sound.</summary>
+    public string? Problem { get; init; }
+}
+
+/// <summary>A harness a plugin declares, or a server it hands every session: its name, and the command that runs it.</summary>
+public sealed record HelpPluginPart(string Name, IReadOnlyList<string> Command);
 
 /// <summary>What the person's Apply did: whether it was applied, what the conversation is told, and a go's place.</summary>
 public sealed record HelpApplied(bool Applied, string Told)
@@ -138,6 +182,15 @@ public interface IHelpDoors
 
     /// <summary><c>SET_AGENT_SETTINGS</c>'s own write to an account's settings file.</summary>
     AgentSettingsRead SetAgentSettings(string harness, string account, AgentSettingEdit? model, AgentSettingEdit? effort);
+
+    /// <summary>
+    /// <c>daoris plugin add</c>'s copy, the driver's twin (<see cref="PluginInstall.Add"/>, PLUG9): the
+    /// folder copied into the home under its manifest's id. 🔴 Nothing the plugin declares is started here.
+    /// </summary>
+    void AddPlugin(string folder);
+
+    /// <summary><c>PLUGIN_ACTION</c>'s own enable or disable: a row in <c>plugins.json</c> (PLUG9).</summary>
+    void SwitchPlugin(string id, bool on);
 }
 
 /// <summary>
@@ -256,6 +309,8 @@ public static partial class HelpProposals
             Effort = Text(root, "effort"),
             Domain = Text(root, "domain"),
             Part = Text(root, "part"),
+            Repository = Text(root, "repository"),
+            Folder = Text(root, "folder"),
         };
 
     /// <summary>
@@ -281,6 +336,7 @@ public static partial class HelpProposals
         "delete" => Delete(proposal, facts),
         "account" => Account(proposal, facts),
         "go" => Go(proposal),
+        "plugin" => Plugin(proposal, facts),
         var kind => new HelpPlan($"`{kind}` is not a change Ask Daoris proposes.", "", "", null),
     };
 
@@ -811,6 +867,22 @@ public static partial class HelpProposals
 
             case "go":
                 return Settled(true, $"Applied: `#{id}` — {plan.Describe} Nothing else changed.", null) with { Go = plan.Go };
+
+            case "plugin":
+            {
+                // PLUG9: a copy or a row, and nothing started — the loop starts what it runs at its next look.
+                try
+                {
+                    if (proposal.Door == "add") doors.AddPlugin(plan.Source!);
+                    else doors.SwitchPlugin(plan.Plugin!.Id, proposal.Door == "enable");
+                }
+                catch (DriverException error)
+                {
+                    return Settled(false, $"Not applied: `#{id}` (`{plan.Terminal}`) — {error.Message}", error.Message);
+                }
+
+                return Settled(true, $"Applied: `#{id}` — {plan.Describe} (`{plan.Terminal}`)", null);
+            }
 
             default:
                 doors.Change(plan.Apply!);
