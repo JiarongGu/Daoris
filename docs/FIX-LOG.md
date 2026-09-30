@@ -89,6 +89,25 @@ moved-install facts were red on the old rule (`Establish` answered null), then g
 respected branch turned the gate's case red (`A_home_named_for_this_start_alone_is_respected…`).
 Modules 390 → 393. No second install was started on a real account.
 
+## A stop threw when a process in the tree was already ending (2026-09-30)
+
+**Symptom.** Seen once in MOD8's serial run of the Process category: `ProtocolChatTests`' cleanup threw
+`AggregateException(Win32Exception: Access is denied)` out of `ChatRunner.Dispose`, through
+`SessionProcesses.StopAll`.
+
+**Root cause.** `Process.Kill(entireProcessTree: true)` reports a process in the tree that refused access
+because it was already exiting as a `Win32Exception` inside an `AggregateException`. `SessionProcesses.Stop`
+caught only `InvalidOperationException` (the root gone first), so the aggregate escaped: from a test's
+cleanup that day, and from a person's stop the same way on any machine where a session's tree is ending as
+they press it. `EndIfRunning` caught the bare `Win32Exception` but not the aggregate either.
+
+**Fix.** Both catch through one rule, `SessionProcesses.Ending`: a root that exited, a process refusing
+access mid-exit, or an aggregate made only of those, flattened. Anything else still propagates.
+
+**Verification.** `SessionProcessesTests` holds the rule (the aggregate, a nested one, and the failures it
+must not swallow). The kill itself cannot be provoked on demand, so the defect is proven by the rule and
+the one sighting, not by a test that reproduces it.
+
 ## A plugin's words came back in the console's code page (2026-09-30)
 
 **Symptom.** PLUG8's Try on the window, on a Chinese-locale machine: the GitHub example plugin's

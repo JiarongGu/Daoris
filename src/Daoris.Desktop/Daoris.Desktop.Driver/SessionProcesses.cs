@@ -153,13 +153,26 @@ public sealed class SessionProcesses(string? markers = null)
         {
             entry.Process.Kill(entireProcessTree: true);
         }
-        catch (InvalidOperationException)
+        catch (Exception error) when (Ending(error))
         {
-            // Exited between the lookup and the kill — the flag still marks whose decision the end was.
+            // Exited between the lookup and the kill, or a process in its tree was already ending — the
+            // flag still marks whose decision the end was.
         }
 
         return true;
     }
+
+    /// <summary>
+    /// Whether a kill's failure only says the tree was already going: the root exited first, or a process in
+    /// the tree refused access mid-exit. A whole-tree kill reports those inside an <see cref="AggregateException"/>,
+    /// which a catch of the single types let through a person's stop and a chat's cleanup (MOD8, FIX-LOG).
+    /// </summary>
+    internal static bool Ending(Exception error) => error switch
+    {
+        InvalidOperationException or System.ComponentModel.Win32Exception => true,
+        AggregateException many => many.Flatten().InnerExceptions.All(Ending),
+        _ => false,
+    };
 
     /// <summary>
     /// End a spawned harness's process tree if it is still running — the reaper every spawn site holds
@@ -178,13 +191,10 @@ public sealed class SessionProcesses(string? markers = null)
         {
             if (!process.HasExited) process.Kill(entireProcessTree: true);
         }
-        catch (InvalidOperationException)
+        catch (Exception error) when (Ending(error))
         {
-            // Exited, or never associated — either way nothing is left running.
-        }
-        catch (System.ComponentModel.Win32Exception)
-        {
-            // Access to the tree was refused mid-exit; the root is ending anyway.
+            // Exited, never associated, or access to the tree refused mid-exit — either way nothing is left
+            // running that this could end.
         }
     }
 
