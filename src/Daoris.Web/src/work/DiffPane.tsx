@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { sentence } from '../format';
 import { ExternalLink } from '../links';
 import { store, stored } from '../lib/stored';
-import { useDiscardSessionTree, useLandSessionTree, useLanding, useSessionDiff } from '../shell';
+import { useDiscardSessionTree, useHandOff, useHandOffPress, useLandSessionTree, useLanding, useSessionDiff } from '../shell';
 import { Button, EmptyState, Inline, Segmented, SkeletonRows } from '../ui';
 import { DiffFileRow } from './DiffFileRow';
 import type { DiffLayout } from './PatchView';
@@ -57,6 +57,11 @@ export function DiffPane({ session, hasTree = false, onSendBack }: {
   // What a press would do, asked only where there is a tree to land.
   const landing = useLanding(hasTree ? session : null);
   const discard = useDiscardSessionTree();
+  // The branch this session's landing made, handed to a landing plugin afterwards (WSR5b) — asked whether
+  // or not a tree is still here, since a tidy removes it and the branch stands.
+  const handOff = useHandOff(session);
+  const hand = useHandOffPress();
+  const handable = handOff.data?.branch && handOff.data.plugin ? handOff.data : null;
 
   // Per-reader, per-session, and never written down: which files this person has opened and which
   // they have ticked off. Keyed by path, reset by attending a different session.
@@ -94,7 +99,7 @@ export function DiffPane({ session, hasTree = false, onSendBack }: {
   attended.current = session;
 
   const act = (
-    run: Promise<{ done: boolean; message: string; plugin?: { pullRequest?: string } }>,
+    run: Promise<{ done: boolean; message: string; plugin?: { pullRequest?: string } | null }>,
     onDone?: () => void,
     onRefused?: () => void,
   ) => {
@@ -136,7 +141,7 @@ export function DiffPane({ session, hasTree = false, onSendBack }: {
   // Gated on the TREE, not on the diff: a session whose range git cannot read may still hold a tree
   // worth discarding, and one whose record travelled here holds none at all. Sending the work back
   // is about the work, not the tree, so it stands wherever there is a door for it (UX5 U66).
-  const acts = !hasTree && !onSendBack ? null : (
+  const acts = !hasTree && !onSendBack && !handable ? null : (
     <footer className="grid shrink-0 gap-2 border-t border-line px-3 py-2">
       {said && <p className="m-0 text-small text-ink-soft">{said}</p>}
       {said && opened && (
@@ -165,6 +170,17 @@ export function DiffPane({ session, hasTree = false, onSendBack }: {
           <Inline text={t('work.review.landsOnLine', { line: landing.data.target })} />
         </p>
       )}
+      {/* The branch the landing made, and who can push it now (WSR5b) — and what stands in the way. */}
+      {!said && handable && (
+        <p className="m-0 text-small text-ink-faint">
+          <Inline text={t('work.review.handOn', { branch: handable.branch, plugin: handable.plugin })} />
+        </p>
+      )}
+      {!said && handable?.problem && (
+        <p className="m-0 border-l-[3px] border-warn pl-2 text-small text-ink-soft">
+          {t('work.review.handProblem', { problem: handable.problem })}
+        </p>
+      )}
 
       <div className="flex flex-wrap items-center gap-2">
         {hasTree && (
@@ -174,6 +190,16 @@ export function DiffPane({ session, hasTree = false, onSendBack }: {
             onClick={() => act(land.mutateAsync(session))}
           >
             {land.isPending ? t('work.review.accepting') : t('work.review.accept')}
+          </Button>
+        )}
+
+        {handable && (
+          <Button
+            // A press that could only be refused is not offered (UX5 U66): the sentence above says why.
+            disabled={hand.isPending || Boolean(handable.problem)}
+            onClick={() => act(hand.mutateAsync(session))}
+          >
+            {hand.isPending ? t('work.review.handing') : t('work.review.hand', { plugin: handable.plugin })}
           </Button>
         )}
 

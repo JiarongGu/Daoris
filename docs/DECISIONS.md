@@ -4331,9 +4331,14 @@ this is enough for `az.cmd`'s own `%*` was reasoned from how cmd parses, not mea
 `az`. Ask Daoris cannot yet propose a rule naming a plugin: its parser takes `branch <pattern>` and
 `--tidy`, and refuses the rest as a pattern.
 
-## D102 — A branch a landing made is recorded, and goes once its work reads on the line (2026-09-30)
+*Amended by D102 (WSR5b, 2026-09-30): a branch a landing made and recorded can be handed to a landing
+plugin after the landing, by the person's press (`daoris-driver trees hand`, the review's *hand it to*, or
+an Ask Daoris card), told this frame for the branch as it stands. A hand-off the plugin does not complete
+changes nothing.*
 
-**Decision (WSR5a, amending D88).** The first real ticket's pull request was completed as a squash merge,
+## D102 — A branch a landing made is recorded, goes once its work reads on the line, and can be handed to its plugin afterwards (2026-09-30)
+
+**Decision (WSR5, amending D88 and D100).** The first real ticket's pull request was completed as a squash merge,
 and it left the two branches its landings had made. Git calls both unmerged, since no commit of theirs is
 on the line, and D88 never looked at them, since they are not `daoris/`. So:
 
@@ -4369,13 +4374,34 @@ on the line, and D88 never looked at them, since they are not `daoris/`. So:
   still the commit it was judged at: `git branch -D` of that one branch in the repository's own checkout.
   No working tree, no other ref, and never a remote branch.
 
+- **A recorded branch can be handed to a landing plugin afterwards (WSR5b).** Until now the plugin ran
+  only inside the landing, and pressing Accept again was refused because the branch exists, so a ticket
+  landed before its workspace named a plugin, or one whose plugin failed, had no door but a hand push.
+  The doors: `daoris-driver trees hand <session|branch> [--repository <name>] [--plugin <id>] [--plan]`,
+  *hand it to <plugin>* on the review of the session that landed it (shown whether or not its tree is
+  still there, since a tidy removes it), and an Ask Daoris proposal of its own kind, `hand`
+  (`hand_propose`), applied through the review's door. The plugin is the one named, else the
+  repository's landing rule's. It is told exactly D100's frame for the branch as it stands: the line as
+  `base`, the branch's commits the line lacks as `commits`, oldest first, and the quest, session and
+  title the landing recorded. Its answer is said as a landing says it, and kept as a note in the
+  conversation's record; a push is kept on the record, with its pull request and the commit it pushed.
+- **What a hand-off refuses, each in its own sentence, speaking to no plugin:** a branch the record does
+  not hold; one gone, or no longer holding the recorded commit; no plugin named; a plugin that cannot
+  land work here (D100's four); nothing beyond the line; work that already reads on the line, which is
+  the clean-up's; and a branch already on its remote at this very commit with a pull request answered
+  for it. **A hand-off the plugin does not complete changes nothing**: the branch, the record and the
+  remote stay as they were, and the sentence says how to push by hand.
+
 This amends **D88**: its proof is unchanged for session branches, and a second one, by content, serves the
-branches landings made.
+branches landings made. It amends **D100**: the plugin a branch rule names may also be spoken to after the
+landing, by the person's press, for a branch the landing made.
 
 **Why.** D88's proof is ancestry: every commit on a branch of the person's. A squash merge makes one new
 commit on the line from the branch's content, so ancestry calls the branch unmerged forever and `git
 branch -d` refuses it. What reached the line is the content, so the content is what is compared. The
-first real workspace's owner, after the ticket: *"we still have so many branch need to clean up"*.
+first real workspace's owner, after the ticket: *"we still have so many branch need to clean up"*. And
+of the push: *"if you want to open pr is the azure plugin ready"* — and a ticket landed before a plugin
+was named has no door to one but the person's own terminal.
 
 **Rejected.**
 - **A branch whose remote branch is gone** (`git fetch --prune`, then `[gone]`). A platform deletes a
@@ -4385,8 +4411,17 @@ first real workspace's owner, after the ticket: *"we still have so many branch n
   core, which D87 left to plugins.
 - **Patch equivalence** (`git cherry`). A squash of several commits matches none of them.
 - **Judging by the pattern.** As above: it judges the person's own branches.
+- **Pressing Accept again for a hand-off.** Accept makes a branch, and one standing is refused so a branch
+  Daoris did not make is never moved (D87). The hand-off is its own act on the branch the landing made.
+- **Asking the platform whether a pull request is open before handing on.** A network call in core again;
+  the record's answer and the remote-tracking branch are what this machine knows, and the plugin, which
+  speaks for its platform, answers for the rest.
 
 **What the gates do not cover.** The real case's two branches predate the record, so this build never
-judges them. Every squash in the tests is `git merge --squash` in a scratch repository, on the local
-line or on a clone of a local bare `origin`; no platform's squash was run. A branch rebased before its
-pull request no longer holds the recorded commit, so it is never judged: the safe side.
+judges them, nor hands them on. Every squash in the tests is `git merge --squash` in a scratch
+repository, on the local line or on a clone of a local bare `origin`; no platform's squash was run. A
+branch rebased before its pull request no longer holds the recorded commit, so it is never judged: the
+safe side. The hand-off's plugins in the tests are fakes on the wire's channel; its frame is D100's, which
+the examples' own tests drive against a bare repository, but no hand-off has run against a real platform.
+The review's button and Ask Daoris's card are held by the page's tests over a mocked bridge, not yet looked
+at on the window.

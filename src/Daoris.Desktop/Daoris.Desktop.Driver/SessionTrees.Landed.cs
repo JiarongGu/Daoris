@@ -167,7 +167,7 @@ public sealed partial class SessionTrees
     private const string ChangedSince = "it changed since the list, and is kept";
 
     /// <summary>A landed branch as judged, and the commit it was judged at — the one a removal must still find.</summary>
-    private sealed record Judged(LandedItem Item, string Tip, bool Proven);
+    private sealed record Judged(LandedItem Item, string Tip);
 
     private static List<LandedBranch> EntriesOf(IReadOnlyList<LandedBranch> record, string repository) =>
         // A pattern under `daoris/` would make a session branch's name, which D88 already judges.
@@ -270,8 +270,7 @@ public sealed partial class SessionTrees
             items.Add(new(
                 new LandedItem(repository, workspace, entry.Branch, kind, where, files, proof.Detail, entry.PullRequest,
                     kind == LandedKind.AheadOfRemote ? ahead : proof.Commits),
-                tip,
-                proof.Kind is LandedKind.OnLine or LandedKind.Merged));
+                tip));
         }
 
         return items;

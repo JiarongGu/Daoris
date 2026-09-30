@@ -831,6 +831,15 @@ The first version: doctrine that installs, is checked, and flows back.
   commits its remote lacks, one a kept session branch still needs, and one whose files differ are kept,
   with the files named. Only branches a landing made here are judged; landings from before the record,
   and your own branches, are never touched.
+- **A landed branch can be handed to its plugin afterwards** (WSR5, D102). A ticket landed before its
+  workspace named a plugin, or one whose plugin failed, had no door but a hand push: pressing Accept again
+  is refused while the branch stands. The review of the session that landed it now offers *hand it to
+  <plugin>* (its tree may be gone), `daoris-driver trees hand <session|branch>` does the same from a
+  terminal (`--plugin <id>` where the rule names none, `--plan` to see it first), and Ask Daoris can
+  propose it as a card. The plugin is told the same frame a landing tells it, for the branch as it stands,
+  and its answer is said and kept the same way. A branch no landing made, one moved away from what the
+  landing made, one whose work is already on the line, and one already on its remote at this commit with a
+  pull request are refused, and a hand-off whose plugin does not push changes nothing.
 - **A plugin can push the branch and open the pull request** (WSR4, D100). A branch landing rule may
   name an installed plugin (`daoris driver landing … branch <pattern> --plugin <id>`, or the *who
   pushes it* chooser in Settings → Workspace → *How work lands*). Once accepting has made the branch,

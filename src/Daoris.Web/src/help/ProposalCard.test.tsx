@@ -165,6 +165,23 @@ describe('the kinds that reach every door', () => {
     expect(screen.getByText(/contributes nothing: declares harness/)).toBeInTheDocument();
   });
 
+  // WSR5b: a branch a landing made, handed to a landing plugin — the one card whose Apply leads to a push.
+  const HAND: HelpProposal = {
+    id: 'p8', kind: 'hand',
+    describe: 'Hand `feature/q2-second` (in `engine`) to plugin `example.lands`: it pushes the branch and opens the pull request against the line.',
+    terminal: 'daoris-driver trees hand feature/q2-second --repository engine',
+    why: 'the person wants its pull request opened',
+  };
+
+  it('a hand-off says a plugin pushes the branch, signed in as the person, before Apply', async () => {
+    await press(HAND, 'apply');
+
+    expect(screen.getByText('Ask Daoris proposes handing a branch on')).toBeInTheDocument();
+    expect(screen.getByText('feature/q2-second', { selector: 'code' })).toBeInTheDocument();
+    expect(screen.getByText(/pushes the branch to its remote, signed in as you/)).toBeInTheDocument();
+    expect(screen.getByText(HAND.terminal, { selector: 'code' })).toBeInTheDocument();
+  });
+
   it('speaks 中文 for every kind, the driver\'s sentence left as it said it', async () => {
     const { default: i18n } = await import('../i18n');
     await i18n.changeLanguage('zh');
@@ -179,6 +196,11 @@ describe('the kinds that reach every door', () => {
       expect(screen.getByText('问道衍提议一个插件')).toBeInTheDocument();
       const runs = within(screen.getByRole('list', { name: '插件会运行什么' }));
       expect(runs.getByText('node ${plugin}/hooks.mjs', { selector: 'code' })).toBeInTheDocument();
+      cleanup();
+      // WSR5b: the hand-off's chrome translates too.
+      render(<ul><ProposalCard proposal={HAND} onApply={vi.fn()} onDismiss={vi.fn()} /></ul>);
+      expect(screen.getByText('问道衍提议交接一个分支')).toBeInTheDocument();
+      expect(screen.getByText(/以你的身份把分支推送到它的远程/)).toBeInTheDocument();
     } finally {
       cleanup();
       await i18n.changeLanguage('en');

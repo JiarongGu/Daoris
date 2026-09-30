@@ -163,8 +163,64 @@ internal static class TreesConsole
                 return landed.Landed && landed.Plugin is not { Failed: true } and not { Pushed: false } ? 0 : 1;
             }
 
+            // A branch a landing made, handed to a landing plugin afterwards (WSR5b): the review's *hand it to*,
+            // from a terminal (D50). Named by the session that landed it or by the branch; the plugin is the
+            // one --plugin names, else the repository's landing rule's. --plan says what it would do.
+            case ["hand", var named, ..]:
+            {
+                var repository = Option(args, "--repository");
+                var plugin = Option(args, "--plugin");
+                var found = trees.Recorded.Find(named, repository);
+                if (found.Count == 0)
+                {
+                    Console.Error.WriteLine($"trees: {SessionTrees.NotLanded(named)}");
+                    return 1;
+                }
+
+                // A session means its newest landing; a branch name in two repositories means the person says which.
+                var repositories = found.Select(entry => entry.Repository).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+                if (repositories.Count > 1)
+                {
+                    Console.Error.WriteLine($"trees: `{named}` names a landed branch in {string.Join(", ", repositories.Select(r => $"`{r}`"))} — "
+                        + "say which with `--repository <name>`.");
+                    return 1;
+                }
+
+                var entry = found[0];
+                using var service = ServiceClient.FromEnvironment();
+                var root = (await service.RegistryAsync().ConfigureAwait(false))
+                    .FirstOrDefault(row => string.Equals(row.Repository, entry.Repository, StringComparison.OrdinalIgnoreCase))?.Root;
+                if (string.IsNullOrWhiteSpace(root) || !Directory.Exists(root))
+                {
+                    Console.Error.WriteLine($"trees: `{entry.Repository}` has no checkout on this machine, so there is no `{entry.Branch}` here to hand on.");
+                    return 1;
+                }
+
+                // A plugin's own lines, said as they come, under its name — as `trees land` says them (D64 §4).
+                var handing = new SessionTrees(home, new LandingPlugins(home, say: (id, line) => Console.WriteLine($"  plugin:{id}  {line}")));
+                if (args.Contains("--plan"))
+                {
+                    var plan = await handing.HandPlanAsync(root, entry, plugin).ConfigureAwait(false);
+                    Console.WriteLine(HandPlanned(plan));
+                    return 0;
+                }
+
+                var handed = await handing.HandAsync(root, entry, plugin).ConfigureAwait(false);
+                Console.WriteLine($"trees: {handed.Message}");
+                // Kept where the conversation is kept, as the review's press keeps it (D100).
+                if (handed.Plugin is not null)
+                {
+                    new SessionEvents(Path.Combine(home, "sessions"))
+                        .Keep(entry.Session, LandingRules.HandNote(handed), line => Console.Error.WriteLine($"trees: {line}"));
+                }
+
+                // 1 where the branch was not pushed: refused, or the plugin's step did not complete.
+                return handed.Handed ? 0 : 1;
+            }
+
             default:
-                Console.Error.WriteLine("usage: daoris-driver trees [list | remove <path> [--force] | clean [--yes] | land <session> [--plan]]");
+                Console.Error.WriteLine("usage: daoris-driver trees [list | remove <path> [--force] | clean [--yes] | land <session> [--plan]");
+                Console.Error.WriteLine("                           | hand <session|branch> [--repository <name>] [--plugin <id>] [--plan]]");
                 Console.Error.WriteLine("  A session's worktree (D51). Removal refuses while the tree holds");
                 Console.Error.WriteLine("  uncommitted changes or work no branch of yours holds; --force means it.");
                 Console.Error.WriteLine("  clean lists every session branch with what it holds; --yes removes those");
@@ -173,7 +229,26 @@ internal static class TreesConsole
                 Console.Error.WriteLine("  land accepts a session's work as the review's Accept does, by the workspace's");
                 Console.Error.WriteLine("  rule; --plan says where it would go and does nothing (D87). A rule naming a");
                 Console.Error.WriteLine("  plugin hands the branch to it to push and open the pull request (D100).");
+                Console.Error.WriteLine("  hand gives a branch a landing made to a landing plugin afterwards — the one");
+                Console.Error.WriteLine("  --plugin names, else the rule's — to push and open the pull request (WSR5).");
                 return 2;
         }
+    }
+
+    /// <summary>What handing a landed branch on would do, in one line — and what would refuse it (WSR5b).</summary>
+    internal static string HandPlanned(HandPlan plan)
+    {
+        var line = plan.Plugin is { } plugin
+            ? $"trees: handing on `{plan.Branch}` ({plan.Repository}) would give plugin `{plugin}` its {plan.Commits} commit(s) to push and open the pull request for."
+            : $"trees: `{plan.Branch}` ({plan.Repository}) has no plugin named to hand it to.";
+        if (plan.PullRequest is { } pr) line += $" Its last pull request: {pr}";
+        return plan.Problem is { } problem ? $"{line} It would be refused now: {problem}" : line;
+    }
+
+    /// <summary>The word after <paramref name="name"/>, or null where it is absent or ends the line.</summary>
+    private static string? Option(string[] args, string name)
+    {
+        var at = Array.IndexOf(args, name);
+        return at >= 0 && at + 1 < args.Length && !args[at + 1].StartsWith("--", StringComparison.Ordinal) ? args[at + 1] : null;
     }
 }

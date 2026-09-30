@@ -351,9 +351,10 @@ public sealed class DriverModule : ModuleBase
                 var standing = await service.AsksAsync(cancellationToken).ConfigureAwait(false);
                 var asks = standing.Count(ask => ask.State == "Proposed");
                 // The asks by id too (HELP6), so a delete of one made by mistake can name it.
+                // And the branches landings made here (WSR5b), so a hand-off names one the record holds.
                 var machine = HelpRoom.Describe(
                     config, snapshot, lines, roster, adapter => _loop.Harnesses.Toolchain(adapter)?.Product, asks, standing,
-                    PluginCatalog.Load(_loop.Home, AdapterSet.Built().Names));
+                    PluginCatalog.Load(_loop.Home, AdapterSet.Built().Names), new LandedBranches(_loop.Home).All());
 
                 var start = await chat.StartHelpAsync(
                     helper, config, machine,
@@ -636,6 +637,12 @@ public sealed class DriverModule : ModuleBase
             case "SWEEP_PLAN":
             case "SWEEP":
                 return await SweepAsync(request, cancellationToken);
+
+            // A branch a landing made, handed to a landing plugin afterwards (WSR5b): what a press would do,
+            // said before it, and the press — `daoris-driver trees hand` is the terminal's door (D50).
+            case "HANDOFF_PLAN":
+            case "HANDOFF":
+                return await HandOffAsync(request, cancellationToken);
 
             // A repository's landing rule or a workspace's, or either cleared with no form — the same file
             // `daoris driver landing` edits: one truth, two doors (D50).
@@ -1372,6 +1379,77 @@ public sealed class DriverModule : ModuleBase
     }
 
     /// <summary>
+    /// A session's landed branch handed to a landing plugin after its landing (WSR5b): the plan before the
+    /// press, or the press. The branch is the one this session's landing made and recorded; a session whose
+    /// landing made none answers no branch, which is information, not a failure.
+    /// </summary>
+    /// <remarks>
+    /// A refusal is an answer, as a landing's is. The checkout is the registry's, since the tree may have been
+    /// tidied away; a repository with no checkout here is answered in the same sentence form.
+    /// </remarks>
+    private async Task<object?> HandOffAsync(IpcRequest request, CancellationToken cancellationToken)
+    {
+        var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
+        var named = Optional(request, "plugin");
+        var service = _loop.Service ?? throw NotReady();
+        var trees = new SessionTrees(_loop.Home, new LandingPlugins(
+            _loop.Home, say: (plugin, line) => _loop.Output.Append($"plugin:{plugin}", line)));
+
+        // The session's newest landing: a session lands once, and a second press is refused while its branch stands.
+        var entry = trees.Recorded.Find(id).FirstOrDefault(each => string.Equals(each.Session, id, StringComparison.OrdinalIgnoreCase));
+        if (entry is null)
+        {
+            return request.Type == "HANDOFF_PLAN"
+                ? new { Session = id, Branch = (string?)null }
+                : (object)new { Session = id, Done = false, Message = SessionTrees.NotLanded(id), Branch = (string?)null };
+        }
+
+        var root = await CheckoutOfAsync(service, entry.Repository, cancellationToken);
+        if (root is null)
+        {
+            var none = $"`{entry.Repository}` has no checkout on this machine, so there is no `{entry.Branch}` here to hand on.";
+            return request.Type == "HANDOFF_PLAN"
+                ? new { Session = id, Branch = (string?)entry.Branch, entry.Repository, Plugin = (string?)null, Problem = (string?)none, entry.PullRequest, Commits = 0 }
+                : (object)new { Session = id, Done = false, Message = none, Branch = (string?)entry.Branch };
+        }
+
+        if (request.Type == "HANDOFF_PLAN")
+        {
+            var plan = await trees.HandPlanAsync(root, entry, named, cancellationToken);
+            return new { Session = id, Branch = (string?)plan.Branch, plan.Repository, plan.Plugin, plan.Problem, plan.PullRequest, plan.Commits };
+        }
+
+        var handed = await HandAsync(trees, root, entry, named, cancellationToken);
+        return new
+        {
+            Session = id, Done = handed.Handed, handed.Message, Branch = (string?)handed.Branch,
+            Plugin = handed.Plugin is { } said
+                ? new { Id = said.Plugin, said.Pushed, said.PullRequest, said.Message, said.Failed }
+                : null,
+        };
+    }
+
+    /// <summary>A repository's checkout here, from the registry — or null where it has none on this machine.</summary>
+    private static async Task<string?> CheckoutOfAsync(ServiceClient service, string repository, CancellationToken cancellationToken)
+    {
+        var root = (await service.RegistryAsync(cancellationToken))
+            .FirstOrDefault(row => string.Equals(row.Repository, repository, StringComparison.OrdinalIgnoreCase))?.Root;
+        return string.IsNullOrWhiteSpace(root) || !Directory.Exists(root) ? null : root;
+    }
+
+    /// <summary>
+    /// The hand-off's press, which the review's button and Ask Daoris's card share (WSR5b): the plugin spoken
+    /// to, its word kept where the landing's own note is (D100), and the loop told to look again.
+    /// </summary>
+    private async Task<TreeHand> HandAsync(SessionTrees trees, string root, LandedBranch entry, string? plugin, CancellationToken cancellationToken)
+    {
+        var handed = await trees.HandAsync(root, entry, plugin, cancellationToken);
+        if (handed.Plugin is not null) _loop.Events.Keep(entry.Session, LandingRules.HandNote(handed), line => _loop.Output.Append(entry.Session, line));
+        _loop.Nudge();
+        return handed;
+    }
+
+    /// <summary>
     /// A reviewed session's landing (WSR1, D87): the plan before the press, or the press itself.
     /// </summary>
     /// <remarks>
@@ -2018,6 +2096,18 @@ public sealed class DriverModule : ModuleBase
             module.SwitchPlugin(module.InstalledPlugin(id), on);
             module._loop.Nudge();
         }
+
+        // HANDOFF's own press (WSR5b): the recorded branch, its repository's checkout, the same note kept.
+        public async Task<TreeHand> HandAsync(string repository, string branch, string? plugin, CancellationToken ct)
+        {
+            var trees = new SessionTrees(module._loop.Home, new LandingPlugins(
+                module._loop.Home, say: (id, line) => module._loop.Output.Append($"plugin:{id}", line)));
+            if (trees.Recorded.Of(repository, branch) is not { } entry) return new TreeHand(false, SessionTrees.NotLanded(branch), branch);
+            var root = await CheckoutOfAsync(service ?? throw NotReady(), repository, ct).ConfigureAwait(false);
+            return root is null
+                ? new TreeHand(false, $"`{repository}` has no checkout on this machine, so there is no `{branch}` here to hand on.", branch)
+                : await module.HandAsync(trees, root, entry, plugin, ct).ConfigureAwait(false);
+        }
     }
 
     /// <summary>An installed plugin by its id, or the Plugins screen's refusal (<c>PLUGIN_ACTION</c>, PLUG9's door).</summary>
@@ -2208,6 +2298,8 @@ public sealed class DriverModule : ModuleBase
                 .GroupBy(known => known.Repository, StringComparer.OrdinalIgnoreCase)
                 .ToDictionary(same => same.Key, same => same.First().Root, StringComparer.OrdinalIgnoreCase),
             Reserved = AdapterSet.Built().Names,
+            // A hand-off names a branch this machine's landings recorded (WSR5b), read as its door reads it.
+            Landed = new LandedBranches(_loop.Home).All(),
         };
 
         if (proposals.Any(proposal => proposal.Kind is "agent" or "account"))

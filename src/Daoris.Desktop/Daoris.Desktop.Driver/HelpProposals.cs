@@ -4,17 +4,18 @@ using System.Text.Json.Nodes;
 
 namespace Daoris.Driver;
 
-/// <summary>One of Ask Daoris's proposals, as the connector wrote it (HELP1c, D89; HELP6; PLUG9).</summary>
-/// <param name="Kind">`setting`, `ask`, `agent`, `delete`, `account`, `go` or `plugin`.</param>
+/// <summary>One of Ask Daoris's proposals, as the connector wrote it (HELP1c, D89; HELP6; PLUG9; WSR5b).</summary>
+/// <param name="Kind">`setting`, `ask`, `agent`, `delete`, `account`, `go`, `plugin` or `hand`.</param>
 /// <param name="Door">
 /// The `daoris driver` verb for a setting; `ask` for an ask; `update` or `pin` for an agent; `quest` or
-/// `ask` for a delete; `settings` for an account; `go` for a go; `add`, `enable` or `disable` for a plugin.
+/// `ask` for a delete; `settings` for an account; `go` for a go; `add`, `enable` or `disable` for a plugin;
+/// `hand` for a hand-off.
 /// </param>
 /// <param name="Target">
 /// The repository a setting is for; the agent of an agent or an account; the id a delete names; a go's
-/// view; the id of a plugin switched on or off.
+/// view; the id of a plugin switched on or off; the session or branch a hand-off names.
 /// </param>
-/// <param name="Value">A setting's value; a pin's version.</param>
+/// <param name="Value">A setting's value; a pin's version; the plugin a hand-off names, or null for the rule's.</param>
 /// <param name="Session">The conversation that proposed it.</param>
 /// <param name="State">`proposed`, then `applied`, `dismissed` or `refused`.</param>
 public sealed record HelpProposal(
@@ -36,7 +37,10 @@ public sealed record HelpProposal(
     /// <summary>A go's part of its domain or view — a card, a setup step, a drawer — or null.</summary>
     public string? Part { get; init; }
 
-    /// <summary>The repository whose checkout holds a plugin to add (PLUG9), or null for a whole path the person gave.</summary>
+    /// <summary>
+    /// The repository whose checkout holds a plugin to add (PLUG9), or null for a whole path the person gave;
+    /// for a hand-off (WSR5b), the repository its branch is in, where a name alone is in several.
+    /// </summary>
     public string? Repository { get; init; }
 
     /// <summary>A plugin's folder to add from: from that checkout's root, or a whole path (PLUG9).</summary>
@@ -67,6 +71,9 @@ public sealed record HelpMachineFacts(
 
     /// <summary>The harness names this build carries, which a plugin may not declare (PLUG9, D64 §5).</summary>
     public IReadOnlyCollection<string> Reserved { get; init; } = [];
+
+    /// <summary>The branches this machine's landings made and recorded, for a hand-off (WSR5b).</summary>
+    public IReadOnlyList<LandedBranch> Landed { get; init; } = [];
 }
 
 /// <summary>One door as the Agents screen reads it (HELP6): what its Update does, whether it pins, whose accounts it runs as.</summary>
@@ -128,7 +135,13 @@ public sealed record HelpPlan(string? Refusal, string Describe, string Terminal,
 
     /// <summary>The folder a plugin is added from, resolved on this machine (PLUG9); null for every other plan.</summary>
     public string? Source { get; init; }
+
+    /// <summary>The landed branch a hand-off gives its plugin (WSR5b); null for every other plan.</summary>
+    public HelpHandOff? Hand { get; init; }
 }
+
+/// <summary>What a hand-off's Apply hands on (WSR5b): the recorded branch, and the plugin the card named — null for the rule's.</summary>
+public sealed record HelpHandOff(string Repository, string Branch, string? Plugin);
 
 /// <summary>
 /// What a plugin proposal's card shows (PLUG9): the plugin's id, the command it starts, the points it
@@ -191,6 +204,12 @@ public interface IHelpDoors
 
     /// <summary><c>PLUGIN_ACTION</c>'s own enable or disable: a row in <c>plugins.json</c> (PLUG9).</summary>
     void SwitchPlugin(string id, bool on);
+
+    /// <summary>
+    /// The review's own hand-off (<c>HANDOFF</c>, WSR5b): the recorded branch given to the plugin named, else the
+    /// repository's rule's, which pushes it and opens the pull request. A refusal is an answer, never thrown.
+    /// </summary>
+    Task<TreeHand> HandAsync(string repository, string branch, string? plugin, CancellationToken ct);
 }
 
 /// <summary>
@@ -337,6 +356,7 @@ public static partial class HelpProposals
         "account" => Account(proposal, facts),
         "go" => Go(proposal),
         "plugin" => Plugin(proposal, facts),
+        "hand" => Hand(proposal, config, facts),
         var kind => new HelpPlan($"`{kind}` is not a change Ask Daoris proposes.", "", "", null),
     };
 
@@ -882,6 +902,23 @@ public static partial class HelpProposals
                 }
 
                 return Settled(true, $"Applied: `#{id}` — {plan.Describe} (`{plan.Terminal}`)", null);
+            }
+
+            case "hand":
+            {
+                // WSR5b: the review's own press; the plugin pushes, and what it answered is what the person reads.
+                TreeHand handed;
+                try
+                {
+                    handed = await doors.HandAsync(plan.Hand!.Repository, plan.Hand.Branch, plan.Hand.Plugin, ct).ConfigureAwait(false);
+                }
+                catch (DriverException error)
+                {
+                    return Settled(false, $"Not applied: `#{id}` (`{plan.Terminal}`) — {error.Message}", error.Message);
+                }
+
+                return Settled(handed.Handed, $"{(handed.Handed ? "Applied" : "Not applied")}: `#{id}` (`{plan.Terminal}`) — {handed.Message}",
+                    handed.Handed ? null : handed.Message);
             }
 
             default:

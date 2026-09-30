@@ -26,7 +26,8 @@ and the calls that are the owner's. The order at the end is a recommendation.
 
 > **Decided and built: D87** (2026-09-28). The owner's call: configurable, no push or pull request by
 > default, and that form a plugin's (WSR4). **WSR4 built: D100** (2026-09-30): a branch rule names the
-> plugin, which pushes and opens the pull request over `work/land`. What follows is the study as written.
+> plugin, which pushes and opens the pull request over `work/land`. **WSR5b built: D102** (2026-09-30): a
+> branch a landing made can be handed to its plugin afterwards. What follows is the study as written.
 
 **Today.** A session works on its own branch, `daoris/s-<id>`, in its own tree (D51). The one way that
 work lands is the merge door (`SessionTrees.MergeAsync`): `--no-ff` into the repository's canonical

@@ -52,6 +52,9 @@ public sealed record HelpPlugin(string Id, bool Enabled, IReadOnlyList<string> P
     public string? Problem { get; init; }
 }
 
+/// <summary>A branch a landing made here, as the room lists it (WSR5b): by name and session, so a hand-off names one the record holds.</summary>
+public sealed record HelpLanded(string Repository, string Branch, string Session, bool Pushed, string? PullRequest);
+
 /// <summary>What the room says this machine holds now: names and states, never a key, never a path.</summary>
 public sealed record HelpMachine
 {
@@ -84,6 +87,9 @@ public sealed record HelpMachine
 
     /// <summary>Every plugin installed here, sound or not, in the catalogue's order (PLUG9).</summary>
     public IReadOnlyList<HelpPlugin> Plugins { get; init; } = [];
+
+    /// <summary>The branches this machine's landings made and recorded, in the order they landed (WSR5b).</summary>
+    public IReadOnlyList<HelpLanded> Landed { get; init; } = [];
 }
 
 /// <summary>
@@ -145,6 +151,8 @@ public static class HelpRoom
         $"mcp__{KnowledgeConnector.ServerName}__go_propose",
         // PLUG9: adding a plugin that has landed, or switching one; making one is an ask, never this.
         $"mcp__{KnowledgeConnector.ServerName}__plugin_propose",
+        // WSR5b: a branch a landing made, handed to a landing plugin afterwards — the review's own press.
+        $"mcp__{KnowledgeConnector.ServerName}__hand_propose",
     ];
 
     public static string PathOf(string home) => Path.Combine(home, Folder);
@@ -183,7 +191,7 @@ public static class HelpRoom
     public static HelpMachine Describe(
         DriverConfig config, Snapshot snapshot, IReadOnlyList<RepositoryLine> lines,
         IReadOnlyList<HarnessReport> roster, Func<string, string?> product, int asks,
-        IReadOnlyList<AskView>? standing = null, PluginCatalog? plugins = null)
+        IReadOnlyList<AskView>? standing = null, PluginCatalog? plugins = null, IReadOnlyList<LandedBranch>? landed = null)
     {
         var lineOf = lines.ToDictionary(line => line.Repository, StringComparer.OrdinalIgnoreCase);
         bool Named(IReadOnlyList<string> list, string repository) => list.Contains(repository, StringComparer.OrdinalIgnoreCase);
@@ -220,6 +228,7 @@ public static class HelpRoom
             LandingPlugins = LandingPluginsOf(plugins ?? PluginCatalog.None),
             Plugins = [.. (plugins ?? PluginCatalog.None).Plugins.Select(entry =>
                 new HelpPlugin(entry.Manifest.Id, entry.Enabled, entry.Manifest.Hooks?.Points ?? []) { Problem = entry.Problem })],
+            Landed = [.. (landed ?? []).Select(entry => new HelpLanded(entry.Repository, entry.Branch, entry.Session, entry.Pushed, entry.PullRequest))],
         };
     }
 
@@ -286,7 +295,12 @@ public static class HelpRoom
         text.Append("- `go_propose`: take the person to a place on the window, from the list below. It changes nothing.\n");
         text.Append("- `plugin_propose`: add a plugin that has landed, from its folder in the checkout of the repository that\n");
         text.Append("  holds it (name the repository and the folder there), or switch one installed here on or off. Daoris copies\n");
-        text.Append("  an added plugin into its home under its id, and never replaces one already installed.\n\n");
+        text.Append("  an added plugin into its home under its id, and never replaces one already installed.\n");
+        // WSR5b: the review's own hand-off, for a ticket landed before its workspace named a plugin, or whose plugin failed.
+        text.Append("- `hand_propose`: hand a branch a landing made (from the list below) to a landing plugin, which pushes it\n");
+        text.Append("  and opens the pull request, signed in as the person. Name the session that landed it or the branch, and\n");
+        text.Append("  a plugin only where the repository's landing rule names none. Only a branch a landing made and recorded\n");
+        text.Append("  here can be handed on; the person's own branches are theirs to push.\n\n");
         // HELP7: the real helper said *press Apply* of a card whose button reads *go there*.
         text.Append("Each proposal reaches the person as a card with two buttons, and you name them as the card does:\n");
         text.Append("every card but a go reads **apply** and **not now** (in 中文 **应用** and **暂不**), and\n");
@@ -375,8 +389,12 @@ public static class HelpRoom
             + $"{Count(machine.Asks, "ask waits", "asks wait")} for an answer.\n");
         // PLUG9: by id and state, so a switch names one the catalogue holds.
         text.Append(machine.Plugins.Count > 0
-            ? $"- Plugins: {string.Join(", ", machine.Plugins.Select(PluginLine))}.\n\n"
-            : "- Plugins: none installed.\n\n");
+            ? $"- Plugins: {string.Join(", ", machine.Plugins.Select(PluginLine))}.\n"
+            : "- Plugins: none installed.\n");
+        // WSR5b: by name and session, so a hand-off names one the record holds.
+        text.Append(machine.Landed.Count > 0
+            ? $"- Branches landings made: {string.Join(", ", machine.Landed.Select(LandedLine))}.\n\n"
+            : "- Branches landings made: none recorded.\n\n");
 
         if (machine.Repositories.Count == 0)
         {
@@ -442,6 +460,9 @@ public static class HelpRoom
             + "and on a branch `--plugin <id>`: an installed plugin that pushes it and opens the pull request)"),
         ("clean up session branches whose work landed, and branches a landing made whose work reached the line",
             "Settings → Workspace → Session branches", "`daoris-driver trees clean`"),
+        // WSR5b: a landed branch handed to a landing plugin after its landing.
+        ("hand a branch a landing made to a landing plugin, to push it and open the pull request",
+            "Sessions → the session's review → hand it to <plugin>", "`daoris-driver trees hand <session|branch> [--plugin <id>]`"),
         ("choose the agent that answers asks", "Settings → Daoris's own AI", "`daoris driver intake <agent>|off`"),
         ("choose the agent Ask Daoris runs on", "Settings → Daoris's own AI", "`daoris driver helper <agent>|off`"),
         ("park a quest after failed sessions", "Settings → Driver", "`daoris driver strikes <n>`"),
@@ -470,6 +491,10 @@ public static class HelpRoom
         [HookPoints.SessionEnded] = "to hear how a session ended",
         [HookPoints.Land] = "to push a branch Daoris made and open its pull request",
     };
+
+    private static string LandedLine(HelpLanded landed) =>
+        $"`{landed.Branch}` in `{landed.Repository}` (session `{landed.Session}`, "
+        + (landed.Pushed ? "pushed" + (landed.PullRequest is { } pr ? $", pull request {pr}" : "") : "not pushed") + ")";
 
     private static string PluginLine(HelpPlugin plugin)
     {

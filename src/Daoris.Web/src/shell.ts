@@ -1911,7 +1911,38 @@ export const useLandSessionTree = () => {
       if (result.done) {
         void client.invalidateQueries({ queryKey: keys.diff(result.session) });
         void client.invalidateQueries({ queryKey: keys.allSessions });
+        // A branch just made may now be handed on (WSR5b) — its plugin failed, or the rule names none.
+        void client.invalidateQueries({ queryKey: keys.handOff(result.session) });
       }
+    },
+  });
+};
+
+/**
+ * Whether the branch this session's landing made can be handed to a landing plugin now (WSR5b): the
+ * branch, the plugin it would go to (the rule's), and the sentence a press would be refused with. A
+ * session whose landing made no branch answers none. Shell-only: it reads this machine's record and checkout.
+ */
+export const useHandOff = (id: string | null) => {
+  const { isAvailable } = useShenora();
+  return useQuery({
+    queryKey: keys.handOff(id ?? ''),
+    queryFn: () => call<{
+      session: string; branch?: string | null; repository?: string; plugin?: string | null;
+      problem?: string | null; pullRequest?: string | null; commits?: number;
+    }>('HANDOFF_PLAN', { id }),
+    enabled: isAvailable && id !== null,
+  });
+};
+
+/** Hand a session's landed branch to its plugin (WSR5b): the plugin pushes and opens the pull request; a refusal is an answer. */
+export const useHandOffPress = () => {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => call<TreeAct & { branch?: string | null; plugin?: PluginLanding | null }>('HANDOFF', { id }),
+    onSuccess: (result) => {
+      void client.invalidateQueries({ queryKey: keys.handOff(result.session) });
+      void client.invalidateQueries({ queryKey: keys.sweep });
     },
   });
 };
