@@ -42,8 +42,14 @@ public sealed class PermissionRulesTests : IDisposable
         "mcp__daoris-knowledge__permission_propose",
     ];
 
-    /// <summary>What the `commit` default allows (PERM4).</summary>
-    private static readonly string[] Commit = ["Bash(cd:*)", "Bash(git add:*)", "Bash(git commit:*)"];
+    /// <summary>What the `commit` default allows (PERM4), a rename among it (UNBLOCK4, D122 §3.6).</summary>
+    private static readonly string[] Commit = ["Bash(cd:*)", "Bash(git add:*)", "Bash(git commit:*)", "Bash(git mv:*)"];
+
+    /// <summary>
+    /// What the `no-push` default denies: a push as written, and with options before its subcommand, the
+    /// forms the harness's maker says a `git push` rule does not stop (UNBLOCK4, D122 §3.7).
+    /// </summary>
+    private static readonly string[] NoPush = ["Bash(git push)", "Bash(git push:*)", "Bash(git -* push)", "Bash(git -* push *)"];
 
     /// <summary>Everything the defaults allow, in the order they are handed.</summary>
     private static readonly string[] Allowed = [.. Connector, .. Commit];
@@ -121,7 +127,7 @@ public sealed class PermissionRulesTests : IDisposable
         var rules = PermissionRules.Compose(PermissionRules.Load(_home), "default", "engine");
 
         Assert.Equal(Allowed, rules.Allow);
-        Assert.Equal(["Bash(git push)", "Bash(git push:*)"], rules.Deny);
+        Assert.Equal(NoPush, rules.Deny);
         Assert.Empty(rules.Ask);
     }
 
@@ -374,7 +380,7 @@ public sealed class PermissionRulesTests : IDisposable
             PermissionRules.Add(PermissionRules.Load(_home), RuleScope.Machine, null, RuleList.Ask, "WebFetch"),
             "default", "engine");
 
-        var path = SpawnSettings.Write(_home, "s1", rules);
+        var path = SpawnSettings.Write(_home, "s1", rules, hardDeny: []);
 
         Assert.Equal(Path.Combine(_home, SpawnServers.Folder, "s1.settings.json"), path);
         var text = File.ReadAllText(path!);
@@ -382,7 +388,7 @@ public sealed class PermissionRulesTests : IDisposable
         using var document = JsonDocument.Parse(text);
         var permissions = document.RootElement.GetProperty("permissions");
         Assert.Equal(
-            [.. Connector, "Bash(cd:*)", "Bash(git add:*)", "Bash(git commit:*)"],
+            [.. Connector, .. Commit],
             permissions.GetProperty("allow").EnumerateArray().Select(e => e.GetString()));
         Assert.Equal(["WebFetch"], permissions.GetProperty("ask").EnumerateArray().Select(e => e.GetString()));
         Assert.Contains("Bash(git push)", permissions.GetProperty("deny").EnumerateArray().Select(e => e.GetString()));
@@ -396,7 +402,7 @@ public sealed class PermissionRulesTests : IDisposable
     {
         var file = Off(PermissionRules.Load(_home), "connector", "commit", "no-push");
 
-        Assert.Null(SpawnSettings.Write(_home, "s1", PermissionRules.Compose(file, "default", "engine")));
+        Assert.Null(SpawnSettings.Write(_home, "s1", PermissionRules.Compose(file, "default", "engine"), PermissionRules.HardDeny(file)));
     }
 
     // ——— PERM4: a driven session may commit.
@@ -410,15 +416,128 @@ public sealed class PermissionRulesTests : IDisposable
     [Fact]
     public void Daoris_ships_a_commit_default_and_the_person_can_switch_it_off()
     {
-        string[] commit = ["Bash(cd:*)", "Bash(git add:*)", "Bash(git commit:*)"];
-
         var on = PermissionRules.Compose(PermissionRules.Load(_home), "default", "engine");
-        foreach (var rule in commit) Assert.Contains(rule, on.Allow);
+        foreach (var rule in Commit) Assert.Contains(rule, on.Allow);
         Assert.Contains("Bash(git push:*)", on.Deny);
 
         var off = PermissionRules.Compose(Off(PermissionRules.Load(_home), "commit"), "default", "engine");
-        foreach (var rule in commit) Assert.DoesNotContain(rule, off.Allow);
+        foreach (var rule in Commit) Assert.DoesNotContain(rule, off.Allow);
         Assert.Contains("mcp__daoris-knowledge__quest_respond", off.Allow);
+    }
+
+    // ——— UNBLOCK4: the push carve-out, held harder (D122 §3.6, §3.7).
+
+    /// <summary>
+    /// 🔴 A push written another way than `git push …` met no deny rule in the composed file: the
+    /// harness's maker says a `git push` rule does not stop `git -C . push` or `git -c &lt;key&gt;=&lt;value&gt;
+    /// push`, and auto mode allows a push to the working repository by default (D81 put the protocol door
+    /// in auto mode). Every form here must meet a deny rule the composed spawn file carries, on either
+    /// door. A quoted subcommand, an alias, a path to git or a shell running it meet none; the classifier
+    /// is told those (below), and on the pipe door nothing allows them.
+    /// </summary>
+    [Theory]
+    [InlineData("git push")]
+    [InlineData("git push origin main")]
+    [InlineData("git push --force origin main")]
+    [InlineData("git push -u origin feature/budget")]
+    [InlineData("git -C . push")]
+    [InlineData("git -C . push origin main")]
+    [InlineData("git -C /work/engine push --force")]
+    [InlineData("git -c push.default=current push")]
+    [InlineData("git -c push.default=current push origin main")]
+    [InlineData("git --git-dir=.git push origin main")]
+    [InlineData("git --no-pager push")]
+    public void A_push_in_each_form_meets_a_deny_rule_in_the_composed_file(string command)
+    {
+        var file = PermissionRules.Load(_home);
+        var path = SpawnSettings.Write(
+            _home, "s1", PermissionRules.Compose(file, "default", "engine"), PermissionRules.HardDeny(file));
+
+        using var document = JsonDocument.Parse(File.ReadAllText(path!));
+        var deny = document.RootElement.GetProperty("permissions").GetProperty("deny").EnumerateArray().Select(e => e.GetString()!).ToList();
+        Assert.True(deny.Any(rule => BashRule.Matches(rule, command)), $"`{command}` meets none of: {string.Join(", ", deny)}");
+    }
+
+    /// <summary>
+    /// The push's denies take nothing a session is allowed: its commit, a message that says "push", a
+    /// rename, the read-only git it runs unasked, and what reading and writing across hand it (D107). A
+    /// commit made with `-C` whose message has "push" as a word before another is refused, and that is
+    /// the price: a false refusal costs a rewording, a false allowance the thing the carve-out keeps.
+    /// </summary>
+    [Theory]
+    [InlineData("git add -A")]
+    [InlineData("git commit -m \"Hold the push carve-out harder\"")]
+    [InlineData("git mv docs/old.md docs/new.md")]
+    [InlineData("git status")]
+    [InlineData("git log --oneline -5")]
+    [InlineData("git -C /work/game status")]
+    [InlineData("git -C /work/game branch --list")]
+    [InlineData("git -C /work/game commit -m \"Expose a streaming budget\"")]
+    public void The_push_denies_refuse_none_of_the_work_a_session_is_allowed(string command)
+    {
+        var rules = PermissionRules.Compose(PermissionRules.Load(_home), "default", "engine");
+
+        Assert.DoesNotContain(rules.Deny, rule => BashRule.Matches(rule, command));
+    }
+
+    /// <summary>
+    /// The harness's auto mode judges each action with a classifier, which allows a push to the working
+    /// repository by default. While `no-push` is on, the spawn file tells it a push in any form, a
+    /// publish and a release are the person's — as a hard denial, which neither the classifier's own
+    /// allowances nor the conversation can clear. It reads `autoMode` from this command-line tier and
+    /// never from a repository's own settings.
+    /// </summary>
+    [Fact]
+    public void The_spawn_file_tells_auto_modes_classifier_a_push_in_any_form_is_the_persons()
+    {
+        var file = PermissionRules.Load(_home);
+        var path = SpawnSettings.Write(
+            _home, "s1", PermissionRules.Compose(file, "default", "engine"), PermissionRules.HardDeny(file));
+
+        using var document = JsonDocument.Parse(File.ReadAllText(path!));
+        var hardDeny = document.RootElement.GetProperty("autoMode").GetProperty("hard_deny").EnumerateArray().Select(e => e.GetString()!).ToList();
+        Assert.Equal(2, hardDeny.Count);
+        Assert.Equal("$defaults", hardDeny[0]);
+        Assert.Contains("git -C <dir> push", hardDeny[1]);
+        Assert.Contains("git -c <key>=<value> push", hardDeny[1]);
+        Assert.Contains("publishing a package", hardDeny[1]);
+        Assert.Contains("creating a release", hardDeny[1]);
+    }
+
+    /// <summary>
+    /// 🔴 `"$defaults"` first, always: a `hard_deny` list without it REPLACES the harness's built-in list,
+    /// whose entry is the rule against sending data out. Whatever a caller hands, the file's list begins
+    /// with it exactly once.
+    /// </summary>
+    [Fact]
+    public void The_classifiers_own_hard_denials_are_never_dropped()
+    {
+        var rules = PermissionRules.Compose(PermissionRules.Load(_home), "default", "engine");
+        string[] Written(string id, IReadOnlyList<string> hardDeny)
+        {
+            using var document = JsonDocument.Parse(File.ReadAllText(SpawnSettings.Write(_home, id, rules, hardDeny)!));
+            return [.. document.RootElement.GetProperty("autoMode").GetProperty("hard_deny").EnumerateArray().Select(e => e.GetString()!)];
+        }
+
+        Assert.Equal(["$defaults", "Never X."], Written("s1", ["Never X."]));
+        Assert.Equal(["$defaults", "Never X."], Written("s2", ["Never X.", "$defaults"]));
+        Assert.Equal(["$defaults", "Never X.", "Never Y."], Written("s3", ["$defaults", "Never X.", "$defaults", "Never Y."]));
+    }
+
+    /// <summary>
+    /// The classifier is told only while `no-push` is on: switched off, the person has taken the push
+    /// back, and nothing about it is handed — no `autoMode` key at all, so the harness's own lists stand.
+    /// </summary>
+    [Fact]
+    public void With_no_push_switched_off_the_classifier_is_told_nothing()
+    {
+        var file = Off(PermissionRules.Load(_home), "no-push");
+
+        Assert.Empty(PermissionRules.HardDeny(file));
+        var path = SpawnSettings.Write(_home, "s1", PermissionRules.Compose(file, "default", "engine"), PermissionRules.HardDeny(file));
+        using var document = JsonDocument.Parse(File.ReadAllText(path!));
+        Assert.False(document.RootElement.TryGetProperty("autoMode", out _));
+        Assert.NotEmpty(PermissionRules.HardDeny(PermissionRules.Load(_home)));
     }
 
     // ——— PERM3: the tree guard, a hook rather than a rule.
@@ -449,7 +568,7 @@ public sealed class PermissionRulesTests : IDisposable
         var tree = Path.Combine(_home, "engine");
         var guard = TreeGuard.For(_home, tree);
 
-        var path = SpawnSettings.Write(_home, "s1", PermissionRules.Compose(PermissionRules.Load(_home), "default", "engine"), guard);
+        var path = SpawnSettings.Write(_home, "s1", PermissionRules.Compose(PermissionRules.Load(_home), "default", "engine"), [], guard);
 
         using var document = JsonDocument.Parse(File.ReadAllText(path!));
         var entry = Assert.Single(document.RootElement.GetProperty("hooks").GetProperty("PreToolUse").EnumerateArray());
@@ -469,7 +588,7 @@ public sealed class PermissionRulesTests : IDisposable
         var target = Path.Combine(_home, "engine");
         var guard = TreeGuard.For(_home, tree, [target]);
 
-        var path = SpawnSettings.Write(_home, "s1", RuleLists.Empty, guard);
+        var path = SpawnSettings.Write(_home, "s1", RuleLists.Empty, [], guard);
 
         using var document = JsonDocument.Parse(File.ReadAllText(path!));
         var hook = document.RootElement.GetProperty("hooks").GetProperty("PreToolUse")[0].GetProperty("hooks")[0];
@@ -480,13 +599,13 @@ public sealed class PermissionRulesTests : IDisposable
     public void No_guard_is_no_hooks_key_and_a_guard_alone_is_still_a_file()
     {
         var rules = PermissionRules.Compose(PermissionRules.Load(_home), "default", "engine");
-        using (var plain = JsonDocument.Parse(File.ReadAllText(SpawnSettings.Write(_home, "s1", rules)!)))
+        using (var plain = JsonDocument.Parse(File.ReadAllText(SpawnSettings.Write(_home, "s1", rules, [])!)))
         {
             Assert.False(plain.RootElement.TryGetProperty("hooks", out _));
         }
 
         var nothing = PermissionRules.Compose(Off(PermissionRules.Load(_home), "connector", "commit", "no-push"), "default", "engine");
-        var alone = SpawnSettings.Write(_home, "s2", nothing, TreeGuard.For(_home, _home));
+        var alone = SpawnSettings.Write(_home, "s2", nothing, [], TreeGuard.For(_home, _home));
         Assert.NotNull(alone);
         using var guarded = JsonDocument.Parse(File.ReadAllText(alone!));
         Assert.True(guarded.RootElement.TryGetProperty("hooks", out _));
