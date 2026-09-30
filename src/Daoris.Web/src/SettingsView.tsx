@@ -29,6 +29,7 @@ import {
 import { useThemeChoice } from './theme';
 import { workspacesOf } from './workspaces';
 import type { StarterDoor } from './help/starters';
+import type { SetupStepId } from './help/setup';
 import { GetStartedDomain } from './setupGuide';
 
 /**
@@ -45,8 +46,11 @@ import { GetStartedDomain } from './setupGuide';
 export type SettingsSection =
   | 'start' | 'appearance' | 'ai' | 'workspace' | 'driver' | 'agents' | 'permissions' | 'plugins' | 'browser';
 
-/** A part of a domain a menu item is named for (UX5 U72), found by the id `settings-<anchor>`. */
-export type SettingsAnchor = 'usage' | 'proposals' | 'wiring' | 'lines' | 'landing';
+/**
+ * A part of a domain a menu item is named for (UX5 U72), found by the id `settings-<anchor>` — and since
+ * HELP6 each place Ask Daoris's go may name: Session branches, and each step of the setup guide.
+ */
+export type SettingsAnchor = 'usage' | 'proposals' | 'wiring' | 'lines' | 'landing' | 'sweep' | `step-${SetupStepId}`;
 
 /** Which domains need this machine: a browser is never offered one (D47 §4). */
 const SECTIONS: readonly { id: SettingsSection; machine: boolean }[] = [
@@ -62,6 +66,9 @@ const SECTIONS: readonly { id: SettingsSection; machine: boolean }[] = [
   { id: 'plugins', machine: true },
   { id: 'browser', machine: true },
 ];
+
+/** Settings' domains in the order its list shows them — what Ask Daoris's places are held to (HELP6). */
+export const SETTINGS_SECTIONS: readonly SettingsSection[] = SECTIONS.map(({ id }) => id);
 
 /**
  * Settings (D66, as amended by D75): one page, its domains in a list at its left, one shown at a time,

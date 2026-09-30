@@ -33,6 +33,8 @@ const HELP = {
 let SESSIONS: unknown[] = [];
 let HELPER: string | null = 'claude-code-acp';
 let PROPOSALS: unknown[] = [];
+const APPLIED_SETTING = { message: 'Applied: `#p1a2b3c4` — Drive `engine`.', applied: true };
+let APPLIED: unknown = APPLIED_SETTING;
 const asked: string[] = [];
 
 function respond(url: string): Response {
@@ -58,7 +60,7 @@ function bridge(start: { sessionId: string | null; message: string } = { session
       case 'SESSION_QUEUE': return { session: HELP.id, queued: [], taking: false };
       case 'END_CHAT': return { ended: true };
       case 'HELP_PROPOSALS': return { session: HELP.id, proposals: PROPOSALS };
-      case 'HELP_APPLY': return { message: 'Applied: `#p1a2b3c4` — Drive `engine`.', applied: true };
+      case 'HELP_APPLY': return APPLIED;
       case 'HELP_DISMISS': return { message: 'Not now: the person did not apply `#p1a2b3c4`.' };
       default: return {};
     }
@@ -68,12 +70,12 @@ function bridge(start: { sessionId: string | null; message: string } = { session
 /** How many times the page asked the driver to open Ask Daoris's conversation. */
 const starts = () => invoke.mock.calls.filter(([, type]) => type === 'START_HELP').length;
 
-function show(where?: Omit<HelpWhere, 'session'>, attending: string | null = null) {
+function show(where?: Omit<HelpWhere, 'session'>, attending: string | null = null, onGo = vi.fn()) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
     <QueryClientProvider client={client}>
       <Tooltip.Provider>
-        <AskDaoris where={where} attending={attending} onGo={vi.fn()} onClose={vi.fn()} />
+        <AskDaoris where={where} attending={attending} onGo={onGo} onClose={vi.fn()} />
       </Tooltip.Provider>
     </QueryClientProvider>,
   );
@@ -455,6 +457,80 @@ describe('Ask Daoris, with an agent named', () => {
     await userEvent.click(within(cards).getByRole('button', { name: 'not now' }));
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HELP_DISMISS', { payload: { id: 'p1a2b3c4' } });
     PROPOSALS = [];
+  });
+
+  /**
+   * HELP6: a go is applied by navigating, through the starters' own door, and nothing else changes. The
+   * driver settles it and names the place; the page opens it — here the setup guide at its second step.
+   */
+  it('takes the person to the place a go names once they press go there', async () => {
+    SESSIONS = [HELP];
+    PROPOSALS = [{
+      id: 'g1o2t3o4', kind: 'go', describe: 'Open Settings → Get started at step 2, Daoris\'s own agent.', terminal: '',
+      why: 'the person asked where to name its agent',
+    }];
+    APPLIED = {
+      message: 'Applied: `#g1o2t3o4` — Open Settings → Get started at step 2, Daoris\'s own agent. Nothing else changed.',
+      applied: true, go: { view: 'settings', domain: 'start', part: 'helper' },
+    };
+    bridge();
+    const onGo = vi.fn();
+    show(undefined, null, onGo);
+
+    const cards = await screen.findByRole('list', { name: 'what Ask Daoris proposes' });
+    await userEvent.click(within(cards).getByRole('button', { name: 'go there' }));
+
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HELP_APPLY', { payload: { id: 'g1o2t3o4' } });
+    await waitFor(() => expect(onGo).toHaveBeenCalledWith({ view: 'settings', section: 'start', anchor: 'step-helper' }));
+    PROPOSALS = [];
+    APPLIED = APPLIED_SETTING;
+  });
+
+  /** HELP6: a delete is applied through the driver's Apply, like every card, and opens nothing. */
+  it('deletes a record made by mistake on the person\'s press, and goes nowhere', async () => {
+    SESSIONS = [HELP];
+    PROPOSALS = [{
+      id: 'd1e2l3e4', kind: 'delete', describe: 'Delete ask `#a2none00` “a test ask”: it became no quest, so it goes alone.',
+      terminal: 'daoris-driver ask --delete a2none00', why: 'it was a test',
+    }];
+    APPLIED = { message: 'Applied: `#d1e2l3e4` — Deleted ask #a2none00.', applied: true, go: null, harnessAction: null };
+    bridge();
+    const onGo = vi.fn();
+    show(undefined, null, onGo);
+
+    const cards = await screen.findByRole('list', { name: 'what Ask Daoris proposes' });
+    expect(within(cards).getByText(/cannot be undone/)).toBeInTheDocument();
+    await userEvent.click(within(cards).getByRole('button', { name: 'delete' }));
+
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HELP_APPLY', { payload: { id: 'd1e2l3e4' } }));
+    expect(onGo).not.toHaveBeenCalled();
+    PROPOSALS = [];
+    APPLIED = APPLIED_SETTING;
+  });
+
+  /**
+   * HELP6: an update the person applied is followed by the Agents screen where the application holds its
+   * running action; drawn alone, with nothing holding one, the card still applies.
+   */
+  it('applies an agent\'s update with nothing above to follow it', async () => {
+    SESSIONS = [HELP];
+    PROPOSALS = [{
+      id: 'u1p2d3a4', kind: 'agent', describe: 'Update `claude-code` with its own updater.',
+      terminal: 'daoris agent update claude-code', why: 'the person asked for the newest',
+    }];
+    APPLIED = {
+      message: 'Started: `#u1p2d3a4` — Update `claude-code` with its own updater.', applied: true,
+      harnessAction: { harness: 'claude-code', action: 'update' },
+    };
+    bridge();
+    show();
+
+    const cards = await screen.findByRole('list', { name: 'what Ask Daoris proposes' });
+    await userEvent.click(within(cards).getByRole('button', { name: 'apply' }));
+
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HELP_APPLY', { payload: { id: 'u1p2d3a4' } }));
+    PROPOSALS = [];
+    APPLIED = APPLIED_SETTING;
   });
 
   /** With HELP5: the next conversation opens ahead, and the one that ended stays in front until it is spoken in. */

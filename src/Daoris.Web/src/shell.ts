@@ -9,6 +9,7 @@ import type { AccountSettings, AccountSettingsChange, ToolDoor } from './tools';
 import type { SessionDiff } from './work/diff';
 import type { SessionOption } from './work/SessionOptions';
 import type { HelpProposal } from './help/ProposalCard';
+import type { HelpPlace } from './help/places';
 import { type ChatMessage, type EventPage, mergeEvents, type SessionEvent } from './work/conversation';
 import { toUpload } from './attachments';
 import { effectiveDark, subscribeTheme } from './theme';
@@ -1279,19 +1280,34 @@ export const useHelpProposals = (session: string | null, live: boolean) => {
   });
 };
 
+/**
+ * What the person's Apply did (HELP1c, HELP6): the driver's sentence, whether it was applied, where a go
+ * takes the person, and the agent action an update or a pin started.
+ */
+export type HelpSettled = {
+  message: string;
+  applied?: boolean;
+  go?: HelpPlace | null;
+  harnessAction?: { harness: string; action: 'update' | 'pin' } | null;
+};
+
 /** The person's Apply and Not now on a proposal: the result goes back into the conversation (D89). */
 export const useSettleHelp = () => {
   const client = useQueryClient();
   return useMutation({
     mutationFn: (settle: { id: string; apply: boolean }) =>
-      call<{ message: string; applied?: boolean }>(settle.apply ? 'HELP_APPLY' : 'HELP_DISMISS', { id: settle.id }),
+      call<HelpSettled>(settle.apply ? 'HELP_APPLY' : 'HELP_DISMISS', { id: settle.id }),
     onSuccess: (_answer, settle) => {
       // Whether Ask Daoris's proposals help (LOG1b): the person's Apply or Not now, once it landed.
       logEvent('proposal.settled', { applied: settle.apply });
       void client.invalidateQueries({ queryKey: ['help-proposals'] });
-      // What an Apply changed: the driver's file, and an ask it made.
+      // What an Apply changed: the driver's file, and an ask it made…
       void client.invalidateQueries({ queryKey: keys.driver });
       void client.invalidateQueries({ queryKey: keys.allSessions });
+      // …an account's settings or an agent's pin (HELP6), and a record it deleted.
+      void client.invalidateQueries({ queryKey: keys.harnesses });
+      void client.invalidateQueries({ queryKey: keys.allQuests });
+      void client.invalidateQueries({ queryKey: keys.allAsks });
     },
   });
 };

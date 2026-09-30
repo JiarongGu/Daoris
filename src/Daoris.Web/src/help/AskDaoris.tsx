@@ -43,7 +43,7 @@ export function AskDaoris({
   const helper = machine.helper;
   const conversation = useAskConversation(
     scroller, where ? { ...where, session: attendedOf(attending, everything.data ?? []) } : undefined, opening,
-    helper, onOpened);
+    helper, onOpened, onGo);
 
   const found = starters(machine);
   // The setup guide's standing, from the same reading (D97): the starters lead to it while it is not done.

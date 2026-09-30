@@ -4,15 +4,18 @@ import { HELP_REPOSITORY } from '../api';
 import { sentence } from '../format';
 import { useHelpSessions } from '../queries';
 import {
-  NO_TURNS, useCancelTurn, useChatTurns, useEndChat, useHarnesses, useHelpProposals, useHelpReadied, useSendMessage,
-  useSettleHelp, useStartHelp, useStopSession,
+  type HelpSettled, NO_TURNS, useCancelTurn, useChatTurns, useEndChat, useHarnesses, useHelpProposals, useHelpReadied,
+  useSendMessage, useSettleHelp, useStartHelp, useStopSession,
 } from '../shell';
+import { useHeldHarnessRun } from '../harnessRuns';
 import { SESSION_ACTIVE } from '../ui';
 import type { ChatMessage } from '../work/conversation';
 import { Composer } from '../work/Composer';
 import { SessionConversation } from '../work/SessionConversation';
 import type { AskConversationSlot } from './AskPanel';
+import { placeDoor } from './places';
 import { ProposalCard } from './ProposalCard';
+import type { StarterDoor } from './starters';
 import { type HelpWhere, prefaceOf } from './where';
 import { logEvent } from '../shell';
 
@@ -51,6 +54,8 @@ export function useAskConversation(
    * with its tab or its box, and a question still held would be asked again by the next drawing.
    */
   onOpened?: () => void,
+  /** Where a go the person applied takes them (HELP6): the starters' own door, so nothing else changes. */
+  onGo?: (door: StarterDoor) => void,
 ) {
   const { t } = useTranslation();
   const sessions = useHelpSessions();
@@ -269,7 +274,16 @@ export function useAskConversation(
   // Apply or Not now goes back into the conversation as the person's next message.
   const proposals = useHelpProposals(shown?.id ?? null, live);
   const settle = useSettleHelp();
+  // The Agents screen's running action, where the application holds one (HELP6).
+  const runs = useHeldHarnessRun();
   const cards = proposals.data ?? [];
+  // What an Apply did beyond the driver's sentence (HELP6): a go opens its place through the starters'
+  // door, and an update or a pin is followed by the Agents screen, its console and its end said there.
+  const applied = (answer: HelpSettled) => {
+    const door = answer.go ? placeDoor(answer.go) : null;
+    if (door) onGo?.(door);
+    if (answer.harnessAction) runs?.follow(answer.harnessAction.harness, answer.harnessAction.action);
+  };
   const proposed = cards.length > 0 ? (
     <ul aria-label={t('help.proposal.list')} className="m-0 mt-3 grid list-none gap-2.5 p-0">
       {cards.map((proposal) => (
@@ -277,7 +291,7 @@ export function useAskConversation(
           key={proposal.id}
           proposal={proposal}
           pending={settle.isPending}
-          onApply={(id) => settle.mutate({ id, apply: true }, { onError: (error) => setRefusal(sentence(error)) })}
+          onApply={(id) => settle.mutate({ id, apply: true }, { onSuccess: applied, onError: (error) => setRefusal(sentence(error)) })}
           onDismiss={(id) => settle.mutate({ id, apply: false }, { onError: (error) => setRefusal(sentence(error)) })}
         />
       ))}

@@ -98,8 +98,10 @@ export function GetStarted({ steps, reading = false, helper, atStart, onAtStart,
         {shown.map(({ step, number, title }) => (
           <li
             key={step.id}
+            // Where Ask Daoris's go to a step lands (HELP6), as a menu's part lands on its card.
+            id={`settings-step-${step.id}`}
             aria-label={`${number}. ${title}`}
-            className="flex flex-wrap items-start justify-between gap-x-6 gap-y-2 border-t border-line py-3 first:border-t-0 first:pt-0 last:pb-0"
+            className="flex scroll-mt-3 flex-wrap items-start justify-between gap-x-6 gap-y-2 border-t border-line py-3 first:border-t-0 first:pt-0 last:pb-0"
           >
             {/* Wrapping, not a fixed grid (SETUP1, looked at): beside a side bar the card is narrow, and a
                 grid squeezed both columns until a command broke mid-word and a door's label took two lines.

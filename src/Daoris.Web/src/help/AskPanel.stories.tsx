@@ -83,6 +83,44 @@ export const Proposing: Story = {
   },
 };
 
+/**
+ * HELP6: a card for each door built since — an agent's update, an account's model and effort, a delete of
+ * a record made by mistake, and a go to a screen, which changes nothing and carries no command.
+ */
+export const ProposingEveryKind: Story = {
+  args: {
+    ...Talking.args,
+    conversation: {
+      ...Talking.args!.conversation!,
+      proposals: (
+        <ul className="m-0 mt-3 grid list-none gap-2.5 p-0">
+          {[
+            {
+              id: 'u1', kind: 'agent' as const,
+              describe: 'Update `claude-code-acp`: move its pin from 0.84.0 to the newest release, installed before the pin moves.',
+              terminal: 'daoris agent update claude-code-acp', why: 'you asked for the newest',
+            },
+            {
+              id: 's1', kind: 'account' as const,
+              describe: 'Set `claude-code` account `work`\'s model to `opus` and its effort to `high`.',
+              terminal: 'daoris agent settings claude-code --account work model opus effort high', why: 'you want it to think harder',
+            },
+            {
+              id: 'd1', kind: 'delete' as const,
+              describe: 'Delete ask `#a1b2c3d4` “a test ask”, with the quest it became: `#q1a2b3c4` “Cap the chunk budget”.',
+              terminal: 'daoris-driver ask --delete a1b2c3d4', why: 'it was a test',
+            },
+            {
+              id: 'g1', kind: 'go' as const, describe: 'Open Settings → Get started at step 2, Daoris\'s own agent.', terminal: '',
+              why: 'you asked where to name its agent',
+            },
+          ].map((proposal) => <ProposalCard key={proposal.id} proposal={proposal} onApply={() => {}} onDismiss={() => {}} />)}
+        </ul>
+      ),
+    },
+  },
+};
+
 export const Ended: Story = {
   args: { ...Talking.args, conversation: { ...Talking.args!.conversation!, ended: true } },
 };
