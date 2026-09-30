@@ -8380,3 +8380,23 @@ boundary now covers `bridge/`. **MOD4:** the 1,925-line `SettingsView.tsx` becam
 split beside its code and deleted. Nothing a person sees changed; seventeen structural tests hold the shape.
 **Proven by:** vitest 1700 (from 1683), `tsc`, the catalogue check, CLI 629, release 66/66, family 301/301,
 Playwright 21, deployment 70/70 (the same batch proved MOD7's merge).
+
+
+## MOD6 — Ask Daoris's room and proposals, by feature (2026-09-30)
+
+> - [ ] **MOD6 — the room and the proposals by feature**: a room section or door row per file, a judge per
+> proposal kind behind one interface, the service twin mirroring it.
+
+**Outcome** (built by a subagent in its own worktree, merged, then rehearsed on main). Driver: a proposal
+kind is an `IHelpProposalKind` class, one file per kind under `Help/Proposals/`, registered in
+`HelpProposalKinds`; the record, facts, plan and doors are partial, so a kind declares what only it needs.
+The room is thirteen `IHelpRoomSection` files under `Help/Room/`, registered in `HelpRoomSections`, with
+`HelpMachine` partial (`Help.cs` 663 → 149 lines, `HelpProposals.cs` 973 → 252). Service: one
+`HelpProposalBox.<Kind>.cs` writer and one `KnowledgeTools.Help.<Kind>.cs` tool per kind, the tool surface
+identical by reflection. A golden test taken before the split holds the room byte for byte, and a
+structural test keeps each kind whole across the driver, the service, the connector and the page.
+**Found by this merge, not by the branch:** MOD2 (merged just before) split the page's catalogues, and two
+C# tests that read `locales/<language>.json` (`RefusalCatalogueTests`, `AskTierCatalogueTests`) failed on
+main, unseen because that batch skipped the .NET suites as "web only". Both now merge the area files as
+the page does. MOD9's merge tool runs every declared gate whatever the lane.
+**Proven by:** driver 1431, modules 399, service 655 + 46, CLI 629, family 301/301, deployment 70/70.

@@ -21,7 +21,7 @@ lists.
 
 ## State
 
-**Counts, and this is their one home:** sixteen commands, **629 CLI tests, 652 service and 46 HTTP host, 1416 driver,
+**Counts, and this is their one home:** sixteen commands, **629 CLI tests, 655 service and 46 HTTP host, 1431 driver,
 399 desktop modules, 80 devkit, 1700 web unit, 21 Playwright**, 66/66 release rehearsal, **301/301
 family rehearsal** (it names its own phases when you run it), **70/70 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge
@@ -112,9 +112,9 @@ rather than designed.
 
 ## Backlog
 
-**Twenty-two rows are open, in three kinds** (triaged 2026-09-30, when the owner asked to go faster):
-- **Workable now, by the parent or subagents (eight):** the parallel-development arc's four
-  (MOD5, MOD6, MOD8, MOD9, the owner's newest; MOD5 in flight, MOD6 merging), READ1, TASKBAR1, TEST1, and FLAKE1 (which MOD8
+**Twenty-one rows are open, in three kinds** (triaged 2026-09-30, when the owner asked to go faster):
+- **Workable now, by the parent or subagents (seven):** the parallel-development arc's three
+  (MOD5, MOD8, MOD9, the owner's newest; MOD5 in flight), READ1, TASKBAR1, TEST1, and FLAKE1 (which MOD8
   absorbs).
 - **Waiting on the owner (six):** BUDGET1 and PLUGREPO1 (their calls), TRUST2 and AGT2c (a grant, two
   downloads), FG5 and BRW3 (the owner present).
@@ -134,12 +134,12 @@ the two kinds of collision (a shared record, a god file), the rules, the splits,
 order. Every split is behaviour-preserving and proven by the gates as they stand.
 - [ ] **MOD5 — the driver module by domain**: `DriverModule.cs` → a partial per domain and a route
   table each adds to.
-- [ ] **MOD6 — the room and the proposals by feature**: a room section or door row per file, a judge per
-  proposal kind behind one interface, the service twin mirroring it.
 - [ ] **MOD8 — tests follow their code, and a `Process` category** run serially in the parent; the
   worktree path-length failure fixed at its cause.
 - [ ] **MOD9 — one merge tool and a dispatch skill**: `tools/merge-branch.mjs` (merge, stop on a
-  conflict it cannot resolve, the declared gates in order, whole outputs kept) and a repository skill
+  conflict it cannot resolve, EVERY declared gate in order whatever the branch's lane — MOD2 moved the
+  web's catalogues and two C# tests that read them broke unseen, because the batch skipped the .NET
+  suites as "web only" — whole outputs kept) and a repository skill
   holding the brief every subagent gets.
 
 ### Watch it, type into it, set it up (owner, 2026-09-30) — in this order

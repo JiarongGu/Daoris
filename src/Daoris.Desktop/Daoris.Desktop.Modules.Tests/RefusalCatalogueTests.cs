@@ -25,10 +25,24 @@ public sealed class RefusalCatalogueTests
         return at?.FullName ?? throw new InvalidOperationException("no workspace root above the test binary");
     }
 
+    /// <summary>
+    /// A language's whole catalogue. Since MOD2 it is one file per area under `locales/<language>/`, merged
+    /// at load, and read here the same way; a single `<language>.json` no longer exists.
+    /// </summary>
     private static JsonElement Catalogue(string language)
     {
-        var path = Path.Combine(RepositoryRoot(), "src", "Daoris.Web", "src", "locales", $"{language}.json");
-        return JsonDocument.Parse(File.ReadAllText(path)).RootElement.Clone();
+        var folder = Path.Combine(RepositoryRoot(), "src", "Daoris.Web", "src", "locales", language);
+        var merged = new System.Text.Json.Nodes.JsonObject();
+        foreach (var file in Directory.EnumerateFiles(folder, "*.json").Order(StringComparer.Ordinal))
+        {
+            foreach (var (key, value) in System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllText(file))!.AsObject())
+            {
+                merged[key] = value?.DeepClone();
+            }
+        }
+
+        Assert.NotEmpty(merged);
+        return JsonDocument.Parse(merged.ToJsonString()).RootElement.Clone();
     }
 
     [Theory]

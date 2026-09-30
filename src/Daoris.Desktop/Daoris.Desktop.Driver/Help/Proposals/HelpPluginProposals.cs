@@ -1,9 +1,15 @@
+using System.Text.Json;
+using static Daoris.Driver.HelpProposals;
+
 namespace Daoris.Driver;
 
 /// <summary>
 /// Ask Daoris's <c>plugin</c> proposal (PLUG9): a plugin that has landed, added from its folder in the
 /// checkout of the repository that holds it, or one installed here switched on or off — judged with the
-/// catalogue's own reader, as <c>daoris plugin add</c> and Settings → Plugins' switch judge them.
+/// catalogue's own reader, as <c>daoris plugin add</c> and Settings → Plugins' switch judge them. Its door is
+/// <c>add</c>, <c>enable</c>, <c>disable</c> or <c>update</c>; its target the id of a plugin switched or
+/// updated; and its own <c>folder</c> and <c>offer</c>, beside the proposal's <c>repository</c>, name what an
+/// add copies.
 /// </summary>
 /// <remarks>
 /// <para><b>Making a plugin is work, and installing one is the person's press.</b> A plugin runs on this
@@ -21,9 +27,20 @@ namespace Daoris.Driver;
 /// never a path, and an <c>update</c> replaces an installed plugin from the source it recorded, judged by
 /// <see cref="PluginInstall.PlanUpdate"/> and showing what changes before Apply.</para>
 /// </remarks>
-public static partial class HelpProposals
+internal sealed class HelpPluginProposals : IHelpProposalKind
 {
-    private static HelpPlan Plugin(HelpProposal proposal, HelpMachineFacts facts) => proposal.Door switch
+    public string Kind => "plugin";
+
+    // PLUG9: adding a plugin that has landed, or switching one; making one is an ask, never this.
+    public string Tool => "plugin_propose";
+
+    public HelpProposal Read(HelpProposal proposal, JsonElement file) => proposal with
+    {
+        Folder = Text(file, "folder"),
+        Offer = Text(file, "offer"),
+    };
+
+    public HelpPlan Plan(HelpProposal proposal, DriverConfig config, HelpMachineFacts facts) => proposal.Door switch
     {
         "add" when proposal.Offer?.Trim() is { Length: > 0 } => OfferAdd(proposal, facts),
         "add" => PluginAdd(proposal, facts),
@@ -31,6 +48,26 @@ public static partial class HelpProposals
         "update" => PluginUpdate(proposal, facts),
         var door => new HelpPlan($"`{door}` is not a plugin's change — `add`, `enable`, `disable` or `update`.", "", "", null),
     };
+
+    public async Task<HelpApplied> ApplyAsync(HelpApplying applying, CancellationToken ct)
+    {
+        var (proposal, plan, doors, id) = (applying.Proposal, applying.Plan, applying.Doors, applying.Id);
+
+        // PLUG9: a copy, a swap or a row, and nothing started — the loop starts what it runs at its next look.
+        try
+        {
+            if (proposal.Door == "add" && proposal.Offer?.Trim() is { Length: > 0 }) doors.AddOffer(plan.Plugin!.Id);
+            else if (proposal.Door == "add") doors.AddPlugin(plan.Source!);
+            else if (proposal.Door == "update") await doors.UpdatePluginAsync(plan.Plugin!.Id, ct).ConfigureAwait(false);
+            else doors.SwitchPlugin(plan.Plugin!.Id, proposal.Door == "enable");
+        }
+        catch (DriverException error)
+        {
+            return applying.Settled(false, $"Not applied: `#{id}` (`{plan.Terminal}`) — {error.Message}", error.Message);
+        }
+
+        return applying.Settled(true, $"Applied: `#{id}` — {plan.Describe} (`{plan.Terminal}`)", null);
+    }
 
     /// <summary>
     /// An add of one of the install's offers, by its id (PLUG9 d): one the install carries, sound, and not
@@ -244,4 +281,93 @@ public static partial class HelpProposals
         var comparison = OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal;
         return string.Equals(path, folder, comparison) || path.StartsWith(folder + Path.DirectorySeparatorChar, comparison);
     }
+}
+
+/// <summary>
+/// What a plugin proposal's card shows (PLUG9): the plugin's id, the command it starts, the points it
+/// speaks on, the harnesses it declares and the servers it hands every session, each as its manifest
+/// writes it, so the person sees what will run before Apply.
+/// </summary>
+/// <param name="Command">Its hook process, `${plugin}` as written; null where it speaks on no point.</param>
+public sealed record HelpPluginView(
+    string Id, string Name, string Version, IReadOnlyList<string>? Command, IReadOnlyList<string> Points,
+    IReadOnlyList<HelpPluginPart> Harnesses, IReadOnlyList<HelpPluginPart> Servers)
+{
+    /// <summary>Whether Apply copies it into the home under its id (an add), rather than switching one installed.</summary>
+    public bool Copied { get; init; }
+
+    /// <summary>Why an installed plugin contributes nothing as it stands, in the catalogue's words; null when sound.</summary>
+    public string? Problem { get; init; }
+
+    /// <summary>What an offer says it needs on the machine, in its README's words (PLUG9 d); empty for every other plugin.</summary>
+    public IReadOnlyList<string> Needs { get; init; } = [];
+
+    /// <summary>What an update changes (PLUG9 c); empty for every other change, and for an update whose declarations stay.</summary>
+    public IReadOnlyList<PluginChange> Changes { get; init; } = [];
+
+    /// <summary>Whether Apply replaces the installed folder from its source, keeping what it kept (an update).</summary>
+    public bool Replaced { get; init; }
+}
+
+/// <summary>A harness a plugin declares, or a server it hands every session: its name, and the command that runs it.</summary>
+public sealed record HelpPluginPart(string Name, IReadOnlyList<string> Command);
+
+public sealed partial record HelpProposal
+{
+    /// <summary>A plugin's folder to add from: from that checkout's root, or a whole path (PLUG9).</summary>
+    public string? Folder { get; init; }
+
+    /// <summary>One of the install's own plugins to add, by its id (PLUG9 d) — never a path on this machine.</summary>
+    public string? Offer { get; init; }
+}
+
+public sealed partial record HelpMachineFacts
+{
+    /// <summary>The Daoris home, which a plugin is never added from (PLUG9); null where none was named.</summary>
+    public string? Home { get; init; }
+
+    /// <summary>Each registered repository's checkout on this machine, or null where it has none (PLUG9).</summary>
+    public IReadOnlyDictionary<string, string?> Checkouts { get; init; } = new Dictionary<string, string?>();
+
+    /// <summary>The harness names this build carries, which a plugin may not declare (PLUG9, D64 §5).</summary>
+    public IReadOnlyCollection<string> Reserved { get; init; } = [];
+
+    /// <summary>The install's offers folder (PLUG9 d), where an offer is found and an offer's update reads; null is none.</summary>
+    public string? OffersFolder { get; init; }
+
+    /// <summary>The install's offers, as Settings → Plugins lists them (PLUG9 d).</summary>
+    public IReadOnlyList<PluginOffer> Offers { get; init; } = [];
+}
+
+public sealed partial record HelpPlan
+{
+    /// <summary>What a plugin proposal's plugin runs, as its manifest writes it (PLUG9); null for every other kind.</summary>
+    public HelpPluginView? Plugin { get; init; }
+
+    /// <summary>The folder a plugin is added from, resolved on this machine (PLUG9); null for every other plan.</summary>
+    public string? Source { get; init; }
+}
+
+public partial interface IHelpDoors
+{
+    /// <summary>
+    /// <c>daoris plugin add</c>'s copy, the driver's twin (<see cref="PluginInstall.Add"/>, PLUG9): the
+    /// folder copied into the home under its manifest's id. 🔴 Nothing the plugin declares is started here.
+    /// </summary>
+    void AddPlugin(string folder);
+
+    /// <summary><c>PLUGIN_ACTION</c>'s own enable or disable: a row in <c>plugins.json</c> (PLUG9).</summary>
+    void SwitchPlugin(string id, bool on);
+
+    /// <summary>
+    /// <c>PLUGIN_INSTALL</c>'s own copy of one of the install's offers, by its id (PLUG9 d,
+    /// <see cref="PluginInstall.AddOffer"/>). 🔴 Nothing the plugin declares is started here.
+    /// </summary>
+    void AddOffer(string id);
+
+    /// <summary>
+    /// <c>PLUGIN_UPDATE</c>'s own apply (PLUG9 c, <see cref="PluginInstall.Update"/>): the plugin's hook stopped,
+    /// its install folder replaced from its source, what it kept untouched; the loop starts it again later.
+    /// </summary>
+    Task UpdatePluginAsync(string id, CancellationToken ct);
 }
