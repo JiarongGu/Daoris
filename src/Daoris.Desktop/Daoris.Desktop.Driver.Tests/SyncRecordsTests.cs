@@ -102,8 +102,73 @@ public sealed class SyncRecordsTests : IDisposable
         Assert.Contains("no `origin/main`", SyncWords.Describe(Pull(PullKind.NoRemote)));
         Assert.Contains("no local `main`", SyncWords.Describe(Pull(PullKind.NoLocal)));
         Assert.Contains("git said so", SyncWords.Describe(Pull(PullKind.Unknown)));
-        Assert.EndsWith("(not fetched: there is no `origin` remote here)", SyncWords.Describe(Pull(PullKind.UpToDate, fetch: "there is no `origin` remote here")));
+        // A short mark on the row (WSR7): the reason is said once, before the rows (`SyncWords.NotFetched`).
+        Assert.EndsWith("up to date with `origin/main` (not fetched)", SyncWords.Describe(Pull(PullKind.UpToDate, fetch: "there is no `origin` remote here")));
         Assert.Contains("no line is set", SyncWords.Describe(new LinePull("engine", "aurora", null, PullKind.NoLine, null, null, 0, null, null)));
+    }
+
+    /// <summary>
+    /// WSR7: every fetch failed on the owner's workspace, and the look said so only at the end of each of 29 rows. It is
+    /// said once, first: how many, grouped by git's reason, when each last heard from origin, and what the git Daoris
+    /// runs needs to reach an origin over SSH or HTTPS — in no product's name.
+    /// </summary>
+    [Fact]
+    public void Repositories_not_fetched_are_said_once_first_grouped_by_reason_with_when_each_last_heard_and_what_git_needs()
+    {
+        const string Unreadable = "fatal: Could not read from remote repository.";
+        LinePull Pull(string repository, string? fetch, DateTimeOffset? last = null, string? reach = "ssh") =>
+            new(repository, "aurora", "main", PullKind.UpToDate, "a", "a", 0, fetch, null) { LastFetch = last, Reach = reach };
+        var lines = new[]
+        {
+            Pull("engine", Unreadable, At.AddDays(-2)),
+            Pull("game", Unreadable),
+            Pull("tools", "there is no `origin` remote here", reach: null),
+            Pull("atlas", null),
+        };
+
+        var said = SyncWords.NotFetched(lines, At);
+
+        Assert.Equal("trees: 3 of 4 repositories were not fetched, so each is judged against what origin said when it was last fetched here:", said[0]);
+        Assert.Equal($"  {Unreadable} (2): engine (last fetched 2 days ago), game (never fetched)", said[1]);
+        Assert.Equal("  there is no `origin` remote here (1): tools (never fetched)", said[2]);
+        Assert.Contains("needs a key its own ssh reads, or `core.sshCommand`", said[3]);
+        Assert.Equal(4, said.Count);
+        Assert.Empty(SyncWords.NotFetched([Pull("atlas", null)], At));
+
+        var https = SyncWords.NotFetched([Pull("web", "fatal: could not read Username for 'https://example.test': terminal prompts disabled", reach: "https")], At);
+        Assert.Contains("a credential helper that answers without asking", https[^1]);
+        Assert.DoesNotContain(https, line => line.Contains("sshCommand"));
+    }
+
+    [Theory]
+    [InlineData(0, "last fetched just now")]
+    [InlineData(1, "last fetched 1 minute ago")]
+    [InlineData(59, "last fetched 59 minutes ago")]
+    [InlineData(60, "last fetched 1 hour ago")]
+    [InlineData(60 * 49, "last fetched 2 days ago")]
+    public void When_a_repository_last_heard_from_origin_is_said_in_words(int minutesAgo, string words)
+    {
+        Assert.Equal(words, SyncWords.LastFetched(At.AddMinutes(-minutesAgo), At));
+        Assert.Equal("never fetched", SyncWords.LastFetched(null, At));
+    }
+
+    /// <summary>How origin is reached, from its URL: what a failed fetch's advice is for. A drive letter is a folder, not a host.</summary>
+    [Theory]
+    [InlineData("git@example.test:owner/repo.git", "ssh")]
+    [InlineData("example.test:repo.git", "ssh")]
+    [InlineData("ssh://git@example.test/owner/repo.git", "ssh")]
+    [InlineData("git+ssh://example.test/repo.git", "ssh")]
+    [InlineData("https://example.test/owner/repo.git", "https")]
+    [InlineData("http://example.test/repo.git", "http")]
+    [InlineData("file:///srv/repo.git", "file")]
+    [InlineData("C:\\repos\\engine-origin.git", "file")]
+    [InlineData("C:/repos/engine-origin.git", "file")]
+    [InlineData("../engine-origin.git", "file")]
+    [InlineData("/srv/repo.git", "file")]
+    [InlineData("", null)]
+    public void How_origin_is_reached_is_read_from_its_address(string url, string? reach)
+    {
+        Assert.Equal(reach, SessionTrees.ReachOf(url));
     }
 
     [Fact]

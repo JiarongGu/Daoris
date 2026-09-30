@@ -29,10 +29,12 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
         ("set how accepted work lands", "Settings → Workspace → How work lands",
             "`daoris driver landing <repository> merge|branch <pattern>|--clear` (`--workspace <name>`, `--tidy`, "
             + "and on a branch `--plugin <id>`: an installed plugin that pushes it and opens the pull request)"),
-        // WSR6: after a pull request merges — the line pulled, what merged deleted, what still works replayed onto it.
+        // WSR6: after a pull request merges — the line pulled, what merged deleted, what still works replayed onto it. It
+        // takes the repositories holding Daoris's branches, and the others where included (WSR7, D112).
         ("bring a repository up to date after its pull request merged: fetch and fast-forward the line, delete the branches "
-            + "whose work reached it, replay the branches still at work onto it (Daoris fetches, never pushes)",
-            "Settings → Workspace → Session branches → Bring up to date", "`daoris-driver trees sync [--repository <name>] [--yes]`"),
+            + "whose work reached it, replay the branches still at work onto it (Daoris fetches, never pushes; it takes the "
+            + "repositories holding Daoris's branches, and another where named or included)",
+            "Settings → Workspace → Session branches → Bring up to date", "`daoris-driver trees sync [--repository <name>] [--all] [--yes]`"),
         ("clean up session branches whose work landed, and branches a landing made whose work reached the line",
             "Settings → Workspace → Session branches", "`daoris-driver trees clean`"),
         // WSR5b: a landed branch handed to a landing plugin after its landing.

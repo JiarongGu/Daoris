@@ -5386,3 +5386,75 @@ dropped as already on the line), and deletes the landed branch, pushing nothing.
 branch and not run there; the git sequence it relies on (the squashed commit dropped, the proof's diff
 empty) was run by hand in scratch repositories. It stays with `--repository`, since the examples'
 registered roots are not repositories of their own and git walks up from a folder that is not one.*
+
+*Amended by WSR7 (2026-10-01), from the owner's workspace of 29 repositories. **A look fetches four repositories at a
+time** (`SyncBounds.FetchesAtOnce`), and **the page waits as long as the host may work** on each long route
+(`bridge/call.ts`'s `hostBounds`, a twin of `SyncBounds` held by `SyncBoundsTests`): the bridge's default 30 seconds
+gave up on a look that ran for minutes, and the host's answer reached nobody. **The fetch writes no `FETCH_HEAD`**
+(`--no-write-fetch-head`, git 2.29 and later): a fetch that fails empties that file and stamps it with the failure's
+time, so the person's own last fetch could no longer be read, and only origin's refs are the look's to move. **What was
+not fetched is said once, before the rows**, on both doors: how many, grouped by git's reason; when each last heard
+from origin, the newer of `FETCH_HEAD`'s time where it holds a fetch and the time `origin/<line>` last moved here, or
+never; and what the git on the path needs to reach an origin over SSH (a key its own ssh reads, or `core.sshCommand`)
+or HTTPS (a credential helper that answers without asking), since the person's own Git client may carry a git and an
+ssh of its own. A row carries a short mark. Which repositories a look takes is D112. The bound, the words and the
+twin are held in the fast half. That a failed fetch leaves `FETCH_HEAD` as it was, and that a fetch that lands logs
+`origin/<line>` with its time, were run by hand in scratch repositories (git 2.53, Windows), and a `TreeSyncTests` case
+in the `Process` half asserts both, written and not run here (MOD8). No fetch reached a real SSH remote. `HANDOFF` and
+`LAND_SESSION_TREE` still wait the bridge's default, since the work frame's tests hold those calls' exact shape.*
+
+## D112 — Bringing up to date looks at the repositories that hold Daoris's branches; every other is listed apart, and included by the person (2026-10-01)
+
+**Decision (WSR7 c).** The first look on the owner's workspace of 29 repositories fetched all 29, and after one
+pull request merged it proposed fast-forwarding the line of seven repositories where Daoris held nothing. The
+owner's ask that D109 was built from names three things, all of them Daoris's: pull the latest line, delete the
+merged branch, rebase the working branches. So:
+
+1. **By default a look, and a press, take the repositories that hold a branch of Daoris's**: a session branch
+   (`daoris/…`), or a branch a landing recorded (`landings.json`, D102) that still stands. That is read on the
+   machine, one `for-each-ref` per repository beside the landings record, and reaches no network. A repository
+   git cannot answer for is looked at, so git's own words reach its row rather than the repository vanishing.
+2. **Every other repository with a checkout is listed apart**, by name: not fetched, not judged, and nothing of
+   it moves. The person includes it. On the screen the list sits under the section, collapsed, each repository
+   with a box and one box for all of them; the next look fetches and judges what was ticked, and keeps it
+   included when it looks again. On the terminal, `daoris-driver trees sync --all` includes every one, and
+   without it the list ends with one line naming the rest. **Naming a repository includes it**:
+   `--repository <name>`, and an Ask Daoris proposal targeting one.
+3. **The press acts on what the person was shown.** A row the screen listed names its repository, so a
+   repository included at the look is included at the press without being asked for again, and the press
+   never reaches one it did not list.
+4. **Ask Daoris's sync card takes the same default**, and a card naming a repository includes it. Its look's words
+   name the repositories it left apart, since its rows say only what it looked at, and its press asks the sessions in
+   use again inside each repository's hold, as the screen's does (LEFT2).
+
+**Why.** Fast-forwarding the line of a repository Daoris holds nothing in is Daoris moving the person's branch
+for no work of its own. D109's reason to pull a line, that a stale line grows the next session from before the
+merge, holds where Daoris's work stands, and after a pull request merges the repository it merged in holds the
+landed branch, so it is in the default at the moment it matters. The cost was real as well: every fetch is a
+round trip as the person, and 29 of them, one after another, were the look the window stopped waiting for
+(WSR7 a).
+
+**Rejected.**
+- **Every repository with a checkout** (D109 as built): the seven fast-forwards nobody asked for, and a look
+  that pays a network round trip for each repository Daoris has nothing in.
+- **Only the repository whose pull request merged.** Daoris cannot know which one merged before it fetches,
+  and a session branch elsewhere may be waiting on a landing that merged a day earlier.
+- **Judging the others against their last fetch, without fetching.** Cheap, but it fills the list with stale
+  answers about repositories nobody asked after, which is the noise this removes.
+- **Leaving the others out altogether.** Once Daoris's branches in a repository are gone, the person could no
+  longer bring its line up to date from here, and a later session will grow from that line. Listed apart,
+  collapsed and included by a tick keeps it one press away.
+- **Counting the repositories the driver drives as Daoris's.** Considered, since the next driven session grows
+  from the local line. Left out: driving says Daoris may start work there, not that it holds any, and the tree a
+  session opens grows from the local line or origin's (D86), whichever the person last brought here. A driven
+  repository with nothing of Daoris's in it yet is one tick from holding a branch, and one tick from the default.
+
+**What the gates do not cover.** The scope rule without git (`SyncScope`, which repositories a scope includes)
+is held in the fast half. Reading which repositories hold Daoris's branches, the look taking only those, the
+press including a repository only where a listed row names it, and `--all` are `TreeSyncTests` cases in the
+`Process` half, written in the branch and not run there (MOD8). The screen's list apart is held by the vitest loop
+over a mocked bridge, and was not looked at on the window. The card's words are held by `HelpSyncProposalsTests`, and
+that every modules door's press hands the sessions in use again is a source-reading test, since only a live driver
+opens a session between a look and its press.
+for this press was not built: it would reach into the service's proposal kinds and the page's cards. *(HELP10
+built it since: the `sync` kind, a card whose first press is the look; see D110.)*

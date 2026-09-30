@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { screen } from '@testing-library/react';
+import { screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
 // The Workspace domain in SHELL mode: the machine's wiring, which only a desktop may render. Moved from
@@ -127,10 +127,69 @@ describe("the workspace domain: the machine's wiring", () => {
     await userEvent.click(button);
     await userEvent.click(await screen.findByRole('button', { name: 'Bring up to date: 2 changes' }));
 
-    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'TREES_SYNC_PLAN', {});
-    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'TREES_SYNC', { payload: { only: ['engine:main', 'engine:daoris/s-step'] } });
+    // Each waits as long as the host may work (WSR7): a look a workspace's worth of fetches, the press two replays.
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'TREES_SYNC_PLAN', { timeoutMs: 18 * 60_000 });
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'TREES_SYNC', {
+      payload: { only: ['engine:main', 'engine:daoris/s-step'] }, timeoutMs: 12 * 60_000,
+    });
     expect(notify).toHaveBeenCalledWith('2 of 2 done. What did not happen is still listed, with why.');
     expect(serviceCalls()).toEqual([]);
+  });
+
+  /**
+   * WSR7: a look the page stopped waiting for is said in the section, where it was asked, rather than only in a toast
+   * that goes — and the look's bound is the host's, for the repositories it takes.
+   */
+  it('says in the section that it stopped waiting for a look, and waits as long as the look it asked may take', async () => {
+    const notify = vi.fn();
+    invoke.mockImplementation(async (module: string, type: string) => {
+      if (module !== 'DAORIS.DRIVER') return WIRING;
+      if (type === 'TREES_SYNC_SCOPE') {
+        return { repositories: ['engine', 'game', 'tools', 'atlas', 'beacon'].map((repository) => ({ repository, workspace: 'aurora', holds: true })) };
+      }
+      if (type === 'TREES_SYNC_PLAN') throw Object.assign(new Error('DAORIS.DRIVER.TREES_SYNC_PLAN timed out'), { code: 'TIMEOUT' });
+      if (type === 'SWEEP_PLAN') return { branches: [], landed: [] };
+      return DRIVER_STATE;
+    });
+    show(<SettingsView notify={notify} section="workspace" />);
+
+    await screen.findByText(/A look fetches the 5 repositories/);
+    await userEvent.click(screen.getByRole('button', { name: 'Look for updates' }));
+
+    const section = within(screen.getByRole('region', { name: 'Bring up to date' }));
+    expect((await section.findByRole('alert')).textContent).toMatch(/stopped waiting before the look answered/);
+    // Five repositories, four at a time: two rounds of a fetch's two minutes, and two to spare.
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'TREES_SYNC_PLAN', { timeoutMs: 6 * 60_000 });
+    expect(notify).not.toHaveBeenCalledWith(expect.stringMatching(/did not answer in time/), 'error');
+  });
+
+  /**
+   * WSR7 (D112): a look takes the repositories holding Daoris's branches, and the rest are listed apart. Ticking one
+   * and asking looks at it too, and looking again keeps it.
+   */
+  it('lists apart the repositories holding nothing of Daoris\'s, and looks at one once it is ticked', async () => {
+    const plan = { lines: [], rebases: [], deletes: [], looked: [], apart: [{ repository: 'game', workspace: 'aurora', holds: false }] };
+    invoke.mockImplementation(async (module: string, type: string) => {
+      if (module !== 'DAORIS.DRIVER') return WIRING;
+      if (type === 'TREES_SYNC_SCOPE') {
+        return { repositories: [{ repository: 'engine', workspace: 'aurora', holds: true }, { repository: 'game', workspace: 'aurora', holds: false }] };
+      }
+      if (type === 'TREES_SYNC_PLAN') return plan;
+      if (type === 'SWEEP_PLAN') return { branches: [], landed: [] };
+      return DRIVER_STATE;
+    });
+    show(<SettingsView notify={() => {}} section="workspace" />);
+
+    expect(await screen.findByText(/A look fetches the 1 repository that holds a branch of Daoris's/)).toBeTruthy();
+    await userEvent.click(screen.getByText("1 other repository with a checkout here holds no branch of Daoris's"));
+    await userEvent.click(screen.getByRole('checkbox', { name: 'game' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Include and look (1)' }));
+
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'TREES_SYNC_PLAN', expect.objectContaining({ payload: { also: ['game'] } }));
+    invoke.mockClear();
+    const section = within(screen.getByRole('region', { name: 'Bring up to date' }));
+    await userEvent.click(await section.findByRole('button', { name: 'Look again' }));
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'TREES_SYNC_PLAN', expect.objectContaining({ payload: { also: ['game'] } }));
   });
 
   /**
