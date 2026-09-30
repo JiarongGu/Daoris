@@ -2,7 +2,7 @@
   "search.title": "搜索",
   "search.description": "关于这件事，家族已经学到了什么——决策、修复、规则、任务结果，遍及每个仓库。",
   "search.placeholder": "一项决策、一个陷阱、一条规则——用你自己的话",
-  "search.clear": "清除查询",
+  "search.clear": "清除搜索",
   "search.localOnly": "仅各仓库自有",
   "search.searching": "搜索中…",
   "search.count": "{{count}} 条结果",
@@ -14,5 +14,5 @@
   "search.noneHeadline": "没有搜索作答",
   "search.noneBody": "这次两种搜索都没能读到索引，所以这不是空结果。再试一次，或者重建索引。",
   "search.meaningDown": "只按字词匹配：这次按语义的搜索没有作答，用别的说法得出的结论可能漏掉了。",
-  "search.toConvergence": "去看同归"
+  "search.toConvergence": "在同归中查看"
 }

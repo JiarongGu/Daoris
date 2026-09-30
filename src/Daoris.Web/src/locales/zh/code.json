@@ -1,5 +1,5 @@
 {
-  "code.title": "{{repository}}：它的代码",
+  "code.title": "{{repository}}：代码地图",
   "code.description": "这个仓库自述由哪些模块组成、各自依赖什么——取自它自己维护的文件。",
   "code.back": "回到工作区",
   "code.canvas": "{{repository}} 的代码地图",

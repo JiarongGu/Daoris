@@ -157,9 +157,9 @@ test('a repository opens its own code map, and one without says where it would g
   await page.goto('/');
   await nav(page, 'Map').click();
   await page.getByRole('button', { name: /^engine, \d+ open/ }).click();
-  await page.getByRole('button', { name: 'Open its code map' }).click();
+  await page.getByRole('button', { name: 'Open code map' }).click();
 
-  await expect(page.getByRole('heading', { name: 'engine: its code' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'engine: code map' })).toBeVisible();
   await page.getByRole('button', { name: 'chunks, depends on 1' }).click();
   await expect(page.getByText('streams the world in chunks, within a per-frame budget')).toBeVisible();
   // Its neighbours are doors: what uses it, and what it uses.
@@ -168,7 +168,7 @@ test('a repository opens its own code map, and one without says where it would g
 
   await page.getByRole('button', { name: 'Back to the workspace' }).click();
   await page.getByRole('button', { name: /^game, \d+ open/ }).click();
-  await page.getByRole('button', { name: 'Open its code map' }).click();
+  await page.getByRole('button', { name: 'Open code map' }).click();
   await expect(page.getByText('game keeps no code map')).toBeVisible();
 });
 

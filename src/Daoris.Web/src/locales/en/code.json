@@ -1,5 +1,5 @@
 {
-  "code.title": "{{repository}}: its code",
+  "code.title": "{{repository}}: code map",
   "code.description": "The modules this repository says it is made of, and what each depends on, from a file it keeps itself.",
   "code.back": "Back to the workspace",
   "code.canvas": "the code map of {{repository}}",
@@ -15,6 +15,6 @@
   "code.none.body": "A repository draws its own: docs/code-map.json, committed like its decisions log. Daoris reads it and never writes it.",
   "code.detail.hint": "Choose a module to see what it depends on and what uses it.",
   "code.detail.none": "none",
-  "code.detail.dependsOn": "depends on",
-  "code.detail.usedBy": "used by"
+  "code.detail.dependsOn": "Depends on",
+  "code.detail.usedBy": "Used by"
 }
