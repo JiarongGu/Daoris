@@ -152,6 +152,112 @@ public sealed class MachineLogTests : IDisposable
         Assert.All(lines, line => System.Text.Json.JsonDocument.Parse(line).Dispose());
     }
 
+    /// <summary>
+    /// LOG2b: a task nobody awaits, observed. The first real log's one <c>error</c> was an exception the
+    /// finalizer rethrew for such a task, an AggregateException whose only place was "an unobserved
+    /// task". Observed, a failure is a line that says where it happened, when it happened.
+    /// </summary>
+    [Fact]
+    public async Task A_task_nobody_awaits_that_fails_is_written_where_it_happened()
+    {
+        using var log = Log("browser");
+        var failed = 0;
+
+        await log.Observe(Task.FromException(new IOException("the pipe broke")), "the browser's first window", () => failed++);
+
+        var line = Assert.Single(Lines("2026-09-30.browser.jsonl"));
+        Assert.Contains("\"level\":\"error\",\"event\":\"error\"", line);
+        Assert.Contains("\"where\":\"the browser's first window\"", line);
+        Assert.Contains("\"type\":\"System.IO.IOException\"", line);
+        Assert.Contains("\"message\":\"the pipe broke\"", line);
+        Assert.Equal(1, failed);
+    }
+
+    /// <summary>A task that finished, or was cancelled because its reason went away, is no failure.</summary>
+    [Fact]
+    public async Task A_task_that_finished_or_was_cancelled_writes_nothing()
+    {
+        using var log = Log("browser");
+        var failed = 0;
+
+        await log.Observe(Task.CompletedTask, "the browser's first window", () => failed++);
+        await log.Observe(Task.FromCanceled(new CancellationToken(canceled: true)), "the browser's first window", () => failed++);
+
+        Assert.False(File.Exists(Path.Combine(Logs, "2026-09-30.browser.jsonl")));
+        Assert.Equal(0, failed);
+    }
+
+    /// <summary>What runs after a failure may fail too: that is written as well, and the observation still ends cleanly.</summary>
+    [Fact]
+    public async Task What_runs_after_a_failure_failing_too_is_written_and_the_observation_never_faults()
+    {
+        using var log = Log("browser");
+
+        await log.Observe(
+            Task.FromException(new IOException("first")), "the browser's first window",
+            () => throw new InvalidOperationException("second"));
+
+        var lines = Lines("2026-09-30.browser.jsonl");
+        Assert.Equal(2, lines.Length);
+        Assert.Contains("\"type\":\"System.IO.IOException\"", lines[0]);
+        Assert.Contains("\"type\":\"System.InvalidOperationException\"", lines[1]);
+    }
+
+    /// <summary>
+    /// The point of it: an observed failure never reaches the finalizer. The same failure left alone does,
+    /// which is what shows this probe can see one at all.
+    /// </summary>
+    [Fact]
+    public async Task An_observed_failure_never_reaches_the_finalizer_and_one_left_alone_does()
+    {
+        using var log = Log("browser");
+
+        Assert.False(await ReachesTheFinalizerAsync(task => log.Observe(task, "the browser's first window")));
+        Assert.True(await ReachesTheFinalizerAsync(observe: null));
+    }
+
+    /// <summary>
+    /// Whether a failed task, observed by <paramref name="observe"/> or not at all, has its exception
+    /// rethrown by the finalizer: <see cref="TaskScheduler.UnobservedTaskException"/>, recognised by a
+    /// message nobody else's task carries.
+    /// </summary>
+    private static async Task<bool> ReachesTheFinalizerAsync(Func<Task, Task>? observe)
+    {
+        var marker = "log2b-" + Guid.NewGuid().ToString("N");
+        var reached = false;
+        void Seen(object? sender, UnobservedTaskExceptionEventArgs e)
+        {
+            if (e.Exception.InnerExceptions.Any(inner => inner.Message == marker)) Volatile.Write(ref reached, true);
+        }
+
+        TaskScheduler.UnobservedTaskException += Seen;
+        try
+        {
+            await FailUnawaitedAsync(marker, observe);
+            for (var attempt = 0; attempt < 10 && !Volatile.Read(ref reached); attempt++)
+            {
+                GC.Collect();
+                GC.WaitForPendingFinalizers();
+                GC.Collect();
+                await Task.Delay(20);
+            }
+
+            return Volatile.Read(ref reached);
+        }
+        finally
+        {
+            TaskScheduler.UnobservedTaskException -= Seen;
+        }
+    }
+
+    /// <summary>A failed task made in a frame of its own, so nothing here keeps it alive once it is let go.</summary>
+    [System.Runtime.CompilerServices.MethodImpl(System.Runtime.CompilerServices.MethodImplOptions.NoInlining)]
+    private static Task FailUnawaitedAsync(string marker, Func<Task, Task>? observe)
+    {
+        var failed = Task.FromException(new IOException(marker));
+        return observe is null ? Task.CompletedTask : observe(failed);
+    }
+
     /// <summary>A reader opens the file while it is being written — as a person tailing it would.</summary>
     [Fact]
     public void The_file_can_be_read_while_it_is_written()

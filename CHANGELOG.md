@@ -613,6 +613,9 @@ The first version: doctrine that installs, is checked, and flows back.
   standard input, which the host it started takes as its stop, and kills it only if it is still running
   five seconds later. A host started from a terminal is unchanged, and a host the desktop found already
   running is still left running.
+- **Daoris's browser says where its own failures happen** (LOG2b). A failure making its first window,
+  or watching for the desktop that started it, is a line in the machine log naming that place, rather
+  than an exception the runtime reported later as *an unobserved task*.
 - **One conversation's model and effort, beside its composer** (AGT6b, D98). A conversation on the
   protocol door offers the model and the effort its agent offered when the session opened, in the
   agent's own words, and changing one changes it for that conversation, as the tool's own `/model`

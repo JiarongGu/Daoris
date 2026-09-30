@@ -1,7 +1,5 @@
 using System.Diagnostics;
 using System.Globalization;
-using System.Net.WebSockets;
-using System.Text.Json;
 using Shenora.Chromium;
 
 namespace Daoris.Desktop;
@@ -26,6 +24,11 @@ namespace Daoris.Desktop;
 /// <para><b>The port it is given is the kit's relay</b> (CHR6, then CHR8): it passes everything through
 /// and announces a new tab as a <c>page</c> from the start, so an agent's browser MCP can open tabs. Daoris
 /// kept a relay of its own for this until the kit's arrived.</para>
+///
+/// <para><b>Every task started here and not awaited is observed</b> (LOG2b): the machine log's
+/// <c>Observe</c> writes its failure as a line saying where. The first real log held one exception the
+/// finalizer rethrew in this process, from a relay pump nobody awaited (Daoris's own relay, before
+/// CHR8), and a source test holds the rule for the next task written here.</para>
 ///
 /// <para><b>Nothing under the user profile</b> (D63): with no profile folder it refuses, rather than
 /// let the engine pick a folder of its own.</para>
@@ -58,14 +61,18 @@ internal static class BrowserProcess
         // left to close. Not disposed: a watcher may still hold it then, and a source that holds no timer
         // has nothing to free before the process ends.
         var stop = new CancellationTokenSource();
-        if (options.Parent is { } parent && !WatchShell(parent, stop)) return 0; // the shell that asked has gone
+        if (options.Parent is { } parent && !WatchShell(parent, stop, log)) return 0; // the shell that asked has gone
 
         Directory.CreateDirectory(options.Profile);
         Prepare(options.Profile);
 
         var started = DateTimeOffset.UtcNow;
         log.Info("app.started");
-        _ = OpenFirstWindowAsync(options, stop, log);
+
+        // Started and not awaited, so observed (LOG2b): a failure is a line saying where, and a browser
+        // that cannot make its window stops, since a process with no window is nothing the person can
+        // see or close, and the shell starts another when asked.
+        _ = log.Observe(FirstWindowAsync(options, stop.Token), EngineBrowser.FirstWindowPlace, stop.Cancel);
         try
         {
             return ChromiumBrowserProcess.Run(
@@ -97,7 +104,7 @@ internal static class BrowserProcess
     /// Stop when the shell that started it has gone, as the shell's own window did. False when it has
     /// gone already, and there is nobody to open a browser for.
     /// </summary>
-    private static bool WatchShell(int parent, CancellationTokenSource stop)
+    private static bool WatchShell(int parent, CancellationTokenSource stop, Daoris.Driver.MachineLog log)
     {
         Process shell;
         try
@@ -109,7 +116,9 @@ internal static class BrowserProcess
             return false;
         }
 
-        _ = Task.Run(async () =>
+        // Observed like every task started here (LOG2b); a watch that fails is written, and the browser's
+        // windows stay the person's to close.
+        _ = log.Observe(Task.Run(async () =>
         {
             using (shell)
             {
@@ -131,43 +140,22 @@ internal static class BrowserProcess
                     }
                 }
             }
-        });
+        }), EngineBrowser.ShellWatchPlace);
         return true;
     }
 
     /// <summary>
-    /// The engine's own window, made over its port once the port answers. A browser that cannot make it
-    /// stops: a process with no window is nothing the person can see or close, and the shell starts
-    /// another when asked.
+    /// The engine's own window, made over its port once the port answers (<see cref="EngineCdp.FirstWindowAsync"/>).
+    /// Cancelled when the shell or the engine went first; any failure is its caller's to observe.
     /// </summary>
-    private static async Task OpenFirstWindowAsync(EngineBrowserOptions options, CancellationTokenSource stop, Daoris.Driver.MachineLog log)
+    /// <remarks>
+    /// 🔴 LOG2b: this caught a list of exception types and left any other to fault a task nobody held,
+    /// which only the finalizer ever looked at. It throws now, and the caller observes all of it.
+    /// </remarks>
+    private static async Task FirstWindowAsync(EngineBrowserOptions options, CancellationToken ct)
     {
-        try
-        {
-            using var engine = new EngineCdp(options.Port);
-            var deadline = DateTime.UtcNow + PortLimit;
-            while (!await engine.AnswersAsync(stop.Token).ConfigureAwait(false))
-            {
-                if (DateTime.UtcNow > deadline)
-                {
-                    throw new TimeoutException($"its port did not answer within {PortLimit.TotalSeconds:0} seconds");
-                }
-
-                await Task.Delay(100, stop.Token).ConfigureAwait(false);
-            }
-
-            await engine.NewWindowAsync("chrome://newtab/", options.Background, stop.Token).ConfigureAwait(false);
-        }
-        catch (OperationCanceledException)
-        {
-            // The shell went, or the engine did, before there was a window to make.
-        }
-        catch (Exception error) when (error is TimeoutException or HttpRequestException or WebSocketException
-                                          or InvalidOperationException or JsonException)
-        {
-            log.Error("error", ("where", "the browser's first window"), ("message", error.Message));
-            stop.Cancel();
-        }
+        using var engine = new EngineCdp(options.Port);
+        await engine.FirstWindowAsync(options.Background, PortLimit, ct).ConfigureAwait(false);
     }
 
     /// <summary>

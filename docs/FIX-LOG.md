@@ -5,6 +5,37 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## The browser left a task's exception to the finalizer (2026-09-30)
+
+**Symptom.** The owner's first real machine log (LOG2) held one `error` in the `browser` source: `where`
+*an unobserved task*, an `AggregateException` wrapping *The remote party closed the WebSocket
+connection without completing the close handshake* (a `SocketException` 10054 underneath), written
+fifteen seconds before the browser's `app.stopped`, as the application was closed; the host's next
+`app.started` ran the CHR8 build.
+
+**Root cause.** The stack's last frame is `Daoris.Desktop.CdpRelay.PumpAsync`: the browser was still
+the pre-CHR8 build. `RelaySocketAsync` started two pumps, `await Task.WhenAny(up, down)`, cancelled
+the other and returned, observing neither. As the engine shut down it dropped its sockets without a close
+frame, the pump reading from it faulted, and only the finalizer ever looked. CHR8 (D99) deleted that relay,
+and the browser's own two remaining fire-and-forget tasks had the same shape in a smaller form: the first
+window caught a list of exception types and left any other to fault a task nobody held, and the shell
+watch caught none.
+
+**Fix.** `MachineLog.Observe(task, where, failed)` in the driver library: a continuation that writes a
+failure as the `error` event with its place, runs the reaction, writes that too if it throws, and never
+faults. `BrowserProcess` hands both tasks to it; the first window moved to `EngineCdp.FirstWindowAsync`
+in the modules, throws whatever went wrong, and turns a client timeout into a `TimeoutException`.
+
+**Verify.** `MachineLogTests`: an observed failed task never reaches `TaskScheduler.UnobservedTaskException`
+after forced collections, and the same task unobserved does. `FirstWindowTests`: a stand-in engine that
+completes the socket handshake and drops the connection gives one line (`the browser's first window`,
+`System.Net.WebSockets.WebSocketException`) and a cancelled stop. A source test fails if `BrowserProcess`
+discards a task without `log.Observe(`; it failed on the two it had.
+
+**The trap.** `Task.WhenAny` returns a task; it observes nothing, the winner's exception included. The
+kit's relay that replaced Daoris's (Shenora.Chromium 0.18.0) has the same lines, which is a request for
+the kit, not a fix here.
+
 ## The HTTP host never wrote its own stop (2026-09-30)
 
 **Symptom.** The usage report over the owner's first real machine log (LOG2): the `host` source had an
