@@ -5422,7 +5422,9 @@ merged branch, rebase the working branches. So:
 3. **The press acts on what the person was shown.** A row the screen listed names its repository, so a
    repository included at the look is included at the press without being asked for again, and the press
    never reaches one it did not list.
-4. **Ask Daoris's sync card takes the same default**, since it asks the same code with no scope of its own.
+4. **Ask Daoris's sync card takes the same default**, and a card naming a repository includes it. Its look's words
+   name the repositories it left apart, since its rows say only what it looked at, and its press asks the sessions in
+   use again inside each repository's hold, as the screen's does (LEFT2).
 
 **Why.** Fast-forwarding the line of a repository Daoris holds nothing in is Daoris moving the person's branch
 for no work of its own. D109's reason to pull a line, that a stale line grows the next session from before the
@@ -5450,6 +5452,8 @@ round trip as the person, and 29 of them, one after another, were the look the w
 is held in the fast half. Reading which repositories hold Daoris's branches, the look taking only those, the
 press including a repository only where a listed row names it, and `--all` are `TreeSyncTests` cases in the
 `Process` half, written in the branch and not run there (MOD8). The screen's list apart is held by the vitest loop
-over a mocked bridge, and was not looked at on the window.
+over a mocked bridge, and was not looked at on the window. The card's words are held by `HelpSyncProposalsTests`, and
+that every modules door's press hands the sessions in use again is a source-reading test, since only a live driver
+opens a session between a look and its press.
 for this press was not built: it would reach into the service's proposal kinds and the page's cards. *(HELP10
 built it since: the `sync` kind, a card whose first press is the look; see D110.)*

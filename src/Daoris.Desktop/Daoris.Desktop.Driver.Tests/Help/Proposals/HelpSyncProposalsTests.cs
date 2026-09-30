@@ -94,6 +94,44 @@ public sealed class HelpSyncProposalsTests : HelpProposalsFixture
         Assert.Equal("refused", HelpProposals.Find(_home, "p11")!.State);
     }
 
+    /// <summary>
+    /// WSR7: the card's look says what its rows do not — what was not fetched, once, since a row carries only a mark, and
+    /// the repositories it left apart, holding no branch of Daoris's (D112), which a proposal naming one looks at.
+    /// </summary>
+    [Fact]
+    public async Task A_look_says_once_what_was_not_fetched_and_names_the_repositories_it_left_apart()
+    {
+        var offline = new SyncPlan(
+            [new LinePull("engine", "work", "main", PullKind.FastForward, "aaaaaaaa", "bbbbbbbb", 1, "fatal: Could not read from remote repository.", null)
+                { Reach = "ssh" }],
+            [], [])
+        {
+            Apart = [new SyncRepository("game", "work", Holds: false), new SyncRepository("tools", "work", Holds: false)],
+        };
+
+        var (looked, _, _) = await ApplyAsync(Sync(), new HelpStandInDoors { Listed = offline });
+
+        Assert.Contains("fast-forwards 1 commit(s) to `origin/main` (not fetched)", looked.Told);
+        Assert.Contains(
+            "1 of 1 repositories were not fetched, so each is judged against what origin said when it was last fetched here: "
+            + "fatal: Could not read from remote repository. (1): engine (never fetched)", looked.Told);
+        Assert.Contains("`core.sshCommand`", looked.Told);
+        Assert.Contains("Not looked at, since they hold no branch of Daoris's (2): game, tools; a proposal naming one looks at it.", looked.Told);
+        Assert.DoesNotContain("trees:", looked.Told);
+    }
+
+    /// <summary>A look that takes no repository, since none holds a branch of Daoris's (D112), says so rather than "no checkout".</summary>
+    [Fact]
+    public async Task A_look_where_no_repository_holds_Daoris_branches_says_so()
+    {
+        var none = new SyncPlan([], [], []) { Apart = [new SyncRepository("game", "work", Holds: false)] };
+
+        var (looked, _, _) = await ApplyAsync(Sync(), new HelpStandInDoors { Listed = none });
+
+        Assert.Contains("nothing to bring up to date — no repository with a checkout here holds a branch of Daoris's.", looked.Told);
+        Assert.Contains("(1): game;", looked.Told);
+    }
+
     [Fact]
     public async Task A_look_at_a_repository_with_no_checkout_here_says_so()
     {

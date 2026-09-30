@@ -100,15 +100,42 @@ internal sealed class HelpSyncProposals : IHelpProposalKind
         {
             // As the terminal says it: a repository with no checkout here has nothing to bring up to date.
             var why = rows.Count > 0 ? string.Join("; ", rows.Select(row => row.Says))
+                : listed.Apart.Count > 0 ? "no repository with a checkout here holds a branch of Daoris's"
                 : repository is null ? "no repository has a checkout here" : $"`{repository}` has no checkout here";
             const string Nothing = "nothing to bring up to date";
-            return applying.Settled(false, $"Looked for updates (`#{id}`): {Nothing} — {why}.", Nothing);
+            return applying.Settled(false, $"Looked for updates (`#{id}`): {Nothing} — {why}.{Besides(listed)}", Nothing);
         }
 
         Keep(applying.Home, id, rows);
         return new HelpApplied(false,
             $"Looked for updates (`#{id}`): {moving.Count} thing(s) would change — {string.Join("; ", moving.Select(row => row.Says))}. "
-            + "The card now lists them; nothing moves until the person applies it.");
+            + $"The card now lists them; nothing moves until the person applies it.{Besides(listed)}");
+    }
+
+    /// <summary>How many repositories the look left apart are named before the rest are counted.</summary>
+    private const int ApartNamed = 12;
+
+    /// <summary>
+    /// What the rows do not say (WSR7, D112): what was not fetched, said once, since a row carries only a mark; and the
+    /// repositories the look left apart, holding no branch of Daoris's, which a proposal naming one looks at.
+    /// </summary>
+    internal static string Besides(SyncPlan listed)
+    {
+        var said = new List<string>();
+        var notFetched = SyncWords.NotFetched(listed.Lines, DateTimeOffset.UtcNow);
+        if (notFetched.Count > 0)
+        {
+            said.Add(string.Join(" ", notFetched.Select(line => line.Trim()))["trees: ".Length..]);
+        }
+
+        if (listed.Apart.Count > 0)
+        {
+            var named = string.Join(", ", listed.Apart.Take(ApartNamed).Select(each => each.Repository))
+                + (listed.Apart.Count > ApartNamed ? $" and {listed.Apart.Count - ApartNamed} more" : "");
+            said.Add($"Not looked at, since they hold no branch of Daoris's ({listed.Apart.Count}): {named}; a proposal naming one looks at it.");
+        }
+
+        return said.Count == 0 ? "" : " " + string.Join(" ", said);
     }
 
     /// <summary>The second press: <c>TREES_SYNC</c>'s own, on the listed rows that move, said as the terminal says what it did.</summary>
