@@ -6325,6 +6325,33 @@ repository were read from its files: the canon's rules and skills, `Acp.cs`, `Ad
 2026-10-01 and cited in design §9, or LAYOUT2's reading of their shipped code; none was measured on a turn. The
 account of what AR-2201's sessions read is the parent's, recorded in no tracked document. `verify` checks this
 entry's shape and the design's links and budget, and none of their words.
+
+**Built 2026-10-01 (DOC2): the standard is canon** (points 1 and 2, design §2.1–§2.6 and §4).
+- Core knowledge `development-documents` and core skill `set-up-documents`, the skill with seven templates in
+  `templates/`: `brief.md`, `room.md`, `knowledge.md`, `router.md`, `decision.md`, `backlog-row.md` and
+  `archive-entry.md`. §4 named five. `archive-entry.md` joins them because §2.5 states that shape, and
+  `knowledge.md` because the skill moves a brief's deep dives into the knowledge tier, whose frontmatter is its
+  index row. The fix log's shape stays the `fix-log` skill's, and a skill's stays the harness's, so neither is
+  written twice. The skill carries no `allowed-tools`.
+- Measured, not estimated: this repository's region went from 22,672 to 23,306 bytes of 26,000, 634 bytes for the
+  two index rows (§2.6 estimated about 450). Each example's region grew by the same two rows, to 21,758 (engine)
+  and 21,975 (game) of 30,000. This repository and both examples were re-synced in the same commit.
+- Canon-authoring holds. No file names a product, a harness, a build command or one repository's path. The byte
+  limit is *one widely used agent's*, 32,768 bytes when written, and the file names are left to the index (§2.6).
+  The records' list is described as the brief's *Where things are*, written by hand or generated where a tool
+  does it, which is true before DOC3 and after.
+- The adoption playbook (local) gained steps 6 to 8: write the brief, declare the documents and the rooms,
+  declare the safe work. Its later steps renumber to 9 to 11, and the hand-over names each new item. It says
+  plainly that the CLI ignores a `documents` field until DOC3 lands, and that nothing reads `safe` until
+  UNBLOCK2; those rows update the playbook when they land.
+- Found building it: `dogfood.test.ts`'s *every shipped canon skill carries the frontmatter the harness needs*
+  takes every file under a skill's folder for its entry file, so the first canonical skill with supporting files
+  fails it, though `canon.ts` ships a skill's whole folder by design and `canon.test.ts` holds that. The test is
+  the CLI lane's, and DOC2 names it rather than changing it.
+- What the gates do not cover: the knowledge document's statements about agents are the design's sources (§9),
+  not measured here. *No shared skill carries one*, of a skill pre-approving its tools, is true of the canon
+  today by search; DOC3's test is what will hold it. Whether the templates produce a good brief is judgement,
+  which only a real set-up shows (§7, point 5).
 ## D121 — Every tool Daoris runs is the system's, managed, or a file the person names; a list built in says where each version downloads, and more locations extend it without a release (2026-10-01)
 
 **Decision (TOOLS1).** The owner: *"all tools that daoris using like git, [terminal] should all have a self managed
