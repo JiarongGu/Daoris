@@ -348,8 +348,8 @@ export function isShell(page, serviceUrl) {
   return page.origin === SHELL_ORIGIN && (!service || told === service);
 }
 
-/** What `isShell` reads, evaluated in the page. */
-const PAGE_IDENTITY = '({ webview: !!window.chrome?.webview, chromium: !!window.__shenora_chromium, '
+/** What `isShell` reads, evaluated in the page — here and by the deployment gate (DEPLOY5). */
+export const PAGE_IDENTITY ='({ webview: !!window.chrome?.webview, chromium: !!window.__shenora_chromium, '
   + "origin: location.origin, host: new URLSearchParams(location.search).get('host') })";
 
 /** What the shell captions that window — how the OS-level capture finds it. */

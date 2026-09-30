@@ -101,8 +101,10 @@ person or an agent starts the shell and sees what it actually rendered.
 
 **The gate is `npm run rehearse:deploy`** (D60), and it is a different question: this loop runs what
 the workspace built, and that gate publishes the shell to a scratch folder and drives the **artefact**
-— a window that finds its host without being told where it is, and a session transcript compared as
-bytes. Everything this loop provides is what hid two of the first deployment's four defects.
+— a window that finds its host without being told where it is, a session transcript compared as
+bytes, and a conversation open when the window closes, whose record must carry the close's own note
+(DEPLOY5: the gate starts the install with `run --install`'s debug port to open it over the bridge).
+Everything this loop provides is what hid two of the first deployment's four defects.
 
 | command | what |
 |---|---|
