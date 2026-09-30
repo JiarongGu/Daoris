@@ -255,6 +255,10 @@ public static class HelpRoom
         text.Append("  Never propose deleting a taken, done or declined quest: its record stays,\n");
         text.Append("  the route refuses it, and declining it with the reason is the way instead. A delete cannot be undone.\n");
         text.Append("- `go_propose`: take the person to a place on the window, from the list below. It changes nothing.\n\n");
+        // HELP7: the real helper said *press Apply* of a card whose button reads *go there*.
+        text.Append("Each proposal reaches the person as a card with two buttons, and you name them as the card does:\n");
+        text.Append("every card but a go reads **apply** and **not now** (in 中文 **应用** and **暂不**), and\n");
+        text.Append("a go card reads **go there** and **not now** (in 中文 **前往** and **暂不**).\n\n");
 
         text.Append("## The doors\n\n");
         text.Append("| To | On the screen | At a terminal |\n");

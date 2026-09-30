@@ -140,6 +140,21 @@ public sealed class HelpRoomTests : IDisposable
     }
 
     /// <summary>
+    /// HELP7: tried with the real helper, it told the person to *press Apply* on a card whose button reads
+    /// *go there*. The room gives each card's buttons as the card labels them, in both languages.
+    /// </summary>
+    [Fact]
+    public void The_room_names_each_cards_own_buttons()
+    {
+        var agents = HelpRoom.Render(Machine);
+
+        Assert.Contains("every card but a go reads **apply** and **not now**", agents);
+        Assert.Contains("a go card reads **go there** and **not now**", agents);
+        Assert.Contains("**应用**", agents);
+        Assert.Contains("**前往**", agents);
+    }
+
+    /// <summary>
     /// HELP2: asked what the panel held, the helper guessed that the View menu names each view's region,
     /// which it does not — its room said nothing of the window. The room says how the window is laid out
     /// and how a view moves, by the names the window uses, and that where the views stand now arrives with

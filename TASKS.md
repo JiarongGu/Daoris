@@ -108,7 +108,7 @@ rather than designed.
 
 ## Backlog
 
-**Twenty-five rows are open**: the day's three (USE1's last part to confirm, LOG2, HELP7),
+**Twenty-four rows are open**: the day's two (USE1's last part to confirm, LOG2),
 first; WSR4 from the first real workspace; the three REV3 left (DIST1, BUDGET1 and
 HOME1, the owner's); the in-app browser's one (BRW3); D85's one (TASKBAR1); the first
 goal's four (FG5, READACROSS1 and HELPREAD1 the owner's, and SEM2 on a trigger); D76's held file tools;
@@ -164,9 +164,6 @@ TASK.md and complete one by one"*).
   close already does for sessions. (b) **The browser leaves a task's exception unobserved** when a
   WebSocket to its debug port closes without a handshake (an `AggregateException` at `error`): observe
   it where the relay or the first-window call awaits it, and say what closed.
-- [ ] **HELP7 — the room names each card's own button.** Tried with the real helper (HELP6): asked to go
-  to a setup step, it said *press Apply* while the card's button reads *go there*. The room should give
-  each kind's button as the card labels it, in both languages the page speaks.
 ### After the first real workspace (owner, 2026-09-28) — to start later
 
 > *"I also found issues after the [first workspace] work, which points out things that daoris leak

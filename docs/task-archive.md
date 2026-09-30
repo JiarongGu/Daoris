@@ -8102,3 +8102,13 @@ chip beside the door that opens it, several a count with a menu, and Settings �
 **Looked at:** the compass on the strip and the Browser domain's new rows, no overflow; not yet a live
 driving chip or a routed click (both need a session with the browser plugin).
 **Proven by:** driver 1140, modules 376, vitest 1625, CLI 584.
+
+## HELP7 — the room names each card's own button (2026-09-30)
+
+> - [ ] **HELP7 — the room names each card's own button.** Tried with the real helper (HELP6): asked to go
+>   to a setup step, it said *press Apply* while the card's button reads *go there*. …
+
+**Outcome.** The room says each proposal reaches the person as a card with two buttons, named as the
+card names them: every card but a go reads *apply* and *not now*, a go card *go there* and *not now*,
+each with its 中文 label beside it, so the helper points at the button the person sees.
+**Proven by:** `HelpRoomTests` (the phrases pinned, each on one line), 13 room tests.
