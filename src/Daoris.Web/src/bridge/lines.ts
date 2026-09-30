@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { type QueryClient, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useShenora } from '@shenora/react';
 import { keys } from '../queries';
 import type { LineChange, RepositoryLine } from '../settings/Lines';
@@ -93,6 +93,24 @@ export type SyncAsked = { include: SyncInclude; count: number | null };
 /** How many repositories a look's bound allows for when the machine's reading of how many it takes is not in yet. */
 const UNKNOWN_COUNT = 32;
 
+/**
+ * How many repositories a look takes (D112): those holding Daoris's branches and those `include` names, from the
+ * machine's last reading; null where that reading is not in yet.
+ */
+const lookCount = (client: QueryClient, include: SyncInclude): number | null => {
+  const scope = client.getQueryData<{ repositories?: SyncRepository[] }>(treesSyncScopeKey)?.repositories;
+  return Array.isArray(scope)
+    ? scope.filter((each) => each.holds || include === 'all' || include.includes(each.repository)).length
+    : null;
+};
+
+/**
+ * How long a look may take (WSR7): a few repositories at a time, each within a fetch's bound, for as many as it takes —
+ * Ask Daoris's sync card's look as well as the screen's (`bridge/help.ts`).
+ */
+export const syncLookBound = (client: QueryClient, include: SyncInclude = []) =>
+  lookBound(lookCount(client, include) ?? UNKNOWN_COUNT);
+
 /** The payload that asks a look to take `include` beside the default (D112): every one, or the ones named. */
 const scopePayload = (include: SyncInclude): Record<string, unknown> | undefined =>
   include === 'all' ? { all: true } : include.length > 0 ? { also: include } : undefined;
@@ -153,11 +171,7 @@ export const useTreesSyncPlan = () => {
     asked: asked.data ?? undefined,
     /** Look: the default, and what `include` names beside it. */
     look: (include: SyncInclude) => {
-      const scope = client.getQueryData<{ repositories?: SyncRepository[] }>(treesSyncScopeKey)?.repositories;
-      const count = Array.isArray(scope)
-        ? scope.filter((each) => each.holds || include === 'all' || include.includes(each.repository)).length
-        : null;
-      client.setQueryData<SyncAsked>(treesSyncAskedKey, { include, count });
+      client.setQueryData<SyncAsked>(treesSyncAskedKey, { include, count: lookCount(client, include) });
       return plan.refetch();
     },
   };

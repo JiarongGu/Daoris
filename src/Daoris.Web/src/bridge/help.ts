@@ -1,9 +1,10 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { type QueryClient, useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useShenora } from '@shenora/react';
 import { keys } from '../queries';
 import type { HelpProposal } from '../help/ProposalCard';
 import type { HelpPlace } from '../help/places';
-import { call } from './call';
+import { call, pressBound } from './call';
+import { syncLookBound } from './lines';
 import { logEvent } from './log';
 
 // Ask Daoris (MOD3): its conversation, the one readied ahead, and what it proposes (D89).
@@ -85,12 +86,30 @@ export type HelpSettled = {
   harnessAction?: { harness: string; action: 'update' | 'pin' } | null;
 };
 
+/**
+ * How long an Apply may take (WSR7): a sync card's first Apply is the look, which fetches, and its second the press,
+ * which replays, and each waits as long as the screen's own would; every other Apply is quick, and waits the bridge's
+ * default. The proposal is the one the conversation's list holds, found by its id.
+ */
+export const settleBound = (client: QueryClient, id: string): number | undefined => {
+  const proposal = client.getQueriesData<HelpProposal[]>({ queryKey: ['help-proposals'] })
+    .flatMap(([, list]) => (Array.isArray(list) ? list : []))
+    .find((each) => each.id === id);
+  if (proposal?.kind !== 'sync') return undefined;
+  return proposal.sync?.looked
+    ? pressBound(proposal.sync.rows.filter((row) => row.moves).length)
+    : syncLookBound(client);
+};
+
 /** The person's Apply and Not now on a proposal: the result goes back into the conversation (D89). */
 export const useSettleHelp = () => {
   const client = useQueryClient();
   return useMutation({
     mutationFn: (settle: { id: string; apply: boolean }) =>
-      call<HelpSettled>(settle.apply ? 'HELP_APPLY' : 'HELP_DISMISS', { id: settle.id }),
+      call<HelpSettled>(settle.apply ? 'HELP_APPLY' : 'HELP_DISMISS', { id: settle.id },
+        settle.apply ? { timeoutMs: settleBound(client, settle.id) } : undefined),
+    // An Apply the page stopped waiting for may still be at work on the host: it is said, never pressed again.
+    retry: false,
     onSuccess: (_answer, settle) => {
       // Whether Ask Daoris's proposals help (LOG1b): the person's Apply or Not now, once it landed.
       logEvent('proposal.settled', { applied: settle.apply });
