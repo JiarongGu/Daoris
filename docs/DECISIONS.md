@@ -4880,6 +4880,10 @@ parallelism with it; changing the insertion point removes only the conflict.
   edits it. Union would keep every branch's version of that row, so those files stay as they are until
   the splits (MOD3–MOD5) give each feature its own row.
 
+*Amended by DEV2 (D115, 2026-10-01): the parent's records, the backlog and the archive, are the steward's lane
+`records` in `daoris.lanes.json`, with the lane map itself. The parent keeps them as the steward until a steward
+session does (DEV9). Union still serves the archive and never the backlog.*
+
 ## D107 — Agents read the workspace's checkouts by default, and write into another only where the person declared it (2026-09-30)
 
 **Decision (READ1, the owner's call closing READACROSS1 and HELPREAD1: *"should be configuable and
@@ -5693,6 +5697,21 @@ today's code were read from the files the design's §0 names: the planner, the t
 tree lock, the landing rules, the ledger, the exchange, the merge tool, the lane map, the gates and the skill.
 `verify` checks the records' shape and the budgets, and none of those words. Its statements about the future
 are design. The design's §9 says which of them a rehearsal can prove, and which wait for DEV10's real run.
+
+*Built in part by DEV2 (2026-10-01): point 1's file. `tools/lanes.json` is now `daoris.lanes.json` at the root,
+with eight lanes by id: `web-shell`, `web-settings`, `driver`, `modules`, `service`, `cli`, `tools` and the
+steward's `records`. Each has a title and a one-line summary. `records` holds what the parent's list held and the
+map itself, with `gates: ["universal", "cli"]`, and *Tools and records* is now *Tools*. The docs' laneless group
+carves the archive out (`!docs/task-archive.md`), so no tracked file has two places. `tools/merge-branch.mjs`
+reads the file. Its lane report names lanes by id and title, and names the steward's records where it named the
+parent's. It refuses an unreadable file by §2.1's rules, naming each problem. The commit check, the laneless report
+and the gates are unchanged: the tool still runs every gate whatever a branch touched, so it reads `gates` only to
+check each names a declared gate, until the queue (DEV5). Every tracked file classifies as before, with the
+steward's paths where the parent's were. Held by `merge-branch.test.ts`, which also holds the parallel design's
+§5 table to the file by id and title. One consequence for a later row: a branch that adds a path no lane owns must
+place it in the steward's file, or the lanes test fails. The dispatch skill names that as the one exception and
+the merge tool reports it; in the driven cycle §2.3's check would send such a branch back, so DEV9's steward
+instruction needs an answer for it. §11's twin waits for the driver's reader (DEV6).*
 
 ## D117 — One repository, every agent: knowledge and skills under `.agents/`, a mirror for the agent that reads `.claude/`, rooms, and a set-up the repository's own session does (2026-10-01)
 
