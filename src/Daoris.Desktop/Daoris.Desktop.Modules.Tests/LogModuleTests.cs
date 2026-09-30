@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.Json;
 using Daoris.Driver;
 
@@ -190,6 +191,180 @@ public sealed class LogModuleTests : Bridge
     {
         using var log = Log();
 
-        Assert.Contains("NO_ROUTE", await RefusalAsync(new LogModule(log), "READ"));
+        Assert.Contains("NO_ROUTE", await RefusalAsync(new LogModule(log), "WRITE"));
+    }
+
+    // ---- LOG1c: the screen's door to reading the log, and to its folder ----
+
+    private static readonly DateTimeOffset Noon = new(2026, 9, 30, 12, 0, 0, TimeSpan.Zero);
+
+    private LogModule Reader(MachineLog log, OpenFolder? open = null) => new(log, open, () => Noon);
+
+    private void Logged(string name, params string[] lines)
+    {
+        var folder = Path.Combine(Home, MachineLog.Folder);
+        Directory.CreateDirectory(folder);
+        File.WriteAllText(Path.Combine(folder, name), string.Join("\n", lines) + "\n");
+    }
+
+    private static string Line(string time, string source, string level, string @event, string data = "{}") =>
+        $$"""{"time":"{{time}}","source":"{{source}}","level":"{{level}}","event":"{{@event}}","data":{{data}}}""";
+
+    /// <summary>A morning on this machine, across three sources and two days, with one torn line.</summary>
+    private void Morning()
+    {
+        Logged("2026-09-29.desktop.jsonl", Line("2026-09-29T20:00:00.000Z", "desktop", "info", "app.started"));
+        Logged("2026-09-30.desktop.jsonl",
+            Line("2026-09-30T09:00:00.000Z", "desktop", "info", "view.opened", """{"view":"sessions"}"""),
+            Line("2026-09-30T10:00:00.000Z", "desktop", "info", "refused", """{"code":"DRIVER_REFUSED","request":"DAORIS.DRIVER.START_CHAT"}"""),
+            "{\"time\":\"2026-09-30T10:1",
+            Line("2026-09-30T11:30:00.000Z", "desktop", "error", "page.error", """{"where":"window","message":"x is undefined"}"""));
+        Logged("2026-09-30.host.jsonl", Line("2026-09-30T11:00:00.000Z", "host", "warn", "request.failed", """{"method":"GET","status":500}"""));
+        Logged("2026-09-30.browser.jsonl", Line("2026-09-30T10:30:00.000Z", "browser", "info", "app.started"));
+    }
+
+    private static string[] Events(JsonElement answer) =>
+        answer.GetProperty("lines").EnumerateArray().Select(line => line.GetProperty("event").GetString()!).ToArray();
+
+    /// <summary>
+    /// The recent lines, newest first, from every source — each with its time as written, its source,
+    /// level, event and data — and the folder they are read from, what each level counts, the events the
+    /// period holds, and how many lines could not be read.
+    /// </summary>
+    [Fact]
+    public async Task Lines_are_every_sources_newest_first_with_counts_events_and_what_was_skipped()
+    {
+        Morning();
+        using var log = Log();
+
+        var answer = await AnswerAsync(Reader(log), "LINES");
+
+        Assert.Equal(Path.Combine(Home, MachineLog.Folder), answer.GetProperty("folder").GetString());
+        Assert.Equal(["page.error", "request.failed", "app.started", "refused", "view.opened", "app.started"], Events(answer));
+        var first = answer.GetProperty("lines")[0];
+        Assert.Equal("2026-09-30T11:30:00.000Z", first.GetProperty("time").GetString());
+        Assert.Equal("desktop", first.GetProperty("source").GetString());
+        Assert.Equal("error", first.GetProperty("level").GetString());
+        Assert.Equal("window", first.GetProperty("data").GetProperty("where").GetString());
+        Assert.Equal(6, answer.GetProperty("total").GetInt32());
+        Assert.Equal(1, answer.GetProperty("skipped").GetInt32());
+        var counts = answer.GetProperty("counts");
+        Assert.Equal((4, 1, 1), (counts.GetProperty("info").GetInt32(), counts.GetProperty("warn").GetInt32(), counts.GetProperty("error").GetInt32()));
+        Assert.Equal(
+            ["app.started", "page.error", "refused", "request.failed", "view.opened"],
+            answer.GetProperty("events").EnumerateArray().Select(name => name.GetString()));
+    }
+
+    /// <summary>
+    /// The filters are the terminal's, applied here and not on the page: a span back from now, a source,
+    /// an event, a level as a floor. The counts are the period's before the level, so a person filtering
+    /// to errors still sees how many warnings there were; the events are the period's before the event.
+    /// </summary>
+    [Fact]
+    public async Task The_filters_are_applied_here_as_the_terminal_applies_them()
+    {
+        Morning();
+        using var log = Log();
+        var module = Reader(log);
+
+        Assert.Equal(["page.error", "request.failed", "app.started"],
+            Events(await AnswerAsync(module, "LINES", new { since = "90m" })));
+        Assert.Equal(["request.failed"], Events(await AnswerAsync(module, "LINES", new { source = "host" })));
+        Assert.Equal(["app.started", "app.started"], Events(await AnswerAsync(module, "LINES", new { @event = "app.started" })));
+
+        var errors = await AnswerAsync(module, "LINES", new { since = "12h", level = "error" });
+        Assert.Equal(["page.error"], Events(errors));
+        Assert.Equal(1, errors.GetProperty("total").GetInt32());
+        Assert.Equal(3, errors.GetProperty("counts").GetProperty("info").GetInt32());
+        Assert.Equal(1, errors.GetProperty("counts").GetProperty("warn").GetInt32());
+
+        var warnings = await AnswerAsync(module, "LINES", new { level = "warn", @event = "request.failed" });
+        Assert.Equal(["request.failed"], Events(warnings));
+        Assert.Equal(5, warnings.GetProperty("events").GetArrayLength());
+    }
+
+    /// <summary>At most the cap, the newest; the total says how many there were, so the page can say it showed part.</summary>
+    [Fact]
+    public async Task At_most_the_limit_is_answered_and_never_more_than_the_cap()
+    {
+        using var log = Log();
+        Logged("2026-09-30.desktop.jsonl", Enumerable.Range(0, LogModule.MaxLines + 20)
+            .Select(i => Line(Noon.AddSeconds(-i - 1).ToString("yyyy-MM-dd'T'HH:mm:ss.fff'Z'", CultureInfo.InvariantCulture), "desktop", "info", "view.opened", $$"""{"view":"v{{i}}"}"""))
+            .Reverse().ToArray());
+        var module = Reader(log);
+
+        var two = await AnswerAsync(module, "LINES", new { limit = 2 });
+        Assert.Equal(2, two.GetProperty("lines").GetArrayLength());
+        Assert.Equal("v0", two.GetProperty("lines")[0].GetProperty("data").GetProperty("view").GetString());
+        Assert.Equal(LogModule.MaxLines + 20, two.GetProperty("total").GetInt32());
+
+        Assert.Equal(LogModule.DefaultLines, (await AnswerAsync(module, "LINES")).GetProperty("lines").GetArrayLength());
+        Assert.Equal(LogModule.MaxLines, (await AnswerAsync(module, "LINES", new { limit = 100_000 })).GetProperty("lines").GetArrayLength());
+    }
+
+    /// <summary>A filter the reader cannot use is refused by name, never read as no filter.</summary>
+    [Theory]
+    [InlineData("since", "yesterday")]
+    [InlineData("source", "hots")]
+    [InlineData("level", "info")]
+    public async Task A_filter_the_reader_cannot_use_is_refused(string filter, string value)
+    {
+        using var log = Log();
+
+        var refusal = await RefusalAsync(Reader(log), "LINES", new Dictionary<string, string> { [filter] = value });
+
+        Assert.Contains(Refusals.LogFilterUnknown, refusal);
+        Assert.Contains($"filter={filter}", refusal);
+        Assert.Contains($"value={value}", refusal);
+    }
+
+    [Fact]
+    public async Task With_no_folder_yet_the_answer_is_empty_not_a_refusal()
+    {
+        using var log = Log();
+
+        var answer = await AnswerAsync(Reader(log), "LINES");
+
+        Assert.Empty(Events(answer));
+        Assert.Equal(0, answer.GetProperty("total").GetInt32());
+    }
+
+    /// <summary>
+    /// Open the folder: the log's own, made if it is not there yet. The page names no path — a page that
+    /// chose what the shell opens would be a page choosing a folder on this machine.
+    /// </summary>
+    [Fact]
+    public async Task Open_the_folder_opens_the_logs_own_folder_and_no_path_the_page_names()
+    {
+        using var log = Log();
+        var opened = new List<string>();
+
+        var answer = await AnswerAsync(Reader(log, opened.Add), "OPEN_FOLDER", new { path = "C:/elsewhere" });
+
+        var folder = Path.Combine(Home, MachineLog.Folder);
+        Assert.Equal([folder], opened);
+        Assert.True(Directory.Exists(folder));
+        Assert.True(answer.GetProperty("opened").GetBoolean());
+        Assert.Equal(folder, answer.GetProperty("folder").GetString());
+    }
+
+    [Fact]
+    public async Task With_no_way_to_open_a_folder_it_says_it_did_not()
+    {
+        using var log = Log();
+
+        Assert.False((await AnswerAsync(Reader(log), "OPEN_FOLDER")).GetProperty("opened").GetBoolean());
+    }
+
+    [Fact]
+    public async Task A_folder_the_system_would_not_open_is_refused_with_its_reason()
+    {
+        using var log = Log();
+
+        var refusal = await RefusalAsync(
+            Reader(log, _ => throw new System.ComponentModel.Win32Exception("the file manager is not there")), "OPEN_FOLDER");
+
+        Assert.Contains(Refusals.LogFolderNotOpened, refusal);
+        Assert.Contains("the file manager is not there", refusal);
     }
 }

@@ -79,6 +79,12 @@ public sealed class MachineLog : IDisposable
     /// <summary>Whether there is anywhere to write: false with no home.</summary>
     public bool Writing => _folder is not null;
 
+    /// <summary>
+    /// The folder this log writes into, and every other process's beside it — the home's <c>logs/</c> —
+    /// or null with no home. What the Settings domain reads and opens (LOG1c).
+    /// </summary>
+    public string? Location => _folder;
+
     public void Info(string @event, params (string Key, object? Value)[] data) => Write("info", @event, data);
 
     public void Warn(string @event, params (string Key, object? Value)[] data) => Write("warn", @event, data);

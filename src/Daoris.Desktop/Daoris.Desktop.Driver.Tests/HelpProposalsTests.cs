@@ -325,7 +325,7 @@ public sealed class HelpProposalsTests : IDisposable
     public void The_places_are_the_pages_twin()
     {
         Assert.Equal(["overview", "sessions", "quests", "projects", "map", "convergence", "search", "settings"], HelpPlaces.Views.Select(view => view.Id));
-        Assert.Equal(["start", "appearance", "ai", "workspace", "driver", "agents", "permissions", "plugins", "browser"], HelpPlaces.Domains.Select(domain => domain.Id));
+        Assert.Equal(["start", "appearance", "ai", "workspace", "driver", "agents", "permissions", "plugins", "browser", "logs"], HelpPlaces.Domains.Select(domain => domain.Id));
         Assert.Equal(
             [
                 "projects/add", "projects/import",

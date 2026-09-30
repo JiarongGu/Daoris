@@ -9,8 +9,9 @@ import {
   useAddFavorite, useBrowserSettings, useDriver, useHarnessAction, useHarnesses, useLines,
   usePluginAction, usePlugins, useRefreshHarnesses, useRemotes, useRemoveFavorite, useRuleAction, useRuleProposal, useRules,
   useSetAgentSettings, useSetBrowser, useSetExtensions, useSetHelper, useSetIntake, useSetLanding, useSetLine, useSetNotify, useSweep, useSweepPlan, useSetStrikes, useStarts, useUnwireRemote, useUsage,
-  useWireRemote,
+  useWireRemote, useMachineLog, useOpenLogFolder,
 } from './shell';
+import { LOG_FILTERS, LogList, type LogFilters } from './settings/Logs';
 import { AccountSettingsForm, AccountSettingsSummary } from './settings/AccountSettings';
 import { AgentRules } from './settings/AgentRules';
 import { proposalChange } from './settings/proposals';
@@ -44,7 +45,7 @@ import { GetStartedDomain } from './setupGuide';
  */
 /** Settings' domains, in the order its list shows them (D75 §2). */
 export type SettingsSection =
-  | 'start' | 'appearance' | 'ai' | 'workspace' | 'driver' | 'agents' | 'permissions' | 'plugins' | 'browser';
+  | 'start' | 'appearance' | 'ai' | 'workspace' | 'driver' | 'agents' | 'permissions' | 'plugins' | 'browser' | 'logs';
 
 /**
  * A part of a domain a menu item is named for (UX5 U72), found by the id `settings-<anchor>` — and since
@@ -65,6 +66,8 @@ const SECTIONS: readonly { id: SettingsSection; machine: boolean }[] = [
   { id: 'permissions', machine: true },
   { id: 'plugins', machine: true },
   { id: 'browser', machine: true },
+  // The machine log (LOG1c, D94): the machine's alone, so a browser is offered no such domain.
+  { id: 'logs', machine: true },
 ];
 
 /** Settings' domains in the order its list shows them — what Ask Daoris's places are held to (HELP6). */
@@ -179,6 +182,7 @@ export function SettingsView({
           {shown === 'permissions' && <Rules notify={notify} />}
           {shown === 'plugins' && <Plugins notify={notify} />}
           {shown === 'browser' && <BrowserDomain notify={notify} />}
+          {shown === 'logs' && <LogsDomain notify={notify} />}
         </div>
       </div>
     </section>
@@ -520,6 +524,34 @@ function LandingSettings({ notify }: { notify: Notify }) {
  * The clean-up (WSR3, D88): the driver's list of every session branch here, and the press. Shell-only,
  * because it is read off this machine's checkouts.
  */
+/**
+ * The machine log read back (LOG1c, D94): the filters are held here and applied by the shell, the same
+ * reading `daoris-driver logs` prints at a terminal (D50).
+ */
+function LogsDomain({ notify }: { notify: Notify }) {
+  const { t } = useTranslation();
+  const [filters, setFilters] = useState<LogFilters>(LOG_FILTERS);
+  const log = useMachineLog(filters);
+  const open = useOpenLogFolder();
+  useErrorNotify(log.error, notify);
+
+  return (
+    <LogList
+      reading={log.data}
+      filters={filters}
+      busy={log.isFetching}
+      onFilters={setFilters}
+      onRefresh={() => void log.refetch()}
+      onOpenFolder={() => open.mutate(undefined, {
+        onSuccess: (answer) => {
+          if (!answer.opened && answer.folder) notify(t('settings.logs.notOpened', { folder: answer.folder }));
+        },
+        onError: failure(notify),
+      })}
+    />
+  );
+}
+
 function SweepSettings({ notify }: { notify: Notify }) {
   const { t } = useTranslation();
   const plan = useSweepPlan();

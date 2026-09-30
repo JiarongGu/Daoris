@@ -27,6 +27,11 @@
       "summary": "the driver's tests"
     },
     {
+      "id": "Daoris.Desktop.Launcher",
+      "path": "src/Daoris.Desktop/Daoris.Desktop.Launcher",
+      "summary": "Daoris"
+    },
+    {
       "id": "Daoris.Desktop.Modules",
       "path": "src/Daoris.Desktop/Daoris.Desktop.Modules",
       "summary": "the shell's modules: every IPC surface the page talks to"
@@ -80,6 +85,11 @@
       "id": "daoris-web",
       "path": "src/Daoris.Web",
       "summary": "The platform: knowledge, quests and projects over the service. Doctrine read-only; Overview first (D40), sessions a view (D66). Built into the HTTP host's wwwroot."
+    },
+    {
+      "id": "ChromiumProbe",
+      "path": "tools/chromium-probe",
+      "summary": ""
     }
   ],
   "dependencies": [

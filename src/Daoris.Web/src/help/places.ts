@@ -17,7 +17,7 @@ export type HelpPlace = { view: string; domain?: string | null; part?: string | 
 export const PLACE_VIEWS: readonly View[] = ['overview', 'sessions', 'quests', 'projects', 'map', 'convergence', 'search', 'settings'];
 
 export const PLACE_DOMAINS: readonly SettingsSection[] = [
-  'start', 'appearance', 'ai', 'workspace', 'driver', 'agents', 'permissions', 'plugins', 'browser',
+  'start', 'appearance', 'ai', 'workspace', 'driver', 'agents', 'permissions', 'plugins', 'browser', 'logs',
 ];
 
 /** The parts, each within a view (Projects) or a Settings domain. */

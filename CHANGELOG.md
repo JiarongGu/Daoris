@@ -588,6 +588,14 @@ The first version: doctrine that installs, is checked, and flows back.
   <v> [--for <model>]]` is the same from a terminal, and prints the values given none. Only those keys
   move; every other key the tool keeps there stays. The tool's own configuration home is never touched,
   and a tool whose settings Daoris does not know (Codex, dsh) is offered nothing, and says so.
+- **The machine log, read back at two doors, and a report to improve Daoris from** (LOG1c, LOG1d,
+  D94). Every Daoris process writes what happens to it under the home's `logs/`, without anyone's
+  words. `daoris-driver logs [--since 30m|2h|3d] [--source <name>] [--event <name>] [--level
+  warn|error] [--json]` prints every source's lines merged by time, and Settings → Logs on the desktop
+  shows the newest with the same filters, a count per level, and *Open the folder*; a line that cannot
+  be read is skipped and counted. `node tools/usage-report.mjs --install <dir> [--days 7]` summarises
+  an install's log for a development session: what was used most, how long conversations took to open
+  and answer, how turns ended, what was refused and what failed. Nothing is sent anywhere.
 - **One conversation's model and effort, beside its composer** (AGT6b, D98). A conversation on the
   protocol door offers the model and the effort its agent offered when the session opened, in the
   agent's own words, and changing one changes it for that conversation, as the tool's own `/model`

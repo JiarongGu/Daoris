@@ -8062,3 +8062,25 @@ helper called `go_propose` at once (no tool search, HELP5's switch confirmed wit
 turn took 10 s, and *go there* opened Settings → Get started at step 2 with the application recorded
 in the conversation. **Nit:** its words said *press Apply* where the card's button reads *go there*.
 **Proven by:** service 619, driver 1090, modules 351, vitest 1569, and the window.
+
+## LOG1c, LOG1d — the machine log read back, and a report to improve Daoris from (2026-09-30, D94)
+
+> - [ ] **LOG1** … (c) **Two doors to read it** (D50): `daoris-driver logs` at a terminal, and a Settings
+>   domain that shows the recent lines and opens the folder. (d) **A report for improving Daoris**:
+>   `tools/usage-report.mjs --install <dir>` summarises a period …
+
+**Outcome** (built by a subagent in its own worktree, merged and rehearsed on main). **1c:** one reader,
+`MachineLogReader` in the driver library, merges every source's files by time with the same filters
+at both doors (a span, a source, an event, a level as a floor); a line it cannot read is skipped and
+counted. `daoris-driver logs` prints one readable line an event, or the raw lines with `--json`;
+Settings → Logs (desktop only) shows the newest lines over `DAORIS.LOG` · `LINES`, capped, with a count
+per level, and *Open the folder* opens the home's `logs/` through the kit's shell launcher. **1d:**
+`tools/usage-report.mjs --home <dir> | --install <dir> [--days 7] [--json]` summarises the lifecycle,
+what was used most, conversations and sessions (open and first-answer times, turns by ending),
+refusals and failures; a time the log could not know is never counted as zero. Run on a copy of the
+owner's log, it found the HTTP host never writes `app.stopped` and the browser leaves a task's
+exception unobserved (LOG2).
+
+**On main:** Ask Daoris's places (HELP6, merged just before) lacked the new *Logs* domain, and the page's
+test that every Settings domain is a place caught it; both twins gained it.
+**Proven by:** driver, modules 361, vitest 1588, CLI 581, family 301/301, deployment 67/67, Playwright 21.

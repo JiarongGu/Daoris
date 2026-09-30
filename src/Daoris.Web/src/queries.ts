@@ -47,6 +47,10 @@ export const keys = {
   usage: ['usage'] as const,
   /** This machine's plugins — shell-only, since a plugin's folder is a machine path (D64). */
   plugins: ['plugins'] as const,
+  /** The machine log read back (LOG1c) — shell-only: the log never leaves the machine (D94). */
+  allMachineLog: ['machine-log'] as const,
+  machineLog: (since: string, source: string, event: string, level: string) =>
+    ['machine-log', since, source, event, level] as const,
   rules: ['rules'] as const,
   /** One session's landed work, read off the checkout — shell-only for the console's reason (SURF6). */
   diff: (session: string) => ['diff', session] as const,

@@ -17,7 +17,21 @@ public sealed class HookTests : IDisposable
 
     public void Dispose()
     {
-        if (Directory.Exists(_home)) Directory.Delete(_home, recursive: true);
+        // FLAKE1: a real hook's process runs in its plugin folder, and Windows refuses to delete a folder
+        // a process still stands in; the process lets go a moment after it is told to stop. So the
+        // cleanup waits a little for it rather than failing a test that passed.
+        for (var attempt = 0; Directory.Exists(_home); attempt++)
+        {
+            try
+            {
+                Directory.Delete(_home, recursive: true);
+            }
+            catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+            {
+                if (attempt >= 20) return;
+                Thread.Sleep(250);
+            }
+        }
     }
 
     /// <summary>A scripted plugin: a handler turns each frame the host sends into the frame it gets back.</summary>

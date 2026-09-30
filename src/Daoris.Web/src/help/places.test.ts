@@ -10,7 +10,7 @@ import { PLACE_DOMAINS, PLACE_PARTS, PLACE_VIEWS, placeDoor } from './places';
 describe('the places a go may name', () => {
   it('are the driver\'s table, line for line', () => {
     expect(PLACE_VIEWS).toEqual(['overview', 'sessions', 'quests', 'projects', 'map', 'convergence', 'search', 'settings']);
-    expect(PLACE_DOMAINS).toEqual(['start', 'appearance', 'ai', 'workspace', 'driver', 'agents', 'permissions', 'plugins', 'browser']);
+    expect(PLACE_DOMAINS).toEqual(['start', 'appearance', 'ai', 'workspace', 'driver', 'agents', 'permissions', 'plugins', 'browser', 'logs']);
     expect(PLACE_PARTS.map(({ within, part }) => `${within}/${part}`)).toEqual([
       'projects/add', 'projects/import',
       'start/agent', 'start/helper', 'start/repositories', 'start/driven', 'start/landing', 'start/rules',

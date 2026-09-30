@@ -76,6 +76,32 @@ public sealed class DrivenSessionInputTests : IDisposable
         Assert.False(File.Exists(heard), File.Exists(heard) ? File.ReadAllText(heard) : "");
 
         Assert.True(processes.Stop("s1"));
+        var report = await tick;
+        // FLAKE1: under a loaded run this has read `failed` a few times and never alone; the record's
+        // note and the tick's own lines say which ending the driver chose and why.
+        var record = service.Session("s1");
+        Assert.True(
+            record["state"]!.GetValue<string>() == "stopped",
+            $"the record: {record.ToJsonString()} | the tick: {string.Join(" | ", report.Events)}");
+    }
+
+    /// <summary>
+    /// A stop that lands before the protocol's handshake has finished is still the person's stop. Written
+    /// to test a reading of FLAKE1 (under load, a stop landing mid-handshake): it passed on the driver as it
+    /// was, so that is not the flake's cause, and it stays as the edge it pins. An agent that never answers
+    /// makes that moment certain.
+    /// </summary>
+    [Fact]
+    public async Task A_stop_before_the_protocol_handshake_finishes_is_recorded_as_the_persons()
+    {
+        await using var service = StandInService.Start(_repository);
+        var processes = new SessionProcesses();
+        var driver = Driver("acp-silent", Path.Combine(_home, "heard.txt"), service, processes);
+
+        var tick = driver.TickAsync();
+        await Until(() => processes.Running.Contains("s1"));
+
+        Assert.True(processes.Stop("s1"));
         await tick;
         Assert.Equal("stopped", service.Session("s1")["state"]!.GetValue<string>());
     }
@@ -201,13 +227,15 @@ public sealed class DrivenSessionInputTests : IDisposable
         var config = DriverConfig.Empty with
         {
             Drivable = ["engine"],
-            Adapter = adapter == "acp-turns" ? "acp-stub" : adapter,
+            Adapter = adapter is "acp-turns" or "acp-silent" ? "acp-stub" : adapter,
             TimeoutMinutes = 1,
             PollSeconds = 1,
             Commands = new Dictionary<string, IReadOnlyList<string>>
             {
                 ["stub"] = ["node", PipeAgent()],
-                ["acp-stub"] = adapter == "acp-turns" ? ["node", TurnsAgent(), heard, turns] : ["node", ProtocolAgent(), heard],
+                ["acp-stub"] = adapter == "acp-turns" ? ["node", TurnsAgent(), heard, turns]
+                    : adapter == "acp-silent" ? ["node", SilentAgent()]
+                    : ["node", ProtocolAgent(), heard],
             },
         };
         var adapters = AdapterSet.Built();
@@ -259,6 +287,17 @@ public sealed class DrivenSessionInputTests : IDisposable
                 send({ jsonrpc: '2.0', id: frame.id, result: {} });
               }
             }
+            """);
+        return script;
+    }
+
+    /// <summary>A protocol agent that never answers: its handshake is still pending whenever it is stopped.</summary>
+    private string SilentAgent()
+    {
+        var script = Path.Combine(_home, "acp-silent-agent.mjs");
+        File.WriteAllText(script, """
+            import { createInterface } from 'node:readline';
+            for await (const line of createInterface({ input: process.stdin })) { void line; }
             """);
         return script;
     }

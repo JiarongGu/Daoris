@@ -158,7 +158,7 @@ public static class HelpPlaces
     [
         ("start", "Get started"), ("appearance", "Appearance"), ("ai", "Daoris's own AI"), ("workspace", "Workspace"),
         ("driver", "Driver"), ("agents", "Agents & accounts"), ("permissions", "Permissions"), ("plugins", "Plugins"),
-        ("browser", "Browser"),
+        ("browser", "Browser"), ("logs", "Logs"),
     ];
 
     /// <summary>The parts, each within a view (Projects) or a Settings domain.</summary>

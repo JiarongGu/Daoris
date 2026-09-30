@@ -106,8 +106,8 @@ rather than designed.
 
 ## Backlog
 
-**Twenty-six rows are open**: the owner's two of 2026-09-30 (USE1's last part to confirm,
-LOG1's last two), first; WSR4 from the first real workspace; the three REV3 left (DIST1, BUDGET1 and
+**Twenty-seven rows are open**: the day's three (USE1's last part to confirm, LOG2, HELP7),
+first; WSR4 from the first real workspace; the three REV3 left (DIST1, BUDGET1 and
 HOME1, the owner's); the in-app browser's three (BRW3, BRW7, BRW8); D85's one (TASKBAR1); the first
 goal's four (FG5, READACROSS1 and HELPREAD1 the owner's, and SEM2 on a trigger); D76's held file tools;
 three leftovers (CONSOLE3, FLAKE1, TEST1); two on the owner (TRUST2, AGT2c); REH1; and the rest on a
@@ -156,22 +156,15 @@ TASK.md and complete one by one"*).
   folders in each command. The session before it, on 0.79.0 and a normal start, committed with git.
   Check on a normal start before anything else, then decide whether the shell's environment or the
   adapter's release is the cause.
-- [ ] **LOG1 — a log of what happens on this machine, to improve Daoris from.** Today nothing is
-  written outside the session transcripts: the shell's, the driver loop's and the host's own lines go
-  to a console nobody has once the application is installed, and an unhandled exception leaves no
-  trace. (a) and (b) *landed 2026-09-30, in the archive.* **One log, machine-local**: JSON lines under the home's `logs/`, one file a day, kept
-  for a bounded number of days, written by every process (the shell, the driver loop, the host, the
-  browser), each line naming its source, its event and its fields. Unhandled exceptions from every
-  process land there. (b) **What the person does, without their words**: the page reports views
-  opened, commands run, sessions started, stopped and finished with their durations, messages sent
-  (their length, never their text), proposals applied or dismissed, refusals shown by code, errors
-  caught; the driver reports each start's cost (spawn to ready, send to first answer — the delay
-  HELP4 found took a person to notice). Nothing is synced or served over HTTP (D47 §4), and the log
-  says what it holds. (c) **Two doors to read it** (D50): `daoris-driver logs` at a terminal, and a
-  Settings domain that shows the recent lines and opens the folder. (d) **A report for improving
-  Daoris**: `tools/usage-report.mjs --install <dir>` summarises a period (what was used most, what
-  was refused, what failed, what was slow), so a development session starts from the owner's real
-  use rather than a guess. A decision (D94) records the event set and what is never logged.
+- [ ] **LOG2 — what the first real log showed** (2026-09-30, read by LOG1d's report on a copy of the
+  owner's log). (a) **The HTTP host never writes `app.stopped`**: the shell ends it by force, so its log
+  shows starts and no stops; let the shell ask it to stop and wait a moment before the force, as the
+  close already does for sessions. (b) **The browser leaves a task's exception unobserved** when a
+  WebSocket to its debug port closes without a handshake (an `AggregateException` at `error`): observe
+  it where the relay or the first-window call awaits it, and say what closed.
+- [ ] **HELP7 — the room names each card's own button.** Tried with the real helper (HELP6): asked to go
+  to a setup step, it said *press Apply* while the card's button reads *go there*. The room should give
+  each kind's button as the card labels it, in both languages the page speaks.
 ### After the first real workspace (owner, 2026-09-28) — to start later
 
 > *"I also found issues after the [first workspace] work, which points out things that daoris leak
@@ -407,7 +400,7 @@ TDD, looked at on the window, and the ones that touch a real session use one (au
   was slow, so it needs the same treatment. **Seen again 2026-09-28**, beside a third: in consecutive
   full runs the `acp-stub` case failed once, then `HookTests.A_real_hook_process_is_started_in_its_folder_with_its_data_and_id_in_the_environment`
   failed in its cleanup, the plugin folder still held by the hook's process, and the next full run
-  passed 862/862. The cleanup deletes before the process has let go. **Seen again 2026-09-29**: one
+  passed 862/862. The cleanup deletes before the process has let go. *Fixed 2026-09-30: the hook tests' cleanup now waits for the process to let go.* **Seen again 2026-09-29**: one
   failure in a full run of 898 during HELP1c, not named because only the summary line was kept; the
   next three full runs passed 898/898. Keep a full run's whole output, so the next one names itself.
   **Seen again 2026-09-30**, the output kept: `DrivenSessionInputTests`' `acp-stub` case, 935/936,
@@ -416,7 +409,8 @@ TDD, looked at on the window, and the ones that touch a real session use one (au
   the stub's process is already ending, and the record takes the exit's word over the person's.
   **And a fourth class the same day**: `CanonicalLineTests.A_session_tree_grows_from_the_line_set_for_its_repository`
   failed once (*"the tree grew from main, not develop"*, 993/994) while five subagents built in
-  parallel; its class passed three runs alone. Load is the common factor in every sighting.
+  parallel; its class passed three runs alone. Load is the common factor in every sighting. The driven-session assertion now carries the record and the tick's lines, so its next failure names
+  itself; a stop landing mid-handshake was tested and is not the cause.
 
 - [ ] **TEST1 — the Playwright suite aborts a worker with `0xC0000409`: seen twice now.** The
   second sighting was its trigger. Both runs died with `worker process exited unexpectedly

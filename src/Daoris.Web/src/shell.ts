@@ -18,6 +18,7 @@ import type { AgentRulesState, RuleListName, RuleScopeName } from './settings/Ag
 import type { LineChange, RepositoryLine } from './settings/Lines';
 import type { LandingChange, LandingRule, RepositoryLanding } from './settings/Landings';
 import type { SweepBranch } from './settings/Sweep';
+import type { LogFilters, LogReading } from './settings/Logs';
 import type { OpenTerminal, TerminalOpening, TerminalShellChoice, Terminals } from './work/terminals';
 
 export type { DiffFile, SessionDiff } from './work/diff';
@@ -103,6 +104,39 @@ export function logEvent(event: string, data: Record<string, string | number | b
     // Dropped: the report is never the page's problem.
   }
 }
+
+/** How many lines Settings → Logs asks for: a screen of the newest, never the month. */
+export const LOG_LINES = 200;
+
+/**
+ * The machine log read back (LOG1c, D94): the newest lines with the terminal's filters, applied by the
+ * shell — the reading `daoris-driver logs` prints. Desktop only: no HTTP route serves the log, and a
+ * browser has no bridge to ask (D47 §4).
+ */
+export const useMachineLog = (filters: LogFilters) => {
+  const { isAvailable } = useShenora();
+  return useQuery({
+    queryKey: keys.machineLog(filters.since, filters.source, filters.event, filters.level),
+    queryFn: () => getBridge().invoke<LogReading>('DAORIS.LOG', 'LINES', {
+      payload: {
+        since: filters.since,
+        // An empty filter is no filter, and is left out rather than sent as nothing.
+        ...(filters.source ? { source: filters.source } : {}),
+        ...(filters.event ? { event: filters.event } : {}),
+        ...(filters.level ? { level: filters.level } : {}),
+        limit: LOG_LINES,
+      },
+    }),
+    enabled: isAvailable,
+    // A filter changed keeps the last lines on the screen until the new ones land, rather than a blank.
+    placeholderData: (previous) => previous,
+  });
+};
+
+/** Open the log's folder in the file manager: the shell names the folder, never the page. */
+export const useOpenLogFolder = () => useMutation({
+  mutationFn: () => getBridge().invoke<{ opened: boolean; folder: string | null }>('DAORIS.LOG', 'OPEN_FOLDER', {}),
+});
 
 let pageErrorsHeard = false;
 

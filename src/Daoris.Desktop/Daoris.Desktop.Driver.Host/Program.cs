@@ -57,6 +57,11 @@ using Daoris.Driver;
 //                 `status`, where each circle stands — ahead, behind, in conflict, last synced (SYNC6a);
 //                 with `dismiss`, the conflicts a quest carries go, here and at the next pass (SYNC6c).
 //
+//   logs [--since <30m|2h|3d>] [--source <name>] [--event <name>] [--level <warn|error>] [--json]
+//                 the machine log (LOG1c, D94): every source's lines under the home, merged by time,
+//                 one readable line each, or as written with --json. A line that cannot be read is
+//                 skipped and counted. Settings → Logs is the screen's door to the same reading.
+//
 // While watching, a line marked `!` is what would have been a toast on a machine with a screen
 // (SURF5b): a session parked, or one ended without the person asking. `daoris driver notify off`
 // turns it off here exactly as the desktop's checkbox does — one file, two doors (D50).
@@ -126,6 +131,12 @@ try
     if (args is ["sync", .. var syncArgs])
     {
         return await Daoris.Driver.Host.SyncConsole.RunAsync(syncArgs);
+    }
+
+    // The machine log from a terminal (LOG1c, D50): Settings → Logs is the other door to the same reading.
+    if (args is ["logs", .. var logsArgs])
+    {
+        return Daoris.Driver.Host.LogsConsole.Run(logsArgs);
     }
 
     var once = args.Contains("--once");
