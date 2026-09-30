@@ -11,6 +11,8 @@ import { isAbsolute, resolve } from 'node:path';
 import { flagValue } from './args.ts';
 import { readManifest } from './config.ts';
 import { DaorisError } from './errors.ts';
+import { readLanes } from './lanes.ts';
+import type { LaneWords } from './lanes.ts';
 import { endpoint, isLocalService, refusal, request } from './service.ts';
 import type { CommandArgs, Domain, Manifest } from './types.ts';
 import type { ExitCode } from './errors.ts';
@@ -43,15 +45,21 @@ export function repositoryName(root: string): string {
  * file, and is **omitted entirely** when unstated — because an absent field PRESERVES the existing
  * row, while an explicit `null` or `""` would re-point every repository to the default on the next
  * ordinary sync tick. Silence here means "I am not saying", not "I say default".
+ *
+ * The lanes (D115 §2.2, DEV4) travel as their words from `daoris.lanes.json`, and always as a list:
+ * none is `[]`. The service keeps a row's lanes when a registration says nothing of them (the page's
+ * add, an older client), so connect, the one door that reads the file, is the one that says "none".
  */
 export function registration(
   root: string, manifest: Manifest, name: string, serviceUrl: string, workspace?: string,
+  lanes: LaneWords[] = [],
 ): {
   repository: string;
   packs: string[];
   domain: Domain | null;
   join: boolean;
   shareKnowledge: boolean;
+  lanes: LaneWords[];
   root?: string;
   workspace?: string;
 } {
@@ -61,6 +69,7 @@ export function registration(
     domain: manifest.domain ? declaredDomain(manifest.domain, name) : null,
     join: manifest.remote?.join ?? false,
     shareKnowledge: manifest.remote?.knowledge ?? false,
+    lanes,
     ...(isLocalService(serviceUrl) ? { root } : {}),
     ...(workspace ? { workspace } : {}),
   };
@@ -161,8 +170,10 @@ export async function commandConnect({ root, argv, write }: CommandArgs): Promis
       1);
   }
 
+  // Read before anything is sent, --dry-run included: an unreadable file is refused naming each problem.
+  const lanes = readLanes(root) ?? [];
   const { url } = endpoint();
-  const body = registration(root, manifest, name, url, flagValue(argv, '--workspace'));
+  const body = registration(root, manifest, name, url, flagValue(argv, '--workspace'), lanes);
   if (argv.includes('--dry-run')) {
     write(JSON.stringify(body, null, 2));
     write(`daoris: would register with ${url}${REGISTRY_PATH}`);
@@ -182,6 +193,10 @@ export async function commandConnect({ root, argv, write }: CommandArgs): Promis
   write(`  owns ${manifest.domain!.owns.length} area(s); accepts ${manifest.domain!.accepts.length} kind(s)`);
   const uses = usesOf(manifest.domain, name);
   if (uses.length > 0) write(`  uses ${uses.join(', ')}`);
+  if (lanes.length > 0) {
+    const named = lanes.map((lane) => `${lane.id}${lane.steward ? ' (the steward\'s)' : ''}`).join(', ');
+    write(`  lanes ${named}: a quest addresses one as ${name}:<lane>, or several as ${name}:<lane>+<lane>`);
+  }
   if (landed?.workspace) write(`  workspace: ${landed.workspace} — this machine's wiring; nothing was written here`);
   write('  siblings can now address quests here, and see what is worth asking.');
   return 0;

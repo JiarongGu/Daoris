@@ -108,6 +108,62 @@ describe('QuestsView', () => {
     expect(within(dialog).getByRole('button', { name: 'Publish quest' })).toBeEnabled();
   });
 
+  // ——— A quest's lanes (D115 §2.2, DEV4): `to` stays the repository, and its lanes are shown beside it.
+
+  const LANED = [{ ...QUESTS[0], lanes: ['assets', 'core'] }];
+  const LANED_REGISTRY = [{
+    ...REGISTRY[0],
+    lanes: [
+      { id: 'core', title: 'Core', summary: 'The runtime.', steward: false },
+      { id: 'assets', title: 'Assets', summary: 'The pipeline.', steward: false },
+    ],
+  }, REGISTRY[1]];
+
+  function stubLaned() {
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.startsWith('/api/quests')) return Response.json(LANED);
+      if (url.startsWith('/api/registry')) return Response.json(LANED_REGISTRY);
+      return respond(url);
+    }));
+  }
+
+  it('shows the lanes a quest addresses beside its repository, on the card and in the drawer', async () => {
+    stubLaned();
+    view();
+
+    expect(await screen.findByText('lanes assets + core')).toBeInTheDocument();
+    await userEvent.click(screen.getByText('Expose a streaming budget'));
+    const dialog = await screen.findByRole('dialog');
+    // A field's name is sentence case (the glossary's `field` kind, NAME1a).
+    expect(within(dialog).getByText('Lanes')).toBeInTheDocument();
+    // Named as the repository declares them, where its registration says.
+    expect(within(dialog).getByText('assets (Assets), core (Core)')).toBeInTheDocument();
+  });
+
+  it('a quest to the whole repository shows no lanes', async () => {
+    view();
+    await userEvent.click(await screen.findByText('Expose a streaming budget'));
+    const dialog = await screen.findByRole('dialog');
+
+    expect(screen.queryByText(/^lanes? /)).toBeNull();
+    expect(within(dialog).queryByText('Lanes')).toBeNull();
+  });
+
+  it('says a quest\'s lanes in 中文, the lanes\' own names left as they are', async () => {
+    const { default: i18n } = await import('./i18n');
+    await i18n.changeLanguage('zh');
+    try {
+      stubLaned();
+      view();
+      expect(await screen.findByText('泳道 assets + core')).toBeInTheDocument();
+      await userEvent.click(screen.getByText('Expose a streaming budget'));
+      expect(within(await screen.findByRole('dialog')).getByText('泳道')).toBeInTheDocument();
+    } finally {
+      await i18n.changeLanguage('en');
+    }
+  });
+
   // ——— A conflict (D68 §5, SYNC6b): kept on the quest for a person, and reachable from the status bar.
 
   it('the drawer shows each move that lost the race, in its own words', async () => {

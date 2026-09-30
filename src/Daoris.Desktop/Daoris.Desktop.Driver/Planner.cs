@@ -29,6 +29,15 @@ public sealed record QuestView(string Id, string From, string To, string Title, 
     /// Absent is false — a host from before the delete door offers none.
     /// </summary>
     public bool Deletable { get; init; }
+
+    /// <summary>
+    /// The lanes of <see cref="To"/> it addresses (D115 §2.2), as the service answered them; empty for a
+    /// quest to the whole repository. Carried, and not yet planned on: the lane locks are DEV6's.
+    /// </summary>
+    public IReadOnlyList<string> Lanes { get; init; } = [];
+
+    /// <summary>Whom it asks as a person reads it: `repository`, or `repository:lane+lane` (the service's `QuestAddress.Spell`).</summary>
+    public string Address => Lanes.Count == 0 ? To : $"{To}:{string.Join('+', Lanes)}";
 }
 
 /// <summary>The session this machine last ran on a quest, and the tree it ran in (D79, D80).</summary>

@@ -85,6 +85,14 @@ public sealed record Quest(
     /// session's view can say what it caused without guessing from the times.
     /// </summary>
     public string? PublishedBy { get; init; }
+
+    /// <summary>
+    /// The lanes of <see cref="To"/> it addresses (D115 §2.2), as that repository declares them, sorted
+    /// — `repository:lane+lane` at every door. Empty for a quest to the whole repository, which is every
+    /// quest from before lanes. <see cref="To"/> stays the repository, so everything keyed on one goes
+    /// on reading one.
+    /// </summary>
+    public IReadOnlyList<string> Lanes { get; init; } = [];
 }
 
 /// <summary>One step of a chain: whom to ask next, and what (D65 §4).</summary>
@@ -307,7 +315,8 @@ public sealed class QuestStore
                   parent      TEXT NULL,
                   conflicts   TEXT NOT NULL DEFAULT '[]',
                   awaits      TEXT NULL,
-                  published_by TEXT NULL
+                  published_by TEXT NULL,
+                  lanes       TEXT NOT NULL DEFAULT '[]'
                 );
                 CREATE INDEX IF NOT EXISTS quests_receiver ON quests (receiver, status);
                 """;
@@ -331,6 +340,8 @@ public sealed class QuestStore
             ("quests", "awaits", "awaits TEXT NULL"),
             // The session that published it (SESS1); a quest from before says none, which is true.
             ("quests", "published_by", "published_by TEXT NULL"),
+            // The lanes it addresses (D115 §2.2); a quest from before asked the whole repository.
+            ("quests", "lanes", "lanes TEXT NOT NULL DEFAULT '[]'"),
             ("quest_log", "remote", "remote INTEGER NULL"),
         })
         {
@@ -471,13 +482,18 @@ public sealed class QuestStore
     /// machines is one quest. A chain's step also derives from its PARENT (D65 §4): "Verify in the
     /// browser" is a title many chains will use, and a step that collided with an earlier quest of
     /// those words would quietly join somebody else's closed quest. The widening kept the hash, so an
-    /// id from before it is exactly the first six characters of the same ask's id now.
+    /// id from before it is exactly the first six characters of the same ask's id now. A quest to
+    /// LANES widens the same way (D115 §2.2), only when there are some, so every quest to a whole
+    /// repository keeps its id and a lane's ask is not the repository's.
     /// </remarks>
-    internal static string MakeId(string from, string to, string title, string? parent = null) =>
+    internal static string MakeId(
+        string from, string to, string title, string? parent = null, IReadOnlyList<string>? lanes = null) =>
         Convert.ToHexString(
             System.Security.Cryptography.SHA256.HashData(
                 System.Text.Encoding.UTF8.GetBytes(
-                    $"{from}->{to}:{title.Trim()}" + (parent is null ? "" : $"<-{parent}"))))[..IdLength].ToLowerInvariant();
+                    $"{from}->{to}:{title.Trim()}" + (parent is null ? "" : $"<-{parent}")
+                    + (lanes is { Count: > 0 } ? $"@{string.Join('+', lanes.Order(StringComparer.Ordinal))}" : ""))))[..IdLength]
+            .ToLowerInvariant();
 
     /// <summary>Publish a quest. Returns the existing one unchanged if it was already asked.</summary>
     /// <param name="workspace">
@@ -488,6 +504,7 @@ public sealed class QuestStore
     /// <param name="attachments">Files the quest carries, by name — the bytes are never this store's.</param>
     /// <param name="then">The chain after this quest (D65 §4), already judged by the exchange.</param>
     /// <param name="publishedBy">The session whose connector published it, when one did (SESS1).</param>
+    /// <param name="lanes">The lanes of <paramref name="to"/> it addresses, already judged by the exchange (D115 §2.2).</param>
     public async Task<Quest> PublishAsync(
         string from, string to, string title, string body, DateTimeOffset now,
         string? workspace = null,
@@ -495,9 +512,11 @@ public sealed class QuestStore
         IReadOnlyList<QuestAttachment>? attachments = null,
         IReadOnlyList<QuestStep>? then = null,
         CancellationToken ct = default,
-        string? publishedBy = null)
+        string? publishedBy = null,
+        IReadOnlyList<string>? lanes = null)
     {
-        var id = MakeId(from, to, title);
+        var sorted = (lanes ?? []).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToList();
+        var id = MakeId(from, to, title, lanes: sorted);
         return await InTransactionAsync(async (transaction, inside) =>
         {
             // The same ask already held is the answer, whichever width of id it was published under.
@@ -513,6 +532,7 @@ public sealed class QuestStore
                 Attachments = attachments ?? [],
                 Then = then ?? [],
                 PublishedBy = string.IsNullOrWhiteSpace(publishedBy) ? null : publishedBy.Trim(),
+                Lanes = sorted,
             };
 
             return await PublishInAsync(asked, transaction, inside).ConfigureAwait(false);
@@ -610,16 +630,17 @@ public sealed class QuestStore
         await using var command = _connection.CreateCommand();
         command.Transaction = transaction;
         command.CommandText = """
-            INSERT INTO quests (id, sender, receiver, title, body, status, note, filed, updated, workspace, links, attachments, then_steps, parent, conflicts, awaits, published_by)
-            VALUES ($id, $sender, $receiver, $title, $body, $status, $note, $filed, $updated, $workspace, $links, $attachments, $then, $parent, $conflicts, $awaits, $publishedBy)
+            INSERT INTO quests (id, sender, receiver, title, body, status, note, filed, updated, workspace, links, attachments, then_steps, parent, conflicts, awaits, published_by, lanes)
+            VALUES ($id, $sender, $receiver, $title, $body, $status, $note, $filed, $updated, $workspace, $links, $attachments, $then, $parent, $conflicts, $awaits, $publishedBy, $lanes)
             ON CONFLICT (id) DO UPDATE SET
               sender = excluded.sender, receiver = excluded.receiver, title = excluded.title, body = excluded.body,
               status = excluded.status, note = excluded.note, filed = excluded.filed, updated = excluded.updated,
               workspace = excluded.workspace, links = excluded.links, attachments = excluded.attachments,
               then_steps = excluded.then_steps, parent = excluded.parent, conflicts = excluded.conflicts,
-              awaits = excluded.awaits, published_by = excluded.published_by
+              awaits = excluded.awaits, published_by = excluded.published_by, lanes = excluded.lanes
             """;
         command.Parameters.AddWithValue("$publishedBy", (object?)quest.PublishedBy ?? DBNull.Value);
+        command.Parameters.AddWithValue("$lanes", LinksJson(quest.Lanes));
         command.Parameters.AddWithValue("$conflicts", ConflictsJson(quest.Conflicts));
         command.Parameters.AddWithValue("$links", LinksJson(quest.Links));
         command.Parameters.AddWithValue("$attachments", AttachmentsJson(quest.Attachments));
@@ -1506,6 +1527,7 @@ public sealed class QuestStore
         Conflicts = ReadConflicts(reader.GetString(reader.GetOrdinal("conflicts"))),
         Awaits = reader.IsDBNull(reader.GetOrdinal("awaits")) ? null : reader.GetString(reader.GetOrdinal("awaits")),
         PublishedBy = reader.IsDBNull(reader.GetOrdinal("published_by")) ? null : reader.GetString(reader.GetOrdinal("published_by")),
+        Lanes = ReadLinks(reader.GetString(reader.GetOrdinal("lanes"))),
     };
 
     /// <summary>An operation as its log row holds it (<see cref="OperationColumns"/>) — a publish's payload is the quest as asked.</summary>
@@ -1537,6 +1559,8 @@ public sealed class QuestStore
                 Then = ReadSteps(payload.GetProperty("then")),
                 Parent = payload.TryGetProperty("parent", out var parent) ? parent.GetString() : null,
                 PublishedBy = payload.TryGetProperty("publishedBy", out var by) ? by.GetString() : null,
+                // Absent from every publish before lanes, which asked the whole repository (D115 §2.2).
+                Lanes = payload.TryGetProperty("lanes", out var lanes) ? ReadLinks(lanes) : [],
             };
 
         QuestOperationRef? dismisses = payload.TryGetProperty("dismisses", out var named)
@@ -1595,6 +1619,12 @@ public sealed class QuestStore
             WriteSteps(writer, published.Then);
             if (published.Parent is not null) writer.WriteString("parent", published.Parent);
             if (published.PublishedBy is not null) writer.WriteString("publishedBy", published.PublishedBy);
+            // Only when it names some (D115 §2.2): a publish to the whole repository reads as it always did.
+            if (published.Lanes.Count > 0)
+            {
+                writer.WritePropertyName("lanes");
+                WriteLinks(writer, published.Lanes);
+            }
         }
 
         if (note is not null) writer.WriteString("note", note);

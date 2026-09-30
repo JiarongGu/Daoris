@@ -4,9 +4,9 @@
 > cross darois development … daoris itself need to have a proper develpment cycle too, this also need
 > to be designed properly"*. Other repositories will rely on Daoris to make their development smooth,
 > so Daoris's own cycle is the first thing it has to run. This is the contract for the DEV rows in
-> `TASKS.md`, and its decision is **D115**. Status: **designed; DEV2 built §2.1's file and DEV3 §3.1**
-> (2026-10-01); the rest is not. It starts from `docs/2026-09-30-parallel-development-design.md` (MOD1–MOD9,
-> D106).
+> `TASKS.md`, and its decision is **D115**. Status: **designed; DEV2 built §2.1's file, DEV3 §3.1 and DEV4
+> §2.2's addresses** (2026-10-01); the rest is not. It starts from
+> `docs/2026-09-30-parallel-development-design.md` (MOD1–MOD9, D106).
 
 ## 0. What exists today, read from the code
 
@@ -153,6 +153,13 @@ is DEV4's, the driver's reader DEV6's, and `gates` waits for the queue (DEV5).*
   which is every machine one person drives.
 - **The intake's room lists each repository's lanes** (D65 §1b), and says that a quest to the
   repository alone goes to its steward to split.
+
+*Built by DEV4: every bullet above but two words of the last. The room lists each lane by the address
+that asks it and marks the steward's, but says a quest to the repository alone is for the whole of it,
+since nothing routes one to the steward until DEV9. A registration silent about lanes keeps the row's
+(connect always says, `[]` for none), because the page's add, an import and an older client re-register
+without reading the file. The import reads no lanes; a `then` step takes no lane address until DEV9; the
+page shows a quest's lanes and its composer offers none yet. The twins are in `.claude/knowledge/twins.md`.*
 
 ### 2.3 What a lane owns, and staying in it
 

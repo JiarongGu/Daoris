@@ -50,7 +50,9 @@ public sealed record QuestResponse(
     string? PublishedBy = null,
     // Whether this host would delete it (D95): the exchange's own judgement, so no page re-derives it.
     // Always false at a shared deployment, which has no delete door.
-    bool Deletable = false);
+    bool Deletable = false,
+    // The lanes of `To` it addresses (D115 §2.2), sorted; empty for a quest to the whole repository.
+    IReadOnlyList<string>? Lanes = null);
 // An attachment arrives with its CONTENT at a local host — base64 on the wire, which is what a byte
 // array is in JSON — and by NAME at a shared one, which keeps names and never bytes (D65 §2). The door
 // decides which shape its mode takes and refuses the other; the exchange never sees the wrong one.
@@ -106,11 +108,16 @@ public sealed record DomainRequest(
 // folder that has not adopted (D70). Silence is the connector's `connect`, which runs in an adopter
 // and is adoption, so it stays true; a shared deployment takes no false at all (it holds no roots, and
 // an unadopted repository is never joined).
+// `Lanes` (D115 §2.2) is the words of the lanes the repository declares, never their paths. Null on the
+// way in is unstated and preserves the row's, as the workspace does: only `connect` reads the file, and
+// it always says, `[]` for none.
 public sealed record RegisterRequest(
     string Repository, IReadOnlyList<string>? Packs, DomainRequest? Domain, string? Root,
     bool? Join, bool? ShareKnowledge, string? Workspace, string? DefaultBranch,
     string? Commit = null, DateTimeOffset? CommittedAt = null, string? Branch = null, string? Base = null,
-    bool? Adopted = null);
+    bool? Adopted = null, IReadOnlyList<LaneWire>? Lanes = null);
+// One lane's words (D115 §2.2), the same shape both ways; judged by `Declared.Lanes` on the way in.
+public sealed record LaneWire(string? Id, string? Title, string? Summary, bool? Steward);
 public sealed record RegisteredResponse(string Repository, DateTimeOffset At, string Workspace);
 public sealed record RetiredResponse(string Repository, bool Retired, string Message);
 // The repositories this machine's checkouts took out of a circle, not yet told to its deployment (SYNC5b).
@@ -130,7 +137,7 @@ public sealed record RegistrationResponse(
     string Repository, bool Adopted, bool Registered, string? Summary,
     IReadOnlyList<string> Owns, IReadOnlyList<string> Accepts, IReadOnlyList<string> Packs, int Entries,
     string? Root, bool Joined, bool SharesKnowledge, string Workspace, string? DefaultBranch, bool Addressable,
-    IReadOnlyList<string> Uses);
+    IReadOnlyList<string> Uses, IReadOnlyList<LaneWire>? Lanes = null);
 // `Quest` is null for a chat (D49 §3) and `Kind` says which way in it was — the same record either
 // way, which is the point: a conversation is a session, not a second kind of thing.
 // `HarnessVersion` and `Profile` say which tool and which account produced this (D49 §4), and `Tree`

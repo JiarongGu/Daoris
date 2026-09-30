@@ -185,6 +185,15 @@ export function QuestsView({
   const nobody = registry.data !== undefined && adopters.length === 0;
   const target = (registry.data ?? []).find((r) => r.repository === draft.to);
   const busy = publish.isPending || respond.isPending || remove.isPending || reading;
+  // A quest's lanes as its repository names them (D115 §2.2): the id, and its title where the
+  // registration gives one. The ids are the repository's words, so they are shown as it spells them.
+  const laneNames = (quest: Quest) => {
+    const declared = (registry.data ?? []).find((r) => r.repository === quest.to)?.lanes ?? [];
+    return (quest.lanes ?? []).map((id) => {
+      const title = declared.find((lane) => lane.id === id)?.title;
+      return title ? `${id} (${title})` : id;
+    }).join(', ');
+  };
 
   const onPublish = async () => {
     // Read whole only now — a file chosen and then removed was never read at all.
@@ -317,6 +326,15 @@ export function QuestsView({
         </header>
         <p className="mt-1 text-body text-accent">
           {quest.from} → {quest.to}
+          {/* The lanes of the repository it asks (D115 §2.2), beside the repository: `to` stays one. */}
+          {quest.lanes?.length ? (
+            <>
+              {' · '}
+              <span className="text-ink-soft" title={t('quests.card.lanesHint', { repository: quest.to })}>
+                {t('quests.card.lanes', { count: quest.lanes.length, lanes: quest.lanes.join(' + ') })}
+              </span>
+            </>
+          ) : null}
           <span className="font-mono text-meta text-ink-faint">
             {' '}· {t('quests.card.filed', { ago: ago(quest.filed) })}
             {quest.updated !== quest.filed && <> · {t('quests.card.moved', { ago: ago(quest.updated) })}</>}
@@ -506,6 +524,13 @@ export function QuestsView({
           <dl className="mb-4 grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-body">
             <dt className="text-ink-faint">{t('quests.detail.from')}</dt><dd className="m-0">{detail.from}</dd>
             <dt className="text-ink-faint">{t('quests.detail.to')}</dt><dd className="m-0">{detail.to}</dd>
+            {detail.lanes?.length ? (
+              <>
+                {/* Each lane as the repository declares it, named where its registration says (D115 §2.2). */}
+                <dt className="text-ink-faint">{t('quests.detail.lanes')}</dt>
+                <dd className="m-0">{laneNames(detail)}</dd>
+              </>
+            ) : null}
             <dt className="text-ink-faint">{t('quests.detail.filed')}</dt>
             <dd className="m-0">{stamp(detail.filed)} · {ago(detail.filed)}</dd>
             {detail.updated !== detail.filed && (

@@ -36,6 +36,12 @@ public enum QuestPublishRefusal
     /// is shared, or there are too many.
     /// </summary>
     BadChain,
+
+    /// <summary>
+    /// The address names a lane its repository does not declare, or any lane of a repository that
+    /// declares none (D115 §2.2). The answer names the lanes there are.
+    /// </summary>
+    UnknownLane,
 }
 
 /// <summary>
@@ -200,17 +206,24 @@ public sealed class QuestExchange(
         PublishAsync(new QuestAsk(from, to, title, body), now, ct);
 
     /// <summary>
-    /// Publish a quest to another repository. Refuses a self-addressed quest and a target nothing could
-    /// answer; warns when the target has not adopted, or has declared nothing about itself (D34, D70). It is published HERE,
+    /// Publish a quest to another repository, or to lanes of a repository (`repository:lane+lane`,
+    /// D115 §2.2), its own included. Refuses a self-addressed quest that names no lane, a target nothing
+    /// could answer, and a lane the target does not declare; warns when the target has not adopted, or
+    /// has declared nothing about itself (D34, D70). It is published HERE,
     /// whoever the receiver is (D68), and a joined receiver's quest reaches the remote on the next sync.
     /// What it carries is judged before anything is written anywhere, and its files are kept HERE —
     /// under this machine's home — wherever the record travels (D65 §2).
     /// </summary>
     public async Task<QuestPublishOutcome> PublishAsync(QuestAsk ask, DateTimeOffset now, CancellationToken ct = default)
     {
-        var (from, to, title, body) = (ask.From, ask.To, ask.Title, ask.Body);
+        // `repository:lane+lane` is split once, here (D115 §2.2): from now on `to` is the repository,
+        // and the lanes ride beside it to the store.
+        var address = QuestAddress.Parse(ask.To);
+        var (from, to, title, body) = (ask.From, address.Repository, ask.Title, ask.Body);
 
-        if (string.Equals(from, to, StringComparison.OrdinalIgnoreCase))
+        // Work for another lane is work for another session, so a repository may ask one of its own
+        // lanes (D115, amending this refusal). To itself whole is still its own backlog's.
+        if (!address.Named && string.Equals(from, to, StringComparison.OrdinalIgnoreCase))
         {
             return new(
                 QuestPublishRefusal.SelfAddressed,
@@ -264,6 +277,14 @@ public sealed class QuestExchange(
                 Quest: null, addressable);
         }
 
+        // The registration's lanes are what an address is judged by (D115 §2.2): the line's file is
+        // the authority for what runs, and this is what askers read.
+        var (lanes, unfitLane) = JudgeLanes(address, target);
+        if (unfitLane is not null)
+        {
+            return new(QuestPublishRefusal.UnknownLane, unfitLane, Quest: null, addressable);
+        }
+
         // What it carries is judged here, before any door writes anything: a refused ask must leave
         // nothing behind — not a record, and not a file no record names.
         var carried = Judge(ask);
@@ -283,7 +304,7 @@ public sealed class QuestExchange(
 
         var quest = await quests.PublishAsync(
             from, to, title, body, now, home, carried.Links, carried.Attachments, ask.Then, ct: ct,
-            publishedBy: ask.PublishedBy).ConfigureAwait(false);
+            publishedBy: ask.PublishedBy, lanes: lanes).ConfigureAwait(false);
 
         var caution = !target.Adopted
             // Registered is addressable; adopted is disciplined (D70). Said at publish, because it is
@@ -299,11 +320,60 @@ public sealed class QuestExchange(
 
         return new(
             QuestPublishRefusal.None,
-            $"Published quest `#{quest.Id}` to `{quest.To}` — {quest.Status}.{caution}\n\n"
+            $"Published quest `#{quest.Id}` to `{QuestAddress.Spell(quest.To, quest.Lanes)}` — {quest.Status}.{caution}\n\n"
             + "It is held by the service, not written into that repository. Its agent will see it and "
             + "decide. Do not make the change yourself."
             + await KeepAsync(quest, ask, carried, ct).ConfigureAwait(false),
             quest, addressable);
+    }
+
+    /// <summary>
+    /// Whether the lanes an address names are the receiver's (D115 §2.2): each must be one its
+    /// registration declares, matched in any case and kept in the declared spelling, once, sorted. Any
+    /// lane of a repository that declares none is refused, saying to address the repository; an
+    /// unknown lane is refused, naming the lanes there are and how to address one.
+    /// </summary>
+    /// <returns>The lanes to keep on the quest, or why the address cannot be taken.</returns>
+    private static (IReadOnlyList<string> Lanes, string? Refusal) JudgeLanes(QuestAddress address, Registration target)
+    {
+        if (!address.Named) return ([], null);
+
+        var asked = $"{address.Repository}:{string.Join('+', address.Lanes)}";
+        var declared = target.DeclaredLanes;
+        if (declared.Count == 0)
+        {
+            return ([], $"`{target.Repository}` declares no lanes, so a quest to it addresses the repository: "
+                        + $"`{target.Repository}`, not `{asked}`.");
+        }
+
+        var theirs = string.Join(", ", declared.Select(lane => $"`{lane.Id}`" + (lane.Title.Length > 0 ? $" ({lane.Title})" : "")));
+        var how = $"Address one as `{target.Repository}:{declared[0].Id}`, or several as `{target.Repository}:<lane>+<lane>`.";
+        if (address.Lanes.Count == 0)
+        {
+            return ([], $"`{asked}` names no lane after the colon. `{target.Repository}`'s lanes: {theirs}. {how}");
+        }
+
+        var kept = new List<string>();
+        var unknown = new List<string>();
+        foreach (var name in address.Lanes)
+        {
+            if (declared.FirstOrDefault(lane => string.Equals(lane.Id, name, StringComparison.OrdinalIgnoreCase)) is { } lane)
+            {
+                if (!kept.Contains(lane.Id, StringComparer.Ordinal)) kept.Add(lane.Id);
+            }
+            else if (!unknown.Contains(name, StringComparer.Ordinal))
+            {
+                unknown.Add(name);
+            }
+        }
+
+        if (unknown.Count > 0)
+        {
+            return ([], $"`{target.Repository}` declares no lane {string.Join(" or ", unknown.Select(name => $"`{name}`"))}. "
+                        + $"Its lanes: {theirs}. {how}");
+        }
+
+        return (kept.Order(StringComparer.Ordinal).ToList(), null);
     }
 
     /// <summary>
@@ -436,6 +506,14 @@ public sealed class QuestExchange(
         {
             return $"`{asked.To}` is not registered at this deployment, so nobody here could answer quest "
                    + $"`#{asked.Id}`. Its registration travels first; the next sync tries again.";
+        }
+
+        // Its lanes were judged against the registration by the machine that published it (D115 §2.2),
+        // and a registration here may lag its own; but a lane no registration could declare is no lane.
+        if (asked.Lanes.FirstOrDefault(lane => !QuestAddress.IsLaneId(lane)) is { } malformed)
+        {
+            return $"Quest `#{asked.Id}` names `{Clip(malformed)}` as a lane, and no repository could declare it — a "
+                   + "lane is lower-case letters, digits and dashes, starting with a letter.";
         }
 
         var carried = Judge(new QuestAsk(asked.From, asked.To, asked.Title, asked.Body)

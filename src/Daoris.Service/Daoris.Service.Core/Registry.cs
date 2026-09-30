@@ -46,6 +46,13 @@ namespace Daoris.Knowledge;
 /// `domain.uses`. Null and empty are the same: nothing declared. Read through <see cref="DependsOn"/>,
 /// which holds the rule its CLI twin (`connect.ts`, <c>usesOf</c>) holds too.
 /// </param>
+/// <param name="Lanes">
+/// The lanes it declares (D115 §2.2): the domains inside it a quest may address as
+/// `repository:lane`, as their words — never their paths, which stay in the repository's file. <b>Null
+/// means unstated</b> and is preserved on upsert, as the workspace is: only `connect` reads the file,
+/// and it always says (`[]` for none), while the page's add and an import say nothing of lanes. Read
+/// through <see cref="DeclaredLanes"/>, which holds the rule its CLI twin (`lanes.ts`) holds too.
+/// </param>
 public sealed record Registration(
     string Repository,
     bool Adopted,
@@ -59,13 +66,17 @@ public sealed record Registration(
     bool SharesKnowledge = false,
     string? Workspace = null,
     string? DefaultBranch = null,
-    IReadOnlyList<string>? Uses = null)
+    IReadOnlyList<string>? Uses = null,
+    IReadOnlyList<DeclaredLane>? Lanes = null)
 {
     /// <summary>The workspace this repository is wired to, with silence resolved to the default.</summary>
     public string InWorkspace => Workspaces.Normalize(Workspace);
 
     /// <summary>What it says it uses, as the rule reads the declaration (D91).</summary>
     public IReadOnlyList<string> DependsOn => Declared.Uses(Uses, Repository);
+
+    /// <summary>The lanes it declares, as the rule reads them (D115 §2.2); none when unstated.</summary>
+    public IReadOnlyList<DeclaredLane> DeclaredLanes => Declared.Lanes(Lanes);
 
     /// <summary>Whether this repository has said anything useful about what it can be asked for.</summary>
     public bool Registered => Adopted && (!string.IsNullOrWhiteSpace(Summary) || Owns.Count > 0 || Accepts.Count > 0);
@@ -106,7 +117,36 @@ public static class Declared
         }
         return kept;
     }
+
+    /// <summary>
+    /// How a registration's lanes read (D115 §2.2) — the rule the CLI's `laneWords` holds too, by its own
+    /// test table (twins): the id, title and summary trimmed; an id that is not a lane's (lower-case
+    /// letters, digits and dashes, starting with a letter) dropped, since no quest could address it; a
+    /// repeated id dropped, the first kept; the steward's mark kept by the first lane that carries it; a
+    /// missing title or summary empty. Absent is none.
+    /// </summary>
+    public static IReadOnlyList<DeclaredLane> Lanes(IEnumerable<DeclaredLane?>? lanes)
+    {
+        var kept = new List<DeclaredLane>();
+        foreach (var lane in lanes ?? [])
+        {
+            if (lane is null) continue;
+            var id = lane.Id?.Trim() ?? "";
+            if (!QuestAddress.IsLaneId(id) || kept.Any(k => k.Id == id)) continue;
+            kept.Add(new DeclaredLane(
+                id, lane.Title?.Trim() ?? "", lane.Summary?.Trim() ?? "", lane.Steward && !kept.Any(k => k.Steward)));
+        }
+
+        return kept;
+    }
 }
+
+/// <summary>One lane a repository declares (D115 §2.2): its words, never its paths.</summary>
+/// <param name="Id">How a quest addresses it: `repository:id`.</param>
+/// <param name="Title">What a person calls it.</param>
+/// <param name="Summary">One line of what it owns, for whoever addresses it.</param>
+/// <param name="Steward">The one lane that keeps the repository's records (§5).</param>
+public sealed record DeclaredLane(string Id, string Title, string Summary, bool Steward = false);
 
 /// <summary>A repository looked up by name — in any case, as every door here matches it.</summary>
 public static class Registrations

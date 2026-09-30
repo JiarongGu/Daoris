@@ -76,6 +76,27 @@ public sealed class McpToolsTests : IAsyncLifetime
     }
 
     /// <summary>
+    /// D115 §2.2 (DEV4): the registry's answer lists each repository's lanes, so an asker can see what it
+    /// may address and how; a quest to one is published through this door and listed with its lanes.
+    /// </summary>
+    [Fact]
+    public async Task The_registry_lists_lanes_and_a_quest_to_one_is_listed_with_them()
+    {
+        var owner = (await _service.RegistryAsync()).Named("Owner")!;
+        await _service.RegisterAsync(
+            owner with { Lanes = [new("core", "Core", "The runtime."), new("records", "Records", "The backlog.", Steward: true)] },
+            DateTimeOffset.UtcNow);
+
+        var registry = await _tools.RegistryAsync();
+        Assert.Contains("`Owner:core`", registry);
+        Assert.Contains("The runtime.", registry);
+        Assert.Contains("the steward's", registry);
+
+        Assert.Contains("Published quest", await _tools.PublishQuestAsync("Asker", "Owner:core", "Cap the frame", "It is unbounded."));
+        Assert.Contains("lanes: `core`", await _tools.ListQuestsAsync("Owner"));
+    }
+
+    /// <summary>
     /// An intake's connector (D65 §1b): the room is no repository, so the quest is asked BY THE ASK, in
     /// the ask's circle — and because the session publishing is the ask's own intake, the ask says a
     /// harness decided. The `from` an agent fills in is not what decides who asked.

@@ -58,6 +58,9 @@ transcript in `_fixtures/rehearsal-logs/`:
 - both projects register, through the real `daoris connect`;
 - a quest goes `game → engine`; one to a stranger is **refused naming who is addressable**; declining
   without a reason is refused; the quest is taken and finished;
+- a quest **addresses a lane**: `engine` declares two in its `daoris.lanes.json`, which `connect` sends
+  as words; `engine:core` publishes, `engine:nope` is refused naming both, and `engine` may ask its own
+  lane but never itself whole (D115);
 - `game`'s own knowledge answers a search made from outside it;
 - a third project is **born mid-run** (D44) — init, declare, sync, check, connect — and answers its
   first quest on day one;

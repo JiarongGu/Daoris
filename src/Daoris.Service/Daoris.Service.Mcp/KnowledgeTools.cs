@@ -300,6 +300,18 @@ public sealed partial class KnowledgeTools(
             if (entry.Owns.Count > 0) text.AppendLine($"- **owns:** {string.Join("; ", entry.Owns)}");
             if (entry.Accepts.Count > 0) text.AppendLine($"- **accepts:** {string.Join("; ", entry.Accepts)}");
             if (entry.DependsOn.Count > 0) text.AppendLine($"- **uses:** {string.Join(", ", entry.DependsOn)}");
+            if (entry.DeclaredLanes.Count > 0)
+            {
+                // Its lanes (D115 §2.2): what an asker may address inside it, each by its own address.
+                text.AppendLine("- **lanes** — a quest to one is work for that lane's session:");
+                foreach (var lane in entry.DeclaredLanes)
+                {
+                    var named = string.Join(" — ", new[] { lane.Title, lane.Summary }.Where(words => words.Length > 0));
+                    text.AppendLine($"  - `{entry.Repository}:{lane.Id}`{(named.Length > 0 ? $" — {named}" : "")}"
+                                    + (lane.Steward ? " (the steward's: it keeps the records)" : ""));
+                }
+            }
+
             if (entry.Packs.Count > 0) text.AppendLine($"- packs: {string.Join(", ", entry.Packs)}");
             text.AppendLine($"- {entry.Entries} indexed entries");
             text.AppendLine();
@@ -338,7 +350,10 @@ public sealed partial class KnowledgeTools(
     public async Task<string> PublishQuestAsync(
         [Description("The repository asking — the one you are working in. An intake publishes as its ask, whatever this says.")]
         string from,
-        [Description("The repository being asked. It must be in the registry as addressable, or nobody there can see it.")]
+        [Description(
+            "The repository being asked. It must be in the registry as addressable, or nobody there can see it. "
+            + "Where the registry lists its lanes, `repository:lane` asks one of them, and `repository:lane+lane` "
+            + "several — your own repository's lanes included, which is the one way to ask your own repository.")]
         string to,
         [Description("One line: what is wanted.")] string title,
         [Description("Why, and the evidence. Whoever works there may see a better answer than you did.")]
@@ -432,6 +447,8 @@ public sealed partial class KnowledgeTools(
             {
                 text.AppendLine($"- `#{quest.Id}` **{quest.Title}** — {quest.Status}, from `{quest.From}`");
                 text.AppendLine($"  {Text.Excerpt(quest.Body, null, 200)}");
+                // The lanes of the repository it asks (D115 §2.2); none is the whole repository.
+                if (quest.Lanes.Count > 0) text.AppendLine($"  lanes: {string.Join(" · ", quest.Lanes.Select(lane => $"`{lane}`"))}");
                 if (quest.Links.Count > 0) text.AppendLine($"  links: {string.Join(" · ", quest.Links)}");
                 if (quest.Attachments.Count > 0)
                 {
