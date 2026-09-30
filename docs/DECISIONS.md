@@ -5565,6 +5565,16 @@ says so before the press instead of offering it.
 - **Re-recognising a merged session as landed** (a merge records nothing, D102): its review after a tidy is
   `SESSION_TREE_GONE`, which offers nothing that acts on a tree. A merge's own record is not built.
 
+**Amended 2026-10-01 (LOOK2b): the rail reads as landed too.** The session list said where a session's tree was
+(*in s-2394e5d9*) after its landing tidied that tree away and its branch went. A row now says where the work landed
+(*landed on `<branch>`*, and *gone since* for a trace) by the review's own rule: while the landed branch stands, or once
+the tree is gone. A tree still here after its branch went is named as before, and a tree gone with no landing (a merge,
+which records none) is not named at all. The rail asks once for the rows it shows (`SESSION_WHERE`), naming the tree
+each record holds; the host reads `landings.json` and whether a tree of its own home's is there, and runs no git, so the
+row states the branch as the record holds it and the review says where it stands. It is not a field of the sessions
+listing, which is the service's records and travels (D47 §4), where a landing is this machine's (D102). Held by
+`DriverModuleSessionsTests` and the vitest loop (`SessionRow`, `SessionRail`); not looked at on the window.
+
 ### What the gates do not cover
 
 The record's traces, the sentences, the answer's shape and each refusal's code are in the fast halves

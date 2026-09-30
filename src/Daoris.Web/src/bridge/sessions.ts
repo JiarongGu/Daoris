@@ -1,7 +1,9 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useShenora, useShenoraEvent } from '@shenora/react';
+import type { Session } from '../api';
 import { keys } from '../queries';
 import type { SessionEvent } from '../work/conversation';
+import type { SessionWhere } from '../work/SessionRow';
 import { call } from './call';
 
 // A session's life on this machine (MOD3): the person's answer to a parked one, a stop and how it is
@@ -97,6 +99,33 @@ export const useSessionOpenings = (sessions: readonly { id: string }[] | undefin
   });
 
   return openings;
+};
+
+/**
+ * Where each of these sessions' work is now (LOOK2b): whether the tree it opened is still here, and its landing (D113),
+ * from this machine's own files, in one ask for the rows a list shows.
+ *
+ * @remarks
+ * Asked only of sessions whose record names a tree, with that tree, since the host looks at no folder but the trees its
+ * home opened. Not a field of the sessions listing: the listing is the service's records, which travel (D47 §4), and a
+ * landing is this machine's (`landings.json`, D102). Keyed under the sessions, so a landing, a clean-up or a tick that
+ * asks the listing again asks this again too.
+ */
+export const useSessionWhere = (sessions: readonly Session[] | undefined): Record<string, SessionWhere> => {
+  const { isAvailable } = useShenora();
+  const asked = [...new Map((sessions ?? []).filter((session) => session.tree).map((session) => [session.id, session])).values()]
+    .sort((a, b) => a.id.localeCompare(b.id));
+  const answer = useQuery({
+    queryKey: keys.sessionsWhere(asked.map((session) => session.id)),
+    queryFn: () => call<{ sessions?: ({ session: string } & SessionWhere)[] }>('SESSION_WHERE', {
+      sessions: asked.map((session) => ({ id: session.id, tree: session.tree })),
+    }),
+    enabled: isAvailable && asked.length > 0,
+    staleTime: 60_000,
+    refetchOnWindowFocus: false,
+  });
+  const rows = Array.isArray(answer.data?.sessions) ? answer.data.sessions : [];
+  return Object.fromEntries(rows.map((row) => [row.session, { treeGone: row.treeGone === true, landed: row.landed ?? null }]));
 };
 
 /** Where a search found its words: the session, the event it began at, whose words, and a window of them. */

@@ -76,6 +76,11 @@ export const keys = {
     ['search', q, localOnly, workspace ?? '*'] as const,
   allQuests: ['quests'] as const,
   allSessions: ['sessions'] as const,
+  /**
+   * Where each of these sessions' work is now, its tree or its landing (LOOK2b) — shell-only, read off this machine's
+   * files. Under the sessions' key, so whatever asks the listing again (a landing, a clean-up, a tick) asks this too.
+   */
+  sessionsWhere: (ids: string[]) => ['sessions', 'where', ...ids] as const,
   allAsks: ['asks'] as const,
   asks: (includeClosed: boolean, workspace: string | null) => ['asks', includeClosed, workspace ?? '*'] as const,
   quests: (repository: string | null, includeClosed: boolean, workspace: string | null) =>

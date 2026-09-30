@@ -37,6 +37,63 @@ public sealed class DriverModuleSessionsTests : DriverModuleBridge
     }
 
     /// <summary>
+    /// LOOK2b: the rail said *in s-2394e5d9* of a session whose landing had tidied that tree away and whose branch was
+    /// gone. Where each session's work is now is answered for the whole rail in one ask, from this machine's own files:
+    /// whether the tree it opened is still here, and its landing, standing or a trace (D113). No service is asked and no
+    /// git is run, so it answers on a cold start, and a folder Daoris did not open is never looked at.
+    /// </summary>
+    [Fact]
+    public async Task Where_each_sessions_work_is_now_is_answered_from_the_machines_own_files()
+    {
+        var loop = Loop();
+        var trees = new SessionTrees(loop.Home);
+        var standing = Path.Combine(trees.TreesRoot, "aurora", "engine", "s-2394e5d9");
+        var kept = Path.Combine(trees.TreesRoot, "aurora", "engine", "s-5a1f0c2b");
+        var carriedOn = Path.Combine(trees.TreesRoot, "aurora", "game", "s-77e0d9a4");
+        Directory.CreateDirectory(kept);
+        File.WriteAllText(Path.Combine(kept, "README.md"), "kept");
+        Directory.CreateDirectory(carriedOn);
+        File.WriteAllText(Path.Combine(carriedOn, "README.md"), "carried on");
+        var at = DateTimeOffset.Parse("2026-10-01T08:00:00Z", System.Globalization.CultureInfo.InvariantCulture);
+        trees.Recorded.Record(new LandedBranch("engine", "aurora", "feature/42-streamer", "main", "abc123", "landed1", "42", null, at));
+        trees.Recorded.Record(new LandedBranch("game", "aurora", "feature/7-hud", "main", "def456", "carried1", "7", null, at));
+        trees.Recorded.Gone("game", ["feature/7-hud"]);
+        trees.Recorded.Record(new LandedBranch("engine", "aurora", "feature/9-cache", "main", "fed789", "gone1", "9", null, at));
+        trees.Recorded.Gone("engine", ["feature/9-cache"]);
+        var module = new DriverModule(Bus, loop);
+
+        var answer = await AnswerAsync(module, "SESSION_WHERE", new
+        {
+            sessions = new object[]
+            {
+                new { id = "landed1", tree = standing },
+                new { id = "gone1", tree = Path.Combine(trees.TreesRoot, "aurora", "engine", "s-0b3c4d5e") },
+                new { id = "carried1", tree = carriedOn },
+                new { id = "working1", tree = kept },
+                new { id = "rooted1", tree = Path.Combine(Home, "elsewhere", "engine") },
+            },
+        });
+        var rows = answer.GetProperty("sessions").EnumerateArray().ToDictionary(row => row.GetProperty("session").GetString()!);
+
+        // Its tree tidied and its branch standing: where it landed.
+        Assert.True(rows["landed1"].GetProperty("treeGone").GetBoolean());
+        Assert.Equal("feature/42-streamer", rows["landed1"].GetProperty("landed").GetProperty("branch").GetString());
+        Assert.Equal("standing", rows["landed1"].GetProperty("landed").GetProperty("state").GetString());
+        // Its tree tidied and its branch gone since: a trace.
+        Assert.Equal("gone", rows["gone1"].GetProperty("landed").GetProperty("state").GetString());
+        // A tree still here after its branch went: the session carried on in it, as its review reads (D113 §1).
+        Assert.False(rows["carried1"].GetProperty("treeGone").GetBoolean());
+        Assert.Equal("gone", rows["carried1"].GetProperty("landed").GetProperty("state").GetString());
+        // No landing: its tree, still here.
+        Assert.False(rows["working1"].GetProperty("treeGone").GetBoolean());
+        Assert.Equal(JsonValueKind.Null, rows["working1"].GetProperty("landed").ValueKind);
+        // A folder that is no tree of this home's is never looked at, and nothing is said of it.
+        Assert.False(rows.ContainsKey("rooted1"));
+        // Never a machine path back: the page sent the trees it was answered, and has no use for them again.
+        Assert.DoesNotContain(JsonSerializer.Serialize(Home).Trim('"'), answer.GetRawText(), StringComparison.OrdinalIgnoreCase);
+    }
+
+    /// <summary>
     /// Stopping a session that has already finished is FALSE, not an error: the record says how it
     /// ended, and a page that showed a failure would be reporting the race rather than the outcome.
     /// </summary>
