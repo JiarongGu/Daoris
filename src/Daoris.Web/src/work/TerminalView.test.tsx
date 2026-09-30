@@ -2,6 +2,7 @@ import { StrictMode } from 'react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { act, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import * as Tooltip from '@radix-ui/react-tooltip';
 
 // CONSOLE4b (D96): the terminal view over the mocked bridge, held the way the Work frame holds it — the
 // terminals in the frame, the view drawing them. The renderer is stood in for: jsdom lays nothing out,
@@ -54,7 +55,7 @@ import { TerminalView } from './TerminalView';
 /** The view as the frame holds it: the terminals above, outliving the view. */
 function Held({ shown = true, cwd }: { shown?: boolean; cwd?: string }) {
   const terminals = useTerminals();
-  return shown ? <TerminalView terminals={terminals} cwd={cwd} /> : null;
+  return <Tooltip.Provider>{shown ? <TerminalView terminals={terminals} cwd={cwd} /> : null}</Tooltip.Provider>;
 }
 
 let next = 0;
@@ -173,6 +174,113 @@ describe('the terminal view (CONSOLE4b)', () => {
     act(() => setThemeChoice('system'));
 
     expect(screens[0]!.looks).toBe(2);
+  });
+
+  describe('more than one (CONSOLE4c)', () => {
+    let shells: { shells: { shell: string }[]; default: string | null };
+    /** The terminals' ids, in the order the module gives them. */
+    let ids: string[];
+
+    /** "+" and the shell chosen from it, by the keys, as the frame's other menus are opened in its tests. */
+    const newTerminal = async (shell: RegExp) => {
+      screen.getByRole('button', { name: 'New terminal' }).focus();
+      await userEvent.keyboard('{Enter}');
+      await userEvent.click(await screen.findByRole('menuitem', { name: shell }));
+    };
+
+    beforeEach(() => {
+      shells = { shells: [{ shell: 'pwsh' }, { shell: 'cmd' }, { shell: 'bash' }], default: 'pwsh' };
+      const answers = [opened('pwsh'), opened('cmd', 'C:/somewhere/engine'), opened('pwsh')];
+      ids = answers.map((row) => row.id);
+      invoke.mockImplementation(async (_module: string, type: string) => {
+        if (type === 'OPEN') return answers.shift();
+        if (type === 'SHELLS') return shells;
+        return {};
+      });
+    });
+
+    it('offers the machine\'s shells behind "+", the default first, and opens the one chosen in a tab of its own', async () => {
+      render(<Held cwd="C:/somewhere/engine" />);
+      await screen.findByRole('tab', { name: 'PowerShell · engine', selected: true });
+
+      screen.getByRole('button', { name: 'New terminal' }).focus();
+      await userEvent.keyboard('{Enter}');
+      const items = await screen.findAllByRole('menuitem');
+      expect(items.map((item) => item.textContent)).toEqual(['PowerShelldefault', 'Command Prompt', 'Git Bash']);
+      await userEvent.click(screen.getByRole('menuitem', { name: /^Command Prompt/ }));
+
+      expect(await screen.findByRole('tab', { name: 'Command Prompt · engine', selected: true })).toBeInTheDocument();
+      expect(screen.getByRole('tab', { name: 'PowerShell · engine', selected: false })).toBeInTheDocument();
+      expect(calls('OPEN')[1]![2]).toEqual({ payload: { shell: 'cmd', cwd: 'C:/somewhere/engine' } });
+      // Each its own shell, with its own screen.
+      await waitFor(() => expect(screens).toHaveLength(2));
+    });
+
+    it('opens the only shell there is straight from "+", with no menu to pass through', async () => {
+      shells = { shells: [{ shell: 'powershell' }], default: 'powershell' };
+      render(<Held />);
+      await screen.findByRole('tab', { name: 'PowerShell · engine' });
+
+      await userEvent.click(screen.getByRole('button', { name: 'New terminal' }));
+
+      expect(screen.queryByRole('menuitem')).toBeNull();
+      await waitFor(() => expect(calls('OPEN')).toHaveLength(2));
+      expect(calls('OPEN')[1]![2]).toEqual({ payload: { shell: 'powershell' } });
+    });
+
+    it('names two tabs alike apart, and writes each shell\'s words on its own screen', async () => {
+      render(<Held cwd="C:/somewhere/engine" />);
+      await screen.findByRole('tab', { name: 'PowerShell · engine' });
+      await newTerminal(/^Command Prompt/);
+      await screen.findByRole('tab', { name: 'Command Prompt · engine' });
+      await newTerminal(/^PowerShell/);
+
+      const tabs = await screen.findAllByRole('tab');
+      expect(tabs.map((tab) => tab.getAttribute('aria-label'))).toEqual(['PowerShell · engine', 'Command Prompt · engine', 'PowerShell · engine (2)']);
+      expect(tabs[0]!.getAttribute('title')).toBe('PowerShell, started in C:/somewhere/engine');
+
+      // The first tab's shell speaks while the third is shown: its own screen hears it.
+      await say(ids[0]!, 'from the first');
+      await say(ids[2]!, 'from the third');
+      await waitFor(() => expect(screens).toHaveLength(3));
+      expect(screens[0]!.written).toEqual(['from the first']);
+      expect(screens[2]!.written).toEqual(['from the third']);
+    });
+
+    it('closes a tab with its shell, and shows the one beside it', async () => {
+      render(<Held cwd="C:/somewhere/engine" />);
+      await screen.findByRole('tab', { name: 'PowerShell · engine' });
+      await newTerminal(/^Command Prompt/);
+      await screen.findByRole('tab', { name: 'Command Prompt · engine', selected: true });
+      await waitFor(() => expect(screens).toHaveLength(2));
+
+      await userEvent.click(screen.getByRole('button', { name: 'Close Command Prompt · engine' }));
+
+      expect(calls('CLOSE')).toHaveLength(1);
+      expect(screen.queryByRole('tab', { name: 'Command Prompt · engine' })).toBeNull();
+      expect(screen.getByRole('tab', { name: 'PowerShell · engine', selected: true })).toBeInTheDocument();
+      await waitFor(() => expect(screens[1]!.disposed).toBe(true));
+      expect(screens[0]!.disposed).toBe(false);
+    });
+
+    it('closes a tab on a middle click, as a browser\'s and an editor\'s tabs do', async () => {
+      render(<Held />);
+      const tab = await screen.findByRole('tab', { name: 'PowerShell · engine' });
+
+      await userEvent.pointer({ keys: '[MouseMiddle]', target: tab });
+
+      expect(calls('CLOSE')).toHaveLength(1);
+      expect(await screen.findByText('No terminal is open.')).toBeInTheDocument();
+    });
+
+    it('says a tab has ended in its name\'s tip and its mark', async () => {
+      render(<Held />);
+      const tab = await screen.findByRole('tab', { name: 'PowerShell · engine' });
+
+      await act(() => eventHandlers.get('DAORIS.TERMINAL_EXITED')!({ id: ids[0], code: 0 }));
+
+      expect(tab.textContent).toContain('ended');
+    });
   });
 
   it('says why a terminal would not open, in the reader\'s language, and offers to try again', async () => {

@@ -1,6 +1,7 @@
 # The terminal: a place to type in the console panel (CONSOLE4)
 
-**Status: the contract for CONSOLE4a–c, recorded as D96 before any code.** The owner, 2026-09-30:
+**Status: the contract for CONSOLE4a–c, recorded as D96 before any code; all three built
+2026-09-30 (§4), the window's look still to take in both themes.** The owner, 2026-09-30:
 *"we also need to make input line for console too, so we can control console just like regular
 console window (more into powershell style)"*. It amends the interactive design's console
 (`2026-09-20-interactive-design.md` §2), which shows what a session prints and takes no input.
@@ -108,7 +109,21 @@ into the machine log (D94).
      application's handler) go to the frame rather than the shell.
    - Ask Daoris's room names the terminal among the views, and says it is the person's, never a
      session's.
-3. **CONSOLE4c**: more than one, the shell's choice, where it starts, and its tab's name.
+3. **CONSOLE4c**: more than one, the shell's choice, where it starts, and its tab's name. *Built
+   2026-09-30* (`work/TerminalTabs.tsx`), and like 4b not yet looked at on the window:
+   - **A row of tabs at the view's top**, each its own shell and process, named by its shell and the
+     folder it started in (*PowerShell · engine*), the whole path in its tip; a name that repeats is
+     numbered in the order the terminals opened, so a name already on a tab never changes.
+   - **The shown tab's close after the tabs**, as the console's stop is (CONSOLE3a): a tab list owns
+     tabs and nothing else. A middle click closes any tab. Closing ends the process tree, and the tab
+     beside it is shown, as a browser's are. The shown tab is held with the terminals, so a view
+     shown again shows the same one.
+   - **"+" offers only the shells the machine has** (`SHELLS`, asked once), the default first and
+     marked; with one shell there is nothing to choose, and "+" opens it. A new terminal starts where
+     the frame says a terminal starts *now*, so one opened after attending another session starts in
+     that session's tree.
+   - **An ended tab says so** in its mark and its name, and keeps its screen until it is closed or
+     started again.
 
 ## 5. Not chosen
 

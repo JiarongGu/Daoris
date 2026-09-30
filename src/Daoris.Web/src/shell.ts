@@ -784,10 +784,14 @@ const callTerminal = <TData,>(type: string, payload?: Record<string, unknown>): 
 export function useTerminals(): Terminals {
   const { isAvailable } = useShenora();
   const [list, setList] = useState<OpenTerminal[]>([]);
+  // The tab shown (CONSOLE4c): held with the terminals, so a view shown again shows the same one.
+  const [selected, setSelected] = useState<string | null>(null);
   const [opening, setOpening] = useState(false);
   const [refused, setRefused] = useState<unknown>(null);
   const [shells, setShells] = useState<TerminalShellChoice | null>(null);
   const inFlight = useRef(false);
+  const listed = useRef<OpenTerminal[]>([]);
+  listed.current = list;
   const sinks = useRef(new Map<string, (data: string) => void>());
   const held = useRef(new Map<string, string>());
   const ended = useRef(new Map<string, number>());
@@ -807,6 +811,8 @@ export function useTerminals(): Terminals {
           cwd: typeof answer.cwd === 'string' ? answer.cwd : '',
           exit: ended.current.get(id) ?? null,
         }]);
+        // A new terminal is shown, as a new tab is: the person asked for it to type in.
+        setSelected(id);
       })
       .catch((error: unknown) => setRefused(error))
       .finally(() => {
@@ -825,7 +831,12 @@ export function useTerminals(): Terminals {
   }, []);
 
   const close = useCallback((id: string) => {
-    setList((was) => was.filter((row) => row.id !== id));
+    // The shown tab closed: the one after it is shown, else the one before, as a browser's tabs do.
+    const was = listed.current;
+    const at = was.findIndex((row) => row.id === id);
+    const neighbour = was[at + 1]?.id ?? was[at - 1]?.id ?? null;
+    setSelected((shown) => (shown === id ? neighbour : shown));
+    setList((rows) => rows.filter((row) => row.id !== id));
     sinks.current.delete(id);
     held.current.delete(id);
     ended.current.delete(id);
@@ -879,8 +890,8 @@ export function useTerminals(): Terminals {
   });
 
   return useMemo(
-    () => ({ list, opening, refused, open, input, resize, close, listen, shells, askShells }),
-    [list, opening, refused, open, input, resize, close, listen, shells, askShells],
+    () => ({ list, selected, select: setSelected, opening, refused, open, input, resize, close, listen, shells, askShells }),
+    [list, selected, opening, refused, open, input, resize, close, listen, shells, askShells],
   );
 }
 

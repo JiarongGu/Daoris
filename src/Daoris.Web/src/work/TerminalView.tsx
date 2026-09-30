@@ -5,7 +5,8 @@ import { Button } from '../ui';
 import { effectiveDark, subscribeTheme } from '../theme';
 import { createScreen, type Screen, type ScreenLook } from './terminalScreen';
 import { readToken, terminalTheme } from './terminalTheme';
-import type { OpenTerminal, Terminals } from './terminals';
+import { folderName, type OpenTerminal, terminalNames, type Terminals } from './terminals';
+import { TerminalTabs } from './TerminalTabs';
 
 /**
  * Each terminal's screen, for as long as the terminal lives. Kept outside the view, which unmounts
@@ -47,6 +48,9 @@ export function shellName(t: (key: string, options?: Record<string, unknown>) =>
  *
  * **Every open terminal is heard while the view is here**, not only the one shown, so a screen is never
  * behind its shell; while the view is away the frame holds what comes, and this catches each screen up.
+ *
+ * **More than one** (CONSOLE4c): each a tab, its own shell and its own process, named by its shell and
+ * where it started; "+" offers the machine's shells, and a tab closes with its process.
  */
 export function TerminalView({ terminals, cwd }: {
   terminals: Terminals;
@@ -57,8 +61,19 @@ export function TerminalView({ terminals, cwd }: {
   const root = useRef<HTMLDivElement>(null);
   const host = useRef<HTMLDivElement>(null);
   const { list, listen, input, resize } = terminals;
-  const shown: OpenTerminal | null = list[list.length - 1] ?? null;
-  const startHere = () => terminals.open(cwd ? { cwd } : {});
+  const shown: OpenTerminal | null = list.find((row) => row.id === terminals.selected) ?? list[list.length - 1] ?? null;
+  const startHere = (shell?: string) => terminals.open({ ...(shell ? { shell } : {}), ...(cwd ? { cwd } : {}) });
+  const names = terminalNames(
+    list,
+    (row) => t('work.terminal.tab', { shell: shellName(t, row.shell), folder: folderName(row.cwd) }),
+    (name, n) => t('work.terminal.tabNth', { name, n }),
+  );
+  // The machine's shells for "+", the default first, each by the name the person knows it by.
+  const choice = terminals.shells;
+  const shells = choice
+    ? [...choice.shells].sort((a, b) => Number(b === choice.default) - Number(a === choice.default))
+      .map((shell) => ({ shell, name: shellName(t, shell), default: shell === choice.default }))
+    : null;
 
   const screenOf = (id: string) => {
     let screen = screens.get(id);
@@ -71,6 +86,8 @@ export function TerminalView({ terminals, cwd }: {
 
   useEffect(() => {
     if (terminals.list.length === 0) startHere();
+    // What "+" can offer, asked once: the shells on the machine's PATH do not change under a session.
+    if (terminals.shells === null) terminals.askShells();
     // Once per showing: what is open, and where to start, are read, not watched.
   }, []);
 
@@ -143,6 +160,19 @@ export function TerminalView({ terminals, cwd }: {
       {shown
         ? (
           <>
+            <TerminalTabs
+              tabs={list.map((row) => ({
+                id: row.id,
+                name: names[row.id] ?? row.id,
+                tip: t('work.terminal.tabTip', { shell: shellName(t, row.shell), cwd: row.cwd }),
+                ended: row.exit !== null,
+              }))}
+              selected={shown.id}
+              onSelect={terminals.select}
+              onClose={terminals.close}
+              shells={shells}
+              onNew={startHere}
+            />
             {/* The renderer draws inside; its background is the page's, so the gutter is one surface. */}
             <div ref={host} className="min-h-0 flex-1 overflow-hidden pl-3 pt-1" />
             {shown.exit !== null && (
@@ -160,7 +190,7 @@ export function TerminalView({ terminals, cwd }: {
                 ? t('work.terminal.opening')
                 : terminals.refused ? sentence(terminals.refused) : t('work.terminal.none')}
             </p>
-            {!terminals.opening && <Button onClick={startHere}>{t('work.terminal.open')}</Button>}
+            {!terminals.opening && <Button onClick={() => startHere()}>{t('work.terminal.open')}</Button>}
           </div>
         )}
     </div>

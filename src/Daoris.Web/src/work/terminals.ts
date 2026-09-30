@@ -26,6 +26,9 @@ export type TerminalShellChoice = { shells: string[]; default: string | null };
  */
 export type Terminals = {
   list: OpenTerminal[];
+  /** The tab shown (CONSOLE4c): the one opened last, until the person picks another. */
+  selected: string | null;
+  select: (id: string) => void;
   /** Whether an open is on its way; a second one waits for it. */
   opening: boolean;
   /** Why the last open was refused, as the bridge rejected it, or null. */
@@ -46,4 +49,23 @@ export type Terminals = {
 export function folderName(path: string): string {
   const parts = path.split(/[\\/]+/).filter(Boolean);
   return parts[parts.length - 1] ?? path;
+}
+
+/**
+ * Each terminal's tab name (CONSOLE4c): its shell and where it started, and, where that name repeats,
+ * which of them it is — the first plain, the next numbered in the order they opened, so a name already
+ * on a tab never changes under the person.
+ */
+export function terminalNames(
+  list: readonly OpenTerminal[],
+  name: (terminal: OpenTerminal) => string,
+  nth: (name: string, n: number) => string,
+): Record<string, string> {
+  const seen = new Map<string, number>();
+  return Object.fromEntries(list.map((terminal) => {
+    const base = name(terminal);
+    const count = (seen.get(base) ?? 0) + 1;
+    seen.set(base, count);
+    return [terminal.id, count === 1 ? base : nth(base, count)];
+  }));
 }
