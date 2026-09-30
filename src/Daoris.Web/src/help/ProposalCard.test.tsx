@@ -367,7 +367,7 @@ describe('the kinds that reach every door', () => {
       // LEFT3 b: what the look did not fetch and left apart, the chrome in 中文 and git's words as git said them.
       render(<ul><ProposalCard proposal={OFFLINE} onApply={vi.fn()} onDismiss={vi.fn()} /></ul>);
       expect(within(screen.getByRole('note', { name: '未获取' })).getByText(unreadable)).toBeInTheDocument();
-      expect(within(screen.getByRole('group', { name: '未查看的仓库' })).getByText(/点名其中一个的提议会查看它/)).toBeInTheDocument();
+      expect(within(screen.getByRole('group', { name: '未检查的仓库' })).getByText(/点名其中一个的提议会查看它/)).toBeInTheDocument();
     } finally {
       cleanup();
       await i18n.changeLanguage('en');

@@ -48,7 +48,7 @@ describe('the landing card', () => {
     draw();
 
     const group = screen.getByRole('radiogroup', { name: 'How work in tools lands' });
-    expect(within(group).getAllByRole('radio').map((option) => option.textContent)).toEqual(['merge', 'branch']);
+    expect(within(group).getAllByRole('radio').map((option) => option.textContent)).toEqual(['Merge', 'Branch']);
   });
 
   it('sets a branch rule with its pattern, and an empty field means the example', async () => {
@@ -56,15 +56,15 @@ describe('the landing card', () => {
     const user = userEvent.setup();
     const forge = screen.getByRole('region', { name: 'forge' });
 
-    await user.click(within(screen.getByRole('radiogroup', { name: 'How work in tools lands' })).getByRole('radio', { name: 'branch' }));
+    await user.click(within(screen.getByRole('radiogroup', { name: 'How work in tools lands' })).getByRole('radio', { name: 'Branch' }));
     const pattern = screen.getByRole('textbox', { name: 'The branch pattern for tools' });
     expect(pattern).toHaveValue('');
     expect(pattern).toHaveAttribute('placeholder', 'feature/{quest}-{slug}');
-    await user.click(within(forge).getAllByRole('button', { name: 'Set' })[1]!);
+    await user.click(within(forge).getAllByRole('button', { name: 'Save' })[1]!);
     expect(onSet).toHaveBeenLastCalledWith({ repository: 'tools', form: 'branch', pattern: 'feature/{quest}-{slug}' });
 
     await user.type(pattern, 'review/{{session}');
-    await user.click(within(forge).getAllByRole('button', { name: 'Set' })[1]!);
+    await user.click(within(forge).getAllByRole('button', { name: 'Save' })[1]!);
     expect(onSet).toHaveBeenLastCalledWith({ repository: 'tools', form: 'branch', pattern: 'review/{session}' });
   });
 
@@ -74,8 +74,8 @@ describe('the landing card', () => {
     const user = userEvent.setup();
     const forge = screen.getByRole('region', { name: 'forge' });
 
-    await user.click(within(forge).getAllByRole('checkbox', { name: 'tidy once landed' })[1]!);
-    await user.click(within(forge).getAllByRole('button', { name: 'Set' })[1]!);
+    await user.click(within(forge).getAllByRole('checkbox', { name: 'Clean up once landed' })[1]!);
+    await user.click(within(forge).getAllByRole('button', { name: 'Save' })[1]!);
 
     expect(onSet).toHaveBeenLastCalledWith({ repository: 'tools', form: 'merge', tidy: true });
   });
@@ -108,14 +108,14 @@ describe('the landing card', () => {
     const forge = screen.getByRole('region', { name: 'forge' });
 
     expect(screen.queryByRole('combobox', { name: 'Who pushes the branch for tools' })).toBeNull();
-    await user.click(within(screen.getByRole('radiogroup', { name: 'How work in tools lands' })).getByRole('radio', { name: 'branch' }));
-    await choose('Who pushes the branch for tools', 'plugin github-pull-request');
-    await user.click(within(forge).getAllByRole('button', { name: 'Set' })[1]!);
+    await user.click(within(screen.getByRole('radiogroup', { name: 'How work in tools lands' })).getByRole('radio', { name: 'Branch' }));
+    await choose('Who pushes the branch for tools', 'Plugin github-pull-request');
+    await user.click(within(forge).getAllByRole('button', { name: 'Save' })[1]!);
 
     expect(onSet).toHaveBeenLastCalledWith({ repository: 'tools', form: 'branch', pattern: 'feature/{quest}-{slug}', plugin: 'github-pull-request' });
 
-    await choose('Who pushes the branch for tools', 'you push it');
-    await user.click(within(forge).getAllByRole('button', { name: 'Set' })[1]!);
+    await choose('Who pushes the branch for tools', 'You push it');
+    await user.click(within(forge).getAllByRole('button', { name: 'Save' })[1]!);
     expect(onSet).toHaveBeenLastCalledWith({ repository: 'tools', form: 'branch', pattern: 'feature/{quest}-{slug}' });
   });
 
@@ -123,7 +123,7 @@ describe('the landing card', () => {
     draw();
     const user = userEvent.setup();
 
-    await user.click(within(screen.getByRole('radiogroup', { name: 'How work in tools lands' })).getByRole('radio', { name: 'branch' }));
+    await user.click(within(screen.getByRole('radiogroup', { name: 'How work in tools lands' })).getByRole('radio', { name: 'Branch' }));
 
     expect(screen.queryByRole('combobox', { name: 'Who pushes the branch for tools' })).toBeNull();
   });
@@ -135,7 +135,7 @@ describe('the landing card', () => {
 
     expect(screen.getByText(/pushes it and opens the pull request/)).toBeInTheDocument();
     expect(screen.getByText('github-pull-request', { selector: 'code' })).toBeInTheDocument();
-    expect(screen.getByRole('combobox', { name: 'Who pushes the branch for game' })).toHaveTextContent('plugin github-pull-request');
+    expect(screen.getByRole('combobox', { name: 'Who pushes the branch for game' })).toHaveTextContent('Plugin github-pull-request');
   });
 
   it('does not send what already stands, and clears only where a rule is set', async () => {
@@ -143,7 +143,7 @@ describe('the landing card', () => {
     const user = userEvent.setup();
 
     // `game` inherits the workspace's branch rule, and pressing Set with it unchanged sends nothing.
-    const game = screen.getAllByRole('button', { name: 'Set' })[2]!;
+    const game = screen.getAllByRole('button', { name: 'Save' })[2]!;
     expect(game).toBeDisabled();
     // A clear on `aurora` (set) and `engine` (set); none on the inherited or the default rows.
     expect(screen.getAllByRole('button', { name: 'Clear' })).toHaveLength(2);

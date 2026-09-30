@@ -6,7 +6,7 @@
   "settings.workspaces.none": "有仓库登记进来，工作区才存在。“项目”里写着仓库怎样加入。",
   "settings.workspaces.repositories": "{{count}} 个仓库",
   "settings.workspaces.repositories_other": "{{count}} 个仓库",
-  "settings.workspaces.inView": "当前查看",
+  "settings.workspaces.inView": "当前",
   "settings.description": "配置这台电脑还需要什么、这个窗口的外观与语言，以及这台电脑本身的设置。",
   "settings.descriptionBrowser": "这个窗口的外观与语言。一台电脑本身的设置在桌面应用里，在那台电脑上。",
   "settings.theme.label": "主题",

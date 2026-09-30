@@ -16,7 +16,7 @@
   "settings.sweep.clean_other": "Clean up {{count}} branches",
   "settings.sweep.look": "Look again",
   "settings.sweep.done": "Removed {{removed}} of {{count}}. What was kept is still listed, with why.",
-  "settings.sweep.landed.title": "Branches landings made",
+  "settings.sweep.landed.title": "Landed branches",
   "settings.sweep.landed.body": "A landing put each one's work on a branch, and a squash merge of its pull request leaves git calling it unmerged. Each goes once every file it changed reads on the line as it left it, or it is inside another that does. Only branches a landing made here are listed: your own are never judged.",
   "settings.sweep.landed.kind.onLine": "Its pull request reached `{{where}}`: every file it changed reads there as it left it.",
   "settings.sweep.landed.kind.merged": "Merged into `{{where}}`.",

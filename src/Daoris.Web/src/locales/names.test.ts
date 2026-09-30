@@ -230,12 +230,13 @@ describe('the real glossary and catalogues', () => {
       'settings.domain.ai': ['AI features', 'AI 功能'],
       'settings.domain.agents': ['Agents', '智能体'],
       'menu.agents.tools': ['Agent settings', '智能体设置'],
+      'settings.sync.title': ['Updates', '更新'],
+      'settings.sync.look': ['Look for updates', '检查更新'],
     };
     for (const [key, [english, chinese]] of Object.entries(approved)) {
       expect([en[key], zh[key]], key).toEqual([english, chinese]);
       expect(rules(found, key), key).toEqual([]);
     }
-    expect(rules(found, 'settings.sync.title')).toContain('glossary:zh');
     expect(rules(found, 'command.go.convergence')).toContain('door:zh');
   });
 

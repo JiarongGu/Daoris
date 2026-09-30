@@ -11,7 +11,7 @@
   "settings.lines.from.workspace": "`{{branch}}`，为工作区 {{workspace}} 设置。",
   "settings.lines.from.checkout": "`{{branch}}`，检出自己的。",
   "settings.lines.from.none": "没有主线：既未设置，git 在此也未指明。",
-  "settings.lines.set": "设置",
+  "settings.lines.set": "保存",
   "settings.lines.clear": "清除",
   "settings.lines.saved": "{{name}} 的工作现在从 `{{branch}}` 长出并落回其上。已在运行的会话保持原样。",
   "settings.lines.cleared": "{{name}} 重新沿用其上层的主线。"

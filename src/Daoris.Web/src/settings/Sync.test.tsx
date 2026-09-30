@@ -122,7 +122,7 @@ describe('bringing repositories up to date', () => {
     expect(within(screen.getByRole('group', { name: 'game' })).getByText(/uncommitted work, so it stays/)).toBeInTheDocument();
     expect(within(row('daoris/s-step')).getByText(/Replays 1 commit of its own onto/)).toBeInTheDocument();
     expect(within(row('daoris/s-step')).getByText('daoris/s-parent', { selector: 'code' })).toBeInTheDocument();
-    expect(within(row('feature/q2-second')).getByText("a landing's")).toBeInTheDocument();
+    expect(within(row('feature/q2-second')).getByText("landed")).toBeInTheDocument();
     expect(within(row('daoris/s-busy')).getByText('stays')).toBeInTheDocument();
     expect(within(row('feature/q3-open')).getByText(/force push/)).toBeInTheDocument();
     expect(within(row('daoris/s-waits')).getByText(/has not reached the line yet/)).toBeInTheDocument();

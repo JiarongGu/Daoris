@@ -145,7 +145,7 @@ describe("Daoris's own AI", () => {
     show({ intake: intake({ adapter: 'gone', starts: [intakeStart({ adapter: 'gone', refusal })] }) });
 
     const circle = screen.getByRole('listitem', { name: 'an intake in default' });
-    expect(within(circle).getByText('held')).toBeInTheDocument();
+    expect(within(circle).getByText('blocked')).toBeInTheDocument();
     expect(within(circle).getByText(refusal)).toBeInTheDocument();
   });
 
