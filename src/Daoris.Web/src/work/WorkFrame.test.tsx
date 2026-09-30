@@ -2319,7 +2319,8 @@ describe('the frame\'s geometry (FRAME6)', () => {
   });
 
   it('asks to be closed rather than squeezing the session, when it cannot fit beside it', async () => {
-    widen(1024);
+    // D118: the list gives way to its strip first, so it is past that, at 800 px, that the side bar is cramped.
+    widen(800);
     show('s1a2b3c4');
     expect(await screen.findByText(/too narrow to sit beside the session/)).toBeInTheDocument();
 

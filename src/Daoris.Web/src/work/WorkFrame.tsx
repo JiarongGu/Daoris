@@ -29,7 +29,7 @@ import { SessionRail } from './SessionRail';
 import { StartSession, type StartChoice } from './StartSession';
 import { OutputPanel, PANEL_MIN, Splitter, StreamTabs } from './frame';
 import { panelTabs } from './streams';
-import { DOCK, dockRange, frameLayout, RAIL } from './layout';
+import { DOCK, dockRange, frameLayout, LIST_BOUNDS } from './layout';
 import { type FrameClosings, useFrameClosings } from './closings';
 import { type Place, type Placements, usePlacements, type ViewId, viewsIn } from './placements';
 import { relationsOf } from './relations';
@@ -72,9 +72,10 @@ function rememberedWidth(key: string): number | null {
 }
 
 /**
- * How wide the window is and how wide this frame is (FRAME6): the window decides the thresholds —
- * a strip rail under 1024px, a full dock under 768 — and the frame decides the room. Where nothing
- * measures the frame (a unit test's DOM), it is the window less the 48px activity bar beside it.
+ * How wide the window is and how wide this frame is (FRAME6): the window decides the one threshold
+ * left, a full dock under 768 px, and the frame decides the room, which is what makes the list a strip
+ * (D118). Where nothing measures the frame (a unit test's DOM), it is the window less the 48px activity
+ * bar beside it.
  */
 function useFrameWidth(frame: RefObject<HTMLDivElement | null>) {
   const [viewport, setViewport] = useState(() => window.innerWidth);
@@ -215,8 +216,10 @@ export function WorkFrame({
   // Another view in the centre (DOCK1a): the frame without Sessions' rail.
   const elsewhere = content !== undefined;
   const layout = frameLayout(width.viewport, width.frame, {
-    rail: railWidth, railClosed, dockShare, dockClosed, dockFull, noRail: elsewhere,
+    list: elsewhere ? null : { bounds: LIST_BOUNDS.sessions, width: railWidth, closed: railClosed, over: false },
+    dockShare, dockClosed, dockFull,
   });
+  const list = layout.list;
 
   const resizeRail = (next: number | null) => {
     setRailWidth(next);
@@ -727,17 +730,17 @@ export function WorkFrame({
     // Sessions is drawn in here, so a long title that should truncate widened the frame past the
     // window (seen on the install's Quests view; a browser draws the view outside the frame).
     <div ref={root} className="relative flex min-h-0 min-w-0 flex-1">
-      {!elsewhere && (
-      <aside className="relative flex shrink-0 flex-col border-r border-line" style={{ width: layout.rail.width }}>
+      {list && (
+      <aside className="relative flex shrink-0 flex-col border-r border-line" style={{ width: list.beside }}>
         {/* The rail is a list of sessions, and NEW is one control (D56). It used to be a permanent
             287×200 form above the list — 27% of the rail, always, for something a person does
             occasionally. Every reference in the study puts new behind a single affordance. */}
-        {layout.rail.strip
+        {list.mode !== 'open'
           ? (
             // The strip (FRAME6): its controls stacked, since 56px holds one across. A strip the window
             // drew opens only by widening it, so it offers no way to — a button that could do nothing.
             <header className="flex shrink-0 flex-col items-center gap-0.5 border-b border-line py-1">
-              {!layout.rail.auto && (
+              {!list.auto && (
                 <Tip content={t('work.rail.open')} side="right">
                   <Button
                     variant="ghost"
@@ -794,7 +797,7 @@ export function WorkFrame({
             selected={selected}
             onSelect={attend}
             notify={notify}
-            compact={layout.rail.strip}
+            compact={list.mode !== 'open'}
             taking={taking}
             lastTurns={lastTurns}
             // A row's menu reviews that session: attended, with the dock open on its work.
@@ -806,12 +809,12 @@ export function WorkFrame({
           />
         </div>
 
-        {!layout.rail.strip && (
+        {list.mode === 'open' && (
           <Splitter
             label={t('work.rail.resize')}
-            value={layout.rail.width}
-            min={RAIL.min}
-            max={RAIL.max}
+            value={list.width}
+            min={LIST_BOUNDS.sessions.min}
+            max={LIST_BOUNDS.sessions.max}
             edge="right"
             onChange={resizeRail}
             onReset={() => resizeRail(null)}
@@ -1024,7 +1027,7 @@ export function WorkFrame({
           preview={previewing ? { name: fileName(previewing.path), path: previewing.path, onClose: closePreview } : null}
           mode={layout.dock.mode}
           width={layout.dock.width}
-          range={dockRange(width.viewport, width.frame, layout.rail.width)}
+          range={dockRange(width.viewport, width.frame, list?.beside ?? 0)}
           // Full because the window is narrow, not because the person asked: only widening undoes it.
           autoFull={layout.dock.mode === 'full' && !dockFull}
           onResize={resizeDock}
