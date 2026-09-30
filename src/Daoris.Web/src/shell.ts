@@ -1878,21 +1878,27 @@ export type TreeAct = { session: string; done: boolean; message: string };
 /**
  * What accepting this session would do under its repository's landing rule (WSR1, D87): merge into
  * the line, or the branch it would make — said before the press. Only for a session with a tree here.
+ * Where the rule names a plugin (D100), which one pushes it, and the sentence a press would be refused
+ * with where that plugin cannot land work now.
  */
 export const useLanding = (id: string | null) => {
   const { isAvailable } = useShenora();
   return useQuery({
     queryKey: keys.landing(id ?? ''),
-    queryFn: () => call<{ session: string; form?: string; target?: string; source?: string }>('LANDING', { id }),
+    queryFn: () => call<{ session: string; form?: string; target?: string; source?: string; plugin?: string; problem?: string }>(
+      'LANDING', { id }),
     enabled: isAvailable && id !== null,
   });
 };
+
+/** What the rule's plugin answered once the branch was made (D100): whether it pushed, the pull request, its words. */
+export type PluginLanding = { id: string; pushed: boolean; pullRequest?: string; message: string; failed?: boolean };
 
 /** Accept a session: its work lands as its repository's rule says — merged, or put on a branch to push. */
 export const useLandSessionTree = () => {
   const client = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => call<TreeAct & { branch?: string }>('LAND_SESSION_TREE', { id }),
+    mutationFn: (id: string) => call<TreeAct & { branch?: string; plugin?: PluginLanding }>('LAND_SESSION_TREE', { id }),
     onSuccess: (result) => {
       // Only a merge that happened changes what a diff or a removal would say.
       if (result.done) {

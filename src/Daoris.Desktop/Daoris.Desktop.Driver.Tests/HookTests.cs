@@ -177,6 +177,78 @@ public sealed class HookTests : IDisposable
     }
 
     /// <summary>
+    /// WSR4 (D100): a landing's answer is whether the plugin pushed, the pull request it opened where it
+    /// opened one, and its own sentence. Anything else is not an answer, in a sentence naming the plugin
+    /// — which a landing says as the plugin's step failing, never as the branch undone.
+    /// </summary>
+    [Theory]
+    [InlineData("""{"pushed":true,"pullRequest":"https://example.test/example-org/engine/pull/7","message":"opened it"}""", true, "https://example.test/example-org/engine/pull/7", "opened it")]
+    [InlineData("""{"pushed":false,"message":"gh is not signed in"}""", false, null, "gh is not signed in")]
+    [InlineData("""{"pushed":true}""", true, null, "no sentence given")]
+    [InlineData("""{"pushed":true,"pullRequest":null,"message":"pushed; no pull request"}""", true, null, "pushed; no pull request")]
+    public async Task A_landing_answer_is_pushed_its_pull_request_and_its_sentence(string result, bool pushed, string? pullRequest, string message)
+    {
+        var plugin = new FakePlugin((frame, _) => Method(frame) switch
+        {
+            "initialize" => Ok(frame, """{"protocolVersion":1,"points":["work/land"]}"""),
+            "hook/work/land" => Ok(frame, result),
+            _ => null,
+        });
+        var peer = Peer(plugin);
+        await peer.InitializeAsync("h", "d", ["work/land"], CancellationToken.None);
+
+        var answer = await peer.LandAsync(new { branch = "feature/x" }, CancellationToken.None);
+
+        Assert.Equal(new PluginLanding("acme.gate", pushed, pullRequest, message), answer);
+        Assert.Equal("feature/x", plugin.Frame(1).GetProperty("params").GetProperty("branch").GetString());
+    }
+
+    [Theory]
+    [InlineData("null")]
+    [InlineData("[]")]
+    [InlineData("""{"message":"no word on the push"}""")]
+    [InlineData("""{"pushed":"yes"}""")]
+    [InlineData("""{"pushed":true,"pullRequest":7}""")]
+    [InlineData("""{"pushed":true,"pullRequest":"javascript:alert(1)"}""")]
+    [InlineData("""{"pushed":true,"message":5}""")]
+    public async Task A_landing_answer_of_the_wrong_shape_is_a_sentence_naming_the_plugin(string result)
+    {
+        var plugin = new FakePlugin((frame, _) => Method(frame) switch
+        {
+            "initialize" => Ok(frame, """{"protocolVersion":1,"points":["work/land"]}"""),
+            "hook/work/land" => Ok(frame, result),
+            _ => null,
+        });
+        var peer = Peer(plugin);
+        await peer.InitializeAsync("h", "d", ["work/land"], CancellationToken.None);
+
+        var error = await Assert.ThrowsAsync<DriverException>(() => peer.LandAsync(new { }, CancellationToken.None));
+
+        Assert.Contains("acme.gate", error.Message);
+        Assert.Contains("not a landing's answer", error.Message);
+    }
+
+    /// <summary>
+    /// A plugin that speaks only at a landing is started by the landing, for that landing — the loop has
+    /// nothing to ask it, so it never keeps one running beside the ticks.
+    /// </summary>
+    [Fact]
+    public async Task A_plugin_that_speaks_only_at_a_landing_is_not_started_by_the_loop()
+    {
+        var started = new List<string>();
+        await using var set = new HookSet(_home, start: (plugin, _, _) =>
+        {
+            started.Add(plugin.Manifest.Id);
+            return Task.FromResult<IHookChannel>(new FakeChannel(plugin.Manifest.Hooks!.Points));
+        });
+
+        await set.ReconcileAsync(
+            Catalog(_home, ("acme.lands", ["work/land"]), ("acme.both", ["work/land", "session/ended"])), CancellationToken.None);
+
+        Assert.Equal(["acme.both"], started);
+    }
+
+    /// <summary>
     /// 🔴 REV3: an answer of the wrong JSON SHAPE threw InvalidOperationException from a property read —
     /// not a DriverException — so it escaped the tick's catch and killed every tick, naming no plugin.
     /// Every shape the wire can carry is a sentence naming the plugin.
@@ -304,6 +376,9 @@ public sealed class HookTests : IDisposable
             ended?.Invoke(payload);
             return Task.CompletedTask;
         }
+
+        public Task<PluginLanding> LandAsync(object payload, CancellationToken ct) =>
+            throw new DriverException("the loop never asks a plugin to land work");
 
         public ValueTask DisposeAsync()
         {

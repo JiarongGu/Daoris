@@ -12,10 +12,12 @@
 // (`pollSeconds`, the per-adapter `commands` map), and an editor that rewrote the file from its own
 // idea of the shape would silently delete the command that makes the stub run.
 
+import { dirname } from 'node:path';
 import { requireHomeFile } from './home.ts';
 import { DaorisError } from './errors.ts';
 import { flagValue, operands } from './args.ts';
 import { readJsonObject, writeJsonAtomic } from './fsx.ts';
+import { readPlugins, type PluginCatalog } from './plugins.ts';
 import { TOOLCHAINS } from './toolchain.ts';
 import type { CommandArgs } from './types.ts';
 import type { ExitCode } from './errors.ts';
@@ -70,14 +72,23 @@ const EMPTY: DriverChoices = {
 
 /**
  * How a session's work lands (WSR1, D87): merged into the line, or put on a branch the pattern names,
- * for the person to push. Pushing and opening a pull request is a plugin's form, not yet built (WSR4).
+ * for the person to push — or, where a branch rule names one, for a plugin to push and open the pull
+ * request from (WSR4, D100). Daoris itself never pushes.
  */
 export interface LandingRule {
   form: string;
   pattern?: string;
   /** Once a press lands the work, its tree and branch go — behind the driver's proof (D88). Absent is off. */
   tidy?: boolean;
+  /** The plugin a branch rule hands its new branch to, spoken to on `work/land` (D100). Absent is the person. */
+  plugin?: string;
 }
+
+/** The point a plugin lands work on — the driver's `HookPoints.Land`. */
+export const LAND_POINT = 'work/land';
+
+/** What a plugin's id may be — the catalogue's own shape, so a rule never names a path. */
+const PLUGIN_ID = /^[a-z0-9][a-z0-9.-]*$/;
 
 /** What a pattern may say — the driver's `LandingRules.Placeholders`. One of the first two is required. */
 const PLACEHOLDERS = ['quest', 'session', 'slug', 'repository'];
@@ -86,14 +97,21 @@ const PLACEHOLDERS = ['quest', 'session', 'slug', 'repository'];
 const SAMPLE: Record<string, string> = { quest: '0fda18', session: 's1a2b3c4', slug: 'sample-work', repository: 'engine' };
 
 /**
- * What is wrong with a landing rule, in a sentence, or null when it can land work. `LandingRules.Problem`
- * in the driver is the twin, and both carry the same pattern table.
+ * What is wrong with a landing rule's shape, in a sentence, or null when it can land work.
+ * `LandingRules.Problem` in the driver is the twin, and both carry the same tables. Whether its plugin is
+ * on this machine is `landingPluginProblem`'s question.
  */
 export function landingProblem(rule: LandingRule): string | null {
-  if (rule.form === 'merge') return null;
+  if (rule.form === 'merge') {
+    // A merge makes no branch, and the plugin starts from the branch Daoris made (D100).
+    return rule.plugin === undefined ? null
+      : 'only a branch rule hands its work to a plugin — the plugin pushes the branch Daoris made, and a merge '
+        + 'makes none. `branch <pattern> --plugin <id>` is the form that does.';
+  }
   if (rule.form !== 'branch') {
     return `\`${rule.form}\` is not a way work lands here — \`merge\` or \`branch\`. `
-      + 'Pushing and opening a pull request is a plugin\'s to do, and none can yet.';
+      + 'Pushing and opening a pull request is a plugin\'s to do, named on the branch form: '
+      + '`branch <pattern> --plugin <id>`.';
   }
 
   const pattern = rule.pattern ?? '';
@@ -110,9 +128,33 @@ export function landingProblem(rule: LandingRule): string | null {
   }
 
   const sample = PLACEHOLDERS.reduce((text, name) => text.replaceAll(`{${name}}`, SAMPLE[name]!), pattern);
-  return sample.includes('{') || sample.includes('}') || !isBranchName(sample)
-    ? `\`${pattern}\` does not make a branch name git would take — it gives \`${sample}\`.`
+  if (sample.includes('{') || sample.includes('}') || !isBranchName(sample)) {
+    return `\`${pattern}\` does not make a branch name git would take — it gives \`${sample}\`.`;
+  }
+
+  return rule.plugin !== undefined && !PLUGIN_ID.test(rule.plugin)
+    ? `\`${rule.plugin}\` is not a plugin id — one is lowercase letters, digits, dots and dashes, like \`example.github-pull-request\`.`
     : null;
+}
+
+/**
+ * Why the plugin a rule names cannot land work on this machine, in a sentence, or null when it can
+ * (D100): not installed, switched off, refused by the catalogue, or speaking on no `work/land` point.
+ * The driver's `LandingRules.PluginProblem` is the twin, and asks again at the press.
+ */
+export function landingPluginProblem(plugin: string, catalog: PluginCatalog): string | null {
+  const entry = catalog.plugins.find((p) => p.manifest.id.toLowerCase() === plugin.toLowerCase());
+  if (!entry) {
+    return `the landing rule names plugin \`${plugin}\`, which is not installed on this machine — `
+      + '`daoris plugin add <folder>` installs one, and `daoris plugin list` shows what there is.';
+  }
+  if (!entry.enabled) {
+    return `plugin \`${plugin}\` is switched off on this machine — \`daoris plugin enable ${entry.manifest.id}\` switches it on.`;
+  }
+  if (entry.problem !== null) return `plugin \`${plugin}\` contributes nothing: ${entry.problem}`;
+  return entry.manifest.hooks?.points.includes(LAND_POINT)
+    ? null
+    : `plugin \`${plugin}\` does not land work — its manifest speaks on no \`${LAND_POINT}\` point.`;
 }
 
 /**
@@ -480,27 +522,40 @@ export function commandDriver({ argv, write }: CommandArgs): ExitCode {
     }
 
     // How work lands (WSR1, D87) — for one repository, or with `--workspace` for every repository in
-    // it that sets none of its own: `merge` into the line, or `branch <pattern>` for the person to push.
-    // Unset, it is the merge it always was. Daoris never pushes; that form is a plugin's (WSR4).
+    // it that sets none of its own: `merge` into the line, or `branch <pattern>` for the person to push,
+    // or for the plugin `--plugin` names to push and open the pull request from (WSR4, D100). Unset, it
+    // is the merge it always was. Daoris itself never pushes.
     case 'landing': {
       const workspace = flagValue(argv, '--workspace');
       const clear = argv.includes('--clear');
-      const words = operands(argv, new Set(['--workspace'])).slice(1);
+      const words = operands(argv, new Set(['--workspace', '--plugin'])).slice(1);
       const name = workspace ?? words.shift();
       const [form, pattern] = words;
       if (!name || (!clear && !form)) {
         throw new DaorisError(
           '`driver landing` needs <repository>|--workspace <name>, then merge|branch <pattern>|--clear — '
-          + 'e.g. `daoris driver landing --workspace aurora branch "feature/{quest}-{slug}"`.');
+          + 'e.g. `daoris driver landing --workspace aurora branch "feature/{quest}-{slug}"`, and on a branch '
+          + '`--plugin <id>` for an installed plugin that pushes it and opens the pull request.');
+      }
+
+      const pluginAt = argv.indexOf('--plugin');
+      const plugin = pluginAt === -1 ? undefined : argv[pluginAt + 1];
+      if (pluginAt !== -1 && (!plugin || plugin.startsWith('--'))) {
+        throw new DaorisError('`--plugin` needs the id of an installed plugin — `--plugin <id>`; '
+          + '`daoris plugin list` shows what there is.');
       }
 
       const rule: LandingRule | null = clear ? null : {
         form: form!,
         ...(pattern !== undefined ? { pattern } : {}),
         ...(argv.includes('--tidy') ? { tidy: true } : {}),
+        ...(plugin !== undefined ? { plugin } : {}),
       };
       const problem = rule === null ? null : landingProblem(rule);
       if (problem !== null) throw new DaorisError(problem);
+      // The plugin must land work on THIS machine — its plugins sit beside the file, as the driver reads them.
+      const unready = rule?.plugin === undefined ? null : landingPluginProblem(rule.plugin, readPlugins(dirname(path)));
+      if (unready !== null) throw new DaorisError(`${unready} Nothing was written.`);
 
       writeDriverChoices(path, workspace
         ? { ...choices, workspaceLandings: withEntry(choices.workspaceLandings, workspace, rule && kept(rule)) }
@@ -512,6 +567,11 @@ export function commandDriver({ argv, write }: CommandArgs): ExitCode {
           + 'the merge into its line.');
       } else if (rule.form === 'merge') {
         write(`daoris: work in ${whose} is merged into the line when you accept it, in the repository's own checkout.`);
+      } else if (rule.plugin !== undefined) {
+        write(`daoris: work in ${whose} is put on a branch named \`${rule.pattern}\` when you accept it, and then`);
+        write(`  plugin \`${rule.plugin}\` pushes it and opens the pull request, over its wire. Daoris itself never pushes`);
+        write('  (D87, D100): the plugin\'s own process does, signed in as its platform\'s tools are. A plugin that fails');
+        write('  leaves the branch standing, and the review says how to push it yourself.');
       } else {
         write(`daoris: work in ${whose} is put on a branch named \`${rule.pattern}\` when you accept it —`);
         write('  from the session\'s branch, with nothing merged and no checkout touched. You push it and open');
@@ -591,7 +651,8 @@ export function commandDriver({ argv, write }: CommandArgs): ExitCode {
     }
 
     const spelled = (rule: LandingRule) =>
-      (rule.form === 'branch' ? `branch ${rule.pattern}` : rule.form) + (rule.tidy ? ', tidy' : '');
+      (rule.form === 'branch' ? `branch ${rule.pattern}` : rule.form)
+      + (rule.plugin ? `, plugin ${rule.plugin}` : '') + (rule.tidy ? ', tidy' : '');
     for (const [repository, rule] of Object.entries(choices.landings)) {
       write(`  landing    ${repository}  ${spelled(rule)}`);
     }
@@ -679,11 +740,13 @@ function ruleMap(value: unknown): Record<string, LandingRule> {
   const held: Record<string, LandingRule> = {};
   for (const [name, rule] of Object.entries(value as Record<string, unknown>)) {
     if (!rule || typeof rule !== 'object') continue;
-    const { form, pattern, tidy } = rule as Record<string, unknown>;
+    const { form, pattern, tidy, plugin } = rule as Record<string, unknown>;
     const read: LandingRule = {
       form: typeof form === 'string' ? form : '',
       ...(typeof pattern === 'string' ? { pattern } : {}),
       ...(tidy === true ? { tidy: true } : {}),
+      // An empty name is no name, as the driver reads it.
+      ...(typeof plugin === 'string' && plugin.length > 0 ? { plugin } : {}),
     };
     if (landingProblem(read) === null) held[name] = kept(read);
   }
@@ -691,10 +754,14 @@ function ruleMap(value: unknown): Record<string, LandingRule> {
   return held;
 }
 
-/** A rule as it is kept: a merge carries no pattern, and the tidy only when on — the driver keeps it the same way. */
+/**
+ * A rule as it is kept: a merge carries no pattern, a plugin only on a branch, and the tidy only when
+ * on — the driver keeps it the same way.
+ */
 function kept(rule: LandingRule): LandingRule {
   return {
     ...(rule.form === 'merge' ? { form: 'merge' } : { form: rule.form, pattern: rule.pattern! }),
+    ...(rule.form !== 'merge' && rule.plugin ? { plugin: rule.plugin } : {}),
     ...(rule.tidy ? { tidy: true } : {}),
   };
 }

@@ -266,6 +266,8 @@ public sealed record DriverConfig(
             writer.WriteStartObject(key);
             writer.WriteString("form", rule.Form);
             if (rule.Pattern is not null) writer.WriteString("pattern", rule.Pattern);
+            // Written only when named (D100): absent is the branch left for the person to push.
+            if (rule.Plugin is not null) writer.WriteString("plugin", rule.Plugin);
             // Written only when on: absent is the tree staying, as it always has.
             if (rule.Tidy) writer.WriteBoolean("tidy", true);
             writer.WriteEndObject();
@@ -274,7 +276,11 @@ public sealed record DriverConfig(
         writer.WriteEndObject();
     }
 
-    /// <summary>A map of names to landing rules; one that could not land work — an unknown form, a pattern that names no branch — is skipped.</summary>
+    /// <summary>
+    /// A map of names to landing rules; one that could not land work — an unknown form, a pattern that
+    /// names no branch, a merge naming a plugin — is skipped. A plugin not installed here is still read:
+    /// the press says so, and the file stays what the person wrote.
+    /// </summary>
     private static IReadOnlyDictionary<string, LandingRule> RuleMap(JsonElement root, string name)
     {
         var map = new Dictionary<string, LandingRule>(StringComparer.OrdinalIgnoreCase);
@@ -285,7 +291,8 @@ public sealed record DriverConfig(
                 if (property.Value.ValueKind != JsonValueKind.Object) continue;
                 var rule = new LandingRule(
                     String(property.Value, "form") ?? "", String(property.Value, "pattern"),
-                    property.Value.TryGetProperty("tidy", out var tidy) && tidy.ValueKind == JsonValueKind.True);
+                    property.Value.TryGetProperty("tidy", out var tidy) && tidy.ValueKind == JsonValueKind.True,
+                    String(property.Value, "plugin"));
                 if (LandingRules.Problem(rule) is null) map[property.Name] = Kept(rule);
             }
         }

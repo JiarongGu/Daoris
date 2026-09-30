@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { sentence } from '../format';
+import { ExternalLink } from '../links';
 import { store, stored } from '../lib/stored';
 import { useDiscardSessionTree, useLandSessionTree, useLanding, useSessionDiff } from '../shell';
 import { Button, EmptyState, Inline, Segmented, SkeletonRows } from '../ui';
@@ -70,6 +71,8 @@ export function DiffPane({ session, hasTree = false, onSendBack }: {
   const [shown, setShown] = useState<string | null>(null);
   // Whatever the tree layer last said, done or refused. Its sentence is the contract.
   const [said, setSaid] = useState<string | null>(null);
+  // The pull request the rule's plugin opened, where it opened one (D100) — one press from the sentence.
+  const [opened, setOpened] = useState<string | null>(null);
   // The second press. It exists only because the first one produced the sentence above.
   const [confirmingDiscard, setConfirmingDiscard] = useState(false);
 
@@ -81,6 +84,7 @@ export function DiffPane({ session, hasTree = false, onSendBack }: {
     // destructive second press against work the person never looked at.
     setConfirmingDiscard(false);
     setSaid(null);
+    setOpened(null);
   }
 
   // 🔴 Which session an answer is FOR. A refusal that landed after the person moved on armed the forced
@@ -90,17 +94,19 @@ export function DiffPane({ session, hasTree = false, onSendBack }: {
   attended.current = session;
 
   const act = (
-    run: Promise<{ done: boolean; message: string }>,
+    run: Promise<{ done: boolean; message: string; plugin?: { pullRequest?: string } }>,
     onDone?: () => void,
     onRefused?: () => void,
   ) => {
     const askedFor = session;
     const current = () => attended.current === askedFor;
     setSaid(null);
+    setOpened(null);
     void run.then(
       (result) => {
         if (!current()) return;
         setSaid(result.message);
+        setOpened(result.plugin?.pullRequest ?? null);
         if (result.done) onDone?.();
         else onRefused?.();
       },
@@ -133,11 +139,25 @@ export function DiffPane({ session, hasTree = false, onSendBack }: {
   const acts = !hasTree && !onSendBack ? null : (
     <footer className="grid shrink-0 gap-2 border-t border-line px-3 py-2">
       {said && <p className="m-0 text-small text-ink-soft">{said}</p>}
-      {/* Where a press sends the work, before it is pressed (D87). A shell older than the rule
-          answers no form, and the pane then claims nothing. */}
+      {said && opened && (
+        <p className="m-0 text-small">
+          <ExternalLink href={opened} className="text-accent underline underline-offset-2">
+            {t('work.review.pullRequest')}
+          </ExternalLink>
+        </p>
+      )}
+      {/* Where a press sends the work, before it is pressed (D87) — and who pushes it where a plugin
+          does (D100). A shell older than the rule answers no form, and the pane then claims nothing. */}
       {!said && hasTree && landing.data?.form === 'branch' && landing.data.target && (
         <p className="m-0 text-small text-ink-faint">
-          <Inline text={t('work.review.landsOnBranch', { branch: landing.data.target })} />
+          <Inline text={landing.data.plugin
+            ? t('work.review.landsOnBranchPlugin', { branch: landing.data.target, plugin: landing.data.plugin })
+            : t('work.review.landsOnBranch', { branch: landing.data.target })} />
+        </p>
+      )}
+      {!said && hasTree && landing.data?.problem && (
+        <p className="m-0 border-l-[3px] border-warn pl-2 text-small text-ink-soft">
+          {t('work.review.landingProblem', { problem: landing.data.problem })}
         </p>
       )}
       {!said && hasTree && landing.data?.form === 'merge' && landing.data.target && (

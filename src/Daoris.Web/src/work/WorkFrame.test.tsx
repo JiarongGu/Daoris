@@ -1806,6 +1806,49 @@ describe('acting on what a session landed', () => {
     expect(screen.getByText('feature/0fda18-fix', { selector: 'code' })).toBeTruthy();
   });
 
+  /** WSR4 (D100): who pushes it is said before the press — and what would refuse the press, where something would. */
+  it('says before the press which plugin pushes the branch, and what stands in its way', async () => {
+    let plan: Record<string, unknown> = {
+      session: 's1a2b3c4', form: 'branch', target: 'feature/0fda18-fix', source: 'workspace', plugin: 'github-pull-request',
+    };
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'SESSION_DIFF') return DIFF;
+      if (type === 'LANDING') return plan;
+      return DRIVER_STATE;
+    });
+
+    await review();
+
+    expect(await screen.findByText(/pushes it and opens the pull request\. Nothing is merged/)).toBeTruthy();
+    expect(screen.getByText('github-pull-request', { selector: 'code' })).toBeTruthy();
+    cleanup();
+
+    plan = { ...plan, problem: 'plugin `github-pull-request` is switched off on this machine — `daoris plugin enable github-pull-request` switches it on.' };
+    await review();
+    expect(await screen.findByText(/switched off on this machine/)).toBeTruthy();
+  });
+
+  /** WSR4 (D100): the plugin's pull request, once opened, is one press away — a link that opens as the person's links do. */
+  it('offers the pull request a plugin opened as a link beside the landing sentence', async () => {
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'SESSION_DIFF') return DIFF;
+      if (type === 'LAND_SESSION_TREE') {
+        return {
+          session: 's1a2b3c4', done: true, branch: 'feature/0fda18-fix',
+          message: 'put the work on `feature/0fda18-fix` — 1 commit(s) from `main`. Plugin `github-pull-request`: pushed it.',
+          plugin: { id: 'github-pull-request', pushed: true, pullRequest: 'https://example.test/example-org/engine/pull/7', message: 'pushed it.', failed: false },
+        };
+      }
+      return DRIVER_STATE;
+    });
+
+    await review();
+    await userEvent.click(screen.getByRole('button', { name: 'accept' }));
+
+    expect(await screen.findByText(/Plugin `github-pull-request`: pushed it/)).toBeTruthy();
+    expect(screen.getByRole('link', { name: 'open the pull request' })).toHaveAttribute('href', 'https://example.test/example-org/engine/pull/7');
+  });
+
   /** SESS1 S10: the head finds its branch in the clean-up's list by the tree's folder, on a Windows path too. */
   it('names the branch its tree left and whether its work landed, in the head', async () => {
     SESSIONS = [{ ...IN_A_TREE, tree: 'C:\\somewhere\\.daoris\\trees\\default\\engine\\s-abc12345' }];

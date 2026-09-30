@@ -21,8 +21,8 @@ lists.
 
 ## State
 
-**Counts, and this is their one home:** sixteen commands, **584 CLI tests, 619 service and 45 HTTP host, 1144 driver,
-384 desktop modules, 80 devkit, 1625 web unit, 21 Playwright**, 66/66 release rehearsal, **301/301
+**Counts, and this is their one home:** sixteen commands, **592 CLI tests, 619 service and 45 HTTP host, 1174 driver,
+385 desktop modules, 80 devkit, 1631 web unit, 21 Playwright**, 66/66 release rehearsal, **301/301
 family rehearsal** (it names its own phases when you run it), **67/67 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge
 documents, 5 skills, 7 packs. The always-loaded core is **22,492 of 26,000 bytes** — a span in
@@ -108,8 +108,8 @@ rather than designed.
 
 ## Backlog
 
-**Twenty-three rows are open**: the day's one (USE1's last part to confirm),
-first; WSR4 from the first real workspace; the three REV3 left (DIST1, BUDGET1 and
+**Twenty-five rows are open**: the day's four (USE1's last part to confirm, HELP8, PLUG8, PLUG9),
+first; the three REV3 left (DIST1, BUDGET1 and
 HOME1, the owner's); the in-app browser's one (BRW3); D85's one (TASKBAR1); the first
 goal's four (FG5, READACROSS1 and HELPREAD1 the owner's, and SEM2 on a trigger); D76's held file tools;
 three leftovers (CONSOLE3, FLAKE1, TEST1); two on the owner (TRUST2, AGT2c); REH1; and the rest on a
@@ -163,18 +163,43 @@ TASK.md and complete one by one"*).
   (`Harnesses.Apply`). Still confounded: the start (Git Bash hands on `PATH` upper-case with MSYS's
   variables; a normal start hands on `Path`) and the bundled Claude Code (2.1.274 in 0.79.0, 2.1.284
   in 0.84.0). The next session on the normal start answers it: read its snapshot's `export PATH`.
+- [ ] **HELP8 — Ask Daoris proposes a landing rule that names a plugin** (WSR4 left it, D100). Its
+  parser takes `branch <pattern>` and `--tidy` and reads the rest as the pattern. It should take
+  `--plugin <id>` in either order, refuse in `daoris driver landing`'s own words (not installed,
+  switched off, lands no work, a merge naming one), and the room should name the plugins that can land
+  work here, so the helper proposes one the route takes.
 
-### After the first real workspace (owner, 2026-09-28) — to start later
+### Plugins Daoris makes (owner, 2026-09-30)
 
-> *"I also found issues after the [first workspace] work, which points out things that daoris leak
-> of … you can analyze and put those into TASKS.md and lets start them later"*
+> *"do we need a Daoris.Plugins repo? … I think Daoris should have ability to create plugin by itself,
+> say for example via "ask Daoris""*
 
-`docs/2026-09-28-after-the-first-workspace.md` is the study: what each part has today, the gap, the
-requirements, and the owner's calls. Its recommended order is the order below.
-- [ ] **WSR4 — a plugin lands work: push and open a pull request** (D87). The landing rule names a
-  plugin, and the plugin, for its platform, pushes the branch and opens the pull request over its
-  wire (D64). Off by default, and configurable per workspace. WSR1's branch form is what it starts
-  from: `LandingRules.Problem` refuses any other form today, and says so.
+The reading, recorded before anything is built. A plugin is code that runs on this machine as the
+person: WSR4's pushes with their git and platform sign-in. So **making one is work, not a setting**.
+Written by a session in a repository, with tests, reviewed as a diff and landed; installed only by the
+person's press, with the card naming what it runs and where it speaks. Ask Daoris is the door in, not
+the author: it has no shell and changes nothing itself (HELP4), and a plugin it wrote in one tool call
+would run untested with the person's credentials. **A plugins repository** is then the natural home for
+what Daoris makes: versioned, reviewed, shareable with a team, owned by its own agent like any
+repository. It is not a registry (D64) and not a home for Daoris's own examples: those are the wire's
+contract and the rehearsals' fixtures, so they stay here. Whether to make one, and where, is the owner's.
+- [ ] **PLUG8 — the kit a session makes a plugin with.** (a) `daoris plugin new <id> --point <p>…
+  [--harness]`: a folder with a manifest, a wire script answering the handshake and the named points,
+  and its test, on both doors (Settings → Plugins → New). (b) `daoris plugin try <folder> --point <p>
+  [--frame <file>]`: starts it as the driver would, speaks the handshake, one frame and the shutdown,
+  and checks the answer against the point's result shape (for `work/land`: `pushed`, `pullRequest`,
+  `message`). A gate a session can run before a person reviews. (c) The authoring knowledge a session
+  reads: the points, their frames and answers, the rules (no stdout but frames, data in `${data}`, a
+  `.cmd` tool's quoting on Windows). It lives with the kit, in the plugin design document or a
+  knowledge document, not the canon: it is Daoris's, not every repository's.
+- [ ] **PLUG9 — Ask Daoris makes one by asking for it, and installs it by a press.** (a) The room says a
+  plugin is made as an ask at the workspace holding the plugins repository, and proposes that ask; it
+  never writes one. (b) A new proposal kind, `plugin`: add a landed plugin from its folder, enable or
+  disable one. It is judged by the catalogue's own reader, and the card shows the id, the command it
+  starts, and its points, harnesses and servers, so the person sees what will run before Apply. (c)
+  Installing from a repository's folder remembers the source, so the plugin can be updated when its
+  repository lands a change. (d) The install carries Daoris's own example plugins as offers in
+  Settings → Plugins and in the room, never installed until a press (D87: off by default).
 
 ### What REV3 left (2026-09-25)
 

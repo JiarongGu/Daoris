@@ -505,11 +505,17 @@ function LandingSettings({ notify }: { notify: Notify }) {
   const answer = useLines();
   const driver = useDriver();
   const setLanding = useSetLanding();
+  // The plugins a branch rule may hand its branch to (D100): on, sound, and speaking on `work/land`.
+  const catalog = usePlugins();
+  const landers = (catalog.data?.plugins ?? [])
+    .filter((plugin) => plugin.enabled && !plugin.problem && plugin.points.includes('work/land'))
+    .map((plugin) => plugin.id);
 
   return (
     <LandingList
       landings={Array.isArray(answer.data?.landings) ? answer.data.landings : []}
       workspaceLandings={driver.data?.workspaceLandings ?? []}
+      landers={landers}
       busy={setLanding.isPending}
       onSet={(change) => setLanding.mutate(change, {
         onSuccess: () => {
@@ -517,7 +523,9 @@ function LandingSettings({ notify }: { notify: Notify }) {
           notify(!change.form
             ? t('settings.landing.cleared', { name })
             : change.form === 'branch'
-              ? t('settings.landing.savedBranch', { name, pattern: change.pattern })
+              ? change.plugin
+                ? t('settings.landing.savedBranchPlugin', { name, pattern: change.pattern, plugin: change.plugin })
+                : t('settings.landing.savedBranch', { name, pattern: change.pattern })
               : t('settings.landing.savedMerge', { name }));
         },
         onError: failure(notify),

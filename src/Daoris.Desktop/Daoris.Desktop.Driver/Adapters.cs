@@ -310,11 +310,15 @@ public static class TargetPrompt
         ? ""
         : $"""
 
-          This work goes through review. When it is done, the person puts this tree's branch on
-          `{plan.Target}` and opens a pull request from it. Commit your work on this branch as you go —
+          This work goes through review. {Lands(plan)} Commit your work on this branch as you go —
           do not merge it, push it, or open a pull request yourself.
 
           """;
+
+    /// <summary>Who takes the branch on from there: the person, or the plugin the rule names (D100) once the person accepts it.</summary>
+    private static string Lands(LandingPlan plan) => plan.Plugin is null
+        ? $"When it is done, the person puts this tree's branch on `{plan.Target}` and opens a pull request from it."
+        : $"When it is done and the person accepts it, this tree's branch is put on `{plan.Target}`, pushed, and a pull request opened from it.";
 
     /// <summary>
     /// What the asker gave beside their words, said plainly — each link, each file where it lies, and a

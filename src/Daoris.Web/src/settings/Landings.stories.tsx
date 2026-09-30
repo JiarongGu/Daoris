@@ -26,4 +26,16 @@ export const EverySource: Story = {
 
 export const Saving: Story = { args: { ...EverySource.args, busy: true } };
 
+/** WSR4 (D100): a branch rule handed to a plugin installed here, which pushes it and opens the pull request. */
+export const HandedToAPlugin: Story = {
+  args: {
+    landers: ['github-pull-request', 'azure-devops-pull-request'],
+    workspaceLandings: [{ workspace: 'aurora', form: 'branch', pattern: 'feature/{quest}-{slug}', plugin: 'github-pull-request' }],
+    landings: [
+      { repository: 'engine', workspace: 'aurora', form: 'branch', pattern: 'feature/{quest}-{slug}', plugin: 'github-pull-request', source: 'workspace' },
+      { repository: 'game', workspace: 'aurora', form: 'branch', pattern: 'review/{session}', source: 'repository' },
+    ],
+  },
+};
+
 export const NothingHere: Story = {};

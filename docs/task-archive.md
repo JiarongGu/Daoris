@@ -8133,3 +8133,24 @@ modules as `EngineCdp.FirstWindowAsync`. The kit's own relay (Shenora.Chromium 0
 unobserved `WhenAny`, which is a request for the kit's owner.
 **Proven by:** service 619 + HTTP host 45, modules 384, driver 1144 (the ProcessJob real-tick test once
 under a parallel build, green alone thrice), CLI 584, deployment 67/67.
+
+## WSR4 — a plugin lands work: push and open a pull request (2026-09-30)
+
+> - [ ] **WSR4 — a plugin lands work: push and open a pull request** (D87). The landing rule names a
+>   plugin, and the plugin, for its platform, pushes the branch and opens the pull request over its
+>   wire (D64). Off by default, and configurable per workspace. …
+
+**Outcome** (built by a subagent in its own worktree, merged, then rehearsed on main): **D100**, amending
+D87. A branch landing rule can name an installed plugin (`--plugin <id>`, or the *who pushes it* chooser
+in Settings → Workspace → How work lands). Both doors refuse a plugin that is missing, off, refused or
+does not speak on `work/land`, and the review's plan and the press refuse it again before anything is
+made. After the branch is made, and only then, the landing starts the plugin for one `hook/work/land`
+frame (repository, root, branch, base, title, quest, session, commits) and reads back `{pushed,
+pullRequest, message}`: said in the review's Accept result with the pull request as a link, and by
+`trees land`, and kept as a note in the conversation's record. A plugin that fails leaves the branch
+standing and says how to push by hand; Daoris runs no push itself. Two inert examples are tracked,
+`github-pull-request` (gh) and `azure-devops-pull-request` (az repos), tested against a bare repository
+and fake CLIs, never a network, and never run against a real platform. Ask Daoris cannot yet propose a
+rule naming a plugin (HELP8).
+**Proven by:** driver 1174, modules 385, CLI 592, vitest 1631, Playwright 21, family 301/301,
+deployment 67/67.

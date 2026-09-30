@@ -813,6 +813,17 @@ The first version: doctrine that installs, is checked, and flows back.
   of a long record; your answer is kept in its record beneath the question and opens the session that
   carries on. Overview's *what needs you* rows say where each goes (*open it to answer*) and keep an
   analysis to two lines.
+- **A plugin can push the branch and open the pull request** (WSR4, D100). A branch landing rule may
+  name an installed plugin (`daoris driver landing … branch <pattern> --plugin <id>`, or the *who
+  pushes it* chooser in Settings → Workspace → *How work lands*). Once accepting has made the branch,
+  the plugin is told it on the new `work/land` point, pushes it and opens the pull request for its
+  platform, and answers with the pull request's address, which the review offers as a link and
+  `trees land` prints. Nothing pushes unless a rule names a plugin; Daoris itself still never pushes. A
+  plugin that is missing, off or lands nothing is refused when the rule is set and again at the press,
+  before anything is made. One that fails once the branch is made leaves the branch, and the sentence
+  says how to push it by hand. Two example plugins are tracked, inert until installed and named:
+  `examples/plugins/github-pull-request` (`gh`) and `examples/plugins/azure-devops-pull-request`
+  (`az repos`).
 - **`daoris-driver trees land <session>`** accepts a session's work from a terminal, as the review's
   Accept does, by the workspace's rule; `--plan` says where it would go. A tidied landing no longer
   also says its tree is still there.
@@ -831,8 +842,8 @@ The first version: doctrine that installs, is checked, and flows back.
   branch, from the session's branch, with nothing merged and no checkout touched, for the person to push
   and open a pull request from. The review says where a press sends the work before it is pressed. A
   session whose work goes through review is told not to merge or push it. Set it with `daoris driver
-  landing` or Settings → Workspace → *How work lands*. Daoris never pushes; that form is a plugin's, and
-  not built yet.
+  landing` or Settings → Workspace → *How work lands*. Daoris never pushes; that form is a plugin's
+  (WSR4, above).
 - **A repository's line can be set** (WSR2, D86). The branch its work grows from and lands on was
   only git's guess (`origin/HEAD`, else `main`, else `master`). A person now sets it per repository or
   as a workspace's default, with `daoris driver line` or Settings → Workspace → *Lines*, and a

@@ -380,7 +380,8 @@ public static class HelpRoom
         ("set the line its work grows from and lands on", "Settings → Workspace → Lines",
             "`daoris driver line <repository> <branch>|--clear` (`--workspace <name>` for a whole workspace)"),
         ("set how accepted work lands", "Settings → Workspace → How work lands",
-            "`daoris driver landing <repository> merge|branch <pattern>|--clear` (`--workspace <name>`, `--tidy`)"),
+            "`daoris driver landing <repository> merge|branch <pattern>|--clear` (`--workspace <name>`, `--tidy`, "
+            + "and on a branch `--plugin <id>`: an installed plugin that pushes it and opens the pull request)"),
         ("clean up session branches whose work landed", "Settings → Workspace → Session branches", "`daoris-driver trees clean`"),
         ("choose the agent that answers asks", "Settings → Daoris's own AI", "`daoris driver intake <agent>|off`"),
         ("choose the agent Ask Daoris runs on", "Settings → Daoris's own AI", "`daoris driver helper <agent>|off`"),
@@ -423,6 +424,7 @@ public static class HelpRoom
         var rule = landing.Rule.Form == "branch"
             ? $"on a branch `{landing.Rule.Pattern}`"
             : "merged into the line";
+        if (landing.Rule.Plugin is { } plugin) rule += $", pushed with a pull request opened by plugin `{plugin}`";
         if (landing.Rule.Tidy) rule += ", tree removed once landed";
         var source = landing.Source switch
         {

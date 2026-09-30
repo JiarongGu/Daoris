@@ -239,6 +239,38 @@ public sealed class DriverModuleTests : Bridge
         Assert.Contains("a plugin's to do", push);
     }
 
+    /// <summary>
+    /// WSR4 (D100): a branch rule may name the plugin that pushes it and opens the pull request — one
+    /// installed here, switched on, and speaking on `work/land`. Refused in a sentence otherwise, as the
+    /// terminal refuses it, and nothing is written.
+    /// </summary>
+    [Fact]
+    public async Task A_branch_rule_names_its_plugin_only_where_one_here_lands_work()
+    {
+        var missing = await RefusalAsync(Module(), "SET_LANDING",
+            new { workspace = "aurora", form = "branch", pattern = "feature/{quest}-{slug}", plugin = "example.github-pull-request" });
+        Assert.Contains("not installed", missing);
+        Assert.False(File.Exists(DriverConfigPath) && DriverConfig.Load(DriverConfigPath).WorkspaceLandings.Count > 0);
+
+        var folder = Path.Combine(Home, "plugins", "example.github-pull-request");
+        Directory.CreateDirectory(folder);
+        File.WriteAllText(Path.Combine(folder, "plugin.json"),
+            """{ "id": "example.github-pull-request", "hooks": { "command": ["node", "${plugin}/land.mjs"], "points": ["work/land"] } }""");
+        PluginState.Disable(Home, "example.github-pull-request");
+        var off = await RefusalAsync(Module(), "SET_LANDING",
+            new { workspace = "aurora", form = "branch", pattern = "feature/{quest}-{slug}", plugin = "example.github-pull-request" });
+        Assert.Contains("daoris plugin enable example.github-pull-request", off);
+
+        PluginState.Enable(Home, "example.github-pull-request");
+        var state = await AnswerAsync(Module(), "SET_LANDING",
+            new { workspace = "aurora", form = "branch", pattern = "feature/{quest}-{slug}", plugin = "example.github-pull-request" });
+        Assert.Equal("example.github-pull-request", DriverConfig.Load(DriverConfigPath).WorkspaceLandings["aurora"].Plugin);
+        Assert.Equal("example.github-pull-request", state.GetProperty("workspaceLandings")[0].GetProperty("plugin").GetString());
+
+        var merge = await RefusalAsync(Module(), "SET_LANDING", new { repository = "engine", form = "merge", plugin = "example.github-pull-request" });
+        Assert.Contains("only a branch rule", merge);
+    }
+
     /// <summary>The tidy rides the rule (D88), and is written only when on.</summary>
     [Fact]
     public async Task A_tidy_landing_rule_writes_the_same_file()
