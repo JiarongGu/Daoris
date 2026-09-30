@@ -144,8 +144,8 @@ rather than designed.
 
 ## Backlog
 
-**Thirty-one rows are open**: the owner's five of 2026-09-30 (USE1, AGT6, HELP6, LOG1,
-CONSOLE4), first; WSR4
+**Thirty rows are open**: the owner's four of 2026-09-30 (USE1, AGT6, HELP6, LOG1),
+first; WSR4
 from the first real workspace (its other WSR, HELP, SESS, DOCK
 and MAP rows are in the archive); the four REV3 left (DIST1, BUDGET1 and HOME1 the owner's, and HTTP1);
 the in-app browser's three (BRW3, BRW7, BRW8); D85's one (TASKBAR1); the first goal's four
@@ -233,16 +233,6 @@ TASK.md and complete one by one"*).
   Daoris**: `tools/usage-report.mjs --install <dir>` summarises a period (what was used most, what
   was refused, what failed, what was slow), so a development session starts from the owner's real
   use rather than a guess. A decision (D94) records the event set and what is never logged.
-- [ ] **CONSOLE4 — the console takes input: a terminal, PowerShell by default.** The console panel
-  gains a terminal tab beside the session streams: a real shell under a pseudo-console (ConPTY), so
-  prompts, colours, Ctrl+C, history and full-screen programs behave as in a console window, drawn
-  by a terminal renderer in the page. (a) The terminal: PowerShell 7 when installed, else Windows
-  PowerShell, started in the attended session's tree, else the workspace's first repository; the
-  install's environment in it (`DAORIS_HOME`, so the `daoris` CLI answers for this machine). (b) More
-  than one, and a choice of shell (PowerShell, Command Prompt, Git Bash when found), each a tab,
-  closed with its process. (c) Desktop-only (D47 §4): the keystrokes and output ride the bridge,
-  never HTTP. *Designed 2026-09-30:* `docs/2026-09-30-terminal-design.md`, D96, records that the console became a place to type, and that a
-  session's own streams stay read-only (the composer is how a session is spoken to).
 ### After the first real workspace (owner, 2026-09-28) — to start later
 
 > *"I also found issues after the [first workspace] work, which points out things that daoris leak

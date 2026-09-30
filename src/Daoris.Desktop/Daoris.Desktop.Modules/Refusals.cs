@@ -110,6 +110,18 @@ public static class Refusals
     /// <summary>A browser choice that is neither `daoris` nor `edge` (BRW12).</summary>
     public const string BrowserChoiceUnknown = "BROWSER_CHOICE_UNKNOWN";
 
+    /// <summary>A terminal asked for a shell this build does not offer (CONSOLE4a): not one of `pwsh`, `powershell`, `cmd`, `bash`.</summary>
+    public const string TerminalShellUnknown = "TERMINAL_SHELL_UNKNOWN";
+
+    /// <summary>A terminal asked for a shell this build offers and this machine does not have on PATH.</summary>
+    public const string TerminalShellMissing = "TERMINAL_SHELL_MISSING";
+
+    /// <summary>A terminal asked for where this machine has no shell at all on PATH.</summary>
+    public const string TerminalNoShell = "TERMINAL_NO_SHELL";
+
+    /// <summary>The system would not start the shell, or make its console; the system's own reason goes with it.</summary>
+    public const string TerminalNotStarted = "TERMINAL_NOT_STARTED";
+
     /// <summary>
     /// Every code a module here can raise — what the catalogue test enumerates. Read off the
     /// declarations above (REFUSE1): a list kept by hand let a code left out of it escape the check.

@@ -172,13 +172,16 @@ export function OverviewView({ onNavigate, onOpenQuest, doors, notify }: {
               body={t('overview.repositories.emptyBody')}
             />
           )}
-          <ul className="m-0 list-none p-0">
+          {/* Sized by its own width, not the window's (USE1, looked at): beside the side bar a wide window
+              still leaves this card narrow, and a viewport breakpoint kept three columns until the
+              counts ran past the card's edge. */}
+          <ul className="@container m-0 list-none p-0">
             {shown.map((repository) => {
               const declared = (registry.data ?? []).find((r) => r.repository === repository.name);
               return (
                 <li
                   key={repository.name}
-                  className="grid grid-cols-[minmax(8.5rem,12rem)_1fr_minmax(7.5rem,auto)] items-center gap-3 py-1.5 max-md:grid-cols-[1fr_auto] max-md:[&>span:nth-child(2)]:col-span-2 max-md:[&>span:nth-child(2)]:row-start-2"
+                  className="grid grid-cols-[minmax(8.5rem,12rem)_1fr_minmax(7.5rem,auto)] items-center gap-3 py-1.5 @max-[26rem]:grid-cols-[1fr_auto] @max-[26rem]:[&>span:nth-child(2)]:col-span-2 @max-[26rem]:[&>span:nth-child(2)]:row-start-2"
                 >
                   <span className="flex min-w-0 items-center gap-2 text-body">
                     {declared?.adopted && (

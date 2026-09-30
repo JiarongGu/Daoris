@@ -3,20 +3,31 @@ import { store, stored } from '../lib/stored';
 
 /**
  * A view that can move (DOCK1b, `docs/2026-09-29-dock-design.md` §3): what the right side bar and the
- * bottom panel hold, as VS Code's views move between its secondary side bar and its panel.
+ * bottom panel hold, as VS Code's views move between its secondary side bar and its panel. The terminal
+ * (CONSOLE4b, D96) is the person's own shell, beside the console as VS Code's terminal is beside its output.
  */
-export type ViewId = 'timeline' | 'review' | 'ask' | 'console';
+export type ViewId = 'timeline' | 'review' | 'ask' | 'console' | 'terminal';
+
+/**
+ * Every view, in the frame's order: a region's tabs read in it, whichever were moved there.
+ *
+ * @remarks
+ * A new view is named here and in `DEFAULT_PLACES`; its tab's name and icon (`ViewsMenu`) and the name Ask
+ * Daoris is told (`help/where.ts`) are records over `ViewId`, so the compiler asks for them; its surface and
+ * where it is present are the Work frame's. The one place nothing checks is Ask Daoris's room (`Help.cs`,
+ * *The window*), which lists the views in prose: its test holds a phrase for each (CONSOLE4b found it).
+ */
+export const VIEW_IDS: readonly ViewId[] = ['timeline', 'review', 'ask', 'console', 'terminal'];
 
 /** A region a view can go: the right side bar, or the panel under the session. */
 export type Place = 'right' | 'panel';
 
 /** Where each view stands until the viewer moves it: where the frame always drew it. */
 export const DEFAULT_PLACES: Readonly<Record<ViewId, Place>> = {
-  timeline: 'right', review: 'right', ask: 'right', console: 'panel',
+  timeline: 'right', review: 'right', ask: 'right', console: 'panel', terminal: 'panel',
 };
 
-/** The frame's order: a region's tabs read in it, whichever were moved there. */
-const ORDER: readonly ViewId[] = ['timeline', 'review', 'ask', 'console'];
+const ORDER = VIEW_IDS;
 
 export const VIEW_PLACES = 'daoris.viewPlaces';
 

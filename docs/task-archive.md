@@ -7955,3 +7955,28 @@ start on *2 of 5*. Beside the side bar the card is narrow, and the rows' fixed t
 command mid-word and a door's label onto two lines; the rows now wrap, the doors drop under the text,
 and the page never scrolls sideways (measured: scroll width equals the column's).
 **Proven by:** vitest 1491, Playwright 21, verify, and the window.
+
+## CONSOLE4 — a terminal in the console panel (2026-09-30, D96)
+
+> - [ ] **CONSOLE4 — the console takes input: a terminal, PowerShell by default.** … (a) The terminal …
+>   (b) More than one, and a choice of shell … (c) Desktop-only (D47 §4) …
+
+**Outcome** (built by a subagent in its own worktree, merged, then looked at on main). **4a:** a Windows
+pseudo-console in the driver library: the shell is started suspended and joined to the session
+processes' job before it runs, so closing a terminal ends everything it started; the pseudo-console is
+told the shell has no standard handles (measured: a shell started from a process with redirected
+handles wrote to those instead); output is batched every 16 ms, since here it is a keystroke's echo.
+Shells: `pwsh`, else `powershell`, then `cmd` and Git Bash (the bash beside git, never WSL's), found
+through the plugin door's resolver. `DAORIS.TERMINAL` carries `SHELLS`, `OPEN`, `INPUT`, `RESIZE`,
+`CLOSE` and two events; every terminal ends with the app, and nothing typed or printed reaches the
+machine log. **4b:** a *Terminal* view beside the console, on `@xterm/xterm`, held by the frame so it
+survives a move; it starts in the attended session's tree, else the first repository in scope, else
+the home; colours come from the tokens; Ctrl+C copies or interrupts, and the frame's own keys stay the
+frame's. **4c:** tabs, each its own shell, named by shell and folder, *+* offering only the machine's
+shells.
+
+**Looked at** on the scratch window: the tab read *Windows PowerShell · game*, in the attended
+session's repository; `git status` and `Get-ChildItem` ran with PowerShell's own colours, legible in
+light and in dark. **Not covered:** a page reload leaves shells running until the app exits (no
+re-adoption yet), and xterm is not lazy-loaded (the bundle grew about 350 KB).
+**Proven by:** driver (pseudo-console, shells), modules 336, vitest 1529, and the window.

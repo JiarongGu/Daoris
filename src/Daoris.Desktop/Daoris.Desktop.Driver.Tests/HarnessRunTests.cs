@@ -9,6 +9,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// &gt;</i> with no newline, and waits on stdin. A pump that delivered whole lines only, from a
 /// process whose stdin nobody held, was a login that could never finish.
 /// </summary>
+[Collection(ProcessPath.Name)]
 public sealed class HarnessRunTests
 {
     private static readonly HarnessToolchain Node = new(Binary: ["node"], VersionArguments: ["--version"]);

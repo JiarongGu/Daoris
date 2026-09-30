@@ -15,6 +15,7 @@ namespace Daoris.Desktop.Driver.Tests;
 /// One resolver, <see cref="CommandPresence.Resolve"/>, the plugin door's. Windows only, because the
 /// failure is Windows': elsewhere a bare name starts as it always did.
 /// </remarks>
+[Collection(ProcessPath.Name)]
 public sealed class CommandShimTests : IDisposable
 {
     // Scratch in the repository's own gitignored `_fixtures/`, never OS temp.
