@@ -67,6 +67,15 @@ describe('the plugins card', () => {
     expect(serviceCalls()).toEqual([]);
   });
 
+  /** PLUG10 (P9): running is a state, not an outcome, so its pill never wears done's green. */
+  it('the running pill wears the in-progress hue, never done\'s', async () => {
+    show(<SettingsView notify={() => {}} section="plugins" />);
+
+    const pill = await screen.findByText('running');
+    expect(pill.className).toMatch(/\bborder-st-taken\b/);
+    expect(pill.className).not.toMatch(/st-done/);
+  });
+
   it('the switch and Remove land on the bridge as the actions a terminal has', async () => {
     const notify = vi.fn();
     show(<SettingsView notify={notify} section="plugins" />);
