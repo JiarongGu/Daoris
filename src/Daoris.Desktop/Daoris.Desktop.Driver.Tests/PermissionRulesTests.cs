@@ -92,6 +92,29 @@ public sealed class PermissionRulesTests : IDisposable
         Assert.Equal("Read(//srv/daoris/asks/a1/**)", PermissionRules.ReadRule("/srv/daoris/asks/a1"));
     }
 
+    /// <summary>D107: what a session reaches across joins the person's rules, each rule once, theirs first.</summary>
+    [Fact]
+    public void Two_sets_of_lists_join_each_rule_once_in_the_order_first_met()
+    {
+        var person = new RuleLists(["Bash(make:*)", "Read(//a/**)"], ["WebFetch"], ["Bash(rm:*)"]);
+        var across = new RuleLists(["Read(//a/**)", "Read(//b/**)"], [], ["Edit(//b/**)"]);
+
+        var joined = person.Joined(across);
+
+        Assert.Equal(["Bash(make:*)", "Read(//a/**)", "Read(//b/**)"], joined.Allow);
+        Assert.Equal(["WebFetch"], joined.Ask);
+        Assert.Equal(["Bash(rm:*)", "Edit(//b/**)"], joined.Deny);
+    }
+
+    /// <summary>D107: an edit of another checkout is written in the same absolute form as a read.</summary>
+    [Fact]
+    public void A_checkouts_edit_is_the_same_absolute_rule_as_its_read()
+    {
+        Assert.Equal("Edit(//c/work/engine/**)", PermissionRules.EditRule(@"C:\work\engine\"));
+        Assert.Equal("Edit(//srv/engine/**)", PermissionRules.EditRule("/srv/engine"));
+        Assert.Null(PermissionRules.Refusal(PermissionRules.EditRule(@"D:\my work\engine")));
+    }
+
     [Fact]
     public void Nothing_written_hands_the_defaults_alone()
     {
@@ -436,6 +459,21 @@ public sealed class PermissionRulesTests : IDisposable
         Assert.Equal("node", hook.GetProperty("command").GetString());
         Assert.Equal([guard.Script, tree], hook.GetProperty("args").EnumerateArray().Select(e => e.GetString()));
         Assert.True(File.Exists(guard.Script));
+    }
+
+    /// <summary>D107: each declared write target rides the hook as one more argument after the tree.</summary>
+    [Fact]
+    public void The_spawn_files_hook_names_each_declared_target_after_the_tree()
+    {
+        var tree = Path.Combine(_home, "plugins");
+        var target = Path.Combine(_home, "engine");
+        var guard = TreeGuard.For(_home, tree, [target]);
+
+        var path = SpawnSettings.Write(_home, "s1", RuleLists.Empty, guard);
+
+        using var document = JsonDocument.Parse(File.ReadAllText(path!));
+        var hook = document.RootElement.GetProperty("hooks").GetProperty("PreToolUse")[0].GetProperty("hooks")[0];
+        Assert.Equal([guard.Script, tree, target], hook.GetProperty("args").EnumerateArray().Select(e => e.GetString()));
     }
 
     [Fact]

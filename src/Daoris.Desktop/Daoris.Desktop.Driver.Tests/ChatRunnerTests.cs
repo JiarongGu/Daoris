@@ -27,6 +27,26 @@ public sealed class ChatRunnerTests : IDisposable
         return AdapterSet.Built().WithPlugins(PluginCatalog.Load(_home, AdapterSet.Built().Names));
     }
 
+    /// <summary>
+    /// D107: a conversation in a repository is handed what a driven session there is — the person's union, a
+    /// read of its kept files, and what it may reach across — with no refusal on its own tree or files.
+    /// </summary>
+    [Fact]
+    public void A_conversations_rules_are_a_driven_sessions_with_its_kept_files_and_what_it_may_reach_across()
+    {
+        var file = PermissionFile.Empty with { Machine = new RuleLists(["Bash(make:*)"], [], []) };
+        var across = new AcrossReach([new("game", "/work/game")], [], [new("personal", "/srv/personal")]);
+
+        var rules = ChatRunner.RulesFor(file, "default", "engine", "/work/engine", "/data/chats/s1", across);
+
+        Assert.Contains("Bash(make:*)", rules.Allow);
+        Assert.Contains(PermissionRules.ReadRule("/data/chats/s1"), rules.Allow);
+        Assert.Contains("Read(//work/game/**)", rules.Allow);
+        Assert.Contains("Edit(//work/game/**)", rules.Deny);
+        Assert.Contains("Read(//srv/personal/**)", rules.Deny);
+        Assert.DoesNotContain(rules.Deny, rule => rule.Contains("/work/engine", StringComparison.Ordinal));
+    }
+
     [Fact]
     public async Task A_harness_declared_after_the_runner_was_built_is_found_through_the_roster_s_live_set()
     {

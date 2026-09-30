@@ -22,6 +22,8 @@ public sealed class HelpRoomDoorsTests
             "daoris driver helper <agent>|off", "daoris driver strikes <n>", "daoris driver timeout <minutes>",
             "daoris driver notify on|off", "daoris agent rules", "daoris-driver ask --workspace <name>",
             "daoris-driver trees clean",
+            // D107: reading and writing across, the CLI's `driver across` verbs.
+            "daoris driver across <repository> read on|off|--clear", "daoris driver across <repository> write-to <other> [--clear]",
         })
         {
             Assert.Contains(command, agents);

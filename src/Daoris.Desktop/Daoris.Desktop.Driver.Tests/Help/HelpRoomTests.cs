@@ -106,6 +106,28 @@ public sealed class HelpRoomTests : IDisposable
     }
 
     /// <summary>
+    /// D107: with reading across on, what it is handed adds, for each checkout it may read, a read and the two
+    /// read-only git commands by exact prefix — no other command, and nothing that writes. HELP4's refusal of
+    /// a shell stands: in the agent's asking mode anything else is asked, and refused.
+    /// </summary>
+    [Fact]
+    public void Its_rules_read_each_checkout_it_may_read_and_run_no_other_command()
+    {
+        var kept = Path.Combine(_home, "chats", "s1");
+
+        var rules = HelpRoom.Rules(PermissionFile.Empty, kept, [new("console-ui", "work", "/work/console-ui")]);
+
+        Assert.Equal(
+            [
+                .. HelpRoom.Allowed, PermissionRules.ReadRule(kept),
+                "Read(//work/console-ui/**)", "Bash(git -C /work/console-ui status:*)", "Bash(git -C /work/console-ui branch --list:*)",
+            ],
+            rules.Allow);
+        Assert.DoesNotContain(rules.Allow, rule => rule.StartsWith("Edit", StringComparison.Ordinal) || rule.StartsWith("Write", StringComparison.Ordinal));
+        Assert.Equal(2, rules.Allow.Count(rule => rule.StartsWith("Bash", StringComparison.Ordinal)));
+    }
+
+    /// <summary>
     /// The machine the room describes is read from what the driver already holds — its file, the
     /// registry, the lines and the roster — so the room and the screens cannot disagree.
     /// </summary>
@@ -171,7 +193,13 @@ public sealed class HelpRoomTests : IDisposable
         // A key is an account's handle and never its value (AGT3), and the room carries neither.
         Assert.DoesNotContain("sk-", HelpRoom.Render(machine));
         Assert.DoesNotContain("/profiles/work", HelpRoom.Render(machine));
-        Assert.DoesNotContain("/work/console-ui", HelpRoom.Render(machine));
+        // A root is named only where the helper may read it (D107), once, in the reading list.
+        var room = HelpRoom.Render(machine);
+        Assert.Single(room.Split('\n'), line => line.Contains("/work/console-ui", StringComparison.Ordinal));
+        Assert.Contains("- `console-ui` (workspace `work`) — `/work/console-ui`", room);
+        var unread = HelpRoom.Describe(
+            config.WithWorkspaceReadAcross("work", false), snapshot, lines, roster, _ => null, asks: 1, standing);
+        Assert.DoesNotContain("/work/console-ui", HelpRoom.Render(unread));
     }
 
     /// <summary>A twin (`twins.md`): the service's `SessionLedger.HelpRepository` and the page's spell it too.</summary>

@@ -440,22 +440,29 @@ public sealed class DrivenSessionInputTests : IDisposable
         private readonly List<JsonObject> _sessions = [];
         private readonly string? _kept;
         private readonly string? _refuses;
+        private readonly IReadOnlyList<(string Repository, string Root, string Workspace)> _others;
 
         public string Url { get; }
 
-        private StandInService(HttpListener listener, string url, string root, string? kept, string? refuses)
+        private StandInService(
+            HttpListener listener, string url, string root, string? kept, string? refuses,
+            IReadOnlyList<(string Repository, string Root, string Workspace)> others)
         {
             _listener = listener;
             Url = url.TrimEnd('/');
             _root = root;
             _kept = kept;
             _refuses = refuses;
+            _others = others;
             _serving = ServeAsync();
         }
 
         /// <param name="kept">Where this machine keeps a file the quest carries, or null for a quest with none (INT4j).</param>
         /// <param name="refuses">A state this ledger will not move a record to, as a terminal record refuses every move.</param>
-        public static StandInService Start(string root, string? kept = null, string? refuses = null)
+        /// <param name="others">More registered checkouts beside `engine`, for what a session may reach across (D107).</param>
+        public static StandInService Start(
+            string root, string? kept = null, string? refuses = null,
+            IReadOnlyList<(string Repository, string Root, string Workspace)>? others = null)
         {
             var probe = new System.Net.Sockets.TcpListener(IPAddress.Loopback, 0);
             probe.Start();
@@ -466,7 +473,7 @@ public sealed class DrivenSessionInputTests : IDisposable
             var listener = new HttpListener();
             listener.Prefixes.Add(url);
             listener.Start();
-            return new StandInService(listener, url, root, kept, refuses);
+            return new StandInService(listener, url, root, kept, refuses, others ?? []);
         }
 
         public JsonObject Session(string id)
@@ -519,11 +526,18 @@ public sealed class DrivenSessionInputTests : IDisposable
                         }).ToJsonString());
 
                     case ("GET", "/api/registry"):
-                        return (200, new JsonArray(new JsonObject
-                        {
-                            ["repository"] = "engine", ["adopted"] = true, ["registered"] = true,
-                            ["root"] = _root, ["workspace"] = "default",
-                        }).ToJsonString());
+                        return (200, new JsonArray([
+                            new JsonObject
+                            {
+                                ["repository"] = "engine", ["adopted"] = true, ["registered"] = true,
+                                ["root"] = _root, ["workspace"] = "default",
+                            },
+                            .. _others.Select(other => new JsonObject
+                            {
+                                ["repository"] = other.Repository, ["adopted"] = true, ["registered"] = true,
+                                ["root"] = other.Root, ["workspace"] = other.Workspace,
+                            }),
+                        ]).ToJsonString());
 
                     case ("GET", "/api/sessions"):
                         return (200, new JsonArray([.. _sessions

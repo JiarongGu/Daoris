@@ -21,8 +21,8 @@ lists.
 
 ## State
 
-**Counts, and this is their one home:** sixteen commands, **654 CLI tests, 655 service and 46 HTTP host, 1431 driver,
-406 desktop modules, 80 devkit, 1700 web unit, 21 Playwright**, 66/66 release rehearsal, **301/301
+**Counts, and this is their one home:** sixteen commands, **660 CLI tests, 655 service and 46 HTTP host, 1480 driver,
+410 desktop modules, 80 devkit, 1713 web unit, 21 Playwright**, 66/66 release rehearsal, **301/301
 family rehearsal** (it names its own phases when you run it), **70/70 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge
 documents, 5 skills, 7 packs. The always-loaded core is **22,672 of 26,000 bytes** — a span in
@@ -117,8 +117,8 @@ rather than designed.
 
 ## Backlog
 
-**Nineteen rows are open, in three kinds** (triaged 2026-09-30, when the owner asked to go faster):
-- **Workable now, by the parent or subagents (five):** the parallel-development arc's last
+**Eighteen rows are open, in three kinds** (triaged 2026-09-30, when the owner asked to go faster):
+- **Workable now, by the parent or subagents (four):** the parallel-development arc's last
   (MOD8, in flight), READ1, TASKBAR1, TEST1, and FLAKE1 (which MOD8
   absorbs).
 - **Waiting on the owner (six):** BUDGET1 and PLUGREPO1 (their calls), TRUST2 and AGT2c (a grant, two
@@ -297,14 +297,6 @@ is behind a sign-in. FG1–FG4 are in the archive. **INT6 is reshaped as FG5.**
   **The loop is met** (2026-09-27): six legs, from the first ask to a chain that ran end to end, are
   the study's §8. **Still the owner's:** the verify step's camera-GUID defect and the daily view's note
   chip, both in that repository, and the branches its sessions left (WSR3).
-- [ ] **READ1 — reading across repositories, configurable** (the owner's call, 2026-09-30, closing
-  READACROSS1 and HELPREAD1: *"should be configuable and default to read yes write no (because some repo
-  have master/child relationship like plugin repos)"*). A driven session and Ask Daoris may read any
-  registered checkout (`git status`, a branch list, a file) and write none, by default. It is set per
-  workspace and per repository on both doors, and a declared relationship (a parent and its child, like a
-  plugins repository and the repository it serves) may also allow writes, as the person's durable say-so
-  that the canon's rule on writing across asks for. It is the handed rules and a sentence in the
-  instruction for sessions, and D89's allow-list and the room for Ask Daoris.
 - [ ] ⏸ **SEM2 — vectors that persist** (after SEM1, held). SEM1 embeds what is on disk once per
   process, on first use. The MCP host is one process per session, so with an embedder configured,
   each session's first search embeds the whole corpus. Lyntai.Storage.Sqlite's vector store would

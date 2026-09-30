@@ -12,9 +12,10 @@ namespace Daoris.Driver;
 /// write, since no one else owns it. Never a session tree, and never asked about by git — it is no
 /// repository, and git asked about it walks UP.</para>
 ///
-/// <para><b>It reads, and it advises.</b> Its allow-list reads the family and proposes, and nothing
-/// else, and over the protocol door anything unlisted is refused by construction (D52). A change is the
-/// person's, on a screen or at a terminal; a proposal is a card the person confirms (HELP1c, HELP6).</para>
+/// <para><b>It reads, and it advises.</b> Its allow-list reads the family and proposes, and what it is
+/// handed at spawn reads the checkouts reading across allows (D107), and nothing else: over the protocol
+/// door anything unlisted is refused by construction (D52). A change is the person's, on a screen or at a
+/// terminal; a proposal is a card the person confirms (HELP1c, HELP6).</para>
 ///
 /// <para><b>By section (MOD6).</b> What it says is <see cref="HelpRoomSections.All"/>, in order: each section a
 /// file of its own under <c>Help/Room/</c> that says one thing and describes the facts it says, so a new
@@ -79,16 +80,26 @@ public static class HelpRoom
     /// conversation keeps (CONV4c) — never the person's own allows, which are for work in a repository —
     /// and every deny the person wrote, which still wins.
     /// </summary>
-    public static RuleLists Rules(PermissionFile file, string kept)
+    /// <param name="reads">
+    /// The checkouts reading across lets it read (D107): each a read and two read-only git commands by exact
+    /// prefix, and nothing that writes. Anything else is asked in its mode, and refused (D52).
+    /// </param>
+    public static RuleLists Rules(PermissionFile file, string kept, IReadOnlyList<HelpRead>? reads = null)
     {
         var composed = PermissionRules.Compose(file, workspace: null, repository: null);
-        return new RuleLists([.. Allowed, PermissionRules.ReadRule(kept)], [], composed.Deny);
+        return new RuleLists(
+            [
+                .. Allowed, PermissionRules.ReadRule(kept),
+                .. (reads ?? []).SelectMany(read => AcrossRules.ReadOnlyRules(new AcrossCheckout(read.Name, read.Path))),
+            ],
+            [],
+            composed.Deny);
     }
 
     /// <summary>
     /// The machine as the driver already holds it — its file, the registry, each repository's line, the
-    /// roster — so the room says what the screens say. Names and states only: no root, no profile's
-    /// home, no key.
+    /// roster — so the room says what the screens say. Names and states, and the root of a checkout only
+    /// where reading across lets the helper read it (D107): no other root, no profile's home, no key.
     /// </summary>
     /// <remarks>Each section describes the facts it says, from the same sources (MOD6).</remarks>
     /// <param name="product">What a person calls a harness's tool, where its toolchain says.</param>
@@ -128,7 +139,10 @@ public static class HelpRoom
     }
 }
 
-/// <summary>What the room says this machine holds now: names and states, never a key, never a path.</summary>
+/// <summary>
+/// What the room says this machine holds now: names and states, never a key, and a path only for a checkout
+/// the helper may read (D107).
+/// </summary>
 /// <remarks>MOD6: each section declares, in its own file, the facts it says.</remarks>
 public sealed partial record HelpMachine
 {

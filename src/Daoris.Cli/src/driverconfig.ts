@@ -57,6 +57,15 @@ export interface DriverChoices {
   landings: Record<string, LandingRule>;
   /** A workspace's landing rule, for every repository in it that sets none of its own. */
   workspaceLandings: Record<string, LandingRule>;
+  /**
+   * Whether each repository's checkout is read by agents outside it (READ1, D107) — absent takes its
+   * workspace's, then on. Only the driver resolves it (`Across.cs`); this editor sets and lists.
+   */
+  readAcross: Record<string, boolean>;
+  /** A workspace's reading across, for every repository in it that sets none of its own. */
+  workspaceReadAcross: Record<string, boolean>;
+  /** The declared relationships (D107): the repositories each repository's sessions may also write into. */
+  writeAcross: Record<string, string[]>;
   rest: Record<string, unknown>;
 }
 
@@ -67,8 +76,19 @@ export const DEFAULT_TIMEOUT_MINUTES = 30;
 const EMPTY: DriverChoices = {
   drivable: [], holds: [], trees: [], cap: 2, adapter: 'claude-code', notify: true,
   strikes: 3, forgiven: {}, intakeAdapter: null, helperAdapter: null, timeoutMinutes: null, lines: {}, workspaceLines: {},
-  landings: {}, workspaceLandings: {}, rest: {},
+  landings: {}, workspaceLandings: {}, readAcross: {}, workspaceReadAcross: {}, writeAcross: {}, rest: {},
 };
+
+/**
+ * Why a relationship from one repository to another cannot be declared, in a sentence, or null when it
+ * can (D107). `AcrossRules.Problem` in the driver says the same two sentences.
+ */
+export function writeAcrossProblem(repository: string, to: string): string | null {
+  if (to.trim().length === 0) return 'a relationship names the repository it may write into.';
+  return repository.trim().toLowerCase() === to.trim().toLowerCase()
+    ? `\`${repository.trim()}\` writes in its own tree already — a relationship names another repository.`
+    : null;
+}
 
 /**
  * How a session's work lands (WSR1, D87): merged into the line, or put on a branch the pattern names,
@@ -193,11 +213,16 @@ export function readDriverChoices(path = driverConfigPath()): DriverChoices {
     throw new DaorisError(`${problem}. Fix it, or delete it to start from nothing — `
       + 'this command will not overwrite a file it could not understand.');
   }
-  if (parsed === null) return { ...EMPTY, lines: {}, workspaceLines: {}, landings: {}, workspaceLandings: {}, rest: {} };
+  if (parsed === null) {
+    return {
+      ...EMPTY, lines: {}, workspaceLines: {}, landings: {}, workspaceLandings: {},
+      readAcross: {}, workspaceReadAcross: {}, writeAcross: {}, rest: {},
+    };
+  }
 
   const {
     drivable, holds, trees, cap, adapter, notify, strikes, forgiven, intakeAdapter, helperAdapter, timeoutMinutes,
-    lines, workspaceLines, landings, workspaceLandings, ...rest
+    lines, workspaceLines, landings, workspaceLandings, readAcross, workspaceReadAcross, writeAcross, ...rest
   } = parsed;
   return {
     drivable: names(drivable),
@@ -232,6 +257,10 @@ export function readDriverChoices(path = driverConfigPath()): DriverChoices {
     // A rule that could not land work is not read, as the driver does not read it.
     landings: ruleMap(landings),
     workspaceLandings: ruleMap(workspaceLandings),
+    // Only a boolean is read, and only other names as a relationship, as the driver reads them (D107).
+    readAcross: flagMap(readAcross),
+    workspaceReadAcross: flagMap(workspaceReadAcross),
+    writeAcross: targetMap(writeAcross),
     rest,
   };
 }
@@ -260,6 +289,10 @@ export function writeDriverChoices(path: string, choices: DriverChoices): void {
     // Written only when set (WSR1): absent is the merge it always was.
     ...(Object.keys(choices.landings).length > 0 ? { landings: choices.landings } : {}),
     ...(Object.keys(choices.workspaceLandings).length > 0 ? { workspaceLandings: choices.workspaceLandings } : {}),
+    // Written only when set (D107): absent is reading on and no relationship.
+    ...(Object.keys(choices.readAcross).length > 0 ? { readAcross: choices.readAcross } : {}),
+    ...(Object.keys(choices.workspaceReadAcross).length > 0 ? { workspaceReadAcross: choices.workspaceReadAcross } : {}),
+    ...(Object.keys(choices.writeAcross).length > 0 ? { writeAcross: choices.writeAcross } : {}),
   });
 }
 
@@ -591,9 +624,84 @@ export function commandDriver({ argv, write }: CommandArgs): ExitCode {
       return 0;
     }
 
+    // Reading and writing across repositories (READ1, D107). `read` is whether a repository's checkout —
+    // or, with `--workspace`, each checkout there that sets none of its own — is read by agents outside
+    // it; on unless switched off. `write-to` declares that one repository's sessions may also write into
+    // another: the person's standing say-so, one direction per declaration.
+    case 'across': {
+      const workspace = flagValue(argv, '--workspace');
+      const clear = argv.includes('--clear');
+      const words = operands(argv, new Set(['--workspace'])).slice(1);
+      const name = workspace ?? words.shift();
+      const [what, value] = words;
+      if (!name) {
+        throw new DaorisError(
+          '`driver across` needs <repository>|--workspace <name>, then read on|off|--clear or write-to <other> '
+          + '[--clear] — e.g. `daoris driver across engine read off`.');
+      }
+
+      if (what === 'read') {
+        if (!clear && value !== 'on' && value !== 'off') {
+          throw new DaorisError('`driver across … read` needs on|off|--clear — e.g. `daoris driver across engine read off`.');
+        }
+
+        const set = clear ? null : value === 'on';
+        writeDriverChoices(path, workspace
+          ? { ...choices, workspaceReadAcross: withEntry(choices.workspaceReadAcross, workspace, set) }
+          : { ...choices, readAcross: withEntry(choices.readAcross, name, set) });
+
+        const whose = workspace ? `each checkout in the workspace \`${workspace}\` that sets none of its own is`
+          : `\`${name}\`'s checkout is`;
+        if (set === null) {
+          write(workspace
+            ? `daoris: checkouts in the workspace \`${workspace}\` are read across again, unless one says otherwise.`
+            : `daoris: \`${name}\` takes its workspace's reading again, else on.`);
+        } else if (set) {
+          write(`daoris: ${whose} read by sessions in its workspace's other repositories and by Ask Daoris —`);
+          write('  its files and `git status` and the branch list, never a write.');
+        } else {
+          write(`daoris: ${whose} read by no agent outside it: no session in another repository, and not Ask Daoris.`);
+        }
+
+        if (set !== null && workspace) {
+          write('  A repository with a setting of its own keeps it — `daoris driver across <repository> read --clear` hands it back.');
+        }
+
+        write('  A session already running keeps what it started with.');
+        write(`  Written to ${path} — the driver reads it at every start, so nothing restarts.`);
+        return 0;
+      }
+
+      if (what === 'write-to') {
+        if (workspace) {
+          throw new DaorisError('a relationship is declared from one repository — `daoris driver across <repository> write-to <other>`.');
+        }
+
+        const problem = writeAcrossProblem(name, value ?? '');
+        if (problem !== null) throw new DaorisError(problem);
+
+        writeDriverChoices(path, { ...choices, writeAcross: withTarget(choices.writeAcross, name, value!, !clear) });
+        if (clear) {
+          write(`daoris: sessions in \`${name}\` no longer write into \`${value}\`; a change needed there is a quest again.`);
+        } else {
+          write(`daoris: sessions in \`${name}\` may also write into \`${value}\` — its files, and a commit there —`);
+          write('  where both are in one workspace with a checkout here. This is your standing say-so for writing');
+          write(`  across; it has one direction, so \`${value}\` writes nothing into \`${name}\` unless you declare that too.`);
+          write(`  \`daoris driver across ${name} write-to ${value} --clear\` takes it back.`);
+        }
+
+        write(`  Written to ${path} — the driver reads it at every start, so nothing restarts.`);
+        return 0;
+      }
+
+      throw new DaorisError(
+        `\`driver across\` sets read or write-to, not \`${what ?? ''}\` — e.g. \`daoris driver across engine read off\`, `
+        + '`daoris driver across plugins write-to engine`.');
+    }
+
     default:
       throw new DaorisError(
-        `unknown driver verb '${verb}' — one of: list, drive, undrive, hold, resume, trees, line, landing, notify, `
+        `unknown driver verb '${verb}' — one of: list, drive, undrive, hold, resume, trees, line, landing, across, notify, `
         + 'strikes, retry, timeout, cap, adapter, intake, helper');
   }
 
@@ -659,6 +767,19 @@ export function commandDriver({ argv, write }: CommandArgs): ExitCode {
 
     for (const [workspace, rule] of Object.entries(choices.workspaceLandings)) {
       write(`  landing    workspace ${workspace}  ${spelled(rule)}  (for each repository there that sets none)`);
+    }
+
+    // Reading across (D107): on unless switched off, the repository's own over its workspace's.
+    for (const [repository, read] of Object.entries(choices.readAcross)) {
+      write(`  across     ${repository}  read ${read ? 'on' : 'off'}`);
+    }
+
+    for (const [workspace, read] of Object.entries(choices.workspaceReadAcross)) {
+      write(`  across     workspace ${workspace}  read ${read ? 'on' : 'off'}  (for each repository there that sets none)`);
+    }
+
+    for (const [repository, targets] of Object.entries(choices.writeAcross)) {
+      write(`  across     ${repository}  writes into ${targets.join(', ')}  (declared by you)`);
     }
 
     // A hold on something not opted in is inert, and saying so is the point: it reads as protection
@@ -732,6 +853,52 @@ function branchMap(value: unknown): Record<string, string> {
 function withEntry<T>(map: Record<string, T>, key: string, value: T | null): Record<string, T> {
   const kept = Object.fromEntries(Object.entries(map).filter(([name]) => name.toLowerCase() !== key.toLowerCase()));
   return value === null ? kept : { ...kept, [key]: value };
+}
+
+/**
+ * The relationships with `to` declared from `repository`, or taken back — matched without case, as the
+ * driver matches it, keeping the repository's existing spelling. The last one taken back leaves no entry.
+ */
+function withTarget(map: Record<string, string[]>, repository: string, to: string, allow: boolean): Record<string, string[]> {
+  const key = Object.keys(map).find((name) => name.toLowerCase() === repository.trim().toLowerCase()) ?? repository.trim();
+  const held = map[key] ?? [];
+  const same = (name: string) => name.toLowerCase() === to.trim().toLowerCase();
+  const kept = allow ? (held.some(same) ? held : [...held, to.trim()]) : held.filter((name) => !same(name));
+  const rest = Object.fromEntries(Object.entries(map).filter(([name]) => name !== key));
+  return kept.length > 0 ? { ...rest, [key]: kept } : rest;
+}
+
+/** A map of names to booleans; an entry of any other type is not read, as the driver does not read it (D107). */
+function flagMap(value: unknown): Record<string, boolean> {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
+  const held: Record<string, boolean> = {};
+  for (const [name, flag] of Object.entries(value as Record<string, unknown>)) {
+    if (typeof flag === 'boolean' && name.trim().length > 0) held[name.trim()] = flag;
+  }
+
+  return held;
+}
+
+/**
+ * The declared relationships (D107): each repository's list of other names, once each in any case, in the
+ * order first written. A list that is not one, an entry that is not a name, and the repository itself are
+ * not read, as the driver does not read them; a repository left with none has no entry.
+ */
+function targetMap(value: unknown): Record<string, string[]> {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
+  const held: Record<string, string[]> = {};
+  for (const [name, list] of Object.entries(value as Record<string, unknown>)) {
+    if (!Array.isArray(list) || name.trim().length === 0) continue;
+    const targets: string[] = [];
+    for (const item of list) {
+      if (typeof item !== 'string' || writeAcrossProblem(name, item) !== null) continue;
+      if (!targets.some((target) => target.toLowerCase() === item.trim().toLowerCase())) targets.push(item.trim());
+    }
+
+    if (targets.length > 0) held[name.trim()] = targets;
+  }
+
+  return held;
 }
 
 /** A map of names to landing rules; one that could not land work is skipped, as the driver skips it. */

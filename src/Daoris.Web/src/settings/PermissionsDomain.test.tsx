@@ -103,5 +103,56 @@ describe('the rules card', () => {
     // The machine's domains appear once the shell has answered, and Permissions is the one open.
     await waitFor(() => expect(screen.getByRole('button', { name: 'Permissions' })).toHaveAttribute('aria-current', 'page'));
     expect(screen.queryByText('The rules file')).toBeNull();
+    expect(screen.queryByText('Reading and writing across repositories')).toBeNull();
+  });
+});
+
+/**
+ * READ1 (D107): reading and writing across, the screen's half of `daoris driver across` (D50) — each change
+ * lands on the bridge as the verb a terminal has, and what the driver answered is what the card shows.
+ */
+describe('the reading and writing across card', () => {
+  const ACROSS = {
+    repositories: [
+      { repository: 'engine', workspace: 'default', checkout: true, read: true, source: 'default', writesTo: [] },
+      { repository: 'plugins', workspace: 'default', checkout: true, read: true, source: 'default', writesTo: ['engine'] },
+    ],
+  };
+  const STATE = { drivable: [], holds: [], running: [], workspaceReadAcross: [] };
+
+  beforeEach(() => {
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => respond(String(input))));
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'ACROSS') return ACROSS;
+      if (type === 'STATE' || type === 'SET_READ_ACROSS' || type === 'SET_WRITE_ACROSS') return STATE;
+      return WIRING;
+    });
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    invoke.mockReset();
+  });
+
+  it('switches a checkout\'s reading off, as `daoris driver across <repository> read off` does, and says what it means', async () => {
+    const notify = vi.fn();
+    show(<SettingsView notify={notify} section="permissions" />);
+
+    const engine = await screen.findByRole('radiogroup', { name: "Reading engine's checkout" });
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'ACROSS', {});
+    await userEvent.click(within(engine).getByRole('radio', { name: 'off' }));
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SET_READ_ACROSS', { payload: { repository: 'engine', read: false } });
+    await waitFor(() => expect(notify).toHaveBeenCalledWith(
+      'engine: its checkout is read by no agent outside it. A session already running keeps what it began with.'));
+  });
+
+  it('takes a relationship back, as `daoris driver across <repository> write-to <other> --clear` does', async () => {
+    const notify = vi.fn();
+    show(<SettingsView notify={notify} section="permissions" />);
+
+    await userEvent.click(await screen.findByRole('button', { name: 'stop plugins writing into engine' }));
+    expect(invoke).toHaveBeenCalledWith(
+      'DAORIS.DRIVER', 'SET_WRITE_ACROSS', { payload: { repository: 'plugins', to: 'engine', allow: false } });
+    await waitFor(() => expect(notify).toHaveBeenCalledWith(
+      'Sessions in plugins no longer write into engine; a change needed there is a quest again.'));
   });
 });

@@ -161,6 +161,23 @@ gains the room that measures it. If this tier is honoured untrusted, the connect
 INT3b without anyone granting trust. If it is not, trust stays DEPLOY1(b)'s to grant, and PERM1
 still carries the guard.
 
+### 4a. What a session may reach across (D107, as built)
+
+Beside the person's rules, the composition adds what reading and writing across allows, from
+`driver.json` (`AcrossRules`), for every other registered checkout on this machine:
+
+| That checkout, to this session | Allowed | Denied |
+|---|---|---|
+| readable: its workspace's, reading on | `Read(//<path>/**)`, `Bash(git -C <path> status:*)`, `Bash(git -C <path> branch --list:*)` | `Edit(//<path>/**)` |
+| a declared write target | the three above, and `Edit(//<path>/**)`, `Bash(git -C <path> add:*)`, `Bash(git -C <path> commit:*)` | nothing |
+| not readable: reading off, or another workspace | nothing | `Edit(//<path>/**)`, `Read(//<path>/**)` |
+
+A declared target is also one more argument to the tree guard's hook, after the tree, so a write
+there gets no decision. No deny lands on a checkout that holds the session's own tree, its kept
+files, or a checkout it may use, because deny beats allow. A conversation in a repository gets the
+same. Ask Daoris gets the reads and the git rules for every readable checkout in every workspace,
+and nothing that writes. An intake gets none. D107 says what the gates do not cover.
+
 ## 5. Two doors to edit them (D50)
 
 - **Terminal**: `daoris agent rules` lists the defaults (on or off) and each scope's rules.

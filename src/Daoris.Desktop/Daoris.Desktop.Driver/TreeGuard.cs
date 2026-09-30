@@ -3,7 +3,14 @@ namespace Daoris.Driver;
 /// <summary>What one session's tree guard is: the script the hook runs, and the tree it guards.</summary>
 /// <param name="Script">The script, written under the Daoris home by <see cref="TreeGuard.Install"/>.</param>
 /// <param name="Tree">The session's own working tree — the executor's, never re-derived by the hook.</param>
-public sealed record TreeGuardHook(string Script, string Tree);
+public sealed record TreeGuardHook(string Script, string Tree)
+{
+    /// <summary>
+    /// The checkouts the person declared this session's repository may also write into (D107), each one more
+    /// argument after the tree. Empty — the default — is the tree alone.
+    /// </summary>
+    public IReadOnlyList<string> Also { get; init; } = [];
+}
 
 /// <summary>
 /// The tree guard (PERM3): a PreToolUse hook Daoris ships, refusing a file write outside the session's
@@ -51,8 +58,9 @@ public static class TreeGuard
         return path;
     }
 
-    /// <summary>The guard for one session: the script, installed, and the tree it guards.</summary>
-    public static TreeGuardHook For(string home, string tree) => new(Install(home), Path.GetFullPath(tree));
+    /// <summary>The guard for one session: the script, installed, the tree it guards, and the declared targets.</summary>
+    public static TreeGuardHook For(string home, string tree, IEnumerable<string>? also = null) =>
+        new(Install(home), Path.GetFullPath(tree)) { Also = [.. (also ?? []).Select(Path.GetFullPath)] };
 
     private static string ReadSource()
     {

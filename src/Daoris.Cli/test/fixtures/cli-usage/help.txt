@@ -88,6 +88,13 @@ daoris <command> [options]
                                                    --plugin <id> on a branch: an
                                                    installed plugin pushes it and
                                                    opens the pull request)
+                         across <repo> read on|off|--clear
+                                                   whether agents outside it read
+                                                   its checkout; on by default
+                                                   (--workspace <name> too)
+                         across <repo> write-to <other> [--clear]
+                                                   let its sessions also write
+                                                   into <other>: your say-so
                          notify on|off           say so when a session parks,
                                                    or ends without you asking
                          intake <adapter>|off      answer an ask the declarations

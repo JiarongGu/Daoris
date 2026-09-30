@@ -6,6 +6,7 @@
 // file is only the barrel, so no import moved when they did. It re-exports every domain and holds no
 // code of its own, which `bridge/bridge.test.ts` holds. `bridge/call.ts` is the domains' own helper
 // and is re-exported by nothing.
+export * from './bridge/across';
 export * from './bridge/agents';
 export * from './bridge/browser';
 export * from './bridge/console';

@@ -45,6 +45,7 @@ map found this first (WSP3), and every twin since was built the same way for the
 |---|---|---|---|
 | The home (`DAORIS_HOME`, D63) | `home.ts` | `DaorisHome.cs` | `DaorisHome.cs` |
 | The driver's choices (D46 §6), with each repository's line and its branch-name rule (WSR2), and how its work lands with the pattern rule (WSR1) | `driverconfig.ts` | `DriverConfig.cs`, `CanonicalLine.cs`, `Landing.cs` | — |
+| Reading and writing across in `driver.json` (D107): `readAcross`, `workspaceReadAcross`, `writeAcross`, and a repository never writing into itself | `driverconfig.ts` (`writeAcrossProblem`); `driverconfig.test.ts` holds the shape cases | `DriverConfig.cs`; `Across.cs` (`AcrossRules.Problem`), which alone resolves it; `AcrossTests` holds the same shape cases, then the precedence | — |
 | The remotes map (WSP3) | `remotemap.ts` | `RemoteTarget.cs` | `RemoteConfig.cs` |
 | Harnesses, pins and accounts (D57, D67) | `toolchain.ts` | `Harnesses.cs` | — |
 | A maker's release channel (AGT2b) | `channels.ts` | `ReleaseChannel.cs` | — |

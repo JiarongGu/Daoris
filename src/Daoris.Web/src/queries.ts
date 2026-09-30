@@ -34,6 +34,8 @@ export const keys = {
   remotes: ['remotes'] as const,
   browserSettings: ['browser-settings'] as const,
   lines: ['driver', 'lines'] as const,
+  /** How each repository's checkout stands for reading and writing across (D107) — shell-only, like the lines. */
+  across: ['driver', 'across'] as const,
   allLandings: ['driver', 'landing'] as const,
   sweep: ['driver', 'sweep'] as const,
   landing: (session: string) => ['driver', 'landing', session] as const,

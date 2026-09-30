@@ -176,21 +176,33 @@ public sealed class ChatRunner(
             return new(null, message);
         }
 
+        // What it may reach outside its tree (D107), as a driven session in this repository would.
+        var across = AcrossRules.Reach(config, snapshot.Repositories, known.Repository, known.Workspace);
+
         return await RunAsync(
             sessionId, message, resolved, selection, config,
             new ChatPlace(
                 known.Repository, workTree,
-                // What the conversation's agent may do (PERM1, D72) — the same union a driven session in
-                // this repository is handed. What the person attaches is kept outside the tree, for this
-                // conversation alone, and the agent reads it where it lies (CONV4c): a read of exactly that
-                // folder, INT4j's rule — every other read there would be asked, and every ask is refused (D52).
-                (file, id) =>
-                {
-                    var composed = PermissionRules.Compose(file, known.Workspace, repository);
-                    return composed with { Allow = [.. composed.Allow, PermissionRules.ReadRule(ChatFiles.Folder(home, id))] };
-                },
-                Plugins: true, ConnectorOnPipe: false, Posture: null, ToolsUpFront: false),
+                (file, id) => RulesFor(file, known.Workspace, repository, workTree, ChatFiles.Folder(home, id), across),
+                Plugins: true, ConnectorOnPipe: false, Posture: null, ToolsUpFront: false)
+            {
+                Also = [.. across.Writes.Select(target => target.Path)],
+            },
             onEnded, ct).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// What a conversation's agent in a repository may do (PERM1, D72): the same union a driven session in
+    /// this repository is handed, with what it may reach across (D107). What the person attaches is kept
+    /// outside the tree, for this conversation alone, and the agent reads it where it lies (CONV4c): a read of
+    /// exactly that folder, INT4j's rule — every other read there would be asked, and every ask is refused (D52).
+    /// </summary>
+    internal static RuleLists RulesFor(
+        PermissionFile file, string? workspace, string repository, string tree, string kept, AcrossReach across)
+    {
+        var composed = PermissionRules.Compose(file, workspace, repository);
+        return (composed with { Allow = [.. composed.Allow, PermissionRules.ReadRule(kept)] })
+            .Joined(AcrossRules.Rules(across, [tree, kept]));
     }
 
     /// <summary>
@@ -246,7 +258,7 @@ public sealed class ChatRunner(
             sessionId, message, resolved, selection, config,
             new ChatPlace(
                 HelpRoom.Repository, room,
-                (file, id) => HelpRoom.Rules(file, ChatFiles.Folder(home, id)),
+                (file, id) => HelpRoom.Rules(file, ChatFiles.Folder(home, id), machine.Reads),
                 Plugins: false, ConnectorOnPipe: true, Posture: HelpRoom.Posture, ToolsUpFront: true),
             onEnded, ct).ConfigureAwait(false);
     }
@@ -267,7 +279,11 @@ public sealed class ChatRunner(
     /// </param>
     private sealed record ChatPlace(
         string Name, string Tree, Func<PermissionFile, string, RuleLists> Rules, bool Plugins, bool ConnectorOnPipe,
-        string? Posture, bool ToolsUpFront);
+        string? Posture, bool ToolsUpFront)
+    {
+        /// <summary>The checkouts it may also write into (D107), which its tree guard lets a write reach.</summary>
+        public IReadOnlyList<string> Also { get; init; } = [];
+    }
 
     /// <summary>
     /// A conversation whose record is open: its process spawned with its rules and servers, its door's
@@ -317,7 +333,7 @@ public sealed class ChatRunner(
                 var file = PermissionRules.Load(home);
                 rules = SpawnSettings.Write(
                     home, sessionId, place.Rules(file, sessionId),
-                    PermissionRules.GuardsTree(file) ? TreeGuard.For(home, workTree) : null);
+                    PermissionRules.GuardsTree(file) ? TreeGuard.For(home, workTree, place.Also) : null);
                 if (rules is not null && resolved.Wire == SessionWire.Pipe) resolved.HandSettings(info, rules);
                 else if (rules is not null) meta = resolved.AcpSessionMeta(rules);
             }
