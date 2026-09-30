@@ -56,9 +56,11 @@ public static class RemoteSyncPayloads
     /// wire, which is the only place the guarantee can be broken.
     /// </param>
     /// <param name="Uses">What it says it depends on (D91), carried with the rest of the declaration.</param>
+    /// <param name="Lanes">The lanes it declares (D115 §2.2), as their words; none when the registry answered none.</param>
     public sealed record JoinedRepository(
         string Repository, string? Summary, IReadOnlyList<string> Owns, IReadOnlyList<string> Accepts,
-        IReadOnlyList<string> Packs, bool SharesKnowledge, string Root, IReadOnlyList<string>? Uses = null);
+        IReadOnlyList<string> Packs, bool SharesKnowledge, string Root, IReadOnlyList<string>? Uses = null,
+        IReadOnlyList<LaneView>? Lanes = null);
 
     /// <summary>Every repository a registry answer names — joined or not, adopted or not.</summary>
     public static IReadOnlySet<string> Names(string registryJson)
@@ -117,7 +119,8 @@ public static class RemoteSyncPayloads
                 Strings(repo, "packs"),
                 repo.TryGetProperty("sharesKnowledge", out var s) && s.ValueKind == JsonValueKind.True,
                 root,
-                Strings(repo, "uses")));
+                Strings(repo, "uses"),
+                Lanes(repo)));
         }
 
         return joined;
@@ -157,6 +160,7 @@ public static class RemoteSyncPayloads
         writer.WriteEndObject();
         writer.WriteBoolean("join", true);
         writer.WriteBoolean("shareKnowledge", repo.SharesKnowledge);
+        WriteLanes(writer, repo.Lanes ?? []);
         writer.WriteEndObject();
     });
 
@@ -481,7 +485,37 @@ public static class RemoteSyncPayloads
         string.Join("\u001e", Strings(repo, "packs")),
         repo.TryGetProperty("joined", out var j) && j.ValueKind == JsonValueKind.True,
         repo.TryGetProperty("sharesKnowledge", out var s) && s.ValueKind == JsonValueKind.True,
-        string.Join("\u001e", Strings(repo, "uses")));
+        string.Join("\u001e", Strings(repo, "uses")),
+        string.Join("\u001e", Lanes(repo).Select(lane => $"{lane.Id}\u001d{lane.Title}\u001d{lane.Summary}\u001d{lane.Steward}")));
+
+    /// <summary>A row's lanes (D115 §2.2), as a registry answers them: each lane's words, in order.</summary>
+    private static IReadOnlyList<LaneView> Lanes(JsonElement repo) =>
+        Items(repo, "lanes")
+            .Where(lane => Text(lane, "id") is { Length: > 0 })
+            .Select(lane => new LaneView(
+                Text(lane, "id")!, Text(lane, "title") ?? "", Text(lane, "summary") ?? "",
+                lane.TryGetProperty("steward", out var steward) && steward.ValueKind == JsonValueKind.True))
+            .ToList();
+
+    /// <summary>
+    /// A repository's lanes (D115 §2.2), written ALWAYS, `[]` for none: the deployment keeps a row's
+    /// lanes when a registration says nothing of them, so silence here could never take one away.
+    /// </summary>
+    private static void WriteLanes(Utf8JsonWriter writer, IReadOnlyList<LaneView> lanes)
+    {
+        writer.WriteStartArray("lanes");
+        foreach (var lane in lanes)
+        {
+            writer.WriteStartObject();
+            writer.WriteString("id", lane.Id);
+            writer.WriteString("title", lane.Title);
+            writer.WriteString("summary", lane.Summary);
+            writer.WriteBoolean("steward", lane.Steward);
+            writer.WriteEndObject();
+        }
+
+        writer.WriteEndArray();
+    }
 
     /// <summary>
     /// What a repository says it uses (D91), written only when it says something: a declaration of none
@@ -517,6 +551,7 @@ public static class RemoteSyncPayloads
         writer.WriteBoolean("shareKnowledge",
             repo.TryGetProperty("sharesKnowledge", out var s) && s.ValueKind == JsonValueKind.True);
         writer.WriteString("workspace", RemoteTarget.Workspace(workspace));
+        WriteLanes(writer, Lanes(repo));
         writer.WriteEndObject();
     });
 

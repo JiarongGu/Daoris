@@ -136,6 +136,60 @@ public sealed class RemoteSyncTests
     }
 
     /// <summary>
+    /// D115 §2.2 (DEV4): a joined repository's lanes travel with its declaration as their words, and
+    /// always as a list. The deployment keeps a row's lanes when a registration says nothing of them,
+    /// so only an explicit empty list takes away lanes the repository stopped declaring.
+    /// </summary>
+    [Fact]
+    public void A_registration_payload_carries_the_lanes_words_and_an_empty_list_when_there_are_none()
+    {
+        const string registry = """
+            [{ "repository": "Shared", "summary": "Shares.", "owns": [], "accepts": [], "packs": [],
+               "root": "C:/somewhere/private/Shared", "joined": true, "sharesKnowledge": false, "workspace": "default",
+               "lanes": [{ "id": "core", "title": "Core", "summary": "The runtime.", "steward": false },
+                         { "id": "records", "title": "Records", "summary": "", "steward": true }] }]
+            """;
+
+        var repo = Assert.Single(RemoteSyncPayloads.Joined(registry, RemoteTarget.DefaultWorkspace));
+        using (var said = JsonDocument.Parse(RemoteSyncPayloads.Registration(repo)))
+        {
+            var lanes = said.RootElement.GetProperty("lanes");
+            Assert.Equal(["core", "records"], lanes.EnumerateArray().Select(lane => lane.GetProperty("id").GetString()));
+            Assert.Equal("The runtime.", lanes[0].GetProperty("summary").GetString());
+            Assert.True(lanes[1].GetProperty("steward").GetBoolean());
+        }
+
+        using var none = JsonDocument.Parse(RemoteSyncPayloads.Registration(
+            new RemoteSyncPayloads.JoinedRepository("game", "the game", [], [], [], false, "/somewhere")));
+        Assert.Equal(0, none.RootElement.GetProperty("lanes").GetArrayLength());
+    }
+
+    /// <summary>A teammate's lanes come down with their row, and a change to them alone re-files it.</summary>
+    [Fact]
+    public void A_teammates_lanes_come_down_with_their_row_and_a_change_to_them_rewrites_it()
+    {
+        const string local = """
+            [{ "repository": "Teammate", "summary": "Same.", "owns": [], "accepts": [], "packs": [], "joined": true,
+               "sharesKnowledge": false, "workspace": "default", "lanes": [{ "id": "core", "title": "Core", "summary": "", "steward": false }] }]
+            """;
+        const string same = """
+            [{ "repository": "Teammate", "summary": "Same.", "owns": [], "accepts": [], "packs": [], "joined": true,
+               "sharesKnowledge": false, "lanes": [{ "id": "core", "title": "Core", "summary": "", "steward": false }] }]
+            """;
+        const string grown = """
+            [{ "repository": "Teammate", "summary": "Same.", "owns": [], "accepts": [], "packs": [], "joined": true,
+               "sharesKnowledge": false, "lanes": [{ "id": "core", "title": "Core", "summary": "", "steward": false },
+                                                   { "id": "assets", "title": "Assets", "summary": "", "steward": false }] }]
+            """;
+
+        Assert.Empty(RemoteSyncPayloads.Mirror(same, local, "default", retiredHere: []).Write);
+
+        var (_, json) = Assert.Single(RemoteSyncPayloads.Mirror(grown, local, "default", retiredHere: []).Write);
+        using var copy = JsonDocument.Parse(json);
+        Assert.Equal(["core", "assets"], copy.RootElement.GetProperty("lanes").EnumerateArray().Select(lane => lane.GetProperty("id").GetString()));
+    }
+
+    /// <summary>
     /// A quest pass, as a person hears it (D69): each move of this machine's that lost, each quest the
     /// remote would not keep — in its own words — and a circle still moving after every round.
     /// </summary>

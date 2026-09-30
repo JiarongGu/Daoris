@@ -309,7 +309,7 @@ static void Print(TickReport report, bool quietWhenIdle = false)
     foreach (var consideration in report.Considerations)
     {
         var verdict = consideration.Verdict == StartVerdict.Start ? "start" : "sitting";
-        Console.WriteLine($"  {verdict,-8} #{consideration.Quest.Id} → {consideration.Quest.To} — {consideration.Reason}");
+        Console.WriteLine($"  {verdict,-8} #{consideration.Quest.Id} → {consideration.Quest.Address} — {consideration.Reason}");
     }
 
     foreach (var line in report.Events)
