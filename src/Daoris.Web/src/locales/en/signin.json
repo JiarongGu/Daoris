@@ -15,6 +15,6 @@
   "signin.codePlaceholder": "code from the page",
   "signin.continue": "Continue",
   "signin.sent": "Code sent — the tool is finishing.",
-  "signin.ready": "The account is ready when the row reads logged in.",
+  "signin.ready": "The account is ready when the row reads signed in.",
   "signin.output": "The tool's own output"
 }

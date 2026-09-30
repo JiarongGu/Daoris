@@ -10,5 +10,5 @@
   "work.awaiting.carryOn": "Answer and carry on…",
   "work.awaiting.answerPlaceholder": "your answer — the session that carries the quest on is handed these words",
   "work.awaiting.answerConfirm": "Carry on with this answer",
-  "work.awaiting.answered": "Answered — its quest is carried on in the same tree at the next tick."
+  "work.awaiting.answered": "Answered — its quest is carried on in the same tree at the driver's next look."
 }

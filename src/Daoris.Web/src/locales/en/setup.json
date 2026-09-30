@@ -28,7 +28,7 @@
   "setup.door.permissions": "Open Permissions",
   "setup.copy": "copy {{command}}",
   "setup.copied": "copied",
-  "setup.desktop": "An agent, Daoris's own agent, what is driven, how work lands and what agents may do are this machine's own: the desktop's Get started shows them.",
+  "setup.desktop": "An agent, Ask Daoris's agent, what is driven, how work lands and what agents may do are this machine's own: the desktop's Setup shows them.",
   "setup.askNeedsAgent": "Ask Daoris can walk you through these once it has an agent to run on: step 2.",
   "setup.ask.button": "Set up with Ask Daoris",
   "setup.ask.message": "Walk me through setting up Daoris on this machine, one step at a time. Not done yet: {{steps}}.",

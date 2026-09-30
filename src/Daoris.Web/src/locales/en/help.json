@@ -4,7 +4,7 @@
   "help.quick.title": "Quick Ask",
   "help.quick.expand": "Open in the side bar",
   "help.quick.close": "Close Quick Ask",
-  "help.intro": "What this machine lacks, each with the screen that fixes it and the command that does the same. Name an agent under Daoris's own AI to talk with Ask Daoris as well.",
+  "help.intro": "What this machine lacks, each with the screen that fixes it and the command that does the same. Name an agent under AI features to talk with Ask Daoris as well.",
   "help.introAgent": "Ask below about Daoris on this machine: a screen, a refusal, how to drive a repository or start a task. Ask Daoris runs on {{agent}} and changes nothing itself. What this machine lacks comes first, each with the screen that fixes it and the command that does the same.",
   "help.new": "New conversation",
   "help.resize": "resize Ask Daoris",

@@ -265,7 +265,7 @@ describe('the Work frame', () => {
     expect(screen.getByRole('tablist', { name: 'right side bar' })).toBeInTheDocument();
     expect(screen.getByRole('region', { name: 'the panel' })).toBeInTheDocument();
     // No rail, and not the session's own centre either.
-    expect(screen.queryByRole('separator', { name: 'rail width' })).toBeNull();
+    expect(screen.queryByRole('separator', { name: 'session list width' })).toBeNull();
     expect(screen.queryByRole('button', { name: 'Hide the session list' })).toBeNull();
     expect(screen.queryByRole('heading', { level: 2, name: 'Expose a streaming budget' })).toBeNull();
     // The attended session's timeline is still a tab away, as VS Code's panel is whatever the editor shows.
@@ -2188,12 +2188,12 @@ describe('the frame\'s geometry (FRAME6)', () => {
 
   it('resizes the rail from the keyboard within its bounds, and remembers the width', async () => {
     show('s1a2b3c4');
-    const edge = await screen.findByRole('separator', { name: 'rail width' });
+    const edge = await screen.findByRole('separator', { name: 'session list width' });
     expect(edge).toHaveAttribute('aria-valuenow', '280');
 
     edge.focus();
     await userEvent.keyboard('{ArrowRight}');
-    expect(screen.getByRole('separator', { name: 'rail width' })).toHaveAttribute('aria-valuenow', '304');
+    expect(screen.getByRole('separator', { name: 'session list width' })).toHaveAttribute('aria-valuenow', '304');
     expect(window.localStorage.getItem('daoris.railWidth')).toBe('304');
   });
 
@@ -2201,27 +2201,27 @@ describe('the frame\'s geometry (FRAME6)', () => {
     const { onSelect } = show('s1a2b3c4');
     await userEvent.click(await screen.findByRole('button', { name: 'Hide the session list' }));
 
-    expect(screen.queryByRole('separator', { name: 'rail width' })).toBeNull();
+    expect(screen.queryByRole('separator', { name: 'session list width' })).toBeNull();
     await userEvent.click(await screen.findByRole('button', { name: 'Chat · engine · working' }));
     expect(onSelect).toHaveBeenCalledWith('c0ffee11');
 
     // A wider window is not the person asking for it back.
     widen(2400);
-    expect(screen.queryByRole('separator', { name: 'rail width' })).toBeNull();
+    expect(screen.queryByRole('separator', { name: 'session list width' })).toBeNull();
     expect(window.localStorage.getItem('daoris.railClosed')).toBe('1');
 
     await userEvent.click(screen.getByRole('button', { name: 'Show the session list' }));
-    expect(await screen.findByRole('separator', { name: 'rail width' })).toBeInTheDocument();
+    expect(await screen.findByRole('separator', { name: 'session list width' })).toBeInTheDocument();
   });
 
   it('draws the rail as a strip in a narrow window, and gives it back when the window widens', async () => {
     widen(1000);
     show('s1a2b3c4');
     expect(await screen.findByRole('button', { name: 'Chat · engine · working' })).toBeInTheDocument();
-    expect(screen.queryByRole('separator', { name: 'rail width' })).toBeNull();
+    expect(screen.queryByRole('separator', { name: 'session list width' })).toBeNull();
 
     widen(1600);
-    expect(await screen.findByRole('separator', { name: 'rail width' })).toBeInTheDocument();
+    expect(await screen.findByRole('separator', { name: 'session list width' })).toBeInTheDocument();
   });
 
   /**

@@ -76,7 +76,7 @@ describe('SettingsView in a browser', () => {
     expect(within(steps).getAllByRole('listitem').map((item) => item.getAttribute('aria-label')))
       .toEqual(['3. A workspace and its repositories']);
     expect(within(steps).getByText('done')).toBeTruthy();
-    expect(screen.getByText(/the desktop's Get started shows them/)).toBeTruthy();
+    expect(screen.getByText(/the desktop's Setup shows them/)).toBeTruthy();
     expect(screen.queryByRole('checkbox', { name: "Don't open at start" })).toBeNull();
   });
 });

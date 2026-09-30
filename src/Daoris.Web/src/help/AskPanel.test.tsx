@@ -19,7 +19,7 @@ describe('Ask Daoris', () => {
     expect(within(panel).getByText('1 session is waiting on you.')).toBeInTheDocument();
     expect(within(panel).getByText(/No repository is driven on this machine/)).toBeInTheDocument();
     expect(within(panel).getByText('daoris driver drive <repository>', { selector: 'code' })).toBeInTheDocument();
-    expect(within(panel).getByText(/Name an agent under Daoris's own AI/)).toBeInTheDocument();
+    expect(within(panel).getByText(/Name an agent under AI features/)).toBeInTheDocument();
   });
 
   it('goes to the screen that fixes a starter, and closes', async () => {

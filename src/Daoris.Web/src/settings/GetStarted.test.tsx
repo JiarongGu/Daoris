@@ -130,7 +130,7 @@ describe('Get started', () => {
     expect(within(items[0]!).getByText('to do')).toBeInTheDocument();
     expect(within(items[0]!).queryByRole('button', { name: /Add repository/ })).toBeNull();
     expect(within(items[0]!).getByText('daoris connect')).toBeInTheDocument();
-    expect(screen.getByText(/the desktop's Get started shows them/)).toBeInTheDocument();
+    expect(screen.getByText(/the desktop's Setup shows them/)).toBeInTheDocument();
     expect(screen.queryByRole('checkbox')).toBeNull();
     expect(screen.queryByRole('button', { name: 'Set up with Ask Daoris' })).toBeNull();
     expect(screen.queryByText(/required steps done/)).toBeNull();

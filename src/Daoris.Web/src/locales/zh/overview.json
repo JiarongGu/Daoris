@@ -20,13 +20,13 @@
   "overview.outstanding.sitting": "搁置 — {{reason}}",
   "overview.outstanding.sittingTip": "本机驱动上次查看时为何没有启动它——以它自己的话说。",
   "overview.outstanding.emptyHeadline": "无事搁置",
-  "overview.outstanding.emptyBody": "家族眼下两不相欠。一个项目需要同族项目做什么时，就在这里提出。",
+  "overview.outstanding.emptyBody": "家族眼下两不相欠。一个仓库需要同族仓库做什么时，就在这里提出。",
   "overview.repositories.title": "按索引大小排列的仓库",
   "overview.repositories.button": "仓库",
   "overview.repositories.local": "本地 {{count}}",
-  "overview.repositories.more": "另有 {{count}} 个，在“项目”中",
+  "overview.repositories.more": "另有 {{count}} 个，在「仓库」中",
   "overview.repositories.emptyHeadline": "索引里还什么都没有",
-  "overview.repositories.emptyBody": "已登记仓库的知识，会在下次重建索引后出现在这里。",
-  "overview.repositories.adoptedDot": "已加入——带着自己的声明与规范",
-  "overview.repositories.hint": "● 已加入——带着自己的声明与规范。其余仓库尚未加入，其中已在本机登记且有根目录的，仍可接受委托。“本地”是仓库自己的材料——没有这份索引，任何同族项目都触及不到的那一部分。"
+  "overview.repositories.emptyBody": "已注册仓库的知识，会在下次刷新索引后出现在这里。",
+  "overview.repositories.adoptedDot": "已采用——带着自己的声明与规范",
+  "overview.repositories.hint": "● 已采用——带着自己的声明与规范。其余仓库尚未采用，其中已在本机注册且有根目录的，仍可接受委托。「本地」是仓库自己的材料——没有这份索引，任何同族仓库都触及不到的那一部分。"
 }

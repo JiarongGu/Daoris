@@ -13,5 +13,5 @@
   "chain.noSession": "尚无会话",
   "chain.closedUnrun": "未经会话即关闭",
   "chain.pending": "尚未发布",
-  "chain.pendingHint": "每一步在上一步完成关闭时发布，以同一委托方的名义；被拒绝则链条就此停止。"
+  "chain.pendingHint": "每一步在上一步完成关闭时发布，以同一委托方的名义；被谢绝则链条就此停止。"
 }

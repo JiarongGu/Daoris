@@ -3,7 +3,7 @@
   "settings.domains": "Settings domains",
   "settings.workspaces.title": "{{count}} workspace",
   "settings.workspaces.title_other": "{{count}} workspaces",
-  "settings.workspaces.none": "A workspace exists once a repository is registered in it. Projects says how one joins.",
+  "settings.workspaces.none": "A workspace exists once a repository is registered in it. Repositories says how one joins.",
   "settings.workspaces.repositories": "{{count}} repository",
   "settings.workspaces.repositories_other": "{{count}} repositories",
   "settings.workspaces.inView": "in view",
@@ -25,11 +25,11 @@
   "settings.notify.terminal": "Also `daoris driver notify on|off` — one file, either door; a machine with no screen says it on its console.",
   "settings.notify.on": "This machine will tell you when a session needs you.",
   "settings.notify.off": "This machine will not interrupt you. The records still say everything they said.",
-  "settings.strikes.body": "A session that fails leaves its quest open and untouched, so the next tick considers it again — which is right when the failure was a passing one, and expensive when it was not. Measured: one quest whose session could not start ran eighteen times, and every run spent an account.",
+  "settings.strikes.body": "A session that fails leaves its quest open and untouched, so the driver's next look considers it again — which is right when the failure was a passing one, and expensive when it was not. Measured: one quest whose session could not start ran eighteen times, and every run spent an account.",
   "settings.strikes.label": "Failures before a quest parks",
   "settings.strikes.set": "A quest is parked after {{count}} failed session, and waits for you.",
   "settings.strikes.set_other": "A quest is parked after {{count}} failed sessions, and waits for you.",
   "settings.strikes.never": "This machine never parks a quest.",
-  "settings.strikes.zero": "Zero means it keeps trying. A quest that fails for a reason no retry can fix will be started again every tick, and every start spends a real login.",
+  "settings.strikes.zero": "Zero means it keeps trying. A quest that fails for a reason no retry can fix will be started again on every look the driver takes, and every start spends a real account.",
   "settings.strikes.terminal": "Also `daoris driver strikes <n>`; `daoris driver retry <quest>` starts a parked one again. Stand-downs, declines, stops and held repositories never count."
 }

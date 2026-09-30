@@ -11,7 +11,7 @@
   "work.rail.search.searching": "searching what was said…",
   "work.rail.search.none": "nothing matches “{{query}}”.",
   "work.rail.search.cut": "More matched than is shown here — add a word to narrow it.",
-  "work.rail.resize": "rail width",
+  "work.rail.resize": "session list width",
   "work.rail.close": "Hide the session list",
   "work.rail.open": "Show the session list",
   "work.rail.on": "on {{origin}}",

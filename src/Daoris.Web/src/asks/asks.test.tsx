@@ -79,7 +79,7 @@ describe('AskRecord', () => {
   /** The sentence the tier writes about itself is what a person reads: which tier answered, never implied. */
   it('says which tier answered, in the words for it, beside the ask\'s own words whole', () => {
     const { drawer } = record(PROPOSED);
-    expect(within(drawer).getByText('by declarations only; no intake harness ran')).toBeInTheDocument();
+    expect(within(drawer).getByText('by declarations only; no intake agent ran')).toBeInTheDocument();
     // The first line is the title, and the rest follows it — each once (POLISH4).
     expect(within(drawer).getAllByText(/The chunk streamer stalls on a cold cache/)).toHaveLength(1);
     expect(within(drawer).getByText(/Seen on the test rig after a fresh install/)).toBeInTheDocument();
@@ -230,7 +230,7 @@ describe('AskRecord', () => {
    */
   it('never says no intake ran above the intake that did', () => {
     const { drawer } = record(INTAKE_ASKED, { intake: INTAKE_PARKED });
-    expect(within(drawer).queryByText('by declarations only; no intake harness ran')).toBeNull();
+    expect(within(drawer).queryByText('by declarations only; no intake agent ran')).toBeNull();
     expect(within(drawer).getByText('by declarations; an intake read it and has not published')).toBeInTheDocument();
   });
 

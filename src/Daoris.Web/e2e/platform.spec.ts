@@ -44,7 +44,7 @@ test('a quest carries a link and files: kept here, opened here, never run as the
   await page.goto('/');
   await nav(page, 'Quests').click();
   await page.getByRole('button', { name: 'New quest' }).click();
-  await page.getByLabel('from', { exact: true }).click();
+  await page.getByLabel('From', { exact: true }).click();
   await page.getByRole('option', { name: 'game' }).click();
   await page.getByLabel('to', { exact: true }).click();
   await page.getByRole('option', { name: 'engine' }).click();
@@ -87,7 +87,7 @@ test('a quest carries a link and files: kept here, opened here, never run as the
   expect(served.headers()['content-disposition']).toContain('attachment');
 
   // Leave the family as it was found: the suite is serial, and the next test expects nothing open.
-  await dialog.getByRole('button', { name: 'done', exact: true }).click();
+  await dialog.getByRole('button', { name: 'Mark done', exact: true }).click();
   await expect(page.getByText(/is now Done/).first()).toBeVisible();
 });
 
@@ -110,7 +110,7 @@ test('a chain moves on when its quest closes done', async ({ page, request }) =>
   await page.getByText('Develop the streaming cap').first().click();
   const dialog = page.getByRole('dialog');
   await expect(dialog.getByText(/Verify \{parent\} in a playtest/)).toBeVisible();
-  await dialog.getByRole('button', { name: 'done', exact: true }).click();
+  await dialog.getByRole('button', { name: 'Mark done', exact: true }).click();
   await expect(page.getByText(/Then: published #[0-9a-f]{12} to engine/).first()).toBeVisible();
 
   // The step is an ordinary open quest, named with the id of the one it follows.
@@ -128,7 +128,7 @@ test('a chain moves on when its quest closes done', async ({ page, request }) =>
   await chain().getByRole('button', { name: `Verify #${parent} in a playtest` }).click();
 
   // Leave the family as it was found: the suite is serial, and a later test expects nothing open.
-  await page.getByRole('dialog').getByRole('button', { name: 'done', exact: true }).click();
+  await page.getByRole('dialog').getByRole('button', { name: 'Mark done', exact: true }).click();
   await expect(page.getByText(/is now Done/).first()).toBeVisible();
 });
 
@@ -177,7 +177,7 @@ test('a quest travels: composed, published, taken, finished', async ({ page }) =
   await nav(page, 'Quests').click();
   await page.getByRole('button', { name: 'New quest' }).click();
 
-  await page.getByLabel('from', { exact: true }).click();
+  await page.getByLabel('From', { exact: true }).click();
   await page.getByRole('option', { name: 'game' }).click();
   await page.getByLabel('to', { exact: true }).click();
   await page.getByRole('option', { name: 'engine' }).click();
@@ -193,11 +193,11 @@ test('a quest travels: composed, published, taken, finished', async ({ page }) =
 
   // It sits in Open; its card is a door to the detail drawer, where the acting happens.
   await page.getByText('Expose a streaming budget on the chunk API').first().click();
-  await page.getByRole('button', { name: 'take', exact: true }).click();
+  await page.getByRole('button', { name: 'Take', exact: true }).click();
   await expect(page.getByText(/is now Taken/).first()).toBeVisible();
 
   await page.getByText('Expose a streaming budget on the chunk API').first().click();
-  await page.getByRole('button', { name: 'done', exact: true }).click();
+  await page.getByRole('button', { name: 'Mark done', exact: true }).click();
   await expect(page.getByText(/is now Done/).first()).toBeVisible();
 
   // Closed work leaves the default list and returns on request.
@@ -212,7 +212,7 @@ test('a refusal reaches the person verbatim', async ({ page }) => {
   await page.getByRole('button', { name: 'New quest' }).click();
 
   // Self-addressed: the one refusal the form cannot prevent, because the judgement is the service's.
-  await page.getByLabel('from', { exact: true }).click();
+  await page.getByLabel('From', { exact: true }).click();
   await page.getByRole('option', { name: 'engine' }).click();
   await page.getByLabel('to', { exact: true }).click();
   await page.getByRole('option', { name: 'engine' }).click();
@@ -250,7 +250,7 @@ test('an ask is proposed by declarations, published by a person, and closed with
   await composer.getByLabel('choose files…').setInputFiles([
     { name: 'trace.log', mimeType: 'text/plain', buffer: Buffer.from('frame 212: hydrate stalls 38ms\n') },
   ]);
-  await composer.getByRole('button', { name: 'ask', exact: true }).click();
+  await composer.getByRole('button', { name: 'Ask', exact: true }).click();
 
   // The service's sentence, verbatim: which tier answered, what it proposed, and that nothing went out.
   await expect(page.getByText(/Asked as #[0-9a-f]{6} in default — by declarations only; no intake harness ran — proposed, best first: engine/).first()).toBeVisible();
@@ -259,7 +259,7 @@ test('an ask is proposed by declarations, published by a person, and closed with
   // (The quest it becomes takes the same words for its title, so each drawer is told apart by what it holds.)
   const record = page.getByRole('dialog', { name: sentence });
   await expect(record.getByRole('region', { name: 'Where it belongs' })).toBeVisible();
-  await expect(record.getByText('by declarations only; no intake harness ran')).toBeVisible();
+  await expect(record.getByText('by declarations only; no intake agent ran')).toBeVisible();
   await expect(record.getByText('trace.log')).toBeVisible();
   await expect(record).not.toContainText('_fixtures');
 
@@ -277,7 +277,7 @@ test('an ask is proposed by declarations, published by a person, and closed with
 
   // Its only quest done, the ask's work is finished (USE1c): it is DONE, and leaves the list by itself,
   // as a closed ask and a closed quest do. Nobody has to close it, and the family is left as found.
-  await quest.getByRole('button', { name: 'done', exact: true }).click();
+  await quest.getByRole('button', { name: 'Mark done', exact: true }).click();
   await expect(page.getByText(/is now Done/).first()).toBeVisible();
   await expect(page.getByText(/^Asks \(/)).toHaveCount(0);
 
@@ -378,7 +378,7 @@ test('a project created mid-run joins, and the platform shows it (D44)', async (
 
   await nav(page, 'Quests').click();
   await page.getByRole('button', { name: 'New quest' }).click();
-  await page.getByLabel('from', { exact: true }).click();
+  await page.getByLabel('From', { exact: true }).click();
   await page.getByRole('option', { name: 'game' }).click();
   await page.getByLabel('to', { exact: true }).click();
   await page.getByRole('option', { name: 'newcomer' }).click();
@@ -408,7 +408,7 @@ test('the console scopes by workspace once the family holds two (WSP5)', async (
 
   await page.goto('/');
   const scope = page.getByRole('combobox', { name: 'workspace' });
-  await expect(scope).toHaveText(/every workspace · 2/);
+  await expect(scope).toHaveText(/Every workspace · 2/);
   await expect(page.getByText('of 3 in the family')).toBeVisible();
 
   await scope.click();
@@ -424,7 +424,7 @@ test('the console scopes by workspace once the family holds two (WSP5)', async (
   await expect(page.getByRole('combobox', { name: 'workspace' })).toHaveText('studio');
 
   await page.getByRole('combobox', { name: 'workspace' }).click();
-  await page.getByRole('option', { name: /every workspace/ }).click();
+  await page.getByRole('option', { name: /Every workspace/ }).click();
   await nav(page, 'Repositories').click();
   await expect(page.getByText('the engine runtime — simulation, rendering, assets')).toBeVisible();
 

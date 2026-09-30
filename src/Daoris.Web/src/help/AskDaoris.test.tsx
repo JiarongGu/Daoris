@@ -562,7 +562,7 @@ describe('Ask Daoris, with no agent named', () => {
     bridge();
     show();
 
-    expect(await screen.findByText(/Name an agent under Daoris's own AI/)).toBeInTheDocument();
+    expect(await screen.findByText(/Name an agent under AI features/)).toBeInTheDocument();
     expect(screen.queryByLabelText('Message')).toBeNull();
     await act(async () => {});
     expect(starts()).toBe(0);

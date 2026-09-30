@@ -149,7 +149,7 @@ export const Empty: StoryObj = {
     <EmptyState
       icon="inbox"
       headline="No open quests anywhere"
-      body="The family owes itself nothing right now. When a project needs something from a sibling, it is asked for here — never edited across."
+      body="The family owes itself nothing right now. When a repository needs something from a sibling, it is asked for here — never edited across."
       action={<Button>ask for something</Button>}
     />
   ),

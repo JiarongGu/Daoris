@@ -1,6 +1,6 @@
 {
   "plugin.folder": "插件文件夹",
-  "plugin.body": "插件就是这里的一个带 plugin.json 的文件夹：它声明会话可运行于其上的工具，也可以「说话」——驱动在启动前会询问、结束后会告知的一个独立进程。插件的代码从不在 Daoris 内部运行。",
+  "plugin.body": "插件就是这里的一个带 plugin.json 的文件夹：它声明会话可运行于其上的智能体，也可以「说话」——驱动在启动前会询问、结束后会告知的一个独立进程。插件的代码从不在 Daoris 内部运行。",
   "plugin.none": "没有插件——用 `daoris plugin add <folder>` 拷入一个文件夹。",
   "plugin.declares": "声明 {{harnesses}}",
   "plugin.speaks": "监听 {{points}}",
