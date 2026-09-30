@@ -8713,3 +8713,27 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > gone branches are never pruned.
 
 **Outcome** (built by a subagent, merged with `tools/merge-branch.mjs`, every gate; no decision): LEFT3 closed the leftovers of HELP10, LEFT2, WSR7 and REVIEW2, one commit each; no decision was taken, and notes went under D94, D110, D112 and D113. A landing and a hand-off now wait as long as their plugin may (`pluginBound`). Ask Daoris's sync card says on the card, as the screen does, which lines it could not fetch and which repositories it left out; the look keeps both in the proposal file. A sync card's look no longer writes `proposal.settled`: its answer says the card still stands. HELP10's guard, that an applied default names no agent action, now has a fast test that fails without it. `daoris agent profile default <agent> --clear [--workspace <name>]` gives the screen's clear its terminal door (D50), as a twin of `profile-default` held by a table on each side; Ask Daoris proposing a clear is recorded as owed in `HelpCoverageTests`, and the room names the command. The usage report counts `preview.opened` by session and file extension. `landings.json` keeps each repository's newest 50 traces. A merge's own landing record was decided against, because its branch is the line and every reader of the record acts on recorded branches (the clean-up deletes, bringing up to date moves, the hand-off pushes).
+
+
+## DEV1 — Daoris develops Daoris through Daoris: the design (2026-10-01)
+
+> - [ ] **DEV1 — Daoris develops Daoris through Daoris.** (The design, building: D115.) The module and domain refactor is done (MOD1–MOD9:
+> registries, lanes in `tools/lanes.json`, a `Process` test category, `tools/merge-branch.mjs`, the
+> `dispatch-subagent` skill). But the cycle it enables is run by an assistant session acting as the
+> parent, not by Daoris's own driver. The family's model is one session per repository, and Daoris is one
+> repository with seven lanes, the shape a large adopter will have too. Design, as a contract document
+> with its decision:
+> - **lanes as domains within a repository**: declared by the repository, addressable by a quest, each
+> with the files it owns;
+> - **concurrent sessions in one repository**, one per lane in its own tree, and the load cap that keeps
+> real-process tests honest (FLAKE1);
+> - **a merge queue as Daoris's own landing**: each branch gated by the repository's declared gates,
+> serially, with the flake rule; the merge tool's steps as the driver's;
+> - **who keeps the records**: the backlog, the archive, decision numbers reserved at dispatch (D106), and
+> which session plays the parent that dispatches and merges;
+> - **where the person stands**: the target set, the final diff and the look on the window verified
+> (D37), and everything irreversible still theirs.
+> Then the phased build, Daoris's own development its first user, and any adopter with lanes the second.
+> The contract starts from `docs/2026-09-30-parallel-development-design.md`.
+
+**Outcome** (designed by a subagent, merged with `tools/merge-branch.mjs`, every gate; **D115**): Designed (D115, `docs/2026-10-01-self-development-design.md`): Daoris's own development runs through Daoris's driver, as a family feature an adopter with lanes also gets. **Lanes:** a repository declares its lanes in `daoris.lanes.json`, which replaces `tools/lanes.json`; a quest addresses one as `repository:lane`. **Side by side:** sessions run beside each other once a session outlives its tick (today a tick waits for every session it started, up to 30 minutes); work in flight holds its lanes; `laneCap` defaults to 3 with the queue counted, and a `quiet` gate starts nothing new while it runs. **The queue:** a third landing form that gates a branch the session readied, serially, in a detached tree of its own outside the trees home (D88's proof would read a queue branch as the person's), and lands it by fast-forwarding the line; failures go back through the answer door (D83) with the log, nothing is ever forced, and done means landed. **The steward:** a steward lane splits work into lane quests, reserves decision numbers and keeps the backlog. **The person** keeps the target, the landed history, the republish, the look, and everything irreversible. **Rejected** (§10): one repository per lane, lanes in `daoris.json`, the lane as part of `to`, permission-rule enforcement, a lock in the ledger, gating in the person's checkout, rebasing, a queue branch, the queue closing quests, the driver writing records. §9 separates what the family rehearsal can prove from what only DEV10's real run can. The driver design's §9 now notes PAR1 (several sessions per repository with trees on). Documents only; `verify` passed, CLI 667/667. The build is DEV2–DEV11, filed as rows.

@@ -5591,6 +5591,20 @@ this build's library in a scratch repository (a probe, not committed), and each 
 twin was not run: it needs a service. **Nothing has looked at the window**: the note in both themes, at the side
 bar's 300px floor, and 中文.
 
+*Amended by LEFT3 (2026-10-01): the traces are bounded. Each repository keeps its newest 50
+(`LandedBranches.TracesKept`), by when each went, dropped at the record's next write; a standing entry is never
+dropped. A count per repository rather than a span: the file grows with landings, not with the clock, and a person
+back after a month away still reviews last month's sessions, while a busy repository cannot push a quiet one's
+traces out. A session whose trace was dropped reads `SESSION_TREE_GONE` once its tree is gone, as one merged does.
+Held by `LandedTracesTests` in the fast half.*
+
+*A merge's own record was considered again (LEFT3) and is still not built, for §5's reason and one found looking:
+a merge's "branch" is the line itself, and every reader of the record treats an entry as a branch Daoris made. The
+clean-up deletes a recorded branch whose work reads on the line (`git branch -D`), bringing up to date replays one
+and counts its repository as holding Daoris's branches (D112), and the hand-off pushes one. A merge entry that
+reached any of them would delete, move or push the person's line. Building it is a change to what a landing record
+is: an entry of its own kind that `All()` never returns, the review reading the merge's own range (its first parent
+up to the merge commit) and the preview reading at that commit rather than at the line's tip, each with its test.*
 ## D115 — Daoris develops Daoris: a repository declares its lanes, a queue lands them, a steward keeps the records (2026-10-01)
 
 **Decision (DEV1, from the owner's *"we should be able to run sub-agents cross darois development … daoris

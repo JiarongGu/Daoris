@@ -132,9 +132,10 @@ rather than designed.
 
 ## Backlog
 
-**Twenty-two rows are open** (triaged 2026-09-30, when the owner asked to go faster; 2026-10-01 after the night's merges, the look, and the owner's round):
-- **Merging next:** DEV1's design (its build rows DEV2–DEV11 file with it).
-- **Next, the owner's round (six):** NAME1 and LAYOUT1 building (their design halves), LOOK1 and LOOK2 building; FRAME1 and PLUGUI1.
+**Thirty-one rows are open** (triaged 2026-09-30, when the owner asked to go faster; 2026-10-01 after the night's merges, the look, and the owner's round):
+- **Merging next:** LAYOUT1's and FRAME1a's designs, NAME1a, LOOK1 and LOOK2. **Building:** NAME1b, LAYOUT2.
+- **Designed, to build in order:** DEV2–DEV11 (D115); FRAME1b–i (D118) after NAME1b; PLUGUI1 after FRAME1c;
+  LAYOUT3–LAYOUT10 (D117) after LAYOUT2's evidence.
 - **Waiting on the owner (six):** BUDGET1 and PLUGREPO1 (their calls), TRUST2 and AGT2c (a grant, two
   downloads), FG5 and BRW3 (the owner present).
 - **Parked on a trigger (nine):** TOOL4, TOOL5, PLUG7, SEM2, CANON9, REH1, D76's held file tree,
@@ -181,7 +182,7 @@ install in both themes and both languages.
   gains glossary conformance and the label budgets, so drift fails a gate. It extends
   `.claude/knowledge/translation-parity.md` (*chrome translates and content does not*) and
   `docs/2026-09-19-platform-ux.md`. The contract is a naming design document, written first.
-- [ ] **FRAME1 — every view gets the frame Sessions has.** Sessions has the full layout: a list that
+- [ ] **FRAME1 — every view gets the frame Sessions has.** (FRAME1a, the audit and the model, building: D118.) Sessions has the full layout: a list that
   collapses and resizes, the main area, the right side bar with its movable views, the panel, the strip's
   toggles, and each remembered. Other views have part of it (DOCK1a put the side bar and panel on every
   view; the rest differs). (a) **An audit**, measured on the window as UX5's was: for each view (Overview,
@@ -201,24 +202,6 @@ install in both themes and both languages.
   - making and trying one (the kit, PLUG8), and asking for one (PLUG9), from the screen.
   Settings keeps only what is a setting. Ask Daoris's plugin kind gains go anchors into the screen. The
   contract is a design document written first, extending `docs/2026-09-23-plugin-design.md`.
-- [ ] **DEV1 — Daoris develops Daoris through Daoris.** (The design, building: D115.) The module and domain refactor is done (MOD1–MOD9:
-  registries, lanes in `tools/lanes.json`, a `Process` test category, `tools/merge-branch.mjs`, the
-  `dispatch-subagent` skill). But the cycle it enables is run by an assistant session acting as the
-  parent, not by Daoris's own driver. The family's model is one session per repository, and Daoris is one
-  repository with seven lanes, the shape a large adopter will have too. Design, as a contract document
-  with its decision:
-  - **lanes as domains within a repository**: declared by the repository, addressable by a quest, each
-    with the files it owns;
-  - **concurrent sessions in one repository**, one per lane in its own tree, and the load cap that keeps
-    real-process tests honest (FLAKE1);
-  - **a merge queue as Daoris's own landing**: each branch gated by the repository's declared gates,
-    serially, with the flake rule; the merge tool's steps as the driver's;
-  - **who keeps the records**: the backlog, the archive, decision numbers reserved at dispatch (D106), and
-    which session plays the parent that dispatches and merges;
-  - **where the person stands**: the target set, the final diff and the look on the window verified
-    (D37), and everything irreversible still theirs.
-  Then the phased build, Daoris's own development its first user, and any adopter with lanes the second.
-  The contract starts from `docs/2026-09-30-parallel-development-design.md`.
 - [ ] **LAYOUT1 — one repository, every agent (the design half building: D117): the `.agents/` layout, here and in every repository Daoris
   manages** (owner, 2026-10-01: *"the agent/claude file/folder we should follow [deepseek-harness] which
   make repo compatible to different agents we should apply this to current repo also find a way to apply
@@ -265,6 +248,33 @@ install in both themes and both languages.
   the page follows only while the viewer's theme choice is *system*. On the install the choice was dark, so
   `--theme light` silently photographed dark (`tools/desktop.mjs`, `theme.ts`'s `effectiveDark`). Set the
   page's own choice for the capture and put it back, or refuse with the reason.
+
+### Daoris develops Daoris (D115) — the build
+
+The contract is `docs/2026-10-01-self-development-design.md`; each row names its sections, which carry the
+detail and the proof. Order: DEV2 ∥ DEV3 ∥ DEV4, then DEV5 → DEV6 → DEV7 (one lane, in sequence), then
+DEV8 ∥ DEV9, then DEV10 and DEV11.
+
+- [ ] **DEV2 — the lanes are the repository's declaration** (§2.1): `tools/lanes.json` becomes
+  `daoris.lanes.json` with ids, summaries and a steward lane `records`; the merge tool and the skill follow.
+- [ ] **DEV3 — sessions outlive their tick** (§3.1): today a tick awaits every session it started, so nothing
+  new starts until the last ends. Changes behaviour for every repository; the family phases must pass unchanged.
+- [ ] **DEV4 — lanes in the registry and on the quest** (§2.2): `repository:lane[+lane]`, a self-addressed quest
+  allowed only when it names a lane; a family check over an example with two lanes.
+- [ ] **DEV5 — the queue lands a branch from outside** (§4.2–§4.8): the `queue` form in a detached tree under
+  the home, gates by declared `kind` with the `quiet` re-run, the fast-forward under TreeLock,
+  `daoris-driver queue …`, `tools/commit-check.mjs`.
+- [ ] **DEV6 — lanes side by side** (§3.2–§3.4): lane locks, oldest-first reservation, `laneCap` (default 3,
+  both doors), `lanes` on the record and in the prompt.
+- [ ] **DEV7 — a driven session readies, and the queue answers it** (§4.1, §4.5, §4.6): `session_ready`, the
+  verdict through the answer door (D83), three failures to the person, done means landed.
+- [ ] **DEV8 — the queue on the window** (§4.9), with Ask Daoris's doors for every new verb (D110).
+- [ ] **DEV9 — the steward** (§5): the split into lane quests, decision numbers, record steps; the dispatch
+  skill rewritten for the steward and the lane session.
+- [ ] **DEV10 — the first user** (the owner present): a real row through steward → lane → queue → record, then
+  one crossing two lanes; the cap and the strikes rule revisited from its evidence.
+- [ ] **DEV11 — the second user, and the tools retire**: a canon knowledge document on lanes, a laned example,
+  then `tools/merge-branch.mjs` retires and the dev loop says *queue*.
 
 ### Plugins Daoris makes (owner, 2026-09-30)
 
