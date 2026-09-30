@@ -1162,6 +1162,10 @@ publish, release, history rewrites, cross-repository writes, and destructive act
 text made the commit itself the checkpoint; that sentence is superseded, and `autonomous-development`,
 `CLAUDE.md`, `TASKS.md` and `ROADMAP.md` now state the boundary form.
 
+*Read with D109 (WSR6, 2026-09-30): Daoris fetches a repository's line from its origin, as the person and by
+their press, to bring it up to date after a pull request merged. A fetch leaves nothing; the push stays
+outside the automated middle, and Daoris never makes one.*
+
 ## D38 — The platform is the web app grown into the person's window; service-state actions arrive in the UI, doctrine actions never do (2026-09-19)
 
 **Decision.** The task / knowledge / setup platform the owner asked for is `Daoris.Web` with two more
@@ -3798,6 +3802,10 @@ Daoris already has for behaviour it does not carry (D64).
 the landing speaks to on `work/land` once the branch exists; the plugin pushes and opens the pull
 request, and a plugin that fails leaves the branch. Daoris itself still never pushes.*
 
+*Amended by D109 (WSR6, 2026-09-30): the rejection of a rebase stands for the landing, which keeps the
+session's commits as they were made. After the line moves, the person's press may replay a session branch
+or a landed branch nobody pushed onto it, only its own commits.*
+
 ## D88 — A session's branch goes once git proves its work is on a branch of the person's (2026-09-28)
 
 **Decision (WSR3, from the owner's *"after merge to master or feature branch we should cleanup daoris
@@ -4536,6 +4544,10 @@ the examples' own tests drive against a bare repository, but no hand-off has run
 The review's button and Ask Daoris's card are held by the page's tests over a mocked bridge, not yet looked
 at on the window.
 
+*Amended by D109 (WSR6, 2026-09-30): a landing now also records its `from`, where the session branch it was
+made from started, and a replay Daoris makes moves the recorded tip with the branch, so it stays judged. A
+branch rebased by anyone else is still never judged.*
+
 ## D103 — An installed plugin remembers where it came from, and the install offers Daoris's own (2026-09-30)
 
 **Decision (PLUG9 c and d).** The owner asked that Daoris make and install plugins easily, "easy access
@@ -5192,3 +5204,118 @@ measured here; the native door carries the tool's input as it was given.
 - **The line an ACP location carries** (`locations[].line`). The driver keeps a location's path and
   drops its line today; carrying it changes the event's shape on both doors, and a read's input already
   says which lines it read.
+## D109 — After a pull request merges, one press brings a repository up to date; Daoris fetches and never pushes (2026-09-30)
+
+**Decision (WSR6).** The owner, after their first real pull request merged: *"we also need a post merge and
+rebase logic pull latest master delete the merged branch and rebase working branches"*. The real case: the
+ticket's branch was squash-merged, so one new commit on the line holds its content and none of its commits,
+and a session still working had grown from that branch's tip. Bringing a repository up to date is three
+steps, **listed first and done by a press**, on both doors, each row judged again right before it acts:
+
+### 1. Pull the line
+
+- **Fetch** the repository's line (D86) from `origin` — `git fetch origin <line>`, nothing else. It runs as
+  the person, with their git credentials and their credential helper, with `GIT_TERMINAL_PROMPT=0` so a prompt
+  nobody can answer fails instead of waiting, and within two minutes, as a plugin's push is (D100). A fetch
+  that fails is named and the rest is judged from what the checkout already knows. **The list fetches**: it
+  moves only origin's own refs, and nothing of the person's.
+- **Fast-forward only.** In the repository's own checkout, `merge --ff-only` while it is clean and on the
+  line, both read immediately before; where nothing has the line checked out, the ref is moved from the
+  commit it was judged at (`update-ref` with the old value). Each of these is left and named: a local line
+  with commits origin lacks (nothing to pull, and Daoris never pushes), one that diverged, a checkout on it
+  with work in flight, and one checked out in another working tree. **Never a merge commit, a force or a push.**
+
+### 2. Replay what still works on it
+
+- **What is replayed:** a session branch whose tree no session running or waiting holds, and a branch a
+  landing made and recorded (D102) whose work is not on the line. Each is replayed onto the new line with
+  `rebase --onto <line> <cut>`: only its own commits.
+- **The cut, for each kind.** A tree's opening now records where its branch started: the commit, the line,
+  and the step before's branch when a chain's step grew from it (CHAIN2). A landing records the start of the
+  session branch it was made from as its `from`. Where that start is on the line, the cut is where the branch
+  leaves the line, a plain rebase. Where it is beyond the line (a chain's step on the step before's tip), the
+  cut is that start, **only once its work reads on the line by WSR5's proof by content**: then the squash-merged
+  parent's commits drop. Until then the branch **waits**, since replaying only its own would lose the work it
+  builds on. A branch with no record (a tree opened before this build) is cut at its newest commit whose work
+  reads on the line, walking its first parents back to where it leaves the line.
+- **Where:** in a tree of Daoris's own, never the person's checkout. A session branch in its own tree, which
+  is detached where it stands; a landing's branch, which nobody may have checked out, in a tree made for it
+  under the trees home and removed after. Every git call says `core.longpaths`. The person's configuration
+  still speaks (identity, signing, hooks), except `rebase.updateRefs` and `rebase.autoStash`, which would reach
+  beyond the one branch judged.
+- **Kept only once proven.** Between the old tip and the new one, only files the line itself changed between
+  the cut and the new line may differ; then the branch moves, from the commit it was judged at. A conflict
+  aborts and names the files, and the branch and its tree are as they were.
+- **What keeps one:** a session still running or waiting; uncommitted work in its tree; checked out in a tree
+  that is not a session's own (a landing's branch anywhere); **on its remote** — a remote-tracking branch of
+  its own name, or a push the record kept — since replaying it would need a force push; and git unable to say.
+- **Shared commits stay shared.** A landing's branch made at a session's tip takes the session's new commit,
+  and a branch inside another is replayed onto the other's new commits, so the clean-up's proofs read them
+  together afterwards as before.
+- **The records follow the move**: the session branch's start becomes the line's commit it was replayed
+  onto, and a landing's branch keeps its record with its new tip and `from`, so it stays the landing's.
+
+### 3. Delete what merged
+
+WSR5's landed half of the clean-up, after the replays: a landed branch a staying session branch leaned on
+goes once that branch was replayed past its commits. Only local branches, never a remote one.
+
+### 4. The doors
+
+`daoris-driver trees sync [--repository <name>] [--yes]`: the list, and with `--yes` the press, exit 1 where
+something the proofs cleared did not happen. Settings → Workspace → Session branches → *Bring up to date*:
+nothing is asked until *Look for updates* (the list, `TREES_SYNC_PLAN`), and the press (`TREES_SYNC`) does
+not fetch again and acts only on the rows the list showed. Ask Daoris's room names both doors.
+
+### 5. What the first real post-merge run added (the parent, by hand, 2026-09-30)
+
+- A tree made outside the trees home without long paths could not check out the repository's deepest files:
+  the replay's tree is under the trees home, and long paths are on every call.
+- `git diff <old tip> <new tip>` was empty after the replay: the proof above, made before anything moves.
+- **A tree folder something held open.** `git worktree remove` lets go of the tree, then fails on its folder
+  and exits non-zero. A removal, the tidy included, now says plainly that the tree and its branch are gone
+  and the empty folder is left, and why; the clean-up deletes every empty folder under the trees home once
+  nothing holds it. Only an empty folder is ever deleted.
+- A rebase by hand leaves the landing's record at a tip the branch no longer holds, so WSR5 treats it as the
+  person's. Daoris's own replay moves the record with it.
+
+This **amends D37's reading**: Daoris now reaches the network for one thing, a fetch, as the person, by
+their press; it still never pushes, and the push stays human or a plugin's (D87, D100). It **amends D87's
+rejection of a rebase**: a landing still keeps the session's commits as they were made; a replay after the
+line moved is the person's press, and never of a branch on its remote. It **amends D102**: a replay Daoris
+made moves a landed branch's recorded tip, so the branch stays judged. D51 rule 7 stands: a replay rewrites a
+branch nobody pushed, by a press, and deletes nothing.
+
+**Why.** The line moves on the platform, and every tree Daoris opens grows from the local line, so a stale
+line grows the next session from before the merge. A squash merge puts none of a branch's commits on the
+line, so a child branch replayed plainly carries its parent's commits back in, where they conflict or land
+twice; only its own commits belong on the new line.
+
+**Rejected.**
+- **`git pull`.** It merges or rebases by the person's configuration, and may make a merge commit in their
+  checkout.
+- **Replaying in the person's checkout**, or switching its branch: the trespass `reaching-in` was written from.
+- **`rebase --update-refs`.** It moves every branch pointing into the range, the person's and pushed ones too.
+- **Git's fork point, or patch equivalence** (`--fork-point`, `git cherry`): the first reads the line's
+  reflog, which expires and knows nothing of a platform's squash; the second matches no squash of several
+  commits (D102's reason).
+- **The session record's base commit as the cut.** A session carried on in the same tree begins where the one
+  before stopped, and a chain step's start on the step before's tip is written nowhere else.
+- **`fetch --prune`.** A remote branch gone says nothing of where its work went (D102), and pruning would move
+  refs the list did not need.
+- **Replaying a pushed branch and leaving the force push to the person.** The branch on the remote and the one
+  here would disagree, which is the trap a force push exists to settle; that is the person's to decide.
+- **Fetching when the screen opens.** Looking reaches the network as the person, so it waits for their press.
+
+**What the gates do not cover.** The shape is held by `TreeSyncTests` (ten tests, in the `Process` half: the
+owner's case end to end, a missing record, a step that waits, a conflict, the line in each checkout state, a
+diverged line, a failed fetch, pushed and dirty branches, a press on listed rows only, and a held folder).
+**They were written in the branch and not run there** (MOD8: the parent runs the `Process` half at its merge).
+The git sequence itself was run by hand in scratch repositories: a squash-merge on a bare `origin`, the fetch
+and fast-forward, the detached replay cutting at the parent's tip, the proof, the moves by compare-and-swap, a
+conflict aborted and put back, and a folder held by a native process (git 2.53, Windows). No platform's squash
+was run, and no fetch reached a real remote or its credentials; an SSH passphrase prompt is bounded only by
+the two minutes. A driver resuming a session in a tree between the list's check and the replay is not closed.
+The screen's section is held by the vitest loop over a mocked bridge, not looked at on the window. A landing
+branch rebased by hand keeps a record it no longer matches, and no door re-records it. An Ask Daoris proposal
+for this press was not built: it would reach into the service's proposal kinds and the page's cards.

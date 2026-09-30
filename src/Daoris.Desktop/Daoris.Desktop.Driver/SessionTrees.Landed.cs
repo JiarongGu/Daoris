@@ -47,7 +47,8 @@ public sealed record LandedResult(LandedItem Item, bool Removed, string Message)
 public sealed record SweepPlan(IReadOnlyList<SweepItem> Sessions, IReadOnlyList<LandedItem> Landed);
 
 /// <summary>What one press of the clean-up did, both groups.</summary>
-public sealed record SweepDone(IReadOnlyList<SweepResult> Sessions, IReadOnlyList<LandedResult> Landed);
+/// <param name="Folders">The empty folders trees left behind, each removed or still held, in a sentence.</param>
+public sealed record SweepDone(IReadOnlyList<SweepResult> Sessions, IReadOnlyList<LandedResult> Landed, IReadOnlyList<string>? Folders = null);
 
 /// <summary>A landed branch's row in words — the terminal's line, and the sentence the screen's row says in its own catalogue.</summary>
 public static class LandedWords
@@ -114,6 +115,19 @@ public sealed partial class SessionTrees
     {
         var known = repositories.ToList();
         var sessions = await SweepAsync(known, inUse, only, ct).ConfigureAwait(false);
+        var landed = await CleanLandedAsync(known, only, ct).ConfigureAwait(false);
+        // The empty folders trees left where something held them open (the first real post-merge run), tried again.
+        return new(sessions, landed, EmptyFoldersGone());
+    }
+
+    /// <summary>
+    /// The landed half of the clean-up's press (WSR5): the recorded branches whose work reached the line go, each
+    /// judged over the whole set and again right before it goes. Bringing a repository up to date presses this
+    /// half alone (WSR6), after its rebases.
+    /// </summary>
+    private async Task<List<LandedResult>> CleanLandedAsync(
+        IReadOnlyList<(string Repository, string? Workspace, string? Root)> known, IReadOnlySet<string>? only, CancellationToken ct)
+    {
         var results = new List<LandedResult>();
         foreach (var (repository, space, root) in known)
         {
@@ -161,7 +175,7 @@ public sealed partial class SessionTrees
             if (removed.Count + stale.Count > 0) Recorded.Forget(repository, [.. removed, .. stale]);
         }
 
-        return new(sessions, results);
+        return results;
     }
 
     private const string ChangedSince = "it changed since the list, and is kept";

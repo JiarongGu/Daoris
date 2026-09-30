@@ -45,8 +45,10 @@ public static class DriverCommand
           answer <session> ["…"]
               answer a session that parked to ask you; its quest is carried on with your words.
           trees [list | remove <path> [--force] | clean [--yes] | land <session> [--plan]
-                | hand <session|branch> [--repository <name>] [--plugin <id>] [--plan]]
-              this machine's session trees and the branches its landings made.
+                | hand <session|branch> [--repository <name>] [--plugin <id>] [--plan]
+                | sync [--repository <name>] [--yes]]
+              this machine's session trees and the branches its landings made; sync brings each
+              repository up to date after a pull request merged, listed first (it fetches, never pushes).
           sync [status | dismiss <quest>] [--workspace <name>]
               one sync pass now, or where each workspace stands.
           logs [--since <30m|2h|3d>] [--source <name>] [--event <name>] [--level <warn|error>] [--json]

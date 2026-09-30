@@ -21,8 +21,8 @@ lists.
 
 ## State
 
-**Counts, and this is their one home:** sixteen commands, **661 CLI tests, 672 service and 46 HTTP host, 1539 driver,
-426 desktop modules, 80 devkit, 1761 web unit, 21 Playwright**, 66/66 release rehearsal, **301/301
+**Counts, and this is their one home:** sixteen commands, **661 CLI tests, 672 service and 46 HTTP host, 1558 driver,
+427 desktop modules, 80 devkit, 1761 web unit, 21 Playwright**, 66/66 release rehearsal, **301/301
 family rehearsal** (it names its own phases when you run it), **70/70 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge
 documents, 5 skills, 7 packs. The always-loaded core is **22,672 of 26,000 bytes** — a span in
@@ -133,21 +133,6 @@ rather than designed.
 Every closed row is in `docs/task-archive.md`, and this file holds no ticked rows, by the `task-lifecycle`
 rule it also ships. A heading below holds open rows only.
 
-### After a pull request merges (owner, 2026-09-30)
-
-> *"pr merged so we also need a post merge and rebase logic pull latest "master" delete the merged
-> branch and rebase working branches"*
-
-- [ ] **WSR6 — bring a repository up to date after its pull request merges** (D109, building). The first
-  real case: the ticket's branch was squash-merged, and a session still working grew from that branch, so
-  its commits are on the line by content only. (a) **Pull the line**: fetch, then fast-forward the local
-  line branch, only when the checkout is clean and on it (or by moving the ref when it is not checked
-  out); never a merge commit, never a force, never a push. (b) **Delete what merged**: WSR5's content
-  proof, over the branches landings recorded. (c) **Rebase what still works on it**: a session branch not
-  in use and a recorded branch not yet merged are replayed onto the new line, only their own commits
-  (`--onto`, cutting at the commit they grew from, so a squash-merged parent's commits drop), in a tree of
-  Daoris's own, never the person's checkout; a conflict aborts and is named; a branch already pushed is
-  left, since rebasing it would need a force push. Listed first, done by a press, on both doors.
 
 ### Keep going (owner, 2026-09-30: *"lets continue the development … you probabbly should start with subagents"*)
 

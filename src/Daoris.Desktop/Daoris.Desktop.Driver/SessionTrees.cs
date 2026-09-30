@@ -55,6 +55,9 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
     /// <summary>The branches this machine's landings made (WSR5) — the only ones the clean-up and the hand-off act on.</summary>
     public LandedBranches Recorded => new(home);
 
+    /// <summary>Where this machine's session branches started (WSR6) — what bringing one up to date cuts at.</summary>
+    public SessionBranches Grown => new(home);
+
     /// <summary>Every tree this machine's Daoris has opened lives under here, and only here.</summary>
     public string TreesRoot => Path.Combine(home, "trees");
 
@@ -142,12 +145,30 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
                 $"could not open a session tree for `{repository}` — git said: {Failure(stderr)}");
         }
 
+        // Where the branch started (WSR6), the moment it exists: bringing it up to date after the line moves cuts
+        // here, so a chain's step replays only its own commits once the step before's are on the line.
+        var unrecorded = "";
+        var (headCode, head, _) = await WorkingTree.GitAsync(root, ["rev-parse", "--verify", "--quiet", $"refs/heads/{branch}"], ct)
+            .ConfigureAwait(false);
+        if (headCode == 0)
+        {
+            try
+            {
+                Grown.Record(new GrownBranch(repository, workspace, branch, line.Branch, head.Trim(), grewFrom, DateTimeOffset.UtcNow));
+            }
+            catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+            {
+                unrecorded = $" Daoris could not record where its branch started ({error.Message}), so bringing it up to date "
+                    + "will cut where its work first differs from the line.";
+            }
+        }
+
         return new(
             path, branch, basedOn,
             $"opened a session tree at {path} on `{branch}`, from {basedOn} — a fresh tree holds "
             + "nothing git does not track: no installed dependencies, no build outputs. The "
             + "repository's own setup cost is paid here, and in exchange the root's uncommitted work "
-            + "holds nothing.",
+            + "holds nothing." + unrecorded,
             grewFrom);
     }
 
@@ -350,9 +371,11 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
             var tip = branched.Commits.Count > 0 ? branched.Commits[^1].Sha : null;
             if (landed.Landed && tip is not null)
             {
+                // Where its work grew from (WSR6): the session branch's start, so bringing it up to date replays only its own.
+                var from = branched.Source is { } source ? Grown.Of(repository, source)?.From : null;
                 landed = Remember(landed, () => Recorded.Record(new LandedBranch(
                     repository, workspace, landed.Branch!, branched.Base, tip, subject.Session, subject.Quest, subject.Title,
-                    DateTimeOffset.UtcNow)));
+                    DateTimeOffset.UtcNow) { From = from }));
             }
 
             if (landed.Landed && plugin is not null)
@@ -468,21 +491,29 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
                 continue;
             }
 
+            string? left = null;
             if (now.Tree is { } tree)
             {
                 var (removeCode, _, removeErr) = await WorkingTree.GitAsync(
                     root, ["worktree", "remove", tree], ct).ConfigureAwait(false);
                 if (removeCode != 0)
                 {
-                    results.Add(new(now, false, $"git would not remove its tree: {FirstLine(removeErr)}"));
-                    continue;
+                    // A tree git let go of whose folder something holds open: the tree is gone all the same.
+                    var (letGo, why) = await LetGoAsync(root, tree, ct).ConfigureAwait(false);
+                    if (!letGo)
+                    {
+                        results.Add(new(now, false, $"git would not remove its tree: {FirstLine(removeErr)}"));
+                        continue;
+                    }
+
+                    left = why;
                 }
             }
 
             // -D, because the proof was made in this call; git's own -d asks only about the checkout's HEAD.
             var (deleteCode, _, deleteErr) = await WorkingTree.GitAsync(root, ["branch", "-D", now.Branch], ct).ConfigureAwait(false);
             results.Add(deleteCode == 0
-                ? new(now, true, now.Tree is null ? "removed" : "removed, with its tree")
+                ? new(now, true, (now.Tree is null ? "removed" : "removed, with its tree") + (left is null ? "" : $". {left}"))
                 : new(now, false, $"git would not delete the branch: {FirstLine(deleteErr)}"));
         }
 
@@ -551,8 +582,9 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
     private static string Normal(string path) =>
         Path.GetFullPath(path).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
 
-    /// <summary>What the branch form made, and what a plugin is told of it (D100): where, from which line, which commits.</summary>
-    private sealed record Branched(TreeLanding Landing, string Root = "", string? Base = null, IReadOnlyList<LandingCommit>? Carried = null)
+    /// <summary>What the branch form made, and what a plugin is told of it (D100): where, from which line, which commits — and the session branch it was made from.</summary>
+    private sealed record Branched(
+        TreeLanding Landing, string Root = "", string? Base = null, IReadOnlyList<LandingCommit>? Carried = null, string? Source = null)
     {
         public IReadOnlyList<LandingCommit> Commits => Carried ?? [];
 
@@ -650,7 +682,7 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
                 $"put the work on `{name}` — {commits.Count} commit(s) from `{line ?? "HEAD"}`.{pushIt} Nothing was merged "
                 + $"and the checkout was not touched.{TreeStays}",
                 name),
-            root, line, commits);
+            root, line, commits, branch);
     }
 
     /// <summary>
@@ -751,9 +783,14 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
             ? new[] { "worktree", "remove", "--force", full }
             : ["worktree", "remove", full];
         var (removeCode, _, removeErr) = await WorkingTree.GitAsync(root, removeArgs, ct).ConfigureAwait(false);
+        string? left = null;
         if (removeCode != 0)
         {
-            return new(false, $"git would not remove the tree: {FirstLine(removeErr)}");
+            // Git lets go of a tree before its folder, and a folder something holds open stays (the first real
+            // post-merge run): then the tree is gone and only its folder is left, which is said plainly.
+            var (letGo, why) = await LetGoAsync(root, full, ct).ConfigureAwait(false);
+            if (!letGo) return new(false, $"git would not remove the tree: {FirstLine(removeErr)}");
+            left = why;
         }
 
         // The branch goes with its tree — where this call's proof cleared it (D88) or the person forced it.
@@ -764,7 +801,7 @@ public sealed partial class SessionTrees(string home, LandingPlugins? plugins = 
             await WorkingTree.GitAsync(root, ["branch", "-D", branch], ct).ConfigureAwait(false);
         }
 
-        return new(true, $"removed the session tree at {path} (branch `{branch}`).");
+        return new(true, $"removed the session tree at {path} (branch `{branch}`)." + (left is null ? "" : $" {left}"));
     }
 
     /// <summary>

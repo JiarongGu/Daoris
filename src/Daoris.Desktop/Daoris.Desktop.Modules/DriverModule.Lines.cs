@@ -6,8 +6,8 @@ namespace Daoris.Desktop;
 
 /// <summary>
 /// Each repository's line and how its work lands, the page's `bridge/lines.ts` (MOD5): the lines and
-/// landing rules as set and as they resolve (WSR1, WSR2), and the clean-up of the branches sessions and
-/// landings left (WSR3).
+/// landing rules as set and as they resolve (WSR1, WSR2), the clean-up of the branches sessions and
+/// landings left (WSR3), and bringing each repository up to date after a pull request merged (WSR6).
 /// </summary>
 public sealed partial class DriverModule
 {
@@ -103,15 +103,7 @@ public sealed partial class DriverModule
     [DriverRoute("SWEEP")]
     private async Task<object?> SweepAsync(IpcRequest request, CancellationToken cancellationToken)
     {
-        var service = _loop.Service ?? throw NotReady();
-        var registry = await service.RegistryAsync(cancellationToken);
-        var inUse = (await service.ActiveSessionsAsync(cancellationToken))
-            .Select(session => session.Tree).OfType<string>().Where(tree => tree.Length > 0).ToHashSet(StringComparer.OrdinalIgnoreCase);
-        var repositories = registry
-            .Where(row => !string.IsNullOrWhiteSpace(row.Root))
-            .OrderBy(row => row.Repository, StringComparer.Ordinal)
-            .Select(row => (row.Repository, (string?)row.Workspace, row.Root))
-            .ToList();
+        var (repositories, inUse) = await CheckoutsAndSessionsAsync(null, cancellationToken);
         var trees = new SessionTrees(_loop.Home);
 
         object Row(SweepItem item) => new
@@ -120,17 +112,10 @@ public sealed partial class DriverModule
             item.Kind, item.Commits, item.Where, item.Detail, item.Removable,
         };
 
-        // A landed branch's row: what the proof found, and the files that keep it where some do.
-        object Landed(LandedItem item) => new
-        {
-            item.Repository, item.Workspace, item.Branch, item.Kind, item.Where, item.Files, item.Detail,
-            item.PullRequest, item.Commits, item.Removable,
-        };
-
         if (request.Type == "SWEEP_PLAN")
         {
             var plan = await trees.CleanPlanAsync(repositories, inUse, cancellationToken);
-            return new { Branches = plan.Sessions.Select(Row).ToArray(), Landed = plan.Landed.Select(Landed).ToArray() };
+            return new { Branches = plan.Sessions.Select(Row).ToArray(), Landed = plan.Landed.Select(LandedRow).ToArray() };
         }
 
         HashSet<string>? only = null;
@@ -144,8 +129,95 @@ public sealed partial class DriverModule
         return new
         {
             Results = done.Sessions.Select(result => new { Branch = Row(result.Item), result.Removed, result.Message }).ToArray(),
-            Landed = done.Landed.Select(result => new { Branch = Landed(result.Item), result.Removed, result.Message }).ToArray(),
+            Landed = done.Landed.Select(result => new { Branch = LandedRow(result.Item), result.Removed, result.Message }).ToArray(),
+            // The empty folders trees left where something held them open, each removed or still held (WSR6's first run).
+            Folders = done.Folders ?? [],
             Removed = done.Sessions.Count(result => result.Removed) + done.Landed.Count(result => result.Removed),
         };
+    }
+
+    // Bringing repositories up to date after a pull request merged (WSR6, D109): the list, which fetches each line —
+    // moving only origin's refs — and the press, which does not fetch again: it acts on what the list fetched, and
+    // only on the rows the page listed (`only`). `daoris-driver trees sync` is the terminal's door (D50).
+    /// <summary>
+    /// Bringing each repository with a checkout here up to date (WSR6): its line fast-forwarded, the branches still at
+    /// work replayed onto it, the landed branches whose work reached it deleted — listed first, done by a press.
+    /// </summary>
+    /// <remarks>
+    /// <b>A row that is not done is an answer, not an error</b>, as the clean-up's are: a conflict, a checkout with work
+    /// in flight, a branch on its remote. Each comes back as its row with the sentence the tree layer wrote.
+    /// </remarks>
+    [DriverRoute("TREES_SYNC_PLAN")]
+    [DriverRoute("TREES_SYNC")]
+    private async Task<object?> TreesSyncAsync(IpcRequest request, CancellationToken cancellationToken)
+    {
+        var (repositories, inUse) = await CheckoutsAndSessionsAsync(Optional(request, "repository"), cancellationToken);
+        var trees = new SessionTrees(_loop.Home);
+
+        static string? Short(string? commit) => commit is null ? null : commit[..Math.Min(8, commit.Length)];
+        object Pull(LinePull pull) => new
+        {
+            pull.Repository, pull.Workspace, pull.Line, pull.Kind, From = Short(pull.From), To = Short(pull.To), pull.Commits,
+            pull.Fetch, pull.Detail, pull.Moves,
+        };
+        object Rebase(RebaseItem item) => new
+        {
+            item.Repository, item.Workspace, item.Branch, item.Landed, item.Kind, item.Onto, item.Cut, item.CutBy, item.GrewFrom,
+            item.Commits, item.Detail, item.Replays,
+        };
+
+        if (request.Type == "TREES_SYNC_PLAN")
+        {
+            var plan = await trees.SyncPlanAsync(repositories, inUse, fetch: true, cancellationToken);
+            return new
+            {
+                Lines = plan.Lines.Select(Pull).ToArray(),
+                Rebases = plan.Rebases.Select(Rebase).ToArray(),
+                Deletes = plan.Deletes.Select(LandedRow).ToArray(),
+            };
+        }
+
+        HashSet<string>? only = null;
+        if (request.Payload is { } payload && payload.TryGetProperty("only", out var named) && named.ValueKind == JsonValueKind.Array)
+        {
+            only = named.EnumerateArray().Where(e => e.ValueKind == JsonValueKind.String).Select(e => e.GetString()!).ToHashSet(StringComparer.Ordinal);
+        }
+
+        var done = await trees.SyncAsync(repositories, inUse, only, fetch: false, cancellationToken);
+        _loop.Nudge();
+        return new
+        {
+            Lines = done.Lines.Select(result => new { Line = Pull(result.Pull), result.Moved, result.Message }).ToArray(),
+            Rebases = done.Rebases.Select(result => new { Branch = Rebase(result.Item), result.Replayed, result.Message }).ToArray(),
+            Deletes = done.Deletes.Select(result => new { Branch = LandedRow(result.Item), result.Removed, result.Message }).ToArray(),
+            Changed = done.Lines.Count(result => result.Moved) + done.Rebases.Count(result => result.Replayed) + done.Deletes.Count(result => result.Removed),
+        };
+    }
+
+    /// <summary>A landed branch's row: what the proof found, and the files that keep it where some do (WSR5).</summary>
+    private static object LandedRow(LandedItem item) => new
+    {
+        item.Repository, item.Workspace, item.Branch, item.Kind, item.Where, item.Files, item.Detail,
+        item.PullRequest, item.Commits, item.Removable,
+    };
+
+    /// <summary>
+    /// Every repository with a checkout here — or the one named — and the trees sessions still running or waiting
+    /// name: what the clean-up and bringing up to date both judge by, from the service, so they wait for the driver.
+    /// </summary>
+    private async Task<(List<(string Repository, string? Workspace, string? Root)> Repositories, HashSet<string> InUse)> CheckoutsAndSessionsAsync(
+        string? repository, CancellationToken cancellationToken)
+    {
+        var service = _loop.Service ?? throw NotReady();
+        var registry = await service.RegistryAsync(cancellationToken);
+        var inUse = (await service.ActiveSessionsAsync(cancellationToken))
+            .Select(session => session.Tree).OfType<string>().Where(tree => tree.Length > 0).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var repositories = registry
+            .Where(row => !string.IsNullOrWhiteSpace(row.Root))
+            .Where(row => repository is null || string.Equals(row.Repository, repository, StringComparison.OrdinalIgnoreCase))
+            .OrderBy(row => row.Repository, StringComparer.Ordinal)
+            .Select(row => (row.Repository, (string?)row.Workspace, row.Root))
+            .ToList();
+        return (repositories, inUse);
     }
 }

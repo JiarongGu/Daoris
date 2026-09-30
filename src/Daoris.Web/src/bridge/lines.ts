@@ -4,11 +4,12 @@ import { keys } from '../queries';
 import type { LineChange, RepositoryLine } from '../settings/Lines';
 import type { LandingChange, RepositoryLanding } from '../settings/Landings';
 import type { LandedBranch, SweepBranch } from '../settings/Sweep';
+import type { LinePull, RebaseBranch, SyncPlan } from '../settings/Sync';
 import { call } from './call';
 import type { DriverState } from './driver';
 
-// Each repository's line, how work lands in it, and the clean-up of the branches sessions left (MOD3):
-// the Workspace domain's machine half (WSR1, WSR2, WSR3).
+// Each repository's line, how work lands in it, the clean-up of the branches sessions left, and bringing it up
+// to date after a pull request merged (MOD3): the Workspace domain's machine half (WSR1, WSR2, WSR3, WSR6).
 
 /**
  * Every repository's line here and what said so (WSR2). Desktop-only: the guess is read off a
@@ -65,6 +66,42 @@ export const useSweep = () => {
         landed?: { branch: LandedBranch; removed: boolean; message: string }[];
         removed: number;
       }>('SWEEP', { only }),
+    onSuccess: () => {
+      void client.invalidateQueries({ queryKey: keys.sweep });
+      void client.invalidateQueries({ queryKey: keys.allSessions });
+    },
+  });
+};
+
+/** Where the last look at bringing repositories up to date is kept (WSR6). */
+const treesSyncKey = ['driver', 'trees-sync'] as const;
+
+/**
+ * Bringing each repository with a checkout here up to date after a pull request merged (WSR6): the driver fetches
+ * each line, then says what a press would do. Asked for, never on its own — looking reaches the network, as the
+ * person — so it waits for `refetch`, which the card's *Look for updates* is.
+ */
+export const useTreesSyncPlan = () => useQuery({
+  queryKey: treesSyncKey,
+  queryFn: () => call<SyncPlan>('TREES_SYNC_PLAN'),
+  enabled: false,
+  staleTime: Infinity,
+});
+
+/**
+ * The press: only the rows the list showed, each judged again by the driver, which does not fetch again. The
+ * branches it moved or deleted change the clean-up's list and the sessions' trees, so those are asked again.
+ */
+export const useTreesSync = () => {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (only: string[]) =>
+      call<{
+        lines: { line: LinePull; moved: boolean; message: string }[];
+        rebases: { branch: RebaseBranch; replayed: boolean; message: string }[];
+        deletes: { branch: LandedBranch; removed: boolean; message: string }[];
+        changed: number;
+      }>('TREES_SYNC', { only }),
     onSuccess: () => {
       void client.invalidateQueries({ queryKey: keys.sweep });
       void client.invalidateQueries({ queryKey: keys.allSessions });
