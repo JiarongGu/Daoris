@@ -148,6 +148,8 @@ daoris <command> [options]
 
 Options:
   --dry-run            print the plan; write nothing
+  --harness <name>     the layout init writes: claude-code (the default), or agents —
+                       knowledge and skills under .agents/, mirrored for Claude Code (init only)
   --force              overwrite locally-drifted files (sync only)
   --all                promote every drifted file (upstream only)
   --machine            report this machine's wiring too (status only)

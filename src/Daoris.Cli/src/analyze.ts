@@ -1,5 +1,5 @@
 import type {
-  AnalysisReport, Canon, CanonFile, CommandArgs, Lock, LockEntry, PackSuggestion, Survey, Twin,
+  AnalysisReport, Canon, CanonFile, CommandArgs, Harness, Lock, LockEntry, PackSuggestion, Survey, Twin,
 } from './types.ts';
 import type { ExitCode } from './errors.ts';
 import { existsSync, statSync } from 'node:fs';
@@ -223,10 +223,10 @@ function projectBudget(
 }
 
 export function analyze(
-  { root, canon, packs, switchedOff = {}, target, budgetLimit, lock = null }:
+  { root, canon, packs, switchedOff = {}, target, budgetLimit, lock = null, harness = CLAUDE }:
   {
     root: string; canon: Canon; packs: readonly string[]; switchedOff?: Readonly<Record<string, string>>;
-    target: string; budgetLimit: number; lock?: Lock | null;
+    target: string; budgetLimit: number; lock?: Lock | null; harness?: Harness;
   },
 ): AnalysisReport {
   const existing = survey(root, target);
@@ -238,7 +238,8 @@ export function analyze(
   return {
     target,
     harness: harnessVerdict(root),
-    contract: verifyHarnessContract(root, target),
+    // The manifest's own descriptor, so a repository on the agents layout is checked at `.agents/skills/`.
+    contract: verifyHarnessContract(root, target, harness),
     existing,
     suggested: suggestPacks(root, canon),
     collisions,
@@ -274,7 +275,10 @@ export function commandAnalyze({ root, argv, write, packageRoot }: CommandArgs):
   // was never part of.
   const switchedOff = requested.length ? {} : (manifest?.switchedOff ?? {});
 
-  const report = analyze({ root, canon, packs, switchedOff, target, budgetLimit, lock: readLock(root) });
+  const report = analyze({
+    root, canon, packs, switchedOff, target, budgetLimit, lock: readLock(root),
+    ...(manifest ? { harness: manifest.harnessDescriptor } : {}),
+  });
 
   // For the agent driving an adoption: the exact facts, in a shape it can act on rather than parse
   // out of prose.

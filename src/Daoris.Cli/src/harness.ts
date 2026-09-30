@@ -17,11 +17,12 @@ import { DaorisError } from './errors.ts';
  * one harness's conventions as though they were universal. Naming them in one place is what makes a
  * second harness an addition rather than an excavation.
  *
- * **One implementation ships** (D23). The others are detected and reported so the gap is loud: a tree
- * installed for the wrong harness is present, correct, and never loaded — a failure with nothing to
- * notice. Writing a second descriptor is deliberately deferred until a repository actually wants it,
- * because the layout, the always-loaded semantics and the trigger mechanism all differ, and guessing
- * produces doctrine nobody chose in a format nobody verified.
+ * **Two implementations ship** (D23, D117). `claude-code` is the older layout, kept for every
+ * repository that has not moved. `agents` is the first descriptor to serve several harnesses at once:
+ * one target every agent that reads a skill root reads, plus what the one harness that looks elsewhere
+ * needs — a pointer for its instruction file and a mirror of its skills. The others are detected and
+ * reported so the gap is loud: a tree installed for the wrong harness is present, correct, and never
+ * loaded — a failure with nothing to notice.
  */
 export const HARNESSES: Record<string, Harness> = {
   'claude-code': {
@@ -69,6 +70,37 @@ export const HARNESSES: Record<string, Harness> = {
      * Frontmatter must start at byte 0 or this harness does not see it, so the provenance line goes
      * beneath the closing fence rather than above the opening one (D14).
      */
+    headerPlacement: 'below-frontmatter',
+  },
+
+  /**
+   * The agents layout (D117, `docs/2026-10-01-agent-layout-design.md` §2). Knowledge and skills live
+   * under `.agents/`, the always-loaded tier stays the region in `AGENTS.md` (D59), and the vocabulary
+   * does not move: no canon file names a layout, which is what makes this a descriptor rather than an
+   * edit to the doctrine.
+   *
+   * Measured before relied on (LAYOUT2, `docs/2026-10-01-entry-point-evidence.md`): codex reads
+   * `.agents/skills/` from the project root down, dsh reads it at the root, and Claude Code reads only
+   * `.claude/skills/`, and `AGENTS.md` only through `CLAUDE.md`'s import. So the two things the
+   * reference links, Daoris writes: the pointer, and the mirror.
+   */
+  agents: {
+    id: 'agents',
+    name: 'the agents layout',
+    supported: true,
+    detect: ['.agents'],
+    defaultTarget: '.agents',
+    tiers: {
+      rules: { region: { file: 'AGENTS.md', name: 'rules' }, alwaysLoaded: true },
+      knowledge: { dir: 'knowledge', alwaysLoaded: false },
+      skills: { dir: 'skills', alwaysLoaded: false, entryFile: 'SKILL.md', frontmatter: SKILL_FIELDS },
+    },
+    pointer: { file: 'CLAUDE.md', imports: 'AGENTS.md' },
+    // A copy, not a link (D3): on a checkout with `core.symlinks=false` a link is a text file holding
+    // its target, and the harness reading it gets a path and no skills. Each skill's `agents/` folder
+    // is left out: per-agent metadata another agent writes there belongs to that agent.
+    mirror: { tier: 'skills', root: '.claude/skills', reader: 'Claude Code', skip: ['agents'] },
+    formerly: '.claude',
     headerPlacement: 'below-frontmatter',
   },
 };
