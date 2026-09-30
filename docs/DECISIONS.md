@@ -4024,3 +4024,61 @@ pure reading of the machine serves the guide and the starters, so the two cannot
 
 **Rejected.** A wizard of modal screens (a second copy of every setting, drifting from the first), and
 doing the setup for the person (signing in and choosing what is driven are theirs).
+
+## D98 — An agent's model and effort are the person's to set from Daoris, in the tool's own terms (2026-09-30)
+
+**Decision (AGT6).** This reverses D49's *no model selection UI* (interactive design §7) on the
+owner's word: *"we also need way to adjust the claude setup (since we have command to setup model
+effort or other setting in console but no way in daoris rn)"*. They had typed `/model` into a driven
+session's message box, which cut its turn short. There are two levels, and each uses the tool's own
+mechanism:
+
+- **An account's defaults** live in the tool's own settings file under the account. For Claude Code
+  that is `settings.json` in the configuration home: `model`, `effortLevel`, and
+  `modelSettings.<model>.effortLevel`, which the tool reads first for that model. This was read from
+  `claude-agent-acp` 0.84.0's own settings reader and the Agent SDK 0.3.284's settings schema, not
+  guessed. There are two doors (D50): Settings → Agents & accounts → *Model & effort*, and `daoris agent
+  settings <agent> [--account <name>] [model <v>] [effort <v> [--for <model>]]`. They are twins
+  (`agentsettings.ts`, `AgentSettings.cs`) holding seven rules, and a write moves only the keys it
+  names. The choices offered are the tool's own: its SDK's aliases, a free field for a full id, and
+  the four efforts its settings keep.
+- **One conversation's model and effort** use the protocol door. The agent offers config options on
+  `session/new`; the ones in the `model` and `thought_level` categories are offered beside that
+  conversation's composer and changed with `session/set_config_option`.
+
+**How D24 and `model-decoupling` still hold.** Daoris names no model and chooses none. Every alias,
+effort and option is the tool's own word, read from its artefacts or its wire, and a person picks
+one. *The deployment chooses*, and for an agent a person runs, the deployment is the person. Nothing
+of Daoris's own uses a model because of this, and no Daoris feature needs one. D57's rejected
+registry stays rejected: the list is the tool's, and the free field takes anything the tool accepts.
+
+**Boundaries.**
+- **The tool's own configuration home is never written.** The roster already says Daoris never
+  touches it, and the tool's own `/model` and `/config` set it.
+- **A tool whose settings Daoris has not read (Codex, dsh) is offered nothing** for its accounts, and
+  the surface says so in one line. No keys are invented.
+- **The session's mode is not offered.** It is the posture D37 and D81 set, so only the model and
+  thought-level categories are, and the driver refuses any other option.
+- **`max` is refused as an account's default**, because the tool's settings never keep it. A
+  conversation can still take it, where the agent offers it.
+- dsh's one config option is its model catalogue (ACP3 evidence §1). Daoris still never turns it
+  itself. The person may, for one conversation.
+
+**What the gates do not cover.**
+- Whether a real Claude Code reads a key Daoris wrote the same way as one it wrote itself. It is the
+  tool's own schema, read from its SDK's types and its adapter's reader.
+- The cascade: a repository's own `.claude/settings.json`, and `ANTHROPIC_MODEL`, over the account.
+  The variable's precedence is read in the adapter's code. The tiers' order is read from the SDK's
+  documentation of them, and not observed.
+- A real `session/set_config_option` against the real adapter. It was read from its source at 0.84.0,
+  and the stub speaks that shape.
+- The alias list is the SDK's at 0.3.284, and moves only when a person changes both twins.
+
+**Rejected.**
+- **Typing `/model` into a conversation.** It was the owner's attempt, and it cut the turn short. A
+  slash command belongs to the tool's own console, not to a message.
+- **A model list Daoris maintains.** This is D57's registry, rejected on the owner's word.
+- **Writing the tool's own home when no account is named.** It is the one place the roster promises
+  Daoris never touches.
+- **`ANTHROPIC_MODEL` at spawn.** It would outrank the person's own settings wherever the tool runs
+  under Daoris, and it would be Daoris's setting rather than the tool's.

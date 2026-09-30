@@ -248,6 +248,32 @@ The driver declares only the Claude Code channel (§3a), so its channel half is 
 **What the gates do not cover:** npm and both pointers are stand-ins in every test, so whether the
 real `npm view` and the real pointers answer as the evidence recorded is unexercised.
 
+## 3d. An account's own settings, as built (AGT6, D98, 2026-09-30)
+
+An account is a directory Daoris owns the location of, and what is inside it is the tool's. That still
+holds. What changed is that Daoris now edits two of the tool's keys there, on a person's word. The keys
+belong to the tool's own settings file under the account, and nothing else in that file moves.
+
+- **The declaration.** `settingsFile` in the CLI's table and `SettingsFile` in the driver's are
+  declared on `claude-code` alone, as `settings.json`. The ACP door's accounts are its owner's (AGT7),
+  so it reads the same file. The keys are `model`, `effortLevel`, and `modelSettings.<model>.effortLevel`,
+  which the tool reads first for that model. They were read from `claude-agent-acp` 0.84.0's settings
+  reader (`CLAUDE_CONFIG_DIR/settings.json`) and the Agent SDK 0.3.284's settings schema.
+- **The twins.** `agentsettings.ts` and `AgentSettings.cs` hold seven rules, each with a test table
+  the other matches. A missing file is the tool's defaults, and reading it creates nothing. A file that
+  is not a JSON object is a sentence to a read and a refusal to a write. A write changes only what it
+  names. `max` is refused, because the tool keeps it for one session only. Clearing removes the key,
+  and an emptied entry with it. A new file holds exactly what was written.
+- **The two doors (D50).** *Model & effort* on each account's row, and `daoris agent settings <agent>
+  [--account <name>] [model <v>] [effort <v> [--for <model>]]`. The terminal names the account, else
+  takes the machine's default. **Neither door ever writes the tool's own configuration home.**
+- **What is offered.** The tool's own aliases (the SDK's list), a free field for a full id, and the
+  four efforts its settings keep. A tool whose settings were never read (Codex, dsh) is offered
+  nothing, and the surface says so in one line.
+
+One conversation's model and effort ride the protocol door instead: the options the agent offers on
+`session/new` (D98).
+
 ## 4. Measurement
 
 - **The source is ACP's `usage_update`**, parsed structurally instead of rendered to a line. It is
@@ -296,7 +322,8 @@ D24 — it is D23 applied more times.
   declared harness names a real mechanism for everything Daoris offers to do.
 - **Still no model named.** The harness carries the model; Daoris pipes text (D24, SES2). A harness
   that fronts several providers — the reference is one — is one harness to Daoris, with its own
-  configuration deciding what it talks to.
+  configuration deciding what it talks to. *Since D98 a person may set that configuration's model and
+  effort from Daoris, in the tool's own terms (§3d), and Daoris still names none of its own.*
 
 **Rejected again, with the owner's answer on the record: a provider/model registry.** It would make
 Daoris the thing that knows about models, which is precisely what D24 says the deployment decides.
@@ -331,7 +358,8 @@ console. All three need either a credential or an API Daoris has no business hol
   account that is an API key is kept in the home's `keys.json`; a sign-in stays the tool's)*. Measurement needs no credential, and
   rotation as designed needs none either. The reference's approach is the opposite and was read
   before this was written; adopting it was considered and declined on those terms.
-- **D24 — a feature is specified without naming a model.** No registry, no price table.
+- **D24 — a feature is specified without naming a model.** No registry, no price table. D98 keeps
+  it: the models and efforts a person may pick are the tool's own words, never a list of Daoris's.
 - **D23 — an adapter arrives deliberately, one owner per domain.** Breadth is more adapters, not a
   generic one.
 - **D48 §2a — coexistence.** Every part of this is additive: absent pin means `PATH`, absent profile

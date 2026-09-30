@@ -580,6 +580,13 @@ The first version: doctrine that installs, is checked, and flows back.
   nothing was fetched. npm answers for a package, and the maker's channel for Claude Code and Codex.
   Unpinned, the agent's own updater runs, as before. An agent with neither offers no Update button,
   and the button's tip says which of the two it does.
+- **An account's model and effort, from Daoris** (AGT6a, D98). Each Claude Code account on Settings →
+  Agents & accounts says the model and effort its own settings file holds, and *Model & effort* changes
+  them: the tool's own aliases or a full model id, the four efforts its settings keep, and an effort per
+  model where the file sets one. `daoris agent settings <agent> [--account <name>] [model <v>] [effort
+  <v> [--for <model>]]` is the same from a terminal, and prints the values given none. Only those keys
+  move; every other key the tool keeps there stays. The tool's own configuration home is never touched,
+  and a tool whose settings Daoris does not know (Codex, dsh) is offered nothing, and says so.
 - **The desktop finds an agent npm installed globally** (USE1f). On Windows such an agent is a `.cmd`
   on PATH, which `daoris agent list` found and the desktop reported as not installed, holding every
   start on it. The desktop now asks PATH for what Windows can start, as the terminal does, and a

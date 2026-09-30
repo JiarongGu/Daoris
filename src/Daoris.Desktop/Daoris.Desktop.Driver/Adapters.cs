@@ -1188,6 +1188,9 @@ public sealed class ClaudeCodeAdapter : ISessionAdapter
         // the session cannot then take or close its quest — nine minutes and a real login, three
         // times over, before this was measured rather than assumed.
         TrustFile: ClaudeTrust.FileName,
+        // Its user-tier settings, `model` and `effortLevel` among them (AGT6): read from its ACP adapter's
+        // own settings reader and its SDK's settings schema, never guessed. The ACP door's are this one's.
+        SettingsFile: AgentSettings.FileName,
         PinnedEnvironment: StayPinned,
         // An account that is an API key (AGT3). Measured on 2.1.280 with an invalid key: `auth
         // status` reads it (api_key, no email) and a `-p` run takes it with no prompt.

@@ -69,6 +69,40 @@ export interface ToolDoor {
   workspaceDefaults?: { workspace: string; profile: string }[];
   /** The plugin this door was declared by (D64), or null for one the build carries. */
   plugin?: string | null;
+  /**
+   * What the tool itself offers for an account's model and effort (AGT6, D98): its own aliases and the
+   * efforts its settings keep. Null where Daoris does not know the tool's settings, and nothing is then
+   * offered. Absent from an older shell.
+   */
+  settingsChoices?: SettingsChoices | null;
+}
+
+/** The choices a tool offers for an account's own settings, in its own words (AGT6). */
+export interface SettingsChoices {
+  models: string[];
+  efforts: string[];
+}
+
+/**
+ * An account's own model and effort, as the tool's settings file under it says (AGT6). Null is not set:
+ * the tool's own default. `problem` is the driver's sentence when the file could not be read.
+ */
+export interface AccountSettings {
+  model: string | null;
+  effort: string | null;
+  /** The efforts set per model, which the tool reads before the account's for that model. */
+  perModel: { model: string; effort: string }[];
+  problem: string | null;
+}
+
+/**
+ * A change to an account's settings: a key left out is untouched, a value sets it, null clears it —
+ * the three a person can mean, kept apart on the wire too.
+ */
+export interface AccountSettingsChange {
+  model?: string | null;
+  effort?: string | null;
+  perModel?: Record<string, string | null>;
 }
 
 /**
@@ -83,6 +117,8 @@ export interface Account {
   account?: string | null;
   /** An account that is an API key (AGT3): its handle, never the key. */
   key?: string | null;
+  /** Its own model and effort (AGT6), where the tool's settings are known; absent or null otherwise. */
+  settings?: AccountSettings | null;
 }
 
 /** One tool, with every door onto it and the one account list they share. */
@@ -112,6 +148,12 @@ export interface Tool {
   ownAccount: string | null;
   /** Which circles use which account, once per circle however many doors report it. */
   workspaceDefaults: { workspace: string; profile: string }[];
+  /**
+   * What the tool offers for an account's model and effort (AGT6), from the first door that says; null
+   * where the doors say none, and a surface then offers nothing and says so; undefined from an older
+   * shell that never said, and a surface then says nothing either way.
+   */
+  settingsChoices?: SettingsChoices | null;
 }
 
 /**
@@ -211,6 +253,10 @@ export function byTool(doors: readonly ToolDoor[]): Tool[] {
         ?? 'unknown',
       ownAccount: doorsInOrder.map((door) => door.ownAccount).find(Boolean) ?? null,
       workspaceDefaults,
+      // One file per account whichever door reads it (AGT7), so the first door to offer choices speaks for
+      // all; a door that said none says none, and a shell that never said leaves it unsaid.
+      settingsChoices: doorsInOrder.map((door) => door.settingsChoices).find(Boolean)
+        ?? (doorsInOrder.some((door) => door.settingsChoices === null) ? null : undefined),
     };
   });
 }

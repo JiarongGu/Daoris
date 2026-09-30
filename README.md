@@ -100,7 +100,7 @@ no gate ever runs them. `remote`, `agent`, `driver` and `plugin` are management 
 **the Daoris home** (`DAORIS_HOME` — the installed application's own `data/`, set once for your
 account, never your profile; D63), refusing with none set. `agent` runs each agent's own installer,
 updater or login flow, `agent pin` fetches from a maker's verified channel, and `agent trust --yes`
-sets one flag in the agent's own file. Every other
+and `agent settings` edit the agent's files (D73, D98). Every other
 command above is offline by construction. **The machine's registry
 is the authority** on who is in the family: being in a folder is not being a member, so a repository
 joins by connecting and leaves by retiring. `import` is safe to re-run: unstated wiring is

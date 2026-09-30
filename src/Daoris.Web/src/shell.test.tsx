@@ -1608,6 +1608,62 @@ describe('the harness roster', () => {
     expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'HARNESS_ACTION', expect.anything());
   });
 
+  /**
+   * AGT6 (D98): an account's own model and effort, read from the tool's own file under it and changed
+   * there — the screen's half of `daoris agent settings`. The choices are the tool's, from the roster;
+   * the change goes over the bridge as the keys the person changed, and nothing else.
+   */
+  it("sets an account's own model over the bridge, from the choices the tool offers", async () => {
+    const CHOICES = { models: ['default', 'sonnet', 'opus'], efforts: ['low', 'medium', 'high', 'xhigh'] };
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'SET_AGENT_SETTINGS') return { harness: 'claude-code', profile: 'work', model: 'sonnet', effort: 'high', perModel: [], problem: null };
+      return type === 'HARNESSES'
+        ? {
+          ...ROSTER,
+          harnesses: [{
+            ...ROSTER.harnesses[0],
+            settingsChoices: CHOICES,
+            profiles: [
+              { name: 'work', home: 'C:/somewhere/.daoris/harnesses/claude-code/work', login: 'in',
+                settings: { model: 'opus', effort: 'high', perModel: [], problem: null } },
+            ],
+          }, ROSTER.harnesses[1]],
+        }
+        : WIRING;
+    });
+    const notify = vi.fn();
+    show(<SettingsView notify={notify} section="agents" />);
+
+    const row = (await screen.findByText('model opus · effort high')).closest('li')!;
+    await userEvent.click(within(row).getByRole('button', { name: 'Model & effort' }));
+    const form = within(row).getByRole('group', { name: 'work: model and effort' });
+    within(form).getByRole('combobox', { name: 'model' }).focus();
+    await userEvent.keyboard('{Enter}');
+    await userEvent.click(await screen.findByRole('option', { name: 'sonnet' }));
+    await userEvent.click(within(form).getByRole('button', { name: 'Save' }));
+
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SET_AGENT_SETTINGS', {
+      payload: { harness: 'claude-code', profile: 'work', model: 'sonnet' },
+    });
+    await waitFor(() => expect(notify).toHaveBeenCalledWith('work: saved — the next session reads it.'));
+    expect(serviceCalls()).toEqual([]);
+  });
+
+  /** A tool whose settings Daoris does not know is offered none, said in one line (AGT6). */
+  it("offers no settings for a tool whose own Daoris does not know, and says so once", async () => {
+    invoke.mockImplementation(async (_module: string, type: string) => (type === 'HARNESSES'
+      ? {
+        ...ROSTER,
+        harnesses: [ROSTER.harnesses[0], { ...ROSTER.harnesses[1], product: 'Codex', settingsChoices: null,
+          profiles: [{ name: 'work', home: 'C:/somewhere/.daoris/harnesses/codex/work', login: 'in', settings: null }] }],
+      }
+      : WIRING));
+    show(<SettingsView notify={() => {}} section="agents" />);
+
+    expect(await screen.findByText("Daoris does not know Codex's own settings, so it offers none — set its model with the tool itself.")).toBeTruthy();
+    expect(screen.queryByRole('button', { name: 'Model & effort' })).toBeNull();
+  });
+
   /** A key account reads as its handle and offers no sign-in: it is signed in by its key. */
   it('lists a key account by its handle, with no sign-in to offer', async () => {
     invoke.mockImplementation(async (_module: string, type: string) => (type === 'HARNESSES'

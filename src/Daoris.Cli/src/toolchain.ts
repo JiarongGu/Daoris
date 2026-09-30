@@ -42,8 +42,10 @@ import { spawnSync } from 'node:child_process';
 import { flagValue, operands } from './args.ts';
 
 /** The `agent` flags that take a value — so that value is never read as an operand. */
-const AGENT_VALUED: ReadonlySet<string> = new Set(['--profile', '--workspace']);
+const AGENT_VALUED: ReadonlySet<string> = new Set(['--profile', '--workspace', '--account', '--for']);
 import { DaorisError } from './errors.ts';
+import { AGENT_SETTINGS_FILE, readAgentSettings, writeAgentSettings } from './agentsettings.ts';
+import type { AgentSettingsEdit } from './agentsettings.ts';
 import { onPath, readJsonObject, writeJsonAtomic } from './fsx.ts';
 import { normalizeWorkspace } from './remotemap.ts';
 // A cycle with `plugins.ts`, harmless because both sides read the other only inside functions:
@@ -161,6 +163,13 @@ export interface Toolchain {
    */
   trustFile?: string;
   /**
+   * The tool's own settings file in an account's configuration home, where the account's model and
+   * effort live (AGT6, D98) — declared only where its keys were read from the tool itself. Absent means
+   * Daoris does not know this tool's settings and offers none. A door's are its owner's (twin rule 7).
+   * The driver's `SettingsFile` is the twin.
+   */
+  settingsFile?: string;
+  /**
    * The tool's own variable for an API key (AGT3, D67 §1): what an account that is a key is handed
    * at spawn. Declared only where measured; absent means this agent takes no key from Daoris. The
    * driver's `KeyVariable` is the twin.
@@ -205,6 +214,9 @@ export const TOOLCHAINS: Record<string, Toolchain> = {
     keyVariable: 'ANTHROPIC_API_KEY',
     // Its trust record: until a folder is accepted here, the folder's own allow-list is ignored.
     trustFile: TRUST_FILE,
+    // Its user-tier settings, `model` and `effortLevel` among them (AGT6): read from its ACP adapter's
+    // own settings reader and its SDK's settings schema, never guessed.
+    settingsFile: AGENT_SETTINGS_FILE,
   },
   // The supported harness over the PROTOCOL door (ACP2/D53). A separate toolchain entry from
   // `claude-code` on purpose: the ACP adapter and `claude` are different packages at different
@@ -899,6 +911,11 @@ export function commandHarness(
     case 'trust':
       return trust();
 
+    // An account's own model and effort (AGT6, D98): two keys in the tool's own settings file under
+    // the account, the terminal's door onto the Settings screen's. It spawns nothing and opens nothing.
+    case 'settings':
+      return settingsVerb();
+
     // An account that is an API key (AGT3, D67 §1). 🔴 Read from STDIN, never from an argument: an
     // argument is visible in the process list and saved in the shell's history.
     case 'key': {
@@ -922,7 +939,7 @@ export function commandHarness(
 
     default:
       throw new DaorisError(
-        `unknown agent verb '${verb}' — one of: list, install, update, login, key, pin, unpin, profile, trust, rules`);
+        `unknown agent verb '${verb}' — one of: list, install, update, login, key, pin, unpin, profile, settings, trust, rules`);
   }
 
   /**
@@ -1338,6 +1355,98 @@ export function commandHarness(
     }
 
     return 0;
+  }
+
+  /**
+   * `agent settings <agent> [--account <name>] [model <v>] [effort <v> [--for <model>]]` — an account's
+   * own model and effort (AGT6, D98), in the tool's own settings file under that account.
+   *
+   * @remarks
+   * Given nothing to change it prints what the file says. `unset` clears a key, and the tool's own
+   * default applies again. `--for` names the model an effort is for, which the tool reads before the
+   * account's effort for that model.
+   *
+   * The account is the one named (`--account`, or `--profile` as the other verbs spell it), else the
+   * machine's default. 🔴 **Never the tool's own configuration home**: that home is the tool's, and the
+   * Settings screen says Daoris never touches it — so with no account anywhere this refuses and says
+   * how, rather than writing into it. A door's account is its owner's (twin rule 7).
+   */
+  function settingsVerb(): ExitCode {
+    const { name } = required(argv, 'settings');
+    const owner = ownerOf(name);
+    if (owner !== name) write(`daoris: \`${name}\` runs as \`${owner}\`'s accounts — this is one of them.`);
+    const edit = settingsEdit(operands(argv, AGENT_VALUED).slice(2), flagValue(argv, '--for'));
+
+    const file = TOOLCHAINS[owner]?.settingsFile;
+    if (!file) {
+      const line = `\`${owner}\` keeps its settings in files of its own that Daoris does not know the shape of, `
+        + 'so Daoris offers none — set its model with the tool itself.';
+      if (edit) throw new DaorisError(line);
+      write(`daoris: ${line}`);
+      return 0;
+    }
+
+    const account = flagValue(argv, '--account') ?? flagValue(argv, '--profile')
+      ?? readHarnessSettings(path).defaults[owner] ?? null;
+    if (!account) {
+      throw new DaorisError(
+        `\`${owner}\` runs as its own sign-in on this machine — the tool's own configuration home, which Daoris `
+        + `never touches. Name one of Daoris's accounts with \`--account <name>\` (\`daoris agent list\` shows `
+        + 'them), or set the model with the tool itself.');
+    }
+    // Refused rather than made: a setting is not how an account comes to exist (D66 §3).
+    if (!profiles(home, owner).includes(account)) {
+      throw new DaorisError(
+        `\`${owner}\` has no account \`${account}\` on this machine — accounts that exist: `
+        + `${profiles(home, owner).join(', ') || '(none)'}`);
+    }
+
+    const where = join(profileHome(home, owner, account), file);
+    if (edit) writeAgentSettings(where, edit);
+    const held = readAgentSettings(where);
+    if (held.problem) throw new DaorisError(`${held.problem} — fix it, or change the setting with the tool itself.`);
+
+    write(`daoris: \`${owner}\` account \`${account}\` — ${edit ? 'written to' : 'read from'} the tool's own settings:`);
+    write(`  ${where}`);
+    const unset = "the tool's own default";
+    write(`  model    ${held.model ?? unset}`);
+    write(`  effort   ${held.effort ?? unset}`);
+    if (held.perModel.length > 0) {
+      write('  per model — the tool reads these first, for that model:');
+      for (const entry of held.perModel) write(`    ${entry.model.padEnd(24)} ${entry.effort}`);
+    }
+    write('  A session reads these when it starts. A repository\'s own .claude/settings.json and the');
+    write('  ANTHROPIC_MODEL variable take precedence over an account\'s model.');
+    return 0;
+  }
+
+  /**
+   * The edit the operands after `settings <agent>` ask for — pairs of a key and a value — or null for
+   * none. `unset` clears; `--for <model>` puts an effort under that model.
+   */
+  function settingsEdit(pairs: string[], forModel: string | undefined): AgentSettingsEdit | null {
+    if (pairs.length === 0) return null;
+    const edit: AgentSettingsEdit = {};
+    for (let at = 0; at < pairs.length; at += 2) {
+      const key = pairs[at]!;
+      const value = pairs[at + 1];
+      if (key !== 'model' && key !== 'effort') {
+        throw new DaorisError(`\`${key}\` is not a setting Daoris changes — the two are model and effort.`);
+      }
+      if (value === undefined) {
+        throw new DaorisError(`\`${key}\` needs a value — e.g. \`${key} ${key === 'model' ? 'opus' : 'high'}\`, or \`${key} unset\`.`);
+      }
+      const set = value === 'unset' ? null : value;
+      if (key === 'model') {
+        if (forModel !== undefined) throw new DaorisError('--for names the model an effort is for; a model has no model of its own.');
+        edit.model = set;
+      } else if (forModel !== undefined) {
+        edit.perModel = { ...edit.perModel, [forModel]: set };
+      } else {
+        edit.effort = set;
+      }
+    }
+    return edit;
   }
 
   /**

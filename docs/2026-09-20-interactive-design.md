@@ -312,6 +312,11 @@ every record (D24's split, again).
   If a team wants live shared consoles, that is a new disclosure argument, not a transport detail.
 - **No model selection UI.** Which model a harness uses is the harness's own configuration in that
   repository (`model-decoupling`); Daoris displays what the record reports and configures nothing.
+  *Reversed by D98 (2026-09-30), on the owner's word.* An account's model and effort are now set in
+  the tool's own settings file under that account, from Settings or `daoris agent settings`. One
+  conversation's are set on the protocol door, from the options the agent itself offers on
+  `session/new`. The terms are the tool's and the choice is the person's; Daoris still names no model
+  and chooses none.
 - **No doctrine writes from chat surfaces** — a chat session's agent edits doctrine in its repository
   under its own review flow, like any session; the platform's D31 boundary does not move.
 - **No second UI.** The chat and console land in the existing session drawer and Projects view; the

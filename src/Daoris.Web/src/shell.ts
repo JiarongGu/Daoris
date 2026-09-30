@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { getBridge, useShenora, useShenoraEvent } from '@shenora/react';
 import { keys } from './queries';
 import type { Consideration, TrustHold } from './signals';
-import type { ToolDoor } from './tools';
+import type { AccountSettings, AccountSettingsChange, ToolDoor } from './tools';
 // The shape lives beside the components that render it, so a molecule can name it without
 // importing this module (SURF6).
 import type { SessionDiff } from './work/diff';
@@ -1358,6 +1358,26 @@ export const useRefreshHarnesses = () => {
       // Looking again also lets a refused account through (AGT3b), which changes what a start takes.
       void client.invalidateQueries({ queryKey: keys.allStarts });
     },
+  });
+};
+
+/**
+ * An account's own model and effort (AGT6, D98): keys in the tool's own settings file under that
+ * account — the screen's half of `daoris agent settings`, over the same file (D50). Only the keys the
+ * change names go on the wire: one left out is untouched, and null clears it. The roster is asked again
+ * after, since it reads each account's file.
+ */
+export const useSetAgentSettings = () => {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: ({ harness, profile, ...change }: { harness: string; profile: string } & AccountSettingsChange) =>
+      call<AccountSettings & { harness: string; profile: string }>('SET_AGENT_SETTINGS', {
+        harness, profile,
+        ...('model' in change ? { model: change.model ?? null } : {}),
+        ...('effort' in change ? { effort: change.effort ?? null } : {}),
+        ...(change.perModel && Object.keys(change.perModel).length > 0 ? { perModel: change.perModel } : {}),
+      }),
+    onSuccess: () => void client.invalidateQueries({ queryKey: keys.harnesses }),
   });
 };
 
