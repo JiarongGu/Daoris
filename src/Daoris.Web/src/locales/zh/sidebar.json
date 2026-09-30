@@ -1,7 +1,7 @@
 {
   "sidebar.count": "{{entries}} 个条目 · {{repositories}} 个仓库",
-  "sidebar.refresh": "重建索引",
-  "sidebar.refreshing": "读取中…",
+  "sidebar.refresh": "刷新索引",
+  "sidebar.refreshing": "刷新中…",
   "sidebar.refreshed": "已从 {{repositories}} 个仓库索引 {{entries}} 个条目。",
   "sidebar.absent": "未在注册表所说的位置找到：{{names}}——它已在此注册，但这次刷新没有收录它的任何内容。"
 }

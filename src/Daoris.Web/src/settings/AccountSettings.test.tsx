@@ -141,7 +141,7 @@ describe("an account's own settings", () => {
     const onCancel = vi.fn();
     const { rerender } = form({ onCancel });
 
-    await userEvent.click(screen.getByRole('button', { name: 'never mind' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Never mind' }));
     expect(onCancel).toHaveBeenCalled();
 
     rerender(

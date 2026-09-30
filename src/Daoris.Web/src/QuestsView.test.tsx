@@ -242,7 +242,7 @@ describe('QuestsView', () => {
       const dialog = await screen.findByRole('dialog');
 
       await userEvent.click(within(dialog).getByRole('button', { name: 'delete…' }));
-      await userEvent.click(within(dialog).getByRole('button', { name: 'never mind' }));
+      await userEvent.click(within(dialog).getByRole('button', { name: 'Never mind' }));
 
       expect(within(dialog).queryByRole('group', { name: 'delete this quest' })).toBeNull();
       expect(within(dialog).getByRole('button', { name: 'delete…' })).toBeInTheDocument();

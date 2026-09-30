@@ -14,6 +14,6 @@
   "work.sync.untitled": "此页面尚未加载的委托",
   "work.sync.now": "立即同步",
   "work.sync.syncing": "同步中…",
-  "work.sync.remotes": "远端接线…",
+  "work.sync.remotes": "接线…",
   "work.sync.done": "{{workspace}} 已同步。"
 }

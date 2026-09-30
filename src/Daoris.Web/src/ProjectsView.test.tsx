@@ -139,7 +139,7 @@ describe('the shell-attached registry management', () => {
 
     // UX5 U38: the move leads and *never mind* follows, as in every other drawer; this one was reversed.
     const register = screen.getByRole('button', { name: 'register it' });
-    expect(register.compareDocumentPosition(screen.getByRole('button', { name: 'never mind' })))
+    expect(register.compareDocumentPosition(screen.getByRole('button', { name: 'Never mind' })))
       .toBe(Node.DOCUMENT_POSITION_FOLLOWING);
     await userEvent.click(register);
 
@@ -190,7 +190,7 @@ describe('the shell-attached registry management', () => {
 
     // The move leads and *never mind* follows, as in every drawer (UX5 U38).
     const importIt = within(drawer).getByRole('button', { name: 'import them' });
-    expect(importIt.compareDocumentPosition(within(drawer).getByRole('button', { name: 'never mind' })))
+    expect(importIt.compareDocumentPosition(within(drawer).getByRole('button', { name: 'Never mind' })))
       .toBe(Node.DOCUMENT_POSITION_FOLLOWING);
     await userEvent.click(importIt);
 
@@ -230,7 +230,7 @@ describe('the shell-attached registry management', () => {
     await userEvent.click(within(drawer).getByRole('button', { name: 'retire' }));
     // UX5 U38: the move, then *never mind*, as every other drawer puts them; this pair was reversed.
     const confirm = within(drawer).getByRole('button', { name: 'yes, retire it' });
-    expect(confirm.compareDocumentPosition(within(drawer).getByRole('button', { name: 'never mind' })))
+    expect(confirm.compareDocumentPosition(within(drawer).getByRole('button', { name: 'Never mind' })))
       .toBe(Node.DOCUMENT_POSITION_FOLLOWING);
     await userEvent.click(confirm);
 

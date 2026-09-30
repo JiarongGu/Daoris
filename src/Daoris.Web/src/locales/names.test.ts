@@ -232,12 +232,12 @@ describe('the real glossary and catalogues', () => {
       'menu.agents.tools': ['Agent settings', '智能体设置'],
       'settings.sync.title': ['Updates', '更新'],
       'settings.sync.look': ['Look for updates', '检查更新'],
+      'command.go.convergence': ['Convergence', '同归'],
     };
     for (const [key, [english, chinese]] of Object.entries(approved)) {
       expect([en[key], zh[key]], key).toEqual([english, chinese]);
       expect(rules(found, key), key).toEqual([]);
     }
-    expect(rules(found, 'command.go.convergence')).toContain('door:zh');
   });
 
   it('report what they find and exit 0, and exit 1 under --strict until the renames land', () => {

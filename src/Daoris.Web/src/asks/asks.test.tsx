@@ -382,7 +382,7 @@ describe('deleting an ask', () => {
     const { drawer, onDelete } = record({ ...PROPOSED, deletable: true }, { onDelete: vi.fn() });
 
     await userEvent.click(within(drawer).getByRole('button', { name: 'delete…' }));
-    await userEvent.click(within(drawer).getByRole('button', { name: 'never mind' }));
+    await userEvent.click(within(drawer).getByRole('button', { name: 'Never mind' }));
 
     expect(within(drawer).getByRole('button', { name: 'close the ask' })).toBeInTheDocument();
     expect(onDelete).not.toHaveBeenCalled();

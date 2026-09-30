@@ -88,7 +88,7 @@ describe('a session parked at a checkpoint', () => {
     show({ onResolve: resolve });
 
     await userEvent.click(screen.getByRole('button', { name: 'decline…' }));
-    await userEvent.click(screen.getByRole('button', { name: 'never mind' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Never mind' }));
 
     expect(screen.getByRole('button', { name: 'finish it' })).toBeInTheDocument();
     expect(resolve).not.toHaveBeenCalled();

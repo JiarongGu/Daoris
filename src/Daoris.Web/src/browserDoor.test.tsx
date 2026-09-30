@@ -118,7 +118,7 @@ describe("Daoris's browser, from the window", () => {
       expect(group).not.toBeNull();
       return group!;
     });
-    const door = await within(end).findByRole('button', { name: "open Daoris's browser" });
+    const door = await within(end).findByRole('button', { name: "Open Daoris's browser" });
     expect(within(end).getByRole('button', { name: /show or hide the right side bar/ })).toBeInTheDocument();
     expect(within(screen.getByRole('navigation', { name: 'Views' })).queryByRole('button', { name: /browser/i })).toBeNull();
 
@@ -159,7 +159,7 @@ describe("Daoris's browser, from the window", () => {
       machine(undefined, driving);
       start();
       await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'STATE', {}));
-      await screen.findByRole('button', { name: "open Daoris's browser" });
+      await screen.findByRole('button', { name: "Open Daoris's browser" });
 
       expect(screen.queryByText(/driven by/)).toBeNull();
       cleanup();

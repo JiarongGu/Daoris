@@ -1,7 +1,7 @@
 {
-  "work.panel.title": "console",
-  "work.panel.show": "show the panel",
-  "work.panel.hide": "hide the panel",
+  "work.panel.title": "Console",
+  "work.panel.show": "Show the panel",
+  "work.panel.hide": "Hide the panel",
   "work.panel.resize": "panel height",
   "work.panel.none": "Attend a session and its console streams here.",
   "work.panel.silent": "Nothing printed is held here: the console keeps what a session prints while this app runs. Its conversation, where one is kept, is on Sessions, and its record is on the timeline.",
@@ -19,7 +19,7 @@
   "work.panel.stream.state.cancelled": "cancelled",
   "work.panel.stream.state.session-ended": "ended with its session",
   "work.panel.stream.stop": "Stop {{name}}",
-  "work.panel.stream.stopShort": "stop",
+  "work.panel.stream.stopShort": "Stop",
   "work.panel.stream.stopping": "Asked {{name}} to stop.",
   "work.panel.stream.notStopped": "{{name}} did not stop: nothing here runs it any more, or its tool stopped nothing."
 }

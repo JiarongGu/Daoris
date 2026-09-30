@@ -753,7 +753,8 @@ export function App() {
               // offered a button that could not run it.
               onSyncNow={attached ? () => onSyncNow(circle) : undefined}
               onOpenQuest={(id) => { setQuestFocus(id); setView('quests'); }}
-              onRemotes={attached ? () => openSettings('workspace') : undefined}
+              // Named for the part (NAME1b, UX5 U72), so it opens at Wiring, as *Wire to a remote…* does.
+              onRemotes={attached ? () => openSettings('workspace', 'wiring') : undefined}
             />
           )
           : undefined}

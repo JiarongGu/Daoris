@@ -1,5 +1,5 @@
 {
-  "work.review.tab": "改动",
+  "work.review.tab": "审阅",
   "work.review.timelineTab": "时间线",
   "work.review.files": "{{count}} 个文件有改动",
   "work.review.progress": "已看 {{done}}/{{total}}",

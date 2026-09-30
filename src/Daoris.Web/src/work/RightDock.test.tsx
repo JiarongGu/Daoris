@@ -84,8 +84,8 @@ describe('the side bar\'s tabs', () => {
     room = layTabs(430);
     render(dock({ tab: 'preview', preview: PREVIEW }));
 
-    // 时间线, 改动 and 问道衍 with a preview: 368px of names in 350px of room.
-    expect(shown()).toEqual([['时间线', ''], ['改动', ''], ['问道衍', ''], ['预览：chunk.rs', 'chunk.rs']]);
+    // 时间线, 审阅 and 问道衍 with a preview: 368px of names in 350px of room.
+    expect(shown()).toEqual([['时间线', ''], ['审阅', ''], ['问道衍', ''], ['预览：chunk.rs', 'chunk.rs']]);
   });
 
   it('shows every name again once the side bar is widened to hold them', () => {
@@ -117,14 +117,14 @@ describe('the side bar\'s tabs', () => {
   });
 
   it('measures again when the language changes', async () => {
-    // Timeline, Review and Ask Daoris need 420px; 时间线, 改动 and 问道衍 need 228.
+    // Timeline, Review and Ask Daoris need 420px; 时间线, 审阅 and 问道衍 need 228.
     room = layTabs(430);
     render(dock());
     expect(row()?.getAttribute('data-fit')).toBe('icons');
 
     await act(async () => { await i18n.changeLanguage('zh'); });
 
-    expect(shown()).toEqual([['时间线', '时间线'], ['改动', '改动'], ['问道衍', '问道衍']]);
+    expect(shown()).toEqual([['时间线', '时间线'], ['审阅', '审阅'], ['问道衍', '问道衍']]);
   });
 
   it('measures again when a preview opens, and when it closes', () => {

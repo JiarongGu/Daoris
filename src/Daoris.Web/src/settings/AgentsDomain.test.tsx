@@ -382,7 +382,7 @@ describe('the harness roster', () => {
 
     const work = (await screen.findByText('work')).closest('li')!;
     await userEvent.click(within(work).getByRole('button', { name: 'Remove' }));
-    await userEvent.click(within(work).getByRole('button', { name: 'never mind' }));
+    await userEvent.click(within(work).getByRole('button', { name: 'Never mind' }));
 
     expect(within(work).queryByRole('button', { name: 'Remove account' })).toBeNull();
     expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'HARNESS_ACTION', expect.anything());
@@ -546,7 +546,7 @@ describe('the harness roster', () => {
 
     await userEvent.click(await screen.findByRole('button', { name: 'Add an API key' }));
     fireEvent.change(screen.getByLabelText('API key for Claude Code'), { target: { value: 'sk-ant-api03-no' } });
-    await userEvent.click(screen.getByRole('button', { name: 'never mind' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Never mind' }));
 
     expect(screen.queryByLabelText('API key for Claude Code')).toBeNull();
     expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'HARNESS_ACTION', expect.anything());

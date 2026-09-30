@@ -188,7 +188,7 @@ describe('the Work frame', () => {
     const { rerender } = render(view(0));
 
     // Closed, the dock's strip offers it beside the other two.
-    expect(await screen.findByRole('button', { name: 'open Ask Daoris' })).toBeInTheDocument();
+    expect(await screen.findByRole('button', { name: 'Open Ask Daoris' })).toBeInTheDocument();
     expect(screen.queryByText('the ask panel')).toBeNull();
 
     rerender(view(1));
@@ -266,7 +266,7 @@ describe('the Work frame', () => {
     expect(screen.getByRole('region', { name: 'the panel' })).toBeInTheDocument();
     // No rail, and not the session's own centre either.
     expect(screen.queryByRole('separator', { name: 'rail width' })).toBeNull();
-    expect(screen.queryByRole('button', { name: 'close the rail' })).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Hide the session list' })).toBeNull();
     expect(screen.queryByRole('heading', { level: 2, name: 'Expose a streaming budget' })).toBeNull();
     // The attended session's timeline is still a tab away, as VS Code's panel is whatever the editor shows.
     expect(screen.getByRole('tab', { name: 'Timeline' })).toBeInTheDocument();
@@ -387,7 +387,7 @@ describe('the Work frame', () => {
 
     expect(screen.queryByRole('tab', { name: 'Console' })).toBeNull();
     // Back where it started, and still hidden: only the person opens it again.
-    expect(screen.getByRole('button', { name: 'show the panel' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Show the panel' })).toBeInTheDocument();
     expect(window.localStorage.getItem('daoris.viewPlaces')).toBeNull();
   });
 
@@ -720,9 +720,9 @@ describe('the Work frame', () => {
   it('hides the panel when the person hides it, and nothing else reopens it', async () => {
     show('s1a2b3c4');
 
-    await userEvent.click(await screen.findByRole('button', { name: 'hide the panel' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Hide the panel' }));
     expect(screen.queryByRole('separator', { name: 'panel height' })).toBeNull();
-    expect(screen.getByRole('button', { name: 'show the panel' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'Show the panel' })).toBeInTheDocument();
   });
 });
 
@@ -2071,7 +2071,7 @@ describe('acting on what a session landed', () => {
 
     await review();
     await userEvent.click(screen.getByRole('button', { name: 'discard the tree' }));
-    await userEvent.click(await screen.findByRole('button', { name: 'never mind' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Never mind' }));
 
     expect(screen.queryByRole('button', { name: 'discard it anyway' })).toBeNull();
     expect(screen.getByRole('button', { name: 'discard the tree' })).toBeTruthy();
@@ -2193,7 +2193,7 @@ describe('the frame\'s geometry (FRAME6)', () => {
 
   it('closes the rail to a strip that still reaches every session, and only the person opens it again', async () => {
     const { onSelect } = show('s1a2b3c4');
-    await userEvent.click(await screen.findByRole('button', { name: 'close the rail' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Hide the session list' }));
 
     expect(screen.queryByRole('separator', { name: 'rail width' })).toBeNull();
     await userEvent.click(await screen.findByRole('button', { name: 'conversation · engine · working' }));
@@ -2204,7 +2204,7 @@ describe('the frame\'s geometry (FRAME6)', () => {
     expect(screen.queryByRole('separator', { name: 'rail width' })).toBeNull();
     expect(window.localStorage.getItem('daoris.railClosed')).toBe('1');
 
-    await userEvent.click(screen.getByRole('button', { name: 'open the rail' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Show the session list' }));
     expect(await screen.findByRole('separator', { name: 'rail width' })).toBeInTheDocument();
   });
 
@@ -2255,24 +2255,24 @@ describe('the frame\'s geometry (FRAME6)', () => {
   it('opens the dock on demand: closed to its strip until the person opens it, and then remembered', async () => {
     window.localStorage.removeItem('daoris.dockClosed');
     show('s1a2b3c4');
-    await screen.findByRole('button', { name: 'open Review' });
+    await screen.findByRole('button', { name: 'Open Review' });
     expect(screen.queryByRole('tablist', { name: 'right side bar' })).toBeNull();
 
-    await userEvent.click(screen.getByRole('button', { name: 'open Timeline' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Open Timeline' }));
     expect(await screen.findByRole('tab', { name: 'Timeline' })).toHaveAttribute('aria-selected', 'true');
     expect(window.localStorage.getItem('daoris.dockClosed')).toBe('0');
   });
 
   it('closes the dock to a strip, and opens it again only on the person\'s press, on the tab they chose', async () => {
     show('s1a2b3c4');
-    await userEvent.click(await screen.findByRole('button', { name: 'close the side bar' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Close the side bar' }));
     expect(screen.queryByRole('tablist', { name: 'right side bar' })).toBeNull();
 
     widen(2400);
     expect(screen.queryByRole('tablist', { name: 'right side bar' })).toBeNull();
     expect(window.localStorage.getItem('daoris.dockClosed')).toBe('1');
 
-    await userEvent.click(screen.getByRole('button', { name: 'open Review' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Open Review' }));
     expect(await screen.findByRole('tab', { name: 'Review' })).toHaveAttribute('aria-selected', 'true');
   });
 
@@ -2295,9 +2295,9 @@ describe('the frame\'s geometry (FRAME6)', () => {
     show('s1a2b3c4');
     const surface = await screen.findByRole('tabpanel');
 
-    await userEvent.click(screen.getByRole('button', { name: 'fill the frame' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Fill the frame' }));
     expect(screen.getByRole('tabpanel')).toBe(surface);
-    await userEvent.click(screen.getByRole('button', { name: 'back beside the session' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Back beside the session' }));
     expect(screen.getByRole('tabpanel')).toBe(surface);
   });
 
@@ -2317,7 +2317,7 @@ describe('the frame\'s geometry (FRAME6)', () => {
     show('s1a2b3c4');
     expect(await screen.findByText(/too narrow to sit beside the session/)).toBeInTheDocument();
 
-    await userEvent.click(screen.getByRole('button', { name: 'close the side bar' }));
+    await userEvent.click(screen.getByRole('button', { name: 'Close the side bar' }));
     expect(screen.queryByText(/too narrow to sit beside the session/)).toBeNull();
   });
 });

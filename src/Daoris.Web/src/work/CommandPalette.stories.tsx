@@ -24,7 +24,7 @@ const LABELS: Record<string, string> = {
   'do.language': 'Switch language',
 };
 
-const GROUPS = { go: 'go to', do: 'do', work: 'work' } as const;
+const GROUPS = { go: 'Go to', do: 'Actions', work: 'Sessions' } as const;
 
 const world = (over: Partial<Parameters<typeof commands>[0]> = {}) => commands({
   label: (id) => LABELS[id] ?? id,

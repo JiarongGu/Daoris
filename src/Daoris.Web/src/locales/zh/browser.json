@@ -1,5 +1,5 @@
 {
-  "browser.door.open": "打开 Daoris 的浏览器",
+  "browser.door.open": "打开 Daoris 浏览器",
   "browser.driving.one": "{{name}} 正在操作",
   "browser.driving.several": "{{count}} 个会话正在操作",
   "browser.driving.oneLabel": "{{name}} 正在操作 Daoris 的浏览器——打开这个会话",
