@@ -57,7 +57,7 @@ owner, not Daoris's to change (LOG2b).
   in a shared helper, and a production config update). Two landed branches of the ticket before it
   wait for the owner to delete (the permission policy refused a forced branch delete). The private
   notes name them.
-- **The install** runs main at MOD5 (`ee85caa`, republished 2026-09-30 evening: WSR5, PLUG9, D105, DRV8 and the splits); republishing is the session's own call, never while a session
+- **The install** runs main at TASKBAR1 (`34f8602`, republished 2026-09-30 night: the splits, READ1, MOD8, TASKBAR1; the taskbar is the owner's to look at); republishing is the session's own call, never while a session
   on it runs. Start it the normal way, not through the dev tool, unless the instruments are needed
   (USE1g, confirmed: a start from Git Bash hands sessions a `PATH` their shell cannot read).
 - **Load makes flakes**: FLAKE1's real-tick classes fail under parallel builds and pass alone. Run the
