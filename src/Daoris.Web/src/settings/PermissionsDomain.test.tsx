@@ -56,7 +56,7 @@ describe('the rules card', () => {
 
     expect(await screen.findByText('C:/somewhere/data/permissions.json')).toBeTruthy();
     expect(screen.getByRole('listitem', { name: 'no-push' })).toBeTruthy();
-    expect(within(screen.getByRole('list', { name: 'repository engine' })).getByText('Bash(make:*)')).toBeTruthy();
+    expect(within(screen.getByRole('list', { name: 'Repository engine' })).getByText('Bash(make:*)')).toBeTruthy();
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'RULES', {});
   });
 
@@ -89,7 +89,7 @@ describe('the rules card', () => {
     show(<SettingsView notify={notify} section="permissions" />);
 
     const row = await screen.findByRole('listitem', { name: 'proposal #p0000002' });
-    await userEvent.click(within(row).getByRole('button', { name: 'accept' }));
+    await userEvent.click(within(row).getByRole('button', { name: 'Accept' }));
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'RULE_PROPOSAL', { payload: { id: 'p0000002', accept: true } });
     await waitFor(() => expect(notify).toHaveBeenCalledWith(
       'Accepted: allow WebFetch for every session on this machine. Sessions started from now on are handed it.'));
@@ -103,7 +103,7 @@ describe('the rules card', () => {
     // The machine's domains appear once the shell has answered, and Permissions is the one open.
     await waitFor(() => expect(screen.getByRole('button', { name: 'Permissions' })).toHaveAttribute('aria-current', 'page'));
     expect(screen.queryByText('The rules file')).toBeNull();
-    expect(screen.queryByText('Reading and writing across repositories')).toBeNull();
+    expect(screen.queryByText('Across repositories')).toBeNull();
   });
 });
 
@@ -139,7 +139,7 @@ describe('the reading and writing across card', () => {
 
     const engine = await screen.findByRole('radiogroup', { name: "Reading engine's checkout" });
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'ACROSS', {});
-    await userEvent.click(within(engine).getByRole('radio', { name: 'off' }));
+    await userEvent.click(within(engine).getByRole('radio', { name: 'Off' }));
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SET_READ_ACROSS', { payload: { repository: 'engine', read: false } });
     await waitFor(() => expect(notify).toHaveBeenCalledWith(
       'engine: its checkout is read by no agent outside it. A session already running keeps what it began with.'));
@@ -149,7 +149,7 @@ describe('the reading and writing across card', () => {
     const notify = vi.fn();
     show(<SettingsView notify={notify} section="permissions" />);
 
-    await userEvent.click(await screen.findByRole('button', { name: 'stop plugins writing into engine' }));
+    await userEvent.click(await screen.findByRole('button', { name: 'Stop plugins writing into engine' }));
     expect(invoke).toHaveBeenCalledWith(
       'DAORIS.DRIVER', 'SET_WRITE_ACROSS', { payload: { repository: 'plugins', to: 'engine', allow: false } });
     await waitFor(() => expect(notify).toHaveBeenCalledWith(

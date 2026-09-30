@@ -54,29 +54,29 @@ describe('the reading and writing across card', () => {
     draw();
 
     const engine = screen.getByRole('radiogroup', { name: "Reading engine's checkout" });
-    expect(within(engine).getByRole('radio', { name: 'off' })).toHaveAttribute('aria-checked', 'true');
+    expect(within(engine).getByRole('radio', { name: 'Off' })).toHaveAttribute('aria-checked', 'true');
     const game = screen.getByRole('radiogroup', { name: "Reading game's checkout" });
-    expect(within(game).getByRole('radio', { name: 'inherit (on)' })).toHaveAttribute('aria-checked', 'true');
+    expect(within(game).getByRole('radio', { name: 'Inherit (On)' })).toHaveAttribute('aria-checked', 'true');
     // The workspace said off, so what a repository there inherits is off.
     const tools = screen.getByRole('radiogroup', { name: "Reading tools's checkout" });
-    expect(within(tools).getByRole('radio', { name: 'inherit (off)' })).toHaveAttribute('aria-checked', 'true');
+    expect(within(tools).getByRole('radio', { name: 'Inherit (Off)' })).toHaveAttribute('aria-checked', 'true');
     const forge = screen.getByRole('radiogroup', { name: 'Reading across in forge' });
-    expect(within(forge).getByRole('radio', { name: 'off' })).toHaveAttribute('aria-checked', 'true');
+    expect(within(forge).getByRole('radio', { name: 'Off' })).toHaveAttribute('aria-checked', 'true');
     const aurora = screen.getByRole('radiogroup', { name: 'Reading across in aurora' });
-    expect(within(aurora).getByRole('radio', { name: 'inherit (on)' })).toHaveAttribute('aria-checked', 'true');
+    expect(within(aurora).getByRole('radio', { name: 'Inherit (On)' })).toHaveAttribute('aria-checked', 'true');
   });
 
   it('sets a repository\'s reading, a workspace\'s, and hands one back to what stands above it', async () => {
     const { onRead } = draw();
     const user = userEvent.setup();
 
-    await user.click(within(screen.getByRole('radiogroup', { name: "Reading game's checkout" })).getByRole('radio', { name: 'off' }));
+    await user.click(within(screen.getByRole('radiogroup', { name: "Reading game's checkout" })).getByRole('radio', { name: 'Off' }));
     expect(onRead).toHaveBeenLastCalledWith({ repository: 'game', read: false });
 
-    await user.click(within(screen.getByRole('radiogroup', { name: 'Reading across in aurora' })).getByRole('radio', { name: 'off' }));
+    await user.click(within(screen.getByRole('radiogroup', { name: 'Reading across in aurora' })).getByRole('radio', { name: 'Off' }));
     expect(onRead).toHaveBeenLastCalledWith({ workspace: 'aurora', read: false });
 
-    await user.click(within(screen.getByRole('radiogroup', { name: "Reading engine's checkout" })).getByRole('radio', { name: 'inherit (on)' }));
+    await user.click(within(screen.getByRole('radiogroup', { name: "Reading engine's checkout" })).getByRole('radio', { name: 'Inherit (On)' }));
     expect(onRead).toHaveBeenLastCalledWith({ repository: 'engine' });
   });
 
@@ -86,7 +86,7 @@ describe('the reading and writing across card', () => {
 
     const plugins = screen.getByRole('list', { name: 'plugins writes into' });
     expect(within(plugins).getByText('engine')).toBeInTheDocument();
-    await user.click(screen.getByRole('button', { name: 'stop plugins writing into engine' }));
+    await user.click(screen.getByRole('button', { name: 'Stop plugins writing into engine' }));
     expect(onWrite).toHaveBeenLastCalledWith({ repository: 'plugins', to: 'engine', allow: false });
   });
 
@@ -112,6 +112,6 @@ describe('the reading and writing across card', () => {
   it('shows a workspace that sets its own reading even with no repository here', () => {
     draw(vi.fn(), vi.fn(), []);
     const forge = screen.getByRole('radiogroup', { name: 'Reading across in forge' });
-    expect(within(forge).getByRole('radio', { name: 'off' })).toHaveAttribute('aria-checked', 'true');
+    expect(within(forge).getByRole('radio', { name: 'Off' })).toHaveAttribute('aria-checked', 'true');
   });
 });
