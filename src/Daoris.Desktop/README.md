@@ -88,8 +88,14 @@ process of its own, started with the loop and stopped with it. The driver asks t
 its points — `quest/consider` before a start costs anything (a hold is the quest's own sitting
 reason, and a plugin that cannot decide holds too, naming itself), `session/ended` after — and
 every line one writes reaches the console under `plugin:<id>`, over the bridge and nowhere else.
-`daoris plugin list|add|remove|enable|disable` is the terminal door; the Settings page's Plugins
-card is the other — the same rows, the same `plugins.json`, Remove naming what a plugin kept.
+`daoris plugin list|add|update|remove|enable|disable` is the terminal door; the Settings page's Plugins
+card is the other — the same rows, the same `plugins.json`, Remove naming what a plugin kept. Since
+PLUG9 (c, d; D102) each row carries its `source` (a folder, the install's offer, or none recorded, from
+`.daoris-source.json` in its install folder); `PLUGIN_UPDATE` {id} answers what an update would change or
+why it cannot, and `{id, apply: true}` swaps the folder in, the hook stopped first. `PLUGINS` also answers
+`offers`, Daoris's own plugins the install carries in `app/plugin-offers/` (found beside this
+executable, else beside the home), each with its README's requirement lines, and `PLUGIN_INSTALL`
+{offer} copies one in. None runs at the press.
 **No plugin code ever runs inside the shell, the host or the page.**
 
 **The kit a plugin is made with** (PLUG8, D101, the plugin design's §9) is the driver library's

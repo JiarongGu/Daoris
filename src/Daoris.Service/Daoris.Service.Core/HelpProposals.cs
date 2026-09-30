@@ -19,10 +19,10 @@ public sealed record SettingChange(string Door, string? Target, string? Workspac
 /// <para><b>Seven kinds</b>, each a door a screen or a terminal already has: a <c>setting</c> and an
 /// <c>ask</c> (HELP1c); an <c>agent</c>'s update or pin, a <c>delete</c> of a quest or an ask, an
 /// <c>account</c>'s model and effort, and a <c>go</c> to a screen (HELP6); a <c>plugin</c> added from its
-/// folder, or switched on or off (PLUG9). Every file carries <c>target</c>, <c>workspace</c>,
-/// <c>value</c> and <c>sentence</c>, null where the kind has none; an account adds <c>account</c>,
-/// <c>model</c> and <c>effort</c>, a go <c>domain</c> and <c>part</c>, and a plugin <c>repository</c> and
-/// <c>folder</c>.</para>
+/// folder or from the install's own offers by id, switched on or off, or updated (PLUG9). Every file carries
+/// <c>target</c>, <c>workspace</c>, <c>value</c> and <c>sentence</c>, null where the kind has none; an account
+/// adds <c>account</c>, <c>model</c> and <c>effort</c>, a go <c>domain</c> and <c>part</c>, and a plugin
+/// <c>repository</c>, <c>folder</c> and <c>offer</c>.</para>
 ///
 /// <para><b>PERM2's shape</b> (<see cref="RuleProposalBox"/>): a file under the home, never a row in the
 /// store, since what it would change is machine-local; one file per proposal, so two never collide.</para>
@@ -245,22 +245,33 @@ public sealed class HelpProposalBox(string? home)
     /// <c>disable</c> one installed here, Settings → Plugins' switch. Whether the folder holds a sound
     /// manifest, and whether the id is installed, is the driver's, read with the catalogue's own reader.
     /// </summary>
-    /// <param name="id">For enable and disable: the installed plugin's id.</param>
+    /// <param name="id">For enable, disable and update: the installed plugin's id.</param>
     /// <param name="folder">For add: the folder from the repository's checkout root, or a whole path the person gave.</param>
     /// <param name="repository">For add: the repository whose checkout holds it; null only for a whole path.</param>
+    /// <param name="offer">For add, instead of a folder: one of the install's own plugins, by its id (PLUG9 d) — never a path.</param>
+    /// <remarks>
+    /// Since PLUG9 (c) and (d) (D102) an <c>add</c> may name an offer, and an <c>update</c> takes a newer copy of an
+    /// installed plugin from where it came from. Whether the install offers it, and whether the plugin recorded
+    /// where it came from, is the driver's, which reads both with its own code.
+    /// </remarks>
     public (string? Id, string Message) ProposePlugin(
-        string action, string? id, string? folder, string? repository, string why, string? session, DateTimeOffset at)
+        string action, string? id, string? folder, string? repository, string why, string? session, DateTimeOffset at,
+        string? offer = null)
     {
         var door = action.Trim().ToLowerInvariant();
         var named = Blank(id);
         var where = Blank(folder);
         var holder = Blank(repository);
+        var offered = Blank(offer);
         if (string.IsNullOrWhiteSpace(why)) return NoReason;
-        var refused = door is not ("add" or "enable" or "disable")
-            ? "a plugin's change is `add`, `enable` or `disable`: add copies a plugin that has landed into Daoris's home from its folder, and enable or disable switches one installed here."
-            : door == "add" ? AddRefusal(named, where, holder)
+        var refused = door is not ("add" or "enable" or "disable" or "update")
+            ? "a plugin's change is `add`, `enable`, `disable` or `update`: add copies a plugin that has landed, or one of "
+              + "Daoris's own, into Daoris's home; enable or disable switches one installed here; update takes a newer copy "
+              + "from where an installed one came from."
+            : door == "add" ? AddRefusal(named, where, holder, offered)
             : named is null ? $"`{door}` names the plugin by its id, as the room lists the plugins installed here."
-            : where is not null || holder is not null ? $"`{door}` names only the plugin's id — a folder is for `add`."
+            : where is not null || holder is not null || offered is not null
+                ? $"`{door}` names only the plugin's id — a folder or an offer is for `add`."
             : Word(named, "an id");
         if (refused is not null) return (null, $"{Capital(refused)} Nothing was proposed.");
 
@@ -274,13 +285,24 @@ public sealed class HelpProposalBox(string? home)
             writer.WriteNull("sentence");
             Nullable(writer, "repository", door == "add" ? holder : null);
             Nullable(writer, "folder", door == "add" ? where : null);
+            Nullable(writer, "offer", door == "add" ? offered : null);
         }, why, session, at);
     }
 
-    /// <summary>Why an add is not an add's shape: a folder, no id, and a repository's checkout it stays inside.</summary>
-    private static string? AddRefusal(string? id, string? folder, string? repository)
+    /// <summary>Why an add is not an add's shape: an offer by its id, or a folder, no id, and a repository's checkout it stays inside.</summary>
+    private static string? AddRefusal(string? id, string? folder, string? repository, string? offer)
     {
-        if (folder is null) return "`add` names the plugin's folder: where it landed, in the checkout of the repository that holds it.";
+        if (offer is not null)
+        {
+            if (folder is not null || repository is not null)
+            {
+                return "`add` names an offer or a folder, never both: an offer is one of Daoris's own plugins by its id, and a folder one that has landed in a repository.";
+            }
+
+            return id is not null ? "`add` names no id — an offer is named in `offer`, and a folder's id is its manifest's." : Word(offer, "an offer");
+        }
+
+        if (folder is null) return "`add` names the plugin's folder: where it landed, in the checkout of the repository that holds it — or one of Daoris's own plugins by its id, in `offer`.";
         if (id is not null) return "`add` names no id — a plugin's id is its manifest's, read from its folder.";
         if (repository is null)
         {

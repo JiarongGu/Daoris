@@ -748,6 +748,139 @@ describe('the plugins card', () => {
     expect(screen.getByText('C:/somewhere/data/plugins')).toBeTruthy();
   });
 
+  /**
+   * PLUG9 (c): each row says where the plugin came from; one with a record is updated by two presses, the
+   * first asking what would change and the second making it; one with none says so and offers no Update.
+   */
+  it('a row says where its plugin came from, and Update asks what changes before it replaces anything', async () => {
+    const notify = vi.fn();
+    const SOURCED = {
+      ...PLUGINS,
+      plugins: [
+        { ...PLUGINS.plugins[0]!, source: { kind: 'folder', folder: 'C:/checkouts/house-plugins/gate', offer: null, problem: null } },
+        { ...PLUGINS.plugins[1]!, source: { kind: 'none', folder: null, offer: null, problem: null } },
+      ],
+    };
+    const PLAN = {
+      id: 'acme.gate', applied: false, refusal: null, source: 'C:/checkouts/house-plugins/gate', from: 'C:/checkouts/house-plugins/gate',
+      changes: [{ what: 'version', was: '1.2.0', now: '1.3.0' }],
+    };
+    invoke.mockImplementation(async (_module: string, type: string, request?: { payload?: { apply?: boolean } }) => {
+      if (type === 'PLUGINS') return SOURCED;
+      if (type === 'PLUGIN_UPDATE') return request?.payload?.apply ? { ...PLAN, applied: true } : PLAN;
+      return WIRING;
+    });
+    show(<SettingsView notify={notify} section="plugins" />);
+
+    expect(await screen.findByText(/Added from/)).toHaveTextContent('C:/checkouts/house-plugins/gate');
+    expect(screen.getByText(/No record of where it came from/)).toBeTruthy();
+    // No record, nothing to update from: the refused plugin's row has no Update.
+    expect(screen.queryByRole('button', { name: 'Update future' })).toBeNull();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Update acme.gate' }));
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'PLUGIN_UPDATE', { payload: { id: 'acme.gate' } });
+    const plan = await screen.findByRole('region', { name: 'What an update changes' });
+    expect(within(plan).getByText('1.3.0', { selector: 'code' })).toBeTruthy();
+    expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'PLUGIN_UPDATE', { payload: { id: 'acme.gate', apply: true } });
+
+    await userEvent.click(within(plan).getByRole('button', { name: 'Update now' }));
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'PLUGIN_UPDATE', { payload: { id: 'acme.gate', apply: true } });
+    await waitFor(() => expect(notify).toHaveBeenCalledWith(expect.stringContaining('acme.gate is updated')));
+    expect(screen.queryByRole('region', { name: 'What an update changes' })).toBeNull();
+    expect(serviceCalls()).toEqual([]);
+  });
+
+  it('an update the driver refuses shows its sentence under the row, with nothing to press but Not now', async () => {
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'PLUGINS') {
+        return { ...PLUGINS, plugins: [{ ...PLUGINS.plugins[0]!, source: { kind: 'folder', folder: 'C:/gone/gate' } }] };
+      }
+      if (type === 'PLUGIN_UPDATE') {
+        return { id: 'acme.gate', applied: false, refusal: 'the folder `acme.gate` was added from is not there any more: C:/gone/gate.', changes: [] };
+      }
+      return WIRING;
+    });
+    show(<SettingsView notify={() => {}} section="plugins" />);
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Update acme.gate' }));
+
+    const plan = await screen.findByRole('region', { name: 'What an update changes' });
+    expect(within(plan).getByText(/is not there any more/)).toBeTruthy();
+    expect(within(plan).queryByRole('button', { name: 'Update now' })).toBeNull();
+    await userEvent.click(within(plan).getByRole('button', { name: 'Not now' }));
+    expect(screen.queryByRole('region', { name: 'What an update changes' })).toBeNull();
+  });
+
+  /**
+   * PLUG9 (d): the install's own plugins, in their own group beneath the catalogue, each with what it
+   * needs; Install is `daoris plugin add --offer`'s copy. An older shell answers no offers, and gets no group.
+   */
+  it('the install\'s own plugins are offered in their own group, and Install copies one in', async () => {
+    const notify = vi.fn();
+    const OFFERS = [
+      {
+        id: 'github-pull-request', name: 'GitHub pull request', version: '1.0.0', description: '', problem: null,
+        harnesses: [], points: ['work/land'], servers: [], needs: ['gh, signed in: `gh auth login`.'], installed: false,
+      },
+      {
+        id: 'acme.gate', name: 'Acme gate', version: '1.2.0', description: '', problem: null,
+        harnesses: [], points: ['quest/consider'], servers: [], needs: [], installed: true,
+      },
+    ];
+    invoke.mockImplementation(async (_module: string, type: string) => {
+      if (type === 'PLUGINS') return { ...PLUGINS, offers: OFFERS, offersFolder: 'C:/somewhere/app/plugin-offers' };
+      if (type === 'PLUGIN_INSTALL') return { id: 'github-pull-request', name: 'GitHub pull request', version: '1.0.0' };
+      return WIRING;
+    });
+    show(<SettingsView notify={notify} section="plugins" />);
+
+    const group = (await screen.findByText('Daoris\'s own plugins')).closest('article')!;
+    expect(within(group).getByText('GitHub pull request')).toBeTruthy();
+    expect(within(group).getByText('gh auth login', { selector: 'code' })).toBeTruthy();
+    // Installed already, it is a row of the catalogue above, never offered again.
+    expect(within(group).queryByText('Acme gate')).toBeNull();
+
+    await userEvent.click(within(group).getByRole('button', { name: 'Install github-pull-request' }));
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'PLUGIN_INSTALL', { payload: { offer: 'github-pull-request' } });
+    await waitFor(() => expect(notify).toHaveBeenCalledWith(expect.stringContaining('github-pull-request is installed')));
+    expect(serviceCalls()).toEqual([]);
+  });
+
+  it('an older shell answers no offers and no source, and the screen draws neither', async () => {
+    show(<SettingsView notify={() => {}} section="plugins" />);
+
+    expect(await screen.findByText('Acme gate')).toBeTruthy();
+    expect(screen.queryByText('Daoris\'s own plugins')).toBeNull();
+    expect(screen.queryByText(/No record of where it came from/)).toBeNull();
+    expect(screen.queryByRole('button', { name: 'Update acme.gate' })).toBeNull();
+  });
+
+  it('speaks 中文 on the plugins screen, the driver\'s and the README\'s words left as they are', async () => {
+    const { default: i18n } = await import('./i18n');
+    invoke.mockImplementation(async (_module: string, type: string) => (type === 'PLUGINS'
+      ? {
+        ...PLUGINS,
+        plugins: [{ ...PLUGINS.plugins[0]!, source: { kind: 'offer', offer: 'acme.gate' } }],
+        offers: [{
+          id: 'github-pull-request', name: 'GitHub pull request', version: '1.0.0', description: '', problem: null,
+          harnesses: [], points: ['work/land'], servers: [], needs: ['gh, signed in: `gh auth login`.'], installed: false,
+        }],
+      }
+      : WIRING));
+    await i18n.changeLanguage('zh');
+    try {
+      show(<SettingsView notify={() => {}} section="plugins" />);
+
+      expect(await screen.findByText('Daoris 自带的插件')).toBeTruthy();
+      expect(screen.getByText(/安装自 Daoris 自带的插件/)).toBeTruthy();
+      expect(screen.getByRole('button', { name: '更新 acme.gate' })).toBeTruthy();
+      expect(screen.getByRole('button', { name: '安装 github-pull-request' })).toBeTruthy();
+      expect(screen.getByText('gh auth login', { selector: 'code' })).toBeTruthy();
+    } finally {
+      await i18n.changeLanguage('en');
+    }
+  });
+
   /** PLUG8 (D101): the kit a plugin is made with, and a Try beside every plugin that speaks. */
   const KIT = {
     points: [

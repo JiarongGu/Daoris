@@ -223,9 +223,52 @@ public sealed class HelpProposalsTests : IDisposable
         Assert.Equal(JsonValueKind.Null, Written(given!).GetProperty("repository").ValueKind);
     }
 
+    /// <summary>
+    /// PLUG9 (c) and (d): an add may name one of the install's own plugins by its id (<c>offer</c>, never a path),
+    /// and an <c>update</c> names an installed plugin by its id. Whether the install offers it, and whether the
+    /// plugin recorded where it came from, is the driver's to judge.
+    /// </summary>
+    [Fact]
+    public void An_offer_is_written_by_its_id_and_an_update_names_the_installed_plugin()
+    {
+        var (offered, _) = Box().ProposePlugin("add", null, null, null, "the person wants pull requests opened", "h1", Now, offer: "github-pull-request");
+        var (updated, _) = Box().ProposePlugin(" Update ", "acme.quiet-hours", null, null, "a newer one has landed", "h1", Now);
+
+        var added = Written(offered!);
+        Assert.Equal(("plugin", "add", "github-pull-request"),
+            (added.GetProperty("kind").GetString(), added.GetProperty("door").GetString(), added.GetProperty("offer").GetString()));
+        Assert.Equal(JsonValueKind.Null, added.GetProperty("folder").ValueKind);
+        Assert.Equal(JsonValueKind.Null, added.GetProperty("repository").ValueKind);
+        Assert.Equal(JsonValueKind.Null, added.GetProperty("target").ValueKind);
+        var update = Written(updated!);
+        Assert.Equal(("plugin", "update", "acme.quiet-hours"),
+            (update.GetProperty("kind").GetString(), update.GetProperty("door").GetString(), update.GetProperty("target").GetString()));
+        Assert.Equal(JsonValueKind.Null, update.GetProperty("offer").ValueKind);
+    }
+
+    [Theory]
+    [InlineData("add", "", "quiet-hours", "house-plugins", "github-pull-request", "an offer or a folder, never both")]
+    [InlineData("add", "", "", "", "two words", "one word")]
+    [InlineData("add", "acme.x", "", "", "github-pull-request", "names no id")]
+    [InlineData("update", "", "", "", "", "`update` names the plugin by its id")]
+    [InlineData("update", "acme.x", "quiet-hours", "", "", "names only the plugin's id")]
+    [InlineData("enable", "acme.x", "", "", "github-pull-request", "names only the plugin's id")]
+    public void A_malformed_offer_or_update_is_refused_with_nothing_written(
+        string action, string id, string folder, string repository, string offer, string says)
+    {
+        static string? Named(string field) => field.Length == 0 ? null : field;
+
+        var (written, message) = Box().ProposePlugin(action, Named(id), Named(folder), Named(repository), "a reason", "h1", Now, offer: Named(offer));
+
+        Assert.Null(written);
+        Assert.Contains(says, message);
+        Assert.Contains("Nothing was proposed", message);
+        Assert.False(Directory.Exists(Path.Combine(_home, "help", "proposals")));
+    }
+
     /// <summary>PLUG9: a plugin proposal's shape, checked here and nothing more; the driver's twin table holds what the catalogue says.</summary>
     [Theory]
-    [InlineData("install", "", "quiet-hours", "house-plugins", "`add`, `enable` or `disable`")]
+    [InlineData("install", "", "quiet-hours", "house-plugins", "`add`, `enable`, `disable` or `update`")]
     [InlineData("add", "", "", "house-plugins", "names the plugin's folder")]
     [InlineData("add", "acme.quiet-hours", "quiet-hours", "house-plugins", "names no id")]
     [InlineData("add", "", "quiet-hours", "", "the repository whose checkout holds it")]

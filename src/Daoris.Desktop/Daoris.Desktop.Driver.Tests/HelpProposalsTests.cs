@@ -18,6 +18,7 @@ public sealed class HelpProposalsTests : IDisposable
     {
         try { Directory.Delete(_home, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
         try { Directory.Delete(Checkouts, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
+        try { Directory.Delete(OffersFolder, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
     }
 
     private static readonly HelpMachineFacts Facts = new(
@@ -403,6 +404,18 @@ public sealed class HelpProposalsTests : IDisposable
 
         public void SwitchPlugin(string id, bool on) => Calls.Add($"PLUGIN_ACTION {(on ? "enable" : "disable")} {id}");
 
+        public void AddOffer(string id)
+        {
+            Calls.Add($"PLUGIN_INSTALL {id}");
+            if (PluginRefusal is { } refused) throw new DriverException(refused);
+        }
+
+        public Task UpdatePluginAsync(string id, CancellationToken ct)
+        {
+            Calls.Add($"PLUGIN_UPDATE {id}");
+            return PluginRefusal is { } refused ? Task.FromException(new DriverException(refused)) : Task.CompletedTask;
+        }
+
         public (bool Ok, string Message) Deleted { get; set; } = (true, "Deleted it.");
 
         public DriverConfig Config { get; private set; } = DriverConfig.Empty;
@@ -786,7 +799,7 @@ public sealed class HelpProposalsTests : IDisposable
     [InlineData("enable", "nowhere.lands", "no plugin `nowhere.lands` on this machine")]
     [InlineData("enable", "example.lands", "`example.lands` is already on")]
     [InlineData("disable", "example.off", "`example.off` is already off")]
-    [InlineData("remove", "example.lands", "`add`, `enable` or `disable`")]
+    [InlineData("remove", "example.lands", "`add`, `enable`, `disable` or `update`")]
     public void A_switch_the_catalogue_would_refuse_is_never_proposed(string door, string id, string says)
     {
         var plan = HelpProposals.Plan(Of("plugin", door, id), DriverConfig.Empty, PluginMachine());
@@ -820,6 +833,119 @@ public sealed class HelpProposalsTests : IDisposable
         Assert.False(applied.Applied);
         Assert.Contains("is already installed", applied.Told);
         Assert.Equal("refused", HelpProposals.Find(_home, "p6")!.State);
+    }
+
+    // ── PLUG9 (c) and (d): one of the install's own plugins, by id; an update from where one came from ──
+
+    /// <summary>The install's offers, beside the test's home as an install lays them out.</summary>
+    private string OffersFolder => _home + "-app-plugin-offers";
+
+    private HelpMachineFacts OfferMachine()
+    {
+        var facts = PluginMachine();
+        void Offer(string id, string manifest, string? readme = null)
+        {
+            var folder = Path.Combine(OffersFolder, id);
+            Directory.CreateDirectory(folder);
+            System.IO.File.WriteAllText(Path.Combine(folder, PluginCatalog.ManifestName), manifest);
+            if (readme is not null) System.IO.File.WriteAllText(Path.Combine(folder, "README.md"), readme);
+        }
+
+        Offer("github-pull-request",
+            """{ "id": "github-pull-request", "name": "GitHub pull request", "version": "1.0.0", "hooks": { "command": ["node", "${plugin}/land.mjs"], "points": ["work/land"] } }""",
+            "# x\n\n## What it needs\n\n- **gh**, signed in: `gh auth login`.\n");
+        Offer("future", """{ "id": "future", "apiVersion": 99 }""");
+        Offer("example.lands", """{ "id": "example.lands" }""");
+        return facts with { OffersFolder = OffersFolder, Offers = PluginOffers.Load(OffersFolder, _home, AdapterSet.Built().Names) };
+    }
+
+    [Fact]
+    public void One_of_the_installs_own_plugins_is_added_by_its_id_and_the_card_says_what_it_needs()
+    {
+        var plan = HelpProposals.Plan(Of("plugin", "add") with { Offer = "github-pull-request" }, DriverConfig.Empty, OfferMachine());
+
+        Assert.Null(plan.Refusal);
+        Assert.Equal("daoris plugin add --offer github-pull-request", plan.Terminal);
+        Assert.Contains("Install Daoris's own plugin `github-pull-request` (GitHub pull request 1.0.0), which this install offers", plan.Describe);
+        Assert.Contains("It runs `node ${plugin}/land.mjs`, speaking on `work/land`.", plan.Describe);
+        Assert.Contains("It needs: gh, signed in: `gh auth login`.", plan.Describe);
+        // An offer is named by its id: the sentence the conversation is told names no path on this machine.
+        Assert.DoesNotContain(OffersFolder, plan.Describe);
+        Assert.Equal(["gh, signed in: `gh auth login`."], plan.Plugin!.Needs);
+        Assert.True(plan.Plugin.Copied);
+    }
+
+    [Theory]
+    [InlineData("acme.nothing", "this install offers no plugin `acme.nothing` — it offers `example.lands`, `future`, `github-pull-request`.")]
+    [InlineData("future", "Daoris's own `future` cannot be installed as it stands: needs plugin API 99")]
+    [InlineData("example.lands", "plugin `example.lands` is already installed on this machine")]
+    public void An_offer_the_install_would_refuse_is_never_proposed(string offer, string says)
+    {
+        var plan = HelpProposals.Plan(Of("plugin", "add") with { Offer = offer }, DriverConfig.Empty, OfferMachine());
+
+        Assert.Contains(says, plan.Refusal);
+        Assert.Null(plan.Plugin);
+    }
+
+    [Fact]
+    public void An_update_is_planned_from_where_the_plugin_came_from_saying_what_changes_and_no_path()
+    {
+        var facts = OfferMachine();
+        PluginInstall.Add(_home, Path.Combine(HousePlugins, "quiet-hours"), AdapterSet.Built().Names);
+        System.IO.File.WriteAllText(Path.Combine(HousePlugins, "quiet-hours", PluginCatalog.ManifestName), QuietHours.Replace("1.0.0", "1.1.0"));
+
+        var plan = HelpProposals.Plan(Of("plugin", "update", "acme.quiet-hours"), DriverConfig.Empty, facts);
+
+        Assert.Null(plan.Refusal);
+        Assert.Equal("daoris plugin update acme.quiet-hours --yes", plan.Terminal);
+        Assert.Contains("Update plugin `acme.quiet-hours` from the folder it was added from", plan.Describe);
+        Assert.Contains("It changes its version from `1.0.0` to `1.1.0`.", plan.Describe);
+        Assert.DoesNotContain(Checkouts, plan.Describe);
+        Assert.Equal([new PluginChange("version", "1.0.0", "1.1.0")], plan.Plugin!.Changes);
+        Assert.True(plan.Plugin.Replaced);
+    }
+
+    [Theory]
+    [InlineData("example.lands", "`example.lands` has no record of where it came from")]
+    [InlineData("nowhere.lands", "no plugin `nowhere.lands` on this machine")]
+    public void An_update_the_driver_would_refuse_is_never_proposed(string id, string says)
+    {
+        var plan = HelpProposals.Plan(Of("plugin", "update", id), DriverConfig.Empty, OfferMachine());
+
+        Assert.Contains(says, plan.Refusal);
+        Assert.Equal($"daoris plugin update {id} --yes", plan.Terminal);
+    }
+
+    [Fact]
+    public async Task An_offer_and_an_update_are_applied_through_the_screens_own_doors()
+    {
+        var facts = OfferMachine();
+        PluginInstall.Add(_home, Path.Combine(HousePlugins, "quiet-hours"), AdapterSet.Built().Names);
+
+        var (installed, installing, _) = await ApplyAsync(Of("plugin", "add") with { Id = "p9", Offer = "github-pull-request" }, facts: facts);
+        var (updated, updating, _) = await ApplyAsync(Of("plugin", "update", "acme.quiet-hours") with { Id = "p10" }, facts: facts);
+
+        Assert.True(installed.Applied);
+        Assert.Equal(["PLUGIN_INSTALL github-pull-request"], installing.Calls);
+        Assert.True(updated.Applied);
+        Assert.Equal(["PLUGIN_UPDATE acme.quiet-hours"], updating.Calls);
+        Assert.StartsWith("Applied: `#p10` — Update plugin `acme.quiet-hours`", updated.Told);
+    }
+
+    /// <summary>A plugin's fields, read from the file the service's box writes — the twin's shape.</summary>
+    [Fact]
+    public void A_plugins_offer_is_read_from_the_file()
+    {
+        var node = new JsonObject
+        {
+            ["id"] = "k4", ["proposed"] = "2026-09-30T10:00:00.0000000+00:00", ["by"] = new JsonObject { ["session"] = "h1" },
+            ["kind"] = "plugin", ["door"] = "add", ["target"] = null, ["workspace"] = null, ["value"] = null,
+            ["sentence"] = null, ["repository"] = null, ["folder"] = null, ["offer"] = "github-pull-request",
+            ["why"] = "the person asked", ["state"] = "proposed", ["note"] = null,
+        };
+        System.IO.File.WriteAllText(Path.Combine(HelpProposals.FolderOf(_home), "k4.json"), node.ToJsonString());
+
+        Assert.Equal("github-pull-request", HelpProposals.Find(_home, "k4")!.Offer);
     }
 
     /// <summary>A plugin's fields, read from the file the service's box writes — the twin's shape.</summary>

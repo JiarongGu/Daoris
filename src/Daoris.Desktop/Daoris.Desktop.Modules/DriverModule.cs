@@ -40,6 +40,15 @@ public sealed class DriverModule : ModuleBase
     public override string ModuleName => "DAORIS.DRIVER";
 
     /// <summary>
+    /// The folder holding the install's offers — Daoris's own example plugins, none installed until a press
+    /// (PLUG9 d, D102). Null finds them beside the running application, else beside the home; a test names
+    /// its own, since every test's home shares one parent.
+    /// </summary>
+    public string? Offers { get; init; }
+
+    private string OffersFolder => Offers ?? PluginOffers.FolderFor(_loop.Home, AppContext.BaseDirectory);
+
+    /// <summary>
     /// Route, and let the driver's own refusals reach the person.
     /// </summary>
     /// <remarks>
@@ -353,7 +362,9 @@ public sealed class DriverModule : ModuleBase
                 // The asks by id too (HELP6), so a delete of one made by mistake can name it.
                 var machine = HelpRoom.Describe(
                     config, snapshot, lines, roster, adapter => _loop.Harnesses.Toolchain(adapter)?.Product, asks, standing,
-                    PluginCatalog.Load(_loop.Home, AdapterSet.Built().Names));
+                    PluginCatalog.Load(_loop.Home, AdapterSet.Built().Names),
+                    // The install's own plugins (PLUG9 d), which the helper may propose installing by id.
+                    PluginOffers.Load(OffersFolder, _loop.Home, AdapterSet.Built().Names));
 
                 var start = await chat.StartHelpAsync(
                     helper, config, machine,
@@ -396,6 +407,9 @@ public sealed class DriverModule : ModuleBase
                                 Harnesses = plugin.Harnesses.Select(part => new { part.Name, part.Command }).ToArray(),
                                 Servers = plugin.Servers.Select(part => new { part.Name, part.Command }).ToArray(),
                                 plugin.Copied, plugin.Problem,
+                                // An offer's requirement lines (PLUG9 d), and an update's changes (PLUG9 c).
+                                plugin.Needs, plugin.Replaced,
+                                Changes = ChangesOf(plugin.Changes),
                             }
                             : null,
                     });
@@ -993,8 +1007,59 @@ public sealed class DriverModule : ModuleBase
                         Running = running.Contains(plugin.Manifest.Id),
                         plugin.Folder,
                         plugin.Data,
+                        // Where it came from (PLUG9 c): what an Update re-reads, or why there is none.
+                        Source = SourceOf(plugin.Folder),
+                    }).ToArray(),
+                    // Daoris's own plugins the install carries (PLUG9 d), installed only by a press.
+                    OffersFolder,
+                    Offers = PluginOffers.Load(OffersFolder, _loop.Home, AdapterSet.Built().Names).Select(offer => new
+                    {
+                        offer.Id,
+                        offer.Manifest.Name,
+                        offer.Manifest.Version,
+                        offer.Manifest.Description,
+                        offer.Problem,
+                        Harnesses = offer.Manifest.Harnesses.Select(h => h.Name).ToArray(),
+                        Points = offer.Manifest.Hooks?.Points ?? [],
+                        Servers = offer.Manifest.Servers.Select(s => s.Name).ToArray(),
+                        offer.Needs,
+                        offer.Installed,
                     }).ToArray(),
                 };
+            }
+
+            // The screen's half of `daoris plugin update <id>` (PLUG9 c, D50): without `apply`, what an update
+            // would change, or why it cannot, for the row to show before the press; with it, the update.
+            case "PLUGIN_UPDATE":
+            {
+                var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
+                if (request.Payload is { } payload && payload.TryGetProperty("apply", out var apply) && apply.ValueKind == JsonValueKind.True)
+                {
+                    var updated = await UpdatePluginAsync(id).ConfigureAwait(false);
+                    return new { updated.Id, Applied = true, Refusal = (string?)null, Source = updated.Source.Said, updated.From, Changes = ChangesOf(updated.Changes) };
+                }
+
+                var (plan, refusal) = PluginInstall.PlanUpdate(_loop.Home, id, AdapterSet.Built().Names, OffersFolder);
+                return new
+                {
+                    Id = plan?.Id ?? id,
+                    Applied = false,
+                    Refusal = refusal,
+                    Source = plan?.Source.Said,
+                    plan?.From,
+                    Changes = ChangesOf(plan?.Changes ?? []),
+                };
+            }
+
+            // The screen's Install beside one of the install's offers (PLUG9 d): `daoris plugin add --offer <id>`'s
+            // copy, the offer recorded. 🔴 Nothing starts at the press; the loop starts it at its next look.
+            case "PLUGIN_INSTALL":
+            {
+                await Task.CompletedTask;
+                var offer = PayloadHelper.GetRequiredValue<string>(request.Payload, "offer");
+                var added = PluginInstall.AddOffer(_loop.Home, OffersFolder, offer, AdapterSet.Built().Names);
+                _loop.Nudge();
+                return new { added.Id, added.Name, added.Version };
             }
 
             // The screen's half of `daoris plugin enable|disable|remove` (D50): a row in
@@ -2050,6 +2115,49 @@ public sealed class DriverModule : ModuleBase
             module.SwitchPlugin(module.InstalledPlugin(id), on);
             module._loop.Nudge();
         }
+
+        // PLUGIN_INSTALL's own copy of one of the install's offers (PLUG9 d); nothing runs here.
+        public void AddOffer(string id)
+        {
+            PluginInstall.AddOffer(module._loop.Home, module.OffersFolder, id, AdapterSet.Built().Names);
+            module._loop.Nudge();
+        }
+
+        // PLUGIN_UPDATE's own apply (PLUG9 c): the hook stopped, the folder swapped, the loop asked to look.
+        public async Task UpdatePluginAsync(string id, CancellationToken ct) =>
+            await module.UpdatePluginAsync(id).ConfigureAwait(false);
+    }
+
+    /// <summary>Where an installed plugin came from, for its row: a folder, an offer, none recorded, or a record that does not read.</summary>
+    private static object SourceOf(string installFolder)
+    {
+        var (source, problem) = PluginSource.Read(installFolder);
+        return new
+        {
+            Kind = problem is not null ? "unread" : source is null ? "none" : source.Offer is not null ? "offer" : "folder",
+            Folder = source?.Folder,
+            Offer = source?.Offer,
+            Problem = problem,
+        };
+    }
+
+    private static object[] ChangesOf(IReadOnlyList<PluginChange> changes) =>
+        [.. changes.Select(change => (object)new { change.What, change.Was, change.Now })];
+
+    /// <summary>
+    /// An update, as <c>PLUGIN_UPDATE</c> and Ask Daoris's update door make it (PLUG9 c): judged, the plugin's
+    /// hook stopped first (on Windows a running process holds its folder), the install folder swapped, and
+    /// the loop asked to look, which starts the new one as it does any plugin.
+    /// </summary>
+    private async Task<PluginUpdatePlan> UpdatePluginAsync(string id)
+    {
+        var reserved = AdapterSet.Built().Names;
+        var (plan, refusal) = PluginInstall.PlanUpdate(_loop.Home, id, reserved, OffersFolder);
+        if (plan is null) throw new DriverException($"{refusal} Nothing was replaced.");
+        await _loop.StopPluginAsync(plan.Id).ConfigureAwait(false);
+        var updated = PluginInstall.Update(_loop.Home, plan.Id, reserved, OffersFolder);
+        _loop.Nudge();
+        return updated;
     }
 
     /// <summary>An installed plugin by its id, or the Plugins screen's refusal (<c>PLUGIN_ACTION</c>, PLUG9's door).</summary>
@@ -2240,6 +2348,9 @@ public sealed class DriverModule : ModuleBase
                 .GroupBy(known => known.Repository, StringComparer.OrdinalIgnoreCase)
                 .ToDictionary(same => same.Key, same => same.First().Root, StringComparer.OrdinalIgnoreCase),
             Reserved = AdapterSet.Built().Names,
+            // The install's own plugins (PLUG9 d), which an add may name by id, and where an offer's update reads.
+            OffersFolder = OffersFolder,
+            Offers = PluginOffers.Load(OffersFolder, _loop.Home, AdapterSet.Built().Names),
         };
 
         if (proposals.Any(proposal => proposal.Kind is "agent" or "account"))

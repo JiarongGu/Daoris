@@ -47,8 +47,10 @@ catalogue). There is no SDK to keep append-only, because the contract is a wire 
 ```
 <home>/plugins/<id>/plugin.json      the manifest — installed material, replaced wholesale by an update
 <home>/plugins/<id>/…                whatever it ships beside it (a script, a definition file)
+<home>/plugins/<id>/.daoris-source.json   where it came from: a folder, or the install's offer (PLUG9 c, D102)
 <home>/plugins/.data/<id>/           what it keeps — never touched by an update, named on removal
 <home>/plugins.json                  the machine's word: which plugins are disabled
+<install>/app/plugin-offers/<id>/    Daoris's own example plugins, offered and never installed (PLUG9 d, D102)
 ```
 
 The home is the Daoris home (D63), because a plugin is a **machine** fact, like a harness pin or a
@@ -160,6 +162,8 @@ Every decision and every failure is a console line under `plugin:<id>`, the way 
 | `daoris plugin add <folder>` — copies the folder in under its manifest's id, replacing wholesale, `.data/` untouched | *(the folder is a machine path; a terminal names it)* — *PLUG9: or Ask Daoris's plugin card, from a folder named within a registered repository's checkout; it adds and never replaces* |
 | `daoris plugin remove <id>` — the install folder goes; the data folder is named and stays | *Forget* — the same, worded for what it does |
 | `daoris plugin enable|disable <id>` | the row's switch |
+| `daoris plugin update <id> [--yes]` — what a newer copy at its source changes; `--yes` swaps it in *(PLUG9 c)* | **Update…** on a row with a record, then **Update now** under it; or Ask Daoris's `update` card |
+| `daoris plugin add --offer <id>` — one of Daoris's own, copied in with the offer recorded *(PLUG9 d)* | **Install** in *Daoris's own plugins*; or Ask Daoris's card naming the `offer` |
 
 The roster shows a declared harness like any other, with the plugin it came from beside it; a
 session record names the harness exactly as it names `dsh`, and the plugin nowhere — the record
@@ -178,6 +182,17 @@ starts, its points, harnesses and servers before Apply. Apply is `PluginInstall.
 of `plugin add`'s copy, or `PLUGIN_ACTION`'s own switch; neither starts anything, and the loop starts a
 hook at its next look as it does any plugin. **Not covered:** whether the folder's contents have landed
 on the repository's line is not checked; the card copies the checkout as it stands.
+
+**Where a plugin came from, and Daoris's own** (PLUG9 c and d, 2026-09-30, D102). Every add records its
+source in `.daoris-source.json` in the install folder, written into the staged copy before the swap: the
+folder, or the offer. A plugin with no record (added before, or copied in by hand) says so and cannot be
+updated. `update` re-reads the source by the catalogue's own rules, refuses in the same words at both
+doors (twins `plugins.ts` and `PluginInstall.cs`), shows what changes (version, command, points,
+harnesses, servers) before the press, and swaps the folder as `add` replaces one, `.data/` untouched. The
+install carries `github-pull-request`, `azure-devops-pull-request` and `in-app-browser` in
+`app/plugin-offers/`, laid out by the publish; Settings → Plugins offers them in their own card with
+their README's `## What it needs`, the CLI lists them from beside the home, and Ask Daoris names them by
+id. Installing one runs nothing.
 
 ## 7. Deliberately not in this design
 
@@ -203,6 +218,7 @@ on the repository's line is not checked; the card copies the checkout as it stan
 | **PLUG6** | the Machine view's Plugins card and the roster's provenance chip | the vitest loop over the mocked bridge, and a screenshot |
 | **PLUG7** *(held)* | service-side points | asked for by a plugin somebody writes |
 | **PLUG8** | the kit a plugin is made with (§9, D101): `daoris-driver plugins new\|try` and Settings → Plugins | a fresh plugin passes its own `node --test` and `try`; the samples sent through the real loop and landing; the two checkers held by one answer table |
+| **PLUG9** | a plugin made by an ask and installed by a card (a, b); its source recorded and an update from it (c); the install's own plugins offered (d, D102) | the twins' tables (source, refusals, offers, needs); the module routes; the vitest loop in both catalogues; the deployment rehearsal's offers check |
 
 ## 9. Making a plugin: the kit (PLUG8, D101)
 

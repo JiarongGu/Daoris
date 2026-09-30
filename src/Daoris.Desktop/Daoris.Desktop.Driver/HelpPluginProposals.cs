@@ -16,15 +16,81 @@ namespace Daoris.Driver;
 ///
 /// <para>🔴 <b>Nothing runs</b> at the proposal, the judgement or the Apply: an add copies a folder and a
 /// switch writes a row; the loop starts what a plugin runs at its next look, as it does any plugin.</para>
+///
+/// <para><b>Since PLUG9 (c) and (d) (D102)</b> an add may name one of the install's own offers by its id,
+/// never a path, and an <c>update</c> replaces an installed plugin from the source it recorded, judged by
+/// <see cref="PluginInstall.PlanUpdate"/> and showing what changes before Apply.</para>
 /// </remarks>
 public static partial class HelpProposals
 {
     private static HelpPlan Plugin(HelpProposal proposal, HelpMachineFacts facts) => proposal.Door switch
     {
+        "add" when proposal.Offer?.Trim() is { Length: > 0 } => OfferAdd(proposal, facts),
         "add" => PluginAdd(proposal, facts),
         "enable" or "disable" => PluginSwitch(proposal, facts),
-        var door => new HelpPlan($"`{door}` is not a plugin's change — `add`, `enable` or `disable`.", "", "", null),
+        "update" => PluginUpdate(proposal, facts),
+        var door => new HelpPlan($"`{door}` is not a plugin's change — `add`, `enable`, `disable` or `update`.", "", "", null),
     };
+
+    /// <summary>
+    /// An add of one of the install's offers, by its id (PLUG9 d): one the install carries, sound, and not
+    /// installed here — <see cref="PluginInstall.AddOffer"/>'s own refusals, said before the card is drawn.
+    /// </summary>
+    private static HelpPlan OfferAdd(HelpProposal proposal, HelpMachineFacts facts)
+    {
+        var wanted = proposal.Offer!.Trim();
+        var terminal = $"daoris plugin add --offer {wanted}";
+        static HelpPlan Refused(string why, string terminal) => new(why, "", terminal, null);
+        if (facts.Offers.FirstOrDefault(each => string.Equals(each.Id, wanted, StringComparison.OrdinalIgnoreCase)) is not { } offer)
+        {
+            return Refused($"this install offers no plugin `{wanted}` — "
+                + (facts.Offers.Count > 0 ? $"it offers {Names(facts.Offers.Select(each => each.Id))}." : "it offers none."), terminal);
+        }
+
+        terminal = $"daoris plugin add --offer {offer.Id}";
+        if (offer.Problem is { } problem) return Refused($"Daoris's own `{offer.Id}` cannot be installed as it stands: {problem}", terminal);
+        if (offer.Installed || facts.Plugins.Plugins.Any(entry => string.Equals(entry.Manifest.Id, offer.Id, StringComparison.OrdinalIgnoreCase)))
+        {
+            return Refused($"plugin `{offer.Id}` is already installed on this machine. Ask Daoris adds a plugin and never replaces "
+                + $"one: an update (`daoris plugin update {offer.Id}`) takes the install's newer copy, keeping what it kept.", terminal);
+        }
+
+        var view = View(offer.Manifest) with { Copied = true, Needs = offer.Needs };
+        var needs = offer.Needs.Count > 0 ? $" It needs: {string.Join("; ", offer.Needs)}" : "";
+        return new HelpPlan(null,
+            $"Install Daoris's own plugin `{offer.Id}`{Titled(offer.Manifest)}, which this install offers, copied into Daoris's "
+            + $"home under its id; the driver starts what it runs at its next look. {Runs(view)}{needs}",
+            terminal, null) { Plugin = view };
+    }
+
+    /// <summary>
+    /// An update of an installed plugin from the source it recorded (PLUG9 c): <see cref="PluginInstall.PlanUpdate"/>'s
+    /// judgement, in the words <c>daoris plugin update</c> refuses with, and what changes before Apply.
+    /// </summary>
+    private static HelpPlan PluginUpdate(HelpProposal proposal, HelpMachineFacts facts)
+    {
+        var id = proposal.Target?.Trim() ?? "";
+        var terminal = $"daoris plugin update {id} --yes";
+        if (facts.Home is not { Length: > 0 } home) return new HelpPlan("there is no Daoris home here to update a plugin in.", "", terminal, null);
+        var (plan, refusal) = PluginInstall.PlanUpdate(home, id, facts.Reserved, facts.OffersFolder);
+        if (plan is null) return new HelpPlan(refusal, "", terminal, null);
+
+        terminal = $"daoris plugin update {plan.Id} --yes";
+        var (manifest, _) = PluginCatalog.ReadAsWritten(plan.Id, Path.Combine(plan.From, PluginCatalog.ManifestName));
+        var view = View(manifest) with { Replaced = true, Changes = plan.Changes };
+        // The folder a plugin came from is a path on this machine, which the conversation is never told.
+        var from = plan.Source.Offer is { } offer ? $"the install's own `{offer}`" : "the folder it was added from";
+        var changes = plan.Changes.Count > 0
+            ? "It changes " + string.Join("; ", plan.Changes.Select(change => $"its {change.What} from {Said(change.Was)} to {Said(change.Now)}")) + "."
+            : "What it declares does not change; its files are replaced.";
+        return new HelpPlan(null,
+            $"Update plugin `{plan.Id}` from {from}: its folder is replaced from there, what it kept stays, and the driver starts "
+            + $"it again at its next look. {changes} {Runs(view)}",
+            terminal, null) { Plugin = view };
+    }
+
+    /// <summary>One side of a change, as the card says it: code, or none.</summary>
+    private static string Said(string value) => value.Length > 0 ? $"`{value}`" : "none";
 
     /// <summary>
     /// An add: the folder resolved inside the checkout it names (or the whole path the person gave), never
@@ -97,7 +163,8 @@ public static partial class HelpProposals
         {
             return Refused(
                 $"plugin `{id}` is already installed on this machine. Ask Daoris adds a plugin and never replaces one: "
-                + "`daoris plugin add <folder>` at a terminal replaces it wholesale, keeping what it kept.",
+                + $"an update (`daoris plugin update {id}`) takes a newer copy from where it came from, and "
+                + "`daoris plugin add <folder>` at a terminal replaces it wholesale; either keeps what it kept.",
                 terminal);
         }
 

@@ -92,6 +92,31 @@ const PLUGIN_ON: HelpProposal = {
   },
 };
 
+// PLUG9 (d): one of the install's own plugins, by id, with what it needs; (c): an update, with what changes.
+const PLUGIN_OFFER: HelpProposal = {
+  id: 'p8', kind: 'plugin',
+  describe: 'Install Daoris\'s own plugin `github-pull-request` (GitHub pull request 1.0.0), which this install offers.',
+  terminal: 'daoris plugin add --offer github-pull-request',
+  why: 'the person wants pull requests opened',
+  plugin: {
+    id: 'github-pull-request', name: 'GitHub pull request', version: '1.0.0',
+    command: ['node', '${plugin}/land.mjs'], points: ['work/land'], harnesses: [], servers: [],
+    copied: true, needs: ['gh, signed in: `gh auth login`.'],
+  },
+};
+
+const PLUGIN_UPDATE: HelpProposal = {
+  id: 'p9', kind: 'plugin',
+  describe: 'Update plugin `acme.quiet-hours` from the folder it was added from.',
+  terminal: 'daoris plugin update acme.quiet-hours --yes',
+  why: 'a newer one has landed',
+  plugin: {
+    id: 'acme.quiet-hours', name: 'Quiet hours', version: '1.1.0',
+    command: ['node', '${plugin}/hooks.mjs'], points: ['quest/consider'], harnesses: [], servers: [],
+    replaced: true, changes: [{ what: 'version', was: '1.0.0', now: '1.1.0' }, { what: 'servers', was: '', now: 'browser (npx -y @playwright/mcp@0.0.82)' }],
+  },
+};
+
 const press = async (proposal: HelpProposal, apply: string) => {
   const onApply = vi.fn();
   const onDismiss = vi.fn();
@@ -165,6 +190,26 @@ describe('the kinds that reach every door', () => {
     expect(screen.getByText(/contributes nothing: declares harness/)).toBeInTheDocument();
   });
 
+  it('one of the install\'s own plugins says what it needs, in its README\'s words, before Apply', async () => {
+    await press(PLUGIN_OFFER, 'apply');
+
+    const runs = within(screen.getByRole('list', { name: 'what the plugin runs' }));
+    expect(runs.getByText('gh auth login', { selector: 'code' })).toBeInTheDocument();
+    expect(runs.getByText(/^needs:/)).toBeInTheDocument();
+    expect(screen.getByText(PLUGIN_OFFER.terminal, { selector: 'code' })).toBeInTheDocument();
+  });
+
+  it('an update says what changes, as the manifests write it, and that its folder is replaced keeping what it kept', async () => {
+    await press(PLUGIN_UPDATE, 'apply');
+
+    const runs = within(screen.getByRole('list', { name: 'what the plugin runs' }));
+    expect(runs.getByText('1.0.0', { selector: 'code' })).toBeInTheDocument();
+    expect(runs.getByText('1.1.0', { selector: 'code' })).toBeInTheDocument();
+    expect(runs.getByText(/its servers/)).toBeInTheDocument();
+    expect(screen.getByText(/replaces its folder from where it came from/)).toBeInTheDocument();
+    expect(screen.queryByText(/copies its folder/)).not.toBeInTheDocument();
+  });
+
   it('speaks 中文 for every kind, the driver\'s sentence left as it said it', async () => {
     const { default: i18n } = await import('../i18n');
     await i18n.changeLanguage('zh');
@@ -179,6 +224,12 @@ describe('the kinds that reach every door', () => {
       expect(screen.getByText('问道衍提议一个插件')).toBeInTheDocument();
       const runs = within(screen.getByRole('list', { name: '插件会运行什么' }));
       expect(runs.getByText('node ${plugin}/hooks.mjs', { selector: 'code' })).toBeInTheDocument();
+      cleanup();
+      // PLUG9 (c) and (d): what an offer needs and what an update changes, the chrome in 中文.
+      render(<ul><ProposalCard proposal={PLUGIN_OFFER} onApply={vi.fn()} onDismiss={vi.fn()} /><ProposalCard proposal={PLUGIN_UPDATE} onApply={vi.fn()} onDismiss={vi.fn()} /></ul>);
+      expect(screen.getByText(/^需要：/)).toBeInTheDocument();
+      expect(screen.getByText(/它的版本/)).toBeInTheDocument();
+      expect(screen.getByText(/从它的来处替换它的文件夹/)).toBeInTheDocument();
     } finally {
       cleanup();
       await i18n.changeLanguage('en');

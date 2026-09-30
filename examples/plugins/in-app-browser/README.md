@@ -21,6 +21,18 @@ servers, and brings the window up first, without taking focus. Where no shell an
 `daoris-driver`, or a gate), the server is not handed, and the session's transcript says why. For a
 machine that runs without the shell, the `browser` example launches a browser of its own instead.
 
+## What it needs
+
+- **Daoris's desktop**, which carries the browser and fills `${browser}`; the headless `daoris-driver`
+  hands a session no such server.
+- **node** on the PATH, with `npx`: the server is started as `npx -y @playwright/mcp@0.0.82`, which
+  fetches it the first time a session is handed it.
+- **A rule that lets sessions call it**: `daoris agent rules allow mcp__browser`, for the machine or
+  with `--workspace <name>`.
+- **A sign-in, once, in the browser's window**, for a page that sits behind one.
+
+## One of two
+
 Both examples name their server `browser`, so one allow rule covers either, and a machine installs
 one of them. The second to claim the name contributes nothing, and `daoris plugin list` says so.
 The version is pinned to the one this was measured against (0.0.82). `--output-dir` keeps the

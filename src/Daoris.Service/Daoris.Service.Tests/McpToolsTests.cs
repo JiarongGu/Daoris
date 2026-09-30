@@ -239,11 +239,14 @@ public sealed class McpToolsTests : IAsyncLifetime
         Assert.Contains("Proposed", tools.ProposePlugin("add", "the person wants quests held overnight", repository: "house-plugins", folder: "quiet-hours"));
         Assert.Contains("Proposed", tools.ProposePlugin("enable", "the person wants it on", id: "example.lands"));
         Assert.Contains("Nothing was proposed", tools.ProposePlugin("add", "no folder named"));
+        // PLUG9 (c) and (d): one of the install's own by its id, and an update of an installed one.
+        Assert.Contains("Proposed", tools.ProposePlugin("add", "the person wants pull requests opened", offer: "github-pull-request"));
+        Assert.Contains("Proposed", tools.ProposePlugin("update", "a newer one has landed", id: "example.lands"));
 
         var written = Directory.GetFiles(HelpProposalBox.FolderOf(home))
             .Select(path => JsonDocument.Parse(File.ReadAllText(path)).RootElement)
             .ToList();
-        Assert.Equal(["add", "enable"], written.Select(file => file.GetProperty("door").GetString()).Order());
+        Assert.Equal(["add", "add", "enable", "update"], written.Select(file => file.GetProperty("door").GetString()).Order());
         Assert.All(written, file => Assert.Equal(("plugin", "h1e1p000"),
             (file.GetProperty("kind").GetString(), file.GetProperty("by").GetProperty("session").GetString())));
     }

@@ -8,11 +8,12 @@ namespace Daoris.Driver;
 /// <param name="Kind">`setting`, `ask`, `agent`, `delete`, `account`, `go` or `plugin`.</param>
 /// <param name="Door">
 /// The `daoris driver` verb for a setting; `ask` for an ask; `update` or `pin` for an agent; `quest` or
-/// `ask` for a delete; `settings` for an account; `go` for a go; `add`, `enable` or `disable` for a plugin.
+/// `ask` for a delete; `settings` for an account; `go` for a go; `add`, `enable`, `disable` or `update` for a
+/// plugin.
 /// </param>
 /// <param name="Target">
 /// The repository a setting is for; the agent of an agent or an account; the id a delete names; a go's
-/// view; the id of a plugin switched on or off.
+/// view; the id of a plugin switched on or off, or updated.
 /// </param>
 /// <param name="Value">A setting's value; a pin's version.</param>
 /// <param name="Session">The conversation that proposed it.</param>
@@ -41,6 +42,9 @@ public sealed record HelpProposal(
 
     /// <summary>A plugin's folder to add from: from that checkout's root, or a whole path (PLUG9).</summary>
     public string? Folder { get; init; }
+
+    /// <summary>One of the install's own plugins to add, by its id (PLUG9 d) — never a path on this machine.</summary>
+    public string? Offer { get; init; }
 }
 
 /// <summary>What the machine holds that a proposal is judged against: names only.</summary>
@@ -67,6 +71,12 @@ public sealed record HelpMachineFacts(
 
     /// <summary>The harness names this build carries, which a plugin may not declare (PLUG9, D64 §5).</summary>
     public IReadOnlyCollection<string> Reserved { get; init; } = [];
+
+    /// <summary>The install's offers folder (PLUG9 d), where an offer is found and an offer's update reads; null is none.</summary>
+    public string? OffersFolder { get; init; }
+
+    /// <summary>The install's offers, as Settings → Plugins lists them (PLUG9 d).</summary>
+    public IReadOnlyList<PluginOffer> Offers { get; init; } = [];
 }
 
 /// <summary>One door as the Agents screen reads it (HELP6): what its Update does, whether it pins, whose accounts it runs as.</summary>
@@ -145,6 +155,15 @@ public sealed record HelpPluginView(
 
     /// <summary>Why an installed plugin contributes nothing as it stands, in the catalogue's words; null when sound.</summary>
     public string? Problem { get; init; }
+
+    /// <summary>What an offer says it needs on the machine, in its README's words (PLUG9 d); empty for every other plugin.</summary>
+    public IReadOnlyList<string> Needs { get; init; } = [];
+
+    /// <summary>What an update changes (PLUG9 c); empty for every other change, and for an update whose declarations stay.</summary>
+    public IReadOnlyList<PluginChange> Changes { get; init; } = [];
+
+    /// <summary>Whether Apply replaces the installed folder from its source, keeping what it kept (an update).</summary>
+    public bool Replaced { get; init; }
 }
 
 /// <summary>A harness a plugin declares, or a server it hands every session: its name, and the command that runs it.</summary>
@@ -191,6 +210,18 @@ public interface IHelpDoors
 
     /// <summary><c>PLUGIN_ACTION</c>'s own enable or disable: a row in <c>plugins.json</c> (PLUG9).</summary>
     void SwitchPlugin(string id, bool on);
+
+    /// <summary>
+    /// <c>PLUGIN_INSTALL</c>'s own copy of one of the install's offers, by its id (PLUG9 d,
+    /// <see cref="PluginInstall.AddOffer"/>). 🔴 Nothing the plugin declares is started here.
+    /// </summary>
+    void AddOffer(string id);
+
+    /// <summary>
+    /// <c>PLUGIN_UPDATE</c>'s own apply (PLUG9 c, <see cref="PluginInstall.Update"/>): the plugin's hook stopped,
+    /// its install folder replaced from its source, what it kept untouched; the loop starts it again later.
+    /// </summary>
+    Task UpdatePluginAsync(string id, CancellationToken ct);
 }
 
 /// <summary>
@@ -311,6 +342,7 @@ public static partial class HelpProposals
             Part = Text(root, "part"),
             Repository = Text(root, "repository"),
             Folder = Text(root, "folder"),
+            Offer = Text(root, "offer"),
         };
 
     /// <summary>
@@ -870,10 +902,12 @@ public static partial class HelpProposals
 
             case "plugin":
             {
-                // PLUG9: a copy or a row, and nothing started — the loop starts what it runs at its next look.
+                // PLUG9: a copy, a swap or a row, and nothing started — the loop starts what it runs at its next look.
                 try
                 {
-                    if (proposal.Door == "add") doors.AddPlugin(plan.Source!);
+                    if (proposal.Door == "add" && proposal.Offer?.Trim() is { Length: > 0 }) doors.AddOffer(plan.Plugin!.Id);
+                    else if (proposal.Door == "add") doors.AddPlugin(plan.Source!);
+                    else if (proposal.Door == "update") await doors.UpdatePluginAsync(plan.Plugin!.Id, ct).ConfigureAwait(false);
                     else doors.SwitchPlugin(plan.Plugin!.Id, proposal.Door == "enable");
                 }
                 catch (DriverException error)

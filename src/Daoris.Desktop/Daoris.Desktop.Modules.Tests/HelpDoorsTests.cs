@@ -163,6 +163,45 @@ public sealed class HelpDoorsTests : Bridge
         Assert.Contains("no plugin `nobody` on this machine", refused.Message);
     }
 
+    /// <summary>
+    /// PLUG9 (d): an offer is <c>PLUGIN_INSTALL</c>'s own copy, by its id, the offer recorded; (c): an update is
+    /// <c>PLUGIN_UPDATE</c>'s own apply, the folder swapped and what the plugin kept untouched.
+    /// </summary>
+    [Fact]
+    public async Task An_offer_is_installed_and_an_update_applied_as_the_plugins_screens_routes_make_them()
+    {
+        var offers = Path.Combine(Path.GetDirectoryName(Home)!, "offers-" + Path.GetFileName(Home));
+        try
+        {
+            var offer = Path.Combine(offers, "acme.quiet-hours");
+            Directory.CreateDirectory(offer);
+            File.WriteAllText(Path.Combine(offer, PluginCatalog.ManifestName), """{ "id": "acme.quiet-hours", "version": "1.0.0" }""");
+            File.WriteAllText(Path.Combine(offer, "hooks.mjs"), "// v1");
+            var doors = new DriverModule(Bus, new DriverLoop(Bus, new HostSupervisor("http://localhost:0"), "http://localhost:0")) { Offers = offers }
+                .HelpDoors(null);
+
+            doors.AddOffer("acme.quiet-hours");
+
+            var installed = Path.Combine(Home, PluginCatalog.Folder, "acme.quiet-hours");
+            Assert.Equal(PluginSource.FromOffer("acme.quiet-hours"), PluginSource.Read(installed).Source);
+            Assert.Contains("already installed", Assert.Throws<DriverException>(() => doors.AddOffer("acme.quiet-hours")).Message);
+
+            File.WriteAllText(Path.Combine(offer, "hooks.mjs"), "// v2");
+            var kept = Path.Combine(Home, PluginCatalog.Folder, PluginCatalog.DataFolder, "acme.quiet-hours");
+            Directory.CreateDirectory(kept);
+
+            await doors.UpdatePluginAsync("acme.quiet-hours", CancellationToken.None);
+
+            Assert.Equal("// v2", File.ReadAllText(Path.Combine(installed, "hooks.mjs")));
+            Assert.True(Directory.Exists(kept));
+            Assert.Contains("no plugin `nobody`", (await Assert.ThrowsAsync<DriverException>(() => doors.UpdatePluginAsync("nobody", CancellationToken.None))).Message);
+        }
+        finally
+        {
+            try { Directory.Delete(offers, recursive: true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
+        }
+    }
+
     /// <summary>The local host's delete routes, standing in: each answers the service's sentence.</summary>
     private sealed class StandInHost : HttpMessageHandler
     {

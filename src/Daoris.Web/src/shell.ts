@@ -21,6 +21,8 @@ import type { LandingChange, LandingRule, RepositoryLanding } from './settings/L
 import type { SweepBranch } from './settings/Sweep';
 import type { LogFilters, LogReading } from './settings/Logs';
 import type { KitPoint, NewPlugin, PluginTrialResult } from './settings/PluginKit';
+import type { PluginOfferShown } from './settings/PluginOffers';
+import type { PluginSourceShown, PluginUpdatePlanShown } from './settings/PluginUpdate';
 import type { OpenTerminal, TerminalOpening, TerminalShellChoice, Terminals } from './work/terminals';
 
 export type { DiffFile, SessionDiff } from './work/diff';
@@ -1494,12 +1496,17 @@ export type PluginEntry = {
   running: boolean;
   folder: string;
   data: string;
+  /** Where it came from (PLUG9 c): what an Update re-reads. An older shell sends none. */
+  source?: PluginSourceShown;
 };
 export type PluginCatalog = {
   folder: string;
   plugins: PluginEntry[];
   /** Where a new plugin may speak (PLUG8): the kit's points, which are the driver's. An older shell sends none. */
   kit?: { points: KitPoint[] };
+  /** Daoris's own plugins the install carries (PLUG9 d), each marked installed or not. An older shell sends none. */
+  offers?: PluginOfferShown[];
+  offersFolder?: string;
 };
 
 export const usePlugins = () => {
@@ -1559,6 +1566,38 @@ export const usePluginAction = () => {
     onSuccess: () => {
       void client.invalidateQueries({ queryKey: keys.plugins });
       // A declared harness came or went with it, so the roster is asked again too.
+      void client.invalidateQueries({ queryKey: keys.harnesses });
+    },
+  });
+};
+
+/**
+ * The screen's half of `daoris plugin update <id>` (PLUG9 c, D50): without `apply`, what an update would
+ * change or why it cannot, for the row to show before the press; with it, the update, and the catalogue and
+ * the roster asked again, since what the plugin declares may have changed.
+ */
+export const usePluginUpdate = () => {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (target: { id: string; apply?: boolean }) => call<PluginUpdatePlanShown>('PLUGIN_UPDATE', target),
+    onSuccess: (plan) => {
+      if (!plan.applied) return;
+      void client.invalidateQueries({ queryKey: keys.plugins });
+      void client.invalidateQueries({ queryKey: keys.harnesses });
+    },
+  });
+};
+
+/**
+ * The screen's Install beside one of the install's own plugins (PLUG9 d): `daoris plugin add --offer <id>`'s
+ * copy. Nothing runs at the press; the catalogue and the roster are asked again.
+ */
+export const usePluginInstall = () => {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (offer: string) => call<{ id: string; name: string; version: string }>('PLUGIN_INSTALL', { offer }),
+    onSuccess: () => {
+      void client.invalidateQueries({ queryKey: keys.plugins });
       void client.invalidateQueries({ queryKey: keys.harnesses });
     },
   });

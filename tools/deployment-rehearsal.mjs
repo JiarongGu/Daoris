@@ -66,8 +66,8 @@ import {
 } from './rehearsal-kit.mjs';
 // The install's layout, from the script that makes it (REV3 CLEAN1) — never a second spelling of it.
 import {
-  HOME, HOST_EXE, HOST_HOME, KEPT_LOCALES, LAUNCHER, OWN, RETIRED_BROWSER_EXE, RETIRED_IN_APP, RETIRED_LAUNCHERS,
-  SHELL_EXE, SHELL_FILES, SHELL_HOME,
+  HOME, HOST_EXE, HOST_HOME, KEPT_LOCALES, LAUNCHER, OFFERED_PLUGINS, OWN, PLUGIN_OFFERS, RETIRED_BROWSER_EXE, RETIRED_IN_APP,
+  RETIRED_LAUNCHERS, SHELL_EXE, SHELL_FILES, SHELL_HOME,
 } from './desktop-publish.mjs';
 
 // ---------------------------------------------------------------------------------------------
@@ -104,6 +104,22 @@ export function insideWorkspace(path, repoRoot) {
   // The gate's own scratch lives under the workspace and is not part of it — the question is whether
   // the shell fell through to a PROJECT build, which is the candidate a deployment does not have.
   return !resolve(path).toLowerCase().startsWith(join(inside, '_fixtures').toLowerCase());
+}
+
+/**
+ * What is wrong with the install's offers (PLUG9 d, D102), as sentences: an offered plugin the install does
+ * not carry in `app/plugin-offers/`, and 🔴 one installed under a home, which a publish must never do — an
+ * offer is installed only by a person's press. Empty when the offers are as the publish claims.
+ */
+export function offerProblems(install, homes) {
+  const problems = [];
+  for (const id of OFFERED_PLUGINS) {
+    if (!existsSync(join(install, ...PLUGIN_OFFERS, id, 'plugin.json'))) problems.push(`${PLUGIN_OFFERS.join('/')}/${id} is not carried`);
+    for (const home of homes) {
+      if (existsSync(join(home, 'plugins', id))) problems.push(`${id} is installed under ${home}`);
+    }
+  }
+  return problems;
 }
 
 /** The bytes a line occupies in a transcript — computed, so nothing restates the string. */
@@ -522,11 +538,21 @@ async function main() {
   const recorded = existsSync(join(install, ...SHELL_FILES))
     ? readFileSync(join(install, ...SHELL_FILES), 'utf8').split('\n').filter(Boolean).sort()
     : [];
-  const besideIt = [HOST_HOME.at(-1), SHELL_FILES.at(-1)];
+  // Beside the application's own files: the host, the record itself, and the offers (PLUG9 d).
+  const besideIt = [HOST_HOME.at(-1), SHELL_FILES.at(-1), PLUGIN_OFFERS.at(-1)];
   check(`…and ${SHELL_FILES.join('/')} names every file the application put there, and nothing else`,
     recorded.includes(SHELL_EXE)
       && recorded.join() === inApp.filter((name) => !besideIt.includes(name)).sort().join(),
     `recorded: ${recorded.join(', ') || '(nothing)'}`);
+
+  // Daoris's own example plugins (PLUG9 d, D102): carried as offers beside the application, and none
+  // installed — the install's `data/` does not exist yet, and nothing a publish writes goes into it.
+  const laidOut = existsSync(join(install, ...PLUGIN_OFFERS)) ? readdirSync(join(install, ...PLUGIN_OFFERS)).sort() : [];
+  check(`the install carries Daoris’s own plugins as offers in ${PLUGIN_OFFERS.join('/')}/, and only those`,
+    offerProblems(install, []).length === 0 && laidOut.join() === [...OFFERED_PLUGINS].sort().join(),
+    `offered: ${laidOut.join(', ') || '(nothing)'}; ${offerProblems(install, []).join('; ')}`);
+  check('…and the publish installed none of them', !existsSync(join(install, HOME, 'plugins')),
+    `${join(install, HOME, 'plugins')} exists`);
 
   // -------------------------------------------------------------- 2. the publish guard
 
@@ -1003,6 +1029,20 @@ if (!done.ok) throw new Error(done.text);
     if (opened?.error?.code !== 'NOT_READY') break;
     await sleep(500);
   }
+
+  // PLUG9 (d): the DEPLOYED driver finds the install's offers beside the application — this run's home is
+  // scratch, not the install's `data/` — and, after a whole run of its loop, has installed none of them.
+  const catalogue = cdp
+    ? await bounded(
+      cdp.evaluate(bridgeCall('DAORIS.DRIVER', 'PLUGINS', {}))
+        .catch((error) => ({ ok: false, error: { code: 'EVALUATE', message: error.message } })),
+      45_000,
+      { ok: false, error: { code: 'NO_ANSWER', message: 'the page did not answer within 45s' } })
+    : { ok: false, error: { code: 'NO_PAGE', message: found } };
+  const offeredHere = (catalogue?.data?.offers ?? []).filter((offer) => !offer.installed).map((offer) => offer.id).sort();
+  check('the deployed shell offers Daoris’s own plugins, found beside the application, none installed',
+    offeredHere.join() === [...OFFERED_PLUGINS].sort().join() && offerProblems(install, [home, join(install, HOME)]).length === 0,
+    JSON.stringify(catalogue?.data?.offers ?? catalogue));
   cdp?.close();
   const chatId = (opened?.ok && opened.data?.sessionId) || '';
   check('a conversation opens in the newcomer, on the protocol stub, over the bridge',
