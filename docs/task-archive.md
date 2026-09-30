@@ -8400,3 +8400,21 @@ C# tests that read `locales/<language>.json` (`RefusalCatalogueTests`, `AskTierC
 main, unseen because that batch skipped the .NET suites as "web only". Both now merge the area files as
 the page does. MOD9's merge tool runs every declared gate whatever the lane.
 **Proven by:** driver 1431, modules 399, service 655 + 46, CLI 629, family 301/301, deployment 70/70.
+
+
+## MOD5 — the driver module by domain (2026-09-30)
+
+> - [ ] **MOD5 — the driver module by domain**: `DriverModule.cs` → a partial per domain and a route
+> table each adds to.
+
+**Outcome** (built by a subagent in its own worktree, merged, then rehearsed on main with every declared
+gate). `DriverModule.cs` (2,506 lines, one switch) became ten domain partials, each named after the page's
+`bridge/<domain>.ts` that calls its routes, and a 158-line core. The switch became a route table built from
+`[DriverRoute]` marks, and an unknown route still answers NO_ROUTE. The case bodies moved unchanged, and the
+399 existing tests passed untouched before they were split per partial. `DriverModuleRoutesTests` checks both
+ways that a route cannot be half-added: every page call answered, every handler asked, each route in its
+domain's partial, and each named in its README row. The README's single `DAORIS.DRIVER` row became one row
+per domain. `MERGE_SESSION_TREE` turned out to be called by neither the page nor a test since WSR1; it is now
+held by a test, and retiring it is a question for later.
+**Proven by:** driver 1431, modules 406, service 655 + 46, vitest 1700, CLI 629, release 66/66, family 301/301,
+Playwright 21, deployment 70/70.
