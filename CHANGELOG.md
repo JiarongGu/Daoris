@@ -928,6 +928,7 @@ The first version: doctrine that installs, is checked, and flows back.
   left apart. `daoris agent profile default <agent> --clear [--workspace <name>]` clears a default from a
   terminal, as the screen does. The usage report counts previews opened, and the landing record keeps
   each repository's newest fifty traces of gone branches.
+- **The window says when the driver is up, and a landed session says where its work went** (LOOK2). Right after a start the status bar reads *starting* until the driver is ready, and every screen that asked too early asks again, so Settings no longer shows *no repository* for a moment that lasted. The session list names where a landed session's work went instead of a tree that is gone, and choosing a workspace default on the Agents screen says what sessions there will run as.
 - **A plugin can push the branch and open the pull request** (WSR4, D100). A branch landing rule may
   name an installed plugin (`daoris driver landing … branch <pattern> --plugin <id>`, or the *who
   pushes it* chooser in Settings → Workspace → *How work lands*). Once accepting has made the branch,

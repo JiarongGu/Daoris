@@ -484,6 +484,70 @@ describe('the harness roster', () => {
   });
 
   /**
+   * LOOK2c (found by LEFT3): *use for a workspace* on the tool's own row clears that workspace's account, and with a
+   * machine default set its sessions then run as that default, not in the tool's own home the row names. The choice says
+   * so before the press, and the press says what sessions there run as now, the fact `daoris agent profile default …
+   * --clear --workspace` prints.
+   */
+  it('the tool’s own row says a workspace chosen there falls back to the machine’s default, and says it after', async () => {
+    const notify = vi.fn();
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.startsWith('/api/registry')) return Response.json([{ ...REGISTRY[0], workspace: 'lab' }]);
+      return respond(url);
+    }));
+    invoke.mockImplementation(async (_module: string, type: string, options?: { payload?: Record<string, unknown> }) => {
+      if (type === 'HARNESSES') return ROSTER;
+      if (type === 'HARNESS_ACTION' && options?.payload?.action === 'profile-default') {
+        return {
+          harness: 'claude-code', action: 'profile-default', exitCode: 0,
+          default: { workspace: 'lab', account: 'personal', from: 'machine' },
+        };
+      }
+      return WIRING;
+    });
+    show(<SettingsView notify={notify} section="agents" />);
+
+    // Two tools, two own rows; claude-code's is first, in the roster's order.
+    const trigger = (await screen.findAllByRole('combobox', { name: "use this machine's own for a workspace" }))[0]!;
+    trigger.focus();
+    await userEvent.keyboard('{Enter}');
+    await userEvent.click(await screen.findByRole('option', { name: "lab, which then runs as personal, this machine's default" }));
+
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HARNESS_ACTION', {
+      payload: { harness: 'claude-code', action: 'profile-default', workspace: 'lab' },
+    });
+    await waitFor(() => expect(notify).toHaveBeenCalledWith(
+      "lab names no account for claude-code now: its sessions run as this machine's default, personal."));
+  });
+
+  /** With no machine default, the tool's own row's choice is what it says, and the press says so too. */
+  it('the tool’s own row, with no machine default, runs a workspace in the tool’s own home and says so', async () => {
+    const notify = vi.fn();
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.startsWith('/api/registry')) return Response.json([{ ...REGISTRY[0], workspace: 'lab' }]);
+      return respond(url);
+    }));
+    invoke.mockImplementation(async (_module: string, type: string, options?: { payload?: Record<string, unknown> }) => {
+      if (type === 'HARNESSES') return { ...ROSTER, harnesses: [{ ...ROSTER.harnesses[0], machineDefault: null }] };
+      if (type === 'HARNESS_ACTION' && options?.payload?.action === 'profile-default') {
+        return { harness: 'claude-code', action: 'profile-default', exitCode: 0, default: { workspace: 'lab', account: null, from: 'own' } };
+      }
+      return WIRING;
+    });
+    show(<SettingsView notify={notify} section="agents" />);
+
+    const trigger = await screen.findByRole('combobox', { name: "use this machine's own for a workspace" });
+    trigger.focus();
+    await userEvent.keyboard('{Enter}');
+    await userEvent.click(await screen.findByRole('option', { name: 'lab' }));
+
+    await waitFor(() => expect(notify).toHaveBeenCalledWith(
+      'lab names no account for claude-code now: its sessions run in its own configuration home.'));
+  });
+
+  /**
    * A sign-in is the tool's to keep (D49 §4): there is no field for a token or a password, and the
    * surface says where a sign-in lives. An API key is the one exception (D67 §1), and it has its own
    * test below: one field, behind a press, on an agent that takes a key.

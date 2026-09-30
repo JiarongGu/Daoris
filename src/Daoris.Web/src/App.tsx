@@ -269,7 +269,10 @@ export function App() {
   const indexed = (repositories.data ?? []).reduce((sum, r) => sum + r.total, 0);
   const outstandingCount = outstanding.data?.length ?? 0;
 
-  const presence: DriverPresence = driver.data ? 'running' : driver.isError ? 'stopped' : 'absent';
+  // Ready once the driver's service is up, not merely its file (LOOK2a); a shell older than the field says nothing, and reads ready.
+  const presence: DriverPresence = driver.data
+    ? (driver.data.ready === false ? 'starting' : 'running')
+    : driver.isError ? 'stopped' : 'absent';
   const liveSessions = (running.data ?? []).filter((s) => SESSION_ACTIVE.has(s.state)).length;
   // Overview's badge, from the one derivation the band uses — two answers to "how many need me" would
   // disagree the first time either was edited. Sessions' badge is its own sessions only (U20).

@@ -76,6 +76,29 @@ public sealed class HarnessProfileTests : Bridge
     }
 
     /// <summary>
+    /// LOOK2c: a default's edit answers what sessions there run as now, the fact the terminal's verb prints. The tool's
+    /// own row's *use for a workspace*, with a machine default set, runs that workspace as the default, not in the tool's
+    /// own home, and the answer says so for the screen to say.
+    /// </summary>
+    [Fact]
+    public async Task A_defaults_edit_answers_what_sessions_there_run_as_now()
+    {
+        var module = Module();
+        await AnswerAsync(module, "HARNESS_ACTION",
+            new { harness = "claude-code", action = "profile-add", profile = "work" });
+        var machine = (await AnswerAsync(module, "HARNESS_ACTION",
+            new { harness = "claude-code", action = "profile-default", profile = "work" })).GetProperty("default");
+        var cleared = (await AnswerAsync(module, "HARNESS_ACTION",
+            new { harness = "claude-code", action = "profile-default", workspace = "aurora" })).GetProperty("default");
+
+        Assert.Equal(JsonValueKind.Null, machine.GetProperty("workspace").ValueKind);
+        Assert.Equal("work", machine.GetProperty("account").GetString());
+        Assert.Equal("aurora", cleared.GetProperty("workspace").GetString());
+        Assert.Equal("work", cleared.GetProperty("account").GetString());
+        Assert.Equal("machine", cleared.GetProperty("from").GetString());
+    }
+
+    /// <summary>
     /// A harness with real spawns, real answers and no account. Signed in exactly when the profile
     /// holds a `credentials.json` — what a real login leaves behind — and it says WHO by that file's
     /// contents, the way `claude auth status` names an email. The stub adapter's own toolchain asks

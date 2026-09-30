@@ -1425,6 +1425,14 @@ knowledge server on `session/new`, not through the repository's own files. It is
 because the canon is what adoption installs. For such a repository the driven session is the only one
 that can answer, and the surfaces say so. The pipe door keeps its own requirements.
 
+**Amended 2026-10-01 (LOOK2a): the shell says when its driver is up.** Every route that reads the driver's service
+refuses *still coming up* (`DRIVER_NOT_READY`) until the loop hands the service over, and never answers an empty list
+for it. The service holds its registry the moment it answers at all, so that handing over is the whole of being ready.
+The loop then says `DRIVER_READY` once, and the page asks again everything the driver refused as not ready, and the
+driver's own answers. Before, only a tick asked again, and the first tick can wait on a remote's sync or on another
+driver's lock (DRV8a): Settings → Workspace said no repository had a line until something else asked. The driver's
+state carries `ready`, and the status bar says *starting* until it is true, where it said *ready* from the file alone.
+
 ## D47 — The remote is the same host fed by the desktop; transitions write through, records sync (2026-09-20)
 
 **Decision.** DRV3's design is settled: `docs/2026-09-20-remote-design.md` is the mechanism for D45's
@@ -5164,6 +5172,15 @@ is a door owed: the `agent` kind's `default` door takes an account and no clear,
 service's `agent_propose` and the driver's judge. `HelpCoverageTests` holds it as a form owed, and the room names the
 command meanwhile.*
 
+*Amended by LOOK2c (2026-10-01): the screen says it too. *Use for a workspace* on the tool's own row clears that
+workspace's account, and with a machine default set its sessions then run as that default, not in the tool's own home
+the row names. No file can say "the tool's own home here" over a machine default, so offering that as a second choice
+would be a new value in both twins' file, and is not built. Instead each of that row's choices says where it leads
+while a machine default is set (*lab, which then runs as personal, this machine's default*), and every default's press
+says what sessions there run as now, the fact the terminal's verb prints: `HARNESS_ACTION`'s `profile-default` answers
+`default` (the workspace, the account or none, and whether it came from the workspace, the machine or the agent's own
+home), from the resolution a start takes (`DriverModule.DefaultStanding`). The twins' table of edits is unchanged.*
+
 **Why.** HELP6 and HELP8 each found a door built since the last pass that Ask Daoris could not reach, and
 READ1 left one the room already promised. A list kept by hand drifts; a list a test derives from the doors'
 own sources does not.
@@ -5577,6 +5594,16 @@ says so before the press instead of offering it.
   does not resolve a link inside a tree.
 - **Re-recognising a merged session as landed** (a merge records nothing, D102): its review after a tidy is
   `SESSION_TREE_GONE`, which offers nothing that acts on a tree. A merge's own record is not built.
+
+**Amended 2026-10-01 (LOOK2b): the rail reads as landed too.** The session list said where a session's tree was
+(*in s-2394e5d9*) after its landing tidied that tree away and its branch went. A row now says where the work landed
+(*landed on `<branch>`*, and *gone since* for a trace) by the review's own rule: while the landed branch stands, or once
+the tree is gone. A tree still here after its branch went is named as before, and a tree gone with no landing (a merge,
+which records none) is not named at all. The rail asks once for the rows it shows (`SESSION_WHERE`), naming the tree
+each record holds; the host reads `landings.json` and whether a tree of its own home's is there, and runs no git, so the
+row states the branch as the record holds it and the review says where it stands. It is not a field of the sessions
+listing, which is the service's records and travels (D47 §4), where a landing is this machine's (D102). Held by
+`DriverModuleSessionsTests` and the vitest loop (`SessionRow`, `SessionRail`); not looked at on the window.
 
 ### What the gates do not cover
 

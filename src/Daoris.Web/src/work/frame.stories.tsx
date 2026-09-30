@@ -24,6 +24,8 @@ export const Statuses: StoryObj = {
         <StatusBar driver="running" sessions={2} workspace="default" remote onDriver={() => {}} />
         {/* A first start (SETUP1b): the setup's count, until its required steps are done. */}
         <StatusBar driver="running" sessions={0} workspace={null} remote={false} setup={{ done: 1, of: 5 }} onSetup={() => {}} />
+        {/* A shell whose driver's file answers while its service is not up yet (LOOK2a): starting, not ready. */}
+        <StatusBar driver="starting" sessions={0} workspace="aurora" remote onDriver={() => {}} />
         {/* A shell whose driver did not answer — different from having none, and it says so. */}
         <StatusBar driver="stopped" sessions={0} workspace="aurora" remote />
         {/* A browser: no driver, and the remote question is not one it can be asked. */}

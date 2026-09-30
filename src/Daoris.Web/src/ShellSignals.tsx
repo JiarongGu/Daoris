@@ -3,6 +3,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { useShenora, useShenoraEvent } from '@shenora/react';
 import { sentence } from './format';
 import { keys } from './queries';
+import { useDriverReady } from './shell';
 import { type Consideration, type TrustHold, newsFrom } from './signals';
 import type { Notify } from './ui';
 
@@ -82,6 +83,9 @@ export function ShellSignals({ notify, onAttend }: {
     // tick when the registry moved, and this is the half that makes the page look again.
     void client.invalidateQueries({ queryKey: keys.allRegistry });
   });
+
+  // The driver's service is up (LOOK2a): what it refused while it came up is asked again now, not at the first tick.
+  useDriverReady();
 
   // A failure the driver names is worded from the catalogue, in the reader's language (UX5 U30): a
   // refused connection toasted the .NET socket's own words. Anything else keeps the driver's.

@@ -188,12 +188,25 @@ export function AgentsDomain({ notify }: { notify: Notify }) {
                     {t('harness.profile.use')}
                   </Button>
                 )}
+                {/* 🔴 Choosing the tool's own home for a workspace CLEARS that workspace's account, and with a machine
+                    default set its sessions then run as that default (LOOK2c, found by LEFT3): no file can say "the
+                    tool's own home here" over a machine default. So each choice says where it leads before the press,
+                    and the press says what sessions there run as, as the terminal's verb does. */}
                 {workspaces.length > 0 && (
                   <SelectField
                     value=""
                     onChange={(workspace) =>
                       run(tool.doors[0]!.harness, 'profile-default', undefined, undefined, workspace)}
-                    options={workspaces.map((workspace) => ({ value: workspace, label: workspace }))}
+                    options={workspaces.map((workspace) => ({
+                      value: workspace,
+                      label: tool.machineDefault !== null
+                        ? t('harness.profile.useForFallsBack', {
+                          workspace,
+                          account: named(tool.accounts.find((profile) => profile.name === tool.machineDefault)
+                            ?? { name: tool.machineDefault }),
+                        })
+                        : workspace,
+                    }))}
                     placeholder={t('harness.profile.useForPlaceholder')}
                     ariaLabel={t('harness.profile.useFor', { profile: t('harness.own') })}
                   />

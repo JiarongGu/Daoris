@@ -352,6 +352,95 @@ export function isShell(page, serviceUrl) {
 export const PAGE_IDENTITY ='({ webview: !!window.chrome?.webview, chromium: !!window.__shenora_chromium, '
   + "origin: location.origin, host: new URLSearchParams(location.search).get('host') })";
 
+/**
+ * Where the page remembers the viewer's theme choice: `theme.ts`'s `THEME_KEY`, spelled here too
+ * (`twins.md`), because `shot --theme` sets the choice for a capture and puts it back (LOOK1).
+ */
+export const THEME_KEY = 'daoris.theme';
+
+/**
+ * The theme the page is in, evaluated in it: the forced attribute a light or dark choice puts on
+ * `<html>`, else the scheme the system (or the emulation) reports. The same reading as `theme.ts`'s
+ * `effectiveDark`, including its dark default where the media query cannot be asked.
+ */
+export const PAGE_THEME = '(() => { const forced = document.documentElement.dataset.theme; '
+  + "if (forced === 'light' || forced === 'dark') return forced; "
+  + "try { return matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'; } "
+  + "catch { return 'dark'; } })()";
+
+/**
+ * An expression that stores `value` as the viewer's choice (null forgets it, which is System) and tells
+ * the page, answering the choice it replaced: `{ prior }`, or `{ refused }` with the store's reason.
+ *
+ * The page hears a write through `followStoredTheme`, which the browser calls only in the OTHER
+ * documents of the origin. So this document is told as they are, by the same event, and nothing new is
+ * reached into the page: it follows the write as it follows one made in a second window (WINDOW1).
+ */
+export function themeChoiceExpression(value) {
+  return `(() => { const key = ${JSON.stringify(THEME_KEY)}; let prior;
+    try {
+      prior = localStorage.getItem(key);
+      ${value === null ? 'localStorage.removeItem(key);' : `localStorage.setItem(key, ${JSON.stringify(value)});`}
+    } catch (error) { return { refused: String((error && error.message) || error) }; }
+    dispatchEvent(new StorageEvent('storage', { key }));
+    return { prior }; })()`;
+}
+
+/**
+ * Do `work` with the page in `theme`, and leave the viewer's choice as it was (LOOK1).
+ *
+ * The system's scheme is emulated first, which is all a viewer on System needs, and it ends with the
+ * debug session. A viewer who chose light or dark overrides the emulation, and `--theme light`
+ * photographed their dark window with nothing said. So where the emulation does not take, the viewer's
+ * choice is set for the capture through the page's own store, and put back after it, whether the
+ * capture worked or not. A page that still is not in the theme is refused rather than photographed, and
+ * a choice that could not be put back fails the shot and names what it was.
+ */
+export async function withPageTheme(cdp, theme, work, { settle = 700 } = {}) {
+  await cdp.send('Emulation.setEmulatedMedia', { features: [{ name: 'prefers-color-scheme', value: theme }] });
+
+  let changed = false;
+  let prior = null;
+  const before = await cdp.evaluate(PAGE_THEME);
+  if (before !== theme) {
+    const taken = await cdp.evaluate(themeChoiceExpression(theme));
+    if (!taken || taken.refused) {
+      throw new Error(`refusing: the page's own theme choice keeps it ${before} over the emulated scheme, and it `
+        + `could not be set to ${theme} for the capture (${taken?.refused ?? 'the page said nothing'}). `
+        + 'Choose System under Settings → Theme, or take the shot without --theme.');
+    }
+    changed = true;
+    prior = taken.prior ?? null;
+  }
+
+  let outcome = null;
+  try {
+    // The page's listeners fire and the SET_THEME round trip lands before the window has repainted.
+    // Nothing reports when that finished, so this waits.
+    await new Promise((resolve) => setTimeout(resolve, settle));
+    const now = await cdp.evaluate(PAGE_THEME);
+    if (now !== theme) {
+      throw new Error(`refusing: the page is still ${now} with its theme choice set to ${theme}, `
+        + 'so the capture would photograph the other theme.');
+    }
+    await work();
+  } catch (error) {
+    outcome = error;
+  }
+
+  if (changed) {
+    const back = await cdp.evaluate(themeChoiceExpression(prior))
+      .catch((error) => ({ refused: error.message }));
+    if (!back || back.refused) {
+      const left = `⚠ the viewer's theme choice was not put back (${back?.refused ?? 'the page said nothing'}): `
+        + `it is ${theme} now and was ${prior ?? 'System'}. Settings → Theme sets it back.`;
+      outcome = new Error(outcome ? `${outcome.message}\n${left}` : left);
+    }
+  }
+
+  if (outcome) throw outcome;
+}
+
 /** What the shell captions that window — how the OS-level capture finds it. */
 function windowCaption(window) {
   // Daoris's own browser (D85) is the engine's own window, captioned `<page> - Chromium`.
@@ -620,6 +709,11 @@ async function main(command, args) {
        * either. Emulating the media query makes the page push the other theme, and the window
        * repaints for real.
        *
+       * The page follows the emulation only while the viewer's choice is System. A viewer who chose
+       * light or dark has theirs set for the capture and put back after it, and a page that still
+       * is not in the theme is refused rather than photographed (LOOK1, `withPageTheme`). It holds
+       * for `--page` too, which ignored `--theme` before.
+       *
        * 🔴 The emulation is scoped to the CDP SESSION and is reverted the moment it closes. A probe
        * that set it, closed, and then captured reported dark and photographed a light window — so
        * the capture happens HERE, while the connection is still open. */
@@ -658,6 +752,7 @@ async function main(command, args) {
 
       if (page !== -1) {
         const cdp = await attach(window);
+        let refusal = null;
         try {
           if (size) {
             await cdp.send('Emulation.setDeviceMetricsOverride', {
@@ -665,14 +760,21 @@ async function main(command, args) {
             });
             await new Promise((resolve) => setTimeout(resolve, 600));
           }
-          const shot = await cdp.send('Page.captureScreenshot', { format: 'png' });
-          mkdirSync(SHOTS, { recursive: true });
-          writeFileSync(join(SHOTS, `${name}.png`), Buffer.from(shot.data, 'base64'));
-          console.log(`captured the page -> ${join(SHOTS, `${name}.png`)}`);
+          const capturePage = async () => {
+            const shot = await cdp.send('Page.captureScreenshot', { format: 'png' });
+            mkdirSync(SHOTS, { recursive: true });
+            writeFileSync(join(SHOTS, `${name}.png`), Buffer.from(shot.data, 'base64'));
+            console.log(`captured the page -> ${join(SHOTS, `${name}.png`)}`);
+          };
+          if (theme) await withPageTheme(cdp, theme, capturePage);
+          else await capturePage();
+        } catch (error) {
+          refusal = error.message;
         } finally {
           if (size) await cdp.send('Emulation.clearDeviceMetricsOverride').catch(() => {});
           cdp.close();
         }
+        if (refusal) fail(refusal, 1);
         pruneShots();
         break;
       }
@@ -687,27 +789,32 @@ async function main(command, args) {
       }
       const whose = ['-ProcessName', basename(exe, '.exe'), '-ExePath', exe,
         ...(browsers.length ? ['-ProcessId', String(browsers[0])] : [])];
-      const capture = () => run('powershell', ['-NoProfile', '-ExecutionPolicy', 'Bypass',
+      const captureArgs = ['-NoProfile', '-ExecutionPolicy', 'Bypass',
         '-File', join(repoRoot, 'tools', 'shot-window.ps1'),
         ...whose,
         ...(window ? ['-WindowTitle', windowCaption(window)] : []),
-        '-OutFile', join(SHOTS, `${name}.png`)]);
+        '-OutFile', join(SHOTS, `${name}.png`)];
 
       if (theme) {
+        // Thrown, not exited: `run` would end the process inside the capture and skip putting the
+        // viewer's theme choice back (LOOK1).
+        const capture = async () => {
+          const result = spawnSync('powershell', captureArgs, { stdio: 'inherit', shell: false });
+          if (result.error) throw new Error(`powershell did not start: ${result.error.message}`);
+          if (result.status !== 0) throw new Error(`the capture exited ${result.status}`);
+        };
         const cdp = await attach(window);
+        let refusal = null;
         try {
-          await cdp.send('Emulation.setEmulatedMedia', {
-            features: [{ name: 'prefers-color-scheme', value: theme }],
-          });
-          // The page's own listener has to fire and the SET_THEME round trip has to land before the
-          // window has repainted. Nothing reports when that finished, so this waits.
-          await new Promise((resolve) => setTimeout(resolve, 700));
-          capture();
+          await withPageTheme(cdp, theme, capture);
+        } catch (error) {
+          refusal = error.message;
         } finally {
           cdp.close();
         }
+        if (refusal) fail(refusal, 1);
       } else {
-        capture();
+        run('powershell', captureArgs);
       }
 
       pruneShots();

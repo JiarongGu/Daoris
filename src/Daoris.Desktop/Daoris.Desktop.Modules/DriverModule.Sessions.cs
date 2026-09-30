@@ -125,6 +125,75 @@ public sealed partial class DriverModule
         return new { Openings = _loop.Events.Openings(ids) };
     }
 
+    /// <summary>
+    /// Where each of these sessions' work is now (LOOK2b), for the rail in one ask: whether the tree it opened is still
+    /// here, and its landing, standing or a trace (D113), so a row says where the work landed rather than naming a tree a
+    /// landing tidied away.
+    /// </summary>
+    /// <remarks>
+    /// <para><b>From this machine's own files, and cheap</b>: the landing record and whether a folder is there. No service
+    /// is asked and no git is run, so it answers on a cold start, and a landing's branch is read as the record holds it:
+    /// the review is where git is asked where that branch stands (D113 §1).</para>
+    ///
+    /// <para><b>Only this home's trees are looked at.</b> The page sends the tree each record names; one outside the trees
+    /// this home opened is a session in a repository's own checkout, which no landing tidies, and nothing is said of
+    /// it. Nothing machine-local comes back.</para>
+    /// </remarks>
+    [DriverRoute("SESSION_WHERE")]
+    private async Task<object?> SessionWhereAsync(IpcRequest request, CancellationToken cancellationToken)
+    {
+        var trees = new SessionTrees(_loop.Home);
+        var rows = new List<object>();
+        if (request.Payload is { } payload && payload.TryGetProperty("sessions", out var sessions)
+            && sessions.ValueKind == JsonValueKind.Array)
+        {
+            foreach (var session in sessions.EnumerateArray())
+            {
+                if (session.ValueKind != JsonValueKind.Object
+                    || !session.TryGetProperty("id", out var named) || named.ValueKind != JsonValueKind.String
+                    || !session.TryGetProperty("tree", out var at) || at.ValueKind != JsonValueKind.String)
+                {
+                    continue;
+                }
+
+                var id = named.GetString()!;
+                var tree = at.GetString()!;
+                if (!HeldTree(trees, tree)) continue;
+
+                var landing = trees.Recorded.Landing(id);
+                rows.Add(new
+                {
+                    Session = id,
+                    TreeGone = SessionTrees.TreeGone(tree),
+                    Landed = landing is null
+                        ? null
+                        : new
+                        {
+                            landing.Repository,
+                            landing.Branch,
+                            State = landing.GoneAt is null ? LandedState.Standing : LandedState.Gone,
+                        },
+                });
+            }
+        }
+
+        await Task.CompletedTask;
+        return new { Sessions = rows };
+    }
+
+    /// <summary>Whether a path names a tree this home opened; a path no folder could have is none.</summary>
+    private static bool HeldTree(SessionTrees trees, string path)
+    {
+        try
+        {
+            return path.Length > 0 && trees.Holds(path);
+        }
+        catch (Exception error) when (error is ArgumentException or NotSupportedException or PathTooLongException)
+        {
+            return false;
+        }
+    }
+
     // What sessions said, searched (RAIL1): the person's words and the agent's, from this machine's
     // own record, bounded and saying so.
     [DriverRoute("SESSION_SEARCH")]

@@ -2,6 +2,7 @@
   "work.status.label": "本机状态",
   "work.status.driver": "驱动",
   "work.status.driverRunning": "就绪",
+  "work.status.driverStarting": "启动中",
   "work.status.driverStopped": "无响应",
   "work.status.driverAbsent": "本机没有",
   "work.status.sessions": "{{count}} 个会话",

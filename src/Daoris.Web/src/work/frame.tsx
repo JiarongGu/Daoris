@@ -228,8 +228,11 @@ export function ActivityBar<T extends string>({
   );
 }
 
-/** What the driver is, as a surface can honestly know it. */
-export type DriverPresence = 'running' | 'stopped' | 'absent';
+/**
+ * What the driver is, as a surface can honestly know it. `starting` is a shell whose driver answers from its file while
+ * its service is not up yet, so every route that reads the service still refuses (LOOK2a).
+ */
+export type DriverPresence = 'running' | 'starting' | 'stopped' | 'absent';
 
 /**
  * Ambient truth: the driver, how much is running, which circle, and whether this one syncs.
@@ -290,7 +293,7 @@ export function StatusBar({
 }) {
   const { t } = useTranslation();
   const tone = driver === 'running' ? 'live' : driver === 'stopped' ? 'parked' : 'idle';
-  const driverWord = driver === 'running' ? 'Running' : driver === 'stopped' ? 'Stopped' : 'Absent';
+  const driverWord = driver === 'running' ? 'Running' : driver === 'starting' ? 'Starting' : driver === 'stopped' ? 'Stopped' : 'Absent';
 
   return (
     <footer

@@ -158,6 +158,36 @@ describe('the session rail', () => {
       });
     });
 
+    /**
+     * LOOK2b: the rail said *in s-2394e5d9* of a session whose landing had tidied that tree away. Where each row's work
+     * is now is asked once for the rows the rail shows, naming the tree each record holds, and a landed row says where
+     * the work landed.
+     */
+    it('says where a landed session’s work went, asked once for the rows the rail shows', async () => {
+      const tidied = 'C:/somewhere/.daoris/trees/default/engine/s-2394e5d9';
+      SESSIONS = [...LIVE, {
+        ...base, id: 'e5f6a7b8', quest: '7a82cc', repository: 'engine', state: 'completed',
+        created: at(400), updated: at(300), tree: tidied,
+      }];
+      answer((type) => (type === 'SESSION_WHERE'
+        ? { sessions: [{ session: 'e5f6a7b8', treeGone: true, landed: { repository: 'engine', branch: 'feature/7a82cc-streaming-budget', state: 'standing' } }] }
+        : undefined));
+      rail();
+
+      expect(await screen.findByText(/landed on feature\/7a82cc-streaming-budget/)).toBeInTheDocument();
+      expect(screen.queryByText(/in s-2394e5d9/)).toBeNull();
+      // The live session's own tree is still named: nothing was said of it but that it is there.
+      expect(screen.getByText(/in streaming-budget/)).toBeInTheDocument();
+      expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_WHERE', {
+        payload: {
+          sessions: [
+            { id: 'e5f6a7b8', tree: tidied },
+            { id: 's1a2b3c4', tree: 'C:/somewhere/.daoris/trees/default/engine/streaming-budget' },
+          ],
+        },
+      });
+    });
+
     it('finds sessions by name at once, and by what was said with the words marked', async () => {
       const select = vi.fn();
       answer((type, payload) => {

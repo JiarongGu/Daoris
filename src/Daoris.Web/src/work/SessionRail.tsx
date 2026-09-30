@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { HELP_REPOSITORY, type Quest, type Session } from '../api';
 import { useQuests, useRegistry, useSessions } from '../queries';
 import { partition, waitingFirst } from './rail';
-import { type SessionHit, useDriver, useOpenWindow, useSessionOpenings, useSessionSearch } from '../shell';
+import { type SessionHit, useDriver, useOpenWindow, useSessionOpenings, useSessionSearch, useSessionWhere } from '../shell';
 import { EmptyState, Icon, type Notify, SESSION_ACTIVE, SkeletonRows, useErrorNotify } from '../ui';
 import { cn } from '../lib/cn';
 import { useDebounced } from '../lib/useDebounced';
@@ -66,6 +66,12 @@ export function SessionRail({ selected = null, onSelect, notify, compact = false
   const openWindow = useOpenWindow();
   // A conversation's name is what was first said in it (RAIL1), from this machine's record.
   const openings = useSessionOpenings(sessions.data);
+  // Live sessions grouped by repository, and beneath them the ones that ended — reachable after a
+  // restart, which §7 of the working-surface design promises and which this rail did not keep until
+  // the deployed application showed four empty-state sentences over four real records (`rail.ts`).
+  const { active: shown, ended, hiddenEnded } = partition(sessions.data ?? [], selected);
+  // Where each row's work is now (LOOK2b): its tree, or where its landing put the work — asked once, for the rows shown.
+  const where = useSessionWhere([...shown, ...ended]);
   // Searching (RAIL1): by name at once, and by what was said once the typing settles.
   const [query, setQuery] = useState('');
   const settled = useDebounced(query, 250);
@@ -88,6 +94,7 @@ export function SessionRail({ selected = null, onSelect, notify, compact = false
       taking={taking[session.id]}
       lastTurn={lastTurns[session.id]}
       root={registered.get(session.repository)?.root}
+      where={where[session.id]}
       selected={session.id === selected}
       onSelect={onSelect}
       onDetach={(id) => openWindow.mutate(sessionWindowName(id))}
@@ -98,10 +105,6 @@ export function SessionRail({ selected = null, onSelect, notify, compact = false
     />
   );
 
-  // Live sessions grouped by repository, and beneath them the ones that ended — reachable after a
-  // restart, which §7 of the working-surface design promises and which this rail did not keep until
-  // the deployed application showed four empty-state sentences over four real records (`rail.ts`).
-  const { active: shown, ended, hiddenEnded } = partition(sessions.data ?? [], selected);
   // What a search may find: everything the list holds, or only what is running where the rail is live.
   const pool = live ? (sessions.data ?? []).filter((session) => SESSION_ACTIVE.has(session.state)) : (sessions.data ?? []);
 

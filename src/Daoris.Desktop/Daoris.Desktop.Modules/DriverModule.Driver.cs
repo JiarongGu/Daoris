@@ -153,6 +153,9 @@ public sealed partial class DriverModule
         var config = DriverConfig.Load(_loop.ConfigPath);
         return new
         {
+            // Whether the loop's service is up (LOOK2a): until it is, every route that reads it refuses *still coming up*,
+            // so the status bar says starting rather than ready, which this file alone would claim.
+            Ready = _loop.Service is not null,
             _loop.ConfigPath,
             // Where this machine's Daoris lives (D63), and what establishing it did this start — a
             // machine-local path, answered only over this bridge, like every path here.

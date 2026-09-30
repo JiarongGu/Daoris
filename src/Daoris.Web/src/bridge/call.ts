@@ -40,5 +40,11 @@ export const pressBound = (rows: number) => Math.max(1, rows) * hostBounds.repla
 /** How long a landing or a hand-off a plugin pushes may take: the plugin's start and its one answer, each within its patience. */
 export const pluginBound = 2 * hostBounds.pluginMinutes * MINUTE + SLACK;
 
+/**
+ * Whether the driver refused because it is still coming up (`DRIVER_NOT_READY`): its service is not handed to the routes
+ * yet. A refusal of this kind is asked again when the driver says it is up (LOOK2a, `useDriverReady`).
+ */
+export const refusedNotReady = (error: unknown) => (error as { code?: unknown } | null)?.code === 'DRIVER_NOT_READY';
+
 /** Whether a call ended because the page stopped waiting (the bridge's `TIMEOUT`), rather than by the host's answer. */
 export const stoppedWaiting = (error: unknown) => (error as { code?: unknown } | null)?.code === 'TIMEOUT';

@@ -8809,3 +8809,31 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > `docs/2026-09-19-platform-ux.md`. The contract is a naming design document, written first.
 
 **Outcome** (built by a subagent, merged with `tools/merge-branch.mjs`, every gate; **D116**): Designed (D116): `docs/2026-10-01-naming-design.md` defines a name as part of its UI element, designed in each language: fourteen kinds (a palette row's `command` kind found while building the check), each with rules in English and Chinese and a budget per language derived from the frame's rooms at 888 px with the side bar at its 300 px floor, and two cross-language rules (a door names its destination; a heading and its button name one act). `src/Daoris.Web/src/locales/glossary.json` is the authority: about 110 terms, each with its names in both languages, a definition, the words it must not be called and a match pattern; it also maps every label key to its kind and pairs each door with its destination. `names:check` (`scripts/names-check.mjs`) reports glossary conformance, budgets, form and doors, exiting 0; `--strict` is ready for NAME1b, for the facts only (budgets report and never gate, D54). Today it finds 519. `docs/2026-10-01-naming-audit.md` proposes names for all 772 label keys, 406 of which change, Settings first; applied in memory, the proposals leave no glossary, form or door finding and keep every placeholder, with 107 budget judgements left. Web vitest 1856 → 1881; nothing looked at on the window.
+
+
+## LOOK1 — shot --theme says when it cannot take (2026-10-01)
+
+> - [ ] **LOOK1 — `shot --theme` says when it cannot take.** It emulates the system's colour scheme, which
+> the page follows only while the viewer's theme choice is *system*. On the install the choice was dark, so
+> `--theme light` silently photographed dark (`tools/desktop.mjs`, `theme.ts`'s `effectiveDark`). Set the
+> page's own choice for the capture and put it back, or refuse with the reason.
+
+**Outcome** (built by a subagent, merged with `tools/merge-branch.mjs`, every gate; no decision): `npm run desktop -- shot --theme light|dark` now makes the theme take, or refuses with the reason. It emulates the colour scheme and reads the page's theme; where the viewer's own choice overrides the emulation, it sets the choice for the capture through the page's own store and storage event (`daoris.theme`, which `followStoredTheme` hears), and afterwards puts the prior value back, even when the capture fails. A page still not in the theme is refused; a choice that cannot be set or put back fails the shot and names what it was. `--page` honours `--theme` too (it ignored the flag before). The key is a twin of `theme.ts` (`twins.md`). Nine tests in `desktop-tool.test.ts` over a vm-simulated page.
+
+
+## LOOK2 — what the post-merge look found (2026-10-01)
+
+> - [ ] **LOOK2 — what the post-merge look found** (2026-10-01, the install at `66efbf7`). (a) Right after a
+> start, Settings → Workspace's Line and landing cards said no repository here has a line: `LINES` answered
+> from the driver's snapshot before the service held its registry, and the page kept that empty answer until
+> *Bring up to date*'s look invalidated it. A route that reads the snapshot should refuse *not ready* rather
+> than answer empty, or the page should ask again when the driver becomes ready; check every screen that
+> reads it in the first seconds. (b) The session list still says where a session's tree was (*位于
+> s-2394e5d9*) after the landing tidied it and its branch went; it should say where the work landed, as
+> REVIEW2's review now does.
+> (c) **The Agents screen's "use for a workspace" on the tool's own row** removes the workspace's entry,
+> which falls back to the machine's default, not the tool's own home, when a machine default is set (found
+> by LEFT3; the terminal's `--clear --workspace` does the same, as its twin must, and says what sessions run
+> as). The screen's wording promises more than it does: say what it falls back to, or offer both.
+
+**Outcome** (built by a subagent, merged with `tools/merge-branch.mjs`, every gate; no decision, notes under D46, D110 and D113): **(a)** The empty Line and landing cards after a start were the page's: it asked `LINES` before the loop handed over its service, was refused `DRIVER_NOT_READY`, rendered the refusal as no repository, and only a tick asked again. The loop now emits `DRIVER_READY` once its service is up, and the page asks again for the driver's answers and every query refused as not ready; `STATE` carries `ready`, and the status bar says *starting* / 启动中 until it is true (D46 amended). **(b)** The rail asks `SESSION_WHERE` once for the rows it shows, answered from `landings.json` and whether the tree is still there (no git, no service). By D113's rule a row says *landed on `<branch>`* (*gone since* for a trace), keeps naming a tree still in use, and names no tree that is gone (D113 amended). **(c)** On the Agents screen, the tool's own row's *use for a workspace* says before the press that the workspace falls back to the machine's default while one is set, and every default's press says what sessions there run as, from `profile-default`'s new `default` answer, the fact the terminal's `--clear --workspace` prints (D110's LEFT3 note amended). The twin table is unchanged.
