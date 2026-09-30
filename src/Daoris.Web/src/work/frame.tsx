@@ -215,6 +215,7 @@ export function ActivityBar<T extends string>({
   return (
     <nav
       aria-label={label}
+      data-region="activity"
       // 🔴 A place keeps its size, and a bar too short to hold them scrolls (UX5 U22). At the
       // window's least height the places shrank until they touched, the counts sat over their
       // neighbours and Settings went under the status bar. No scrollbar is drawn in a 48px bar;
@@ -303,6 +304,7 @@ export function StatusBar({
   return (
     <footer
       aria-label={t('work.status.label')}
+      data-region="status"
       /* 🔴 `items-stretch` and a fixed height, not `items-center` and padding — because a hover
          target that stops short of the bar's edges reads as a word that lit up rather than as a
          control. Every item fills the bar's full height; that single property is most of what makes
@@ -641,7 +643,7 @@ export function OutputPanel({
   };
 
   return (
-    <section aria-label={t('layout.panel')} className="relative flex shrink-0 flex-col border-t border-line" {...drop.props}>
+    <section aria-label={t('layout.panel')} data-region="panel" className="relative flex shrink-0 flex-col border-t border-line" {...drop.props}>
       {drop.over && <DropMark />}
       {!collapsed && (
         <div

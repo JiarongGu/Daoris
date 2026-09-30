@@ -127,6 +127,23 @@ describe("the list's doors, on the window", () => {
     expect(await screen.findByRole('separator', { name: 'session list width' })).toBeInTheDocument();
   });
 
+  /** D118 §3e: F6 and Shift+F6 walk the window's regions, VS Code's Focus Next Part and Previous Part. */
+  it('walks the regions on F6 and back on Shift+F6: the activity bar\'s place, then the list\'s row', async () => {
+    start('sessions');
+    await screen.findByRole('separator', { name: 'session list width' });
+    const rail = await screen.findByRole('navigation', { name: 'Sessions' });
+    // The ended chat's row, and its menu.
+    await within(rail).findAllByRole('button', { name: /Chat/ });
+
+    fireEvent.keyDown(window, { key: 'F6' });
+    expect(within(bar()).getByRole('button', { name: 'Sessions' })).toHaveFocus();
+    fireEvent.keyDown(window, { key: 'F6' });
+    expect(document.activeElement?.closest('[data-list-row]')).not.toBeNull();
+    expect(rail.contains(document.activeElement)).toBe(true);
+    fireEvent.keyDown(window, { key: 'F6', shiftKey: true });
+    expect(within(bar()).getByRole('button', { name: 'Sessions' })).toHaveFocus();
+  });
+
   it('offers none of the four on a view with no list: absent, never disabled', async () => {
     start('overview');
     await screen.findByRole('button', { name: /show or hide the panel/ });

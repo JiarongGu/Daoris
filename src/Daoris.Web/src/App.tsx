@@ -15,6 +15,7 @@ import { type ListMode, listToggled } from './work/layout';
 import { usePlacements, viewsIn } from './work/placements';
 import { LAYOUT_KEYS, type LayoutRegion, LayoutToggles } from './work/LayoutToggles';
 import { frameShortcut } from './shortcuts';
+import { focusRegion } from './work/regions';
 import type { StarterDoor } from './help/starters';
 import { WorkspaceSwitcher } from './WorkspaceSwitcher';
 import {
@@ -403,6 +404,12 @@ export function App() {
       // Ask (DOCK1d), Ask Daoris (HELP1), and the region toggles (DOCK1c). Anywhere, a field included:
       // none of them types anything there.
       const shortcut = frameShortcut(event);
+      // The regions in turn (D118 §3e): in a browser too, whose window has its bar, its view and its status.
+      if (shortcut === 'nextRegion' || shortcut === 'previousRegion') {
+        event.preventDefault();
+        focusRegion(document, shortcut === 'previousRegion');
+        return;
+      }
       if (shortcut === 'quickAsk' || shortcut === 'help') {
         if (!attached) return;
         event.preventDefault();
@@ -491,7 +498,7 @@ export function App() {
     // `relative`: the containing block for what is positioned inside the column. Without it an
     // `sr-only` label far down a long page took the viewport as its block and stretched the
     // document, which grew a second scrollbar beside this one (seen on the window, PERM1).
-    <main className="relative min-h-0 min-w-0 flex-1 overflow-y-auto px-6 pb-12 pt-5 max-md:px-3 max-md:pb-8 max-md:pt-4">
+    <main data-region="main" className="relative min-h-0 min-w-0 flex-1 overflow-y-auto px-6 pb-12 pt-5 max-md:px-3 max-md:pb-8 max-md:pt-4">
       {/* No cap: content follows the window (UX5 U59, the owner), as the session's centre does
           since U16. It was 72rem, and a maximized window left every view a third empty.
           Prose keeps its own measure (`Prose`), and a form its own size. */}

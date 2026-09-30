@@ -18,6 +18,9 @@ describe('the frame\'s keys', () => {
     expect(frameShortcut(press('b', { ctrl: true }))).toBe('list');
     expect(frameShortcut(press('j', { ctrl: true }))).toBe('panel');
     expect(frameShortcut(press('B', { ctrl: true, alt: true }))).toBe('right');
+    // D118 §3e: VS Code's Focus Next Part and Focus Previous Part.
+    expect(frameShortcut(press('F6'))).toBe('nextRegion');
+    expect(frameShortcut(press('F6', { shift: true }))).toBe('previousRegion');
   });
 
   it('leaves every other key to whatever has focus: a shell\'s interrupt, its line keys, the palette\'s key in a field', () => {
@@ -27,6 +30,7 @@ describe('the frame\'s keys', () => {
     expect(frameShortcut(press('b', { ctrl: true, shift: true }))).toBeNull();
     expect(frameShortcut(press('b'))).toBeNull();
     expect(frameShortcut(press('F2'))).toBeNull();
+    expect(frameShortcut(press('F6', { ctrl: true }))).toBeNull();
     expect(frameShortcut(press('Enter'))).toBeNull();
   });
 });

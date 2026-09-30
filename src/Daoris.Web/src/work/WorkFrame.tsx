@@ -813,7 +813,7 @@ export function WorkFrame({
 
       <div className="flex min-w-0 flex-1 flex-col">
         {elsewhere ? content : (<>
-        <div ref={centre} className="flex min-h-0 flex-1 flex-col overflow-y-auto px-4 py-3">
+        <div ref={centre} data-region="main" className="flex min-h-0 flex-1 flex-col overflow-y-auto px-4 py-3">
           <AttendedSession
             session={attended}
             quest={quest}

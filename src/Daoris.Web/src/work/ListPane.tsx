@@ -143,7 +143,7 @@ export function ListPane({
 
   if (layout.mode === 'open') {
     return (
-      <aside ref={aside} data-list-mode="open" className="relative flex shrink-0 flex-col border-r border-line" style={{ width: layout.beside }}>
+      <aside ref={aside} data-region="list" data-list-mode="open" className="relative flex shrink-0 flex-col border-r border-line" style={{ width: layout.beside }}>
         {header}
         {body}
         {edge}
@@ -152,7 +152,7 @@ export function ListPane({
   }
 
   return (
-    <aside ref={aside} data-list-mode={layout.mode} className="relative flex shrink-0 flex-col border-r border-line" style={{ width: LIST_STRIP }}>
+    <aside ref={aside} data-region="list" data-list-mode={layout.mode} className="relative flex shrink-0 flex-col border-r border-line" style={{ width: LIST_STRIP }}>
       {/* The strip's controls, stacked, since 56px holds one across. */}
       <header className="flex shrink-0 flex-col items-center gap-0.5 border-b border-line py-1">
         <Tip content={labels.open} side="right">
