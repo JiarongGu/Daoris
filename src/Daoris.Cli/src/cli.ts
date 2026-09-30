@@ -130,6 +130,9 @@ const USAGE = `daoris <command> [options]
                          add <folder>              copy one in under its id
                          remove <id>               take it out; what it kept stays
                          enable|disable <id>       a row, never a rename
+                         new, try                  the kit a plugin is made with is
+                                                   \`daoris-driver plugins new|try\`,
+                                                   which starts plugins as the driver does
   browser [verb]       Daoris's browser: its favorites and its settings ($DAORIS_HOME/browser/),
                        the same files the Settings screen keeps; read each time it starts:
                          favorite list             what is kept, in the bar's order

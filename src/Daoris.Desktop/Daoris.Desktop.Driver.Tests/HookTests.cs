@@ -354,6 +354,38 @@ public sealed class HookTests : IDisposable
         Assert.Contains("plugin diagnostics, printed to stdout by mistake", lines);
     }
 
+    /// <summary>
+    /// PLUG8: a JSON value that is not an object, and an object that is neither an answer nor a request,
+    /// are noise like any other line. A bare `42` on stdout threw InvalidOperationException in the pump,
+    /// which its catch did not name, so the wire ended and every call after it said the plugin had stopped.
+    /// </summary>
+    [Theory]
+    [InlineData("42")]
+    [InlineData("\"hello\"")]
+    [InlineData("[1,2]")]
+    [InlineData("""{"level":"info","msg":"a logging library's line"}""")]
+    public async Task A_json_line_that_is_not_a_frame_is_noise_and_the_wire_goes_on(string noise)
+    {
+        var lines = new List<string>();
+        var plugin = new FakePlugin((frame, self) =>
+        {
+            self.Push(noise);
+            return Method(frame) switch
+            {
+                "initialize" => Ok(frame, """{"protocolVersion":1,"points":["quest/consider"]}"""),
+                _ => Ok(frame, """{"kind":"allow"}"""),
+            };
+        });
+        var peer = Peer(plugin, onLine: lines.Add);
+
+        await peer.InitializeAsync("h", "d", ["quest/consider"], CancellationToken.None);
+        var decision = await peer.ConsiderAsync(new { }, CancellationToken.None);
+
+        Assert.True(decision.Allowed);
+        Assert.True(peer.Alive);
+        Assert.Equal([noise, noise], lines);
+    }
+
     // ——— the set
 
     private sealed class FakeChannel(IReadOnlyList<string> points, Func<object, HookDecision>? consider = null, Action<object>? ended = null)
@@ -601,5 +633,44 @@ public sealed class HookTests : IDisposable
             Assert.Contains("gate: saw s1 end completed", lines);
         }
         Assert.True(Directory.Exists(plugin.Data));
+    }
+
+    /// <summary>
+    /// The wire is UTF-8 both ways, whatever the console's code page. Seen on the window (PLUG8's try, a
+    /// Chinese-locale machine): a plugin's em dash read back as `鈥?`, its stdout decoded in the console's
+    /// code page. So a frame going in, an answer coming out and a stderr line keep every character.
+    /// </summary>
+    [Fact]
+    public async Task A_hook_process_speaks_utf8_both_ways_whatever_the_consoles_code_page()
+    {
+        var folder = Path.Combine(_home, "plugins", "acme.words");
+        Directory.CreateDirectory(folder);
+        File.WriteAllText(Path.Combine(folder, "plugin.json"), """
+            { "id": "acme.words", "hooks": { "command": ["node", "${plugin}/hooks.mjs"], "points": ["quest/consider"] } }
+            """);
+        File.WriteAllText(Path.Combine(folder, "hooks.mjs"), """
+            import { createInterface } from 'node:readline';
+            const send = (frame) => process.stdout.write(JSON.stringify(frame) + '\n');
+            for await (const line of createInterface({ input: process.stdin })) {
+              const frame = JSON.parse(line);
+              if (frame.method === 'initialize') {
+                send({ jsonrpc: '2.0', id: frame.id, result: { protocolVersion: 1, points: frame.params.points } });
+              } else if (frame.method === 'hook/quest/consider') {
+                console.error('words: held — ' + frame.params.quest.title);
+                send({ jsonrpc: '2.0', id: frame.id, result: { kind: 'hold', reason: 'held — ' + frame.params.quest.title } });
+              } else if (frame.method === 'shutdown') {
+                process.exit(0);
+              }
+            }
+            """);
+        var lines = new List<string>();
+        var plugin = PluginCatalog.Load(_home).Plugins.Single();
+
+        await using var process = await HookProcess.StartAsync(plugin, _home, line => { lock (lines) lines.Add(line); }, CancellationToken.None);
+        var held = await process.ConsiderAsync(new { quest = new { title = "修复仪表盘 — ünïcode" } }, CancellationToken.None);
+
+        Assert.Equal("held — 修复仪表盘 — ünïcode", held.Reason);
+        await Task.Delay(200);
+        lock (lines) Assert.Contains("words: held — 修复仪表盘 — ünïcode", lines);
     }
 }

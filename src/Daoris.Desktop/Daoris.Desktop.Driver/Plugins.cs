@@ -250,8 +250,42 @@ public sealed class PluginCatalog
     public static (PluginManifest Manifest, string? Problem) ReadAsWritten(string id, string manifestPath) =>
         Read(id, folder: null, manifestPath);
 
+    /// <summary>Whether a name has a plugin id's shape: lowercase letters, digits, dots and dashes, never leading with a dot or a dash.</summary>
+    public static bool IsId(string id) => IdShape.IsMatch(id);
+
+    /// <summary>
+    /// A manifest in a folder anywhere — a plugins repository's, before anything is installed (PLUG8) —
+    /// read by the catalogue's own rules, with the manifest's id taken as the folder's name the way
+    /// `daoris plugin add` reads a source folder: installing names the folder by the id, so a source
+    /// folder may be called anything.
+    /// </summary>
+    /// <param name="data">
+    /// What <see cref="DataPlaceholder"/> expands to. Absent, it is the install layout's `.data/` beside
+    /// the folder, which for a folder outside the home is somewhere nobody named.
+    /// </param>
+    public static (PluginManifest Manifest, string? Problem) ReadFolder(string folder, string? data = null)
+    {
+        var path = Path.Combine(folder, ManifestName);
+        var name = Path.GetFileName(Path.TrimEndingDirectorySeparator(Path.GetFullPath(folder)));
+        try
+        {
+            using var probe = JsonDocument.Parse(File.ReadAllText(path), new JsonDocumentOptions
+            {
+                AllowTrailingCommas = true,
+                CommentHandling = JsonCommentHandling.Skip,
+            });
+            if (Text(probe.RootElement, "id") is { } id) name = id;
+        }
+        catch (Exception error) when (error is JsonException or IOException or UnauthorizedAccessException)
+        {
+            // Read below, which names what is wrong with it.
+        }
+
+        return Read(name, folder, path, data);
+    }
+
     /// <param name="folder">The install folder the placeholders expand to, or null to leave them as written.</param>
-    private static (PluginManifest Manifest, string? Problem) Read(string folderName, string? folder, string path)
+    private static (PluginManifest Manifest, string? Problem) Read(string folderName, string? folder, string path, string? data = null)
     {
         JsonDocument document;
         try
@@ -324,7 +358,7 @@ public sealed class PluginCatalog
                         return (PluginManifest.Empty(id), "a declared harness needs a `name`.");
                     }
 
-                    var command = Strings(row, "command", folder);
+                    var command = Strings(row, "command", folder, data);
                     if (command is not { Count: > 0 })
                     {
                         return (PluginManifest.Empty(id), $"harness `{name}` needs a `command` — what to run.");
@@ -336,8 +370,8 @@ public sealed class PluginCatalog
                         Posture: Text(row, "posture"),
                         ProfileVariable: Text(row, "profileVariable"),
                         Package: Text(row, "package"),
-                        Install: Strings(row, "install", folder),
-                        VersionArguments: Strings(row, "versionArguments", folder),
+                        Install: Strings(row, "install", folder, data),
+                        VersionArguments: Strings(row, "versionArguments", folder, data),
                         AccountOf: Text(row, "accountOf")));
                 }
             }
@@ -345,8 +379,8 @@ public sealed class PluginCatalog
             PluginHooks? hooks = null;
             if (root.TryGetProperty("hooks", out var spoken))
             {
-                var command = spoken.ValueKind == JsonValueKind.Object ? Strings(spoken, "command", folder) : null;
-                var points = spoken.ValueKind == JsonValueKind.Object ? Strings(spoken, "points", folder) : null;
+                var command = spoken.ValueKind == JsonValueKind.Object ? Strings(spoken, "command", folder, data) : null;
+                var points = spoken.ValueKind == JsonValueKind.Object ? Strings(spoken, "points", folder, data) : null;
                 if (command is not { Count: > 0 } || points is not { Count: > 0 })
                 {
                     return (PluginManifest.Empty(id), "`hooks` needs a `command` and the `points` it listens on.");
@@ -372,7 +406,7 @@ public sealed class PluginCatalog
                             "a declared server needs a `name` — lowercase letters, digits, dots and dashes; it is what the agent calls it.");
                     }
 
-                    var command = Strings(row, "command", folder);
+                    var command = Strings(row, "command", folder, data);
                     if (command is not { Count: > 0 })
                     {
                         return (PluginManifest.Empty(id), $"server `{name}` needs a `command` — what to run.");
@@ -393,7 +427,7 @@ public sealed class PluginCatalog
                                 return (PluginManifest.Empty(id), $"server `{name}`'s `env` must be an object of strings.");
                             }
 
-                            environment[pair.Name] = Expand(pair.Value.GetString()!, folder);
+                            environment[pair.Name] = Expand(pair.Value.GetString()!, folder, data);
                         }
                     }
 
@@ -421,7 +455,7 @@ public sealed class PluginCatalog
             : null;
 
     /// <summary>A string array, with the plugin placeholder expanded to the install folder in every entry.</summary>
-    private static IReadOnlyList<string>? Strings(JsonElement element, string name, string? folder)
+    private static IReadOnlyList<string>? Strings(JsonElement element, string name, string? folder, string? data)
     {
         if (element.ValueKind != JsonValueKind.Object
             || !element.TryGetProperty(name, out var value)
@@ -434,7 +468,7 @@ public sealed class PluginCatalog
         foreach (var item in value.EnumerateArray())
         {
             if (item.ValueKind != JsonValueKind.String) return null;
-            items.Add(Expand(item.GetString()!, folder));
+            items.Add(Expand(item.GetString()!, folder, data));
         }
 
         return items;
@@ -442,17 +476,18 @@ public sealed class PluginCatalog
 
     /// <remarks>
     /// The data folder is the install folder's sibling under <see cref="DataFolder"/>, by the same name:
-    /// a plugin's folder IS its id, so the two are one derivation and never disagree.
+    /// a plugin's folder IS its id, so the two are one derivation and never disagree — unless a reader of
+    /// a folder outside the home names where it keeps things (<see cref="ReadFolder"/>).
     /// </remarks>
-    private static string Expand(string text, string? folder)
+    private static string Expand(string text, string? folder, string? data)
     {
         if (folder is null) return text;
         var plugin = text.Contains(Placeholder, StringComparison.Ordinal);
-        var data = text.Contains(DataPlaceholder, StringComparison.Ordinal);
-        if (!plugin && !data) return text;
+        var keeps = text.Contains(DataPlaceholder, StringComparison.Ordinal);
+        if (!plugin && !keeps) return text;
 
         var install = Path.TrimEndingDirectorySeparator(Path.GetFullPath(folder));
-        var kept = Path.Combine(Path.GetDirectoryName(install)!, DataFolder, Path.GetFileName(install));
+        var kept = data ?? Path.Combine(Path.GetDirectoryName(install)!, DataFolder, Path.GetFileName(install));
         return Path.GetFullPath(text
             .Replace(Placeholder, install, StringComparison.Ordinal)
             .Replace(DataPlaceholder, kept, StringComparison.Ordinal));

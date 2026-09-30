@@ -58,7 +58,7 @@ public sealed class LandingPlugins(
                 return Failed(id, $"plugin `{id}` declares `{HookPoints.Land}` but its process does not listen there.");
             }
 
-            var answer = await channel.LandAsync(Payload(frame), ct).ConfigureAwait(false);
+            var answer = await channel.LandAsync(HookFrames.Land(frame), ct).ConfigureAwait(false);
             Say(id, $"landed `{frame.Branch}`: {(answer.Pushed ? "pushed" : "not pushed")}"
                 + (answer.PullRequest is { } pr ? $", {pr}" : "") + $" — {answer.Message}");
             return answer with { Plugin = id };
@@ -80,18 +80,4 @@ public sealed class LandingPlugins(
     }
 
     private void Say(string plugin, string line) => say?.Invoke(plugin, line);
-
-    /// <summary>The frame as the wire carries it, every name spelled here rather than left to a serializer's policy.</summary>
-    private static object Payload(LandingFrame frame) => new
-    {
-        repository = frame.Repository,
-        workspace = frame.Workspace,
-        root = frame.Root,
-        branch = frame.Branch,
-        @base = frame.Base,
-        title = frame.Title,
-        quest = frame.Quest is { } quest ? new { id = quest, title = frame.Title } : null,
-        session = frame.Session,
-        commits = frame.Commits.Select(commit => new { sha = commit.Sha, subject = commit.Subject }).ToArray(),
-    };
 }

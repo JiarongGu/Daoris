@@ -833,6 +833,16 @@ The first version: doctrine that installs, is checked, and flows back.
   says how to push it by hand. Two example plugins are tracked, inert until installed and named:
   `examples/plugins/github-pull-request` (`gh`) and `examples/plugins/azure-devops-pull-request`
   (`az repos`).
+- **A kit to make a plugin with** (PLUG8, D101). `daoris-driver plugins new <id> --point <point>…`,
+  or *Make a plugin* in Settings → Plugins, writes a plugin's folder into one you name: a manifest, a
+  wire script already answering each point in the right shape, a README carrying the wire and the rules,
+  and a wire test that needs nothing of Daoris's, so `node --test` is a plugins repository's whole gate.
+  It refuses a folder that holds anything, and installs nothing. `daoris-driver plugins try <folder|id>`,
+  or **Try** beside each plugin that speaks, starts a plugin as the driver would, sends the driver's own
+  frames, and says each check in its own sentence: a wrong answer, a silent plugin, a crash, a stray
+  line on stdout, a plugin that stays after shutdown. The sample frames name no repository, so a
+  plugin that pushes first pushes nothing. `daoris plugin new|try` say where the kit is. A JSON line on
+  a plugin's stdout that is not a frame no longer ends its wire.
 - **`daoris-driver trees land <session>`** accepts a session's work from a terminal, as the review's
   Accept does, by the workspace's rule; `--plan` says where it would go. A tidied landing no longer
   also says its tree is still there.

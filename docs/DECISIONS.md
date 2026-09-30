@@ -4325,3 +4325,88 @@ refuse one holding a double quote, a percent sign or a line break, and respell t
 this is enough for `az.cmd`'s own `%*` was reasoned from how cmd parses, not measured against a real
 `az`. Ask Daoris cannot yet propose a rule naming a plugin: its parser takes `branch <pattern>` and
 `--tidy`, and refuses the rest as a pattern.
+
+## D101 — A plugin is made with the driver's kit: a folder that tests itself, and a trial as the driver would run it (2026-09-30)
+
+**Decision (PLUG8).** The owner wants Daoris able to make plugins, eventually by asking Ask Daoris. The
+reading recorded with the ask: a plugin is code that runs on the machine as the person, so making one is
+work, done by a session in a repository, tested, reviewed as a diff and installed only by a press. This
+is the kit that session, or a person, makes one with. The plugin design's §9 is its contract.
+
+- **What a session in another repository can run: `node`, and nothing of Daoris's.** Checked: the
+  published install (`tools/desktop-publish.mjs`, its `INSTALLED.md`) carries the launcher, the
+  application and the HTTP host, and neither the `daoris` CLI nor `daoris-driver`. The CLI is an npm
+  package nothing publishes yet (DIST1), and `daoris-driver` is a workspace build. A driven session's
+  environment is the machine's with Daoris's own variables added (`Spawning.InRoot`), and no PATH. So
+  the kit's gate needs neither: `new` writes a **self-contained wire test** beside the plugin,
+  `plugin.test.mjs`, which imports nothing but Node. It starts the plugin as the driver does (the
+  manifest's command, `${plugin}` and `${data}` expanded, the four environment variables), speaks the
+  handshake, one frame at every declared point and the shutdown, and checks every answer by the driver's
+  rules and that stdout held only frames. A plugins repository's gate is `node --test`.
+  `daoris-driver plugins try` is the second check, where Daoris is on the machine.
+- **Where `try` lives: the driver library, behind `daoris-driver plugins new|try` and Settings →
+  Plugins.** The CLI may spawn only in `toolchain.ts`, and `dogfood.test.ts` holds it. That rule's reason
+  would not forbid a person's `try`, but the second reason decides. The driver already starts plugins
+  (`HookProcess.StartInfo`, now public for this) and reads their answers (`HookPeer`), and a `try` built
+  anywhere else would be a second reader of the wire, one that could accept what the driver refuses.
+  `new` sits beside it, so there is **one scaffold behind both doors**, in C#, because the samples it
+  writes are built by the driver's own frame builders. The CLI's `daoris plugin new|try` answer with
+  where the kit is, and exit 2, in the shape of a moved verb.
+- **The samples are the driver's frames.** `HookFrames.Consider`, `Ended` and `Land` now build what the
+  loop and the landing send, and the kit builds each point's sample by calling them on a sample input.
+  A test sends the samples through the real waterfall, observation and landing and compares; a point
+  added to `HookPoints.All` without a kit entry fails a test.
+
+  | Point | Kind | Frame | Answer | Waits |
+  |---|---|---|---|---|
+  | `quest/consider` | decision | `quest { id, title, from, to }`, `repository`, `workspace`, `root` | `{ kind: "allow" }`, or `{ kind: "hold", reason }` | 10 s |
+  | `session/ended` | observation | `session`, `quest`, `repository`, `state`, `adapter`, `account`, `byPerson`, `note` | anything; `{}` | 10 s |
+  | `work/land` | act | `repository`, `workspace`, `root`, `branch`, `base`, `title`, `quest { id, title }`, `session`, `commits [{ sha, subject }]` | `{ pushed, pullRequest?, message? }` | 2 min |
+- **The two checkers are twins.** `try` reads answers with `HookPeer`, and the wire test with its own
+  JavaScript, since a plugins repository has no Daoris. `PluginKitTests` holds them with one answer
+  table: for each of its 22 rows, one plugin answers the row's answer, and both doors must give the
+  row's verdict. Both are stricter than the driver in one place: a point the manifest declares and the
+  process does not listen on fails, where the driver tolerates it.
+- **A sample frame names no repository.** `root` is an empty scratch folder, and `GIT_DIR` points at a
+  repository that is not there. git walks up, so an empty folder under a checkout answers for that
+  checkout, and a landing plugin that pushes first would push it. A test proves it with the scratch
+  inside a real repository, at both doors. With the person's own frame (`--frame`), the frame is theirs.
+- **`try` says each check in its own sentence**: the handshake, each point, the shutdown, and stdout. A
+  wrong answer is the driver's own sentence and what the driver would then do. A silent plugin "is
+  running and did not answer `…` within Ns". A crash "exited (code N) before answering `…`", with its last
+  line on stderr. A line on stdout that is not a frame fails `stdout`. A plugin still there two seconds
+  after `shutdown` is ended, and fails it. It exits 0 when every answer is one the driver reads, 1 when
+  the plugin failed a check, and 2 when it could not do what was asked.
+- **`new` refuses rather than overwrites**: a name that is not an id, a point this build lacks, no
+  point, a folder that does not exist, and a folder that holds anything. It installs nothing.
+- **`--harness` is left out**, and so are servers. A harness is a declaration, not code: there is
+  nothing to scaffold but the manifest row §3 shows, a scaffold would have to invent a command, and a
+  posture is the adapter's own word (ACP3), never a guess. `try` cannot reach it either, since the ACP
+  door is a session and not a frame. `plugins new --harness` says so.
+- **The authoring knowledge lives with the kit**, not in the canon: the plugin design's §9, and a README
+  the scaffold writes into every plugin from the same table. It covers the wire, the rules (stdout is
+  the wire, data in `${data}`, paths told and never guessed, every request answered, a `.cmd` tool's
+  quoting on Windows), each declared point's frame and answer, and how to test and install. A landing
+  plugin's scaffold carries the WSR4 examples' `run()` helper with that quoting.
+
+**Also.** A line on a plugin's stdout that parses as JSON but is not an object, or is an object that
+is neither an answer nor a request, is now noise under the plugin's name. A bare `42` threw from the
+pump's property read, past a catch that did not name it, and ended the wire.
+
+**Why.** The kit is what makes the middle of making a plugin checkable by a gate (D37). A session can
+run `node --test` in its plugins repository before a person reviews, with nothing of Daoris's on its
+PATH, and a person can try the result as the driver would before adding it.
+
+**Rejected.**
+- **The scaffold in the CLI, and `try` in the driver.** The screen's New is C#, so that is two
+  scaffolds, and a CLI scaffold's samples could not come from the driver's frame builders.
+- **A spawn in the CLI for `try`.** It turns "only `toolchain.ts`" into a list, and its answer reader
+  would be a TypeScript copy of `HookPeer`.
+- **Templates as files both artefacts read.** Only the driver writes them, so there is no second reader
+  to agree with. They are embedded in the driver, as the tree guard's script is.
+- **A sample frame naming a path on a machine**, or a scratch root with no `GIT_DIR`.
+
+**What the gates do not cover.** The wire test ran under Node 24 here; `node --test` with no arguments
+needs Node 21 or later. No real plugins repository exists yet, and no session has made a plugin in one
+(PLUG9 proposes that ask). The screen's New and Try were checked by the vitest loop over a mocked bridge
+and by the module tests, not yet by looking at the window.

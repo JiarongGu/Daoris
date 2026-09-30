@@ -5,6 +5,32 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## A plugin's words came back in the console's code page (2026-09-30)
+
+**Symptom.** PLUG8's Try on the window, on a Chinese-locale machine: the GitHub example plugin's
+answer read *git push to origin failed 鈥?fatal: …*, its em dash turned into `鈥?`.
+
+**Root cause.** The hook wire's start (`HookProcess.StartInfo`) redirected all three streams and named
+no encoding, so .NET read and wrote them in the console's code page (CP936 here). A UTF-8 em dash
+(`e2 80 94`) decoded as GBK is `鈥` plus a replacement. The first deployment found exactly this in a
+session's transcript and fixed it where the adapters spawn (`Adapters.Shell`), with a comment saying
+so. The hook wire and the version probe (`Harnesses.AskAsync`) were written or kept apart from that
+spawn, and nothing held the property at every spawn site. Every plugin's non-ASCII words were garbled
+on this machine, in the loop as well as in Try: a hold's reason, a landing's sentence, a stderr line.
+They went out mangled too, since a quest's 中文 title was written to the plugin the same way.
+
+**Fix.** The hook wire names UTF-8 with no byte-order mark on all three streams, the version probe on
+both of its, and the host supervisor's input as well. The source scan that makes every desktop spawn
+say `CreateNoWindow` now also makes every redirected stream name its encoding
+(`NoConsoleWindowTests.Every_stream_the_desktop_redirects_is_utf8`). It found the supervisor's input,
+the one site left.
+
+**Verification.** Test red first:
+`HookTests.A_hook_process_speaks_utf8_both_ways_whatever_the_consoles_code_page` read back
+`held 鈥?淇浠〃鐩?…` for `held — 修复仪表盘 — ünïcode`, then green. Seen again on the window: Try's
+line reads *failed — fatal*. The test expresses the defect only where the console's code page is not
+UTF-8, as this machine's is; a Linux gate passes it either way.
+
 ## The browser left a task's exception to the finalizer (2026-09-30)
 
 **Symptom.** The owner's first real machine log (LOG2) held one `error` in the `browser` source: `where`

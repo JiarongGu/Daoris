@@ -978,6 +978,8 @@ public sealed class DriverModule : ModuleBase
                 return new
                 {
                     Folder = Path.Combine(_loop.Home, PluginCatalog.Folder),
+                    // Where a new plugin may speak (PLUG8): the kit's points, which are the driver's.
+                    Kit = new { Points = PluginKit.Points.Select(point => new { point.Name, point.Kind }).ToArray() },
                     Plugins = catalog.Plugins.Select(plugin => new
                     {
                         plugin.Manifest.Id,
@@ -1054,6 +1056,46 @@ public sealed class DriverModule : ModuleBase
                     Id = entry.Manifest.Id,
                     Action = action,
                     Data = Directory.Exists(entry.Data) ? entry.Data : null,
+                };
+            }
+
+            // The plugin kit's screen half (PLUG8, D101): `daoris-driver plugins new` from a form. It writes
+            // a plugin's folder into the one the person named, a plugins repository's typically, and
+            // installs nothing: making a plugin is work, reviewed before `daoris plugin add`.
+            case "PLUGIN_NEW":
+            {
+                await Task.CompletedTask;
+                var points = request.Payload is { } payload && payload.TryGetProperty("points", out var named)
+                    && named.ValueKind == JsonValueKind.Array
+                        ? named.EnumerateArray().Where(e => e.ValueKind == JsonValueKind.String).Select(e => e.GetString()!).ToList()
+                        : [];
+                var plan = PluginKit.Plan(
+                    PayloadHelper.GetRequiredValue<string>(request.Payload, "id"), points,
+                    PayloadHelper.GetRequiredValue<string>(request.Payload, "folder"));
+                var files = PluginKit.Write(plan);
+                return new { plan.Id, plan.Folder, plan.Points, Files = files };
+            }
+
+            // `daoris-driver plugins try` from a button: an installed plugin by its id, or a folder by
+            // its path, started as the driver would and every answer read by the driver's own reader.
+            // It may take as long as the driver waits at the points tried — two minutes for a landing.
+            case "PLUGIN_TRY":
+            {
+                var options = new TrialOptions(Point: Optional(request, "point"));
+                var trial = Optional(request, "id") is { } id
+                    ? await PluginKit.TryInstalledAsync(_loop.Home, id, options, cancellationToken)
+                    : Optional(request, "folder") is { } folder
+                        ? await PluginKit.TryFolderAsync(folder, options, cancellationToken)
+                        : throw new DriverException("a try needs an installed plugin's id or a folder.");
+                return new
+                {
+                    trial.Plugin,
+                    trial.Folder,
+                    trial.Command,
+                    trial.Passed,
+                    trial.Summary,
+                    Steps = trial.Steps.Select(step => new { step.Name, step.Ok, step.Sentence }).ToArray(),
+                    trial.Said,
                 };
             }
 

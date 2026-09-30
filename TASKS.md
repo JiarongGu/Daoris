@@ -21,8 +21,8 @@ lists.
 
 ## State
 
-**Counts, and this is their one home:** sixteen commands, **592 CLI tests, 620 service and 45 HTTP host, 1184 driver,
-385 desktop modules, 80 devkit, 1631 web unit, 21 Playwright**, 66/66 release rehearsal, **301/301
+**Counts, and this is their one home:** sixteen commands, **593 CLI tests, 632 service and 45 HTTP host, 1294 driver,
+388 desktop modules, 80 devkit, 1653 web unit, 21 Playwright**, 66/66 release rehearsal, **301/301
 family rehearsal** (it names its own phases when you run it), **67/67 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge
 documents, 5 skills, 7 packs. The always-loaded core is **22,492 of 26,000 bytes** — a span in
@@ -112,7 +112,7 @@ rather than designed.
 
 ## Backlog
 
-**Twenty-five rows are open**: the day's four (USE1's last part to confirm, WSR5, PLUG8, PLUG9),
+**Twenty-four rows are open**: the day's three (USE1's last part to confirm, WSR5, PLUG9's last two parts),
 first; the three REV3 left (DIST1, BUDGET1 and
 HOME1, the owner's); the in-app browser's one (BRW3); D85's one (TASKBAR1); the first
 goal's four (FG5, READACROSS1 and HELPREAD1 the owner's, and SEM2 on a trigger); D76's held file tools;
@@ -197,15 +197,6 @@ would run untested with the person's credentials. **A plugins repository** is th
 what Daoris makes: versioned, reviewed, shareable with a team, owned by its own agent like any
 repository. It is not a registry (D64) and not a home for Daoris's own examples: those are the wire's
 contract and the rehearsals' fixtures, so they stay here. Whether to make one, and where, is the owner's.
-- [ ] **PLUG8 — the kit a session makes a plugin with.** (a) `daoris plugin new <id> --point <p>…
-  [--harness]`: a folder with a manifest, a wire script answering the handshake and the named points,
-  and its test, on both doors (Settings → Plugins → New). (b) `daoris plugin try <folder> --point <p>
-  [--frame <file>]`: starts it as the driver would, speaks the handshake, one frame and the shutdown,
-  and checks the answer against the point's result shape (for `work/land`: `pushed`, `pullRequest`,
-  `message`). A gate a session can run before a person reviews. (c) The authoring knowledge a session
-  reads: the points, their frames and answers, the rules (no stdout but frames, data in `${data}`, a
-  `.cmd` tool's quoting on Windows). It lives with the kit, in the plugin design document or a
-  knowledge document, not the canon: it is Daoris's, not every repository's.
 - [ ] **PLUG9 — Ask Daoris makes one by asking for it, and installs it by a press.** (a) The room says a
   plugin is made as an ask at the workspace holding the plugins repository, and proposes that ask; it
   never writes one. (b) A new proposal kind, `plugin`: add a landed plugin from its folder, enable or
@@ -441,7 +432,9 @@ TDD, looked at on the window, and the ones that touch a real session use one (au
   itself; a stop landing mid-handshake was tested and is not the cause. **A fifth class, twice on
   2026-09-30** (LOG2's baseline, then its merge while WSR4 built beside it):
   `ProcessJobTests.A_child_that_outlives_its_parent_ends_when_the_session_is_untracked`, 1144/1145,
-  green alone three times running.
+  green alone three times running. **And a rehearsal the same day**: the family rehearsal exited 127
+  straight after building the HTTP host, writing no transcript of its own, while three worktrees
+  built beside it. It passed 301/301 run alone.
 
 - [ ] **TEST1 — the Playwright suite aborts a worker with `0xC0000409`: seen twice now.** The
   second sighting was its trigger. Both runs died with `worker process exited unexpectedly
