@@ -47,10 +47,13 @@ describe('the layout toggles', () => {
     expect(onToggle).toHaveBeenCalledWith('right');
   });
 
-  it('toggles the list by its own region', async () => {
+  it('toggles the list by its own region, as a door to it that a list laid over leaves to it', async () => {
     const onToggle = vi.fn();
     render(<LayoutToggles regions={['list', 'right']} list="the session list" closed={{ list: false, panel: false, right: false }} onToggle={onToggle} />);
-    await userEvent.click(screen.getByRole('button', { name: /session list/ }));
+    const toggle = screen.getByRole('button', { name: /session list/ });
+    expect(toggle).toHaveAttribute('data-list-door');
+    expect(screen.getByRole('button', { name: /right side bar/ })).not.toHaveAttribute('data-list-door');
+    await userEvent.click(toggle);
     expect(onToggle).toHaveBeenCalledWith('list');
   });
 });

@@ -6,7 +6,7 @@ import * as Tooltip from '@radix-ui/react-tooltip';
 import '../i18n';
 import { StripMark } from '../ui';
 import { LIST_BOUNDS, LIST_STRIP, type ListLayout } from './layout';
-import { LIST_ROW } from './listKeys';
+import { LIST_DOOR, LIST_ROW } from './listKeys';
 import { ListPane } from './ListPane';
 
 // D118 §3a, §5: one list pane for every view that has a list, Sessions' rail first. A molecule: every
@@ -166,6 +166,19 @@ describe('the list pane, laid over the main area', () => {
 
     fireEvent.pointerDown(screen.getByText('the main area'));
     expect(onDismiss).toHaveBeenCalledOnce();
+  });
+
+  it('leaves a press on one of its doors elsewhere to that door, which toggles it itself', () => {
+    const { onDismiss } = pane(OVER);
+    const door = document.createElement('button');
+    door.setAttribute(LIST_DOOR, '');
+    document.body.append(door);
+    try {
+      fireEvent.pointerDown(door);
+      expect(onDismiss).not.toHaveBeenCalled();
+    } finally {
+      door.remove();
+    }
   });
 
   it('closes from its header, and from the strip\'s open pressed again', async () => {

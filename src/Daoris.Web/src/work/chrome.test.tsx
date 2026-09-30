@@ -170,6 +170,9 @@ describe('ActivityBar', () => {
       <ActivityBar label="Views" items={VIEWS} end={SETTINGS} active="sessions" onSelect={onSelect} onToggleCurrent={onToggleCurrent} />,
     );
 
+    // A door to its list, which a list laid over the main area leaves to it rather than closing on its press.
+    expect(screen.getByRole('button', { name: 'Sessions' })).toHaveAttribute('data-list-door');
+    expect(screen.getByRole('button', { name: 'Quests' })).not.toHaveAttribute('data-list-door');
     await userEvent.click(screen.getByRole('button', { name: 'Sessions' }));
     expect(onToggleCurrent).toHaveBeenCalledOnce();
     expect(onSelect).not.toHaveBeenCalled();

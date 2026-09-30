@@ -8,6 +8,7 @@ import type { Place, ViewId } from './placements';
 import { DropMark, viewEntries, ViewsMenu } from './ViewsMenu';
 import { dragProps, useViewDrop } from './viewDrag';
 import { useTabFit } from './tabFit';
+import { LIST_DOOR } from './listKeys';
 
 // The window's own furniture (D55, extended by D56, simplified by D66): the app strip, the activity
 // bar, the status bar and the output panel. Small, presentational, and kept together because they
@@ -194,6 +195,8 @@ export function ActivityBar<T extends string>({
         type="button"
         aria-label={name}
         aria-current={active === tab ? 'page' : undefined}
+        // The current place is a door to its list where it toggles it (D118 §3a).
+        {...(active === tab && onToggleCurrent ? { [LIST_DOOR]: '' } : {})}
         onClick={() => (active === tab && onToggleCurrent ? onToggleCurrent() : onSelect(tab))}
         className={cn(
           'relative flex h-9 w-9 shrink-0 items-center justify-center rounded-control transition-colors duration-(--speed)',

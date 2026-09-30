@@ -115,6 +115,32 @@ describe("the list's doors, on the window", () => {
     expect(window.localStorage.getItem('daoris.railClosed')).toBeNull();
   });
 
+  /**
+   * With the side bar open, 1024 px has no room for the list beside the main area, so the window draws its
+   * strip, and a door lays it over. The same door, pressed again, closes it: a press on a door is not a
+   * press outside the list, or it would close it and open it again in one go.
+   */
+  it('lays a strip the window drew over the main area from a door, and the same door closes it', async () => {
+    window.localStorage.setItem('daoris.dockClosed', '0');
+    start('sessions');
+    const toggle = await screen.findByRole('button', { name: TOGGLE });
+    await waitFor(() => expect(screen.getByRole('button', { name: 'Show the session list' })).toBeInTheDocument());
+    expect(toggle).toHaveAttribute('aria-pressed', 'false');
+
+    await userEvent.click(within(bar()).getByRole('button', { name: 'Sessions' }));
+    expect(await screen.findByRole('region', { name: 'Sessions' })).toBeInTheDocument();
+    await waitFor(() => expect(toggle).toHaveAttribute('aria-pressed', 'true'));
+    await userEvent.click(within(bar()).getByRole('button', { name: 'Sessions' }));
+    await waitFor(() => expect(screen.queryByRole('region', { name: 'Sessions' })).toBeNull());
+
+    await userEvent.click(toggle);
+    expect(await screen.findByRole('region', { name: 'Sessions' })).toBeInTheDocument();
+    await userEvent.click(toggle);
+    await waitFor(() => expect(screen.queryByRole('region', { name: 'Sessions' })).toBeNull());
+    // Laying it over was never the person closing it.
+    expect(window.localStorage.getItem('daoris.railClosed')).toBeNull();
+  });
+
   it('toggles the list on Ctrl+B, and from the View menu', async () => {
     start('sessions');
     await screen.findByRole('separator', { name: 'session list width' });

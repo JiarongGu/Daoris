@@ -10,6 +10,13 @@ import { type KeyboardEvent, useCallback } from 'react';
 export const LIST_ROW = 'data-list-row';
 
 /**
+ * The attribute a door to the list carries where it stands outside it: the strip's toggle, the current
+ * place on the activity bar. A press there is the door's to answer, not a press outside a list laid over
+ * the main area, which would close it on the press and open it again on the click.
+ */
+export const LIST_DOOR = 'data-list-door';
+
+/**
  * The row a key moves to among `count`, from `current` (null, or out of range, when the focus is outside
  * every row), or null where the key is not a move or there is no row. It stops at either end rather than
  * wrapping, as a workbench's lists do, so holding a key never carries the focus round to where it began.

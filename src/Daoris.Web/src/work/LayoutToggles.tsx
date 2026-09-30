@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next';
 import { Button, Icon, type IconName, Tip } from '../ui';
+import { LIST_DOOR } from './listKeys';
 
 /** A region the strip toggles: the view's list, the output panel, the right side bar. */
 export type LayoutRegion = 'list' | 'panel' | 'right';
@@ -42,6 +43,7 @@ export function LayoutToggles({ regions, list, closed, onToggle }: {
               variant="ghost"
               aria-label={label}
               aria-pressed={!closed[region]}
+              {...(region === 'list' ? { [LIST_DOOR]: '' } : {})}
               onClick={() => onToggle(region)}
               className="h-7 w-7 justify-center px-0"
             >

@@ -4,7 +4,7 @@ import { Button, EmptyState, Icon, SkeletonRows, Tip } from '../ui';
 import { cn } from '../lib/cn';
 import { Splitter } from './frame';
 import { LIST_STRIP, type ListBounds, type ListLayout } from './layout';
-import { useListKeys } from './listKeys';
+import { LIST_DOOR, useListKeys } from './listKeys';
 
 /**
  * What a view makes from its list's `＋` (D118 §3a): one control, and where the view makes two kinds of
@@ -21,8 +21,11 @@ export type ListMake = {
 /** The attribute the strip's open carries, so a list laid over hands the focus back to it. */
 const OPEN_ATTRIBUTE = 'data-list-open';
 
-/** A press that lands in a menu or a dialog the list opened is the list's, though drawn elsewhere. */
-const OPENED_ELSEWHERE = '[data-radix-popper-content-wrapper], [role="menu"], [role="dialog"]';
+/**
+ * A press that lands in a menu or a dialog the list opened is the list's, though drawn elsewhere; and one
+ * on a door to the list is the door's, which toggles it.
+ */
+const OPENED_ELSEWHERE = `[data-radix-popper-content-wrapper], [role="menu"], [role="dialog"], [${LIST_DOOR}]`;
 
 /**
  * A view's **list pane** (D118 §3a, §5): the header with the list's name, its `＋`, the view's ⋯ and its
