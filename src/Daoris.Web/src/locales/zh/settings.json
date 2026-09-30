@@ -18,6 +18,7 @@
   "settings.language.hint": "窗口自身的文字；服务说的话按原样显示。",
   "settings.home.label": "Daoris 主目录",
   "settings.home.hint": "Daoris 主目录。本页的每个文件都在其中，终端里的 daoris 读的也是同一目录；你的个人目录下不存放 Daoris 的任何东西。",
+  "settings.home.hintOverridden": "Daoris 主目录。本页的每个文件都在其中；你的个人目录下不存放 Daoris 的任何东西。终端里的 daoris 读哪个目录，见下面那一行。",
   "settings.notify.body": "没有人应该守着驱动看。这台机器可以在会话停下来问你事情、或者在你没要求的情况下结束时告诉你——你自己造成的结束永远不通知，因为把你刚按下的事再说一遍，只会让人学会不看通知。",
   "settings.notify.label": "会话停下等人、或非我所愿地结束时告诉我",
   "settings.notify.terminal": "也可用 `daoris driver notify on|off`——同一个文件，两道门；没有屏幕的机器会改在它的控制台上说。",

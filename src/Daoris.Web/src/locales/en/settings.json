@@ -18,6 +18,7 @@
   "settings.language.hint": "The window's own words; what the service says is shown as it said it.",
   "settings.home.label": "Daoris home",
   "settings.home.hint": "The Daoris home. Every file on this page lives under it, and a terminal's daoris reads the same folder; nothing of Daoris's lives under your profile.",
+  "settings.home.hintOverridden": "The Daoris home. Every file on this page lives under it; nothing of Daoris's lives under your profile. The line below says which folder a terminal's daoris reads.",
   "settings.notify.body": "Nobody should have to watch a driver. This machine can say so when a session stops to ask you something, or ends without you asking — never for an ending you caused, because a notice about what you just pressed is one you learn to dismiss unread.",
   "settings.notify.label": "Tell me when a session parks or ends unasked",
   "settings.notify.terminal": "Also `daoris driver notify on|off` — one file, either door; a machine with no screen says it on its console.",
