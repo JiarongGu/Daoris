@@ -90,8 +90,8 @@ makes accounts **named profiles**: isolated configuration directories whose *loc
 already has. Logging in runs the agent's own flow inside one, so **Daoris never
 sees, stores or copies a sign-in**; `agent key` keeps an API key, and `agent rules` what a
 session may do (D72). Pick one per machine, per
-workspace, or for a single conversation, and `agent profile default <agent> --clear` goes back to the
-agent's own home; the session record then names the account and tool version it ran as. A spawn onto a missing agent, a profile nobody signed into, or a workspace the agent
+workspace, or for a single conversation, or `--clear` it; the session record names the account and tool
+version it ran as. A spawn onto a missing agent, a profile nobody signed into, or a workspace the agent
 has never been trusted in refuses **naming the action that fixes it**.
 `docs/2026-09-22-toolchain-design.md` is the contract.
 
