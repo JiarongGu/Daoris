@@ -5804,6 +5804,25 @@ none of those is one. The index names a room by its first heading. `check` repor
 `status` naming what reaches each harness (LAYOUT7's table and its twin), the service's half (LAYOUT4), the
 lanes' rooms (LAYOUT9). The release rehearsal's move phase is written and was not run in the branch.*
 
+*Built by LAYOUT4 (2026-10-01): the service reads the layout, the design's §5.5, and the scanner no longer assumes
+`.claude`. `DaorisLock` reads the lock's `harness`, `target` and `mirrors` and resolves its root by the CLI's
+`lockLayout`, row for row: the lock's target, else the manifest's while both are on the older layout, else the
+descriptor's. `RepositoryLayout` says where the scanner reads: at the lock's root and, for a layout that moved, the
+root it moved from, where a skill kept for one agent sits beside the mirrors; with no lock, at the manifest's root
+and both `.agents` and `.claude`. The lock's mirrors are never indexed, so a skill is found once, at its source.
+Each declared room's `AGENTS.md` is a local knowledge entry named by its folder. `RepositoryLinks` skips a link, a
+junction or a link held as text, by the CLI's `heldAsText` cases, and never follows one. Four choices, each held by
+a test: (1) the reader's answer where the CLI refuses: a lock whose target leaves the repository, or whose
+descriptor it does not know, reads as no lock, everything local; a room the CLI refuses is not read, and the good
+rooms beside it still are. Never outside the repository, and never the whole corpus for one repository's file.
+(2) Rooms are the manifest's, not the lock's: a room's `AGENTS.md` is the repository's own file, and the lock's
+`rooms` record pointers, one import line each. (3) The link rule covers every file the scanner reads, the logs and
+the region's file included, and a region file the lock names outside the repository is not read (D18). (4) A room
+whose file a tier already yielded is one entry. A repository on the older layout indexes exactly as before: a golden
+test was run against the scanner before this change and after it. The CLI still writes `claude-code` from `init`;
+the service no longer holds that default back (LAYOUT3's choice 1). Not run in the branch: the family rehearsal's
+*each document indexed once* (§5.6), the parent's at merge.*
+
 *Amended by LEFT3 (2026-10-01): the traces are bounded. Each repository keeps its newest 50
 (`LandedBranches.TracesKept`), by when each went, dropped at the record's next write; a standing entry is never
 dropped. A count per repository rather than a span: the file grows with landings, not with the clock, and a person
