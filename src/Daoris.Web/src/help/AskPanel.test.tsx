@@ -27,7 +27,7 @@ describe('Ask Daoris', () => {
     const onClose = vi.fn();
     render(<AskPanel starters={LACKING} helper={null} onGo={onGo} onClose={onClose} />);
 
-    await userEvent.click(screen.getByRole('button', { name: "open Daoris's own AI" }));
+    await userEvent.click(screen.getByRole('button', { name: "Open AI features" }));
     expect(onGo).toHaveBeenCalledWith({ view: 'settings', section: 'ai' });
     await userEvent.click(screen.getByRole('button', { name: 'close Ask Daoris' }));
     expect(onClose).toHaveBeenCalledOnce();

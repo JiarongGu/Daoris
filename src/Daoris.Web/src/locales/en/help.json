@@ -57,8 +57,8 @@
   "help.starter.helper-off": "Ask Daoris runs no agent: name one to talk with it here.",
   "help.door.sessions": "open Sessions",
   "help.door.projects": "open Projects",
-  "help.door.agents": "open Agents & accounts",
-  "help.door.workspace": "open Workspace settings",
-  "help.door.ai": "open Daoris's own AI",
+  "help.door.agents": "Open Agents",
+  "help.door.workspace": "Open Workspace",
+  "help.door.ai": "Open AI features",
   "help.setup": "set up Daoris step by step: {{done}} of {{of}} done"
 }

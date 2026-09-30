@@ -220,11 +220,21 @@ describe('the real glossary and catalogues', () => {
     expect(validate(glossary, en, zh)).toEqual([]);
   });
 
-  it("find the owner's examples today: Settings' names translated, a door with a third name, a heading against its press", () => {
+  /**
+   * NAME1b: the owner's examples, named as the owner approved them (2026-10-01): Settings' names were
+   * translated, a door had a third name, and a heading named another act than the press under it.
+   */
+  it("name the owner's examples as approved, and the check finds nothing in them", () => {
     const found = check(glossary, en, zh);
-    expect(rules(found, 'settings.domain.ai')).toContain('glossary:en');
-    expect(rules(found, 'settings.domain.agents')).toContain('budget:zh');
-    expect(rules(found, 'menu.agents.tools')).toContain('door:en');
+    const approved: Record<string, [string, string]> = {
+      'settings.domain.ai': ['AI features', 'AI 功能'],
+      'settings.domain.agents': ['Agents', '智能体'],
+      'menu.agents.tools': ['Agent settings', '智能体设置'],
+    };
+    for (const [key, [english, chinese]] of Object.entries(approved)) {
+      expect([en[key], zh[key]], key).toEqual([english, chinese]);
+      expect(rules(found, key), key).toEqual([]);
+    }
     expect(rules(found, 'settings.sync.title')).toContain('glossary:zh');
     expect(rules(found, 'command.go.convergence')).toContain('door:zh');
   });

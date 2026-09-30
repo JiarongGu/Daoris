@@ -60,7 +60,7 @@ describe('SettingsView in a browser', () => {
 
     const domains = screen.getByRole('navigation', { name: 'Settings domains' });
     expect(within(domains).getAllByRole('button').map((button) => button.textContent))
-      .toEqual(['Get started', 'Appearance', "Daoris's own AI", 'Workspace']);
+      .toEqual(['Setup', 'Appearance', "AI features", 'Workspace']);
     expect(within(domains).getByRole('button', { name: 'Appearance' })).toHaveAttribute('aria-current', 'page');
     expect(await screen.findByText('Theme')).toBeTruthy();
   });

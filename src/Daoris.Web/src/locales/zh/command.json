@@ -14,7 +14,7 @@
   "command.work.help": "问道衍——本机缺什么，以及如何设置",
   "command.work.quickAsk": "快速提问——向问道衍问一个问题，不必打开侧栏",
   "command.work.detach": "在单独的窗口中打开该会话",
-  "command.do.setup": "配置 Daoris——本机需要的步骤，按先后排列",
+  "command.do.setup": "配置——本机需要的步骤，按先后排列",
   "command.do.ask": "向工作区提出请求…",
   "command.do.refresh": "刷新索引",
   "command.do.language": "切换语言"

@@ -64,9 +64,9 @@ describe('Get started', () => {
   it('opens the screen each step is done on', async () => {
     const { onGo } = draw();
 
-    await userEvent.click(within(step(/An agent/)).getByRole('button', { name: 'open Agents & accounts' }));
+    await userEvent.click(within(step(/An agent/)).getByRole('button', { name: 'Open Agents' }));
     expect(onGo).toHaveBeenLastCalledWith({ view: 'settings', section: 'agents' });
-    await userEvent.click(within(step(/own agent/)).getByRole('button', { name: "open Daoris's own AI" }));
+    await userEvent.click(within(step(/own agent/)).getByRole('button', { name: "Open AI features" }));
     expect(onGo).toHaveBeenLastCalledWith({ view: 'settings', section: 'ai' });
     await userEvent.click(within(step(/repositories/)).getByRole('button', { name: 'Add repository…' }));
     expect(onGo).toHaveBeenLastCalledWith({ view: 'projects', drawer: 'add' });
@@ -74,9 +74,9 @@ describe('Get started', () => {
     expect(onGo).toHaveBeenLastCalledWith({ view: 'projects', drawer: 'import' });
     await userEvent.click(within(step(/driven/)).getByRole('button', { name: 'open Projects' }));
     expect(onGo).toHaveBeenLastCalledWith({ view: 'projects' });
-    await userEvent.click(within(step(/work lands/)).getByRole('button', { name: 'open Workspace settings' }));
+    await userEvent.click(within(step(/work lands/)).getByRole('button', { name: 'Open Workspace' }));
     expect(onGo).toHaveBeenLastCalledWith({ view: 'settings', section: 'workspace', anchor: 'landing' });
-    await userEvent.click(within(step(/agents may do/)).getByRole('button', { name: 'open Permissions' }));
+    await userEvent.click(within(step(/agents may do/)).getByRole('button', { name: 'Open Permissions' }));
     expect(onGo).toHaveBeenLastCalledWith({ view: 'settings', section: 'permissions' });
   });
 

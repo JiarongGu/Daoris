@@ -232,12 +232,12 @@ describe('the shell in a browser, over two workspaces', () => {
   it('the Agents menu opens Settings at the domain it names', async () => {
     shell();
     const user = await openMenu('Agents');
-    await screen.findByRole('menuitem', { name: "Daoris's own AI" });
-    expect(screen.getAllByRole('menuitem').map((item) => item.textContent)).toEqual(["Daoris's own AI"]);
+    await screen.findByRole('menuitem', { name: "AI features" });
+    expect(screen.getAllByRole('menuitem').map((item) => item.textContent)).toEqual(["AI features"]);
 
-    await user.click(screen.getByRole('menuitem', { name: "Daoris's own AI" }));
+    await user.click(screen.getByRole('menuitem', { name: "AI features" }));
     const domains = await screen.findByRole('navigation', { name: 'Settings domains' });
-    expect(within(domains).getByRole('button', { name: "Daoris's own AI" })).toHaveAttribute('aria-current', 'page');
+    expect(within(domains).getByRole('button', { name: "AI features" })).toHaveAttribute('aria-current', 'page');
   });
 
   /**
@@ -248,9 +248,9 @@ describe('the shell in a browser, over two workspaces', () => {
     shell();
     const user = await openMenu('Daoris');
 
-    await user.click(await screen.findByRole('menuitem', { name: 'Set up Daoris' }));
+    await user.click(await screen.findByRole('menuitem', { name: 'Setup' }));
     const domains = await screen.findByRole('navigation', { name: 'Settings domains' });
-    expect(within(domains).getByRole('button', { name: 'Get started' })).toHaveAttribute('aria-current', 'page');
+    expect(within(domains).getByRole('button', { name: 'Setup' })).toHaveAttribute('aria-current', 'page');
     const steps = await screen.findByRole('list', { name: 'setup steps' });
     expect(within(steps).getByRole('listitem', { name: '3. A workspace and its repositories' })).toHaveTextContent('done');
   });

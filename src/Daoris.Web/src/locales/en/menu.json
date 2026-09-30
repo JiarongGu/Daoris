@@ -3,7 +3,7 @@
   "menu.app": "Daoris",
   "menu.view": "View",
   "menu.settings": "Settings",
-  "menu.setup": "Set up Daoris",
+  "menu.setup": "Setup",
   "menu.workspace": "Workspace",
   "menu.agents": "Agents",
   "menu.driver": "Driver",
@@ -13,11 +13,11 @@
   "menu.workspace.import": "Import a folder…",
   "menu.workspace.wire": "Wire to a remote…",
   "menu.workspace.settings": "Workspace settings",
-  "menu.agents.tools": "Tools & accounts",
-  "menu.agents.rules": "What agents may do",
+  "menu.agents.tools": "Agent settings",
+  "menu.agents.rules": "Permissions",
   "menu.agents.proposals": "Proposals",
   "menu.agents.usage": "Usage",
-  "menu.agents.ai": "Daoris's own AI",
+  "menu.agents.ai": "AI features",
   "menu.refresh": "Refresh the index",
   "menu.language": "Switch language"
 }

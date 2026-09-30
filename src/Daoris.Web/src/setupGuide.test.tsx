@@ -86,8 +86,8 @@ describe('Get started, on the desktop', () => {
 
     const domains = screen.getByRole('navigation', { name: 'Settings domains' });
     await within(domains).findByRole('button', { name: 'Driver' });
-    expect(within(domains).getAllByRole('button')[0]).toHaveTextContent('Get started');
-    expect(within(domains).getByRole('button', { name: 'Get started' })).toHaveAttribute('aria-current', 'page');
+    expect(within(domains).getAllByRole('button')[0]).toHaveTextContent('Setup');
+    expect(within(domains).getByRole('button', { name: 'Setup' })).toHaveAttribute('aria-current', 'page');
   });
 
   it('reads a fresh machine as every step to do, and opens the screen each is done on', async () => {

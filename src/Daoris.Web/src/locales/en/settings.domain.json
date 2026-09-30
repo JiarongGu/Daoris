@@ -1,12 +1,12 @@
 {
   "settings.domain.appearance": "Appearance",
-  "settings.domain.ai": "Daoris's own AI",
+  "settings.domain.ai": "AI features",
   "settings.domain.workspace": "Workspace",
   "settings.domain.driver": "Driver",
-  "settings.domain.agents": "Agents & accounts",
+  "settings.domain.agents": "Agents",
   "settings.domain.permissions": "Permissions",
   "settings.domain.plugins": "Plugins",
   "settings.domain.browser": "Browser",
-  "settings.domain.start": "Get started",
-  "settings.domain.logs": "Logs"
+  "settings.domain.start": "Setup",
+  "settings.domain.logs": "Machine log"
 }

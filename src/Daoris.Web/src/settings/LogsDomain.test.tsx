@@ -56,7 +56,7 @@ describe('the logs domain', () => {
   it('is a domain of a desktop, reading the last day of every source from the machine, and nothing over the service', async () => {
     show(<SettingsView notify={() => {}} section="logs" />);
 
-    expect(await within(screen.getByRole('navigation', { name: 'Settings domains' })).findByRole('button', { name: 'Logs' }))
+    expect(await within(screen.getByRole('navigation', { name: 'Settings domains' })).findByRole('button', { name: 'Machine log' }))
       .toHaveAttribute('aria-current', 'page');
     expect(await screen.findByRole('listitem', { name: 'page.error' })).toBeInTheDocument();
     expect(screen.getByText('C:/somewhere/data/logs')).toBeInTheDocument();

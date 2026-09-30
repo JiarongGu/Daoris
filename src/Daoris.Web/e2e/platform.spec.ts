@@ -534,8 +534,8 @@ test('a browser learns nothing about this machine’s harnesses (D49 §4)', asyn
   // passed whatever a browser was shown. The domain list is what a browser is OFFERED, so it is
   // asserted whole: a machine domain appearing here fails this line.
   const domains = page.getByRole('navigation', { name: 'Settings domains' }).getByRole('button');
-  // Get started leads (SETUP1a, D97), holding in a browser only the registry's step.
-  await expect(domains).toHaveText([/Get started/, /Appearance/, /Daoris.s own AI/, /Workspace/]);
+  // Setup leads (SETUP1a, D97; named so by NAME1b), holding in a browser only the registry's step.
+  await expect(domains).toHaveText([/Setup/, /Appearance/, /AI features/, /Workspace/]);
 
   // Workspace is the one domain with a machine half (its wiring), so it is opened and that half's
   // absence asserted where it would render, after its browser half is seen.
@@ -562,7 +562,7 @@ test('a browser is told which tier answers search, and nothing of the intake (AG
 
   await page.getByLabel('state of this machine').getByRole('button', { name: 'recall' }).click();
   await expect(page.getByRole('heading', { name: 'Settings', exact: true })).toBeVisible();
-  await expect(page.getByText('Daoris\'s own AI')).toBeVisible();
+  await expect(page.getByText('AI features')).toBeVisible();
   await expect(page.getByText('Search and convergence')).toBeVisible();
   await expect(page.getByText(status.tier, { exact: true }).first()).toBeVisible();
   if (status.note) await expect(page.getByText(status.note, { exact: true })).toBeVisible();
