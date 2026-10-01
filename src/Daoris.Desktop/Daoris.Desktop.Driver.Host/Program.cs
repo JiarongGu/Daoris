@@ -83,6 +83,11 @@ using Daoris.Driver;
 //                 speaks the handshake, one frame at each point and the shutdown, and checks every answer
 //                 by the driver's own reader: 0 when all are ones it reads, 1 when the plugin failed a check.
 //                 Settings → Plugins is the other door.
+//   plugins show <id> [--json]
+//   plugins activity <id> [--since <30m|2h|3d>] [--json]
+//                 a plugin's page and what it did (PLUGUI1d, D119 §4.4): what it declares as written, a
+//                 server's environment by name only, its health from the machine log's last word, said with
+//                 when; and its activity from the machine log over the last 7 days, or the span --since names.
 //
 // While watching, a line marked `!` is what would have been a toast on a machine with a screen
 // (SURF5b): a session parked, or one ended without the person asking. `daoris driver notify off`
@@ -146,7 +151,7 @@ try
     // the CLI's `daoris driver trees <repo> on|off` is the standing opt-in, a file edit; these are disk.
     if (args is ["trees", .. var treesArgs])
     {
-        return await Daoris.Driver.Host.TreesConsole.RunAsync(treesArgs);
+        return await Daoris.Driver.Host.TreesConsole.RunAsync(treesArgs, log);
     }
 
     // The sync on demand (SYNC6a, D50): the screen's *Sync now* is the other door to the same pass.
@@ -168,11 +173,11 @@ try
         return Daoris.Driver.Host.LogsConsole.Run(logsArgs);
     }
 
-    // The plugin kit from a terminal (PLUG8, D50): Settings → Plugins is the other door. It needs no
-    // service, and a home only to try an installed plugin by its id.
+    // Plugins from a terminal (PLUG8, PLUGUI1d, D50): the kit's new and try, and a plugin's page and activity,
+    // the Plugins view's twins. None needs a service; try a home only to try an installed plugin by its id.
     if (args is ["plugins", .. var pluginsArgs])
     {
-        return await PluginKitCommand.RunAsync(pluginsArgs, Console.Out, DaorisHome.Resolve());
+        return await PluginsCommand.RunAsync(pluginsArgs, Console.Out, DaorisHome.Resolve(), log);
     }
 
     // 🔴 The loop only by its verb (DRV8a, D104): a bare invocation, or a word nobody answers, is the
@@ -252,7 +257,8 @@ try
 
     // The plugins that speak (D64): their processes live as long as this host does, and are stopped
     // with it. Their diagnostics have no console buffer here, so they go to stderr under their name.
-    await using var hooks = new HookSet(home, say: (id, line) => Console.Error.WriteLine($"plugin:{id}  {line}"));
+    // What the set does with each, without their words, goes to this host's machine log (PLUGUI1d).
+    await using var hooks = new HookSet(home, say: (id, line) => Console.Error.WriteLine($"plugin:{id}  {line}"), log: log);
 
     if (once)
     {

@@ -58,6 +58,8 @@ public static class DriverCommand
               install a plugin package's plugin, checked first; nothing reaches a network.
           plugins new <id> --point <point>… [--in <folder>]  ·  plugins try <folder|id> [--point <point>]
               make a plugin, or try one as the driver would.
+          plugins show <id> [--json]  ·  plugins activity <id> [--since <30m|2h|3d>] [--json]
+              a plugin's page and its health, or what it did, from the machine log.
 
         Only `drive` starts a loop. DAORIS_HOME names the home; DAORIS_SERVICE_URL the service, which
         `drive` and every verb that reads a record need.

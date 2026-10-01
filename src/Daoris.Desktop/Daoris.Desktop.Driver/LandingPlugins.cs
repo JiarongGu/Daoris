@@ -17,14 +17,26 @@ namespace Daoris.Driver;
 /// <para><b>It never throws for the plugin's sake.</b> Whatever the plugin does — not start, answer late,
 /// answer wrongly, refuse — comes back as a <see cref="PluginLanding"/> marked failed, with the sentence,
 /// because the branch is already made and the press is owed an answer about both.</para>
+///
+/// <para><b>What it did is kept without the plugin's words</b> (PLUGUI1d, D119 §4.2): the frame's start, its
+/// answer or failure, and its stop are <c>plugin.*</c> lines, by <c>landing</c> or <c>hand</c>, and words in the
+/// loop's record of the plugin's health where the process runs the loop. Never the pull request's address, the
+/// plugin's sentence or what it wrote to stderr. A plugin the press refuses before it is started was never
+/// spoken to, and writes nothing.</para>
 /// </remarks>
 public sealed class LandingPlugins(
     string home,
     Func<PluginEntry, Action<string>, CancellationToken, Task<IHookChannel>>? start = null,
     // Where a plugin's word goes: the console under `plugin:<id>`, or a terminal's own lines.
     Action<string, string>? say = null,
-    TimeSpan? patience = null)
+    TimeSpan? patience = null,
+    // The process's machine log (PLUGUI1d). Null writes none.
+    MachineLog? log = null,
+    // The loop's own record of each plugin's health (D119 §2), in the process that runs the loop. Null keeps none.
+    PluginHealth? health = null)
 {
+    private readonly PluginLog _log = new(log, health);
+
     /// <summary>
     /// How long a plugin has to push and open the pull request. Longer than a decision's ten seconds: a
     /// push and a platform's API are network round trips, and the person pressed and is waiting.
@@ -42,7 +54,14 @@ public sealed class LandingPlugins(
     public string? Problem(string plugin) => LandingRules.PluginProblem(plugin, Catalog());
 
     /// <summary>Speak the one frame and hear the answer — or the sentence saying why there is none.</summary>
-    public async Task<PluginLanding> LandAsync(string plugin, LandingFrame frame, CancellationToken ct = default)
+    public Task<PluginLanding> LandAsync(string plugin, LandingFrame frame, CancellationToken ct = default) =>
+        SpeakAsync(plugin, frame, PluginEvents.ByLanding, ct);
+
+    /// <summary>The same frame for a branch a landing made earlier, handed on after it (WSR5b): the machine log says it was a hand-off.</summary>
+    public Task<PluginLanding> HandAsync(string plugin, LandingFrame frame, CancellationToken ct = default) =>
+        SpeakAsync(plugin, frame, PluginEvents.ByHand, ct);
+
+    private async Task<PluginLanding> SpeakAsync(string plugin, LandingFrame frame, string by, CancellationToken ct)
     {
         var catalog = Catalog();
         if (LandingRules.PluginProblem(plugin, catalog) is { } problem) return Failed(plugin, problem);
@@ -50,26 +69,40 @@ public sealed class LandingPlugins(
         var id = entry.Manifest.Id;
 
         IHookChannel? channel = null;
+        var where = PluginEvents.AtStart;
+        var took = System.Diagnostics.Stopwatch.StartNew();
         try
         {
             channel = await _start(entry, line => Say(id, line), ct).ConfigureAwait(false);
+            _log.Started(id, channel.Points, took.ElapsedMilliseconds, by);
             if (!channel.Points.Contains(HookPoints.Land, StringComparer.Ordinal))
             {
+                // It answered the handshake, and not with the point it declares: it cannot be asked.
+                _log.Failed(id, HookPoints.Land, PluginEvents.Unreadable, code: null, ms: null, by);
                 return Failed(id, $"plugin `{id}` declares `{HookPoints.Land}` but its process does not listen there.");
             }
 
+            where = HookPoints.Land;
+            took.Restart();
             var answer = await channel.LandAsync(HookFrames.Land(frame), ct).ConfigureAwait(false);
+            _log.Called(id, HookPoints.Land, answer.Pushed ? PluginEvents.Pushed : PluginEvents.NotPushed, took.ElapsedMilliseconds);
             Say(id, $"landed `{frame.Branch}`: {(answer.Pushed ? "pushed" : "not pushed")}"
                 + (answer.PullRequest is { } pr ? $", {pr}" : "") + $" — {answer.Message}");
             return answer with { Plugin = id };
         }
         catch (DriverException error)
         {
+            var kind = PluginFailures.KindOf(error, where == PluginEvents.AtStart ? PluginEvents.Unstartable : PluginEvents.Errored);
+            _log.Failed(id, where, kind, kind == PluginEvents.Exited ? channel?.ExitCode : null, took.ElapsedMilliseconds, by);
             return Failed(id, error.Message);
         }
         finally
         {
-            if (channel is not null) await channel.DisposeAsync().ConfigureAwait(false);
+            if (channel is not null)
+            {
+                await channel.DisposeAsync().ConfigureAwait(false);
+                _log.Stopped(id, PluginEvents.Ended, by);
+            }
         }
     }
 
