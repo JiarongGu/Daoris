@@ -108,6 +108,28 @@ describe('the harness roster', () => {
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'STARTS', { payload: { workspaces: ['default'] } });
   });
 
+  /**
+   * FRAME1g (D118 §3h; audit ST11): the domain drew nothing until the roster's first answer, so a first open
+   * was a blank page under its name. It holds the card's place with skeleton rows until the roster answers.
+   */
+  it('holds the roster\'s place with skeleton rows on its first load, never nothing', async () => {
+    let answer: (roster: typeof ROSTER) => void = () => {};
+    invoke.mockImplementation((_module: string, type: string) => (type === 'HARNESSES'
+      ? new Promise((resolve) => { answer = resolve; })
+      : Promise.resolve(WIRING)));
+    show(<SettingsView notify={() => {}} section="agents" />);
+
+    // The machine's domains are offered once the shell answers, and the main area is drawn anew for this one.
+    await screen.findByRole('heading', { level: 1, name: 'Agents' });
+    const main = screen.getByRole('main');
+    await waitFor(() => expect(main.querySelector('[aria-busy="true"]')).not.toBeNull());
+    expect(screen.queryByText('Agents on this machine')).toBeNull();
+
+    answer(ROSTER);
+    expect(await screen.findByText('claude 9.9.9')).toBeTruthy();
+    expect(main.querySelector('[aria-busy="true"]')).toBeNull();
+  });
+
   /** An absent harness names what it is and offers the action, rather than leaving a blank row. */
   it('an absent tool says so and offers its own installer', async () => {
     show(<SettingsView notify={() => {}} section="agents" />);
@@ -724,6 +746,10 @@ describe('the harness roster', () => {
 
     expect(await screen.findByRole('navigation', { name: 'Settings domains' })).toBeTruthy();
     expect(screen.queryByText('Agents on this machine')).toBeNull();
+    // An answer is in, so nothing is loading any more: no skeleton left standing in for a card.
+    await screen.findByRole('heading', { level: 1, name: 'Agents' });
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'HARNESSES', {}));
+    await waitFor(() => expect(screen.getByRole('main').querySelector('[aria-busy="true"]')).toBeNull());
   });
 
   /**

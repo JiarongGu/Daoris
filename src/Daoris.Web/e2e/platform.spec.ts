@@ -561,8 +561,10 @@ test('a browser is told which tier answers search, and nothing of the intake (AG
   await page.goto('/');
 
   await page.getByLabel('state of this machine').getByRole('button', { name: 'recall' }).click();
-  await expect(page.getByRole('heading', { name: 'Settings', exact: true })).toBeVisible();
-  await expect(page.getByText('AI features')).toBeVisible();
+  // Settings' main area is named for the domain shown (FRAME1g), and its list has that domain chosen.
+  await expect(page.getByRole('heading', { level: 1, name: 'AI features', exact: true })).toBeVisible();
+  await expect(page.getByRole('navigation', { name: 'Settings domains' }).getByRole('button', { name: 'AI features' }))
+    .toHaveAttribute('aria-current', 'page');
   await expect(page.getByText('Search and convergence')).toBeVisible();
   await expect(page.getByText(status.tier, { exact: true }).first()).toBeVisible();
   if (status.note) await expect(page.getByText(status.note, { exact: true })).toBeVisible();

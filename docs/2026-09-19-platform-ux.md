@@ -382,8 +382,11 @@ controls are in the frame design's §3.
   one shown at a time and reachable by name: *Setup*, *Appearance*, *AI features*, *Workspace*,
   *Driver*, *Agents*, *Permissions*, *Plugins*, *Browser*, *Machine log* (配置, 外观, AI 功能, 工作区,
   驱动, 智能体, 权限, 插件, 浏览器, 本机日志; named so by NAME1b, D116). Every way in opens the domain its
-  fact is set in, at the part it names, and a browser is offered only the first four. What the domains
-  hold:
+  fact is set in, at the part it names, and a browser is offered only the first four, its list saying
+  beneath them that a machine's own settings are on the desktop. **Since FRAME1g (D118) the list is the
+  frame's list pane**, 176–320 px and 176 to start, closed to its strip, a strip by room and laid over
+  the domain from it, never stacked above it; the domain is the main area, its header naming it, and a
+  machine domain's first load is skeleton rows in its cards' place. What the domains hold:
   - **Setup** (D97): the six setup steps in order, each a row with its state pill (done's hue,
     open's for *to do*, neutral for optional), what done means, its commands with a copy each, and the
     doors to the screens that do it at the right; a done step's doors are quiet, a step to do's are
