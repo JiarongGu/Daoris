@@ -6221,6 +6221,37 @@ proof.
   finding chosen, a search typed at 1280 px for SR11, both themes and both languages, are the parent's to see. The
   finding list's toggles are over the button budget (21 characters for 20); the budgets are a report (D116 §3).
 
+**Built: FRAME1h (2026-10-01), and what it settled that the design left open.**
+- **The monitor's rail is a list of its own, `monitor`**, in `LIST_BOUNDS` with Sessions' bounds, since it is the
+  session list live. Its closing and its width are kept as `daoris.list.monitor.*`, so closing it closes no rail in
+  the main window. `ViewFrame`, the browser's frame, draws it, since nothing stands beside the tiles: the rail gives
+  way to its strip only for the tiles' 400 px floor, open from a 680 px window. Its strip holds each running
+  session's mark, as Sessions' does. Its names and doors are the session list's. It has no `＋` and no ⋯, since the
+  window makes nothing (D56's one owner).
+- **A press on a session scrolls to its tile**, from the rail or its strip, and lets a rail laid over the tiles go,
+  as a choice in any list does. No item is chosen or kept: the tiles are the running sessions.
+- **A tile is never wider than the tiles' area** (`minmax(min(26rem, 100%), 1fr)`). Beside the rail at the floor, a
+  26 rem tile ran past it.
+- **A detached window's console is `OutputPanel`**, kept as one memory for every detached window
+  (`daoris.detached.panelHeight` and `.panelClosed`, `useDetachedPanel` in `closings.ts`). It is kept apart from the
+  main window's panel, since the windows share one page's storage. It starts at the main window's 200 px. Picking a
+  stream opens a hidden console, as the main window's does.
+- **`OutputPanel` draws no views menu where it holds one view and has nowhere to move it.** In a detached window the
+  ⋯ listed the console alone. It is absent, never a door that does nothing (§3a). The main window always passes its
+  move, so it keeps the menu.
+- **Each window answers the key of the one region it has**: Ctrl+B on the monitor, Ctrl+J in a detached window,
+  wherever focus is, as the main window's keys are. Neither window answers F6, since each has its native frame and
+  one region that moves.
+- **The monitor's title is `text-view`**, the one heading step a view has, as every page's header. `tokens.test.ts`
+  now reads a `text-` class whole, and fails on one for which `tokens.css` declares no step, colour or layout. It
+  was seen red first, on `text-h3` alone. It also holds the steps `cn.ts` hands the class merge equal to the ones
+  `tokens.css` declares.
+- **What the gates do not cover.** jsdom lays nothing out. In the tests, the rail's mode at 600 and 1400 px is the
+  room rule's answer for the window less 48 px, where the real window measures its frame and has no activity bar. A
+  short window does not cap the console's height, as it does not cap the main window's. No look at the windows was
+  taken. `shot --window monitor` at 900 and 1400 px, and `shot --window session:<id>` with a long console and
+  narrow, in both themes, are the parent's to see.
+
 ## D116 — A name is a UI element, designed in each language; the glossary is the authority, and a check holds it (2026-10-01)
 
 **Decision (NAME1a, the owner's round).** The owner: names in Settings and every other display must be named
