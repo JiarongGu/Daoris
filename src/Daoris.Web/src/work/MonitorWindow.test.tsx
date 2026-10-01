@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { act, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import * as Tooltip from '@radix-ui/react-tooltip';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 // The monitor window (SURF8). An ORGANISM, so this is the layer a mocked bridge is for (components
@@ -59,9 +60,20 @@ function respond(url: string): Response {
 function show() {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
-    <QueryClientProvider client={client}><MonitorWindow notify={() => {}} /></QueryClientProvider>,
+    <QueryClientProvider client={client}>
+      <Tooltip.Provider><MonitorWindow notify={() => {}} /></Tooltip.Provider>
+    </QueryClientProvider>,
   );
 }
+
+/** The window this wide. Nothing lays out in jsdom, so the frame is read as the window less 48 px. */
+const widen = (width: number) => act(() => {
+  Object.defineProperty(window, 'innerWidth', { configurable: true, value: width });
+  window.dispatchEvent(new Event('resize'));
+});
+
+/** The rail's pane, by the list's name, and how the room left it. */
+const railPane = () => screen.getByRole('complementary', { name: 'Sessions' });
 
 describe('the monitor window', () => {
   beforeEach(() => {
@@ -84,6 +96,8 @@ describe('the monitor window', () => {
   afterEach(() => {
     vi.unstubAllGlobals();
     invoke.mockReset();
+    window.localStorage.clear();
+    widen(1024);
   });
 
   it('shows what is running, and leaves what has finished to the views that review it', async () => {
@@ -106,7 +120,80 @@ describe('the monitor window', () => {
 
     await waitFor(() => expect(within(rail).getAllByRole('listitem').length).toBeGreaterThan(0));
     expect(within(rail).queryByRole('region', { name: 'Ended' })).toBeNull();
-    expect(rail.closest('aside')!.className).toContain('w-[17.5rem]');
+    // The main rail's own bounds (FRAME1h): 280 px to start, as Sessions' list.
+    expect(rail.closest('aside')!.style.width).toBe('280px');
+  });
+
+  /**
+   * FRAME1h, audit MO2: below 1024 px the rail was hidden with no way back, and the running sessions it
+   * scrolls to were out of reach. It is a list pane now: a strip where the tiles leave it no room, which
+   * keeps each running session's mark and an open that lays the rail over the tiles.
+   */
+  it('keeps its rail as a strip where there is no room, never hidden, and lays it over the tiles from there', async () => {
+    widen(600);
+    show();
+
+    await screen.findByText('Expose a streaming budget on the chunk API');
+    expect(railPane()).toHaveAttribute('data-list-mode', 'strip');
+    // Each running session this machine or another holds, by its mark; what ended is not one.
+    await waitFor(() => expect(within(railPane()).getAllByRole('button', { name: / · engine · / })).toHaveLength(3));
+
+    await userEvent.click(within(railPane()).getByRole('button', { name: 'Show the session list' }));
+    const over = screen.getByRole('region', { name: 'Sessions' });
+    // The row, before its own menu.
+    const [row] = await within(over).findAllByRole('button', { name: /Expose a streaming budget/ });
+    await userEvent.click(row!);
+    await waitFor(() => expect(screen.queryByRole('region', { name: 'Sessions' })).toBeNull());
+    expect(railPane()).toHaveAttribute('data-list-mode', 'strip');
+  });
+
+  /** The monitor remembers its own rail (D118 §4, §3f): the main window's is another list. */
+  it('remembers its rail\'s closing and width for the monitor, apart from the main window\'s', async () => {
+    widen(1400);
+    show();
+
+    await userEvent.click(await screen.findByRole('button', { name: 'Hide the session list' }));
+    expect(railPane()).toHaveAttribute('data-list-mode', 'strip');
+    expect(window.localStorage.getItem('daoris.list.monitor.closed')).toBe('1');
+    expect(window.localStorage.getItem('daoris.railClosed')).toBeNull();
+
+    await userEvent.click(screen.getByRole('button', { name: 'Show the session list' }));
+    const edge = screen.getByRole('separator', { name: 'session list width' });
+    edge.focus();
+    await userEvent.keyboard('{ArrowRight}');
+    expect(window.localStorage.getItem('daoris.list.monitor.width')).toBe('304');
+    expect(window.localStorage.getItem('daoris.railWidth')).toBeNull();
+  });
+
+  it('opens on what the monitor kept', async () => {
+    window.localStorage.setItem('daoris.list.monitor.closed', '1');
+    widen(1400);
+    show();
+
+    await screen.findByText('Expose a streaming budget on the chunk API');
+    expect(railPane()).toHaveAttribute('data-list-mode', 'strip');
+  });
+
+  /** Each window answers the key of the region it has (D118 §4): the monitor's is its list, on Ctrl+B. */
+  it('toggles its rail on Ctrl+B, and has no panel for Ctrl+J to toggle', async () => {
+    widen(1400);
+    show();
+
+    await screen.findByText('Expose a streaming budget on the chunk API');
+    expect(railPane()).toHaveAttribute('data-list-mode', 'open');
+    await userEvent.keyboard('{Control>}b{/Control}');
+    expect(railPane()).toHaveAttribute('data-list-mode', 'strip');
+    await userEvent.keyboard('{Control>}j{/Control}');
+    expect(railPane()).toHaveAttribute('data-list-mode', 'strip');
+    await userEvent.keyboard('{Control>}b{/Control}');
+    expect(railPane()).toHaveAttribute('data-list-mode', 'open');
+  });
+
+  /** Audit MO11: its title wore `text-h3`, which no token defines, and was drawn at the body's size. */
+  it('titles itself on the one heading step a view has', async () => {
+    show();
+
+    expect(await screen.findByRole('heading', { level: 1, name: 'Monitor window' })).toHaveClass('text-view');
   });
 
   /** What needs a person comes first — the rail's rule, which matters more across a desk. */

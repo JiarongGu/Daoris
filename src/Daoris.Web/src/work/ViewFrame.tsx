@@ -128,6 +128,9 @@ export function ViewListPane({ spec, layout, lists, onOver }: {
  * **A browser's frame** (D118 §4, amending DOCK1a): the view's list and its main area, which hold nothing
  * machine-local, and never the side bar or the panel, which hold this machine's sessions (D47 §4). The list
  * has the frame's whole width for room, since no side bar stands beside it.
+ *
+ * **The monitor window's too** (FRAME1h): its rail and its tiles, under its native frame, with no side bar
+ * beside them either (D55 §b).
  */
 export function ViewFrame({ layout, lists, over, onOver, onListMode }: {
   layout: ViewLayout;

@@ -122,6 +122,35 @@ export const PanelViewsNarrow: StoryObj = {
   ),
 };
 
+/**
+ * The panel as a detached session's window draws it (FRAME1h): the console and its streams, with no views
+ * menu, since the window has no side bar to move a view to and nothing in it acts, so no stop either. Open,
+ * then hidden, then at a narrow window's width, where the streams' tabs scroll beside *Hide the panel*.
+ */
+export const PanelInItsOwnWindow: StoryObj = {
+  render: () => {
+    const tabs = [
+      { key: 's1a2b3c4', kind: 'session' as const, label: 'session', tone: 'idle' as const, status: "the session's own console" },
+      { key: 's1a2b3c4/task/bs00', kind: 'task' as const, label: 'dev server', tone: 'live' as const, status: 'background · running', stoppable: true },
+      { key: 's1a2b3c4/subagent/a9', kind: 'subagent' as const, label: '检查世界流式加载引擎的每一个分块预算', tone: 'ended' as const, status: 'subagent · completed' },
+    ];
+    const panel = (collapsed: boolean) => (
+      <OutputPanel
+        console={<SessionConsole id="s1a2b3c4/task/bs00" fill quiet="nothing held here" />}
+        height={160} collapsed={collapsed} onResize={() => {}} onToggle={() => {}}
+        tabs={tabs} selected="s1a2b3c4/task/bs00" onSelect={() => {}}
+      />
+    );
+    return (
+      <div className="grid gap-6">
+        <div className="w-[40rem]">{panel(false)}</div>
+        <div className="w-[40rem]">{panel(true)}</div>
+        <div className="w-[22rem]">{panel(false)}</div>
+      </div>
+    );
+  },
+};
+
 const PROFILES = [
   { name: 'personal', login: 'in' as const },
   { name: 'work', login: 'out' as const },
