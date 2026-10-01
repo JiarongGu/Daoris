@@ -6,6 +6,10 @@ The contract for the CLI is `2026-08-04-daoris-design.md`; this is its knowledge
 > **Since written (2026-09-25):** built, as `src/Daoris.Service` — an MCP host and an HTTP host over
 > one store, in local and shared modes. All four of §8's questions have been answered. Where this
 > document and a later decision disagree, the decision wins; §8 names each one.
+>
+> **2026-10-01, D123:** §7's model reads every part of an entry. A long entry is embedded in pieces no
+> longer than the window the deployment states (`DAORIS_EMBED_WINDOW`), each its own vector, and a search
+> names the entry once.
 
 ---
 

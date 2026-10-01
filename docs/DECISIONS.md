@@ -6874,3 +6874,91 @@ the folder, so it reaches into nothing.
 - **No custom type with a listed package was queried.** The first publish is that proof.
 - **The workshop, the reader, *Find* and the pack** exist only as rows. `verify` checks this document's links
   and the log's shape, and none of its words.
+
+## D123 — A long entry is embedded whole, in pieces the deployment's window bounds; its best piece speaks for it, and a refresh says how many were split (2026-10-01)
+
+**Decision (SEM3, found upgrading Lyntai to 3.5.3, LYN1).** The semantic tier embedded an entry's title twice and
+the first 2,000 characters of its body, and dropped the rest without saying so. An embedder then cuts whatever
+passes its own context the same way: Ollama's embed endpoint does it silently. So a search by meaning could not
+find what a long entry says past its opening, however close the meaning. Lyntai 3.3 offers `MaxInputChars` and
+`Segmentation` on its providers. Daoris segments instead, in Core, one vector per piece.
+
+### 1. Measured first
+
+- **The fixture** (`LongEntryTests`): a knowledge document whose only statement of a fact sits past character
+  2,000, and a short decision that mentions the meaning once among six build words. The vectors are the
+  deterministic stand-in's, and the query shares no word with either entry, so the order is the semantic half's
+  alone. **Before**: the document's one vector held build words only (cosine 0), and the decision (0.164) took the
+  one place. The test failed as the reading predicted. **After**: the piece that holds the fact scores 0.316, and
+  the document is first.
+- **The corpus**, scanned by the service's own scanner (a scratch probe, not committed). This repository holds
+  636 entries and 1.61 million characters of body. 293 entries (46%) were longer than 2,000 characters, and
+  562,000 characters (35%) never reached a vector. The longest is a decision of 17,518 characters. The medians by
+  kind: a decision 3,378, a knowledge document 6,839, a task outcome 1,890, a fix 1,466. Each example repository
+  holds 21 entries, all canon; 15 were longer, 44% of their text never reached a vector, and the longest is the
+  canon's `development-documents` at 8,662.
+- **Against a typical window**: a small embedder takes 512 tokens, about 2,000 characters of English and fewer of
+  code or 中文. A large one takes 8,192 tokens, about 30,000. The longest entry fits the large one and is nine
+  times the small one.
+
+### 2. What an entry becomes
+
+- **Every part of its body is embedded, in pieces no longer than the window** (`EntryPieces`). A piece ends at the
+  last blank line in the latter half of the window, else a line break, a sentence end, a space, or the window
+  itself, never inside a surrogate pair. The next piece starts at a line or sentence inside the last 15% of the
+  one before, so a sentence a cut falls through is whole in one of them. Each piece is led by the title: twice, as
+  the entry always was, or once where two would take more than half the window. An entry within the window is
+  one piece, the same text as before.
+- **The window is the deployment's** (D24): `DAORIS_EMBED_WINDOW`, the most characters one embedded text carries,
+  the title included. Unset, it is 2,000, the number the code already cut at, now a statement rather than a
+  silence. Below 200, or not a whole number, both hosts refuse to start, as for `DAORIS_MODE`. Characters only
+  approximate tokens, so a deployment leaves margin for code and for 中文.
+- **Each piece is its own vector, and its payload is the entry's id.** A search ranks pieces and **names an entry
+  once**, at its best piece's score. It reads further while pieces crowd out the places it was asked for, so a
+  long entry does not cost the answer its other entries. A hit found in a later piece shows that piece's passage
+  (the vector's id carries where the piece starts), so a reader can see why it matched.
+- **A refresh embeds everything first, then replaces the collection whole.** An embedder that fails part-way
+  leaves the previous vectors as they were, and an edited entry's old pieces and a deleted entry's vectors leave
+  with them: an entry is several ids now, so writing into the collection would let a stale piece be found for
+  words its entry no longer has.
+- **A refresh says what it embedded**: entries, the vectors they became, how many were split, at what window. The
+  agent's door (`knowledge_refresh`) says it in a sentence, and the HTTP door's refresh answer carries it as
+  `embedded`.
+- **Convergence** seeds from an entry's first piece, as before, compares it with every piece, and names each
+  neighbour once.
+- **The lexical tier is unchanged.** It always read the whole body.
+- **The cost, measured**: at 2,000, this repository's 636 entries become 1,267 vectors, 322 entries split, at most
+  14 pieces for one entry, and 1.70 times the characters the old cut sent. Of that, 1.49 is the text it dropped,
+  and the rest is the title on each piece and the overlap. At 8,000 it is 663 vectors. It is paid once per process
+  (SEM1), which raises what SEM2's trigger would measure.
+
+### 3. Rejected
+
+- **Capping**: embed the first window and say in the record what was cut. Honest, and still blind. The fact past
+  the cut stays unfindable by meaning, and the measure says that is a third of this repository's text.
+- **The provider's segmentation** (Lyntai 3.3's `MaxInputChars` with `Segmentation`). It splits an input and
+  returns its pieces' unit vectors averaged by length, one vector per input. That names an entry once by
+  construction, and dilutes a fact in one piece by all the others. On the fixture the pooled vector scores 0.111,
+  below the decision's 0.164, so the document would still be missed, and the dilution grows with the length it
+  is meant to fix. It is also invisible to Daoris, since the answer carries one vector and no plan, so the record
+  could not say an entry was split. It exists only on the HTTP and Ollama providers, when a deployment sets it,
+  and Daoris's own cut sat in front of it.
+- **The provider's bound as a guard**: `MaxInputChars` set to the window, so Ollama is sent `truncate: false`
+  and a piece that still overflows the model fails the call instead of being cut. It is the right shape for a
+  window set too wide, and it is not taken yet. It turns one overflowing piece into a semantic tier that does not
+  answer, and choosing its default needs a machine that runs an embedder, which none here does (SEM2's trigger).
+- **A cap on pieces per entry** (Lyntai's `MaxPiecesPerInput`): a cut by another name, with gaps in what is
+  covered. The cost is measured instead (§2).
+- **Storing a piece's text in the vector store**: the payload stays the entry's id, so the text lives in the store
+  alone and the two cannot disagree. A piece's passage is read back from the entry by where it starts.
+
+### What the gates do not cover
+
+The splitter, the window's parsing, the search, the refresh's report, the replacement, the excerpt, convergence
+and the agent's sentence are held in the service suite (`EntryPiecesTests`, `LongEntryTests`, `McpToolsTests`), all
+over the stand-in embedder and no network. A mutation of each of the dedupe, the read further, the replacement and
+convergence's dedupe was seen failing them. The HTTP host's refusal of a bad window is held by `StartupTests`; the
+MCP host's identical refusal is not run by any test. The HTTP door's `embedded` field is not run with a model,
+because no HTTP host test has one. **No real embedder has embedded a piece**: whether 2,000 characters fits a
+given model's context, and what segmenting does to recall on the real corpus, need a machine that runs one. The
+page shows `semanticError` from a refresh and not yet `embedded`, which is the web lane's to add.
