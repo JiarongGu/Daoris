@@ -140,7 +140,7 @@ The first version: doctrine that installs, is checked, and flows back.
   *service* is the exception, and publishing a quest is the only one the canon instructs — so it names
   the alternative in the same breath ("a message to that repository's owner where none does"), and a
   gate refuses any canon file that instructs a quest without one.
-- **Five core knowledge documents**, each knowledge rather than a rule because it applies to a
+- **Six core knowledge documents**, each knowledge rather than a rule because it applies to a
   situation, not to every task — a distinction the budget gate enforced more than once.
   `model-decoupling` (the model is a deployment choice: specify the feature without naming one, select
   the provider by deployment, report which tier ran), `claims-need-checks` (behavioural prose is
@@ -149,9 +149,13 @@ The first version: doctrine that installs, is checked, and flows back.
   writing into another repository, and why the repair is worse), and `autonomous-development`
   (development is automation-first: a person sets the target and verifies the outcome, agents execute
   the steps between under gates, and destructive, irreversible, cross-repository and publishing actions
-  stay explicitly human). The canon's own `CHANGELOG.md` carries the full reasoning per document.
-- **Five core skills**, each canonized from copies found across the family and reduced to what they share.
-  `doc-loader` and `pattern-finder` (six repositories each) start a task; `post-feature` (four) and
+  stay explicitly human), and `development-documents` (the documents a repository keeps for a
+  code-generating session: each with one role and one way it is read, a short brief every agent reads,
+  ceilings on what is read whole, and what may run unasked declared where a tool reads it). The canon's
+  own `CHANGELOG.md` carries the full reasoning per document.
+- **Six core skills.** `set-up-documents` carries `development-documents`' procedure and a template per
+  document shape. The other five were canonized from copies found across the family and reduced to
+  what they share. `doc-loader` and `pattern-finder` (six repositories each) start a task; `post-feature` (four) and
   `fix-log` (three) close one; `caveman` (five) governs output. `fix-log`'s copies sat within 100 bytes of
   each other, so the invariant was nearly the whole file. `post-feature`'s looked least alike of any —
   one a stack checklist, another a diff-detection procedure — and the shared shape turned out to be the
@@ -933,6 +937,11 @@ The first version: doctrine that installs, is checked, and flows back.
 - **Permission asks are counted** (UNBLOCK5). Every refused permission is a line in the machine log, and the usage report shows asks per session, the baseline the declared safe work (UNBLOCK2–3) will be measured against.
 - **Which git, node, pwsh, gh and az Daoris runs is yours to set** (TOOLS2, TOOLS3; D121). `daoris tool list|path|use` says, for each tool, whether it is the system's or a file you name, and the install carries a resource list of the makers' own downloads with their published hashes (MinGit, Node.js, PowerShell, GitHub CLI, Azure CLI). Downloading a managed version and starting it come next.
 - **Every list is one list pane** (FRAME1b, D118). Sessions' list becomes a strip only when the conversation would fall below 400 px, not below a fixed width; a strip opens the list over the conversation; ↑, ↓, Home and End move through any list, and pressing the current place on the activity bar shows or hides it.
+- **Every view is laid out the same way** (FRAME1c, D118). Each view hands the frame its list, where it has one, and its main area; each remembers its own list's width, closing, chosen item and filters; and one opener carries every door, so a link to a quest, a plugin or a Settings domain lands on that item whichever screen it came from.
+- **Plugins have a view of their own** (PLUGUI1b, D119). *Plugins* on the activity bar lists what is installed, grouped by what each does, with its own page: what it declares, whether it is running, its trial's report, an update's plan, and *Remove…*; Daoris's own offers have a page before they are installed. A browser over a remote is offered neither the view nor its doors.
+- **Settings is on the frame** (FRAME1g, D118). Its domains are its list, which closes to a strip like every other list rather than stacking above the domain on a narrow window, and each domain opens at its top.
+- **A repository says where each kind of document lives** (DOC3, D122). `daoris.json`'s `documents` maps a role (the decisions, the backlog, the archive, the changelog, and the rest) to its path, and `sync` writes a *Where things are* table every agent reads, so a session stops searching for where something is written.
+- **Shenora 0.19 and Lyntai 3.5.3** (SHEN2, LYN1). The window is on the desktop kit's 0.19; the service is on the model library's 3.5.3, with no change to what it answers.
 - **A plugin's landing waits as long as the plugin may, and the rest of the night's leftovers** (LEFT3).
   Accepting into a plugin's pull request, and handing a branch to one, wait up to six minutes rather than
   thirty seconds. Ask Daoris's *Bring up to date* card says on the card what it could not fetch and what it

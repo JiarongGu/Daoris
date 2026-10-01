@@ -10,7 +10,8 @@ import { findRegion } from './region.ts';
 import { tierRuleBody } from './tierrender.ts';
 import { readCanon, resolveCanonRoot, resolveSelection } from './canon.ts';
 import { DEFAULT_CORE_BUDGET_BYTES, lockIndex, readLock, readManifest } from './config.ts';
-import { significantTokens, containment } from './twins.ts';
+import { isEntry, significantTokens, containment } from './twins.ts';
+import { candidateDocuments, sayCandidates } from './documents.ts';
 import {
   DEFAULT_HARNESS, HARNESSES, harnessVerdict, tierNames, verifyHarnessContract,
 } from './harness.ts';
@@ -167,10 +168,15 @@ function findCollisions(
  * in the tree. Compared within a tier, for the reason recorded in D17.
  */
 function findTwinsAgainstCanon(
-  root: string, target: string, canon: Canon, selected: readonly CanonFile[], threshold = 0.3,
+  root: string, target: string, canon: Canon, selected: readonly CanonFile[], harness: Harness, threshold = 0.3,
 ): Twin[] {
+  // A skill is its entry file (DOC3): the templates beside it are supporting material, never a twin.
+  const entry = (tierPath: string) => {
+    const [tier, ...rest] = tierPath.split('/');
+    return isEntry(harness, tier!, rest.join('/'));
+  };
   const canonical = selected
-    .filter((file) => file.target.endsWith('.md'))
+    .filter((file) => file.target.endsWith('.md') && entry(file.target))
     .map((file) => ({
       tier: file.target.split('/')[0],
       target: file.target,
@@ -183,6 +189,7 @@ function findTwinsAgainstCanon(
     for (const file of listMarkdown(dir)) {
       if (file === INDEX_FILE) continue;
       const local = `${tier}/${file}`;
+      if (!entry(local)) continue;
       // A file at a canonical path is a collision, which is reported separately and more precisely.
       if (canonical.some((c) => c.target === local)) continue;
 
@@ -244,10 +251,13 @@ export function analyze(
     suggested: suggestPacks(root, canon),
     collisions,
     updates,
-    twins: findTwinsAgainstCanon(root, target, canon, selection.files),
+    twins: findTwinsAgainstCanon(root, target, canon, selection.files, harness),
     budget: { ...projectBudget(root, target, canon, selection.files, existing, collisions), limit: budgetLimit },
     offers: selection.offers,
     switchedOff: selection.switchedOff,
+    // The records this repository seems to keep, by role (D122 §2.7): named for the session that
+    // declares them, never declared here.
+    documents: candidateDocuments(root),
   };
 }
 
@@ -372,6 +382,8 @@ export function commandAnalyze({ root, argv, write, packageRoot }: CommandArgs):
       write(`      looks like ${twin.canonical} (${Math.round(twin.score * 100)}% shared vocabulary)`);
     }
   }
+
+  sayCandidates(report.documents, write);
 
   write('');
   const { current, projected, limit } = report.budget;

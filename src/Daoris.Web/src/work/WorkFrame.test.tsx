@@ -248,7 +248,7 @@ describe('the Work frame', () => {
           <WorkFrame
             selected="s1a2b3c4" onSelect={vi.fn()} notify={() => {}}
             ask={<p>the ask panel</p>}
-            content={<main><h1>Overview</h1></main>}
+            layout={{ main: <main><h1>Overview</h1></main> }}
             onOpenSessions={onOpenSessions}
           />
         </Tooltip.Provider>
@@ -286,7 +286,7 @@ describe('the Work frame', () => {
           <WorkFrame
             selected="s1a2b3c4" onSelect={vi.fn()} notify={() => {}}
             ask={<p>the ask panel</p>}
-            content={<main><h1>Quests</h1></main>}
+            layout={{ main: <main><h1>Quests</h1></main> }}
           />
         </Tooltip.Provider>
       </QueryClientProvider>,
@@ -298,6 +298,77 @@ describe('the Work frame', () => {
       if (box.classList.contains('flex-1') && !box.classList.contains('min-w-0')) unshrinkable.push(box.className);
     }
     expect(unshrinkable).toEqual([]);
+  });
+
+  /**
+   * D118 §3c, audit SE11: off Sessions the side bar's timeline spoke for the attended session with the
+   * main area's sentence, *Choose a session in the session list*, on a view with no such list. It says
+   * nothing is attended, and offers Sessions, where one is chosen.
+   */
+  it('says off Sessions that nothing is attended without naming a list the view does not have', async () => {
+    window.localStorage.setItem('daoris.dockClosed', '0');
+    const onOpenSessions = vi.fn();
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={client}>
+        <Tooltip.Provider>
+          <WorkFrame selected={null} onSelect={vi.fn()} notify={() => {}} layout={{ main: <main><h1>Overview</h1></main> }} onOpenSessions={onOpenSessions} />
+        </Tooltip.Provider>
+      </QueryClientProvider>,
+    );
+
+    const side = await screen.findByRole('complementary', { name: 'right side bar' });
+    expect(within(side).getByText(/No session is attended/)).toBeInTheDocument();
+    expect(side).not.toHaveTextContent(/session list/);
+    await userEvent.click(within(side).getByRole('button', { name: 'Open Sessions' }));
+    expect(onOpenSessions).toHaveBeenCalled();
+  });
+
+  /**
+   * D118 §3b, audit SE11: a relaunch into Sessions with a session attended said *Nothing attended* while
+   * the list that holds it was still on its way, since the frame finds the attended session in that list.
+   * A first load is skeleton rows.
+   */
+  it('draws the attended session loading as skeleton rows, never as Nothing attended, while the list first loads', async () => {
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) =>
+      (String(input).startsWith('/api/sessions') ? new Promise<Response>(() => {}) : respond(String(input)))));
+    show('s1a2b3c4');
+
+    const main = await screen.findByRole('main');
+    expect(main).toHaveAttribute('aria-busy', 'true');
+    expect(screen.queryByText('Nothing attended')).toBeNull();
+  });
+
+  it('says Nothing attended where nothing is chosen, and offers the list\'s ＋', async () => {
+    show(null);
+    const main = await screen.findByRole('main');
+    expect(await within(main).findByText('Nothing attended')).toBeInTheDocument();
+    await userEvent.click(within(main).getByRole('button', { name: 'Start a session' }));
+    expect(await screen.findByRole('dialog', { name: 'Start a session' })).toBeInTheDocument();
+  });
+
+  /**
+   * D118 §3d, audit F10: a full side bar was `z-20` in the page's own stacking order, above the drawer's
+   * `z-10`, so below 768 px a drawer could open under it. The frame is a stacking context of its own, so
+   * every overlay drawn at the page's root — a drawer, the palette, Quick Ask — lies above all of it.
+   */
+  it('opens a drawer above a full side bar: the frame keeps its layers to itself', async () => {
+    window.localStorage.setItem('daoris.dockClosed', '0');
+    Object.defineProperty(window, 'innerWidth', { configurable: true, value: 700 });
+    try {
+      show(null);
+      const side = await screen.findByRole('complementary', { name: 'right side bar' });
+      const frame = side.parentElement!;
+      expect(frame).toHaveClass('isolate');
+      expect(side.className).toMatch(/\bz-20\b/);
+
+      await userEvent.click(within(await screen.findByRole('main')).getByRole('button', { name: 'Start a session' }));
+      const drawer = await screen.findByRole('dialog', { name: 'Start a session' });
+      // Drawn at the page's root, outside the frame's own layers.
+      expect(frame.contains(drawer)).toBe(false);
+    } finally {
+      Object.defineProperty(window, 'innerWidth', { configurable: true, value: 1024 });
+    }
   });
 
   /** DOCK1e: dragging a tab to the other region is the same move as the menu's, by the pointer. */
@@ -751,7 +822,8 @@ describe('starting and holding a conversation', () => {
    * session takes it.
    */
   const openStart = async () => {
-    await userEvent.click(await screen.findByRole('button', { name: 'Start a session' }));
+    // The list's ＋, which comes first; *Nothing attended* offers the same act in the main area (D118 §2).
+    await userEvent.click((await screen.findAllByRole('button', { name: 'Start a session' }))[0]!);
     return screen.findByRole('dialog');
   };
 
@@ -2317,6 +2389,102 @@ describe('the frame\'s geometry (FRAME6)', () => {
     expect(second).toHaveFocus();
     await userEvent.keyboard('{ArrowUp}');
     expect(first).toHaveFocus();
+  });
+
+  /**
+   * D118 §1, §5: every view hands the frame a `ViewLayout`, its list pane where it has one and its main
+   * area, and the frame draws the list for every view that hands one. Sessions' rail is one such list.
+   */
+  describe('a view with a list, and a view without one', () => {
+    const ROWS = ['Expose a streaming budget', 'Read the budget from the level file'];
+    /** A view's list as it hands it in, with its chosen item held for it, as the application holds it. */
+    function Quests({ initial = null }: { initial?: string | null }) {
+      const [chosen, setChosen] = useState<string | null>(initial);
+      return (
+        <WorkFrame
+          selected={null}
+          onSelect={vi.fn()}
+          notify={() => {}}
+          layout={{
+            list: {
+              view: 'quests',
+              name: 'Quests',
+              labels: { open: 'Show the quest list', close: 'Hide the quest list', resize: 'quest list width' },
+              chosen,
+              body: (
+                <ul>
+                  {ROWS.map((title) => (
+                    <li key={title} data-list-row=""><button type="button" onClick={() => setChosen(title)}>{title}</button></li>
+                  ))}
+                </ul>
+              ),
+            },
+            main: <main><h1>{chosen ?? 'Nothing chosen'}</h1></main>,
+          }}
+        />
+      );
+    }
+    const frame = () => {
+      const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+      return render(<QueryClientProvider client={client}><Tooltip.Provider><Quests /></Tooltip.Provider></QueryClientProvider>);
+    };
+
+    it('draws its list beside its main area, with the side bar and the panel, and no session rail', async () => {
+      frame();
+      expect(await screen.findByRole('separator', { name: 'quest list width' })).toHaveAttribute('aria-valuenow', '280');
+      expect(screen.getByRole('heading', { level: 1, name: 'Nothing chosen' })).toBeInTheDocument();
+      expect(screen.getByRole('complementary', { name: 'right side bar' })).toBeInTheDocument();
+      expect(screen.getByRole('region', { name: 'the panel' })).toBeInTheDocument();
+      expect(screen.queryByRole('separator', { name: 'session list width' })).toBeNull();
+
+      await userEvent.click(screen.getByRole('button', { name: 'Read the budget from the level file' }));
+      expect(screen.getByRole('heading', { level: 1, name: 'Read the budget from the level file' })).toBeInTheDocument();
+    });
+
+    it('closes and widens as its own, in its own keys, leaving Sessions\' rail as it was', async () => {
+      frame();
+      const edge = await screen.findByRole('separator', { name: 'quest list width' });
+      edge.focus();
+      await userEvent.keyboard('{ArrowRight}');
+      expect(window.localStorage.getItem('daoris.list.quests.width')).toBe('304');
+
+      await userEvent.click(screen.getByRole('button', { name: 'Hide the quest list' }));
+      expect(screen.queryByRole('separator', { name: 'quest list width' })).toBeNull();
+      expect(window.localStorage.getItem('daoris.list.quests.closed')).toBe('1');
+      expect(window.localStorage.getItem('daoris.railClosed')).toBeNull();
+      expect(window.localStorage.getItem('daoris.railWidth')).toBeNull();
+
+      await userEvent.click(screen.getByRole('button', { name: 'Show the quest list' }));
+      expect(await screen.findByRole('separator', { name: 'quest list width' })).toHaveAttribute('aria-valuenow', '304');
+      window.localStorage.removeItem('daoris.list.quests.width');
+    });
+
+    it('lays its list over the main area from a strip the window drew, and a choice closes it', async () => {
+      widen(900);
+      frame();
+      await userEvent.click(await screen.findByRole('button', { name: 'Show the quest list' }));
+      const over = screen.getByRole('region', { name: 'Quests' });
+
+      await userEvent.click(within(over).getByRole('button', { name: 'Expose a streaming budget' }));
+      expect(screen.getByRole('heading', { level: 1, name: 'Expose a streaming budget' })).toBeInTheDocument();
+      await waitFor(() => expect(screen.queryByRole('region', { name: 'Quests' })).toBeNull());
+      expect(window.localStorage.getItem('daoris.list.quests.closed')).toBeNull();
+    });
+
+    it('draws no list pane for a view that hands none', async () => {
+      // No live chat: its turns would be asked of the driver after this short test has let the bridge go.
+      SESSIONS = [DRIVEN];
+      const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+      render(
+        <QueryClientProvider client={client}>
+          <Tooltip.Provider>
+            <WorkFrame selected={null} onSelect={vi.fn()} notify={() => {}} layout={{ main: <main><h1>Overview</h1></main> }} />
+          </Tooltip.Provider>
+        </QueryClientProvider>,
+      );
+      expect(await screen.findByRole('heading', { level: 1, name: 'Overview' })).toBeInTheDocument();
+      expect(document.querySelector('[data-region="list"]')).toBeNull();
+    });
   });
 
   /**

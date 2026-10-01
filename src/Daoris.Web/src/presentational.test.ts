@@ -55,6 +55,9 @@ const ORGANISMS = new Set<string>([
   // The machine as the queries answer it (SETUP1a, D97): one reading for the starters and the setup
   // guide, so the panel, the guide and the steps below them hold no query.
   './help/useMachine.ts',
+  // The Plugins view's organism (PLUGUI1b, D119): it holds the catalogue and the plugin's acts, so the list, the
+  // strip, the page and the offer's page below it hold none.
+  './plugins/PluginsView.tsx',
 ]);
 
 /**
@@ -97,7 +100,8 @@ export function offenders(files: [path: string, source: string][]): string[] {
 // `projects/` since INT3c: the driver's row, drawn from props — ProjectsView above it holds the driver.
 // `help/` since HELP1: Ask Daoris's panel and its starters, drawn from props — AskDaoris holds the machine.
 // `links.tsx` since BRW7: the one place a link opens, told where by a context the application provides.
-const sources = import.meta.glob('./{ui.tsx,links.tsx,work/**/*.{ts,tsx},map/**/*.{ts,tsx},asks/**/*.{ts,tsx},compose/**/*.{ts,tsx},settings/**/*.{ts,tsx},projects/**/*.{ts,tsx},help/**/*.{ts,tsx}}', {
+// `plugins/` since PLUGUI1b: the Plugins view's list, strip and pages, drawn from props — PluginsView holds the catalogue.
+const sources = import.meta.glob('./{ui.tsx,links.tsx,work/**/*.{ts,tsx},map/**/*.{ts,tsx},asks/**/*.{ts,tsx},compose/**/*.{ts,tsx},settings/**/*.{ts,tsx},projects/**/*.{ts,tsx},help/**/*.{ts,tsx},plugins/**/*.{ts,tsx}}', {
   eager: true, query: '?raw', import: 'default',
 }) as Record<string, string>;
 

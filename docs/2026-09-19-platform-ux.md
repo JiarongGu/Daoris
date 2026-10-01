@@ -371,12 +371,22 @@ controls are in the frame design's §3.
     is (U67), opens on a repository nothing works in, marks a busy one and says a working tree of its
     own lets it start beside it, and says a refused start in the form (U68).
   - **The monitor is the present tense**, its rail as its tiles, at the main rail's width (U69, U70).
+- **Plugins** (D119) — the activity bar's place after Search, shell-only, on the frame. Its list groups the plugins by what each needs from the person: *Waiting on you* (refused while on),
+  *On*, *Off*, then *Daoris's own plugins* not installed, each with *Install* on its row. Its strip marks each
+  installed plugin: the waiting mark, a faint initial for off, nothing for on. A plugin's page heads with its
+  switch, *Try*, *Update…* and *Remove…*, which asks once. A refused one's sentence leads, then Points, Agents,
+  Tests (its last trial here), Data folder and Source, and its terminal twins at its foot. *Running* is the neutral
+  pill, never done's green. The `＋` asks Ask Daoris for a plugin first, then *Make a plugin…*, the kit in a drawer;
+  the ⋯ holds *Try a folder…*.
 - **Settings** (D66, as amended by **D75**) — one page with its **domains in a list at its left**,
   one shown at a time and reachable by name: *Setup*, *Appearance*, *AI features*, *Workspace*,
   *Driver*, *Agents*, *Permissions*, *Plugins*, *Browser*, *Machine log* (配置, 外观, AI 功能, 工作区,
   驱动, 智能体, 权限, 插件, 浏览器, 本机日志; named so by NAME1b, D116). Every way in opens the domain its
-  fact is set in, at the part it names, and a browser is offered only the first four. What the domains
-  hold:
+  fact is set in, at the part it names, and a browser is offered only the first four, its list saying
+  beneath them that a machine's own settings are on the desktop. **Since FRAME1g (D118) the list is the
+  frame's list pane**, 176–320 px and 176 to start, closed to its strip, a strip by room and laid over
+  the domain from it, never stacked above it; the domain is the main area, its header naming it, and a
+  machine domain's first load is skeleton rows in its cards' place. What the domains hold:
   - **Setup** (D97): the six setup steps in order, each a row with its state pill (done's hue,
     open's for *to do*, neutral for optional), what done means, its commands with a copy each, and the
     doors to the screens that do it at the right; a done step's doors are quiet, a step to do's are

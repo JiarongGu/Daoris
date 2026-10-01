@@ -15,19 +15,20 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- The desktop runtime sibling, consumed as a LIBRARY at a RELEASED version (D22). 0.18.0 verified
-         on nuget.org and npm 2026-09-30 (SHEN1), the gates and the deployment rehearsal green on it; it brings
+    <!-- The desktop runtime sibling, consumed as a LIBRARY at a RELEASED version (D22). 0.19.0 restored
+         from nuget.org and npm 2026-10-01 (SHEN2), where the shell's window state, shell launcher and
+         single-instance types moved to `Shenora.Core.Shell`; it brings
          `Shenora.Chromium`'s managed assembly and small shims transitively, and no Chromium runtime
          (that is fetched only by an app that opts into it). `Shenora.Windows` is the WINDOW half — WinForms and WebView2 — and only
          `Daoris.Desktop.App` needs it. `Shenora` is the cross-platform half that carries the event bus
          and the IPC module base; the modules project names it directly so it can build, and be tested,
          with no desktop present. Both move together: they are one release. -->
-    <PackageVersion Include="Shenora.Windows" Version="0.18.0" />
-    <PackageVersion Include="Shenora" Version="0.18.0" />
+    <PackageVersion Include="Shenora.Windows" Version="0.19.0" />
+    <PackageVersion Include="Shenora" Version="0.19.0" />
     <!-- The engine the shell's windows render on (D92), and Daoris's browser too since CHR8 (D99,
          `ChromiumBrowserProcess`): the kit's own CEF binding, and its build's fetch of the pinned CEF
          (154). One engine in the install. One release with the two above. -->
-    <PackageVersion Include="Shenora.Chromium" Version="0.18.0" />
+    <PackageVersion Include="Shenora.Chromium" Version="0.19.0" />
   </ItemGroup>
 
   <ItemGroup>

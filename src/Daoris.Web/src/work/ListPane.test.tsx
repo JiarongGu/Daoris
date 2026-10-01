@@ -7,7 +7,7 @@ import '../i18n';
 import { StripMark } from '../ui';
 import { LIST_BOUNDS, LIST_STRIP, type ListLayout } from './layout';
 import { LIST_DOOR, LIST_ROW } from './listKeys';
-import { ListPane } from './ListPane';
+import { ListMore, ListPane } from './ListPane';
 
 // D118 §3a, §5: one list pane for every view that has a list, Sessions' rail first. A molecule: every
 // state is reached by its props, and a press goes out.
@@ -221,5 +221,33 @@ describe('the list pane\'s states', () => {
     expect(acts).toHaveLength(2);
     await userEvent.click(acts[1]!);
     expect(onMake).toHaveBeenCalled();
+  });
+
+  /** PLUGUI1b (D119 §3.1): where the ＋ makes two kinds, an empty list offers each by its own name, its primary first. */
+  it('says it is empty with each of the ＋\'s kinds, where it makes two', async () => {
+    const onMake = vi.fn();
+    pane(OPEN, {
+      make: { label: 'Add a plugin', kinds: [{ id: 'ask', label: 'Ask Daoris for a plugin' }, { id: 'make', label: 'Make a plugin…' }], onMake },
+      empty: { headline: 'No plugins on this machine', body: 'A plugin adds an agent.' },
+    });
+
+    const empty = screen.getByText('No plugins on this machine').parentElement!;
+    const acts = within(empty).getAllByRole('button');
+    expect(acts.map((act) => act.textContent)).toEqual(['Ask Daoris for a plugin', 'Make a plugin…']);
+    await userEvent.click(acts[1]!);
+    expect(onMake).toHaveBeenCalledWith('make');
+  });
+});
+
+describe('the list pane\'s ⋯', () => {
+  it('holds the list\'s own menu, each item told by its id', async () => {
+    const onChoose = vi.fn();
+    pane(OPEN, { more: <ListMore label="More actions" items={[{ id: 'try', label: 'Try a folder…' }]} onChoose={onChoose} /> });
+
+    const header = screen.getByText('Sessions').closest('header')!;
+    within(header).getByRole('button', { name: 'More actions' }).focus();
+    await userEvent.keyboard('{Enter}');
+    await userEvent.click(await screen.findByRole('menuitem', { name: 'Try a folder…' }));
+    expect(onChoose).toHaveBeenCalledWith('try');
   });
 });

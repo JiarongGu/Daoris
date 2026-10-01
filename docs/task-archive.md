@@ -9048,3 +9048,77 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > per-view bounds, strip by room, the laid-over mode; Sessions' rail moves onto it. Look: 1280, 900, 680 px.
 
 **Outcome** (built by a subagent, merged with `tools/merge-branch.mjs`, every gate; a note under D118): The list pane is built, and Sessions' rail is its first user (D118). `layout.ts` holds each view's list bounds and the room rule: the list becomes a strip when the main area would fall below 400 px beside the side bar as it stands, so there is no fixed 1024 px; the rail stays open at 900 px beside a closed side bar. A strip the window drew opens the list over the main area (amending FRAME6); the laid-over list closes on a choice, on Escape and on a press outside it, and is never remembered. `ListPane`, `StripMark` and `listKeys` are shared, so ↑, ↓, Home and End work in every list. The list's four doors (the strip toggle and the View menu item, named for the view, Ctrl+B, and a press on the current place on the activity bar) toggle by what the room made of the list, and a door's press is not a press outside it. F6 and Shift+F6 move between the window's regions, built unmeasured in one revertable commit (`2755882`) for the look to decide. Sessions keeps `daoris.railClosed` and `daoris.railWidth`. Web vitest 1,905 → 1,982.
+
+
+## FRAME1c — the main area and the view contract (2026-10-01)
+
+> - [ ] **FRAME1c — the main area and the view contract**: `ViewMain`, per-view memory, `open(view, item?)`,
+> container queries in Overview, Projects and Map, loading states, drawers above a full side bar.
+
+**Outcome** (built by a subagent, merged with `tools/merge-branch.mjs`, every gate; a note under D118): Every view now hands the frame a `ViewLayout` (its list pane where it has one, and its `ViewMain` main area); `WorkFrame` draws every view's list through one path, Sessions' rail one such list. `listPanes.ts` keeps each view's list closing, width, chosen item and filters, Sessions' and Settings' old keys still read. One opener, `open(view, item?)` planned in `opener.ts`, carries every door (an ask named as one); `StarterDoor` gained `item`. Overview, Repositories and Map lay their columns out at 56rem of the main area's own width, never the viewport's. A browser draws the view's list and main area with no side bar and no panel. Sessions shows skeleton rows while its list first loads; off Sessions the side bar says nothing is attended and offers *Open Sessions*. The frame is its own stacking context, so drawers open above a full side bar; the map's lines use the page's one storage guard. Web vitest 1982 → 2043; the platform spec gained a test.
+
+
+## PLUGUI1b — the Plugins view on the frame (2026-10-01)
+
+> - [ ] **PLUGUI1b — the Plugins view on the frame, on today's answers** (D119 §6; waits on FRAME1c): the view,
+> its list and pages, `＋` and ⋯, the offer's page, the kit drawer, the opener. Look: 1280 and 680 px, both
+> themes, both languages.
+
+**Outcome** (built by a subagent, merged with `tools/merge-branch.mjs`, every gate; a note under D119): The Plugins view, built on FRAME1c's frame on today's `PLUGINS` answer (D119). `VIEWS` gains `plugins` (shell-only, the `plug` icon, after Search), with the palette row and the Daoris menu opening it; a browser falls back from it and is offered neither door. The view is `usePluginsView`, a hook App holds on every view that asks the driver nothing until the view is in front, so a trial's report, an update's plan and *Remove…*'s ask last until Daoris closes. The list groups plugins by what they need from the person (waiting on you, on, off, then Daoris's own plugins with *Install*), and the strip marks each installed one. A plugin's page carries its switch, *Try*, *Update…* and *Remove…* (which asks once), a refused plugin's sentence leading, Points, Agents, Tests, Data folder, Source and its terminal twins; *Running* is the neutral pill. An offer's page installs and then chooses the plugin it became; a plugin gone (`PLUGIN_UNKNOWN`) says so by code. The kit opens in a drawer from the ＋ and at its trial from the ⋯. `ListPane` gained `ListMore` and a two-kind empty state. The glossary names every new label and its doors, with D119's four terms plus `test`. Web vitest 2049 → 2147. Settings → Plugins stays until PLUGUI1c.
+
+
+## FRAME1g — Settings on the frame (2026-10-01)
+
+> - [ ] **FRAME1g — Settings on the frame** (after FRAME1c): the domains as the list pane, never stacked; skeleton
+> rows while machine domains load.
+
+**Outcome** (built by a subagent, merged with `tools/merge-branch.mjs`, every gate; a note under D118): Settings is on the frame (D118). Its domains are its list pane (`DomainList`), 176–320 px and 176 to start, closed to its strip by the person, a strip by itself by the room rule, and laid over the domain from that strip; it no longer stacks above the domain below 768 px (audit ST1–ST3, ST10). The domain is the main area, named by its h1 and drawn anew for each domain so it opens at its top, with a door's anchor brought into view as before. `useSettingsLayout` is what the frame takes, and `SettingsView` draws Settings on its own for its suites. The list doors reach it as "the settings list" (设置列表), and the domain is still kept under `daoris.settings`. A browser's list says beneath its four domains that a machine's settings are on the desktop. Agents, Permissions and Plugins hold their cards' places with skeleton rows on first load instead of drawing nothing (ST11, PL11). Web vitest 2043 → 2071.
+
+
+## DOC2 — the development-document standard as canon (2026-10-01)
+
+> - [ ] **DOC2 — the standard as canon** (§2.1–§2.6, §4): core knowledge `development-documents`, core skill
+> `set-up-documents` with templates; this repository and `examples/` re-synced in the same commit.
+
+**Outcome** (built by a subagent, merged with DOC3 by `tools/merge-branch.mjs`, every gate; notes under D122): The development-document standard is core canon (D122 points 1–2; design §2.1–§2.6 and §4). `development-documents` (core knowledge) covers the twelve roles, the three ways they are read (always, on demand, by lookup), the brief's content test and what a brief never holds, and the ceilings (bytes for the root file, words for attention; reported, never failed), where the records are, and that what may run unasked is a declaration a tool reads and a person accepts once, never a sentence. `set-up-documents` (core skill) is a seven-step procedure with seven templates (brief, room, knowledge, router, decision, backlog row, archive entry), carrying no `allowed-tools`. Neither names a product, harness, build command or path. This repository and both examples were re-synced in the same commit; the region went from 22,672 to 23,306 of 26,000 bytes (the two index rows cost 634), `check` clean in all three. The adoption playbook gained steps 6–8 (write the brief, declare the documents and rooms, declare the safe work). Building it found that a dogfood test took every file in a skill's folder for its entry file, so the first canonical skill with supporting files failed it; the parent fixed the test at merge to hold each folder to a `SKILL.md`. DOC3 carries the manifest's `documents`, `check`'s facts and reports, and the `allowed-tools` test; UNBLOCK2 carries `safe`.
+
+
+## DOC3 — roles bound to paths (2026-10-01)
+
+> - [ ] **DOC3 — roles bound to paths** (§2.7, §2.8): `documents` in the manifest, `sync`'s table, `check`'s facts;
+> no canonical skill carries `allowed-tools`.
+
+**Outcome** (built by a subagent, merged with `tools/merge-branch.mjs`, every gate; notes under D122): Roles bound to paths in the CLI (D122 §2.7–§2.8). `daoris.json`'s `documents` maps ten roles to a path or a words ceiling (`brief` and `room` take a ceiling alone), refused at the edge for an unknown role, an escaping, root, target or mirror path, or a role declared twice (found in the text, since `JSON.parse` keeps the last key). `init` and `analyze` name candidate records by role and declare none. `sync` renders a *Where things are* table as the roster's last section (seven rows cost 639 bytes), refuses a declared link and only names an absent document; a repository that declares nothing sees no change. `check` fails on an absent path, a link and a stale table, and reports (never fails) a document over its ceiling, a ceiling on a folder, and no backlog or decisions declared; the root file's bytes stay LAYOUT3's one line. The two defects DOC2 found are fixed: the dogfood test holds a skill folder to its `SKILL.md`, and `doctor` and `analyze` compare a skill's entry file only. A canon scan holds that no canonical skill carries `allowed-tools`, and a release-rehearsal phase declares, breaks and repairs a document (16 checks). CLI 774 (1 failing) → 837, all passing.
+
+
+## SHEN2 — Shenora 0.19.0 (2026-10-01)
+
+> - [ ] **SHEN2 — Shenora 0.19.0.** Move `Shenora`, `Shenora.Windows`, `Shenora.Chromium` (the desktop's
+> `Directory.Packages.props`) and `@shenora/react` (the web) from 0.18.0 to 0.19.0; read the kit's changelog for
+> what the shell relies on (the Chromium engine, the frame, the IPC modules, the window state, the debug port
+> LOOK3 met) and retire any workaround the kit now carries, as SHEN1 did. The deployment rehearsal proves it.
+
+**Outcome** (built by a subagent, merged with `tools/merge-branch.mjs`, every gate): `Shenora`, `Shenora.Windows`, `Shenora.Chromium` and `@shenora/react` are at 0.19.0; CEF stays at 154.0.32. The one break that reached the shell: 0.19 moved the window-state types, `IShellLauncher` and the single-instance guard to `Shenora.Core.Shell`, and three files of the application took that namespace. The kit's other 0.19 entries were read against what the shell relies on (the single-instance guard over a pipe, the launcher's icon and version stamped, CEF's later-launch hand-over answered, Chrome's error dialogs off, a route answering with a Task now an error, a hand-written request parser reading the same envelope, the debug port unchanged so LOOK3's two-loopback probe stays). No Daoris workaround needed retiring. The kit's fix to its own file dialogs, which made `timeoutMs: Infinity` mean no timer, let Daoris fix the same defect: `PICK_FOLDER` now waits as long as the folder dialog is open, where a pick after 30 seconds used to answer nobody (a test written first, seen failing). The kit's CDP relay is unchanged, so the unobserved-pump request to the kit stands.
+
+
+## LYN1 (3.5.3) — Lyntai 3.5.3 (2026-10-01)
+
+> - [ ] **LYN1 — Lyntai 3.5.3.** Move `Lyntai.Core` and `Lyntai.Providers.Basic` (the service's
+> `Directory.Packages.props`) from 3.2.0 to 3.5.3; read the changelog for anything the service relies on or can
+> now drop. The service suites and the family rehearsal prove it.
+
+**Outcome** (built by a subagent, merged with `tools/merge-branch.mjs`, every gate): `Lyntai.Core` and `Lyntai.Providers.Basic` are at 3.5.3, and the service needed no code change. 3.3 raised the sibling's dependency floors, so `Microsoft.Data.Sqlite` (10.0.12) and `SQLitePCLRaw.bundle_e_sqlite3` (3.0.5) follow its pins and the in-process test host moved to the same band; 3.3's `Unsupported` and `Failed` verdicts on the providers' wrong-kind calls and transport failures land where `Embedding.EmbedAsync` already reads any non-Ok verdict as "the semantic tier did not answer"; 3.5's filtered vector search and 3.5.1–3.5.3's additions are unused. Considered and not taken: 3.3's `MaxInputChars`/`Segmentation` (a feature choice, filed as SEM3) and dropping the hosts' copy of the Ollama-root test (still internal upstream). SEM2's version floors are now in place.
+
+
+## PLUGREPO2c — the two landing plugins, built by Daoris (2026-10-01)
+
+> - [ ] **PLUGREPO2c — the two landing plugins** (asked: quest `#36351d45ac11`, its session working).
+
+**Outcome** Asked of Daoris.Plugins through the platform's door (quest `#36351d45ac11`) and done by its own session: `plugins/github-pull-request` and `plugins/azure-devops-pull-request`, each copied from Daoris's frozen example with a `plugin.test.mjs` carrying the kit's wire test and the landing cases on a fake `gh`/`az` and a bare `origin`, with no test reaching a network (a real `gh` on the machine, so each case gives the plugin a PATH of the test's own folder). One judgement it made: a missing tool now answers with how to install it, as the ask wanted, so the 1.0.0 here differs from the frozen example's by that sentence until packaging sets versions. Reviewed and landed by the merge rule (37/37).
+
+
+## PLUGREPO2d — the in-app browser plugin, built by Daoris (2026-10-01)
+
+> - [ ] **PLUGREPO2d — in-app-browser** (an ask), then **PLUGREPO2e — this repository lets them go** (after PLUGDIST1g).
+
+**Outcome** Asked of Daoris.Plugins (quest `#4393fe1b9caf`) and done by its own session: `plugins/in-app-browser`, its manifest the same blob as Daoris's example. It declares a server and speaks no wire, so its `plugin.test.mjs` tests the declaration by the driver's own rules: `${browser}` and `${data}` kept as written, every placeholder one Daoris fills, `@playwright/mcp` pinned to one exact version (0.0.82), the README naming that version; each rule also run against declarations that break it. Not checked: whether 0.0.82 attaches to Daoris's browser window. Reviewed and landed (46/46). The repository now holds Daoris's three plugins, all built by Daoris.

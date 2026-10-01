@@ -135,6 +135,36 @@ test("a repo's own skill is checked against canonical skills too", () => {
   repoFx.cleanup();
 });
 
+/**
+ * DOC3: a skill is its entry file. The files beside it — a template, a reference — are supporting
+ * material, and comparing them as documents reported a repository's own skill as 61% like a canonical
+ * skill's backlog-row template. Neither side's supporting files are a twin candidate.
+ */
+test("only a skill's entry file is a twin candidate, never the templates beside it", () => {
+  const canonFx = makeFixture('doctor-template-canon');
+  canonFx.write('canon.json', '{"version":"0.1.0"}');
+  canonFx.write('core/skills/set-up/SKILL.md', `---\nname: set-up\ndescription: Arrange the records.\n---\n\n${UNRELATED}`);
+  canonFx.write('core/skills/set-up/templates/row.md', CANONICAL);
+
+  const repoFx = makeFixture('doctor-template-repo');
+  repoFx.write('daoris.json', JSON.stringify({ source: 's', packs: [] }));
+  const canon = readCanon(canonFx.root);
+  const manifest = readManifest(repoFx.root);
+  applySync({
+    root: repoFx.root, manifest, canonVersion: canon.version, force: false,
+    plan: planSync({ root: repoFx.root, manifest, canon, lock: null }),
+  });
+  // The repository's own skill restates the canonical TEMPLATE, and carries a template of its own that
+  // restates the canonical skill's entry file.
+  repoFx.write('.claude/skills/dispatch/SKILL.md', `---\nname: dispatch\ndescription: d\n---\n\n${LOCAL_TWIN}`);
+  repoFx.write('.claude/skills/dispatch/templates/brief.md', UNRELATED);
+
+  assert.deepEqual(look(repoFx), []);
+
+  canonFx.cleanup();
+  repoFx.cleanup();
+});
+
 test('an unrelated local document is not reported', () => {
   const { canonFx, repoFx } = seeded();
   repoFx.write('.claude/knowledge/play-queue.md', UNRELATED);
