@@ -778,7 +778,7 @@ public sealed partial class Driver(
                                 // Whose take it was, and what it last said (STANDDOWN2): a session
                                 // holding the quest it took and stopping is waiting on the person.
                                 took: status == "Taken" && await service.TookAsync(sessionId, ct).ConfigureAwait(false),
-                                lastWords: LastWords(transcript))
+                                lastWords: ParkedWords(_events, sessionId, transcript))
                             : new SessionConclusion("failed", $"timed out after {config.TimeoutMinutes} minutes and was killed.");
 
                     conclusion = AccountRefused(conclusion, adapter, selection, transcript);
@@ -1295,6 +1295,20 @@ public sealed partial class Driver(
         return carried;
     }
 
+    /// <summary>How much of a parked session's words its card keeps, from the end, where a question list sits (FG5).</summary>
+    internal const int LastWordsLimit = 4000;
+
+    /// <summary>
+    /// What a parked session said to the person (PARK1): its record's last message whole, and the
+    /// transcript's last plain lines only where the record holds none. The record keeps the message as
+    /// written; the transcript's reading stops at an indented line, which a question's own list has.
+    /// </summary>
+    internal static string? ParkedWords(SessionEvents events, string sessionId, string transcript)
+    {
+        if (events.LastSaid(sessionId) is not { } said) return LastWords(transcript);
+        return said.Length <= LastWordsLimit ? said : "…" + said[^LastWordsLimit..].TrimStart();
+    }
+
     /// <summary>
     /// The agent's own last words in a finished transcript (STANDDOWN2): its final block of plain lines,
     /// after its last tool and before the driver's closing line — what a session that parks to ask the
@@ -1305,7 +1319,7 @@ public sealed partial class Driver(
     /// whole brief, and the apply session's was 2,500 long — cut to its end, the card kept the command
     /// and lost the question.
     /// </remarks>
-    internal static string? LastWords(string transcript, int limit = 4000)
+    internal static string? LastWords(string transcript, int limit = LastWordsLimit)
     {
         IReadOnlyList<string> lines;
         try
