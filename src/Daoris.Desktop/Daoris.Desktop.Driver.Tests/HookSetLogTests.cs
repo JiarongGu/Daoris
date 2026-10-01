@@ -313,6 +313,44 @@ public sealed class HookSetLogTests : IDisposable
         Assert.DoesNotContain("tickets.mjs", Raw());
     }
 
+    /// <summary>
+    /// A conversation is handed the plugins' servers as a driven session is, and says so in the log (PLUGUI1e, D119
+    /// §4.2): one line per server, handed or withheld, the browser's withheld where no shell answers (D78).
+    /// </summary>
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task A_conversation_is_handed_its_servers_with_a_line_for_each_handed_or_withheld(bool shell)
+    {
+        Directory.CreateDirectory(Path.Combine(_home, "plugins", "acme.tools"));
+        File.WriteAllText(Path.Combine(_home, "plugins", "acme.tools", "plugin.json"), $$"""
+            { "id": "acme.tools", "servers": [
+                { "name": "tickets", "command": ["node", "tickets.mjs"], "env": { "TICKETS_TOKEN": "{{Words}}" } },
+                { "name": "browser", "command": ["node", "drive.mjs", "${browser}"] } ] }
+            """);
+
+        var (servers, notice, drives) = await ChatRunner.HandServersAsync(
+            _home, AdapterSet.Built().Names, shell ? new AnsweringBrowser("http://127.0.0.1:4810") : null,
+            new PluginLog(_log), "s1a2b3c4", CancellationToken.None);
+
+        Assert.Equal(shell ? ["tickets", "browser"] : ["tickets"], servers.Select(server => server.Name));
+        Assert.Equal(shell, drives);
+        Assert.Equal(shell, notice is null);
+        var lines = Lines();
+        Assert.Equal([("tickets", true), ("browser", shell)], lines.Select(l => (Text(l, "server"), l.Data.GetProperty("handed").GetBoolean())));
+        Assert.All(lines, line => Assert.Equal(("plugin.served", "acme.tools", "s1a2b3c4"), (line.Event, Text(line, "plugin"), Text(line, "session"))));
+        Assert.DoesNotContain(Words, Raw());
+    }
+
+    private sealed class AnsweringBrowser(string endpoint) : IInAppBrowser
+    {
+        public Task<string?> EnsureAsync(CancellationToken ct = default) => Task.FromResult<string?>(endpoint);
+
+        public void Show() { }
+
+        public void Open(string address) { }
+    }
+
     [Fact]
     public void A_trial_and_a_test_run_are_one_line_each_from_their_door_warn_when_they_failed()
     {

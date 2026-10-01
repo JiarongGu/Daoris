@@ -46,6 +46,21 @@ public sealed class PluginRecordWiringTests : DriverModuleBridge
             $"{call.File} builds a {call.Kind} without the loop's log and health: {call.Call}"));
     }
 
+    /// <summary>
+    /// PLUGUI1e: the loop's conversations write <c>plugin.served</c> to the shell's log for each plugin server they are
+    /// handed or withheld, as its driven sessions do through the hook set. A conversation needs a service, git and a
+    /// harness, so this half reads the construction; the driver's tests hold what the runner writes.
+    /// </summary>
+    [Fact]
+    public void The_loops_conversations_are_handed_its_log_for_the_servers_they_are_handed()
+    {
+        var source = File.ReadAllText(Path.Combine(WorkspaceRoot(), "src", "Daoris.Desktop", "Daoris.Desktop.Modules", "DriverLoop.cs"));
+        var built = Regex.Matches(source, @"new ChatRunner\(").Select(call => source[call.Index..source.IndexOf(';', call.Index)]).ToList();
+
+        var call = Assert.Single(built);
+        Assert.Matches(@"\bplugins:\s*new PluginLog\(log\b", call);
+    }
+
     private static string WorkspaceRoot()
     {
         var at = new DirectoryInfo(AppContext.BaseDirectory);

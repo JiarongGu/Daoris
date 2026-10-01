@@ -296,7 +296,10 @@ public sealed class DriverLoop(
         // what guarantees the client is still there. Stopped after the client, a chat open at close was
         // recorded nowhere and read `working` forever (2026-09-25).
         // …and the same usage record, so a conversation's end and a driven session's are one writer (USAGE1).
-        using var chat = new ChatRunner(service, Harnesses.Adapters, homeDirectory, Processes, Output, Harnesses, Events, Usage, browser);
+        // …and the same log, where each plugin server a conversation is handed or withheld is a line (PLUGUI1e).
+        using var chat = new ChatRunner(
+            service, Harnesses.Adapters, homeDirectory, Processes, Output, Harnesses, Events, Usage, browser,
+            plugins: new PluginLog(log, Health));
         // Where a conversation's turns stand, as it moves (CONV4a): whether one is in flight, and what is
         // waiting, which is in no record until it is sent. Each change is the whole state, so a missed one
         // costs nothing.

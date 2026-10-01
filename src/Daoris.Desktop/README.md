@@ -151,7 +151,8 @@ Daoris's judge judges a folder and refusing an id already installed; `PLUGIN_ADD
 over one installed. `PLUGIN_OPEN_FOLDER` {id?, which: install|data|plugins} opens the folder the module names
 through the window kit's launcher (`PLUGIN_NOTHING_KEPT` for a data folder never made, `PLUGIN_FOLDER_NOT_OPENED`
 when the system will not). The screen's trial of an installed plugin is a `plugin.tried` line from the `screen`
-door.
+door, and the loop's conversations write a `plugin.served` line for each plugin server they are handed or are
+not, as its driven sessions do (`daoris-driver chat` writes none, as it writes no session lines).
 
 ## The dev loop — `tools/desktop.mjs` (2026-09-21)
 
