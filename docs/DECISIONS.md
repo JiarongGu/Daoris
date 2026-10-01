@@ -6068,6 +6068,28 @@ proof.
   The look on the window settles both: Overview, Repositories and Map at 1280 px with the side bar open and
   closed and at 680 px, and a drawer at 680 px with the side bar full.
 
+**Built: FRAME1g (2026-10-01), and what it settled that the design left open.**
+- **Settings hands the frame what it builds** (`useSettingsLayout`): `DomainList` as its list pane and the
+  domain chosen as its main area. `SettingsView` draws Settings alone, in a browser's frame of its own, which
+  every domain's suite renders, as a surface drawn alone holds its own running action. It has no `＋` and no
+  strip items (§4).
+- **The main area's header names the domain**, so the domain is named where the list is a strip. The page's
+  own header went with the page: the list's header says *Settings*. The shell's page sentence is dropped, and
+  a browser's became a note beneath its four domains, saying where the absence is (D47 §4).
+- **A domain chosen opens at its top.** The main area is drawn anew for each domain, where one scroll box
+  kept the scroll the last domain was left at. A part a door names is brought into view as before.
+- **Its doors are the frame's four**, named *the settings list* and *Settings list* (设置列表), in the shape of
+  the glossary's *session list*. The domain is still kept under `daoris.settings`.
+- **The opener is FRAME1c's**: `open('settings', domain, { anchor })`. No `domain#part` string was added,
+  since the opener already carries a part beside the item.
+- **A machine domain's first load is skeleton rows in its cards' place**: while it has no answer and one is on
+  its way. A failed question ends in its toast rather than loading forever, and an older shell's answer still
+  draws no card. Permissions holds both its cards' places.
+- **What the gates do not cover.** jsdom lays nothing out: the list's mode at 600, 680, 900 and 1024 px is held
+  by the frame's room rule and by the mode each test reads, not by a measured width. The platform spec's tier
+  door was edited to the domain's heading and not run. The look on the window settles the rest: Settings at
+  1280 and 680 px, English and 中文, both themes, and the first open of Agents, Permissions and Plugins.
+
 ## D116 — A name is a UI element, designed in each language; the glossary is the authority, and a check holds it (2026-10-01)
 
 **Decision (NAME1a, the owner's round).** The owner: names in Settings and every other display must be named
