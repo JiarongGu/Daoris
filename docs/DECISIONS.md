@@ -6116,6 +6116,43 @@ proof.
   typechecked, and **not run** in the branch: the parent runs it. No look at the window was taken: the list beside
   the page at 1280 px with Ask Daoris open, the list laid over at 680 px, both themes and both languages, are the
   parent's to see. The names' budgets are estimates (D116 §4); the new keys added no finding.
+
+**Built: FRAME1e (2026-10-01), and what it settled that the design left open.**
+- **Repositories hands the frame a value, as Quests does** (`useProjectsView`), held by the application on every
+  view, its errors said only while it is in front. It holds no query the application does not already hold (the
+  registry, the index, the driver, and on a shell the roster, the lines and the sweep), so holding it everywhere asks
+  nothing more. Below it are molecules: `ProjectList` with `RepositoryMarks`, and `ProjectPage` with
+  `ProjectsMainNotice`.
+- **A row is the repository and its one line**: an adopter's summary, *no domain declared yet* where it declared
+  nothing (D34), or for one not adopted what the index reads of it. Its standing on this machine is in the session
+  list's words (`RepositoryGroup`'s): *held* outranks *drives here*, and *not on this machine* where a shell answers
+  and the registration names no checkout. The adopted dot and its word retire: the group's name says it.
+- **The page is what the card said, in one column.** The cards went, and with them the split by the main area's
+  width that FRAME1c gave them: the list holds the repositories now. The header's line is the summary, and the header
+  has no id line, since a repository's name is its id (`PageHead`'s `id` became optional). Its acts are *Open code
+  map*, the map's own name for the act, and *Manage*, an adopter's on a shell as before. *Manage* left the driving
+  row, which stands alone under *This machine*; one not adopted has *Adoption steps* in place of a declaration.
+- **The `＋` keeps the act's name, *Add repository***, where the design's prose says *Add a repository*: one act, one
+  name (NAME1b), which the empty state and the Workspace menu's *Add repository…* already say. Its one kind makes the
+  press the act. The ⋯ holds *Import a folder…*, as the Workspace menu does. Both are a shell's (D48 §7), so a
+  browser's list makes nothing, and its strip holds its controls alone.
+- **The code map is a door with a part** (`open('map', null, { code })`): the Map has no list (§4), so the repository
+  is no chosen item. The opener plans `code`, and the Map is drawn anew on it; any other way onto the Map opens the
+  workspace, as it always has.
+- **A repository added is chosen, and one retired goes back to choosing**, as an installed plugin is chosen and a
+  removed one let go (D119 §3.1). A chosen repository the registry no longer answers is *gone*: retired, or in a
+  workspace the window is not showing.
+- **`projects.title`, `projects.description`, `projects.adoptedDot` and `projects.outside.title` retire**: the list is
+  named by the view's own name, the description became the main area's sentence with nothing chosen, and the
+  groups' names carry their counts.
+- **What the gates do not cover.** vitest holds the list, the page, the memory, the drawers' doors and the code map's
+  door over a stubbed service and a mocked bridge, on jsdom, which lays nothing out. `test:web`'s registry pages were
+  moved to the list and the page, a reload's memory and the code map's door added, and the Repositories half of the
+  main-area split test removed with the cards; they were typechecked and **not run** in the branch: the parent runs
+  them. No look at the window was taken: Repositories at 1280 and 680 px with a repository chosen, both themes and
+  both languages, are the parent's to see. The list's toggles are over the button budget (24 characters for 20), as
+  Settings' are; the budgets are a report (D116 §3).
+
 **Built: FRAME1g (2026-10-01), and what it settled that the design left open.**
 - **Settings hands the frame what it builds** (`useSettingsLayout`): `DomainList` as its list pane and the
   domain chosen as its main area. `SettingsView` draws Settings alone, in a browser's frame of its own, which

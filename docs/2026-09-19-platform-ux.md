@@ -293,13 +293,23 @@ controls are in the frame design's §3.
   folder, what trusting means in the agent's terms, what the driver is holding, and the one file
   written. It is never wider than the hold, since the shell refuses any pair the driver did not
   produce, and there is one row per folder.
-- **Repositories** (named *Projects* until NAME1b, the owner's call) — adopted as cards (two columns from 1024px, one below) with chips and the local/canonical
-  split; non-adopters as one group, *Registered, not adopted*, led by one line with its reasoning on
-  the info glyph (U36), each with the driving row where it has a root here, and the join steps
-  proposed as text at a reading measure. **Who can be asked is the host's answer**: every receiver
+- **Repositories** (named *Projects* until NAME1b, the owner's call; on the frame since FRAME1e, D118 §2) —
+  a list pane and a main area. The list holds the adopted, then *Registered, not adopted*, each group
+  counted; a row is the repository's name with its standing on this machine at its right, in the
+  session list's words (*held*, *drives here*, *not on this machine*), and its one line: an adopter's
+  summary, *no domain declared yet*, or what the index reads of one not adopted. Its `＋` is *Add
+  repository* and its ⋯ holds *Import a folder…*, both a shell's, so a browser's list makes nothing.
+  **Choosing a row opens its page in the main area**: its name, its standing (*not adopted* too), its
+  summary as the header's line, and *Open code map* and *Manage* in its header, the map one level in
+  (MAP3a) and *Manage* an adopter's on a shell; then the index with the local/canonical split, the
+  commit it was fed from, its workspace, its line and its unlanded branches; its declaration as chips;
+  *This machine*, the driving row, where it has somewhere to start; and for one not adopted the
+  *Adoption steps*, led by one line with its reasoning on the info glyph (U36) and the join steps
+  proposed as text at a reading measure. The chosen repository is remembered, and adding, importing and
+  managing stay drawers (D118 §3d). **Who can be asked is the host's answer**: every receiver
   list reads `addressable` from the registry, never re-derived from `adopted` (D70). A choice that
   outlives the door is offered with the door said beside it: on a machine whose adapter rides the
-  direct door, a quest there sits, and the row says so under the control. The group's paragraph claims
+  direct door, a quest there sits, and the page says so under the control. The steps' paragraph claims
   only what is proven. *Manage* edits the declaration in the face it is read in (U37).
 - **Convergence / Search** — pages with the page header that open entries in the drawer. An excerpt is
   the entry's prose, without its frontmatter or its Markdown's markers (U39), and a hit's highlight
