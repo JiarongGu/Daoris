@@ -6183,6 +6183,44 @@ proof.
   door was edited to the domain's heading and not run. The look on the window settles the rest: Settings at
   1280 and 680 px, English and 中文, both themes, and the first open of Agents, Permissions and Plugins.
 
+**Built: FRAME1f (2026-10-01), and what it settled that the design left open.**
+- **Search and Convergence each hand the frame a value** (`useSearchView`, `useConvergenceView`), held by the
+  application on every view as Quests is, but **asking the service nothing until in front**: a comparison over a
+  real index takes seconds, and nobody on another view asked for one. Below them are molecules under `knowledge/`:
+  `HitList`, `EntryPage` with `EntryText` and `EntryPills`, `FindingList`, `FindingPage`, and the values in
+  `knowledge/records.ts`.
+- **The reader retired, and the wide drawer with it.** Search and Convergence were its only doors, so `Reader` went,
+  and so did `Drawer`'s `wide`, which only it passed. An entry reads at the main area's own width, with no measure.
+- **Each list's one filter sits where it changes what the list holds**, not in a ⋯ as Quests' do: *local only* under
+  the box, the similarity at the list's head with its tier's note, both reached for on every look. Neither view makes
+  anything, so neither list has a `＋` or a ⋯, and each strip holds its controls alone. Each head stays in reach as the
+  rows scroll under it. ↓ goes from the box into the hits, through the list's own keys, and Escape clears the box.
+- **A finding is named by its entries** (`findingId`), since the service names none: an entry's id is its place, so
+  the same entries found at another similarity are the same finding, still chosen. One the answer no longer holds is
+  *gone* at the similarity asked. An entry is *gone* when the service answers that it holds nothing by that id: a
+  read's error carries its status now (`notFound`), so a 404 is told from a read that failed.
+- **A finding's page** is titled by its entries' titles, each once, with how alike beside it, the repositories as its
+  id line and the kind of likeness as its line. The service's sentence comes first, then each entry whole in a section
+  of its own, where one entry still on its way, gone or failed is said in its place and the others still read.
+- **What is kept**: each list's chosen item; *local only* only when everything is chosen, the default kept as nothing;
+  the similarity once it has held still, its start kept as nothing. What was typed lasts while Daoris is open and is
+  never stored.
+- **Loading (audit SR11) is built to the platform language's §4 rule**, for the look to confirm: a first answer is
+  skeleton rows with its words on the count's line, and a newer search or a moved similarity holds the last rows at
+  reduced opacity (`holding`, TanStack's previous data) instead of blanking the list at each answer.
+- **The names.** The lists are named for what they hold, *the result list* (结果列表) and *the finding list* (发现列表),
+  as *the quest list* is. The count says *findings* (发现), the map's word, where it said *groups*. `search.title`,
+  `search.description`, `convergence.title` and `convergence.description` retire: the list is named by the view's own
+  name, and each description became its main area's sentence with nothing chosen. `search.noneHeadline` and its body
+  became `search.nothing*`, since `search.none.*` now means nothing chosen, as on every view. The box's placeholder
+  was cut to fit a list's box.
+- **What the gates do not cover.** vitest holds the lists, the pages, the memory and the doors over a stubbed service,
+  on jsdom, which lays nothing out. `test:web` gained a Search test and a Convergence test, typechecked and **not run**
+  in the branch; the Convergence one asks the host's answer first, since the example family's own entries may share
+  nothing at 0.75. No look at the window was taken: Search and Convergence at 1280 and 680 px with an entry and a
+  finding chosen, a search typed at 1280 px for SR11, both themes and both languages, are the parent's to see. The
+  finding list's toggles are over the button budget (21 characters for 20); the budgets are a report (D116 §3).
+
 ## D116 — A name is a UI element, designed in each language; the glossary is the authority, and a check holds it (2026-10-01)
 
 **Decision (NAME1a, the owner's round).** The owner: names in Settings and every other display must be named
