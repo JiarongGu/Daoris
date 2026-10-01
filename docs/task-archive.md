@@ -9138,3 +9138,84 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > `PLUGIN_READ`, `PLUGIN_ADD`, `PLUGIN_OPEN_FOLDER`.
 
 **Outcome** (built by a subagent, merged with `tools/merge-branch.mjs`, every gate; a note under D119): The host's answers for the Plugins view (D119 §4.1) on `DAORIS.DRIVER`. `PLUGINS` gives each plugin its servers, hook (command as written), listening points, health from the loop's own record and whether an update waits. `PLUGIN` and `PLUGIN_ACTIVITY` call `PluginPage.Read` and `PluginActivity.Read`, refusing a gone id as `PLUGIN_UNKNOWN`. `PLUGIN_READ` answers what a folder's plugin would run, or the refusal as an answer, in Ask Daoris's judge's order; `PLUGIN_ADD` installs from a folder and never replaces; `PLUGIN_OPEN_FOLDER` opens the folder the module names through the window kit's launcher. Two refusals were added (`PLUGIN_FOLDER_NOT_OPENED`, `PLUGIN_NOTHING_KEPT`), each with its code, both catalogues and a throw site. What PLUGUI1d left is wired: the screen's trial writes `plugin.tried`, and the shell's conversations write `plugin.served` through one `ChatRunner` seam. Modules 353 → 361, driver 1499 → 1501. Not yet seen on the window or with a real file manager; the page's calls come with PLUGUI1f.
+
+
+## TOOLS4 — download, verify, unpack, lay out (2026-10-01)
+
+> - [ ] **TOOLS4 — download, verify, unpack, lay out** (§3.6, §3.7): staging, hashes, `daoris tool download|update|…`.
+
+**Outcome** (built by a subagent, merged with `tools/merge-branch.mjs`, every gate; a note under D121): TOOLS4 built download, verify, unpack and lay out as twins: `toolinstall.ts` with `zipfile.ts` beside `tarball.ts`, and `ToolInstall.cs` with its archive readers. A plan says which version and whether it is fetched. A download is staged at `<version>.part`, held to the list's size and SHA-256 at each address in read order, with every redirect held to https:// or loopback http://. It is unpacked whole, recorded in `tool.json` and moved whole; a refusal leaves nothing under `tools/<tool>/`. Every refusal names its check, the same code on both sides, and one table of archives built in the test holds both readers. The driver reads archives by hand because .NET 10's readers were measured to skip a wrong CRC, a bad tar checksum and a cut gzip. `daoris tool download|use … managed|update|delete|locations|look` is the terminal's door, through `service.ts`'s fetcher handed in by the row, with the dogfood guards extended. The driver's `ToolActions` runs the download as an action the page follows and the person's stop cancels. Tests went from 825 to 855 in the CLI and from 1365 to 1534 in the driver fast half (after merging main). Nothing starts a managed tool yet (TOOLS5); the routes and screen are TOOLS7's. The twins still differ on two inputs no list carries (a deflate stream cut short inside an entry, a multi-member gzip), both refused on each side, recorded under D121.
+
+
+## FRAME1d — Quests on the frame (2026-10-01)
+
+> - [ ] **FRAME1d — Quests on the frame**: asks and quests in the list, a record in the main area, composers
+> stay drawers; `test:web`'s quest-lifecycle spec moves to the page in the same row.
+
+**Outcome** (built by a subagent, merged with `tools/merge-branch.mjs`, every gate; a note under D118): Quests is on the frame (D118 §2). `useQuestsView` hands the frame a list pane and a main area, the way Plugins does. The list holds the asks, then the quests by state. Its ⋯ holds *Receiver* and *Include closed*, both ticked and remembered (`daoris.list.quests.filters`), and its ＋ offers *Ask* first, then *New quest*. The main area shows the chosen quest's page (`QuestPage`) or an ask's (`AskPage`), with the acts in the header; *Decline…* and *Delete…* ask under it. Otherwise it says how to choose, that a record has gone, or that it is loading. The composers stay drawers. Doors now choose the list's item through the opener, which no longer plans a drawer, and a browser now shows Quests' list next to the main area. A record the list leaves out still opens, an act leaves the page on the quest as it stands, and the page shows the freshest copy of the record. `ListMore` gained filter items, the list pane is a named landmark, and `ListGroup`/`ListRowDoor`, `PageHead` and `PageSection` are now shared. The QuestsView and asks suites, App's doors and test:web's quest lifecycle moved from the drawers to the page. There are stories for QuestList, QuestPage and AskPage. Web vitest went from 168 files and 2147 tests to 170 and 2213; `verify`, typecheck, i18n and `names --strict` are clean. Left for later rows: `PluginList`'s private group and row door (onto `ListGroup`/`ListRowDoor`), and Ask Daoris naming Quests' list and item (FRAME1i, with `help/places.ts`).
+
+
+## FRAME1e — Repositories on the frame (2026-10-01)
+
+> - [ ] **FRAME1e — Repositories on the frame** (the renamed Projects): adopted, then registered; the
+> repository's page with Manage and its code map.
+
+**Outcome** (built by a subagent, merged with `tools/merge-branch.mjs`, every gate; a note under D118): Repositories moved onto the frame (D118 §2, audit PR1–PR4 and PR9). `useProjectsView` hands the frame a list and a main area, held on every view on queries the application already holds. The list shows the adopted repositories, then *Registered, not adopted*, each row with its standing on this machine and its one line; its ＋ is *Add repository* (the act's one name, NAME1b) and its ⋯ is *Import a folder…*, both shell-only. The main area is the chosen repository's page: what its card said, in one column, with *Open code map* and *Manage* in its header, the driving row under *This machine*, and adoption steps for a repository not adopted. The chosen repository is remembered; one just added is chosen, and one retired returns the page to choosing. The code map opens through `open('map', null, { code })`. `ProjectsView.test.tsx` moved to the page, with stories for the list and the page and tests for the browser's list and the code-map door; web vitest went from 2242 to 2285 tests. `test:web`'s registry pages were moved to the new DOM and typechecked in the branch. Left: Overview's repository rows are not yet doors into a chosen repository; the help room's account of the window is FRAME1i's.
+
+
+## SEM3 — a long entry is embedded whole, in pieces (2026-10-01)
+
+> - [ ] **SEM3 — a long entry is embedded whole and cut silently** (found upgrading Lyntai, LYN1 3.5.3): the semantic tier
+> sends an entry whole, and the embedder cuts it at its context without saying; Lyntai 3.3's `MaxInputChars` and
+> `Segmentation` would cap or split it. A feature choice: decide, then measure recall before and after.
+
+**Outcome** (built by a subagent, merged with `tools/merge-branch.mjs`, every gate; D123): Measured first: the semantic tier cut each entry to its title and first 2,000 characters, so 293 of this repository's 636 entries, a third of its text, never reached a vector (44% in the examples). `LongEntryTests`' fixture, a fact past the cut, failed as predicted against the stub embedder. Now `EntryPieces` embeds every part of an entry in pieces no longer than `DAORIS_EMBED_WINDOW` (the deployment's window, title included, default 2000; both hosts refuse a bad value), cut at paragraphs and overlapping by 15%, each its own vector carrying the entry's id. A search names an entry once at its best piece, reads further when pieces crowd the places asked for, and shows the matching passage; convergence names each neighbour once. A refresh embeds everything, then replaces the collection whole, and says how many entries were split, on the agent's door and in the HTTP answer's `embedded` field. The fixture's fact is found. At the default window this repository becomes 1,267 vectors, 1.70× the characters sent. Rejected (D123): capping; the provider's averaged segmentation (0.111 on the fixture, still a miss, and invisible to the index); the provider's window limit as a guard, for now; a cap on pieces. Not covered: the MCP host's refusal, the HTTP field with a model, any real embedder. Service 778 → 811, HTTP 47 → 49.
+
+
+## PARK1 — a parked session's card quotes its whole question (2026-10-01)
+
+> - [ ] **PARK1 — a parked session's card lost its question** (AR-2203, 2026-10-01): the session asked which report
+> is the "individual Daily OEE report" in a long message with indented lists, and its card read "to ask you:" and
+> the closing line, since the question was scraped from the console transcript, where an indented line is a
+> tool's output. The card now quotes the record's last message whole (`SessionEvents.LastSaid`), the transcript
+> only as a fallback. Built on branch `park1`; seen failing against the old reading.
+
+**Outcome** (built by the parent, merged in integrate-h with `tools/merge-branch.mjs`, every gate): A parked session's card now quotes the agent's last message whole. `SessionEvents.LastSaid` joins the record's last message from its chunks as the page joins them, and is null when the person spoke after it; the driver's `ParkedWords` prefers it and reads the console transcript's last plain lines only where the record holds none, kept to 4,000 characters from the end. The old reading stopped at the first indented line, which a question's own list has, so AR-2203's card read "to ask you:" and the closing line; a test reproduces that against the old reading and passes against the new. Driver fast half 1427 → 1430.
+
+
+## METER1 — a turn's meter says cache reads apart (2026-10-01)
+
+> - [ ] **METER1 — a turn's meter summed cache reads into "in"** (owner, 2026-10-01: *"输入 69.1M … there must be an
+> issue"*): AR-2203's 48-minute turn read 663K anew and re-read 68.5M from its cache; the line said 69.1M in. The
+> line now says them apart (`16.7K in · 51.1K cached · 80 out`, 输入 / 缓存 / 输出), the hover sentence with it.
+> Built on branch `park1`.
+
+**Outcome** (built by the parent, merged in integrate-h with `tools/merge-branch.mjs`, every gate): A finished turn's meter says what the agent read anew apart from what it re-read from its cache: "in" is new input plus what it wrote to its cache, "cached" what it read from it, then "out" (输入 / 缓存 / 输出), and the hover sentence says the same split. AR-2203's 48-minute turn had shown "69.1M in" for 663K read anew and 68.5M re-read from the cache across about a thousand calls. The view's test was changed first and seen failing; both catalogues agree.
+
+
+## PLUGDIST1a — the package and its reader, offline (2026-10-01)
+
+> - [ ] **PLUGDIST1a — the package and its reader, offline** (§5.1, §5.7)
+
+**Outcome** (built by a subagent, merged in integrate-h with `tools/merge-branch.mjs`, every gate; a note under D120): A Daoris plugin package is read and installed offline. `PluginPackage` reads a `.nupkg` before writing anything: one nuspec read with no DTD, the type `DaorisPlugin` alone whose version's major number is a plugin API this build speaks, no dependencies, and `plugin/plugin.json`. The `plugin/` guard reads each entry's name as NuGet does and refuses the whole package for a rooted name, `..`, a drive, a control character or a duplicate. It extracts `plugin/` alone into a stage under the home and reads it with the catalogue's own reader; the plugin's version and API must match the package's. The plugin is added through `PluginInstall`, never over an installed id, with `{ package, version, sha512, source }` recorded. `daoris-driver plugins install <file.nupkg>` is the terminal's door. Both twins read the package record, and the CLI's tables are held to `PluginSourceTests`' theories by a gate that was seen failing. An update of a plugin from a package is refused on both sides until PLUGDIST1c (package sources over HTTP, update, the off row for another publisher, the log event). `PluginPackageTests` builds every package in the test; each refusal was seen failing first. Counts: CLI +3, driver fast half 1427 → 1492. Left: extraction has no size bound; the modules' plugin page still calls a package record `folder` (PLUGDIST1d); `install` is routed in `Program.cs` ahead of the `plugins` catch-all rather than in `PluginsCommand`.
+
+
+## DOC4 — this repository declares its documents (2026-10-01)
+
+> - [ ] **DOC4 — this repository declares its documents**
+
+**Outcome** (built by the parent, merged in integrate-h with `tools/merge-branch.mjs`, every gate; a note under D122): This repository declares its documents (D122 §2.7). `daoris.json`'s `documents` names eight roles: router, decisions, backlog (with its 6,600-word ceiling), archive, fixes, changelog, the naming glossary and the gates. `sync` writes the *Where things are* table into the region, which costs about 1 KB of the always-loaded core (23,306 → 24,064 of 26,000 bytes). `tools/doc-budgets.mjs` reads a declared ceiling from the manifest; `doc-budgets.json` shrinks to the four documents no role names (the standing orders until LAYOUT6, the consuming story, the forward sequence, the contract) rather than retiring, and a document given a number in both fails. Found building it: a scripted rewrite dropped every backslash, so the tool counted the letter *s* and read every document as within budget with exit 0; `words` is now exported and pinned by a test (`doc-budgets.test.ts`, five cases). CLI 888 → 893. A note under D122.
+
+
+## DOC5 — the service reads declared records (2026-10-01)
+
+> - [ ] **DOC5 — the service reads declared records**
+
+**Outcome** (built by a subagent, merged in integrate-h with `tools/merge-branch.mjs`, every gate; a note under D122): The service reads the records a repository declares. `RepositoryDocuments`, a twin of the CLI's `documents.ts`, reads the manifest's `documents`, and `RepositoryLayout.Documents` checks it against the target and mirror root the rooms use. The scanner puts the declared decisions, fixes and archive in front of its candidates: a log at a name no candidate knows is found, and found once; a declared folder is one record per file; a declared path missing from disk falls through to the candidates. The declared router is indexed as one local knowledge document, and the router has no candidates. One file is one place in the index across every reader, so no ids are duplicated (REV3). A role the CLI refuses is read as undeclared and the roles beside it are read; a `documents` that is not a map or is held twice, and a manifest that is not JSON, are read as none, and the scanner reads its candidates as before: an indexer has nobody to tell, and a declaration adds a path but is never required. `RepositoryDocumentsTests` holds the CLI's `documents-manifest.test.ts` rows in order, then the reader's own. Service 811 → 865, HTTP 49. Found building it, for the CLI lane: a declared path is checked as spelled, so `docs/..` and `x/../.claude/…` pass the CLI's root and target checks (DOC3a).
+
+
+## DOC3a — a declared document's path is judged where it lands (2026-10-01)
+
+> (found by DOC5; no backlog row: fixed the same day)
+
+**Outcome** (built by the parent, merged in integrate-h with `tools/merge-branch.mjs`, every gate): `checkPath` (`documents.ts`) normalised a declared path only to ask whether it left the repository, then judged the root, the target and the mirror on the spelling, so `docs/..` (the root) and `x/../.claude/knowledge/g.md` (inside the target) were accepted. They are judged where they land now, as the service's reader (DOC5) already does, and the spelling is still what the index shows. Two refusal rows in `documents-manifest.test.ts`, seen failing first. CLI 888 → 890.

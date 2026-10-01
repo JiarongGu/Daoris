@@ -1,6 +1,6 @@
 import i18n from '../i18n';
 import type { Ask, Quest, Registration, Session } from '../api';
-import { firstLine } from '../asks/AskCard';
+import { firstLine } from '../asks/AskRow';
 import type { RuleProposal } from '../settings/AgentRules';
 import { proposalAuthor, proposalChange } from '../settings/proposals';
 import type { TrustHold } from '../signals';

@@ -1,36 +1,39 @@
 import { type ReactElement, useState } from 'react';
 import { describe, expect, it, vi } from 'vitest';
-import { fireEvent, render as rtlRender, screen, within } from '@testing-library/react';
+import { render as rtlRender, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import '../i18n';
 import { NO_CARRY } from '../compose/carry';
-import { AskCard } from './AskCard';
 import { AskComposer, type AskDraft } from './AskComposer';
-import { AskRecord } from './AskRecord';
-import { asksInOrder } from './AsksSection';
+import { AskPage } from './AskPage';
+import { AskRow, asksInOrder } from './AskRow';
 import {
   BY_INTAKE, CLOSED, DONE, INTAKE_ASKED, INTAKE_PARKED, INTAKE_SESSION, NAMED, PROPOSED, PUBLISHED, REFUSED, UNKNOWN_TIER,
   UNMATCHED,
 } from './fixtures';
 
-// An ask's three molecules (INT4c), props in and states out: no service and no shell, so every state
-// the record can be in is an ordinary assertion (components §2).
+// An ask's three molecules (INT4c; FRAME1d): its row in Quests' list, its page in the main area, and the composer's
+// drawer — props in and states out: no service and no shell, so every state the record can be in is an ordinary
+// assertion (components §2).
 
 const render = (node: ReactElement) => rtlRender(<Tooltip.Provider>{node}</Tooltip.Provider>);
 
-const record = (ask = PROPOSED, over: Partial<Parameters<typeof AskRecord>[0]> = {}) => {
+/** A row is an item of its list. */
+const row = (node: ReactElement) => <Tooltip.Provider><ul>{node}</ul></Tooltip.Provider>;
+
+const record = (ask = PROPOSED, over: Partial<Parameters<typeof AskPage>[0]> = {}) => {
   const props = {
     ask, receivers: ['engine', 'game', 'lantern'], questTitles: {},
-    onPublish: vi.fn(), onClose: vi.fn(), onOpenQuest: vi.fn(), onDismiss: vi.fn(), ...over,
+    onPublish: vi.fn(), onClose: vi.fn(), onOpenQuest: vi.fn(), ...over,
   };
-  render(<AskRecord {...props} />);
-  return { ...props, drawer: screen.getByRole('dialog') };
+  render(<AskPage {...props} />);
+  return { ...props, page: screen.getByRole('main') };
 };
 
-describe('AskCard', () => {
+describe('AskRow', () => {
   it('leads with its state and its first line, and says what answered and what it proposed', () => {
-    render(<AskCard ask={PROPOSED} onOpen={() => {}} />);
+    rtlRender(row(<AskRow ask={PROPOSED} onOpen={() => {}} />));
 
     expect(screen.getByText('proposed')).toBeInTheDocument();
     expect(screen.getByText('The chunk streamer stalls on a cold cache — cap its hydration per frame.')).toBeInTheDocument();
@@ -43,7 +46,7 @@ describe('AskCard', () => {
    * repository — the band's own rule (INT4d), which the card had not followed.
    */
   it('names its place as a workspace, never as a bare name', () => {
-    render(<AskCard ask={PROPOSED} onOpen={() => {}} />);
+    rtlRender(row(<AskRow ask={PROPOSED} onOpen={() => {}} />));
     expect(screen.getByText('workspace aurora')).toBeInTheDocument();
   });
 
@@ -52,113 +55,121 @@ describe('AskCard', () => {
    * it and one had its intake waiting on the person — which the band above said and the card did not.
    */
   it('says when an intake is reading it, and when its intake asked the person', () => {
-    const { rerender } = render(<AskCard ask={INTAKE_ASKED} intake="working" onOpen={() => {}} />);
+    const { rerender } = rtlRender(row(<AskRow ask={INTAKE_ASKED} intake="working" onOpen={() => {}} />));
     expect(screen.getByText(/an intake is reading it/)).toBeInTheDocument();
 
-    rerender(<Tooltip.Provider><AskCard ask={INTAKE_ASKED} intake="awaiting-person" onOpen={() => {}} /></Tooltip.Provider>);
+    rerender(row(<AskRow ask={INTAKE_ASKED} intake="awaiting-person" onOpen={() => {}} />));
     expect(screen.getByText('its intake asked you')).toBeInTheDocument();
     expect(screen.queryByText(/an intake is reading it/)).toBeNull();
 
     // An intake that ended without publishing leaves an ordinary proposal, and says nothing more.
-    rerender(<Tooltip.Provider><AskCard ask={INTAKE_ASKED} intake="completed" onOpen={() => {}} /></Tooltip.Provider>);
+    rerender(row(<AskRow ask={INTAKE_ASKED} intake="completed" onOpen={() => {}} />));
     expect(screen.queryByText('its intake asked you')).toBeNull();
     expect(screen.queryByText(/an intake is reading it/)).toBeNull();
   });
 
-  it('names the quests an ask became, and opens on a press or a key', () => {
+  it('names the quests an ask became, and opens on a press or a key', async () => {
     const onOpen = vi.fn();
-    render(<AskCard ask={PUBLISHED} onOpen={onOpen} />);
+    rtlRender(row(<AskRow ask={PUBLISHED} onOpen={onOpen} />));
 
     expect(screen.getByText(/became #9a8b7c, #1f2e3d/)).toBeInTheDocument();
-    fireEvent.keyDown(screen.getByRole('button'), { key: 'Enter' });
+    screen.getByRole('button').focus();
+    await userEvent.keyboard('{Enter}');
     expect(onOpen).toHaveBeenCalledWith(PUBLISHED);
+  });
+
+  /** FRAME1d: a row of its list, so the list's arrows move to it, wearing the list's choice. */
+  it('is a row of its list, and says when the list has it chosen', () => {
+    rtlRender(row(<AskRow ask={PROPOSED} chosen onOpen={() => {}} />));
+    expect(screen.getByRole('listitem')).toHaveAttribute('data-list-row');
+    expect(screen.getByRole('button')).toHaveAttribute('aria-current', 'true');
   });
 });
 
-describe('AskRecord', () => {
+describe('AskPage', () => {
   /** The sentence the tier writes about itself is what a person reads: which tier answered, never implied. */
   it('says which tier answered, in the words for it, beside the ask\'s own words whole', () => {
-    const { drawer } = record(PROPOSED);
-    expect(within(drawer).getByText('by declarations only; no intake agent ran')).toBeInTheDocument();
+    const { page } = record(PROPOSED);
+    expect(within(page).getByText('by declarations only; no intake agent ran')).toBeInTheDocument();
     // The first line is the title, and the rest follows it — each once (POLISH4).
-    expect(within(drawer).getAllByText(/The chunk streamer stalls on a cold cache/)).toHaveLength(1);
-    expect(within(drawer).getByText(/Seen on the test rig after a fresh install/)).toBeInTheDocument();
+    expect(within(page).getAllByText(/The chunk streamer stalls on a cold cache/)).toHaveLength(1);
+    expect(within(page).getByText(/Seen on the test rig after a fresh install/)).toBeInTheDocument();
   });
 
   /** 🔴 Seen on the window (POLISH4): "answered by" above "by declarations…" read "answered by by". */
   it('labels the tier so that no tier\'s words repeat the label', () => {
-    const { drawer } = record(PROPOSED);
-    expect(within(drawer).queryByText('answered by')).toBeNull();
-    expect(within(drawer).getByText('Answered')).toBeInTheDocument();
+    const { page } = record(PROPOSED);
+    expect(within(page).queryByText('answered by')).toBeNull();
+    expect(within(page).getByText('Answered')).toBeInTheDocument();
   });
 
-  /** 🔴 Seen on the window (POLISH4): a one-line ask was its drawer's title and then its body. */
+  /** 🔴 Seen on the window (POLISH4): a one-line ask was its page's title and then its body. */
   it('does not repeat a one-line ask as its own body', () => {
-    const { drawer } = record(UNMATCHED);
-    expect(within(drawer).getAllByText('Tidy the release notes.')).toHaveLength(1);
+    const { page } = record(UNMATCHED);
+    expect(within(page).getAllByText('Tidy the release notes.')).toHaveLength(1);
   });
 
   it('names the workspace a receiver is chosen from as a workspace', () => {
-    const { drawer } = record(UNMATCHED);
-    expect(within(drawer).getByText('any repository in workspace aurora that can be asked')).toBeInTheDocument();
+    const { page } = record(UNMATCHED);
+    expect(within(page).getByText('any repository in workspace aurora that can be asked')).toBeInTheDocument();
   });
 
   it('shows a tier it has no word for as the service wrote it', () => {
-    const { drawer } = record(UNKNOWN_TIER);
-    expect(within(drawer).getByText('intake-session')).toBeInTheDocument();
+    const { page } = record(UNKNOWN_TIER);
+    expect(within(page).getByText('intake-session')).toBeInTheDocument();
   });
 
   it('offers each proposal as a publish, and publishes to the one pressed', async () => {
-    const { drawer, onPublish } = record(PROPOSED);
+    const { page, onPublish } = record(PROPOSED);
 
-    expect(within(drawer).getByText(/chunk, stream, frame/)).toBeInTheDocument();
-    await userEvent.click(within(drawer).getByRole('button', { name: 'Publish to engine' }));
+    expect(within(page).getByText(/chunk, stream, frame/)).toBeInTheDocument();
+    await userEvent.click(within(page).getByRole('button', { name: 'Publish to engine' }));
 
     expect(onPublish).toHaveBeenCalledWith('engine');
   });
 
   it('says when no declarations share its words, and still offers any receiver in its circle', async () => {
-    const { drawer, onPublish } = record(UNMATCHED);
+    const { page, onPublish } = record(UNMATCHED);
 
-    expect(within(drawer).getByText(/No repository's declarations share its words/)).toBeInTheDocument();
+    expect(within(page).getByText(/No repository's declarations share its words/)).toBeInTheDocument();
     const user = userEvent.setup();
-    within(drawer).getByRole('combobox', { name: 'publish to another' }).focus();
+    within(page).getByRole('combobox', { name: 'publish to another' }).focus();
     await user.keyboard('{Enter}');
     await user.click(await screen.findByRole('option', { name: 'lantern' }));
-    await user.click(within(drawer).getByRole('button', { name: 'Publish' }));
+    await user.click(within(page).getByRole('button', { name: 'Publish' }));
 
     expect(onPublish).toHaveBeenCalledWith('lantern');
   });
 
   it('lists the quests it became and opens the one chosen, by its title where the page holds it', async () => {
-    const { drawer, onOpenQuest } = record(PUBLISHED, { questTitles: { '9a8b7c6d5e4f': 'Cap the hydration' } });
+    const { page, onOpenQuest } = record(PUBLISHED, { questTitles: { '9a8b7c6d5e4f': 'Cap the hydration' } });
 
-    await userEvent.click(within(drawer).getByRole('button', { name: /Cap the hydration/ }));
+    await userEvent.click(within(page).getByRole('button', { name: /Cap the hydration/ }));
     expect(onOpenQuest).toHaveBeenCalledWith('9a8b7c6d5e4f');
   });
 
   it('names a quest the page does not hold yet, and offers no door that would open nothing', () => {
     // Just after a publish, the answer names the quest before the list has asked again for it.
-    const { drawer } = record(PUBLISHED, { questTitles: { '9a8b7c6d5e4f': 'Cap the hydration' } });
+    const { page } = record(PUBLISHED, { questTitles: { '9a8b7c6d5e4f': 'Cap the hydration' } });
 
-    expect(within(drawer).getByText('#1f2e3d')).toBeInTheDocument();
-    expect(within(drawer).queryByRole('button', { name: /#1f2e3d/ })).toBeNull();
+    expect(within(page).getByText('#1f2e3d')).toBeInTheDocument();
+    expect(within(page).queryByRole('button', { name: /#1f2e3d/ })).toBeNull();
   });
 
   it('carries the named receiver\'s refusal verbatim, and keeps its proposal to go on with', () => {
-    const { drawer } = record(REFUSED);
+    const { page } = record(REFUSED);
 
-    expect(within(drawer).getByText(REFUSED.note!)).toBeInTheDocument();
-    expect(within(drawer).getByRole('button', { name: 'Publish to engine' })).toBeInTheDocument();
+    expect(within(page).getByText(REFUSED.note!)).toBeInTheDocument();
+    expect(within(page).getByRole('button', { name: 'Publish to engine' })).toBeInTheDocument();
   });
 
   it('closes with a reason, and not without one', async () => {
-    const { drawer, onClose } = record(PROPOSED);
+    const { page, onClose } = record(PROPOSED);
 
-    await userEvent.click(within(drawer).getByRole('button', { name: 'Close ask' }));
-    const confirm = within(drawer).getByRole('button', { name: 'Close with this reason' });
+    await userEvent.click(within(page).getByRole('button', { name: 'Close ask' }));
+    const confirm = within(page).getByRole('button', { name: 'Close with this reason' });
     expect(confirm).toBeDisabled();
-    await userEvent.type(within(drawer).getByLabelText('why — what became of it'), 'Answered elsewhere.');
+    await userEvent.type(within(page).getByLabelText('why — what became of it'), 'Answered elsewhere.');
     await userEvent.click(confirm);
 
     expect(onClose).toHaveBeenCalledWith('Answered elsewhere.');
@@ -166,40 +177,40 @@ describe('AskRecord', () => {
 
   /** A closed ask becomes nothing more (INT4a): its reason stays, and no verb is offered. */
   it('offers nothing to do on a closed ask, and says why it closed', () => {
-    const { drawer } = record(CLOSED);
+    const { page } = record(CLOSED);
 
-    expect(within(drawer).getByText('Answered in the design review instead.')).toBeInTheDocument();
-    expect(within(drawer).queryByRole('button', { name: /publish/i })).toBeNull();
-    expect(within(drawer).queryByRole('button', { name: 'Close ask' })).toBeNull();
+    expect(within(page).getByText('Answered in the design review instead.')).toBeInTheDocument();
+    expect(within(page).queryByRole('button', { name: /publish/i })).toBeNull();
+    expect(within(page).queryByRole('button', { name: 'Close ask' })).toBeNull();
   });
 
   it('names its files and never the path this machine keeps them at', () => {
-    const { drawer } = record(PROPOSED);
+    const { page } = record(PROPOSED);
 
-    expect(within(drawer).getByText('trace.log')).toBeInTheDocument();
-    expect(drawer.textContent).not.toContain('somewhere');
-    expect(within(drawer).getByRole('link', { name: /tickets\.example/ })).toHaveAttribute('href', 'https://tickets.example/T-42');
+    expect(within(page).getByText('trace.log')).toBeInTheDocument();
+    expect(page.textContent).not.toContain('somewhere');
+    expect(within(page).getByRole('link', { name: /tickets\.example/ })).toHaveAttribute('href', 'https://tickets.example/T-42');
   });
 
   it('says a named receiver answered, and offers publishing it further', () => {
-    const { drawer } = record(NAMED);
+    const { page } = record(NAMED);
 
-    expect(within(drawer).getByText('the asker named the receiver')).toBeInTheDocument();
-    expect(within(drawer).getByRole('combobox', { name: 'publish to another' })).toBeInTheDocument();
+    expect(within(page).getByText('the asker named the receiver')).toBeInTheDocument();
+    expect(within(page).getByRole('combobox', { name: 'publish to another' })).toBeInTheDocument();
   });
 
   // ——— Who answered (INT4d): the tier INT4b added, and the intake session that served it.
 
   it('says an intake session answered, in the words for it', () => {
-    const { drawer } = record(BY_INTAKE, { intake: INTAKE_SESSION });
-    expect(within(drawer).getByText('an intake session read it and published it')).toBeInTheDocument();
+    const { page } = record(BY_INTAKE, { intake: INTAKE_SESSION });
+    expect(within(page).getByText('an intake session read it and published it')).toBeInTheDocument();
   });
 
   /** On the desktop the session is a door into Sessions, where its transcript and console are. */
   it('names its intake session by state and tool, and opens it where Sessions exists', async () => {
     const onAttend = vi.fn();
-    const { drawer } = record(INTAKE_ASKED, { intake: INTAKE_PARKED, onAttend });
-    const line = within(drawer).getByRole('region', { name: 'Intake session' });
+    const { page } = record(INTAKE_ASKED, { intake: INTAKE_PARKED, onAttend });
+    const line = within(page).getByRole('region', { name: 'Intake session' });
 
     expect(within(line).getByText('waiting on you')).toBeInTheDocument();
     await userEvent.click(within(line).getByRole('button', { name: 'claude-code · 2.1.4' }));
@@ -208,8 +219,8 @@ describe('AskRecord', () => {
 
   /** A browser has no Sessions: the session is named, and nothing pretends to open it. */
   it('names its intake session without a door where Sessions does not exist', () => {
-    const { drawer } = record(BY_INTAKE, { intake: INTAKE_SESSION });
-    const line = within(drawer).getByRole('region', { name: 'Intake session' });
+    const { page } = record(BY_INTAKE, { intake: INTAKE_SESSION });
+    const line = within(page).getByRole('region', { name: 'Intake session' });
 
     expect(within(line).getByText('claude-code · 2.1.4')).toBeInTheDocument();
     expect(within(line).getByText('completed')).toBeInTheDocument();
@@ -217,8 +228,8 @@ describe('AskRecord', () => {
   });
 
   it('names an intake session the page has not loaded by its id, and offers no door that would open nothing', () => {
-    const { drawer } = record(BY_INTAKE, { onAttend: vi.fn() });
-    const line = within(drawer).getByRole('region', { name: 'Intake session' });
+    const { page } = record(BY_INTAKE, { onAttend: vi.fn() });
+    const line = within(page).getByRole('region', { name: 'Intake session' });
 
     expect(within(line).getByText('#i9n8t7')).toBeInTheDocument();
     expect(within(line).queryByRole('button')).toBeNull();
@@ -229,14 +240,14 @@ describe('AskRecord', () => {
    * declarations' — and its words, "no intake harness ran", sat directly above the intake that ran.
    */
   it('never says no intake ran above the intake that did', () => {
-    const { drawer } = record(INTAKE_ASKED, { intake: INTAKE_PARKED });
-    expect(within(drawer).queryByText('by declarations only; no intake agent ran')).toBeNull();
-    expect(within(drawer).getByText('by declarations; an intake read it and has not published')).toBeInTheDocument();
+    const { page } = record(INTAKE_ASKED, { intake: INTAKE_PARKED });
+    expect(within(page).queryByText('by declarations only; no intake agent ran')).toBeNull();
+    expect(within(page).getByText('by declarations; an intake read it and has not published')).toBeInTheDocument();
   });
 
   it('has no intake line for an ask no intake served', () => {
-    const { drawer } = record(PROPOSED);
-    expect(within(drawer).queryByRole('region', { name: 'Intake session' })).toBeNull();
+    const { page } = record(PROPOSED);
+    expect(within(page).queryByRole('region', { name: 'Intake session' })).toBeNull();
   });
 });
 
@@ -362,15 +373,15 @@ describe('the asks, in the order they are read', () => {
  */
 describe('deleting an ask', () => {
   it('offers no delete on an ask the service does not say may go', () => {
-    const { drawer } = record(PUBLISHED, { onDelete: vi.fn() });
-    expect(within(drawer).queryByRole('button', { name: 'Delete…' })).toBeNull();
+    const { page } = record(PUBLISHED, { onDelete: vi.fn() });
+    expect(within(page).queryByRole('button', { name: 'Delete…' })).toBeNull();
   });
 
   it('asks once, saying its quests go with it, then deletes', async () => {
-    const { drawer, onDelete } = record({ ...PUBLISHED, deletable: true }, { onDelete: vi.fn() });
+    const { page, onDelete } = record({ ...PUBLISHED, deletable: true }, { onDelete: vi.fn() });
 
-    await userEvent.click(within(drawer).getByRole('button', { name: 'Delete…' }));
-    const confirm = within(drawer).getByRole('group', { name: 'delete this ask' });
+    await userEvent.click(within(page).getByRole('button', { name: 'Delete…' }));
+    const confirm = within(page).getByRole('group', { name: 'delete this ask' });
     expect(within(confirm).getByText(/every quest it became goes with it/)).toBeInTheDocument();
     expect(onDelete).not.toHaveBeenCalled();
 
@@ -379,40 +390,40 @@ describe('deleting an ask', () => {
   });
 
   it('never mind puts the verbs back and deletes nothing', async () => {
-    const { drawer, onDelete } = record({ ...PROPOSED, deletable: true }, { onDelete: vi.fn() });
+    const { page, onDelete } = record({ ...PROPOSED, deletable: true }, { onDelete: vi.fn() });
 
-    await userEvent.click(within(drawer).getByRole('button', { name: 'Delete…' }));
-    await userEvent.click(within(drawer).getByRole('button', { name: 'Never mind' }));
+    await userEvent.click(within(page).getByRole('button', { name: 'Delete…' }));
+    await userEvent.click(within(page).getByRole('button', { name: 'Never mind' }));
 
-    expect(within(drawer).getByRole('button', { name: 'Close ask' })).toBeInTheDocument();
+    expect(within(page).getByRole('button', { name: 'Close ask' })).toBeInTheDocument();
     expect(onDelete).not.toHaveBeenCalled();
   });
 
   /** A closed ask becomes nothing more — but one made by mistake can still go, when the service says so. */
   it('offers delete on a closed ask the service says may go, and nothing else', () => {
-    const { drawer } = record({ ...CLOSED, deletable: true }, { onDelete: vi.fn() });
+    const { page } = record({ ...CLOSED, deletable: true }, { onDelete: vi.fn() });
 
-    expect(within(drawer).getByRole('button', { name: 'Delete…' })).toBeInTheDocument();
-    expect(within(drawer).queryByRole('button', { name: 'Close ask' })).toBeNull();
+    expect(within(page).getByRole('button', { name: 'Delete…' })).toBeInTheDocument();
+    expect(within(page).queryByRole('button', { name: 'Close ask' })).toBeNull();
   });
 });
 
 /**
  * USE1c: an ask the service reports DONE — it became quests and every one of them closed. It says so in
- * a pill of its own, reads as finished on the card, and names what it became.
+ * a pill of its own, reads as finished on its row, and names what it became.
  */
 describe('a done ask', () => {
-  it('wears a done pill and reads as finished on its card, naming what it became', () => {
-    render(<AskCard ask={DONE} onOpen={() => {}} />);
+  it('wears a done pill and reads as finished on its row, naming what it became', () => {
+    rtlRender(row(<AskRow ask={DONE} onOpen={() => {}} />));
 
     expect(screen.getByText('done')).toBeInTheDocument();
     expect(screen.getByText(/became #9a8b7c, #1f2e3d/)).toBeInTheDocument();
-    // Read as finished, the way a closed record is: the card's dimmed face.
+    // Read as finished, the way a closed record is: the row's dimmed face.
     expect(screen.getByRole('button').closest('.opacity-75')).not.toBeNull();
   });
 
   it('says it is done on its record', () => {
-    const { drawer } = record(DONE);
-    expect(within(drawer).getByText('done')).toBeInTheDocument();
+    const { page } = record(DONE);
+    expect(within(page).getByText('done')).toBeInTheDocument();
   });
 });

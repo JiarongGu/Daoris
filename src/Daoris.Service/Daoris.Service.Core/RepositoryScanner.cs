@@ -18,6 +18,12 @@ namespace Daoris.Knowledge;
 /// a scanner that needs setting up before it can read anything gets set up for one repository and
 /// then never for the rest.
 ///
+/// A repository may still say where its records are, in its manifest's <c>documents</c> (DOC5; D122
+/// §2.7, <see cref="RepositoryDocuments"/>). A declaration adds a path and is never required: the
+/// declared decisions, fixes or archive is the first candidate for its log, a file or a folder of
+/// records, and the declared router is read as a document. A declaration the CLI refuses is read as
+/// none, so the candidates are read as before it was written. One file is one place in the index.
+///
 /// Where the documents live is the layout's (D117 §5.5, LAYOUT4): the lock's root before the
 /// manifest's, both roots for a repository with no lock, the lock's mirrors skipped so each skill is
 /// found once, and each declared room's <c>AGENTS.md</c> read as the repository's own knowledge
@@ -80,32 +86,76 @@ public sealed class RepositoryScanner
         {
             entries.AddRange(ScanSkills(repositoryRoot, name, daorisLock, RepositoryLayout.Under(root, "skills")));
         }
-        entries.AddRange(ScanRooms(
-            repositoryRoot, name, layout,
-            entries.Select(entry => entry.RelativePath).ToHashSet(StringComparer.OrdinalIgnoreCase)));
+        // 🔴 One file is one place in the index: read twice, under two kinds or two readers, its entries
+        // share ids, and the store's primary key fails the whole refresh on the second (REV3).
+        var indexed = entries.Select(entry => entry.RelativePath).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        void Add(IEnumerable<KnowledgeEntry> read)
+        {
+            foreach (var entry in read)
+            {
+                entries.Add(entry);
+                indexed.Add(entry.RelativePath);
+            }
+        }
 
-        foreach (var (candidates, kind) in new[]
-                 {
-                     (DecisionFiles, EntryKind.Decision),
-                     (FixFiles, EntryKind.Fix),
-                     (TaskOutcomeFiles, EntryKind.TaskOutcome),
-                 })
+        Add(ScanRooms(repositoryRoot, name, layout, indexed));
+
+        // The router, declared and never guessed (DOC5): a `docs/README.md` in a repository that
+        // declared nothing may be a site's front page as easily as a router of its documents. A
+        // document, not a log: it is read whole at a task's start, and its rows are about each other.
+        if (layout.PathOf("router") is { } router && !indexed.Contains(router))
+        {
+            if (Directory.Exists(Absolute(repositoryRoot, router)))
+            {
+                Add(ScanFolder(repositoryRoot, name, router, EntryKind.Knowledge, indexed));
+            }
+            else if (ReadDocument(repositoryRoot, router) is { } body)
+            {
+                Add([new KnowledgeEntry(name, EntryKind.Knowledge, Provenance.Local, Path.GetFileNameWithoutExtension(router), body, router)]);
+            }
+        }
+
+        foreach (var (role, candidates, kind) in Logs)
         {
             // FIRST match wins. The candidates are alternative NAMES for one log, not several logs —
             // and scanning them all double-counts on a case-insensitive filesystem, where
             // `docs/DECISIONS.md` and `docs/decisions.md` are the same file. Found immediately, on
             // Windows; on Linux it would have waited until someone happened to have both.
-            var found = candidates.FirstOrDefault(candidate =>
-                File.Exists(Path.Combine(repositoryRoot, candidate.Replace('/', Path.DirectorySeparatorChar))));
-            // A log reached through a link is some other folder's log (LAYOUT4): skipped, never followed.
-            if (found is not null && !RepositoryLinks.Crosses(repositoryRoot, found))
-            {
-                entries.AddRange(ScanLog(repositoryRoot, name, found, kind));
-            }
+            //
+            // The declared path is the first candidate (DOC5), so a log at a name no candidate knows is
+            // found, and one a candidate also names is found once. Declared, it may be a folder of
+            // records; absent from the disk, the candidates are read as before it was declared.
+            var declared = layout.PathOf(role) is { } path && Exists(repositoryRoot, path, folder: true) ? path : null;
+            var found = declared ?? candidates.FirstOrDefault(candidate => Exists(repositoryRoot, candidate, folder: false));
+            // A log reached through a link is some other folder's log (LAYOUT4): skipped, never followed,
+            // and never replaced by a candidate, which would be a guess at which log is the repository's.
+            if (found is null || indexed.Contains(found)) continue;
+
+            Add(Directory.Exists(Absolute(repositoryRoot, found))
+                ? ScanFolder(repositoryRoot, name, found, kind, indexed)
+                : ScanLog(repositoryRoot, name, found, kind));
         }
 
         return entries;
     }
+
+    /// <summary>
+    /// The logs, each with the role a repository declares it under (D122 §2.7) and the names the scanner
+    /// tries when it declares none.
+    /// </summary>
+    private static readonly (string Role, string[] Candidates, EntryKind Kind)[] Logs =
+    [
+        ("decisions", DecisionFiles, EntryKind.Decision),
+        ("fixes", FixFiles, EntryKind.Fix),
+        ("archive", TaskOutcomeFiles, EntryKind.TaskOutcome),
+    ];
+
+    private static string Absolute(string root, string relative) =>
+        Path.Combine(root, relative.Replace('/', Path.DirectorySeparatorChar));
+
+    /// <summary>Whether a log is there: a file, or a folder of records where one is declared.</summary>
+    private static bool Exists(string root, string relative, bool folder) =>
+        File.Exists(Absolute(root, relative)) || (folder && Directory.Exists(Absolute(root, relative)));
 
     /// <summary>
     /// A document's text, or null when it is not one to index: absent, reached through a link, or a
@@ -239,17 +289,56 @@ public sealed class RepositoryScanner
         }
     }
 
+    /// <summary>
+    /// A declared folder of records (DOC5; D122 §2.1): one entry per markdown file in it or below, each
+    /// read whole, since a record's headings are its own parts (an ADR's context and consequences) and
+    /// not records of their own. Named by its file, as a document is.
+    /// </summary>
+    /// <param name="indexed">What is already read: a file another reader took is not read again.</param>
+    private static IEnumerable<KnowledgeEntry> ScanFolder(
+        string root, string repository, string folder, EntryKind kind, ISet<string> indexed)
+    {
+        foreach (var relative in Records(root, folder).Order(StringComparer.Ordinal))
+        {
+            if (indexed.Contains(relative)) continue;
+            if (ReadDocument(root, relative) is not { } body) continue;
+
+            yield return new KnowledgeEntry(
+                repository, kind, Provenance.Local, Path.GetFileNameWithoutExtension(relative), body, relative);
+        }
+    }
+
+    /// <summary>
+    /// The markdown files in a folder and below, repository-relative. A folder reached through a link is
+    /// some other folder (LAYOUT4) and is never entered, so a link that loops back is never walked round.
+    /// </summary>
+    private static IEnumerable<string> Records(string root, string folder)
+    {
+        if (RepositoryLinks.Crosses(root, folder)) yield break;
+
+        var absolute = Absolute(root, folder);
+        foreach (var file in Directory.EnumerateFiles(absolute, "*.md"))
+        {
+            yield return $"{folder}/{Path.GetFileName(file)}";
+        }
+        foreach (var below in Directory.EnumerateDirectories(absolute))
+        {
+            foreach (var file in Records(root, $"{folder}/{Path.GetFileName(below)}")) yield return file;
+        }
+    }
+
     private static IEnumerable<KnowledgeEntry> ScanLog(
         string root, string repository, string relativePath, EntryKind kind)
     {
-        var absolute = Path.Combine(root, relativePath.Replace('/', Path.DirectorySeparatorChar));
-        if (!File.Exists(absolute)) yield break;
+        // Through the one boundary every document goes through: a log reached through a link, or a link
+        // held as text, is some other folder's (LAYOUT4).
+        if (ReadDocument(root, relativePath) is not { } text) yield break;
 
         // 🔴 An anchor is unique within its file (REV3). Two sections under one heading — date-only fix
         // headings do it — shared an id, and the store's primary key threw on the second, failing the
         // whole refresh. The first keeps the id it always had; each repeat is told apart by its count.
         var used = new Dictionary<string, int>(StringComparer.Ordinal);
-        foreach (var section in MarkdownSections.Split(Text.ReadDocument(absolute)))
+        foreach (var section in MarkdownSections.Split(text))
         {
             if (section.Body.Length == 0) continue;
             var seen = used.GetValueOrDefault(section.Heading) + 1;

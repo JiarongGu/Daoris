@@ -88,12 +88,12 @@ function start() {
 
 const opened = () => invoke.mock.calls.filter(([module, type]) => module === 'DAORIS.WINDOWS' && type === 'OPEN_BROWSER');
 
-/** Open the quest's drawer from Overview's band, and the ticket link in it. */
+/** Open the quest's page from Overview's band — in Quests' main area since FRAME1d — and the ticket link on it. */
 async function ticketLink() {
   // The band's row and the outstanding row both open it.
   await userEvent.click((await screen.findAllByRole('button', { name: /Expose a streaming budget/ }))[0]!);
-  const drawer = await screen.findByRole('dialog', { name: 'Expose a streaming budget' });
-  return within(drawer).getByRole('link', { name: TICKET });
+  await screen.findByRole('heading', { level: 1, name: 'Expose a streaming budget' });
+  return within(screen.getByRole('main')).getByRole('link', { name: TICKET });
 }
 
 describe("Daoris's browser, from the window", () => {

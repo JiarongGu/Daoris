@@ -250,4 +250,49 @@ describe('the list pane\'s ⋯', () => {
     await userEvent.click(await screen.findByRole('menuitem', { name: 'Try a folder…' }));
     expect(onChoose).toHaveBeenCalledWith('try');
   });
+
+  /** FRAME1d (D118 §2): a list's filters sit in its ⋯, one value among several and a toggle, each ticked as it stands. */
+  it('holds the list\'s filters, each ticked as it stands, and says which was chosen', async () => {
+    const onChoose = vi.fn();
+    const onPick = vi.fn();
+    const more = (closed: boolean) => (
+      <ListMore
+        label="Filter the list"
+        choice={{
+          label: 'Receiver', value: '*', onChoose: onPick,
+          options: [{ value: '*', label: 'Everyone' }, { value: 'engine', label: 'engine' }],
+        }}
+        items={[{ id: 'closed', label: 'Include closed', checked: closed }]}
+        onChoose={onChoose}
+      />
+    );
+    pane(OPEN, { more: more(false) });
+    const user = userEvent.setup();
+    const button = within(screen.getByText('Sessions').closest('header')!).getByRole('button', { name: 'Filter the list' });
+
+    button.focus();
+    await user.keyboard('{Enter}');
+    const receiver = await screen.findByRole('group', { name: 'Receiver' });
+    expect(within(receiver).getByRole('menuitemradio', { name: 'Everyone' })).toHaveAttribute('aria-checked', 'true');
+    expect(within(receiver).getByRole('menuitemradio', { name: 'engine' })).toHaveAttribute('aria-checked', 'false');
+    expect(screen.getByRole('menuitemcheckbox', { name: 'Include closed' })).toHaveAttribute('aria-checked', 'false');
+    await user.click(within(receiver).getByRole('menuitemradio', { name: 'engine' }));
+    expect(onPick).toHaveBeenCalledWith('engine');
+
+    button.focus();
+    await user.keyboard('{Enter}');
+    await user.click(await screen.findByRole('menuitemcheckbox', { name: 'Include closed' }));
+    expect(onChoose).toHaveBeenCalledWith('closed');
+  });
+});
+
+describe('the list pane, named', () => {
+  /** FRAME1d: the list is a landmark named for the view, so a reader, and a test, finds it by its name. */
+  it('is a region of the window named by its list\'s name, open or as a strip', () => {
+    const { unmount } = pane(OPEN);
+    expect(screen.getByRole('complementary', { name: 'Sessions' })).toBeInTheDocument();
+    unmount();
+    pane(CLOSED);
+    expect(screen.getByRole('complementary', { name: 'Sessions' })).toBeInTheDocument();
+  });
 });

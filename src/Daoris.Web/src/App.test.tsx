@@ -90,8 +90,9 @@ describe('the shell in a browser, over two workspaces', () => {
   });
   afterEach(() => {
     vi.unstubAllGlobals();
-    // A menu opens Settings at a domain, and the domain is remembered per viewer (D75).
+    // A menu opens Settings at a domain, and the domain is remembered per viewer (D75); a door chooses Quests' item.
     window.localStorage.removeItem('daoris.settings');
+    window.localStorage.removeItem('daoris.list.quests.chosen');
   });
 
   /**
@@ -289,8 +290,9 @@ describe('the shell in a browser, over two workspaces', () => {
       expect(screen.queryByRole('menuitem', { name: /Sync now/ })).toBeNull();
       await user.keyboard('{Enter}');
 
-      const drawer = await screen.findByRole('dialog');
-      expect(within(drawer).getByRole('region', { name: 'Conflicts' })).toBeInTheDocument();
+      // Its page, in Quests' main area (FRAME1d): a record is the main area, never a drawer.
+      await screen.findByRole('heading', { level: 1, name: 'Lost the race' });
+      expect(within(screen.getByRole('main')).getByRole('region', { name: 'Conflicts' })).toBeInTheDocument();
     } finally {
       SYNC = { workspace: 'default', wired: false, ahead: 0, behind: [], conflicts: [] };
       QUESTS = [];
@@ -379,6 +381,32 @@ describe('the views, in a browser', () => {
     expect(document.querySelector('[data-region="list"]')).toBeNull();
   });
 
+  /** FRAME1d (D118 §4): Quests is the first view a browser draws with its list, beside its main area. */
+  it("keeps Quests' list and its main area, with the list's toggle alone on its strip", async () => {
+    shell();
+    await userEvent.click(within(await screen.findByRole('navigation', { name: 'Views' })).getByRole('button', { name: 'Quests' }));
+
+    expect(await screen.findByRole('complementary', { name: 'Quests' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'show or hide the quest list (Ctrl+B)' })).toBeInTheDocument();
+    expect(within(screen.getByRole('main')).getByText('Choose a quest or an ask')).toBeInTheDocument();
+    expect(screen.queryByRole('complementary', { name: 'right side bar' })).toBeNull();
+    expect(screen.queryByRole('button', { name: /show or hide the panel/ })).toBeNull();
+  });
+
+  /** FRAME1e (D118 §4): Repositories is a browser's list too, and it makes nothing there, since adding is a shell's. */
+  it("keeps Repositories' list and its main area, and offers a browser nothing to add or import", async () => {
+    shell();
+    await userEvent.click(within(await screen.findByRole('navigation', { name: 'Views' })).getByRole('button', { name: 'Repositories' }));
+
+    const list = await screen.findByRole('complementary', { name: 'Repositories' });
+    expect(await within(list).findByRole('heading', { name: 'Adopted (2)' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'show or hide the repository list (Ctrl+B)' })).toBeInTheDocument();
+    expect(within(screen.getByRole('main')).getByText('Choose a repository')).toBeInTheDocument();
+    // Adding and importing touch machine paths (D48 §7): the list's ＋ and its ⋯ are absent, never disabled.
+    expect(within(list).queryByRole('button', { name: 'Add repository' })).toBeNull();
+    expect(within(list).queryByRole('button', { name: 'More actions' })).toBeNull();
+  });
+
   it('falls back to Overview when the browser remembers a view this deployment does not have', async () => {
     window.localStorage.setItem('daoris.view', 'sessions');
     shell();
@@ -411,8 +439,8 @@ describe('the views, in a browser', () => {
 
 /**
  * D118 §3i: every door into a view names the item it opens, through the application's one opener, and the
- * view's list remembers it as its chosen item (§3f) — a quest's, an ask's, a domain's. Until Quests has its
- * list and main area (FRAME1d) the record still opens in its drawer, as each door asks.
+ * view's list remembers it as its chosen item (§3f) — a quest's, an ask's, a domain's. Since FRAME1d Quests
+ * shows its chosen item in its main area, so a quest's record and an ask's open there, never in a drawer.
  */
 describe('every door names its item', () => {
   const QUEST = {
@@ -436,8 +464,12 @@ describe('every door names its item', () => {
     shell();
     await userEvent.click(await screen.findByRole('button', { name: /Read the media field names from config/ }));
 
-    expect(await screen.findByRole('dialog', { name: 'Read the media field names from config' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { level: 1, name: 'Read the media field names from config' })).toBeInTheDocument();
+    expect(screen.queryByRole('dialog')).toBeNull();
     expect(window.localStorage.getItem('daoris.list.quests.chosen')).toBe('5e7a11');
+    // Chosen in the list beside it, which a browser keeps (D118 §4).
+    const list = screen.getByRole('complementary', { name: 'Quests' });
+    expect(within(list).getByRole('button', { name: /Read the media field names from config/ })).toHaveAttribute('aria-current', 'true');
   });
 
   it("What needs you's ask row opens the ask, chosen as an ask", async () => {
@@ -449,7 +481,8 @@ describe('every door names its item', () => {
     shell();
     await userEvent.click(await screen.findByRole('button', { name: /Cap the hydration per frame\./ }));
 
-    expect(await screen.findByRole('dialog', { name: 'Cap the hydration per frame.' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { level: 1, name: 'Cap the hydration per frame.' })).toBeInTheDocument();
+    expect(within(screen.getByRole('main')).getByRole('button', { name: 'Publish to engine' })).toBeInTheDocument();
     expect(window.localStorage.getItem('daoris.list.quests.chosen')).toBe('ask:7c1e9a04b2d5');
   });
 
@@ -465,8 +498,41 @@ describe('every door names its item', () => {
     await user.keyboard('{Enter}');
     await user.keyboard('{Enter}');
 
-    expect(await screen.findByRole('dialog', { name: 'Read the media field names from config' })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { level: 1, name: 'Read the media field names from config' })).toBeInTheDocument();
     expect(window.localStorage.getItem('daoris.list.quests.chosen')).toBe('5e7a11');
+  });
+
+  /**
+   * FRAME1e: a repository's page has a door to its code map, one level into the Map (MAP3a), and the list remembers the
+   * repository. The Map's own place opens the workspace, never a code map a door left there.
+   */
+  it("a repository's page opens its code map on the Map, which its own place leaves for the workspace", async () => {
+    fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.startsWith('/api/code-map/')) {
+        return Response.json({
+          repository: 'engine', file: 'docs/code-map.json', problem: null,
+          modules: [{ id: 'renderer', path: 'src/renderer', summary: 'draws frames' }], dependencies: [],
+        });
+      }
+      if (url.startsWith('/api/convergence')) return Response.json([]);
+      return respond(url);
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    shell();
+    const views = await screen.findByRole('navigation', { name: 'Views' });
+    await userEvent.click(within(views).getByRole('button', { name: 'Repositories' }));
+    const list = await screen.findByRole('complementary', { name: 'Repositories' });
+    await userEvent.click(within(await within(list).findByRole('listitem', { name: 'engine' })).getByRole('button'));
+    expect(window.localStorage.getItem('daoris.list.projects.chosen')).toBe('engine');
+
+    await userEvent.click(await within(screen.getByRole('main')).findByRole('button', { name: 'Open code map' }));
+    expect(await screen.findByRole('heading', { name: 'engine: code map' })).toBeInTheDocument();
+
+    await userEvent.click(within(views).getByRole('button', { name: 'Overview' }));
+    await userEvent.click(within(views).getByRole('button', { name: 'Map' }));
+    expect(await screen.findByRole('heading', { name: 'Map' })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'engine: code map' })).toBeNull();
   });
 
   it("the status bar's tier opens Settings at Daoris's own AI, chosen in its list", async () => {
@@ -494,6 +560,8 @@ describe('the attention band', () => {
     vi.unstubAllGlobals();
     QUESTS = [];
     SESSIONS = [];
+    // A door chooses Quests' item, which is remembered per viewer (D118 §3f).
+    window.localStorage.removeItem('daoris.list.quests.chosen');
   });
 
   it('is absent entirely when nothing is waiting — an always-there all-clear is not read', async () => {
@@ -551,10 +619,10 @@ describe('the attention band', () => {
 
   /**
    * 🔴 UX5 U26: an outstanding row went to Quests and opened nothing, so the person pressed a quest
-   * and had to find it again in the list. Platform language §5: *outstanding rows open the quest
-   * drawer*, as the band's quest rows already did.
+   * and had to find it again in the list. Platform language §5: *outstanding rows open the quest*,
+   * as the band's quest rows already did — on its page in Quests' main area since FRAME1d.
    */
-  it('opens an outstanding quest in its own drawer, not only its view', async () => {
+  it('opens an outstanding quest on its own page, not only its view', async () => {
     QUESTS = [{
       id: '5e7a11', from: 'game', to: 'engine', title: 'Read the media field names from config',
       body: 'the names are hard-coded.', status: 'Open',
@@ -565,13 +633,13 @@ describe('the attention band', () => {
     // Its receiver is registered, so the band does not list it: this button is the outstanding row.
     await userEvent.click(await screen.findByRole('button', { name: /Read the media field names from config/ }));
 
-    const drawer = await screen.findByRole('dialog', { name: 'Read the media field names from config' });
-    expect(within(drawer).getByText('#5e7a11')).toBeInTheDocument();
+    await screen.findByRole('heading', { level: 1, name: 'Read the media field names from config' });
+    expect(within(screen.getByRole('main')).getByText('#5e7a11')).toBeInTheDocument();
   });
 
   /**
    * A door opens something, or it is not a door (platform language §4). A browser has no Sessions, so
-   * a parked row is text there; a quest nobody can take opens its own drawer, which a browser has.
+   * a parked row is text there; a quest nobody can take opens its own page, which a browser has.
    */
   it('makes a row a door only where its destination exists', async () => {
     SESSIONS = [{
@@ -591,8 +659,8 @@ describe('the attention band', () => {
     expect(within(band).getByText('two ways forward.')).toBeInTheDocument();
 
     await userEvent.click(within(band).getByRole('button', { name: /Expose a streaming budget/ }));
-    const drawer = await screen.findByRole('dialog', { name: 'Expose a streaming budget' });
-    expect(within(drawer).getByText('#7a82cc')).toBeInTheDocument();
+    await screen.findByRole('heading', { level: 1, name: 'Expose a streaming budget' });
+    expect(within(screen.getByRole('main')).getByText('#7a82cc')).toBeInTheDocument();
   });
 
   /**
@@ -624,8 +692,8 @@ describe('the attention band', () => {
       expect(screen.queryByText('parked at a checkpoint')).toBeNull();
 
       await userEvent.click(screen.getByRole('button', { name: /Cap the hydration per frame\./ }));
-      const record = await screen.findByRole('dialog', { name: 'Cap the hydration per frame.' });
-      expect(within(record).getByRole('button', { name: 'Publish to engine' })).toBeInTheDocument();
+      await screen.findByRole('heading', { level: 1, name: 'Cap the hydration per frame.' });
+      expect(within(screen.getByRole('main')).getByRole('button', { name: 'Publish to engine' })).toBeInTheDocument();
     } finally {
       ASKS = [];
     }

@@ -57,5 +57,7 @@
   "asks.tier.intake": "由受理会话读取后发布",
   "asks.tierShort.intake": "由受理会话",
   "asks.record.intake": "受理会话",
-  "asks.record.tierIntakeUnpublished": "按声明判断；受理会话已读过，尚未发布"
+  "asks.record.tierIntakeUnpublished": "按声明判断；受理会话已读过，尚未发布",
+  "asks.gone.headline": "此需求已不在这里",
+  "asks.gone.body": "它已被删除，或者属于本窗口没有显示的工作区。请在列表中另选一个。"
 }

@@ -59,6 +59,9 @@ const REFUSED_ROWS: { name: string; documents?: unknown; raw?: string; harness?:
   { name: "the repository's root", documents: { decisions: './' }, says: /documents\.decisions is the repository's root/ },
   { name: 'inside the doctrine target', documents: { glossary: '.claude/knowledge/glossary.md' }, says: /documents\.glossary '\.claude\/knowledge\/glossary\.md' sits inside \.claude, where daoris writes the on-demand tiers/ },
   { name: 'inside the mirror root', harness: 'agents', documents: { fixes: '.claude/skills/fixes.md' }, says: /sits inside \.claude\/skills, where daoris writes the mirror for Claude Code/ },
+  // DOC3a: a path is judged where it lands, not as spelled; the service's reader (DOC5) refuses both.
+  { name: 'the root, reached by climbing back', documents: { decisions: 'docs/..' }, says: /documents\.decisions is the repository's root/ },
+  { name: 'inside the target, reached by climbing back', documents: { glossary: 'x/../.claude/knowledge/g.md' }, says: /documents\.glossary 'x\/\.\.\/\.claude\/knowledge\/g\.md' sits inside \.claude, where daoris writes the on-demand tiers/ },
   {
     name: 'a role declared twice, which JSON would keep the last of silently',
     raw: '{ "source": "s", "packs": [], "documents": { "decisions": "a.md", "backlog": "b.md", "decisions": "c.md" } }',

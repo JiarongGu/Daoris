@@ -4,9 +4,10 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
-  GIT_SETTINGS, TOOLS, TOOLS_FILE, TOOLS_FOLDER, TOOL_PACKAGE, TOOL_RECORD, commandTool, gitKeyProblem,
-  isWholePath, locationProblem, readTools, resolveTool, useFile, useSystem,
+  GIT_SETTINGS, TOOLS, TOOLS_FILE, TOOLS_FOLDER, TOOL_PACKAGE, TOOL_RECORD, addLocation, gitKeyProblem,
+  isWholePath, locationProblem, readTools, removeLocation, resolveTool, useFile, useManaged, useSystem,
 } from '../src/tools.ts';
+import { commandTool } from '../src/toolinstall.ts';
 import { driverRows as csharpRows } from './_csharp.ts';
 import { captureError, makeFixture } from './_fixture.ts';
 
@@ -325,7 +326,7 @@ test('a tool resolves as the driver resolves it: the way set decides, and never 
   }
 });
 
-test('a version nobody downloaded refuses, names the way back to PATH, and never guesses', () => {
+test('a version nobody downloaded refuses, names the download and the way back to PATH, and never guesses', () => {
   const { fx, home: at } = home('tools-not-downloaded');
   writeFile(at, '{"tools":{"git":{"use":"managed","version":"2.51.0"}}}');
 
@@ -333,7 +334,8 @@ test('a version nobody downloaded refuses, names the way back to PATH, and never
   assert.deepEqual(resolution, {
     tool: 'git', way: 'managed', version: '2.51.0', file: null, refused: true,
     problem: `Git is managed at 2.51.0, and that version is not downloaded (${join(at, TOOLS_FOLDER, 'git', '2.51.0')}) `
-      + '— it never falls back to PATH. `daoris tool use git system` runs the one on PATH',
+      + '— it never falls back to PATH. `daoris tool use git managed 2.51.0` downloads it, and `daoris tool use git system` '
+      + 'runs the one on PATH',
   });
   fx.cleanup();
 });
@@ -419,6 +421,93 @@ test('a write that cannot be made writes nothing', () => {
   fx.cleanup();
 });
 
+// ——— Managed, written (TOOLS4, rule 6): only over a version that is downloaded. The twin is
+// `ToolsTests.Managed_is_written_as_the_cli_writes_it`.
+
+/** [case, the file's text before (null: none; FILE: a whole path), the version downloaded (null: none), the version asked, the entry after, a fragment of the refusal]. */
+const USE_MANAGED_ROWS: [string, string | null, string | null, string, string | null, string | null][] = [
+  ['a version downloaded', null, '2.62.0', '2.62.0', '{"use":"managed","version":"2.62.0"}', null],
+  ['a version not downloaded', null, null, '2.62.0', null, 'is not downloaded'],
+  ['another version downloaded', null, '2.61.0', '2.62.0', null, 'is not downloaded'],
+  ['a version that is not exact', null, null, 'latest', null, '`latest` is not an exact version'],
+  ['a version that climbs out', null, null, '../2.62.0', null, '`../2.62.0` is not an exact version'],
+  ['over a file it names', '{"tools":{"gh":{"use":"file","file":"FILE","keep":"this"}}}', '2.62.0', '2.62.0', '{"use":"managed","keep":"this","version":"2.62.0"}', null],
+  ['over a file that does not read', 'not json', '2.62.0', '2.62.0', null, 'is not readable JSON'],
+];
+
+/** A downloaded version as the resolution finds it: its record, naming an executable that is there. */
+function downloaded(at: string, tool: string, version: string): void {
+  const folder = join(at, TOOLS_FOLDER, tool, version);
+  mkdirSync(join(folder, TOOL_PACKAGE, 'bin'), { recursive: true });
+  writeFileSync(join(folder, TOOL_PACKAGE, 'bin', `${tool}.exe`), tool);
+  writeFileSync(join(folder, TOOL_RECORD), JSON.stringify({ exe: `bin/${tool}.exe` }));
+}
+
+test('managed is written only over a version that is downloaded, as the driver writes it', () => {
+  for (const [index, [name, before, has, version, after, refusal]] of USE_MANAGED_ROWS.entries()) {
+    const { fx, home: at, whole } = home(`tools-use-managed-${index}`);
+    if (before !== null) writeFile(at, before.replace('FILE', JSON.stringify(whole).slice(1, -1)));
+    if (has !== null) downloaded(at, 'gh', has);
+    const was = existsSync(join(at, TOOLS_FILE)) ? readFileSync(join(at, TOOLS_FILE), 'utf8') : null;
+
+    if (refusal === null) {
+      useManaged(at, 'gh', version);
+      assert.deepEqual(JSON.parse(readFileSync(join(at, TOOLS_FILE), 'utf8')).tools.gh, JSON.parse(after!), name);
+      assert.equal(resolveTool(at, 'gh', { PATH: '' }).file, join(at, TOOLS_FOLDER, 'gh', version, TOOL_PACKAGE, 'bin', 'gh.exe'), name);
+    } else {
+      const error = captureError(() => useManaged(at, 'gh', version));
+      assert.ok(error.message.includes(refusal), `${name}: ${error.message}`);
+      assert.equal(existsSync(join(at, TOOLS_FILE)) ? readFileSync(join(at, TOOLS_FILE), 'utf8') : null, was, `${name}: nothing written`);
+    }
+    fx.cleanup();
+  }
+});
+
+// ——— Locations, written (rule 5's write side, TOOLS4). The twin is `ToolsTests.A_location_is_written_as_the_cli_writes_it`.
+
+/** [case, the file's text before (null: none), add or remove, the address, the locations after (JSON), whether it changed, a fragment of the refusal]. */
+const LOCATION_WRITES: [string, string | null, string, string, string | null, boolean, string | null][] = [
+  ['add to no file', null, 'add', 'https://a.example/r.json', '["https://a.example/r.json"]', true, null],
+  ['add after another', '{"locations":["https://a.example/r.json"]}', 'add', 'http://localhost:8080/r.json', '["https://a.example/r.json","http://localhost:8080/r.json"]', true, null],
+  ['add one already listed', '{"locations":["https://a.example/r.json"]}', 'add', 'https://a.example/r.json', '["https://a.example/r.json"]', false, null],
+  ['add over http to another host', null, 'add', 'http://a.example/r.json', null, false, 'is not a resource location'],
+  ['add over locations that are not a list', '{"locations":"https://a.example/r.json"}', 'add', 'https://b.example/r.json', null, false, '`locations` is not a list'],
+  ['add over a file that does not read', 'not json', 'add', 'https://a.example/r.json', null, false, 'is not readable JSON'],
+  ['remove one listed', '{"locations":["https://a.example/r.json","https://b.example/r.json"]}', 'remove', 'https://a.example/r.json', '["https://b.example/r.json"]', true, null],
+  ['remove one not listed', '{"locations":["https://a.example/r.json"]}', 'remove', 'https://b.example/r.json', '["https://a.example/r.json"]', false, null],
+  ['remove beside one that is not an address', '{"locations":["ftp://kept.example/r.json","https://a.example/r.json"]}', 'remove', 'https://a.example/r.json', '["ftp://kept.example/r.json"]', true, null],
+  ['remove from no file', null, 'remove', 'https://a.example/r.json', null, false, null],
+];
+
+test('a location is added or removed as the driver writes it, and a refusal writes nothing', () => {
+  for (const [index, [name, before, verb, address, after, changed, refusal]] of LOCATION_WRITES.entries()) {
+    const { fx, home: at } = home(`tools-locations-write-${index}`);
+    if (before !== null) writeFile(at, before);
+    const write = () => (verb === 'add' ? addLocation(at, address) : removeLocation(at, address));
+
+    if (refusal === null) {
+      assert.equal(write(), changed, name);
+      const file = join(at, TOOLS_FILE);
+      assert.deepEqual(existsSync(file) ? JSON.parse(readFileSync(file, 'utf8')).locations : null, after === null ? null : JSON.parse(after), name);
+    } else {
+      const error = captureError(write);
+      assert.ok(error.message.includes(refusal), `${name}: ${error.message}`);
+      assert.equal(existsSync(join(at, TOOLS_FILE)) ? readFileSync(join(at, TOOLS_FILE), 'utf8') : null, before, `${name}: nothing written`);
+    }
+    fx.cleanup();
+  }
+});
+
+test('a location written keeps every key the writer has no field for', () => {
+  const { fx, home: at } = home('tools-locations-keep');
+  writeFile(at, '{"note":"mine","tools":{"git":{"use":"system"}},"git":{"core.sshCommand":"ssh"}}');
+  addLocation(at, 'https://a.example/r.json');
+  assert.deepEqual(JSON.parse(readFileSync(join(at, TOOLS_FILE), 'utf8')), {
+    note: 'mine', tools: { git: { use: 'system' } }, git: { 'core.sshCommand': 'ssh' }, locations: ['https://a.example/r.json'],
+  });
+  fx.cleanup();
+});
+
 // ——— The twin, held: the driver's tables are these tables, row for row and in this order.
 
 const DRIVER_TABLES = join(
@@ -436,6 +525,8 @@ test('the driver’s tables are these tables, row for row and in this order', ()
   assert.deepEqual(driverRows(source, 'A_location_is_judged_as_the_cli_judges_it'), LOCATION_ROWS);
   assert.deepEqual(driverRows(source, 'A_tool_resolves_as_the_cli_resolves_it'), RESOLVE_ROWS);
   assert.deepEqual(driverRows(source, 'A_write_that_cannot_be_made_writes_nothing'), REFUSED_WRITES);
+  assert.deepEqual(driverRows(source, 'Managed_is_written_as_the_cli_writes_it'), USE_MANAGED_ROWS);
+  assert.deepEqual(driverRows(source, 'A_location_is_written_as_the_cli_writes_it'), LOCATION_WRITES);
 
   // The git rows are member data, one `{ "case", …` per row.
   const git = source.slice(source.indexOf('GitRows =>'), source.indexOf('[MemberData(nameof(GitRows))]'));
@@ -444,13 +535,15 @@ test('the driver’s tables are these tables, row for row and in this order', ()
 
 // ——— The verb: `daoris tool list|path|use`.
 
+/** The verb, given no way to reach a network: these verbs need none. */
 function run(argv: string[], at: string | null, path = ''): { code: number; out: string[] } {
   const out: string[] = [];
   const env: Record<string, string | undefined> = { ...process.env, PATH: path };
   if (at === null) delete env.DAORIS_HOME;
   else env.DAORIS_HOME = at;
-  const code = commandTool({ root: process.cwd(), argv, write: (line) => out.push(line), packageRoot: process.cwd() }, env);
-  return { code, out };
+  const code = commandTool({ root: process.cwd(), argv, write: (line) => out.push(line), packageRoot: process.cwd() }, null, env);
+  assert.equal(typeof code, 'number', `${argv.join(' ')} answers at once: it reaches no network`);
+  return { code: code as number, out };
 }
 
 test('tool list on a home with no file says every tool is the system’s, and writes nothing', () => {
@@ -534,7 +627,7 @@ test('a relative file is named from where the command runs', () => {
   const code = commandTool({
     root: fx.root, argv: ['use', 'git', 'file', join('bin', process.platform === 'win32' ? 'git.exe' : 'git')],
     write: (line) => out.push(line), packageRoot: fx.root,
-  }, { ...process.env, DAORIS_HOME: at });
+  }, null, { ...process.env, DAORIS_HOME: at });
   assert.equal(code, 0, out.join('\n'));
   assert.equal(readTools(at).entries.git!.file, whole);
   fx.cleanup();
@@ -543,11 +636,10 @@ test('a relative file is named from where the command runs', () => {
 test('the verb refuses what it does not set, with no file written', () => {
   const { fx, home: at } = home('tools-verb-refusals');
   const rows: [string[], RegExp][] = [
-    [['frobnicate'], /^unknown tool verb 'frobnicate' — one of: list, path, use$/],
+    [['frobnicate'], /^unknown tool verb 'frobnicate' — one of: list, path, use, download, update, delete, locations, look$/],
     [['path'], /^`tool path` needs a tool — one of: git, node, pwsh, gh, az$/],
     [['path', 'bun'], /^`bun` is not a tool this build runs — one of: git, node, pwsh, gh, az/],
-    [['use', 'git'], /^`tool use git` takes `system` or `file <path>`$/],
-    [['use', 'git', 'managed', '2.51.0'], /^`tool use git managed` is not offered yet: a managed version is downloaded from a list of versions, and this build has none\. `system` and `file <path>` are the ways it sets$/],
+    [['use', 'git'], /^`tool use git` takes `system`, `managed \[<version>\]` or `file <path>`$/],
     [['use', 'git', 'file'], /^`tool use git file` needs a path — the executable to run$/],
   ];
   for (const [argv, said] of rows) {

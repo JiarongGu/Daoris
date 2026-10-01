@@ -18,12 +18,15 @@
 // `agent update`, which asks the channel for its newest release and then pins it, USE1a). That is the
 // same shape of conversation — a person asked for it, and no gate runs it — so it lives here rather
 // than giving the toolchain a socket of its own; the dispatcher hands the fetcher in.
+//
+// And since TOOLS4, a tool's maker and a resource location, for `daoris tool download|use … managed|update|look`
+// (D121 §3.6, §3.7): the same fetcher, its hops held to the address rule the dispatcher names.
 
 import { createWriteStream } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { once } from 'node:events';
 import { finished } from 'node:stream/promises';
-import { DaorisError } from './errors.ts';
+import { DaorisError, RefusalError } from './errors.ts';
 import type { Fetcher } from './channels.ts';
 
 /** Where the service is, and the key it wants — supplied by the environment, never committed. */
@@ -88,19 +91,40 @@ export function refusal(status: number, json: Record<string, unknown> | null): s
 }
 
 /**
- * A vendor's release channel, over HTTPS (AGT2b). It fetches and nothing else: every judgement about
- * what arrived — the signature, the hashes, the version — is `channels.ts`'s, where it is tested
+ * How a fetcher may follow a host (TOOLS4, D121 §3.6). Absent, it follows redirects as `fetch` does, as a maker's
+ * release channel always has been.
+ */
+export interface FetchRules {
+  /**
+   * Whether an address may be fetched from: every hop is held to it — the first address and each redirect, which
+   * are then followed here, one at a time, rather than by `fetch`. A tool's download and a resource location are
+   * held to `isAddress`: https://, or http:// to this machine.
+   */
+  hop?: (url: string) => boolean;
+  /** How many redirects one fetch follows before it is refused. */
+  redirects?: number;
+  /** How long a small read (`bytes`) may wait, in milliseconds; a download (`save`) waits for the person's stop. */
+  bound?: number;
+}
+
+/** What `fetch` is to this module: handed in by a test, which answers as a host without opening a socket. */
+export type Get = (url: string, init: RequestInit) => Promise<Response>;
+
+/**
+ * A vendor's release channel, over HTTPS (AGT2b), and since TOOLS4 a tool's download and a resource location,
+ * held to the rules the caller names. It fetches and nothing else: every judgement about what arrived — the
+ * signature, the hashes, the version, the list — is `channels.ts`'s or `toolinstall.ts`'s, where it is tested
  * without a network.
  *
  * @remarks
  * A download is streamed to disk and hashed on the way, never held whole: a Claude Code binary is
  * over 200 MB. A 404 answers null, because "that version is not there" is an answer the caller words;
- * anything else that is not a 2xx is refused here with the address and the status.
+ * anything else that is not a 2xx is refused here with the address and the status, as `unreachable`.
  */
-export function releaseFetcher(): Fetcher {
+export function releaseFetcher(rules: FetchRules = {}, request: Get = fetch): Fetcher {
   return {
     async bytes(url) {
-      const response = await get(url);
+      const response = await get(url, rules.bound);
       return response ? Buffer.from(await response.arrayBuffer()) : null;
     },
 
@@ -126,14 +150,38 @@ export function releaseFetcher(): Fetcher {
     },
   };
 
-  async function get(url: string): Promise<Response | null> {
-    const response = await fetch(url, { redirect: 'follow', headers: { 'user-agent': 'daoris' } })
-      .catch((error: Error) => {
-        throw new DaorisError(`could not reach ${new URL(url).host} — ${error.message}. Nothing was installed.`);
+  async function get(url: string, bound?: number): Promise<Response | null> {
+    const { hop, redirects = 10 } = rules;
+    let at = url;
+    for (let hops = 0; ; hops += 1) {
+      if (hop && !hop(at)) {
+        throw new RefusalError('address', hops === 0
+          ? `${at} is not https://, or http:// to this machine — nothing was fetched from it.`
+          : `${url} redirected to ${at}, which is not https://, or http:// to this machine — nothing was fetched from it.`);
+      }
+
+      const response = await request(at, {
+        redirect: hop ? 'manual' : 'follow',
+        headers: { 'user-agent': 'daoris' },
+        ...(bound === undefined ? {} : { signal: AbortSignal.timeout(bound) }),
+      }).catch((error: Error) => {
+        throw new RefusalError('unreachable', error.name === 'TimeoutError'
+          ? `${new URL(at).host} did not answer within ${Math.round(bound! / 1000)} seconds. Nothing was installed.`
+          : `could not reach ${new URL(at).host} — ${error.message}. Nothing was installed.`);
       });
 
-    if (response.status === 404) return null;
-    if (!response.ok) throw new DaorisError(`${url} answered ${response.status} — nothing was installed.`);
-    return response;
+      const location = response.headers.get('location');
+      if (hop && response.status >= 300 && response.status < 400 && location) {
+        if (hops >= redirects) {
+          throw new RefusalError('unreachable', `${url} redirected more than ${redirects} times — nothing was fetched from it.`);
+        }
+        at = new URL(location, at).href;
+        continue;
+      }
+
+      if (response.status === 404) return null;
+      if (!response.ok) throw new RefusalError('unreachable', `${at} answered ${response.status} — nothing was installed.`);
+      return response;
+    }
   }
 }

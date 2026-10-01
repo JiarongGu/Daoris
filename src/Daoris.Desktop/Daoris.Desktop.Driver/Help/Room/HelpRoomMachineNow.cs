@@ -22,7 +22,13 @@ internal sealed class HelpRoomMachineNow : IHelpRoomSection
             {
                 Problem = entry.Problem,
                 // Its kind only: the folder it came from is a path on this machine, which the room never names.
-                Source = PluginSource.Read(entry.Folder).Source is { } source ? (source.Offer is not null ? "offer" : "folder") : null,
+                Source = PluginSource.Read(entry.Folder).Source switch
+                {
+                    null => null,
+                    { Package: not null } => "package",
+                    { Offer: not null } => "offer",
+                    _ => "folder",
+                },
             })],
         Landed = [.. sources.Landed.Select(entry => new HelpLanded(entry.Repository, entry.Branch, entry.Session, entry.Pushed, entry.PullRequest))],
         Parked = sources.Parked,
@@ -79,6 +85,8 @@ internal sealed class HelpRoomMachineNow : IHelpRoomSection
         {
             "offer" => ", installed from this install's offer",
             "folder" => ", added from a folder",
+            // PLUGDIST1a: an update refuses it, and says a newer package takes its place.
+            "package" => ", installed from a package",
             _ => ", no record of where it came from",
         };
         if (!plugin.Enabled) return $"`{plugin.Id}` (off{from})";
@@ -98,7 +106,7 @@ public sealed record HelpPlugin(string Id, bool Enabled, IReadOnlyList<string> P
     /// <summary>Why it contributes nothing, in the catalogue's words; null when sound.</summary>
     public string? Problem { get; init; }
 
-    /// <summary>Where it came from (PLUG9 c): `folder`, `offer`, or null for none recorded — never the path itself.</summary>
+    /// <summary>Where it came from (PLUG9 c, PLUGDIST1a): `folder`, `offer`, `package`, or null for none recorded — never the path itself.</summary>
     public string? Source { get; init; }
 }
 

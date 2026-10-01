@@ -56,6 +56,47 @@ public sealed class McpToolsTests : IAsyncLifetime
         if (Directory.Exists(_root)) Directory.Delete(_root, recursive: true);
     }
 
+    private sealed class Entries(params KnowledgeEntry[] entries) : IKnowledgeSource
+    {
+        public string Name => "fixture";
+
+        public Task<IReadOnlyList<KnowledgeEntry>> ReadAsync(CancellationToken ct = default) =>
+            Task.FromResult<IReadOnlyList<KnowledgeEntry>>(entries);
+    }
+
+    /// <summary>
+    /// SEM3 (D123): an entry longer than the window becomes several vectors, and the agent's door says how
+    /// many did and at what window — a reader of the index sees it rather than assumes it.
+    /// </summary>
+    [Fact]
+    public async Task A_refresh_says_how_many_entries_were_split_and_at_what_window()
+    {
+        var store = new InMemoryKnowledgeStore();
+        var embedder = new DimensionEmbedder(["window"]);
+        var vectors = new Lyntai.Memory.InMemoryVectorStore();
+        var longOne = new KnowledgeEntry(
+            "Owner", EntryKind.Decision, Provenance.Local, "D1", string.Concat(Enumerable.Repeat("A sentence of the body. ", 300)),
+            "docs/DECISIONS.md", "D1");
+        var shortOne = new KnowledgeEntry(
+            "Owner", EntryKind.Fix, Provenance.Local, "F1", "Short.", "docs/FIX-LOG.md", "F1");
+        var service = new KnowledgeService(
+            store,
+            new HybridKnowledgeSearch(new LexicalKnowledgeSearch(store), new SemanticKnowledgeSearch(store, embedder, vectors)),
+            new Entries(longOne, shortOne), DisclosurePolicy.LocalOnly, embedder, vectors);
+        var tools = new KnowledgeTools(
+            service, _quests, new QuestExchange(service, _quests, files: _files),
+            new AmbientWorkspace(Path.Combine(_root, "family", "Asker")));
+
+        var said = await tools.RefreshAsync();
+
+        var pieces = EntryPieces.Of(longOne, EntryPieces.DefaultWindow).Count + 1;
+        Assert.Contains(
+            $"Embedded 2 entries as {pieces} vectors of at most 2000 characters ({ServiceOptions.WindowVariable}): "
+            + "1 longer than that was split, each part a vector of its own.",
+            said);
+        Assert.Contains("Lexical and semantic recall are both active.", said);
+    }
+
     [Fact]
     public async Task Publishing_carries_links_a_file_by_its_path_and_a_chain()
     {

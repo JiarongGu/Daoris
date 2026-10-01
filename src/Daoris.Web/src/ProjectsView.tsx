@@ -1,28 +1,49 @@
-import { type ReactNode, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { canBeAsked, type Registration } from './api';
+import { sentence } from './format';
 import { AddProjectDrawer, ImportFolderDrawer, ManageProjectDrawer } from './ProjectManage';
-import { DriverChoices } from './projects/DriverChoices';
-import { ago, figure } from './format';
+import { ProjectList, type RepositoryRowFacts } from './projects/ProjectList';
+import { type Driving, ProjectPage, ProjectsMainNotice } from './projects/ProjectPage';
 import { useRegistry, useRepositories } from './queries';
 import { useScope } from './scope';
 import { useDriver, useHarnesses, useLines, useSetDrivable, useSetHold, useSetTrees, useSweepPlan } from './shell';
 import { doorOf } from './tools';
-import {
-  Button, Card, Chip, EmptyState, failure, Icon, Inline, type Notify, PageHeader, Prose, SkeletonRows, Tip,
-  useErrorNotify, WhyGlyph,
-} from './ui';
+import { failure, type Notify, useErrorNotify } from './ui';
+import { ListMore } from './work/ListPane';
+import type { ViewLayout } from './work/ViewFrame';
+
+const list = <T,>(value: unknown): T[] => (Array.isArray(value) ? value as T[] : []);
 
 /**
- * The setup half of the platform (D38): who is in the family, what each repository owns and accepts —
- * as chips a person can scan — and, just as deliberately, who has not adopted yet. Membership is a
- * repository's own act (D32): Daoris never writes into a sibling, so nothing joins by being seen; the
- * join steps are proposed as text, never a button (D31's shape).
+ * **The Repositories view** (D38; FRAME1e, D118 §2): what it hands the frame (D118 §5), its list pane and its main
+ * area. The list holds the adopted repositories, then *Registered, not adopted*; its `＋` adds a repository and its ⋯
+ * imports a folder. The main area holds the chosen repository's page, with *Manage* and the door to its code map in its
+ * header. A record is the main area and a form a drawer (§3d): adding, importing and managing stay drawers.
+ *
+ * @remarks
+ * **A hook, because a view hands the frame a value** (`ViewLayout`), as Quests' and Plugins' are: the list and the main
+ * area are drawn in two places the frame decides. The application holds it on every view, and says its errors only
+ * while it is in front. Every query it holds the frame already holds, so holding it everywhere asks nothing more.
+ *
+ * **What it remembers is its list's** (`listPanes.ts`, §3f): the chosen repository, by name, which a door into the view
+ * names through the opener (§3i).
+ *
+ * **Membership is a repository's own act** (D32): Daoris never writes into a sibling, so nothing joins by being seen,
+ * and the join steps are proposed as text, never a button (D31's shape). The management surfaces exist where a shell
+ * does (D48 §7): managing repositories means touching machine paths, and a browser has none.
  */
-export function ProjectsView({
-  notify, addRequested = false, onAddOpened, importRequested = false, onImportOpened,
+export function useProjectsView({
+  active, chosen, onChoose, notify, onOpenCode, addRequested = false, onAddOpened, importRequested = false, onImportOpened,
 }: {
+  /** The view is in front: only then are its errors said. */
+  active: boolean;
+  /** The list's chosen item, a repository's name, which the application remembers (`daoris.list.projects.chosen`). */
+  chosen: string | null;
+  onChoose: (item: string | null) => void;
   notify: Notify;
+  /** Its code map, one level into the Map (MAP3a): the door a repository's page offers. */
+  onOpenCode?: (repository: string) => void;
   /**
    * The Workspace menu's *Add repository…* (D75), an EVENT like Quests' opening draft: consumed once,
    * and cleared by its holder through `onAddOpened`, or the drawer would reopen on every render.
@@ -32,7 +53,7 @@ export function ProjectsView({
   /** And its *Import a folder…* (D77): the same kind of event, for the import drawer. */
   importRequested?: boolean;
   onImportOpened?: () => void;
-}) {
+}): ViewLayout {
   const { t } = useTranslation();
   const registry = useRegistry();
   const { workspace } = useScope();
@@ -51,11 +72,10 @@ export function ProjectsView({
   const sweep = useSweepPlan();
   const unlandedIn = (repository: string) => (Array.isArray(sweep.data?.branches) ? sweep.data.branches : [])
     .filter((branch) => branch.repository === repository && branch.kind === 'unlanded').length;
-  // The driver bridge included: a STATE that fails silently reads as a machine with no driver.
-  useErrorNotify(registry.error ?? repositories.error ?? driver.error, notify);
+  // The driver bridge included: a STATE that fails silently reads as a machine with no driver. Said once, while the
+  // view is in front (D118 §3h).
+  useErrorNotify(active ? registry.error ?? repositories.error ?? driver.error : null, notify);
 
-  // The management surfaces exist where a shell does (D48 §7) — the same gate as every control, and
-  // for the same reason: managing repositories means touching machine paths, and a browser has none.
   const attached = driver.data !== undefined;
   const [adding, setAdding] = useState(false);
   useEffect(() => {
@@ -71,256 +91,118 @@ export function ProjectsView({
   }, [importRequested, attached, onImportOpened]);
   const [managing, setManaging] = useState<Registration | null>(null);
 
-  // Starting and holding a CONVERSATION moved to the Work frame (design §3, D55): one home for the
-  // stream, and starting a session belongs where its result appears. What stays here is the
-  // registry's own business — who is in the family, and this machine's standing driver choices.
-  const adopted = (registry.data ?? []).filter((r) => r.adopted);
-  const outside = (registry.data ?? []).filter((r) => !r.adopted);
+  const rows = registry.data ?? [];
   const indexed = (name: string) => (repositories.data ?? []).find((r) => r.name === name);
-  const named = (names: string[], repository: string) =>
-    names.some((name) => name.toLowerCase() === repository.toLowerCase());
+  const named = (names: string[] | undefined, repository: string) =>
+    (names ?? []).some((name) => name.toLowerCase() === repository.toLowerCase());
   const onDriverError = failure(notify);
+  // Which door this machine's starts ride (INT3c): an unadopted repository is carried by the protocol door only
+  // (D70), so on a direct one its page says a quest there will sit. Unknown says nothing.
+  const door = doorOf(roster.data?.adapter, list(roster.data?.harnesses));
 
-  // Which door this machine's starts ride (INT3c): an unadopted repository is carried by the protocol
-  // door only (D70), so on a direct one its row says a quest there will sit. Unknown says nothing.
-  const door = doorOf(
-    roster.data?.adapter,
-    Array.isArray(roster.data?.harnesses) ? roster.data.harnesses : []);
+  /** Its standing on this machine: the driver's choices and whether a checkout is here, where a shell answers. */
+  const standing = (registration: Registration) => driver.data && {
+    drivable: named(driver.data.drivable, registration.repository),
+    held: named(driver.data.holds, registration.repository),
+    // Only a local host names a checkout, and only to its own page (D47 §4).
+    here: Boolean(registration.root),
+  };
+  const facts = (registration: Registration): RepositoryRowFacts => ({
+    registration,
+    ...standing(registration),
+    entries: indexed(registration.repository)?.total ?? null,
+  });
 
-  /** This machine's driving row for one repository — the same row wherever it can be driven. */
-  const driving = (repository: string, extra: { note?: string; action?: ReactNode; className?: string }) =>
-    driver.data && (
-      <DriverChoices
-        drivable={named(driver.data.drivable, repository)}
-        held={named(driver.data.holds, repository)}
-        ownTree={named(driver.data.trees ?? [], repository)}
-        onDrive={(next) => setDrivable.mutate({ repository, drivable: next }, { onError: onDriverError })}
-        onHold={(next) => setHold.mutate({ repository, held: next }, { onError: onDriverError })}
-        onTrees={(next) => setTrees.mutate({ repository, ownTree: next }, { onError: onDriverError })}
-        {...extra}
-      />
-    );
+  /**
+   * This machine's driving row for one repository — the same row wherever it can be driven: every adopter, and since
+   * INT3c one not adopted with a root here (D70). One with no root has nowhere to start, and gets none.
+   */
+  const drivingOf = (registration: Registration): Driving | null => {
+    if (!driver.data || (!registration.adopted && !canBeAsked(registration))) return null;
+    const { repository } = registration;
+    return {
+      drivable: named(driver.data.drivable, repository),
+      held: named(driver.data.holds, repository),
+      ownTree: named(driver.data.trees, repository),
+      onDrive: (next) => setDrivable.mutate({ repository, drivable: next }, { onError: onDriverError }),
+      onHold: (next) => setHold.mutate({ repository, held: next }, { onError: onDriverError }),
+      onTrees: (next) => setTrees.mutate({ repository, ownTree: next }, { onError: onDriverError }),
+      note: !registration.adopted && door === 'pipe' ? t('projects.outside.directDoor') : undefined,
+    };
+  };
 
-  return (
-    <section>
-      <PageHeader
-        title={t('projects.title')}
-        description={t('projects.description')}
-        action={attached
-          ? <Button variant="primary" onClick={() => setAdding(true)}>{t('projects.manage.add')}</Button>
-          : undefined}
-      />
-
-      {adding && <AddProjectDrawer onClose={() => setAdding(false)} notify={notify} />}
-      {importing && <ImportFolderDrawer onClose={() => setImporting(false)} notify={notify} />}
-      {managing && (
-        <ManageProjectDrawer project={managing} onClose={() => setManaging(null)} notify={notify} />
-      )}
-
-      {registry.isPending && <SkeletonRows rows={4} />}
-
-      {/* 🔴 The first thing a new installation shows, and it was a header over a blank page: the
-          fixture always holds a repository, so nothing had ever rendered this. It names the circle
-          when the scope is one, because the machine may hold repositories in another. */}
-      {registry.data?.length === 0 && (
-        <EmptyState
-          icon="projects"
-          headline={workspace
-            ? t('projects.empty.headlineIn', { workspace })
-            : t('projects.empty.headline')}
-          body={t(attached ? 'projects.empty.body' : 'projects.empty.bodyBrowser')}
-          action={attached && (
-            <Button onClick={() => setAdding(true)}>
-              <Icon name="plus" size={14} />{t('projects.manage.add')}
-            </Button>
-          )}
+  const shown = chosen ? rows.find((row) => row.repository === chosen) : undefined;
+  const add = { label: t('projects.manage.add'), onAct: () => setAdding(true) };
+  const main = chosen
+    ? shown
+      ? (
+        <ProjectPage
+          key={shown.repository}
+          registration={shown}
+          counts={indexed(shown.repository)}
+          line={lineOf(shown.repository)}
+          unlanded={unlandedIn(shown.repository)}
+          here={attached ? Boolean(shown.root) : undefined}
+          driving={drivingOf(shown)}
+          // Adoption's own acts are an adopter's (INT3c): managing writes its declaration into it.
+          onManage={attached && shown.adopted ? () => setManaging(shown) : undefined}
+          onOpenCode={onOpenCode ? () => onOpenCode(shown.repository) : undefined}
         />
-      )}
+      )
+      : registry.data === undefined && registry.error
+        ? <ProjectsMainNotice state="unanswered" sentence={sentence(registry.error)} />
+        : <ProjectsMainNotice state={registry.data === undefined ? 'loading' : 'gone'} />
+    : <ProjectsMainNotice state="none" action={attached ? add : undefined} />;
 
-      {/* By the main area's own width, never the viewport's (D118 §3b, audit PR10): at 1280 px with the side
-          bar open, two cards made each about 300 px. */}
-      <div className="grid items-start gap-3.5 @4xl/main:grid-cols-2">
-        {adopted.map((project) => {
-          const counts = indexed(project.repository);
-          return (
-            <Card key={project.repository}>
-              <header className="flex items-baseline justify-between gap-4">
-                <span className="inline-flex items-center gap-2 text-body font-semibold">
-                  <Tip content={t('projects.adoptedDot')}>
-                    <span className="inline-block size-2 shrink-0 rounded-full bg-accent" />
-                  </Tip>
-                  {project.repository}
-                </span>
-                <span className="whitespace-nowrap font-mono text-small tabular-nums text-ink-faint">
-                  {/* One sentence for "the index holds nothing of this", whether the repository is
-                      absent from the index or present with a count of zero — the deployed family
-                      had both, and read "0 entries · 0 local · 0 canonical" beside "nothing indexed
-                      yet" beside "—" for the same fact. */}
-                  {counts && counts.total > 0
-                    ? t('projects.entries', {
-                        // `count` picks the plural form; the formatted string is what is shown.
-                        count: counts.total,
-                        total: figure(counts.total),
-                        local: figure(counts.local),
-                        canonical: figure(counts.canonical),
-                      })
-                    : t('projects.nothingIndexed')}
-                </span>
-              </header>
-              {project.summary
-                ? <p className="mt-1.5 text-body text-ink-soft">{project.summary}</p>
-                : (
-                  /* Addressable regardless — adoption gates addressing, declaration does not (D34) —
-                     but an asker deserves to know they would be guessing. */
-                  <p className="mt-2 border-l-[3px] border-warn bg-raised px-3.5 py-2 text-body text-ink-soft">
-                    <Inline text={t('projects.undeclared')} />
-                  </p>
-                )}
-              {/* The labels are a column and the chips wrap in their own, so a second line of chips
-                  lines up under the first. As one flowing line, a wrapped chip fell back under its
-                  label (POLISH4). */}
-              {(project.owns.length > 0 || project.accepts.length > 0 || project.packs.length > 0
-                || counts?.fed || project.workspace || lineOf(project.repository)
-                || unlandedIn(project.repository) > 0) && (
-                <dl className="m-0 mt-2 grid grid-cols-[max-content_1fr] items-baseline gap-x-3 gap-y-2">
-                  {project.owns.length > 0 && (
-                    <Row label={t('projects.owns')}>
-                      {project.owns.map((item) => <Chip key={item}>{item}</Chip>)}
-                    </Row>
-                  )}
-                  {project.accepts.length > 0 && (
-                    <Row label={t('projects.accepts')}>
-                      {project.accepts.map((item) => <Chip key={item} accent>{item}</Chip>)}
-                    </Row>
-                  )}
-                  {project.packs.length > 0 && (
-                    <Row label={t('projects.packs')}>
-                      {project.packs.map((item) => <Chip key={item}>{item}</Chip>)}
-                    </Row>
-                  )}
-                  {counts?.fed && (
-                    /* Where this deployment's copy came from (D48 §6). Shown rather than implied: the
-                       index is a claim about a commit, and a person who cannot see which commit has no
-                       way to tell a current view from one a machine stopped feeding a month ago. */
-                    <Row label={t('projects.fed')}>
-                      <Tip content={t('projects.fedTip', {
-                        commit: counts.fed.commit,
-                        branch: counts.fed.branch,
-                        origin: counts.fed.origin ?? t('projects.fedUnknownOrigin'),
-                      })}
-                      >
-                        <span className="font-mono text-small text-ink-soft">
-                          {counts.fed.shortCommit} · {ago(counts.fed.committedAt)}
-                        </span>
-                      </Tip>
-                    </Row>
-                  )}
-                  {project.workspace && (
-                    /* Which workspace this one shares with (D48). Shown rather than assumed: a machine
-                       holding two workspaces would otherwise present them as one family, and the
-                       person would have no way to tell from the list that it was two. */
-                    <Row label={t('projects.workspace')}>
-                      <Tip content={t('projects.workspaceTip')}><Chip>{project.workspace}</Chip></Tip>
-                    </Row>
-                  )}
-                  {lineOf(project.repository) && (() => {
-                    /* The branch this machine grows its work here from and lands it on (WSR2), and what
-                       said so — Settings → Workspace is where it is set. */
-                    const line = lineOf(project.repository)!;
-                    return (
-                      <Row label={t('projects.line')}>
-                        <span className="text-small text-ink-soft">
-                          <Inline text={t(`settings.lines.from.${line.source}`, {
-                            branch: line.branch, workspace: line.workspace,
-                          })}
-                          />
-                        </span>
-                      </Row>
-                    );
-                  })()}
-                  {unlandedIn(project.repository) > 0 && (
-                    <Row label={t('projects.unlandedLabel')}>
-                      <span className="text-small text-warn">
-                        {t('projects.unlanded', { count: unlandedIn(project.repository) })}
-                      </span>
-                    </Row>
-                  )}
-                </dl>
-              )}
-              {/* The person's standing choices for THIS machine's driver (D46 §6) — rendered only
-                  where a shell answers; a browser has no driver to control, and shows nothing. */}
-              {driving(project.repository, {
-                className: 'mt-2.5 border-t border-line pt-2.5',
-                action: (
-                  <Button variant="ghost" onClick={() => setManaging(project)}>
-                    {t('projects.manage.open')}
-                  </Button>
-                ),
-              })}
-            </Card>
-          );
-        })}
-      </div>
-
-      {outside.length > 0 && (
-        <Card className="mt-3.5">
-          <header className="flex items-baseline justify-between gap-4">
-            <span className="flex items-center gap-1.5 text-body font-semibold">
-              {t('projects.outside.title')}
-              {/* The reasoning is one press away, not eight lines read before one row on every visit
-                  (UX5 U36; the rule §4 settled for a settings page). */}
-              <WhyGlyph why={t('projects.outside.body')} />
-            </span>
-            <span className="font-mono text-small tabular-nums text-ink-faint">{outside.length}</span>
-          </header>
-          <Prose className="mt-1.5">{t('projects.outside.lead')}</Prose>
-          <ul className="m-0 mt-2 list-none p-0">
-            {outside.map((project) => {
-              const counts = indexed(project.repository);
-              return (
-                <li
-                  key={project.repository}
-                  aria-label={project.repository}
-                  className="border-t border-line py-1.5 text-body first:border-t-0"
-                >
-                  <div className="flex items-baseline justify-between gap-4">
-                    <span>{project.repository}</span>
-                    <span className="font-mono text-meta text-ink-faint">
-                      {counts && counts.total > 0
-                        ? t('projects.outside.readable', {
-                            count: counts.total, total: figure(counts.total),
-                          })
-                        : t('projects.nothingIndexed')}
-                    </span>
-                  </div>
-                  {/* INT3c: one with a root here is drivable over the protocol door (D70), so it gets
-                      the adopters' driving row — and none of adoption's own acts, like managing its
-                      declaration, which writes into the repository. One with no root has nowhere to
-                      start, and gets nothing. */}
-                  {canBeAsked(project) && driving(project.repository, {
-                    className: 'mt-1.5',
-                    note: door === 'pipe' ? t('projects.outside.directDoor') : undefined,
-                  })}
-                </li>
-              );
-            })}
-          </ul>
-          {/* A sentence with its commands as code — it was all monospace, prose included (POLISH4). */}
-          <p className="mt-3 max-w-prose rounded-control bg-accent-soft px-3 py-2.5 text-small">
-            <Inline text={t('projects.outside.join')} />
-          </p>
-        </Card>
-      )}
-    </section>
-  );
-}
-
-/** One row of a project card: its label in the card's label column, its content wrapping beside it. */
-function Row({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <>
-      <dt className="text-meta text-ink-faint">{label}</dt>
-      <dd className="m-0 flex min-w-0 flex-wrap items-baseline gap-1.5">{children}</dd>
-    </>
-  );
+  return {
+    list: {
+      view: 'projects',
+      name: t('nav.projects'),
+      labels: { open: t('projects.list.open'), close: t('projects.list.close'), resize: t('projects.list.resize') },
+      // Adding and importing touch machine paths, so they are a shell's (D48 §7): a browser's list makes nothing.
+      make: attached ? { label: add.label, onMake: add.onAct } : undefined,
+      more: attached
+        ? <ListMore label={t('projects.list.more')} items={[{ id: 'import', label: t('projects.list.import') }]} onChoose={() => setImporting(true)} />
+        : undefined,
+      loading: registry.isPending,
+      // 🔴 The first thing a new installation shows, and it was a header over a blank page: the fixture always holds
+      // a repository, so nothing had ever rendered this. It names the workspace when the scope is one, because the
+      // machine may hold repositories in another.
+      empty: registry.data?.length === 0
+        ? {
+            headline: workspace ? t('projects.empty.headlineIn', { workspace }) : t('projects.empty.headline'),
+            body: t(attached ? 'projects.empty.body' : 'projects.empty.bodyBrowser'),
+          }
+        : undefined,
+      chosen,
+      body: (
+        <ProjectList
+          adopted={rows.filter((row) => row.adopted).map(facts)}
+          outside={rows.filter((row) => !row.adopted).map(facts)}
+          chosen={chosen}
+          unanswered={registry.data === undefined && registry.error ? sentence(registry.error) : null}
+          onChoose={onChoose}
+        />
+      ),
+    },
+    main: (
+      <>
+        {main}
+        {adding && (
+          // Once registered, the list has it chosen, as an installed plugin is (D119 §3.1).
+          <AddProjectDrawer onClose={() => setAdding(false)} onAdded={onChoose} notify={notify} />
+        )}
+        {importing && <ImportFolderDrawer onClose={() => setImporting(false)} notify={notify} />}
+        {managing && (
+          <ManageProjectDrawer
+            project={managing}
+            onClose={() => setManaging(null)}
+            // Retired by the person's own press, so the page goes back to choosing, not to *gone*.
+            onRetired={() => onChoose(null)}
+            notify={notify}
+          />
+        )}
+      </>
+    ),
+  };
 }

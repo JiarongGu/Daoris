@@ -1,123 +1,104 @@
-import { useEffect, useState } from 'react';
+import { type ReactNode, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { api, canBeAsked, type Quest, type QuestStep, type Session } from './api';
+import { canBeAsked, type Quest } from './api';
+import { linksOf, toUpload } from './attachments';
+import { useAsksPart } from './asks/AsksPart';
+import { sentence } from './format';
+import { buildChain } from './map/chain';
+import { questsItem } from './opener';
+import { useDeleteQuest, useDismissConflict, usePublishQuest, useQuests, useRegistry, useRespondQuest, useSessions } from './queries';
+import { EMPTY_QUEST, QuestComposer, type QuestDraft } from './quests/QuestComposer';
+import { QuestList } from './quests/QuestList';
 import {
-  useDeleteQuest, useDismissConflict, usePublishQuest, useQuests, useRegistry, useRespondQuest, useSessions,
-} from './queries';
+  answered, freshest, keptFilters, latestSessions, type QuestFilters, questFilters, questionOf,
+} from './quests/records';
+import { QuestPage, QuestsMainNotice } from './quests/QuestPage';
 import {
   stopNotice, useConsidered, useDriver, useNudge, useRetryQuest, useSetHold, useStopSession, useTrustFolder, useUntrusted,
 } from './shell';
-import { TrustAsk } from './work/TrustAsk';
-import { ago, sentence, sessionTool, sittingDays, size, stamp } from './format';
-import { isImage, linksOf, toUpload } from './attachments';
-import { ExternalLink } from './links';
-import { CarriedCount, CarryFields, useCarry } from './compose/carry';
-import { AsksSection } from './asks/AsksSection';
-import { sittingBecause, sittingSentence } from './signals';
-import { buildChain } from './map/chain';
-import { ChainStrip } from './map/ChainStrip';
-import {
-  Button, CheckField, Drawer, EmptyState, failure, Icon, Inline, type Notify, PageHeader, Pill, QUEST_TONE, RecordCard,
-  SectionTitle, SelectField, SESSION_ACTIVE, SESSION_TONE, SkeletonRows, useErrorNotify,
-} from './ui';
-import { cn } from './lib/cn';
+import { sittingBecause } from './signals';
+import { failure, type Notify, useErrorNotify } from './ui';
+import { ListMore } from './work/ListPane';
+import type { ViewLayout } from './work/ViewFrame';
 
-/** Radix Select cannot carry an empty value, so "everyone" travels as a sentinel. */
+/** A radio item cannot carry an empty value, so "every receiver" travels as a sentinel. */
 const EVERYONE = '*';
 
 /**
- * An ask being written. `links` is the text as typed — read into addresses at publish — and `files`
- * are the browser's own handles, read whole only when the ask is sent (D65 §2).
- */
-type Draft = {
-  from: string; to: string; title: string; body: string; links: string; files: File[];
-  /** One next step (D65 §4), or none. The service takes a longer chain; the composer offers one. */
-  step: QuestStep | null;
-};
-const EMPTY_DRAFT: Draft = { from: '', to: '', title: '', body: '', links: '', files: [], step: null };
-
-/**
- * The task half of the platform (D38, D40): the list is for reading — a card is a summary and a
- * door — and the acting happens in the detail drawer, where there is room to act deliberately.
- * Sitting time is the management signal, so a week of silence wears a mark.
+ * **The Quests view** (D38, D40; FRAME1d, D118 §2): what it hands the frame (D118 §5), its list pane and its main
+ * area. The list holds the asks, then the quests by where they are in their life, with *Receiver* and *Include
+ * closed* in its ⋯; the main area holds the chosen quest's page or an ask's, with its acts in its header. A record
+ * is the main area and a form a drawer (§3d): the two composers stay drawers.
  *
- * Publish and respond go through the same endpoints and the same `QuestExchange` judgement as every
- * other door, refusals surfaced verbatim — the service's sentence is the contract, so it is never
- * translated or rephrased here.
+ * @remarks
+ * **A hook, because a view hands the frame a value** (`ViewLayout`), as the Plugins view's is: the list and the main
+ * area are drawn in two places the frame decides. The application holds it on every view, and says its errors only
+ * while it is in front.
+ *
+ * **What it remembers is its list's** (`listPanes.ts`, §3f): the chosen item, a quest's id or `ask:<id>`, which every
+ * door into the view names through the opener (§3i), and the filters. A record the list leaves out — a closed quest,
+ * or one to another receiver — is still found for its page, among every quest.
+ *
+ * Publish and respond go through the same endpoints and the same `QuestExchange` judgement as every other door,
+ * refusals surfaced verbatim — the service's sentence is the contract, so it is never translated or rephrased here.
  */
-export function QuestsView({
-  notify, onAttend, opening, onOpened, focus, onFocused, asking, onAsked, askFocus, onAskFocused,
+export function useQuestsView({
+  active, chosen, onChoose, filters: kept, onFilters, notify, onAttend, opening, onOpened, asking, onAsked,
 }: {
+  /** The view is in front: only then are its errors said. */
+  active: boolean;
+  /** The list's chosen item, which the application remembers (`daoris.list.quests.chosen`). */
+  chosen: string | null;
+  onChoose: (item: string | null) => void;
+  /** The list's filters as kept (`daoris.list.quests.filters`). */
+  filters: Record<string, unknown>;
+  /** Null forgets them. */
+  onFilters: (filters: Record<string, unknown> | null) => void;
   notify: Notify;
   /**
-   * The palette asked for the ask composer (INT4c) — an event like `opening`, consumed by identity and
-   * cleared by its holder, so asking twice opens it twice.
-   */
-  asking?: boolean;
-  onAsked?: () => void;
-  /**
-   * An ask a door asked to see — Overview's band, where an ask waits on a person (INT4d). An event
-   * like `focus`: its record opens once the ask is loaded, and the holder is told so it can clear it.
-   */
-  askFocus?: string | null;
-  onAskFocused?: () => void;
-  /**
-   * A quest a door asked to see — the status bar's conflict list (SYNC6b). An event like `opening`:
-   * the drawer opens on it once the quest is loaded, and the holder is told so it can clear it.
-   */
-  focus?: string | null;
-  onFocused?: () => void;
-  /**
-   * A draft handed in by a door — SURF6b's "send it back as a quest" arrives with the repository the
-   * work came from already named. The composer opens on it; the person writes the rest, because the
-   * ask and its reason are the part that has to travel (`repository-owns-its-work`).
-   */
-  opening?: { from?: string; to?: string } | null;
-  /** Consumed — so re-rendering, or closing and reopening the view, does not reopen the composer. */
-  onOpened?: () => void;
-  /**
-   * The door into Work (design §3): this view keeps the record summary and hands the session over
-   * rather than growing a second console. Absent where Work is — a browser has no frame to open.
+   * The door into Sessions (design §3): this view keeps the record summary and hands the session over rather than
+   * growing a second console. Absent where Sessions is not — a browser has no frame to open.
    */
   onAttend?: (session: string) => void;
-}) {
+  /**
+   * A draft handed in by a door — SURF6b's "send it back as a quest" arrives with the repository the work came from
+   * already named. The composer opens on it; the person writes the rest, because the ask and its reason are the
+   * part that has to travel (`repository-owns-its-work`). An event, consumed by identity.
+   */
+  opening?: { from?: string; to?: string } | null;
+  onOpened?: () => void;
+  /** The palette asked for the ask composer (INT4c) — an event like `opening`. */
+  asking?: boolean;
+  onAsked?: () => void;
+}): ViewLayout {
   const { t } = useTranslation();
-  const [repository, setRepository] = useState(EVERYONE);
-  const [includeClosed, setIncludeClosed] = useState(false);
-  const [detail, setDetail] = useState<Quest | null>(null);
+  const filters = questFilters(kept);
+  const setFilters = (next: QuestFilters) => onFilters(keptFilters(next));
+  const item = chosen ? questsItem(chosen) : null;
   const [composing, setComposing] = useState(false);
-  const [declining, setDeclining] = useState(false);
-  // A delete asks once (D95): the first press arms it, and only the second removes the record.
-  const [deleting, setDeleting] = useState(false);
-  const [reason, setReason] = useState('');
-  const [draft, setDraft] = useState<Draft>(EMPTY_DRAFT);
+  const [draft, setDraft] = useState<QuestDraft>(EMPTY_QUEST);
   const [reading, setReading] = useState(false);
-  // What the draft carries (D65 §2) — the drop, the paste and the chooser are shared with the ask
-  // composer (INT4c), and so is absorbing a stray drop while the composer is open.
-  const carry = useCarry(
-    { links: draft.links, files: draft.files },
-    ({ links, files }) => setDraft({ ...draft, links, files }),
-    composing);
+  const [askComposing, setAskComposing] = useState(false);
+  // The door's last answer about a quest, kept until the list catches up with it.
+  const [held, setHeld] = useState<Quest | null>(null);
+  // The quest whose trust question is open (D73): only on the press, for the quest it was asked about.
+  const [trustingFor, setTrustingFor] = useState<string | null>(null);
 
-  // A door asked for the composer, pre-filled. Consumed on arrival: this is an event, not a state,
-  // and leaving it set would reopen the drawer every time anything else here re-rendered.
-  // 🔴 Consumed by IDENTITY, not by the parent clearing it. A state update during render makes React
-  // re-run this component at once, with the SAME props — so "if (opening) set…" saw the draft still
-  // there on every pass and looped until React gave up ("Too many re-renders"): the door crashed the
-  // view it opened. Found by the first test to hold `opening` the way App does. The parent is told
+  // A door asked for the composer, pre-filled. Consumed on arrival: this is an event, not a state.
+  // 🔴 Consumed by IDENTITY, not by the parent clearing it. A state update during render makes React re-run this
+  // component at once, with the SAME props — so "if (opening) set…" saw the draft still there on every pass and
+  // looped until React gave up ("Too many re-renders"): the door crashed the view it opened. The parent is told
   // from an effect, because updating another component during this one's render is its own warning.
   const [arrived, setArrived] = useState<typeof opening>(null);
   if (opening && opening !== arrived) {
     setArrived(opening);
-    setDraft({ ...EMPTY_DRAFT, from: opening.from ?? '', to: opening.to ?? '' });
-    carry.forget();
+    setDraft({ ...EMPTY_QUEST, from: opening.from ?? '', to: opening.to ?? '' });
     setComposing(true);
   }
   useEffect(() => { if (opening) onOpened?.(); }, [opening, onOpened]);
 
-  // The ask composer (INT4c), opened by the header's button or by the palette's event — consumed by
-  // identity for `opening`'s reason, and forgotten once the holder clears it.
-  const [askComposing, setAskComposing] = useState(false);
+  // The ask composer, opened by the list's ＋ or by the palette's event — consumed by identity for `opening`'s
+  // reason, and forgotten once the holder clears it.
   const [askSeen, setAskSeen] = useState(false);
   if (asking && !askSeen) {
     setAskSeen(true);
@@ -126,22 +107,10 @@ export function QuestsView({
   if (!asking && askSeen) setAskSeen(false);
   useEffect(() => { if (asking) onAsked?.(); }, [asking, onAsked]);
 
-  const quests = useQuests(repository === EVERYONE ? null : repository, includeClosed);
-  // Every quest, closed ones included, for the chain a drawer shows (MAP1): the step before this one
-  // is usually closed, and very often somebody else's.
+  const quests = useQuests(filters.to, filters.closed);
+  // Every quest, closed ones included: a page for one the list leaves out, the chain a page shows (MAP1), whose
+  // step before this one is usually closed and very often somebody else's, and the question a quest waits on.
   const everything = useQuests(null, true);
-
-  // A quest a door named (SYNC6b), consumed by identity for `opening`'s reason (frontend §4b): the
-  // last one seen is remembered, a new one opens the drawer once the quest is loaded, and the holder
-  // is told from an effect. Forgotten once the holder clears it, so the same quest asked twice opens twice.
-  const [focusSeen, setFocusSeen] = useState<string | null>(null);
-  const focused = focus ? everything.data?.find((quest) => quest.id === focus) : undefined;
-  if (focus && focused && focus !== focusSeen) {
-    setFocusSeen(focus);
-    setDetail(focused);
-  }
-  if (!focus && focusSeen) setFocusSeen(null);
-  useEffect(() => { if (focus && focusSeen === focus) onFocused?.(); }, [focus, focusSeen, onFocused]);
   const registry = useRegistry();
   const sessions = useSessions(null, true);
   const driver = useDriver();
@@ -150,45 +119,43 @@ export function QuestsView({
   const considered = useConsidered().data ?? [];
   const setHold = useSetHold();
   const stop = useStopSession();
-  // A start the driver is holding for the agent's trust (D73), and the person's grant of it. The
-  // question opens inline, for the quest it was asked about, and only on the press.
+  // A start the driver is holding for the agent's trust (D73), and the person's grant of it.
   const untrusted = useUntrusted().data ?? [];
   const trust = useTrustFolder();
-  const [trustingFor, setTrustingFor] = useState<string | null>(null);
   // A quest parked by its strikes (DRV6), started again — `daoris driver retry`'s screen twin (RETRY1).
   const retry = useRetryQuest();
   const publish = usePublishQuest();
   const respond = useRespondQuest();
   const dismiss = useDismissConflict();
   const remove = useDeleteQuest();
-  // Every query this view renders from, the arc's new ones included — a session surface or driver
-  // bridge that fails silently is indistinguishable from a family with no driver attached.
-  useErrorNotify(quests.error ?? registry.error ?? sessions.error ?? driver.error, notify);
+  // Every query this view renders from — a session surface or driver bridge that fails silently is
+  // indistinguishable from a family with no driver attached. Said once, while the view is in front (D118 §3h).
+  useErrorNotify(active ? quests.error ?? registry.error ?? sessions.error ?? driver.error : null, notify);
 
-  // The freshest attempt per quest: a retry is its own record, and the drawer shows where things
-  // stand now, not the history (the service keeps that).
-  const sessionFor = new Map<string, Session>();
-  for (const session of sessions.data ?? []) {
-    // A chat may serve no quest at all (D49 §3) — it belongs to its repository, and it is shown in
-    // Projects rather than here. Only a session that names a quest can mark one.
-    if (!session.quest) continue;
-    const held = sessionFor.get(session.quest);
-    if (!held || session.updated >= held.updated) sessionFor.set(session.quest, session);
-  }
+  const asks = useAsksPart({
+    active,
+    closed: filters.closed,
+    chosen: item && 'ask' in item ? item.ask : null,
+    quests: everything.data,
+    onChoose,
+    notify,
+    onAttend,
+    composing: askComposing,
+    onComposingChange: setAskComposing,
+  });
 
-  // Only what the host says can be asked is offered (D70: an adopter, or a repository registered with
-  // a root) — anything else would invite an ask the service refuses. The service still holds the
-  // judgement; this only keeps the form from lying.
-  const adopters = (registry.data ?? []).filter(canBeAsked).map((r) => r.repository);
-  const adopterOptions = adopters.map((name) => ({ value: name, label: name }));
+  const latest = latestSessions(sessions.data ?? []);
+  // Only what the host says can be asked is offered (D70: an adopter, or a repository registered with a root) —
+  // anything else would invite an ask the service refuses. The service still holds the judgement.
+  const adopters = (registry.data ?? []).filter(canBeAsked).map((row) => row.repository);
   // Known to be nobody, not merely not loaded yet: a composer that flashed "nobody" would be a lie.
   const nobody = registry.data !== undefined && adopters.length === 0;
-  const target = (registry.data ?? []).find((r) => r.repository === draft.to);
+  const target = (registry.data ?? []).find((row) => row.repository === draft.to);
   const busy = publish.isPending || respond.isPending || remove.isPending || reading;
-  // A quest's lanes as its repository names them (D115 §2.2): the id, and its title where the
-  // registration gives one. The ids are the repository's words, so they are shown as it spells them.
+  // A quest's lanes as its repository names them (D115 §2.2): the id, and its title where the registration gives
+  // one. The ids are the repository's words, so they are shown as it spells them.
   const laneNames = (quest: Quest) => {
-    const declared = (registry.data ?? []).find((r) => r.repository === quest.to)?.lanes ?? [];
+    const declared = (registry.data ?? []).find((row) => row.repository === quest.to)?.lanes ?? [];
     return (quest.lanes ?? []).map((id) => {
       const title = declared.find((lane) => lane.id === id)?.title;
       return title ? `${id} (${title})` : id;
@@ -213,753 +180,193 @@ export function QuestsView({
     publish.mutate({ from, to, title, body, links: linksOf(draft.links), attachments, then }, {
       onSuccess: (result) => {
         notify(result.message);
-        setDraft(EMPTY_DRAFT);
-        carry.forget();
+        setDraft(EMPTY_QUEST);
         setComposing(false);
+        // The quest just published opens on its page, as an ask's record opens on its answer.
+        setHeld(result.quest);
+        onChoose(result.quest.id);
         nudge();
       },
       onError: failure(notify),
     });
   };
 
+  // The page stays on the quest as it now stands: a take or a done moves it, and its page says so.
   const onRespond = (quest: Quest, action: 'take' | 'done' | 'decline', why: string | null = null) =>
     respond.mutate({ id: quest.id, action, reason: why }, {
       onSuccess: (result) => {
         notify(result.message);
-        setDetail(null);
-        setDeclining(false);
-        setReason('');
+        setHeld(result.quest);
       },
       onError: failure(notify),
     });
 
-  // A person's dismissal (SYNC6c): the drawer stays open on the quest as it now stands, because the
-  // quest itself did not move — only what it was waiting on.
+  // A person's dismissal (SYNC6c): the quest itself did not move — only what it was waiting on.
   const onDismiss = (quest: Quest, machine: string, sequence: number) =>
     dismiss.mutate({ id: quest.id, machine, sequence }, {
       onSuccess: (result) => {
         notify(result.message);
-        setDetail(result.quest);
+        setHeld(result.quest);
       },
       onError: failure(notify),
     });
 
-  // A quest made by mistake, deleted (D95). The drawer closes on the service's sentence; a refusal is
-  // its sentence too, and the quest stays in the drawer, because nothing happened to it.
+  // A quest made by mistake, deleted (D95): the list chooses nothing, on the service's sentence. A refusal is its
+  // sentence too, and the page stays on the quest, because nothing happened to it.
   const onDelete = (quest: Quest) =>
     remove.mutate(quest.id, {
       onSuccess: (result) => {
         notify(result.message);
-        setDetail(null);
-        setDeleting(false);
+        setHeld(null);
+        onChoose(null);
       },
-      onError: (error) => {
-        setDeleting(false);
-        failure(notify)(error);
-      },
+      onError: failure(notify),
     });
 
-  const openDetail = (quest: Quest) => {
-    setDetail(quest);
-    setDeclining(false);
-    setDeleting(false);
-    setReason('');
+  // The ＋'s kinds (D118 §2): asking first, since the regular task enters at the workspace (D65), then a quest to a
+  // repository the person already knows.
+  const kinds = [{ id: 'ask', label: t('asks.ask') }, { id: 'quest', label: t('quests.new') }];
+  const make = (kind?: string) => {
+    if (kind === 'ask') setAskComposing(true);
+    else setComposing(true);
   };
 
-  const open = (quests.data ?? []).filter((q) => q.status === 'Open');
-  const taken = (quests.data ?? []).filter((q) => q.status === 'Taken');
-  const closed = (quests.data ?? []).filter((q) => q.status === 'Done' || q.status === 'Declined');
-  const groups: { title: string; items: Quest[] }[] = [
-    { title: t('quests.groups.open', { count: open.length }), items: open },
-    { title: t('quests.groups.progress', { count: taken.length }), items: taken },
-    ...(includeClosed ? [{ title: t('quests.groups.closed', { count: closed.length }), items: closed }] : []),
-  ];
-
-  // The question a taken quest's taker asked another repository and waits on (D79), found among every
-  // quest, closed ones too: once it closes the quest resumes, and the wait is no longer the news.
-  const questionOf = (quest: Quest) =>
-    quest.status === 'Taken' && quest.awaits
-      ? { id: quest.awaits, quest: everything.data?.find((candidate) => candidate.id === quest.awaits) }
-      : null;
-  const answered = (question: Quest | undefined) =>
-    question?.status === 'Done' || question?.status === 'Declined';
-
-  const card = (quest: Quest) => {
-    const sat = sittingDays(quest.filed);
-    const tone = QUEST_TONE[quest.status];
-    const session = sessionFor.get(quest.id);
-    const question = questionOf(quest);
-    // Why this machine's driver leaves it waiting (USE1): the drawer said so, the card did not, and a
-    // quest to a held repository read as a request that would not start.
-    const sitting = quest.status === 'Open' ? sittingBecause(considered, quest.id) : null;
+  const pageOf = (quest: Quest): ReactNode => {
+    const session = latest.get(quest.id) ?? null;
+    const hold = untrusted.find((candidate) => candidate.quest === quest.id) ?? null;
+    // A door into Sessions only where Sessions exists and a driver answers (D46 §6).
+    const attend = onAttend && driver.data ? onAttend : undefined;
     return (
-      <RecordCard
+      <QuestPage
         key={quest.id}
-        closed={quest.status === 'Done' || quest.status === 'Declined'}
-        onOpen={() => openDetail(quest)}
-      >
-        {/* Status FIRST, beside the title it describes — the order D41 §5 already specifies for
-            Overview's rows (`pill · title · route · how long`). Pushed to the far edge it sat a
-            thousand pixels from the thing it was about, and the eye had to cross the whole card to
-            connect them. The secondary marks stay right: they are exceptions, not identity. */}
-        <header className="flex items-baseline gap-2">
-          <Pill tone={tone} title={t(`statusHint.${quest.status}`)}>{t(`status.${quest.status}`)}</Pill>
-          <span className="min-w-0 flex-1 truncate text-body font-semibold">{quest.title}</span>
-          <span className="flex shrink-0 items-baseline gap-1.5">
-            <CarriedCount links={quest.links?.length ?? 0} files={quest.attachments?.length ?? 0} />
-            {/* A week of silence is the signal this view exists to surface. */}
-            {quest.status === 'Open' && sat >= 7 && (
-              <Pill tone="declined">{t('quests.card.sat', { days: sat })}</Pill>
-            )}
-            {/* Taken and waiting on another repository's answer (D79) — not stuck, and nothing for
-                the person to do. The waiting tone, as `awaiting-person` wears it. */}
-            {question && !answered(question.quest) && (
-              <Pill tone="open" title={t('quests.card.waitsHint')}>{t('quests.card.waits', { id: question.id })}</Pill>
-            )}
-            {/* A live driven session marks its quest; finished ones live in the drawer's record. */}
-            {session && SESSION_ACTIVE.has(session.state) && (
-              <Pill tone={SESSION_TONE[session.state]} title={t('quests.session.hint')}>
-                {t(`sessionState.${session.state}`)}
-              </Pill>
-            )}
-          </span>
-        </header>
-        <p className="mt-1 text-body text-accent">
-          {quest.from} → {quest.to}
-          {/* The lanes of the repository it asks (D115 §2.2), beside the repository: `to` stays one. */}
-          {quest.lanes?.length ? (
-            <>
-              {' · '}
-              <span className="text-ink-soft" title={t('quests.card.lanesHint', { repository: quest.to })}>
-                {t('quests.card.lanes', { count: quest.lanes.length, lanes: quest.lanes.join(' + ') })}
-              </span>
-            </>
-          ) : null}
-          <span className="font-mono text-meta text-ink-faint">
-            {' '}· {t('quests.card.filed', { ago: ago(quest.filed) })}
-            {quest.updated !== quest.filed && <> · {t('quests.card.moved', { ago: ago(quest.updated) })}</>}
-            {/* A step of a chain says which quest's close published it (D65 §4). */}
-            {quest.parent && <> · {t('quests.card.follows', { id: quest.parent })}</>}
-          </span>
-        </p>
-        {sitting && (
-          <p className="mt-1 mb-0 flex items-center gap-2 text-small text-ink-soft">
-            <span className="min-w-0 flex-1 truncate"><Inline text={sittingSentence(sitting)} /></span>
-            {/* The hold is the person's own and one press lifts it, here where it is read. Inside the
-                card's own press, so it keeps its click and its keys to itself. */}
-            {sitting.verdict === 'Held' && (
-              <Button
-                variant="ghost"
-                className="shrink-0"
-                title={t('quests.card.resumeTip', { repository: quest.to })}
-                disabled={setHold.isPending}
-                onKeyDown={(event) => event.stopPropagation()}
-                onClick={(event) => {
-                  event.stopPropagation();
-                  setHold.mutate({ repository: quest.to, held: false }, { onError: failure(notify) });
-                }}
-              >
-                {t('quests.card.resume', { repository: quest.to })}
-              </Button>
-            )}
-          </p>
-        )}
-        <p className="mt-1.5 line-clamp-2 text-body text-ink-soft">{quest.body}</p>
-      </RecordCard>
+        quest={quest}
+        lanes={quest.lanes?.length ? laneNames(quest) : undefined}
+        question={questionOf(quest, everything.data ?? [])}
+        sitting={sittingBecause(considered, quest.id)}
+        hold={hold}
+        chain={buildChain(quest.id, everything.data ?? quests.data ?? [quest], sessions.data ?? [])}
+        session={session}
+        running={session ? driver.data?.running.includes(session.id) ?? false : false}
+        busy={busy}
+        retrying={retry.isPending}
+        trusting={trustingFor === quest.id}
+        granting={trust.isPending}
+        dismissing={dismiss.isPending}
+        stopping={stop.isPending}
+        onRespond={(action, reason) => onRespond(quest, action, reason ?? null)}
+        onDelete={() => onDelete(quest)}
+        onDismiss={(machine, sequence) => onDismiss(quest, machine, sequence)}
+        // A driver's verdicts and holds reach only a shell, so in a browser neither act is ever offered.
+        onRetry={() => retry.mutate({ quest: quest.id }, {
+          onSuccess: (state) => notify(t('quests.detail.retried', { id: quest.id, count: state.strikes })),
+          onError: failure(notify),
+        })}
+        onTrusting={(open) => setTrustingFor(open ? quest.id : null)}
+        onGrant={(granted) => trust.mutate(granted, {
+          onSuccess: (answer) => {
+            notify(answer.message, answer.verified ? 'ok' : 'error');
+            setTrustingFor(null);
+          },
+          onError: failure(notify),
+        })}
+        onStop={session ? () => stop.mutate(session.id, {
+          onSuccess: (answer) => notify(t(stopNotice(answer), { id: session.id })),
+          onError: failure(notify),
+        }) : undefined}
+        onOpenQuest={(id) => onChoose(id)}
+        onAttend={attend}
+      />
     );
   };
 
-  return (
-    <section>
-      <PageHeader
-        title={t('quests.title')}
-        description={t('quests.description')}
-        action={
-          // Asking leads (D65): the regular task enters at the circle, and the declarations say where
-          // it belongs. A quest to a repository the person already knows is the second door.
-          <div className="flex flex-wrap items-center gap-2">
-            <Button variant="primary" onClick={() => setAskComposing(true)}>
-              <Icon name="plus" size={14} />{t('asks.ask')}
-            </Button>
-            <Button onClick={() => setComposing(true)}>
-              <Icon name="plus" size={14} />{t('quests.new')}
-            </Button>
-          </div>
-        }
-      />
+  const shownQuest = item && 'quest' in item
+    ? freshest(everything.data?.find((quest) => quest.id === item.quest), held?.id === item.quest ? held : null)
+    : undefined;
+  const main = item && 'ask' in item
+    ? asks.page
+    : item
+      ? shownQuest
+        ? pageOf(shownQuest)
+        : everything.data === undefined && everything.error
+          ? <QuestsMainNotice state="unanswered" sentence={sentence(everything.error)} />
+          : <QuestsMainNotice state={everything.data === undefined ? 'loading' : 'gone'} gone="quest" />
+      : <QuestsMainNotice state="none" actions={kinds} onAct={make} />;
 
-      <div className="mb-4 flex flex-wrap items-center gap-4">
-        <label className="flex items-center gap-2.5 text-body text-ink-soft">
-          {t('quests.addressedTo')}
-          <SelectField
-            value={repository}
-            onChange={setRepository}
-            ariaLabel={t('quests.addressedTo')}
-            options={[{ value: EVERYONE, label: t('quests.everyone') }, ...adopterOptions]}
-          />
-        </label>
-        <CheckField checked={includeClosed} onChange={setIncludeClosed} label={t('quests.includeClosed')} />
-      </div>
+  const rows = (quests.data ?? []).map((quest) => {
+    const question = questionOf(quest, everything.data ?? []);
+    return {
+      quest,
+      session: latest.get(quest.id)?.state ?? null,
+      // Once its question is answered the wait is no longer the news (D79).
+      waits: question && !answered(question.quest) ? question.id : null,
+      sitting: quest.status === 'Open' ? sittingBecause(considered, quest.id) : null,
+    };
+  });
+  // A receiver kept from before stays choosable, so the filter that names it can be seen and undone.
+  const receivers = [...adopters, ...(filters.to && !adopters.includes(filters.to) ? [filters.to] : [])];
+  const listed = quests.data !== undefined;
+  const headline = filters.to
+    ? t('quests.empty.headlineFor', { repository: filters.to })
+    : t('quests.empty.headlineAll');
 
-      {/* Asks first: they are where quests come from, and a proposal waits on a person (INT4a). */}
-      <AsksSection
-        notify={notify}
-        includeClosed={includeClosed}
-        composing={askComposing}
-        onComposingChange={setAskComposing}
-        onOpenQuest={(id) => {
-          const quest = everything.data?.find((candidate) => candidate.id === id);
-          if (quest) openDetail(quest);
-        }}
-        focus={askFocus}
-        onFocused={onAskFocused}
-        onAttend={onAttend}
-      />
-
-      {quests.isPending && <SkeletonRows rows={4} />}
-
-      {quests.data?.length === 0 && (
-        <EmptyState
-          icon="inbox"
-          headline={repository === EVERYONE
-            ? t('quests.empty.headlineAll')
-            : t('quests.empty.headlineFor', { repository })}
-          body={t('quests.empty.body')}
-          action={
-            <Button onClick={() => setComposing(true)}>
-              <Icon name="plus" size={14} />{t('overview.outstanding.ask')}
-            </Button>
-          }
+  return {
+    list: {
+      view: 'quests',
+      name: t('nav.quests'),
+      labels: { open: t('quests.list.open'), close: t('quests.list.close'), resize: t('quests.list.resize') },
+      make: { label: t('quests.list.add'), kinds, onMake: make },
+      // The list's ⋯ (D118 §2): whose quests it holds, and whether closed ones are among them, remembered (§3f).
+      more: (
+        <ListMore
+          label={t('quests.list.more')}
+          choice={{
+            label: t('quests.addressedTo'),
+            value: filters.to ?? EVERYONE,
+            options: [{ value: EVERYONE, label: t('quests.everyone') }, ...receivers.map((name) => ({ value: name, label: name }))],
+            onChoose: (value) => setFilters({ ...filters, to: value === EVERYONE ? null : value }),
+          }}
+          items={[{ id: 'closed', label: t('quests.includeClosed'), checked: filters.closed }]}
+          onChoose={(id) => { if (id === 'closed') setFilters({ ...filters, closed: !filters.closed }); }}
         />
-      )}
-
-      <div className={cn(busy && quests.data && 'opacity-60 transition-opacity duration-(--speed)')}>
-        {groups.map((group) =>
-          group.items.length > 0 && (
-            <div key={group.title}>
-              <SectionTitle>{group.title}</SectionTitle>
-              {group.items.map(card)}
-            </div>
-          ))}
-      </div>
-
-      {detail && (
-        <Drawer
-          title={detail.title}
-          onClose={() => setDetail(null)}
-          meta={
-            <>
-              <Pill tone={QUEST_TONE[detail.status]}>
-                {t(`status.${detail.status}`)}
-              </Pill>
-              <span className="font-mono text-meta text-ink-faint">#{detail.id}</span>
-            </>
-          }
-          footer={
-            deleting && detail.deletable ? (
-              /* 🔴 A delete removes the record, which nothing gives back (D95) — so the first press only
-                 asks, the way removing an account does, and the second is the one that deletes. */
-              <div
-                role="group"
-                aria-label={t('quests.detail.deleteTitle')}
-                className="flex w-full flex-wrap items-center gap-2"
-              >
-                <span className="min-w-0 flex-1 basis-64 text-small text-ink-soft">{t('quests.detail.deleteConfirm')}</span>
-                <Button variant="danger" disabled={busy} onClick={() => onDelete(detail)}>
-                  {t('quests.detail.deleteMeanIt')}
-                </Button>
-                <Button variant="ghost" disabled={busy} onClick={() => setDeleting(false)}>{t('common.cancel')}</Button>
-              </div>
-            ) : (detail.status === 'Open' || detail.status === 'Taken') && (
-              <div className="flex w-full flex-wrap items-center gap-2">
-                {/* The one loud control is the quest's next step (UX5 U31): taking it while it is
-                    open, closing it once it is taken. Done led an open quest too, with taking it
-                    offered as the quiet choice. */}
-                {detail.status === 'Open' && (
-                  <Button variant="primary" disabled={busy} onClick={() => onRespond(detail, 'take')}>
-                    {t('quests.detail.take')}
-                  </Button>
-                )}
-                <Button
-                  variant={detail.status === 'Taken' ? 'primary' : 'default'}
-                  disabled={busy}
-                  onClick={() => onRespond(detail, 'done')}
-                >
-                  {t('quests.detail.done')}
-                </Button>
-                {declining ? (
-                  <>
-                    <input
-                      autoFocus
-                      placeholder={t('quests.detail.declinePlaceholder')}
-                      value={reason}
-                      onChange={(e) => setReason(e.target.value)}
-                      className="min-h-[1.9rem] flex-1 basis-56 rounded-control border border-line-strong bg-raised px-2.5 py-1.5 text-body"
-                    />
-                    {/* Declining without a reason is refused by the service; the form does not offer
-                        the mistake. */}
-                    <Button
-                      variant="danger" disabled={busy || !reason.trim()}
-                      onClick={() => onRespond(detail, 'decline', reason)}
-                    >
-                      {t('quests.detail.declineConfirm')}
-                    </Button>
-                  </>
-                ) : (
-                  <Button variant="ghost" disabled={busy} onClick={() => setDeclining(true)}>
-                    {t('quests.detail.decline')}
-                  </Button>
-                )}
-                {/* Only where the service says it may go (D95): open, and nobody has started on it. */}
-                {detail.deletable && (
-                  <Button variant="ghost" disabled={busy} onClick={() => setDeleting(true)}>
-                    <Icon name="remove" size={13} />
-                    {t('quests.detail.delete')}
-                  </Button>
-                )}
-              </div>
-            )
-          }
-        >
-          <dl className="mb-4 grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-body">
-            <dt className="text-ink-faint">{t('quests.detail.from')}</dt><dd className="m-0">{detail.from}</dd>
-            <dt className="text-ink-faint">{t('quests.detail.to')}</dt><dd className="m-0">{detail.to}</dd>
-            {detail.lanes?.length ? (
-              <>
-                {/* Each lane as the repository declares it, named where its registration says (D115 §2.2). */}
-                <dt className="text-ink-faint">{t('quests.detail.lanes')}</dt>
-                <dd className="m-0">{laneNames(detail)}</dd>
-              </>
-            ) : null}
-            <dt className="text-ink-faint">{t('quests.detail.filed')}</dt>
-            <dd className="m-0">{stamp(detail.filed)} · {ago(detail.filed)}</dd>
-            {detail.updated !== detail.filed && (
-              <>
-                <dt className="text-ink-faint">{t('quests.detail.moved')}</dt>
-                <dd className="m-0">{stamp(detail.updated)} · {ago(detail.updated)}</dd>
-              </>
-            )}
-            <dt className="text-ink-faint">{t('quests.detail.state')}</dt>
-            <dd className="m-0">{t(`statusHint.${detail.status}`)}</dd>
-            {(() => {
-              // What its taker asked and waits on (D79), opened in place — the answer is read there.
-              const question = questionOf(detail);
-              if (!question) return null;
-              const closed = answered(question.quest);
-              return (
-                <>
-                  <dt className="text-ink-faint">{t(closed ? 'quests.detail.asked' : 'quests.detail.waitsOn')}</dt>
-                  <dd className="m-0">
-                    <span className="inline-flex flex-wrap items-baseline gap-1.5">
-                      {question.quest ? (
-                        <button
-                          type="button"
-                          className="cursor-pointer border-0 bg-transparent p-0 text-left text-body text-accent underline-offset-2 hover:underline"
-                          onClick={() => openDetail(question.quest!)}
-                        >
-                          <span className="font-mono text-meta">#{question.id}</span> {question.quest.title}
-                        </button>
-                      ) : (
-                        <span className="font-mono text-meta">#{question.id}</span>
-                      )}
-                      {question.quest && (
-                        <>
-                          <span className="text-meta text-ink-faint">→ {question.quest.to}</span>
-                          <Pill tone={QUEST_TONE[question.quest.status]}>{t(`status.${question.quest.status}`)}</Pill>
-                        </>
-                      )}
-                    </span>
-                    <span className="mt-0.5 block text-small text-ink-soft">
-                      {t(closed ? 'quests.detail.answered' : 'quests.detail.waitsWhy')}
-                    </span>
-                  </dd>
-                </>
-              );
-            })()}
-            {(() => {
-              // Why this machine's driver is not starting it, in its own words (D46 §3) — the
-              // whole sentence here, where there is room; the Overview row carries it truncated.
-              const because = sittingBecause(considered, detail.id);
-              // A wait (D79) is said by the row above, with the question itself; the driver's
-              // sentence under it would only say it again.
-              const sitting = because?.verdict === 'Waiting' ? null : because;
-              const held = untrusted.find((hold) => hold.quest === detail.id);
-              // The trust hold stands on its own: it arrives in the same tick as the sentence, and the
-              // grant must not wait on a second list having arrived too.
-              return (sitting || held) && (
-                <>
-                  <dt className="text-ink-faint">{t('quests.detail.sitting')}</dt>
-                  <dd className="m-0">
-                    <Inline text={sitting ? sittingSentence(sitting) : t('work.attention.trustWhy')} />
-                    {/* The one hold only the person can lift, offered where it is read (D73). */}
-                    {held && trustingFor !== detail.id && (
-                      <span className="mt-1.5 block">
-                        <Button onClick={() => setTrustingFor(detail.id)}>{t('trust.open')}</Button>
-                      </span>
-                    )}
-                    {/* And the other: a quest parked by its strikes, started again on the press
-                        (RETRY1). Counted from where it stands, so the next failures park it again. */}
-                    {sitting?.verdict === 'Exhausted' && (
-                      <span className="mt-1.5 block">
-                        <Button
-                          disabled={retry.isPending}
-                          onClick={() => retry.mutate({ quest: detail.id }, {
-                            onSuccess: (state) => notify(t('quests.detail.retried', {
-                              id: detail.id, count: state.strikes,
-                            })),
-                            onError: failure(notify),
-                          })}
-                        >
-                          {t('quests.detail.retry')}
-                        </Button>
-                      </span>
-                    )}
-                  </dd>
-                </>
-              );
-            })()}
-          </dl>
-          {(() => {
-            const held = untrusted.find((hold) => hold.quest === detail.id);
-            return held && trustingFor === detail.id && (
-              <div className="mb-4">
-                <TrustAsk
-                  hold={held}
-                  busy={trust.isPending}
-                  onCancel={() => setTrustingFor(null)}
-                  onGrant={() => trust.mutate(held, {
-                    onSuccess: (granted) => {
-                      notify(granted.message, granted.verified ? 'ok' : 'error');
-                      setTrustingFor(null);
-                    },
-                    onError: failure(notify),
-                  })}
-                />
-              </div>
-            );
-          })()}
-          {(detail.conflicts?.length ?? 0) > 0 && (
-            /* A move that reached the remote second (D68 §5): kept on the quest for a person and
-               never merged, so it sits above the body — it is what this quest is waiting on. The
-               note is that session's own words, verbatim. */
-            <section
-              aria-label={t('quests.detail.conflicts')}
-              className="mb-4 rounded-card border border-line border-l-[3px] border-l-st-open bg-raised px-3 py-2.5"
-            >
-              <SectionTitle>{t('quests.detail.conflicts')}</SectionTitle>
-              <p className="m-0 mb-2 text-small text-ink-soft">{t('quests.detail.conflictsHint')}</p>
-              <ul className="m-0 grid list-none gap-1.5 p-0">
-                {detail.conflicts!.map((conflict) => (
-                  <li
-                    key={`${conflict.machine}-${conflict.sequence}`}
-                    className="flex items-start justify-between gap-3 text-body"
-                  >
-                    <span className="grid min-w-0 gap-0.5">
-                      <span className="inline-flex flex-wrap items-center gap-1.5">
-                        <Icon name="conflict" size={12} className="text-warn" />
-                        {t('quests.detail.conflictLine', {
-                          machine: conflict.machine, attempted: t(`status.${conflict.attempted}`),
-                        })}
-                        <span className="text-meta text-ink-faint">· {ago(conflict.at)}</span>
-                      </span>
-                      {conflict.note && <span className="text-small text-ink-soft">{conflict.note}</span>}
-                    </span>
-                    {/* Seen, and nothing more to do here: the dismissal travels, so every machine
-                        stops showing it (SYNC6c). */}
-                    <Button
-                      variant="ghost"
-                      disabled={dismiss.isPending}
-                      onClick={() => onDismiss(detail, conflict.machine, conflict.sequence)}
-                    >
-                      {t('quests.detail.dismiss')}
-                    </Button>
-                  </li>
-                ))}
-              </ul>
-            </section>
-          )}
-          <p className="m-0 whitespace-pre-wrap text-body leading-relaxed">{detail.body}</p>
-          {(detail.links?.length ?? 0) > 0 && (
-            /* The asker's addresses, as links — the service accepted only http and https, so each
-               is an address and nothing that would run. They open where the person chose, their
-               browser or Daoris's (BRW7). */
-            <div className="mt-4">
-              <SectionTitle>{t('quests.detail.links')}</SectionTitle>
-              <ul className="m-0 grid list-none gap-1 p-0">
-                {detail.links!.map((link) => (
-                  <li key={link} className="min-w-0">
-                    <ExternalLink
-                      href={link}
-                      className="inline-flex max-w-full items-center gap-1.5 text-body text-accent underline-offset-2 hover:underline"
-                    >
-                      <Icon name="link" size={12} />
-                      <span className="truncate">{link}</span>
-                    </ExternalLink>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-          {(detail.attachments?.length ?? 0) > 0 && (
-            /* The files, by name (D65 §2). One this machine keeps opens through the host's own route
-               — never by its path, which a page does not show — and a picture is shown as one. One
-               named on the record and kept elsewhere says so, rather than looking like a broken link. */
-            <div className="mt-4">
-              <SectionTitle>{t('quests.detail.files')}</SectionTitle>
-              <ul className="m-0 grid list-none gap-2 p-0">
-                {detail.attachments!.map((file) => (
-                  <li key={file.sha256} className="min-w-0 text-body">
-                    {file.path ? (
-                      <ExternalLink
-                        href={api.attachmentUrl(detail.id, file.sha256)}
-                        className="group inline-grid max-w-full gap-1.5 text-accent"
-                      >
-                        <span className="inline-flex min-w-0 items-center gap-1.5">
-                          <Icon name="attach" size={12} />
-                          <span className="truncate underline-offset-2 group-hover:underline">{file.name}</span>
-                          <span className="shrink-0 font-mono text-meta text-ink-faint">{size(file.bytes)}</span>
-                        </span>
-                        {isImage(file.name) && (
-                          <img
-                            src={api.attachmentUrl(detail.id, file.sha256)} alt={file.name}
-                            className="max-h-40 max-w-full rounded-control border border-line object-contain"
-                          />
-                        )}
-                      </ExternalLink>
-                    ) : (
-                      <span className="inline-flex min-w-0 flex-wrap items-center gap-1.5 text-ink-soft">
-                        <Icon name="attach" size={12} />
-                        <span className="truncate">{file.name}</span>
-                        <span className="font-mono text-meta text-ink-faint">
-                          {size(file.bytes)} · {t('quests.detail.fileElsewhere')}
-                        </span>
-                      </span>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-          {(() => {
-            /* The chain this quest belongs to (MAP1): the ask, the steps before and after it, what
-               its close will still publish (D65 §4, `{parent}` as the asker wrote it), and on what
-               each step ran. Only when there is a chain: a lone quest's session is shown below. */
-            const chain = buildChain(
-              detail.id, everything.data ?? quests.data ?? [detail], sessions.data ?? []);
-            return chain.length > 1 && (
-              <div className="mt-4">
-                <ChainStrip
-                  chain={chain}
-                  onQuest={openDetail}
-                  onSession={onAttend && driver.data ? (session) => onAttend(session.id) : undefined}
-                />
-              </div>
-            );
-          })()}
-          {detail.note && (
-            <p className="mt-4 rounded-control bg-accent-soft px-3 py-2.5 text-body italic">{detail.note}</p>
-          )}
-          {(() => {
-            const session = sessionFor.get(detail.id);
-            if (!session) return null;
-            return (
-              /* The driven session's RECORD (D46 §4) — read-only here: the process, and the person's
-                 controls over it, live where a driver is attached, which is the desktop. The note and
-                 evidence are the driver's observations and render verbatim, like every system sentence. */
-              <section className="mt-5" aria-label={t('quests.session.title')}>
-                <SectionTitle>{t('quests.session.title')}</SectionTitle>
-                <div className="flex flex-wrap items-center gap-2">
-                  <Pill tone={SESSION_TONE[session.state]}>{t(`sessionState.${session.state}`)}</Pill>
-                  <span className="font-mono text-meta text-ink-faint">
-                    {session.id} · {sessionTool(session)}
-                    {' · '}{t('quests.session.moved', { ago: ago(session.updated) })}
-                  </span>
-                  {/* Stop reaches a PROCESS, so it renders only where one is actually running — the
-                      shell's driver — never in a browser that could only wish (D46 §6). */}
-                  {driver.data?.running.includes(session.id) && (
-                    <Button
-                      variant="danger"
-                      disabled={stop.isPending}
-                      onClick={() => stop.mutate(session.id, {
-                        onSuccess: (answer) => notify(t(stopNotice(answer), { id: session.id })),
-                        onError: failure(notify),
-                      })}
-                    >
-                      {t('quests.session.stop')}
-                    </Button>
-                  )}
-                </div>
-                {session.note && (
-                  <p className="mt-2 mb-0 text-body text-ink-soft">{session.note}</p>
-                )}
-                {session.evidence && (
-                  <pre className="mt-2 mb-0 overflow-x-auto whitespace-pre-wrap rounded-control border border-line-strong bg-raised px-3 py-2.5 font-mono text-small">
-                    {session.evidence}
-                  </pre>
-                )}
-                {/* One home for the stream (design §3, D55): the console was here, and a session's
-                    console is now the Work frame's output panel. This keeps the record summary and
-                    becomes a DOOR — which is only offered where Work exists at all. */}
-                {onAttend && driver.data && (
-                  <Button className="mt-2.5" onClick={() => onAttend(session.id)}>{t('work.open')}</Button>
-                )}
-                <p className="mt-2 mb-0 text-small text-ink-faint">{t('quests.session.hint')}</p>
-              </section>
-            );
-          })()}
-        </Drawer>
-      )}
-
-      {/* 🔴 Nobody to ask: with nothing registered, `from` and `to` offered nobody and a quest
-          written in full could never be published. Seen on the installed window, 2026-09-24. */}
-      {composing && nobody && (
-        <Drawer
-          title={t('quests.compose.title')}
-          onClose={() => setComposing(false)}
-          meta={<span className="font-mono text-meta text-ink-faint">{t('quests.compose.meta')}</span>}
-          footer={<Button variant="ghost" onClick={() => setComposing(false)}>{t('common.close')}</Button>}
-        >
-          <EmptyState icon="projects" headline={t('quests.compose.nobody.headline')} body={t('quests.compose.nobody.body')} />
-        </Drawer>
-      )}
-
-      {composing && !nobody && (
-        <Drawer
-          title={t('quests.compose.title')}
-          onClose={() => setComposing(false)}
-          meta={<span className="font-mono text-meta text-ink-faint">{t('quests.compose.meta')}</span>}
-          footer={
-            <div className="flex flex-wrap items-center gap-2">
-              <Button
-                variant="primary"
-                disabled={
-                  busy || !draft.from || !draft.to || !draft.title.trim() || !draft.body.trim()
-                  // A next step started is a next step owed: the form does not offer half of one.
-                  || (draft.step !== null && (!draft.step.to || !draft.step.title.trim() || !draft.step.body.trim()))
-                }
-                onClick={() => void onPublish()}
-              >
-                {t('quests.compose.publish')}
-              </Button>
-              <Button variant="ghost" disabled={busy} onClick={() => setComposing(false)}>
-                {t('common.cancel')}
-              </Button>
-            </div>
-          }
-        >
-          <form
-            className="grid gap-3"
-            onSubmit={(e) => { e.preventDefault(); void onPublish(); }}
-            // The whole composer takes a drop and a paste (D65 §2) — aiming at a box inside a drawer
-            // is a chore, and the box below lights up to say where the file went.
-            {...carry.handlers}
-          >
-            <p className="m-0 text-body text-ink-soft">{t('quests.compose.hint')}</p>
-            <div className="grid grid-cols-2 gap-2.5 max-md:grid-cols-1">
-              <label className="grid gap-1 text-small text-ink-soft">
-                {t('quests.compose.from')}
-                <SelectField
-                  value={draft.from} required
-                  onChange={(from) => setDraft({ ...draft, from })}
-                  placeholder={t('quests.compose.fromPlaceholder')}
-                  ariaLabel={t('quests.compose.from')}
-                  options={adopterOptions}
-                />
-              </label>
-              <label className="grid gap-1 text-small text-ink-soft">
-                {t('quests.compose.to')}
-                <SelectField
-                  value={draft.to} required
-                  onChange={(to) => setDraft({ ...draft, to })}
-                  placeholder={t('quests.compose.toPlaceholder')}
-                  ariaLabel={t('quests.compose.to')}
-                  options={adopterOptions}
-                />
-              </label>
-            </div>
-            <label className="grid gap-1 text-small text-ink-soft">
-              {t('quests.compose.titleLabel')}
-              <input
-                required value={draft.title}
-                onChange={(e) => setDraft({ ...draft, title: e.target.value })}
-                className="min-h-[1.9rem] rounded-control border border-line-strong bg-raised px-2.5 py-1.5 text-body text-ink"
-              />
-            </label>
-            {target && !target.registered && (
-              /* The same caution the service gives an agent, before the person relies on it. */
-              <p className="m-0 border-l-[3px] border-warn bg-raised px-3.5 py-2 text-body text-ink-soft">
-                <Inline text={t('quests.compose.caution', { repository: target.repository })} />
-              </p>
-            )}
-            <label className="grid gap-1 text-small text-ink-soft">
-              {t('quests.compose.bodyLabel')}
-              <textarea
-                required value={draft.body}
-                onChange={(e) => setDraft({ ...draft, body: e.target.value })}
-                className="min-h-28 resize-y rounded-control border border-line-strong bg-raised px-2.5 py-1.5 text-body text-ink"
-              />
-            </label>
-            <CarryFields
-              carry={{ links: draft.links, files: draft.files }}
-              filesLabel={t('quests.compose.filesLabel')}
-              leftOff={carry.leftOff}
-              dragging={carry.dragging}
-              busy={busy}
-              onLinks={(links) => setDraft({ ...draft, links })}
-              onAttach={carry.attach}
-              onRemove={carry.remove}
-            />
-            {/* The chain (D65 §4): one next step, published by the service when this closes done.
-                Behind a press, because most asks are one quest and the form should not say otherwise. */}
-            {draft.step === null ? (
-              <div>
-                <Button
-                  type="button" variant="ghost" disabled={busy}
-                  onClick={() => setDraft({ ...draft, step: { to: '', title: '', body: '' } })}
-                >
-                  <Icon name="plus" size={12} />{t('quests.compose.addStep')}
-                </Button>
-              </div>
-            ) : (
-              <fieldset className="m-0 grid gap-2.5 rounded-control border border-line-strong px-3 pb-3 pt-2">
-                <legend className="px-1 text-small text-ink-soft">{t('quests.compose.stepLegend')}</legend>
-                <p className="m-0 text-small text-ink-faint">{t('quests.compose.stepHint')}</p>
-                <label className="grid gap-1 text-small text-ink-soft">
-                  {t('quests.compose.stepTo')}
-                  <SelectField
-                    value={draft.step.to}
-                    onChange={(to) => setDraft({ ...draft, step: { ...draft.step!, to } })}
-                    placeholder={t('quests.compose.toPlaceholder')}
-                    ariaLabel={t('quests.compose.stepTo')}
-                    options={adopterOptions}
-                  />
-                </label>
-                <label className="grid gap-1 text-small text-ink-soft">
-                  {t('quests.compose.stepTitle')}
-                  <input
-                    value={draft.step.title}
-                    onChange={(e) => setDraft({ ...draft, step: { ...draft.step!, title: e.target.value } })}
-                    className="min-h-[1.9rem] rounded-control border border-line-strong bg-raised px-2.5 py-1.5 text-body text-ink"
-                  />
-                </label>
-                <label className="grid gap-1 text-small text-ink-soft">
-                  {t('quests.compose.stepBody')}
-                  <textarea
-                    rows={3} value={draft.step.body}
-                    onChange={(e) => setDraft({ ...draft, step: { ...draft.step!, body: e.target.value } })}
-                    className="resize-y rounded-control border border-line-strong bg-raised px-2.5 py-1.5 text-body text-ink"
-                  />
-                </label>
-                <div>
-                  <Button type="button" variant="ghost" disabled={busy} onClick={() => setDraft({ ...draft, step: null })}>
-                    <Icon name="x" size={12} />{t('quests.compose.removeStep')}
-                  </Button>
-                </div>
-              </fieldset>
-            )}
-          </form>
-        </Drawer>
-      )}
-    </section>
-  );
+      ),
+      loading: quests.isPending || asks.loading,
+      empty: listed && rows.length === 0 && asks.rows.length === 0
+        ? { headline, body: t('quests.empty.body') }
+        : undefined,
+      chosen,
+      body: (
+        <QuestList
+          asks={asks.rows}
+          quests={rows}
+          closed={filters.closed}
+          filteredTo={filters.to}
+          empty={headline}
+          unanswered={!listed && quests.error ? sentence(quests.error) : null}
+          chosen={chosen}
+          resuming={setHold.isPending}
+          onChoose={onChoose}
+          // A hold is this machine's driver's, so only a shell's list ever says one to lift.
+          onResume={(repository) => setHold.mutate({ repository, held: false }, { onError: failure(notify) })}
+        />
+      ),
+    },
+    main: (
+      <>
+        {main}
+        {composing && (
+          <QuestComposer
+            draft={draft}
+            onChange={setDraft}
+            receivers={adopters}
+            nobody={nobody}
+            caution={target && !target.registered ? target.repository : null}
+            busy={busy}
+            onPublish={() => void onPublish()}
+            onCancel={() => setComposing(false)}
+          />
+        )}
+        {asks.composer}
+      </>
+    ),
+  };
 }

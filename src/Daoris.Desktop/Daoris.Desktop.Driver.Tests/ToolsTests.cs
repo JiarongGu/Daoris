@@ -351,14 +351,15 @@ public sealed class ToolsTests : IDisposable
     }
 
     [Fact]
-    public void A_version_nobody_downloaded_refuses_names_the_way_back_to_PATH_and_never_guesses()
+    public void A_version_nobody_downloaded_refuses_names_the_download_and_the_way_back_to_PATH_and_never_guesses()
     {
         Write("""{"tools":{"git":{"use":"managed","version":"2.51.0"}}}""");
 
         Assert.Equal(
             new ToolResolution("git", ToolWay.Managed, "2.51.0", null, true,
                 $"Git is managed at 2.51.0, and that version is not downloaded ({Path.Combine(Home, Tools.Folder, "git", "2.51.0")}) "
-                + "— it never falls back to PATH. `daoris tool use git system` runs the one on PATH"),
+                + "— it never falls back to PATH. `daoris tool use git managed 2.51.0` downloads it, and `daoris tool use git system` "
+                + "runs the one on PATH"),
             Tools.Resolve(Home, "git", path: ""));
     }
 
@@ -457,5 +458,88 @@ public sealed class ToolsTests : IDisposable
 
         Assert.True(error.Message.Contains(fragment, StringComparison.Ordinal), $"{name}: {error.Message}");
         Assert.Equal(before, File.ReadAllText(ToolsFile));
+    }
+
+    // ── Managed, written (TOOLS4, rule 6): only over a version that is downloaded. The CLI's `managed is written…` ──
+
+    /// <summary>A downloaded version as the resolution finds it: its record, naming an executable that is there.</summary>
+    private void Downloaded(string tool, string version)
+    {
+        var folder = Path.Combine(Home, Tools.Folder, tool, version);
+        Directory.CreateDirectory(Path.Combine(folder, Tools.Package, "bin"));
+        File.WriteAllText(Path.Combine(folder, Tools.Package, "bin", $"{tool}.exe"), tool);
+        File.WriteAllText(Path.Combine(folder, Tools.Record), $$"""{"exe":"bin/{{tool}}.exe"}""");
+    }
+
+    private string? Text() => File.Exists(ToolsFile) ? File.ReadAllText(ToolsFile) : null;
+
+    [Theory]
+    [InlineData("a version downloaded", null, "2.62.0", "2.62.0", """{"use":"managed","version":"2.62.0"}""", null)]
+    [InlineData("a version not downloaded", null, null, "2.62.0", null, "is not downloaded")]
+    [InlineData("another version downloaded", null, "2.61.0", "2.62.0", null, "is not downloaded")]
+    [InlineData("a version that is not exact", null, null, "latest", null, "`latest` is not an exact version")]
+    [InlineData("a version that climbs out", null, null, "../2.62.0", null, "`../2.62.0` is not an exact version")]
+    [InlineData("over a file it names", """{"tools":{"gh":{"use":"file","file":"FILE","keep":"this"}}}""", "2.62.0", "2.62.0", """{"use":"managed","keep":"this","version":"2.62.0"}""", null)]
+    [InlineData("over a file that does not read", "not json", "2.62.0", "2.62.0", null, "is not readable JSON")]
+    public void Managed_is_written_as_the_cli_writes_it(string name, string? before, string? has, string version, string? after, string? refusal)
+    {
+        if (before is not null) Write(before.Replace("FILE", Escaped(WholeFile)));
+        if (has is not null) Downloaded("gh", has);
+        var was = Text();
+
+        if (refusal is null)
+        {
+            Tools.UseManaged(Home, "gh", version);
+            Same(after!, Parsed()["tools"]!["gh"]!);
+            Assert.Equal(Path.Combine(Home, Tools.Folder, "gh", version, Tools.Package, "bin", "gh.exe"), Tools.Resolve(Home, "gh", path: "").File);
+        }
+        else
+        {
+            var error = Assert.Throws<DriverException>(() => Tools.UseManaged(Home, "gh", version));
+            Assert.True(error.Message.Contains(refusal, StringComparison.Ordinal), $"{name}: {error.Message}");
+            Assert.Equal(was, Text());
+        }
+    }
+
+    // ── Locations, written (rule 5's write side, TOOLS4). The CLI's `a location is added or removed…` ──────────────
+
+    [Theory]
+    [InlineData("add to no file", null, "add", "https://a.example/r.json", """["https://a.example/r.json"]""", true, null)]
+    [InlineData("add after another", """{"locations":["https://a.example/r.json"]}""", "add", "http://localhost:8080/r.json", """["https://a.example/r.json","http://localhost:8080/r.json"]""", true, null)]
+    [InlineData("add one already listed", """{"locations":["https://a.example/r.json"]}""", "add", "https://a.example/r.json", """["https://a.example/r.json"]""", false, null)]
+    [InlineData("add over http to another host", null, "add", "http://a.example/r.json", null, false, "is not a resource location")]
+    [InlineData("add over locations that are not a list", """{"locations":"https://a.example/r.json"}""", "add", "https://b.example/r.json", null, false, "`locations` is not a list")]
+    [InlineData("add over a file that does not read", "not json", "add", "https://a.example/r.json", null, false, "is not readable JSON")]
+    [InlineData("remove one listed", """{"locations":["https://a.example/r.json","https://b.example/r.json"]}""", "remove", "https://a.example/r.json", """["https://b.example/r.json"]""", true, null)]
+    [InlineData("remove one not listed", """{"locations":["https://a.example/r.json"]}""", "remove", "https://b.example/r.json", """["https://a.example/r.json"]""", false, null)]
+    [InlineData("remove beside one that is not an address", """{"locations":["ftp://kept.example/r.json","https://a.example/r.json"]}""", "remove", "https://a.example/r.json", """["ftp://kept.example/r.json"]""", true, null)]
+    [InlineData("remove from no file", null, "remove", "https://a.example/r.json", null, false, null)]
+    public void A_location_is_written_as_the_cli_writes_it(
+        string name, string? before, string verb, string address, string? after, bool changed, string? refusal)
+    {
+        if (before is not null) Write(before);
+        bool Change() => verb == "add" ? Tools.AddLocation(Home, address) : Tools.RemoveLocation(Home, address);
+
+        if (refusal is null)
+        {
+            Assert.True(changed == Change(), name);
+            var written = File.Exists(ToolsFile) ? Parsed()["locations"] : null;
+            if (after is null) Assert.Null(written);
+            else Same(after, written!);
+        }
+        else
+        {
+            var error = Assert.Throws<DriverException>(() => Change());
+            Assert.True(error.Message.Contains(refusal, StringComparison.Ordinal), $"{name}: {error.Message}");
+            Assert.Equal(before, Text());
+        }
+    }
+
+    [Fact]
+    public void A_location_written_keeps_every_key_the_writer_has_no_field_for()
+    {
+        Write("""{"note":"mine","tools":{"git":{"use":"system"}},"git":{"core.sshCommand":"ssh"}}""");
+        Tools.AddLocation(Home, "https://a.example/r.json");
+        Same("""{"note":"mine","tools":{"git":{"use":"system"}},"git":{"core.sshCommand":"ssh"},"locations":["https://a.example/r.json"]}""", Parsed());
     }
 }

@@ -2,9 +2,8 @@ import {
   type KeyboardEvent, type PointerEvent, type ReactNode, type SetStateAction, useEffect, useMemo, useRef, useState,
 } from 'react';
 import { useTranslation } from 'react-i18next';
-import * as Menu from '@radix-ui/react-dropdown-menu';
 import { cn } from '../lib/cn';
-import { Icon, Tip } from '../ui';
+import { Icon, Menu, Tip } from '../ui';
 import { CARD_H, type Card, layoutLayers, lineKey, type Point, ROUND } from './layers';
 import {
   ASKS_DASH, AsksMark, CHAIN_DASH, chainOpen, Count, DependsLine, howMany, lineLabel, type MapSelection, sameSelection,
@@ -27,16 +26,10 @@ const CHAIN_LANE = 20;
 /** The sizes the sizing menu offers by name, as a map tool's zoom menu does. */
 const PRESETS = [0.5, 1, 2] as const;
 
-const MENU_ITEM = cn(
-  'flex cursor-pointer items-center gap-2 rounded-[4px] px-2 py-1.5 text-small text-ink-soft outline-none',
-  'data-[highlighted]:bg-raised data-[highlighted]:text-ink',
-);
-
 /** One way to size the map: its name, a tick when it is the size now, and its key where it has one. */
 function SizeItem({ label, keys, current = false, onSelect }: { label: string; keys?: string; current?: boolean; onSelect: () => void }) {
   return (
-    <Menu.Item onSelect={onSelect} className={cn(MENU_ITEM, current && 'text-ink')}>
-      <span className="flex w-3.5 shrink-0 justify-center">{current && <Icon name="check" size={12} aria-hidden />}</span>
+    <Menu.Item tick={current} onSelect={onSelect}>
       <span className="flex-1 truncate">{label}</span>
       {keys && <kbd className="font-mono text-meta text-ink-faint">{keys}</kbd>}
     </Menu.Item>
@@ -256,7 +249,7 @@ export function LayeredMap({ topology, selected, onSelect, tools }: {
         {/* The size, and every way to change it, behind the size itself — a map tool's zoom menu, where
             there were an arrow down, an arrow up and a corner that meant *fit*. */}
         {tools}
-        <Menu.Root modal={false}>
+        <Menu.Root>
           <Tip content={t('map.sizing')}>
             <Menu.Trigger asChild>
               <button
@@ -272,27 +265,20 @@ export function LayeredMap({ topology, selected, onSelect, tools }: {
               </button>
             </Menu.Trigger>
           </Tip>
-          <Menu.Portal>
-            <Menu.Content
-              align="end"
-              sideOffset={4}
-              collisionPadding={8}
-              className="z-30 min-w-52 rounded-control border border-line bg-overlay p-1 shadow-lg"
-            >
-              <SizeItem label={t('map.zoomIn')} keys="+" onSelect={() => zoomAt(ZOOM.step)} />
-              <SizeItem label={t('map.zoomOut')} keys="-" onSelect={() => zoomAt(1 / ZOOM.step)} />
-              <Menu.Separator className="my-1 h-px bg-line" />
-              <SizeItem label={t('map.fit')} keys="0" onSelect={() => move(fitted(true))} />
-              {PRESETS.map((scale) => (
-                <SizeItem
-                  key={scale}
-                  label={`${scale * 100}%`}
-                  current={percent === scale * 100}
-                  onSelect={() => zoomTo(scale)}
-                />
-              ))}
-            </Menu.Content>
-          </Menu.Portal>
+          <Menu.Content align="end" className="min-w-52">
+            <SizeItem label={t('map.zoomIn')} keys="+" onSelect={() => zoomAt(ZOOM.step)} />
+            <SizeItem label={t('map.zoomOut')} keys="-" onSelect={() => zoomAt(1 / ZOOM.step)} />
+            <Menu.Separator />
+            <SizeItem label={t('map.fit')} keys="0" onSelect={() => move(fitted(true))} />
+            {PRESETS.map((scale) => (
+              <SizeItem
+                key={scale}
+                label={`${scale * 100}%`}
+                current={percent === scale * 100}
+                onSelect={() => zoomTo(scale)}
+              />
+            ))}
+          </Menu.Content>
         </Menu.Root>
       </div>
 

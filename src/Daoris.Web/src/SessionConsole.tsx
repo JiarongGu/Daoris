@@ -14,7 +14,7 @@ import { MonoWell } from './ui';
  * browser the hook asks nobody and this stays absent, which is the same rule the stop control
  * follows.
  *
- * Shared by the quest drawer (a driven session's record) and the chat drawer (a conversation), for
+ * Shared by the quest's page (a driven session's record) and the chat drawer (a conversation), for
  * the reason those two are one entity in the first place: the console does not care which way in a
  * session was entered.
  */

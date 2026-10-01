@@ -54,6 +54,8 @@ public static class DriverCommand
               one sync pass now, or where each workspace stands.
           logs [--since <30m|2h|3d>] [--source <name>] [--event <name>] [--level <warn|error>] [--json]
               the machine log, every source merged by time.
+          plugins install <file.nupkg>
+              install a plugin package's plugin, checked first; nothing reaches a network.
           plugins new <id> --point <point>… [--in <folder>]  ·  plugins try <folder|id> [--point <point>]
               make a plugin, or try one as the driver would.
           plugins show <id> [--json]  ·  plugins activity <id> [--since <30m|2h|3d>] [--json]
