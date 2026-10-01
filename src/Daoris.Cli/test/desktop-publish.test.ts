@@ -6,11 +6,13 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 // Untyped workspace tooling, suppressed at the one site — see desktop-tool.test.ts for why.
 import {
-  KEPT_LOCALES, LAUNCHER, MARKER, MARKER_HEADER, OFFERED_PLUGINS, OWN, PLUGIN_OFFERS, RETIRED_IN_APP, RETIRED_LAUNCHERS,
-  SHELL_EXE, SHELL_FILES, SHELL_HOME, installedNote, isInstall, layOffers, recordedShellFiles, refusal, retiredPaths,
+  KEPT_LOCALES, LAUNCHER, MARKER, MARKER_HEADER, OFFERED_PLUGINS, OWN, PLUGIN_OFFERS, RESOURCES, RESOURCES_SOURCE, RETIRED_IN_APP,
+  RETIRED_LAUNCHERS, SHELL_EXE, SHELL_FILES, SHELL_HOME, installedNote, isInstall, layOffers, layResources, recordedShellFiles,
+  refusal, retiredPaths,
   // @ts-expect-error — untyped workspace tooling; see above
 } from '../../../tools/desktop-publish.mjs';
 import { OFFERS_DIR, readManifest } from '../src/plugins.ts';
+import { BUILT_IN, BUILT_IN_LAYOUT, parseResources } from '../src/resources.ts';
 
 /**
  * The publish guard (`tools/desktop-publish.mjs`): what it refuses to write into, and the one door
@@ -248,6 +250,70 @@ test('an offer missing from the examples stops the publish, naming it, and the o
 
   assert.throws(() => layOffers(examples, install), /azure-devops-pull-request/);
   assert.ok(existsSync(join(offers, 'in-app-browser')), 'the last publish’s offers are untouched');
+});
+
+/**
+ * TOOLS3, D121 §3.1: the install carries the list built in at `app/resources.json`, beside the application,
+ * where the driver reads it from its own folder; the CLI finds it beside the home, which in an install is the
+ * same folder. Three spellings, held here, and the source the publish copies is the driver's own.
+ */
+const workspace = join(here, '..', '..', '..');
+
+test('the list built in is where the CLI and the driver look for it', () => {
+  assert.deepEqual([...RESOURCES], ['app', 'resources.json']);
+  assert.deepEqual([...RESOURCES], [...BUILT_IN_LAYOUT]);
+  assert.equal(RESOURCES[0], SHELL_HOME[0], 'beside the application, in app/');
+  const driver = readFileSync(join(here, '..', '..', 'Daoris.Desktop', 'Daoris.Desktop.Driver', 'ToolResources.cs'), 'utf8');
+  assert.ok(driver.includes(`Layout = [${RESOURCES.map((part: string) => `"${part}"`).join(', ')}]`), 'ToolResources.Layout');
+
+  assert.deepEqual([...RESOURCES_SOURCE], ['src', 'Daoris.Desktop', 'Daoris.Desktop.Driver', 'resources.json']);
+  const project = readFileSync(join(workspace, 'src', 'Daoris.Desktop', 'Daoris.Desktop.Driver', 'Daoris.Desktop.Driver.csproj'), 'utf8');
+  assert.match(project, /<None Include="resources\.json" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="Never" \/>/,
+    'every build carries it beside the driver, and the publish lays it out one way');
+});
+
+test('laying out the list copies the driver’s own whole into app/resources.json, and nothing into the home', () => {
+  const install = folder();
+  mkdirSync(join(install, 'data'), { recursive: true });
+  const source = join(workspace, ...RESOURCES_SOURCE);
+
+  const laid = layResources(source, install);
+
+  assert.equal(laid, join(install, ...RESOURCES));
+  assert.deepEqual(readFileSync(laid), readFileSync(source), 'the bytes as tracked, so its hash is the list’s own');
+  const list = parseResources(readFileSync(laid, 'utf8'), BUILT_IN);
+  assert.equal(list.problem, null);
+  assert.deepEqual(list.notes, []);
+  assert.deepEqual(readdirSync(join(install, 'data')), [], 'nothing under the home');
+  assert.deepEqual(readdirSync(join(install, SHELL_HOME[0])), [RESOURCES[1]], 'nothing left staged beside it');
+});
+
+test('a republish replaces the list whole', () => {
+  const install = folder();
+  mkdirSync(join(install, SHELL_HOME[0]), { recursive: true });
+  writeFileSync(join(install, ...RESOURCES), '{"schema":1,"tools":{"gh":{}}}\n');
+  const source = join(folder(), 'resources.json');
+  writeFileSync(source, '{"schema":1,"tools":{}}\n');
+
+  layResources(source, install);
+
+  assert.equal(readFileSync(join(install, ...RESOURCES), 'utf8'), '{"schema":1,"tools":{}}\n');
+  assert.deepEqual(readdirSync(join(install, SHELL_HOME[0])), [RESOURCES[1]]);
+});
+
+test('a list that is not schema 1 stops the publish, naming it, and the list stands as it was', () => {
+  const install = folder();
+  mkdirSync(join(install, SHELL_HOME[0]), { recursive: true });
+  writeFileSync(join(install, ...RESOURCES), '{"schema":1,"tools":{}}\n');
+  const at = folder();
+
+  const sources: [string, string][] = [['not JSON', 'not json'], ['a newer schema', '{"schema":2,"tools":{}}'], ['a list', '[]']];
+  for (const [name, text] of sources) {
+    const source = join(at, `${name}.json`);
+    writeFileSync(source, text);
+    assert.throws(() => layResources(source, install), (error: Error) => error.message.includes(source), name);
+    assert.equal(readFileSync(join(install, ...RESOURCES), 'utf8'), '{"schema":1,"tools":{}}\n', `${name}: the last list is untouched`);
+  }
 });
 
 test('the last publish’s record is read from inside app/, and no record is no names', () => {
