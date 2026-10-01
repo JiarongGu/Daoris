@@ -561,8 +561,10 @@ test('a browser is told which tier answers search, and nothing of the intake (AG
   await page.goto('/');
 
   await page.getByLabel('state of this machine').getByRole('button', { name: 'recall' }).click();
-  await expect(page.getByRole('heading', { name: 'Settings', exact: true })).toBeVisible();
-  await expect(page.getByText('AI features')).toBeVisible();
+  // Settings' main area is named for the domain shown (FRAME1g), and its list has that domain chosen.
+  await expect(page.getByRole('heading', { level: 1, name: 'AI features', exact: true })).toBeVisible();
+  await expect(page.getByRole('navigation', { name: 'Settings domains' }).getByRole('button', { name: 'AI features' }))
+    .toHaveAttribute('aria-current', 'page');
   await expect(page.getByText('Search and convergence')).toBeVisible();
   await expect(page.getByText(status.tier, { exact: true }).first()).toBeVisible();
   if (status.note) await expect(page.getByText(status.note, { exact: true })).toBeVisible();
@@ -579,12 +581,14 @@ test('a browser is told which tier answers search, and nothing of the intake (AG
  * transcript — none of which may leave the machine that produced them (D47 §4). Playwright holds
  * the NEGATIVE, over the shipped bundle, because the positive is only reachable from the desktop.
  */
-test('a browser has no Sessions, and no mode to switch (D55, D66)', async ({ page }) => {
+test('a browser has no Sessions and no Plugins, and no mode to switch (D55, D66, D119)', async ({ page }) => {
   await page.goto('/');
 
   // One navigation, and Sessions is not on it — absent rather than disabled.
   await expect(page.getByRole('group', { name: /mode/i })).toHaveCount(0);
   await expect(nav(page, 'Sessions')).toHaveCount(0);
+  // Nor Plugins (PLUGUI1b, D119 §3.7): a plugin is this machine's, so its view is shell-only, as Sessions is.
+  await expect(nav(page, 'Plugins')).toHaveCount(0);
   await expect(nav(page, 'Quests')).toBeVisible();
 
   // A browser that remembers Sessions still lands on Overview: the fallback is not cosmetic.
@@ -649,6 +653,8 @@ test('the palette offers a browser nothing that needs this machine (SURF9)', asy
 
   // Nothing that needs a shell is — not disabled, ABSENT.
   await expect(palette.getByRole('option', { name: /Sessions/ })).toHaveCount(0);
+  // Plugins is this machine's (D119 §3.7), so its palette row is not offered here.
+  await expect(palette.getByRole('option', { name: /Plugins/ })).toHaveCount(0);
   await expect(palette.getByRole('option', { name: /Start a session/ })).toHaveCount(0);
   await expect(palette.getByRole('option', { name: /Review what/ })).toHaveCount(0);
   // A window is the shell's to open, so neither of SURF8's is offered here.
@@ -687,6 +693,55 @@ test('the chrome stays beside the content on a narrow window, never above it', a
   expect(bar.width).toBeLessThan(60);
   // The content gets the height, which is the thing the bug actually cost.
   expect(main.height).toBeGreaterThan(400);
+});
+
+/**
+ * A view's columns follow its main area, never the window (D118 §3b, FRAME1c): the side bar and a list
+ * narrow the main area while the window stays as wide, so Overview's two cards, the repositories' cards and
+ * the map's detail beside its canvas are laid out by the main area's own width. A browser has no side bar
+ * (§4), so the main area is narrowed here by hand at a window that stays 1280 px wide: a viewport breakpoint
+ * would keep two columns, and only a container query stacks them. vitest has no layout to see this with.
+ */
+test("a browser's main area lays its columns out by its own width, beside no side bar and no panel (D118)", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.goto('/');
+  await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible();
+  // The main area and the view's list are a browser's; the side bar and the panel never are.
+  await expect(page.getByRole('complementary', { name: 'right side bar' })).toHaveCount(0);
+  await expect(page.getByRole('region', { name: 'the panel' })).toHaveCount(0);
+
+  const main = page.locator('main');
+  /** The two columns of the split that holds `text`, and whether the second sits beside the first. */
+  const beside = async (text: string) => {
+    const columns = page.locator('main section > div.grid', { hasText: text }).locator(':scope > *');
+    const first = await columns.nth(0).boundingBox();
+    const second = await columns.nth(1).boundingBox();
+    if (!first || !second) throw new Error(`the split holding "${text}" must have two columns laid out`);
+    return Math.abs(first.y - second.y) < 4 && second.x >= first.x + first.width - 1;
+  };
+  const narrowed = (width: string | null) => main.evaluate((element, to) => { element.style.maxWidth = to ?? ''; }, width);
+
+  // Overview: Outstanding beside the repositories by index size, and above them in a narrow main area.
+  expect(await beside('Outstanding — oldest first')).toBe(true);
+  await narrowed('600px');
+  await expect.poll(() => beside('Outstanding — oldest first')).toBe(false);
+  await narrowed(null);
+
+  // Repositories: the two adopted members side by side, and one above the other.
+  await nav(page, 'Repositories').click();
+  await expect(page.getByText('the engine runtime — simulation, rendering, assets')).toBeVisible();
+  await expect.poll(() => beside('the engine runtime')).toBe(true);
+  await narrowed('600px');
+  await expect.poll(() => beside('the engine runtime')).toBe(false);
+  await narrowed(null);
+
+  // The map: its detail beside the canvas, and under it.
+  await nav(page, 'Map').click();
+  await expect(page.getByRole('group', { name: 'the workspace map' })).toBeVisible();
+  await expect.poll(() => beside('the number in a repository')).toBe(true);
+  await narrowed('600px');
+  await expect.poll(() => beside('the number in a repository')).toBe(false);
+  await narrowed(null);
 });
 
 test('the console speaks 中文', async ({ page }) => {

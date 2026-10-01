@@ -21,11 +21,11 @@ lists.
 
 ## State
 
-**Counts, and this is their one home:** seventeen commands, **835 CLI tests, 778 service and 47 HTTP host, 2001 driver,
-466 desktop modules, 80 devkit, 1988 web unit, 21 Playwright**, 92/92 release rehearsal, **312/312
+**Counts, and this is their one home:** seventeen commands, **888 CLI tests, 778 service and 47 HTTP host, 2001 driver,
+466 desktop modules, 80 devkit, 2176 web unit, 22 Playwright**, 108/108 release rehearsal, **312/312
 family rehearsal** (it names its own phases when you run it), **70/70 deployment rehearsal** (D60),
-and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge
-documents, 5 skills, 7 packs. The always-loaded core is **22,672 of 26,000 bytes** — a span in
+and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 6 knowledge
+documents, 6 skills, 7 packs. The always-loaded core is **22,672 of 26,000 bytes** — a span in
 `AGENTS.md` since D59 — and **advisory rather than enforced** (D54: a fact gates, a judgement
 reports).
 
@@ -132,8 +132,8 @@ rather than designed.
 
 ## Backlog
 
-**Sixty-eight rows are open** (most of them the builds of the designs below) (triaged 2026-09-30, when the owner asked to go faster; 2026-10-01 after the night's merges, the look, and the owner's round):
-- **Merging next:** FRAME1c, PLUGUI1b, FRAME1g, DOC2 and DOC3, SHEN2 and LYN1. **Building:** FRAME1d, PLUGUI1d, TOOLS4; Daoris.Plugins' own session on PLUGREPO2d.
+**Sixty-one rows are open** (most of them the builds of the designs below) (triaged 2026-09-30, when the owner asked to go faster; 2026-10-01 after the night's merges, the look, and the owner's round):
+- **Merging next:** PLUGUI1d and PLUGUI1e. **Building:** FRAME1d, TOOLS4, PLUGDIST1a.
 - **Designed, to build in order:** DEV2–DEV11 (D115); FRAME1b–i (D118) after NAME1b; PLUGUI1 after FRAME1c;
   LAYOUT3–LAYOUT10 (D117) after LAYOUT2's evidence.
 - **Waiting on the owner (five):** BUDGET1 (their call), TRUST2 and AGT2c (a grant, two
@@ -175,9 +175,6 @@ install in both themes and both languages.
 - [ ] **NAME2 — the names after NAME1b, on the window**: the glossary gains *lane* / 泳道 (DEV4 named it; NAME1
   had no term); the 107 budget judgements `names:check` reports are looked at on the window at 888 px, both
   languages, and each is renamed or accepted.
-- [ ] **PLUGUI1b — the Plugins view on the frame, on today's answers** (D119 §6; waits on FRAME1c): the view,
-  its list and pages, `＋` and ⋯, the offer's page, the kit drawer, the opener. Look: 1280 and 680 px, both
-  themes, both languages.
 - [ ] **PLUGUI1c — Settings keeps only what is a setting** (after b): the domain retires, its anchors repoint,
   the folder row joins Settings → Driver; crosses five lanes on purpose.
 - [ ] **PLUGUI1d — the machine log's plugin events, health, and `plugins show|activity`** (beside b): seven
@@ -188,16 +185,12 @@ install in both themes and both languages.
   live, Data folder, Source, *Install from a folder…*.
 - [ ] **PLUGUI1g — a plugin's checks** (after f): the last trial kept, its own tests run in a copy under the home.
 - [ ] **PLUGUI1h — Ask Daoris reaches the Plugins view** (after c and FRAME1i).
-- [ ] **FRAME1c — the main area and the view contract**: `ViewMain`, per-view memory, `open(view, item?)`,
-  container queries in Overview, Projects and Map, loading states, drawers above a full side bar.
 - [ ] **FRAME1d — Quests on the frame**: asks and quests in the list, a record in the main area, composers
   stay drawers; `test:web`'s quest-lifecycle spec moves to the page in the same row.
 - [ ] **FRAME1e — Repositories on the frame** (the renamed Projects): adopted, then registered; the
   repository's page with Manage and its code map.
 - [ ] **FRAME1f — Search and Convergence on the frame**: the hits and findings in the list, the entry in the
   main area; the reader drawer retires for these.
-- [ ] **FRAME1g — Settings on the frame** (after FRAME1c): the domains as the list pane, never stacked; skeleton
-  rows while machine domains load.
 - [ ] **FRAME1h — the secondary windows**: the monitor's rail on `ListPane`, a detached console on
   `OutputPanel`, the monitor's title on a real token (`tokens.test.ts` fails on `text-h3` first).
 - [ ] **FRAME1i — Ask Daoris knows each view's list and item**: `where.ts`, `go` naming an item, the room.
@@ -205,13 +198,6 @@ install in both themes and both languages.
 
 ### The kits (owner, 2026-10-01: *"shenora 0.19 and lyntai 3.5.3 both ready"*)
 
-- [ ] **SHEN2 — Shenora 0.19.0.** Move `Shenora`, `Shenora.Windows`, `Shenora.Chromium` (the desktop's
-  `Directory.Packages.props`) and `@shenora/react` (the web) from 0.18.0 to 0.19.0; read the kit's changelog for
-  what the shell relies on (the Chromium engine, the frame, the IPC modules, the window state, the debug port
-  LOOK3 met) and retire any workaround the kit now carries, as SHEN1 did. The deployment rehearsal proves it.
-- [ ] **LYN1 — Lyntai 3.5.3.** Move `Lyntai.Core` and `Lyntai.Providers.Basic` (the service's
-  `Directory.Packages.props`) from 3.2.0 to 3.5.3; read the changelog for anything the service relies on or can
-  now drop. The service suites and the family rehearsal prove it.
 
 ### Doctrine, plugins and tools (owner, 2026-10-01)
 
@@ -231,8 +217,11 @@ install in both themes and both languages.
 The contract is `docs/2026-10-01-plugin-distribution-design.md`; §7 carries each row's full text and proof.
 Every task in Daoris.Plugins is an ask to it, taken by its own session (the owner's wish: Daoris develops them).
 
-- [ ] **PLUGREPO2c — the two landing plugins** (asked: quest `#36351d45ac11`, its session working).
-- [ ] **PLUGREPO2d — in-app-browser** (an ask), then **PLUGREPO2e — this repository lets them go** (after PLUGDIST1g).
+- [ ] **PLUGREPO2e — this repository lets them go** (after PLUGDIST1g): the three plugins Daoris.Plugins now holds leave
+  `examples/`, `landing-plugins.test.ts` retires, and the offers are laid out from packages.
+- [ ] **SEM3 — a long entry is embedded whole and cut silently** (found upgrading Lyntai, LYN1 3.5.3): the semantic tier
+  sends an entry whole, and the embedder cuts it at its context without saying; Lyntai 3.3's `MaxInputChars` and
+  `Segmentation` would cap or split it. A feature choice: decide, then measure recall before and after.
 - [ ] **WORKSHOP1a — the workshop setting** (§2.1): where Daoris develops a plugin, the home by default, both doors.
 - [ ] **WORKSHOP1b — the workshop and its sessions** (§2.2); **WORKSHOP1c — the workshop on the view; Ask Daoris
   makes plugins there** (§2.3, §2.5); **WORKSHOP1d — hand-over and a named source** (§2.4).
@@ -251,10 +240,6 @@ The contract is `docs/2026-10-01-development-documents-design.md`; §6 carries e
 Order: UNBLOCK5 first (a week of *before*); then DOC2, DOC3 and UNBLOCK2 side by side; the driver lane runs
 UNBLOCK5 → UNBLOCK2 → UNBLOCK4 → UNBLOCK3 → DOC7. Only DOC2 changes the canon.
 
-- [ ] **DOC2 — the standard as canon** (§2.1–§2.6, §4): core knowledge `development-documents`, core skill
-  `set-up-documents` with templates; this repository and `examples/` re-synced in the same commit.
-- [ ] **DOC3 — roles bound to paths** (§2.7, §2.8): `documents` in the manifest, `sync`'s table, `check`'s facts;
-  no canonical skill carries `allowed-tools`.
 - [ ] **UNBLOCK4c — the push canary** (the owner's to allow): one turn per form against a local bare remote in
   scratch, by UNBLOCK4's procedure (its archive entry and hand-back): `git -C . push`, `-c`, `--no-pager`, a quoted
   subcommand, an alias, on both doors; the remote's tip must not move, and what refused each is recorded.

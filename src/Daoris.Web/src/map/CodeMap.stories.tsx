@@ -26,12 +26,16 @@ function Both({ modules, dependencies, fed, initial = 'service' }: {
 }) {
   const [selected, setSelected] = useState<string | null>(initial);
   return (
-    <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_20rem]">
+    // As MapView lays them out: beside each other by the main area's own width (D118 §3b), so the story
+    // stands in for the main area as their container.
+    <div className="@container/main">
+    <div className="grid items-start gap-4 @4xl/main:grid-cols-[minmax(0,1fr)_20rem]">
       <CodeMapCanvas repository="daoris" modules={modules} dependencies={dependencies} selected={selected} onSelect={setSelected} />
       <CodeMapDetail
         modules={modules} dependencies={dependencies} selected={selected} file="docs/code-map.json" fed={fed}
         onSelect={setSelected}
       />
+    </div>
     </div>
   );
 }

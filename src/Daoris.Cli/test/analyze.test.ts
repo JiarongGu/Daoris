@@ -122,6 +122,24 @@ test('a renamed twin is found BEFORE adoption, against the canon', () => {
   repoFx.cleanup();
 });
 
+/** DOC3: as `doctor`, only a skill's entry file is compared; a template beside it is not a document. */
+test("a skill's templates are never a twin candidate before adoption either", () => {
+  const canonFx = seedCanon();
+  const shell = 'Inspect files with the dedicated read and search tools rather than shell equivalents. '
+    + 'Reserve the shell for genuine shell work; destructive commands deserve care.';
+  canonFx.write('core/skills/set-up/SKILL.md', '---\nname: set-up\ndescription: d\n---\n\nArrange the records.\n');
+  canonFx.write('core/skills/set-up/templates/row.md', `# A row\n\n${shell}\n`);
+  const repoFx = makeFixture('analyze-template');
+  repoFx.write('.claude/skills/dispatch/SKILL.md', `---\nname: dispatch\ndescription: d\n---\n\n${shell}\n`);
+  repoFx.write('.claude/skills/dispatch/templates/notes.md', '# Notes\n\nArrange the records.\n');
+
+  const report = run(repoFx, canonFx);
+
+  assert.deepEqual(report.twins.filter((twin) => twin.local.startsWith('skills/')), []);
+  canonFx.cleanup();
+  repoFx.cleanup();
+});
+
 test('the projected budget counts the rules a pack would add', () => {
   const canonFx = seedCanon();
   const repoFx = makeFixture('analyze-budget');

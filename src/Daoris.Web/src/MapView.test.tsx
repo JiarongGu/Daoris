@@ -7,6 +7,7 @@ import { MapView } from './MapView';
 import { MapDetail } from './map/MapDetail';
 import { buildTopology } from './map/topology';
 import { WorkspaceScopeProvider } from './scope';
+import { columnsFollow } from './test/mainSplit';
 
 // MAP2 (D67 §3): the workspace map, over a stubbed service — a view of its own, the owner's choice.
 
@@ -350,6 +351,19 @@ describe('the workspace map', () => {
   });
 
   /**
+   * D118 §3b (audit MA3): the detail sat beside the canvas from the viewport's 1024 px, so at 1280 px with
+   * the side bar open the canvas kept a 20rem column beside it in a main area of about 650 px. The detail
+   * goes beside the canvas by the main area's own width, and under it in a narrow one.
+   */
+  it('lays its detail beside the canvas by the main area\'s own width, never the viewport\'s', async () => {
+    show();
+    const map = await screen.findByRole('group', { name: 'the workspace map' });
+    const split = map.closest('section > div')!;
+
+    expect(columnsFollow(split)).toEqual({ main: ['@4xl/main:grid-cols-[minmax(0,1fr)_20rem]'], viewport: [] });
+  });
+
+  /**
    * UX5 U49: scoped to every workspace, the map says so, as its empty state already did, and a
    * repository's detail names its circle. It said "this workspace" over every circle's repositories.
    */
@@ -426,6 +440,23 @@ describe('the workspace map', () => {
 
     await userEvent.click(screen.getByRole('button', { name: 'Back to the workspace' }));
     expect(await screen.findByRole('heading', { name: 'Map' })).toBeTruthy();
+  });
+
+  /** D118 §3b: one level in, the module's detail goes beside the code map by the main area's width too. */
+  it('lays a code map\'s detail beside it by the main area\'s own width', async () => {
+    CODE_MAPS = {
+      engine: {
+        repository: 'engine', file: 'docs/code-map.json', problem: null,
+        modules: [{ id: 'renderer', path: 'src/renderer', summary: 'draws frames' }],
+        dependencies: [],
+      },
+    };
+    show();
+    await openCode('engine');
+    await screen.findByRole('heading', { name: 'engine: code map' });
+    const split = (await screen.findByRole('button', { name: /^renderer/ })).closest('section > div')!;
+
+    expect(columnsFollow(split)).toEqual({ main: ['@4xl/main:grid-cols-[minmax(0,1fr)_20rem]'], viewport: [] });
   });
 
   /** 🔴 As the host answers it: a null field is LEFT OUT, and `=== null` once drew nothing at all. */

@@ -19,8 +19,12 @@ describe('the places a go may name', () => {
     ]);
   });
 
+  /**
+   * Plugins is a view since PLUGUI1b, and a go still names Settings → `plugins` until PLUGUI1c moves it to the
+   * views in this table and the driver's `HelpPlaces` together, since the twins change together (D119 §5).
+   */
   it('are every view the activity bar has and every domain Settings shows, and nothing else', () => {
-    expect([...PLACE_VIEWS].sort()).toEqual(VIEWS.map(({ view }) => view).sort());
+    expect([...PLACE_VIEWS].sort()).toEqual(VIEWS.map(({ view }) => view).filter((view) => view !== 'plugins').sort());
     expect([...PLACE_DOMAINS].sort()).toEqual([...SETTINGS_SECTIONS].sort());
   });
 

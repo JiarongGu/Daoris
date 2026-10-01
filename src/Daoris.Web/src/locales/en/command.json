@@ -7,6 +7,7 @@
   "command.go.search": "Search",
   "command.go.settings": "Settings",
   "command.go.sessions": "Sessions",
+  "command.go.plugins": "Plugins",
   "command.work.start": "Start a session…",
   "command.work.review": "Review what this session landed",
   "command.work.monitor": "Open the monitor window",

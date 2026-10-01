@@ -25,6 +25,7 @@ vi.mock('@shenora/react', () => ({
 
 import { ProjectsView } from './ProjectsView';
 import { DRIVER_STATE, REGISTRY, REPOSITORIES, respond, show } from './test/shellHarness';
+import { columnsFollow } from './test/mainSplit';
 
 describe('the shell-attached platform', () => {
   beforeEach(() => {
@@ -65,6 +66,17 @@ describe('the shell-attached platform', () => {
     expect(screen.getByText(/daoris import/).tagName).toBe('CODE');
     // The page header's and the empty state's: the second is where the eye already is.
     expect(screen.getAllByRole('button', { name: 'Add repository' })).toHaveLength(2);
+  });
+
+  /**
+   * D118 §3b (audit PR10): the adopted repositories went to two columns at the viewport's 1024 px, so at
+   * 1280 px with the side bar open each card was about 300 px. They go to two by the main area's own width.
+   */
+  it('lays the adopted repositories out by the main area\'s own width, never the viewport\'s', async () => {
+    show(<ProjectsView notify={() => {}} />);
+    const card = (await screen.findByText('the engine')).closest('section > div')!;
+
+    expect(columnsFollow(card)).toEqual({ main: ['@4xl/main:grid-cols-2'], viewport: [] });
   });
 
   it('hold appears only once a repository is drivable — a hold on nothing is noise', async () => {
@@ -134,7 +146,7 @@ describe('the shell-attached registry management', () => {
     await userEvent.click(await screen.findByRole('button', { name: 'Add repository' }));
     await userEvent.click(await screen.findByRole('button', { name: 'Choose a folder…' }));
 
-    expect(invoke).toHaveBeenCalledWith('DAORIS.REGISTRY', 'PICK_FOLDER', {});
+    expect(invoke).toHaveBeenCalledWith('DAORIS.REGISTRY', 'PICK_FOLDER', { timeoutMs: Infinity });
     expect(await screen.findByText('D:/repos/borealis')).toBeInTheDocument();
 
     // UX5 U38: the move leads and *never mind* follows, as in every other drawer; this one was reversed.

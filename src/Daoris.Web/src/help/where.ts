@@ -31,7 +31,7 @@ function listed(views: readonly ViewId[]): string {
 // The window's own names (NAME1b), so the agent names a place the person can find.
 const VIEWS: Record<View, string> = {
   overview: 'Overview', sessions: 'Sessions', quests: 'Quests', projects: 'Repositories',
-  map: 'Map', convergence: 'Convergence', search: 'Search', settings: 'Settings',
+  map: 'Map', convergence: 'Convergence', search: 'Search', plugins: 'Plugins', settings: 'Settings',
 };
 
 const DOMAINS: Record<SettingsSection, string> = {

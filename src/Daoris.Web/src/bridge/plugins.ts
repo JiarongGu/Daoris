@@ -46,12 +46,16 @@ export type PluginCatalog = {
   offersFolder?: string;
 };
 
-export const usePlugins = () => {
+/**
+ * The catalogue. `enabled: false` asks nothing (PLUGUI1b): the application holds the Plugins view on every view, and the
+ * view asks only while it is in front; Settings → Plugins asks whenever it is drawn.
+ */
+export const usePlugins = ({ enabled = true }: { enabled?: boolean } = {}) => {
   const { isAvailable } = useShenora();
   return useQuery({
     queryKey: keys.plugins,
     queryFn: () => call<PluginCatalog>('PLUGINS'),
-    enabled: isAvailable,
+    enabled: isAvailable && enabled,
   });
 };
 

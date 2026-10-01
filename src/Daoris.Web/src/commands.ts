@@ -5,7 +5,7 @@ import type { IconName } from './ui';
 // can assert rather than a screen somebody has to arrange.
 
 /** The application's views (D66): one list, the activity bar's. */
-export type View = 'overview' | 'sessions' | 'quests' | 'projects' | 'map' | 'convergence' | 'search' | 'settings';
+export type View = 'overview' | 'sessions' | 'quests' | 'projects' | 'map' | 'convergence' | 'search' | 'plugins' | 'settings';
 
 /**
  * Every view, in the activity bar's order, with the glyph both the bar and the palette show. The
@@ -23,6 +23,9 @@ export const VIEWS: readonly { view: View; icon: IconName; keywords?: string; sh
   { view: 'map', icon: 'map', keywords: 'map topology graph wiring repositories' },
   { view: 'convergence', icon: 'convergence' },
   { view: 'search', icon: 'search' },
+  // A view of its own since PLUGUI1b (D119 §3), after Search: a plugin is this machine's (D64; D47 §4), so a browser
+  // is shown no Plugins, as it is shown no Sessions.
+  { view: 'plugins', icon: 'plug', keywords: 'plugins plugin extension kit hook server 插件', shellOnly: true },
   // Everywhere since D66: a browser has appearance to set, if nothing of a machine.
   { view: 'settings', icon: 'settings', keywords: 'settings theme dark light appearance language machine remote harness account' },
 ];
