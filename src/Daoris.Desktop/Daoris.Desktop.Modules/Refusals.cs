@@ -129,6 +129,15 @@ public static class Refusals
     public const string PluginActionUnknown = "PLUGIN_ACTION_UNKNOWN";
     public const string PluginBusy = "PLUGIN_BUSY";
 
+    /// <summary>The system would not open a plugin's folder, or the plugins folder, in the file manager; its own reason goes with it (PLUGUI1e).</summary>
+    public const string PluginFolderNotOpened = "PLUGIN_FOLDER_NOT_OPENED";
+
+    /// <summary>
+    /// A plugin's data folder asked to open where it never made one (PLUGUI1e, D119 §4.1). INFORMATION, in the review's
+    /// class (D48 §6): the page shows no Open folder then, so this answers a race, a press made as the folder went.
+    /// </summary>
+    public const string PluginNothingKept = "PLUGIN_NOTHING_KEPT";
+
     /// <summary>A favorite that is no web page: the bar's rule keeps only `http` and `https` pages (CHR5).</summary>
     public const string BrowserNotAPage = "BROWSER_NOT_A_PAGE";
 

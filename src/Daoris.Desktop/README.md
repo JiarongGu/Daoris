@@ -42,7 +42,7 @@ that domain's row here.
 | `trees` | Review (`SESSION_DIFF`, and a tree discarded, `DISCARD_SESSION_TREE`; the merge alone was retired, LEFT2, since landing merges where the rule says merge), the files a composer's `@` offers (`SESSION_FILES`), one file read for its preview in the side bar, only inside the tree (`SESSION_FILE`, D111), landing (`LANDING`, `LAND_SESSION_TREE`) and a landed branch handed on (`HANDOFF_PLAN`, `HANDOFF`). A landed session's review and preview read its landed branch in the repository's checkout once its tree is gone (D113) |
 | `help` | Ask Daoris's conversation in its room (`START_HELP`, the one running or a new one), and its proposals with the person's Apply or Not now (`HELP_PROPOSALS`, `HELP_APPLY`, `HELP_DISMISS`) |
 | `agents` | The toolchain (`HARNESSES`, `HARNESS_ACTION` relayed under `<harness>:<action>`, its input and cancel, `HARNESS_INPUT` and `HARNESS_CANCEL`), what a start would run on (`STARTS`), an account's own model and effort (`SET_AGENT_SETTINGS`), and usage (`USAGE`) |
-| `plugins` | The catalogue and the install's offers (`PLUGINS`), enable, disable and remove (`PLUGIN_ACTION`), an update (`PLUGIN_UPDATE`), an offer installed (`PLUGIN_INSTALL`), and the kit's `PLUGIN_NEW` and `PLUGIN_TRY` |
+| `plugins` | The catalogue and the install's offers (`PLUGINS`, each plugin with its servers, hook, the points its process listens on, health and whether an update waits), a plugin's page and its activity (`PLUGIN`, `PLUGIN_ACTIVITY`), enable, disable and remove (`PLUGIN_ACTION`), an update (`PLUGIN_UPDATE`), an offer installed (`PLUGIN_INSTALL`), a folder read and installed from (`PLUGIN_READ`, `PLUGIN_ADD`), a plugin's folders or the plugins folder opened (`PLUGIN_OPEN_FOLDER`), and the kit's `PLUGIN_NEW` and `PLUGIN_TRY` |
 | `rules` | Permission rules and agents' proposals about them (`RULES`, `RULE_ACTION`, `RULE_PROPOSAL`) |
 
 These doors are the shell's alone: machine-local facts never reach a browser (D47 §4), so none of
@@ -135,11 +135,23 @@ a plugin as the driver would and checks every answer with the driver's own reade
 folder, and `PLUGIN_TRY` {id} or {folder} answers the trial's steps, summary and stderr lines.
 
 **What a plugin did, and its health** (PLUGUI1d, D119). What the loop, a landing, a hand-off, the driver's
-handing of servers and the terminal's trial do with a plugin is a `plugin.*` line in the machine log, never its
+handing of servers and the trial at either door do with a plugin is a `plugin.*` line in the machine log, never its
 words (`PluginLog`). The loop's `PluginHealth`, the shell's `DriverLoop.Health`, keeps each plugin's state and is
 handed to the hook set and to every landing the routes build. `daoris-driver plugins show <id>` and
 `plugins activity <id>` read through `PluginPage.Read` and `PluginActivity.Read`, the readers the page's routes
-are to call; a terminal reads a plugin's health from the machine log's last word, and says so.
+call; a terminal reads a plugin's health from the machine log's last word, and says so.
+
+**The host answers the Plugins view** (PLUGUI1e, D119 §4.1). `PLUGINS` carries, per plugin, its `servers`, its
+`hook` (the command as its manifest writes it, and its points), `listening`, `health` (`state`, `since`, `failure`)
+from the loop's own record, and `update` (`waits`, `current`, or null with no record). `PLUGIN` {id} is
+`PluginPage.Read` with the loop's health, and `PLUGIN_ACTIVITY` {id, since?} is `PluginActivity.Read` over a span
+such as `1d`, `7d` or `30d` (7 days without one); both refuse an id no longer here as `PLUGIN_UNKNOWN`.
+`PLUGIN_READ` {folder} answers what a folder's plugin would run, or the refusal as an answer, judged as Ask
+Daoris's judge judges a folder and refusing an id already installed; `PLUGIN_ADD` {folder} copies it in, never
+over one installed. `PLUGIN_OPEN_FOLDER` {id?, which: install|data|plugins} opens the folder the module names
+through the window kit's launcher (`PLUGIN_NOTHING_KEPT` for a data folder never made, `PLUGIN_FOLDER_NOT_OPENED`
+when the system will not). The screen's trial of an installed plugin is a `plugin.tried` line from the `screen`
+door.
 
 ## The dev loop — `tools/desktop.mjs` (2026-09-21)
 
