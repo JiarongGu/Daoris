@@ -134,6 +134,13 @@ a plugin as the driver would and checks every answer with the driver's own reade
 `DAORIS.DRIVER`'s `PLUGINS` answer carries `kit.points`, `PLUGIN_NEW` {id, points, folder} writes the
 folder, and `PLUGIN_TRY` {id} or {folder} answers the trial's steps, summary and stderr lines.
 
+**What a plugin did, and its health** (PLUGUI1d, D119). What the loop, a landing, a hand-off, the driver's
+handing of servers and the terminal's trial do with a plugin is a `plugin.*` line in the machine log, never its
+words (`PluginLog`). The loop's `PluginHealth`, the shell's `DriverLoop.Health`, keeps each plugin's state and is
+handed to the hook set and to every landing the routes build. `daoris-driver plugins show <id>` and
+`plugins activity <id>` read through `PluginPage.Read` and `PluginActivity.Read`, the readers the page's routes
+are to call; a terminal reads a plugin's health from the machine log's last word, and says so.
+
 ## The dev loop — `tools/desktop.mjs` (2026-09-21)
 
 Everything else here has a loop that can see it. The shell had none: Playwright cannot reach it (the

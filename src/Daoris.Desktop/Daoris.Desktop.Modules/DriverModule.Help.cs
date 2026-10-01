@@ -302,7 +302,8 @@ public sealed partial class DriverModule
         public async Task<TreeHand> HandAsync(string repository, string branch, string? plugin, CancellationToken ct)
         {
             var trees = new SessionTrees(module._loop.Home, new LandingPlugins(
-                module._loop.Home, say: (id, line) => module._loop.Output.Append($"plugin:{id}", line)));
+                module._loop.Home, say: (id, line) => module._loop.Output.Append($"plugin:{id}", line),
+                log: module._loop.Log, health: module._loop.Health));
             if (trees.Recorded.Of(repository, branch) is not { } entry) return new TreeHand(false, SessionTrees.NotLanded(branch), branch);
             var root = await CheckoutOfAsync(service ?? throw NotReady(), repository, ct).ConfigureAwait(false);
             return root is null

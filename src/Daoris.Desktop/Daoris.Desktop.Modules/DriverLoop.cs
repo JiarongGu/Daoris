@@ -155,6 +155,12 @@ public sealed class DriverLoop(
     /// <summary>The plugins that speak (D64): their processes live with this loop and stop with it.</summary>
     private HookSet? _hooks;
 
+    /// <summary>
+    /// The loop's own record of each plugin's health (PLUGUI1d, D119 §2): fed by its hook set and by every landing and
+    /// hand-off a route runs in this process, and read for the Plugins view, which a terminal reads from the log instead.
+    /// </summary>
+    public PluginHealth Health { get; } = new();
+
     /// <summary>Which plugins have a hook process up right now, by id — what the Plugins card shows as running.</summary>
     public IReadOnlyList<string> RunningPlugins => _hooks?.Running ?? [];
 
@@ -327,7 +333,9 @@ public sealed class DriverLoop(
 
         // A plugin's word goes to the console under `plugin:<id>` (D49 §2, D64 §4) — the same buffer
         // a session's lines and a harness action's lines land in, readable only over this bridge.
-        _hooks = new HookSet(homeDirectory, Output);
+        // What the set does with each plugin goes to the machine log without its words, and into the loop's
+        // record of its health (PLUGUI1d).
+        _hooks = new HookSet(homeDirectory, Output, log: log, health: Health);
 
         // What is worth interrupting the person for (SURF5b). The judgement is the library's, so the
         // headless host reaches the same answer; the shell's half is only what an event BECOMES.

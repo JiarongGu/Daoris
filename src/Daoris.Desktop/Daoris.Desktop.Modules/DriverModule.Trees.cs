@@ -390,9 +390,10 @@ public sealed partial class DriverModule
         var subject = await LandingRules.SubjectAsync(
             id, questId, quest => service.FindQuestAsync(quest, cancellationToken),
             _loop.Events.Openings([id]).GetValueOrDefault(id));
-        // A rule's plugin says its lines on the console under its name, as a hook's do (D64 §4, D100).
+        // A rule's plugin says its lines on the console under its name, as a hook's do (D64 §4, D100); what the
+        // landing did with it goes to the machine log and the loop's record of its health (PLUGUI1d).
         var trees = new SessionTrees(_loop.Home, new LandingPlugins(
-            _loop.Home, say: (plugin, line) => _loop.Output.Append($"plugin:{plugin}", line)));
+            _loop.Home, say: (plugin, line) => _loop.Output.Append($"plugin:{plugin}", line), log: _loop.Log, health: _loop.Health));
 
         if (request.Type == "LANDING")
         {
@@ -432,7 +433,7 @@ public sealed partial class DriverModule
         var named = Optional(request, "plugin");
         var service = _loop.Service ?? throw NotReady();
         var trees = new SessionTrees(_loop.Home, new LandingPlugins(
-            _loop.Home, say: (plugin, line) => _loop.Output.Append($"plugin:{plugin}", line)));
+            _loop.Home, say: (plugin, line) => _loop.Output.Append($"plugin:{plugin}", line), log: _loop.Log, health: _loop.Health));
 
         // The session's newest landing: a session lands once, and a second press is refused while its branch stands.
         var entry = trees.Recorded.Find(id).FirstOrDefault(each => string.Equals(each.Session, id, StringComparison.OrdinalIgnoreCase));

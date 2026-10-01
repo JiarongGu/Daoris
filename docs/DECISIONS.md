@@ -6263,6 +6263,28 @@ measured on the window: the names' counts are D116's estimates. The health state
 plugin, and the tests' runner has not met a real plugins repository or the PATH an install hands the application
 (USE1g). No landing plugin has pushed to a real platform, so Activity's pushes have not been seen. Each build row
 names its own proof, and the design's §9 says what only the window and a real plugin can prove.
+
+*As built (PLUGUI1d, 2026-10-01): the host's half of §2 and §4. The machine log's `plugin.*` events are written by
+`PluginLog` (D94's note says what each holds). `PluginHealth` is the loop's record, the shell's `DriverLoop.Health`,
+handed with the shell's log to its hook set and to every landing and hand-off the routes build. Its state is decided by
+one set of rules for the record and for the log's reading (`FromLog`), held by one table (`PluginHealthTests`). Four
+readings the design left open are settled there:*
+- *A plugin that speaks at a loop point and has no process up, with no failure as its last word, is `ready`: before the
+  loop's first look, after the loop ended, or after Daoris stopped. The terminal's line says no process of it is up.*
+- *Switching a plugin off, removing it or updating it starts its record afresh; a change to its manifest, or its process
+  started again, does not.*
+- *The record is its process's own, so the log's reading starts it afresh where the process that ran the plugin's loop
+  starts or stops (`app.started`, `app.stopped`) and where another process's loop starts it.*
+- *A landing's or a hand-off's failure is the plugin's word, and makes it `failing` until its next good answer, at any
+  point.*
+
+*`PluginPage.Read` and `PluginActivity.Read` are the readers the page's routes are to call, and
+`daoris-driver plugins show <id> [--json]` and `plugins activity <id> [--since] [--json]` print them. A page answers a
+server's environment by name only. Activity's agent sessions are `session.started` lines whose adapter is a declared
+agent, and its pushes are the landing record's, dated by when the branch landed, since the record keeps no push time.
+Not yet built: a conversation's `plugin.served` and the screen's `plugin.tried`, which wait for the shell to hand its log
+to the chat runner and `PLUGIN_TRY`. What only a real plugin proves is unchanged: no failing plugin's process has met the
+record.*
 ## D122 — The development documents are a standard the canon ships, and a repository declares its safe work once for the person's yes (2026-10-01)
 
 **Decision (DOC1 and UNBLOCK1, the owner's: *"research a good development doc pattern for code generation and use it as
