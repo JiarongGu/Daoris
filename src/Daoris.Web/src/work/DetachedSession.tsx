@@ -1,11 +1,13 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useQuests, useSessions } from '../queries';
 import { useChatTurns, useSessionOpenings, useSessionStreams } from '../shell';
+import { frameShortcut } from '../shortcuts';
 import { EmptyState, type Notify, SESSION_ACTIVE, SkeletonRows, useErrorNotify } from '../ui';
 import { SessionConsole } from '../SessionConsole';
 import { AttendedSession } from './AttendedSession';
-import { StreamTabs } from './frame';
+import { useDetachedPanel } from './closings';
+import { OutputPanel, PANEL_MIN } from './frame';
 import { sessionOrigin } from './identity';
 import { SessionConversation } from './SessionConversation';
 import { panelTabs } from './streams';
@@ -30,6 +32,11 @@ import { panelTabs } from './streams';
  * **Its console carries the session's streams** (CONSOLE3b), a tab each as in the main window, so a
  * subagent or a dev server is not out of sight here. With no stop: nothing in this window acts.
  *
+ * **Its console is the main window's output panel** (D118 §4, FRAME1h): grown for a long console, hidden
+ * for a long conversation, on its handle, its *Hide*, and Ctrl+J, the key of the one region this window
+ * has. What a person makes of it is kept for every detached window, apart from the main window's panel
+ * (`useDetachedPanel`). It offers no views to move: there is no side bar here to move one to.
+ *
  * **The same head as the other windows'**: a chat named by what was asked of it, and idle between
  * turns, as the driver says. Without them this window headed one session `conversation · working`
  * beside a main window heading it `start the dev server · idle`.
@@ -45,6 +52,7 @@ export function DetachedSession({ id, notify }: { id: string; notify: Notify }) 
   const [picked, setPicked] = useState<string | null>(null);
   const shown = picked && streams.some((row) => row.key === picked) ? picked : id;
   const tabs = panelTabs(id, streams);
+  const panel = useDetachedPanel();
 
   useErrorNotify(sessions.error, notify);
 
@@ -54,6 +62,23 @@ export function DetachedSession({ id, notify }: { id: string; notify: Notify }) 
   const quest = session?.quest
     ? (quests.data ?? []).find((row) => row.id === session.quest) ?? null
     : null;
+  // The console is this machine's to give only for a session this machine ran (D47 §4).
+  const here = session ? sessionOrigin(session) === null : false;
+
+  // Ctrl+J, wherever focus is, as in the main window: the panel is the one region this window has, so
+  // Ctrl+B and the side bar's key are left alone. The latest panel, for a listener added once.
+  const latest = useRef({ here, panel });
+  latest.current = { here, panel };
+  useEffect(() => {
+    const onKey = (event: KeyboardEvent) => {
+      const now = latest.current;
+      if (frameShortcut(event) !== 'panel' || !now.here) return;
+      event.preventDefault();
+      now.panel.setClosed(!now.panel.closed);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
 
   if (sessions.isPending) {
     return <div className="p-4"><SkeletonRows rows={4} /></div>;
@@ -70,9 +95,6 @@ export function DetachedSession({ id, notify }: { id: string; notify: Notify }) 
       </div>
     );
   }
-
-  // The console is this machine's to give only for a session this machine ran (D47 §4).
-  const here = sessionOrigin(session) === null;
 
   return (
     <div className="flex h-screen flex-col overflow-hidden">
@@ -96,17 +118,23 @@ export function DetachedSession({ id, notify }: { id: string; notify: Notify }) 
       </div>
 
       {here && (
-        <div className="flex h-56 shrink-0 flex-col border-t border-line px-4 py-2">
-          {/* The raw view, beside the conversation it is the text of. A sentence rather than an
-              empty well, for the reason the monitor's tiles have one: a bordered empty box in a
-              read-only window reads as a field to type in. */}
-          {tabs && (
-            <div className="mb-2">
-              <StreamTabs tabs={tabs} selected={shown} onSelect={(key) => setPicked(key === id ? null : key)} />
-            </div>
-          )}
-          <SessionConsole id={shown} fill quiet={t(shown === id ? 'work.panel.silent' : 'work.panel.streamSilent')} />
-        </div>
+        <OutputPanel
+          // The raw view, beside the conversation it is the text of. A sentence rather than an empty
+          // well, for the reason the monitor's tiles have one: a bordered empty box in a read-only window
+          // reads as a field to type in.
+          console={<SessionConsole id={shown} fill quiet={t(shown === id ? 'work.panel.silent' : 'work.panel.streamSilent')} />}
+          height={Math.max(PANEL_MIN, panel.height)}
+          collapsed={panel.closed}
+          onResize={panel.setHeight}
+          onToggle={() => panel.setClosed(!panel.closed)}
+          tabs={tabs}
+          selected={shown}
+          onSelect={(key) => {
+            setPicked(key === id ? null : key);
+            // Picking what to read is asking to read it: a hidden console opens, as the main window's does.
+            if (panel.closed) panel.setClosed(false);
+          }}
+        />
       )}
 
       {!here && (

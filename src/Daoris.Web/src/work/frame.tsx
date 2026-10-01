@@ -714,16 +714,20 @@ export function OutputPanel({
           )}
         {tabbed && <StreamTabs tabs={tabs} selected={selected} onSelect={onSelect} onStop={onStop} />}
         <div className="ml-auto flex shrink-0 items-center gap-1">
-          <ViewsMenu
-            region="panel"
-            views={entries}
-            selected={shown}
-            onSelect={(id) => onView?.(id)}
-            onMove={onMove}
-            onReset={onReset}
-            open={menu}
-            onOpenChange={setMenu}
-          />
+          {/* Absent where it would list one view and offer nothing (D118 §3a: absent, never a door that does
+              nothing): a detached session's window, which has no side bar to move a view to (FRAME1h). */}
+          {(entries.length > 1 || onMove || onReset) && (
+            <ViewsMenu
+              region="panel"
+              views={entries}
+              selected={shown}
+              onSelect={(id) => onView?.(id)}
+              onMove={onMove}
+              onReset={onReset}
+              open={menu}
+              onOpenChange={setMenu}
+            />
+          )}
           <Button variant="ghost" className="shrink-0" onClick={onToggle}>
             {collapsed ? t('work.panel.show') : t('work.panel.hide')}
           </Button>

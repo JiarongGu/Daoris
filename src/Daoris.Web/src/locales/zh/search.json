@@ -1,7 +1,6 @@
 {
-  "search.title": "搜索",
-  "search.description": "关于这件事，家族已经学到了什么——决策、修复、规则、任务结果，遍及每个仓库。",
-  "search.placeholder": "一项决策、一个陷阱、一条规则——用你自己的话",
+  "search.box": "搜索知识",
+  "search.placeholder": "一项决策、一个陷阱、一条规则",
   "search.clear": "清除搜索",
   "search.localOnly": "仅各仓库自有",
   "search.searching": "搜索中…",
@@ -11,8 +10,15 @@
   "search.emptyHeadline": "没有匹配",
   "search.emptyLexical": "字面搜索只认词，换一套词汇得出同一结论的仓库不会出现在这里。同归视图能找到它们。",
   "search.emptySemantic": "这里的搜索既认词也认意思，所以家族学到的东西里没有与此相近的。同归视图显示两个仓库在哪里得出了同一结论。",
-  "search.noneHeadline": "没有搜索作答",
-  "search.noneBody": "这次两种搜索都没能读到索引，所以这不是空结果。再试一次，或者重建索引。",
+  "search.nothingHeadline": "没有搜索作答",
+  "search.nothingBody": "这次两种搜索都没能读到索引，所以这不是空结果。再试一次，或者重建索引。",
   "search.meaningDown": "只按字词匹配：这次按语义的搜索没有作答，用别的说法得出的结论可能漏掉了。",
-  "search.toConvergence": "在同归中查看"
+  "search.toConvergence": "在同归中查看",
+  "search.list.open": "展开结果列表",
+  "search.list.close": "收起结果列表",
+  "search.list.resize": "结果列表宽度",
+  "search.none.headline": "请选择结果",
+  "search.none.body": "关于这件事，家族已经学到了什么——决策、修复、规则、任务结果，遍及每个仓库。在列表中搜索，所选结果对应的条目会按原文在这里阅读。",
+  "search.gone.headline": "此条目已不在索引中",
+  "search.gone.body": "找到它之后，它被移动、改名或删除了，或者它所在的仓库已被注销。请在列表中重新搜索。"
 }

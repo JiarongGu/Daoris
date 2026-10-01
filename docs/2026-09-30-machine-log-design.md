@@ -72,6 +72,7 @@ nested. A reader skips a line it cannot parse and a field it does not know.
 | `request.failed` | host | method, route, status, ms | a request that failed, or took over two seconds |
 | `tool.download.started` / `.verified` / `.refused` / `.stopped` | the process that runs the download (D121 §3.6, TOOLS4) | tool, version, check when refused | a managed version fetched, and the check that refused it |
 | `tool.location.fetched` / `.failed` | the process that looks (D121 §3.7, TOOLS4) | position in the list, versions or check | a resource location looked at, by its place and never by the address the person typed |
+| `tool.used` | desktop (D121 §3.6, TOOLS7) | tool, way, version when managed | a tool's way set from Settings → Tools, never the path of a file the person named |
 | `plugin.started` | desktop, driver | plugin, points, ms, by | a plugin's process up: what it listens on, how long its handshake took, and whose it is (D119) |
 | `plugin.stopped` | desktop, driver | plugin, why, by | why a plugin's process went: off, removed, updated, changed, or its owner ended |
 | `plugin.called` | desktop, driver | plugin, point, answer, ms | each answer at a point, by its word, and how long it took |

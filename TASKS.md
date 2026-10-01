@@ -21,9 +21,9 @@ lists.
 
 ## State
 
-**Counts, and this is their one home:** seventeen commands, **928 CLI tests, 865 service and 49 HTTP host, 2302 driver,
-477 desktop modules, 80 devkit, 2294 web unit, 22 Playwright**, 108/108 release rehearsal, **312/312
-family rehearsal** (it names its own phases when you run it), **70/70 deployment rehearsal** (D60),
+**Counts, and this is their one home:** seventeen commands, **947 CLI tests, 901 service and 49 HTTP host, 2434 driver,
+504 desktop modules, 80 devkit, 2445 web unit, 24 Playwright**, 113/113 release rehearsal, **329/329
+family rehearsal** (it names its own phases when you run it), **84/84 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 6 knowledge
 documents, 6 skills, 7 packs. The always-loaded core is **24,064 of 26,000 bytes** — a span in
 `AGENTS.md` since D59 — and **advisory rather than enforced** (D54: a fact gates, a judgement
@@ -113,9 +113,9 @@ rather than designed.
 
 ## Backlog
 
-**Seventy-two rows are open** (most of them the builds of the designs below) (triaged 2026-09-30, when the owner asked to go faster; 2026-10-01 after the night's merges, the look, and the owner's round):
-- **Merging:** integrate-j (FRAME1f, WSSETUP9 with WSSETUP11, TOOLS7, WSSETUP8, SEM3b with MANAGE1). **Building:**
-  LAYOUT7 as amended by D124, WSSETUP2 with WSSETUP4, FRAME1h.
+**Sixty-three rows are open** (most of them the builds of the designs below) (triaged 2026-09-30, when the owner asked to go faster; 2026-10-01 after the night's merges, the look, and the owner's round):
+- **Building:** WSSETUP5 (resumed after the account's limit; WSSETUP3 committed on its branch), TEST2 with TEST3
+  and STUB1, TOOL4's design (D125). **Next in the driver lane:** WSSETUP6; then LAYOUT8 and WSSETUP7.
 - **Designed, to build in order:** DEV2–DEV11 (D115); FRAME1b–i (D118) after NAME1b; PLUGUI1 after FRAME1c;
   LAYOUT3–LAYOUT10 (D117) after LAYOUT2's evidence.
 - **Waiting on the owner (five):** BUDGET1 (their call), TRUST2 and AGT2c (a grant, two
@@ -156,39 +156,17 @@ install in both themes and both languages.
   high-water and cache reads per turn, from the usage record and the turn events, over a week), then offer a
   per-agent ceiling, a smaller window or the harness's own compaction setting, on both doors. The owner's call,
   since it trades cost for what a session remembers.
-- [ ] **SELECT1 — a long select runs off the window** (owner, 2026-10-01: *"select option currenly does not have
-  scroll it just overflow the screen"*). Every select is the one atom `SelectField` (`ui.tsx`), whose list had no
-  height cap: capped at the room the popper measures, with the scroll arrows Radix hides the scrollbar for. **Merged
-  2026-10-01 (integrate-h)**; open until it is looked at on the republished window with a long list, at 680 px.
-- [ ] **MENU1 — one menu atom** (found with SELECT1): eight files style Radix's dropdown menu each on its own
-  (AppMenu, ViewsMenu, ListPane's ＋ and ⋯, SessionRow, SyncStatus, TerminalTabs, BrowserDoor, the map's
-  LinesMenu and LayeredMap), and none caps its height, so a long menu runs off the window as the select did. One
-  menu molecule beside `SelectField` (content capped at the popper's available height and scrolling, item,
-  checkbox item, separator, label), every menu moved onto it. The two dialogs built outside the atoms (QuickAsk,
-  CommandPalette) move onto a dialog atom or are named as the test's exceptions. The test: no file but `ui.tsx`
-  imports a Radix primitive (the app root's tooltip provider excepted), as `presentational.test.ts` holds what a
-  molecule imports. **Merged 2026-10-01 (integrate-h)**; open until a long menu is looked at on the republished
-  window at 680 px, both themes.
-- [ ] **SEM3b — the window says what a refresh embedded** (SEM3's hand-back): the refresh notice shows the HTTP
-  answer's `embedded` (entries, vectors, splits, window), and Settings → AI's search hint names
-  `DAORIS_EMBED_WINDOW` beside the model and the address, in both languages. Web shell and web settings.
-- [ ] **MANAGE1 — saving a declaration erases `uses`** (found by DEV4). Repositories → Manage → Save
-  declaration re-registers with a `domain` that carries no `uses`, which erases the repository's `uses` from
-  the registry until its next `connect`. Lanes avoid it by DEV4's preserve rule; `uses` needs the same, with a
-  test that fails first.
 - [ ] **NAME2 — the names after NAME1b, on the window**: the glossary gains *lane* / 泳道 (DEV4 named it; NAME1
   had no term); the 107 budget judgements `names:check` reports are looked at on the window at 888 px, both
   languages, and each is renamed or accepted.
+  Seen on the republished install (2026-10-01, 中文): the plugin page's on/off act reads 关闭, which says *close* as
+  much as *turn off* (停用 is unambiguous); the plugin's description is cut to one line with an ellipsis.
 - [ ] **PLUGUI1c — Settings keeps only what is a setting** (after b): the domain retires, its anchors repoint,
   the folder row joins Settings → Driver; crosses five lanes on purpose.
 - [ ] **PLUGUI1f — the page whole** (after c and e): health on the window, Points, Agents, Servers, Activity
   live, Data folder, Source, *Install from a folder…*.
 - [ ] **PLUGUI1g — a plugin's checks** (after f): the last trial kept, its own tests run in a copy under the home.
 - [ ] **PLUGUI1h — Ask Daoris reaches the Plugins view** (after c and FRAME1i).
-- [ ] **FRAME1f — Search and Convergence on the frame**: the hits and findings in the list, the entry in the
-  main area; the reader drawer retires for these.
-- [ ] **FRAME1h — the secondary windows**: the monitor's rail on `ListPane`, a detached console on
-  `OutputPanel`, the monitor's title on a real token (`tokens.test.ts` fails on `text-h3` first).
 - [ ] **FRAME1i — Ask Daoris knows each view's list and item**: `where.ts`, `go` naming an item, the room.
   Order: b, c, then d–g (d, e, f one at a time; g beside one), then h and i. PLUGUI1 starts after FRAME1c.
 
@@ -219,19 +197,18 @@ first, then WSSETUP11 early (a week of *before*); WSSETUP4, WSSETUP8, WSSETUP10 
 TOOLS5 and WSSETUP2. The driver lane runs WSSETUP9 → WSSETUP11 → LAYOUT7 → WSSETUP5 → WSSETUP6; WSSETUP7 after LAYOUT8,
 FRAME1e and WSSETUP6. Then the owner's two runs.
 
-- [ ] **WSSETUP9 — a session looks before it asks** (§6.1, §6.2; driver): `TargetPrompt.Asking` rewritten for the
-  claiming, resuming and carrying-on instructions; the clause naming other checkouts only with reading across.
-- [ ] **WSSETUP11 — set-ups and parks, counted** (§7.3; driver, tools): `session.parked` from the attention watch; the
-  usage report gains a set-up section and parks per week by workspace. Run early.
-- [ ] **WSSETUP4 — an older tool never rewrites a newer lock** (§1.4; cli, tools): `sync` and `upstream` refuse (exit
-  1) a lock whose canon version is newer, naming both versions.
-- [ ] **WSSETUP8 — the README as an unadopted repository's word** (§5; service).
-- [ ] **WSSETUP2 — the install carries its doctrine tool** (§1.2; tools): the packed CLI in `app/cli/`, two launchers
-  in `app/bin/`; the deployment rehearsal runs `daoris --version` and `check` from Command Prompt and Git Bash.
 - [ ] **WSSETUP3 — `daoris` on every child's PATH** (§1.3; driver, modules, cli; after TOOLS5 and WSSETUP2): `app/bin/`
   first in the tools' environment; the press's facts gain `node` and `daoris` with their versions.
-- [ ] **LAYOUT7, amended by D124** (§2): the refusals of §2.1, the body of §2.2–§2.7 with the tool check and the
-  knowledge step, `daoris` in place of `npx`, §2.4's exact verbs; the playbook gains *Initialise the knowledge*.
+  Also (WSSETUP2's hand-back): `src/Daoris.Desktop/README.md`'s *Installing it* and gate paragraphs name the doctrine
+  tool (`app/cli/node_modules/daoris/`, `app/bin/`) and the deployment rehearsal's phase 8.
+- [ ] **TEST3 — the set-up kit's tests join a gate** (LAYOUT7a's hand-back): `tools/setup-kit.test.mjs` (12) runs outside
+  `verify`; move it beside the other tools' tests in `src/Daoris.Cli/test/`, so a gate runs it.
+- [ ] **STUB1 — the protocol stub ends on a libuv assertion on Windows** (LAYOUT7a's hand-back): with Node 24 the stub
+  can exit `0xC0000409` in `process.exit` after a `fetch`, in phases 17, 17b and 17c; the driver judges by the quest,
+  so records still end right. Let the stub close its handles and return rather than call `process.exit`.
+- [ ] **TEST2 — `tools.test.ts` reads the shell's spelling of PATH** (LAYOUT7's hand-back): three cases found the system
+  git and gh when `verify` ran from PowerShell, where the variable is `Path`; they pass from Git Bash. Make the
+  cases set the environment they assume whatever the parent shell spells.
 - [ ] **WSSETUP5 — registration follows the line** (§3; driver, modules, cli; after LAYOUT7): three moments, read as git
   objects, a twin of `connect`'s `registration()`, `registry.followed`, `daoris-driver register`, the row's *Refresh*.
 - [ ] **WSSETUP6 — the workspace plan** (§4.1–§4.3; driver; after LAYOUT7): the plan file, the tick, the order,
@@ -296,7 +273,7 @@ managed git; TOOLS11 last.
 - [ ] **TOOLS6 — what Daoris's git carries** (§2.5): the allow-list from `core.sshCommand`, `GIT_CONFIG_GLOBAL` with
   includes, the version floors; and `SessionTrees.Sync.cs`'s sentence "the git Daoris runs (the one on the
   path)" points at Settings → Tools, as the page's copy already does (TOOLS7's hand-back).
-- [ ] **TOOLS7 — Settings → Tools** (§4.1, §4.4) and **TOOLS8 — Ask Daoris's `tool` kind** (§4.3).
+- [ ] **TOOLS8 — Ask Daoris's `tool` kind** (§4.3).
 - [ ] **TOOLS9 — the rehearsals** (§6): a loopback list server, stub tools, a tampered file refused.
 - [ ] **TOOLS10 — the probe before a managed git meets an agent** (the owner allows one start of each agent).
 - [ ] **TOOLS11 — the first real downloads, on the install** (the owner's run): a managed git bringing the owner's
@@ -374,7 +351,9 @@ repository's own allow-list does not (`docs/2026-09-24-deploy1-acp-trust-evidenc
 the archive: **usage is measured before it is managed**, and breadth is **more native adapters plus
 the ACP door, not a registry**.
 
-- [ ] **TOOL4 — rotation.** ⛔ **Held by D57 §b until TOOL3 has run long enough to answer three
+- [ ] **TOOL4 — rotation** (owner, 2026-10-01: *"this is also good to test for account switch"*): **being designed as
+  D125**, since the install now holds three observed exhaustions (27 and 29 Sep, the ACP adapter's spend-limit
+  refusal naming its reset time) and the owner's own weekly-limit switch on 1 Oct. Was: ⛔ **Held by D57 §b until TOOL3 has run long enough to answer three
   questions**: what a harness's exhaustion actually looks like in its output, how long a cool-off
   should be, and whether a rotated session stays reproducible. Exhaustion is **observed, never read**
   — Daoris cannot ask a provider what is left without a credential, and D49 §4 stands. Do not start

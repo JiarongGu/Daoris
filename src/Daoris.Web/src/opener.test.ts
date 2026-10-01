@@ -61,6 +61,16 @@ describe('the opener', () => {
     expect(opening('projects', 'engine', { code: 'engine' })).toEqual({ view: 'projects', chosen: { view: 'projects', item: 'engine' } });
   });
 
+  /** FRAME1f: an entry by its id in Search's list, and a finding by its entries in Convergence's. */
+  it('chooses the entry or the finding a door names', () => {
+    expect(opening('search', 'game:.claude/knowledge/world-streaming.md')).toEqual({
+      view: 'search', chosen: { view: 'search', item: 'game:.claude/knowledge/world-streaming.md' },
+    });
+    expect(opening('convergence', 'engine:a.md\ngame:a.md')).toEqual({
+      view: 'convergence', chosen: { view: 'convergence', item: 'engine:a.md\ngame:a.md' },
+    });
+  });
+
   it('keeps no chosen item for a view with no list', () => {
     expect(opening('map', 'engine')).toEqual({ view: 'map' });
     expect(opening('overview', 'abc123')).toEqual({ view: 'overview' });

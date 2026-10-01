@@ -80,6 +80,44 @@ describe('a refresh, said whole', () => {
 
     expect(await screen.findByText(/Indexed 3 entries/)).toBeTruthy();
     expect(await screen.findByText(/Not found where the registry says: studio/)).toBeTruthy();
+    // Absent is never zero (SEM3b): a refresh the semantic half did not run in says nothing of embedding.
+    expect(screen.queryByText(/Embedded|vectors/)).toBeNull();
+  });
+
+  /**
+   * SEM3b (D123): the service embeds every part of a long entry, in pieces the deployment's window
+   * bounds, and its refresh answer says what that made. The notice says it beside the count, the
+   * figures grouped as the reader's language groups them.
+   */
+  it('a refresh the semantic half ran in says what it embedded, at what window, and how many it split', async () => {
+    fetchMock.mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) =>
+      (String(input) === '/api/refresh' && init?.method === 'POST'
+        ? Response.json({
+          entries: 636, repositories: 3, withheld: 0,
+          embedded: { entries: 636, pieces: 1267, split: 322, window: 2000 },
+        })
+        : respond(String(input))));
+    shell();
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Refresh the index' }));
+
+    expect(await screen.findByText(
+      'Indexed 636 entries from 3 repositories. Embedded 636 entries as 1,267 vectors of at most 2,000 '
+      + 'characters; 322 longer than that were split.')).toBeTruthy();
+  });
+
+  it('a refresh that split nothing says none was, rather than a zero', async () => {
+    fetchMock.mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) =>
+      (String(input) === '/api/refresh' && init?.method === 'POST'
+        ? Response.json({
+          entries: 2, repositories: 1, withheld: 0, embedded: { entries: 2, pieces: 2, split: 0, window: 8000 },
+        })
+        : respond(String(input))));
+    shell();
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Refresh the index' }));
+
+    expect(await screen.findByText(/at most 8,000 characters; none was longer, so none was split\.$/)).toBeTruthy();
   });
 });
 
@@ -405,6 +443,37 @@ describe('the views, in a browser', () => {
     // Adding and importing touch machine paths (D48 §7): the list's ＋ and its ⋯ are absent, never disabled.
     expect(within(list).queryByRole('button', { name: 'Add repository' })).toBeNull();
     expect(within(list).queryByRole('button', { name: 'More actions' })).toBeNull();
+  });
+
+  /**
+   * FRAME1f (D118 §2, §4): Search's list is the box, *local only* and the hits, and Convergence's the similarity and the
+   * findings, each beside its main area in a browser too; each makes nothing, so neither list has a ＋. Neither asks the
+   * service anything until it is in front: a comparison over a real index takes seconds.
+   */
+  it("keeps Search's and Convergence's lists and their main areas, asking nothing until each is in front", async () => {
+    fetchMock.mockImplementation(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.startsWith('/api/convergence')) return Response.json([]);
+      return respond(url);
+    });
+    shell();
+    const views = await screen.findByRole('navigation', { name: 'Views' });
+    expect(requested().some((url) => url.startsWith('/api/convergence') || url.startsWith('/api/search'))).toBe(false);
+
+    await userEvent.click(within(views).getByRole('button', { name: 'Search' }));
+    const results = await screen.findByRole('complementary', { name: 'Search' });
+    expect(within(results).getByRole('searchbox', { name: 'search knowledge' })).toHaveFocus();
+    expect(within(results).getByRole('checkbox', { name: "Each repository's own only" })).toBeChecked();
+    expect(screen.getByRole('button', { name: 'show or hide the result list (Ctrl+B)' })).toBeInTheDocument();
+    expect(within(screen.getByRole('main')).getByText('Choose a result')).toBeInTheDocument();
+    expect(screen.queryByRole('dialog')).toBeNull();
+
+    await userEvent.click(within(views).getByRole('button', { name: 'Convergence' }));
+    const findings = await screen.findByRole('complementary', { name: 'Convergence' });
+    expect(await within(findings).findByText('Nothing converges at 0.75 or above')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'show or hide the finding list (Ctrl+B)' })).toBeInTheDocument();
+    expect(within(screen.getByRole('main')).getByText('Choose a finding')).toBeInTheDocument();
+    expect(within(findings).queryByRole('button', { name: /^New|^Add/ })).toBeNull();
   });
 
   it('falls back to Overview when the browser remembers a view this deployment does not have', async () => {

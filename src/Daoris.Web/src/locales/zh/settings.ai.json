@@ -2,7 +2,7 @@
   "settings.ai.body": "Daoris 可以用模型来做的工作。每一项没有模型也能完成自己的那部分，并说明是哪一层作答的。",
   "settings.ai.unknown": "尚不知道",
   "settings.ai.search.label": "搜索与同归",
-  "settings.ai.search.hint": "服务在启动时从它的环境读取 `DAORIS_EMBED_MODEL`（模型名）和 `DAORIS_EMBED_URL`（其端点；未设置时为本地 Ollama 的地址），所以改动要重启服务才生效。",
+  "settings.ai.search.hint": "服务在启动时从它的环境读取 `DAORIS_EMBED_MODEL`（模型名）、`DAORIS_EMBED_URL`（其端点；未设置时为本地 Ollama 的地址）和 `DAORIS_EMBED_WINDOW`（嵌入为一个向量的字符数上限，未设置时为 2000；更长的条目分段嵌入），所以改动要重启服务才生效。",
   "settings.ai.search.why": "没有模型时，搜索按词匹配，同归找出复制与改写；两者照样作答，并说明是哪一层。模型补上文本比对做不到的：两个仓库用不同的话得出了同一个结论。用哪个模型由部署决定，从不由功能决定。",
   "settings.ai.helper.label": "问道衍",
   "settings.ai.helper.hint": "也可用 `daoris driver helper <agent>|off`。",

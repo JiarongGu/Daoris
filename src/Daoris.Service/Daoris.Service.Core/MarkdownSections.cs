@@ -20,11 +20,24 @@ public static class MarkdownSections
     /// headings that were only ever examples. This repository's own decision log contains exactly
     /// such a fence, so the naive version fails on the first real input.
     /// </remarks>
-    public static IReadOnlyList<MarkdownSection> Split(string markdown, int level = 2)
+    public static IReadOnlyList<MarkdownSection> Split(string markdown, int level = 2) => Walk(markdown, level).Sections;
+
+    /// <summary>
+    /// The text before the first heading at the given level, trimmed, which <see cref="Split"/> drops:
+    /// empty when the document opens with one, and the whole document when it has none.
+    /// </summary>
+    /// <remarks>
+    /// A log's preamble describes the file, but a README's is the part a newcomer reads first, what the
+    /// repository is (WSSETUP8; D124 §5). Found by the same walk, so a heading inside a fence ends neither.
+    /// </remarks>
+    public static string Preamble(string markdown, int level = 2) => Walk(markdown, level).Preamble;
+
+    private static (string Preamble, List<MarkdownSection> Sections) Walk(string? markdown, int level)
     {
         ArgumentOutOfRangeException.ThrowIfLessThan(level, 1);
         var marker = new string('#', level) + ' ';
 
+        var preamble = new List<string>();
         var sections = new List<MarkdownSection>();
         string? heading = null;
         var body = new List<string>();
@@ -45,11 +58,11 @@ public static class MarkdownSections
                 continue;
             }
 
-            if (heading is not null) body.Add(raw);
+            (heading is null ? preamble : body).Add(raw);
         }
 
         if (heading is not null) sections.Add(Build(heading, body));
-        return sections;
+        return (string.Join('\n', preamble).Trim(), sections);
     }
 
     private static MarkdownSection Build(string heading, List<string> body) =>

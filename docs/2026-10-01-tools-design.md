@@ -10,7 +10,9 @@ and `ToolInstall.cs`, `daoris tool download|use … managed|update|delete|locati
 followed action. TOOLS5 is built: one answer for every child (§2.4, §2.6, §2.7), twins in `Tools.Children.cs` and
 `tools.ts`. Daoris's own git, a hook's first word, a pin's `npm` and the tree guard's node are the resolved files, and
 every child the driver and the modules start is handed the tools' `PATH`, held by source scans. `GIT_CONFIG_GLOBAL` is
-TOOLS6's. D121's notes say what each row settled that this document left open. The owner, 2026-10-01:
+TOOLS6's. TOOLS7 is built: Settings → Tools (§4.1), on `DriverModule.Tools.cs` and the page's `bridge/tools.ts`, with the
+glossary's three terms (§4.4); its SSH command is TOOLS6's and its Ask Daoris doors TOOLS8's. D121's notes say what each
+row settled that this document left open. The owner, 2026-10-01:
 
 > *"all tools that daoris using like git, [terminal] should all have a self managed option (and can be setup
 > in settings) which can be download from locations … I perfer provide default download location and built
@@ -561,7 +563,9 @@ A machine domain (`machine: true`) after *Agents* in `settings/domains.ts`, so a
 - **The routes are `DAORIS.DRIVER` doors** in `DriverModule.Tools.cs`, called by the page's `bridge/tools.ts`:
   `TOOLS_LIST`, `TOOLS_USE`, `TOOLS_DOWNLOAD`, `TOOLS_DELETE`, `TOOLS_LOOK`, `TOOLS_LOCATION` (add and remove) and
   `TOOLS_GIT`. Each is named in the Desktop README's row (MOD5). `TOOLS_LOOK` and a download's follow wait by
-  `hostBounds`, the twin of the driver's bounds (WSR7).
+  `hostBounds`, the twin of the driver's bounds (WSR7). *As built (TOOLS7):* `TOOLS_STOP` and `TOOLS_PICK` join them, a
+  download is followed by the `TOOLS_ENDED` news rather than waited on, and `TOOL_GIT_TOO_OLD` waits for TOOLS6; D121's
+  note has the rest.
 
 ### 4.2 The terminal: `daoris tool`
 

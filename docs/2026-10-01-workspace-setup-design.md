@@ -4,11 +4,9 @@
 > person a question its own repository's notes and code could answer. The owner's diagnosis is that the
 > workspace lacks knowledge: *"the repo should be registered and apply the doctrine and also initialize the
 > knowledge"*. This is the contract for the WSSETUP rows, and its decision is **D124**. Status: **designed;
-> WSSETUP9, WSSETUP11 and LAYOUT7 as amended built** (§6.1, §7.3, §2), **and WSSETUP2 and WSSETUP4** (the
-> install's doctrine tool, §1.2, and the version guard, §1.4), **and WSSETUP3** (`daoris` on every child's `PATH`,
-> §1.3), **and WSSETUP5** (registration follows the line, §3); D124's notes say what each build settled, and the rest
-> is not built. It
-> builds on the set-up quest of `docs/2026-10-01-agent-layout-design.md` §6 (D117: LAYOUT7, LAYOUT8, LAYOUT10),
+> WSSETUP2, WSSETUP3, WSSETUP4, WSSETUP5, WSSETUP8, WSSETUP9, WSSETUP11, LAYOUT7 as amended and LAYOUT7a built**
+> (§1.2, §1.3, §1.4, §3, §5, §6.1, §7.3, §2; D124's notes say what each build settled), the rest not.
+> It builds on the set-up quest of `docs/2026-10-01-agent-layout-design.md` §6 (D117: LAYOUT7, LAYOUT8, LAYOUT10),
 > the standard of `docs/2026-10-01-development-documents-design.md` (D122) and the tools' environment of
 > `docs/2026-10-01-tools-design.md` (D121, TOOLS5), and it amends D117 §6 where §11 says. Read with **D13**,
 > **D32**, **D45**–**D47**, **D58**, **D70**, **D77**, **D79**, **D83**, **D87**, **D105**, **D107**, **D109**,

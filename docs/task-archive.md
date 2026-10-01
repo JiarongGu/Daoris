@@ -9241,3 +9241,125 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > `## Unreleased`, this repository and `examples/` re-synced in the same commit.
 
 **Outcome** (built by the parent, merged with `tools/merge-branch.mjs`, every gate): `autonomous-development` gains *Look before you ask* (D124 §6.3), before *A step that genuinely needs a human choice surfaces as a decision*: a question the task's own material, the repository's documents, code and history, or a neighbour's documents can settle is the agent's to settle, with its evidence kept for the hand-over; a reading the evidence leans to is taken and stated at the checkpoint; only what no source holds and only the person can give reaches them mid-run. An entry under the canon changelog's Unreleased; this repository and both examples re-synced in the same commit; the always-loaded region is unchanged (23,306 bytes before DOC4's table).
+
+
+## FRAME1f — Search and Convergence on the frame (2026-10-01)
+
+> - [ ] **FRAME1f — Search and Convergence on the frame**: the hits and findings in the list, the entry in the
+> main area; the reader drawer retires for these.
+
+**Outcome** (built by a subagent, merged with `tools/merge-branch.mjs`, every gate; a note under D118): Search and Convergence are on the frame. Each hands a `ViewLayout` from a hook, held on every view and asking the service nothing until in front. Search's list is the box, *each repository's own only* and the hits (↓ into the hits, Escape clears the box); its main area is the entry, read as it is written. Convergence's list is the similarity and its tier's note, then the findings; its main area is the finding, the service's sentence first and then each entry whole. *Local only*, the similarity and each chosen item are remembered; a finding is named by its entries, and a 404 entry reads as gone. The reader drawer and `Drawer`'s `wide` prop are retired. Loading follows platform-ux §4 (skeleton first, then the last rows held, dimmed), for the look to confirm (SR11). New molecules `HitList`, `EntryPage`, `FindingList` and `FindingPage` live under `knowledge/` with stories. The view suites and the reader's tests moved to the pages, and `test:web` gained a Search and a Convergence spec. Web vitest 2294 → 2383. Left: the Map's knowledge-pair door opens Convergence without naming a finding; FRAME1i teaches Ask Daoris the two lists.
+
+
+## WSSETUP9 — a session looks before it asks (2026-10-01)
+
+> - [ ] **WSSETUP9 — a session looks before it asks** (§6.1, §6.2; driver): `TargetPrompt.Asking` rewritten for the
+> claiming, resuming and carrying-on instructions; the clause naming other checkouts only with reading across.
+
+**Outcome** (built by a subagent, merged with `tools/merge-branch.mjs`, every gate; notes under D124): Every driven instruction (claiming, resuming, carrying on) now opens its asking part with D124 §6.1's look-first paragraph: the quest and its files, its repository's documents, code and history, the workspace's knowledge through `knowledge_search`, and the other checkouts only where it may read across (the clause says whether they are listed above, below or both). What the sources settle is decided; a reading they lean to is taken and said in the closing note. The stop narrows to what no source holds and only the person can give (a sign-in, a go-ahead outside the repository or on a production system, a preference nothing records), and says what was looked at; "a choice between options that is theirs" is gone. Five new `AskAndWaitPromptTests` cases, each seen failing first; no Process-half test, rehearsal or e2e spec named the old words. Notes under D124, D79 and D83.
+
+
+## WSSETUP11 — set-ups and parks, counted (2026-10-01)
+
+> - [ ] **WSSETUP11 — set-ups and parks, counted** (§7.3; driver, tools): `session.parked` from the attention watch; the
+> usage report gains a set-up section and parks per week by workspace. Run early.
+
+**Outcome** (built by a subagent, merged with `tools/merge-branch.mjs`, every gate; notes under D124): The machine log counts parks and set-ups. `session.parked {session, kind, repository, workspace}` is written by `SessionLog` as the driver moves a record into the parked state, in the shell and the headless host alike and in every mode (the attention watch shares the predicate and the same rows; the watch lives in the modules lane and its first look is a baseline, so the log is the one writer). `session.started` gains `workspace`, and `setup: true` for a set-up's session (`SetupQuests`, the press's three titles, which LAYOUT7's composer takes its words from). `turn.ended` gains the turn's tokens as METER1 splits them, its tool calls and its context against the window. `tools/usage-report.mjs` gains a Set-ups section and a Parks section (per week by workspace, beside the sessions started there); absent is never zero, and no price is claimed. Held by `SessionLogTests`, `AttentionTests`, `SetupQuestsTests` and the report's tables, each new case seen failing first; the driver's open passing the set-up mark is reached only by a real tick. Driver fast half 1656 → 1755 (with main), CLI 918 → 932.
+
+
+## WSSETUP8 — the README as an unadopted repository's word (2026-10-01)
+
+> - [ ] **WSSETUP8 — the README as an unadopted repository's word** (§5; service).
+
+**Outcome** (built by a subagent, merged with `tools/merge-branch.mjs`, every gate; a note under D124): Until a repository adopts, the service indexes its root `README.md`, in any case, as the repository's own word (D124 §5). It is split at level-two headings like a log; the text before the first heading, which `MarkdownSections.Preamble` now returns, is titled *README* with no anchor, and each later section is titled by its heading. All entries are local knowledge labelled by the path on disk and claim no role. It is never read through a link or a link held as text, never from `docs/README.md`, and never in another format. It is read after the declared records, so a README a manifest names as router or log is read once, by that role. "Unadopted" is the scanner's own test for reading both roots (`RepositoryLayout.Locked`: no lock, or one read as none); once a lock is read the README is not, and the next refresh drops its entries. `RepositoryReadmeTests` (30) and the new `MarkdownSectionsTests` cases (6) hold each rule, each seen failing first; the golden test of an adopted repository is unchanged. Service 865 → 901, HTTP 49. Whether its sections help a neighbour's search is WSSETUP12's canary.
+
+
+## SEM3b — the window says what a refresh embedded (2026-10-01)
+
+> - [ ] **SEM3b — the window says what a refresh embedded** (SEM3's hand-back): the refresh notice shows the HTTP
+> answer's `embedded` (entries, vectors, splits, window), and Settings → AI's search hint names
+> `DAORIS_EMBED_WINDOW` beside the model and the address, in both languages. Web shell and web settings.
+
+**Outcome** (built by a subagent, merged with `tools/merge-branch.mjs`, every gate): The refresh's one notice now says what the semantic half embedded, from the HTTP answer's `embedded` (D123): "Indexed 636 entries from 3 repositories. Embedded 636 entries as 1,267 vectors of at most 2,000 characters; 322 longer than that were split." The figures are grouped the reader's way, and a split of none is said as none. A refresh with no `embedded` says nothing of embedding, since absent is never zero. Settings → AI's search hint names `DAORIS_EMBED_WINDOW` as code beside the model and the address, in both languages, and D123's note no longer says the page lacks it. Seen failing first: `App.test.tsx` (the notice, the zero form, the absent case) and `AiJobs.test.tsx`. Not covered: a real embedder behind the notice, and the notice's wrap on the window. Web 2294 → 2297.
+
+
+## MANAGE1 — saving a declaration keeps what the repository uses (2026-10-01)
+
+> - [ ] **MANAGE1 — saving a declaration erases `uses`** (found by DEV4). Repositories → Manage → Save
+> declaration re-registers with a `domain` that carries no `uses`, which erases the repository's `uses` from
+> the registry until its next `connect`. Lanes avoid it by DEV4's preserve rule; `uses` needs the same, with a
+> test that fails first.
+
+**Outcome** (built by a subagent, merged with `tools/merge-branch.mjs`, every gate): Saving a declaration was re-registering from the shell's answer about the folder (`RegistryModule.Inspect`), which carried every part of the declaration except `uses`; the HTTP door reads an absent `uses` as none (D91) and the store replaces a row's `uses` with the declaration's, so the registry lost them until the next `connect` while the file still held them, and *Add repository* did the same. The answer now states `uses` as the manifest has it (`[]` for none), and both of the page's registering doors send it. DEV4's preserve rule was not used: lanes can be kept when absent because every door that reads the repository's file always sends them, but `connect` and the driver's sync send `uses` only when there is one, so keeping an absent `uses` would make a dropped dependency impossible to clear. Seen failing first: `RegistryModuleTests` and `ProjectsView.test.tsx`. Logged in FIX-LOG. Modules 361 → 363.
+
+
+## TOOLS7 — Settings → Tools (2026-10-01)
+
+> - [ ] **TOOLS7 — Settings → Tools** (§4.1, §4.4)
+
+**Outcome** (built by a subagent, merged in integrate-j with `tools/merge-branch.mjs`, every gate; a note under D121): Settings → Tools, built as a machine domain after Agents on `DriverModule.Tools.cs` and the page's `bridge/tools.ts`. Each tool's card says why Daoris needs it, how it is run (System, Managed or Custom), the file it runs and the version it answers. Managed offers the downloaded versions, then those the lists name for this machine, with *Download*, *Use this version* and *Delete* (which asks once). Custom checks that a named file answers a version before writing it, with *Browse…* on the system's picker. Nothing applies on choosing; a press applies it. A switch of git first names the checkout keys the two gits read differently (`TOOLS_GIT`) and switches on the second press. A download is followed: its console and stop are on the card, and its end comes from `TOOLS_ENDED`. The resource locations card lists the person's locations and then the built-in list, with *Look for updates* (a new `hostBounds` twin row), *Add location…* and *Remove*. Nine refusal codes in both catalogues, the glossary's three terms (tool 工具, managed 托管, resource location 资源位置), `tool.used` in the machine log, and the controls answered in `HelpCoverageTests` (System and managed use and removing a location owed to TOOLS8, the rest exempt). Modules fast half 362 → 384, web 2176 → 2219 before merging main. `DriverModuleToolProgramsTests` (Process half) was written in the branch and run at the merge. The SSH command and `TOOL_GIT_TOO_OLD` wait for TOOLS6.
+
+
+## SELECT1 — a long select scrolls inside the window (2026-10-01)
+
+> - [ ] **SELECT1 — a long select runs off the window** (owner, 2026-10-01: *"select option currenly does not have
+> scroll it just overflow the screen"*). Every select is the one atom `SelectField` (`ui.tsx`), whose list had no
+> height cap: capped at the room the popper measures, with the scroll arrows Radix hides the scrollbar for. **Merged
+> 2026-10-01 (integrate-h)**; open until it is looked at on the republished window with a long list, at 680 px.
+
+**Outcome** (built by the parent and a subagent, merged in integrate-h with `tools/merge-branch.mjs`, every gate; looked at on the window): Every select is the one atom `SelectField`, whose list had no height cap: it is now capped at the room the popper measures on its side (`--radix-select-content-available-height`, 8 px collision padding) and scrolls inside it, with Radix's scroll arrows since the viewport hides its scrollbar. Looked at on the republished install, 2026-10-01, in the owner's dark theme and 中文: the new quest's receiver list holds the workspace's 29 repositories and ends at the window's bottom edge (y 232 → 1005 of 1013) with the ⌄ arrow, where before it ran off the screen. A ui test holds the cap on the content.
+
+
+## MENU1 — one menu atom (2026-10-01)
+
+> - [ ] **MENU1 — one menu atom** (found with SELECT1): eight files style Radix's dropdown menu each on its own
+> (AppMenu, ViewsMenu, ListPane's ＋ and ⋯, SessionRow, SyncStatus, TerminalTabs, BrowserDoor, the map's
+> LinesMenu and LayeredMap), and none caps its height, so a long menu runs off the window as the select did. One
+> menu molecule beside `SelectField` (content capped at the popper's available height and scrolling, item,
+> checkbox item, separator, label), every menu moved onto it. The two dialogs built outside the atoms (QuickAsk,
+> CommandPalette) move onto a dialog atom or are named as the test's exceptions. The test: no file but `ui.tsx`
+> imports a Radix primitive (the app root's tooltip provider excepted), as `presentational.test.ts` holds what a
+> molecule imports. **Merged 2026-10-01 (integrate-h)**; open until a long menu is looked at on the republished
+> window at 680 px, both themes.
+
+**Outcome** (built by the parent and a subagent, merged in integrate-h with `tools/merge-branch.mjs`, every gate; looked at on the window): One menu atom. `Menu` in `ui.tsx` is every dropdown, as `SelectField` is every select: never modal; its content in a portal capped at `--radix-dropdown-menu-content-available-height` with `collisionPadding`, scrolling inside with the theme's bar; one row density, the tick's column, a label and a rule; the two row highlights already on screen kept as the content's `highlight`. All nine dropdowns across eight files moved onto it, and the command palette and Quick Ask onto `QuickPanel`. `primitives.test.ts` holds that no file but the atoms imports a Radix primitive, watched failing on all eleven files first; a 60-item menu test and a `LongMenu` story prove the cap. Looked at on the republished install, 2026-10-01 (dark, 中文): the Workspace menu reads as before (the ticked workspace, its counts, the rules and icons) and its live content carries the cap; no menu on the install is long enough to fill the window, so the long case stands on the test and the story. Web vitest 2286 → 2294.
+
+
+## LAYOUT7 — the set-up quest and its terminal door, as D124 amends it (2026-10-01)
+
+> - [ ] **LAYOUT7, amended by D124** (§2): the refusals of §2.1, the body of §2.2–§2.7 with the tool check and the
+> knowledge step, `daoris` in place of `npx`, §2.4's exact verbs; the playbook gains *Initialise the knowledge*.
+
+**Outcome** (built by a subagent, merged with `tools/merge-branch.mjs`, every gate; notes under D117 and D124): `daoris-driver setup <repository> [--plan]` reads a repository's line as git objects through `LayoutReader`: the layout by the lock, then the manifest, then `.claude`; links by mode and links held as text by the CLI's cases; the tiers, mirrors and rooms; and whether an agents adopter is finished. The press gives every D124 §2.1 refusal at once, each with its door. A press publishes one ask, as the person's, whose title comes from `SetupQuests` and whose body is the adoption playbook in the canon's words: the tool check first, the knowledge step after the sync, then the brief, documents, safe work, bounds and close. Before publishing it adds §2.4's nine exact `Bash` verbs to the repository's rules, and takes them back if the service refuses. `--plan` publishes and writes nothing. The playbook gained the layout's steps, *Initialise the knowledge* and the driven hand-over; the twins table gained the reader and the brief-and-playbook twin. Driver fast half 1755 → 1853; CLI 932. `SetupLineProcessTests` (Process half) was written in the branch and run at the merge. Owed: the family rehearsal's set-up phase (LAYOUT7a), the per-agent table and its CLI twin (LAYOUT8), `PowerShell` rules (after D122 §3.5's canary), and `app/bin` on a child's PATH (WSSETUP3).
+
+
+## LAYOUT7a — the family rehearsal sets a repository up (2026-10-01)
+
+> - [ ] **LAYOUT7a — the family rehearsal sets a repository up** (LAYOUT7's hand-back; tools): `setup game --plan`, then
+> a press, a stub session running `daoris` in its tree and landing, the set-up recognised and counted.
+
+**Outcome** (built by a subagent, merged with `tools/merge-branch.mjs`, every gate; a note under D124): The family rehearsal sets a repository up. Phase 17c registers a scratch repository that has nothing for agents, without adopting it, and drives `daoris-driver setup` over it through the real host and driver; the repository's own session finds the workspace's CLI by its bare name through a launcher first on the PATH (the install's `app/bin/` is the deployment rehearsal's). It checks that a plan names every refusal at once, then the facts read from the line, the quest's whole text and the nine exact verbs, and publishes nothing; that a press publishes one quest as the person's ask and adds the rules, and a second press is refused while the first is open; that the protocol stub's new set-up branch takes the quest in its own tree, runs each verb the quest asks for, commits and closes it done without touching the checkout; that the machine log marks the start `setup: true` and a later ordinary session carries no mark; that the landing merges into the line, which then reads as already set up; and that the usage report counts one set-up of two sessions, with its calls. `tools/setup-kit.mjs` holds the launcher and a reader of the command's output, with 12 tests in `tools/setup-kit.test.mjs`. The phase's 17 checks were proven against a recorded transcript (25 single-claim breakages each caught) and ran for real at the merge.
+
+
+## WSSETUP2 — the install carries its doctrine tool (2026-10-01)
+
+> - [ ] **WSSETUP2 — the install carries its doctrine tool** (§1.2; tools): the packed CLI in `app/cli/`, two launchers
+> in `app/bin/`; the deployment rehearsal runs `daoris --version` and `check` from Command Prompt and Git Bash.
+
+**Outcome** (built by a subagent, merged with `tools/merge-branch.mjs`, every gate; a note under D124): The install carries its doctrine tool. `publish:desktop` packs `src/Daoris.Cli` with `npm pack`, as the release does, and the CLI's own tar reader lays it out in `app/cli/node_modules/daoris/`, as npm lays a package out under a prefix, because the CLI reads the canon it ships only from under `node_modules` (the design said `app/cli/`; a test holds the layout to `resolveCanonRoot`). `app/bin/` holds `daoris` (Git Bash) and `daoris.cmd` (Command Prompt, and PowerShell by PATHEXT), which run it on the `node` PATH finds. Both folders are swapped in whole, and a package that is not the release's `daoris` is refused before anything is replaced. `INSTALLED.md` says where the tool is and that no PATH changed. The deployment rehearsal reads the layout back (phase 1), checks the republish (phase 2), and in a new phase 8 runs `--version`, `init`, `sync` and `check` by the bare name from Command Prompt, PowerShell and Git Bash. `desktop-publish.test.ts` 22 → 29, `deployment-rehearsal.test.ts` 17 → 20; the shells' lookup was also measured by hand on a laid-out pack. D124's note.
+
+
+## WSSETUP4 — an older tool never rewrites a newer lock (2026-10-01)
+
+> - [ ] **WSSETUP4 — an older tool never rewrites a newer lock** (§1.4; cli, tools): `sync` and `upstream` refuse (exit
+> 1) a lock whose canon version is newer, naming both versions.
+
+**Outcome** (built by a subagent, merged with `tools/merge-branch.mjs`, every gate; a note under D124): An older tool never rewrites a newer lock. `sync` (in every mode, `--dry-run` and `--force` included) and `upstream` (one file or `--all`) refuse, exit 1, a lock whose canon version is newer by number than the canon the tool carries, naming both versions and `npx daoris@<the lock's version> <command>`. `status` no longer offers the older canon as an update: it prints a `newer lock` line, and `--json` carries `newerLock`. `check` cannot know, since it never reads the canon (D8). Held by `newer-lock.test.ts` (5, each failing first: before the guard the older tool synced, returned 0 and rewrote the file) and the release rehearsal's phase 5 (f), where the packed tool at canon 0.0.1 meets a consumer locked at 0.0.6. During `0.0.x` two builds both answer 0.0.1, so the guard cannot tell them apart until the first release. D124's note.
+
+
+## FRAME1h — the secondary windows on the frame (2026-10-01)
+
+> - [ ] **FRAME1h — the secondary windows**: the monitor's rail on `ListPane`, a detached console on
+> `OutputPanel`, the monitor's title on a real token (`tokens.test.ts` fails on `text-h3` first).
+
+**Outcome** (built by a subagent, merged with `tools/merge-branch.mjs`, every gate; a note under D118): The secondary windows are on the frame. The monitor's rail is a list pane (`monitor` in `LIST_BOUNDS`, drawn by `ViewFrame` with no side bar), resized by its edge, closed to its strip, and a strip by itself below a 680 px window, never hidden (audit MO2); its strip keeps each running session's mark and lays the rail over the tiles. The monitor keeps its rail as `daoris.list.monitor.*`, apart from the main window's, and Ctrl+B toggles it. A detached session's console is the `OutputPanel` (audit DE6), grown and hidden there, kept for every detached window as `daoris.detached.panel*`, toggled by Ctrl+J, with no views menu since nothing in that window can be moved. The monitor's title is on `text-view` (audit MO11). `tokens.test.ts` reads a `text-` class whole and fails on any step `tokens.css` does not declare: red on `text-h3` alone first, and it holds `cn.ts`'s steps equal to `tokens.css`'s. Web vitest 2383 → 2399, each new case seen failing first. The look at both windows is the parent's.

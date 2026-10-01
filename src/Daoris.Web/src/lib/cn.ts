@@ -12,12 +12,13 @@ import { extendTailwindMerge } from 'tailwind-merge';
  *
  * It is exactly the failure this project keeps finding: valid Tailwind, a perfectly rendering page,
  * one step off the intended scale, and nothing to notice. `tokens.test.ts` could not catch it —
- * the class is right there in the source, which is all a source scan can see.
+ * the class is right there in the source, which is all a source scan can see. What it does hold is
+ * that this list is the one `tokens.css` declares (FRAME1h), so a step added there reaches the merge.
  */
-const STEPS = ['meta', 'small', 'body', 'title', 'view', 'wordmark', 'value'] as const;
+export const TYPE_STEPS = ['meta', 'small', 'body', 'title', 'view', 'wordmark', 'value'] as const;
 
 const merge = extendTailwindMerge({
-  extend: { classGroups: { 'font-size': [{ text: [...STEPS] }] } },
+  extend: { classGroups: { 'font-size': [{ text: [...TYPE_STEPS] }] } },
 });
 
 /** The standard composition idiom: conditional classes, with Tailwind conflicts resolved last-wins. */

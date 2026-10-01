@@ -4,6 +4,7 @@
   "settings.domain.workspace": "Workspace",
   "settings.domain.driver": "Driver",
   "settings.domain.agents": "Agents",
+  "settings.domain.tools": "Tools",
   "settings.domain.permissions": "Permissions",
   "settings.domain.plugins": "Plugins",
   "settings.domain.browser": "Browser",

@@ -586,6 +586,19 @@ describe('the output panel', () => {
     expect(onMove).not.toHaveBeenCalled();
   });
 
+  // FRAME1h: a detached session's window has one view and no side bar, so its ⋯ would list the console alone
+  // and offer nothing; absent, never a menu with nothing to do (D118 §3a). Where a view can move, it stays.
+  it('offers its views menu only where there is a view to choose or somewhere to move one', () => {
+    const { rerender } = render(<OutputPanel console={<p>the console</p>} height={180} collapsed={false} onResize={() => {}} onToggle={() => {}} />);
+    expect(screen.queryByRole('button', { name: 'views in the panel' })).toBeNull();
+    expect(screen.getByRole('button', { name: 'Hide the panel' })).toBeTruthy();
+
+    rerender(<OutputPanel console={<p>the console</p>} height={180} collapsed={false} onResize={() => {}} onToggle={() => {}} onMove={() => {}} />);
+    expect(screen.getByRole('button', { name: 'views in the panel' })).toBeTruthy();
+    rerender(<OutputPanel console={<p>the console</p>} height={180} collapsed={false} onResize={() => {}} onToggle={() => {}} onReset={() => {}} />);
+    expect(screen.getByRole('button', { name: 'views in the panel' })).toBeTruthy();
+  });
+
   it('says how to fill it when every view has moved out, rather than an empty well', () => {
     render(<OutputPanel console={<p>the console</p>} height={180} collapsed={false} onResize={() => {}} onToggle={() => {}} views={[]} />);
     expect(screen.getByText(/Nothing is here now/)).toBeTruthy();

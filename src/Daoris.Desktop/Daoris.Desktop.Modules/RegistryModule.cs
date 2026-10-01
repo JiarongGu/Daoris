@@ -78,6 +78,11 @@ public sealed class RegistryModule(IEventBus events, Func<string?> pickFolder) :
             Packs = declaration?.Packs ?? [],
             Join = declaration?.Join ?? false,
             ShareKnowledge = declaration?.ShareKnowledge ?? false,
+            // What it says it uses (D91), so the page registers the whole declaration (MANAGE1): the
+            // registry replaces a row's `uses` with the declaration's, and an answer without them made
+            // the page's add and its save erase them until the next `connect`. Raw, as the file has
+            // them; the service reads them by the one rule (`Declared.Uses`).
+            Uses = declaration?.Uses ?? [],
         };
     }
 
@@ -169,7 +174,7 @@ public sealed class RegistryModule(IEventBus events, Func<string?> pickFolder) :
 
     private sealed record Declaration(
         string? Summary, IReadOnlyList<string> Owns, IReadOnlyList<string> Accepts,
-        IReadOnlyList<string> Packs, bool Join, bool ShareKnowledge);
+        IReadOnlyList<string> Packs, bool Join, bool ShareKnowledge, IReadOnlyList<string> Uses);
 
     private static Declaration? ReadDeclaration(string manifest)
     {
@@ -193,7 +198,8 @@ public sealed class RegistryModule(IEventBus events, Func<string?> pickFolder) :
                 join,
                 // Knowledge feeds only from a joined repository (D47 §4), narrowed wherever a manifest
                 // is read — this one was written by hand as often as by the CLI.
-                join && remote is not null && Bool(remote.Value, "knowledge"));
+                join && remote is not null && Bool(remote.Value, "knowledge"),
+                domain is null ? [] : Strings(domain.Value, "uses"));
         }
         catch (Exception error) when (error is JsonException or IOException or UnauthorizedAccessException)
         {
@@ -202,7 +208,7 @@ public sealed class RegistryModule(IEventBus events, Func<string?> pickFolder) :
             // any other reason lands here too — a file open in another process, or one this account
             // may not read — because the question being asked is "is there a repository here", and a
             // locked file is not an answer of "no", nor a reason to take the folder picker down.
-            return new Declaration(null, [], [], [], false, false);
+            return new Declaration(null, [], [], [], false, false, []);
         }
     }
 

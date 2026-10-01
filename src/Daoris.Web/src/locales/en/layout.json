@@ -3,6 +3,8 @@
   "layout.list.plugins": "the plugin list",
   "layout.list.quests": "the quest list",
   "layout.list.projects": "the repository list",
+  "layout.list.convergence": "the finding list",
+  "layout.list.search": "the result list",
   "layout.list.settings": "the settings list",
   "layout.panel": "the panel",
   "layout.right": "the right side bar",
@@ -11,6 +13,8 @@
   "layout.menu.list.plugins": "Plugin list",
   "layout.menu.list.quests": "Quest list",
   "layout.menu.list.projects": "Repository list",
+  "layout.menu.list.convergence": "Finding list",
+  "layout.menu.list.search": "Result list",
   "layout.menu.list.settings": "Settings list",
   "layout.menu.panel": "Panel",
   "layout.menu.right": "Right side bar"
