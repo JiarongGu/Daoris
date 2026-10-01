@@ -371,6 +371,13 @@ controls are in the frame design's §3.
     is (U67), opens on a repository nothing works in, marks a busy one and says a working tree of its
     own lets it start beside it, and says a refused start in the form (U68).
   - **The monitor is the present tense**, its rail as its tiles, at the main rail's width (U69, U70).
+- **Plugins** (D119) — the activity bar's place after Search, shell-only, on the frame. Its list groups the plugins by what each needs from the person: *Waiting on you* (refused while on),
+  *On*, *Off*, then *Daoris's own plugins* not installed, each with *Install* on its row. Its strip marks each
+  installed plugin: the waiting mark, a faint initial for off, nothing for on. A plugin's page heads with its
+  switch, *Try*, *Update…* and *Remove…*, which asks once. A refused one's sentence leads, then Points, Agents,
+  Tests (its last trial here), Data folder and Source, and its terminal twins at its foot. *Running* is the neutral
+  pill, never done's green. The `＋` asks Ask Daoris for a plugin first, then *Make a plugin…*, the kit in a drawer;
+  the ⋯ holds *Try a folder…*.
 - **Settings** (D66, as amended by **D75**) — one page with its **domains in a list at its left**,
   one shown at a time and reachable by name: *Setup*, *Appearance*, *AI features*, *Workspace*,
   *Driver*, *Agents*, *Permissions*, *Plugins*, *Browser*, *Machine log* (配置, 外观, AI 功能, 工作区,

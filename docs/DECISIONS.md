@@ -6311,6 +6311,40 @@ measured on the window: the names' counts are D116's estimates. The health state
 plugin, and the tests' runner has not met a real plugins repository or the PATH an install hands the application
 (USE1g). No landing plugin has pushed to a real platform, so Activity's pushes have not been seen. Each build row
 names its own proof, and the design's §9 says what only the window and a real plugin can prove.
+
+**Built: PLUGUI1b (2026-10-01), and what it settled that the design left open.**
+- **The view hands the frame a value, so it is a hook** (`usePluginsView`, `plugins/PluginsView.tsx`). Its list and its
+  page are drawn where the frame decides, so no one component could hold both. The application holds it on every view.
+  It asks the driver for nothing until the view is in front (`usePlugins({ enabled })`).
+  - So a trial's report, an update's plan and *Remove…*'s ask last as long as the application. A trial stays on its
+    plugin's page across a change of view, until Daoris closes. PLUGUI1g keeps it on the machine.
+- **`PluginList`, `PluginPage` and `OfferPage` hold no hook**, so by the components method they are molecules, with a
+  story for every state §6 names. `PluginsView` is the view's one organism, named in the presentational check, whose glob
+  now reads `plugins/`.
+- **Today's states are four**: running, on, refused and off. `ready` and `failing` wait for PLUGUI1f, so a sound
+  plugin whose process is not up says no word. A refused plugin that is off is off.
+- **Gone is read two ways, both by code.** A chosen plugin is gone when the answered catalogue lacks it. An act refused
+  with `PLUGIN_UNKNOWN` asks for the catalogue again and says no toast. A removal by the page's own press goes back to
+  *Choose a plugin*, not to *gone*.
+- **The list pane gained two things every view may use** (`work/ListPane.tsx`). Where the `＋` makes two kinds, its
+  empty state offers each by name, the primary first. And `ListMore` is a list's ⋯.
+- **The `＋` is named *Add a plugin*.** With one kind left (no Ask Daoris, or a shell with no kit), the `＋` is that act.
+  The groups' counts are in their keys, so the offers' group has `plugin.group.offers` beside `plugin.offers.title`.
+- **The glossary has a fifth term, `test` (测试).** Under `--all`, the kit's two sentences that name a plugin's tests
+  and its trial together read as a trial called 测试. A term for the tests sets that name aside, as NAME1b's check does
+  for any term the English names. `try` does not match *Try again*, which is a retry (重试).
+- **The page imports the kit and the update's plan from `settings/`** (`PluginKit.tsx`, `PluginUpdate.tsx`), which
+  PLUGUI1c moves to `plugins/`. Two things wait on that move:
+  - *Update now* wears the default variant, not the primary that §3.2 gives it.
+  - The kit drawer shows the card's own *Make a plugin* heading under the drawer's title.
+- **Places are unchanged.** `places.ts` is the driver's `HelpPlaces`' twin, and the twins move `plugins` to the views
+  together in PLUGUI1c, so a go to the Plugins view waits for that row. `where.ts` names the view.
+- **The page's foot names only the terminal verbs that exist**: `daoris plugin enable|disable|update|remove` and
+  `daoris-driver plugins try`. `show`, `activity` and `test` arrive with PLUGUI1d and PLUGUI1g.
+- **What the gates do not cover.** vitest holds the view over a mocked bridge and the frame's list over jsdom, which
+  lays nothing out. No look at the window was taken in this branch, so every width, the strip at 680 px and the laid-over
+  list are the parent's to see. The names' budgets are estimates (D116 §4). The disclosure spec's two new lines were
+  edited and not run: the parent runs `test:web`.
 ## D122 — The development documents are a standard the canon ships, and a repository declares its safe work once for the person's yes (2026-10-01)
 
 **Decision (DOC1 and UNBLOCK1, the owner's: *"research a good development doc pattern for code generation and use it as
