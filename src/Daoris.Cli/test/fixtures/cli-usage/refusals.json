@@ -22,5 +22,8 @@
   {"argv":["browser"],"code":2,"out":["daoris: `browser` takes `daoris browser favorite list`, `daoris browser favorite add <address> [--title T]`, `daoris browser favorite remove <address>`, `daoris browser extensions [offer|refuse]`, `daoris browser use [daoris|edge]`, or `daoris browser links [system|daoris]`."]},
   {"argv":["browser","frobnicate"],"code":2,"out":["daoris: `browser` takes `daoris browser favorite list`, `daoris browser favorite add <address> [--title T]`, `daoris browser favorite remove <address>`, `daoris browser extensions [offer|refuse]`, `daoris browser use [daoris|edge]`, or `daoris browser links [system|daoris]`."]},
   {"argv":["browser","favorite","frobnicate"],"code":2,"out":["daoris: `browser favorite` does not know `frobnicate` — it takes `daoris browser favorite list`, `daoris browser favorite add <address> [--title T]`, `daoris browser favorite remove <address>`, `daoris browser extensions [offer|refuse]`, `daoris browser use [daoris|edge]`, or `daoris browser links [system|daoris]`."]},
-  {"argv":["browser","history"],"code":2,"out":["daoris: `browser history` is retired: Daoris's browser keeps the browser's own history now, on its History page, where it is cleared as well."]}
+  {"argv":["browser","history"],"code":2,"out":["daoris: `browser history` is retired: Daoris's browser keeps the browser's own history now, on its History page, where it is cleared as well."]},
+  {"argv":["tool","frobnicate"],"code":2,"out":["daoris: unknown tool verb 'frobnicate' — one of: list, path, use"]},
+  {"argv":["tool","path","bun"],"code":2,"out":["daoris: `bun` is not a tool this build runs — one of: git, node, pwsh, gh, az. A tool is added in the code, never by a file."]},
+  {"argv":["tool","use","git","managed","2.51.0"],"code":2,"out":["daoris: `tool use git managed` is not offered yet: a managed version is downloaded from a list of versions, and this build has none. `system` and `file <path>` are the ways it sets"]}
 ]

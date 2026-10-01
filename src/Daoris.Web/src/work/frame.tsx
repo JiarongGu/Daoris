@@ -8,6 +8,7 @@ import type { Place, ViewId } from './placements';
 import { DropMark, viewEntries, ViewsMenu } from './ViewsMenu';
 import { dragProps, useViewDrop } from './viewDrag';
 import { useTabFit } from './tabFit';
+import { LIST_DOOR } from './listKeys';
 
 // The window's own furniture (D55, extended by D56, simplified by D66): the app strip, the activity
 // bar, the status bar and the output panel. Small, presentational, and kept together because they
@@ -168,7 +169,7 @@ export type ActivityItem<T extends string> = {
  * leaves the machine), because a greyed row implies the thing exists somewhere you could get to.
  */
 export function ActivityBar<T extends string>({
-  label, items, end = [], active, onSelect, footer,
+  label, items, end = [], active, onSelect, onToggleCurrent, footer,
 }: {
   /** The bar's accessible name — passed in, so this stays a molecule with no i18n of its own. */
   label: string;
@@ -180,6 +181,11 @@ export function ActivityBar<T extends string>({
   end?: ActivityItem<T>[];
   active: T;
   onSelect: (tab: T) => void;
+  /**
+   * A press on the place you are on (D118 §3a, audit F1): its view's list toggles, as VS Code's activity
+   * bar toggles its side bar. Absent where the view has no list, and the press then selects it again.
+   */
+  onToggleCurrent?: () => void;
   /** Actions, not state: refresh and language. State went to the status bar. */
   footer?: ReactNode;
 }) {
@@ -189,7 +195,9 @@ export function ActivityBar<T extends string>({
         type="button"
         aria-label={name}
         aria-current={active === tab ? 'page' : undefined}
-        onClick={() => onSelect(tab)}
+        // The current place is a door to its list where it toggles it (D118 §3a).
+        {...(active === tab && onToggleCurrent ? { [LIST_DOOR]: '' } : {})}
+        onClick={() => (active === tab && onToggleCurrent ? onToggleCurrent() : onSelect(tab))}
         className={cn(
           'relative flex h-9 w-9 shrink-0 items-center justify-center rounded-control transition-colors duration-(--speed)',
           active === tab
@@ -210,6 +218,7 @@ export function ActivityBar<T extends string>({
   return (
     <nav
       aria-label={label}
+      data-region="activity"
       // 🔴 A place keeps its size, and a bar too short to hold them scrolls (UX5 U22). At the
       // window's least height the places shrank until they touched, the counts sat over their
       // neighbours and Settings went under the status bar. No scrollbar is drawn in a 48px bar;
@@ -298,6 +307,7 @@ export function StatusBar({
   return (
     <footer
       aria-label={t('work.status.label')}
+      data-region="status"
       /* 🔴 `items-stretch` and a fixed height, not `items-center` and padding — because a hover
          target that stops short of the bar's edges reads as a word that lit up rather than as a
          control. Every item fills the bar's full height; that single property is most of what makes
@@ -636,7 +646,7 @@ export function OutputPanel({
   };
 
   return (
-    <section aria-label={t('layout.panel')} className="relative flex shrink-0 flex-col border-t border-line" {...drop.props}>
+    <section aria-label={t('layout.panel')} data-region="panel" className="relative flex shrink-0 flex-col border-t border-line" {...drop.props}>
       {drop.over && <DropMark />}
       {!collapsed && (
         <div

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { store, stored } from '../lib/stored';
 
 /**
- * What the person closed in the Work frame (FRAME6): the session rail, the output panel, the right dock.
+ * What the person closed in the Work frame (FRAME6): the view's list, the output panel, the right dock.
  *
  * @remarks
  * **Held by the application since DOCK1c**, so the strip's toggles and the View menu (SURF11) reach
@@ -13,10 +13,20 @@ import { store, stored } from '../lib/stored';
  * reopens on the upgrade.
  */
 export type FrameClosings = {
-  rail: boolean;
+  /**
+   * Sessions' list, the one list pane until each view keeps its own (FRAME1c, D118 §3f). Its key is
+   * still the rail's, `daoris.railClosed`, so nothing reopens on the upgrade.
+   */
+  list: boolean;
+  /**
+   * Sessions' list laid over the main area, from a strip the window drew (D118 §3a). Held beside its
+   * closing so every door that toggles the list reaches it, and never remembered: it closes on a choice.
+   */
+  listOver: boolean;
   panel: boolean;
   dock: boolean;
-  setRail: (closed: boolean) => void;
+  setList: (closed: boolean) => void;
+  setListOver: (over: boolean) => void;
   setPanel: (closed: boolean) => void;
   setDock: (closed: boolean) => void;
 };
@@ -26,7 +36,8 @@ export const PANEL_CLOSED = 'daoris.panelClosed';
 export const DOCK_CLOSED = 'daoris.dockClosed';
 
 export function useFrameClosings(): FrameClosings {
-  const [rail, setRailState] = useState(() => stored(RAIL_CLOSED) === '1');
+  const [list, setListState] = useState(() => stored(RAIL_CLOSED) === '1');
+  const [listOver, setListOver] = useState(false);
   const [panel, setPanelState] = useState(() => stored(PANEL_CLOSED) === '1');
   // 🔴 Closed until the person opens it (UX5 U7), as the reference's dock opens on demand: open by
   // default at 45%, it left a 1400px window's conversation 442px. So an absent choice is closed, and
@@ -34,10 +45,12 @@ export function useFrameClosings(): FrameClosings {
   const [dock, setDockState] = useState(() => stored(DOCK_CLOSED) !== '0');
 
   return {
-    rail,
+    list,
+    listOver,
     panel,
     dock,
-    setRail: (closed) => { setRailState(closed); store(RAIL_CLOSED, closed ? '1' : null); },
+    setList: (closed) => { setListState(closed); store(RAIL_CLOSED, closed ? '1' : null); },
+    setListOver,
     setPanel: (closed) => { setPanelState(closed); store(PANEL_CLOSED, closed ? '1' : '0'); },
     setDock: (closed) => { setDockState(closed); store(DOCK_CLOSED, closed ? '1' : '0'); },
   };

@@ -173,7 +173,8 @@ export function SessionRail({ selected = null, onSelect, notify, compact = false
             aria-label={t('work.rail.search.label')}
             placeholder={t('work.rail.search.placeholder')}
             onChange={(event) => setQuery(event.target.value)}
-            onKeyDown={(event) => { if (event.key === 'Escape') { event.preventDefault(); setQuery(''); } }}
+            // Escape clears a search, and one with nothing in it is left to the list laid over (D118 §3a).
+            onKeyDown={(event) => { if (event.key === 'Escape' && query) { event.preventDefault(); setQuery(''); } }}
             className="min-w-0 flex-1 bg-transparent text-small text-ink outline-none placeholder:text-ink-faint"
           />
         </label>
@@ -298,7 +299,7 @@ function SearchResults({ query, settled, named, hits, cut, asking, sessionOf, ti
           <h3 className={heading}>{t('work.rail.search.byContent')}</h3>
           <ul className="m-0 list-none p-0">
             {[...found].map(([id, words]) => (
-              <li key={id}>
+              <li key={id} data-list-row="">
                 <button
                   type="button"
                   aria-current={id === selected || undefined}
