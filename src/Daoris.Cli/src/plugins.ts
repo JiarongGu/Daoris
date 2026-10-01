@@ -24,7 +24,9 @@
 //
 //   5. Where an installed plugin came from is `.daoris-source.json` in its install folder: the folder it
 //      was added from, or the offer it was installed from. `update` re-reads that source by rules 1–3,
-//      refuses in the same words, says what changes, and swaps the install folder whole.
+//      refuses in the same words, says what changes, and swaps the install folder whole. Since PLUGDIST1a
+//      (D120) it may be the package the driver installed it from, which this side reads and lists, and
+//      whose update it refuses as the driver does: a package is installed whole, by the driver alone.
 //   6. Daoris's own example plugins are offered from the install's `app/plugin-offers/`, beside the
 //      home; what each needs is its README's `## What it needs`.
 
@@ -35,6 +37,7 @@ import { onPath, readJsonObject, readText, writeJsonAtomic } from './fsx.ts';
 import type { ExitCode } from './errors.ts';
 import { daorisHome, HOME_SENTENCE } from './home.ts';
 import { TOOLCHAINS } from './toolchain.ts';
+import { isAddress } from './tools.ts';
 import type { CommandArgs } from './types.ts';
 
 /** The plugin API this build speaks. Raised only when a plugin written for the new shape cannot work on the old one. */
@@ -420,10 +423,32 @@ export function readPlugins(home: string, reserved: Iterable<string> = reservedH
   return { plugins, contributing: plugins.filter((p) => p.enabled && p.problem === null) };
 }
 
-// ——— Where an installed plugin came from (PLUG9 c, D103). Twin: `PluginSource` in `PluginInstall.cs`.
+// ——— Where an installed plugin came from (PLUG9 c, D103). Twin: `PluginSource` in `PluginInstall.cs`, whose
+// `PluginSourceTests` holds the table `plugin-sources.test.ts` parses and holds this reader to.
 
-/** The folder a plugin was added from (a whole path), or the offer of this install it was installed from (an id). */
-export type PluginSource = { folder: string } | { offer: string };
+/**
+ * The package a plugin was installed from (PLUGDIST1a, D120 §4, the distribution design §5.7 step 5): its package
+ * id, its version, the SHA-512 of the package file in standard base64, and the source it came from — a package
+ * source's index address, or the whole path of the folder that held the file. Only the driver reads a package
+ * (D120 §4); this side reads and lists the record it leaves. Twin: `PluginPackageOrigin`.
+ */
+export interface PackageOrigin { package: string; version: string; sha512: string; source: string }
+
+/** The folder a plugin was added from (a whole path), the offer of this install it was installed from (an id), or its package. */
+export type PluginSource = { folder: string } | { offer: string } | PackageOrigin;
+
+/** A NuGet package id: words of letters, digits and underscores joined by dots or dashes, at most 100 characters. Twin: `PluginSource.IsPackageId`. */
+const PACKAGE_ID = /^[A-Za-z0-9_]+(?:[.-][A-Za-z0-9_]+)*$/;
+
+/** A package's version: one to four numbers, then a prerelease label and build metadata, each optional. Twin: `PluginSource.IsPackageVersion`. */
+const PACKAGE_VERSION = /^[0-9]+(?:\.[0-9]+){0,3}(?:-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$/;
+
+/** A SHA-512 in standard base64: 64 bytes are 86 characters and two of padding. */
+const SHA512 = /^[A-Za-z0-9+/]{86}==$/;
+
+export const isPackageId = (id: string): boolean => id.length <= 100 && PACKAGE_ID.test(id);
+
+export const isPackageVersion = (version: string): boolean => PACKAGE_VERSION.test(version);
 
 /**
  * An installed plugin's record of where it came from: none for a plugin added before Daoris kept one or
@@ -442,10 +467,28 @@ export function readPluginSource(installFolder: string): { source: PluginSource 
   if (typeof root !== 'object' || root === null || Array.isArray(root)) return unread('it is not a JSON object');
   const folder = text(root, 'folder');
   const offer = text(root, 'offer');
+  const pkg = text(root, 'package');
+  if (pkg !== null && folder !== null) return unread('it names both a package and a folder');
+  if (pkg !== null && offer !== null) return unread('it names both a package and an offer');
   if (folder !== null && offer !== null) return unread('it names both a folder and an offer');
   if (folder !== null) return isAbsolute(folder) ? { source: { folder }, problem: null } : unread('its folder is not a whole path');
   if (offer !== null) return ID_SHAPE.test(offer) ? { source: { offer }, problem: null } : unread('its offer is not a plugin id');
-  return unread('it names neither a folder nor an offer');
+  if (pkg === null) return unread('it names no folder, offer or package');
+
+  // A package's record (PLUGDIST1a), each field judged in the driver's order and words.
+  if (!isPackageId(pkg)) return unread(`its package \`${pkg}\` is not a package id`);
+  const version = text(root, 'version');
+  if (version === null) return unread('a package needs its `version`');
+  if (!isPackageVersion(version)) return unread(`its version \`${version}\` is not a package version`);
+  const sha512 = text(root, 'sha512');
+  if (sha512 === null) return unread('a package needs its `sha512`');
+  if (!SHA512.test(sha512)) return unread('its sha512 is not a SHA-512 hash in base64');
+  const source = text(root, 'source');
+  if (source === null) return unread('a package needs its `source`');
+  if (!isAddress(source) && !isAbsolute(source)) {
+    return unread(`its source \`${source}\` is neither a whole path nor an address — https://, or http:// to this machine`);
+  }
+  return { source: { package: pkg, version, sha512, source }, problem: null };
 }
 
 /** Written into a staged copy before it is renamed into place, so the record and the install move together. */
@@ -453,8 +496,9 @@ function writePluginSource(installFolder: string, source: PluginSource): void {
   writeFileSync(join(installFolder, SOURCE_FILE), `${JSON.stringify(source, null, 2)}\n`, 'utf8');
 }
 
-/** Where a plugin came from, said for a person. */
+/** Where a plugin came from, said for a person: a package as the distribution design §6.2 says it. */
 function sourceSaid(source: PluginSource): string {
+  if ('package' in source) return `${source.source}, package \`${source.package}\` ${source.version}`;
   return 'offer' in source
     ? `Daoris's own plugins, offered by this install (\`${source.offer}\`)`
     : source.folder;
@@ -607,6 +651,14 @@ export function planUpdate(home: string, id: string, reserved: Iterable<string> 
   }
   const source = record.source;
 
+  // PLUGDIST1a: a package is installed whole, and only the driver reads one (D120 §4); the driver's
+  // `PluginInstall.PlanUpdate` says the same, word for word.
+  if ('package' in source) {
+    return refuse(`plugin \`${installed}\` came from ${sourceSaid(source)}, and a plugin from a package is installed whole. `
+      + `A newer package takes its place: \`daoris plugin remove ${installed}\`, then `
+      + '`daoris-driver plugins install <file.nupkg>`, and what it kept stays where it is.');
+  }
+
   let from: string;
   if ('offer' in source) {
     from = join(offersFolder(home), source.offer);
@@ -722,6 +774,8 @@ function sourceLine(installFolder: string): string {
     return 'no record of where it came from — added before Daoris kept one, or copied in by hand; '
       + '`daoris plugin add <folder>` records it';
   }
+  // A package is installed whole, so `update` is not offered for one it would refuse (PLUGDIST1a).
+  if ('package' in source) return `from ${sourceSaid(source)}`;
   return `from ${sourceSaid(source)}; \`daoris plugin update ${basename(installFolder)}\` takes a newer one`;
 }
 
@@ -953,6 +1007,13 @@ export function commandPlugin({ argv, write }: CommandArgs): ExitCode {
       throw new DaorisError(
         `the plugin kit is \`daoris-driver plugins ${verb}\`, or Settings → Plugins — it starts a plugin as the `
         + 'driver would, so it lives with the driver. `daoris-driver plugins` says what each takes.');
+
+    // A plugin package (PLUGDIST1a, D120 §4) is read by the driver alone: this side reads and lists the
+    // record a package leaves, and says where one is installed.
+    case 'install':
+      throw new DaorisError(
+        'a plugin package is installed by `daoris-driver plugins install <file.nupkg>` — the driver reads a package '
+        + 'and checks it before anything is extracted. `daoris plugin add <folder>` installs a plugin\'s folder.');
 
     default:
       throw new DaorisError(`unknown plugin verb '${verb}' — one of: list, add, update, remove, enable, disable (and new, try: the kit)`);
