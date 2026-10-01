@@ -40,6 +40,10 @@ public static class DriverCommand
           ask [--workspace <name>] [--to <repo>] [--file <path>]… [--url <address>]… "…"
           ask --publish <id> --to <repo>  ·  ask --close <id> --reason "…"  ·  ask --delete <id>
               ask at a workspace, or turn an ask into a quest, close it, or delete one made by mistake.
+          setup <repository> [--plan]
+              ask a repository's own session to set it up for every agent: the doctrine, its knowledge, its
+              brief, on its own branch. The press adds the doctrine tool's exact verbs to its rules; --plan
+              prints what was read, the rule and the quest, and publishes nothing.
           quest delete <id>
               delete a quest nobody has started on.
           answer <session> ["…"]

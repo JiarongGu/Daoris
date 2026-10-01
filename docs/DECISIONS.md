@@ -5991,6 +5991,27 @@ test was run against the scanner before this change and after it. The CLI still 
 the service no longer holds that default back (LAYOUT3's choice 1). Not run in the branch: the family rehearsal's
 *each document indexed once* (§5.6), the parent's at merge.*
 
+*Built by LAYOUT7 (2026-10-01), as D124 §2 amends §6.1–§6.3: the layout read from a repository's line, the set-up
+quest's composer and `daoris-driver setup <repository> [--plan]`. `LayoutReader` (`LayoutFacts.cs`) reads the line's
+commit by `git ls-tree -r -z`, the manifest, the lock and the two instruction files by `cat-file`, and the checkout's
+`core.symlinks`, never a working file: the layout by the lock, then the manifest, then `.claude`; a link from its mode,
+then a file held as text by the CLI's content cases, with what sits beside read from the line's tree; the rules,
+skills and knowledge under both roots; the lock's mirrors; every folder with an `AGENTS.md` of its own outside the
+doctrine's folders; the declared rooms lacking one. `SetupBrief` composes the title from `SetupQuests`' words, which
+gained a named constant each and `Title(stem, day)`, and the body from the facts in the canon's words: what is asked
+and whose it is, what was read at the named commit, the steps, the bounds, the close. The playbook gained the layout's
+steps (`init --harness agents`, the `git mv`, the `LINK` lines), *Initialise the knowledge* as its step 6, and a
+hand-over that, for a driven set-up, is the committed branch the workspace's rule lands. Three choices the design left
+open, each held by a test: (1) the press asks no doctrine command, so *already on the agents layout and clean* is read
+from the line (`LayoutFacts.Clean`: the lock and the manifest both on `agents`, the region in `AGENTS.md`, no link or
+link held as text where the tool writes, nothing left in `.claude/knowledge/`, every declared room with its
+instructions) and what else `check` holds stays that repository's own gate; (2) an adopter whose line is not clean
+on the agents layout is asked to move, the move's title, which finishes a move half made; (3) §6.5's per-agent table
+and its CLI twin are not built here: the quest's facts need neither, and they are LAYOUT8's screen's. Not run in the
+branch: `SetupLineProcessTests` (a mode-120000 `CLAUDE.md` under `core.symlinks=false`, read from the line while the
+checkout is on another branch with edits in flight), the parent's at merge; the family rehearsal's set-up phase
+(`setup game --plan`, a stub session running the CLI and landing) is the tools lane's and not written.*
+
 ## D118 — Every view has the same frame: its own list pane and main area, beside the frame's side bar and panel (2026-10-01)
 
 **Decision (FRAME1a).** The owner, 2026-10-01: *"why only session has more layout option we do need to make
@@ -7388,6 +7409,63 @@ what each line measures and what each section reads. What the build settled that
 **Not covered**: the driver's open passing the mark is reached only by a real tick (the `Process` half); its
 decision and the client and log beneath it are held in the fast half, and LAYOUT7's family rehearsal runs the first
 set-up. No week of *before* exists until an install carrying this runs.
+
+**As built (LAYOUT7, 2026-10-01): the set-up quest, as §2 says.** `daoris-driver setup <repository> [--plan]` plans
+from the registry, the driver's choices, the repository's line (D117's note says how it is read), the tools a child
+finds, the open quests and the index, then publishes one ask to that repository through the ask door with `--to`, as
+the person's, so no intake runs. The body carries §2.2's facts, §2.3's steps with the tool's check first and the
+knowledge step after the sync, §2.6's bounds and §2.7's close, `daoris` and never `npx`. What the build settled:
+
+- **Every refusal that applies is said at once**, in §2.1's order, so a person fixes them in one pass; only *not on this
+  machine's registry* and *no checkout here* stop the reading, since nothing after them can be read. Each names its
+  door. *Not driven here* for the pipe door names `daoris driver adapter <agent>`, the door that changes it, and applies
+  to a repository the registry calls unadopted, as the planner judges it (D70); an adopter rides either door.
+- **The tools are found as a child would find them**: `node` by Tools' resolution on the child's `PATH` (TOOLS5), asked
+  `--version` and refused under 22; `daoris` on that same `PATH`, refused unless it prints a version. The probe is
+  LAYOUT7's, since the refusals need it; WSSETUP3 still owes the install's `app/bin/` first on that `PATH`, so until it
+  and WSSETUP2 land a press finds `daoris` only where the person put one, and refuses saying so.
+- **The rule goes in before the ask, and comes out if the ask is refused.** The session a look starts right after the
+  publish is handed it, since it cannot ask for it (D52); a press the service refuses takes back the rules it added and
+  keeps any the person already had. `Bash(…)` only, §2.4's nine verbs (`SetupPress.Verbs`), each one the body asks for.
+- **The ask's words are the title, a blank line and the body**, so the quest the service makes is titled by the first
+  line, which `SetupQuests.IsSetup` knows. The ask's id comes from its whole words: a second press on the same day with
+  nothing it read changed is the same ask, and the service says so; one after the line or the index moved would be a
+  new ask, and the *set-up already open* refusal stops it while the first is open or taken.
+- **What it says of itself is read from the checkout** (D77's `SelfDescription`), and the body says so; the index's
+  entries come from `/api/entries`, counted by file; the neighbours are the registry's rows in the same workspace.
+- **Ask Daoris owes it a door**: `HelpCoverageTests` holds the verb as owed to LAYOUT8's `setup` kind, and the room
+  names it meanwhile.
+
+**Not covered**: the Process-half case and the family rehearsal's set-up phase (D117's note); whether a real session
+follows the body, which only WSSETUP12's pilot shows; `PowerShell(…)` rules, held for D122 §3.5's canary.
+
+**As built (LAYOUT7a, 2026-10-01): the family rehearsal sets a repository up.** Its phase 17c registers a scratch
+repository that has a README and nothing for agents, without adopting it, and drives the press over it through the
+real host and driver. The doctrine tool its session finds is the workspace's CLI behind a launcher
+(`tools/setup-kit.mjs`), first on the `PATH` the phase starts the driver with: the install's `app/bin/` is the
+deployment rehearsal's to test (WSSETUP2). The phase's machine log is in a home of its own. The checks:
+
+- **The plan.** It says both refusals at once, each with its door. Then it prints the line's commit, the layout, the
+  agent, the landing and the tool's version, then the set-up's title and a body that promises that version, names
+  the neighbours and asks for the knowledge, then the nine verbs. It publishes nothing.
+- **The press.** It publishes one quest as the person's ask and adds the nine rules. A second press is refused while
+  the first is open.
+- **The session.** The protocol stub's set-up branch (`ACP_STUB_AGENT`) runs in its own tree. It runs each verb by its
+  bare name, and the quest asks for each one. It commits, and it closes the quest done. The checkout is not touched.
+- **The record.** `session.started` says `setup`, and a later ordinary session there does not. The usage report counts
+  one set-up of two sessions, with its six calls.
+- **The landing.** The work merges into the line, and a plan made after it reads the line as already set up.
+
+`tools/setup-kit.test.mjs` holds the launcher, the reading of the command's output, and the stub's set-up branch
+against a stand-in quest door.
+
+**Found**: the protocol stub can end on a libuv assertion (`0xC0000409`) in `process.exit` after a `fetch` on Windows
+with Node 24, on its ordinary quest path too. The driver concludes from the quest, so the record still ends
+`completed`, with the exit noted.
+
+**Not run in the branch**: the family rehearsal itself, which the parent runs at the merge. `verify` does not run
+`setup-kit.test.mjs`.
+
 ## D123 — A long entry is embedded whole, in pieces the deployment's window bounds; its best piece speaks for it, and a refresh says how many were split (2026-10-01)
 
 **Decision (SEM3, found upgrading Lyntai to 3.5.3, LYN1).** The semantic tier embedded an entry's title twice and

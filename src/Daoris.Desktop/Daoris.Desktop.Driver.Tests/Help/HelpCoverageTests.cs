@@ -54,6 +54,15 @@ public sealed partial class HelpCoverageTests
         + "terminal, not a setting: nothing is stored to apply, Ask Daoris starts no loop, and the desktop's own loop "
         + "waits on the lock instead (D104).");
 
+    /// <summary>
+    /// LAYOUT7's <c>daoris-driver setup</c> (D117 §6.1), a verb of the headless host rather than the CLI's table: a door
+    /// Ask Daoris owes, until LAYOUT8 builds the <c>setup</c> kind it is to take.
+    /// </summary>
+    private static readonly Owed SetupDoor = new(
+        "setting a repository up publishes a quest to it and adds a rule its session needs, a widening the person applies "
+        + "as a card, so Ask Daoris should propose it; that waits on LAYOUT8's `setup` kind: the service's box and tool, the "
+        + "driver's judge against the same facts, and the card (D110).");
+
     /// <summary>Each <c>daoris driver</c> verb, and <c>across</c> by its two forms, as the CLI's command table spells them.</summary>
     private static readonly (string Verb, Answer Answer)[] Verbs =
     [
@@ -263,6 +272,7 @@ public sealed partial class HelpCoverageTests
         var reasons = Verbs.Select(row => row.Answer).Concat(Controls.Select(row => row.Answer)).Concat(Local.Select(row => row.Answer))
             .Concat(Forms.Select(row => row.Answer))
             .Append(Share)
+            .Append(SetupDoor)
             .Select(answer => answer switch { Exempt exempt => exempt.Reason, Owed owed => owed.Reason, _ => null })
             .OfType<string>();
 
@@ -281,6 +291,20 @@ public sealed partial class HelpCoverageTests
     {
         Assert.Contains("sync [--repository <name>] [--all] [--yes]", DriverCommand.Usage);
         Assert.Contains("sync", HelpProposalKinds.Find("sync")!.Doors);
+    }
+
+    /// <summary>
+    /// LAYOUT7: the headless host's <c>setup</c> is a door owed to LAYOUT8's <c>setup</c> kind (D110), while the host's usage
+    /// spells it and no kind of that name is built; the room names it meanwhile, so the helper can point the person at it.
+    /// When LAYOUT8 lands the kind, this owed door becomes its door.
+    /// </summary>
+    [Fact]
+    public void The_headless_hosts_setup_is_a_door_owed_to_the_setup_kind()
+    {
+        Assert.Contains("setup <repository> [--plan]", DriverCommand.Usage);
+        Assert.Null(HelpProposalKinds.Find("setup"));
+        Assert.Contains(HelpRoomDoors.Doors, door => door.Terminal.Contains("`daoris-driver setup <repository> [--plan]`", StringComparison.Ordinal));
+        Assert.Contains("LAYOUT8", SetupDoor.Reason);
     }
 
     /// <summary>

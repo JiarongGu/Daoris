@@ -31,6 +31,8 @@ public sealed class HelpRoomDoorsTests
             // LEFT3: the screen's clear has its terminal door, which Ask Daoris still owes.
             "daoris agent profile default <agent> <profile>|--clear [--workspace <name>]",
             "daoris browser use daoris|edge", "daoris browser links system|daoris",
+            // LAYOUT7: the set-up press, which Ask Daoris owes a kind until LAYOUT8.
+            "daoris-driver setup <repository> [--plan]",
         })
         {
             Assert.Contains(command, agents);

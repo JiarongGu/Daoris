@@ -285,6 +285,19 @@ public sealed class ServiceClient : IDisposable
     public async Task<IReadOnlyList<QuestView>> EveryQuestAsync(CancellationToken ct = default) =>
         ReadQuests(await GetAsync("/api/quests?includeClosed=true", ct).ConfigureAwait(false));
 
+    /// <summary>
+    /// The path of each entry the index holds as one repository's own (D47 §4's door), once per entry — what a set-up
+    /// quest says the workspace already knows of it (LAYOUT7, D124 §2.2). Canonical doctrine is not its own.
+    /// </summary>
+    public async Task<IReadOnlyList<string>> EntryPathsAsync(string repository, CancellationToken ct = default)
+    {
+        using var document = JsonDocument.Parse(
+            await GetAsync($"/api/entries?repository={Uri.EscapeDataString(repository)}", ct).ConfigureAwait(false));
+        return document.RootElement.ValueKind == JsonValueKind.Array
+            ? [.. document.RootElement.EnumerateArray().Select(entry => Text(entry, "path")).OfType<string>()]
+            : [];
+    }
+
     /// <summary>One ask as it stands — how an intake's end is observed. Null when the service has none.</summary>
     public async Task<AskView?> FindAskAsync(string id, CancellationToken ct = default)
     {
