@@ -1,129 +1,98 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import type { Convergence } from './api';
-import { useConvergence } from './queries';
-import { Button, Card, EmptyState, Inline, type Notify, PageHeader, Prose, SkeletonRows, useErrorNotify } from './ui';
-import { cn } from './lib/cn';
-import { useDebounced } from './lib/useDebounced';
+import { sentence } from './format';
+import { FindingList, type FindingsAnswer } from './knowledge/FindingList';
+import { FindingMainNotice, FindingPage } from './knowledge/FindingPage';
+import { convergenceFilters, type EntryReading, findingId, readingOf } from './knowledge/records';
+import { useConvergence, useEntries } from './queries';
 import { page } from './results';
-
-/** The slider's floor. */
-const MIN = 0.5;
-
-/** One step down from an empty answer: a tenth, never below the floor, in the slider's own steps. */
-const lower = (value: number) => Math.max(MIN, Math.round((value - 0.1) * 100) / 100);
+import { type Notify, useErrorNotify } from './ui';
+import { useDebounced } from './lib/useDebounced';
+import type { ViewLayout } from './work/ViewFrame';
 
 /**
- * The knowledge half's lead view (D30). The threshold is a control rather than a constant,
- * deliberately: the useful value depends on the embedder and the corpus — measured on this family,
- * 0.82 returns nothing, 0.70 the true pairs, 0.60 begins pulling in unrelated documents.
+ * **The Convergence view** (D30; FRAME1f, D118 §2): what it hands the frame (D118 §5), its list pane and its main area.
+ * The list is the similarity, then the findings; the main area is the finding chosen, the service's sentence and then
+ * its entries read whole, where each entry was the reader drawer over the side bar and the panel (audit CO4). The
+ * knowledge half's lead view: where two repositories reached the same conclusion independently, to read and decide.
  *
- * The suggestion under each group is the SERVICE's sentence, verbatim — a command to run where the
+ * @remarks
+ * **A hook, because a view hands the frame a value** (`ViewLayout`), as Quests' and Repositories' are. The application
+ * holds it on every view, and it asks the service nothing until it is in front: a comparison over a real index takes
+ * seconds, and nobody on another view asked for one.
+ *
+ * **What it remembers is its list's** (`listPanes.ts`, §3f): the finding chosen, by its entries (`findingId`), and the
+ * similarity, once it has held still. The suggestion is the SERVICE's sentence, verbatim: a command to run where the
  * file lives, never a button that applies it (D21, D31).
  */
-export function ConvergenceView({ semantic, onOpen, notify }: {
-  semantic: boolean;
-  onOpen: (id: string) => void;
+export function useConvergenceView({ active, chosen, onChoose, filters: kept, onFilters, notify, semantic }: {
+  /** The view is in front: only then does it ask, and say its errors. */
+  active: boolean;
+  /** The list's chosen item, a finding's name, which the application remembers (`daoris.list.convergence.chosen`). */
+  chosen: string | null;
+  onChoose: (item: string | null) => void;
+  /** The list's filters as kept (`daoris.list.convergence.filters`). */
+  filters: Record<string, unknown>;
+  onFilters: (filters: Record<string, unknown> | null) => void;
   notify: Notify;
-}) {
+  /** Whether this deployment matches meaning too (D24), which the note under the similarity says. */
+  semantic: boolean;
+}): ViewLayout {
   const { t } = useTranslation();
-  const [threshold, setThreshold] = useState(0.75);
+  const remembered = convergenceFilters(kept).threshold;
+  const [threshold, setThreshold] = useState(remembered);
   const debounced = useDebounced(threshold, 200);
+  // Kept once it has held still, not at every step of a drag; the start is kept as nothing.
+  useEffect(() => {
+    if (debounced !== remembered) onFilters(debounced === convergenceFilters({}).threshold ? null : { threshold: debounced });
+  }, [debounced, remembered, onFilters]);
 
-  const groups = useConvergence(debounced);
+  // The last findings are held while a moved similarity's are on their way (platform language §4).
+  const groups = useConvergence(debounced, { enabled: active, holding: true });
   // The service caps; the client asks for one more than it shows, so "there are more" is a fact.
   const { shown, more } = page(groups.data ?? []);
-  useErrorNotify(groups.error, notify);
+  const finding = chosen ? (groups.data ?? []).find((group) => findingId(group) === chosen) : undefined;
+  const ids = finding ? finding.entries.map((entry) => entry.id) : [];
+  const reads = useEntries(ids, active);
+  useErrorNotify(active ? groups.error : null, notify);
 
-  return (
-    <section>
-      <PageHeader title={t('convergence.title')} description={t('convergence.description')} />
+  const answer: FindingsAnswer = groups.data
+    // While held, the findings are the last similarity's, and the list says nothing of `at` until the new ones land.
+    ? { state: 'answered', findings: shown, at: debounced, more, comparing: groups.isPlaceholderData }
+    : groups.error
+      ? { state: 'unanswered', sentence: sentence(groups.error) }
+      : { state: 'first' };
 
-      <div className="mb-4 flex flex-wrap items-center gap-4">
-        <label className="flex items-center gap-2.5 text-body text-ink-soft">
-          {t('convergence.threshold')} <strong className="tabular-nums">{threshold.toFixed(2)}</strong>
-          <input
-            type="range" min={MIN} max={0.95} step={0.01} value={threshold}
-            onChange={(e) => setThreshold(Number(e.target.value))}
-            className="w-56 accent-accent"
-          />
-        </label>
-        {/* At the prose measure: across the column it ran about 180 characters a line (POLISH4).
-            Its own line still — a capped width alone let it fit beside the slider. */}
-        <div className="basis-full">
-          <Prose>{semantic ? t('convergence.hintSemantic') : t('convergence.hintLexical')}</Prose>
-        </div>
-      </div>
+  const readings: Record<string, EntryReading> = Object.fromEntries(ids.map((id, index) => [id, readingOf(reads[index] ?? { error: null })]));
+  const main = !chosen
+    ? <FindingMainNotice state="none" />
+    : finding
+      ? <FindingPage key={chosen} finding={finding} readings={readings} />
+      : groups.data && !groups.isPlaceholderData
+        ? <FindingMainNotice state="gone" at={debounced} />
+        : groups.error
+          ? <FindingMainNotice state="unanswered" sentence={sentence(groups.error)} />
+          : <FindingMainNotice state="loading" />;
 
-      {/* A first load is skeleton rows (D41 §4), with the words in the line the count takes, so
-          nothing moves when the answer lands. On the first real index this was seconds of a bare
-          "comparing…" on an otherwise empty page (POLISH3). */}
-      {groups.isPending && (
-        <>
-          <p className="mb-2 text-small text-ink-faint">{t('convergence.comparing')}</p>
-          <SkeletonRows rows={4} />
-        </>
-      )}
-      {/* Designed, not a bare line (D41 §4): the fact, and the act that changes it. The value is the
-          one the answer is for, so the headline never names a threshold still being debounced. */}
-      {groups.data?.length === 0 && (
-        <EmptyState
-          icon="convergence"
-          headline={t('convergence.empty', { value: debounced.toFixed(2) })}
-          // At the floor there is nothing lower to offer, so the body says so rather than invite it (UX5 U42).
-          body={debounced > MIN + 0.001 ? t('convergence.emptyBody') : t('convergence.emptyFloor', { value: MIN.toFixed(2) })}
-          action={debounced > MIN + 0.001 && (
-            <Button onClick={() => setThreshold(lower(debounced))}>
-              {t('convergence.lower', { value: lower(debounced).toFixed(2) })}
-            </Button>
-          )}
+  return {
+    list: {
+      view: 'convergence',
+      name: t('nav.convergence'),
+      labels: { open: t('convergence.list.open'), close: t('convergence.list.close'), resize: t('convergence.list.resize') },
+      // Convergence makes nothing, so its list has no ＋; its similarity heads the list, where it changes what the list
+      // holds (D118 §2), and its strip holds its controls alone.
+      chosen,
+      body: (
+        <FindingList
+          threshold={threshold}
+          onThreshold={setThreshold}
+          semantic={semantic}
+          answer={answer}
+          chosen={chosen}
+          onChoose={onChoose}
         />
-      )}
-
-      {/* How many, and whether that is all of them — the same promise the search makes, for the
-          same reason: a capped list with nothing saying so reads as the whole answer. */}
-      {!groups.isPending && shown.length > 0 && (
-        <p className="mb-2 text-small text-ink-faint">
-          {more
-            ? t('convergence.cappedAt', { count: shown.length })
-            : t('convergence.count', { count: shown.length })}
-        </p>
-      )}
-
-      <div className={cn(groups.isFetching && groups.data && 'opacity-60 transition-opacity duration-(--speed)')}>
-        {shown.map((group: Convergence, index: number) => (
-          <Card key={index} className="mb-3.5" accent={group.method === 'Convergent'}>
-            <header className="flex items-baseline justify-between gap-4">
-              <span className="text-body font-semibold">
-                {t(`convergence.methods.${group.method}.label`)}
-              </span>
-              <span className="font-mono text-small tabular-nums text-ink-faint">
-                {group.similarity.toFixed(3)}
-              </span>
-            </header>
-            <p className="mb-2 mt-1 text-body text-accent">{group.repositories.join(' ↔ ')}</p>
-            <ul className="m-0 list-none p-0">
-              {group.entries.map((entry) => (
-                <li key={entry.id} className="border-t border-line py-1.5 first:border-t-0">
-                  <button
-                    className="border-0 bg-transparent p-0 text-left text-body font-medium text-ink underline decoration-line-strong underline-offset-[3px] hover:decoration-accent"
-                    onClick={() => onOpen(entry.id)}
-                  >
-                    {entry.title}
-                  </button>
-                  <span className="block font-mono text-meta text-ink-faint">
-                    {entry.repository} · {t(`kind.${entry.kind}`)} · {entry.path}
-                  </span>
-                </li>
-              ))}
-            </ul>
-            {/* The service's sentence is the contract and already says what kind of finding this is;
-                the italic gloss beneath it said the same thing in the UI's words. Seen twice per
-                card on the deployed application, forty cards deep. One sentence — the service's. */}
-            <p className="mt-3 rounded-control bg-accent-soft px-3 py-2.5 text-body"><Inline text={group.suggestion} /></p>
-          </Card>
-        ))}
-      </div>
-    </section>
-  );
+      ),
+    },
+    main,
+  };
 }
