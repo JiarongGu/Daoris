@@ -124,6 +124,11 @@ const WAYS: readonly string[] = ['system', 'managed', 'file'];
 const EXACT_VERSION = /^[0-9]+(?:\.[0-9]+){0,3}$/;
 const NEVER = 'it never falls back to PATH';
 
+/** An exact version: one to four numbers (§3.2), in `tools.json` and in a resource list alike. */
+export function isExactVersion(version: string): boolean {
+  return EXACT_VERSION.test(version);
+}
+
 export function toolsFile(home: string): string {
   return join(home, TOOLS_FILE);
 }
@@ -167,7 +172,7 @@ function judgeEntry(value: unknown): { way: ToolWay; version: string | null; fil
   if (way === 'managed') {
     if (!present(value, 'version')) return 'managed needs a `version`, one to four numbers';
     if (typeof value.version !== 'string') return 'its `version` is not text';
-    if (!EXACT_VERSION.test(value.version)) return `\`${value.version}\` is not an exact version — one to four numbers, like 2.51.0`;
+    if (!isExactVersion(value.version)) return `\`${value.version}\` is not an exact version — one to four numbers, like 2.51.0`;
     return { way, version: value.version, file: null };
   }
 
@@ -271,19 +276,42 @@ export function gitKeyProblem(key: string): string | null {
 /** This machine, named: the hosts an http:// location may have (rule 5). */
 const LOOPBACK: readonly string[] = ['localhost', '127.0.0.1', '[::1]'];
 
-/** An address that is no resource location, refused on a write (rule 5); null for one that is. */
-export function locationProblem(address: string): string | null {
-  const refused = `\`${address}\` is not a resource location — an address is https://, or http:// to this machine `
-    + `(${LOOPBACK.slice(0, 2).join(', ')} or ${LOOPBACK[2]})`;
+/** Whether a host, as a URL names it, is this machine. The driver's `Tools.IsLoopback`. */
+export function isLoopbackHost(hostname: string): boolean {
+  return LOOPBACK.includes(hostname);
+}
+
+/**
+ * Whether an address is one Daoris reads from: https://, or http:// to this machine. Rule 5's for a location,
+ * and a resource list's for a download (§3.2, TOOLS3). The driver's `Tools.IsAddress`.
+ */
+export function isAddress(address: string): boolean {
   let url: URL;
   try {
     url = new URL(address);
   } catch {
-    return refused;
+    return false;
   }
-  if (!url.hostname) return refused;
-  if (url.protocol === 'https:') return null;
-  return url.protocol === 'http:' && LOOPBACK.includes(url.hostname) ? null : refused;
+  if (!url.hostname) return false;
+  if (url.protocol === 'https:') return true;
+  return url.protocol === 'http:' && isLoopbackHost(url.hostname);
+}
+
+/** An address that is no resource location, refused on a write (rule 5); null for one that is. */
+export function locationProblem(address: string): string | null {
+  return isAddress(address)
+    ? null
+    : `\`${address}\` is not a resource location — an address is https://, or http:// to this machine `
+      + `(${LOOPBACK.slice(0, 2).join(', ')} or ${LOOPBACK[2]})`;
+}
+
+/**
+ * Whether a path names something inside a folder: relative, in `/` form, with no empty, `.` or `..` part, and
+ * no `\` or drive. A record's `exe` (§3.6) and a list's `exe` and `paths` (§3.2). The driver's `Tools.IsInside`.
+ */
+export function isInsidePath(path: string): boolean {
+  if (path === '' || /[\\:]/.test(path)) return false;
+  return path.split('/').every((part) => part !== '' && part !== '.' && part !== '..');
 }
 
 /** A downloaded version's executable, or why there is none (§3.6's layout). */
@@ -302,12 +330,9 @@ function managedFile(home: string, tool: ToolDeclaration, version: string): { fi
   if (problem !== null) return unread(problem);
   if (typeof value!.exe !== 'string' || value!.exe === '') return unread(`${record}: it names no \`exe\``);
   const exe = value!.exe;
-  const parts = exe.split('/');
-  if (/[\\:]/.test(exe) || parts.some((part) => part === '' || part === '.' || part === '..')) {
-    return unread(`${record}: its \`exe\` is not a relative path inside the package`);
-  }
+  if (!isInsidePath(exe)) return unread(`${record}: its \`exe\` is not a relative path inside the package`);
 
-  const file = join(folder, TOOL_PACKAGE, ...parts);
+  const file = join(folder, TOOL_PACKAGE, ...exe.split('/'));
   return isFile(file)
     ? { file, problem: null }
     : { file: null, problem: `${tool.name} is managed at ${version}, and its record names ${file}, and there is no file there ${back}` };

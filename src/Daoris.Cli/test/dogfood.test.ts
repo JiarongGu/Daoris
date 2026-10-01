@@ -515,7 +515,9 @@ test('the file-local management verbs reach no network module either', () => {
  * dispatcher hands in (TOOLS4) — so the module that holds the file's rules reaches neither on its own.
  */
 test('the tools file reaches neither the toolchain nor the service client', () => {
-  for (const entry of ['tools.ts', 'cli/tool.ts']) {
+  // TOOLS3: the resource lists are read and merged beside it, as pure; a location is fetched by TOOLS4's verbs,
+  // through the dispatcher's fetcher.
+  for (const entry of ['tools.ts', 'cli/tool.ts', 'resources.ts']) {
     const seen = reachableFrom(entry);
     assert.equal(seen.has(SPAWNS), false, `${entry} reaches the harness toolchain through: ${[...seen].sort().join(', ')}`);
     assert.equal(seen.has(SERVICE_CLIENT), false, `${entry} reaches the service client through: ${[...seen].sort().join(', ')}`);

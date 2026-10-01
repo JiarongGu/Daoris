@@ -231,15 +231,37 @@ public static class Tools
             ? null
             : $"`{key}` is not a setting Daoris's git carries — the one it carries is {string.Join(", ", GitSettings)}";
 
-    /// <summary>An address that is no resource location, refused on a write (rule 5); null for one that is.</summary>
-    public static string? LocationProblem(string address)
+    /// <summary>Whether a host, as a URL names it, is this machine. The CLI's <c>isLoopbackHost</c>.</summary>
+    public static bool IsLoopback(string host) => Loopback.Contains(host, StringComparer.Ordinal);
+
+    /// <summary>
+    /// Whether an address is one Daoris reads from: https://, or http:// to this machine. Rule 5's for a location,
+    /// and a resource list's for a download (§3.2, TOOLS3). The CLI's <c>isAddress</c>.
+    /// </summary>
+    public static bool IsAddress(string address)
     {
-        var refused = $"`{address}` is not a resource location — an address is https://, or http:// to this machine "
-            + $"({Loopback[0]}, {Loopback[1]} or {Loopback[2]})";
-        if (!Uri.TryCreate(address, UriKind.Absolute, out var uri) || string.IsNullOrEmpty(uri.Host)) return refused;
-        if (uri.Scheme == Uri.UriSchemeHttps) return null;
-        return uri.Scheme == Uri.UriSchemeHttp && Loopback.Contains(uri.Host, StringComparer.Ordinal) ? null : refused;
+        if (!Uri.TryCreate(address, UriKind.Absolute, out var uri) || string.IsNullOrEmpty(uri.Host)) return false;
+        if (uri.Scheme == Uri.UriSchemeHttps) return true;
+        return uri.Scheme == Uri.UriSchemeHttp && IsLoopback(uri.Host);
     }
+
+    /// <summary>An address that is no resource location, refused on a write (rule 5); null for one that is.</summary>
+    public static string? LocationProblem(string address) =>
+        IsAddress(address)
+            ? null
+            : $"`{address}` is not a resource location — an address is https://, or http:// to this machine "
+              + $"({Loopback[0]}, {Loopback[1]} or {Loopback[2]})";
+
+    /// <summary>
+    /// Whether a path names something inside a folder: relative, in <c>/</c> form, with no empty, <c>.</c> or
+    /// <c>..</c> part, and no <c>\</c> or drive. A record's <c>exe</c> (§3.6) and a list's <c>exe</c> and
+    /// <c>paths</c> (§3.2). The CLI's <c>isInsidePath</c>.
+    /// </summary>
+    public static bool IsInside(string path) =>
+        path.Length > 0 && path.IndexOfAny(['\\', ':']) < 0 && path.Split('/').All(part => part is not ("" or "." or ".."));
+
+    /// <summary>An exact version: one to four numbers (§3.2), in <c>tools.json</c> and in a resource list alike.</summary>
+    public static bool IsExactVersion(string version) => ExactVersion.IsMatch(version);
 
     /// <summary>Which file a tool is, read from the home's file now.</summary>
     /// <param name="path">The <c>PATH</c> a system tool is found on; null for this process's own.</param>
@@ -353,13 +375,9 @@ public static class Tools
         var (value, problem) = Load(record);
         if (problem is not null) return Unread(problem);
         if (Text(value!["exe"]) is not { Length: > 0 } exe) return Unread($"{record}: it names no `exe`");
-        var parts = exe.Split('/');
-        if (exe.IndexOfAny(['\\', ':']) >= 0 || parts.Any(part => part is "" or "." or ".."))
-        {
-            return Unread($"{record}: its `exe` is not a relative path inside the package");
-        }
+        if (!IsInside(exe)) return Unread($"{record}: its `exe` is not a relative path inside the package");
 
-        var file = Path.Combine([folder, Package, .. parts]);
+        var file = Path.Combine([folder, Package, .. exe.Split('/')]);
         return File.Exists(file)
             ? (file, null)
             : (null, $"{tool.Name} is managed at {version}, and its record names {file}, and there is no file there {back}");
@@ -392,7 +410,7 @@ public static class Tools
         {
             if (entry["version"] is null) return (null, "managed needs a `version`, one to four numbers");
             if (Text(entry["version"]) is not { } version) return (null, "its `version` is not text");
-            if (!ExactVersion.IsMatch(version)) return (null, $"`{version}` is not an exact version — one to four numbers, like 2.51.0");
+            if (!IsExactVersion(version)) return (null, $"`{version}` is not an exact version — one to four numbers, like 2.51.0");
             return (new ToolEntry(way, version, null, null), null);
         }
 

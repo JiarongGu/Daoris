@@ -7,6 +7,7 @@ import {
   GIT_SETTINGS, TOOLS, TOOLS_FILE, TOOLS_FOLDER, TOOL_PACKAGE, TOOL_RECORD, commandTool, gitKeyProblem,
   isWholePath, locationProblem, readTools, resolveTool, useFile, useSystem,
 } from '../src/tools.ts';
+import { driverRows as csharpRows } from './_csharp.ts';
 import { captureError, makeFixture } from './_fixture.ts';
 
 /**
@@ -423,52 +424,8 @@ test('a write that cannot be made writes nothing', () => {
 const DRIVER_TABLES = join(
   dirname(fileURLToPath(import.meta.url)), '..', '..', 'Daoris.Desktop', 'Daoris.Desktop.Driver.Tests', 'ToolsTests.cs');
 
-type Cell = string | boolean | null;
-
-/**
- * One C# `[InlineData(…)]` row's arguments: a raw `"""…"""`, verbatim `@"…"` or plain `"…"` string, `null`,
- * `true`, `false`, or the `Whole` placeholder, which is `WHOLE` here.
- */
-function csharpRow(line: string): Cell[] {
-  const cells: Cell[] = [];
-  let at = line.indexOf('[InlineData(') + '[InlineData('.length;
-  while (!line.startsWith(')]', at)) {
-    if (line[at] === ',' || line[at] === ' ') {
-      at += 1;
-    } else if (line.startsWith('"""', at)) {
-      const end = line.indexOf('"""', at + 3);
-      cells.push(line.slice(at + 3, end));
-      at = end + 3;
-    } else if (line.startsWith('@"', at)) {
-      const end = line.indexOf('"', at + 2);
-      cells.push(line.slice(at + 2, end));
-      at = end + 1;
-    } else if (line[at] === '"') {
-      let text = '';
-      at += 1;
-      while (line[at] !== '"') {
-        text += line[at] === '\\' ? line[at + 1] : line[at];
-        at += line[at] === '\\' ? 2 : 1;
-      }
-      cells.push(text);
-      at += 1;
-    } else {
-      const word = /^(null|true|false|Whole)\b/.exec(line.slice(at))?.[1];
-      assert.ok(word, `a cell this reader does not know, at ${at}: ${line}`);
-      cells.push(word === 'null' ? null : word === 'Whole' ? WHOLE : word === 'true');
-      at += word.length;
-    }
-  }
-  return cells;
-}
-
-/** The rows of one of the driver's theories, in its order. */
-function driverRows(source: string, method: string): Cell[][] {
-  const end = source.indexOf(`public void ${method}(`);
-  assert.ok(end > 0, `ToolsTests has no ${method}`);
-  const start = source.lastIndexOf('[Theory]', end);
-  return source.slice(start, end).split('\n').filter((line) => line.trim().startsWith('[InlineData(')).map(csharpRow);
-}
+/** One of the driver's theories, its `Whole` placeholder read as `WHOLE` here. */
+const driverRows = (source: string, method: string) => csharpRows(source, method, { Whole: WHOLE }, 'ToolsTests');
 
 test('the driver’s tables are these tables, row for row and in this order', () => {
   const source = readFileSync(DRIVER_TABLES, 'utf8').replace(/\r\n/g, '\n');
