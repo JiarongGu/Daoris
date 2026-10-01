@@ -176,6 +176,52 @@ public sealed class RegistryModuleTests : Bridge
         Assert.Equal("engine", domain.GetProperty("uses")[0].GetString());
     }
 
+    /// <summary>
+    /// MANAGE1: the page re-registers from what this write answers, and the registry replaces a row's
+    /// `uses` with the declaration's (D91), where saying none is saying nothing. The answer left `uses`
+    /// out, so saving a declaration erased the repository's dependencies from the registry until its next
+    /// `connect`, while the file the form had just written still held them.
+    /// </summary>
+    [Fact]
+    public async Task Writing_a_declaration_answers_what_the_domain_says_it_uses()
+    {
+        var path = Repository("game", new
+        {
+            source = "s",
+            domain = new { summary = "before", owns = Array.Empty<string>(), accepts = Array.Empty<string>(), uses = new[] { "engine", "tools" } },
+        });
+
+        var written = await AnswerAsync(Module(), "WRITE_DECLARATION", new
+        {
+            path,
+            summary = "after",
+            owns = Array.Empty<string>(),
+            accepts = Array.Empty<string>(),
+        });
+
+        Assert.Equal(
+            new[] { "engine", "tools" },
+            written.GetProperty("uses").EnumerateArray().Select(name => name.GetString()!).ToArray());
+    }
+
+    /// <summary>
+    /// The add reads the same answer (MANAGE1): a folder whose manifest uses nothing answers an empty
+    /// list, which is what its file says, and one that never adopted has nothing to say.
+    /// </summary>
+    [Fact]
+    public async Task A_picked_folder_answers_what_it_uses_and_none_is_an_empty_list()
+    {
+        _picked = Repository("game", new { source = "s", domain = new { summary = "s", uses = new[] { "engine" } } });
+        var game = await AnswerAsync(Module(), "PICK_FOLDER");
+        Assert.Equal("engine", Assert.Single(game.GetProperty("uses").EnumerateArray()).GetString());
+
+        _picked = Repository("engine", new { source = "s", domain = new { summary = "s" } });
+        Assert.Equal(0, (await AnswerAsync(Module(), "PICK_FOLDER")).GetProperty("uses").GetArrayLength());
+
+        _picked = Repository("stranger");
+        Assert.Equal(0, (await AnswerAsync(Module(), "PICK_FOLDER")).GetProperty("uses").GetArrayLength());
+    }
+
     /// <summary>Knowledge without join is a manifest the CLI refuses; a form must not write one.</summary>
     [Fact]
     public async Task A_form_cannot_write_knowledge_without_join()

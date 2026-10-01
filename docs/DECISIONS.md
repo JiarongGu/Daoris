@@ -6233,6 +6233,44 @@ proof.
   door was edited to the domain's heading and not run. The look on the window settles the rest: Settings at
   1280 and 680 px, English and 中文, both themes, and the first open of Agents, Permissions and Plugins.
 
+**Built: FRAME1f (2026-10-01), and what it settled that the design left open.**
+- **Search and Convergence each hand the frame a value** (`useSearchView`, `useConvergenceView`), held by the
+  application on every view as Quests is, but **asking the service nothing until in front**: a comparison over a
+  real index takes seconds, and nobody on another view asked for one. Below them are molecules under `knowledge/`:
+  `HitList`, `EntryPage` with `EntryText` and `EntryPills`, `FindingList`, `FindingPage`, and the values in
+  `knowledge/records.ts`.
+- **The reader retired, and the wide drawer with it.** Search and Convergence were its only doors, so `Reader` went,
+  and so did `Drawer`'s `wide`, which only it passed. An entry reads at the main area's own width, with no measure.
+- **Each list's one filter sits where it changes what the list holds**, not in a ⋯ as Quests' do: *local only* under
+  the box, the similarity at the list's head with its tier's note, both reached for on every look. Neither view makes
+  anything, so neither list has a `＋` or a ⋯, and each strip holds its controls alone. Each head stays in reach as the
+  rows scroll under it. ↓ goes from the box into the hits, through the list's own keys, and Escape clears the box.
+- **A finding is named by its entries** (`findingId`), since the service names none: an entry's id is its place, so
+  the same entries found at another similarity are the same finding, still chosen. One the answer no longer holds is
+  *gone* at the similarity asked. An entry is *gone* when the service answers that it holds nothing by that id: a
+  read's error carries its status now (`notFound`), so a 404 is told from a read that failed.
+- **A finding's page** is titled by its entries' titles, each once, with how alike beside it, the repositories as its
+  id line and the kind of likeness as its line. The service's sentence comes first, then each entry whole in a section
+  of its own, where one entry still on its way, gone or failed is said in its place and the others still read.
+- **What is kept**: each list's chosen item; *local only* only when everything is chosen, the default kept as nothing;
+  the similarity once it has held still, its start kept as nothing. What was typed lasts while Daoris is open and is
+  never stored.
+- **Loading (audit SR11) is built to the platform language's §4 rule**, for the look to confirm: a first answer is
+  skeleton rows with its words on the count's line, and a newer search or a moved similarity holds the last rows at
+  reduced opacity (`holding`, TanStack's previous data) instead of blanking the list at each answer.
+- **The names.** The lists are named for what they hold, *the result list* (结果列表) and *the finding list* (发现列表),
+  as *the quest list* is. The count says *findings* (发现), the map's word, where it said *groups*. `search.title`,
+  `search.description`, `convergence.title` and `convergence.description` retire: the list is named by the view's own
+  name, and each description became its main area's sentence with nothing chosen. `search.noneHeadline` and its body
+  became `search.nothing*`, since `search.none.*` now means nothing chosen, as on every view. The box's placeholder
+  was cut to fit a list's box.
+- **What the gates do not cover.** vitest holds the lists, the pages, the memory and the doors over a stubbed service,
+  on jsdom, which lays nothing out. `test:web` gained a Search test and a Convergence test, typechecked and **not run**
+  in the branch; the Convergence one asks the host's answer first, since the example family's own entries may share
+  nothing at 0.75. No look at the window was taken: Search and Convergence at 1280 and 680 px with an entry and a
+  finding chosen, a search typed at 1280 px for SR11, both themes and both languages, are the parent's to see. The
+  finding list's toggles are over the button budget (21 characters for 20); the budgets are a report (D116 §3).
+
 ## D116 — A name is a UI element, designed in each language; the glossary is the authority, and a check holds it (2026-10-01)
 
 **Decision (NAME1a, the owner's round).** The owner: names in Settings and every other display must be named
@@ -7100,6 +7138,54 @@ tools' environment. What the design left open, settled here:
   substitution D57's pin exists to prevent; and handing a hook's first word to the system bare, which finds only an
   `.exe`.
 
+**As built (TOOLS7, 2026-10-01): Settings → Tools.** A machine domain after *Agents*, on the routes of
+`DriverModule.Tools.cs` that the page's `bridge/tools.ts` calls, the molecules in `settings/Tools.tsx` and the organism
+`settings/ToolsDomain.tsx`. What the design left open, settled here:
+- **The routes**, beside §4.1's: `TOOLS_LIST` reads files only, and with `ask` asks each resolved file its version, which
+  starts it, so the page draws from the first answer and fills in from the second. `TOOLS_USE` takes `action` as
+  `system`, `managed` or `file`. **`TOOLS_STOP`** is the person's stop, which §4.1 named no route for; one with nothing
+  running answers `stopped: false`. **`TOOLS_PICK`** is the system's file picker for *Browse…*, a `PickFile` delegate the
+  application hands in as it hands `OpenFolder`. `TOOLS_GIT` answers what a switch of git changes; TOOLS6 adds the SSH
+  command to it.
+- **The refusal codes.** Nine are built, each with a throw site: §4.1's codes but `TOOL_GIT_TOO_OLD`, which waits for
+  TOOLS6's version floors, plus `TOOL_FILE_NO_VERSION` (a named file that does not start, or answers no version) and
+  `TOOL_HELD` (a delete the system refused, with its reason). The file's own refusals, such as a `tools.json` that does
+  not read, travel as the driver's words (`DRIVER_REFUSED`), which name the file to fix.
+- **A named file is checked before it is written** (§4.1): a whole path to a file that is there, then started with its
+  version question (bounded at fifteen seconds, its input closed) and refused unless it says a dotted number. Each file's
+  answer is kept while its write time and size stand; an answer that did not come in time is not kept.
+- **Nothing applies on choosing, for every tool.** A segment shows a way's controls and a press applies it, so git's
+  switch can be said before it applies without a second rule for git. Git's press asks first: the four checkout keys
+  from each git's own `config --system --list`, a git with no system file read as no keys, a side that cannot answer
+  comparing nothing and saying why, and the git that runs now changing nothing. The switch is the second press. A
+  managed git not yet downloaded is offered *Download* first, since the switch is asked of that git.
+- **A download is followed** as an agent's install is: the press answers once started, its lines go to the loop's
+  console buffer under `tools:<tool>`, closed at its end, so a console opened later reads the backlog through
+  `TAIL_SESSION`, and its end is the `TOOLS_ENDED` news. The card shows the console and *Stop download* while the list
+  says the action runs.
+- **The look's wait** is a twin row: `hostBounds` gains `toolLookMinutes: 0.5`, `ToolInstall.LookBound`, held by
+  `SyncBoundsTests`, and the page waits that for each location plus two minutes.
+- **The list's query keys** are a root of their own in `bridge/tools.ts`, as Ask Daoris's proposals keep theirs, not
+  under the driver's, which every tick asks again; the version question starts each program.
+- **The machine log** gets `tool.used` (tool, way, and the version when managed) for a way set from the screen, never a
+  path. The terminal's `daoris tool use` writes none, since the CLI is no machine log source (D94).
+- **Ask Daoris** (D110). `HelpCoverageTests` answers *System*, a managed *Use this version* and removing a location as
+  doors owed to TOOLS8's `tool` kind, and a named file, *Add location…*, *Download*, the stop, *Delete*, *Look for updates*
+  and the picker as exempt with §4.3's reasons. Settings → Tools is not a place a go names until TOOLS8 adds it to the
+  driver's `HelpPlaces` and the page's `places.ts` together; `places.test.ts` sets it aside, as it set Plugins aside.
+- **Names** (D116, amended). The glossary gains *tool* 工具, *managed* 托管 and *resource location* 资源位置, and *version*
+  now means a tool's too; `names-check --strict` finds nothing in them, and no existing label names a tool. The house's
+  words for two presses §4.4 did not name: *Use the system's* 改用系统 and *Use this file* 使用这个文件.
+- **D109 as amended by WSR7.** The page's sentence for what was not fetched now says Settings → Tools names the git
+  Daoris runs, where it said the one on the path. The driver's own copy of it, in `SessionTrees.Sync.cs`, still says
+  the path, and is the driver's to change.
+- **Not built:** the SSH command and the global file's lines (TOOLS6); an *Update* press, which §4.1 does not put on the
+  screen; the size a version takes on disk (a downloaded version shows the size its record says it downloaded); the
+  menu atom, which is not on this base, so the version choice is `SelectField`.
+- **Not covered by a gate run here.** `DriverModuleToolProgramsTests`, in the `Process` half, starts stub programs: a
+  named file answering its version, the list asking it, and a switch of git over two stub gits. It was written and not
+  run (MOD8). The window was not looked at, and the application's file dialog was compiled, not opened.
+
 ## D120 — Plugins leave the repository: a workshop in the home makes them, Daoris.Plugins keeps Daoris's own, and NuGet is where they are found (2026-10-01)
 
 **Decision (PLUGREPO2, PLUGDIST1).** The owner made an empty folder, Daoris.Plugins, beside this repository, for
@@ -7466,7 +7552,9 @@ convergence's dedupe was seen failing them. The HTTP host's refusal of a bad win
 MCP host's identical refusal is not run by any test. The HTTP door's `embedded` field is not run with a model,
 because no HTTP host test has one. **No real embedder has embedded a piece**: whether 2,000 characters fits a
 given model's context, and what segmenting does to recall on the real corpus, need a machine that runs one. The
-page shows `semanticError` from a refresh and not yet `embedded`, which is the web lane's to add.
+page shows `semanticError` from a refresh, and since SEM3b `embedded` too, in the refresh's notice beside the count;
+Settings → AI names `DAORIS_EMBED_WINDOW` beside the model and the address. A refresh with no `embedded` says nothing
+of embedding.
 **As built (PLUGDIST1a, 2026-10-01): the package and its reader, offline, with the record in both twins.** The
 driver's `PluginPackage` reads a `.nupkg` and installs its plugin through `PluginInstall`, and `daoris-driver plugins
 install <file.nupkg>` is the terminal's door. The CLI reads and lists the record a package leaves. Nothing reaches a
@@ -7504,3 +7592,33 @@ network: a package source is PLUGDIST1c's. What the design left open, settled he
 - **Not built here**: a package source over HTTP, `find`, `show`, `install <Id>`, an update from a source, the off row
   for another publisher, and `plugin.installed` in the machine log (§5.10), all PLUGDIST1c's. The modules' `PLUGINS`
   answer still names a package record's kind `folder`, with no folder: PLUGDIST1d's to say.
+**Built 2026-10-01 (WSSETUP8): the README as an unadopted repository's word** (point 6, design §5). The scanner
+reads the root's `README.md` for a repository its layout reads with no lock (`RepositoryLayout.Locked`), after
+every other reader. It splits at level-two headings with `MarkdownSections.Split`, and the part before the first
+comes from `MarkdownSections.Preamble`, the text the splitter drops for a log. Each entry is local knowledge with
+the path the disk spells. The choices §5 left open, each held by a test in `RepositoryReadmeTests`:
+- **"No lock" is the scanner's own test**: no lock, or one it reads as none (not JSON, no entries, a target that
+  leaves the repository), the same test that reads both roots. A manifest with no lock is mid-adoption and has
+  declared nothing yet, so its README is still read. Once a lock is read, the next scan reads no README. The
+  refresh replaces a repository's entries whole, so that scan's refresh drops them.
+- **The part before the first heading keeps its title line.** For a README, `# Name` and the paragraph under it
+  say what the repository is. It is titled *README* and has no anchor, so it points at the top of the file and its
+  id is never a section's. A README whose sections are all level one is one entry, as a log's split would leave
+  it. An empty section is skipped, and a heading used twice gets a count in its anchor (REV3).
+- **Any case, one file.** The root's file named `README.md` in any case, labelled as the disk spells it, so a
+  session can open it on a case-sensitive disk. Two spellings side by side, which only such a disk holds, read the
+  first in ordinal order.
+- **Read last, so a declaration wins.** A README that a manifest with no lock declares as its router or a log is
+  read by that role's reader and not again. Read twice, the router's entry and the part before the first heading
+  would share the id `<repository>:README.md`, and the store's primary key would fail the refresh (REV3).
+- **Rejected**: splitting at every heading level, which cuts a section's subsections into entries too small to
+  answer anything; titling the first part by its `#` heading, since §5 names it *README* and the heading stays in
+  its body; reading `README.markdown`, `README.rst`, `README.txt` or `README` with no extension, or a README
+  below the root.
+- **Not a twin** (design §12): the driver's `SelfDescription` reads the same file for the intake, a title and a
+  paragraph, and neither is held to the other.
+- What the gates do not cover: no refresh of a real workspace has read a README on this branch, so whether its
+  sections help a neighbour's search is WSSETUP12's canary. The real-link test made a link on this machine. On a
+  machine that makes none it returns early, and the held-as-text rows hold the rule. Two spellings side by side
+  cannot exist on this machine's disk, so that rule is untested. The family rehearsal's unadopted repository (17b)
+  now has its README indexed. No check there reads its knowledge, and the rehearsal was not run on this branch.

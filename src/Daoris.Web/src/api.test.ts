@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { api } from './api';
+import { api, notFound } from './api';
 import { sentence } from './format';
 import i18n from './i18n';
 
@@ -35,5 +35,26 @@ describe('a request that reaches nobody', () => {
     vi.stubGlobal('fetch', vi.fn(async () => { throw aborted; }));
 
     await expect(api.status()).rejects.toBe(aborted);
+  });
+});
+
+/**
+ * FRAME1f: an entry chosen in Search is kept by its id, and the index may have let it go since. The service's
+ * *no entry with that id* is an answer the page says as *gone*; a service that failed, or reached nobody, is not.
+ */
+describe('a read the service has nothing for', () => {
+  afterEach(() => { vi.unstubAllGlobals(); });
+
+  it('says so apart from a failure, in the service\'s own sentence', async () => {
+    vi.stubGlobal('fetch', vi.fn(async () => Response.json({ error: "no entry with id 'game:x.md'" }, { status: 404 })));
+    const missing = await api.entry('game:x.md').catch((error: unknown) => error);
+    expect(notFound(missing)).toBe(true);
+    expect(sentence(missing)).toBe("no entry with id 'game:x.md'");
+
+    vi.stubGlobal('fetch', vi.fn(async () => Response.json({ error: 'the index is being rebuilt' }, { status: 503 })));
+    expect(notFound(await api.entry('game:x.md').catch((error: unknown) => error))).toBe(false);
+
+    vi.stubGlobal('fetch', vi.fn(async () => { throw new TypeError('Failed to fetch'); }));
+    expect(notFound(await api.entry('game:x.md').catch((error: unknown) => error))).toBe(false);
   });
 });

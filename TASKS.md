@@ -21,8 +21,8 @@ lists.
 
 ## State
 
-**Counts, and this is their one home:** seventeen commands, **928 CLI tests, 865 service and 49 HTTP host, 2302 driver,
-477 desktop modules, 80 devkit, 2294 web unit, 22 Playwright**, 108/108 release rehearsal, **312/312
+**Counts, and this is their one home:** seventeen commands, **932 CLI tests, 901 service and 49 HTTP host, 2334 driver,
+504 desktop modules, 80 devkit, 2429 web unit, 24 Playwright**, 108/108 release rehearsal, **312/312
 family rehearsal** (it names its own phases when you run it), **70/70 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 6 knowledge
 documents, 6 skills, 7 packs. The always-loaded core is **24,064 of 26,000 bytes** — a span in
@@ -113,9 +113,9 @@ rather than designed.
 
 ## Backlog
 
-**Seventy-two rows are open** (most of them the builds of the designs below) (triaged 2026-09-30, when the owner asked to go faster; 2026-10-01 after the night's merges, the look, and the owner's round):
-- **Merging:** integrate-j (FRAME1f, WSSETUP9 with WSSETUP11, TOOLS7, WSSETUP8, SEM3b with MANAGE1). **Building:**
-  LAYOUT7 as amended by D124, WSSETUP2 with WSSETUP4, FRAME1h.
+**Sixty-eight rows are open** (most of them the builds of the designs below) (triaged 2026-09-30, when the owner asked to go faster; 2026-10-01 after the night's merges, the look, and the owner's round):
+- **Merging next:** integrate-k (LAYOUT7, WSSETUP2 with WSSETUP4, FRAME1h). **Building:** WSSETUP3 then WSSETUP5 (on
+  LAYOUT7), LAYOUT7a.
 - **Designed, to build in order:** DEV2–DEV11 (D115); FRAME1b–i (D118) after NAME1b; PLUGUI1 after FRAME1c;
   LAYOUT3–LAYOUT10 (D117) after LAYOUT2's evidence.
 - **Waiting on the owner (five):** BUDGET1 (their call), TRUST2 and AGT2c (a grant, two
@@ -169,13 +169,6 @@ install in both themes and both languages.
   imports a Radix primitive (the app root's tooltip provider excepted), as `presentational.test.ts` holds what a
   molecule imports. **Merged 2026-10-01 (integrate-h)**; open until a long menu is looked at on the republished
   window at 680 px, both themes.
-- [ ] **SEM3b — the window says what a refresh embedded** (SEM3's hand-back): the refresh notice shows the HTTP
-  answer's `embedded` (entries, vectors, splits, window), and Settings → AI's search hint names
-  `DAORIS_EMBED_WINDOW` beside the model and the address, in both languages. Web shell and web settings.
-- [ ] **MANAGE1 — saving a declaration erases `uses`** (found by DEV4). Repositories → Manage → Save
-  declaration re-registers with a `domain` that carries no `uses`, which erases the repository's `uses` from
-  the registry until its next `connect`. Lanes avoid it by DEV4's preserve rule; `uses` needs the same, with a
-  test that fails first.
 - [ ] **NAME2 — the names after NAME1b, on the window**: the glossary gains *lane* / 泳道 (DEV4 named it; NAME1
   had no term); the 107 budget judgements `names:check` reports are looked at on the window at 888 px, both
   languages, and each is renamed or accepted.
@@ -185,8 +178,6 @@ install in both themes and both languages.
   live, Data folder, Source, *Install from a folder…*.
 - [ ] **PLUGUI1g — a plugin's checks** (after f): the last trial kept, its own tests run in a copy under the home.
 - [ ] **PLUGUI1h — Ask Daoris reaches the Plugins view** (after c and FRAME1i).
-- [ ] **FRAME1f — Search and Convergence on the frame**: the hits and findings in the list, the entry in the
-  main area; the reader drawer retires for these.
 - [ ] **FRAME1h — the secondary windows**: the monitor's rail on `ListPane`, a detached console on
   `OutputPanel`, the monitor's title on a real token (`tokens.test.ts` fails on `text-h3` first).
 - [ ] **FRAME1i — Ask Daoris knows each view's list and item**: `where.ts`, `go` naming an item, the room.
@@ -219,19 +210,21 @@ first, then WSSETUP11 early (a week of *before*); WSSETUP4, WSSETUP8, WSSETUP10 
 TOOLS5 and WSSETUP2. The driver lane runs WSSETUP9 → WSSETUP11 → LAYOUT7 → WSSETUP5 → WSSETUP6; WSSETUP7 after LAYOUT8,
 FRAME1e and WSSETUP6. Then the owner's two runs.
 
-- [ ] **WSSETUP9 — a session looks before it asks** (§6.1, §6.2; driver): `TargetPrompt.Asking` rewritten for the
-  claiming, resuming and carrying-on instructions; the clause naming other checkouts only with reading across.
-- [ ] **WSSETUP11 — set-ups and parks, counted** (§7.3; driver, tools): `session.parked` from the attention watch; the
-  usage report gains a set-up section and parks per week by workspace. Run early.
 - [ ] **WSSETUP4 — an older tool never rewrites a newer lock** (§1.4; cli, tools): `sync` and `upstream` refuse (exit
   1) a lock whose canon version is newer, naming both versions.
-- [ ] **WSSETUP8 — the README as an unadopted repository's word** (§5; service).
 - [ ] **WSSETUP2 — the install carries its doctrine tool** (§1.2; tools): the packed CLI in `app/cli/`, two launchers
   in `app/bin/`; the deployment rehearsal runs `daoris --version` and `check` from Command Prompt and Git Bash.
 - [ ] **WSSETUP3 — `daoris` on every child's PATH** (§1.3; driver, modules, cli; after TOOLS5 and WSSETUP2): `app/bin/`
   first in the tools' environment; the press's facts gain `node` and `daoris` with their versions.
+  Also (WSSETUP2's hand-back): `src/Daoris.Desktop/README.md`'s *Installing it* and gate paragraphs name the doctrine
+  tool (`app/cli/node_modules/daoris/`, `app/bin/`) and the deployment rehearsal's phase 8.
 - [ ] **LAYOUT7, amended by D124** (§2): the refusals of §2.1, the body of §2.2–§2.7 with the tool check and the
   knowledge step, `daoris` in place of `npx`, §2.4's exact verbs; the playbook gains *Initialise the knowledge*.
+- [ ] **LAYOUT7a — the family rehearsal sets a repository up** (LAYOUT7's hand-back; tools): `setup game --plan`, then
+  a press, a stub session running `daoris` in its tree and landing, the set-up recognised and counted.
+- [ ] **TEST2 — `tools.test.ts` reads the shell's spelling of PATH** (LAYOUT7's hand-back): three cases found the system
+  git and gh when `verify` ran from PowerShell, where the variable is `Path`; they pass from Git Bash. Make the
+  cases set the environment they assume whatever the parent shell spells.
 - [ ] **WSSETUP5 — registration follows the line** (§3; driver, modules, cli; after LAYOUT7): three moments, read as git
   objects, a twin of `connect`'s `registration()`, `registry.followed`, `daoris-driver register`, the row's *Refresh*.
 - [ ] **WSSETUP6 — the workspace plan** (§4.1–§4.3; driver; after LAYOUT7): the plan file, the tick, the order,
@@ -296,7 +289,7 @@ managed git; TOOLS11 last.
 - [ ] **TOOLS6 — what Daoris's git carries** (§2.5): the allow-list from `core.sshCommand`, `GIT_CONFIG_GLOBAL` with
   includes, the version floors; and `SessionTrees.Sync.cs`'s sentence "the git Daoris runs (the one on the
   path)" points at Settings → Tools, as the page's copy already does (TOOLS7's hand-back).
-- [ ] **TOOLS7 — Settings → Tools** (§4.1, §4.4) and **TOOLS8 — Ask Daoris's `tool` kind** (§4.3).
+- [ ] **TOOLS8 — Ask Daoris's `tool` kind** (§4.3).
 - [ ] **TOOLS9 — the rehearsals** (§6): a loopback list server, stub tools, a tampered file refused.
 - [ ] **TOOLS10 — the probe before a managed git meets an agent** (the owner allows one start of each agent).
 - [ ] **TOOLS11 — the first real downloads, on the install** (the owner's run): a managed git bringing the owner's

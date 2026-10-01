@@ -46,8 +46,11 @@ describe('the domain list, in a shell', () => {
     show(<SettingsView notify={() => {}} section="driver" onSection={onSection} />);
 
     const domains = await screen.findByRole('navigation', { name: 'Settings domains' });
-    await waitFor(() => expect(within(domains).getAllByRole('button')).toHaveLength(10));
+    await waitFor(() => expect(within(domains).getAllByRole('button')).toHaveLength(11));
     expect(within(domains).getByRole('button', { name: 'Driver' })).toHaveAttribute('aria-current', 'page');
+    // The programs Daoris runs beside its agents follow the agents (TOOLS7, D121 §4.1).
+    const names = within(domains).getAllByRole('button').map((button) => button.textContent);
+    expect(names.slice(names.indexOf('Agents'), names.indexOf('Agents') + 2)).toEqual(['Agents', 'Tools']);
     // The setup guide leads (SETUP1a, D97).
     expect(within(domains).getAllByRole('button')[0]?.textContent).toBe('Setup');
     // Daoris's browser (CHR5, CHR7) and the machine log (LOG1c) are a machine's domains, last in the list.
@@ -72,7 +75,7 @@ describe('the domain list, in a shell', () => {
     show(<SettingsView notify={() => {}} section="driver" />);
 
     const domains = await screen.findByRole('navigation', { name: 'Settings domains' });
-    await waitFor(() => expect(within(domains).getAllByRole('button')).toHaveLength(10));
+    await waitFor(() => expect(within(domains).getAllByRole('button')).toHaveLength(11));
     expect(screen.queryByText(/on the desktop, where the machine is/)).toBeNull();
   });
 });

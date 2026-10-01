@@ -2,7 +2,7 @@
   "settings.ai.body": "The jobs Daoris may use a model for. Each does its part with none, and says which tier answered.",
   "settings.ai.unknown": "not yet known",
   "settings.ai.search.label": "Search and convergence",
-  "settings.ai.search.hint": "The service reads `DAORIS_EMBED_MODEL` (a model's name) and `DAORIS_EMBED_URL` (its endpoint; Ollama's local address unless set) from its environment when it starts, so a change takes a restart of the service.",
+  "settings.ai.search.hint": "The service reads `DAORIS_EMBED_MODEL` (a model's name), `DAORIS_EMBED_URL` (its endpoint; Ollama's local address unless set) and `DAORIS_EMBED_WINDOW` (the most characters embedded as one vector, 2,000 unless set; a longer entry is embedded in pieces) from its environment when it starts, so a change takes a restart of the service.",
   "settings.ai.search.why": "With no model, search matches words and convergence finds copies and restatements; both still answer, and say which tier did. A model adds what comparing text cannot: two repositories that reached the same conclusion in different words. Which model is the deployment's choice, never the feature's.",
   "settings.ai.helper.label": "Ask Daoris",
   "settings.ai.helper.hint": "Also `daoris driver helper <agent>|off`.",

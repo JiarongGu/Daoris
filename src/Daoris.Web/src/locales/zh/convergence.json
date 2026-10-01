@@ -1,6 +1,4 @@
 {
-  "convergence.title": "同归",
-  "convergence.description": "两个仓库各自独立得出同一结论的地方——读过再定。知识这一半的主视图。",
   "convergence.threshold": "相似度 ≥",
   "convergence.hintSemantic": "调低即可看到更弱的重合。值得来回扫一遍，而不是只信一个数——合适的取值取决于语料。",
   "convergence.hintLexical": "没有嵌入端点时，这里只能找到复制与转述。两个仓库若以不同措辞得出同一结论，将不会出现。",
@@ -15,7 +13,15 @@
   "convergence.methods.Restatement.hint": "多半是一份后来漂移了的副本。",
   "convergence.methods.Identical.label": "同一份文档，原样粘贴",
   "convergence.methods.Identical.hint": "是复制，不是巧合。",
-  "convergence.count": "{{count}} 组",
-  "convergence.count_other": "{{count}} 组",
-  "convergence.cappedAt": "前 {{count}} 组——还有更多，请调高相似度"
+  "convergence.count": "{{count}} 个发现",
+  "convergence.count_other": "{{count}} 个发现",
+  "convergence.cappedAt": "前 {{count}} 个——还有更多，请调高相似度",
+  "convergence.list.open": "展开发现列表",
+  "convergence.list.close": "收起发现列表",
+  "convergence.list.resize": "发现列表宽度",
+  "convergence.none.headline": "请选择发现",
+  "convergence.none.body": "两个仓库各自独立得出同一结论的地方——读过再定。在列表中选中的发现会在这里阅读：先是服务给出的建议，再是其中每个条目的全文。",
+  "convergence.gone.headline": "此发现已不在列表中",
+  "convergence.gone.body": "它的条目在相似度 {{value}} 及以上已不再同归，或者找到它之后索引有了变化。请在列表中另选一个。",
+  "convergence.page.entryGone": "已不在索引中：这次比对之后，它被移动、改名或删除了。"
 }

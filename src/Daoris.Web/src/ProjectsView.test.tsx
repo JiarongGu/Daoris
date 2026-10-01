@@ -190,7 +190,7 @@ describe('the shell-attached registry management', () => {
   const PICKED = {
     path: 'D:/repos/borealis', name: 'borealis', exists: true, adopted: true, git: true,
     summary: 'The aurora.', owns: ['the sky'], accepts: ['a quest'], packs: [], join: false,
-    shareKnowledge: false,
+    shareKnowledge: false, uses: ['engine'],
   };
 
   beforeEach(() => {
@@ -243,6 +243,8 @@ describe('the shell-attached registry management', () => {
       .find(([url, init]) => String(url) === '/api/registry' && init?.method === 'POST');
     expect(JSON.parse(String(posted![1]!.body))).toMatchObject({
       repository: 'borealis', root: 'D:/repos/borealis', adopted: true,
+      // What its manifest says it uses travels with the rest of the declaration (MANAGE1, D91).
+      domain: { summary: 'The aurora.', owns: ['the sky'], accepts: ['a quest'], uses: ['engine'] },
     });
     // Once registered, the list has it chosen, as an installed plugin is (D119 §3.1).
     await vi.waitFor(() => expect(window.localStorage.getItem(CHOSEN)).toBe('borealis'));
@@ -373,6 +375,44 @@ describe('the shell-attached registry management', () => {
     for (const field of ['Summary', 'Owns', 'Accepts']) {
       expect(within(drawer).getByLabelText(field)).not.toHaveClass('font-mono');
     }
+  });
+
+  /**
+   * MANAGE1: the registry replaces a row's `uses` with the declaration's (D91), and silence there is
+   * none, since `connect` and the driver's sync send `uses` only when there is one. Saving re-registered
+   * with a domain that carried no `uses`, so the repository's dependencies left the registry until its
+   * next `connect`, while the file just written still held them. The re-registration says what the file
+   * says, from the shell's answer to the write.
+   */
+  it('saving a declaration re-registers with what the written file says it uses', async () => {
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url === '/api/registry' && init?.method === 'POST') return Response.json({ repository: 'engine', workspace: 'default' });
+      if (url.startsWith('/api/registry')) return Response.json([{ ...REGISTRY[0], root: 'C:/somewhere/engine' }]);
+      return respond(url);
+    }));
+    invoke.mockImplementation(async (_module: string, type: string) =>
+      type === 'WRITE_DECLARATION'
+        ? {
+          path: 'C:/somewhere/engine', name: 'engine', exists: true, adopted: true, git: true,
+          summary: 'the engine', owns: ['the runtime'], accepts: [], packs: [], join: false, shareKnowledge: false,
+          uses: ['tools'],
+        }
+        : DRIVER_STATE);
+    const notify = vi.fn();
+    show(<ProjectsView notify={notify} />);
+    const page = await chooseRepository('engine');
+
+    await userEvent.click(within(page).getByRole('button', { name: 'Manage' }));
+    const drawer = await screen.findByRole('dialog');
+    await userEvent.click(within(drawer).getByRole('button', { name: 'Write daoris.json' }));
+
+    await vi.waitFor(() => expect(notify).toHaveBeenCalled());
+    const posted = vi.mocked(fetch).mock.calls
+      .find(([url, init]) => String(url) === '/api/registry' && init?.method === 'POST');
+    expect(JSON.parse(String(posted![1]!.body)).domain).toEqual({
+      summary: 'the engine', owns: ['the runtime'], accepts: [], uses: ['tools'],
+    });
   });
 
   // The CONSOLE's tests moved to `work/WorkFrame.test.tsx` with the console itself (D55): one home

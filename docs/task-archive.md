@@ -9241,3 +9241,60 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > `## Unreleased`, this repository and `examples/` re-synced in the same commit.
 
 **Outcome** (built by the parent, merged with `tools/merge-branch.mjs`, every gate): `autonomous-development` gains *Look before you ask* (D124 §6.3), before *A step that genuinely needs a human choice surfaces as a decision*: a question the task's own material, the repository's documents, code and history, or a neighbour's documents can settle is the agent's to settle, with its evidence kept for the hand-over; a reading the evidence leans to is taken and stated at the checkpoint; only what no source holds and only the person can give reaches them mid-run. An entry under the canon changelog's Unreleased; this repository and both examples re-synced in the same commit; the always-loaded region is unchanged (23,306 bytes before DOC4's table).
+
+
+## FRAME1f — Search and Convergence on the frame (2026-10-01)
+
+> - [ ] **FRAME1f — Search and Convergence on the frame**: the hits and findings in the list, the entry in the
+> main area; the reader drawer retires for these.
+
+**Outcome** (built by a subagent, merged with `tools/merge-branch.mjs`, every gate; a note under D118): Search and Convergence are on the frame. Each hands a `ViewLayout` from a hook, held on every view and asking the service nothing until in front. Search's list is the box, *each repository's own only* and the hits (↓ into the hits, Escape clears the box); its main area is the entry, read as it is written. Convergence's list is the similarity and its tier's note, then the findings; its main area is the finding, the service's sentence first and then each entry whole. *Local only*, the similarity and each chosen item are remembered; a finding is named by its entries, and a 404 entry reads as gone. The reader drawer and `Drawer`'s `wide` prop are retired. Loading follows platform-ux §4 (skeleton first, then the last rows held, dimmed), for the look to confirm (SR11). New molecules `HitList`, `EntryPage`, `FindingList` and `FindingPage` live under `knowledge/` with stories. The view suites and the reader's tests moved to the pages, and `test:web` gained a Search and a Convergence spec. Web vitest 2294 → 2383. Left: the Map's knowledge-pair door opens Convergence without naming a finding; FRAME1i teaches Ask Daoris the two lists.
+
+
+## WSSETUP9 — a session looks before it asks (2026-10-01)
+
+> - [ ] **WSSETUP9 — a session looks before it asks** (§6.1, §6.2; driver): `TargetPrompt.Asking` rewritten for the
+> claiming, resuming and carrying-on instructions; the clause naming other checkouts only with reading across.
+
+**Outcome** (built by a subagent, merged with `tools/merge-branch.mjs`, every gate; notes under D124): Every driven instruction (claiming, resuming, carrying on) now opens its asking part with D124 §6.1's look-first paragraph: the quest and its files, its repository's documents, code and history, the workspace's knowledge through `knowledge_search`, and the other checkouts only where it may read across (the clause says whether they are listed above, below or both). What the sources settle is decided; a reading they lean to is taken and said in the closing note. The stop narrows to what no source holds and only the person can give (a sign-in, a go-ahead outside the repository or on a production system, a preference nothing records), and says what was looked at; "a choice between options that is theirs" is gone. Five new `AskAndWaitPromptTests` cases, each seen failing first; no Process-half test, rehearsal or e2e spec named the old words. Notes under D124, D79 and D83.
+
+
+## WSSETUP11 — set-ups and parks, counted (2026-10-01)
+
+> - [ ] **WSSETUP11 — set-ups and parks, counted** (§7.3; driver, tools): `session.parked` from the attention watch; the
+> usage report gains a set-up section and parks per week by workspace. Run early.
+
+**Outcome** (built by a subagent, merged with `tools/merge-branch.mjs`, every gate; notes under D124): The machine log counts parks and set-ups. `session.parked {session, kind, repository, workspace}` is written by `SessionLog` as the driver moves a record into the parked state, in the shell and the headless host alike and in every mode (the attention watch shares the predicate and the same rows; the watch lives in the modules lane and its first look is a baseline, so the log is the one writer). `session.started` gains `workspace`, and `setup: true` for a set-up's session (`SetupQuests`, the press's three titles, which LAYOUT7's composer takes its words from). `turn.ended` gains the turn's tokens as METER1 splits them, its tool calls and its context against the window. `tools/usage-report.mjs` gains a Set-ups section and a Parks section (per week by workspace, beside the sessions started there); absent is never zero, and no price is claimed. Held by `SessionLogTests`, `AttentionTests`, `SetupQuestsTests` and the report's tables, each new case seen failing first; the driver's open passing the set-up mark is reached only by a real tick. Driver fast half 1656 → 1755 (with main), CLI 918 → 932.
+
+
+## WSSETUP8 — the README as an unadopted repository's word (2026-10-01)
+
+> - [ ] **WSSETUP8 — the README as an unadopted repository's word** (§5; service).
+
+**Outcome** (built by a subagent, merged with `tools/merge-branch.mjs`, every gate; a note under D124): Until a repository adopts, the service indexes its root `README.md`, in any case, as the repository's own word (D124 §5). It is split at level-two headings like a log; the text before the first heading, which `MarkdownSections.Preamble` now returns, is titled *README* with no anchor, and each later section is titled by its heading. All entries are local knowledge labelled by the path on disk and claim no role. It is never read through a link or a link held as text, never from `docs/README.md`, and never in another format. It is read after the declared records, so a README a manifest names as router or log is read once, by that role. "Unadopted" is the scanner's own test for reading both roots (`RepositoryLayout.Locked`: no lock, or one read as none); once a lock is read the README is not, and the next refresh drops its entries. `RepositoryReadmeTests` (30) and the new `MarkdownSectionsTests` cases (6) hold each rule, each seen failing first; the golden test of an adopted repository is unchanged. Service 865 → 901, HTTP 49. Whether its sections help a neighbour's search is WSSETUP12's canary.
+
+
+## SEM3b — the window says what a refresh embedded (2026-10-01)
+
+> - [ ] **SEM3b — the window says what a refresh embedded** (SEM3's hand-back): the refresh notice shows the HTTP
+> answer's `embedded` (entries, vectors, splits, window), and Settings → AI's search hint names
+> `DAORIS_EMBED_WINDOW` beside the model and the address, in both languages. Web shell and web settings.
+
+**Outcome** (built by a subagent, merged with `tools/merge-branch.mjs`, every gate): The refresh's one notice now says what the semantic half embedded, from the HTTP answer's `embedded` (D123): "Indexed 636 entries from 3 repositories. Embedded 636 entries as 1,267 vectors of at most 2,000 characters; 322 longer than that were split." The figures are grouped the reader's way, and a split of none is said as none. A refresh with no `embedded` says nothing of embedding, since absent is never zero. Settings → AI's search hint names `DAORIS_EMBED_WINDOW` as code beside the model and the address, in both languages, and D123's note no longer says the page lacks it. Seen failing first: `App.test.tsx` (the notice, the zero form, the absent case) and `AiJobs.test.tsx`. Not covered: a real embedder behind the notice, and the notice's wrap on the window. Web 2294 → 2297.
+
+
+## MANAGE1 — saving a declaration keeps what the repository uses (2026-10-01)
+
+> - [ ] **MANAGE1 — saving a declaration erases `uses`** (found by DEV4). Repositories → Manage → Save
+> declaration re-registers with a `domain` that carries no `uses`, which erases the repository's `uses` from
+> the registry until its next `connect`. Lanes avoid it by DEV4's preserve rule; `uses` needs the same, with a
+> test that fails first.
+
+**Outcome** (built by a subagent, merged with `tools/merge-branch.mjs`, every gate): Saving a declaration was re-registering from the shell's answer about the folder (`RegistryModule.Inspect`), which carried every part of the declaration except `uses`; the HTTP door reads an absent `uses` as none (D91) and the store replaces a row's `uses` with the declaration's, so the registry lost them until the next `connect` while the file still held them, and *Add repository* did the same. The answer now states `uses` as the manifest has it (`[]` for none), and both of the page's registering doors send it. DEV4's preserve rule was not used: lanes can be kept when absent because every door that reads the repository's file always sends them, but `connect` and the driver's sync send `uses` only when there is one, so keeping an absent `uses` would make a dropped dependency impossible to clear. Seen failing first: `RegistryModuleTests` and `ProjectsView.test.tsx`. Logged in FIX-LOG. Modules 361 → 363.
+
+
+## TOOLS7 — Settings → Tools (2026-10-01)
+
+> - [ ] **TOOLS7 — Settings → Tools** (§4.1, §4.4)
+
+**Outcome** (built by a subagent, merged in integrate-j with `tools/merge-branch.mjs`, every gate; a note under D121): Settings → Tools, built as a machine domain after Agents on `DriverModule.Tools.cs` and the page's `bridge/tools.ts`. Each tool's card says why Daoris needs it, how it is run (System, Managed or Custom), the file it runs and the version it answers. Managed offers the downloaded versions, then those the lists name for this machine, with *Download*, *Use this version* and *Delete* (which asks once). Custom checks that a named file answers a version before writing it, with *Browse…* on the system's picker. Nothing applies on choosing; a press applies it. A switch of git first names the checkout keys the two gits read differently (`TOOLS_GIT`) and switches on the second press. A download is followed: its console and stop are on the card, and its end comes from `TOOLS_ENDED`. The resource locations card lists the person's locations and then the built-in list, with *Look for updates* (a new `hostBounds` twin row), *Add location…* and *Remove*. Nine refusal codes in both catalogues, the glossary's three terms (tool 工具, managed 托管, resource location 资源位置), `tool.used` in the machine log, and the controls answered in `HelpCoverageTests` (System and managed use and removing a location owed to TOOLS8, the rest exempt). Modules fast half 362 → 384, web 2176 → 2219 before merging main. `DriverModuleToolProgramsTests` (Process half) was written in the branch and run at the merge. The SSH command and `TOOL_GIT_TOO_OLD` wait for TOOLS6.

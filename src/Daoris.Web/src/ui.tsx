@@ -626,14 +626,8 @@ export function SectionTitle({ level = 2, children }: { level?: 2 | 3; children:
  * The single detail-and-form surface (D41), on Radix Dialog: focus is trapped, ESC and the scrim
  * dismiss, and the list behind it survives. Every pixel is ours; the behaviour is not hand-rolled.
  */
-export function Drawer({ title, meta, onClose, footer, wide = false, children }: {
+export function Drawer({ title, meta, onClose, footer, children }: {
   title: string; meta?: ReactNode; onClose: () => void; footer?: ReactNode;
-  /**
-   * Wide enough for a line of a source document (UX5 U43): a file wrapped near a hundred characters
-   * broke again at the 32rem drawer's sixty, and read as a zigzag. Only for reading a file as it is
-   * written; a form and a record stay at the drawer's own width.
-   */
-  wide?: boolean;
   children: ReactNode;
 }) {
   const { t } = useTranslation();
@@ -662,8 +656,8 @@ export function Drawer({ title, meta, onClose, footer, wide = false, children }:
           className={cn(
             'fixed bottom-6 right-0 top-9 z-10 flex flex-col border-l border-line bg-overlay focus:outline-none motion-safe:animate-[drawer-in_var(--speed)_ease-out]',
             // Never over the activity bar (3rem): the frame is three bars, and an overlay sits between
-            // them (POLISH3). On an 876px window the wide one covered 4px of it (UX5 U43).
-            wide ? 'w-[min(52rem,calc(100%-3rem))]' : 'w-[min(32rem,calc(100%-3rem))]',
+            // them (POLISH3). A wide one read a source file until FRAME1f gave an entry the main area (U43).
+            'w-[min(32rem,calc(100%-3rem))]',
           )}
         >
           <header className="flex items-start justify-between gap-4 border-b border-line px-5 pb-3.5 pt-4">
