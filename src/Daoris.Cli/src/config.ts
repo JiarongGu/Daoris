@@ -4,6 +4,7 @@ import { readText, writeTextAtomic } from './fsx.ts';
 import { DaorisError } from './errors.ts';
 import { DEFAULT_HARNESS, resolveHarness } from './harness.ts';
 import { checkRooms, checkTarget } from './layout.ts';
+import { checkDocuments } from './documents.ts';
 import type { Lock, Manifest } from './types.ts';
 
 export const MANIFEST_FILE = 'daoris.json';
@@ -56,7 +57,8 @@ export function readManifest(root: string): Manifest {
   if (!existsSync(file)) {
     throw new DaorisError(`no ${MANIFEST_FILE} in '${root}' — run 'daoris init' first`);
   }
-  const parsed = parseJson<Partial<Manifest>>(file, readText(file));
+  const text = readText(file);
+  const parsed = parseJson<Partial<Manifest>>(file, text);
   // A JSON `"remote": null` means what absence means — local, silently — not a crash on the
   // dereference below. The type says the field is never null; the file is under no such obligation.
   if ((parsed as Record<string, unknown>).remote === null) delete parsed.remote;
@@ -99,6 +101,10 @@ export function readManifest(root: string): Manifest {
   // the edge, before a single path is planned, rather than corrected somewhere a reviewer never sees.
   manifest.target = checkTarget(manifest.target ?? manifest.harnessDescriptor.defaultTarget, manifest.harnessDescriptor);
   manifest.rooms = checkRooms((parsed as Record<string, unknown>).rooms, manifest.target, manifest.harnessDescriptor);
+  // The development documents (D122 §2.7), refused at the same edge for the same reason: a role nobody
+  // knows, a path that leaves, or a role declared twice is never half-honoured.
+  manifest.documents = checkDocuments(
+    (parsed as Record<string, unknown>).documents, text, manifest.target, manifest.harnessDescriptor);
   return manifest;
 }
 

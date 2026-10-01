@@ -293,8 +293,23 @@ export interface Manifest {
    * when none are declared.
    */
   rooms: string[];
+  /**
+   * The development documents this repository keeps, each role bound to a path or a ceiling (D122
+   * §2.7), in the roles' own order. Empty when none are declared, which changes nothing.
+   */
+  documents: DeclaredDocument[];
   /** Resolved at read time so an unknown name fails at the edge, naming what exists. */
   harnessDescriptor: Harness;
+}
+
+/** One role the manifest's `documents` declares (D122 §2.7). */
+export interface DeclaredDocument {
+  /** One of the roles `documents.ts` knows. */
+  role: string;
+  /** Repository-relative, as a declared path is spelled; null for `brief` and `room`, which take a ceiling alone. */
+  path: string | null;
+  /** The ceiling in words, reported against and never failed on (D54); null when none is declared. */
+  words: number | null;
 }
 
 /** One row of `daoris.lock`: what was written, from where, and what it hashed to. */
