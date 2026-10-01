@@ -7055,3 +7055,79 @@ the folder, so it reaches into nothing.
 - **No custom type with a listed package was queried.** The first publish is that proof.
 - **The workshop, the reader, *Find* and the pack** exist only as rows. `verify` checks this document's links
   and the log's shape, and none of its words.
+
+## D124 — A workspace is set up one repository at a time by its own sessions: the install carries the doctrine tool, a set-up writes the knowledge a neighbour needs, registration follows the line, and a session looks before it asks (2026-10-01)
+
+**Decision (WSSETUP1).** A driven session in the owner's work workspace stopped to ask the person a question its
+own repository's notes and code could answer. The owner's diagnosis: *"the repo should be registered and apply the
+doctrine and also initialize the knowledge"*. Measured on the install the same day: 29 repositories, all drivable,
+none adopted, none registered (`connect` refuses a manifest that declares no `domain`, and none has a manifest), 23
+with no indexed knowledge and 6 with 16 to 195 entries. The contract is
+`docs/2026-10-01-workspace-setup-design.md`. It builds on D117 §6's set-up quest, D122's standard and D121's tools'
+environment.
+
+1. **The install carries its packed CLI, and every child finds `daoris` on its `PATH`.** `publish:desktop` packs
+   `src/Daoris.Cli`, the release's own artefact, into `app/cli/` with two launchers in `app/bin/`, and TOOLS5's one
+   environment puts `app/bin/` first for every process the driver and the modules start. It is Daoris's own
+   program, not a tool. npm stays the channel outside Daoris and the manifest's `source` (D105).
+2. **An older doctrine tool never rewrites a newer lock.** `sync` and `upstream` refuse a lock whose canon version
+   is newer than their own. Two versions on one machine is a hazard with npm alone, and the tool answers it.
+3. **The set-up quest initialises knowledge.** For a repository that is addressable, not adopted and declaring
+   nothing, its steps check the tool's version, take up the doctrine in the agents layout, then write the domain
+   (`summary`, `owns`, `accepts`, `uses`) and the repository's own knowledge documents a neighbour's session would
+   need: what it owns and where, its contracts and data, and the computations others depend on, each fact at its
+   place in the code and each unconfirmed one said. Then the brief, the documents, the safe work and the checks.
+   It writes only in its tree, on its branch; it never pushes, publishes a quest, runs `connect` or `upstream`,
+   declares a join, or changes code. *Not registered here* is said by what the press finds, each refusal with its
+   door. The press's rule is exact `daoris` verbs.
+4. **Registration follows the line.** The driver registers a repository from `daoris.json` and `daoris.lanes.json`
+   read on its line as git objects, sending what `connect` would send, for the checkout's root and never a tree. It
+   reads after Daoris moves a line (a `merge` landing, *Bring up to date*'s fast-forward), once at start, and on the
+   person's press, and says every refusal on the row.
+5. **The workspace press is a plan of single quests.** One set-up open at a time by default and never the last of
+   the `cap`'s slots; the repositories other work touches first; a pilot of two, after which the plan pauses until
+   the person resumes it; pause, resume and stop on the screen, on `daoris-driver setup --workspace` and as Ask
+   Daoris doors (D50, D110).
+6. **Until a repository adopts, the service indexes its README** as the repository's own word, split at its
+   headings, labelled by its path, and dropped once a lock exists.
+7. **A session looks before it asks.** The driven instruction sends it to the quest and its files, its repository's
+   documents, code and history, the workspace's knowledge and the checkouts it may read first. What they settle is
+   decided; what they lean towards is taken and said in the close; only what no source holds and only the person can
+   give stops the session. `autonomous-development` gains the same line in the canon's words.
+
+**Why.** The two failures are separate. The instruction offered *a choice between options that is theirs* as a
+reason to stop, and a choice the repository's own documents settle read as one. And the workspace held nothing for
+a neighbour to find. A set-up is the repository's own act, carried by its own session and reviewed by its owner
+(D32, D117), so Daoris publishes it rather than performing it. The install's copy of the CLI makes it possible now,
+needs no network, and lets the press's rule be exact verbs where `npx` would be a runner the judge refuses (D122).
+The registry is read from the line because the line is what a review reached. The plan paces the set-ups because
+oldest-first under a cap of two would hold every slot for hours.
+
+**Rejected** (the design's §10 has the full list):
+- **Waiting for npm**: the arc on a press with its own unknowns, and even after it a runner rule and a fetch codex
+  cannot make.
+- **A machine path to the install's CLI in the quest**: it lands in whatever the session commits.
+- **A global npm install, the account's `PATH`, or a single-file build of the CLI.**
+- **The driver or the service running the doctrine commands into the repository** (D32, D46, D117 §9).
+- **Registering from the session, at its `done`, by re-importing, or by reading every line at every tick.**
+- **Publishing every set-up at once, a chain of set-ups, a set-up priority or a *deferred* status.**
+- **The plan in `driver.json`**: a field only the driver uses, kept by two twins.
+- **Set-ups asking their neighbours**, **indexing code as a baseline**, and **the README read after adoption**.
+- **The instruction alone, or the canon alone**: each misses the sessions the other reaches.
+
+**What it amends, when built.** D117 §6.1, §6.2, §6.3, §6.5 and §6.6, and its §9's rejection of *the install carrying
+the CLI onto a session's path*, which is reversed; LAYOUT10 no longer waits on the first publish. D105 §2: npm
+outside Daoris, the install's copy at the same version inside it. D121 §2.4: the environment carries `app/bin/`
+first. D122 §3.9: the press's rule is `daoris` verbs. D79 and D83: what reaches the person narrows. The canon's
+`autonomous-development` and the adoption playbook (local). Each row that builds a piece notes the amendment where
+it lands.
+
+**What the gates do not cover.** This change is documents only, and nothing is built. Its statements about today
+were read from the code at `21787b8`: `TargetPrompt`, the planner and the driver's configuration, the intake's room,
+`connect.ts`, `manage.ts`, `commands.ts`, the registry and its import, the registry module, the scanner, the
+publish script and the prompt's tests. The workspace's numbers are the parent's measurement on the install; the long
+turn's are the backlog's (COST1, METER1). Not measured: which shell each harness runs `daoris` from and whether it
+finds it by its bare name, whether codex's sandbox runs a program outside the workspace, what one set-up costs, and
+whether a real set-up's knowledge is true. During `0.0.x` every build answers `0.0.1`, so the version guard cannot
+tell two builds apart until the first release. `verify` checks the log's shape and the design's links, and none of
+these words.
