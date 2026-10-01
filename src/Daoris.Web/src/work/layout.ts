@@ -11,6 +11,9 @@ const LIST_WIDE: ListBounds = { min: 264, max: 420, initial: 280 };
  * Each view's list pane (D118 §3a), one table: FRAME6's 264–420 px, 280 to start, for every list but
  * Settings', whose rows are single names (its 11 rem). A view that is absent here has no list: Overview
  * and Map (D118 §4).
+ *
+ * The monitor window's rail is a list of its own (D118 §4, FRAME1h): the session list, live, so its bounds
+ * are Sessions', and what it remembers is the monitor's rather than the main window's.
  */
 export const LIST_BOUNDS = {
   sessions: LIST_WIDE,
@@ -20,6 +23,7 @@ export const LIST_BOUNDS = {
   search: LIST_WIDE,
   plugins: LIST_WIDE,
   settings: { min: 176, max: 320, initial: 176 },
+  monitor: LIST_WIDE,
 } as const satisfies Record<string, ListBounds>;
 
 export type ListView = keyof typeof LIST_BOUNDS;

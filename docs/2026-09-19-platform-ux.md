@@ -50,7 +50,9 @@ D75), where its own rules live; this is what a view may assume of it.
 
 - **Type is seven named tokens** (D56): `text-meta` 11px, `text-small` 12, `text-body` 13,
   `text-title` 15, `text-view` 18, `text-wordmark` 20, `text-value` 26. `tokens.test.ts` fails on a raw
-  size: the literal form had drifted to fifteen values across 203 sites with nothing reporting it.
+  size: the literal form had drifted to fifteen values across 203 sites with nothing reporting it. It
+  fails too on a `text-` class `tokens.css` declares no step, colour or layout for (FRAME1h): the
+  monitor's title wore `text-h3`, which renders at the body's size, and the old scan read it as nothing.
   Tile values wear proportional figures; columns of numbers wear `tabular-nums`. **An ideograph is
   never slanted**: `font-synthesis-style: none` keeps Chinese upright, since its system face has no
   italic, and keeps the Latin face's true italic.
@@ -396,6 +398,13 @@ controls are in the frame design's §3.
     is (U67), opens on a repository nothing works in, marks a busy one and says a working tree of its
     own lets it start beside it, and says a refused start in the form (U68).
   - **The monitor is the present tense**, its rail as its tiles, at the main rail's width (U69, U70).
+    **Its rail is a list pane** (FRAME1h, D118 §4): resized by its edge, closed to its strip, and a strip
+    by itself where the tiles would fall below their floor, never hidden; the strip keeps each running
+    session's mark and lays the rail over the tiles. Ctrl+B toggles it, and what it keeps is the
+    monitor's, apart from the main window's rail. Its title is the view step.
+  - **A detached session's console is the output panel** (FRAME1h, D118 §4): grown, hidden, and Ctrl+J,
+    kept for every detached window apart from the main window's panel. It offers no views menu, since
+    the window has no side bar to move one to, and no stop, since nothing in it acts.
 - **Plugins** (D119) — the activity bar's place after Search, shell-only, on the frame. Its list groups the plugins by what each needs from the person: *Waiting on you* (refused while on),
   *On*, *Off*, then *Daoris's own plugins* not installed, each with *Install* on its row. Its strip marks each
   installed plugin: the waiting mark, a faint initial for off, nothing for on. A plugin's page heads with its
