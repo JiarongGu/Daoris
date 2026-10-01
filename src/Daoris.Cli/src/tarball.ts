@@ -10,11 +10,15 @@
 //
 // No dependency: gzip is `node:zlib`, and tar is a 512-byte header format with three ways of
 // spelling a long name.
+//
+// A tool's `tar.gz` is unpacked here too (TOOLS4, D121 §3.6), so each refusal names its check — the code
+// `zipfile.ts` and the driver's `ToolInstall` spell, held by one table: absolute, outside, stream, link,
+// entry (neither a file nor a folder), checksum, truncated and damaged.
 
 import { chmodSync, closeSync, createReadStream, mkdirSync, openSync, writeSync } from 'node:fs';
 import { join, resolve, sep } from 'node:path';
 import { createGunzip } from 'node:zlib';
-import { DaorisError } from './errors.ts';
+import { DaorisError, RefusalError } from './errors.ts';
 
 const BLOCK = 512;
 
@@ -55,12 +59,16 @@ export async function extractTarGz(file: string, into: string): Promise<string[]
   } catch (error) {
     if (state.kind === 'file') closeSync(state.fd);
     if (error instanceof DaorisError) throw error;
-    throw new DaorisError(`the package is damaged — it did not decompress (${(error as Error).message})`);
+    // zlib's own word for a stream that stops before its trailer; anything else did not decompress at all.
+    const cut = (error as NodeJS.ErrnoException).code === 'Z_BUF_ERROR';
+    throw new RefusalError(cut ? 'truncated' : 'damaged', cut
+      ? `the package ends before its gzip trailer does — it is truncated (${(error as Error).message})`
+      : `the package is damaged — it did not decompress (${(error as Error).message})`);
   }
 
   if (state.kind === 'file') closeSync(state.fd);
   if (state.kind !== 'ended') {
-    throw new DaorisError('the package ends before its last entry does — it is truncated or damaged, '
+    throw new RefusalError('truncated', 'the package ends before its last entry does — it is truncated or damaged, '
       + 'and a partial package is not unpacked as if it were whole');
   }
 
@@ -117,7 +125,7 @@ export async function extractTarGz(file: string, into: string): Promise<string[]
 
     switch (type) {
       case 'x': case 'L': case 'K': case 'g':
-        if (size > METADATA_LIMIT) throw new DaorisError(`the package holds a ${size}-byte name, which is not a name`);
+        if (size > METADATA_LIMIT) throw new RefusalError('damaged', `the package holds a ${size}-byte name, which is not a name`);
         return { kind: 'metadata', type, remaining: size, padding, chunks: [] };
 
       case '0': case '\0': case '7': {
@@ -143,12 +151,13 @@ export async function extractTarGz(file: string, into: string): Promise<string[]
       }
 
       case '1': case '2':
-        throw new DaorisError(
+        throw new RefusalError(
+          'link',
           `the package holds a ${type === '2' ? 'symbolic' : 'hard'} link at \`${raw}\`, and Daoris `
           + 'creates no link from an archive — a link is a name that can point anywhere');
 
       default:
-        throw new DaorisError(`the package holds \`${raw}\` as an entry of type '${type}', which is not a file or a directory`);
+        throw new RefusalError('entry', `the package holds \`${raw}\` as an entry of type '${type}', which is not a file or a directory`);
     }
   }
 
@@ -165,7 +174,7 @@ export async function extractTarGz(file: string, into: string): Promise<string[]
     while (at < text.length) {
       const space = text.indexOf(' ', at);
       const length = Number(text.slice(at, space));
-      if (!Number.isInteger(length) || length <= 0) throw new DaorisError('the package holds an unreadable extended header');
+      if (!Number.isInteger(length) || length <= 0) throw new RefusalError('damaged', 'the package holds an unreadable extended header');
       const record = text.slice(space + 1, at + length - 1);
       const equals = record.indexOf('=');
       const key = record.slice(0, equals);
@@ -179,21 +188,21 @@ export async function extractTarGz(file: string, into: string): Promise<string[]
   /** Where an entry lands, or null for the archive's own root; refused when that is outside. */
   function placed(name: string): { path: string; relative: string } | null {
     if (/^[\\/]/.test(name) || /^[A-Za-z]:/.test(name)) {
-      throw new DaorisError(`the package names \`${name}\`, an absolute path — an entry lands inside the directory it is unpacked into or nowhere`);
+      throw new RefusalError('absolute', `the package names \`${name}\`, an absolute path — an entry lands inside the directory it is unpacked into or nowhere`);
     }
 
     const segments = name.split(/[\\/]+/).filter((segment) => segment !== '' && segment !== '.');
     if (segments.includes('..')) {
-      throw new DaorisError(`the package names \`${name}\`, which would land outside the directory it is unpacked into`);
+      throw new RefusalError('outside', `the package names \`${name}\`, which would land outside the directory it is unpacked into`);
     }
     if (segments.some((segment) => segment.includes(':'))) {
-      throw new DaorisError(`the package names \`${name}\`, which Windows would read as a stream of another file`);
+      throw new RefusalError('stream', `the package names \`${name}\`, which Windows would read as a stream of another file`);
     }
     if (segments.length === 0) return null;
 
     const path = join(root, ...segments);
     if (!path.startsWith(root + sep)) {
-      throw new DaorisError(`the package names \`${name}\`, which would land outside the directory it is unpacked into`);
+      throw new RefusalError('outside', `the package names \`${name}\`, which would land outside the directory it is unpacked into`);
     }
 
     return { path, relative: segments.join('/') };
@@ -205,7 +214,7 @@ function checksum(header: Buffer): void {
   let sum = 0;
   for (let at = 0; at < BLOCK; at++) sum += at >= 148 && at < 156 ? 0x20 : header[at]!;
   if (sum !== stated) {
-    throw new DaorisError('the package holds a header that fails its own checksum — it is damaged, and a tarball is not guessed at');
+    throw new RefusalError('checksum', 'the package holds a header that fails its own checksum — it is damaged, and a tarball is not guessed at');
   }
 }
 

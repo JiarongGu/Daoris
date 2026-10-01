@@ -68,6 +68,8 @@ nested. A reader skips a line it cannot parse and a field it does not know.
 | `proposal.settled` | desktop, from the page | applied | whether Ask Daoris's proposals help |
 | `page.error` | desktop, from the page | where, message | a render or request failure the page caught |
 | `request.failed` | host | method, route, status, ms | a request that failed, or took over two seconds |
+| `tool.download.started` / `.verified` / `.refused` / `.stopped` | the process that runs the download (D121 §3.6, TOOLS4) | tool, version, check when refused | a managed version fetched, and the check that refused it |
+| `tool.location.fetched` / `.failed` | the process that looks (D121 §3.7, TOOLS4) | position in the list, versions or check | a resource location looked at, by its place and never by the address the person typed |
 
 **The page reports through the bridge**, one request (`DAORIS.LOG` · `EVENT`), and the module takes
 only the page's events above with only their fields: anything else is dropped. That is where the

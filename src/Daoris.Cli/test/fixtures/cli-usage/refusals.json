@@ -23,7 +23,10 @@
   {"argv":["browser","frobnicate"],"code":2,"out":["daoris: `browser` takes `daoris browser favorite list`, `daoris browser favorite add <address> [--title T]`, `daoris browser favorite remove <address>`, `daoris browser extensions [offer|refuse]`, `daoris browser use [daoris|edge]`, or `daoris browser links [system|daoris]`."]},
   {"argv":["browser","favorite","frobnicate"],"code":2,"out":["daoris: `browser favorite` does not know `frobnicate` — it takes `daoris browser favorite list`, `daoris browser favorite add <address> [--title T]`, `daoris browser favorite remove <address>`, `daoris browser extensions [offer|refuse]`, `daoris browser use [daoris|edge]`, or `daoris browser links [system|daoris]`."]},
   {"argv":["browser","history"],"code":2,"out":["daoris: `browser history` is retired: Daoris's browser keeps the browser's own history now, on its History page, where it is cleared as well."]},
-  {"argv":["tool","frobnicate"],"code":2,"out":["daoris: unknown tool verb 'frobnicate' — one of: list, path, use"]},
+  {"argv":["tool","frobnicate"],"code":2,"out":["daoris: unknown tool verb 'frobnicate' — one of: list, path, use, download, update, delete, locations, look"]},
   {"argv":["tool","path","bun"],"code":2,"out":["daoris: `bun` is not a tool this build runs — one of: git, node, pwsh, gh, az. A tool is added in the code, never by a file."]},
-  {"argv":["tool","use","git","managed","2.51.0"],"code":2,"out":["daoris: `tool use git managed` is not offered yet: a managed version is downloaded from a list of versions, and this build has none. `system` and `file <path>` are the ways it sets"]}
+  {"argv":["tool","use","git","managed","latest"],"code":1,"out":["daoris: `latest` is not an exact version — one to four numbers, like 2.51.0"]},
+  {"argv":["tool","update","git"],"code":1,"out":["daoris: Git runs the system's: its updates are the machine's, not Daoris's — `daoris tool use git managed` keeps a version in the home"]},
+  {"argv":["tool","delete","git","../2.51.0"],"code":1,"out":["daoris: `../2.51.0` is not an exact version — one to four numbers, like 2.51.0 — so nothing was deleted"]},
+  {"argv":["tool","locations","add","http://example.org/resources.json"],"code":2,"out":["daoris: `http://example.org/resources.json` is not a resource location — an address is https://, or http:// to this machine (localhost, 127.0.0.1 or [::1]) — nothing was written."]}
 ]
