@@ -177,6 +177,7 @@ public sealed partial class Driver
             // The plugins' servers — a ticket behind a sign-in is read through Daoris's own browser, brought
             // up here for a server that drives it (D78), or that server left out and the transcript told why.
             var (servers, browserNotice, drivesBrowser) = await InAppBrowserServers.HandAsync(_servers, browser, ct).ConfigureAwait(false);
+            hooks?.Log.Served(_catalog, sessionId, servers);
             if (adapter.Wire == SessionWire.Pipe)
             {
                 var connector = Connector(sessionId, scope);

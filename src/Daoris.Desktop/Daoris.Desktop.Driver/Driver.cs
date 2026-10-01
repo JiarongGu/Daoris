@@ -168,6 +168,9 @@ public sealed partial class Driver(
     // beside the knowledge host. Read with the catalogue, once per tick.
     private IReadOnlyList<AcpMcpServer> _servers = [];
 
+    // The catalogue those servers came from: which plugin declares each, for the machine log's `plugin.served` (PLUGUI1d).
+    private PluginCatalog _catalog = PluginCatalog.None;
+
     // The worktree half of D51, beside the transcripts under the same home.
     private readonly SessionTrees _trees = new(home);
 
@@ -215,6 +218,7 @@ public sealed partial class Driver(
         var catalog = PluginCatalog.Load(home, _built.Names);
         _adapters = _built.WithPlugins(catalog);
         _servers = catalog.Servers;
+        _catalog = catalog;
         _harnesses.Use(_adapters);
         if (hooks is not null)
         {
@@ -731,6 +735,7 @@ public sealed partial class Driver(
             // With Daoris's own browser brought up for a server that drives it (D78), or that server left
             // out and the transcript told why.
             var (servers, browserNotice, drivesBrowser) = await InAppBrowserServers.HandAsync(_servers, browser, ct).ConfigureAwait(false);
+            hooks?.Log.Served(_catalog, sessionId, servers);
             var handed = SpawnServers.Hand(adapter, info, home, sessionId, servers);
 
             // What this session may do (PERM1, D72): the rules composed for its circle and repository,

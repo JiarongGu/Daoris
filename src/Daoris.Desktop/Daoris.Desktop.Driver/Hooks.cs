@@ -91,6 +91,9 @@ public interface IHookChannel : IAsyncDisposable
     /// <summary>Whether the other side is still there. A channel that is not is not asked.</summary>
     bool Alive { get; }
 
+    /// <summary>The process's exit code once it has exited, where there is a process to have one (PLUGUI1d).</summary>
+    int? ExitCode => null;
+
     Task<HookDecision> ConsiderAsync(object payload, CancellationToken ct);
 
     Task EndedAsync(object payload, CancellationToken ct);
@@ -158,7 +161,7 @@ public sealed class HookPeer(
         // killed every tick without naming the plugin.
         if (answer.ValueKind != JsonValueKind.Object)
         {
-            throw new DriverException(
+            throw Unreadable(
                 $"plugin `{plugin}` answered the handshake with {Raw(answer)}, which is not one — "
                 + $"`{{ \"protocolVersion\": {ProtocolVersion}, \"points\": [ … ] }}`.");
         }
@@ -167,7 +170,7 @@ public sealed class HookPeer(
             || version.ValueKind != JsonValueKind.Number
             || !version.TryGetInt32(out var spoken) || spoken != ProtocolVersion)
         {
-            throw new DriverException(
+            throw Unreadable(
                 $"plugin `{plugin}` speaks hook wire {(answer.TryGetProperty("protocolVersion", out var v) ? v.GetRawText() : "(none)")}; "
                 + $"this build speaks {ProtocolVersion}.");
         }
@@ -181,14 +184,14 @@ public sealed class HookPeer(
                 var name = point.GetString()!;
                 if (!declared.Contains(name, StringComparer.Ordinal))
                 {
-                    throw new DriverException(
+                    throw Unreadable(
                         $"plugin `{plugin}` listens on `{name}`, which its manifest does not declare — "
                         + "a manifest is what a person reads before enabling a plugin, so the process may not exceed it.");
                 }
 
                 if (!HookPoints.All.Contains(name, StringComparer.Ordinal))
                 {
-                    throw new DriverException(
+                    throw Unreadable(
                         $"plugin `{plugin}` listens on `{name}`, which is not a point this build has "
                         + $"({string.Join(", ", HookPoints.All)}).");
                 }
@@ -216,7 +219,7 @@ public sealed class HookPeer(
                 && reason.GetString() is { Length: > 0 } why
                     ? why
                     : "no reason given"),
-            _ => throw new DriverException(
+            _ => throw Unreadable(
                 $"plugin `{plugin}` answered {Raw(answer)}, which is not a decision — "
                 + "`{ \"kind\": \"allow\" }` or `{ \"kind\": \"hold\", \"reason\": \"…\" }`."),
         };
@@ -234,7 +237,7 @@ public sealed class HookPeer(
     {
         var answer = await RequestAsync($"hook/{HookPoints.Land}", payload, ct).ConfigureAwait(false);
 
-        DriverException NotAnAnswer() => new(
+        DriverException NotAnAnswer() => Unreadable(
             $"plugin `{plugin}` answered {Raw(answer)}, which is not a landing's answer — "
             + "`{ \"pushed\": true, \"pullRequest\": \"https://…\", \"message\": \"…\" }`, the last two optional.");
 
@@ -288,7 +291,7 @@ public sealed class HookPeer(
 
     private async Task<JsonElement> RequestAsync(string method, object? parameters, CancellationToken ct)
     {
-        if (!_alive) throw new DriverException($"plugin `{plugin}` is not running.");
+        if (!_alive) throw Marked($"plugin `{plugin}` is not running.", PluginEvents.Exited);
 
         var id = Interlocked.Increment(ref _nextId);
         var waiting = new TaskCompletionSource<JsonElement>(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -307,16 +310,20 @@ public sealed class HookPeer(
         catch (OperationCanceledException) when (!ct.IsCancellationRequested)
         {
             _pending.TryRemove(id, out _);
-            throw new DriverException(
-                $"plugin `{plugin}` did not answer `{method}` within {_patience.TotalSeconds:0}s.");
+            throw Marked($"plugin `{plugin}` did not answer `{method}` within {_patience.TotalSeconds:0}s.", PluginEvents.Late);
         }
         catch (IOException error)
         {
             _pending.TryRemove(id, out _);
             _alive = false;
-            throw new DriverException($"plugin `{plugin}` stopped answering: {error.Message}");
+            throw Marked($"plugin `{plugin}` stopped answering: {error.Message}", PluginEvents.Exited);
         }
     }
+
+    /// <summary>A failure of the wire, marked with its kind for the machine log (PLUGUI1d); the sentence is unchanged.</summary>
+    private static DriverException Marked(string message, string kind) => PluginFailures.Mark(new DriverException(message), kind);
+
+    private static DriverException Unreadable(string message) => Marked(message, PluginEvents.Unreadable);
 
     private Task NotifyAsync(string method) =>
         SendAsync(new JsonObject { ["jsonrpc"] = "2.0", ["method"] = method }, CancellationToken.None);
@@ -385,8 +392,9 @@ public sealed class HookPeer(
             _alive = false;
             foreach (var (_, waiting) in _pending)
             {
-                waiting.TrySetException(new DriverException(
-                    $"plugin `{plugin}` stopped answering — its process exited, or it is not speaking the hook wire on stdout."));
+                waiting.TrySetException(Marked(
+                    $"plugin `{plugin}` stopped answering — its process exited, or it is not speaking the hook wire on stdout.",
+                    PluginEvents.Exited));
             }
             _pending.Clear();
         }
@@ -402,7 +410,7 @@ public sealed class HookPeer(
                 && error.TryGetProperty("message", out var m) && m.ValueKind == JsonValueKind.String
                 ? m.GetString()
                 : Raw(error);
-            waiting.TrySetException(new DriverException($"plugin `{plugin}` refused the call: {message}"));
+            waiting.TrySetException(Marked($"plugin `{plugin}` refused the call: {message}", PluginEvents.Errored));
             return;
         }
 
@@ -437,6 +445,22 @@ public sealed class HookProcess : IHookChannel
     public IReadOnlyList<string> Points => _peer.Points;
 
     public bool Alive => _peer.Alive && !_process.HasExited;
+
+    public int? ExitCode
+    {
+        get
+        {
+            try
+            {
+                return _process.HasExited ? _process.ExitCode : null;
+            }
+            catch (InvalidOperationException)
+            {
+                // Disposed, or never started: there is no code to say.
+                return null;
+            }
+        }
+    }
 
     /// <summary>How long a plugin has to leave once it is told `shutdown`, before it is ended.</summary>
     public static readonly TimeSpan Grace = TimeSpan.FromSeconds(2);
@@ -577,19 +601,43 @@ public sealed class HookProcess : IHookChannel
 ///
 /// <para><b>Every line is the plugin's</b>, under `plugin:&lt;id&gt;` on the console — transcript-class
 /// material that stays on the machine (D49 §2).</para>
+///
+/// <para><b>What the set did is kept without the plugin's words</b> (PLUGUI1d, D119 §4.2): each start, call,
+/// failure and stop is a <c>plugin.*</c> line in the machine log and a word in the loop's record of the plugin's
+/// health, through <see cref="Log"/>. A start that fails the same way at every look is one line until it
+/// starts or fails differently.</para>
 /// </remarks>
 public sealed class HookSet(
     string home,
     SessionOutput? output = null,
     Func<PluginEntry, Action<string>, CancellationToken, Task<IHookChannel>>? start = null,
     // Where a plugin's word goes when there is no console buffer — the headless host prints it.
-    Action<string, string>? say = null) : IAsyncDisposable
+    Action<string, string>? say = null,
+    // The process's machine log (PLUGUI1d), where what the set did with each plugin is written. Null writes none.
+    MachineLog? log = null,
+    // The loop's own record of each plugin's health (D119 §2). Null keeps none.
+    PluginHealth? health = null) : IAsyncDisposable
 {
-    private readonly Dictionary<string, (string Signature, IHookChannel Channel)> _running = new(StringComparer.Ordinal);
+    /// <summary>A running plugin's process, with what it was started from: what a stop's reason is judged against.</summary>
+    private sealed record Held(string Signature, string Version, DateTimeOffset? Installed, IHookChannel Channel);
+
+    private readonly Dictionary<string, Held> _running = new(StringComparer.Ordinal);
     private readonly SemaphoreSlim _reconciling = new(1, 1);
+
+    // Stopped by a removal or an update (StopAsync) before the catalogue says which: written at the next look.
+    private readonly Dictionary<string, Held> _stopped = new(StringComparer.Ordinal);
+
+    // The plugins whose last start failed, by the kind it failed with: a failure repeated at every look is one line.
+    private readonly Dictionary<string, string> _unstarted = new(StringComparer.Ordinal);
 
     private readonly Func<PluginEntry, Action<string>, CancellationToken, Task<IHookChannel>> _start =
         start ?? (async (plugin, onLine, ct) => await HookProcess.StartAsync(plugin, home, onLine, ct).ConfigureAwait(false));
+
+    /// <summary>
+    /// What the set does with each plugin, into the machine log and the loop's record (PLUGUI1d): also what the
+    /// driver writes the servers it hands a session through, since the set is what it is given of the plugins.
+    /// </summary>
+    public PluginLog Log { get; } = new(log, health);
 
     /// <summary>The plugins whose process is up, by id, in catalogue order.</summary>
     public IReadOnlyList<string> Running
@@ -614,6 +662,16 @@ public sealed class HookSet(
                 .Where(p => p.Manifest.Hooks is { } hooks && hooks.Points.Any(point => HookPoints.Loop.Contains(point, StringComparer.Ordinal)))
                 .ToDictionary(p => p.Manifest.Id, p => p, StringComparer.Ordinal);
 
+            // The stops a removal or an update asked for, said now that the catalogue says which it was.
+            List<(string Id, Held Held)> asked;
+            lock (_running)
+            {
+                asked = [.. _stopped.Select(pair => (pair.Key, pair.Value))];
+                _stopped.Clear();
+            }
+
+            foreach (var (id, held) in asked) Log.Stopped(id, Why(id, held, catalog), PluginEvents.ByLoop);
+
             List<string> gone;
             lock (_running)
             {
@@ -626,17 +684,27 @@ public sealed class HookSet(
 
             foreach (var id in gone)
             {
-                (string, IHookChannel) held;
+                Held held;
                 lock (_running)
                 {
                     held = _running[id];
                     _running.Remove(id);
                 }
-                var wasAlive = held.Item2.Alive;
-                await held.Item2.DisposeAsync().ConfigureAwait(false);
+                var wasAlive = held.Channel.Alive;
+                var code = held.Channel.ExitCode;
+                await held.Channel.DisposeAsync().ConfigureAwait(false);
                 lines.Add(wasAlive
                     ? $"plugin  {id}: stopped."
                     : $"plugin  {id}: its hook process had exited — it will be started again if it is still enabled.");
+                if (wasAlive) Log.Stopped(id, Why(id, held, catalog), PluginEvents.ByLoop);
+                else Log.Failed(id, PluginEvents.AtProcess, PluginEvents.Exited, code, ms: null, PluginEvents.ByLoop);
+            }
+
+            // A plugin whose start failed and that the loop no longer keeps: its record ends as a stop's would.
+            foreach (var id in _unstarted.Keys.Where(id => !wanted.ContainsKey(id)).ToList())
+            {
+                _unstarted.Remove(id);
+                Log.Stopped(id, Why(id, held: null, catalog), PluginEvents.ByLoop);
             }
 
             foreach (var plugin in wanted.Values.OrderBy(p => p.Manifest.Id, StringComparer.Ordinal))
@@ -646,17 +714,27 @@ public sealed class HookSet(
                 if (running) continue;
 
                 var id = plugin.Manifest.Id;
+                var took = Stopwatch.StartNew();
                 try
                 {
                     var channel = await _start(plugin, line => Say(id, line), ct).ConfigureAwait(false);
-                    lock (_running) _running[id] = (Signature(plugin), channel);
+                    lock (_running) _running[id] = new Held(Signature(plugin), plugin.Manifest.Version, InstalledAt(plugin.Folder), channel);
                     lines.Add($"plugin  {id}: started, listening on {(channel.Points.Count > 0 ? string.Join(", ", channel.Points) : "nothing")}.");
+                    _unstarted.Remove(id);
+                    Log.Started(id, channel.Points, took.ElapsedMilliseconds, PluginEvents.ByLoop);
                 }
                 catch (DriverException error)
                 {
                     // Logged and skipped, never fatal — and said where a person will read it.
                     Say(id, error.Message);
                     lines.Add($"plugin  {id}: could not start — {error.Message}");
+                    var kind = PluginFailures.KindOf(error, PluginEvents.Unstartable);
+                    if (_unstarted.GetValueOrDefault(id) != kind)
+                    {
+                        Log.Failed(id, PluginEvents.AtStart, kind, code: null, took.ElapsedMilliseconds, PluginEvents.ByLoop);
+                    }
+
+                    _unstarted[id] = kind;
                 }
             }
         }
@@ -669,23 +747,58 @@ public sealed class HookSet(
     }
 
     /// <summary>
+    /// Why a plugin's process was stopped, from what the catalogue now says of it: gone from it, switched off, a
+    /// new install of it (another version, or its folder replaced), or anything else about it changed.
+    /// </summary>
+    private static string Why(string id, Held? held, PluginCatalog catalog)
+    {
+        var entry = catalog.Plugins.FirstOrDefault(p => string.Equals(p.Manifest.Id, id, StringComparison.OrdinalIgnoreCase));
+        if (entry is null) return PluginEvents.Removed;
+        if (!entry.Enabled) return PluginEvents.Off;
+        if (held is not null && (held.Version != entry.Manifest.Version || held.Installed != InstalledAt(entry.Folder)))
+        {
+            return PluginEvents.Updated;
+        }
+
+        return PluginEvents.Changed;
+    }
+
+    /// <summary>When a plugin's install folder was made: an update replaces the folder whole (D103).</summary>
+    private static DateTimeOffset? InstalledAt(string folder)
+    {
+        try
+        {
+            return Directory.Exists(folder) ? Directory.GetCreationTimeUtc(folder) : null;
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            return null;
+        }
+    }
+
+    /// <summary>
     /// Stop one plugin's hook process now, rather than at the next tick — what removing a plugin needs
     /// first, because on Windows a running process holds its working directory (REV3).
     /// </summary>
     /// <returns>Whether a process was running to stop.</returns>
+    /// <remarks>
+    /// Its <c>plugin.stopped</c> line is written at the next look (PLUGUI1d), once the catalogue says whether the
+    /// plugin was removed or updated: a stop asked for here cannot tell which, and the route asks for that look
+    /// at once.
+    /// </remarks>
     public async Task<bool> StopAsync(string id, CancellationToken ct = default)
     {
         await _reconciling.WaitAsync(ct).ConfigureAwait(false);
         try
         {
-            IHookChannel? channel;
+            Held? held;
             lock (_running)
             {
-                if (!_running.Remove(id, out var held)) return false;
-                channel = held.Channel;
+                if (!_running.Remove(id, out held)) return false;
+                _stopped[id] = held;
             }
 
-            await channel.DisposeAsync().ConfigureAwait(false);
+            await held.Channel.DisposeAsync().ConfigureAwait(false);
             return true;
         }
         finally
@@ -702,6 +815,7 @@ public sealed class HookSet(
         foreach (var (id, channel) in Listening(HookPoints.QuestConsider))
         {
             HookDecision decision;
+            var took = Stopwatch.StartNew();
             try
             {
                 decision = await channel.ConsiderAsync(payload, ct).ConfigureAwait(false);
@@ -711,9 +825,12 @@ public sealed class HookSet(
                 // 🔴 Fail closed, naming the plugin: the loop spends accounts, and a policy that
                 // silently failed open is the one wrong result nobody would see.
                 Say(id, error.Message);
+                CallFailed(id, channel, HookPoints.QuestConsider, error, took);
                 return HookDecision.Hold($"plugin `{id}` could not decide — {error.Message} `daoris plugin disable {id}` lets the quest go.");
             }
 
+            // The decision's word, never its reason (D94 §5): the reason stays on the console, below.
+            Log.Called(id, HookPoints.QuestConsider, decision.Allowed ? PluginEvents.Allow : PluginEvents.Hold, took.ElapsedMilliseconds);
             if (!decision.Allowed)
             {
                 Say(id, $"holds #{start.Quest.Id} → {start.Quest.To}: {decision.Reason}");
@@ -732,29 +849,54 @@ public sealed class HookSet(
 
         foreach (var (id, channel) in Listening(HookPoints.SessionEnded))
         {
+            var took = Stopwatch.StartNew();
             try
             {
                 await channel.EndedAsync(payload, ct).ConfigureAwait(false);
+                Log.Called(id, HookPoints.SessionEnded, PluginEvents.Answered, took.ElapsedMilliseconds);
             }
             catch (DriverException error)
             {
                 Say(id, error.Message);
                 lines.Add($"plugin  {id}: {error.Message}");
+                CallFailed(id, channel, HookPoints.SessionEnded, error, took);
             }
         }
 
         return lines;
     }
 
+    /// <summary>A call that failed, as its kind: a plain refusal from a channel is the plugin's error.</summary>
+    private void CallFailed(string id, IHookChannel channel, string point, DriverException error, Stopwatch took)
+    {
+        var kind = PluginFailures.KindOf(error, PluginEvents.Errored);
+        Log.Failed(id, point, kind, kind == PluginEvents.Exited ? channel.ExitCode : null, took.ElapsedMilliseconds, PluginEvents.ByLoop);
+    }
+
+    /// <summary>Every process stopped with the loop, and said so: a stop a removal or an update asked for, by what the catalogue says now.</summary>
     public async ValueTask DisposeAsync()
     {
-        List<IHookChannel> channels;
+        List<(string Id, Held Held)> running;
+        List<(string Id, Held Held)> asked;
         lock (_running)
         {
-            channels = _running.Values.Select(v => v.Channel).ToList();
+            running = [.. _running.Select(pair => (pair.Key, pair.Value))];
+            asked = [.. _stopped.Select(pair => (pair.Key, pair.Value))];
             _running.Clear();
+            _stopped.Clear();
         }
-        foreach (var channel in channels) await channel.DisposeAsync().ConfigureAwait(false);
+
+        foreach (var (id, held) in running)
+        {
+            await held.Channel.DisposeAsync().ConfigureAwait(false);
+            Log.Stopped(id, PluginEvents.Ended, PluginEvents.ByLoop);
+        }
+
+        if (asked.Count > 0)
+        {
+            var catalog = PluginCatalog.Load(home);
+            foreach (var (id, held) in asked) Log.Stopped(id, Why(id, held, catalog), PluginEvents.ByLoop);
+        }
     }
 
     private List<(string Id, IHookChannel Channel)> Listening(string point)

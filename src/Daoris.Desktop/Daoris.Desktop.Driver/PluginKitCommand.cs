@@ -24,7 +24,11 @@ public static class PluginKitCommand
         "usage: daoris-driver plugins new <id> --point <point>… [--in <folder>]\n"
         + "       daoris-driver plugins try <folder|id> [--point <point>] [--frame <file.json>]";
 
-    public static async Task<int> RunAsync(string[] args, TextWriter output, string? home, CancellationToken ct = default)
+    /// <param name="log">
+    /// The machine log, where a trial of an installed plugin is one <c>plugin.tried</c> line from this door
+    /// (PLUGUI1d). Null writes none.
+    /// </param>
+    public static async Task<int> RunAsync(string[] args, TextWriter output, string? home, CancellationToken ct = default, MachineLog? log = null)
     {
         try
         {
@@ -33,7 +37,7 @@ public static class PluginKitCommand
                 case ["new", .. var rest]:
                     return New(rest, output);
                 case ["try", .. var rest]:
-                    return await TryAsync(rest, output, home, ct).ConfigureAwait(false);
+                    return await TryAsync(rest, output, home, log, ct).ConfigureAwait(false);
                 default:
                     output.WriteLine(Usage);
                     output.WriteLine("  new writes a plugin's folder — a manifest, a wire script answering each point, its wire");
@@ -77,7 +81,7 @@ public static class PluginKitCommand
         return 0;
     }
 
-    private static async Task<int> TryAsync(string[] args, TextWriter output, string? home, CancellationToken ct)
+    private static async Task<int> TryAsync(string[] args, TextWriter output, string? home, MachineLog? log, CancellationToken ct)
     {
         var (positional, points, options) = Parse(args, "try", ["--frame"]);
         if (positional is null)
@@ -102,7 +106,11 @@ public static class PluginKitCommand
         }
         else if (PluginCatalog.IsId(positional) && home is not null)
         {
+            var took = System.Diagnostics.Stopwatch.StartNew();
             result = await PluginKit.TryInstalledAsync(home, positional, trial, ct).ConfigureAwait(false);
+            // An installed plugin's trial is part of its history (D119 §4.2). A folder's is printed and never kept: its id
+            // may name an installed plugin it is not.
+            new PluginLog(log).Tried(result, took.ElapsedMilliseconds, PluginEvents.Terminal);
         }
         else
         {

@@ -36,7 +36,8 @@ internal static class TreesConsole
         return plan.Problem is { } problem ? $"{line} It would be refused now: {problem}" : line;
     }
 
-    public static async Task<int> RunAsync(string[] args)
+    /// <param name="log">This host's machine log: a landing's and a hand-off's plugin frame is written there (PLUGUI1d).</param>
+    public static async Task<int> RunAsync(string[] args, MachineLog? log = null)
     {
         var configPath = DriverConfig.ResolvePath();
         var home = DriverConfig.HomeOf(configPath);
@@ -244,7 +245,7 @@ internal static class TreesConsole
                     session, questId, quest => service.FindQuestAsync(quest),
                     events.Openings([session]).GetValueOrDefault(session)).ConfigureAwait(false);
                 // A plugin's own lines, said as they come, under its name — as the console says them (D64 §4).
-                var landing = new SessionTrees(home, new LandingPlugins(home, say: (plugin, line) => Console.WriteLine($"  plugin:{plugin}  {line}")));
+                var landing = new SessionTrees(home, new LandingPlugins(home, say: (plugin, line) => Console.WriteLine($"  plugin:{plugin}  {line}"), log: log));
 
                 if (args.Contains("--plan"))
                 {
@@ -297,7 +298,7 @@ internal static class TreesConsole
                 }
 
                 // A plugin's own lines, said as they come, under its name — as `trees land` says them (D64 §4).
-                var handing = new SessionTrees(home, new LandingPlugins(home, say: (id, line) => Console.WriteLine($"  plugin:{id}  {line}")));
+                var handing = new SessionTrees(home, new LandingPlugins(home, say: (id, line) => Console.WriteLine($"  plugin:{id}  {line}"), log: log));
                 if (args.Contains("--plan"))
                 {
                     var plan = await handing.HandPlanAsync(root, entry, plugin).ConfigureAwait(false);

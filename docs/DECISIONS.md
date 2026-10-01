@@ -4129,6 +4129,14 @@ so the line carries no command. The usage report gains asks per session by adapt
 proposals under `proposals/` by the week they were made and their state, counted from the files and printing none of
 their words. The machine-log design's §4 and §6 say, as built, what each reads.*
 
+*Amended by PLUGUI1d (2026-10-01, D119 §4.2): the catalogue gains seven `plugin.*` events, `started`, `stopped`,
+`called`, `failed`, `served`, `tried` and `tested`, written by one writer in the driver library (`PluginLog`) from the
+hook set, a landing, a hand-off, the driver's handing of servers and the terminal's trial. Each is names, counts, flags
+and times: an answer is its word (`allow`, `hold`, `pushed`…), never its reason, message or pull request, and nothing a
+plugin wrote to stderr reaches a line, since no writer takes words as a parameter. `stopped` and `failed` carry `by`
+as `started` does, so a reader can tell the loop's process from a landing's one frame. `tested` has its shape and no
+writer until PLUGUI1g. The machine-log design's §4 says, as built, what each line measures.*
+
 ## D95 — A quest nobody has started on can be deleted, and the delete travels as an operation (2026-09-30)
 
 **Decision (QUEST1).** The owner: *"we do need way to clear or delete quest"*. Clearing is what the
