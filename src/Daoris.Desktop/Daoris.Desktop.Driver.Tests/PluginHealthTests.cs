@@ -200,7 +200,7 @@ public sealed class PluginHealthTests : IDisposable
         var harnesses = kind == Kind.Declares ? new[] { new PluginHarness("acme-agent", ["acme"]) } : [];
         var manifest = new PluginManifest(
             "acme.gate", 1, "Gate", "1.0.0", "", harnesses, points is null ? null : new PluginHooks(["node", "hooks.mjs"], points), []);
-        return new PluginEntry(manifest, "C:/home/plugins/acme.gate", "C:/home/plugins/.data/acme.gate", enabled,
+        return new PluginEntry(manifest, "C:/somewhere/data/plugins/acme.gate", "C:/somewhere/data/plugins/.data/acme.gate", enabled,
             refused ? "declares agent `claude-code`, which this build already carries" : null);
     }
 }
