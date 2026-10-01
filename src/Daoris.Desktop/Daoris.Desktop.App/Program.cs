@@ -2,6 +2,7 @@ using Daoris.Desktop;
 using Microsoft.Extensions.DependencyInjection;
 using Shenora;
 using Shenora.Core.Ipc;
+using Shenora.Core.Shell;
 using Shenora.Windows;
 
 // The local driver's shell (D45 part 2, D46 §7): one window that brings up the local service host —
@@ -155,7 +156,7 @@ internal static class Program
         // Settings → Logs reading it back (LOG1c), with the file manager for Open the folder: the kit's
         // shell launcher, which `UseWindows` registers, opened only on the folder the module names.
         builder.Services.AddSingleton<OpenFolder>(sp =>
-            folder => sp.GetRequiredService<Shenora.Windows.IShellLauncher>().OpenDirectory(folder));
+            folder => sp.GetRequiredService<IShellLauncher>().OpenDirectory(folder));
         builder.Services.AddIpcModule<LogModule>();
         // The person's own shells for the terminal view (CONSOLE4a, D96): each under a pseudo-console, typed at
         // and read over the bridge alone. The container disposes the module as the app ends, and every
