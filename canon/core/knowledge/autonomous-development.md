@@ -46,6 +46,12 @@ why.
 - **Work for another repository is published, never performed.** An agent that reaches a
   neighbour's boundary files the request through the proper channel and continues with its own
   work. Autonomy is scoped to the repository it runs in.
+- **Look before you ask.** A question the task's own material, the repository's documents, code and history, or
+  a neighbouring repository's documents you may read can settle is not a question for the person: settle it,
+  and keep the evidence for the hand-over. Where the evidence leans one way without settling it, take that
+  reading and state it at the checkpoint, where it is reviewed with the rest of the outcome. Only what no source
+  holds and only the person can give reaches them mid-run: a sign-in, a go-ahead for an act outside the
+  repository or on a live system, a preference nothing records.
 - **A step that genuinely needs a human choice surfaces as a decision, not a pause.** State the
   options, the recommendation and the reason at the checkpoint. A question arriving with its
   analysis is decided in seconds; a bare "may I?" in the middle of a run is a stall that teaches

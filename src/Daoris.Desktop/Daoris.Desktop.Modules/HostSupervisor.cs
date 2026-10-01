@@ -125,6 +125,8 @@ public sealed partial class HostSupervisor(string serviceUrl, Func<HostLocation?
     /// </summary>
     public static ProcessStartInfo StartInfo(HostLocation location)
     {
+        // Not the tools' environment (TOOLS5): the host is Daoris's own program, found by its own locator (D60, D93),
+        // and it starts no process (D121 §1.1); the knowledge feed's git is the checkout's driver's.
         var start = new ProcessStartInfo
         {
             FileName = location.Executable,

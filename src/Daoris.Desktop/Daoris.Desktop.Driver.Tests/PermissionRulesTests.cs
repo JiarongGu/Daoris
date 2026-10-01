@@ -575,7 +575,8 @@ public sealed class PermissionRulesTests : IDisposable
         Assert.Equal("Edit|Write|MultiEdit|NotebookEdit", entry.GetProperty("matcher").GetString());
         var hook = Assert.Single(entry.GetProperty("hooks").EnumerateArray());
         Assert.Equal("command", hook.GetProperty("type").GetString());
-        Assert.Equal("node", hook.GetProperty("command").GetString());
+        // The node Tools resolves (TOOLS5): with no tools file, the one PATH finds, by its whole path.
+        Assert.Equal(CommandPresence.Resolve("node", startable: true) ?? "node", hook.GetProperty("command").GetString());
         Assert.Equal([guard.Script, tree], hook.GetProperty("args").EnumerateArray().Select(e => e.GetString()));
         Assert.True(File.Exists(guard.Script));
     }
