@@ -23,6 +23,9 @@ import { copyTree, treeDiff } from './fsx.mjs';
 import {
   ACP_STUB_AGENT, capture, makeChecker, openTranscript,
 } from './rehearsal-kit.mjs';
+import {
+  SETUP_RULES, SETUP_TITLE, readSetup, withFirstOnPath, writeDoctrineLauncher,
+} from './setup-kit.mjs';
 
 const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 const examplesRoot = join(repoRoot, 'examples');
@@ -74,7 +77,9 @@ const DRIVE_TIMEOUT = 90_000;
 // mode (a flag) is asked for as `drive`; any other verb this helper carries (`ask`, `quest delete`) goes
 // as it is. Prefixing every mode sent `drive ask …` and failed fourteen checks.
 const verbOf = (mode) => (mode.startsWith('--') ? `drive ${mode}` : mode);
-const driver = ({ serviceUrl, config, remote = {}, harness = {}, mode = '--once' }) =>
+// `env` is the machine a phase stands up for itself (17c: the PATH its sessions find the doctrine tool on, and a
+// home whose machine log holds only its own lines), laid over the guards like the remote and harness pairs.
+const driver = ({ serviceUrl, config, remote = {}, harness = {}, env = {}, mode = '--once' }) =>
   run(`dotnet "${driverDll}" ${verbOf(mode)}`, scratch, {
     DAORIS_SERVICE_URL: serviceUrl,
     DAORIS_DRIVER_CONFIG: config,
@@ -82,6 +87,7 @@ const driver = ({ serviceUrl, config, remote = {}, harness = {}, mode = '--once'
     ...NO_HARNESS,
     ...remote,
     ...harness,
+    ...env,
   }, DRIVE_TIMEOUT);
 
 /**
@@ -3694,6 +3700,251 @@ check(
 const unadoptedRetired = await api('DELETE', '/api/registry/unadopted');
 check('it is retired again, so no later phase meets it', unadoptedRetired.status === 200, unadoptedRetired.text);
 
+// -------------------------------------------------- 17c. a repository is set up by its own session
+
+section('17c. A repository nobody adopted is set up by its own session (LAYOUT7, D117 §6, D124 §2)');
+
+// The set-up press (LAYOUT7): `daoris-driver setup <repository>` reads the repository's LINE as git objects, says
+// every refusal with its door, and publishes one ask to it as the person's, adding the doctrine tool's exact verbs to
+// its rules. Its own session then takes up the doctrine with the tool found by its bare name, in a tree of its own,
+// and the person lands the work. The ACP stub above is that session: a set-up's title takes its set-up branch.
+//
+// atlas is born here with a README and nothing for agents, outside the family folder as 17b's was, and registered
+// without adopting. The doctrine tool its session finds is the WORKSPACE's CLI behind a launcher first on the PATH
+// this phase starts the driver with, since the install's own `app/bin/` is the deployment rehearsal's to test
+// (WSSETUP2). And its machine log is a home of its own, so the usage report read from it counts this phase alone.
+const atlas = join(scratch, 'atlas');
+mkdirSync(atlas, { recursive: true });
+writeFileSync(join(atlas, 'README.md'), '# atlas\n\nServes the map tiles the game draws its world from.\n');
+run('git init -q', atlas);
+run('git symbolic-ref HEAD refs/heads/main', atlas);
+run(`git ${GIT_ID} add -A`, atlas);
+run(`git ${GIT_ID} commit -q -m "atlas is born"`, atlas);
+const atlasBorn = run('git rev-parse HEAD', atlas).out.trim();
+const atlasAdded = await api('POST', '/api/registry', { body: { repository: 'atlas', root: atlas, adopted: false } });
+
+const doctrineBin = join(scratch, 'doctrine-bin');
+writeDoctrineLauncher(doctrineBin, cliBin);
+const cliVersion = run(`node "${cliBin}" --version`, repoRoot).out.trim();
+const setupHome = join(scratch, 'setup-home');
+mkdirSync(setupHome, { recursive: true });
+const SETUP_MACHINE = { ...withFirstOnPath(doctrineBin), DAORIS_HOME: setupHome };
+
+const setupConfig = join(scratch, 'driver-setup.json');
+writeFileSync(setupConfig, `${JSON.stringify({
+  drivable: ['atlas'], adapter: 'acp-stub', cap: 1, timeoutMinutes: 2, trees: ['atlas'],
+  commands: { 'acp-stub': ['node', acpAgent] },
+}, null, 2)}\n`);
+const onSetupMachine = (mode, { config = setupConfig, env = {} } = {}) =>
+  driver({ serviceUrl: BASE, config, mode, env: { ...SETUP_MACHINE, ...env } });
+const atlasQuests = async () => (await api('GET', '/api/quests?repository=atlas&includeClosed=true')).json ?? [];
+const askCount = async () => ((await api('GET', '/api/asks?includeClosed=true')).json ?? []).length;
+// The press's rule lands in the home its driver's choices sit in (`permissions.json`, PERM1), this run's scratch.
+const atlasAllows = () => {
+  const file = join(scratch, 'permissions.json');
+  return existsSync(file) ? JSON.parse(readFileSync(file, 'utf8')).repositories?.atlas?.allow ?? [] : [];
+};
+const sessionStarts = (out) => out.split(/\r?\n/).filter((line) => line.trim()).flatMap((line) => {
+  try {
+    return [JSON.parse(line)];
+  } catch {
+    return [];
+  }
+});
+
+// Every refusal that applies is said at once, each with its door (LAYOUT7): here, not opted into driving and no
+// tree of its own, read by the same binary from the same line.
+const unreadyConfig = join(scratch, 'driver-setup-unready.json');
+writeFileSync(unreadyConfig, `${JSON.stringify({
+  drivable: [], adapter: 'acp-stub', cap: 1, timeoutMinutes: 2, commands: { 'acp-stub': ['node', acpAgent] },
+}, null, 2)}\n`);
+const unready = onSetupMachine('setup atlas --plan', { config: unreadyConfig });
+const unreadyRead = readSetup(unready.out);
+check(
+  '`daoris-driver setup --plan` refuses a repository not driven here and with no tree of its own, saying both and each door',
+  atlasAdded.status === 200 && unready.code === 1 && unreadyRead.refusals.length === 2
+    && /is not driven here/.test(unreadyRead.refusals[0]) && /`daoris driver drive atlas`/.test(unreadyRead.refusals[0])
+    && /`daoris driver trees atlas on`/.test(unreadyRead.refusals[1])
+    && unreadyRead.nothingPublished && unreadyRead.title === null,
+  `${atlasAdded.text}\n${unready.out}`,
+);
+
+// The plan: what was read, the quest's whole text and the rule, and nothing published or added.
+const asksBeforePlan = await askCount();
+const planned = onSetupMachine('setup atlas --plan');
+const plan = readSetup(planned.out);
+check(
+  '`setup --plan` prints what it read from the line: the commit, nothing for agents yet, the agent, the landing, and the tool a child finds',
+  planned.code === 0 && plan.repository === 'atlas' && plan.workspace === 'default'
+    && plan.line === 'main' && plan.commit === atlasBorn.slice(0, 12)
+    && plan.layout === 'none · adopted no · declares no · the whole set-up'
+    && plan.agent === 'acp-stub' && /^merged into its line/.test(plan.lands ?? '')
+    && /^v\d+\./.test(plan.node ?? '') && plan.daoris === cliVersion,
+  planned.out,
+);
+const neighbours = (plan.body ?? '').split('\n').find((line) => line.includes('by the names it knows them by')) ?? '';
+check(
+  '…and the quest it would publish: the set-up\'s title, the version the tool answered, the neighbours by name, the knowledge step, and `daoris`, never `npx`',
+  SETUP_TITLE.test(plan.title ?? '')
+    && (plan.body ?? '').includes(`Run \`daoris --version\`. It prints \`${cliVersion}\`.`)
+    && neighbours.includes('`game`') && !neighbours.includes('`atlas`')
+    && (plan.body ?? '').includes('**Initialise the knowledge.**') && !/\bnpx\b/.test(plan.body ?? ''),
+  planned.out,
+);
+check(
+  '…and the rule it would add, the doctrine tool\'s nine exact verbs — while a plan publishes nothing and adds no rule',
+  JSON.stringify(plan.rules) === JSON.stringify(SETUP_RULES) && plan.nothingPublished
+    && (await atlasQuests()).length === 0 && (await askCount()) === asksBeforePlan && atlasAllows().length === 0,
+  planned.out,
+);
+
+// The press: one ask, as the person's, which the service publishes at once as one quest.
+const pressed = onSetupMachine('setup atlas');
+const press = readSetup(pressed.out);
+const [setupQuest, ...moreQuests] = await atlasQuests();
+check(
+  'a press publishes ONE quest to atlas, titled as a set-up and asked by the ask it made as the person\'s',
+  pressed.code === 0 && moreQuests.length === 0 && Boolean(press.quest) && setupQuest?.id === press.quest
+    && SETUP_TITLE.test(setupQuest.title ?? '') && setupQuest.status === 'Open' && setupQuest.from === `ask #${press.ask}`,
+  `${pressed.out}\n${JSON.stringify(setupQuest ?? null)}`,
+);
+check(
+  '…and adds the doctrine tool\'s verbs to atlas\'s rules, as it says it did, before its session starts',
+  JSON.stringify(press.rules) === JSON.stringify(SETUP_RULES) && SETUP_RULES.every((rule) => atlasAllows().includes(rule)),
+  `${pressed.out}\n${JSON.stringify(atlasAllows())}`,
+);
+const again = onSetupMachine('setup atlas');
+check(
+  'a second press while the set-up is open is refused, naming it, and publishes nothing',
+  again.code === 1 && readSetup(again.out).refusals.some((said) => said.startsWith(`a set-up is already open for \`atlas\`: \`#${setupQuest?.id}\``))
+    && (await atlasQuests()).length === 1,
+  again.out,
+);
+
+// Driven: the protocol door, since atlas has not adopted (D70), in a tree of its own, by the loop that drives any.
+const setupRun = driver({ serviceUrl: BASE, config: setupConfig, mode: '--until-idle', env: SETUP_MACHINE });
+const atlasSessions = async () => (await api('GET', '/api/sessions?repository=atlas&includeClosed=true')).json ?? [];
+const setupRecord = (await atlasSessions()).find((s) => s.quest === setupQuest?.id);
+const setupTree = setupRecord?.tree ?? '';
+check(
+  'the driver carries the set-up to done in a tree of its own — closed by its session, the commit on the record',
+  setupRun.code === 0 && /completed/.test(setupRun.out)
+    && (await atlasQuests()).some((q) => q.id === setupQuest?.id && q.status === 'Done')
+    && setupRecord?.state === 'completed' && setupRecord.adapter === 'acp-stub'
+    && setupTree.includes('trees') && !setupTree.includes(atlas)
+    && /commits landed/.test(setupRecord.evidence ?? '') && /setup: take up the doctrine/.test(setupRecord.evidence ?? ''),
+  `${setupRun.out}\n${JSON.stringify(setupRecord ?? null)}`,
+);
+const setupSaid = existsSync(setupRecord?.transcript ?? '') ? readFileSync(setupRecord.transcript, 'utf8') : '';
+const ranVerbs = [...setupSaid.matchAll(/setup ran `(daoris [^`]+)`, which the quest asks for/g)].map((match) => match[1]);
+check(
+  '…its session ran the doctrine tool by its bare name, each verb one the quest asks for and the press allowed, the tool answering the version the quest promised',
+  JSON.stringify(ranVerbs) === JSON.stringify(
+    ['daoris --version', 'daoris init --harness agents', 'daoris sync --dry-run', 'daoris sync', 'daoris sync', 'daoris check'])
+    && ranVerbs.every((verb) => SETUP_RULES.includes(`Bash(${verb})`)) && !/does NOT ask/.test(setupSaid)
+    && setupSaid.includes(`daoris --version printed ${cliVersion}, and the quest said it prints ${cliVersion}`),
+  setupSaid.split('\n').filter((line) => /setup|declin|done/.test(line)).join('\n') || `${setupRecord?.transcript}`,
+);
+check(
+  '…and committed in its tree, on its branch, while the checkout was not touched: its line where it was, and no doctrine there',
+  setupTree !== '' && run('git log -1 --format=%s', setupTree).out.startsWith('setup: take up the doctrine')
+    && run('git rev-parse main', atlas).out.trim() === atlasBorn
+    && !existsSync(join(atlas, 'daoris.json')) && run('git status --porcelain', atlas).out.trim() === '',
+  setupTree === '' ? '(no tree on the record)' : run('git log --oneline -3', setupTree).out,
+);
+
+// Recognised as a set-up, where WSSETUP11 says it is: the machine log's start line, read through the driver's own door.
+const startsRead = onSetupMachine('logs --event session.started --json');
+const setupStart = sessionStarts(startsRead.out).find((line) => line.data?.session === setupRecord?.id);
+check(
+  'the machine log marks its start as a set-up\'s: `session.started` says `setup`, driven, atlas, in its workspace',
+  startsRead.code === 0 && setupStart?.data?.setup === true && setupStart.data.kind === 'driven'
+    && setupStart.data.repository === 'atlas' && setupStart.data.workspace === 'default' && setupStart.data.adapter === 'acp-stub',
+  startsRead.out,
+);
+
+// Landed by the person's press, by the workspace's rule (WSR1): merged into the line. A merge commit needs an
+// identity, handed as every git call here is, since the rehearsal runs on machines with no git config.
+const landedSetup = onSetupMachine(`trees land ${setupRecord?.id}`, {
+  env: {
+    GIT_AUTHOR_NAME: 'Family Rehearsal', GIT_AUTHOR_EMAIL: 'rehearsal@example.invalid',
+    GIT_COMMITTER_NAME: 'Family Rehearsal', GIT_COMMITTER_EMAIL: 'rehearsal@example.invalid',
+  },
+});
+const atlasLine = run('git rev-parse main', atlas).out.trim();
+let lineManifest = null;
+try {
+  lineManifest = JSON.parse(run('git show main:daoris.json', atlas).out);
+} catch {
+  // Not on the line, or not JSON: the check below says so.
+}
+check(
+  'the person lands it by the workspace\'s rule — merged into atlas\'s line, with the domain and the knowledge',
+  landedSetup.code === 0 && /merged `daoris\/[^`]+` into `main`/.test(landedSetup.out) && atlasLine !== atlasBorn
+    && /setup: take up the doctrine/.test(run('git log --format=%s main', atlas).out)
+    && lineManifest?.harness === 'agents' && Boolean(lineManifest?.domain?.summary)
+    && run('git cat-file -e main:.agents/knowledge/what-this-repository-owns.md', atlas).code === 0,
+  `${landedSetup.out}\n${run('git log --oneline -4 main', atlas).out}`,
+);
+const afterLanding = onSetupMachine('setup atlas --plan');
+const afterRead = readSetup(afterLanding.out);
+check(
+  'read from the line again, atlas is already set up — adopted on the agents layout and declaring — and nothing more is asked',
+  afterLanding.code === 1 && afterRead.commit === atlasLine.slice(0, 12)
+    && afterRead.layout === 'agents · adopted yes · declares yes'
+    && afterRead.refusals.length === 1 && /is already set up/.test(afterRead.refusals[0]) && afterRead.nothingPublished,
+  afterLanding.out,
+);
+
+// The mark is the set-up's alone: a later quest there is an ordinary session, and its start says nothing of one.
+const ordinary = await api('POST', '/api/quests', {
+  body: { from: 'game', to: 'atlas', title: 'Say which tile sizes the map serves', body: 'The world streamer budgets by tile size.' },
+});
+const ordinaryRun = driver({ serviceUrl: BASE, config: setupConfig, mode: '--until-idle', env: SETUP_MACHINE });
+const ordinaryRecord = (await atlasSessions()).find((s) => s.quest === ordinary.json?.quest?.id);
+const allStarts = sessionStarts(onSetupMachine('logs --event session.started --json').out);
+const ordinaryStart = allStarts.find((line) => line.data?.session === ordinaryRecord?.id);
+check(
+  '…and a later session there that is no set-up starts without the mark',
+  ordinaryRun.code === 0 && ordinaryRecord?.state === 'completed' && allStarts.length === 2
+    && ordinaryStart?.data?.kind === 'driven' && !('setup' in (ordinaryStart?.data ?? { setup: true })),
+  `${ordinaryRun.out}\n${allStarts.map((line) => JSON.stringify(line.data)).join('\n')}`,
+);
+
+// The usage report's Set-ups section (WSSETUP11), read from this phase's log the way a person reads an install's.
+const usageReport = join(repoRoot, 'tools', 'usage-report.mjs');
+const reported = run(`node "${usageReport}" --home "${setupHome}" --json`, repoRoot);
+let usage = null;
+try {
+  usage = JSON.parse(reported.out);
+} catch {
+  // Not JSON: the check below prints what came back.
+}
+const [countedSetup, ...moreSetups] = usage?.setups?.sessions ?? [];
+check(
+  'the usage report\'s Set-ups section counts the set-up and only it: one of two sessions started, completed in atlas, with the calls its turn made',
+  reported.code === 0 && usage?.sessions?.started === 2 && usage.setups?.started === 1 && moreSetups.length === 0
+    && countedSetup?.session === setupRecord?.id && countedSetup.repository === 'atlas' && countedSetup.workspace === 'default'
+    && countedSetup.state === 'completed' && countedSetup.calls === ranVerbs.length,
+  reported.out.slice(0, 2000),
+);
+const reportedText = run(`node "${usageReport}" --home "${setupHome}"`, repoRoot);
+check(
+  '…and says so in its words',
+  reportedText.code === 0 && /\nSet-ups\n {2}started {8}1 — completed 1\n/.test(reportedText.out.replace(/\r\n/g, '\n')),
+  reportedText.out,
+);
+
+// Leave nothing for a later phase to meet: both trees go, and atlas leaves the registry, as 17b's repository did.
+const atlasTrees = [setupTree, ordinaryRecord?.tree ?? ''];
+const treesRemoved = atlasTrees.filter(Boolean).map((tree) => onSetupMachine(`trees remove "${tree}" --force`));
+const atlasRetired = await api('DELETE', '/api/registry/atlas');
+check(
+  'atlas is retired again and both its trees removed, so no later phase meets it',
+  atlasRetired.status === 200 && atlasTrees.every((tree) => tree !== '' && !existsSync(tree)),
+  `${atlasRetired.text}\n${treesRemoved.map((removed) => removed.out).join('\n')}`,
+);
+
 // -------------------------------------------------- 18. a plugin that declares, and speaks
 
 section('18. Three plugins: one declares a harness, one hands a server, one holds a quest with a sentence (D64, D65)');
@@ -3906,7 +4157,11 @@ if (totals.failures) {
   console.log('  And the TREE (D51): the lock keys on the working tree rather than on the repository');
   console.log('  that owns it — a second tree of one repository opened beside the first, the record');
   console.log('  named the tree it held, and that path reached the remote store no more than a');
-  console.log('  transcript or an account name does. And a PLUGIN (D64): a folder under the home that');
+  console.log('  transcript or an account name does. And a SET-UP (D124 §2): a repository nobody adopted, read');
+  console.log('  from its line, asked one quest as the person\'s with the doctrine tool\'s exact verbs allowed,');
+  console.log('  set up by its own session with `daoris` found by its bare name, landed, then read as already');
+  console.log('  set up, and counted by the usage report as the one set-up of two sessions. And a PLUGIN');
+  console.log('  (D64): a folder under the home that');
   console.log('  declared a harness a session then ran on, and spoke — holding one quest with its own');
   console.log('  sentence, told of an ending it kept beside its install, stopped with the loop, and');
   console.log('  switched off from a terminal as a row rather than a rename.');
