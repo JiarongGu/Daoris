@@ -364,6 +364,21 @@ describe('the views, in a browser', () => {
     expect(await screen.findByText(/adopted — it carries its own declaration/)).toHaveClass('max-w-prose');
   });
 
+  /**
+   * D118 §4, amending DOCK1a: a browser keeps the view's list and its main area, and never the side bar or
+   * the panel. Overview has no list, so its strip holds no list toggle either: absent, never disabled.
+   */
+  it('draws the view in its main area, with no side bar, no panel, and no list toggle where the view has no list', async () => {
+    shell();
+    await screen.findByRole('heading', { name: 'Overview' });
+
+    expect(screen.getByRole('main')).toHaveClass('@container/main');
+    expect(screen.queryByRole('complementary', { name: 'right side bar' })).toBeNull();
+    expect(screen.queryByRole('region', { name: 'the panel' })).toBeNull();
+    expect(screen.queryByRole('button', { name: /^show or hide/ })).toBeNull();
+    expect(document.querySelector('[data-region="list"]')).toBeNull();
+  });
+
   it('falls back to Overview when the browser remembers a view this deployment does not have', async () => {
     window.localStorage.setItem('daoris.view', 'sessions');
     shell();

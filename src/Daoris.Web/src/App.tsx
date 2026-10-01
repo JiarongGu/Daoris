@@ -45,6 +45,8 @@ import { TrustAsk } from './work/TrustAsk';
 import { SyncStatus } from './work/SyncStatus';
 import { MONITOR_WINDOW, sessionWindowName } from './work/window';
 import { WorkFrame } from './work/WorkFrame';
+import { ViewFrame, type ViewLayout } from './work/ViewFrame';
+import { ViewMain } from './work/ViewMain';
 import type { AttentionDoors } from './work/AttentionBand';
 import { needsAPerson, waitingInSessions } from './work/attention';
 import { ActivityBar, AppStrip, type DriverPresence, StatusBar } from './work/frame';
@@ -222,14 +224,15 @@ export function App() {
   }, [view, settling]);
 
   // Whether the view in front has a list pane (D118 §3a), whose four doors — the strip's toggle, the View
-  // menu's item, Ctrl+B and a press on its place — are absent where it has none, never disabled.
-  const listed = attached && isListed(view);
+  // menu's item, Ctrl+B and a press on its place — are absent where it has none, never disabled. A browser
+  // keeps a view's list too (D118 §4); Sessions, the one view that needs a shell, is never in front there.
+  const listed = isListed(view);
 
   // A region toggled (DOCK1c): the side bar and the panel are the frame's on every view since DOCK1a, and
-  // the list is the view's own, so where the view has none its key does nothing. True when it did. In a
-  // browser there is no frame, only the view (D47 §4: the regions hold this machine's sessions).
+  // the list is the view's own, so where the view has none its key does nothing. True when it did. A
+  // browser has the view's list and never the side bar or the panel (D47 §4: they hold this machine's sessions).
   const toggleRegion = (region: LayoutRegion): boolean => {
-    if (!attached) return false;
+    if (!attached && region !== 'list') return false;
     if (region === 'right') closings.setDock(!closings.dock);
     else if (region === 'panel') closings.setPanel(!closings.panel);
     else if (listed && isListed(view) && listMode) {
@@ -485,16 +488,18 @@ export function App() {
     ...(attached ? { rule: () => openSettings('permissions') } : {}),
   };
 
-  /** Every view but Sessions, as the frame's centre in a shell and the whole window in a browser (DOCK1a). */
-  const renderView = () => (
-    // `relative`: the containing block for what is positioned inside the column. Without it an
-    // `sr-only` label far down a long page took the viewport as its block and stretched the
-    // document, which grew a second scrollbar beside this one (seen on the window, PERM1).
-    <main data-region="main" className="relative min-h-0 min-w-0 flex-1 overflow-y-auto px-6 pb-12 pt-5 max-md:px-3 max-md:pb-8 max-md:pt-4">
-      {/* No cap: content follows the window (UX5 U59, the owner), as the session's centre does
-          since U16. It was 72rem, and a maximized window left every view a third empty.
-          Prose keeps its own measure (`Prose`), and a form its own size. */}
-      <div>
+  /**
+   * Every view but Sessions, as it hands itself to the frame (D118 §5): its list pane where it has one, and
+   * its main area, in a shell's frame beside the side bar and the panel, and in a browser's without them.
+   * Each view joins the list pane as its row moves it onto the frame (FRAME1d–g); until then its page is its
+   * main area.
+   */
+  const renderView = (): ViewLayout => ({
+    main: (
+      // No cap: content follows the window (UX5 U59, the owner), as the session's centre does since U16. It
+      // was 72rem, and a maximized window left every view a third empty. Prose keeps its own measure
+      // (`Prose`), and a form its own size. The main area is the container a view's split follows (§3b).
+      <ViewMain>
         {view === 'overview' && (
           <OverviewView
             onNavigate={setView}
@@ -559,9 +564,9 @@ export function App() {
             onAttend={attached ? openInWork : undefined}
           />
         )}
-      </div>
-    </main>
-  );
+      </ViewMain>
+    ),
+  });
 
   return (
     // A tool's running action — a sign-in above all — outlives the view it started on (SIGNIN1).
@@ -656,6 +661,14 @@ export function App() {
               onToggle={toggleRegion}
             />
           </div>
+        ) : listed ? (
+          // A browser's strip holds the list's toggle alone (D118 §4): it has no side bar and no panel.
+          <LayoutToggles
+            regions={['list']}
+            list={t(`layout.list.${view}`)}
+            closed={{ list: !listShown, panel: true, right: true }}
+            onToggle={toggleRegion}
+          />
         ) : undefined}
       />
 
@@ -708,8 +721,9 @@ export function App() {
 
         {/* 🔴 ONE frame on every view (DOCK1a): the right side bar and the panel stay whatever the
             centre shows, as VS Code's workbench does. One element in one place, so what is open, selected and sized survives a change
-            of view. Sessions' centre is its own; every other view is handed in. A browser has no frame:
-            its regions hold this machine's sessions (D47 §4), so it shows the view alone. */}
+            of view. Sessions' list and main area are its own; every other view hands in its layout. A browser
+            keeps the view's list and main area and never the side bar or the panel, which hold this machine's
+            sessions (D47 §4; D118 §4). */}
         {attached
           ? (
             <WorkFrame
@@ -737,11 +751,19 @@ export function App() {
               lists={lists}
               onListMode={setListMode}
               placements={placements}
-              content={view === 'sessions' ? undefined : renderView()}
+              layout={view === 'sessions' ? undefined : renderView()}
               onOpenSessions={() => setView('sessions')}
             />
           )
-          : renderView()}
+          : (
+            <ViewFrame
+              layout={renderView()}
+              lists={lists}
+              over={closings.listOver}
+              onOver={closings.setListOver}
+              onListMode={setListMode}
+            />
+          )}
       </div>
 
       {/* Ambient truth, true on every view without being looked at (D55). Which circle and whether
