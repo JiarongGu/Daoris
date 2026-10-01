@@ -6304,6 +6304,33 @@ agent, and its pushes are the landing record's, dated by when the branch landed,
 Not yet built: a conversation's `plugin.served` and the screen's `plugin.tried`, which wait for the shell to hand its log
 to the chat runner and `PLUGIN_TRY`. What only a real plugin proves is unchanged: no failing plugin's process has met the
 record.*
+
+*As built (PLUGUI1e, 2026-10-01): the host's answers of §4.1, on `DAORIS.DRIVER` in `DriverModule.Plugins.cs`. `PLUGINS`
+gains per plugin `servers`, `hook`, `listening`, `health` and `update`; `PLUGIN` and `PLUGIN_ACTIVITY` call the two readers
+with the loop's own record; `PLUGIN_READ`, `PLUGIN_ADD` and `PLUGIN_OPEN_FOLDER` are new, with `PLUGIN_FOLDER_NOT_OPENED`
+and `PLUGIN_NOTHING_KEPT` in `Refusals` and both catalogues. `PLUGIN_TRY` writes the screen's `plugin.tried`, and the
+shell's conversations write `plugin.served` through one seam of the chat runner. Readings the design left open:*
+- *The list's `hook` and `servers` are what the catalogue takes, as its `harnesses` and `points` are, so a refused plugin
+  answers none; the hook's command is as its manifest writes it, `${plugin}` and all, as the page's is.*
+- *`update` is `waits`, `current`, or null: null with no record, and null where the update would be refused (a source
+  gone, or one that does not read), whose sentence the page's Source gives.*
+- *`PLUGIN_ACTIVITY`'s `since` is one of the log's spans (`1d`, `7d`, `30d` for the page's three periods), 7 days when
+  absent; a span the log cannot read is the log's own `LOG_FILTER_UNKNOWN`.*
+- *A folder is judged in Ask Daoris's judge's order: named whole, then `Placement`, then there, then read, then an id
+  already installed, which `PLUGIN_READ` answers before the press and `PLUGIN_ADD` refuses, naming Update… and
+  `daoris plugin add <folder>`. Both refusals are the driver's sentences, verbatim, since the drawer shows them in place.*
+- *`PLUGIN_OPEN_FOLDER` makes the plugins folder before opening it, as the log's module makes its own; a host with no
+  launcher answers `opened: false`; an unknown `which`, or a plugin's folder asked for with no id, is the driver's
+  sentence.*
+- *`PLUGIN` and `PLUGIN_ACTIVITY` read off the caller's thread: a data folder is counted for up to two seconds, and a
+  month of the log may be read.*
+- *The route tests start no process, so they are a class of the modules' fast half (`DriverModulePluginPageTests`) beside
+  `DriverModulePluginsTests`, which tries plugins in real processes.*
+
+*Not built here: `PLUGIN_TEST` and the checks `PLUGIN` is to answer (PLUGUI1g), and the bridge's calls onto these routes
+(PLUGUI1f); until then the route test holds each route by the tests that ask it. `daoris-driver chat` writes no
+`plugin.served`, as it writes no session lines. A conversation's line is held at the seam, not in a real conversation, and
+`PLUGIN_OPEN_FOLDER` has met no file manager: the window is where both are seen.*
 ## D122 — The development documents are a standard the canon ships, and a repository declares its safe work once for the person's yes (2026-10-01)
 
 **Decision (DOC1 and UNBLOCK1, the owner's: *"research a good development doc pattern for code generation and use it as
