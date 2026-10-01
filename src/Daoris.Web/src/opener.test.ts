@@ -55,6 +55,12 @@ describe('the opener', () => {
     expect(opening('plugins')).toEqual({ view: 'plugins' });
   });
 
+  /** FRAME1e: a repository's page opens its code map, the Map's page one level in, which is no chosen item (§4). */
+  it('opens the Map on the code map a door names, and only the Map', () => {
+    expect(opening('map', null, { code: 'engine' })).toEqual({ view: 'map', code: 'engine' });
+    expect(opening('projects', 'engine', { code: 'engine' })).toEqual({ view: 'projects', chosen: { view: 'projects', item: 'engine' } });
+  });
+
   it('keeps no chosen item for a view with no list', () => {
     expect(opening('map', 'engine')).toEqual({ view: 'map' });
     expect(opening('overview', 'abc123')).toEqual({ view: 'overview' });

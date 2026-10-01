@@ -29,7 +29,7 @@ import { ConvergenceView } from './ConvergenceView';
 import { MapView } from './MapView';
 import { SearchView } from './SearchView';
 import { useQuestsView } from './QuestsView';
-import { ProjectsView } from './ProjectsView';
+import { useProjectsView } from './ProjectsView';
 import { type SettingsAnchor, type SettingsSection, useSettingsLayout } from './SettingsView';
 import { Reader } from './Reader';
 import { ShellSignals } from './ShellSignals';
@@ -90,9 +90,9 @@ const NAV = VIEWS.filter(({ view }) => view !== 'settings');
 /**
  * The views drawn with a list pane (D118 §2), each naming it in `layout.list.<view>` and
  * `layout.menu.list.<view>`. Sessions' first (FRAME1b), then Plugins, built on the frame (PLUGUI1b), then Quests
- * (FRAME1d) and Settings (FRAME1g); each view joins as its row moves it onto the frame.
+ * (FRAME1d), Repositories (FRAME1e) and Settings (FRAME1g); each view joins as its row moves it onto the frame.
  */
-const LISTED: ReadonlySet<ListView> = new Set<ListView>(['sessions', 'plugins', 'quests', 'settings']);
+const LISTED: ReadonlySet<ListView> = new Set<ListView>(['sessions', 'plugins', 'quests', 'projects', 'settings']);
 const isListed = (view: View): view is View & ListView => (LISTED as ReadonlySet<string>).has(view);
 
 /** A palette command that says it ran, into the machine log (LOG1b): by its id, never what was typed. */
@@ -122,10 +122,13 @@ export function App() {
   // A quest the review asked for (SURF6b): the repository whose work is being sent back, handed
   // to the composer as an opening draft. Held here because the door crosses two views.
   const [opening, setOpening] = useState<{ from?: string; to?: string } | null>(null);
-  // The Workspace menu's *Add repository…* (D75), an event Projects consumes, like the draft above.
+  // The Workspace menu's *Add repository…* (D75), an event Repositories consumes, like the draft above.
   const [addRequested, setAddRequested] = useState(false);
   // And its *Import a folder…* (D77): the import drawer, which names the workspace it lands in.
   const [importRequested, setImportRequested] = useState(false);
+  // The repository whose code map a door opened the Map on (MAP3a; FRAME1e): a repository's page names it. The Map
+  // goes one level in on it, and back to the workspace from there by its own door.
+  const [mapCode, setMapCode] = useState<string | null>(null);
   // The palette asked for the ask composer (INT4c) — an event Quests consumes, like the two above. A quest or an
   // ask a door names is Quests' chosen item since FRAME1d, and its page is the main area's.
   const [asking, setAsking] = useState(false);
@@ -352,6 +355,9 @@ export function App() {
     if (plan.anchor !== undefined) setSettingsAnchor(plan.anchor);
     if (plan.drawer === 'add') setAddRequested(true);
     if (plan.drawer === 'import') setImportRequested(true);
+    // A door naming a code map opens the Map on it; any other way onto the Map opens the workspace, as it always has.
+    if (plan.code !== undefined) setMapCode(plan.code);
+    else if (plan.view !== view) setMapCode(null);
     // A list laid over the main area is never kept: another view lets it go (§3f).
     if (plan.view !== view) closings.setListOver(false);
     setTab(plan.view);
@@ -460,7 +466,7 @@ export function App() {
   // (INT4d), and a quest nobody can take opens its own page. Both of those a browser has too.
   const openAsk = (id: string) => open('quests', askItem(id));
   // Where a starter's, a setup step's or Ask Daoris's door leads (HELP1d, SETUP1a, HELP6): a view and the item
-  // it names, a domain of Settings at the part it names, or one of the Workspace menu's drawers on Projects.
+  // it names, a domain of Settings at the part it names, or one of the Workspace menu's drawers on Repositories.
   const go = (door: StarterDoor) => apply(doorOpening(door));
 
   // The Quests view (FRAME1d, D118 §2): held on every view, as Plugins is, so what its composers hold lasts while
@@ -478,6 +484,19 @@ export function App() {
     onOpened: () => setOpening(null),
     asking,
     onAsked: () => setAsking(false),
+  });
+  // The Repositories view (FRAME1e, D118 §2): held on every view, as Quests is; its list is the registry and its main
+  // area the chosen repository's page, which every door into it names (§3i). Its drawers are the Workspace menu's too.
+  const projects = useProjectsView({
+    active: view === 'projects',
+    chosen: lists.pane('projects').chosen,
+    onChoose: (item) => lists.choose('projects', item),
+    notify,
+    onOpenCode: (repository) => open('map', null, { code: repository }),
+    addRequested,
+    onAddOpened: () => setAddRequested(false),
+    importRequested,
+    onImportOpened: () => setImportRequested(false),
   });
   // What Ask Daoris is handed wherever it stands: what is on the screen (HELP1b) — the view, the scope,
   // the settings domain on Settings, and the attended session on Sessions — and its two ways out.
@@ -528,11 +547,12 @@ export function App() {
   /**
    * Every view but Sessions, as it hands itself to the frame (D118 §5): its list pane where it has one, and
    * its main area, in a shell's frame beside the side bar and the panel, and in a browser's without them.
-   * Each view joins the list pane as its row moves it onto the frame (FRAME1e–f); until then its page is its
-   * main area. Plugins was built on the frame (PLUGUI1b), and Quests (FRAME1d) and Settings (FRAME1g) moved onto
-   * it: each hands its list and its pages whole.
+   * Each view joins the list pane as its row moves it onto the frame (FRAME1f); until then its page is its main
+   * area. Plugins was built on the frame (PLUGUI1b), and Quests (FRAME1d), Repositories (FRAME1e) and Settings
+   * (FRAME1g) moved onto it: each hands its list and its pages whole.
    */
-  const renderView = (): ViewLayout => (view === 'plugins' ? plugins : view === 'quests' ? quests : view === 'settings' ? settings : {
+  const listedLayouts: Partial<Record<View, ViewLayout>> = { plugins, quests, projects, settings };
+  const renderView = (): ViewLayout => listedLayouts[view] ?? {
     main: (
       // No cap: content follows the window (UX5 U59, the owner), as the session's centre does since U16. It
       // was 72rem, and a maximized window left every view a third empty. Prose keeps its own measure
@@ -546,17 +566,11 @@ export function App() {
             notify={notify}
           />
         )}
-        {view === 'projects' && (
-          <ProjectsView
-            notify={notify}
-            addRequested={addRequested}
-            onAddOpened={() => setAddRequested(false)}
-            importRequested={importRequested}
-            onImportOpened={() => setImportRequested(false)}
-          />
-        )}
         {view === 'map' && (
           <MapView
+            // Drawn anew on a code map a door names, so the door's repository is what it opens on.
+            key={mapCode ?? ''}
+            code={mapCode}
             notify={notify}
             onOpenConvergence={() => open('convergence')}
             onOpenQuest={openQuest}
@@ -575,7 +589,7 @@ export function App() {
         )}
       </ViewMain>
     ),
-  });
+  };
 
   return (
     // A tool's running action — a sign-in above all — outlives the view it started on (SIGNIN1).

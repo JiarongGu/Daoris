@@ -25,8 +25,13 @@ const SHARED = 0.75;
  * convergence findings, the live sessions — so it adds no request shape the service does not serve,
  * and nothing machine-local: the same map in a browser and on the desktop (D47 §4).
  */
-export function MapView({ notify, onOpenConvergence, onOpenQuest }: {
+export function MapView({ notify, code: opening = null, onOpenConvergence, onOpenQuest }: {
   notify: Notify;
+  /**
+   * The repository whose code map it opens on, where a door named one: a repository's page (FRAME1e). The Map then
+   * holds it as its own, and goes back to the workspace from it as from any code map.
+   */
+  code?: string | null;
   onOpenConvergence?: () => void;
   /** A quest named in a detail opens on its page, on Quests (UX5 U46; FRAME1d). */
   onOpenQuest?: (id: string) => void;
@@ -41,7 +46,7 @@ export function MapView({ notify, onOpenConvergence, onOpenQuest }: {
   const [shownLines, toggleShown] = useShownLines();
   const [when, setWhen] = useMapWhen();
   // One level in (MAP3a): the repository whose own code map is open, and the module chosen on it.
-  const [code, setCode] = useState<string | null>(null);
+  const [code, setCode] = useState<string | null>(opening);
   const [module, setModule] = useState<string | null>(null);
   const codeMap = useCodeMap(code);
   useErrorNotify(registry.error ?? quests.error ?? sessions.error ?? codeMap.error, notify);

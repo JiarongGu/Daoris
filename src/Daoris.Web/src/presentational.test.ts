@@ -97,7 +97,8 @@ export function offenders(files: [path: string, source: string][]): string[] {
 // `asks/` and `compose/` since INT4c: the ask's molecules, and the carry fields both composers share.
 // `settings/` since AGT6: Daoris's own AI, drawn from props — SettingsView above it holds the queries,
 // and since MOD4 each domain's own `<Name>Domain.tsx` does.
-// `projects/` since INT3c: the driver's row, drawn from props — ProjectsView above it holds the driver.
+// `projects/` since INT3c: the driver's row, drawn from props — ProjectsView above it holds the driver; since FRAME1e
+// the list and a repository's page too.
 // `help/` since HELP1: Ask Daoris's panel and its starters, drawn from props — AskDaoris holds the machine.
 // `links.tsx` since BRW7: the one place a link opens, told where by a context the application provides.
 // `plugins/` since PLUGUI1b: the Plugins view's list, strip and pages, drawn from props — PluginsView holds the catalogue.

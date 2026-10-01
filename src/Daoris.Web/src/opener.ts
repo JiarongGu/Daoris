@@ -17,8 +17,11 @@ export function questsItem(item: string): { ask: string } | { quest: string } {
   return item.startsWith(ASK) ? { ask: item.slice(ASK.length) } : { quest: item };
 }
 
-/** What a door names besides its item: the part of a Settings domain, or one of Repositories' forms. */
-export type OpenPart = { anchor?: SettingsAnchor; drawer?: 'add' | 'import' };
+/**
+ * What a door names besides its item: the part of a Settings domain, one of Repositories' forms, or the repository whose
+ * code map the Map opens on.
+ */
+export type OpenPart = { anchor?: SettingsAnchor; drawer?: 'add' | 'import'; code?: string };
 
 /** What opening a view does, as a value. */
 export type Opening = {
@@ -32,6 +35,11 @@ export type Opening = {
   anchor?: SettingsAnchor | null;
   /** One of Repositories' forms, which stay drawers (§3d). */
   drawer?: 'add' | 'import';
+  /**
+   * The repository whose code map the Map opens on (MAP3a), where a repository's page names it (FRAME1e). The Map has no
+   * list (§4), so this is no chosen item: it is the page one level in.
+   */
+  code?: string;
 };
 
 const listed = (view: View): view is View & ListView => Object.hasOwn(LIST_BOUNDS, view);
@@ -47,6 +55,7 @@ export function opening(view: View, item?: string | null, part: OpenPart = {}): 
   // A door naming a domain opens it at the part it names, or at its top: never at a part another door left.
   if (view === 'settings' && (item || part.anchor)) plan.anchor = part.anchor ?? null;
   if (view === 'projects' && part.drawer) plan.drawer = part.drawer;
+  if (view === 'map' && part.code) plan.code = part.code;
   return plan;
 }
 

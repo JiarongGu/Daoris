@@ -393,6 +393,20 @@ describe('the views, in a browser', () => {
     expect(screen.queryByRole('button', { name: /show or hide the panel/ })).toBeNull();
   });
 
+  /** FRAME1e (D118 §4): Repositories is a browser's list too, and it makes nothing there, since adding is a shell's. */
+  it("keeps Repositories' list and its main area, and offers a browser nothing to add or import", async () => {
+    shell();
+    await userEvent.click(within(await screen.findByRole('navigation', { name: 'Views' })).getByRole('button', { name: 'Repositories' }));
+
+    const list = await screen.findByRole('complementary', { name: 'Repositories' });
+    expect(await within(list).findByRole('heading', { name: 'Adopted (2)' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'show or hide the repository list (Ctrl+B)' })).toBeInTheDocument();
+    expect(within(screen.getByRole('main')).getByText('Choose a repository')).toBeInTheDocument();
+    // Adding and importing touch machine paths (D48 §7): the list's ＋ and its ⋯ are absent, never disabled.
+    expect(within(list).queryByRole('button', { name: 'Add repository' })).toBeNull();
+    expect(within(list).queryByRole('button', { name: 'More actions' })).toBeNull();
+  });
+
   it('falls back to Overview when the browser remembers a view this deployment does not have', async () => {
     window.localStorage.setItem('daoris.view', 'sessions');
     shell();
@@ -486,6 +500,39 @@ describe('every door names its item', () => {
 
     expect(await screen.findByRole('heading', { level: 1, name: 'Read the media field names from config' })).toBeInTheDocument();
     expect(window.localStorage.getItem('daoris.list.quests.chosen')).toBe('5e7a11');
+  });
+
+  /**
+   * FRAME1e: a repository's page has a door to its code map, one level into the Map (MAP3a), and the list remembers the
+   * repository. The Map's own place opens the workspace, never a code map a door left there.
+   */
+  it("a repository's page opens its code map on the Map, which its own place leaves for the workspace", async () => {
+    fetchMock = vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.startsWith('/api/code-map/')) {
+        return Response.json({
+          repository: 'engine', file: 'docs/code-map.json', problem: null,
+          modules: [{ id: 'renderer', path: 'src/renderer', summary: 'draws frames' }], dependencies: [],
+        });
+      }
+      if (url.startsWith('/api/convergence')) return Response.json([]);
+      return respond(url);
+    });
+    vi.stubGlobal('fetch', fetchMock);
+    shell();
+    const views = await screen.findByRole('navigation', { name: 'Views' });
+    await userEvent.click(within(views).getByRole('button', { name: 'Repositories' }));
+    const list = await screen.findByRole('complementary', { name: 'Repositories' });
+    await userEvent.click(within(await within(list).findByRole('listitem', { name: 'engine' })).getByRole('button'));
+    expect(window.localStorage.getItem('daoris.list.projects.chosen')).toBe('engine');
+
+    await userEvent.click(await within(screen.getByRole('main')).findByRole('button', { name: 'Open code map' }));
+    expect(await screen.findByRole('heading', { name: 'engine: code map' })).toBeInTheDocument();
+
+    await userEvent.click(within(views).getByRole('button', { name: 'Overview' }));
+    await userEvent.click(within(views).getByRole('button', { name: 'Map' }));
+    expect(await screen.findByRole('heading', { name: 'Map' })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: 'engine: code map' })).toBeNull();
   });
 
   it("the status bar's tier opens Settings at Daoris's own AI, chosen in its list", async () => {

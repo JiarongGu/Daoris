@@ -7,10 +7,11 @@ import { cn } from '../lib/cn';
  * id in the mono face; its one line, cut to one line and whole in its tip; and its acts. A title and a line are content.
  *
  * @remarks
- * Shared by every view's page since FRAME1d: PLUGUI1b drew it for a plugin, and a quest's and an ask's wear it.
+ * Shared by every view's page since FRAME1d: PLUGUI1b drew it for a plugin, and a quest's and an ask's wear it. A
+ * repository's has no id line (FRAME1e): its name is its id, and a title said twice is noise.
  */
 export function PageHead({ title, version, pills, id, line, acts }: {
-  title: string; version?: string; pills?: ReactNode; id: string; line?: string; acts?: ReactNode;
+  title: string; version?: string; pills?: ReactNode; id?: string; line?: string; acts?: ReactNode;
 }) {
   return (
     <header className="mb-4 flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
@@ -20,7 +21,7 @@ export function PageHead({ title, version, pills, id, line, acts }: {
           {version && <span className="font-mono text-small text-ink-faint">{version}</span>}
           {pills}
         </div>
-        <p className="m-0 mt-0.5 font-mono text-meta text-ink-faint">{id}</p>
+        {id && <p className="m-0 mt-0.5 font-mono text-meta text-ink-faint">{id}</p>}
         {line && <p title={line} className="m-0 mt-1 truncate text-body text-ink-soft">{line}</p>}
       </div>
       {acts && <div className="flex flex-wrap items-center gap-2">{acts}</div>}
