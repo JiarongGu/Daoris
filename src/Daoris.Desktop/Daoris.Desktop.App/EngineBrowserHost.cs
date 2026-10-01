@@ -194,6 +194,8 @@ public sealed class EngineBrowserHost(string home) : IInAppBrowser
             Directory.CreateDirectory(profile);
             // Edge is a windowed program and opens no console either way; said anyway, because every
             // spawn the desktop makes says it (NoConsoleWindowTests), and a rule with exceptions is a list.
+            // Not the tools' environment (TOOLS5): Edge is the system's own program, at its fixed location, and
+            // starts none of the tools.
             var start = new ProcessStartInfo(executable) { UseShellExecute = false, CreateNoWindow = true };
             foreach (var argument in EdgeBrowser.Arguments(profile, port)) start.ArgumentList.Add(argument);
             Process.Start(start)?.Dispose();
