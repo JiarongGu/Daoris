@@ -579,12 +579,14 @@ test('a browser is told which tier answers search, and nothing of the intake (AG
  * transcript — none of which may leave the machine that produced them (D47 §4). Playwright holds
  * the NEGATIVE, over the shipped bundle, because the positive is only reachable from the desktop.
  */
-test('a browser has no Sessions, and no mode to switch (D55, D66)', async ({ page }) => {
+test('a browser has no Sessions and no Plugins, and no mode to switch (D55, D66, D119)', async ({ page }) => {
   await page.goto('/');
 
   // One navigation, and Sessions is not on it — absent rather than disabled.
   await expect(page.getByRole('group', { name: /mode/i })).toHaveCount(0);
   await expect(nav(page, 'Sessions')).toHaveCount(0);
+  // Nor Plugins (PLUGUI1b, D119 §3.7): a plugin is this machine's, so its view is shell-only, as Sessions is.
+  await expect(nav(page, 'Plugins')).toHaveCount(0);
   await expect(nav(page, 'Quests')).toBeVisible();
 
   // A browser that remembers Sessions still lands on Overview: the fallback is not cosmetic.
@@ -649,6 +651,8 @@ test('the palette offers a browser nothing that needs this machine (SURF9)', asy
 
   // Nothing that needs a shell is — not disabled, ABSENT.
   await expect(palette.getByRole('option', { name: /Sessions/ })).toHaveCount(0);
+  // Plugins is this machine's (D119 §3.7), so its palette row is not offered here.
+  await expect(palette.getByRole('option', { name: /Plugins/ })).toHaveCount(0);
   await expect(palette.getByRole('option', { name: /Start a session/ })).toHaveCount(0);
   await expect(palette.getByRole('option', { name: /Review what/ })).toHaveCount(0);
   // A window is the shell's to open, so neither of SURF8's is offered here.

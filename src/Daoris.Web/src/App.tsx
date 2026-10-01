@@ -59,6 +59,7 @@ import { AppMenu, AppMenuBar } from './work/AppMenu';
 import { store, stored } from './lib/stored';
 import { figure } from './format';
 import { HarnessRuns } from './harnessRuns';
+import { usePluginsView } from './plugins/PluginsView';
 
 /** The views are `commands.ts`'s one list (D66); the activity bar and the palette read the same. */
 type Tab = View;
@@ -88,9 +89,10 @@ const NAV = VIEWS.filter(({ view }) => view !== 'settings');
 
 /**
  * The views drawn with a list pane (D118 §2), each naming it in `layout.list.<view>` and
- * `layout.menu.list.<view>`. Sessions' first (FRAME1b); each view joins as its row moves it onto the frame.
+ * `layout.menu.list.<view>`. Sessions' first (FRAME1b), then Plugins, built on the frame (PLUGUI1b); each view
+ * joins as its row moves it onto the frame.
  */
-const LISTED: ReadonlySet<ListView> = new Set<ListView>(['sessions']);
+const LISTED: ReadonlySet<ListView> = new Set<ListView>(['sessions', 'plugins']);
 const isListed = (view: View): view is View & ListView => (LISTED as ReadonlySet<string>).has(view);
 
 /** A palette command that says it ran, into the machine log (LOG1b): by its id, never what was typed. */
@@ -213,8 +215,9 @@ export function App() {
   const linkOpener = useLinkOpener(notify);
 
   // Sessions does not exist in a browser (D55): no stream, no tree path, nothing honest to show. A
-  // remembered `sessions` where no shell answers falls back rather than rendering an empty view.
-  const view: Tab = tab === 'sessions' && !attached ? 'overview' : tab;
+  // remembered `sessions` where no shell answers falls back rather than rendering an empty view, and so does
+  // any shell-only view a door asked for: Plugins too, which are this machine's (D119 §3.7).
+  const view: Tab = !attached && VIEWS.some((entry) => entry.view === tab && entry.shellOnly) ? 'overview' : tab;
   onSessions.current = view === 'sessions';
 
   // What is used, and what never is (LOG1b): each view the person lands on, into the machine log — once
@@ -223,6 +226,16 @@ export function App() {
   useEffect(() => {
     if (!settling) logEvent('view.opened', { view });
   }, [view, settling]);
+
+  // The Plugins view (PLUGUI1b, D119): held on every view, so what its pages hold — a trial's report, an update's
+  // plan — stays while Daoris is open; it asks the driver for nothing until it is in front.
+  const plugins = usePluginsView({
+    active: view === 'plugins',
+    chosen: lists.pane('plugins').chosen,
+    onChoose: (item) => lists.choose('plugins', item),
+    notify,
+    onAsk: attached ? askSetup : undefined,
+  });
 
   // Whether the view in front has a list pane (D118 §3a), whose four doors — the strip's toggle, the View
   // menu's item, Ctrl+B and a press on its place — are absent where it has none, never disabled. A browser
@@ -387,6 +400,7 @@ export function App() {
     const action = menuAction(item);
     switch (action.kind) {
       case 'settings': openSettings(action.section, action.anchor); return;
+      case 'view': open(action.view); return;
       case 'scope': scope.setWorkspace(action.workspace); return;
       case 'add': open('projects', null, { drawer: 'add' }); return;
       // `daoris import <folder> --workspace <name>`'s screen door (D77): the drawer chooses the folder
@@ -489,9 +503,9 @@ export function App() {
    * Every view but Sessions, as it hands itself to the frame (D118 §5): its list pane where it has one, and
    * its main area, in a shell's frame beside the side bar and the panel, and in a browser's without them.
    * Each view joins the list pane as its row moves it onto the frame (FRAME1d–g); until then its page is its
-   * main area.
+   * main area. Plugins was built on the frame (PLUGUI1b), and hands its list and its page whole.
    */
-  const renderView = (): ViewLayout => ({
+  const renderView = (): ViewLayout => (view === 'plugins' ? plugins : {
     main: (
       // No cap: content follows the window (UX5 U59, the owner), as the session's centre does since U16. It
       // was 72rem, and a maximized window left every view a third empty. Prose keeps its own measure

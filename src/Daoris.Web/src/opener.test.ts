@@ -47,6 +47,15 @@ describe('the opener', () => {
     expect(opening('projects', null, { drawer: 'import' })).toEqual({ view: 'projects', drawer: 'import' });
   });
 
+  /** PLUGUI1b (D119 §3.1): a plugin by its id, and one of Daoris's own plugins as an offer, since the two may share an id. */
+  it('chooses the plugin or the offer a door names, in Plugins\' list', () => {
+    expect(opening('plugins', 'acme.gate')).toEqual({ view: 'plugins', chosen: { view: 'plugins', item: 'acme.gate' } });
+    expect(opening('plugins', 'offer:in-app-browser')).toEqual({
+      view: 'plugins', chosen: { view: 'plugins', item: 'offer:in-app-browser' },
+    });
+    expect(opening('plugins')).toEqual({ view: 'plugins' });
+  });
+
   it('keeps no chosen item for a view with no list', () => {
     expect(opening('map', 'engine')).toEqual({ view: 'map' });
     expect(opening('overview', 'abc123')).toEqual({ view: 'overview' });
