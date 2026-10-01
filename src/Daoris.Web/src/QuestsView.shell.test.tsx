@@ -3,8 +3,8 @@ import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient } from '@tanstack/react-query';
 
-// Quests in SHELL mode: a driven quest's stop, and the grant and retry the driver's holds offer in a
-// quest's drawer. Moved from `shell.test.tsx` with MOD3: tests follow their code.
+// Quests in SHELL mode: a driven quest's stop, and the grant and retry the driver's holds offer on a
+// quest's page (FRAME1d; a drawer until then). Moved from `shell.test.tsx` with MOD3: tests follow their code.
 
 const { invoke, notifyReady, eventHandlers } = vi.hoisted(() => ({
   invoke: vi.fn(),
@@ -23,7 +23,7 @@ vi.mock('@shenora/react', () => ({
 }));
 
 import { OverviewView } from './OverviewView';
-import { QuestsView } from './QuestsView';
+import { chooseRow, QuestsView } from './test/questsView';
 import { ShellSignals } from './ShellSignals';
 import { keys } from './queries';
 import { DRIVER_STATE, respond, show } from './test/shellHarness';
@@ -38,14 +38,14 @@ describe('a driven quest in the shell', () => {
     invoke.mockReset();
     notifyReady.mockClear();
     eventHandlers.clear();
+    window.localStorage.clear();
   });
 
   it('a running session offers stop, and stop names the session', async () => {
     show(<QuestsView notify={() => {}} />);
 
-    await userEvent.click(await screen.findByText('Expose a streaming budget'));
-    const dialog = await screen.findByRole('dialog');
-    await userEvent.click(within(dialog).getByRole('button', { name: 'Stop session' }));
+    const page = await chooseRow('Expose a streaming budget');
+    await userEvent.click(within(page).getByRole('button', { name: 'Stop session' }));
 
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'STOP_SESSION', {
       payload: { id: 's1a2b3c4' },
@@ -82,6 +82,7 @@ describe('trusting a folder the driver is holding (D73)', () => {
     vi.unstubAllGlobals();
     invoke.mockReset();
     eventHandlers.clear();
+    window.localStorage.clear();
   });
 
   const holding = (holds: unknown[] = [HOLD]) => {
@@ -102,17 +103,16 @@ describe('trusting a folder the driver is holding (D73)', () => {
     expect(client.getQueryData(keys.untrusted)).toEqual([]);
   });
 
-  it('the quest the driver holds offers the grant in its drawer, and writes it only on the press', async () => {
+  it('the quest the driver holds offers the grant on its page, and writes it only on the press', async () => {
     const notify = vi.fn();
     show(<QuestsView notify={notify} />, holding());
 
-    await userEvent.click(await screen.findByText('Expose a streaming budget'));
-    const dialog = await screen.findByRole('dialog');
-    await userEvent.click(within(dialog).getByRole('button', { name: 'Trust this folder…' }));
+    const page = await chooseRow('Expose a streaming budget');
+    await userEvent.click(within(page).getByRole('button', { name: 'Trust this folder…' }));
     expect(invoke).not.toHaveBeenCalledWith('DAORIS.DRIVER', 'TRUST_FOLDER', expect.anything());
 
-    expect(within(dialog).getByText(HOLD.trustFile)).toBeInTheDocument();
-    await userEvent.click(within(dialog).getByRole('button', { name: 'Trust this folder' }));
+    expect(within(page).getByText(HOLD.trustFile)).toBeInTheDocument();
+    await userEvent.click(within(page).getByRole('button', { name: 'Trust this folder' }));
 
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'TRUST_FOLDER', {
       payload: { folder: HOLD.folder, trustFile: HOLD.trustFile },
@@ -125,7 +125,7 @@ describe('trusting a folder the driver is holding (D73)', () => {
    * retry`). The page had the other half ready, and nothing rendered it. The retry is offered where
    * the parked quest's sentence is read, and nowhere a quest is not parked.
    */
-  it('a quest parked by its strikes offers the retry in its drawer, and retries on the press', async () => {
+  it('a quest parked by its strikes offers the retry on its page, and retries on the press', async () => {
     const notify = vi.fn();
     const client = holding([]);
     client.setQueryData(keys.considered, [{
@@ -134,10 +134,9 @@ describe('trusting a folder the driver is holding (D73)', () => {
     }]);
     show(<QuestsView notify={notify} />, client);
 
-    await userEvent.click(await screen.findByText('Expose a streaming budget'));
-    const dialog = await screen.findByRole('dialog');
-    expect(within(dialog).getByText(/3 sessions failed on this quest/)).toBeInTheDocument();
-    await userEvent.click(within(dialog).getByRole('button', { name: 'Try again' }));
+    const page = await chooseRow('Expose a streaming budget');
+    expect(within(page).getByText(/3 sessions failed on this quest/)).toBeInTheDocument();
+    await userEvent.click(within(page).getByRole('button', { name: 'Try again' }));
 
     expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'RETRY_QUEST', { payload: { quest: 'abc123' } });
     await waitFor(() => expect(notify).toHaveBeenCalledWith(expect.stringContaining('#abc123')));
@@ -150,17 +149,15 @@ describe('trusting a folder the driver is holding (D73)', () => {
     }]);
     show(<QuestsView notify={() => {}} />, client);
 
-    await userEvent.click(await screen.findByText('Expose a streaming budget'));
-    const dialog = await screen.findByRole('dialog');
-    expect(within(dialog).queryByRole('button', { name: 'Try again' })).toBeNull();
+    const page = await chooseRow('Expose a streaming budget');
+    expect(within(page).queryByRole('button', { name: 'Try again' })).toBeNull();
   });
 
   it('a quest nothing holds for trust offers no grant', async () => {
     show(<QuestsView notify={() => {}} />, holding([]));
 
-    await userEvent.click(await screen.findByText('Expose a streaming budget'));
-    const dialog = await screen.findByRole('dialog');
-    expect(within(dialog).queryByRole('button', { name: 'Trust this folder…' })).toBeNull();
+    const page = await chooseRow('Expose a streaming budget');
+    expect(within(page).queryByRole('button', { name: 'Trust this folder…' })).toBeNull();
   });
 
   it('a held folder waits in *What needs you*, and its row opens the grant', async () => {

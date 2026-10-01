@@ -66,7 +66,7 @@ describe('a session parked at a checkpoint', () => {
   });
 
   /**
-   * The same two-step the quest drawer uses: the note is the only part whoever reads the record
+   * The same two-step a quest's page uses: the note is the only part whoever reads the record
    * later can act on, and a decline that slipped out on one click would routinely carry nothing.
    */
   it('asks for a reason before declining, and will not decline without one', async () => {

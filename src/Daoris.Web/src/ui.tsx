@@ -500,31 +500,6 @@ export function Card({ id, warn, accent, className, children }: {
 }
 
 /**
- * A record's card in a list: the whole card is the door to its record, by pointer or by Enter and
- * Space, and a closed record is dimmed. The quest and ask lists each wrote this (REV3 CLEAN1).
- */
-export function RecordCard({ closed = false, onOpen, children }: {
-  closed?: boolean; onOpen: () => void; children: ReactNode;
-}) {
-  return (
-    <Card className={cn(
-      'mb-3.5 cursor-pointer transition-colors duration-(--speed) hover:border-line-strong hover:border-l-accent',
-      closed && 'opacity-75',
-    )}>
-      <div
-        role="button" tabIndex={0}
-        onClick={onOpen}
-        onKeyDown={(event) => {
-          if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); onOpen(); }
-        }}
-      >
-        {children}
-      </div>
-    </Card>
-  );
-}
-
-/**
  * Something waiting on the person — a parked session, a parked intake, a folder to trust. The one
  * frame each such card wears: the waiting tone on its left edge and on its heading. Four cards
  * wrote it out (REV3 CLEAN1), so a change of that tone is now one change.

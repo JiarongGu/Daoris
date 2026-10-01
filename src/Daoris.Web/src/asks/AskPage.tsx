@@ -3,15 +3,20 @@ import { useTranslation } from 'react-i18next';
 import type { Ask, Session } from '../api';
 import { ago, sessionTool, size, stamp } from '../format';
 import { ExternalLink } from '../links';
-import { Button, Drawer, Icon, Pill, SectionTitle, SelectField, SESSION_TONE } from '../ui';
-import { ASK_TONE, firstLine, tierWords } from './AskCard';
+import { Button, Icon, Pill, SelectField, SESSION_TONE } from '../ui';
+import { PageHead, PageSection, ViewMain } from '../work/ViewMain';
+import { ASK_TONE, firstLine, tierWords } from './AskRow';
 
 /**
- * An ask's record (INT4c) — the screen twin of `daoris-driver ask`'s answer, and its two verbs: what
- * was asked and with what, which tier answered, what it proposed, the quests it became, *publish
- * to…* and *close* (D50: `ask --publish <id> --to` and `ask --close <id> --reason` are the terminal's).
+ * An ask's page (INT4c; FRAME1d, D118 §3d): the record in Quests' main area, the screen twin of
+ * `daoris-driver ask`'s answer — what was asked and with what, which tier answered, what it proposed, the
+ * quests it became — with *Close ask* and *Delete…* in its header and *publish to…* where the proposal is
+ * read (D50: `ask --publish <id> --to` and `ask --close <id> --reason` are the terminal's).
  *
  * @remarks
+ * **A record is the main area** (D118 §3d): it was a drawer, which since DOCK1a lay over the side bar and
+ * the panel that hold Ask Daoris and the attended session. The composer stays a drawer, since it is a form.
+ *
  * **A proposal is a person's to accept** (INT4a): the declarations tier publishes nothing, so each
  * repository it proposed is offered as a publish, and any other adopter in the ask's circle can be
  * chosen instead. The service judges every publish; its sentence reaches the person verbatim, through
@@ -21,19 +26,19 @@ import { ASK_TONE, firstLine, tierWords } from './AskCard';
  * it, if one did. On the desktop that session is a door into Sessions, where its question is on its
  * transcript. A browser has no Sessions, so there it is named and nothing pretends to open it.
  *
- * **A closed ask becomes nothing more** — its reason stays and no verb is offered but *delete*.
+ * **A closed ask becomes nothing more** — its reason stays and no act is offered but *delete*.
  *
  * **An ask made by mistake can be deleted** (D95), with every quest asked by it — offered only where
- * the service says it may go (`deletable`), and asked once, because nothing gives the record back.
- * `daoris-driver ask --delete <id>` is the terminal's twin.
+ * the service says it may go (`deletable`), and asked once under the header, because nothing gives the
+ * record back. `daoris-driver ask --delete <id>` is the terminal's twin.
  *
  * The ask's files are named and never located: the host answers their path to this machine only, and a
  * page does not show a machine path (D47 §4, D65 §2).
  *
  * Props only, no hook from the query layer or the shell (components §2).
  */
-export function AskRecord({
-  ask, receivers, questTitles, intake = null, onAttend, busy = false, onPublish, onClose, onDelete, onOpenQuest, onDismiss,
+export function AskPage({
+  ask, receivers, questTitles, intake = null, onAttend, busy = false, onPublish, onClose, onDelete, onOpenQuest,
 }: {
   ask: Ask;
   /** Whom the ask can be published to: the repositories the host says can be asked, in its circle (D70). */
@@ -50,7 +55,6 @@ export function AskRecord({
   /** Delete the ask with every quest asked by it (D95) — absent where there is no door to do it. */
   onDelete?: () => void;
   onOpenQuest: (id: string) => void;
-  onDismiss: () => void;
 }) {
   const { t } = useTranslation();
   const [another, setAnother] = useState('');
@@ -61,63 +65,71 @@ export function AskRecord({
   const deletable = ask.deletable === true && onDelete !== undefined;
   const rest = ask.sentence.split('\n').slice(1).join('\n').trim();
 
-  return (
-    <Drawer
+  // The acts in the header (D118 §3b); while one asks under it, its first press is not offered twice.
+  const acts = (live || deletable) && (
+    <>
+      {live && !closing && (
+        <Button disabled={busy} onClick={() => { setClosing(true); setDeleting(false); }}>{t('asks.record.close')}</Button>
+      )}
+      {deletable && !deleting && (
+        <Button variant="ghost" disabled={busy} onClick={() => { setDeleting(true); setClosing(false); }}>
+          <Icon name="remove" size={13} />
+          {t('asks.record.delete')}
+        </Button>
+      )}
+    </>
+  );
+
+  const head = (
+    <PageHead
       title={firstLine(ask.sentence)}
-      onClose={onDismiss}
-      meta={
-        <>
-          <Pill tone={ASK_TONE[ask.state]}>{t(`asks.state.${ask.state}`)}</Pill>
-          <span className="font-mono text-meta text-ink-faint">#{ask.id}</span>
-        </>
-      }
-      footer={
-        deleting && deletable ? (
-          /* 🔴 Nothing gives a deleted record back (D95): the first press only asks, and says the quests
-             go too, the way removing an account says what it deletes. */
-          <div role="group" aria-label={t('asks.record.deleteTitle')} className="flex flex-wrap items-center gap-2">
-            <span className="min-w-0 flex-1 basis-64 text-small text-ink-soft">{t('asks.record.deleteConfirm')}</span>
-            <Button variant="danger" disabled={busy} onClick={() => { setDeleting(false); onDelete!(); }}>
-              {t('asks.record.deleteMeanIt')}
-            </Button>
-            <Button variant="ghost" disabled={busy} onClick={() => setDeleting(false)}>{t('common.cancel')}</Button>
-          </div>
-        ) : live && closing ? (
-          <div className="grid gap-2">
-            <textarea
-              aria-label={t('asks.record.closeWhy')}
-              placeholder={t('asks.record.closeWhy')}
-              rows={2} value={reason}
-              onChange={(e) => setReason(e.target.value)}
-              className="resize-y rounded-control border border-line-strong bg-raised px-2.5 py-1.5 text-body text-ink"
-            />
-            <div className="flex flex-wrap gap-2">
-              <Button variant="danger" disabled={busy || !reason.trim()} onClick={() => onClose(reason.trim())}>
-                {t('asks.record.closeConfirm')}
-              </Button>
-              <Button variant="ghost" disabled={busy} onClick={() => { setClosing(false); setReason(''); }}>
-                {t('common.cancel')}
-              </Button>
-            </div>
-          </div>
-        ) : (live || deletable) && (
+      pills={<Pill tone={ASK_TONE[ask.state]}>{t(`asks.state.${ask.state}`)}</Pill>}
+      id={`#${ask.id}`}
+      acts={acts || undefined}
+    />
+  );
+
+  return (
+    <ViewMain header={head}>
+      {deleting && deletable && (
+        /* 🔴 Nothing gives a deleted record back (D95): the first press only asks, and says the quests
+           go too, the way removing an account says what it deletes. */
+        <div
+          role="group"
+          aria-label={t('asks.record.deleteTitle')}
+          className="mb-4 flex flex-wrap items-center gap-2 rounded-control border border-line bg-sunken px-2.5 py-2"
+        >
+          <span className="min-w-0 flex-1 basis-64 text-small text-ink-soft">{t('asks.record.deleteConfirm')}</span>
+          <Button variant="danger" disabled={busy} onClick={() => { setDeleting(false); onDelete!(); }}>
+            {t('asks.record.deleteMeanIt')}
+          </Button>
+          <Button variant="ghost" disabled={busy} onClick={() => setDeleting(false)}>{t('common.cancel')}</Button>
+        </div>
+      )}
+
+      {live && closing && (
+        <div className="mb-4 grid max-w-prose gap-2 rounded-control border border-line bg-sunken px-2.5 py-2">
+          <textarea
+            aria-label={t('asks.record.closeWhy')}
+            placeholder={t('asks.record.closeWhy')}
+            rows={2} value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            className="resize-y rounded-control border border-line-strong bg-raised px-2.5 py-1.5 text-body text-ink"
+          />
           <div className="flex flex-wrap gap-2">
-            {live && (
-              <Button variant="ghost" disabled={busy} onClick={() => setClosing(true)}>{t('asks.record.close')}</Button>
-            )}
-            {deletable && (
-              <Button variant="ghost" disabled={busy} onClick={() => setDeleting(true)}>
-                <Icon name="remove" size={13} />
-                {t('asks.record.delete')}
-              </Button>
-            )}
+            <Button variant="danger" disabled={busy || !reason.trim()} onClick={() => onClose(reason.trim())}>
+              {t('asks.record.closeConfirm')}
+            </Button>
+            <Button variant="ghost" disabled={busy} onClick={() => { setClosing(false); setReason(''); }}>
+              {t('common.cancel')}
+            </Button>
           </div>
-        )
-      }
-    >
-      {/* The first line is the drawer's title, so the body is what follows it — a one-line ask was
-          its title and then its body, word for word (POLISH4). The title wraps, so nothing is lost. */}
-      {rest && <p className="m-0 mb-4 whitespace-pre-wrap text-body leading-relaxed">{rest}</p>}
+        </div>
+      )}
+
+      {/* The first line is the page's title, so the body is what follows it — a one-line ask was its title
+          and then its body, word for word (POLISH4). The title wraps, so nothing is lost. */}
+      {rest && <p className="m-0 mb-4 max-w-prose whitespace-pre-wrap text-body leading-relaxed">{rest}</p>}
 
       <dl className="m-0 mb-4 grid grid-cols-[max-content_1fr] gap-x-4 gap-y-1.5 text-body">
         <dt className="text-ink-faint">{t('asks.record.circle')}</dt><dd className="m-0">{ask.workspace}</dd>
@@ -145,8 +157,7 @@ export function AskRecord({
         /* Who answered (INT4d): the session the intake ran as — its state, then its tool, and its note,
            verbatim like every driver sentence. A door into Sessions only where Sessions exists, and
            only onto a record the page holds; one it does not is named by its id. */
-        <section aria-label={t('asks.record.intake')} className="mb-4">
-          <SectionTitle>{t('asks.record.intake')}</SectionTitle>
+        <PageSection title={t('asks.record.intake')}>
           {intake ? (
             <>
               <p className="m-0 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
@@ -164,17 +175,16 @@ export function AskRecord({
                 )}
                 <span className="font-mono text-meta text-ink-faint">#{intake.id.slice(0, 6)} · {ago(intake.updated)}</span>
               </p>
-              {intake.note && <p className="mt-1.5 mb-0 text-body text-ink-soft">{intake.note}</p>}
+              {intake.note && <p className="mt-1.5 mb-0 max-w-prose text-body text-ink-soft">{intake.note}</p>}
             </>
           ) : (
             <span className="font-mono text-meta text-ink-soft">#{ask.intake.slice(0, 6)}</span>
           )}
-        </section>
+        </PageSection>
       )}
 
       {ask.quests.length > 0 && (
-        <section aria-label={t('asks.record.quests')} className="mb-4">
-          <SectionTitle>{t('asks.record.quests')}</SectionTitle>
+        <PageSection title={t('asks.record.quests')}>
           <ul className="m-0 grid list-none gap-1 p-0">
             {ask.quests.map((id) => (
               <li key={id}>
@@ -195,16 +205,15 @@ export function AskRecord({
               </li>
             ))}
           </ul>
-        </section>
+        </PageSection>
       )}
 
       {live && (
-        <section aria-label={t('asks.record.proposal')} className="mb-4">
-          <SectionTitle>{t('asks.record.proposal')}</SectionTitle>
+        <PageSection title={t('asks.record.proposal')}>
           {ask.proposal.length === 0 ? (
-            <p className="m-0 mb-2 text-body text-ink-soft">{t('asks.record.noProposal')}</p>
+            <p className="m-0 mb-2 max-w-prose text-body text-ink-soft">{t('asks.record.noProposal')}</p>
           ) : (
-            <ul className="m-0 mb-3 grid list-none gap-2 p-0">
+            <ul className="m-0 mb-3 grid max-w-3xl list-none gap-2 p-0">
               {ask.proposal.map((match) => (
                 <li key={match.repository} className="flex items-center justify-between gap-3">
                   <span className="grid min-w-0 gap-0.5">
@@ -232,12 +241,11 @@ export function AskRecord({
             />
             <Button disabled={busy || !another} onClick={() => onPublish(another)}>{t('asks.record.publish')}</Button>
           </div>
-        </section>
+        </PageSection>
       )}
 
       {ask.links.length > 0 && (
-        <section className="mb-4">
-          <SectionTitle>{t('asks.record.links')}</SectionTitle>
+        <PageSection title={t('asks.record.links')}>
           <ul className="m-0 grid list-none gap-1 p-0">
             {ask.links.map((link) => (
               <li key={link} className="min-w-0">
@@ -252,12 +260,11 @@ export function AskRecord({
               </li>
             ))}
           </ul>
-        </section>
+        </PageSection>
       )}
 
       {ask.attachments.length > 0 && (
-        <section>
-          <SectionTitle>{t('asks.record.files')}</SectionTitle>
+        <PageSection title={t('asks.record.files')}>
           <ul className="m-0 grid list-none gap-1 p-0">
             {ask.attachments.map((file) => (
               <li key={file.sha256} className="inline-flex min-w-0 flex-wrap items-center gap-1.5 text-body text-ink-soft">
@@ -267,8 +274,8 @@ export function AskRecord({
               </li>
             ))}
           </ul>
-        </section>
+        </PageSection>
       )}
-    </Drawer>
+    </ViewMain>
   );
 }

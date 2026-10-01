@@ -4,10 +4,13 @@ import { fireEvent, render, screen, waitFor, within } from '@testing-library/rea
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Tooltip from '@radix-ui/react-tooltip';
-import { QuestsView } from './QuestsView';
+import {
+  chooseRow, makeFromList, openFilters, QuestsView, questList, questMain, questPage,
+} from './test/questsView';
 
-// The view over a stubbed service — the shapes the real endpoints return, without a host. The
-// Playwright loop owns the real end-to-end; this owns the view's own logic at millisecond speed.
+// The view over a stubbed service, on the frame (FRAME1d, D118): its list pane holds the asks and the quests, its
+// main area the chosen record, and the composers are drawers. The shapes are what the real endpoints return, without
+// a host. The Playwright loop owns the real end-to-end; this owns the view's own logic at millisecond speed.
 
 // What a quest carries (D65 §2): a link, a file kept on this machine (it has a path — which the
 // page must never SHOW), and a file named on the record whose bytes stayed where it was published.
@@ -31,7 +34,7 @@ const REGISTRY = [
   { repository: 'game', adopted: true, registered: true, summary: 'the game', owns: [], accepts: [], packs: [], entries: 1 },
 ];
 
-// A driven session's record, attached to the quest above (D46): active, so the card wears its state.
+// A driven session's record, attached to the quest above (D46): active, so the row wears its state.
 // TWO records for the one quest, deliberately — a retry is its own record, and the view must show
 // where things stand now (the later one), not the failed first attempt.
 const SESSIONS = [{
@@ -58,20 +61,21 @@ function respond(url: string): Response {
  * The view as the app holds it: a draft handed in is an EVENT, consumed through `onOpened` — so the
  * holder clears it, exactly as `App` does, or the composer would reopen on every render.
  */
-function Held({ opening }: { opening: { from?: string; to?: string } | null }) {
+function Held({ opening, notify }: { opening: { from?: string; to?: string } | null; notify: () => void }) {
   const [pending, setPending] = useState(opening);
-  return <QuestsView notify={() => {}} opening={pending} onOpened={() => setPending(null)} />;
+  return <QuestsView notify={notify} opening={pending} onOpened={() => setPending(null)} />;
 }
 
-function view(opening: { from?: string; to?: string } | null = null) {
+function view(opening: { from?: string; to?: string } | null = null, notify = vi.fn()) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return render(
+  render(
     <QueryClientProvider client={client}>
       <Tooltip.Provider>
-        <Held opening={opening} />
+        <Held opening={opening} notify={notify} />
       </Tooltip.Provider>
     </QueryClientProvider>,
   );
+  return notify;
 }
 
 /** The body the last publish sent — what the local host would have been asked to keep. */
@@ -91,7 +95,11 @@ describe('QuestsView', () => {
       return respond(String(input));
     }));
   });
-  afterEach(() => vi.unstubAllGlobals());
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    // What the list chose and how it was filtered is remembered per viewer (D118 §3f), so each test starts afresh.
+    window.localStorage.clear();
+  });
 
   /**
    * 🔴 SURF6b's door — "send it back as a quest" — hands the composer a draft, and consuming it by
@@ -106,6 +114,102 @@ describe('QuestsView', () => {
     fireEvent.change(within(dialog).getByLabelText('What is wanted, in one line'), { target: { value: 'An ask' } });
     fireEvent.change(within(dialog).getByLabelText('Why, and the evidence'), { target: { value: 'Its reason.' } });
     expect(within(dialog).getByRole('button', { name: 'Publish quest' })).toBeEnabled();
+  });
+
+  // ——— The frame (FRAME1d, D118 §2): a list pane and a main area; a record is the main area, a form a drawer.
+
+  it('says how to choose with nothing chosen, and offers the ＋\'s two kinds, Ask first', async () => {
+    view();
+    expect(await within(questList()).findByText('Expose a streaming budget')).toBeInTheDocument();
+
+    const main = questMain();
+    expect(within(main).getByText('Choose a quest or an ask')).toBeInTheDocument();
+    expect(within(main).getAllByRole('button').map((button) => button.textContent)).toEqual(['Ask', 'New quest']);
+    await userEvent.click(within(main).getByRole('button', { name: 'New quest' }));
+    expect(await screen.findByRole('dialog', { name: 'New quest' })).toBeInTheDocument();
+  });
+
+  it('opens a chosen quest on the page beside the list, with no drawer, and remembers the choice', async () => {
+    view();
+    const page = await chooseRow('Expose a streaming budget');
+
+    expect(within(page).getByText('#abc123')).toBeInTheDocument();
+    expect(screen.queryByRole('dialog')).toBeNull();
+    // The list is still there beside it, its row chosen.
+    expect(within(questList()).getByRole('button', { name: /Expose a streaming budget/ })).toHaveAttribute('aria-current', 'true');
+    expect(window.localStorage.getItem('daoris.list.quests.chosen')).toBe('abc123');
+  });
+
+  it('offers Ask first, then New quest, from the list\'s ＋, each opening its composer in a drawer', async () => {
+    view();
+    await within(questList()).findByText('Expose a streaming budget');
+
+    await makeFromList('Ask');
+    expect(await screen.findByRole('dialog', { name: 'Ask the workspace' })).toBeInTheDocument();
+    await userEvent.keyboard('{Escape}');
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+
+    await makeFromList('New quest');
+    expect(await screen.findByRole('dialog', { name: 'New quest' })).toBeInTheDocument();
+  });
+
+  it('says a chosen quest that is no longer here has gone, rather than showing nothing', async () => {
+    window.localStorage.setItem('daoris.list.quests.chosen', 'f1f1f1');
+    view();
+
+    expect(await within(questMain()).findByText('This quest is no longer here')).toBeInTheDocument();
+  });
+
+  // ——— The list's filters (D118 §2, §3f): in its ⋯, and remembered.
+
+  it('filters the quests to one receiver from the ⋯, says so at the list\'s head, and remembers it', async () => {
+    const asked: string[] = [];
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.startsWith('/api/quests')) asked.push(url);
+      return respond(url);
+    }));
+    view();
+    await within(questList()).findByText('Expose a streaming budget');
+
+    const user = await openFilters();
+    expect(screen.getByRole('menuitemradio', { name: 'Everyone' })).toHaveAttribute('aria-checked', 'true');
+    await user.click(screen.getByRole('menuitemradio', { name: 'engine' }));
+
+    await waitFor(() => expect(asked).toContain('/api/quests?includeClosed=false&repository=engine'));
+    expect(within(questList()).getByText('Showing quests to engine')).toBeInTheDocument();
+    expect(JSON.parse(window.localStorage.getItem('daoris.list.quests.filters')!)).toEqual({ to: 'engine' });
+  });
+
+  it('includes closed quests from the ⋯ in a group of their own, and remembers it', async () => {
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.startsWith('/api/quests')) {
+        return Response.json(url.includes('includeClosed=true') ? [...QUESTS, { ...QUESTS[0], id: 'd0d0d0', title: 'An old one', status: 'Done' }] : QUESTS);
+      }
+      return respond(url);
+    }));
+    view();
+    await within(questList()).findByText('Expose a streaming budget');
+    expect(within(questList()).queryByText('An old one')).toBeNull();
+
+    const user = await openFilters();
+    await user.click(screen.getByRole('menuitemcheckbox', { name: 'Include closed' }));
+
+    expect(await within(questList()).findByText('Closed (1)')).toBeInTheDocument();
+    expect(within(questList()).getByText('An old one')).toBeInTheDocument();
+    expect(JSON.parse(window.localStorage.getItem('daoris.list.quests.filters')!)).toEqual({ closed: true });
+  });
+
+  it('reads the filters it remembered at the next start', async () => {
+    window.localStorage.setItem('daoris.list.quests.filters', JSON.stringify({ to: 'game', closed: true }));
+    view();
+
+    expect(await within(questList()).findByText('Showing quests to game')).toBeInTheDocument();
+    const user = await openFilters();
+    expect(screen.getByRole('menuitemradio', { name: 'game' })).toHaveAttribute('aria-checked', 'true');
+    expect(screen.getByRole('menuitemcheckbox', { name: 'Include closed' })).toHaveAttribute('aria-checked', 'true');
+    await user.keyboard('{Escape}');
   });
 
   // ——— A quest's lanes (D115 §2.2, DEV4): `to` stays the repository, and its lanes are shown beside it.
@@ -128,26 +232,24 @@ describe('QuestsView', () => {
     }));
   }
 
-  it('shows the lanes a quest addresses beside its repository, on the card and in the drawer', async () => {
+  it('shows the lanes a quest addresses beside its repository, on its row and on its page', async () => {
     stubLaned();
     view();
 
-    expect(await screen.findByText('lanes assets + core')).toBeInTheDocument();
-    await userEvent.click(screen.getByText('Expose a streaming budget'));
-    const dialog = await screen.findByRole('dialog');
+    expect(await within(questList()).findByText('lanes assets + core')).toBeInTheDocument();
+    const page = await chooseRow('Expose a streaming budget');
     // A field's name is sentence case (the glossary's `field` kind, NAME1a).
-    expect(within(dialog).getByText('Lanes')).toBeInTheDocument();
+    expect(within(page).getByText('Lanes')).toBeInTheDocument();
     // Named as the repository declares them, where its registration says.
-    expect(within(dialog).getByText('assets (Assets), core (Core)')).toBeInTheDocument();
+    expect(within(page).getByText('assets (Assets), core (Core)')).toBeInTheDocument();
   });
 
   it('a quest to the whole repository shows no lanes', async () => {
     view();
-    await userEvent.click(await screen.findByText('Expose a streaming budget'));
-    const dialog = await screen.findByRole('dialog');
+    const page = await chooseRow('Expose a streaming budget');
 
     expect(screen.queryByText(/^lanes? /)).toBeNull();
-    expect(within(dialog).queryByText('Lanes')).toBeNull();
+    expect(within(page).queryByText('Lanes')).toBeNull();
   });
 
   it('says a quest\'s lanes in 中文, the lanes\' own names left as they are', async () => {
@@ -156,9 +258,9 @@ describe('QuestsView', () => {
     try {
       stubLaned();
       view();
-      expect(await screen.findByText('泳道 assets + core')).toBeInTheDocument();
-      await userEvent.click(screen.getByText('Expose a streaming budget'));
-      expect(within(await screen.findByRole('dialog')).getByText('泳道')).toBeInTheDocument();
+      expect(await within(questList()).findByText('泳道 assets + core')).toBeInTheDocument();
+      const page = await chooseRow('Expose a streaming budget');
+      expect(within(page).getByText('泳道')).toBeInTheDocument();
     } finally {
       await i18n.changeLanguage('en');
     }
@@ -166,7 +268,7 @@ describe('QuestsView', () => {
 
   // ——— A conflict (D68 §5, SYNC6b): kept on the quest for a person, and reachable from the status bar.
 
-  it('the drawer shows each move that lost the race, in its own words', async () => {
+  it('the page shows each move that lost the race, in its own words', async () => {
     const conflicted = [{
       ...QUESTS[0], status: 'Taken',
       conflicts: [{ machine: 'b7f2c9d1', attempted: 'Taken', note: 'machine b, offline', at: '2026-09-02T00:00:00Z' }],
@@ -174,9 +276,7 @@ describe('QuestsView', () => {
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) =>
       String(input).startsWith('/api/quests') ? Response.json(conflicted) : respond(String(input))));
     view();
-    await userEvent.click(await screen.findByText('Expose a streaming budget'));
-    const dialog = await screen.findByRole('dialog');
-    const conflicts = within(dialog).getByRole('region', { name: 'Conflicts' });
+    const conflicts = within(await chooseRow('Expose a streaming budget')).getByRole('region', { name: 'Conflicts' });
 
     expect(within(conflicts).getByText(/Machine b7f2c9d1 tried to mark it taken/)).toBeInTheDocument();
     expect(within(conflicts).getByText('machine b, offline')).toBeInTheDocument();
@@ -193,7 +293,6 @@ describe('QuestsView', () => {
       conflicts: [{ machine: 'b7f2c9d1', sequence: 12, attempted: 'Taken', note: 'machine b, offline', at: '2026-09-02T00:00:00Z' }],
     }];
     let dismissed: unknown = null;
-    const notify = vi.fn();
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
       const url = String(input);
       if (init?.method === 'POST' && url === '/api/quests/abc123/conflicts/dismiss') {
@@ -205,20 +304,16 @@ describe('QuestsView', () => {
       }
       return url.startsWith('/api/quests') ? Response.json(conflicted) : respond(url);
     }));
-    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-    render(
-      <QueryClientProvider client={client}>
-        <Tooltip.Provider><QuestsView notify={notify} /></Tooltip.Provider>
-      </QueryClientProvider>,
-    );
-    await userEvent.click(await screen.findByText('Expose a streaming budget'));
-    const conflicts = within(await screen.findByRole('dialog')).getByRole('region', { name: 'Conflicts' });
+    const notify = view();
+    const conflicts = within(await chooseRow('Expose a streaming budget')).getByRole('region', { name: 'Conflicts' });
 
     await userEvent.click(within(conflicts).getByRole('button', { name: /dismiss/i }));
 
     await waitFor(() => expect(dismissed).toEqual({ machine: 'b7f2c9d1', sequence: 12 }));
     await waitFor(() => expect(notify).toHaveBeenCalledWith(
       'Dismissed one conflict on quest `#abc123`; every machine drops it on its next sync.'));
+    // The page shows the quest as the answer left it, before the list catches up.
+    await waitFor(() => expect(within(questMain()).queryByRole('region', { name: 'Conflicts' })).toBeNull());
   });
 
   // ——— Deleting a quest made by mistake (QUEST1, D95): offered only where the service says it may go,
@@ -240,32 +335,20 @@ describe('QuestsView', () => {
       }));
     }
 
-    function held(notify = vi.fn()) {
-      const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-      render(
-        <QueryClientProvider client={client}>
-          <Tooltip.Provider><QuestsView notify={notify} /></Tooltip.Provider>
-        </QueryClientProvider>,
-      );
-      return notify;
-    }
-
     it('offers no delete on a quest the service does not say may go', async () => {
       view();
-      await userEvent.click(await screen.findByText('Expose a streaming budget'));
-      const dialog = await screen.findByRole('dialog');
+      const page = await chooseRow('Expose a streaming budget');
 
-      expect(within(dialog).queryByRole('button', { name: 'Delete…' })).toBeNull();
+      expect(within(page).queryByRole('button', { name: 'Delete…' })).toBeNull();
     });
 
-    it('asks once, then deletes, and says what the service answered, verbatim', async () => {
+    it('asks once under the header, then deletes, and says what the service answered, verbatim', async () => {
       stub(() => Response.json({ id: 'abc123', message: 'Deleted quest `#abc123` — it never left this machine, so nothing else holds a copy.' }));
-      const notify = held();
-      await userEvent.click(await screen.findByText('Expose a streaming budget'));
-      const dialog = await screen.findByRole('dialog');
+      const notify = view();
+      const page = await chooseRow('Expose a streaming budget');
 
-      await userEvent.click(within(dialog).getByRole('button', { name: 'Delete…' }));
-      const confirm = within(dialog).getByRole('group', { name: 'delete this quest' });
+      await userEvent.click(within(page).getByRole('button', { name: 'Delete…' }));
+      const confirm = within(page).getByRole('group', { name: 'delete this quest' });
       expect(within(confirm).getByText(/cannot be undone/)).toBeInTheDocument();
       expect(deleted).toEqual([]);
 
@@ -274,58 +357,66 @@ describe('QuestsView', () => {
       await waitFor(() => expect(deleted).toEqual(['/api/quests/abc123']));
       await waitFor(() => expect(notify).toHaveBeenCalledWith(
         'Deleted quest `#abc123` — it never left this machine, so nothing else holds a copy.'));
-      await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+      // Gone, so the list chooses nothing, and the main area says how to choose.
+      expect(await within(questMain()).findByText('Choose a quest or an ask')).toBeInTheDocument();
+      expect(window.localStorage.getItem('daoris.list.quests.chosen')).toBeNull();
     });
 
-    it('a refusal reaches the person in the service\'s words, and the quest stays open in the drawer', async () => {
+    it('a refusal reaches the person in the service\'s words, and the quest stays on its page', async () => {
       const refusal = 'Quest `#abc123` is open, but session `s1a2b3c4` was started for it and its record names the quest, so it stays. Decline it instead, with the reason, and the asker hears why.';
       stub(() => Response.json({ error: refusal }, { status: 409 }));
-      const notify = held();
-      await userEvent.click(await screen.findByText('Expose a streaming budget'));
-      const dialog = await screen.findByRole('dialog');
+      const notify = view();
+      const page = await chooseRow('Expose a streaming budget');
 
-      await userEvent.click(within(dialog).getByRole('button', { name: 'Delete…' }));
-      await userEvent.click(within(dialog).getByRole('button', { name: 'Delete quest' }));
+      await userEvent.click(within(page).getByRole('button', { name: 'Delete…' }));
+      await userEvent.click(within(page).getByRole('button', { name: 'Delete quest' }));
 
       await waitFor(() => expect(notify).toHaveBeenCalledWith(refusal, 'error'));
-      expect(screen.getByRole('dialog')).toBeInTheDocument();
+      expect(screen.getByRole('heading', { level: 1, name: 'Expose a streaming budget' })).toBeInTheDocument();
     });
 
     it('never mind leaves the quest where it was, and asks nothing of the service', async () => {
       stub(() => Response.json({ id: 'abc123', message: 'Deleted.' }));
-      held();
-      await userEvent.click(await screen.findByText('Expose a streaming budget'));
-      const dialog = await screen.findByRole('dialog');
+      view();
+      const page = await chooseRow('Expose a streaming budget');
 
-      await userEvent.click(within(dialog).getByRole('button', { name: 'Delete…' }));
-      await userEvent.click(within(dialog).getByRole('button', { name: 'Never mind' }));
+      await userEvent.click(within(page).getByRole('button', { name: 'Delete…' }));
+      await userEvent.click(within(page).getByRole('button', { name: 'Never mind' }));
 
-      expect(within(dialog).queryByRole('group', { name: 'delete this quest' })).toBeNull();
-      expect(within(dialog).getByRole('button', { name: 'Delete…' })).toBeInTheDocument();
+      expect(within(page).queryByRole('group', { name: 'delete this quest' })).toBeNull();
+      expect(within(page).getByRole('button', { name: 'Delete…' })).toBeInTheDocument();
       expect(deleted).toEqual([]);
     });
   });
 
-  /** The sync item's conflict list names a quest; Quests opens it, and the holder is told, once. */
-  it('a quest a door names opens in the drawer, once', async () => {
-    const onFocused = vi.fn();
-    function Focused() {
-      const [pending, setPending] = useState<string | null>('abc123');
-      return <QuestsView notify={() => {}} focus={pending} onFocused={() => { onFocused(); setPending(null); }} />;
-    }
-    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-    render(
-      <QueryClientProvider client={client}>
-        <Tooltip.Provider><Focused /></Tooltip.Provider>
-      </QueryClientProvider>,
-    );
+  /** The sync item's conflict list names a quest through the opener; Quests' list has it chosen, and its page opens. */
+  it('a quest a door names opens on the page', async () => {
+    window.localStorage.setItem('daoris.list.quests.chosen', 'abc123');
+    view();
 
-    const dialog = await screen.findByRole('dialog');
-    expect(within(dialog).getByText('#abc123')).toBeInTheDocument();
-    expect(onFocused).toHaveBeenCalledTimes(1);
+    const page = await questPage('Expose a streaming budget');
+    expect(within(page).getByText('#abc123')).toBeInTheDocument();
   });
 
-  // ——— Asks (INT4c): the screen twin of `daoris-driver ask`, at the head of the view that holds what
+  /** A record the list leaves out is still a record: a closed quest a door names opens on its page all the same. */
+  it('opens a closed quest a door names, though the list leaves closed quests out', async () => {
+    window.localStorage.setItem('daoris.list.quests.chosen', 'd0d0d0');
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.startsWith('/api/quests')) {
+        return Response.json(url.includes('includeClosed=true') ? [...QUESTS, { ...QUESTS[0], id: 'd0d0d0', title: 'An old one', status: 'Done' }] : QUESTS);
+      }
+      return respond(url);
+    }));
+    view();
+
+    const page = await questPage('An old one');
+    const header = within(page).getByRole('heading', { level: 1 }).closest('header')!;
+    expect(within(header).getByText('done')).toBeInTheDocument();
+    expect(within(questList()).queryByText('An old one')).toBeNull();
+  });
+
+  // ——— Asks (INT4c): the screen twin of `daoris-driver ask`, at the head of the list that holds what
   // they become. The family here is one circle (no row names a workspace), so an ask is made there.
 
   describe('asks', () => {
@@ -355,16 +446,11 @@ describe('QuestsView', () => {
     });
     afterEach(() => { ASKS = []; });
 
-    it('the Ask button opens the composer in the one workspace there is, and the ask is sent whole', async () => {
-      const notify = vi.fn();
-      const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-      render(
-        <QueryClientProvider client={client}>
-          <Tooltip.Provider><QuestsView notify={notify} /></Tooltip.Provider>
-        </QueryClientProvider>,
-      );
+    it('the ＋\'s Ask opens the composer in the one workspace there is, sends the ask whole, and opens its page', async () => {
+      const notify = view();
+      await within(questList()).findByText('Expose a streaming budget');
 
-      await userEvent.click(await screen.findByRole('button', { name: 'Ask' }));
+      await makeFromList('Ask');
       const composer = await screen.findByRole('dialog', { name: 'Ask the workspace' });
       expect(within(composer).getByText('Asked in workspace default')).toBeInTheDocument();
       await userEvent.type(within(composer).getByLabelText('What is wanted, and why'), 'Cap the hydration per frame.');
@@ -380,27 +466,28 @@ describe('QuestsView', () => {
           attachments: [{ name: 'trace.log', content: btoa('pixels') }],
         },
       });
-      // The service's sentence, verbatim — and the record opens on what it proposed.
+      // The service's sentence, verbatim — and the page opens on what it proposed, before the list has it.
       await waitFor(() => expect(notify).toHaveBeenCalledWith(
         'Asked as `#7c1e9a04b2d5` in `default` — by declarations only; no intake agent ran.'));
-      const record = await screen.findByRole('dialog', { name: 'Cap the hydration per frame.' });
-      expect(within(record).getByRole('button', { name: 'Publish to engine' })).toBeInTheDocument();
+      const page = await questPage('Cap the hydration per frame.');
+      expect(within(page).getByRole('button', { name: 'Publish to engine' })).toBeInTheDocument();
+      expect(window.localStorage.getItem('daoris.list.quests.chosen')).toBe('ask:7c1e9a04b2d5');
     });
 
     it('lists the asks above the quests, and publishing a proposal goes through the ask\'s own door', async () => {
       ASKS = [PROPOSED];
       view();
 
-      // Counted as the quest groups beside it are, in one form on one page (POLISH4).
-      expect(await screen.findByText('Asks (1)')).toBeInTheDocument();
-      await userEvent.click(screen.getByText('Cap the hydration per frame.'));
-      const record = await screen.findByRole('dialog', { name: 'Cap the hydration per frame.' });
-      await userEvent.click(within(record).getByRole('button', { name: 'Publish to engine' }));
+      // Counted as the quest groups beside it are, in one form on one list (POLISH4).
+      expect(await within(questList()).findByText('Asks (1)')).toBeInTheDocument();
+      const page = await chooseRow('Cap the hydration per frame.');
+      await userEvent.click(within(page).getByRole('button', { name: 'Publish to engine' }));
 
       await waitFor(() => expect(posted).toEqual([{ url: '/api/asks/7c1e9a04b2d5/publish', body: { to: 'engine' } }]));
-      // The quest it became is a door into the quest's own drawer.
-      await userEvent.click(await within(record).findByRole('button', { name: /#abc123/ }));
-      expect(await screen.findByRole('dialog', { name: 'Expose a streaming budget' })).toBeInTheDocument();
+      // The quest it became is a door into the quest's own page.
+      await userEvent.click(await within(questMain()).findByRole('button', { name: /#abc123/ }));
+      expect(await screen.findByRole('heading', { level: 1, name: 'Expose a streaming budget' })).toBeInTheDocument();
+      expect(window.localStorage.getItem('daoris.list.quests.chosen')).toBe('abc123');
     });
 
     /** An ask may be published to any repository its circle can ask — adopted or not (D70). */
@@ -416,9 +503,8 @@ describe('QuestsView', () => {
           : before(input, init)));
       view();
 
-      await userEvent.click(await screen.findByText('Cap the hydration per frame.'));
-      const record = await screen.findByRole('dialog', { name: 'Cap the hydration per frame.' });
-      await userEvent.click(within(record).getByLabelText('publish to another'));
+      const page = await chooseRow('Cap the hydration per frame.');
+      await userEvent.click(within(page).getByLabelText('publish to another'));
       expect(await screen.findByRole('option', { name: 'legacy' })).toBeInTheDocument();
     });
 
@@ -440,33 +526,25 @@ describe('QuestsView', () => {
       expect(onAsked).toHaveBeenCalledTimes(1);
     });
 
-    /** Overview's band names an ask waiting on a person (INT4d); Quests opens its record, once. */
-    it('an ask a door names opens its record, once', async () => {
+    /** Overview's band names an ask waiting on a person (INT4d) through the opener; Quests opens its page. */
+    it('an ask a door names opens its page', async () => {
       ASKS = [PROPOSED];
-      const onAskFocused = vi.fn();
-      function Focused() {
-        const [pending, setPending] = useState<string | null>('7c1e9a04b2d5');
-        return (
-          <QuestsView
-            notify={() => {}}
-            askFocus={pending}
-            onAskFocused={() => { onAskFocused(); setPending(null); }}
-          />
-        );
-      }
-      const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-      render(
-        <QueryClientProvider client={client}>
-          <Tooltip.Provider><Focused /></Tooltip.Provider>
-        </QueryClientProvider>,
-      );
+      window.localStorage.setItem('daoris.list.quests.chosen', 'ask:7c1e9a04b2d5');
+      view();
 
-      const record = await screen.findByRole('dialog', { name: 'Cap the hydration per frame.' });
-      expect(within(record).getByRole('button', { name: 'Publish to engine' })).toBeInTheDocument();
-      expect(onAskFocused).toHaveBeenCalledTimes(1);
+      const page = await questPage('Cap the hydration per frame.');
+      expect(within(page).getByRole('button', { name: 'Publish to engine' })).toBeInTheDocument();
+      expect(within(questList()).getByRole('button', { name: /Cap the hydration per frame\./ })).toHaveAttribute('aria-current', 'true');
     });
 
-    /** The record's intake line is a door into Sessions only where the view is handed one (INT4d). */
+    it('says a chosen ask that is no longer here has gone', async () => {
+      window.localStorage.setItem('daoris.list.quests.chosen', 'ask:0b9f3c21aa77');
+      view();
+
+      expect(await within(questMain()).findByText('This ask is no longer here')).toBeInTheDocument();
+    });
+
+    /** The page's intake line is a door into Sessions only where the view is handed one (INT4d). */
     it('an ask\'s intake session opens where Sessions exists', async () => {
       const INTAKE = {
         id: 'i9n8t7k6a5b4', quest: null, repository: 'ask #7c1e9a04b2d5', adapter: 'stub', kind: 'chat',
@@ -487,9 +565,8 @@ describe('QuestsView', () => {
         </QueryClientProvider>,
       );
 
-      await userEvent.click(await screen.findByText('Cap the hydration per frame.'));
-      const record = await screen.findByRole('dialog', { name: 'Cap the hydration per frame.' });
-      const line = within(record).getByRole('region', { name: 'Intake session' });
+      const page = await chooseRow('Cap the hydration per frame.');
+      const line = within(page).getByRole('region', { name: 'Intake session' });
       await userEvent.click(await within(line).findByRole('button', { name: 'stub' }));
       expect(onAttend).toHaveBeenCalledWith('i9n8t7k6a5b4');
     });
@@ -497,11 +574,9 @@ describe('QuestsView', () => {
 
   // ——— A chain (D65 §4).
 
-  it('the drawer says what a quest follows and what its close will publish next', async () => {
+  it('the page says what a quest follows and what its close will publish next', async () => {
     view();
-    await userEvent.click(await screen.findByText('Expose a streaming budget'));
-    const dialog = await screen.findByRole('dialog');
-    const chain = within(dialog).getByRole('region', { name: 'How this work ran' });
+    const chain = within(await chooseRow('Expose a streaming budget')).getByRole('region', { name: 'How this work ran' });
 
     // The parent is closed and out of this page's list: named, not dropped (MAP1).
     expect(within(chain).getByText('#f0f0f0')).toBeInTheDocument();
@@ -509,19 +584,18 @@ describe('QuestsView', () => {
     expect(within(chain).getByText(/published when the one before it closes done/i)).toBeInTheDocument();
   });
 
-  /** MAP1: every attempt at a step, on what it ran — the drawer's session section keeps only the latest. */
+  /** MAP1: every attempt at a step, on what it ran — the page's session section keeps only the latest. */
   it('the chain lists every session that ran the quest', async () => {
     view();
-    await userEvent.click(await screen.findByText('Expose a streaming budget'));
-    const chain = within(await screen.findByRole('dialog')).getByRole('region', { name: 'How this work ran' });
+    const chain = within(await chooseRow('Expose a streaming budget')).getByRole('region', { name: 'How this work ran' });
 
     expect(within(chain).getAllByText('stub')).toHaveLength(2);
     expect(within(chain).getByText('failed')).toBeInTheDocument();
   });
 
-  it('a card says it follows another quest', async () => {
+  it('a row says it follows another quest', async () => {
     view();
-    expect(await screen.findByText(/follows #f0f0f0/)).toBeInTheDocument();
+    expect(await within(questList()).findByText(/follows #f0f0f0/)).toBeInTheDocument();
   });
 
   // ——— Ask and wait (D79): a taken quest waiting on another repository's answer says so — it is
@@ -538,30 +612,28 @@ describe('QuestsView', () => {
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) =>
       String(input).startsWith('/api/quests') ? Response.json(quests) : respond(String(input))));
 
-  it('a taken quest waiting on a question says which, and the drawer opens that question', async () => {
+  it('a taken quest waiting on a question says which, and its page opens that question', async () => {
     serving(WAITING);
     view();
-    expect(await screen.findByText('waits on #q2q2q2')).toBeInTheDocument();
+    expect(await within(questList()).findByText('waits on #q2q2q2')).toBeInTheDocument();
 
-    await userEvent.click(screen.getByText('Expose a streaming budget'));
-    const dialog = await screen.findByRole('dialog');
-    expect(within(dialog).getByText('Waits on')).toBeInTheDocument();
-    expect(within(dialog).getByText(/resumes, in the same tree/)).toBeInTheDocument();
+    const page = await chooseRow('Expose a streaming budget');
+    expect(within(page).getByText('Waits on')).toBeInTheDocument();
+    expect(within(page).getByText(/resumes, in the same tree/)).toBeInTheDocument();
 
-    await userEvent.click(within(dialog).getByRole('button', { name: /What does the notes endpoint take/ }));
-    expect(await screen.findByRole('heading', { name: 'What does the notes endpoint take?' })).toBeInTheDocument();
+    await userEvent.click(within(page).getByRole('button', { name: /What does the notes endpoint take/ }));
+    expect(await screen.findByRole('heading', { level: 1, name: 'What does the notes endpoint take?' })).toBeInTheDocument();
   });
 
-  it('once its question is answered the card stops saying it waits, and the drawer says it was answered', async () => {
+  it('once its question is answered the row stops saying it waits, and the page says it was answered', async () => {
     serving([WAITING[0], { ...WAITING[1], status: 'Done' }]);
     view();
-    await screen.findByText('Expose a streaming budget');
+    await within(questList()).findByText('Expose a streaming budget');
     expect(screen.queryByText('waits on #q2q2q2')).not.toBeInTheDocument();
 
-    await userEvent.click(screen.getByText('Expose a streaming budget'));
-    const dialog = await screen.findByRole('dialog');
-    expect(within(dialog).getByText('Asked')).toBeInTheDocument();
-    expect(within(dialog).getByText(/^Answered/)).toBeInTheDocument();
+    const page = await chooseRow('Expose a streaming budget');
+    expect(within(page).getByText('Asked')).toBeInTheDocument();
+    expect(within(page).getByText(/^Answered/)).toBeInTheDocument();
   });
 
   it('a next step composed travels with the publish as its chain', async () => {
@@ -579,6 +651,19 @@ describe('QuestsView', () => {
 
     await vi.waitFor(() => expect(published).not.toBeNull());
     expect(published!.then).toEqual([{ to: 'engine', title: 'Verify {parent}', body: 'Open the app.' }]);
+  });
+
+  /** A quest just published opens on its page, as an ask's record opens on its answer. */
+  it('opens the quest just published on its page, and closes the composer', async () => {
+    view({ from: 'game', to: 'engine' });
+    const dialog = await screen.findByRole('dialog');
+    fireEvent.change(within(dialog).getByLabelText('What is wanted, in one line'), { target: { value: 'Expose a streaming budget' } });
+    fireEvent.change(within(dialog).getByLabelText('Why, and the evidence'), { target: { value: 'Because.' } });
+    await userEvent.click(within(dialog).getByRole('button', { name: 'Publish quest' }));
+
+    expect(await questPage('Expose a streaming budget')).toBeInTheDocument();
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull());
+    expect(window.localStorage.getItem('daoris.list.quests.chosen')).toBe('abc123');
   });
 
   /**
@@ -621,34 +706,32 @@ describe('QuestsView', () => {
 
   // ——— What a quest carries (D65 §2).
 
-  it('the drawer shows the links as links and opens a kept file — and never shows where it lies', async () => {
+  it('the page shows the links as links and opens a kept file — and never shows where it lies', async () => {
     view();
-    await userEvent.click(await screen.findByText('Expose a streaming budget'));
-    const dialog = await screen.findByRole('dialog');
+    const page = await chooseRow('Expose a streaming budget');
 
-    expect(within(dialog).getByRole('link', { name: /tickets\.example\/T-1/ })).toHaveAttribute(
+    expect(within(page).getByRole('link', { name: /tickets\.example\/T-1/ })).toHaveAttribute(
       'href', 'https://tickets.example/T-1');
-    expect(within(dialog).getByRole('link', { name: /before\.png/ })).toHaveAttribute(
+    expect(within(page).getByRole('link', { name: /before\.png/ })).toHaveAttribute(
       'href', `/api/quests/abc123/attachments/ab12cd34ef56${'0'.repeat(52)}`);
     // A picture is shown as one — from the host's own route, never from the path.
-    expect(within(dialog).getByRole('img', { name: 'before.png' })).toBeInTheDocument();
+    expect(within(page).getByRole('img', { name: 'before.png' })).toBeInTheDocument();
     // 🔴 A page does not name a machine path, even one it was answered.
-    expect(dialog.textContent).not.toContain('C:/somewhere');
+    expect(page.textContent).not.toContain('C:/somewhere');
   });
 
   it('a file named on the record but not kept here is said to be elsewhere, not offered as a link', async () => {
     view();
-    await userEvent.click(await screen.findByText('Expose a streaming budget'));
-    const dialog = await screen.findByRole('dialog');
+    const page = await chooseRow('Expose a streaming budget');
 
-    expect(within(dialog).getByText('trace.log')).toBeInTheDocument();
-    expect(within(dialog).queryByRole('link', { name: /trace\.log/ })).not.toBeInTheDocument();
-    expect(within(dialog).getByText(/kept on the machine that published it/)).toBeInTheDocument();
+    expect(within(page).getByText('trace.log')).toBeInTheDocument();
+    expect(within(page).queryByRole('link', { name: /trace\.log/ })).not.toBeInTheDocument();
+    expect(within(page).getByText(/kept on the machine that published it/)).toBeInTheDocument();
   });
 
-  it('a card says what its quest carries, beside the title', async () => {
+  it('a row says what its quest carries, beside its state', async () => {
     view();
-    expect(await screen.findByLabelText('1 link · 2 files')).toBeInTheDocument();
+    expect(await within(questList()).findByLabelText('1 link · 2 files')).toBeInTheDocument();
   });
 
   it('links typed and a file chosen travel with the publish — the file whole, as base64', async () => {
@@ -706,18 +789,15 @@ describe('QuestsView', () => {
 
   it('groups what the service returns by where it is in its life', async () => {
     view();
-    expect(await screen.findByText('Open — waiting to be taken (1)')).toBeInTheDocument();
-    expect(screen.getByText('Expose a streaming budget')).toBeInTheDocument();
+    expect(await within(questList()).findByText('Open — waiting to be taken (1)')).toBeInTheDocument();
+    expect(within(questList()).getByText('Expose a streaming budget')).toBeInTheDocument();
   });
 
-  it('a card is a door: clicking it opens the detail drawer, where the acting happens', async () => {
+  it('a row is a door: choosing it opens the quest\'s page, where the acting happens', async () => {
     view();
-    await userEvent.click(await screen.findByText('Expose a streaming budget'));
-    // Scoped to the dialog: the ask's text also lives in the card's excerpt behind the drawer —
-    // the list surviving the detail is the drawer pattern's whole point.
-    const dialog = await screen.findByRole('dialog');
-    expect(within(dialog).getByText('World streaming needs a per-frame cap.')).toBeInTheDocument();
-    expect(within(dialog).getByRole('button', { name: 'Take' })).toBeInTheDocument();
+    const page = await chooseRow('Expose a streaming budget');
+    expect(within(page).getByText('World streaming needs a per-frame cap.')).toBeInTheDocument();
+    expect(within(page).getByRole('button', { name: 'Take' })).toBeInTheDocument();
   });
 
   /**
@@ -725,15 +805,45 @@ describe('QuestsView', () => {
    * quest led with closing it and offered taking it as the quiet choice. The loud control is the
    * quest's next step: take while it is open, done once it is taken.
    */
-  it("makes taking an open quest the drawer's one loud control", async () => {
+  it("makes taking an open quest the page's one loud control, in its header", async () => {
     view();
-    await userEvent.click(await screen.findByText('Expose a streaming budget'));
-    const dialog = await screen.findByRole('dialog');
+    const page = await chooseRow('Expose a streaming budget');
+    const header = within(page).getByRole('heading', { level: 1 }).closest('header')!;
 
-    expect(within(dialog).getByRole('button', { name: 'Take' }).className).toContain('bg-accent');
-    expect(within(dialog).getByRole('button', { name: 'Mark done' }).className).not.toContain('bg-accent');
+    expect(within(header).getByRole('button', { name: 'Take' }).className).toContain('bg-accent');
+    expect(within(header).getByRole('button', { name: 'Mark done' }).className).not.toContain('bg-accent');
     // U35: taking wore a check mark, the sign of done, beside a done that wore none.
-    expect(within(dialog).getByRole('button', { name: 'Take' }).querySelector('svg')).toBeNull();
+    expect(within(header).getByRole('button', { name: 'Take' }).querySelector('svg')).toBeNull();
+  });
+
+  /** A decline needs its reason, asked under the header: the service refuses one without. */
+  it('asks a decline\'s reason under the header, sends it, and never mind puts the press back', async () => {
+    const answered: unknown[] = [];
+    vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (init?.method === 'POST' && url === '/api/quests/abc123/respond') {
+        answered.push(JSON.parse(String(init.body)));
+        return Response.json({ quest: { ...QUESTS[0], status: 'Declined', updated: '2026-09-03T00:00:00Z' }, message: 'Quest `#abc123` is now Declined.' });
+      }
+      return respond(url);
+    }));
+    view();
+    const page = await chooseRow('Expose a streaming budget');
+
+    await userEvent.click(within(page).getByRole('button', { name: 'Decline…' }));
+    await userEvent.click(within(page).getByRole('button', { name: 'Never mind' }));
+    expect(within(page).queryByLabelText('the reason — it is the part the asker can act on')).toBeNull();
+
+    await userEvent.click(within(page).getByRole('button', { name: 'Decline…' }));
+    const confirm = within(page).getByRole('button', { name: 'Decline with this reason' });
+    expect(confirm).toBeDisabled();
+    await userEvent.type(within(page).getByLabelText('the reason — it is the part the asker can act on'), 'Not ours.');
+    await userEvent.click(confirm);
+
+    await waitFor(() => expect(answered).toEqual([{ action: 'decline', reason: 'Not ours.' }]));
+    // The page stays on the quest as the answer left it: declined, with nothing left to do.
+    expect(await within(questMain()).findByText('declined')).toBeInTheDocument();
+    expect(within(questMain()).queryByRole('button', { name: 'Take' })).toBeNull();
   });
 
   /**
@@ -752,32 +862,31 @@ describe('QuestsView', () => {
       return respond(url);
     }));
     view();
-    await userEvent.click(await screen.findByText('Expose a streaming budget'));
-    const dialog = await screen.findByRole('dialog');
+    const page = await chooseRow('Expose a streaming budget');
     await waitFor(() => expect(asked.length).toBeGreaterThan(0));
     const before = asked.length;
 
-    await userEvent.click(within(dialog).getByRole('button', { name: 'Mark done' }));
+    await userEvent.click(within(page).getByRole('button', { name: 'Mark done' }));
 
     await waitFor(() => expect(asked.length).toBeGreaterThan(before));
   });
 
-  it("makes closing a taken quest the drawer's one loud control", async () => {
+  it("makes closing a taken quest the page's one loud control", async () => {
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => {
       const url = String(input);
       return url.startsWith('/api/quests') ? Response.json([{ ...QUESTS[0], status: 'Taken' }]) : respond(url);
     }));
     view();
-    await userEvent.click(await screen.findByText('Expose a streaming budget'));
-    const dialog = await screen.findByRole('dialog');
+    const page = await chooseRow('Expose a streaming budget');
 
-    expect(within(dialog).queryByRole('button', { name: 'Take' })).toBeNull();
-    expect(within(dialog).getByRole('button', { name: 'Mark done' }).className).toContain('bg-accent');
+    expect(within(page).queryByRole('button', { name: 'Take' })).toBeNull();
+    expect(within(page).getByRole('button', { name: 'Mark done' }).className).toContain('bg-accent');
   });
 
   it('publish stays disabled until the ask is complete — the form does not offer the mistake', async () => {
     view();
-    await userEvent.click(await screen.findByRole('button', { name: 'New quest' }));
+    await within(questList()).findByText('Expose a streaming budget');
+    await makeFromList('New quest');
     expect(await screen.findByRole('button', { name: 'Publish quest' })).toBeDisabled();
   });
 
@@ -788,7 +897,8 @@ describe('QuestsView', () => {
       return url.startsWith('/api/registry') ? Response.json([]) : respond(url);
     }));
     view();
-    await userEvent.click(await screen.findByRole('button', { name: 'New quest' }));
+    await within(questList()).findByText('Expose a streaming budget');
+    await makeFromList('New quest');
     const dialog = await screen.findByRole('dialog');
 
     expect(await within(dialog).findByText('Nobody can be asked yet')).toBeInTheDocument();
@@ -796,18 +906,16 @@ describe('QuestsView', () => {
     expect(within(dialog).queryByLabelText('From')).toBeNull();
   });
 
-  it('a quest a driver is working wears its session state on the card', async () => {
+  it('a quest a driver is working wears its session state on its row', async () => {
     view();
-    expect(await screen.findByText('working')).toBeInTheDocument();
+    expect(await within(questList()).findByText('working')).toBeInTheDocument();
   });
 
-  /** The drawer's session section — where things stand NOW. The chain above it keeps the history. */
-  const sessionSection = async () => {
-    await userEvent.click(await screen.findByText('Expose a streaming budget'));
-    return within(await screen.findByRole('dialog')).getByRole('region', { name: 'Session' });
-  };
+  /** The page's session section — where things stand NOW. The chain above it keeps the history. */
+  const sessionSection = async () =>
+    within(await chooseRow('Expose a streaming budget')).getByRole('region', { name: 'Session' });
 
-  it("the drawer carries the session's record — state, adapter, and the evidence, verbatim", async () => {
+  it("the page carries the session's record — state, adapter, and the evidence, verbatim", async () => {
     view();
     const section = await sessionSection();
     expect(within(section).getByText('working')).toBeInTheDocument();
@@ -828,7 +936,6 @@ describe('QuestsView', () => {
     const section = await sessionSection();
     // The record renders (above); the control must not — a browser could only wish (D46 §6).
     expect(within(section).getByText('working')).toBeInTheDocument();
-    expect(within(await screen.findByRole('dialog')).queryByRole('button', { name: 'Stop session' }))
-      .not.toBeInTheDocument();
+    expect(within(questMain()).queryByRole('button', { name: 'Stop session' })).not.toBeInTheDocument();
   });
 });

@@ -123,9 +123,9 @@ controls are in the frame design's §3.
 - **Drawer** (right, 32rem, overlay surface, scrim, ESC/scrim/× to close) is the single detail-and-form
   surface: reading a knowledge entry, composing a quest, a quest's detail with its actions. One pattern
   instead of three; the list stays a list. A `wide` drawer (52rem) is for what holds a line of source
-  (U43). *To change by D118* (FRAME1d–f): the drawer keeps forms. A record (a quest, an ask, a knowledge
-  entry) moves to the main area of the view whose list holds it, because since DOCK1a a drawer lies over
-  the side bar and the panel.
+  (U43). *Changed by D118*: the drawer keeps forms. A record moves to the main area of the view whose
+  list holds it, because since DOCK1a a drawer lies over the side bar and the panel: a quest and an ask
+  since FRAME1d, and a knowledge entry with FRAME1f.
 - 🔴 **An overlay sits between the strip and the status bar**, every one of them: a scrim, a drawer, a
   panel. It starts below the strip, because the strip holds the caption buttons the window paints and
   a page backdrop cannot dim what the page does not draw (a full-bleed scrim greyed the title bar and
@@ -257,44 +257,59 @@ controls are in the frame design's §3.
   (row = pill · title · route · how long — and, on the desktop, *sitting — why*, the driver's own
   sentence from its last look, truncated with the whole in its tip) beside *Repositories by index
   size* (single-hue bars, adopted dot, values in ink). Every row is a door: outstanding rows open the
-  quest drawer; repository rows go to Repositories. Above the tiles, *What needs you* (working surface
+  quest's page on Quests (FRAME1d); repository rows go to Repositories. Above the tiles, *What needs you* (working surface
   §4) lists parked sessions, then asks waiting on a person (INT4d), then quests nobody can take, then
   folders waiting on trust, and it is absent when nothing waits. **The band is live, or it lies**: an
   ask made by another door moves nothing else a tick reports, so the shell forwards a tick when the
   asks change and the page refetches them. A wait is a span (*waiting 4d 3h*, U40).
-- **Quests** — the primary page action is *Ask* (INT4c), and *new quest* is the second door: the
-  regular task enters at the workspace (D65), and an action goes with what it makes, never on the
-  status bar. The asks sit above the quests as a group of their own, a card per ask, what has waited
+- **Quests** (on the frame since FRAME1d, D118 §2) — a list pane and a main area. The list's `＋` offers
+  *Ask* first (INT4c), then *New quest*: the regular task enters at the workspace (D65), and an action
+  goes with what it makes, never on the status bar. Its ⋯ holds *Receiver* and *Include closed*,
+  ticked as they stand and remembered for the list, and a receiver filter is said at the list's head.
+  The asks sit above the quests as a group of their own, a row per ask, what has waited
   longest first and a closed ask last (U32). **An ask says what it waits for wherever it is shown**
   (*proposed, not yet published*, *its intake asked you*, *an intake is reading it*), and its place
   is named by its kind, *workspace default*, never as one more repository name. Its record says who
   answered, the tier in words and an intake as a line (its state, then its tool); a record never says
   no intake ran above the intake that did. The ask composer promises only what this machine will do:
   an intake agent publishes on its own, so *nothing is published until you name a receiver* is said
-  only where none is set (U34). *New quest* opens the **compose drawer**; the list stays scannable
-  (pill, title, route, age, first line of the ask) grouped Open / Taken / Closed; **clicking a
-  card opens the detail drawer**: the whole ask, the meta, the note, and the actions — *Take*, *Mark
-  done*, *Decline…* with a reason — and the loud one is the quest's next step: *Take* while it is
-  open, *Mark done* once it is taken (U31). A card is for reading. What a quest carries (D65 §2) is **counted on the
-  card** (a link glyph and a paperclip, each with its number) and **listed in the drawer**: links as
+  only where none is set (U34). The two composers are **drawers**, since they are forms (D118 §3d);
+  the list stays scannable (pill and its marks, title, route, age) grouped Open / Taken / Closed;
+  **choosing a row opens its page in the main area**, beside Ask Daoris rather than under a scrim:
+  the title with its pill and its state's line, the acts in its header — *Take*, *Mark done*,
+  *Decline…*, which asks its reason under the header — and the loud one is the quest's next step:
+  *Take* while it is open, *Mark done* once it is taken (U31); then the meta, the ask, the note. The
+  page stays on the quest as each act leaves it, and with nothing chosen the main area says how to
+  choose and offers the `＋`'s two kinds. A row is for reading. What a quest carries (D65 §2) is **counted on its
+  row** (a link glyph and a paperclip, each with its number) and **listed on its page**: links as
   links, files by name and size, a picture shown as one. The composer takes links one per line and
   files by drop, paste or *Choose files…*, and says why a file was left off while the person is still
-  choosing. **A chain** (D65 §4) is behind *Add a next step…*; the drawer shows it as one strip
+  choosing. **A chain** (D65 §4) is behind *Add a next step…*; the page shows it as one strip
   (MAP1a): the ask, the quests before and after, the steps still to come as written, and every
   session under its quest, the one being read marked and the others underlined doors.
 - **A folder waiting on trust** (D73) — the grant is offered where the hold is read: the quest's
-  drawer carries *Trust this folder…* under its sitting line, and *What needs you* a `trust` row, the
+  page carries *Trust this folder…* under its sitting line, and *What needs you* a `trust` row, the
   only place an intake's held room shows. The question is the agent's own, asked in the open: the
   folder, what trusting means in the agent's terms, what the driver is holding, and the one file
   written. It is never wider than the hold, since the shell refuses any pair the driver did not
   produce, and there is one row per folder.
-- **Repositories** (named *Projects* until NAME1b, the owner's call) — adopted as cards (two columns from 1024px, one below) with chips and the local/canonical
-  split; non-adopters as one group, *Registered, not adopted*, led by one line with its reasoning on
-  the info glyph (U36), each with the driving row where it has a root here, and the join steps
-  proposed as text at a reading measure. **Who can be asked is the host's answer**: every receiver
+- **Repositories** (named *Projects* until NAME1b, the owner's call; on the frame since FRAME1e, D118 §2) —
+  a list pane and a main area. The list holds the adopted, then *Registered, not adopted*, each group
+  counted; a row is the repository's name with its standing on this machine at its right, in the
+  session list's words (*held*, *drives here*, *not on this machine*), and its one line: an adopter's
+  summary, *no domain declared yet*, or what the index reads of one not adopted. Its `＋` is *Add
+  repository* and its ⋯ holds *Import a folder…*, both a shell's, so a browser's list makes nothing.
+  **Choosing a row opens its page in the main area**: its name, its standing (*not adopted* too), its
+  summary as the header's line, and *Open code map* and *Manage* in its header, the map one level in
+  (MAP3a) and *Manage* an adopter's on a shell; then the index with the local/canonical split, the
+  commit it was fed from, its workspace, its line and its unlanded branches; its declaration as chips;
+  *This machine*, the driving row, where it has somewhere to start; and for one not adopted the
+  *Adoption steps*, led by one line with its reasoning on the info glyph (U36) and the join steps
+  proposed as text at a reading measure. The chosen repository is remembered, and adding, importing and
+  managing stay drawers (D118 §3d). **Who can be asked is the host's answer**: every receiver
   list reads `addressable` from the registry, never re-derived from `adopted` (D70). A choice that
   outlives the door is offered with the door said beside it: on a machine whose adapter rides the
-  direct door, a quest there sits, and the row says so under the control. The group's paragraph claims
+  direct door, a quest there sits, and the page says so under the control. The steps' paragraph claims
   only what is proven. *Manage* edits the declaration in the face it is read in (U37).
 - **Convergence / Search** — pages with the page header that open entries in the drawer. An excerpt is
   the entry's prose, without its frontmatter or its Markdown's markers (U39), and a hit's highlight
@@ -309,7 +324,7 @@ controls are in the frame design's §3.
   chain's hops dotted, and a *Connections* menu that switches each kind) — the circle's repositories on a ring, the quests between them as directed arrows
   with a count on each, and a shared finding as a dashed line; a detail panel beside the map says what
   the chosen node or line holds, and a legend says every mark in words, the number in a node
-  included. It adds no actions: a quest in a detail opens its drawer (U46). What the window taught it
+  included. It adds no actions: a quest in a detail opens its page on Quests (U46; FRAME1d). What the window taught it
   (names outward, wide hit strokes, arrowheads in the map's units, a choice that toggles, the circles
   kept together when it spans several) is in `docs/2026-09-23-map-design.md` §1. **A drawing is drawn
   at its own size**, one unit a pixel and framed on what it draws, so its text is the type scale's at

@@ -17,22 +17,29 @@ export function questsItem(item: string): { ask: string } | { quest: string } {
   return item.startsWith(ASK) ? { ask: item.slice(ASK.length) } : { quest: item };
 }
 
-/** What a door names besides its item: the part of a Settings domain, or one of Repositories' forms. */
-export type OpenPart = { anchor?: SettingsAnchor; drawer?: 'add' | 'import' };
+/**
+ * What a door names besides its item: the part of a Settings domain, one of Repositories' forms, or the repository whose
+ * code map the Map opens on.
+ */
+export type OpenPart = { anchor?: SettingsAnchor; drawer?: 'add' | 'import'; code?: string };
 
 /** What opening a view does, as a value. */
 export type Opening = {
   view: View;
-  /** The item the view's list has chosen now, where the view has a list and the door named one (§3f). */
+  /**
+   * The item the view's list has chosen now, where the view has a list and the door named one (§3f). Its main area
+   * shows it: a quest's record or an ask's on Quests since FRAME1d, which no longer opens either in a drawer.
+   */
   chosen?: { view: ListView; item: string };
-  /** A quest's record, which Quests opens in its drawer until its list and main area (FRAME1d). */
-  quest?: string;
-  /** An ask's record, likewise. */
-  ask?: string;
   /** The part of Settings' domain to bring into view, or null for its top, where the door named a domain. */
   anchor?: SettingsAnchor | null;
   /** One of Repositories' forms, which stay drawers (§3d). */
   drawer?: 'add' | 'import';
+  /**
+   * The repository whose code map the Map opens on (MAP3a), where a repository's page names it (FRAME1e). The Map has no
+   * list (§4), so this is no chosen item: it is the page one level in.
+   */
+  code?: string;
 };
 
 const listed = (view: View): view is View & ListView => Object.hasOwn(LIST_BOUNDS, view);
@@ -45,10 +52,10 @@ const listed = (view: View): view is View & ListView => Object.hasOwn(LIST_BOUND
 export function opening(view: View, item?: string | null, part: OpenPart = {}): Opening {
   const plan: Opening = { view };
   if (item && listed(view)) plan.chosen = { view, item };
-  if (item && view === 'quests') Object.assign(plan, questsItem(item));
   // A door naming a domain opens it at the part it names, or at its top: never at a part another door left.
   if (view === 'settings' && (item || part.anchor)) plan.anchor = part.anchor ?? null;
   if (view === 'projects' && part.drawer) plan.drawer = part.drawer;
+  if (view === 'map' && part.code) plan.code = part.code;
   return plan;
 }
 
