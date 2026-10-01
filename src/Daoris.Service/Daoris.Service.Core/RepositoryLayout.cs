@@ -22,6 +22,10 @@ namespace Daoris.Knowledge;
 /// <c>sync</c> wrote, a <c>CLAUDE.md</c> holding one import line, and are not read here: a room's
 /// <c>AGENTS.md</c> is the repository's own file, and its declaration is where it is.</para>
 ///
+/// <para><b>The documents</b> are the manifest's <c>documents</c> (DOC5), checked against the same target
+/// and mirror root as the rooms, by <see cref="RepositoryDocuments"/>, a twin of the CLI's
+/// <c>documents.ts</c>.</para>
+///
 /// <para>🔴 <b>A twin</b> (<c>.claude/knowledge/twins.md</c>, *the layout*): the CLI's <c>layout.ts</c>
 /// and <c>harness.ts</c> write what this reads, and share no code with it. <see cref="Descriptors"/> is
 /// a deliberate copy of the CLI's descriptors; <c>RepositoryLayoutTests</c> holds the CLI's rows. The
@@ -49,10 +53,12 @@ public sealed partial class RepositoryLayout
     /// <summary>One layout: its root, the root it moved from, and where it mirrors a tier for one agent.</summary>
     internal sealed record Descriptor(string DefaultTarget, string? Formerly, string? MirrorRoot);
 
-    private RepositoryLayout(IReadOnlyList<string> roots, IReadOnlyList<string> rooms)
+    private RepositoryLayout(
+        IReadOnlyList<string> roots, IReadOnlyList<string> rooms, IReadOnlyList<RepositoryDocuments.Declared> documents)
     {
         Roots = roots;
         Rooms = rooms;
+        Documents = documents;
     }
 
     /// <summary>
@@ -63,6 +69,16 @@ public sealed partial class RepositoryLayout
 
     /// <summary>The declared rooms whose <c>AGENTS.md</c> is read, repository-relative with forward slashes.</summary>
     public IReadOnlyList<string> Rooms { get; }
+
+    /// <summary>
+    /// The development documents the manifest declares, as the CLI would accept them, in the roles' order
+    /// (DOC5, <see cref="RepositoryDocuments"/>). Checked against the same target and mirror root as the
+    /// rooms, so the two declarations of one manifest are read by one rule.
+    /// </summary>
+    public IReadOnlyList<RepositoryDocuments.Declared> Documents { get; }
+
+    /// <summary>The path declared for a role, or null when it declares none the CLI would accept.</summary>
+    public string? PathOf(string role) => Documents.FirstOrDefault(document => document.Role == role)?.Path;
 
     /// <summary>The layout of the repository at <paramref name="repositoryRoot"/>, given its lock.</summary>
     public static RepositoryLayout Of(string repositoryRoot, DaorisLock daorisLock)
@@ -90,7 +106,8 @@ public sealed partial class RepositoryLayout
 
         return new RepositoryLayout(
             roots.Distinct(StringComparer.Ordinal).ToList(),
-            ReadableRooms(manifest.Rooms, target, layout));
+            ReadableRooms(manifest.Rooms, target, layout),
+            RepositoryDocuments.Read(manifest.Documents, target, layout.MirrorRoot));
     }
 
     /// <summary>
@@ -158,7 +175,11 @@ public sealed partial class RepositoryLayout
     /// <param name="Harness">The descriptor it names; null when it names none.</param>
     /// <param name="Target">Its target, declared; null when absent or leaving the repository.</param>
     /// <param name="Rooms">Its rooms as written, before any is checked.</param>
-    internal sealed record Manifest(string? Harness, string? Target, IReadOnlyList<string> Rooms)
+    /// <param name="Documents">
+    /// Its <c>documents</c> as written, before any role is checked (DOC5); null when absent, or when the
+    /// manifest holds the field twice, since which was meant is not this reader's guess.
+    /// </param>
+    internal sealed record Manifest(string? Harness, string? Target, IReadOnlyList<string> Rooms, JsonElement? Documents = null)
     {
         private static readonly Manifest None = new(null, null, []);
 
@@ -185,8 +206,12 @@ public sealed partial class RepositoryLayout
                 var rooms = root.TryGetProperty("rooms", out var r) && r.ValueKind == JsonValueKind.Array
                     ? r.EnumerateArray().Where(room => room.ValueKind == JsonValueKind.String).Select(room => room.GetString()!).ToList()
                     : [];
+                // Cloned, so it outlives the document; held twice, it is read as none (the CLI refuses it).
+                var documents = root.EnumerateObject().Count(member => member.Name == "documents") == 1
+                    ? root.GetProperty("documents").Clone()
+                    : (JsonElement?)null;
 
-                return new Manifest(harness, target is not null && !Escapes(target) ? target : null, rooms);
+                return new Manifest(harness, target is not null && !Escapes(target) ? target : null, rooms, documents);
             }
             catch (JsonException)
             {
