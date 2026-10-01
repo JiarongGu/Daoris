@@ -1,4 +1,5 @@
-import { describe, expect, it } from 'vitest';
+import type { ReactElement } from 'react';
+import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { SessionState } from './api';
@@ -6,7 +7,7 @@ import './i18n';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import {
   Button, CountBadge, Dot, Drawer, EmptyState, Inline, MetaLine, MonoWell, PathText, Pill, Segmented, SESSION_ACTIVE,
-  SESSION_DOT, SESSION_TONE, SettingRow, shownState, Tile, Tip, WaitingCard,
+  SESSION_DOT, SESSION_TONE, SettingRow, shownState, StripMark, Tile, Tip, WaitingCard,
 } from './ui';
 import { CommandPalette } from './work/CommandPalette';
 
@@ -156,6 +157,44 @@ describe('the liveness dot', () => {
     expect(mark('failed')).toContain('bg-st-declined');
     const card = render(<WaitingCard title="waiting" />).container.querySelector('section')!;
     expect(card.className).toContain('border-l-st-open');
+  });
+});
+
+/**
+ * D118 §5: one item on a list closed to its strip — FRAME6's session strip row made general, so Plugins'
+ * strip (PLUGUI1) is the same atom.
+ */
+describe('the strip mark', () => {
+  const inStrip = (node: ReactElement) => render(<Tooltip.Provider><ul>{node}</ul></Tooltip.Provider>);
+
+  it('names itself in words, and shows only the initial and the mark, both hidden from a reader', async () => {
+    const onPress = vi.fn();
+    const { container } = inStrip(<StripMark label="Chat · engine · working" initialOf="engine" tone="live" onPress={onPress} />);
+
+    const mark = screen.getByRole('button', { name: 'Chat · engine · working' });
+    expect(container.querySelectorAll('[aria-hidden="true"]')).toHaveLength(2);
+    expect(mark).toHaveTextContent('e');
+    expect(container.querySelector('[aria-hidden="true"].size-1\\.5')!.className).toContain('bg-accent');
+    await userEvent.click(mark);
+    expect(onPress).toHaveBeenCalledOnce();
+  });
+
+  it('marks the one chosen, and is a row its list\'s keys move to', () => {
+    const { container } = inStrip(<StripMark label="engine" initialOf="engine" current />);
+    expect(screen.getByRole('button', { name: 'engine' })).toHaveAttribute('aria-current', 'true');
+    expect(container.querySelector('li')).toHaveAttribute('data-list-row');
+  });
+
+  /** D119: a plugin that is simply on wears no mark, and one switched off a faint initial. */
+  it('wears no mark where it is given none, and a faint initial where it is dimmed', () => {
+    const { container } = inStrip(<StripMark label="lint-on-save · off" initialOf="lint-on-save" dimmed />);
+    expect(container.querySelector('.size-1\\.5')).toBeNull();
+    expect(screen.getByText('l')).toHaveClass('text-ink-faint');
+  });
+
+  it('takes a 中文 name\'s first character whole', () => {
+    inStrip(<StripMark label="引擎" initialOf="引擎" tone="parked" />);
+    expect(screen.getByRole('button', { name: '引擎' })).toHaveTextContent('引');
   });
 });
 

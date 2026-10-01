@@ -1,9 +1,9 @@
 {
-  "layout.rail": "the session list",
+  "layout.list.sessions": "the session list",
   "layout.panel": "the panel",
   "layout.right": "the right side bar",
   "layout.toggle": "show or hide {{region}} ({{keys}})",
-  "layout.menu.rail": "Session list",
+  "layout.menu.list.sessions": "Session list",
   "layout.menu.panel": "Panel",
   "layout.menu.right": "Right side bar"
 }

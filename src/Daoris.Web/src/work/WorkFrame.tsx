@@ -13,7 +13,7 @@ import {
 import { FilePreview } from './FilePreview';
 import { type FileOpen, FileOpener, fileName } from './preview';
 import { TerminalView } from './TerminalView';
-import { Button, Drawer, failure, Icon, type Notify, SESSION_ACTIVE, Tip, useErrorNotify } from '../ui';
+import { Drawer, failure, type Notify, SESSION_ACTIVE, useErrorNotify } from '../ui';
 import { AttendedSession, noteIsInTheHead } from './AttendedSession';
 import { SessionConversation } from './SessionConversation';
 import type { Usage } from './conversation';
@@ -27,9 +27,10 @@ import { type DockTab, RightDock } from './RightDock';
 import { SessionTimeline } from './SessionTimeline';
 import { SessionRail } from './SessionRail';
 import { StartSession, type StartChoice } from './StartSession';
-import { OutputPanel, PANEL_MIN, Splitter, StreamTabs } from './frame';
+import { OutputPanel, PANEL_MIN, StreamTabs } from './frame';
 import { panelTabs } from './streams';
-import { DOCK, dockRange, frameLayout, RAIL } from './layout';
+import { DOCK, dockRange, frameLayout, LIST_BOUNDS, type ListMode, listToggled } from './layout';
+import { ListPane } from './ListPane';
 import { type FrameClosings, useFrameClosings } from './closings';
 import { type Place, type Placements, usePlacements, type ViewId, viewsIn } from './placements';
 import { relationsOf } from './relations';
@@ -72,9 +73,10 @@ function rememberedWidth(key: string): number | null {
 }
 
 /**
- * How wide the window is and how wide this frame is (FRAME6): the window decides the thresholds —
- * a strip rail under 1024px, a full dock under 768 — and the frame decides the room. Where nothing
- * measures the frame (a unit test's DOM), it is the window less the 48px activity bar beside it.
+ * How wide the window is and how wide this frame is (FRAME6): the window decides the one threshold
+ * left, a full dock under 768 px, and the frame decides the room, which is what makes the list a strip
+ * (D118). Where nothing measures the frame (a unit test's DOM), it is the window less the 48px activity
+ * bar beside it.
  */
 function useFrameWidth(frame: RefObject<HTMLDivElement | null>) {
   const [viewport, setViewport] = useState(() => window.innerWidth);
@@ -125,8 +127,13 @@ const door = (structured?: boolean): 'structured' | 'text' | undefined =>
  */
 export function WorkFrame({
   selected, onSelect, notify, onSendBack, onAnswerAsk, onOpenQuest, intent, onIntentTaken, ask, askFocus = 0, closings, placements,
-  content, onOpenSessions, terminal = false,
+  content, onOpenSessions, terminal = false, onListMode,
 }: {
+  /**
+   * What the view's list is now — open, a strip, laid over, or none (D118 §3a) — for the application,
+   * whose doors toggle it and say whether it is shown. The room decides it, and only this frame measures.
+   */
+  onListMode?: (mode: ListMode | null) => void;
   /**
    * The person's own terminal as a view of the regions (CONSOLE4b, D96): only where a shell is attached,
    * as Ask Daoris is, since its shells are this machine's and ride the bridge alone (D47 §4).
@@ -209,20 +216,36 @@ export function WorkFrame({
   const ownPlaces = usePlacements();
   const placed = placements ?? ownPlaces;
   const collapsed = closed.panel;
-  const railClosed = closed.rail;
   const dockClosed = closed.dock;
   const [dockFull, setDockFull] = useState(false);
   // Another view in the centre (DOCK1a): the frame without Sessions' rail.
   const elsewhere = content !== undefined;
   const layout = frameLayout(width.viewport, width.frame, {
-    rail: railWidth, railClosed, dockShare, dockClosed, dockFull, noRail: elsewhere,
+    list: elsewhere ? null : { bounds: LIST_BOUNDS.sessions, width: railWidth, closed: closed.list, over: closed.listOver },
+    dockShare, dockClosed, dockFull,
   });
+  const list = layout.list;
+
+  // What the list is now, told to the application, whose doors toggle it and say whether it is shown.
+  const listMode = list?.mode ?? null;
+  useEffect(() => { onListMode?.(listMode); }, [listMode, onListMode]);
+  // A list laid over the main area is never kept: room returning, or another view, lets it go (D118 §3f).
+  const { listOver, setListOver } = closed;
+  useEffect(() => { if (listOver && listMode !== 'over') setListOver(false); }, [listOver, listMode, setListOver]);
 
   const resizeRail = (next: number | null) => {
     setRailWidth(next);
     store(RAIL_WIDTH, next === null ? null : String(next));
   };
-  const closeRail = (shut: boolean) => closed.setRail(shut);
+  /** The strip's open: beside where there is room, over the main area where the window drew the strip. */
+  const toggleList = () => {
+    if (!list) return;
+    const next = listToggled(list);
+    closed.setList(next.closed);
+    closed.setListOver(next.over);
+  };
+  /** A choice in a list laid over closes it (D118 §3a). */
+  const chosen = () => { if (listOver) setListOver(false); };
   /** A drag lands as the dock's share of the window it was dragged in; null is the default again. */
   const resizeDock = (next: number | null) => {
     const share = next === null || width.viewport <= 0 ? null : next / width.viewport;
@@ -727,97 +750,39 @@ export function WorkFrame({
     // Sessions is drawn in here, so a long title that should truncate widened the frame past the
     // window (seen on the install's Quests view; a browser draws the view outside the frame).
     <div ref={root} className="relative flex min-h-0 min-w-0 flex-1">
-      {!elsewhere && (
-      <aside className="relative flex shrink-0 flex-col border-r border-line" style={{ width: layout.rail.width }}>
-        {/* The rail is a list of sessions, and NEW is one control (D56). It used to be a permanent
-            287×200 form above the list — 27% of the rail, always, for something a person does
-            occasionally. Every reference in the study puts new behind a single affordance. */}
-        {layout.rail.strip
-          ? (
-            // The strip (FRAME6): its controls stacked, since 56px holds one across. A strip the window
-            // drew opens only by widening it, so it offers no way to — a button that could do nothing.
-            <header className="flex shrink-0 flex-col items-center gap-0.5 border-b border-line py-1">
-              {!layout.rail.auto && (
-                <Tip content={t('work.rail.open')} side="right">
-                  <Button
-                    variant="ghost"
-                    aria-label={t('work.rail.open')}
-                    onClick={() => closeRail(false)}
-                    className="h-6 w-6 justify-center px-0"
-                  >
-                    <Icon name="railOpen" size={14} />
-                  </Button>
-                </Tip>
-              )}
-              <Tip content={t('work.start.title')} side="right">
-                <Button
-                  variant="ghost"
-                  aria-label={t('work.start.title')}
-                  onClick={() => setStarting(true)}
-                  className="h-6 w-6 justify-center px-0"
-                >
-                  <Icon name="plus" size={15} />
-                </Button>
-              </Tip>
-            </header>
-          )
-          : (
-            <header className="flex h-8 shrink-0 items-center gap-1 border-b border-line pl-3 pr-1.5">
-              <span className="mr-auto text-meta uppercase tracking-[0.06em] text-ink-faint">
-                {t('work.rail.label')}
-              </span>
-              <Tip content={t('work.start.title')}>
-                <Button
-                  variant="ghost"
-                  aria-label={t('work.start.title')}
-                  onClick={() => setStarting(true)}
-                  className="h-6 w-6 justify-center px-0"
-                >
-                  <Icon name="plus" size={15} />
-                </Button>
-              </Tip>
-              <Tip content={t('work.rail.close')}>
-                <Button
-                  variant="ghost"
-                  aria-label={t('work.rail.close')}
-                  onClick={() => closeRail(true)}
-                  className="h-6 w-6 justify-center px-0"
-                >
-                  <Icon name="railClose" size={14} />
-                </Button>
-              </Tip>
-            </header>
-          )}
-
-        <div className="min-h-0 flex-1 overflow-y-auto">
+      {list && (
+        // Sessions' list (D118 §3a): the rail on the list pane every view with a list shares. NEW is one
+        // control (D56): it was a permanent 287×200 form above the list, 27% of the rail, for something a
+        // person does occasionally, and every reference in the study puts new behind a single affordance.
+        <ListPane
+          name={t('work.rail.label')}
+          labels={{ open: t('work.rail.open'), close: t('work.rail.close'), resize: t('work.rail.resize') }}
+          layout={list}
+          bounds={LIST_BOUNDS.sessions}
+          make={{ label: t('work.start.title'), onMake: () => { chosen(); setStarting(true); } }}
+          loading={sessions.isPending}
+          // Each running session's initial and mark, in the open rail's order (FRAME6).
+          strip={<SessionRail selected={selected} onSelect={(id) => { chosen(); attend(id); }} notify={notify} compact taking={taking} />}
+          onOpen={toggleList}
+          onClose={() => closed.setList(true)}
+          onDismiss={() => setListOver(false)}
+          onResize={resizeRail}
+        >
           <SessionRail
             selected={selected}
-            onSelect={attend}
+            onSelect={(id) => { chosen(); attend(id); }}
             notify={notify}
-            compact={layout.rail.strip}
             taking={taking}
             lastTurns={lastTurns}
             // A row's menu reviews that session: attended, with the dock open on its work.
             onReview={(id) => {
+              chosen();
               attend(id);
               setDocked((was) => ({ ...was, [id]: 'review' }));
               closeDock(false);
             }}
           />
-        </div>
-
-        {!layout.rail.strip && (
-          <Splitter
-            label={t('work.rail.resize')}
-            value={layout.rail.width}
-            min={RAIL.min}
-            max={RAIL.max}
-            edge="right"
-            onChange={resizeRail}
-            onReset={() => resizeRail(null)}
-          />
-        )}
-      </aside>
+        </ListPane>
       )}
 
       {/* D41's single detail-and-form surface (§4), rather than a popover built for one form. */}
@@ -848,7 +813,7 @@ export function WorkFrame({
 
       <div className="flex min-w-0 flex-1 flex-col">
         {elsewhere ? content : (<>
-        <div ref={centre} className="flex min-h-0 flex-1 flex-col overflow-y-auto px-4 py-3">
+        <div ref={centre} data-region="main" className="flex min-h-0 flex-1 flex-col overflow-y-auto px-4 py-3">
           <AttendedSession
             session={attended}
             quest={quest}
@@ -1024,7 +989,7 @@ export function WorkFrame({
           preview={previewing ? { name: fileName(previewing.path), path: previewing.path, onClose: closePreview } : null}
           mode={layout.dock.mode}
           width={layout.dock.width}
-          range={dockRange(width.viewport, width.frame, layout.rail.width)}
+          range={dockRange(width.viewport, width.frame, list?.beside ?? 0)}
           // Full because the window is narrow, not because the person asked: only widening undoes it.
           autoFull={layout.dock.mode === 'full' && !dockFull}
           onResize={resizeDock}
