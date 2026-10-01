@@ -36,6 +36,12 @@ public sealed partial class HelpCoverageTests
 
     private const string Key = "a key is the person's own, typed where it already is (D89).";
 
+    /// <summary>Settings → Tools' *System* and *Use this version* (TOOLS7): the `tool` kind's `use` door, TOOLS8's.</summary>
+    private const string ToolUseOwed =
+        "it narrows what runs to the machine's own, or to a version the lists name, so Ask Daoris should propose it, judged "
+        + "against the lists as last fetched; that is the `tool` kind's `use` door, which TOOLS8 builds (D121 §4.3), and "
+        + "until then `daoris tool use` is the terminal's door.";
+
     private const string Rules =
         "what an agent may do is never proposed by an agent: the room is not handed `permission_propose` (HELP1c), "
         + "since a rule narrowing is applied with nobody's press (PERM2).";
@@ -108,6 +114,29 @@ public sealed partial class HelpCoverageTests
         ("agents", "useHarnessAction", "profile-default", new Door("agent", "default")),
         ("agents", "useSetAgentSettings", null, new Door("account", "settings")),
         ("agents", "useRefreshHarnesses", null, new Exempt("it reads the roster again and changes nothing.")),
+
+        // TOOLS7: Settings → Tools, answered as D121 §4.3 decides, its doors owed until TOOLS8 builds the `tool` kind.
+        ("tools", "useToolUse", "system", new Owed(ToolUseOwed)),
+        ("tools", "useToolUse", "managed", new Owed(ToolUseOwed)),
+        ("tools", "useToolUse", "file", new Exempt(
+            "a program the person names runs as them on every call, so naming one stays their own press (D121 §4.3): a "
+            + "helper that can invent a path must not be one press away from running it.")),
+        ("tools", "useToolDownload", null, new Exempt(
+            "a download changes nothing about what Daoris runs; the use that would is a door (D121 §4.3).")),
+        ("tools", "useToolStop", null, new Exempt(
+            "it stops a download the person started, theirs to stop, and nothing switches either way.")),
+        ("tools", "useToolDelete", null, new Exempt(
+            "deleting a downloaded version is a discard, which stays the person's own press (D89); the one in use is never deleted.")),
+        ("tools", "useToolsLook", null, new Exempt(
+            "a look reads the resource lists and changes nothing about what runs (D121 §4.3).")),
+        ("tools", "useToolLocation", "add", new Exempt(
+            "a location is a source of programs with hashes of its own choosing, so naming one is the person's own trust and "
+            + "their own press (D121 §4.3).")),
+        ("tools", "useToolLocation", "remove", new Owed(
+            "removing a location only narrows what is offered, so Ask Daoris should propose it, its card listing the versions "
+            + "it stops offering; that is the `tool` kind's `location` door, which TOOLS8 builds (D121 §4.3), and until then "
+            + "`daoris tool locations remove` is the terminal's door.")),
+        ("tools", "useToolPick", null, new Exempt("it is the system's file picker, for the person's own choice.")),
         ("agents", "useHarnessInput", null, new Exempt("it types into a running sign-in, the person's own words to it; " + SignIn)),
         ("agents", "useHarnessCancel", null, new Exempt("it stops a sign-in the person started, theirs to stop; " + SignIn)),
 

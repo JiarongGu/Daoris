@@ -11,6 +11,7 @@ import { DriverDomain } from './DriverDomain';
 import { LogsDomain } from './LogsDomain';
 import { PermissionsDomain } from './PermissionsDomain';
 import { PluginsDomain } from './PluginsDomain';
+import { ToolsDomain } from './ToolsDomain';
 import { WorkspaceDomain } from './WorkspaceDomain';
 
 /**
@@ -53,6 +54,9 @@ export const SETTINGS_DOMAINS = [
   { id: 'workspace', label: 'settings.domain.workspace', machine: false, component: WorkspaceDomain },
   { id: 'driver', label: 'settings.domain.driver', machine: true, component: DriverDomain },
   { id: 'agents', label: 'settings.domain.agents', machine: true, component: AgentsDomain },
+  // The programs Daoris runs beside its agents (TOOLS7, D121 §4.1): each a file of this machine's, so a browser is
+  // offered no such domain.
+  { id: 'tools', label: 'settings.domain.tools', machine: true, component: ToolsDomain },
   { id: 'permissions', label: 'settings.domain.permissions', machine: true, component: PermissionsDomain },
   { id: 'plugins', label: 'settings.domain.plugins', machine: true, component: PluginsDomain },
   { id: 'browser', label: 'settings.domain.browser', machine: true, component: BrowserDomain },
