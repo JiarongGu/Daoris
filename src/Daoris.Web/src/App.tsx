@@ -236,7 +236,7 @@ export function App() {
     if (!attached && region !== 'list') return false;
     if (region === 'right') closings.setDock(!closings.dock);
     else if (region === 'panel') closings.setPanel(!closings.panel);
-    else if (listed && isListed(view) && listMode) {
+    else if (isListed(view) && listMode) {
       // By what the room made of it: an open list closes, one laid over goes, and a strip opens — over
       // the main area where the window drew it (D118 §3a). The closing is this view's own (§3f).
       const next = listToggled({ mode: listMode });
