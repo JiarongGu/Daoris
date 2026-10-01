@@ -44,8 +44,18 @@ type Report = {
     unstarted: number;
   };
   proposals: { waiting: number; byWeek: { week: string; made: number; byState: Counted[] }[] };
+  setups: { started: number; byState: Counted[]; sessions: SetupCost[]; total: Omit<SetupCost, 'session' | 'repository' | 'workspace' | 'state' | 'parked'> & { sessions: number } };
+  parks: { parked: number; byKind: Counted[]; byWeek: { week: string; parked: number; started: number; byWorkspace: { name: string; parked: number; started: number }[] }[] };
   refused: { code: string; count: number; requests: Counted[] }[];
   failed: Failure[];
+};
+
+/** One set-up session's cost, as the report reads it from the log: absent is null, never zero. */
+type SetupCost = {
+  session: string; repository: string; workspace: string; state: string; parked: number;
+  seconds: number | null; calls: number | null;
+  input: number | null; cacheRead: number | null; cacheWrite: number | null; output: number | null;
+  used: number | null; size: number | null;
 };
 
 /** Asks per session, spread: the sessions counted, their asks, and the statistics over them. */
@@ -503,6 +513,161 @@ test('the runner reads the home\'s proposals beside its log', () => {
     assert.equal(report.proposals.waiting, 3);
     assert.equal(report.asks.refused, 5);
   });
+});
+
+/**
+ * WSSETUP11 (D124 §7.3): two weeks of set-ups and parks. Three set-up sessions in two repositories (one parks,
+ * is answered and carried on by a second; one has not ended, and its turn is the older shape with no counts),
+ * and the parks of the period: driven sessions, an intake, and one whose open its process never saw.
+ */
+function setupWeeks(): string {
+  const home = mkdtempSync(join(tmpdir(), 'daoris-setups-'));
+  const logs = join(home, 'logs');
+  mkdirSync(logs);
+  const at = (time: string, event: string, data: Record<string, unknown>) => line(time, 'desktop', 'info', event, data);
+  const started = (time: string, session: string, kind: string, repository: string, workspace: string, setup?: boolean) =>
+    at(time, 'session.started', { session, kind, adapter: 'claude-code-acp', repository, workspace, ...(setup ? { setup } : {}) });
+  const parked = (time: string, session: string, kind: string | null, repository: string | null, workspace: string | null) =>
+    at(time, 'session.parked', { session, kind, repository, workspace });
+  writeFileSync(join(logs, '2026-09-24.desktop.jsonl'), `${[
+    started('2026-09-24T09:00:00.000Z', 's7', 'driven', 'reports', 'work'),
+    parked('2026-09-24T09:30:00.000Z', 's7', 'driven', 'reports', 'work'),
+    parked('2026-09-25T10:00:00.000Z', 's9', null, null, null),
+  ].join('\n')}\n`);
+  writeFileSync(join(logs, '2026-09-29.desktop.jsonl'), `${[
+    started('2026-09-29T09:00:00.000Z', 's1', 'driven', 'billing', 'work', true),
+    at('2026-09-29T09:05:00.000Z', 'turn.ended', {
+      session: 's1', stopReason: 'end_turn', turnMs: 300000,
+      input: 12, cacheRead: 51100, cacheWrite: 16700, output: 80, calls: 3, used: 48000, size: 1000000,
+    }),
+    at('2026-09-29T09:06:00.000Z', 'turn.ended', {
+      session: 's1', stopReason: 'end_turn', turnMs: 60000,
+      input: 5, cacheRead: null, cacheWrite: null, output: 7, calls: 0, used: null, size: null,
+    }),
+    parked('2026-09-29T09:07:00.000Z', 's1', 'driven', 'billing', 'work'),
+    at('2026-09-29T09:10:00.000Z', 'session.ended', { session: 's1', state: 'completed', seconds: 600 }),
+    started('2026-09-29T09:11:00.000Z', 's2', 'driven', 'billing', 'work', true),
+    at('2026-09-29T09:30:00.000Z', 'turn.ended', {
+      session: 's2', stopReason: 'end_turn', turnMs: 1140000,
+      input: 100, cacheRead: 1000, cacheWrite: 200, output: 50, calls: 10, used: 60000, size: 1000000,
+    }),
+    at('2026-09-29T09:31:00.000Z', 'session.ended', { session: 's2', state: 'completed', seconds: 1200 }),
+    started('2026-09-29T10:00:00.000Z', 's3', 'driven', 'reports', 'work', true),
+    at('2026-09-29T10:05:00.000Z', 'turn.ended', { session: 's3', stopReason: 'end_turn', turnMs: 300000 }),
+  ].join('\n')}\n`);
+  writeFileSync(join(logs, '2026-09-30.desktop.jsonl'), `${[
+    started('2026-09-30T08:00:00.000Z', 's4', 'driven', 'reports', 'work'),
+    parked('2026-09-30T08:10:00.000Z', 's4', 'driven', 'reports', 'work'),
+    started('2026-09-30T08:20:00.000Z', 's5', 'intake', 'ask #a1', 'home'),
+    parked('2026-09-30T08:30:00.000Z', 's5', 'intake', 'ask #a1', 'home'),
+    // A conversation never parks, so it is no session a park is counted against.
+    started('2026-09-30T08:40:00.000Z', 's6', 'chat', 'engine', 'work'),
+  ].join('\n')}\n`);
+  return home;
+}
+
+function withSetups(body: (report: Report, home: string) => void) {
+  const home = setupWeeks();
+  try {
+    body(reportOf(home), home);
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
+}
+
+test('each set-up\'s cost: how it stands, its minutes, its tool calls, its tokens as METER1 splits them, and its context', () => {
+  withSetups(({ setups }) => {
+    assert.equal(setups.started, 3);
+    assert.deepEqual(setups.byState, [{ name: 'completed', count: 2 }, { name: 'not ended', count: 1 }]);
+    assert.deepEqual(setups.sessions, [
+      {
+        session: 's1', repository: 'billing', workspace: 'work', state: 'completed', parked: 1, seconds: 600, calls: 3,
+        input: 17, cacheRead: 51100, cacheWrite: 16700, output: 87, used: 48000, size: 1000000,
+      },
+      {
+        session: 's2', repository: 'billing', workspace: 'work', state: 'completed', parked: 0, seconds: 1200, calls: 10,
+        input: 100, cacheRead: 1000, cacheWrite: 200, output: 50, used: 60000, size: 1000000,
+      },
+      // A turn of the older shape says nothing it cannot know: every count is null, never zero.
+      {
+        session: 's3', repository: 'reports', workspace: 'work', state: 'not ended', parked: 0, seconds: null, calls: null,
+        input: null, cacheRead: null, cacheWrite: null, output: null, used: null, size: null,
+      },
+    ]);
+    // The total sums what was measured, and its context is the largest any set-up held.
+    assert.deepEqual(setups.total, {
+      sessions: 3, seconds: 1800, calls: 13, input: 117, cacheRead: 52100, cacheWrite: 16900, output: 137, used: 60000, size: 1000000,
+    });
+  });
+});
+
+test('parks per week by workspace, held against the sessions started there that can park', () => {
+  withSetups(({ parks }) => {
+    assert.equal(parks.parked, 5);
+    assert.deepEqual(parks.byKind, [{ name: 'driven', count: 3 }, { name: '(unsaid)', count: 1 }, { name: 'intake', count: 1 }]);
+    // Weeks begin on Monday, in UTC. A conversation's start is not counted, and a park whose workspace the
+    // line does not say is `(unnamed)`.
+    assert.deepEqual(parks.byWeek, [
+      {
+        week: '2026-09-21', parked: 2, started: 1,
+        byWorkspace: [{ name: 'work', parked: 1, started: 1 }, { name: '(unnamed)', parked: 1, started: 0 }],
+      },
+      {
+        week: '2026-09-28', parked: 3, started: 5,
+        byWorkspace: [{ name: 'work', parked: 2, started: 4 }, { name: 'home', parked: 1, started: 1 }],
+      },
+    ]);
+  });
+});
+
+/**
+ * The set-up lines' parse table: a session is a set-up only when its start says `setup` as the boolean true,
+ * and a turn's count is a count only when it is a number at or above zero. Anything else is unsaid, never a
+ * zero and never a guess.
+ */
+const SETUP_LINES: [why: string, started: Record<string, unknown>, turn: Record<string, unknown>, setups: number, input: number | null][] = [
+  ['a whole set-up', { session: 's1', kind: 'driven', setup: true }, { session: 's1', input: 5 }, 1, 5],
+  ['no setup field', { session: 's1', kind: 'driven' }, { session: 's1', input: 5 }, 0, null],
+  ['setup false', { session: 's1', kind: 'driven', setup: false }, { session: 's1', input: 5 }, 0, null],
+  ['setup as a word', { session: 's1', kind: 'driven', setup: 'true' }, { session: 's1', input: 5 }, 0, null],
+  ['setup as a number', { session: 's1', kind: 'driven', setup: 1 }, { session: 's1', input: 5 }, 0, null],
+  ['a start with no session', { kind: 'driven', setup: true }, { session: 's1', input: 5 }, 0, null],
+  ['a count that is a word', { session: 's1', setup: true }, { session: 's1', input: '5' }, 1, null],
+  ['a count below zero', { session: 's1', setup: true }, { session: 's1', input: -1 }, 1, null],
+  ['a count of zero', { session: 's1', setup: true }, { session: 's1', input: 0 }, 1, 0],
+  ['another session\'s turn', { session: 's1', setup: true }, { session: 's2', input: 5 }, 1, null],
+];
+
+test('each shape of a set-up line counts as its parse table says', () => {
+  for (const [why, started, turn, setups, input] of SETUP_LINES) {
+    const lines = [
+      parseLine(line('2026-09-29T09:00:00.000Z', 'desktop', 'info', 'session.started', started)),
+      parseLine(line('2026-09-29T09:01:00.000Z', 'desktop', 'info', 'turn.ended', turn)),
+    ];
+    const report = summarise(lines, { from: since, to: NOW }) as Report;
+    assert.equal(report.setups.started, setups, why);
+    assert.equal(report.setups.sessions[0]?.input ?? null, input, why);
+  }
+});
+
+test('the text report says each set-up\'s cost and the parks by week, and none where there are none', () => {
+  withSetups((report, home) => {
+    const text: string = render(report, join(home, 'logs'));
+
+    assert.match(text, /^Set-ups$/m);
+    assert.match(text, /started\s+3 — completed 2 · not ended 1/);
+    // Anew is what was read fresh, written to the cache included; the rest was read from it.
+    assert.match(text, /s1\s+billing \(work\)\s+completed · parked 1 · 10m 0s · 3 calls · 16\.7K anew · 51\.1K from cache · 87 out · context 48K of 1M/);
+    assert.match(text, /s3\s+reports \(work\)\s+not ended · not measured/);
+    assert.match(text, /total\s+3 sessions · 30m 0s · 13 calls · 17K anew · 52\.1K from cache · 137 out · largest context 60K of 1M/);
+    assert.match(text, /^Parks$/m);
+    assert.match(text, /kinds\s+driven 3 · \(unsaid\) 1 · intake 1/);
+    assert.match(text, /week of 2026-09-28\s+3 parked · 5 started\n\s+work\s+2 parked · 4 started\n\s+home\s+1 parked · 1 started/);
+  });
+
+  const empty: string = render(summarise([], { from: since, to: NOW, skipped: 0 }), 'logs');
+  assert.match(empty, /^Set-ups\n {2}none$/m);
+  assert.match(empty, /^Parks\n {2}none$/m);
 });
 
 test('the arguments: a home, or an install\'s data folder, a number of days, and JSON', () => {

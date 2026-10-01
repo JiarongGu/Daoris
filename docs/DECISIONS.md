@@ -3585,6 +3585,11 @@ behind a codebase does not travel, and a request does.
 workspace's other checkouts by default. What stays of this decision is that a change, or what only the
 other repository knows, is asked of it and waited on.*
 
+*Amended by D124 (WSSETUP9, 2026-10-01): asking another repository is the second place a driven session goes. The
+first is the sources: the quest and its files, its own repository's documents, code and history, the workspace's
+knowledge, and the checkouts it may read. What they settle it decides, and what they lean towards it takes and says
+in its close.*
+
 ## D80 — A session cut off after its take is carried on in its tree, like a failed start is retried (2026-09-27)
 
 **Decision.** A taken quest, waiting on nothing, whose last session on this machine concluded
@@ -3691,6 +3696,10 @@ taker's, and the connector already knows which session it speaks for (PERM2).
   service holds (D46 §4), and the service saw the take arrive.
 - **Answering in the composer.** A driven session takes no person's line (INT4i), and its process is
   gone by the time it parks.
+
+*Amended by D124 (WSSETUP9, 2026-10-01): what may park a session narrows to what no source holds and only the person
+can give: a sign-in, a go-ahead for an act outside the repository or on a production system, a preference nothing
+records. A choice between options is no longer a reason by itself, and a park says what the session looked at.*
 
 ## D84 — Daoris's browser is a Chromium Daoris ships, and the person's Edge is always an option (2026-09-28)
 
@@ -7214,6 +7223,123 @@ the folder, so it reaches into nothing.
 - **The workshop, the reader, *Find* and the pack** exist only as rows. `verify` checks this document's links
   and the log's shape, and none of its words.
 
+## D124 — A workspace is set up one repository at a time by its own sessions: the install carries the doctrine tool, a set-up writes the knowledge a neighbour needs, registration follows the line, and a session looks before it asks (2026-10-01)
+
+**Decision (WSSETUP1).** A driven session in the owner's work workspace stopped to ask the person a question its
+own repository's notes and code could answer. The owner's diagnosis: *"the repo should be registered and apply the
+doctrine and also initialize the knowledge"*. Measured on the install the same day: 29 repositories, all drivable,
+none adopted, none registered (`connect` refuses a manifest that declares no `domain`, and none has a manifest), 23
+with no indexed knowledge and 6 with 16 to 195 entries. The contract is
+`docs/2026-10-01-workspace-setup-design.md`. It builds on D117 §6's set-up quest, D122's standard and D121's tools'
+environment.
+
+1. **The install carries its packed CLI, and every child finds `daoris` on its `PATH`.** `publish:desktop` packs
+   `src/Daoris.Cli`, the release's own artefact, into `app/cli/` with two launchers in `app/bin/`, and TOOLS5's one
+   environment puts `app/bin/` first for every process the driver and the modules start. It is Daoris's own
+   program, not a tool. npm stays the channel outside Daoris and the manifest's `source` (D105).
+2. **An older doctrine tool never rewrites a newer lock.** `sync` and `upstream` refuse a lock whose canon version
+   is newer than their own. Two versions on one machine is a hazard with npm alone, and the tool answers it.
+3. **The set-up quest initialises knowledge.** For a repository that is addressable, not adopted and declaring
+   nothing, its steps check the tool's version, take up the doctrine in the agents layout, then write the domain
+   (`summary`, `owns`, `accepts`, `uses`) and the repository's own knowledge documents a neighbour's session would
+   need: what it owns and where, its contracts and data, and the computations others depend on, each fact at its
+   place in the code and each unconfirmed one said. Then the brief, the documents, the safe work and the checks.
+   It writes only in its tree, on its branch; it never pushes, publishes a quest, runs `connect` or `upstream`,
+   declares a join, or changes code. *Not registered here* is said by what the press finds, each refusal with its
+   door. The press's rule is exact `daoris` verbs.
+4. **Registration follows the line.** The driver registers a repository from `daoris.json` and `daoris.lanes.json`
+   read on its line as git objects, sending what `connect` would send, for the checkout's root and never a tree. It
+   reads after Daoris moves a line (a `merge` landing, *Bring up to date*'s fast-forward), once at start, and on the
+   person's press, and says every refusal on the row.
+5. **The workspace press is a plan of single quests.** One set-up open at a time by default and never the last of
+   the `cap`'s slots; the repositories other work touches first; a pilot of two, after which the plan pauses until
+   the person resumes it; pause, resume and stop on the screen, on `daoris-driver setup --workspace` and as Ask
+   Daoris doors (D50, D110).
+6. **Until a repository adopts, the service indexes its README** as the repository's own word, split at its
+   headings, labelled by its path, and dropped once a lock exists.
+7. **A session looks before it asks.** The driven instruction sends it to the quest and its files, its repository's
+   documents, code and history, the workspace's knowledge and the checkouts it may read first. What they settle is
+   decided; what they lean towards is taken and said in the close; only what no source holds and only the person can
+   give stops the session. `autonomous-development` gains the same line in the canon's words.
+
+**Why.** The two failures are separate. The instruction offered *a choice between options that is theirs* as a
+reason to stop, and a choice the repository's own documents settle read as one. And the workspace held nothing for
+a neighbour to find. A set-up is the repository's own act, carried by its own session and reviewed by its owner
+(D32, D117), so Daoris publishes it rather than performing it. The install's copy of the CLI makes it possible now,
+needs no network, and lets the press's rule be exact verbs where `npx` would be a runner the judge refuses (D122).
+The registry is read from the line because the line is what a review reached. The plan paces the set-ups because
+oldest-first under a cap of two would hold every slot for hours.
+
+**Rejected** (the design's §10 has the full list):
+- **Waiting for npm**: the arc on a press with its own unknowns, and even after it a runner rule and a fetch codex
+  cannot make.
+- **A machine path to the install's CLI in the quest**: it lands in whatever the session commits.
+- **A global npm install, the account's `PATH`, or a single-file build of the CLI.**
+- **The driver or the service running the doctrine commands into the repository** (D32, D46, D117 §9).
+- **Registering from the session, at its `done`, by re-importing, or by reading every line at every tick.**
+- **Publishing every set-up at once, a chain of set-ups, a set-up priority or a *deferred* status.**
+- **The plan in `driver.json`**: a field only the driver uses, kept by two twins.
+- **Set-ups asking their neighbours**, **indexing code as a baseline**, and **the README read after adoption**.
+- **The instruction alone, or the canon alone**: each misses the sessions the other reaches.
+
+**What it amends, when built.** D117 §6.1, §6.2, §6.3, §6.5 and §6.6, and its §9's rejection of *the install carrying
+the CLI onto a session's path*, which is reversed; LAYOUT10 no longer waits on the first publish. D105 §2: npm
+outside Daoris, the install's copy at the same version inside it. D121 §2.4: the environment carries `app/bin/`
+first. D122 §3.9: the press's rule is `daoris` verbs. D79 and D83: what reaches the person narrows. The canon's
+`autonomous-development` and the adoption playbook (local). Each row that builds a piece notes the amendment where
+it lands.
+
+**What the gates do not cover.** This change is documents only, and nothing is built. Its statements about today
+were read from the code at `21787b8`: `TargetPrompt`, the planner and the driver's configuration, the intake's room,
+`connect.ts`, `manage.ts`, `commands.ts`, the registry and its import, the registry module, the scanner, the
+publish script and the prompt's tests. The workspace's numbers are the parent's measurement on the install; the long
+turn's are the backlog's (COST1, METER1). Not measured: which shell each harness runs `daoris` from and whether it
+finds it by its bare name, whether codex's sandbox runs a program outside the workspace, what one set-up costs, and
+whether a real set-up's knowledge is true. During `0.0.x` every build answers `0.0.1`, so the version guard cannot
+tell two builds apart until the first release. `verify` checks the log's shape and the design's links, and none of
+these words.
+
+**As built (WSSETUP9, 2026-10-01): a session looks before it asks.** `TargetPrompt.Asking` (`Adapters.cs`), which
+the claiming, resuming and carrying-on instructions all compose, opens with §6.1's look-first paragraph, keeps the
+paragraph on asking another repository, and ends with the narrowed stop. Two things the build settled:
+
+- **The stop opens *Stop only for what no source holds and only the person can give*,** where §6.1 wrote *Stop for the
+  person only for … only they can give*. The meaning is the same, and §6.2 keeps the phrase *only the person can give*
+  as one of the three the tests hold.
+- **The checkouts clause points to where the instruction lists them.** A declared write target is named in the
+  boundary, below the paragraph, and not in the read-only list above it, so the clause says *listed above*, *listed
+  below*, or *listed above and below*. With reading across off it is absent, and the look names no checkout.
+
+Held by `AskAndWaitPromptTests` (five new cases, each seen failing first) and by the across tests unchanged. The old
+words were searched in the desktop suites' `Process` half, `tools/*rehearsal*.mjs` and the web's `e2e/`, and none
+names them. **Not covered**: whether a real session now settles what it would have asked, which only the pilot's
+canary shows (WSSETUP12).
+
+**As built (WSSETUP11, 2026-10-01): set-ups and parks, counted.** The machine log gains `session.parked {session,
+kind, repository, workspace}`, `session.started` gains `workspace` and, for a set-up's session only, `setup: true`,
+and `turn.ended` gains the turn's tokens (`input`, `cacheRead`, `cacheWrite`, `output`), its tool `calls` and its
+context (`used`, `size`). `tools/usage-report.mjs` gains a *Set-ups* section, each set-up session's cost, and a
+*Parks* section, per week by workspace beside the sessions started there. The machine-log design's §4 and §6 say
+what each line measures and what each section reads. What the build settled that §7.3 left open:
+
+- **The park is written where it is made, not from the attention watch.** `SessionLog` writes it as the service
+  client moves a record into the state `SessionStates.IsParked` names, which only the driver does. The shell's
+  watch lives in the modules, its first look is a baseline that drops a park made just before a restart, and the
+  headless `--once` and `--until-idle` run none, so writing from it would undercount and need a modules change. Both
+  read the one predicate, and `SessionLogTests` and `AttentionTests` hold the same rows.
+- **The line names its workspace and its kind**, beside §7.3's session and repository: parks per week by workspace
+  needs the first, and an intake's park (the person asked about an ask) is told from a driven session's by the
+  second.
+- **A set-up is known by its quest's title.** A quest carries no kind, and the press publishes an ordinary ask, so
+  `SetupQuests` holds the three titles the press composes (D117 §6.2, §2.1–§2.2 here), and LAYOUT7's composer takes
+  its words from there. The driver passes the mark with the open; the ledger is not told.
+- **A set-up's cost is read from the log alone**, not the usage record: its context comes from each turn's usage
+  reports at their high-water, the same reports the usage record keeps, so the report reads no file but the log and
+  `usage.json` gains no reader.
+
+**Not covered**: the driver's open passing the mark is reached only by a real tick (the `Process` half); its
+decision and the client and log beneath it are held in the fast half, and LAYOUT7's family rehearsal runs the first
+set-up. No week of *before* exists until an install carrying this runs.
 ## D123 — A long entry is embedded whole, in pieces the deployment's window bounds; its best piece speaks for it, and a refresh says how many were split (2026-10-01)
 
 **Decision (SEM3, found upgrading Lyntai to 3.5.3, LYN1).** The semantic tier embedded an entry's title twice and
