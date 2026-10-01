@@ -120,9 +120,11 @@ export function onPath(
   }
 
   const windows = process.platform === 'win32';
-  const pathExt = (env.PATHEXT ?? '.EXE;.CMD;.BAT;.COM').split(';').filter(Boolean);
+  // Windows reads a name in any case, and a copy of `process.env` keeps the system's own spelling (`Path`) (TOOLS5).
+  const read = (name: string) => (windows ? env[Object.keys(env).find((key) => key.toUpperCase() === name) ?? name] : env[name]);
+  const pathExt = (read('PATHEXT') ?? '.EXE;.CMD;.BAT;.COM').split(';').filter(Boolean);
   const extensions = !windows ? [''] : startable ? pathExt : ['', ...pathExt];
-  for (const directory of (env.PATH ?? '').split(windows ? ';' : ':')) {
+  for (const directory of (read('PATH') ?? '').split(windows ? ';' : ':')) {
     if (!directory) continue;
     for (const extension of extensions) {
       const candidate = join(directory, command + extension);

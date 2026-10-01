@@ -12,6 +12,13 @@ network.
 
 ## Unreleased
 
+- **`autonomous-development`** gains *Look before you ask*: a question the task's own material, the
+  repository's documents, code and history, or a neighbour's documents can settle is the agent's to
+  settle, with its evidence kept for the hand-over; a reading the evidence leans to is taken and stated at
+  the checkpoint; only what no source holds and only the person can give (a sign-in, a go-ahead for an act
+  outside the repository or on a live system, a preference nothing records) reaches them mid-run. Drawn
+  from a driven session that stopped to ask what its own repository's notes and code could answer. Nothing
+  to do in an adopting repository beyond `sync`; the always-loaded region is unchanged.
 - **`development-documents`** (new core knowledge) and **`set-up-documents`** (new core skill) — a
   standard for the documents a repository keeps so a code-generating session can work without stopping
   to ask or search. Every document has a **role** (brief, room, knowledge, skill, router, decisions,

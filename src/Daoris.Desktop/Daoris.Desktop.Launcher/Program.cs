@@ -47,6 +47,8 @@ public static class Launcher
                 + "this launcher. Publish it again into this folder.");
         }
 
+        // Not the tools' environment (TOOLS5): the application is Daoris's own program, and every child it starts is
+        // handed the tools' environment there, read at each start; its own environment is never rewritten (§2.4).
         var start = new ProcessStartInfo(shell)
         {
             UseShellExecute = false,

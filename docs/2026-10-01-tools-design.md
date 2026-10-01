@@ -7,8 +7,10 @@ platform table and the merge (§3.1–§3.5), twins in `resources.ts` and `ToolR
 `app/resources.json`, whose first entries `2026-10-01-tools-resources-evidence.md` records. TOOLS4 is built: a
 version planned, downloaded, verified, unpacked and laid out (§3.6, §3.7), twins in `toolinstall.ts` with `zipfile.ts`
 and `ToolInstall.cs`, `daoris tool download|use … managed|update|delete|locations|look`, and the driver's download as a
-followed action. Nothing starts a managed tool yet (TOOLS5). D121's notes say what each row settled that this document
-left open. The owner, 2026-10-01:
+followed action. TOOLS5 is built: one answer for every child (§2.4, §2.6, §2.7), twins in `Tools.Children.cs` and
+`tools.ts`. Daoris's own git, a hook's first word, a pin's `npm` and the tree guard's node are the resolved files, and
+every child the driver and the modules start is handed the tools' `PATH`, held by source scans. `GIT_CONFIG_GLOBAL` is
+TOOLS6's. D121's notes say what each row settled that this document left open. The owner, 2026-10-01:
 
 > *"all tools that daoris using like git, [terminal] should all have a self managed option (and can be setup
 > in settings) which can be download from locations … I perfer provide default download location and built
