@@ -7326,3 +7326,22 @@ and swapped in whole. What the design left open, settled here:
   runs the tool from each shell); that is the parent's at merge. Nothing puts `app/bin/` on any `PATH` yet: that is
   WSSETUP3. The desktop README's install paragraph does not mention the tool yet, since this row could not touch the
   desktop tree.
+
+**As built (WSSETUP4, 2026-10-01): an older tool never rewrites a newer lock.** `lockversion.ts` holds the rule:
+`newerLock` compares the lock's canon version with the canon the tool carries by number (`compareVersions`, so
+`0.10.0` follows `0.9.0`), and `refuseNewerLock` throws exit 1 naming both and the command at the lock's version,
+`npx daoris@<locked> <the command as given>`. What the design left open, settled here:
+- **`sync` refuses before anything is planned, in every mode.** A dry run answers with the same refusal, since it is
+  how a person asks whether `sync` would refuse; `--force` does not pass it, since it discards local edits, which is a
+  different question from discarding a newer canon's text. The state space D19 enumerates assumes the canon is not
+  older than the lock.
+- **`upstream` refuses it too, one file or `--all`**, reading the version from `canon.json` alone. A canon with no
+  version to read is left to the refusals that already name it.
+- **`status` says it instead of offering an update.** It said *canon 0.0.1 available (lock has 0.0.6) — run 'daoris
+  sync'*, sending the person to the command that now refuses. It prints a `newer lock` line naming both versions and
+  `npx daoris@<locked>`, and `--json` carries `newerLock` (`locked`, `carried`, `run`) with `update` null.
+- **`check` says nothing of it**: it reads the lock and the disk and never the canon (D8), so it cannot know.
+- **Held by** `newer-lock.test.ts` (each case failing first: the older tool synced, returned 0 and rewrote) and the
+  release rehearsal's phase 5 (f): the packed tool, which carries canon `0.0.1`, run on the consumer the phases above
+  moved to `0.0.6`. That phase was not run by this row; its checks were run by hand against a fresh pack of this
+  source. During `0.0.x` two builds both answer `0.0.1` and the guard cannot tell them apart, as D124 says.

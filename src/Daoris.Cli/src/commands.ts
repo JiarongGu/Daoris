@@ -7,6 +7,7 @@ import { readCanon, resolveCanonRoot, resolveSelection } from './canon.ts';
 import { MANIFEST_FILE, lockIndex, readLock, readManifest, writeManifest } from './config.ts';
 import { planChanges } from './materialize.ts';
 import { notesBetween } from './notes.ts';
+import { newerLock } from './lockversion.ts';
 import { inspect } from './drift.ts';
 import { HARNESSES, DEFAULT_HARNESS, resolveHarness } from './harness.ts';
 import { formerDocuments, lockLayout } from './layout.ts';
@@ -174,9 +175,13 @@ export function commandStatus(
   }));
   const offers = selection?.offers ?? [];
 
+  // A lock a newer canon wrote is not an update: `sync` and `upstream` refuse it (WSSETUP4, D124 §1.4), so
+  // this says so and names the tool at the lock's version, rather than sending the person to `sync`.
+  const behind = canon && lock ? newerLock(lock, canon.version) : null;
+
   // status may reach the canon; `check` deliberately may not (D8), which is why
   // "a newer canon exists" is reported here and never gates a build.
-  if (canon && lock && !selectionProblem) {
+  if (canon && lock && !selectionProblem && !behind) {
     if (canon.version !== lock.canonVersion) {
       // Naming what moved is the difference between a prompt to act and a
       // prompt to investigate. All of it comes from the lock, so it stays offline.
@@ -254,6 +259,8 @@ export function commandStatus(
       local,
       canonSourceAvailable: canonAvailable,
       update: update ? { ...update, notes } : null,
+      // A lock a newer canon wrote, which `sync` and `upstream` refuse, and the tool to run instead (WSSETUP4).
+      newerLock: behind,
       // Absent unless asked for: the wiring is machine state, and a repository's status answer is
       // about the repository. `--machine` is the person saying they want both.
       ...(machine ? { machine } : {}),
@@ -318,6 +325,9 @@ export function commandStatus(
 
   if (!canonAvailable) {
     write(`  canon source  unavailable at '${canonRoot}' (check still works)`);
+  } else if (behind) {
+    write(`  newer lock    the lock is at canon ${behind.locked}, and this daoris carries ${behind.carried} — `
+      + `sync and upstream refuse; run ${behind.run}`);
   } else if (update) {
     write(
       `  update        canon ${update.available} available (lock has ${update.locked}) — run 'daoris sync'`,

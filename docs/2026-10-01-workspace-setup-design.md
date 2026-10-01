@@ -4,7 +4,8 @@
 > person a question its own repository's notes and code could answer. The owner's diagnosis is that the
 > workspace lacks knowledge: *"the repo should be registered and apply the doctrine and also initialize the
 > knowledge"*. This is the contract for the WSSETUP rows, and its decision is **D124**. Status: **designed;
-> WSSETUP2 built** (the install's doctrine tool, §1.2 and D124's note). It builds on the set-up quest of `docs/2026-10-01-agent-layout-design.md` §6 (D117: LAYOUT7,
+> WSSETUP2 and WSSETUP4 built** (the install's doctrine tool, §1.2, and the version guard, §1.4; D124's notes). It
+> builds on the set-up quest of `docs/2026-10-01-agent-layout-design.md` §6 (D117: LAYOUT7,
 > LAYOUT8, LAYOUT10), the standard of `docs/2026-10-01-development-documents-design.md` (D122) and the tools'
 > environment of `docs/2026-10-01-tools-design.md` (D121, TOOLS5), and it amends D117 §6 where §11 says. Read
 > with **D13**, **D32**, **D45**–**D47**, **D58**, **D70**, **D77**, **D79**, **D83**, **D87**, **D105**, **D107**,
@@ -155,6 +156,11 @@ note has the rest.*
   it, so two installs from different commits both answer `0.0.1`, and the guard cannot tell them apart. On one
   machine a republish moves forward with main, so a later `sync` moves a repository forward too. Between two
   machines on different builds it is open, and the first release closes it. It is recorded in §13.
+
+*As built (WSSETUP4): `sync` refuses in every mode, a dry run and `--force` included, and `upstream` one file or
+`--all`. The sentence above was not so of either reader: `check` never reads the canon (D8), so it cannot know, and
+`status` offered the older canon as an update and said to run `daoris sync`. It now prints a `newer lock` line and
+the command at the lock's version. D124's note has the rest.*
 
 ### 1.5 What else it answers
 
