@@ -76,7 +76,7 @@ export function AttendedSession({
   /** And the answer to a driven session that parked to ask the person (STANDDOWN2). */
   onAnswerSession?: (answer: string | null) => void;
   /**
-   * The chain its quest belongs to (MAP1), the same strip a quest's drawer shows. Rendered only
+   * The chain its quest belongs to (MAP1), the same strip a quest's page shows. Rendered only
    * when there is one, like there: a lone quest has nothing before or after it to show.
    */
   chain?: ChainStep[];

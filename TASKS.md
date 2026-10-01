@@ -21,11 +21,11 @@ lists.
 
 ## State
 
-**Counts, and this is their one home:** seventeen commands, **888 CLI tests, 778 service and 47 HTTP host, 2076 driver,
-476 desktop modules, 80 devkit, 2176 web unit, 22 Playwright**, 108/108 release rehearsal, **312/312
+**Counts, and this is their one home:** seventeen commands, **918 CLI tests, 865 service and 49 HTTP host, 2251 driver,
+476 desktop modules, 80 devkit, 2294 web unit, 22 Playwright**, 108/108 release rehearsal, **312/312
 family rehearsal** (it names its own phases when you run it), **70/70 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 6 knowledge
-documents, 6 skills, 7 packs. The always-loaded core is **23,306 of 26,000 bytes** — a span in
+documents, 6 skills, 7 packs. The always-loaded core is **24,064 of 26,000 bytes** — a span in
 `AGENTS.md` since D59 — and **advisory rather than enforced** (D54: a fact gates, a judgement
 reports).
 
@@ -113,9 +113,9 @@ rather than designed.
 
 ## Backlog
 
-**Sixty-seven rows are open** (most of them the builds of the designs below) (triaged 2026-09-30, when the owner asked to go faster; 2026-10-01 after the night's merges, the look, and the owner's round):
-- **Merging next:** integrate-h (TOOLS4, FRAME1e with FRAME1d, PLUGDIST1a, SEM3 with DOC5, DOC4, SELECT1, DOC3a), then
-  PARK1 with METER1 (branch `park1`). **Building:** TOOLS5 (on TOOLS4), MENU1 (on FRAME1e and SELECT1).
+**Seventy-five rows are open** (most of them the builds of the designs below) (triaged 2026-09-30, when the owner asked to go faster; 2026-10-01 after the night's merges, the look, and the owner's round):
+- **Merging next:** TOOLS5, WSSETUP1 (the design) and WSSETUP10 (branch `wssetup10`). **Building:** TOOLS7 (on TOOLS5),
+  FRAME1f (on MENU1), WSSETUP9 with WSSETUP11.
 - **Designed, to build in order:** DEV2–DEV11 (D115); FRAME1b–i (D118) after NAME1b; PLUGUI1 after FRAME1c;
   LAYOUT3–LAYOUT10 (D117) after LAYOUT2's evidence.
 - **Waiting on the owner (five):** BUDGET1 (their call), TRUST2 and AGT2c (a grant, two
@@ -150,15 +150,6 @@ then FRAME1's audit and model, then PLUGUI1 on that frame. DEV1 is a design docu
 them. Each starts with its contract document, is built in parts by subagents, and is looked at on the
 install in both themes and both languages.
 
-- [ ] **PARK1 — a parked session's card lost its question** (AR-2203, 2026-10-01): the session asked which report
-  is the "individual Daily OEE report" in a long message with indented lists, and its card read "to ask you:" and
-  the closing line, since the question was scraped from the console transcript, where an indented line is a
-  tool's output. The card now quotes the record's last message whole (`SessionEvents.LastSaid`), the transcript
-  only as a fallback. Built on branch `park1`; seen failing against the old reading.
-- [ ] **METER1 — a turn's meter summed cache reads into "in"** (owner, 2026-10-01: *"输入 69.1M … there must be an
-  issue"*): AR-2203's 48-minute turn read 663K anew and re-read 68.5M from its cache; the line said 69.1M in. The
-  line now says them apart (`16.7K in · 51.1K cached · 80 out`, 输入 / 缓存 / 输出), the hover sentence with it.
-  Built on branch `park1`.
 - [ ] **COST1 — what a long driven turn costs** (found with METER1): that turn ran about a thousand tool calls,
   and its context grew from 48K to 679K tokens on a 1M window, every call re-reading it from the cache. Nothing in
   Daoris sets an agent's window or when its harness compacts. Measure first (each driven session's context
@@ -167,8 +158,8 @@ install in both themes and both languages.
   since it trades cost for what a session remembers.
 - [ ] **SELECT1 — a long select runs off the window** (owner, 2026-10-01: *"select option currenly does not have
   scroll it just overflow the screen"*). Every select is the one atom `SelectField` (`ui.tsx`), whose list had no
-  height cap: capped at the room the popper measures, with the scroll arrows Radix hides the scrollbar for. Built
-  on branch `select1`; looked at on the window with a long list, at 680 px, before it is archived.
+  height cap: capped at the room the popper measures, with the scroll arrows Radix hides the scrollbar for. **Merged
+  2026-10-01 (integrate-h)**; open until it is looked at on the republished window with a long list, at 680 px.
 - [ ] **MENU1 — one menu atom** (found with SELECT1): eight files style Radix's dropdown menu each on its own
   (AppMenu, ViewsMenu, ListPane's ＋ and ⋯, SessionRow, SyncStatus, TerminalTabs, BrowserDoor, the map's
   LinesMenu and LayeredMap), and none caps its height, so a long menu runs off the window as the select did. One
@@ -176,7 +167,8 @@ install in both themes and both languages.
   checkbox item, separator, label), every menu moved onto it. The two dialogs built outside the atoms (QuickAsk,
   CommandPalette) move onto a dialog atom or are named as the test's exceptions. The test: no file but `ui.tsx`
   imports a Radix primitive (the app root's tooltip provider excepted), as `presentational.test.ts` holds what a
-  molecule imports. Web shell, after FRAME1e; looked at with a long menu at 680 px, both themes.
+  molecule imports. **Merged 2026-10-01 (integrate-h)**; open until a long menu is looked at on the republished
+  window at 680 px, both themes.
 - [ ] **SEM3b — the window says what a refresh embedded** (SEM3's hand-back): the refresh notice shows the HTTP
   answer's `embedded` (entries, vectors, splits, window), and Settings → AI's search hint names
   `DAORIS_EMBED_WINDOW` beside the model and the address, in both languages. Web shell and web settings.
@@ -193,10 +185,6 @@ install in both themes and both languages.
   live, Data folder, Source, *Install from a folder…*.
 - [ ] **PLUGUI1g — a plugin's checks** (after f): the last trial kept, its own tests run in a copy under the home.
 - [ ] **PLUGUI1h — Ask Daoris reaches the Plugins view** (after c and FRAME1i).
-- [ ] **FRAME1d — Quests on the frame**: asks and quests in the list, a record in the main area, composers
-  stay drawers; `test:web`'s quest-lifecycle spec moves to the page in the same row.
-- [ ] **FRAME1e — Repositories on the frame** (the renamed Projects): adopted, then registered; the
-  repository's page with Manage and its code map.
 - [ ] **FRAME1f — Search and Convergence on the frame**: the hits and findings in the list, the entry in the
   main area; the reader drawer retires for these.
 - [ ] **FRAME1h — the secondary windows**: the monitor's rail on `ListPane`, a detached console on
@@ -217,6 +205,48 @@ install in both themes and both languages.
 > need other resouce location"*
 
 
+### A workspace that knows itself (owner, 2026-10-01) — D124
+
+> *"since all is known knowldge it should be able to figure out itself"* … *"its more like leaking of knowledge for
+> workspace, so the repo should be registered and apply the doctorine and also initalize the knowledge"*
+
+Measured the same day: the owner's work workspace holds 29 drivable repositories, none adopted, none registered
+(`connect` refuses one with no `domain`), 23 with no indexed knowledge at all; the intake router said none declares
+what it owns, and a driven session asked the person what its own notes and code could answer.
+
+The contract is `docs/2026-10-01-workspace-setup-design.md`; §8 carries each row's full text and proof. Order: WSSETUP9
+first, then WSSETUP11 early (a week of *before*); WSSETUP4, WSSETUP8, WSSETUP10 and WSSETUP2 any time; WSSETUP3 after
+TOOLS5 and WSSETUP2. The driver lane runs WSSETUP9 → WSSETUP11 → LAYOUT7 → WSSETUP5 → WSSETUP6; WSSETUP7 after LAYOUT8,
+FRAME1e and WSSETUP6. Then the owner's two runs.
+
+- [ ] **WSSETUP1 — the design** (D124): built on its branch; merging next with TOOLS5.
+- [ ] **WSSETUP9 — a session looks before it asks** (§6.1, §6.2; driver): `TargetPrompt.Asking` rewritten for the
+  claiming, resuming and carrying-on instructions; the clause naming other checkouts only with reading across.
+- [ ] **WSSETUP10 — the canon says it** (§6.3; doctrine): one bullet in `autonomous-development`, an entry under
+  `## Unreleased`, this repository and `examples/` re-synced in the same commit.
+- [ ] **WSSETUP11 — set-ups and parks, counted** (§7.3; driver, tools): `session.parked` from the attention watch; the
+  usage report gains a set-up section and parks per week by workspace. Run early.
+- [ ] **WSSETUP4 — an older tool never rewrites a newer lock** (§1.4; cli, tools): `sync` and `upstream` refuse (exit
+  1) a lock whose canon version is newer, naming both versions.
+- [ ] **WSSETUP8 — the README as an unadopted repository's word** (§5; service).
+- [ ] **WSSETUP2 — the install carries its doctrine tool** (§1.2; tools): the packed CLI in `app/cli/`, two launchers
+  in `app/bin/`; the deployment rehearsal runs `daoris --version` and `check` from Command Prompt and Git Bash.
+- [ ] **WSSETUP3 — `daoris` on every child's PATH** (§1.3; driver, modules, cli; after TOOLS5 and WSSETUP2): `app/bin/`
+  first in the tools' environment; the press's facts gain `node` and `daoris` with their versions.
+- [ ] **LAYOUT7, amended by D124** (§2): the refusals of §2.1, the body of §2.2–§2.7 with the tool check and the
+  knowledge step, `daoris` in place of `npx`, §2.4's exact verbs; the playbook gains *Initialise the knowledge*.
+- [ ] **WSSETUP5 — registration follows the line** (§3; driver, modules, cli; after LAYOUT7): three moments, read as git
+  objects, a twin of `connect`'s `registration()`, `registry.followed`, `daoris-driver register`, the row's *Refresh*.
+- [ ] **WSSETUP6 — the workspace plan** (§4.1–§4.3; driver; after LAYOUT7): the plan file, the tick, the order,
+  `atOnce` at most `cap − 1`, the pilot pause, pause, resume and stop.
+- [ ] **WSSETUP7 — the workspace on the screen and in Ask Daoris** (§4.4, §4.5; modules, web-shell, service, driver;
+  after LAYOUT8, FRAME1e and WSSETUP6), both languages.
+- [ ] **WSSETUP12 — the pilot** (the owner's run, after a republish carrying WSSETUP2, 3, 5, 6, 9 and LAYOUT7): two
+  repositories; what each wrote, its review, its cost, its registration, and a canary: a neighbour's session finds
+  the answer by search and does not park.
+- [ ] **WSSETUP13 — the rest** (the owner's run): the plan resumed with the pilot's numbers; parks per week before and
+  after.
+
 ### Plugins: the workshop, Daoris.Plugins and a catalogue (D120) — the build
 
 The contract is `docs/2026-10-01-plugin-distribution-design.md`; §7 carries each row's full text and proof.
@@ -224,14 +254,10 @@ Every task in Daoris.Plugins is an ask to it, taken by its own session (the owne
 
 - [ ] **PLUGREPO2e — this repository lets them go** (after PLUGDIST1g): the three plugins Daoris.Plugins now holds leave
   `examples/`, `landing-plugins.test.ts` retires, and the offers are laid out from packages.
-- [ ] **SEM3 — a long entry is embedded whole and cut silently** (found upgrading Lyntai, LYN1 3.5.3): the semantic tier
-  sends an entry whole, and the embedder cuts it at its context without saying; Lyntai 3.3's `MaxInputChars` and
-  `Segmentation` would cap or split it. A feature choice: decide, then measure recall before and after.
 - [ ] **WORKSHOP1a — the workshop setting** (§2.1): where Daoris develops a plugin, the home by default, both doors.
 - [ ] **WORKSHOP1b — the workshop and its sessions** (§2.2); **WORKSHOP1c — the workshop on the view; Ask Daoris
   makes plugins there** (§2.3, §2.5); **WORKSHOP1d — hand-over and a named source** (§2.4).
-- [ ] **PLUGDIST1a — the package and its reader, offline** (§5.1, §5.7); **PLUGDIST1b — the pack and release
-  workflow** (an ask to Daoris.Plugins); **PLUGDIST1c — a package source over HTTP** (§5.3–§5.8);
+- [ ] **PLUGDIST1b — the pack and release workflow** (an ask to Daoris.Plugins); **PLUGDIST1c — a package source over HTTP** (§5.3–§5.8);
   **PLUGDIST1d — the host answers**; **PLUGDIST1e — Find plugins** (§6, after PLUGUI1f).
 - [ ] **PLUGDIST1a's leftovers** (its hand-back, 2026-10-01): the modules' plugin page calls a package record
   `folder` with no folder (PLUGDIST1d says `package`); `install` is routed in the host's `Program.cs` ahead of the
@@ -259,8 +285,7 @@ UNBLOCK5 → UNBLOCK2 → UNBLOCK4 → UNBLOCK3 → DOC7. Only DOC2 changes the 
 - [ ] **UNBLOCK2 — the declaration and its judge** (§3.1–§3.3, after DEV5): `safe` beside `gates`, read from the line.
 - [ ] **UNBLOCK3 — the person's one yes** (§3.4, §3.5, after UNBLOCK2 and a week of UNBLOCK5): the `declare`
   proposal, exact rules on both Claude Code doors.
-- [ ] **DOC4 — this repository declares its documents**; **DOC5 — the service reads declared records**;
-  **DOC6 — the example family keeps the standard**; **DOC7 — what sessions read, measured** (§1.5).
+- [ ] **DOC6 — the example family keeps the standard**; **DOC7 — what sessions read, measured** (§1.5).
 - [ ] **UNBLOCK6 — the screen and Ask Daoris for a declaration**, both languages; **UNBLOCK7 — codex and dsh
   measured before anything is handed**; **UNBLOCK8 — the first real declaration** (the owner's: asks a week
   before and after).
@@ -271,7 +296,6 @@ The contract is `docs/2026-10-01-tools-design.md`; §7 carries each row's full t
 TOOLS3 → TOOLS4, then TOOLS5 ∥ TOOLS6, then TOOLS7 ∥ TOOLS8, then TOOLS9; TOOLS10 before any session runs a
 managed git; TOOLS11 last.
 
-- [ ] **TOOLS4 — download, verify, unpack, lay out** (§3.6, §3.7): staging, hashes, `daoris tool download|update|…`.
 - [ ] **TOOLS5 — one answer for every child** (§2.4, §2.6, §2.7): git, hooks, npm, the tree guard's node, the terminal.
 - [ ] **TOOLS6 — what Daoris's git carries** (§2.5): the allow-list from `core.sshCommand`, `GIT_CONFIG_GLOBAL` with
   includes, the version floors.
@@ -323,7 +347,8 @@ LAYOUT2 first: until it measures, the layout's entry points are the design's rea
 - [ ] **LAYOUT8 — the layout on the screen, and its Ask Daoris door** (§6.1, §6.5): Projects' rows, *Set up
   for agents*, the `setup` kind; both languages, looked at on the window.
 - [ ] **LAYOUT9 — a lane names its rooms** (§2.5), after DEV2 and DEV6.
-- [ ] **LAYOUT10 — the first real set-ups** (the owner's run, after the first publish): one unadopted
+- [ ] **LAYOUT10 — the first real set-ups** (the owner's run; since D124 no longer after the first publish, and its
+  unadopted half is WSSETUP12): one unadopted
   repository, and one with instruction files of its own.
 
 ### What REV3 left (2026-09-25)

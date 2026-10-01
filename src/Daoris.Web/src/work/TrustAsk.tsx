@@ -16,8 +16,8 @@ import { Button, PathText, WaitingCard } from '../ui';
  * as a pair. The shell refuses any other pair, and the terminal's `daoris agent trust … --yes` is
  * the door that names any folder.
  *
- * A molecule: handed the hold, it reports the grant and the putting-down. It sits inline in a
- * quest's drawer and inside the drawer the band's row opens.
+ * A molecule: handed the hold, it reports the grant and the putting-down. It sits inline on a
+ * quest's page and inside the drawer the band's row opens.
  */
 export function TrustAsk({ hold, busy = false, onGrant, onCancel }: {
   hold: TrustHold;

@@ -1,11 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import * as Tooltip from '@radix-ui/react-tooltip';
 
-// USE1: why the driver leaves a quest waiting, on its card, with the bridge present — the hold is this
-// machine's driver's, so the card's resume exists only where one is attached.
+// USE1: why the driver leaves a quest waiting, on its row of the list, with the bridge present — the hold is
+// this machine's driver's, so the row's resume exists only where one is attached.
 
 const { invoke, notifyReady } = vi.hoisted(() => ({
   invoke: vi.fn(),
@@ -21,7 +21,7 @@ vi.mock('@shenora/react', () => ({
 
 import './i18n';
 import { keys } from './queries';
-import { QuestsView } from './QuestsView';
+import { QuestsView, questMain } from './test/questsView';
 
 const QUESTS = [
   {
@@ -58,7 +58,7 @@ function show() {
   );
 }
 
-describe('a waiting quest says why on its card', () => {
+describe('a waiting quest says why on its row', () => {
   beforeEach(() => {
     vi.stubGlobal('fetch', vi.fn(async (input: RequestInfo | URL) => respond(String(input))));
     invoke.mockImplementation(async (_module: string, type: string) => {
@@ -72,13 +72,14 @@ describe('a waiting quest says why on its card', () => {
   afterEach(() => {
     vi.unstubAllGlobals();
     invoke.mockReset();
+    window.localStorage.clear();
   });
 
   /**
    * 🔴 Seen on the install: two quests to a held repository sat under *Open — waiting to be taken*, and
-   * the person read them as requests that would not start. The drawer said why; the card did not.
+   * the person read them as requests that would not start. The record said why; the card did not.
    */
-  it('says the repository is held, and resumes it from the card without opening the quest', async () => {
+  it('says the repository is held, and resumes it from the row without opening the quest', async () => {
     show();
 
     expect(await screen.findByText(/is held by the person/)).toBeInTheDocument();
@@ -92,7 +93,8 @@ describe('a waiting quest says why on its card', () => {
     await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SET_HOLD', {
       payload: { repository: 'engine', held: false },
     }));
-    // The press was the button's: the quest's drawer did not open under it.
-    expect(screen.queryByRole('dialog')).toBeNull();
+    // The press was the button's, beside the row's door: the quest's page did not open under it.
+    expect(within(questMain()).getByText('Choose a quest or an ask')).toBeInTheDocument();
+    expect(window.localStorage.getItem('daoris.list.quests.chosen')).toBeNull();
   });
 });

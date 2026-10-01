@@ -14,7 +14,7 @@
 
 import type { DeclaredDocument, DocumentLinkProblem, Harness } from './types.ts';
 import { readdirSync, statSync } from 'node:fs';
-import { join } from 'node:path';
+import { join, posix } from 'node:path';
 import { declared, escapes, within } from './layout.ts';
 import { linkProblems } from './links.ts';
 import { DaorisError } from './errors.ts';
@@ -134,11 +134,14 @@ const isObject = (value: unknown): value is Record<string, unknown> =>
 function checkPath(name: string, path: string, target: string, harness: Harness): string {
   const normal = declared(path);
   if (escapes(normal)) throw new DaorisError(`${name} '${path}' leaves the repository — a document is a file or folder inside it`);
-  if (normal === '' || normal === '.') throw new DaorisError(`${name} is the repository's root — a document is a file or folder inside it`);
-  if (target !== '' && within(normal, target)) {
+  // DOC3a: judged where it lands, since `docs/..` is the root and `x/../.claude/…` the target, whatever
+  // the spelling; the spelling is still what the index shows.
+  const landed = posix.normalize(normal).replace(/\/+$/, '');
+  if (landed === '' || landed === '.') throw new DaorisError(`${name} is the repository's root — a document is a file or folder inside it`);
+  if (target !== '' && within(landed, target)) {
     throw new DaorisError(`${name} '${path}' sits inside ${target}, where daoris writes the on-demand tiers`);
   }
-  if (harness.mirror && within(normal, harness.mirror.root)) {
+  if (harness.mirror && within(landed, harness.mirror.root)) {
     throw new DaorisError(`${name} '${path}' sits inside ${harness.mirror.root}, where daoris writes the mirror for ${harness.mirror.reader}`);
   }
   return normal;

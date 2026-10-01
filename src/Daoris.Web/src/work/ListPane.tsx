@@ -1,6 +1,5 @@
 import { type KeyboardEvent, type ReactNode, useEffect, useRef } from 'react';
-import * as Menu from '@radix-ui/react-dropdown-menu';
-import { Button, EmptyState, Icon, SkeletonRows, Tip } from '../ui';
+import { Button, EmptyState, Icon, Menu, SkeletonRows, Tip } from '../ui';
 import { cn } from '../lib/cn';
 import { Splitter } from './frame';
 import { LIST_STRIP, type ListBounds, type ListLayout } from './layout';
@@ -137,9 +136,10 @@ export function ListPane({
     />
   );
 
+  // Named by the list's name, open or a strip (FRAME1d): a landmark a reader, and a test, finds by its name.
   if (layout.mode === 'open') {
     return (
-      <aside ref={aside} data-region="list" data-list-mode="open" className="relative flex shrink-0 flex-col border-r border-line" style={{ width: layout.beside }}>
+      <aside ref={aside} aria-label={name} data-region="list" data-list-mode="open" className="relative flex shrink-0 flex-col border-r border-line" style={{ width: layout.beside }}>
         {header}
         {body}
         {edge}
@@ -148,7 +148,7 @@ export function ListPane({
   }
 
   return (
-    <aside ref={aside} data-region="list" data-list-mode={layout.mode} className="relative flex shrink-0 flex-col border-r border-line" style={{ width: LIST_STRIP }}>
+    <aside ref={aside} aria-label={name} data-region="list" data-list-mode={layout.mode} className="relative flex shrink-0 flex-col border-r border-line" style={{ width: LIST_STRIP }}>
       {/* The strip's controls, stacked, since 56px holds one across. */}
       <header className="flex shrink-0 flex-col items-center gap-0.5 border-b border-line py-1">
         <Tip content={labels.open} side="right">
@@ -207,17 +207,78 @@ function EmptyActs({ make }: { make: ListMake }) {
 }
 
 /**
- * The list's own **⋯** (D118 §3a): its filters and its menu, in its header before its close. An arrow is a direction,
- * never a menu, so a region's own menu is "⋯", as VS Code's *Views and More Actions* is (platform language §4).
+ * A group of a list's rows under its name and count, as the session rail draws a repository's (`RepositoryGroup`) and
+ * the Plugins view a state's. Its rows are `<li>`s, each a row of its list (`data-list-row`).
  */
-export function ListMore({ label, items, onChoose }: {
-  /** Its name and its tip. */
-  label: string;
-  items: { id: string; label: string }[];
-  onChoose: (id: string) => void;
+export function ListGroup({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <section className="border-t border-line first:border-t-0">
+      <h3 className="m-0 truncate px-2.5 pb-1 pt-2.5 text-small font-semibold text-ink">{title}</h3>
+      <ul className="m-0 list-none p-0">{children}</ul>
+    </section>
+  );
+}
+
+/**
+ * A row's door: the whole row chooses it, wearing the list's selection as the rail's rows do, and a closed record
+ * read as finished, dimmed (FRAME1d). `aria-current`, as the rail's: the row is a button, not a listbox option.
+ */
+export function ListRowDoor({ chosen, dimmed = false, onPress, children }: {
+  chosen: boolean;
+  dimmed?: boolean;
+  onPress: () => void;
+  children: ReactNode;
 }) {
   return (
-    <Menu.Root modal={false}>
+    <button
+      type="button"
+      aria-current={chosen || undefined}
+      onClick={onPress}
+      className={cn(
+        'block w-full min-w-0 border-l-[3px] px-2.5 py-1.5 text-left transition-colors duration-(--speed)',
+        'hover:bg-accent-soft/50',
+        chosen ? 'border-l-accent bg-accent-soft' : 'border-l-transparent',
+        dimmed && 'opacity-75',
+      )}
+    >
+      {children}
+    </button>
+  );
+}
+
+/** One of the ⋯'s items: an act, or a toggle where it says whether it is on (a filter: *Include closed*). */
+export type MoreItem = { id: string; label: string; checked?: boolean };
+
+/** One value among several, a filter's (*Receiver*): named above its options, the chosen one ticked. */
+export type MoreChoice = {
+  label: string;
+  value: string;
+  options: { value: string; label: string }[];
+  onChoose: (value: string) => void;
+};
+
+/**
+ * The list's own **⋯** (D118 §3a): its filters and its menu, in its header before its close. An arrow is a direction,
+ * never a menu, so a region's own menu is "⋯", as VS Code's *Views and More Actions* is (platform language §4).
+ *
+ * @remarks
+ * **A filter is a ticked item** (FRAME1d): one value among several is a group named for what it filters, its chosen
+ * value ticked, and a toggle is ticked while it is on. The view keeps the values (`listPanes.ts`); the menu only says
+ * them and tells it what was chosen.
+ */
+export function ListMore({ label, items = [], choice, onChoose }: {
+  /** Its name and its tip. */
+  label: string;
+  items?: MoreItem[];
+  /** One value among several, above the items. */
+  choice?: MoreChoice;
+  /** Told the item's id: an act chosen, or a toggle pressed. */
+  onChoose?: (id: string) => void;
+}) {
+  // The tick's column is reserved on every row where anything may be ticked, so the labels line up.
+  const ticks = choice !== undefined || items.some((item) => item.checked !== undefined);
+  return (
+    <Menu.Root>
       <Tip content={label}>
         <Menu.Trigger asChild>
           <Button variant="ghost" aria-label={label} className="h-6 w-6 justify-center px-0">
@@ -225,25 +286,32 @@ export function ListMore({ label, items, onChoose }: {
           </Button>
         </Menu.Trigger>
       </Tip>
-      <Menu.Portal>
-        <Menu.Content
-          side="bottom"
-          align="end"
-          sideOffset={4}
-          collisionPadding={8}
-          className="z-30 min-w-44 rounded-control border border-line bg-overlay p-1 text-small shadow-lg"
-        >
-          {items.map((item) => (
-            <Menu.Item
-              key={item.id}
-              onSelect={() => onChoose(item.id)}
-              className="flex cursor-default items-center gap-2 rounded-control px-2 py-1.5 text-ink outline-none data-[highlighted]:bg-accent-soft"
-            >
+      <Menu.Content side="bottom" align="end" highlight="accent" className="min-w-44">
+        {choice && (
+          <>
+            <Menu.Label className="pt-1.5">{choice.label}</Menu.Label>
+            <Menu.RadioGroup aria-label={choice.label} value={choice.value} onValueChange={choice.onChoose}>
+              {choice.options.map((option) => (
+                <Menu.RadioItem key={option.value} value={option.value}>
+                  <span className="truncate">{option.label}</span>
+                </Menu.RadioItem>
+              ))}
+            </Menu.RadioGroup>
+            {items.length > 0 && <Menu.Separator />}
+          </>
+        )}
+        {items.map((item) => (item.checked === undefined
+          ? (
+            <Menu.Item key={item.id} tick={ticks ? false : undefined} onSelect={() => onChoose?.(item.id)}>
               {item.label}
             </Menu.Item>
-          ))}
-        </Menu.Content>
-      </Menu.Portal>
+          )
+          : (
+            <Menu.CheckboxItem key={item.id} checked={item.checked} onCheckedChange={() => onChoose?.(item.id)}>
+              {item.label}
+            </Menu.CheckboxItem>
+          )))}
+      </Menu.Content>
     </Menu.Root>
   );
 }
@@ -259,31 +327,17 @@ function MakeButton({ make, side = 'bottom', className }: { make: ListMake; side
     );
   }
   return (
-    <Menu.Root modal={false}>
+    <Menu.Root>
       <Tip content={make.label} side={side}>
         <Menu.Trigger asChild>
           <Button variant="ghost" aria-label={make.label} className={className}>{icon}</Button>
         </Menu.Trigger>
       </Tip>
-      <Menu.Portal>
-        <Menu.Content
-          side={side}
-          align="start"
-          sideOffset={4}
-          collisionPadding={8}
-          className="z-30 min-w-44 rounded-control border border-line bg-overlay p-1 text-small shadow-lg"
-        >
-          {make.kinds.map((kind) => (
-            <Menu.Item
-              key={kind.id}
-              onSelect={() => make.onMake(kind.id)}
-              className="flex cursor-default items-center gap-2 rounded-control px-2 py-1.5 text-ink outline-none data-[highlighted]:bg-accent-soft"
-            >
-              {kind.label}
-            </Menu.Item>
-          ))}
-        </Menu.Content>
-      </Menu.Portal>
+      <Menu.Content side={side} align="start" highlight="accent" className="min-w-44">
+        {make.kinds.map((kind) => (
+          <Menu.Item key={kind.id} onSelect={() => make.onMake(kind.id)}>{kind.label}</Menu.Item>
+        ))}
+      </Menu.Content>
     </Menu.Root>
   );
 }

@@ -1,9 +1,8 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import * as Menu from '@radix-ui/react-dropdown-menu';
 import { cn } from '../lib/cn';
 import { store, stored } from '../lib/stored';
-import { Icon, Tip } from '../ui';
+import { Menu, Tip } from '../ui';
 import { ASKS_DASH, CHAIN_DASH, DEPENDS_DASH } from './MapCanvas';
 import { LINE_KINDS, type LineKind, type Topology, type When, WHENS } from './topology';
 
@@ -78,11 +77,6 @@ function Sample({ kind }: { kind: LineKind }) {
   );
 }
 
-const ITEM = cn(
-  'flex cursor-pointer items-center gap-2 rounded-[4px] px-2 py-1.5 text-small text-ink-soft outline-none',
-  'data-[highlighted]:bg-raised data-[highlighted]:text-ink data-[state=checked]:text-ink',
-);
-
 /**
  * The switches for the map's lines (MAP4b) and which quests they draw (MAP4c): an options menu, as the
  * owner asked of every control that is not a direction. Each kind is ticked while it is drawn,
@@ -98,7 +92,7 @@ export function LinesMenu({ shown, counts, onToggle, when, onWhen }: {
   const { t } = useTranslation();
   const some = shown.size < LINE_KINDS.length;
   return (
-    <Menu.Root modal={false}>
+    <Menu.Root>
       <Tip content={t('map.linesTip')}>
         <Menu.Trigger asChild>
           <button
@@ -116,44 +110,30 @@ export function LinesMenu({ shown, counts, onToggle, when, onWhen }: {
           </button>
         </Menu.Trigger>
       </Tip>
-      <Menu.Portal>
-        <Menu.Content
-          align="end"
-          sideOffset={4}
-          collisionPadding={8}
-          className="z-30 min-w-64 rounded-control border border-line bg-overlay p-1 shadow-lg"
-        >
-          {LINE_KINDS.map((kind) => (
-            <Menu.CheckboxItem
-              key={kind}
-              checked={shown.has(kind)}
-              // Stay open: a person switching lines usually switches more than one.
-              onSelect={(event) => event.preventDefault()}
-              onCheckedChange={() => onToggle(kind)}
-              className={ITEM}
-            >
-              <span className="flex w-3.5 shrink-0 justify-center">
-                <Menu.ItemIndicator><Icon name="check" size={12} /></Menu.ItemIndicator>
-              </span>
-              <Sample kind={kind} />
-              <span className="flex-1 truncate">{t(`map.kind.${kind}`)}</span>
-              <span className="font-mono text-meta tabular-nums text-ink-faint">{counts[kind]}</span>
-            </Menu.CheckboxItem>
+      <Menu.Content align="end" className="min-w-64">
+        {LINE_KINDS.map((kind) => (
+          <Menu.CheckboxItem
+            key={kind}
+            checked={shown.has(kind)}
+            // Stay open: a person switching lines usually switches more than one.
+            onSelect={(event) => event.preventDefault()}
+            onCheckedChange={() => onToggle(kind)}
+          >
+            <Sample kind={kind} />
+            <span className="flex-1 truncate">{t(`map.kind.${kind}`)}</span>
+            <span className="font-mono text-meta tabular-nums text-ink-faint">{counts[kind]}</span>
+          </Menu.CheckboxItem>
+        ))}
+        <Menu.Separator />
+        <Menu.Label className="pt-0.5">{t('map.when.title')}</Menu.Label>
+        <Menu.RadioGroup value={when} onValueChange={(value) => onWhen(value as When)}>
+          {WHENS.map((choice) => (
+            <Menu.RadioItem key={choice} value={choice} onSelect={(event) => event.preventDefault()}>
+              <span className="flex-1 truncate">{t(`map.when.${choice}`)}</span>
+            </Menu.RadioItem>
           ))}
-          <Menu.Separator className="my-1 h-px bg-line" />
-          <Menu.Label className="px-2 pb-1 pt-0.5 text-meta text-ink-faint">{t('map.when.title')}</Menu.Label>
-          <Menu.RadioGroup value={when} onValueChange={(value) => onWhen(value as When)}>
-            {WHENS.map((choice) => (
-              <Menu.RadioItem key={choice} value={choice} onSelect={(event) => event.preventDefault()} className={ITEM}>
-                <span className="flex w-3.5 shrink-0 justify-center">
-                  <Menu.ItemIndicator><Icon name="check" size={12} /></Menu.ItemIndicator>
-                </span>
-                <span className="flex-1 truncate">{t(`map.when.${choice}`)}</span>
-              </Menu.RadioItem>
-            ))}
-          </Menu.RadioGroup>
-        </Menu.Content>
-      </Menu.Portal>
+        </Menu.RadioGroup>
+      </Menu.Content>
     </Menu.Root>
   );
 }

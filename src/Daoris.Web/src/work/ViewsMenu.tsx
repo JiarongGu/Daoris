@@ -1,6 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import * as Menu from '@radix-ui/react-dropdown-menu';
-import { Icon, type IconName, Tip } from '../ui';
+import { Icon, type IconName, Menu, Tip } from '../ui';
 import { cn } from '../lib/cn';
 import type { Place, ViewId } from './placements';
 
@@ -24,11 +23,6 @@ export function DropMark() {
 export function viewEntries(t: (key: string) => string, views: readonly ViewId[]): ViewEntry[] {
   return views.map((id) => ({ id, label: t(VIEW_NAME[id]), icon: VIEW_ICON[id] }));
 }
-
-const ITEM = cn(
-  'flex cursor-pointer items-center gap-2 rounded-[4px] px-2 py-1.5 text-small outline-none',
-  'data-[highlighted]:bg-raised data-[highlighted]:text-ink',
-);
 
 /**
  * The button at the end of a region's tab row (DOCK1b): every view the region holds, and where the
@@ -66,7 +60,7 @@ export function ViewsMenu({
   const chosen = views.find((view) => view.id === selected);
 
   return (
-    <Menu.Root modal={false} open={open} onOpenChange={onOpenChange}>
+    <Menu.Root open={open} onOpenChange={onOpenChange}>
       <Tip content={label}>
         <Menu.Trigger asChild>
           <button
@@ -84,46 +78,30 @@ export function ViewsMenu({
         </Menu.Trigger>
       </Tip>
 
-      <Menu.Portal>
-        <Menu.Content
-          align="end"
-          sideOffset={4}
-          collisionPadding={8}
-          className="z-30 min-w-56 max-w-80 rounded-control border border-line bg-overlay p-1 shadow-lg"
-        >
-          {views.map((view) => (
-            <Menu.Item
-              key={view.id}
-              onSelect={() => onSelect(view.id)}
-              className={cn(ITEM, view.id === selected ? 'text-ink' : 'text-ink-soft')}
-            >
-              <span className="flex w-3.5 shrink-0 justify-center">
-                {view.id === selected && <Icon name="check" size={12} aria-hidden />}
-              </span>
-              <Icon name={view.icon} size={13} className="shrink-0 opacity-70" aria-hidden />
-              <span className="truncate">{view.label}</span>
-            </Menu.Item>
-          ))}
+      <Menu.Content align="end" className="min-w-56 max-w-80">
+        {views.map((view) => (
+          <Menu.Item key={view.id} tick={view.id === selected} onSelect={() => onSelect(view.id)}>
+            <Icon name={view.icon} size={13} className="shrink-0 opacity-70" />
+            <span className="truncate">{view.label}</span>
+          </Menu.Item>
+        ))}
 
-          {(chosen && onMove) || onReset ? <Menu.Separator className="my-1 h-px bg-line" /> : null}
-          {chosen && onMove && (
-            <Menu.Item onSelect={() => onMove(chosen.id, other)} className={cn(ITEM, 'text-ink-soft')}>
-              <span className="w-3.5 shrink-0" />
-              <Icon name={other === 'right' ? 'layoutRight' : 'layoutPanel'} size={13} className="shrink-0 opacity-70" aria-hidden />
-              <span className="truncate">
-                {t(other === 'right' ? 'work.views.toRight' : 'work.views.toPanel', { view: chosen.label })}
-              </span>
-            </Menu.Item>
-          )}
-          {onReset && (
-            <Menu.Item onSelect={onReset} className={cn(ITEM, 'text-ink-soft')}>
-              <span className="w-3.5 shrink-0" />
-              <Icon name="refresh" size={13} className="shrink-0 opacity-70" aria-hidden />
-              <span className="truncate">{t('work.views.reset')}</span>
-            </Menu.Item>
-          )}
-        </Menu.Content>
-      </Menu.Portal>
+        {(chosen && onMove) || onReset ? <Menu.Separator /> : null}
+        {chosen && onMove && (
+          <Menu.Item tick={false} onSelect={() => onMove(chosen.id, other)}>
+            <Icon name={other === 'right' ? 'layoutRight' : 'layoutPanel'} size={13} className="shrink-0 opacity-70" />
+            <span className="truncate">
+              {t(other === 'right' ? 'work.views.toRight' : 'work.views.toPanel', { view: chosen.label })}
+            </span>
+          </Menu.Item>
+        )}
+        {onReset && (
+          <Menu.Item tick={false} onSelect={onReset}>
+            <Icon name="refresh" size={13} className="shrink-0 opacity-70" />
+            <span className="truncate">{t('work.views.reset')}</span>
+          </Menu.Item>
+        )}
+      </Menu.Content>
     </Menu.Root>
   );
 }

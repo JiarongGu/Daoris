@@ -19,12 +19,14 @@ public sealed class HelpRoomMachineNowTests
             [
                 new HelpPlugin("example.lands", Enabled: true, ["work/land"]) { Source = "folder" },
                 new HelpPlugin("example.off", Enabled: false, []) { Source = "offer" },
+                new HelpPlugin("example.packaged", Enabled: true, []) { Source = "package" },
                 new HelpPlugin("example.broken", Enabled: true, []) { Problem = "`apiVersion` must be an integer." },
             ],
         });
 
         Assert.Contains("- Plugins: `example.lands` (on, speaks on `work/land`, added from a folder), "
             + "`example.off` (off, installed from this install's offer), "
+            + "`example.packaged` (on, installed from a package), "
             + "`example.broken` (on, contributes nothing: `apiVersion` must be an integer., no record of where it came from)", some);
         Assert.Contains("- Plugins: none installed.", HelpRoom.Render(HelpRoomFixture.Machine));
         Assert.Contains("an `update` (the plugin's `id`) takes a", some);
@@ -42,6 +44,9 @@ public sealed class HelpRoomMachineNowTests
             File.WriteAllText(Path.Combine(folder, PluginCatalog.ManifestName),
                 """{ "id": "example.lands", "hooks": { "command": ["node", "${plugin}/h.mjs"], "points": ["work/land"] } }""");
             PluginState.Disable(home, "example.lands");
+            // PLUGDIST1a: a plugin from a package is said by its kind, never by the folder that held the file.
+            PluginSource.Write(folder, PluginSource.FromPackage(new PluginPackageOrigin(
+                "Example.Lands", "1.0.0", Convert.ToBase64String(new byte[64]), Path.Combine(home, "feed"))));
 
             var machine = HelpRoom.Describe(
                 DriverConfig.Empty, new Snapshot([], [], []), [], [], _ => null, asks: 0, plugins: PluginCatalog.Load(home));
@@ -49,6 +54,7 @@ public sealed class HelpRoomMachineNowTests
             var plugin = Assert.Single(machine.Plugins);
             Assert.Equal(("example.lands", false, null), (plugin.Id, plugin.Enabled, plugin.Problem));
             Assert.Equal(["work/land"], plugin.Points);
+            Assert.Equal("package", plugin.Source);
         }
         finally
         {

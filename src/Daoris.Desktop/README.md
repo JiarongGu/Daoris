@@ -135,6 +135,14 @@ a plugin as the driver would and checks every answer with the driver's own reade
 `DAORIS.DRIVER`'s `PLUGINS` answer carries `kit.points`, `PLUGIN_NEW` {id, points, folder} writes the
 folder, and `PLUGIN_TRY` {id} or {folder} answers the trial's steps, summary and stderr lines.
 
+**A plugin package** (PLUGDIST1a, D120) is read by the driver library's `PluginPackage`, with no NuGet
+client and no network. `daoris-driver plugins install <file.nupkg>` judges the package before anything is
+extracted: the type `DaorisPlugin` alone at a plugin API this build speaks, no dependencies,
+`plugin/plugin.json`, and every `plugin/` entry inside the plugin's folder. It then extracts `plugin/`
+alone into a stage under the home, reads it as the catalogue reads a plugin, and adds it under its id,
+never over an installed one, with `{ package, version, sha512, source }` recorded in
+`.daoris-source.json`. A package source over HTTP is PLUGDIST1c's.
+
 **What a plugin did, and its health** (PLUGUI1d, D119). What the loop, a landing, a hand-off, the driver's
 handing of servers and the trial at either door do with a plugin is a `plugin.*` line in the machine log, never its
 words (`PluginLog`). The loop's `PluginHealth`, the shell's `DriverLoop.Health`, keeps each plugin's state and is

@@ -6113,6 +6113,74 @@ proof.
   The look on the window settles both: Overview, Repositories and Map at 1280 px with the side bar open and
   closed and at 680 px, and a drawer at 680 px with the side bar full.
 
+**Built: FRAME1d (2026-10-01), and what it settled that the design left open.**
+- **Quests hands the frame a value, as Plugins does** (`useQuestsView`), held by the application on every view,
+  its errors said only while it is in front. The asks' half is a hook of its own (`useAsksPart`, `asks/`), so the
+  asks' rows and an ask's page are drawn where the frame decides. Everything under them is a molecule: `QuestList`,
+  `QuestPage`, `QuestComposer`, `AskRow` and `AskPage`, and the values in `quests/records.ts`.
+- **A record the list leaves out is still a page.** A quest is found among every quest, closed ones and other
+  receivers' included, and an ask among every ask. So a closed quest a door names opens, and an act leaves the page
+  on the quest as it now stands, where the drawer closed on every act. Nothing chosen says how to choose and offers
+  the `＋`'s two kinds; a record no longer here is *gone*, worded for a quest or an ask.
+- **The page shows the freshest record**: the list's copy, or the door's last answer while the list is behind,
+  and the answer on a tie, since a dismissal moves no time. It is the asks' old rule, now for both. A quest just
+  published opens on its page, as an ask has opened on its answer since INT4c.
+- **The filters are ticked items in the list's ⋯** (`ListMore` gained a choice of one value and a toggle), kept as
+  `{ to, closed }`. A receiver filter is said at the list's head, since the ⋯ that set it is a press away and a list
+  that silently holds fewer quests reads as a family that owes less. A receiver kept from before stays choosable, so
+  the filter that names it can be undone.
+- **The header's line is the state's hint**, which left the record's *State* row. *Decline…* and *Delete…* ask
+  under the header, each with *Never mind*; a decline had none, and its reason has a name now.
+- **The opener plans no drawer.** Its `quest` and `ask` fields go: the chosen item is the whole of what a door does.
+- **The list is a landmark named for its view**, open or a strip, so a reader and a test find it by its name.
+  `ListGroup` and `ListRowDoor` are every list's; the Plugins view keeps its own copies until a row of its own takes
+  them. `PageHead` and `PageSection` move from the plugin's page to `work/ViewMain`.
+- **Quests' strip holds its controls alone**, as §2 says. Quests is a browser's first list, which ends FRAME1c's
+  *wired with no first user*.
+- **`quests.title` and `quests.description` retire**: the list is named by the view's own name, and the description
+  became the main area's sentence with nothing chosen.
+- **What the gates do not cover.** vitest holds the list, the page and the memory over a stubbed service and a
+  mocked bridge, on jsdom, which lays nothing out. `test:web`'s quest-lifecycle spec was moved to the page and
+  typechecked, and **not run** in the branch: the parent runs it. No look at the window was taken: the list beside
+  the page at 1280 px with Ask Daoris open, the list laid over at 680 px, both themes and both languages, are the
+  parent's to see. The names' budgets are estimates (D116 §4); the new keys added no finding.
+
+**Built: FRAME1e (2026-10-01), and what it settled that the design left open.**
+- **Repositories hands the frame a value, as Quests does** (`useProjectsView`), held by the application on every
+  view, its errors said only while it is in front. It holds no query the application does not already hold (the
+  registry, the index, the driver, and on a shell the roster, the lines and the sweep), so holding it everywhere asks
+  nothing more. Below it are molecules: `ProjectList` with `RepositoryMarks`, and `ProjectPage` with
+  `ProjectsMainNotice`.
+- **A row is the repository and its one line**: an adopter's summary, *no domain declared yet* where it declared
+  nothing (D34), or for one not adopted what the index reads of it. Its standing on this machine is in the session
+  list's words (`RepositoryGroup`'s): *held* outranks *drives here*, and *not on this machine* where a shell answers
+  and the registration names no checkout. The adopted dot and its word retire: the group's name says it.
+- **The page is what the card said, in one column.** The cards went, and with them the split by the main area's
+  width that FRAME1c gave them: the list holds the repositories now. The header's line is the summary, and the header
+  has no id line, since a repository's name is its id (`PageHead`'s `id` became optional). Its acts are *Open code
+  map*, the map's own name for the act, and *Manage*, an adopter's on a shell as before. *Manage* left the driving
+  row, which stands alone under *This machine*; one not adopted has *Adoption steps* in place of a declaration.
+- **The `＋` keeps the act's name, *Add repository***, where the design's prose says *Add a repository*: one act, one
+  name (NAME1b), which the empty state and the Workspace menu's *Add repository…* already say. Its one kind makes the
+  press the act. The ⋯ holds *Import a folder…*, as the Workspace menu does. Both are a shell's (D48 §7), so a
+  browser's list makes nothing, and its strip holds its controls alone.
+- **The code map is a door with a part** (`open('map', null, { code })`): the Map has no list (§4), so the repository
+  is no chosen item. The opener plans `code`, and the Map is drawn anew on it; any other way onto the Map opens the
+  workspace, as it always has.
+- **A repository added is chosen, and one retired goes back to choosing**, as an installed plugin is chosen and a
+  removed one let go (D119 §3.1). A chosen repository the registry no longer answers is *gone*: retired, or in a
+  workspace the window is not showing.
+- **`projects.title`, `projects.description`, `projects.adoptedDot` and `projects.outside.title` retire**: the list is
+  named by the view's own name, the description became the main area's sentence with nothing chosen, and the
+  groups' names carry their counts.
+- **What the gates do not cover.** vitest holds the list, the page, the memory, the drawers' doors and the code map's
+  door over a stubbed service and a mocked bridge, on jsdom, which lays nothing out. `test:web`'s registry pages were
+  moved to the list and the page, a reload's memory and the code map's door added, and the Repositories half of the
+  main-area split test removed with the cards; they were typechecked and **not run** in the branch: the parent runs
+  them. No look at the window was taken: Repositories at 1280 and 680 px with a repository chosen, both themes and
+  both languages, are the parent's to see. The list's toggles are over the button budget (24 characters for 20), as
+  Settings' are; the budgets are a report (D116 §3).
+
 **Built: FRAME1g (2026-10-01), and what it settled that the design left open.**
 - **Settings hands the frame what it builds** (`useSettingsLayout`): `DomainList` as its list pane and the
   domain chosen as its main area. `SettingsView` draws Settings alone, in a browser's frame of its own, which
@@ -6602,6 +6670,21 @@ reports, the canon scan for `allowed-tools`, and a seventh release-rehearsal pha
   is DOC5's. The twins table gains its row when that reader lands, matched against
   `documents-manifest.test.ts`.
 
+**Built 2026-10-01 (DOC4): this repository declares its documents.** `daoris.json` names eight roles (router,
+decisions, backlog, archive, fixes, changelog, the naming glossary, the gates), and `sync` writes the *Where things
+are* table into the region. Two things the design's row did not foresee:
+- **The table costs about 1 KB of the always-loaded core** (23,306 → 24,064 of 26,000 bytes). Kept whole: the
+  table is the standard's point, and each row answers a search a session would otherwise make.
+- **`doc-budgets.json` does not retire; it shrinks.** Of its five documents only the backlog has a role. The
+  standing orders are `CLAUDE.md`, and the `brief` role measures the root instruction file outside the region,
+  which here is `AGENTS.md` with nothing outside it, until LAYOUT6 moves the brief there. The consuming story,
+  the forward sequence and the contract have no role, and inventing one for each would grow the closed set
+  for one repository. So the tool reads a declared ceiling from the manifest, keeps the rest in its own file,
+  and fails on a document given a number in both, so a ceiling is still written once. The backlog's ceiling
+  is now also `check`'s, which reports it with the role.
+- Found building it: a scripted rewrite of the tool dropped every backslash, so `\s+` counted the letter *s*
+  and every document read as within budget, exit 0. `words` is now exported and pinned by a test.
+
 **Built 2026-10-01 (UNBLOCK4): the carve-outs held harder, and `git mv`.** Point 7 and the `commit` half of point 4,
 as design §3.6 and §3.7 say, with one addition.
 - **`commit` gains `Bash(git mv:*)`**, in both defaults tables (`Permissions.cs`, `permissions.ts`), held together by
@@ -6637,6 +6720,43 @@ TypeScript reference (`SDKPermissionDeniedMessage`, `SDKPermissionDenial`) and l
 shown them yet. A subagent's refusal is not counted on either door, since its calls run beside the session
 (CONSOLE3c). The usage report gives asks per session by adapter and repository, and the rule proposals by week and
 state. `session.read` and `session.skill` stay DOC7's. The machine-log design's §4 and §6 say what was built.*
+
+**Built 2026-10-01 (DOC5): the service reads declared records** (design §5's first twin, §6's DOC5 row).
+`RepositoryDocuments` reads `documents` with the service's own code, and `RepositoryLayout.Documents` carries it
+beside the rooms, checked against the same target and mirror root. The choices the row left open, each held by a
+test in `RepositoryDocumentsTests`:
+- **The declared path is the first candidate.** The scanner's rule that the first present candidate is the log
+  stands, and a declared decisions, fixes or archive goes in front. A log at a name no candidate knows is found;
+  one a candidate also names is found once; a candidate beside a declared log is not read as a second log. A
+  declared path the disk does not hold falls through to the candidates. A declared log that is a link is not read,
+  and no candidate is read in its place, as for a candidate that is a link (LAYOUT4).
+- **A declared folder is one record per file**, every markdown file in it or below, read whole, since an ADR's
+  headings are its own parts. A folder reached through a link is never entered. The service's candidates stay files.
+- **The router is a document**: one knowledge entry, local, read whole, titled by its file name as the knowledge
+  tier's are. Declared, never guessed: the service gives the router no candidates.
+- **One file is one place in the index.** A file the tiers, a room or the router already read is not read again as
+  a log, and a file declared for two roles is read once, by the first reader. Read twice, its entries would share
+  ids, and the store's primary key fails the whole refresh on the second (REV3).
+- **A declaration the CLI refuses is read as none, role by role.** The CLI is a gate: one role it cannot honour
+  refuses the whole manifest (exit 2), so `check` fails and `sync` refuses, and the repository hears it from its own
+  tool. The scanner is an indexer with nobody to tell: a refusal there would drop the repository from search, or
+  fail the refresh for every repository after it. So a role the CLI refuses is undeclared and the roles beside it
+  are read, as a refused room is (LAYOUT4). `documents` that is not a map or is held twice, and a manifest that is
+  not JSON, are read as none. The scanner then reads its candidates as before, never a path the CLI refuses, and
+  never a guess at which of two declarations was meant.
+- **Rejected**: refusing the whole declaration for one bad role, which drops a good role's path for an unrelated
+  typo and departs from how the same reader treats rooms; reading the last of two declarations of one role, the
+  silent choice the CLI refuses to make; and candidates for the router, since a `docs/README.md` in a repository
+  that declared nothing may be a site's front page.
+- **Found building it**: the CLI checks a declared path as spelled, so a `..` inside one passes. `docs/..` is
+  accepted and names the root, and `x/../.claude/knowledge/g.md` is accepted and lands in the target. The reader
+  checks the spelling and where the path lands, and reads where it lands, so it is never looser than the CLI. The
+  CLI's check is the CLI lane's, and this note names it rather than changing it.
+- What the gates do not cover: the twin table's rows were copied from `documents-manifest.test.ts` and are compared
+  by hand, as every twin's are. The service-only rows about the CLI (`1e3`, `2500.0`, the `..` paths) were checked
+  once against `checkDocuments` from the source and are held by no CLI test. A real link was made and read on this
+  machine; on one that makes none, the link test returns early. No repository in the family declares documents on
+  this branch (DOC4, DOC6), so no refresh of a real corpus has read a declaration.
 ## D121 — Every tool Daoris runs is the system's, managed, or a file the person names; a list built in says where each version downloads, and more locations extend it without a release (2026-10-01)
 
 **Decision (TOOLS1).** The owner: *"all tools that daoris using like git, [terminal] should all have a self managed
@@ -7103,3 +7223,128 @@ the folder, so it reaches into nothing.
 - **No custom type with a listed package was queried.** The first publish is that proof.
 - **The workshop, the reader, *Find* and the pack** exist only as rows. `verify` checks this document's links
   and the log's shape, and none of its words.
+
+## D123 — A long entry is embedded whole, in pieces the deployment's window bounds; its best piece speaks for it, and a refresh says how many were split (2026-10-01)
+
+**Decision (SEM3, found upgrading Lyntai to 3.5.3, LYN1).** The semantic tier embedded an entry's title twice and
+the first 2,000 characters of its body, and dropped the rest without saying so. An embedder then cuts whatever
+passes its own context the same way: Ollama's embed endpoint does it silently. So a search by meaning could not
+find what a long entry says past its opening, however close the meaning. Lyntai 3.3 offers `MaxInputChars` and
+`Segmentation` on its providers. Daoris segments instead, in Core, one vector per piece.
+
+### 1. Measured first
+
+- **The fixture** (`LongEntryTests`): a knowledge document whose only statement of a fact sits past character
+  2,000, and a short decision that mentions the meaning once among six build words. The vectors are the
+  deterministic stand-in's, and the query shares no word with either entry, so the order is the semantic half's
+  alone. **Before**: the document's one vector held build words only (cosine 0), and the decision (0.164) took the
+  one place. The test failed as the reading predicted. **After**: the piece that holds the fact scores 0.316, and
+  the document is first.
+- **The corpus**, scanned by the service's own scanner (a scratch probe, not committed). This repository holds
+  636 entries and 1.61 million characters of body. 293 entries (46%) were longer than 2,000 characters, and
+  562,000 characters (35%) never reached a vector. The longest is a decision of 17,518 characters. The medians by
+  kind: a decision 3,378, a knowledge document 6,839, a task outcome 1,890, a fix 1,466. Each example repository
+  holds 21 entries, all canon; 15 were longer, 44% of their text never reached a vector, and the longest is the
+  canon's `development-documents` at 8,662.
+- **Against a typical window**: a small embedder takes 512 tokens, about 2,000 characters of English and fewer of
+  code or 中文. A large one takes 8,192 tokens, about 30,000. The longest entry fits the large one and is nine
+  times the small one.
+
+### 2. What an entry becomes
+
+- **Every part of its body is embedded, in pieces no longer than the window** (`EntryPieces`). A piece ends at the
+  last blank line in the latter half of the window, else a line break, a sentence end, a space, or the window
+  itself, never inside a surrogate pair. The next piece starts at a line or sentence inside the last 15% of the
+  one before, so a sentence a cut falls through is whole in one of them. Each piece is led by the title: twice, as
+  the entry always was, or once where two would take more than half the window. An entry within the window is
+  one piece, the same text as before.
+- **The window is the deployment's** (D24): `DAORIS_EMBED_WINDOW`, the most characters one embedded text carries,
+  the title included. Unset, it is 2,000, the number the code already cut at, now a statement rather than a
+  silence. Below 200, or not a whole number, both hosts refuse to start, as for `DAORIS_MODE`. Characters only
+  approximate tokens, so a deployment leaves margin for code and for 中文.
+- **Each piece is its own vector, and its payload is the entry's id.** A search ranks pieces and **names an entry
+  once**, at its best piece's score. It reads further while pieces crowd out the places it was asked for, so a
+  long entry does not cost the answer its other entries. A hit found in a later piece shows that piece's passage
+  (the vector's id carries where the piece starts), so a reader can see why it matched.
+- **A refresh embeds everything first, then replaces the collection whole.** An embedder that fails part-way
+  leaves the previous vectors as they were, and an edited entry's old pieces and a deleted entry's vectors leave
+  with them: an entry is several ids now, so writing into the collection would let a stale piece be found for
+  words its entry no longer has.
+- **A refresh says what it embedded**: entries, the vectors they became, how many were split, at what window. The
+  agent's door (`knowledge_refresh`) says it in a sentence, and the HTTP door's refresh answer carries it as
+  `embedded`.
+- **Convergence** seeds from an entry's first piece, as before, compares it with every piece, and names each
+  neighbour once.
+- **The lexical tier is unchanged.** It always read the whole body.
+- **The cost, measured**: at 2,000, this repository's 636 entries become 1,267 vectors, 322 entries split, at most
+  14 pieces for one entry, and 1.70 times the characters the old cut sent. Of that, 1.49 is the text it dropped,
+  and the rest is the title on each piece and the overlap. At 8,000 it is 663 vectors. It is paid once per process
+  (SEM1), which raises what SEM2's trigger would measure.
+
+### 3. Rejected
+
+- **Capping**: embed the first window and say in the record what was cut. Honest, and still blind. The fact past
+  the cut stays unfindable by meaning, and the measure says that is a third of this repository's text.
+- **The provider's segmentation** (Lyntai 3.3's `MaxInputChars` with `Segmentation`). It splits an input and
+  returns its pieces' unit vectors averaged by length, one vector per input. That names an entry once by
+  construction, and dilutes a fact in one piece by all the others. On the fixture the pooled vector scores 0.111,
+  below the decision's 0.164, so the document would still be missed, and the dilution grows with the length it
+  is meant to fix. It is also invisible to Daoris, since the answer carries one vector and no plan, so the record
+  could not say an entry was split. It exists only on the HTTP and Ollama providers, when a deployment sets it,
+  and Daoris's own cut sat in front of it.
+- **The provider's bound as a guard**: `MaxInputChars` set to the window, so Ollama is sent `truncate: false`
+  and a piece that still overflows the model fails the call instead of being cut. It is the right shape for a
+  window set too wide, and it is not taken yet. It turns one overflowing piece into a semantic tier that does not
+  answer, and choosing its default needs a machine that runs an embedder, which none here does (SEM2's trigger).
+- **A cap on pieces per entry** (Lyntai's `MaxPiecesPerInput`): a cut by another name, with gaps in what is
+  covered. The cost is measured instead (§2).
+- **Storing a piece's text in the vector store**: the payload stays the entry's id, so the text lives in the store
+  alone and the two cannot disagree. A piece's passage is read back from the entry by where it starts.
+
+### What the gates do not cover
+
+The splitter, the window's parsing, the search, the refresh's report, the replacement, the excerpt, convergence
+and the agent's sentence are held in the service suite (`EntryPiecesTests`, `LongEntryTests`, `McpToolsTests`), all
+over the stand-in embedder and no network. A mutation of each of the dedupe, the read further, the replacement and
+convergence's dedupe was seen failing them. The HTTP host's refusal of a bad window is held by `StartupTests`; the
+MCP host's identical refusal is not run by any test. The HTTP door's `embedded` field is not run with a model,
+because no HTTP host test has one. **No real embedder has embedded a piece**: whether 2,000 characters fits a
+given model's context, and what segmenting does to recall on the real corpus, need a machine that runs one. The
+page shows `semanticError` from a refresh and not yet `embedded`, which is the web lane's to add.
+**As built (PLUGDIST1a, 2026-10-01): the package and its reader, offline, with the record in both twins.** The
+driver's `PluginPackage` reads a `.nupkg` and installs its plugin through `PluginInstall`, and `daoris-driver plugins
+install <file.nupkg>` is the terminal's door. The CLI reads and lists the record a package leaves. Nothing reaches a
+network: a package source is PLUGDIST1c's. What the design left open, settled here:
+- **The type is `DaorisPlugin` alone**, compared without case, as NuGet compares type names. A package that also
+  declares another type is refused, since §5.1 says *no other type*. The type's version is a `System.Version` whose
+  major number is the plugin API. No version, a major of 0, or a major this build does not speak is refused before
+  anything is extracted, the last naming both numbers.
+- **The plugin's own `apiVersion` must equal the type's**, as its version must equal the package's. Otherwise the
+  check a source makes before downloading would trust a type that says something else.
+- **Any `dependency` element refuses the package**, in a group or not.
+- **A part's name is read as NuGet reads it**: unescaped, with `\` a separator, and only then is the `plugin/` guard
+  applied, so an escaped `..%2F` is refused as `../` is. A name twice, compared without case, refuses the package
+  too, since Windows would write the second over the first, and so does a name holding a control character, which
+  an escape can spell (`%00`) and no path holds. The guard judges every `plugin/` entry before anything
+  is written, and each target is checked again against the stage's whole path as it is written.
+- **The file is opened once, shared for reading only**, so the bytes hashed are the bytes extracted.
+- **The stage is `<home>/plugins/.unpacking-<guid>/`**, a dot-folder the catalogue skips, gone whether the install
+  succeeds or not. `PluginInstall` gains an internal `Add` for that stage, the one folder inside the home an add
+  copies from; `Placement` still refuses every other.
+- **A package file's source is the folder that held it**, a whole path. The record so names a folder source, §5.3's
+  offline kind, which PLUGDIST1c can update from as from an index.
+- **The record's rules**: a NuGet package id (ASCII, at most 100 characters); a version of one to four numbers, with
+  an optional prerelease label and metadata; a SHA-512 as standard base64; and a source that is a whole path or an
+  address by TOOLS3's rule (https://, or http:// to this machine). A record naming a package beside a folder or an
+  offer does not read, and `{}` now names all three kinds.
+- **The record's table is held by a gate**, as TOOLS2's is: `plugin-sources.test.ts` parses `PluginSourceTests`'
+  record and update theories and holds its own to them, and was seen failing on a one-sided change.
+- **A plugin from a file lands on**, as a folder's does at `daoris plugin add`: the person named the file. §5.7 step
+  6's *another publisher's lands off* needs the owner account a search result carries, so it joins PLUGDIST1c.
+- **Update refuses a plugin from a package, on both sides, in the same words**: a newer package takes its place by
+  `daoris plugin remove <id>`, then `plugins install`, and what it kept stays. §5.8's *`daoris-driver plugins update
+  <id>` does it* is PLUGDIST1c's to say, once that verb exists. The CLI's list names a package's source and offers no
+  update, and `daoris plugin install` answers as a moved verb does.
+- **Not built here**: a package source over HTTP, `find`, `show`, `install <Id>`, an update from a source, the off row
+  for another publisher, and `plugin.installed` in the machine log (§5.10), all PLUGDIST1c's. The modules' `PLUGINS`
+  answer still names a package record's kind `folder`, with no folder: PLUGDIST1d's to say.

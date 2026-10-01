@@ -1,10 +1,20 @@
+using System.Text.Encodings.Web;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 
 namespace Daoris.Driver;
 
 /// <summary>
-/// Where an installed plugin came from (PLUG9 c, D103): the folder it was added from, a whole path, or the
-/// offer of this install it was installed from, by id. Exactly one of the two.
+/// The package a plugin was installed from (PLUGDIST1a, D120 §4, the distribution design §5.7 step 5): its
+/// package id, its version, the SHA-512 of the package file in standard base64, and the source it came from: a
+/// package source's index address, or the whole path of the folder that held the file.
+/// </summary>
+public sealed record PluginPackageOrigin(string Package, string Version, string Sha512, string Source);
+
+/// <summary>
+/// Where an installed plugin came from (PLUG9 c, D103): the folder it was added from, a whole path; the
+/// offer of this install it was installed from, by id; or, since PLUGDIST1a (D120), the package it was
+/// installed from. Exactly one of the three.
 /// </summary>
 /// <remarks>
 /// <para>It is <see cref="FileName"/> in the plugin's install folder, written into the staged copy before
@@ -12,9 +22,10 @@ namespace Daoris.Driver;
 /// "no record" is said and never guessed. The catalogue reads nothing but the manifest.</para>
 ///
 /// <para>A twin of the CLI's <c>readPluginSource</c> in <c>plugins.ts</c>: the same file, the same shapes,
-/// the same problems in the same words, and each side's tests hold the same table.</para>
+/// the same problems in the same words. <c>PluginSourceTests</c> holds the table, and the CLI's
+/// <c>plugin-sources.test.ts</c> parses its rows and holds its own to them, cell for cell.</para>
 /// </remarks>
-public sealed record PluginSource(string? Folder, string? Offer)
+public sealed record PluginSource(string? Folder, string? Offer, PluginPackageOrigin? Package = null)
 {
     public const string FileName = ".daoris-source.json";
 
@@ -22,8 +33,33 @@ public sealed record PluginSource(string? Folder, string? Offer)
 
     public static PluginSource FromOffer(string id) => new(null, id);
 
-    /// <summary>Where it came from, said for a person.</summary>
-    public string Said => Offer is { } offer ? $"Daoris's own plugins, offered by this install (`{offer}`)" : Folder!;
+    public static PluginSource FromPackage(PluginPackageOrigin package) => new(null, null, package);
+
+    /// <summary>Where it came from, said for a person: a package as the distribution design §6.2 says it.</summary>
+    public string Said => Package is { } package
+        ? $"{package.Source}, package `{package.Package}` {package.Version}"
+        : Offer is { } offer ? $"Daoris's own plugins, offered by this install (`{offer}`)" : Folder!;
+
+    /// <summary>
+    /// A NuGet package id: words of letters, digits and underscores joined by dots or dashes, at most 100
+    /// characters (NuGet's own rule). ASCII only, as the CLI's twin spells it; <c>\z</c>, since .NET's <c>$</c>
+    /// passes a final newline.
+    /// </summary>
+    private static readonly Regex PackageId = new(@"^[A-Za-z0-9_]+(?:[.-][A-Za-z0-9_]+)*\z", RegexOptions.CultureInvariant);
+
+    /// <summary>A package's version: one to four numbers, then a prerelease label and build metadata, each optional.</summary>
+    private static readonly Regex PackageVersion = new(
+        @"^[0-9]+(?:\.[0-9]+){0,3}(?:-[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?\z",
+        RegexOptions.CultureInvariant);
+
+    /// <summary>A SHA-512 in standard base64: 64 bytes are 86 characters and two of padding.</summary>
+    private static readonly Regex Sha512 = new(@"^[A-Za-z0-9+/]{86}==\z", RegexOptions.CultureInvariant);
+
+    /// <summary>Whether a name is a NuGet package id. The CLI's <c>isPackageId</c>.</summary>
+    public static bool IsPackageId(string id) => id.Length <= 100 && PackageId.IsMatch(id);
+
+    /// <summary>Whether a text is a package's version. The CLI's <c>isPackageVersion</c>.</summary>
+    public static bool IsPackageVersion(string version) => PackageVersion.IsMatch(version);
 
     /// <summary>An installed plugin's record: none where there is no file, or the named reason one does not read.</summary>
     public static (PluginSource? Source, string? Problem) Read(string installFolder)
@@ -48,23 +84,45 @@ public sealed record PluginSource(string? Folder, string? Offer)
             if (root.ValueKind != JsonValueKind.Object) return Unread("it is not a JSON object");
             var folder = Text(root, "folder");
             var offer = Text(root, "offer");
+            var package = Text(root, "package");
+            if (package is not null && folder is not null) return Unread("it names both a package and a folder");
+            if (package is not null && offer is not null) return Unread("it names both a package and an offer");
             if (folder is not null && offer is not null) return Unread("it names both a folder and an offer");
             if (folder is not null) return Path.IsPathFullyQualified(folder) ? (new PluginSource(folder, null), null) : Unread("its folder is not a whole path");
             if (offer is not null) return PluginCatalog.IsId(offer) ? (new PluginSource(null, offer), null) : Unread("its offer is not a plugin id");
-            return Unread("it names neither a folder nor an offer");
+            if (package is null) return Unread("it names no folder, offer or package");
+
+            // A package's record (PLUGDIST1a), each field judged in the CLI's order and words.
+            if (!IsPackageId(package)) return Unread($"its package `{package}` is not a package id");
+            if (Text(root, "version") is not { } version) return Unread("a package needs its `version`");
+            if (!IsPackageVersion(version)) return Unread($"its version `{version}` is not a package version");
+            if (Text(root, "sha512") is not { } sha512) return Unread("a package needs its `sha512`");
+            if (!Sha512.IsMatch(sha512)) return Unread("its sha512 is not a SHA-512 hash in base64");
+            if (Text(root, "source") is not { } source) return Unread("a package needs its `source`");
+            if (!Tools.IsAddress(source) && !Path.IsPathFullyQualified(source))
+            {
+                return Unread($"its source `{source}` is neither a whole path nor an address — https://, or http:// to this machine");
+            }
+
+            return (FromPackage(new PluginPackageOrigin(package, version, sha512, source)), null);
         }
     }
 
     /// <summary>Written into a staged copy before it is renamed into place, so the record and the install move together.</summary>
     internal static void Write(string installFolder, PluginSource source)
     {
-        var json = source.Offer is { } offer
-            ? JsonSerializer.Serialize(new { offer }, Indented)
-            : JsonSerializer.Serialize(new { folder = source.Folder }, Indented);
+        var json = source switch
+        {
+            { Package: { } package } => JsonSerializer.Serialize(
+                new { package = package.Package, version = package.Version, sha512 = package.Sha512, source = package.Source }, Indented),
+            { Offer: { } offer } => JsonSerializer.Serialize(new { offer }, Indented),
+            _ => JsonSerializer.Serialize(new { folder = source.Folder }, Indented),
+        };
         File.WriteAllText(Path.Combine(installFolder, FileName), json.Replace("\r\n", "\n") + "\n", new System.Text.UTF8Encoding(false));
     }
 
-    private static readonly JsonSerializerOptions Indented = new() { WriteIndented = true };
+    // A hash's `+` and `/` are written as they are, as the CLI's `JSON.stringify` writes them.
+    private static readonly JsonSerializerOptions Indented = new() { WriteIndented = true, Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping };
 
     private static string? Text(JsonElement element, string name) =>
         element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String ? value.GetString() : null;
@@ -158,9 +216,17 @@ public static class PluginInstall
         return AddFrom(home, offer.Folder, PluginSource.FromOffer(offer.Id), reserved);
     }
 
-    private static PluginManifest AddFrom(string home, string folder, PluginSource source, IEnumerable<string> reservedHarnesses)
+    /// <summary>
+    /// A package's plugin folder, extracted by <see cref="PluginPackage"/> into a stage of its own under the home,
+    /// added with the same copy and the package recorded (PLUGDIST1a, D120 §5.7 step 4). That stage is the one
+    /// folder inside the home an add copies from, since the reader made it and nothing else writes there.
+    /// </summary>
+    internal static PluginManifest Add(string home, string stage, PluginPackageOrigin package, IEnumerable<string> reservedHarnesses) =>
+        AddFrom(home, stage, PluginSource.FromPackage(package), reservedHarnesses, unpacked: true);
+
+    private static PluginManifest AddFrom(string home, string folder, PluginSource source, IEnumerable<string> reservedHarnesses, bool unpacked = false)
     {
-        if (Placement(home, folder) is { } misplaced) throw new DriverException($"{misplaced} Nothing was copied.");
+        if (!unpacked && Placement(home, folder) is { } misplaced) throw new DriverException($"{misplaced} Nothing was copied.");
         var (read, refusal) = Read(folder, reservedHarnesses);
         if (refusal is not null) throw new DriverException($"{refusal} Nothing was copied.");
         var manifest = read!;
@@ -221,6 +287,15 @@ public static class PluginInstall
             return Refuse($"plugin `{installed}` has no record of where it came from: it was added before Daoris kept one, or "
                 + "copied in by hand, so there is nothing to update it from. `daoris plugin add <folder>` replaces it wholesale "
                 + "and records where it came from.");
+        }
+
+        // PLUGDIST1a: a package is installed whole, and this build reads no package source to take a newer
+        // version from; the CLI's `planUpdate` says the same, word for word.
+        if (source.Package is not null)
+        {
+            return Refuse($"plugin `{installed}` came from {source.Said}, and a plugin from a package is installed whole. "
+                + $"A newer package takes its place: `daoris plugin remove {installed}`, then "
+                + "`daoris-driver plugins install <file.nupkg>`, and what it kept stays where it is.");
         }
 
         string from;
@@ -352,7 +427,7 @@ public static class PluginInstall
     }
 
     /// <summary>The id a manifest names, or empty where it names none or does not read — the catalogue then says why.</summary>
-    private static string IdOf(string path)
+    internal static string IdOf(string path)
     {
         try
         {

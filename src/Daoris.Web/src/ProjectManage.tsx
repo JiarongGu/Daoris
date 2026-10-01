@@ -26,7 +26,12 @@ import { Button, Chip, Drawer, failure, Inline, type Notify, PathText, SectionTi
 const EMPTY_LINES = (value: string): string[] =>
   value.split('\n').map((line) => line.trim()).filter(Boolean);
 
-export function AddProjectDrawer({ onClose, notify }: { onClose: () => void; notify: Notify }) {
+export function AddProjectDrawer({ onClose, onAdded, notify }: {
+  onClose: () => void;
+  /** Told the repository registered, so the list that opened the drawer can have it chosen (FRAME1e). */
+  onAdded?: (repository: string) => void;
+  notify: Notify;
+}) {
   const { t } = useTranslation();
   const pick = usePickFolder();
   const register = useRegisterRepository();
@@ -59,6 +64,7 @@ export function AddProjectDrawer({ onClose, notify }: { onClose: () => void; not
     }, {
       onSuccess: (registered) => {
         notify(t('projects.manage.added', { name: found.name, workspace: registered.workspace }));
+        onAdded?.(registered.repository);
         onClose();
       },
       onError: failure(notify),
@@ -206,8 +212,12 @@ export function ImportFolderDrawer({ onClose, notify }: { onClose: () => void; n
   );
 }
 
-export function ManageProjectDrawer({ project, onClose, notify }: {
-  project: Registration; onClose: () => void; notify: Notify;
+export function ManageProjectDrawer({ project, onClose, onRetired, notify }: {
+  project: Registration;
+  onClose: () => void;
+  /** Told the repository is retired, so the page it was managed from can go back to choosing (FRAME1e). */
+  onRetired?: () => void;
+  notify: Notify;
 }) {
   const { t } = useTranslation();
   const wire = useWireRepository();
@@ -340,7 +350,7 @@ export function ManageProjectDrawer({ project, onClose, notify }: {
               disabled={retire.isPending}
               onClick={() => retire.mutate(project.repository, {
                 // The service's own sentence, verbatim — it is the part that says what did not happen.
-                onSuccess: (answer) => { notify(answer.message); onClose(); },
+                onSuccess: (answer) => { notify(answer.message); onRetired?.(); onClose(); },
                 onError: fail,
               })}
             >

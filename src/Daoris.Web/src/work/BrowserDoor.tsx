@@ -1,7 +1,6 @@
-import * as Menu from '@radix-ui/react-dropdown-menu';
 import { useTranslation } from 'react-i18next';
 import { cn } from '../lib/cn';
-import { Button, Icon, Tip } from '../ui';
+import { Button, Icon, Menu, Tip } from '../ui';
 import type { BrowserDriver } from './browserDrivers';
 
 /**
@@ -93,8 +92,8 @@ function Driving({ drivers, onAttend }: { drivers: readonly BrowserDriver[]; onA
   if (!onAttend) return <Tip content={`${text} — ${tip}`}><span className={CHIP}>{face(text)}</span></Tip>;
 
   return (
-    // `modal={false}`: a menu on the strip has no business making the page inert (AppMenu's rule).
-    <Menu.Root modal={false}>
+    // Never modal (`Menu.Root`): a menu on the strip has no business making the page inert.
+    <Menu.Root>
       <Tip content={`${text} — ${tip}`}>
         <Menu.Trigger asChild>
           <button type="button" aria-label={t('browser.driving.severalLabel', { count })} className={cn(CHIP, PRESSABLE)}>
@@ -102,28 +101,15 @@ function Driving({ drivers, onAttend }: { drivers: readonly BrowserDriver[]; onA
           </button>
         </Menu.Trigger>
       </Tip>
-      <Menu.Portal>
-        <Menu.Content
-          align="end"
-          sideOffset={4}
-          collisionPadding={8}
-          className="z-30 w-72 max-w-[calc(100vw-2rem)] rounded-control border border-line bg-overlay p-1 text-small shadow-lg"
-        >
-          <Menu.Label className="px-2 py-1 text-meta text-ink-faint">{t('browser.driving.menu')}</Menu.Label>
-          {drivers.map((driver) => (
-            <Menu.Item key={driver.id} onSelect={() => onAttend(driver.id)} className={ROW}>
-              <Icon name="frameWork" size={12} className="shrink-0" aria-hidden />
-              <span className="min-w-0 truncate">{driver.name}</span>
-            </Menu.Item>
-          ))}
-        </Menu.Content>
-      </Menu.Portal>
+      <Menu.Content align="end" className="w-72 max-w-[calc(100vw-2rem)]">
+        <Menu.Label>{t('browser.driving.menu')}</Menu.Label>
+        {drivers.map((driver) => (
+          <Menu.Item key={driver.id} onSelect={() => onAttend(driver.id)}>
+            <Icon name="frameWork" size={12} className="shrink-0" />
+            <span className="min-w-0 truncate">{driver.name}</span>
+          </Menu.Item>
+        ))}
+      </Menu.Content>
     </Menu.Root>
   );
 }
-
-/** One row of the menu — AppMenu's row, so the menus in this window read as one kind of thing. */
-const ROW = cn(
-  'flex cursor-pointer items-center gap-2 rounded-[4px] px-2 py-1.5 text-small text-ink-soft outline-none',
-  'data-[highlighted]:bg-raised data-[highlighted]:text-ink',
-);

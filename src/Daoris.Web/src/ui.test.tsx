@@ -6,8 +6,8 @@ import type { SessionState } from './api';
 import './i18n';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import {
-  Button, CountBadge, Dot, Drawer, EmptyState, Inline, MetaLine, MonoWell, PathText, Pill, Segmented, SESSION_ACTIVE,
-  SESSION_DOT, SESSION_TONE, SettingRow, shownState, StripMark, Tile, Tip, WaitingCard,
+  Button, CountBadge, Dot, Drawer, EmptyState, Inline, Menu, MetaLine, MonoWell, PathText, Pill, QuickPanel, Segmented,
+  SelectField, SESSION_ACTIVE, SESSION_DOT, SESSION_TONE, SettingRow, shownState, StripMark, Tile, Tip, WaitingCard,
 } from './ui';
 import { CommandPalette } from './work/CommandPalette';
 
@@ -61,6 +61,85 @@ describe('the primitives', () => {
  * the glyph, for the reader who asks, rather than as the paragraph that used to sit above every
  * control on the Machine view.
  */
+describe('a select', () => {
+  // SELECT1: a list longer than the window ran off its edge, with nothing to scroll it by. The list is capped at
+  // the room the popper measures on the side it opened, and it scrolls inside that.
+  it('caps its open list at the room the window has, and scrolls inside it', async () => {
+    const user = userEvent.setup();
+    const options = Array.from({ length: 60 }, (_, i) => ({ value: `repo-${i}`, label: `repository ${i}` }));
+    render(<SelectField value="" onChange={() => {}} options={options} ariaLabel="To" />);
+
+    await user.click(screen.getByRole('combobox', { name: 'To' }));
+
+    const list = await screen.findByRole('listbox');
+    const content = list.closest('[data-radix-select-content], [role="listbox"]') as HTMLElement;
+    expect(content.className).toContain('max-h-[var(--radix-select-content-available-height)]');
+    expect(screen.getAllByRole('option')).toHaveLength(60);
+  });
+});
+
+describe('a menu', () => {
+  // MENU1: the dropdown menus had no atom, and a long one (a receiver filter, a long workspace list) ran off the
+  // window as the select had. The menu is capped at the room the popper measures on its side, and scrolls inside.
+  // Opened from the keyboard with a fresh `userEvent.setup()`, as AppMenu's and SyncStatus's tests are: the shared API
+  // carries pointer state between tests, and a `defaultOpen` menu does not open under jsdom.
+  const open = async (name: string) => {
+    const user = userEvent.setup();
+    screen.getByRole('button', { name }).focus();
+    await user.keyboard('{Enter}');
+    return screen.findByRole('menu');
+  };
+
+  it('caps its content at the room the window has, and scrolls inside it', async () => {
+    render(
+      <Menu.Root>
+        <Menu.Trigger>Receiver</Menu.Trigger>
+        <Menu.Content align="end">
+          <Menu.Label>Receiver</Menu.Label>
+          {Array.from({ length: 60 }, (_, i) => <Menu.Item key={i}>{`repository ${i}`}</Menu.Item>)}
+        </Menu.Content>
+      </Menu.Root>,
+    );
+
+    const menu = await open('Receiver');
+    expect(menu.className).toContain('max-h-[var(--radix-dropdown-menu-content-available-height)]');
+    expect(menu.className).toContain('overflow-y-auto');
+    expect(screen.getAllByRole('menuitem')).toHaveLength(60);
+    // A modal menu makes the body inert, and a menu in the title bar must leave the window draggable under it.
+    expect(document.body.style.pointerEvents).not.toBe('none');
+  });
+
+  it('reserves the tick column where asked, ticks the current item, and leaves it out where not', async () => {
+    render(
+      <Menu.Root>
+        <Menu.Trigger>Size</Menu.Trigger>
+        <Menu.Content>
+          <Menu.Item tick>100%</Menu.Item>
+          <Menu.Item tick={false}>50%</Menu.Item>
+          <Menu.Item>Fit</Menu.Item>
+          <Menu.Separator />
+          <Menu.CheckboxItem checked>Quests</Menu.CheckboxItem>
+          <Menu.RadioGroup value="all">
+            <Menu.RadioItem value="all">All</Menu.RadioItem>
+          </Menu.RadioGroup>
+        </Menu.Content>
+      </Menu.Root>,
+    );
+    await open('Size');
+    const item = (name: string) => screen.getByText(name).closest('[role^="menuitem"]') as HTMLElement;
+    expect(item('100%').querySelector('svg')).not.toBeNull();
+    expect(item('100%').className).toContain('text-ink');
+    expect(item('50%').firstElementChild?.className).toContain('w-3.5');
+    expect(item('50%').querySelector('svg')).toBeNull();
+    expect(item('Fit').firstElementChild).toBeNull();
+    // A checkbox and a radio item reserve the column always, and tick it while chosen.
+    expect(item('Quests').getAttribute('role')).toBe('menuitemcheckbox');
+    expect(item('Quests').querySelector('svg')).not.toBeNull();
+    expect(item('All').getAttribute('role')).toBe('menuitemradio');
+    expect(item('All').querySelector('svg')).not.toBeNull();
+  });
+});
+
 describe('a setting row', () => {
   it('leads with the label, keeps the hint to a line, and holds the why off the page', () => {
     render(
@@ -372,6 +451,27 @@ describe('every modal surface says it is modal', () => {
       />,
     );
     expect(screen.getByRole('dialog').getAttribute('aria-modal')).toBe('true');
+  });
+
+  it('a box at the palette\'s place does, named by its title, its focus where it was asked to land', async () => {
+    render(
+      <Tooltip.Provider>
+        <QuickPanel open onClose={() => {}} title="Quick Ask" header={{ icon: 'help', closeLabel: 'Close' }} initialFocus="textarea">
+          <button type="button">first</button>
+          <textarea aria-label="message" />
+        </QuickPanel>
+      </Tooltip.Provider>,
+    );
+    const box = screen.getByRole('dialog', { name: 'Quick Ask' });
+    expect(box.getAttribute('aria-modal')).toBe('true');
+    await waitFor(() => expect(screen.getByRole('textbox', { name: 'message' })).toHaveFocus());
+    expect(screen.getByRole('button', { name: 'Close' })).toBeInTheDocument();
+  });
+
+  it('a box with no header still has its name, for a reader alone', () => {
+    render(<QuickPanel open onClose={() => {}} title="Command palette"><input aria-label="typed" /></QuickPanel>);
+    expect(screen.getByRole('dialog', { name: 'Command palette' }).getAttribute('aria-modal')).toBe('true');
+    expect(screen.getByText('Command palette').className).toContain('sr-only');
   });
 });
 
