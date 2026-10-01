@@ -55,7 +55,7 @@ export function AddProjectDrawer({ onClose, onAdded, notify }: {
       ...(workspace.trim() ? { workspace: workspace.trim() } : {}),
       ...(found.adopted
         ? {
-            domain: { summary: found.summary ?? '', owns: found.owns, accepts: found.accepts },
+            domain: { summary: found.summary ?? '', owns: found.owns, accepts: found.accepts, uses: found.uses },
             packs: found.packs,
             join: found.join,
             shareKnowledge: found.shareKnowledge,
@@ -241,7 +241,9 @@ export function ManageProjectDrawer({ project, onClose, onRetired, notify }: {
   });
 
   // Two writes, in order, because they are two different things: the tracked file first (it is what a
-  // reviewer will see), then the registration that reflects it.
+  // reviewer will see), then the registration that reflects it — the whole of it, `uses` included, since
+  // the registry replaces a row's `uses` with the declaration's and the form has no field for them: the
+  // shell's answer reads them back from the file it just wrote (MANAGE1).
   const saveDeclaration = () => {
     if (!project.root) return;
     writeDeclaration.mutate({
@@ -256,7 +258,7 @@ export function ManageProjectDrawer({ project, onClose, onRetired, notify }: {
         register.mutate({
           repository: project.repository,
           root: written.path,
-          domain: { summary: written.summary ?? '', owns: written.owns, accepts: written.accepts },
+          domain: { summary: written.summary ?? '', owns: written.owns, accepts: written.accepts, uses: written.uses },
           packs: written.packs,
           join: written.join,
           shareKnowledge: written.shareKnowledge,

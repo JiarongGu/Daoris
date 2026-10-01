@@ -247,10 +247,18 @@ export const HELP_REPOSITORY = 'daoris:help';
  * `absent` names registered repositories whose checkout is no longer where the registry says it is
  * (D48 §3). Named rather than skipped: a repository that quietly stops contributing looks exactly like
  * one with nothing to say, and the count still looks healthy.
+ *
+ * `embedded` is what the semantic half made of the entries (D123): how many it embedded, the vectors
+ * they became, how many were longer than the window and split into pieces, and the window, which is the
+ * deployment's. Absent when that half did not run, which is never a zero.
  */
 export type RefreshReport = {
   entries: number; repositories: number; withheld: number; semanticError?: string; absent?: string[];
+  embedded?: Embedded;
 };
+
+/** One pass of the semantic half (D123), as the refresh answer carries it. */
+export type Embedded = { entries: number; pieces: number; split: number; window: number };
 
 /** What a retire actually did — and its sentence, which is mostly about what it did NOT do. */
 export type Retired = { repository: string; retired: boolean; message: string };
@@ -377,7 +385,8 @@ export const api = {
   registerRepository: (body: {
     // Whether the shell found a manifest there (D70): registered is addressable, adopted is disciplined.
     repository: string; root?: string; workspace?: string; adopted?: boolean;
-    domain?: { summary?: string; owns: string[]; accepts: string[] };
+    // `uses` (D91) replaces the row's, and absent is none: a door that read the file states it (MANAGE1).
+    domain?: { summary?: string; owns: string[]; accepts: string[]; uses?: string[] };
     packs?: string[]; join?: boolean; shareKnowledge?: boolean;
   }) => post<{ repository: string; workspace: string }>('/api/registry', body),
   wireRepository: (repository: string, workspace: string) =>

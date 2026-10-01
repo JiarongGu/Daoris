@@ -283,7 +283,22 @@ export function App() {
 
   const onRefresh = () => refresh.mutate(undefined, {
     onSuccess: (report) => {
-      notify(t('sidebar.refreshed', report));
+      // What the semantic half embedded is said beside the count, in the one notice (SEM3b, D123); a
+      // refresh it did not run in says nothing of it, since absent is never zero.
+      const counted = t('sidebar.refreshed', report);
+      const made = report.embedded;
+      notify(made
+        ? t('sidebar.join', {
+          first: counted,
+          second: t('sidebar.embedded', {
+            count: made.split,
+            split: figure(made.split),
+            entries: figure(made.entries),
+            pieces: figure(made.pieces),
+            window: figure(made.window),
+          }),
+        })
+        : counted);
       // A registered checkout that was not where the registry says contributed nothing, and the count
       // still looks healthy — so it is named, as the failure it is (D48 §3; REV3).
       if (report.absent?.length) notify(t('sidebar.absent', { names: report.absent.join(', ') }), 'error');
