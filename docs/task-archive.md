@@ -9122,3 +9122,19 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **PLUGREPO2d — in-app-browser** (an ask), then **PLUGREPO2e — this repository lets them go** (after PLUGDIST1g).
 
 **Outcome** Asked of Daoris.Plugins (quest `#4393fe1b9caf`) and done by its own session: `plugins/in-app-browser`, its manifest the same blob as Daoris's example. It declares a server and speaks no wire, so its `plugin.test.mjs` tests the declaration by the driver's own rules: `${browser}` and `${data}` kept as written, every placeholder one Daoris fills, `@playwright/mcp` pinned to one exact version (0.0.82), the README naming that version; each rule also run against declarations that break it. Not checked: whether 0.0.82 attaches to Daoris's browser window. Reviewed and landed (46/46). The repository now holds Daoris's three plugins, all built by Daoris.
+
+
+## PLUGUI1d — the machine log's plugin events, health, and plugins show|activity (2026-10-01)
+
+> - [ ] **PLUGUI1d — the machine log's plugin events, health, and `plugins show|activity`** (beside b): seven
+> `plugin.*` events without words, `PluginHealth`, the two verbs.
+
+**Outcome** (built by a subagent, merged with `tools/merge-branch.mjs`, every gate; notes under D94 and D119): The machine log gains seven `plugin.*` events, written by one driver-library writer (`PluginLog`) from the hook set, a landing, a hand-off, the driver's handing of servers and the terminal's trial; each line is names, counts, flags and times, and a hold's reason, a message, a pull request and a plugin's stderr never reach one (`HookSetLogTests`). A failure's kind is marked where the wire throws it. `PluginHealth` keeps the loop's record of the five states and reads the same state from the log's last word under one set of rules, held by one table (`PluginHealthTests`). The shell's `DriverLoop.Health` and its log are handed to the hook set and every landing the routes build. `PluginPage.Read` (environment by name only) and `PluginActivity.Read` are the readers the page's routes call; `daoris-driver plugins show` and `plugins activity` print them. The screen's `plugin.tried`, a conversation's `plugin.served` and `plugin.tested` wait for the shell's log to reach `PLUGIN_TRY` and the chat runner, and for PLUGUI1g. Driver fast half 1212 → 1284, modules 351 → 353.
+
+
+## PLUGUI1e — the host answers the Plugins page (2026-10-01)
+
+> - [ ] **PLUGUI1e — the host answers the page** (after d): `PLUGINS` extended; `PLUGIN`, `PLUGIN_ACTIVITY`,
+> `PLUGIN_READ`, `PLUGIN_ADD`, `PLUGIN_OPEN_FOLDER`.
+
+**Outcome** (built by a subagent, merged with `tools/merge-branch.mjs`, every gate; a note under D119): The host's answers for the Plugins view (D119 §4.1) on `DAORIS.DRIVER`. `PLUGINS` gives each plugin its servers, hook (command as written), listening points, health from the loop's own record and whether an update waits. `PLUGIN` and `PLUGIN_ACTIVITY` call `PluginPage.Read` and `PluginActivity.Read`, refusing a gone id as `PLUGIN_UNKNOWN`. `PLUGIN_READ` answers what a folder's plugin would run, or the refusal as an answer, in Ask Daoris's judge's order; `PLUGIN_ADD` installs from a folder and never replaces; `PLUGIN_OPEN_FOLDER` opens the folder the module names through the window kit's launcher. Two refusals were added (`PLUGIN_FOLDER_NOT_OPENED`, `PLUGIN_NOTHING_KEPT`), each with its code, both catalogues and a throw site. What PLUGUI1d left is wired: the screen's trial writes `plugin.tried`, and the shell's conversations write `plugin.served` through one `ChatRunner` seam. Modules 353 → 361, driver 1499 → 1501. Not yet seen on the window or with a real file manager; the page's calls come with PLUGUI1f.
