@@ -24,6 +24,10 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
         ("drive a repository, or stop", "Repositories", "`daoris driver drive|undrive <repository>`"),
         ("pause one, or release it", "Repositories", "`daoris driver hold|resume <repository>`"),
         ("give its sessions their own tree", "Repositories", "`daoris driver trees <repository> on|off`"),
+        // LAYOUT7: the set-up press's terminal door; its screen and Ask Daoris's `setup` kind are LAYOUT8's, owed meanwhile.
+        ("set a repository up for every agent: one quest to its own session, which takes up the doctrine, writes down what "
+            + "the repository owns and its brief on its own branch (`--plan` shows what was read and the quest, and asks nothing)",
+            "(no screen yet)", "`daoris-driver setup <repository> [--plan]`"),
         ("set the line its work grows from and lands on", "Settings → Workspace → Lines",
             "`daoris driver line <repository> <branch>|--clear` (`--workspace <name>` for a whole workspace)"),
         ("set how accepted work lands", "Settings → Workspace → How work lands",

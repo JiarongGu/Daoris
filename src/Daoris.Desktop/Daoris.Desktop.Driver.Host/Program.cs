@@ -39,6 +39,14 @@ using Daoris.Driver;
 //                 declarations left open with an INTAKE session (D65 §1b) in <home>/intake/<workspace>/:
 //                 it publishes onto the ask, or parks asking you — and ends when you answer the ask.
 //
+//   setup <repository> [--plan]
+//                 ask a repository's own session to set it up for every agent (LAYOUT7; D117 §6, D124 §2): take up
+//                 the doctrine on the agents layout, initialise its knowledge, write its brief and declare its
+//                 documents and safe work, on its own branch. Read from its LINE as git objects, every refusal said
+//                 with its door. A press publishes one ask to it, as yours, and adds to its rules the doctrine tool's
+//                 exact verbs; --plan prints what was read, the rule, the landing, the agent and the quest's text,
+//                 and publishes nothing.
+//
 //   quest delete <id>
 //                 delete a quest made by mistake (D95): only one nobody has started on — open, with no
 //                 session record naming it — goes, and the service's refusal says what to do instead.
@@ -119,6 +127,14 @@ try
     if (args is ["ask", .. var askArgs])
     {
         return await Daoris.Driver.Host.AskConsole.RunAsync(askArgs);
+    }
+
+    // A set-up asked of a repository from a terminal (LAYOUT7, D117 §6.1, D50): one ask to one repository, as the
+    // person's, with the rule its session needs. Repositories' *Set up for agents* and Ask Daoris's `setup` kind are
+    // LAYOUT8's doors to the same press.
+    if (args is ["setup", .. var setupArgs])
+    {
+        return await Daoris.Driver.Host.SetupConsole.RunAsync(setupArgs);
     }
 
     // Deleting a quest made by mistake (D95, D50): the quest drawer's Delete is the other door.

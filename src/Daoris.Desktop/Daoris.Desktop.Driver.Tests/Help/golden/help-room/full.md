@@ -118,6 +118,7 @@ plugin, see whether one of these does the job: propose installing it with `plugi
 | drive a repository, or stop | Repositories | `daoris driver drive|undrive <repository>` |
 | pause one, or release it | Repositories | `daoris driver hold|resume <repository>` |
 | give its sessions their own tree | Repositories | `daoris driver trees <repository> on|off` |
+| set a repository up for every agent: one quest to its own session, which takes up the doctrine, writes down what the repository owns and its brief on its own branch (`--plan` shows what was read and the quest, and asks nothing) | (no screen yet) | `daoris-driver setup <repository> [--plan]` |
 | set the line its work grows from and lands on | Settings → Workspace → Lines | `daoris driver line <repository> <branch>|--clear` (`--workspace <name>` for a whole workspace) |
 | set how accepted work lands | Settings → Workspace → How work lands | `daoris driver landing <repository> merge|branch <pattern>|--clear` (`--workspace <name>`, `--tidy`, and on a branch `--plugin <id>`: an installed plugin that pushes it and opens the pull request) |
 | bring a repository up to date after its pull request merged: fetch and fast-forward the line, delete the branches whose work reached it, replay the branches still at work onto it (Daoris fetches, never pushes; it takes the repositories holding Daoris's branches, and another where named or included) | Settings → Workspace → Session branches → Updates | `daoris-driver trees sync [--repository <name>] [--all] [--yes]` |
