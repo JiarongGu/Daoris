@@ -6950,6 +6950,54 @@ tools' environment. What the design left open, settled here:
   substitution D57's pin exists to prevent; and handing a hook's first word to the system bare, which finds only an
   `.exe`.
 
+**As built (TOOLS7, 2026-10-01): Settings → Tools.** A machine domain after *Agents*, on the routes of
+`DriverModule.Tools.cs` that the page's `bridge/tools.ts` calls, the molecules in `settings/Tools.tsx` and the organism
+`settings/ToolsDomain.tsx`. What the design left open, settled here:
+- **The routes**, beside §4.1's: `TOOLS_LIST` reads files only, and with `ask` asks each resolved file its version, which
+  starts it, so the page draws from the first answer and fills in from the second. `TOOLS_USE` takes `action` as
+  `system`, `managed` or `file`. **`TOOLS_STOP`** is the person's stop, which §4.1 named no route for; one with nothing
+  running answers `stopped: false`. **`TOOLS_PICK`** is the system's file picker for *Browse…*, a `PickFile` delegate the
+  application hands in as it hands `OpenFolder`. `TOOLS_GIT` answers what a switch of git changes; TOOLS6 adds the SSH
+  command to it.
+- **The refusal codes.** Nine are built, each with a throw site: §4.1's codes but `TOOL_GIT_TOO_OLD`, which waits for
+  TOOLS6's version floors, plus `TOOL_FILE_NO_VERSION` (a named file that does not start, or answers no version) and
+  `TOOL_HELD` (a delete the system refused, with its reason). The file's own refusals, such as a `tools.json` that does
+  not read, travel as the driver's words (`DRIVER_REFUSED`), which name the file to fix.
+- **A named file is checked before it is written** (§4.1): a whole path to a file that is there, then started with its
+  version question (bounded at fifteen seconds, its input closed) and refused unless it says a dotted number. Each file's
+  answer is kept while its write time and size stand; an answer that did not come in time is not kept.
+- **Nothing applies on choosing, for every tool.** A segment shows a way's controls and a press applies it, so git's
+  switch can be said before it applies without a second rule for git. Git's press asks first: the four checkout keys
+  from each git's own `config --system --list`, a git with no system file read as no keys, a side that cannot answer
+  comparing nothing and saying why, and the git that runs now changing nothing. The switch is the second press. A
+  managed git not yet downloaded is offered *Download* first, since the switch is asked of that git.
+- **A download is followed** as an agent's install is: the press answers once started, its lines go to the loop's
+  console buffer under `tools:<tool>`, closed at its end, so a console opened later reads the backlog through
+  `TAIL_SESSION`, and its end is the `TOOLS_ENDED` news. The card shows the console and *Stop download* while the list
+  says the action runs.
+- **The look's wait** is a twin row: `hostBounds` gains `toolLookMinutes: 0.5`, `ToolInstall.LookBound`, held by
+  `SyncBoundsTests`, and the page waits that for each location plus two minutes.
+- **The list's query keys** are a root of their own in `bridge/tools.ts`, as Ask Daoris's proposals keep theirs, not
+  under the driver's, which every tick asks again; the version question starts each program.
+- **The machine log** gets `tool.used` (tool, way, and the version when managed) for a way set from the screen, never a
+  path. The terminal's `daoris tool use` writes none, since the CLI is no machine log source (D94).
+- **Ask Daoris** (D110). `HelpCoverageTests` answers *System*, a managed *Use this version* and removing a location as
+  doors owed to TOOLS8's `tool` kind, and a named file, *Add location…*, *Download*, the stop, *Delete*, *Look for updates*
+  and the picker as exempt with §4.3's reasons. Settings → Tools is not a place a go names until TOOLS8 adds it to the
+  driver's `HelpPlaces` and the page's `places.ts` together; `places.test.ts` sets it aside, as it set Plugins aside.
+- **Names** (D116, amended). The glossary gains *tool* 工具, *managed* 托管 and *resource location* 资源位置, and *version*
+  now means a tool's too; `names-check --strict` finds nothing in them, and no existing label names a tool. The house's
+  words for two presses §4.4 did not name: *Use the system's* 改用系统 and *Use this file* 使用这个文件.
+- **D109 as amended by WSR7.** The page's sentence for what was not fetched now says Settings → Tools names the git
+  Daoris runs, where it said the one on the path. The driver's own copy of it, in `SessionTrees.Sync.cs`, still says
+  the path, and is the driver's to change.
+- **Not built:** the SSH command and the global file's lines (TOOLS6); an *Update* press, which §4.1 does not put on the
+  screen; the size a version takes on disk (a downloaded version shows the size its record says it downloaded); the
+  menu atom, which is not on this base, so the version choice is `SelectField`.
+- **Not covered by a gate run here.** `DriverModuleToolProgramsTests`, in the `Process` half, starts stub programs: a
+  named file answering its version, the list asking it, and a switch of git over two stub gits. It was written and not
+  run (MOD8). The window was not looked at, and the application's file dialog was compiled, not opened.
+
 ## D120 — Plugins leave the repository: a workshop in the home makes them, Daoris.Plugins keeps Daoris's own, and NuGet is where they are found (2026-10-01)
 
 **Decision (PLUGREPO2, PLUGDIST1).** The owner made an empty folder, Daoris.Plugins, beside this repository, for
