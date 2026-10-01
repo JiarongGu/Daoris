@@ -405,8 +405,8 @@ controls are in the frame design's §3.
   the ⋯ holds *Try a folder…*.
 - **Settings** (D66, as amended by **D75**) — one page with its **domains in a list at its left**,
   one shown at a time and reachable by name: *Setup*, *Appearance*, *AI features*, *Workspace*,
-  *Driver*, *Agents*, *Permissions*, *Plugins*, *Browser*, *Machine log* (配置, 外观, AI 功能, 工作区,
-  驱动, 智能体, 权限, 插件, 浏览器, 本机日志; named so by NAME1b, D116). Every way in opens the domain its
+  *Driver*, *Agents*, *Tools*, *Permissions*, *Plugins*, *Browser*, *Machine log* (配置, 外观, AI 功能, 工作区,
+  驱动, 智能体, 工具, 权限, 插件, 浏览器, 本机日志; named so by NAME1b, D116, and *Tools* by TOOLS7, D121). Every way in opens the domain its
   fact is set in, at the part it names, and a browser is offered only the first four, its list saying
   beneath them that a machine's own settings are on the desktop. **Since FRAME1g (D118) the list is the
   frame's list pane**, 176–320 px and 176 to start, closed to its strip, a strip by room and laid over
@@ -427,6 +427,12 @@ controls are in the frame design's §3.
     the intake's agent, off as a value (`""` on the wire, since the bridge leaves a null out), offering
     only the ways in this machine has installed while always showing what is in effect, with the
     account an intake in each circle runs as.
+  - **Tools** (TOOLS7, D121 §4.1), on the desktop only: a card per program Daoris runs beside its agents, what it needs
+    it for, how it is run as one choice (*System · Managed · Custom*), the file it runs and the version it answers.
+    **Nothing applies on choosing**: a segment shows a way's controls and a press applies it, so a switch of git is said
+    before it applies, the keys the two gits read a checkout differently by, beside *Switch Git* and *Never mind*. A
+    download is followed on its card (its console and *Stop download*), *Delete* asks once, and *Resource locations*
+    lists the person's, then the list built in, which cannot be removed.
   - On the desktop only, the machine's domains: *Driver* (the home's path, the notification switch,
     the strikes dial); *Workspace* (the workspaces, the wiring with *Wire a workspace* behind a press,
     and *What a start runs on*: one row per workspace and job, each part with the setting that chose

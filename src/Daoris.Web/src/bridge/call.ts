@@ -17,14 +17,16 @@ const MINUTE = 60_000;
 
 /**
  * The driver's own bounds on its long routes (WSR7), spelled again so the page waits as long as the host may work. A
- * twin: `SyncBounds` (a fetch, how many at once, a replay) and `LandingPlugins.DefaultPatience` in the driver, each row
- * held to its number by `SyncBoundsTests`. Minutes, or a count.
+ * twin: `SyncBounds` (a fetch, how many at once, a replay), `LandingPlugins.DefaultPatience` and `ToolInstall.LookBound`
+ * (one resource location's look, TOOLS7) in the driver, each row held to its number by `SyncBoundsTests`. Minutes, or a
+ * count.
  */
 export const hostBounds = {
   fetchMinutes: 2,
   fetchesAtOnce: 4,
   replayMinutes: 5,
   pluginMinutes: 2,
+  toolLookMinutes: 0.5,
 } as const;
 
 /** Room for what the host does around its bounded steps: the registry, the local git, the answer on its way back. */
@@ -39,6 +41,9 @@ export const pressBound = (rows: number) => Math.max(1, rows) * hostBounds.repla
 
 /** How long a landing or a hand-off a plugin pushes may take: the plugin's start and its one answer, each within its patience. */
 export const pluginBound = 2 * hostBounds.pluginMinutes * MINUTE + SLACK;
+
+/** How long *Look for updates* may take over `locations` (TOOLS7, D121 §3.7): one after another, each within a look's bound. */
+export const toolLookBound = (locations: number) => Math.max(1, locations) * hostBounds.toolLookMinutes * MINUTE + SLACK;
 
 /**
  * Whether the driver refused because it is still coming up (`DRIVER_NOT_READY`): its service is not handed to the routes

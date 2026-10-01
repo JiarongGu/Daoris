@@ -28,6 +28,7 @@ public sealed partial class DriverModule : ModuleBase
     private readonly IEventBus _events;
     private readonly DriverLoop _loop;
     private readonly OpenFolder? _openFolder;
+    private readonly PickFile? _pickFile;
 
     /// <remarks>
     /// The bus is held as well as handed to the base: this module both ANSWERS requests and, since
@@ -37,11 +38,17 @@ public sealed partial class DriverModule : ModuleBase
     /// The file manager, for a plugin's Open folder (PLUGUI1e): the application hands in the window kit's launcher,
     /// as it does to the log's module. Null where the host carries none: then nothing opens, and the answer says so.
     /// </param>
-    public DriverModule(IEventBus events, DriverLoop loop, OpenFolder? openFolder = null) : base(events: events)
+    /// <param name="pickFile">
+    /// The system's file picker, for a tool's *Browse…* (TOOLS7): the application hands in its window's dialog. Null
+    /// where the host carries none, and the answer says so.
+    /// </param>
+    public DriverModule(IEventBus events, DriverLoop loop, OpenFolder? openFolder = null, PickFile? pickFile = null)
+        : base(events: events)
     {
         _events = events;
         _loop = loop;
         _openFolder = openFolder;
+        _pickFile = pickFile;
     }
 
     public override string ModuleName => "DAORIS.DRIVER";
