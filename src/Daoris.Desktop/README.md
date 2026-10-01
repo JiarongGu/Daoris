@@ -88,8 +88,15 @@ repository. Built on the family's desktop runtime sibling, consumed at a release
 small launcher, at the folder's root; the application in `app/` beside its Chromium (its files listed in
 `app/shell-files.txt`, which the next publish removes before placing its own), which is Daoris's
 browser too (CHR8: the `app/daoris-browser/` an older publish wrote is removed by name), and the
-service host with its bundle under `app/daoris-knowledge-http/`; the
-install's own `data/` once it has run, and an `INSTALLED.md` saying so. **`data/` is the Daoris
+service host with its bundle under `app/daoris-knowledge-http/`; **the doctrine tool** (WSSETUP2,
+D124 §1.2), the CLI package the release packs laid out as npm lays one out in
+`app/cli/node_modules/daoris/`, with a launcher for each shell in `app/bin/` (`daoris` for Git Bash,
+`daoris.cmd` for Command Prompt and PowerShell), run on the `node` a child's `PATH` finds; the
+install's own `data/` once it has run, and an `INSTALLED.md` saying so. **Every process the driver and
+the modules start finds that `daoris` first** (WSSETUP3, D124 §1.3): the tools' environment puts the
+`app/bin/` beside the home ahead of the tools' folders, so a session, a conversation, a hook and the
+terminal's shells run the install's own doctrine tool by its bare name. The account's `PATH` is never
+touched, so a terminal of the person's own still runs whatever `daoris` they installed. **`data/` is the Daoris
 home** (D63): on first start the shell sets `DAORIS_HOME` to it for its own process — every host and
 session it spawns inherits it — and, once, for the account when it has none, so a terminal's `daoris`
 meets the same machine. A second or moved install runs on its own `data/` even when the account's
@@ -175,6 +182,9 @@ the workspace built, and that gate publishes the shell to a scratch folder and d
 — a window that finds its host without being told where it is, a session transcript compared as
 bytes, and a conversation open when the window closes, whose record must carry the close's own note
 (DEPLOY5: the gate starts the install with `run --install`'s debug port to open it over the bridge).
+Its phase 8 runs the doctrine tool the install carries (WSSETUP2): with the install's `app/bin/` first
+on `PATH`, `daoris` by its bare name from Command Prompt, PowerShell and Git Bash where the runner has
+one, prints the canon's version, and `init`, `sync` and `check` run clean in a scratch repository.
 Everything this loop provides is what hid two of the first deployment's four defects.
 
 | command | what |

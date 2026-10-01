@@ -25,7 +25,7 @@
 // which imports this module.
 
 import { existsSync, statSync } from 'node:fs';
-import { delimiter, dirname, join } from 'node:path';
+import { delimiter, dirname, join, resolve } from 'node:path';
 import { DaorisError } from './errors.ts';
 import { onPath, readJsonObject, writeJsonAtomic } from './fsx.ts';
 
@@ -513,12 +513,35 @@ export function wayWords(way: ToolWay): string {
 //     the folder its `exe` is in; a named file's is its folder; a way that refuses puts nothing first;
 //   - with every tool the system's the environment is the inherited one exactly: nothing is set;
 //   - a command's first word a tool answers for is that tool's: its own name is the resolved file, another it
-//     answers for (`npm`, `npx`) is found beside it and never on PATH when the tool is managed or a file.
+//     answers for (`npm`, `npx`) is found beside it and never on PATH when the tool is managed or a file;
+//   - an install's `app/bin/` beside the home comes first of all, before the tools' folders (WSSETUP3, D124 §1.3):
+//     the doctrine tool's launchers, so every child finds `daoris` by its bare name. No install, no change.
 // Still pure: `toolchain.ts`, the one module that spawns, hands every child its environment through here.
 // `GIT_CONFIG_GLOBAL` is TOOLS6's, and joins `childEnvironment` with the file it names.
 
 /** The variable a child's PATH is. */
 export const PATH_VARIABLE = 'PATH';
+
+/**
+ * Where an install carries the doctrine tool's launchers, from its root (D124 §1.2, WSSETUP2): beside the
+ * application, in `app/`. Twins: the driver's `Tools.InstallBinLayout`, the publish's `CLI_BIN`, which lays them out;
+ * `desktop-publish.test.ts` reads all three.
+ */
+export const INSTALL_BIN: readonly string[] = Object.freeze(['app', 'bin']);
+
+/**
+ * The install's launchers' folder beside the home, where it is a folder: in an install the home is `data/`, its
+ * sibling `app/bin/`. Null for a home with no install beside it, and for an `app/bin` that is not a folder. It is
+ * Daoris's own program, not a tool (D124 §1.3): the install decides, so no file says otherwise.
+ */
+export function installBin(home: string): string | null {
+  const bin = join(dirname(resolve(home)), ...INSTALL_BIN);
+  try {
+    return statSync(bin).isDirectory() ? bin : null;
+  } catch {
+    return null;
+  }
+}
 
 /**
  * The key an environment holds a variable under: on Windows whichever spelling it has (`Path`, `PATH`), since
@@ -562,18 +585,19 @@ function recordPaths(record: string): string[] {
 }
 
 /**
- * The PATH a child of Daoris starts with: every managed or named tool's folders, in the declared order, then
- * `inherited`. Null when no tool puts a folder there, so the child's is the inherited one exactly. An empty
- * inherited PATH adds no empty folder.
+ * The PATH a child of Daoris starts with: the install's launchers beside the home where there is one, then every
+ * managed or named tool's folders, in the declared order, then `inherited`. Null when nothing puts a folder there,
+ * so the child's is the inherited one exactly. An empty inherited PATH adds no empty folder.
  */
 export function childPath(read: ToolsRead, home: string, inherited: string | null | undefined): string | null {
-  const folders = TOOLS.flatMap((tool) => toolFolders(read, home, tool.id));
+  const bin = installBin(home);
+  const folders = [...(bin === null ? [] : [bin]), ...TOOLS.flatMap((tool) => toolFolders(read, home, tool.id))];
   if (folders.length === 0) return null;
   if (inherited) folders.push(inherited);
   return folders.join(delimiter);
 }
 
-/** What a child's environment takes over the one it inherited: PATH when a tool puts a folder first, else nothing. */
+/** What a child's environment takes over the one it inherited: PATH when the install or a tool puts a folder first, else nothing. */
 export function childEnvironment(read: ToolsRead, home: string, inheritedPath: string | null | undefined): Record<string, string> {
   const path = childPath(read, home, inheritedPath);
   return path === null ? {} : { [PATH_VARIABLE]: path };

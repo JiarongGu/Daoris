@@ -12,8 +12,9 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <remarks>
 /// <para><b>The environment</b>: a child's <c>PATH</c> is each tool that is managed or a named file, in the declared
 /// order, its folders first, then the <c>PATH</c> it inherited; with every tool the system's it is the inherited one
-/// exactly. <b>A command's first word</b>: a name a tool answers for is that tool's, by its way, and never falls
-/// back to <c>PATH</c>; any other name is the caller's own resolver's.</para>
+/// exactly. <b>The install's doctrine tool</b> (WSSETUP3, D124 §1.3): an install's <c>app/bin/</c> beside the home
+/// comes first of all, and no install is no change. <b>A command's first word</b>: a name a tool answers for is that
+/// tool's, by its way, and never falls back to <c>PATH</c>; any other name is the caller's own resolver's.</para>
 /// <para>Every case runs in a temporary directory, and nothing here starts a program: the files are empty, and
 /// presence is a file on disk. The real start is <c>ToolsChildProcessTests</c>, in the Process half.</para>
 /// <para>🔴 <b>Keep each row on one line, its cells literals</b>: the CLI's test reads them.</para>
@@ -111,10 +112,11 @@ public sealed class ToolsChildrenTests : IDisposable
         File.WriteAllText(ToolsFile, text);
     }
 
-    /// <summary>A folder token: <c>managed:&lt;tool&gt;/&lt;path&gt;</c>, <c>file:&lt;tool&gt;</c>, or <c>inherited</c>.</summary>
+    /// <summary>A folder token: <c>managed:&lt;tool&gt;/&lt;path&gt;</c>, <c>file:&lt;tool&gt;</c>, <c>bin</c> (the install's, beside the home), or <c>inherited</c>.</summary>
     private string Folder(string token, string? inherited)
     {
         if (token == "inherited") return inherited!;
+        if (token == "bin") return Path.Combine(_root, "app", "bin");
         if (token.StartsWith("file:", StringComparison.Ordinal)) return Path.GetDirectoryName(Named(token[5..]))!;
         var (tool, path) = (token[8..token.IndexOf('/')], token[(token.IndexOf('/') + 1)..]);
         var version = Laid.Single(each => each.Tool == tool).Version;
@@ -154,6 +156,80 @@ public sealed class ToolsChildrenTests : IDisposable
         var variables = Tools.ChildEnvironment(Tools.Read(Home), Home, from);
         if (wanted is null) Assert.Empty(variables);
         else Assert.Equal([Tools.PathVariable], variables.Keys);
+    }
+
+    // ── The install's doctrine tool (D124 §1.3, WSSETUP3) ─────────────────────────────────────────────
+
+    /// <summary>
+    /// Lay out beside the home what the install cell names: <c>none</c>, nothing; <c>bin</c>, an install's
+    /// <c>app/bin/</c> with its two launchers; <c>app</c>, an <c>app/</c> with no <c>bin/</c> (an install from before the
+    /// doctrine tool); <c>file</c>, an <c>app/bin</c> that is a file.
+    /// </summary>
+    private void LayInstall(string install)
+    {
+        var bin = Path.Combine(_root, "app", "bin");
+        switch (install)
+        {
+            case "bin":
+                Touch(Path.Combine(bin, "daoris"));
+                Touch(Path.Combine(bin, "daoris.cmd"));
+                break;
+            case "app":
+                Directory.CreateDirectory(Path.Combine(_root, "app"));
+                break;
+            case "file":
+                Touch(bin);
+                break;
+        }
+    }
+
+    [Theory]
+    [InlineData("no install beside the home: byte for byte as before", null, "two", "none", "unchanged")]
+    [InlineData("an install beside the home: its bin first, with every tool the system's", null, "two", "bin", "bin inherited")]
+    [InlineData("its bin before a managed tool's folders", """{"tools":{"git":{"use":"managed","version":"2.51.0"}}}""", "two", "bin", "bin managed:git/cmd managed:git/mingw64/bin inherited")]
+    [InlineData("its bin before a named file's folder", """{"tools":{"node":{"use":"file","file":"@node"}}}""", "two", "bin", "bin file:node inherited")]
+    [InlineData("its bin, and an empty inherited PATH adds no empty folder", null, "empty", "bin", "bin")]
+    [InlineData("its bin, and no inherited PATH", null, null, "bin", "bin")]
+    [InlineData("an app folder with no bin, an install from before the doctrine tool: as before", null, "two", "app", "unchanged")]
+    [InlineData("a bin that is a file is no folder to put first", null, "two", "file", "unchanged")]
+    public void A_childs_PATH_begins_with_the_installs_doctrine_tool_beside_the_home(
+        string name, string? json, string? inherited, string install, string expected)
+    {
+        Write(json);
+        LayInstall(install);
+        var from = Inherited(inherited);
+
+        var path = Tools.ChildPath(Tools.Read(Home), Home, from);
+
+        var wanted = expected == "unchanged"
+            ? null
+            : string.Join(Path.PathSeparator, expected.Split(' ').Select(token => Folder(token, from)));
+        Assert.True(Spelled(wanted) == Spelled(path), $"{name}: {path}");
+        var variables = Tools.ChildEnvironment(Tools.Read(Home), Home, from);
+        if (wanted is null) Assert.Empty(variables);
+        else Assert.Equal([Tools.PathVariable], variables.Keys);
+    }
+
+    [Fact]
+    public void A_start_is_handed_the_installs_bin_with_every_tool_the_systems()
+    {
+        LayInstall("bin");
+        var info = new ProcessStartInfo("x");
+        info.Environment[Tools.PathVariable] = Inherited("two");
+
+        Tools.Hand(info, Home);
+
+        Assert.Equal(Path.Combine(_root, "app", "bin") + Path.PathSeparator + Inherited("two"), info.Environment[Tools.PathVariable]);
+    }
+
+    [Fact]
+    public void The_installs_bin_is_found_beside_the_home_however_the_home_is_spelled()
+    {
+        LayInstall("bin");
+
+        Assert.Equal(Path.Combine(_root, "app", "bin"), Tools.InstallBin(Home + Path.DirectorySeparatorChar));
+        Assert.Equal(Path.Combine(_root, "app", "bin"), Tools.InstallBin(Path.Combine(_root, "data", "..", "data")));
+        Assert.Null(Tools.InstallBin(Path.Combine(_root, "elsewhere", "data")));
     }
 
     [Fact]

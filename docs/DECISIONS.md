@@ -7100,6 +7100,10 @@ tools' environment. What the design left open, settled here:
   substitution D57's pin exists to prevent; and handing a hook's first word to the system bare, which finds only an
   `.exe`.
 
+*Amended by D124 (WSSETUP3, 2026-10-01): a child's `PATH` begins with the install's `app/bin/` beside the home, before
+the tools' folders, so every child finds the install's `daoris`. With no install beside the home it is as above, byte
+for byte. D124's note has the rest.*
+
 ## D120 — Plugins leave the repository: a workshop in the home makes them, Daoris.Plugins keeps Daoris's own, and NuGet is where they are found (2026-10-01)
 
 **Decision (PLUGREPO2, PLUGDIST1).** The owner made an empty folder, Daoris.Plugins, beside this repository, for
@@ -7522,3 +7526,26 @@ and swapped in whole. What the design left open, settled here:
   release rehearsal's phase 5 (f): the packed tool, which carries canon `0.0.1`, run on the consumer the phases above
   moved to `0.0.6`. That phase was not run by this row; its checks were run by hand against a fresh pack of this
   source. During `0.0.x` two builds both answer `0.0.1` and the guard cannot tell them apart, as D124 says.
+
+**As built (WSSETUP3, 2026-10-01): `daoris` on every child's `PATH`.** TOOLS5's one environment puts the install's
+`app/bin/` first, before the tools' folders, in both twins: the driver's `Tools.ChildPath` (`InstallBin`) and the CLI's
+`childPath` (`installBin`), so every start already handed the tools' environment (a driven session on either door, a
+conversation, an intake, a hook, a landing plugin, the terminal's shells) finds the install's `daoris` by its bare name.
+What the design left open, settled here:
+- **"Where it exists" is the home's sibling `app/bin/` being a folder.** In an install the home is `data/`, so the
+  folder is the install's own; a home anywhere else has none beside it, and nothing is added. No file names it, so no
+  setting can point a child at another `daoris`: it is Daoris's own program, not a tool (§1.3). An `app/` with no `bin/`,
+  an install from before WSSETUP2, and an `app/bin` that is a file add nothing.
+- **Found from the home, not from the running application.** Every child's environment is built from the home it is
+  handed (`Tools.Hand`), and the headless host and the CLI have no application folder; the offers and the list built in
+  look beside the application first only because the application reads them itself.
+- **Byte for byte with no install.** The tables' earlier rows are unchanged, and a new table holds the install's rows
+  in both twins, cell for cell (`ToolsChildrenTests`' `A_childs_PATH_begins_with_the_installs_doctrine_tool_beside_the_home`
+  and `tools-children.test.ts`' `INSTALL_ROWS`); each new row was seen failing with the folder taken out of each side.
+  `desktop-publish.test.ts` holds `INSTALL_BIN` to the publish's `CLI_BIN` and the driver's `InstallBinLayout`.
+- **The press's facts were LAYOUT7's already**: `SetupTools` carries `node` with its version and `daoris` with what it
+  answered, read on the `PATH` a child starts with, so the press now finds the install's. Nothing else was owed.
+- **Not covered by a gate run here.** `ToolsChildProcessTests.A_sessions_daoris_is_the_installs_beside_the_home`, in the
+  `Process` half, lays stub launchers in an install's `app/bin/` and wants a stub driven session's own shell to answer
+  `daoris --version` with them. It was written and not run (MOD8). Whether each real harness's shell finds `daoris` by
+  its bare name stays §9's fourth item, for the pilot.

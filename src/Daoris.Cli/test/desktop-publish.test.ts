@@ -16,6 +16,7 @@ import {
 import { resolveCanonRoot } from '../src/canon.ts';
 import { OFFERS_DIR, readManifest } from '../src/plugins.ts';
 import { BUILT_IN, BUILT_IN_LAYOUT, parseResources } from '../src/resources.ts';
+import { INSTALL_BIN, installBin } from '../src/tools.ts';
 import { makeFixture } from './_fixture.ts';
 import { TAR_END, tarEntry } from './_tar.ts';
 
@@ -419,6 +420,22 @@ test('the doctrine tool lands where the CLI reads the canon it ships, as npm lay
   assert.equal(manifest.name, CLI_PACKAGE.at(-1));
   assert.equal(manifest.bin?.daoris, CLI_ENTRY.join('/'));
   assert.ok(manifest.files.includes(CLI_ENTRY[0]), 'the bin entry ships');
+});
+
+/**
+ * WSSETUP3 (D124 §1.3): the launchers' folder is where every child's PATH begins. The publish lays it out, and
+ * the CLI's `INSTALL_BIN` and the driver's `Tools.InstallBinLayout` find it beside the home, which in an install is
+ * the same `app/`. Three spellings, held here.
+ */
+test('the launchers are where the tools’ environment puts them first on every child’s PATH', () => {
+  assert.deepEqual([...CLI_BIN], [...INSTALL_BIN]);
+  const driver = readFileSync(join(here, '..', '..', 'Daoris.Desktop', 'Daoris.Desktop.Driver', 'Tools.Children.cs'), 'utf8');
+  assert.ok(driver.includes(`InstallBinLayout = [${CLI_BIN.map((part: string) => `"${part}"`).join(', ')}]`), 'Tools.InstallBinLayout');
+
+  const install = folder();
+  mkdirSync(join(install, 'data'));
+  mkdirSync(join(install, ...CLI_BIN), { recursive: true });
+  assert.equal(installBin(join(install, 'data')), join(install, ...CLI_BIN), 'an install’s home finds its own launchers');
 });
 
 test('a launcher for each shell runs the package’s bin entry on the node PATH finds, and names no machine path', () => {

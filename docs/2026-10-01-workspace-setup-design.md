@@ -5,8 +5,8 @@
 > workspace lacks knowledge: *"the repo should be registered and apply the doctrine and also initialize the
 > knowledge"*. This is the contract for the WSSETUP rows, and its decision is **D124**. Status: **designed;
 > WSSETUP9, WSSETUP11 and LAYOUT7 as amended built** (§6.1, §7.3, §2), **and WSSETUP2 and WSSETUP4** (the
-> install's doctrine tool, §1.2, and the version guard, §1.4); D124's notes say what each build settled, and
-> the rest is not built. It
+> install's doctrine tool, §1.2, and the version guard, §1.4), **and WSSETUP3** (`daoris` on every child's `PATH`,
+> §1.3); D124's notes say what each build settled, and the rest is not built. It
 > builds on the set-up quest of `docs/2026-10-01-agent-layout-design.md` §6 (D117: LAYOUT7, LAYOUT8, LAYOUT10),
 > the standard of `docs/2026-10-01-development-documents-design.md` (D122) and the tools' environment of
 > `docs/2026-10-01-tools-design.md` (D121, TOOLS5), and it amends D117 §6 where §11 says. Read with **D13**,
@@ -143,6 +143,11 @@ note has the rest.*
   its version, and refuses with none, or one older (§2.1).
 - **A person's own terminal outside Daoris is unchanged.** Inside Daoris's terminal panel (CONSOLE4), `daoris` is
   the install's, as it is for a session.
+
+*As built (WSSETUP3): "where it exists" is read as the home's sibling `app/bin/` being a folder: in an install the home
+is `data/`, so it is the install's own. Nothing else names it, so no file can point a child at another `daoris`. The
+press's facts were LAYOUT7's already (`SetupTools`: `node` and its version, `daoris` and what it answered), read on the
+same `PATH`, so they now find the install's. D124's note has the rest.*
 
 ### 1.4 The version pin, and two versions on one machine
 
