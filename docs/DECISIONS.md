@@ -7352,6 +7352,34 @@ knowledge step after the sync, §2.6's bounds and §2.7's close, `daoris` and ne
 
 **Not covered**: the Process-half case and the family rehearsal's set-up phase (D117's note); whether a real session
 follows the body, which only WSSETUP12's pilot shows; `PowerShell(…)` rules, held for D122 §3.5's canary.
+
+**As built (LAYOUT7a, 2026-10-01): the family rehearsal sets a repository up.** Its phase 17c registers a scratch
+repository that has a README and nothing for agents, without adopting it, and drives the press over it through the
+real host and driver. The doctrine tool its session finds is the workspace's CLI behind a launcher
+(`tools/setup-kit.mjs`), first on the `PATH` the phase starts the driver with: the install's `app/bin/` is the
+deployment rehearsal's to test (WSSETUP2). The phase's machine log is in a home of its own. The checks:
+
+- **The plan.** It says both refusals at once, each with its door. Then it prints the line's commit, the layout, the
+  agent, the landing and the tool's version, then the set-up's title and a body that promises that version, names
+  the neighbours and asks for the knowledge, then the nine verbs. It publishes nothing.
+- **The press.** It publishes one quest as the person's ask and adds the nine rules. A second press is refused while
+  the first is open.
+- **The session.** The protocol stub's set-up branch (`ACP_STUB_AGENT`) runs in its own tree. It runs each verb by its
+  bare name, and the quest asks for each one. It commits, and it closes the quest done. The checkout is not touched.
+- **The record.** `session.started` says `setup`, and a later ordinary session there does not. The usage report counts
+  one set-up of two sessions, with its six calls.
+- **The landing.** The work merges into the line, and a plan made after it reads the line as already set up.
+
+`tools/setup-kit.test.mjs` holds the launcher, the reading of the command's output, and the stub's set-up branch
+against a stand-in quest door.
+
+**Found**: the protocol stub can end on a libuv assertion (`0xC0000409`) in `process.exit` after a `fetch` on Windows
+with Node 24, on its ordinary quest path too. The driver concludes from the quest, so the record still ends
+`completed`, with the exit noted.
+
+**Not run in the branch**: the family rehearsal itself, which the parent runs at the merge. `verify` does not run
+`setup-kit.test.mjs`.
+
 ## D123 — A long entry is embedded whole, in pieces the deployment's window bounds; its best piece speaks for it, and a refresh says how many were split (2026-10-01)
 
 **Decision (SEM3, found upgrading Lyntai to 3.5.3, LYN1).** The semantic tier embedded an entry's title twice and
