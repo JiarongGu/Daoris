@@ -40,9 +40,15 @@ public sealed class ChatRunner(
     SessionUsage? usage = null,
     // Daoris's own browser (D78), asked for by a plugin server that drives it. Null where no shell
     // carries one, which is the headless chat door's case: such a server is then not handed.
-    IInAppBrowser? browser = null) : IDisposable
+    IInAppBrowser? browser = null,
+    // Where a conversation's plugin servers, handed or withheld, are written without their words (PLUGUI1e, D119
+    // §4.2): the shell's loop hands its log. Null writes nothing, the headless chat door's case, which writes no
+    // session lines either.
+    PluginLog? plugins = null) : IDisposable
 {
     private readonly SessionUsage _usage = usage ?? new SessionUsage(home);
+
+    private readonly PluginLog _plugins = plugins ?? PluginLog.None;
 
     // Shared with the driver where a shell has both, so a probe is paid for once; its own where it
     // does not, which is the headless chat door's case.
@@ -295,6 +301,20 @@ public sealed class ChatRunner(
     }
 
     /// <summary>
+    /// The plugins' servers a conversation is handed, with Daoris's own browser brought up for one that drives it, or
+    /// that one withheld and the sentence why (D78); and a <c>plugin.served</c> line for each, handed or withheld
+    /// (PLUGUI1e, D119 §4.2), read from the catalogue the servers came from, as a driven session's are.
+    /// </summary>
+    internal static async Task<(IReadOnlyList<AcpMcpServer> Handed, string? Notice, bool Drives)> HandServersAsync(
+        string home, IEnumerable<string> reserved, IInAppBrowser? browser, PluginLog plugins, string sessionId, CancellationToken ct)
+    {
+        var catalog = PluginCatalog.Load(home, reserved);
+        var handed = await InAppBrowserServers.HandAsync(catalog.Servers, browser, ct).ConfigureAwait(false);
+        plugins.Served(catalog, sessionId, handed.Handed);
+        return handed;
+    }
+
+    /// <summary>
     /// A conversation whose record is open: its process spawned with its rules and servers, its door's
     /// turns held, and its watch started — or, when the spawn fails, its record concluded.
     /// </summary>
@@ -351,8 +371,8 @@ public sealed class ChatRunner(
             // for one that drives it (D78), or that one left out and the conversation told why.
             if (place.Plugins)
             {
-                (pluginServers, browserNotice, drivesBrowser) = await InAppBrowserServers.HandAsync(
-                    PluginCatalog.Load(home, _harnesses.Adapters.Names).Servers, browser, ct).ConfigureAwait(false);
+                (pluginServers, browserNotice, drivesBrowser) = await HandServersAsync(
+                    home, _harnesses.Adapters.Names, browser, _plugins, sessionId, ct).ConfigureAwait(false);
                 if (browserNotice is not null) Record(sessionId, new SessionEvent { Kind = SessionEventKind.Note, Text = browserNotice });
             }
 

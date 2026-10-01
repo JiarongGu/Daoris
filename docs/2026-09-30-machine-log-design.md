@@ -70,6 +70,13 @@ nested. A reader skips a line it cannot parse and a field it does not know.
 | `request.failed` | host | method, route, status, ms | a request that failed, or took over two seconds |
 | `tool.download.started` / `.verified` / `.refused` / `.stopped` | the process that runs the download (D121 §3.6, TOOLS4) | tool, version, check when refused | a managed version fetched, and the check that refused it |
 | `tool.location.fetched` / `.failed` | the process that looks (D121 §3.7, TOOLS4) | position in the list, versions or check | a resource location looked at, by its place and never by the address the person typed |
+| `plugin.started` | desktop, driver | plugin, points, ms, by | a plugin's process up: what it listens on, how long its handshake took, and whose it is (D119) |
+| `plugin.stopped` | desktop, driver | plugin, why, by | why a plugin's process went: off, removed, updated, changed, or its owner ended |
+| `plugin.called` | desktop, driver | plugin, point, answer, ms | each answer at a point, by its word, and how long it took |
+| `plugin.failed` (warn) | desktop, driver | plugin, where, kind, code, ms, by | a plugin that could not start, exited, or answered late, unreadably or with an error |
+| `plugin.served` | desktop, driver | plugin, server, session, handed | which sessions each plugin's server was handed to, or withheld from |
+| `plugin.tried` (warn when failed) | desktop, driver | plugin, passed, checks, failed, ms, door | a trial of an installed plugin with the kit, from the screen or a terminal |
+| `plugin.tested` (warn when failed) | desktop, driver | plugin, passed, code, ms, door | a run of a plugin's own tests (its runner is PLUGUI1g's; the shape is reserved) |
 
 **The page reports through the bridge**, one request (`DAORIS.LOG` · `EVENT`), and the module takes
 only the page's events above with only their fields: anything else is dropped. That is where the
@@ -136,6 +143,33 @@ through by mistake.
   best-effort, the result's list authoritative) and labelled so in `ClaudeStreamJsonTests` until a turn
   shows them. What an auto-mode classifier block looks like on the protocol wire is the canary's
   (D122 §3.10).
+
+**As built (PLUGUI1d): the `plugin.*` events** (D119 §4.2), measured against the code and its tests
+(`HookSetLogTests`, `PluginHealthTests`):
+
+- **One writer.** `PluginLog` in the driver library writes every line and feeds the loop's record of the
+  plugin's health (`PluginHealth`) from the same call. The hook set writes the loop's, `LandingPlugins` a
+  landing's (`by` `landing`) and a hand-off's (`hand`), the driver the servers it hands a driven or intake
+  session, and the terminal's `plugins try <id>` an installed plugin's trial. A folder's trial is never
+  written, since its id may name an installed plugin it is not.
+- **Names, counts, flags and times only.** The answer is its word (`allow`, `hold`, `answered`, `pushed`,
+  `not-pushed`), never its reason or message. A value that is not shaped like a name is written as null.
+  `points` is what the process answered the handshake with, joined by commas. `ms` is the start to the
+  handshake, or a call to its answer or failure.
+- **`by` on `plugin.stopped` and `plugin.failed` too**, beside `plugin.started`'s: the health record needs it
+  to tell the loop's process from a landing's one frame.
+- **Why a stop.** The catalogue decides: gone is `removed`, switched off is `off`, another version or a
+  replaced install folder is `updated`, anything else is `changed`, and the loop's end or a landing's frame
+  done is `ended`. A stop that a removal or an update asks for first (`HookSet.StopAsync`) is written at the
+  loop's next look, which the route asks for at once, because only then does the catalogue say which.
+- **A failure's kind** is marked where the wire throws it (`PluginFailures`), never read from its sentence:
+  `unstartable` for a start with no mark, `errored` for a call with none. A process found gone at a look is
+  `where` `process`, `kind` `exited`, with its exit code. A start that fails the same way at every look is
+  one line until it starts or fails differently. A plugin whose start was failing and which is then switched
+  off or removed gets a `plugin.stopped`, so its record starts afresh.
+- **Not yet written**: a conversation's servers, and a trial from the screen's door. Both wait for the shell
+  to hand its log to the chat runner and to `PLUGIN_TRY`, a modules change PLUGUI1d did not make.
+  `plugin.tested` has its shape (`PluginLog.Tested`) and no writer until PLUGUI1g's runner.
 
 ## 5. What is never logged
 

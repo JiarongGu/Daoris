@@ -692,6 +692,29 @@ public sealed class PluginKitTests : IDisposable
         Assert.Contains("is not a JSON object", refused.ToString());
     }
 
+    /// <summary>
+    /// PLUGUI1d (D119 §4.2): a trial of an installed plugin from a terminal is one <c>plugin.tried</c> line, its
+    /// history; a folder's trial is printed and never kept, since its id may name an installed plugin it is not.
+    /// </summary>
+    [Fact]
+    public async Task The_terminals_trial_of_an_installed_plugin_is_one_line_in_the_machine_log_and_a_folders_is_none()
+    {
+        Directory.CreateDirectory(Path.Combine(Home, "plugins"));
+        PluginKit.Write(PluginKit.Plan("acme.logged", [HookPoints.SessionEnded], Path.Combine(Home, "plugins")));
+        var folder = New("acme.loose", [HookPoints.SessionEnded]);
+        using (var log = new MachineLog(Home, "driver"))
+        {
+            Assert.Equal(0, await PluginKitCommand.RunAsync(["try", "acme.logged"], new StringWriter(), Home, log: log));
+            Assert.Equal(0, await PluginKitCommand.RunAsync(["try", folder], new StringWriter(), Home, log: log));
+        }
+
+        var line = Assert.Single(MachineLogReader.Read(Path.Combine(Home, MachineLog.Folder), new LogFilter()).Lines);
+        Assert.Equal("plugin.tried", line.Event);
+        Assert.Equal("acme.logged", line.Data.GetProperty("plugin").GetString());
+        Assert.True(line.Data.GetProperty("passed").GetBoolean());
+        Assert.Equal("terminal", line.Data.GetProperty("door").GetString());
+    }
+
     // ——— helpers
 
     private string New(string id, IEnumerable<string> points)
