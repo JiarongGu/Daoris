@@ -218,7 +218,7 @@ Run every command from the **workspace root**, not from a package directory.
   the service, `connect`, the driver, the remote, the toolchain, or the canon's shape —
   **a canon change must re-sync `examples/` in the same commit**, and this gate enforces it.
 - **`npm run test:web`** — the "does the platform work?" gate (D42). Playwright drives the shipped
-  bundle over the example family: a quest through its whole life in the drawers, the verbatim
+  bundle over the example family: a quest through its whole life on its page, the verbatim
   refusal, a session record naming the tool and account that did the work, **what a browser must
   never learn about this machine**, the workspace scope once the family holds two circles (WSP5),
   中文. Declared in `daoris.gates.json`; it rebuilds the host, so

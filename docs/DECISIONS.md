@@ -6085,6 +6085,38 @@ proof.
   The look on the window settles both: Overview, Repositories and Map at 1280 px with the side bar open and
   closed and at 680 px, and a drawer at 680 px with the side bar full.
 
+**Built: FRAME1d (2026-10-01), and what it settled that the design left open.**
+- **Quests hands the frame a value, as Plugins does** (`useQuestsView`), held by the application on every view,
+  its errors said only while it is in front. The asks' half is a hook of its own (`useAsksPart`, `asks/`), so the
+  asks' rows and an ask's page are drawn where the frame decides. Everything under them is a molecule: `QuestList`,
+  `QuestPage`, `QuestComposer`, `AskRow` and `AskPage`, and the values in `quests/records.ts`.
+- **A record the list leaves out is still a page.** A quest is found among every quest, closed ones and other
+  receivers' included, and an ask among every ask. So a closed quest a door names opens, and an act leaves the page
+  on the quest as it now stands, where the drawer closed on every act. Nothing chosen says how to choose and offers
+  the `＋`'s two kinds; a record no longer here is *gone*, worded for a quest or an ask.
+- **The page shows the freshest record**: the list's copy, or the door's last answer while the list is behind,
+  and the answer on a tie, since a dismissal moves no time. It is the asks' old rule, now for both. A quest just
+  published opens on its page, as an ask has opened on its answer since INT4c.
+- **The filters are ticked items in the list's ⋯** (`ListMore` gained a choice of one value and a toggle), kept as
+  `{ to, closed }`. A receiver filter is said at the list's head, since the ⋯ that set it is a press away and a list
+  that silently holds fewer quests reads as a family that owes less. A receiver kept from before stays choosable, so
+  the filter that names it can be undone.
+- **The header's line is the state's hint**, which left the record's *State* row. *Decline…* and *Delete…* ask
+  under the header, each with *Never mind*; a decline had none, and its reason has a name now.
+- **The opener plans no drawer.** Its `quest` and `ask` fields go: the chosen item is the whole of what a door does.
+- **The list is a landmark named for its view**, open or a strip, so a reader and a test find it by its name.
+  `ListGroup` and `ListRowDoor` are every list's; the Plugins view keeps its own copies until a row of its own takes
+  them. `PageHead` and `PageSection` move from the plugin's page to `work/ViewMain`.
+- **Quests' strip holds its controls alone**, as §2 says. Quests is a browser's first list, which ends FRAME1c's
+  *wired with no first user*.
+- **`quests.title` and `quests.description` retire**: the list is named by the view's own name, and the description
+  became the main area's sentence with nothing chosen.
+- **What the gates do not cover.** vitest holds the list, the page and the memory over a stubbed service and a
+  mocked bridge, on jsdom, which lays nothing out. `test:web`'s quest-lifecycle spec was moved to the page and
+  typechecked, and **not run** in the branch: the parent runs it. No look at the window was taken: the list beside
+  the page at 1280 px with Ask Daoris open, the list laid over at 680 px, both themes and both languages, are the
+  parent's to see. The names' budgets are estimates (D116 §4); the new keys added no finding.
+
 ## D116 — A name is a UI element, designed in each language; the glossary is the authority, and a check holds it (2026-10-01)
 
 **Decision (NAME1a, the owner's round).** The owner: names in Settings and every other display must be named
