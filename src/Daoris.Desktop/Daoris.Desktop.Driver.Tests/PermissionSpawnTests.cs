@@ -65,9 +65,21 @@ public sealed class PermissionSpawnTests : IDisposable
         Assert.Contains("Bash(make:*)", allow);
         Assert.DoesNotContain("WebFetch", allow);
         Assert.Contains("Bash(git push:*)", deny);
+        Assert.Contains("Bash(git -* push)", deny);
         Assert.Contains("Bash(rm -rf:*)", deny);
+        // UNBLOCK4: the same file tells auto mode's classifier a push in any form is the person's, the
+        // harness's own hard denials named first so they are kept.
+        HoldsThePushInAutoMode(handed);
 
         Assert.False(File.Exists(adapter.Handed), "the session's settings file outlived it");
+    }
+
+    /// <summary>The spawn file's `autoMode.hard_deny`: the harness's own list first, then what `no-push` tells it.</summary>
+    private void HoldsThePushInAutoMode(JsonDocument handed)
+    {
+        var hardDeny = handed.RootElement.GetProperty("autoMode").GetProperty("hard_deny").EnumerateArray().Select(e => e.GetString()!).ToList();
+        Assert.Equal(SpawnSettings.HarnessDefaults, hardDeny[0]);
+        Assert.Equal(PermissionRules.HardDeny(PermissionRules.Load(_home)), hardDeny.Skip(1));
     }
 
     /// <summary>
@@ -260,6 +272,8 @@ public sealed class PermissionSpawnTests : IDisposable
         Assert.Equal(adapter.Handed, settings);
         using var handed = JsonDocument.Parse(adapter.HandedText!);
         Assert.Contains("Bash(make:*)", handed.RootElement.GetProperty("permissions").GetProperty("allow").EnumerateArray().Select(e => e.GetString()));
+        // The door auto mode runs on (D81), so the one where the classifier's hard denial counts.
+        HoldsThePushInAutoMode(handed);
     }
 
     /// <summary>What the pipe door was handed: the allow and deny lists, and the tree guard's arguments.</summary>

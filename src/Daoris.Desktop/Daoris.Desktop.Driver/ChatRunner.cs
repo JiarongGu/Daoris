@@ -341,7 +341,7 @@ public sealed class ChatRunner(
             {
                 var file = PermissionRules.Load(home);
                 rules = SpawnSettings.Write(
-                    home, sessionId, place.Rules(file, sessionId),
+                    home, sessionId, place.Rules(file, sessionId), PermissionRules.HardDeny(file),
                     PermissionRules.GuardsTree(file) ? TreeGuard.For(home, workTree, place.Also) : null);
                 if (rules is not null && resolved.Wire == SessionWire.Pipe) resolved.HandSettings(info, rules);
                 else if (rules is not null) meta = resolved.AcpSessionMeta(rules);

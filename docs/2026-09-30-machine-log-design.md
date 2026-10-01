@@ -61,6 +61,7 @@ nested. A reader skips a line it cannot parse and a field it does not know.
 | `turn.ended` | desktop | session, stopReason, turnMs | how long a turn takes, and how it ends |
 | `session.ended` | desktop | session, state, seconds | how it finished |
 | `refused` | desktop | code, request | a refusal the person met, by its catalogue code (REFUSE1) |
+| `permission.refused` | desktop | session, adapter, tool, kind, by | a permission a session's harness would have asked a person for, refused because nobody is at the prompt (UNBLOCK5, D122 §3.10): asks per session, before and after a repository declares its safe work |
 | `preview.opened` | desktop | session, path | a file read for its preview (D111), whether the side bar's reading room is used (LEFT2) |
 | `view.opened`, `command.run`, `panel.moved` | desktop, from the page | the view, the command, the region | what is used, and what never is |
 | `message.sent` | desktop, from the page | session, kind, length, files | how the conversations are used |
@@ -111,6 +112,28 @@ through by mistake.
   now once it landed and settled the proposal. A sync card's look (HELP10) settles nothing: its answer says the
   card `stands` for the press that does, and it writes no line (LEFT3); a look that found nothing to do settled
   the card, and is written as any Apply is. `page.error` is `error`-level, `where` `window` or `promise`.
+
+**As built (UNBLOCK5): `permission.refused`**, measured against the code and its tests:
+
+- **One line per refused call, the first time.** `SessionLog` writes it when the conversation record marks
+  a call `refused`. A repeated update to that call is not a second ask, and a call that merely failed is
+  none. The protocol door marks a call `refused` when the agent reports as failed a call whose permission
+  request the driver refused (D52, HELP4). The native door's mapper marks it from the harness's `system`
+  `permission_denied` frame or the result's `permission_denials`, whichever says it first, and then reads
+  that call's failed result as `refused` too, so the conversation says it the same way on both doors.
+- **The fields.** `kind` is ACP's tool kind, from the refusal or else from the call's first event. `tool`
+  is the tool's name (`Bash`) and `by` the wire's `decision_reason_type` (`rule`, `mode`, `classifier`,
+  `asyncAgent`); only the native door carries them, and the protocol door's are null, since its wire names
+  neither. Each is written only if it is an identifier, so a command or a sentence put where a name goes
+  is null. `adapter` is null for a session whose open this process never saw.
+- **Not counted.** A subagent's refusal: its calls run beside the session (CONSOLE3c), so the native door
+  says it on the session's console and makes no card, and on the protocol door its call's update is the
+  subagent's stream's. A refused request whose call the agent never reports on.
+- **Not measured.** The native door's two frames are written from the maker's reference (the Agent SDK's
+  TypeScript reference, read 2026-10-01: emitted by a `-p` run with no permission host since 2.1.223,
+  best-effort, the result's list authoritative) and labelled so in `ClaudeStreamJsonTests` until a turn
+  shows them. What an auto-mode classifier block looks like on the protocol wire is the canary's
+  (D122 §3.10).
 
 ## 5. What is never logged
 
@@ -177,6 +200,21 @@ the transcript beside it.
   zero. `--json` is the same summary as data.
 - **Nobody's words**: the one free text it shows, a caught error's message, is its first line cut at
   the log's own 120 characters. It writes nothing; a missing `logs/` is a sentence and exit 2.
+
+**As built (UNBLOCK5)**, measured against the code and its tests (`usage-report.test.ts`):
+
+- **Asks**: every session `session.started` names in the period, with how many `permission.refused` lines
+  it has, spread as the mean, the median (the two middles' mean), the 90th percentile (the nearest rank)
+  and the share with none: overall, by adapter and by repository. What was refused is counted over every
+  ask in the period, by kind, by tool and by what decided it (`(unsaid)` where the line has none). An ask
+  whose session did not start in the period is counted apart, as `unstarted`, and in no session's spread.
+  No session is no statistic: null, never zero.
+- **Rule proposals**: the home's `proposals/`, read by the rules the file's other readers keep
+  (`RuleProposals.cs`, `ruleproposals.ts`): a file with no id or no `change` object is none, a state they
+  do not know is `proposed`, a proposal with no readable time takes its file's. Only the id, the time and
+  the state are read, so the rule and the reason cannot be printed. It says how many wait for the person
+  now, whenever made, and those made in the period by the week they were made in (Monday, UTC) and the
+  state each stands in.
 
 ## 7. Build order
 

@@ -39,8 +39,13 @@ public sealed record RuleLists(IReadOnlyList<string> Allow, IReadOnlyList<string
 /// The tools a hook default judges, when it is one (PERM3) — a hook adds no rule, so its
 /// <paramref name="Rules"/> are empty and this says what it covers instead.
 /// </param>
+/// <param name="HardDeny">
+/// What the harness's auto-mode classifier is told as a hard denial while this default is on (UNBLOCK4,
+/// D122 §3.7): prose it judges every action against, for the forms a rule cannot name. The driver's
+/// alone, because only the driver writes the spawn file; the CLI's table carries no twin of it.
+/// </param>
 public sealed record PermissionDefault(
-    string Id, RuleList List, IReadOnlyList<string> Rules, string Why, string? Hook = null);
+    string Id, RuleList List, IReadOnlyList<string> Rules, string Why, string? Hook = null, string? HardDeny = null);
 
 /// <summary>
 /// `permissions.json` as it stands: the machine's rules, each circle's, each repository's, and the
@@ -111,16 +116,30 @@ public static class PermissionRules
         // 🔴 The owner's answer to PERM4 (2026-09-24), from a measured failure: in a folder the agent had
         // never trusted, a real driven session made its edit, was refused the commit — the repository's
         // own allow-list does not apply there — and declined. `cd` because the agent prefixes its commit
-        // with one, and every part of a compound command must be allowed.
+        // with one, and every part of a compound command must be allowed. `git mv` (UNBLOCK4, D122 §3.6):
+        // a rename stays in the tree, is taken back by another, and git refuses a path outside the
+        // repository. A merge, a discard and a switch of branch stay out.
         new(
             "commit", RuleList.Allow,
-            ["Bash(cd:*)", "Bash(git add:*)", "Bash(git commit:*)"],
+            ["Bash(cd:*)", "Bash(git add:*)", "Bash(git commit:*)", "Bash(git mv:*)"],
             "A session commits its own work in its own tree, because committing is part of finishing a task "
             + "— the push is still refused."),
+        // 🔴 UNBLOCK4 (D122 §3.7): the harness matches a Bash rule against the command as written, so
+        // `git push …` alone let `git -C . push` and `git -c <key>=<value> push` through, and auto mode's
+        // classifier allows a push to the working repository by default. The option-first rules take
+        // every push with options before its subcommand, on both doors, whatever the mode. A deny's `*`
+        // before the subcommand is the maker's own shape for that; only an ALLOW so written draws its
+        // warning. The price, stated: a `git -C <dir> commit` whose message has "push" as a word before
+        // another is refused too. What no rule can name — a quoted subcommand, an alias, a path to git, a
+        // shell running it — is the classifier's, told below; on the pipe door nothing allows it anyway.
         new(
             "no-push", RuleList.Deny,
-            ["Bash(git push)", "Bash(git push:*)"],
-            "A push leaves this machine, and that stays the person's call."),
+            ["Bash(git push)", "Bash(git push:*)", "Bash(git -* push)", "Bash(git -* push *)"],
+            // UNBLOCK4 left the reason as it was: the page's Chinese catalogue translates it by id, and the
+            // rules say the rest.
+            "A push leaves this machine, and that stays the person's call.",
+            HardDeny: "Pushing to any remote in any form (for example git -C <dir> push, git -c <key>=<value> "
+            + "push), publishing a package, or creating a release: these stay the person's."),
         new(
             TreeGuardId, RuleList.Deny,
             [],
@@ -133,6 +152,18 @@ public static class PermissionRules
     private static readonly Regex Shape = new(@"^[A-Za-z][A-Za-z0-9_-]*(\([^\r\n]+\))?$", RegexOptions.CultureInvariant);
 
     public static string PathOf(string home) => Path.Combine(home, FileName);
+
+    /// <summary>
+    /// What the harness's auto-mode classifier is told as hard denials (UNBLOCK4, D122 §3.7): the sentence
+    /// of each default still on that carries one — today `no-push`'s, so nothing while the person has
+    /// switched it off. The harness's own list is kept by <see cref="SpawnSettings.Write"/>, never here.
+    /// </summary>
+    public static IReadOnlyList<string> HardDeny(PermissionFile file) =>
+    [
+        .. Defaults
+            .Where(shipped => shipped.HardDeny is not null && !file.DefaultsOff.Contains(shipped.Id, StringComparer.Ordinal))
+            .Select(shipped => shipped.HardDeny!),
+    ];
 
     /// <summary>Whether sessions are handed the tree guard (PERM3): on unless the person switched it off.</summary>
     public static bool GuardsTree(PermissionFile file) => !file.DefaultsOff.Contains(TreeGuardId, StringComparer.Ordinal);
@@ -417,11 +448,20 @@ public static class PermissionRules
 /// </summary>
 public static class SpawnSettings
 {
+    /// <summary>The harness's own hard denials, kept by naming them in the list (UNBLOCK4).</summary>
+    public const string HarnessDefaults = "$defaults";
+
     /// <summary>Write the file for one session, or answer null when there is nothing to hand.</summary>
+    /// <param name="hardDeny">
+    /// What auto mode's classifier is told as hard denials (<see cref="PermissionRules.HardDeny"/>), or
+    /// empty for none. Required, so no spawn forgets to say (UNBLOCK4): a session on either door is handed
+    /// the same file, and the classifier reads it from this command-line tier.
+    /// </param>
     /// <param name="guard">The tree guard for this session (PERM3), or null when it is switched off.</param>
-    public static string? Write(string home, string sessionId, RuleLists rules, TreeGuardHook? guard = null)
+    public static string? Write(string home, string sessionId, RuleLists rules, IReadOnlyList<string> hardDeny, TreeGuardHook? guard = null)
     {
-        if (rules.IsEmpty && guard is null) return null;
+        var told = hardDeny.Where(entry => entry != HarnessDefaults).Distinct(StringComparer.Ordinal).ToList();
+        if (rules.IsEmpty && guard is null && told.Count == 0) return null;
 
         var folder = Path.Combine(home, SpawnServers.Folder);
         Directory.CreateDirectory(folder);
@@ -436,6 +476,17 @@ public static class SpawnSettings
                 ["deny"] = new JsonArray([.. rules.Deny.Select(rule => (JsonNode)rule)]),
             },
         };
+
+        // 🔴 `$defaults` FIRST, always (D122 §3.7): a `hard_deny` list without it replaces the harness's
+        // built-in list, whose entry is the rule against sending data out. No `autoMode` key at all when
+        // nothing is told, so the harness's own lists stand untouched.
+        if (told.Count > 0)
+        {
+            document["autoMode"] = new JsonObject
+            {
+                ["hard_deny"] = new JsonArray([HarnessDefaults, .. told.Select(entry => (JsonNode)entry)]),
+            };
+        }
 
         // 🔴 EXEC form — `args` present — so the harness spawns node directly with the script and the
         // tree as one argument each. Shell form would run the line through Git Bash or PowerShell on
