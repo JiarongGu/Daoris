@@ -19,6 +19,7 @@ import { command as agent } from './cli/agent.ts';
 import { command as driver } from './cli/driver.ts';
 import { command as plugin } from './cli/plugin.ts';
 import { command as browser } from './cli/browser.ts';
+import { command as tool } from './cli/tool.ts';
 
 /** The package root — `src/` sits one level below it, `dist/` likewise once built. */
 export const packageRoot = dirname(dirname(fileURLToPath(import.meta.url)));
@@ -49,6 +50,7 @@ export const COMMANDS: readonly CliCommand[] = [
   driver,
   plugin,
   browser,
+  tool,
 ];
 
 const USAGE = [
@@ -57,9 +59,9 @@ const USAGE = [
   ...COMMANDS.flatMap((command) => command.usage),
   '',
   '  connect, retire and import are the MANAGEMENT commands: opt-in, they talk to a',
-  '  service, and no gate ever runs them. remote, agent, driver, plugin and browser are',
-  '  management too — they edit files under the Daoris home ($DAORIS_HOME, the',
-  "  installed application's own data folder; nothing lives under your profile),",
+  '  service, and no gate ever runs them. remote, agent, driver, plugin, browser and',
+  '  tool are management too — they edit files under the Daoris home ($DAORIS_HOME,',
+  "  the installed application's own data folder; nothing lives under your profile),",
   "  and agent spawns each agent's own tooling. Of them only agent pin and agent",
   "  update open a connection themselves: a maker's release channel, for Claude",
   '  Code and Codex.',

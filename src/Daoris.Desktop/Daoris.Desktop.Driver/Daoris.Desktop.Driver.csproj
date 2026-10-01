@@ -18,6 +18,16 @@
     <EmbeddedResource Include="hooks\tree-guard.mjs" LogicalName="Daoris.Driver.tree-guard.mjs" />
   </ItemGroup>
 
+  <!-- The list built in (TOOLS3, D121 §3.1): where each tool's versions download from. A file beside the
+       driver, never a resource inside it, because the person can read it and a republish replaces it whole.
+       Every build that references the driver (the application, the headless host, the tests) carries it
+       beside itself. An install's copy is laid out at app/resources.json by tools/desktop-publish.mjs, the
+       one writer there, which also clears it from the application's publish stage; a publish is not asked
+       to copy it. -->
+  <ItemGroup>
+    <None Include="resources.json" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="Never" />
+  </ItemGroup>
+
   <!-- The plugin kit's templates (PLUG8): what `plugins new` writes into a new plugin's folder. Named
        `.template` so no test runner or gate mistakes them for this repository's own scripts. -->
   <ItemGroup>

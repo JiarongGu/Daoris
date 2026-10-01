@@ -24,7 +24,8 @@
  * home. Daoris's browser is the application itself since CHR8 (D99), started with the browser's
  * argument, so the install carries one Chromium. The names the shell's publish put in `app/` are
  * listed in `app/shell-files.txt`, so the next publish removes exactly those and nothing else. Daoris's
- * own example plugins sit beside them in `app/plugin-offers/`, offered and never installed (D103).
+ * own example plugins sit beside them in `app/plugin-offers/`, offered and never installed (D103), and so
+ * does the list of where each tool's versions download from, `app/resources.json` (D121).
  *
  * **What a deployed shell finds.** Nothing is wired into it: with no `DAORIS_*` overrides it makes
  * the install's `data/` the Daoris home (D63) — the machine's registry, quests, drivable set and profiles
@@ -33,7 +34,7 @@
  * the folder is self-sufficient.
  */
 import { execSync } from 'node:child_process';
-import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, writeFileSync } from 'node:fs';
+import { copyFileSync, cpSync, existsSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, isAbsolute, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { copyTree, isMain } from './fsx.mjs';
@@ -166,6 +167,46 @@ export function layOffers(examples, install) {
 }
 
 /**
+ * Where an install carries the list built in (TOOLS3, D121 §3.1), as path segments: beside the application
+ * in `app/`, where the driver reads it from its own folder, never under `data/`, since a republish
+ * replaces it whole and a newer list arrives as a resource location. A twin of the CLI's
+ * `BUILT_IN_LAYOUT`, which finds it beside the home, and the driver's `ToolResources.Layout`;
+ * `desktop-publish.test.ts` reads all three.
+ */
+export const RESOURCES = Object.freeze(['app', 'resources.json']);
+
+/** The list's one source in the workspace: the driver's own, which every build carries beside itself. */
+export const RESOURCES_SOURCE = Object.freeze(['src', 'Daoris.Desktop', 'Daoris.Desktop.Driver', 'resources.json']);
+
+/**
+ * Lay the list built in out in an install: `source` copied byte for byte to `<install>/app/resources.json`,
+ * written beside and renamed, so a republish replaces it whole and a stopped one leaves the last. The
+ * bytes are the tracked file's, so the hash the screen shows for the list built in is the list's own.
+ *
+ * @returns the path written.
+ * @throws when `source` does not read as a schema 1 list, before anything is written: an install never
+ *   carries a list its own readers refuse whole.
+ */
+export function layResources(source, install) {
+  let list;
+  try {
+    list = JSON.parse(readFileSync(source, 'utf8').replace(/^﻿/, ''));
+  } catch (error) {
+    throw new Error(`desktop-publish: ${source} is not readable JSON (${error.message})`);
+  }
+  if (list === null || typeof list !== 'object' || Array.isArray(list) || list.schema !== 1) {
+    throw new Error(`desktop-publish: ${source} is not a schema 1 resources.json, which every reader of the install refuses`);
+  }
+
+  const target = join(install, ...RESOURCES);
+  mkdirSync(dirname(target), { recursive: true });
+  const staged = `${target}.staging`;
+  copyFileSync(source, staged);
+  renameSync(staged, target);
+  return target;
+}
+
+/**
  * Every name a publish writes at the root of an install — and the shell's own `data/`, which it
  * creates on first start. Nothing else in that folder is ever this script's to touch.
  */
@@ -198,7 +239,7 @@ Published from a Daoris workspace by \`tools/desktop-publish.mjs\`.
 | | |
 |---|---|
 | \`${LAUNCHER}\` | **the application** — the only thing to run. A small launcher that starts \`${[...SHELL_HOME, SHELL_EXE].join('/')}\`. |
-| \`${SHELL_HOME[0]}/\` | the application itself, on the Chromium it carries (its files are listed in \`${SHELL_FILES.join('/')}\`), which is also Daoris's own browser; the HTTP host in \`${HOST_HOME.slice(1).join('/')}/\` when published with \`--service\`; and Daoris's own example plugins in \`${PLUGIN_OFFERS.slice(1).join('/')}/\` (${OFFERED_PLUGINS.join(', ')}), offered in Settings → Plugins and by \`daoris plugin list\`, none installed until you install one. Nothing to open. |
+| \`${SHELL_HOME[0]}/\` | the application itself, on the Chromium it carries (its files are listed in \`${SHELL_FILES.join('/')}\`), which is also Daoris's own browser; the HTTP host in \`${HOST_HOME.slice(1).join('/')}/\` when published with \`--service\`; and Daoris's own example plugins in \`${PLUGIN_OFFERS.slice(1).join('/')}/\` (${OFFERED_PLUGINS.join(', ')}), offered in Settings → Plugins and by \`daoris plugin list\`, none installed until you install one; and \`${RESOURCES.slice(1).join('/')}\`, the list of where each version of the tools Daoris runs downloads from, read and never rewritten. Nothing to open. |
 | \`${HOME}/\` | **the Daoris home**: the registry, the quests, the drivable set, the harness profiles, the installed service binaries — and the window's engine profile (\`chromium/\`) and its geometry. |
 
 Anything else in this folder is not the application's — repositories it drives, typically — and a
@@ -383,6 +424,9 @@ function main() {
   for (const file of readdirSync(locales)) {
     if (!KEPT_LOCALES.includes(file)) rmSync(join(locales, file));
   }
+  // The list built in is laid out below, by its one writer (TOOLS3). Whatever the build's publish carried
+  // of it leaves the stage, so `shell-files.txt` never records it as the application's.
+  rmSync(join(shellStage, RESOURCES.at(-1)), { force: true });
 
   // What the last publish put in `app/` goes first, so an engine upgrade leaves none of its files
   // behind — only the recorded names, never the host beside them. Then what an earlier publish wrote
@@ -402,6 +446,11 @@ function main() {
   // lists them and installs one only when pressed, so the publish writes nothing under the home.
   const offered = layOffers(join(repoRoot, 'examples', 'plugins'), to);
   console.log(`desktop-publish: offering ${offered.join(', ')} in ${PLUGIN_OFFERS.join('/')}/ (none installed).`);
+
+  // The list of where each tool's versions download from (TOOLS3, D121 §3.1), beside the application.
+  // The driver's build carries it too, and the stage was cleared of it above: this is the one writer.
+  layResources(join(repoRoot, ...RESOURCES_SOURCE), to);
+  console.log(`desktop-publish: the list built in is ${RESOURCES.join('/')}.`);
 
   if (flag('--service')) {
     // Supporting binaries go under `app/`, which is the shape the neighbouring applications on this
