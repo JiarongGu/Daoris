@@ -261,22 +261,54 @@ public static class TargetPrompt
     }
 
     /// <summary>
-    /// Ask and wait (D79): what another repository knows is asked of it, never guessed — and, where the
-    /// session may not read across (D107), never read out of it. The session publishes, parks its quest on
-    /// the question, and ends — the quest stays its own, and the driver resumes it here once it closes.
+    /// Where a question goes, in the order a session should reach for each (WSSETUP9, D124 §6.1): to the
+    /// sources first, which settle most questions; then ask and wait (D79), since what another repository
+    /// knows is asked of it, never guessed, and, where the session may not read across (D107), never read
+    /// out of it; and only then to the person, for what no source holds. A session that asks or stops
+    /// commits, ends its turn and keeps the quest, and the driver starts it again here with the answer.
     /// </summary>
+    /// <remarks>
+    /// The person's stop once offered "a choice between options that is theirs", and a session read which
+    /// report a ticket meant as one, though its repository's notes and code settled it. A reading the
+    /// evidence leans to is taken and said in the close instead: it is committed on the session's branch and
+    /// reviewed with the diff, so the person corrects it in review rather than being stopped by it.
+    /// </remarks>
     private static string Asking(SessionTarget target) =>
         $"""
+        Look before you ask. The quest, its links and its files; this repository's own documents, code and
+        history (its log, and the commits that last changed what you are changing); the workspace's
+        knowledge, through your connector's `knowledge_search`{Checkouts(target)}. A question one of these
+        settles is not a question: decide it, and keep what settled it for your closing note. Where the
+        evidence leans one way without settling it, take that reading, carry on, and say in your closing
+        note which reading you took and on what evidence, so the person can correct it in review rather than
+        be stopped by it.
+
         {Needs(target)} Publish a quest to it saying
         what you need and why, commit what you have so far, then respond to `#{target.QuestId}` with `wait`
         on that new quest's id, and end your turn. The quest stays yours, and you are started again here,
         in this tree, with its answer.
 
-        If it needs something only the person can give — a sign-in, a go-ahead for an act outside this
-        repository, a choice between options that is theirs — say exactly what and why in your last
-        message, commit what you have, and end your turn with the quest still taken, rather than declining.
-        The person answers, and you are started again here, in this tree, with their words.
+        Stop only for what no source holds and only the person can give — a sign-in, a go-ahead for an act
+        outside this repository or on a production system, a preference nothing records. Then say exactly
+        what and why, and what you looked at, in your last message, commit what you have, and
+        end your turn with the quest still taken, rather than declining. The person answers, and you are
+        started again here, in this tree, with their words.
         """;
+
+    /// <summary>
+    /// The other checkouts as a source to look in, only where the session may read across (D107), pointed to
+    /// where this instruction lists them: the read-only ones above it, a declared target in the boundary
+    /// below. Empty where reading is off, so the look names no checkout.
+    /// </summary>
+    private static string Checkouts(SessionTarget target)
+    {
+        if (target.ReadsAcross.Count == 0) return "";
+        var above = target.ReadsAcross.Any(read => !target.WritesAcross.Any(write =>
+            string.Equals(write.Repository, read.Repository, StringComparison.OrdinalIgnoreCase)));
+        var below = target.WritesAcross.Count > 0;
+        var where = above && below ? "above and below" : below ? "below" : "above";
+        return $"; and the other checkouts listed {where}";
+    }
 
     private const string Proposing =
         """

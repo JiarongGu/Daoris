@@ -3585,6 +3585,11 @@ behind a codebase does not travel, and a request does.
 workspace's other checkouts by default. What stays of this decision is that a change, or what only the
 other repository knows, is asked of it and waited on.*
 
+*Amended by D124 (WSSETUP9, 2026-10-01): asking another repository is the second place a driven session goes. The
+first is the sources: the quest and its files, its own repository's documents, code and history, the workspace's
+knowledge, and the checkouts it may read. What they settle it decides, and what they lean towards it takes and says
+in its close.*
+
 ## D80 — A session cut off after its take is carried on in its tree, like a failed start is retried (2026-09-27)
 
 **Decision.** A taken quest, waiting on nothing, whose last session on this machine concluded
@@ -3691,6 +3696,10 @@ taker's, and the connector already knows which session it speaks for (PERM2).
   service holds (D46 §4), and the service saw the take arrive.
 - **Answering in the composer.** A driven session takes no person's line (INT4i), and its process is
   gone by the time it parks.
+
+*Amended by D124 (WSSETUP9, 2026-10-01): what may park a session narrows to what no source holds and only the person
+can give: a sign-in, a go-ahead for an act outside the repository or on a production system, a preference nothing
+records. A choice between options is no longer a reason by itself, and a park says what the session looked at.*
 
 ## D84 — Daoris's browser is a Chromium Daoris ships, and the person's Edge is always an option (2026-09-28)
 
@@ -7131,3 +7140,19 @@ finds it by its bare name, whether codex's sandbox runs a program outside the wo
 whether a real set-up's knowledge is true. During `0.0.x` every build answers `0.0.1`, so the version guard cannot
 tell two builds apart until the first release. `verify` checks the log's shape and the design's links, and none of
 these words.
+
+**As built (WSSETUP9, 2026-10-01): a session looks before it asks.** `TargetPrompt.Asking` (`Adapters.cs`), which
+the claiming, resuming and carrying-on instructions all compose, opens with §6.1's look-first paragraph, keeps the
+paragraph on asking another repository, and ends with the narrowed stop. Two things the build settled:
+
+- **The stop opens *Stop only for what no source holds and only the person can give*,** where §6.1 wrote *Stop for the
+  person only for … only they can give*. The meaning is the same, and §6.2 keeps the phrase *only the person can give*
+  as one of the three the tests hold.
+- **The checkouts clause points to where the instruction lists them.** A declared write target is named in the
+  boundary, below the paragraph, and not in the read-only list above it, so the clause says *listed above*, *listed
+  below*, or *listed above and below*. With reading across off it is absent, and the look names no checkout.
+
+Held by `AskAndWaitPromptTests` (five new cases, each seen failing first) and by the across tests unchanged. The old
+words were searched in the desktop suites' `Process` half, `tools/*rehearsal*.mjs` and the web's `e2e/`, and none
+names them. **Not covered**: whether a real session now settles what it would have asked, which only the pilot's
+canary shows (WSSETUP12).
