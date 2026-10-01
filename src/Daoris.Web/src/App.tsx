@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-  useAsks, useEntry, useQuests, useRefreshIndex, useRegistry, useRepositories, useSessions,
+  useAsks, useQuests, useRefreshIndex, useRegistry, useRepositories, useSessions,
   useStatus, useSyncStanding, useWorkspaceHoldings, useWorkspaces,
 } from './queries';
 import { useScope } from './scope';
@@ -21,17 +21,15 @@ import type { StarterDoor } from './help/starters';
 import { askItem, doorOpening, type Opening, type OpenPart, opening as plannedOpening } from './opener';
 import { WorkspaceSwitcher } from './WorkspaceSwitcher';
 import {
-  Button, Drawer, failure, Icon, LanguageSwitcher, Prose, SESSION_ACTIVE, Tip, Toasts,
-  useErrorNotify, useToasts,
+  Button, Drawer, failure, Icon, LanguageSwitcher, Prose, SESSION_ACTIVE, Tip, Toasts, useToasts,
 } from './ui';
 import { OverviewView } from './OverviewView';
-import { ConvergenceView } from './ConvergenceView';
+import { useConvergenceView } from './ConvergenceView';
 import { MapView } from './MapView';
-import { SearchView } from './SearchView';
+import { useSearchView } from './SearchView';
 import { useQuestsView } from './QuestsView';
 import { useProjectsView } from './ProjectsView';
 import { type SettingsAnchor, type SettingsSection, useSettingsLayout } from './SettingsView';
-import { Reader } from './Reader';
 import { ShellSignals } from './ShellSignals';
 import {
   logEvent, useDriver, useLinkOpener, useOpenBrowser, useOpenWindow, useRemotes, useRules, useSyncNow, useTrustFolder,
@@ -90,9 +88,10 @@ const NAV = VIEWS.filter(({ view }) => view !== 'settings');
 /**
  * The views drawn with a list pane (D118 §2), each naming it in `layout.list.<view>` and
  * `layout.menu.list.<view>`. Sessions' first (FRAME1b), then Plugins, built on the frame (PLUGUI1b), then Quests
- * (FRAME1d), Repositories (FRAME1e) and Settings (FRAME1g); each view joins as its row moves it onto the frame.
+ * (FRAME1d), Repositories (FRAME1e), Settings (FRAME1g), and Convergence and Search (FRAME1f): every view but
+ * Overview and Map, which have none (§4).
  */
-const LISTED: ReadonlySet<ListView> = new Set<ListView>(['sessions', 'plugins', 'quests', 'projects', 'settings']);
+const LISTED: ReadonlySet<ListView> = new Set<ListView>(['sessions', 'plugins', 'quests', 'projects', 'convergence', 'search', 'settings']);
 const isListed = (view: View): view is View & ListView => (LISTED as ReadonlySet<string>).has(view);
 
 /** A palette command that says it ran, into the machine log (LOG1b): by its id, never what was typed. */
@@ -118,7 +117,6 @@ export function App() {
   const settingsSection = (lists.pane('settings').chosen as SettingsSection | null) ?? 'appearance';
   // The part of a Settings domain a menu item named, brought into view once it is drawn (UX5 U72).
   const [settingsAnchor, setSettingsAnchor] = useState<SettingsAnchor | null>(null);
-  const [readingId, setReadingId] = useState<string | null>(null);
   // A quest the review asked for (SURF6b): the repository whose work is being sent back, handed
   // to the composer as an opening draft. Held here because the door crosses two views.
   const [opening, setOpening] = useState<{ from?: string; to?: string } | null>(null);
@@ -148,8 +146,6 @@ export function App() {
   const repositories = useRepositories();
   // The badge shares the Quests view's cache — one fetch, two readers.
   const outstanding = useQuests(null, false);
-  // The Reader's document rides the same cache as every other read — re-opening an entry is free.
-  const reading = useEntry(readingId);
   const refresh = useRefreshIndex();
   // The same "is a shell here" answer every control uses — one detection path, not two that drift.
   const driver = useDriver();
@@ -284,8 +280,6 @@ export function App() {
       scope.setWorkspace(null);
     }
   }, [workspaces.data, scope]);
-
-  useErrorNotify(reading.error, notify);
 
   const onRefresh = () => refresh.mutate(undefined, {
     onSuccess: (report) => {
@@ -498,6 +492,29 @@ export function App() {
     importRequested,
     onImportOpened: () => setImportRequested(false),
   });
+  // Search and Convergence (FRAME1f, D118 §2): held on every view, as Quests is, and asking the service nothing until
+  // in front; each list's memory is its chosen item and its one filter, *local only* and the similarity (§3f).
+  const searchPane = lists.pane('search');
+  const search = useSearchView({
+    active: view === 'search',
+    chosen: searchPane.chosen,
+    onChoose: (item) => lists.choose('search', item),
+    filters: searchPane.filters,
+    onFilters: (filters) => lists.setFilters('search', filters),
+    notify,
+    semantic: status.data?.semantic ?? false,
+    onConverge: () => open('convergence'),
+  });
+  const convergencePane = lists.pane('convergence');
+  const convergence = useConvergenceView({
+    active: view === 'convergence',
+    chosen: convergencePane.chosen,
+    onChoose: (item) => lists.choose('convergence', item),
+    filters: convergencePane.filters,
+    onFilters: (filters) => lists.setFilters('convergence', filters),
+    notify,
+    semantic: status.data?.semantic ?? false,
+  });
   // What Ask Daoris is handed wherever it stands: what is on the screen (HELP1b) — the view, the scope,
   // the settings domain on Settings, and the attended session on Sessions — and its two ways out.
   const askProps = {
@@ -547,11 +564,11 @@ export function App() {
   /**
    * Every view but Sessions, as it hands itself to the frame (D118 §5): its list pane where it has one, and
    * its main area, in a shell's frame beside the side bar and the panel, and in a browser's without them.
-   * Each view joins the list pane as its row moves it onto the frame (FRAME1f); until then its page is its main
-   * area. Plugins was built on the frame (PLUGUI1b), and Quests (FRAME1d), Repositories (FRAME1e) and Settings
-   * (FRAME1g) moved onto it: each hands its list and its pages whole.
+   * Plugins was built on the frame (PLUGUI1b), and Quests (FRAME1d), Repositories (FRAME1e), Settings (FRAME1g),
+   * Convergence and Search (FRAME1f) moved onto it: each hands its list and its pages whole. Overview and Map have
+   * no list (§4), and their page is their main area.
    */
-  const listedLayouts: Partial<Record<View, ViewLayout>> = { plugins, quests, projects, settings };
+  const listedLayouts: Partial<Record<View, ViewLayout>> = { plugins, quests, projects, convergence, search, settings };
   const renderView = (): ViewLayout => listedLayouts[view] ?? {
     main: (
       // No cap: content follows the window (UX5 U59, the owner), as the session's centre does since U16. It
@@ -574,17 +591,6 @@ export function App() {
             notify={notify}
             onOpenConvergence={() => open('convergence')}
             onOpenQuest={openQuest}
-          />
-        )}
-        {view === 'convergence' && (
-          <ConvergenceView semantic={status.data?.semantic ?? false} onOpen={setReadingId} notify={notify} />
-        )}
-        {view === 'search' && (
-          <SearchView
-            onOpen={setReadingId}
-            notify={notify}
-            semantic={status.data?.semantic ?? false}
-            onConverge={() => open('convergence')}
           />
         )}
       </ViewMain>
@@ -937,7 +943,6 @@ export function App() {
         </QuickAsk>
       )}
 
-      {reading.data && <Reader entry={reading.data} onClose={() => setReadingId(null)} />}
       {trusting && (
         <Drawer title={t('trust.title')} onClose={() => setTrusting(null)}>
           <TrustAsk

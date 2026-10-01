@@ -407,6 +407,37 @@ describe('the views, in a browser', () => {
     expect(within(list).queryByRole('button', { name: 'More actions' })).toBeNull();
   });
 
+  /**
+   * FRAME1f (D118 §2, §4): Search's list is the box, *local only* and the hits, and Convergence's the similarity and the
+   * findings, each beside its main area in a browser too; each makes nothing, so neither list has a ＋. Neither asks the
+   * service anything until it is in front: a comparison over a real index takes seconds.
+   */
+  it("keeps Search's and Convergence's lists and their main areas, asking nothing until each is in front", async () => {
+    fetchMock.mockImplementation(async (input: RequestInfo | URL) => {
+      const url = String(input);
+      if (url.startsWith('/api/convergence')) return Response.json([]);
+      return respond(url);
+    });
+    shell();
+    const views = await screen.findByRole('navigation', { name: 'Views' });
+    expect(requested().some((url) => url.startsWith('/api/convergence') || url.startsWith('/api/search'))).toBe(false);
+
+    await userEvent.click(within(views).getByRole('button', { name: 'Search' }));
+    const results = await screen.findByRole('complementary', { name: 'Search' });
+    expect(within(results).getByRole('searchbox', { name: 'search knowledge' })).toHaveFocus();
+    expect(within(results).getByRole('checkbox', { name: "Each repository's own only" })).toBeChecked();
+    expect(screen.getByRole('button', { name: 'show or hide the result list (Ctrl+B)' })).toBeInTheDocument();
+    expect(within(screen.getByRole('main')).getByText('Choose a result')).toBeInTheDocument();
+    expect(screen.queryByRole('dialog')).toBeNull();
+
+    await userEvent.click(within(views).getByRole('button', { name: 'Convergence' }));
+    const findings = await screen.findByRole('complementary', { name: 'Convergence' });
+    expect(await within(findings).findByText('Nothing converges at 0.75 or above')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'show or hide the finding list (Ctrl+B)' })).toBeInTheDocument();
+    expect(within(screen.getByRole('main')).getByText('Choose a finding')).toBeInTheDocument();
+    expect(within(findings).queryByRole('button', { name: /^New|^Add/ })).toBeNull();
+  });
+
   it('falls back to Overview when the browser remembers a view this deployment does not have', async () => {
     window.localStorage.setItem('daoris.view', 'sessions');
     shell();

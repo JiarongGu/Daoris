@@ -295,10 +295,15 @@ async function get<T>(path: string, signal?: AbortSignal): Promise<T> {
     // The service reports its own errors as { error }; anything else means the host itself failed,
     // and the status line is the only thing that will say anything useful.
     const body = await response.json().catch(() => null);
-    throw new Error(body?.error ?? `${response.status} ${response.statusText}`);
+    // The status rides along, so a reader can tell "the service has none by that name" (an entry gone since it
+    // was found, FRAME1f) from a service that failed; the sentence is still the service's own.
+    throw Object.assign(new Error(body?.error ?? `${response.status} ${response.statusText}`), { status: response.status });
   }
   return response.json() as Promise<T>;
 }
+
+/** Whether a read failed because the service holds nothing by that name: an answer, where any other failure is not. */
+export const notFound = (error: unknown): boolean => (error as { status?: unknown } | null)?.status === 404;
 
 async function post<T>(path: string, body: unknown, method: 'POST' | 'DELETE' = 'POST'): Promise<T> {
   const response = await reach(path, {

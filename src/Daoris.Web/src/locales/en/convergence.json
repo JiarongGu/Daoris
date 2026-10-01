@@ -1,6 +1,4 @@
 {
-  "convergence.title": "Convergence",
-  "convergence.description": "Where two repositories reached the same conclusion independently — read them and decide. The knowledge half's lead view.",
   "convergence.threshold": "Similarity ≥",
   "convergence.hintSemantic": "Lower it to see weaker overlaps. Worth sweeping rather than trusting one number — the right value depends on the corpus.",
   "convergence.hintLexical": "Without an embedding endpoint this finds copies and restatements only. Two repositories that reached the same conclusion in different words will not appear.",
@@ -15,7 +13,15 @@
   "convergence.methods.Restatement.hint": "Usually a copy that has since drifted.",
   "convergence.methods.Identical.label": "The same document, pasted",
   "convergence.methods.Identical.hint": "A copy, not a coincidence.",
-  "convergence.count": "{{count}} group",
-  "convergence.count_other": "{{count}} groups",
-  "convergence.cappedAt": "first {{count}} — more found, so raise the similarity"
+  "convergence.count": "{{count}} finding",
+  "convergence.count_other": "{{count}} findings",
+  "convergence.cappedAt": "first {{count}} — more found, so raise the similarity",
+  "convergence.list.open": "Show the finding list",
+  "convergence.list.close": "Hide the finding list",
+  "convergence.list.resize": "finding list width",
+  "convergence.none.headline": "Choose a finding",
+  "convergence.none.body": "Where two repositories reached the same conclusion independently — read them and decide. A finding chosen in the list is read here: the service's suggestion, then each of its entries whole.",
+  "convergence.gone.headline": "This finding is no longer listed",
+  "convergence.gone.body": "Its entries no longer converge at {{value}} or above, or the index has changed since it was found. Choose another in the list.",
+  "convergence.page.entryGone": "No longer in the index: moved, renamed or deleted since this finding was made."
 }
