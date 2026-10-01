@@ -93,8 +93,9 @@ public static class PluginPackage
         {
             throw new DriverException($"{refused.Message} Nothing was installed.");
         }
-        catch (Exception error) when (error is IOException or UnauthorizedAccessException or InvalidDataException)
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException or InvalidDataException or ArgumentException)
         {
+            // A name the file system will not take (ArgumentException) is the package's, said as a refusal, never a crash.
             throw new DriverException($"{Path.GetFileName(file)} was not installed: {error.Message} Nothing was installed.");
         }
         finally
@@ -348,6 +349,12 @@ public static class PluginPackage
                 if (!Tools.IsInside(path))
                 {
                     throw new Refused($"{said} holds `{entry.FullName}`, which would land outside its plugin's folder — the whole package is refused.");
+                }
+
+                // An escape can spell any character, NUL among them, which no path holds.
+                if (path.Any(char.IsControl))
+                {
+                    throw new Refused($"{said} holds `{entry.FullName}`, a name with a control character, which no folder holds — the whole package is refused.");
                 }
 
                 if (!folder && !seen.Add(path))

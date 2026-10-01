@@ -187,6 +187,7 @@ public sealed class PluginPackageTests : IDisposable
     [InlineData("an entry that climbs out of a subfolder", "holds `plugin/lib/../../evil.txt`, which would land outside its plugin's folder")]
     [InlineData("an entry on a drive", "holds `plugin/C:/evil.txt`, which would land outside its plugin's folder")]
     [InlineData("a rooted entry", "holds `plugin//evil.txt`, which would land outside its plugin's folder")]
+    [InlineData("an entry with a control character", "holds `plugin/a%00b.txt`, a name with a control character")]
     [InlineData("an entry twice", "holds `plugin/Gate.mjs` twice")]
     [InlineData("a manifest the catalogue refuses", "`id` must be lowercase letters, digits, dots and dashes")]
     [InlineData("a plugin this build refuses", "`dsh`, which this build already carries")]
@@ -223,6 +224,7 @@ public sealed class PluginPackageTests : IDisposable
             "an entry that climbs out of a subfolder" => Package(entries: [.. Plugin, ("plugin/lib/../../evil.txt", "evil")]),
             "an entry on a drive" => Package(entries: [.. Plugin, ("plugin/C:/evil.txt", "evil")]),
             "a rooted entry" => Package(entries: [.. Plugin, ("plugin//evil.txt", "evil")]),
+            "an entry with a control character" => Package(entries: [.. Plugin, ("plugin/a%00b.txt", "evil")]),
             "an entry twice" => Package(entries: [.. Plugin, ("plugin/Gate.mjs", "// another")]),
             "a manifest the catalogue refuses" => Package(entries: [("plugin/plugin.json", """{ "id": "Acme Gate", "version": "1.0.0" }""")]),
             "a plugin this build refuses" => Package(entries: [("plugin/plugin.json",

@@ -6888,7 +6888,8 @@ network: a package source is PLUGDIST1c's. What the design left open, settled he
 - **Any `dependency` element refuses the package**, in a group or not.
 - **A part's name is read as NuGet reads it**: unescaped, with `\` a separator, and only then is the `plugin/` guard
   applied, so an escaped `..%2F` is refused as `../` is. A name twice, compared without case, refuses the package
-  too, since Windows would write the second over the first. The guard judges every `plugin/` entry before anything
+  too, since Windows would write the second over the first, and so does a name holding a control character, which
+  an escape can spell (`%00`) and no path holds. The guard judges every `plugin/` entry before anything
   is written, and each target is checked again against the stage's whole path as it is written.
 - **The file is opened once, shared for reading only**, so the bytes hashed are the bytes extracted.
 - **The stage is `<home>/plugins/.unpacking-<guid>/`**, a dot-folder the catalogue skips, gone whether the install
