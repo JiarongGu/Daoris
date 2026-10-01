@@ -6526,6 +6526,21 @@ reports, the canon scan for `allowed-tools`, and a seventh release-rehearsal pha
   is DOC5's. The twins table gains its row when that reader lands, matched against
   `documents-manifest.test.ts`.
 
+**Built 2026-10-01 (DOC4): this repository declares its documents.** `daoris.json` names eight roles (router,
+decisions, backlog, archive, fixes, changelog, the naming glossary, the gates), and `sync` writes the *Where things
+are* table into the region. Two things the design's row did not foresee:
+- **The table costs about 1 KB of the always-loaded core** (23,306 → 24,064 of 26,000 bytes). Kept whole: the
+  table is the standard's point, and each row answers a search a session would otherwise make.
+- **`doc-budgets.json` does not retire; it shrinks.** Of its five documents only the backlog has a role. The
+  standing orders are `CLAUDE.md`, and the `brief` role measures the root instruction file outside the region,
+  which here is `AGENTS.md` with nothing outside it, until LAYOUT6 moves the brief there. The consuming story,
+  the forward sequence and the contract have no role, and inventing one for each would grow the closed set
+  for one repository. So the tool reads a declared ceiling from the manifest, keeps the rest in its own file,
+  and fails on a document given a number in both, so a ceiling is still written once. The backlog's ceiling
+  is now also `check`'s, which reports it with the role.
+- Found building it: a scripted rewrite of the tool dropped every backslash, so `\s+` counted the letter *s*
+  and every document read as within budget, exit 0. `words` is now exported and pinned by a test.
+
 **Built 2026-10-01 (UNBLOCK4): the carve-outs held harder, and `git mv`.** Point 7 and the `commit` half of point 4,
 as design §3.6 and §3.7 say, with one addition.
 - **`commit` gains `Bash(git mv:*)`**, in both defaults tables (`Permissions.cs`, `permissions.ts`), held together by

@@ -1,8 +1,7 @@
 {
-  "_why": "Word ceilings for the prose a session reads WHOLE. tools/doc-budgets.mjs owns the rule, the discipline when one goes red, and why the append-only records (the decision log, the archive, the fix log, the changelogs) deliberately have none. Raising a ceiling is a one-line diff here, justified in the commit.",
+  "_why": "Word ceilings for the prose a session reads WHOLE that no role in daoris.json names: the standing orders (until they become the brief, LAYOUT6), the consuming story, the forward sequence, the contract. A declared document's ceiling lives in daoris.json's documents, never here as well (DOC4). tools/doc-budgets.mjs owns the rule, the discipline when one goes red, and why the append-only records have none. Raising a ceiling is a one-line diff where it is written, justified in the commit.",
 
   "CLAUDE.md": 3750,
-  "TASKS.md": 6600,
   "README.md": 2600,
   "ROADMAP.md": 3600,
   "docs/2026-08-04-daoris-design.md": 2400

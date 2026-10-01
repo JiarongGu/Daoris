@@ -3,6 +3,16 @@
   "packs": ["localized-ui"],
   "target": ".claude",
   "coreBudgetBytes": 26000,
+  "documents": {
+    "router": "docs/README.md",
+    "decisions": "docs/DECISIONS.md",
+    "backlog": { "path": "TASKS.md", "words": 6600 },
+    "archive": "docs/task-archive.md",
+    "fixes": "docs/FIX-LOG.md",
+    "changelog": "CHANGELOG.md",
+    "glossary": "src/Daoris.Web/src/locales/glossary.json",
+    "gates": "daoris.gates.json"
+  },
   "domain": {
     "summary": "The cross-repo engineering doctrine and knowledge substrate for this family: one canon of agent-facing rules, a service that indexes what every repository has learned, and the quest system they use to ask each other for work.",
     "owns": [

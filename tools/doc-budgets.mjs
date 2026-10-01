@@ -17,8 +17,17 @@
  *
  * ## What is budgeted, and what deliberately is not
  *
- * A ceiling belongs on a document that is **read whole**. Those are the five in the manifest: the
- * standing orders, the backlog, the consuming story, the forward sequence, the contract.
+ * A ceiling belongs on a document that is **read whole**: the standing orders, the backlog, the
+ * consuming story, the forward sequence, the contract.
+ *
+ * ## Where a ceiling is written: once
+ *
+ * A document `daoris.json` declares with a ceiling (`documents`, D122 §2.7) is measured at that number,
+ * which `check` reads too, so it is written in one place (DOC4). `tools/doc-budgets.json` keeps only the
+ * documents no role names (the consuming story, the forward sequence, the contract) and the standing
+ * orders, until they become the brief (LAYOUT6). A role bound to a ceiling alone, the brief or a room,
+ * is `check`'s to measure, since only it knows where the region ends. A document with a ceiling in both
+ * lists has two numbers, and that is a fact, so it fails.
  *
  * It does **not** belong on an append-only record — the decision log, the task archive, the fix log,
  * the changelogs. Those are read by lookup, they grow by design, and a ceiling on one is a rule that
@@ -50,58 +59,84 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { isMain } from './fsx.mjs';
 
-const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
 const MANIFEST = 'tools/doc-budgets.json';
+const DECLARED = 'daoris.json';
 
 /**
  * Whitespace-separated tokens. Stated rather than left to be inferred: a count nobody can reproduce is
  * a ceiling nobody can argue with. Tables, code and links all count, because a reader pays for them.
  */
-const words = (text) => text.split(/\s+/).filter(Boolean).length;
+export const words = (text) => text.split(/\s+/).filter(Boolean).length;
 
-const budgets = JSON.parse(readFileSync(join(repoRoot, MANIFEST), 'utf8'));
-const stale = [];
-const over = [];
-const measured = [];
+const readJson = (file) => (existsSync(file) ? JSON.parse(readFileSync(file, 'utf8')) : {});
 
-for (const [document, ceiling] of Object.entries(budgets)) {
-  if (document.startsWith('_')) continue; // the manifest's own prose
+/**
+ * Every ceiling under `root`: the declared documents' first, in the manifest's order, then this tool's
+ * own list. `twice` names a document both give a number, which is measured at the manifest's.
+ */
+export function ceilings(root) {
+  const budgets = [];
+  for (const [role, entry] of Object.entries(readJson(join(root, DECLARED)).documents ?? {})) {
+    if (typeof entry === 'object' && entry !== null && typeof entry.path === 'string' && typeof entry.words === 'number') {
+      budgets.push({ document: entry.path, ceiling: entry.words, from: `${DECLARED} (${role})` });
+    }
+  }
+  const declared = new Set(budgets.map((b) => b.document));
+  const twice = [];
+  for (const [document, ceiling] of Object.entries(readJson(join(root, MANIFEST)))) {
+    if (document.startsWith('_')) continue; // the manifest's own prose
+    if (declared.has(document)) twice.push(document);
+    else budgets.push({ document, ceiling, from: MANIFEST });
+  }
+  return { budgets, twice };
+}
 
-  const file = join(repoRoot, document);
-  if (!existsSync(file)) {
-    // A ceiling naming a document that moved is a ceiling that silently stopped applying — which is
-    // indistinguishable, from the outside, from a document comfortably under budget. A fact, so it fails.
-    stale.push(`${document}: budgeted at ${ceiling} but the file does not exist — the ceiling is stale`);
-    continue;
+if (isMain(import.meta.url)) {
+  const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
+  const { budgets, twice } = ceilings(repoRoot);
+  const stale = twice.map((document) =>
+    `${document}: given a ceiling in both ${DECLARED} and ${MANIFEST} — keep the manifest's, remove the other`);
+  const over = [];
+  const measured = [];
+
+  for (const { document, ceiling, from } of budgets) {
+    const file = join(repoRoot, document);
+    if (!existsSync(file)) {
+      // A ceiling naming a document that moved is a ceiling that silently stopped applying — which is
+      // indistinguishable, from the outside, from a document comfortably under budget. A fact, so it fails.
+      stale.push(`${document}: budgeted at ${ceiling} in ${from} but the file does not exist — the ceiling is stale`);
+      continue;
+    }
+
+    const count = words(readFileSync(file, 'utf8'));
+    measured.push({ document, count, ceiling, spare: ceiling - count });
+    if (count > ceiling) over.push(`${document}: ${count} words of ${ceiling} — over by ${count - ceiling}`);
   }
 
-  const count = words(readFileSync(file, 'utf8'));
-  measured.push({ document, count, ceiling, spare: ceiling - count });
-  if (count > ceiling) over.push(`${document}: ${count} words of ${ceiling} — over by ${count - ceiling}`);
-}
+  if (over.length > 0) {
+    // Advisory: loud, quantified, and exits 0. An unquantified warning is one nobody acts on.
+    console.warn(`doc-budgets: ${over.length} over budget (advisory)\n  ${over.join('\n  ')}`);
+    console.warn(
+      '\n  Relocate what belongs in another tier, then condense what belongs here. Raise a ceiling where it\n'
+      + '  is written only when the words need the space — and say why in the commit.');
+  }
 
-if (over.length > 0) {
-  // Advisory: loud, quantified, and exits 0. An unquantified warning is one nobody acts on.
-  console.warn(`doc-budgets: ${over.length} over budget (advisory)\n  ${over.join('\n  ')}`);
-  console.warn(
-    '\n  Relocate what belongs in another tier, then condense what belongs here. Raise a ceiling in\n'
-    + `  ${MANIFEST} only when the words need the space — and say why in the commit.`);
-}
+  if (stale.length > 0) {
+    console.error(`doc-budgets: ${stale.length} stale ceiling(s)\n  ${stale.join('\n  ')}`);
+    process.exit(1);
+  }
 
-if (stale.length > 0) {
-  console.error(`doc-budgets: ${stale.length} stale ceiling(s)\n  ${stale.join('\n  ')}`);
-  process.exit(1);
-}
-
-// The tightest document is the useful number on a clean run — a total says nothing about which one is
-// closest to its ceiling, and that is the only question this report can answer usefully.
-if (measured.length === 0) {
-  console.log('doc-budgets: nothing measured');
-} else {
-  const tightest = measured.reduce((a, b) => (a.spare <= b.spare ? a : b));
-  console.log(over.length === 0
-    ? `doc-budgets: ${measured.length} documents within budget — tightest is ${tightest.document} at `
-      + `${tightest.count}/${tightest.ceiling} (${tightest.spare} to spare)`
-    : `doc-budgets: ${measured.length} documents measured, ${over.length} over — see above`);
+  // The tightest document is the useful number on a clean run — a total says nothing about which one is
+  // closest to its ceiling, and that is the only question this report can answer usefully.
+  if (measured.length === 0) {
+    console.log('doc-budgets: nothing measured');
+  } else {
+    const tightest = measured.reduce((a, b) => (a.spare <= b.spare ? a : b));
+    console.log(over.length === 0
+      ? `doc-budgets: ${measured.length} documents within budget — tightest is ${tightest.document} at `
+        + `${tightest.count}/${tightest.ceiling} (${tightest.spare} to spare)`
+      : `doc-budgets: ${measured.length} documents measured, ${over.length} over — see above`);
+  }
 }
