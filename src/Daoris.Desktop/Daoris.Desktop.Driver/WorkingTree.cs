@@ -462,6 +462,46 @@ public static class WorkingTree
         }
     }
 
+    /// <summary>
+    /// How Daoris's own git starts (TOOLS5, D121 §2.4): the file Tools resolves for git, by its whole path, with the
+    /// tools' environment — or the refusal of a git the person chose that cannot run, which never falls back to
+    /// <c>PATH</c>. Every git call here and in <see cref="SessionTrees"/> starts through this.
+    /// </summary>
+    /// <param name="home">The Daoris home whose <c>tools.json</c> says which git; null is a machine with no home, whose
+    /// git is the system's, as before.</param>
+    internal static (ProcessStartInfo? Info, string? Refusal) GitStart(string root, IReadOnlyList<string> arguments, string? home)
+    {
+        var read = home is null ? null : Tools.Read(home);
+        var git = read is null
+            ? new ToolResolution("git", ToolWay.System, null, CommandPresence.Resolve("git", startable: true), false, null)
+            : Tools.Resolve(read, home!, "git");
+        if (git.Refused) return (null, git.Problem);
+
+        var info = new ProcessStartInfo
+        {
+            // The system's git PATH does not find keeps the bare name, so the start fails in the system's own words, as before.
+            FileName = git.File ?? "git",
+            WorkingDirectory = root,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            UseShellExecute = false,
+            CreateNoWindow = true, // git runs every tick; from a window it must not flash a console (Adapters.Shell)
+            StandardOutputEncoding = Encoding.UTF8,
+            StandardErrorEncoding = Encoding.UTF8,
+        };
+        // 🔴 Long paths, for every call (2026-09-28): a session tree's prefix is longer than its root's, so
+        // a file that fits under the root can pass Windows' 260 characters in a tree. Without this git
+        // cannot open it, and says so as a change it cannot read: the first real workspace's clean-up kept
+        // two trees for "uncommitted work" that was three committed files, and a removal failed half done.
+        // Said on the command line, so nothing in the repository's own configuration changes; Daoris's own
+        // need, so it stays here rather than in the git the person's sessions share (§2.4).
+        info.ArgumentList.Add("-c");
+        info.ArgumentList.Add("core.longpaths=true");
+        foreach (var argument in arguments) info.ArgumentList.Add(argument);
+        if (read is not null) Tools.Hand(info, read, home!);
+        return (info, null);
+    }
+
     // Internal rather than private since D51: SessionTrees asks git the same way for the same reason —
     // one process-spawning implementation, not two that differ in encoding or error shape.
     internal static Task<(int Code, string Stdout, string Stderr)> GitAsync(
@@ -477,25 +517,9 @@ public static class WorkingTree
         string root, IReadOnlyList<string> arguments, IReadOnlyDictionary<string, string>? environment, TimeSpan? timeout,
         CancellationToken ct)
     {
-        var info = new ProcessStartInfo
-        {
-            FileName = "git",
-            WorkingDirectory = root,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            UseShellExecute = false,
-            CreateNoWindow = true, // git runs every tick; from a window it must not flash a console (Adapters.Shell)
-            StandardOutputEncoding = Encoding.UTF8,
-            StandardErrorEncoding = Encoding.UTF8,
-        };
-        // 🔴 Long paths, for every call (2026-09-28): a session tree's prefix is longer than its root's, so
-        // a file that fits under the root can pass Windows' 260 characters in a tree. Without this git
-        // cannot open it, and says so as a change it cannot read: the first real workspace's clean-up kept
-        // two trees for "uncommitted work" that was three committed files, and a removal failed half done.
-        // Said on the command line, so nothing in the repository's own configuration changes.
-        info.ArgumentList.Add("-c");
-        info.ArgumentList.Add("core.longpaths=true");
-        foreach (var argument in arguments) info.ArgumentList.Add(argument);
+        var (info, refusal) = GitStart(root, arguments, DaorisHome.Resolve());
+        // A git the person chose that cannot run is git's answer, said in the resolution's words (TOOLS5): never PATH's.
+        if (info is null) return (-1, "", refusal!);
         if (environment is not null)
         {
             foreach (var (name, value) in environment) info.Environment[name] = value;
@@ -549,21 +573,9 @@ public static class WorkingTree
     internal static async Task<(byte[] Bytes, int Count)?> GitBytesAsync(
         string root, IReadOnlyList<string> arguments, int limit, CancellationToken ct)
     {
-        var info = new ProcessStartInfo
-        {
-            FileName = "git",
-            WorkingDirectory = root,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            UseShellExecute = false,
-            CreateNoWindow = true, // as every git call here: from a window it must not flash a console
-            // The blob is read as bytes off the stream beneath; git's own words on the error stream are UTF-8.
-            StandardOutputEncoding = Encoding.UTF8,
-            StandardErrorEncoding = Encoding.UTF8,
-        };
-        info.ArgumentList.Add("-c");
-        info.ArgumentList.Add("core.longpaths=true");
-        foreach (var argument in arguments) info.ArgumentList.Add(argument);
+        // The blob is read as bytes off the stream beneath; git's own words on the error stream are UTF-8.
+        var (info, _) = GitStart(root, arguments, DaorisHome.Resolve());
+        if (info is null) return null;
 
         Process? process = null;
         try

@@ -36,9 +36,11 @@
 
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync } from 'node:fs';
 import { homedir } from 'node:os';
-import { requireHomeFile } from './home.ts';
+import { daorisHome, requireHomeFile } from './home.ts';
+import { commandOnTheSystem, commandThroughTools, handTools } from './tools.ts';
 import { join, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
+import type { SpawnSyncReturns, StdioOptions } from 'node:child_process';
 import { flagValue, operands } from './args.ts';
 
 /** The `agent` flags that take a value — so that value is never read as an operand. */
@@ -647,22 +649,18 @@ function ask(
 ): { ran: boolean; output: string; problem: string | null } {
   // A pinned binary is asked the way a session runs it (AGT2), so asking is not when it moves; and
   // an account that is a key is asked with its key (AGT3).
-  const env = { ...process.env, ...(managed ? toolchain.pinnedEnv : {}), ...account };
+  const base: Env = { ...process.env, ...(managed ? toolchain.pinnedEnv : {}), ...account };
   if (profile) {
     // Created as part of selecting it: at least one supported harness refuses to start when its home
     // variable names a path that does not exist.
     mkdirSync(profile, { recursive: true });
-    env[toolchain.profileVariable] = profile;
+    base[toolchain.profileVariable] = profile;
   }
 
   // 🔴 Through `spawnable`, for the same reason `install` needs it: a managed pin's shim is a `.cmd`
   // on Windows, and a bare `spawnSync` answers ENOENT/EINVAL for one — which reads as "not installed"
-  // about a binary that is installed and works.
-  const [file, argv, verbatim] = spawnable([...command, ...args]);
-  const result = spawnSync(file, argv, {
-    env, encoding: 'utf8', shell: false, timeout: 20_000, windowsHide: true,
-    ...(verbatim ? { windowsVerbatimArguments: true } : {}),
-  });
+  // about a binary that is installed and works. `startChild` is where that happens.
+  const result = startChild([...command, ...args], base, { timeout: 20_000 });
 
   if (result.error) {
     return { ran: false, output: '', problem: `\`${command[0]}\` is not on this machine's PATH` };
@@ -827,7 +825,9 @@ export function commandHarness(
       }
 
       write(`daoris: installing \`${name}\` with its own installer — nothing here is automatic (D49 §4).`);
-      return relay(toolchain.install, null, toolchain, write);
+      // 🔴 On the system's npm (TOOLS5, D121 §2.7), whatever the tools run node as: an install is the agent's own
+      // installer, into the machine. A managed npm's global folder may be its node version's, which the next loses.
+      return relay(commandOnTheSystem(toolchain.install), null, toolchain, write);
     }
 
     // USE1a: update does what it says. A pinned agent with a package or a channel moves its pin to
@@ -1012,7 +1012,8 @@ export function commandHarness(
   ): ExitCode {
     write(`daoris: installing \`${toolchain.package}@${version}\` into a directory Daoris owns.`);
     write(`  ${where}`);
-    const installed = relay([...npm, 'install', '--prefix', where, `${toolchain.package}@${version}`], null, toolchain, write);
+    // The npm the tools resolve (TOOLS5, D121 §2.7): its prefix is named, so what it installs runs on the tools' node.
+    const installed = relay(throughTools([...npm, 'install', '--prefix', where, `${toolchain.package}@${version}`]), null, toolchain, write);
     if (installed !== 0) {
       write('  Nothing was pinned: a pin naming a version that is not there would run a different');
       write('  tool than the one you asked for.');
@@ -1083,17 +1084,17 @@ export function commandHarness(
    * of the same kind the pin's `npm install` is. Anything but one version is a refusal that says so.
    */
   function newestOnNpm(pkg: string, pin: string): string {
-    const command = [...npm, 'view', pkg, 'version'];
-    write(`  $ ${command.join(' ')}`);
-    const [file, args, verbatim] = spawnable(command);
-    const result = spawnSync(file, args, {
-      encoding: 'utf8',
-      stdio: ['ignore', 'pipe', 'pipe'],
-      shell: false,
-      windowsHide: true,
-      ...(verbatim ? { windowsVerbatimArguments: true } : {}),
-    });
     const stays = `Nothing was fetched or pinned, and the pin stays at ${pin}.`;
+    let command: string[];
+    try {
+      // The npm the tools resolve (TOOLS5, D121 §2.7), as the pin it would make runs it.
+      command = throughTools([...npm, 'view', pkg, 'version']);
+    } catch (error) {
+      if (!(error instanceof DaorisError)) throw error;
+      throw new DaorisError(`${error.message} ${stays}`, error.exitCode);
+    }
+    write(`  $ ${command.join(' ')}`);
+    const result = startChild(command, { ...process.env }, { stdio: ['ignore', 'pipe', 'pipe'] });
 
     if (result.error) {
       throw new DaorisError(`\`${command[0]}\` could not be run — ${result.error.message}. ${stays}`);
@@ -1558,20 +1559,13 @@ export function commandHarness(
     out(`  $ ${command.join(' ')}`);
     out('');
 
-    const env = { ...process.env };
+    const env: Env = { ...process.env };
     if (profile) {
       mkdirSync(profile, { recursive: true });
       env[toolchain.profileVariable] = profile;
     }
 
-    const [file, argv, verbatim] = spawnable(command);
-    const result = spawnSync(file, argv, {
-      env,
-      stdio: 'inherit',
-      shell: false,
-      windowsHide: true,
-      ...(verbatim ? { windowsVerbatimArguments: true } : {}),
-    });
+    const result = startChild(command, env, { stdio: 'inherit' });
 
     if (result.error) {
       throw new DaorisError(
@@ -1602,13 +1596,15 @@ export function commandHarness(
  * itself, quotes every token, and passes it verbatim — the quoting is ours, which is the only way it
  * is anybody's.
  *
+ * @param env The child's environment: a bare name is found on ITS PATH, the tools' (TOOLS5), as the driver's
+ * `WindowsShim` finds an agent's on the PATH a session is handed.
  * @returns the file to spawn, its arguments, and whether they are a verbatim Windows command line.
  */
-function spawnable(command: string[]): [string, string[], boolean] {
+function spawnable(command: string[], env: Env): [string, string[], boolean] {
   const [name, ...rest] = command as [string, ...string[]];
   if (process.platform !== 'win32') return [name, rest, false];
 
-  const resolved = windowsExecutable(name);
+  const resolved = windowsExecutable(name, env);
   if (!/\.(cmd|bat)$/i.test(resolved)) return [resolved, rest, false];
 
   // A token cmd.exe would reinterpret is refused rather than escaped. Every argument here is a path
@@ -1628,11 +1624,39 @@ function spawnable(command: string[]): [string, string[], boolean] {
 }
 
 /** Where Windows keeps the shim for a bare command name, or the name itself when it is not one. */
-function windowsExecutable(command: string): string {
+function windowsExecutable(command: string, env: Env): string {
   if (/[\\/]/.test(command) || /\.[a-z]+$/i.test(command)) return command;
 
   // Not found is not this function's decision to make: spawning reports it, with its own sentence.
-  return onPath(command, { startable: true }) ?? command;
+  return onPath(command, { env, startable: true }) ?? command;
+}
+
+type Env = Record<string, string | undefined>;
+
+/**
+ * 🔴 Every child this module starts is started here (TOOLS5, D121 §2.4): handed the tools' environment, read now
+ * from `$DAORIS_HOME/tools.json` through `tools.ts`, and its file found on that PATH. So an agent's probe, its
+ * installer, its login and a pin's npm see the git and node a session of the desktop's would. With no home, or every
+ * tool the system's, the environment is `base` exactly. Held by the dogfood test: the one `spawnSync` is here.
+ */
+function startChild(
+  command: string[], base: Env, options: { stdio?: StdioOptions; timeout?: number },
+): SpawnSyncReturns<string> {
+  const env = handTools(base, daorisHome(base));
+  const [file, argv, verbatim] = spawnable(command, env);
+  return spawnSync(file, argv, {
+    ...options, env, encoding: 'utf8', shell: false, windowsHide: true,
+    ...(verbatim ? { windowsVerbatimArguments: true } : {}),
+  });
+}
+
+/**
+ * A command whose first word a tool answers for, with that word the file the tools resolve (TOOLS5): with no home,
+ * as named, which is today's.
+ */
+function throughTools(command: string[]): string[] {
+  const home = daorisHome();
+  return home === null ? command : commandThroughTools(home, command);
 }
 
 function firstLine(output: string): string | null {

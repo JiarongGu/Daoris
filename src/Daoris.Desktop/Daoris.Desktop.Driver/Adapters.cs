@@ -722,6 +722,10 @@ internal static class Spawning
 
         info.Environment["DAORIS_REPOSITORY"] = repository;
         info.Environment["DAORIS_SERVICE_URL"] = serviceUrl;
+        // TOOLS5 (D121 §2.4): every session, chat, intake and helper finds the tools the person chose first on its
+        // PATH, so its own `git push` is the git the driver's fetch ran. Before the harness's binary is resolved on
+        // that PATH (HarnessProbe.Apply), so an agent npm put under a managed node is found the same way.
+        Tools.Hand(info);
 
         return info;
     }

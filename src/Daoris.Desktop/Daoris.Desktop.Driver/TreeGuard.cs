@@ -10,6 +10,12 @@ public sealed record TreeGuardHook(string Script, string Tree)
     /// argument after the tree. Empty — the default — is the tree alone.
     /// </summary>
     public IReadOnlyList<string> Also { get; init; } = [];
+
+    /// <summary>
+    /// The node the harness starts the script with (TOOLS5, D121 §2.4): the file Tools resolves, by its whole path, so
+    /// the guard runs on the node the person chose. The bare name only where the system's node is on no PATH, as before.
+    /// </summary>
+    public string Node { get; init; } = "node";
 }
 
 /// <summary>
@@ -58,9 +64,17 @@ public static class TreeGuard
         return path;
     }
 
-    /// <summary>The guard for one session: the script, installed, the tree it guards, and the declared targets.</summary>
-    public static TreeGuardHook For(string home, string tree, IEnumerable<string>? also = null) =>
-        new(Install(home), Path.GetFullPath(tree)) { Also = [.. (also ?? []).Select(Path.GetFullPath)] };
+    /// <summary>The guard for one session: the script, installed, the tree it guards, the declared targets, and its node.</summary>
+    /// <exception cref="DriverException">
+    /// Node.js is run a way that cannot run (TOOLS5): the session is not started rather than handed a guard that would
+    /// start whatever node <c>PATH</c> finds, or none — and whether a harness then lets the write through is its own rule.
+    /// </exception>
+    public static TreeGuardHook For(string home, string tree, IEnumerable<string>? also = null)
+    {
+        var node = Tools.Resolve(home, "node");
+        if (node.Refused) throw new DriverException($"the tree guard runs on Node.js, and {node.Problem}");
+        return new(Install(home), Path.GetFullPath(tree)) { Also = [.. (also ?? []).Select(Path.GetFullPath)], Node = node.File ?? "node" };
+    }
 
     private static string ReadSource()
     {
