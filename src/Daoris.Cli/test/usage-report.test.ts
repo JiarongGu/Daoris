@@ -1,10 +1,10 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, rmSync, utimesSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
-  main, median, parseArguments, parseLine, readLogs, render, summarise,
+  main, median, parseArguments, parseLine, readLogs, readProposals, render, summarise,
   // @ts-expect-error — untyped workspace tooling; the same seam desktop-tool.test.ts documents
 } from '../../../tools/usage-report.mjs';
 
@@ -36,9 +36,20 @@ type Report = {
     messages: { sent: number; byKind: Counted[] };
     proposals: { applied: number; declined: number };
   };
+  asks: Spread & {
+    refused: number;
+    byAdapter: (Spread & { name: string })[];
+    byRepository: (Spread & { name: string })[];
+    byKind: Counted[]; byTool: Counted[]; by: Counted[];
+    unstarted: number;
+  };
+  proposals: { waiting: number; byWeek: { week: string; made: number; byState: Counted[] }[] };
   refused: { code: string; count: number; requests: Counted[] }[];
   failed: Failure[];
 };
+
+/** Asks per session, spread: the sessions counted, their asks, and the statistics over them. */
+type Spread = { sessions: number; asks: number; mean: number | null; median: number | null; p90: number | null; none: number | null };
 
 const NOW = new Date('2026-09-30T12:00:00.000Z');
 
@@ -298,6 +309,200 @@ test('an empty period says so in every section rather than printing nothing', ()
   assert.match(text, /No lines in this period\./);
   assert.match(text, /^Refused\n {2}none$/m);
   assert.match(text, /^Used most\n {2}none$/m);
+});
+
+/**
+ * UNBLOCK5 (D122 §3.10): a week of asks. Four sessions started in the period and one before it; the
+ * driver's `permission.refused` lines, one per refused call; and the home's rule proposals, one file each.
+ */
+function asksWeek(): string {
+  const home = mkdtempSync(join(tmpdir(), 'daoris-asks-'));
+  const logs = join(home, 'logs');
+  mkdirSync(logs);
+  const refused = (time: string, data: Record<string, unknown>) => line(time, 'desktop', 'info', 'permission.refused', data);
+  writeFileSync(join(logs, '2026-09-29.desktop.jsonl'), `${[
+    line('2026-09-29T09:00:00.000Z', 'desktop', 'info', 'session.started', { session: 's1', kind: 'driven', adapter: 'claude-code', repository: 'engine' }),
+    line('2026-09-29T09:01:00.000Z', 'desktop', 'info', 'session.started', { session: 's2', kind: 'chat', adapter: 'claude-code-acp', repository: 'engine' }),
+    line('2026-09-29T09:02:00.000Z', 'desktop', 'info', 'session.started', { session: 's3', kind: 'driven', adapter: 'codex-acp', repository: 'game' }),
+    line('2026-09-29T09:03:00.000Z', 'desktop', 'info', 'session.started', { session: 's4', kind: 'driven', adapter: 'claude-code', repository: 'game' }),
+    refused('2026-09-29T09:10:00.000Z', { session: 's1', adapter: 'claude-code', tool: 'Bash', kind: 'execute', by: 'rule' }),
+    refused('2026-09-29T09:11:00.000Z', { session: 's1', adapter: 'claude-code', tool: 'Bash', kind: 'execute', by: 'rule' }),
+    refused('2026-09-29T09:12:00.000Z', { session: 's1', adapter: 'claude-code', tool: 'WebFetch', kind: 'fetch', by: null }),
+    refused('2026-09-29T09:13:00.000Z', { session: 's2', adapter: 'claude-code-acp', tool: null, kind: 'execute', by: null }),
+    // A session whose start is not in the period: its ask is counted, and no session's.
+    refused('2026-09-29T09:14:00.000Z', { session: 's9', adapter: 'claude-code', tool: 'Edit', kind: 'edit', by: 'mode' }),
+  ].join('\n')}\n`);
+
+  const proposals = join(home, 'proposals');
+  mkdirSync(proposals);
+  const proposal = (name: string, body: Record<string, unknown>) =>
+    writeFileSync(join(proposals, `${name}.json`), `${JSON.stringify(body)}\n`);
+  const change = { action: 'add', scope: 'repository', name: 'engine', list: 'allow', rule: 'Bash(npm run secret-script)' };
+  proposal('p1', { id: 'p1', proposed: '2026-09-24T10:00:00Z', by: { session: 's1' }, change, why: 'the words of a proposal', state: 'accepted' });
+  proposal('p2', { id: 'p2', proposed: '2026-09-29T08:00:00Z', change, why: 'the words of a proposal', state: 'waiting' });
+  proposal('p3', { id: 'p3', proposed: '2026-09-30T09:00:00Z', change, why: 'the words of a proposal', state: 'waiting' });
+  proposal('p4', { id: 'p4', proposed: '2026-09-29T09:00:00Z', change, why: 'the words of a proposal' });
+  // Made before the period, and still waiting for the person: it is waiting now, and made in no week shown.
+  proposal('p5', { id: 'p5', proposed: '2026-09-10T00:00:00Z', change, why: 'the words of a proposal', state: 'waiting' });
+  // No time of its own: the file's is the proposal's, as both of the file's readers take it.
+  proposal('p6', { id: 'p6', change, why: 'the words of a proposal', state: 'declined' });
+  utimesSync(join(proposals, 'p6.json'), new Date('2026-09-25T00:00:00Z'), new Date('2026-09-25T00:00:00Z'));
+  writeFileSync(join(proposals, 'torn.json'), '{"id":"p7","chan');
+  writeFileSync(join(proposals, 'notes.txt'), 'the person\'s own note');
+  return home;
+}
+
+function withAsks(body: (home: string) => void) {
+  const home = asksWeek();
+  try {
+    body(home);
+  } finally {
+    rmSync(home, { recursive: true, force: true });
+  }
+}
+
+function asksOf(home: string): Report {
+  const read = readLogs(join(home, 'logs'), { since });
+  return summarise(read.lines, { from: since, to: NOW, skipped: read.skipped, proposals: readProposals(join(home, 'proposals')) });
+}
+
+test('asks per session: the mean, the median, the 90th percentile and the share with none, by adapter and repository', () => {
+  withAsks((home) => {
+    const { asks } = asksOf(home);
+
+    // s1 asked 3, s2 1, s3 and s4 none: the median is the two middles' mean, and the 90th the nearest rank.
+    assert.deepEqual(
+      [asks.refused, asks.sessions, asks.asks, asks.mean, asks.median, asks.p90, asks.none],
+      [5, 4, 4, 1, 0.5, 3, 0.5]);
+    assert.deepEqual(asks.byAdapter, [
+      { name: 'claude-code', sessions: 2, asks: 3, mean: 1.5, median: 1.5, p90: 3, none: 0.5 },
+      { name: 'claude-code-acp', sessions: 1, asks: 1, mean: 1, median: 1, p90: 1, none: 0 },
+      { name: 'codex-acp', sessions: 1, asks: 0, mean: 0, median: 0, p90: 0, none: 1 },
+    ]);
+    assert.deepEqual(asks.byRepository, [
+      { name: 'engine', sessions: 2, asks: 4, mean: 2, median: 2, p90: 3, none: 0 },
+      { name: 'game', sessions: 2, asks: 0, mean: 0, median: 0, p90: 0, none: 1 },
+    ]);
+    // What was refused, over every ask in the period, and what the wire did not say is `(unsaid)`.
+    assert.deepEqual(asks.byKind, [{ name: 'execute', count: 3 }, { name: 'edit', count: 1 }, { name: 'fetch', count: 1 }]);
+    assert.deepEqual(asks.by, [{ name: '(unsaid)', count: 2 }, { name: 'rule', count: 2 }, { name: 'mode', count: 1 }]);
+    assert.equal(asks.byTool.find((tool: Counted) => tool.name === 'Bash')?.count, 2);
+    assert.equal(asks.unstarted, 1);
+  });
+});
+
+/**
+ * The asks line's parse table: what each shape of a `permission.refused` line counts as. A line is a
+ * session's ask only when it names a session that started in the period; a name that is not a string is
+ * unsaid, never a word from somewhere else.
+ */
+const ASK_LINES: [why: string, data: Record<string, unknown>, s1: number, unstarted: number, kind: string][] = [
+  ['a whole line', { session: 's1', adapter: 'claude-code', tool: 'Bash', kind: 'execute', by: 'rule' }, 1, 0, 'execute'],
+  ['a session nobody started in the period', { session: 's7', kind: 'execute' }, 0, 1, 'execute'],
+  ['no session', { kind: 'edit' }, 0, 1, 'edit'],
+  ['a session that is no string', { session: 1, kind: 'edit' }, 0, 1, 'edit'],
+  ['a kind that is no string', { session: 's1', kind: 7 }, 1, 0, '(unsaid)'],
+  ['no data at all', {}, 0, 1, '(unsaid)'],
+];
+
+test('each shape of an asks line counts as the parse table says', () => {
+  const started = parseLine(line('2026-09-29T09:00:00.000Z', 'desktop', 'info', 'session.started', { session: 's1', adapter: 'claude-code', repository: 'engine' }));
+  for (const [why, data, s1, unstarted, kind] of ASK_LINES) {
+    const ask = parseLine(line('2026-09-29T09:10:00.000Z', 'desktop', 'info', 'permission.refused', data));
+    const { asks } = summarise([started, ask], { from: since, to: NOW }) as Report;
+    assert.deepEqual([asks.asks, asks.unstarted, asks.byKind], [s1, unstarted, [{ name: kind, count: 1 }]], why);
+  }
+});
+
+test('a period with no session started has no statistics, and says none rather than zero', () => {
+  const { asks } = summarise([], { from: since, to: NOW }) as Report;
+  assert.deepEqual([asks.sessions, asks.mean, asks.median, asks.p90, asks.none], [0, null, null, null, null]);
+});
+
+test('the rule proposals: what waits for the person now, and those made in the period by week and state', () => {
+  withAsks((home) => {
+    const { proposals } = asksOf(home);
+
+    assert.equal(proposals.waiting, 3);
+    // Weeks begin on Monday, in UTC. A file that is not a proposal is left out, and one with no state
+    // is `proposed`, as the file's other readers read it.
+    assert.deepEqual(proposals.byWeek, [
+      { week: '2026-09-21', made: 2, byState: [{ name: 'accepted', count: 1 }, { name: 'declined', count: 1 }] },
+      { week: '2026-09-28', made: 3, byState: [{ name: 'waiting', count: 2 }, { name: 'proposed', count: 1 }] },
+    ]);
+  });
+});
+
+/**
+ * The proposals' parse table: the file is the contract (`RuleProposals.cs`, `ruleproposals.ts`), and the
+ * report reads only its id, its time and its state, by the same rules: a file with no id or no change is
+ * not a proposal, and a state nobody knows is `proposed`.
+ */
+const PROPOSAL_FILES: [why: string, text: string, state: string | null][] = [
+  ['a whole proposal', '{"id":"a1","proposed":"2026-09-29T08:00:00Z","change":{"action":"add"},"state":"waiting"}', 'waiting'],
+  ['no state', '{"id":"a1","proposed":"2026-09-29T08:00:00Z","change":{"action":"add"}}', 'proposed'],
+  ['a state nobody knows', '{"id":"a1","proposed":"2026-09-29T08:00:00Z","change":{},"state":"pending-review"}', 'proposed'],
+  ['a state that is no string', '{"id":"a1","proposed":"2026-09-29T08:00:00Z","change":{},"state":3}', 'proposed'],
+  ['no id', '{"proposed":"2026-09-29T08:00:00Z","change":{},"state":"waiting"}', null],
+  ['an id of blanks', '{"id":"  ","change":{},"state":"waiting"}', null],
+  ['no change', '{"id":"a1","proposed":"2026-09-29T08:00:00Z","state":"waiting"}', null],
+  ['a change that is no object', '{"id":"a1","change":["add"],"state":"waiting"}', null],
+  ['an array', '[{"id":"a1"}]', null],
+  ['not JSON', 'not json at all', null],
+];
+
+test('each proposal file is read or left out as the file\'s other readers decide', () => {
+  const folder = mkdtempSync(join(tmpdir(), 'daoris-proposals-'));
+  try {
+    for (const [why, text, state] of PROPOSAL_FILES) {
+      writeFileSync(join(folder, 'one.json'), text);
+      const read: { state: string; proposed: number }[] = readProposals(folder);
+      assert.deepEqual(read.map((each) => each.state), state === null ? [] : [state], why);
+    }
+    assert.deepEqual(readProposals(join(folder, 'nowhere')), []);
+  } finally {
+    rmSync(folder, { recursive: true, force: true });
+  }
+});
+
+test('the text report says the asks and the proposals, and never a proposal\'s words', () => {
+  withAsks((home) => {
+    const report = asksOf(home);
+    const text: string = render(report, join(home, 'logs'));
+
+    assert.match(text, /^Asks$/m);
+    assert.match(text, /sessions\s+4 started · 4 asks · mean 1 · median 0\.5 · 90th 3 · 50% with none/);
+    assert.match(text, /by adapter\s+claude-code 2 sessions: mean 1\.5 · median 1\.5 · 90th 3 · 50% with none/);
+    assert.match(text, /^\s+codex-acp 1 session: mean 0 · median 0 · 90th 0 · 100% with none$/m);
+    assert.match(text, /by repository\s+engine 2 sessions: mean 2 · median 2 · 90th 3 · 0% with none/);
+    assert.match(text, /decided by\s+\(unsaid\) 2 · rule 2 · mode 1/);
+    assert.match(text, /1 ask from a session that did not start in this period/);
+    assert.match(text, /^Rule proposals$/m);
+    assert.match(text, /waiting now\s+3/);
+    assert.match(text, /week of 2026-09-28\s+3 made — waiting 2 · proposed 1/);
+    for (const words of ['the words of a proposal', 'secret-script', 'Bash(npm']) {
+      assert.equal(text.includes(words), false, words);
+      assert.equal(JSON.stringify(report).includes(words), false, words);
+    }
+  });
+});
+
+test('a period with no asks and no proposals says none in both sections', () => {
+  const text: string = render(summarise([], { from: since, to: NOW, skipped: 0 }), 'logs');
+  assert.match(text, /^Asks\n {2}none$/m);
+  assert.match(text, /^Rule proposals\n {2}none$/m);
+});
+
+test('the runner reads the home\'s proposals beside its log', () => {
+  withAsks((home) => {
+    const out: string[] = [];
+    const io = { now: NOW, out: (text: string) => out.push(text), err: () => {} };
+
+    assert.equal(main(['--home', home, '--json'], io), 0);
+    const report = JSON.parse(out.join('\n')) as Report;
+    assert.equal(report.proposals.waiting, 3);
+    assert.equal(report.asks.refused, 5);
+  });
 });
 
 test('the arguments: a home, or an install\'s data folder, a number of days, and JSON', () => {
