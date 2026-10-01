@@ -658,6 +658,63 @@ public sealed class AcpTests
         Assert.Contains("  ✗ ls data failed", lines);
     }
 
+    /// <summary>
+    /// UNBLOCK5 (D122 §3.10), the protocol door end to end: each permission request the driver refused, once
+    /// the agent reports its call failed, is one ask in the machine log, by the kind the call was announced
+    /// with. The request's title and input never reach the log.
+    /// </summary>
+    [Fact]
+    public async Task A_call_the_driver_refused_is_one_ask_in_the_machine_log()
+    {
+        var home = Path.Combine(Path.GetTempPath(), "daoris-acp-asks-" + Guid.NewGuid().ToString("N")[..8]);
+        Directory.CreateDirectory(home);
+        try
+        {
+            var events = new SessionEvents(Path.Combine(home, "sessions"));
+            using (var log = new MachineLog(home, "desktop"))
+            using (var client = new ServiceClient("http://ledger.test", null, new HttpClient()))
+            using (new SessionLog(log, client, events))
+            {
+                var agent = new FakeAgent((frame, self) =>
+                {
+                    if (!frame.TryGetProperty("method", out var method)) return null;
+
+                    switch (method.GetString())
+                    {
+                        case "initialize": return Ok(frame, """{"protocolVersion":1}""");
+                        case "session/new": return Ok(frame, """{"sessionId":"s-1"}""");
+                        case "session/prompt":
+                            self.Push(Update("s-1", """{"sessionUpdate":"tool_call","toolCallId":"c9","title":"git push origin main","kind":"execute","status":"pending","rawInput":{"command":"git push origin main"}}"""));
+                            self.Push("""{"jsonrpc":"2.0","id":900,"method":"session/request_permission","params":{"sessionId":"s-1","toolCall":{"toolCallId":"c9","title":"git push origin main"},"options":[{"optionId":"no","name":"Reject","kind":"reject_once"}]}}""");
+                            self.Push(Update("s-1", """{"sessionUpdate":"tool_call_update","toolCallId":"c9","status":"failed"}"""));
+                            self.Push(Update("s-1", """{"sessionUpdate":"tool_call","toolCallId":"c10","title":"cargo build","kind":"execute","status":"pending"}"""));
+                            self.Push(Update("s-1", """{"sessionUpdate":"tool_call_update","toolCallId":"c10","status":"failed"}"""));
+                            return Ok(frame, """{"stopReason":"end_turn"}""");
+                        default: return frame.TryGetProperty("id", out _) ? Ok(frame, "{}") : null;
+                    }
+                });
+
+                await new AcpSession(agent.Incoming, agent.Outgoing, _ => { }, onEvent: e => events.Append("d1", e))
+                    .RunAsync("D:/fam/Game", "push it", CancellationToken.None);
+            }
+
+            var written = string.Join('\n', Directory.GetFiles(Path.Combine(home, MachineLog.Folder)).Select(File.ReadAllText));
+            var asks = written.Split('\n', StringSplitOptions.RemoveEmptyEntries)
+                .Select(line => JsonDocument.Parse(line).RootElement)
+                .Where(line => line.GetProperty("event").GetString() == "permission.refused")
+                .Select(line => line.GetProperty("data"))
+                .ToList();
+            var ask = Assert.Single(asks);
+            Assert.Equal(("d1", "execute"), (ask.GetProperty("session").GetString(), ask.GetProperty("kind").GetString()));
+            Assert.DoesNotContain("git push", written);
+            Assert.DoesNotContain("cargo build", written);
+        }
+        finally
+        {
+            Directory.Delete(home, recursive: true);
+        }
+    }
+
     /// <summary>A call the wire names by no title is refused as what it is, bounded, still never its JSON.</summary>
     [Fact]
     public async Task A_refused_call_with_no_title_is_named_by_its_kind()

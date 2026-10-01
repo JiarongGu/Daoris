@@ -9001,3 +9001,50 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > Daoris.Plugins stays the owner's call.
 
 **Outcome** (designed by a subagent, merged with `tools/merge-branch.mjs`, every gate; **D120**): **NuGet** is the package source (D120): a custom `DaorisPlugin` package type (its version the wire's `apiVersion`), search by `packageType`, downloads from the flat container over HTTP with no client, the catalog's SHA-512 checked (and seen to match a served package), and other publishers' plugins installed switched off. The facts were checked against the maker's pages and live queries (`packageType=McpServer` 274 hits, case-insensitive; a custom type accepted on push). npm was rejected even though its keyword filter proved exact (the row's premise that it filtered less precisely did not hold): a keyword carries no version or meaning, and npm's install machinery would silently not apply; its stronger integrity and namespaces are answered by a pinned hash, the owner account and a held signature row. The offers move to pinned packages after the owner's first publish. *Find plugins* was designed on D119's view with both doors and Ask Daoris's doors. The build is PLUGDIST1a–h, filed.
+
+
+## PLUG10 — two defects in today's Plugins domain (2026-10-01)
+
+> - [ ] **PLUG10 — two defects in today's Plugins domain** (found by PLUGUI1a's reading, P8 and P9): *Remove*
+> removes on its first press, and the *running* pill wears done's green. Fix them now in Settings → Plugins;
+> PLUGUI1b carries the same rules into the view.
+
+**Outcome** (built by a subagent, merged with `tools/merge-branch.mjs`, every gate): Two defects in Settings → Plugins from PLUGUI1a's reading. P9: the *running* pill wore done's green, an outcome's hue; it now wears a neutral tone, as the design's §2 table gives it (a hook process between calls is like a chat between turns, which the platform draws as a quiet mark; the subagent built the in-progress hue from its brief, and the parent set it to the design's neutral at merge). P8: *Remove* removed a plugin's folder on its first press; *Remove…* now asks once, in the house pattern: a sentence under the row names the data folder that stays, beside *Remove plugin* (danger) and *Never mind*, and only the second press reaches `PLUGIN_ACTION`. The row became a molecule, `PluginRow`, whose stories show running, off, refused and the ask. Names follow the glossary in both catalogues (移除…, 确认移除插件), and `names:check --strict` is clean. Web vitest 1905 → 1911.
+
+
+## UNBLOCK4 — the carve-outs held harder (2026-10-01)
+
+> - [ ] **UNBLOCK4 — the carve-outs held harder** (§3.6, §3.7): 🔴 a push written as `git -C . push` passes `no-push`
+> in auto mode today; an `autoMode.hard_deny` entry after `"$defaults"`; `git mv` in both defaults tables.
+
+**Outcome** (built by a subagent, merged with `tools/merge-branch.mjs`, every gate; notes under D122 and D81): The push carve-out now also blocks a push written with options before `push`: `no-push` gained `Bash(git -* push)` and `Bash(git -* push *)` in both defaults tables (`Permissions.cs`, `permissions.ts`), applying on both doors in every mode; the red showed `git -C . push`, the `-c` forms, `--git-dir` and `--no-pager` getting through before. While `no-push` is on, the spawn file tells auto mode's classifier, as `autoMode.hard_deny` after `"$defaults"` (always first, exactly once; every spawn must pass the list), that a push in any form, a publish and a release are the person's; with `no-push` off there is no `autoMode` key. `commit` gained `Bash(git mv:*)` in both twins. A model of the harness's Bash matching, checked against its documented examples (`BashRuleTests`), holds the same push forms in both twins. The cost: a `git -C <dir> commit` whose message has "push" as a word before another word is refused. A quoted subcommand, an alias, a path to git, a shell running git, and PowerShell forms are left to the classifier. Unproven until the owner's canary (a local bare remote in scratch): that the harness matches the rules as documented, and that the classifier reads `autoMode` from the file on the protocol door.
+
+
+## UNBLOCK5 — asks, counted (2026-10-01)
+
+> - [ ] **UNBLOCK5 — asks, counted** (§3.10): `permission.refused` from both doors; asks per session in the usage report.
+
+**Outcome** (built by a subagent, merged with `tools/merge-branch.mjs`, every gate; notes under D94 and D122): Asks are counted from here on, before any declaration lands. `SessionLog` writes `permission.refused {session, adapter, tool, kind, by}` once per call the conversation record marks `refused`: on the protocol door a call whose permission request the driver refused (D52, HELP4); on the pipe door the mapper now reads the harness's `permission_denied` frame and the result's `permission_denials`, marks the call refused once, and reads its failed result as `refused` too, so both doors say it alike. `tool` and `by` (`decision_reason_type`) are the pipe door's identifiers and null on the protocol door, and any value that is not an identifier is written as null, so no command reaches the line. `tools/usage-report.mjs` gives asks per session (mean, median, 90th percentile, share with none) overall, by adapter and by repository, and the rule proposals waiting now and made per week by state. The pipe door's frames are written from the Agent SDK's TypeScript reference and labelled so until a real turn shows them; subagent refusals are not counted.
+
+
+## TOOLS2 — tools.json and its resolution, twins (2026-10-01)
+
+> - [ ] **TOOLS2 — `tools.json` and its resolution, twins** (§2.1–§2.3, §5): the three ways; `daoris tool list|path|use`.
+
+**Outcome** (built by a subagent, merged with `tools/merge-branch.mjs`, every gate; a note under D121): `tools.json` and its resolution are twins: `tools.ts` in the CLI and `Tools.cs` in the driver, sharing no code. Each declares git, node (npm, npx), pwsh, gh and az in code and reads §2.2's six rules. Absent means the system's; a managed version nobody downloaded, or a named file that is gone, refuses and never falls back to `PATH`; a file that does not read refuses every tool. `daoris tool list|path|use <tool> system|file <path>` is the terminal's door (seventeen commands). `tools.test.ts` parses `ToolsTests`' theories and holds them to its own tables cell for cell, so `verify` holds the two tables line for line. A note under D121 records what the build settled. Nothing starts a tool through this yet (TOOLS5), managed versions arrive with the download (TOOLS4), and `list` asks no versions. CLI 774 → 799, driver fast half 1150 → 1240.
+
+
+## TOOLS3 — the resource list and its merge, twins (2026-10-01)
+
+> - [ ] **TOOLS3 — the resource list and its merge, twins** (§3.1–§3.5): `resources.json` built in; the first entries
+> read from the makers' own pages and sums into an evidence document.
+
+**Outcome** (built by a subagent, merged with `tools/merge-branch.mjs`, every gate; a note under D121): `resources.json` schema 1, its platform table and its merge are twins: the CLI's `resources.ts` and the driver's `ToolResources.cs`, whose tables `resources.test.ts` holds cell for cell. The merge works for one platform: the person's locations in order, then the list built in; lists that disagree on one download refuse that version, naming both; lists that agree under other addresses are mirrors; the versions are the union, newest first by number. Fetched copies are read from `<home>/tools/locations/<sha256 of the address>.json`. The list built in is the driver's `resources.json`, carried by every build and laid out at `app/resources.json` by `tools/desktop-publish.mjs`. Its first entries (win-x64): MinGit 2.56.0, Node.js 24.21.0, PowerShell 7.6.6, GitHub CLI 2.102.0, Azure CLI 2.90.0, each read from its maker's published sum, recorded in `docs/2026-10-01-tools-resources-evidence.md`, and matched against the whole downloaded file; a test holds the list to that document. Found for later rows: MinGit carries its own `ssh.exe` and no bash (TOOLS10), and az's executable is a batch file. Nothing reads the lists at run time yet; the verbs are TOOLS4's. CLI 799 → 825, driver fast half 1240 → 1365.
+
+
+## FRAME1b — the list pane, Sessions' first (2026-10-01)
+
+> - [ ] **FRAME1b — the list pane, Sessions' first** (D118, model §6): `ListPane`, `StripMark`, `listKeys`,
+> per-view bounds, strip by room, the laid-over mode; Sessions' rail moves onto it. Look: 1280, 900, 680 px.
+
+**Outcome** (built by a subagent, merged with `tools/merge-branch.mjs`, every gate; a note under D118): The list pane is built, and Sessions' rail is its first user (D118). `layout.ts` holds each view's list bounds and the room rule: the list becomes a strip when the main area would fall below 400 px beside the side bar as it stands, so there is no fixed 1024 px; the rail stays open at 900 px beside a closed side bar. A strip the window drew opens the list over the main area (amending FRAME6); the laid-over list closes on a choice, on Escape and on a press outside it, and is never remembered. `ListPane`, `StripMark` and `listKeys` are shared, so ↑, ↓, Home and End work in every list. The list's four doors (the strip toggle and the View menu item, named for the view, Ctrl+B, and a press on the current place on the activity bar) toggle by what the room made of the list, and a door's press is not a press outside it. F6 and Shift+F6 move between the window's regions, built unmeasured in one revertable commit (`2755882`) for the look to decide. Sessions keeps `daoris.railClosed` and `daoris.railWidth`. Web vitest 1,905 → 1,982.

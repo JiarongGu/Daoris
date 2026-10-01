@@ -12,7 +12,9 @@
  * this reads them for the period and says, in a terminal's width: what was used most (views opened,
  * commands run, panels moved, files previewed by kind), how the conversations and sessions went (how
  * many, by kind and adapter, the median and slowest open and first answer, how long turns took and how
- * they ended), what was
+ * they ended), the asks (UNBLOCK5: the permissions each session's harness would have asked a person for,
+ * refused because nobody was at the prompt, per session by adapter and repository), the rule proposals
+ * (UNBLOCK5: what waits for the person, and those made in the period by week and state), what was
  * refused (by code, most first), what failed (exceptions, the page's errors, error-level log lines,
  * failed or slow requests, grouped) and the lifecycle (starts, stops, uptime, versions). `--json` is the
  * same as data.
@@ -21,7 +23,8 @@
  *
  * **Anyone's words.** There are none in the log (D94 §5), and this adds none: it counts and times. The
  * one free text a line carries, a caught error's message, is shown as its first line and never beyond
- * the log's own 120-character cap, so a stack or a paragraph cannot reach the screen through it.
+ * the log's own 120-character cap, so a stack or a paragraph cannot reach the screen through it. A rule
+ * proposal holds words (its rule, its reason): only its id, its time and its state are read.
  *
  * ## A twin
  *
@@ -32,7 +35,7 @@
  * It reads; it writes nothing, and nothing leaves the machine. Point it at a copy when the install is
  * running, or at the live folder: every file is opened for reading only.
  */
-import { existsSync, readFileSync, readdirSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { isMain } from './fsx.mjs';
 // The install's layout, from the script that makes it: its home is `data/` beside the launcher.
@@ -114,6 +117,50 @@ export function readLogs(folder, { since } = {}) {
   // A stable sort: lines of one moment keep their day-then-source order.
   lines.sort((a, b) => a.time - b.time);
   return { lines, skipped };
+}
+
+/**
+ * The states a rule proposal can stand in, as its file's other readers know them (`RuleProposals.cs`,
+ * `ruleproposals.ts`, PERM2, D74). A state not among them is read as `proposed`, as theirs read it.
+ */
+const PROPOSAL_STATES = ['proposed', 'applied', 'waiting', 'accepted', 'declined', 'refused', 'unchanged'];
+
+const text = (value) => (typeof value === 'string' && value.trim() ? value.trim() : null);
+const record = (value) => (value !== null && typeof value === 'object' && !Array.isArray(value) ? value : null);
+
+/**
+ * The rule proposals in a home's `proposals/` (UNBLOCK5): each as `{ proposed, state }`, and nothing else
+ * of it. The file is the contract its readers share (the twins rule), so this reads it by their rules: a
+ * file that is not JSON, has no id or no `change` object is not a proposal and is left out; a state they
+ * do not know is `proposed`; a proposal with no readable time takes its file's. None of its words (the
+ * rule, the reason, who wrote it) is read, so none can be printed.
+ */
+export function readProposals(folder) {
+  if (!existsSync(folder)) return [];
+  const read = [];
+  for (const name of readdirSync(folder).filter((each) => each.endsWith('.json')).sort()) {
+    const path = join(folder, name);
+    let root;
+    try {
+      root = record(JSON.parse(readFileSync(path, 'utf8')));
+    } catch {
+      // Torn, held, or not JSON: it is no proposal, as the other readers leave it.
+      continue;
+    }
+    if (!root || !text(root.id) || !record(root.change)) continue;
+    const state = text(root.state);
+    const stamped = Date.parse(text(root.proposed) ?? '');
+    let proposed = stamped;
+    if (Number.isNaN(stamped)) {
+      try {
+        proposed = statSync(path).mtime.getTime();
+      } catch {
+        continue;
+      }
+    }
+    read.push({ proposed, state: state && PROPOSAL_STATES.includes(state) ? state : 'proposed' });
+  }
+  return read;
 }
 
 /** `--home <dir>` or `--install <dir>` (its `data/`), `--days <n>` (7), `--json`. Throws a sentence. */
@@ -248,8 +295,103 @@ function kindOf(path) {
   return dot > 0 ? name.slice(dot).toLowerCase() : '(none)';
 }
 
+/** A number to two places, as a person reads a mean: 1.33, 0.5, 2. */
+const twoPlaces = (value) => Math.round(value * 100) / 100;
+
+/**
+ * Asks per session, spread: how many sessions and asks, the mean, the median (the two middles' mean), the
+ * 90th percentile (the nearest rank) and the share of sessions with none. No session is no statistic, and
+ * null, never zero.
+ */
+function spread(counts) {
+  if (counts.length === 0) return { sessions: 0, asks: 0, mean: null, median: null, p90: null, none: null };
+  const sorted = [...counts].sort((a, b) => a - b);
+  const asks = sorted.reduce((sum, count) => sum + count, 0);
+  const middle = Math.floor(sorted.length / 2);
+  return {
+    sessions: sorted.length,
+    asks,
+    mean: twoPlaces(asks / sorted.length),
+    median: sorted.length % 2 === 1 ? sorted[middle] : twoPlaces((sorted[middle - 1] + sorted[middle]) / 2),
+    p90: sorted[Math.ceil(0.9 * sorted.length) - 1],
+    none: twoPlaces(sorted.filter((count) => count === 0).length / sorted.length),
+  };
+}
+
+/**
+ * The asks (UNBLOCK5, D122 §3.10): every session started in the period with how many of its calls were
+ * refused (`permission.refused`, one line per refused call), spread overall, by adapter and by repository,
+ * so a week before a repository declares its safe work can be held against a week after. What was refused
+ * is counted over every ask in the period: by tool kind, by tool, and by what decided it, where the wire
+ * said (`(unsaid)` where it did not). An ask from a session whose start the period does not hold is counted
+ * apart, and in no session's spread.
+ */
+function asksOf(lines) {
+  const sessions = new Map();
+  for (const line of lines) {
+    if (line.event !== 'session.started') continue;
+    const session = named(line.data.session);
+    if (session) {
+      sessions.set(session, {
+        adapter: named(line.data.adapter) ?? '(unnamed)', repository: named(line.data.repository) ?? '(unnamed)', asks: 0,
+      });
+    }
+  }
+
+  const refusals = lines.filter((line) => line.event === 'permission.refused');
+  let unstarted = 0;
+  for (const line of refusals) {
+    const session = sessions.get(named(line.data.session));
+    if (session) session.asks++;
+    else unstarted++;
+  }
+
+  const grouped = (key) => {
+    const groups = new Map();
+    for (const session of sessions.values()) groups.set(session[key], [...(groups.get(session[key]) ?? []), session.asks]);
+    return [...groups].map(([name, counts]) => ({ name, ...spread(counts) }))
+      .sort((a, b) => b.sessions - a.sessions || a.name.localeCompare(b.name));
+  };
+  const said = (field) => counted(refusals.map((line) => named(line.data[field]) ?? '(unsaid)'));
+  return {
+    refused: refusals.length,
+    ...spread([...sessions.values()].map((session) => session.asks)),
+    byAdapter: grouped('adapter'),
+    byRepository: grouped('repository'),
+    byKind: said('kind'),
+    byTool: said('tool'),
+    by: said('by'),
+    unstarted,
+  };
+}
+
+/** The Monday a moment's week begins on, in UTC, as `2026-09-28`. */
+function weekOf(time) {
+  const day = new Date(time);
+  const back = (day.getUTCDay() + 6) % 7;
+  return new Date(Date.UTC(day.getUTCFullYear(), day.getUTCMonth(), day.getUTCDate() - back)).toISOString().slice(0, 10);
+}
+
+/**
+ * The rule proposals (UNBLOCK5): how many wait for the person now, whenever they were made, and those
+ * made in the period by the week they were made in and the state each stands in, oldest week first.
+ */
+function proposalsOf(proposals, { from, to }) {
+  const weeks = new Map();
+  for (const proposal of proposals) {
+    if (proposal.proposed < from.getTime() || proposal.proposed > to.getTime()) continue;
+    const week = weekOf(proposal.proposed);
+    weeks.set(week, [...(weeks.get(week) ?? []), proposal.state]);
+  }
+  return {
+    waiting: proposals.filter((proposal) => proposal.state === 'waiting').length,
+    byWeek: [...weeks].sort(([a], [b]) => a.localeCompare(b))
+      .map(([week, states]) => ({ week, made: states.length, byState: counted(states) })),
+  };
+}
+
 /** The period's lines, summarised. Counts and times only: no line's words are carried. */
-export function summarise(lines, { from, to, skipped = 0 }) {
+export function summarise(lines, { from, to, skipped = 0, proposals = [] }) {
   const of = (event) => lines.filter((line) => line.event === event);
   const field = (event, name) => of(event).map((line) => named(line.data[name])).filter(Boolean);
 
@@ -314,6 +456,8 @@ export function summarise(lines, { from, to, skipped = 0 }) {
         declined: settled.filter((line) => line.data.applied === false).length,
       },
     },
+    asks: asksOf(lines),
+    proposals: proposalsOf(proposals, { from, to }),
     refused: [...refused.values()]
       .sort((a, b) => b.count - a.count)
       .map((entry) => ({ ...entry, requests: counted(entry.requests) })),
@@ -338,6 +482,10 @@ function uptime(seconds) {
 const plural = (count, one, other) => `${count} ${count === 1 ? one : other}`;
 const listed = (items) => items.map((item) => `${item.name} ${item.count}`).join(' · ');
 const minute = (iso) => iso.slice(0, 16).replace('T', ' ');
+
+/** Asks per session as a line reads them: mean 1.33 · median 1 · 90th 3 · 40% with none. */
+const spreadOf = (entry) =>
+  `mean ${entry.mean} · median ${entry.median} · 90th ${entry.p90} · ${Math.round(entry.none * 100)}% with none`;
 
 function timed(label, value) {
   if (value.count === 0) return `  ${label.padEnd(15)}none timed`;
@@ -397,6 +545,36 @@ export function render(report, folder) {
     out.push(`  ${'proposals'.padEnd(15)}${sessions.proposals.applied} applied · ${sessions.proposals.declined} not now`);
   }
 
+  const { asks, proposals } = report;
+  out.push('', 'Asks');
+  if (asks.sessions + asks.refused === 0) {
+    out.push('  none');
+  } else {
+    out.push(`  ${'sessions'.padEnd(15)}${asks.sessions} started · ${plural(asks.asks, 'ask', 'asks')}${asks.sessions ? ` · ${spreadOf(asks)}` : ''}`);
+    const groups = (label, entries) => entries.forEach((entry, at) => out.push(
+      `  ${(at === 0 ? label : '').padEnd(15)}${entry.name} ${plural(entry.sessions, 'session', 'sessions')}: ${spreadOf(entry)}`));
+    groups('by adapter', asks.byAdapter);
+    groups('by repository', asks.byRepository);
+    if (asks.refused > 0) {
+      out.push(`  ${'kinds'.padEnd(15)}${listed(asks.byKind)}`);
+      out.push(`  ${'tools'.padEnd(15)}${listed(asks.byTool)}`);
+      out.push(`  ${'decided by'.padEnd(15)}${listed(asks.by)}`);
+    }
+    if (asks.unstarted > 0) {
+      out.push(`  ${'unstarted'.padEnd(15)}${plural(asks.unstarted, 'ask', 'asks')} from ${asks.unstarted === 1 ? 'a session' : 'sessions'} that did not start in this period`);
+    }
+  }
+
+  out.push('', 'Rule proposals');
+  if (proposals.waiting + proposals.byWeek.length === 0) {
+    out.push('  none');
+  } else {
+    out.push(`  ${'waiting now'.padEnd(15)}${proposals.waiting}`);
+    for (const week of proposals.byWeek) {
+      out.push(`  ${`week of ${week.week}`.padEnd(20)}${week.made} made — ${listed(week.byState)}`);
+    }
+  }
+
   out.push('', 'Refused');
   if (report.refused.length === 0) out.push('  none');
   const codeWidth = Math.max(0, ...report.refused.map((entry) => entry.code.length));
@@ -434,7 +612,8 @@ export function main(argv, io = { now: new Date(), out: (text) => console.log(te
 
   const from = new Date(io.now.getTime() - options.days * DAY_MS);
   const read = readLogs(folder, { since: from });
-  const report = summarise(read.lines, { from, to: io.now, skipped: read.skipped });
+  const proposals = readProposals(join(options.home, 'proposals'));
+  const report = summarise(read.lines, { from, to: io.now, skipped: read.skipped, proposals });
   io.out(options.json ? JSON.stringify(report, null, 2) : render(report, folder));
   return 0;
 }

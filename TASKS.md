@@ -21,8 +21,8 @@ lists.
 
 ## State
 
-**Counts, and this is their one home:** sixteen commands, **774 CLI tests, 778 service and 47 HTTP host, 1724 driver,
-466 desktop modules, 80 devkit, 1905 web unit, 21 Playwright**, 92/92 release rehearsal, **312/312
+**Counts, and this is their one home:** seventeen commands, **835 CLI tests, 778 service and 47 HTTP host, 2001 driver,
+466 desktop modules, 80 devkit, 1988 web unit, 21 Playwright**, 92/92 release rehearsal, **312/312
 family rehearsal** (it names its own phases when you run it), **70/70 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge
 documents, 5 skills, 7 packs. The always-loaded core is **22,672 of 26,000 bytes** — a span in
@@ -132,8 +132,8 @@ rather than designed.
 
 ## Backlog
 
-**Seventy rows are open** (most of them the builds of the designs below) (triaged 2026-09-30, when the owner asked to go faster; 2026-10-01 after the night's merges, the look, and the owner's round):
-- **Merging next:** PLUG10, UNBLOCK4 and UNBLOCK5. **Building:** FRAME1b, TOOLS2; Daoris.Plugins' own session on PLUGREPO2c.
+**Sixty-eight rows are open** (most of them the builds of the designs below) (triaged 2026-09-30, when the owner asked to go faster; 2026-10-01 after the night's merges, the look, and the owner's round):
+- **Merging next:** FRAME1c, PLUGUI1b, FRAME1g, DOC2 and DOC3, SHEN2 and LYN1. **Building:** FRAME1d, PLUGUI1d, TOOLS4; Daoris.Plugins' own session on PLUGREPO2d.
 - **Designed, to build in order:** DEV2–DEV11 (D115); FRAME1b–i (D118) after NAME1b; PLUGUI1 after FRAME1c;
   LAYOUT3–LAYOUT10 (D117) after LAYOUT2's evidence.
 - **Waiting on the owner (five):** BUDGET1 (their call), TRUST2 and AGT2c (a grant, two
@@ -175,9 +175,6 @@ install in both themes and both languages.
 - [ ] **NAME2 — the names after NAME1b, on the window**: the glossary gains *lane* / 泳道 (DEV4 named it; NAME1
   had no term); the 107 budget judgements `names:check` reports are looked at on the window at 888 px, both
   languages, and each is renamed or accepted.
-- [ ] **PLUG10 — two defects in today's Plugins domain** (found by PLUGUI1a's reading, P8 and P9): *Remove*
-  removes on its first press, and the *running* pill wears done's green. Fix them now in Settings → Plugins;
-  PLUGUI1b carries the same rules into the view.
 - [ ] **PLUGUI1b — the Plugins view on the frame, on today's answers** (D119 §6; waits on FRAME1c): the view,
   its list and pages, `＋` and ⋯, the offer's page, the kit drawer, the opener. Look: 1280 and 680 px, both
   themes, both languages.
@@ -191,8 +188,6 @@ install in both themes and both languages.
   live, Data folder, Source, *Install from a folder…*.
 - [ ] **PLUGUI1g — a plugin's checks** (after f): the last trial kept, its own tests run in a copy under the home.
 - [ ] **PLUGUI1h — Ask Daoris reaches the Plugins view** (after c and FRAME1i).
-- [ ] **FRAME1b — the list pane, Sessions' first** (D118, model §6): `ListPane`, `StripMark`, `listKeys`,
-  per-view bounds, strip by room, the laid-over mode; Sessions' rail moves onto it. Look: 1280, 900, 680 px.
 - [ ] **FRAME1c — the main area and the view contract**: `ViewMain`, per-view memory, `open(view, item?)`,
   container queries in Overview, Projects and Map, loading states, drawers above a full side bar.
 - [ ] **FRAME1d — Quests on the frame**: asks and quests in the list, a record in the main area, composers
@@ -207,6 +202,16 @@ install in both themes and both languages.
   `OutputPanel`, the monitor's title on a real token (`tokens.test.ts` fails on `text-h3` first).
 - [ ] **FRAME1i — Ask Daoris knows each view's list and item**: `where.ts`, `go` naming an item, the room.
   Order: b, c, then d–g (d, e, f one at a time; g beside one), then h and i. PLUGUI1 starts after FRAME1c.
+
+### The kits (owner, 2026-10-01: *"shenora 0.19 and lyntai 3.5.3 both ready"*)
+
+- [ ] **SHEN2 — Shenora 0.19.0.** Move `Shenora`, `Shenora.Windows`, `Shenora.Chromium` (the desktop's
+  `Directory.Packages.props`) and `@shenora/react` (the web) from 0.18.0 to 0.19.0; read the kit's changelog for
+  what the shell relies on (the Chromium engine, the frame, the IPC modules, the window state, the debug port
+  LOOK3 met) and retire any workaround the kit now carries, as SHEN1 did. The deployment rehearsal proves it.
+- [ ] **LYN1 — Lyntai 3.5.3.** Move `Lyntai.Core` and `Lyntai.Providers.Basic` (the service's
+  `Directory.Packages.props`) from 3.2.0 to 3.5.3; read the changelog for anything the service relies on or can
+  now drop. The service suites and the family rehearsal prove it.
 
 ### Doctrine, plugins and tools (owner, 2026-10-01)
 
@@ -246,13 +251,17 @@ The contract is `docs/2026-10-01-development-documents-design.md`; §6 carries e
 Order: UNBLOCK5 first (a week of *before*); then DOC2, DOC3 and UNBLOCK2 side by side; the driver lane runs
 UNBLOCK5 → UNBLOCK2 → UNBLOCK4 → UNBLOCK3 → DOC7. Only DOC2 changes the canon.
 
-- [ ] **UNBLOCK5 — asks, counted** (§3.10): `permission.refused` from both doors; asks per session in the usage report.
-- [ ] **UNBLOCK4 — the carve-outs held harder** (§3.6, §3.7): 🔴 a push written as `git -C . push` passes `no-push`
-  in auto mode today; an `autoMode.hard_deny` entry after `"$defaults"`; `git mv` in both defaults tables.
 - [ ] **DOC2 — the standard as canon** (§2.1–§2.6, §4): core knowledge `development-documents`, core skill
   `set-up-documents` with templates; this repository and `examples/` re-synced in the same commit.
 - [ ] **DOC3 — roles bound to paths** (§2.7, §2.8): `documents` in the manifest, `sync`'s table, `check`'s facts;
   no canonical skill carries `allowed-tools`.
+- [ ] **UNBLOCK4c — the push canary** (the owner's to allow): one turn per form against a local bare remote in
+  scratch, by UNBLOCK4's procedure (its archive entry and hand-back): `git -C . push`, `-c`, `--no-pager`, a quoted
+  subcommand, an alias, on both doors; the remote's tip must not move, and what refused each is recorded.
+- [ ] **DEV3a — a stop is reported in the run that made it** (found merging, 2026-10-01): the family rehearsal's
+  lost-claim check failed once under load (311/312, green alone): the losing session was stood down with its
+  reason, but the driver printed no `stop  session` line, since sessions outlive their tick (DEV3) and the stop's
+  report can land after the run's last print. Make `--once`/`--until-idle` wait for and print every report it caused.
 - [ ] **UNBLOCK2 — the declaration and its judge** (§3.1–§3.3, after DEV5): `safe` beside `gates`, read from the line.
 - [ ] **UNBLOCK3 — the person's one yes** (§3.4, §3.5, after UNBLOCK2 and a week of UNBLOCK5): the `declare`
   proposal, exact rules on both Claude Code doors.
@@ -268,9 +277,6 @@ The contract is `docs/2026-10-01-tools-design.md`; §7 carries each row's full t
 TOOLS3 → TOOLS4, then TOOLS5 ∥ TOOLS6, then TOOLS7 ∥ TOOLS8, then TOOLS9; TOOLS10 before any session runs a
 managed git; TOOLS11 last.
 
-- [ ] **TOOLS2 — `tools.json` and its resolution, twins** (§2.1–§2.3, §5): the three ways; `daoris tool list|path|use`.
-- [ ] **TOOLS3 — the resource list and its merge, twins** (§3.1–§3.5): `resources.json` built in; the first entries
-  read from the makers' own pages and sums into an evidence document.
 - [ ] **TOOLS4 — download, verify, unpack, lay out** (§3.6, §3.7): staging, hashes, `daoris tool download|update|…`.
 - [ ] **TOOLS5 — one answer for every child** (§2.4, §2.6, §2.7): git, hooks, npm, the tree guard's node, the terminal.
 - [ ] **TOOLS6 — what Daoris's git carries** (§2.5): the allow-list from `core.sshCommand`, `GIT_CONFIG_GLOBAL` with
@@ -531,6 +537,8 @@ TDD, looked at on the window, and the ones that touch a real session use one (au
   `PluginKitTests.A_silent_plugin_is_still_running_and_said_nothing_within_the_patience`, a timing test under
   three subagents' builds (the driver's Process half took 37 minutes), green alone. **And `PseudoConsoleTests` again**
   (its second sighting) at the designs integration's merge, under three builds, green alone.
+  **And a rehearsal check, a new kind** (merging PLUG10, UNBLOCK4 and UNBLOCK5, three builds beside it): the family
+  rehearsal's *its driver stops its own losing session* failed on its printed line (DEV3a), 311/312, green alone.
 
 - [ ] **TEST1 — a Node process aborts with `0xC0000409`: seen three times now, once outside Playwright.** The
   second sighting was its trigger. Both runs died with `worker process exited unexpectedly

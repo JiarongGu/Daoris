@@ -78,17 +78,23 @@ export const DEFAULTS: readonly PermissionDefault[] = [
   // 🔴 The owner's answer to PERM4 (2026-09-24): in a folder the agent never trusted, a real driven
   // session made its edit and was refused the commit, because the repository's own allow-list does not
   // apply there. `cd` because the agent prefixes its commit with one, and every part must be allowed.
+  // `git mv` (UNBLOCK4, D122 §3.6): a rename stays in the tree and git refuses a path outside it.
   {
     id: 'commit',
     list: 'allow',
-    rules: ['Bash(cd:*)', 'Bash(git add:*)', 'Bash(git commit:*)'],
+    rules: ['Bash(cd:*)', 'Bash(git add:*)', 'Bash(git commit:*)', 'Bash(git mv:*)'],
     why: 'A session commits its own work in its own tree, because committing is part of finishing a task '
       + '— the push is still refused.',
   },
+  // 🔴 UNBLOCK4 (D122 §3.7): a Bash rule matches the command as written, so `git push …` alone let
+  // `git -C . push` and `git -c <key>=<value> push` through. The option-first rules take every push with
+  // options before its subcommand. The driver also tells auto mode's classifier, in the spawn file only
+  // it writes, that a push in any form, a publish and a release are the person's; that sentence has no
+  // twin here.
   {
     id: 'no-push',
     list: 'deny',
-    rules: ['Bash(git push)', 'Bash(git push:*)'],
+    rules: ['Bash(git push)', 'Bash(git push:*)', 'Bash(git -* push)', 'Bash(git -* push *)'],
     why: 'A push leaves this machine, and that stays the person\'s call.',
   },
   // PERM3: a hook the driver hands at spawn, not a rule — a rule cannot say "outside the tree".

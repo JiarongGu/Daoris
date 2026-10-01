@@ -101,6 +101,7 @@ export function RightDock({
     return (
       <aside
         aria-label={t('work.dock.label')}
+        data-region="side"
         className="relative flex shrink-0 flex-col items-center gap-0.5 border-l border-line py-1.5"
         style={{ width }}
         {...drop.props}
@@ -144,6 +145,7 @@ export function RightDock({
   return (
     <aside
       aria-label={t('work.dock.label')}
+      data-region="side"
       data-mode={mode}
       className={cn(
         'flex flex-col bg-page',

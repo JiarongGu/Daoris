@@ -928,6 +928,11 @@ The first version: doctrine that installs, is checked, and flows back.
   changes from the landed branch in the repository's own checkout, says where and when it landed (and the
   pull request, if a plugin opened one), and offers no Accept or Send back; the hand-off where one applies.
   Its file preview reads from that branch, saying so. `trees land` says a session already landed.
+- **Removing a plugin asks first** (PLUG10). *Remove…* in Settings → Plugins asks once, naming the data folder that stays, and a running plugin no longer wears done's green.
+- **A push in any spelling stays yours** (UNBLOCK4). A session cannot push with options before the subcommand (`git -C . push`, `-c`, `--git-dir`, `--no-pager`); while the carve-out is on, auto mode is told that any push, publish or release is the person's. `git mv` joins what a commit may do.
+- **Permission asks are counted** (UNBLOCK5). Every refused permission is a line in the machine log, and the usage report shows asks per session, the baseline the declared safe work (UNBLOCK2–3) will be measured against.
+- **Which git, node, pwsh, gh and az Daoris runs is yours to set** (TOOLS2, TOOLS3; D121). `daoris tool list|path|use` says, for each tool, whether it is the system's or a file you name, and the install carries a resource list of the makers' own downloads with their published hashes (MinGit, Node.js, PowerShell, GitHub CLI, Azure CLI). Downloading a managed version and starting it come next.
+- **Every list is one list pane** (FRAME1b, D118). Sessions' list becomes a strip only when the conversation would fall below 400 px, not below a fixed width; a strip opens the list over the conversation; ↑, ↓, Home and End move through any list, and pressing the current place on the activity bar shows or hides it.
 - **A plugin's landing waits as long as the plugin may, and the rest of the night's leftovers** (LEFT3).
   Accepting into a plugin's pull request, and handing a branch to one, wait up to six minutes rather than
   thirty seconds. Ask Daoris's *Bring up to date* card says on the card what it could not fetch and what it
