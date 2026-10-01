@@ -9219,3 +9219,25 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > (found by DOC5; no backlog row: fixed the same day)
 
 **Outcome** (built by the parent, merged in integrate-h with `tools/merge-branch.mjs`, every gate): `checkPath` (`documents.ts`) normalised a declared path only to ask whether it left the repository, then judged the root, the target and the mirror on the spelling, so `docs/..` (the root) and `x/../.claude/knowledge/g.md` (inside the target) were accepted. They are judged where they land now, as the service's reader (DOC5) already does, and the spelling is still what the index shows. Two refusal rows in `documents-manifest.test.ts`, seen failing first. CLI 888 → 890.
+
+
+## TOOLS5 — one answer for every child (2026-10-01)
+
+> - [ ] **TOOLS5 — one answer for every child** (§2.4, §2.6, §2.7): git, hooks, npm, the tree guard's node, the terminal.
+
+**Outcome** (built by a subagent, merged with `tools/merge-branch.mjs`, every gate; a note under D121): One answer for every child. Daoris's own git (`WorkingTree.GitStart`), a hook's first word, a pin's `npm` and the tree guard's node now start as the files the tools resolve, by their whole paths; a way that cannot run refuses, and never falls back to `PATH`. Every session, chat, intake, helper, probe, agent action, hook, landing plugin, plugin trial and terminal shell is handed the tools' environment: each managed or named tool's folders first on `PATH` in the declared order, and nothing set when every tool is the system's. The terminal offers a managed pwsh and the Git Bash beside the resolved git, else the system's. `agent install` keeps the system's npm and refuses naming `agent pin` where there is none. The rules are twins in `Tools.Children.cs` and `tools.ts`, held by `ToolsChildrenTests` and `tools-children.test.ts` row for row; every start is held by source scans in the driver and the modules and by the CLI's dogfood test, each seen failing once. `ToolsChildProcessTests` (Process half) was written in the branch and run at the merge. D121 carries the note, and D57, D64, D96, D100 and D109 their amendments. `GIT_CONFIG_GLOBAL` stays TOOLS6's. Driver fast half 1534 → 1656 and modules 351 → 362 (each with main merged), CLI 918.
+
+
+## WSSETUP1 — setting a workspace up, the design (2026-10-01)
+
+> - [ ] **WSSETUP1 — the design** (D124): built on its branch; merging next with TOOLS5.
+
+**Outcome** (designed by a subagent, merged with `tools/merge-branch.mjs`, every gate; D124): Designed in `docs/2026-10-01-workspace-setup-design.md`, recorded as D124. The install carries its packed CLI, and every child Daoris starts finds `daoris` on its PATH through TOOLS5's environment; this reverses D117 §9's rejection, npm stays the channel outside Daoris, and a new guard stops an older tool from rewriting a newer lock. The set-up quest gains a step that initialises a repository's knowledge (its domain, and documents on what it owns, its contracts and data, and the computations others depend on, each fact with its place in the code) and is bounded to the repository's own tree. The driver registers a repository from its line after Daoris moves the line. The workspace press is a paced plan of single quests with a pilot of two. Until a repository adopts, the service indexes its README. A driven session looks before it asks, and `autonomous-development` gains the same line. §8 gives the rows WSSETUP2–WSSETUP13 and amends LAYOUT7 and LAYOUT10. Documents only; `verify` passed.
+
+
+## WSSETUP10 — the canon says look before you ask (2026-10-01)
+
+> - [ ] **WSSETUP10 — the canon says it** (§6.3; doctrine): one bullet in `autonomous-development`, an entry under
+> `## Unreleased`, this repository and `examples/` re-synced in the same commit.
+
+**Outcome** (built by the parent, merged with `tools/merge-branch.mjs`, every gate): `autonomous-development` gains *Look before you ask* (D124 §6.3), before *A step that genuinely needs a human choice surfaces as a decision*: a question the task's own material, the repository's documents, code and history, or a neighbour's documents can settle is the agent's to settle, with its evidence kept for the hand-over; a reading the evidence leans to is taken and stated at the checkpoint; only what no source holds and only the person can give reaches them mid-run. An entry under the canon changelog's Unreleased; this repository and both examples re-synced in the same commit; the always-loaded region is unchanged (23,306 bytes before DOC4's table).
