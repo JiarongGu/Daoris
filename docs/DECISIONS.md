@@ -6561,6 +6561,43 @@ TypeScript reference (`SDKPermissionDeniedMessage`, `SDKPermissionDenial`) and l
 shown them yet. A subagent's refusal is not counted on either door, since its calls run beside the session
 (CONSOLE3c). The usage report gives asks per session by adapter and repository, and the rule proposals by week and
 state. `session.read` and `session.skill` stay DOC7's. The machine-log design's §4 and §6 say what was built.*
+
+**Built 2026-10-01 (DOC5): the service reads declared records** (design §5's first twin, §6's DOC5 row).
+`RepositoryDocuments` reads `documents` with the service's own code, and `RepositoryLayout.Documents` carries it
+beside the rooms, checked against the same target and mirror root. The choices the row left open, each held by a
+test in `RepositoryDocumentsTests`:
+- **The declared path is the first candidate.** The scanner's rule that the first present candidate is the log
+  stands, and a declared decisions, fixes or archive goes in front. A log at a name no candidate knows is found;
+  one a candidate also names is found once; a candidate beside a declared log is not read as a second log. A
+  declared path the disk does not hold falls through to the candidates. A declared log that is a link is not read,
+  and no candidate is read in its place, as for a candidate that is a link (LAYOUT4).
+- **A declared folder is one record per file**, every markdown file in it or below, read whole, since an ADR's
+  headings are its own parts. A folder reached through a link is never entered. The service's candidates stay files.
+- **The router is a document**: one knowledge entry, local, read whole, titled by its file name as the knowledge
+  tier's are. Declared, never guessed: the service gives the router no candidates.
+- **One file is one place in the index.** A file the tiers, a room or the router already read is not read again as
+  a log, and a file declared for two roles is read once, by the first reader. Read twice, its entries would share
+  ids, and the store's primary key fails the whole refresh on the second (REV3).
+- **A declaration the CLI refuses is read as none, role by role.** The CLI is a gate: one role it cannot honour
+  refuses the whole manifest (exit 2), so `check` fails and `sync` refuses, and the repository hears it from its own
+  tool. The scanner is an indexer with nobody to tell: a refusal there would drop the repository from search, or
+  fail the refresh for every repository after it. So a role the CLI refuses is undeclared and the roles beside it
+  are read, as a refused room is (LAYOUT4). `documents` that is not a map or is held twice, and a manifest that is
+  not JSON, are read as none. The scanner then reads its candidates as before, never a path the CLI refuses, and
+  never a guess at which of two declarations was meant.
+- **Rejected**: refusing the whole declaration for one bad role, which drops a good role's path for an unrelated
+  typo and departs from how the same reader treats rooms; reading the last of two declarations of one role, the
+  silent choice the CLI refuses to make; and candidates for the router, since a `docs/README.md` in a repository
+  that declared nothing may be a site's front page.
+- **Found building it**: the CLI checks a declared path as spelled, so a `..` inside one passes. `docs/..` is
+  accepted and names the root, and `x/../.claude/knowledge/g.md` is accepted and lands in the target. The reader
+  checks the spelling and where the path lands, and reads where it lands, so it is never looser than the CLI. The
+  CLI's check is the CLI lane's, and this note names it rather than changing it.
+- What the gates do not cover: the twin table's rows were copied from `documents-manifest.test.ts` and are compared
+  by hand, as every twin's are. The service-only rows about the CLI (`1e3`, `2500.0`, the `..` paths) were checked
+  once against `checkDocuments` from the source and are held by no CLI test. A real link was made and read on this
+  machine; on one that makes none, the link test returns early. No repository in the family declares documents on
+  this branch (DOC4, DOC6), so no refresh of a real corpus has read a declaration.
 ## D121 — Every tool Daoris runs is the system's, managed, or a file the person names; a list built in says where each version downloads, and more locations extend it without a release (2026-10-01)
 
 **Decision (TOOLS1).** The owner: *"all tools that daoris using like git, [terminal] should all have a self managed

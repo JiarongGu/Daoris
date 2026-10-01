@@ -25,6 +25,13 @@ once, at its source; each declared room's `AGENTS.md` as the repository's own kn
 link, a junction or a link held as text (`RepositoryLayout`, `RepositoryLinks`, twins of the CLI's
 `layout.ts` and `links.ts`).
 
+Since **D122** (DOC5) the scanner also reads where a repository says its records are, in its manifest's
+`documents`. The declared decisions, fixes and archive are each the first candidate for their log, a file
+or a folder of records, so a log at a name no candidate knows is found, and found once. The declared
+router is indexed as one document. A declaration adds a path and is never required. One the CLI
+refuses is read as none, so the scanner reads its candidates as it did before (`RepositoryDocuments`, a
+twin of the CLI's `documents.ts`).
+
 ## The registry — who is out there, and what they own
 
 Each repository declares a `domain` in its manifest: a one-line summary, the areas it **owns**, the
