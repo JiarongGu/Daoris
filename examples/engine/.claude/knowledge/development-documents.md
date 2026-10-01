@@ -1,0 +1,132 @@
+---
+name: development-documents
+applies_when: setting a repository up for agents, adding, moving or splitting one of its documents, or when a session had to search for where something is written
+enforces: a short brief every agent reads, detail on demand, records in places the always-read file names; a document read whole has a ceiling and a record read by lookup has none; what may run unasked is a declaration a tool reads, never a sentence
+---
+<!-- daoris: core/core/knowledge/development-documents.md @ 0.0.1 — canonical; edit via `daoris upstream` -->
+
+# The development documents — what a repository keeps so a session works unasked
+
+**A code-generating session starts with what it is handed and what it can find. Give every document
+one job and one way it is read: a short brief always, detail on demand, records by lookup. Then say, in
+the brief, where each one is.**
+
+## Why
+
+Each failure this prevents is silent.
+
+- **A brief grown past a byte limit.** At least one widely used agent reads the root instruction file
+  only up to a fixed size, 32,768 bytes when this was written, and drops the rest without a word. The
+  shared doctrine sits at the end of that file. A brief that grows a paragraph at a time pushes the
+  rules out of that agent's context, while every other agent still sees them, and a session that
+  missed them looks exactly like one that read them.
+- **A settled question reopened.** A decision recorded without what it rejected is re-derived by the
+  next session, which reaches the rejected alternative, finds it reasonable, and builds it. The record
+  that would have stopped it existed. It did not say *why not*.
+- **A command allowed in prose and refused by the harness.** An instruction file shapes what an agent
+  tries, not what its harness permits. "You may run the tests", written in a brief, is followed by a
+  refusal and a stall. A sentence that forbids something stops nothing either.
+- **The search before the work.** The doctrine names records by their job (the backlog, the decisions,
+  the fix log) and never by their path, which is right for doctrine and costs every session in every
+  repository a search. A session that guesses wrong writes to the wrong one.
+
+The agents' makers reached the same answers independently: one short file every agent reads, holding
+only what cannot be derived from the code; exact commands and one check that means done; detail moved
+to a tier read on demand; a ceiling on what is read whole and none on what is read by lookup. Two
+sources reaching one rule is the bar for believing it.
+
+## How to apply
+
+The `set-up-documents` skill carries the procedure and a template for each shape below.
+
+### The roles
+
+A **role** is a document's job. One document per role. Every role but the brief is optional, and the
+names and paths are the repository's own.
+
+| Role | Its one job | Read |
+|---|---|---|
+| **brief** | what this is, the constraint every change serves, the non-negotiables, the layout's non-obvious half, the command that means done, and where everything else is | always |
+| **room** | one folder's conventions, traps and checks, in that folder's own instruction file | on demand, when working there |
+| **knowledge** | a deep dive one area needs, saying when it applies and what it enforces | on demand, from the index |
+| **skill** | a procedure, invoked by name | its description always, its body on use |
+| **router** | each document, its kind (contract, method, study, evidence, record) and its standing (current, amended by, superseded by) | whole, at a task's start |
+| **decisions** | numbered decisions, each with why, what it rejected, and what the checks do not cover | by lookup |
+| **backlog** | open work only, each row naming its contract and its proof | whole, when picking work |
+| **archive** | finished work, each with its date and outcome | by lookup |
+| **fixes** | root cause, fix and verification per non-trivial defect | by lookup |
+| **changelog** | what a user of a release sees changed | by lookup |
+| **glossary** | the names people and code use for this repository's things | by lookup |
+| **gates** | the checks, their exact commands, and the work a session may do without asking | by tools |
+
+Design documents are listed by the router rather than given a role each: they come and go too often. A
+roadmap is the backlog's sequence, and the router lists it. A glossary pays where a repository names
+things to people. Elsewhere it is a document nobody opens, so no repository is required to keep one.
+
+### Three ways a document is read
+
+- **Always**: the brief, beside the always-loaded doctrine, in the one root instruction file every
+  agent reads. It is the only file known to reach every agent at the start of a session. A nested file
+  is not loaded by all of them, and not every agent reads a second file the first one imports.
+- **On demand**: rooms, knowledge, skill bodies, the router, the design documents. Something always
+  read names each one, because telling is how an on-demand tier reaches an agent.
+- **By lookup**: decisions, archive, fixes, changelog, glossary. Read for one entry and never whole, so
+  they may grow without limit.
+
+### What goes in the brief
+
+**A fact goes in the brief only if nearly every task needs it and a reader could not derive it from the
+code.** The exact command that means done is in. A tour of the folders is out. Of the layout, only what
+the tree does not say: which folders are generated, which are copies of another, which have their own
+instructions, and what must never be edited by hand. Of the conventions, only those that differ from
+the language's and the tools' defaults.
+
+A brief never holds status (*built*, *not yet*), which rots in place; history, which belongs to the
+decisions; counts, which belong to the one place that keeps them; a quotation of a person, which
+belongs to the decision it motivated; or a permission, which belongs to the declaration.
+
+### Ceilings
+
+A document read whole has a ceiling. A record read by lookup has none. Two units, because two things
+are paid for:
+
+- **Bytes, for the root instruction file as a whole**: the brief and the doctrine together, under the
+  smallest limit among the agents the repository serves. What is lost is the tail, and the tail is the
+  doctrine.
+- **Words and lines, for attention.** Starting ceilings, each with headroom over what a document
+  measures when written: the brief, 1,500 words and 200 lines; a room, 600 words; the router, 2,500
+  words; the backlog, 5,000 words.
+
+**A ceiling reports and never fails**, because whether a document says too much is a judgement. When one
+goes over, relocate what belongs in another tier, then condense, and only then raise the number,
+deliberately and with the reason. What fails is a fact: a named document missing, or a list of places
+that no longer matches the files.
+
+### Where the records are
+
+The brief ends with **where things are**: one line per record the repository keeps, its role and its
+path. Where a tool generates that list from a declaration, declare the records and let the tool keep
+the list true. Without one, write it by hand. A record with no line there is a record no session finds.
+
+### What may run unasked is a declaration
+
+What a session may run without asking goes in a declaration a tool reads, beside the gates, and a
+person accepts it once: the checks that are a session's to run, the build and test commands, the
+install from the lockfile. The brief says only where the declaration is.
+
+- **Exact commands, one per entry.** A pattern that admits any argument to a runner or an interpreter
+  admits anything at all.
+- **The carve-outs never enter it**: a push, a publish, a release, a history rewrite, a discard, a
+  recursive delete, a path outside the repository (`autonomous-development`). They stay the person's.
+- **A declaration takes effect once it has landed and a person has accepted it.** One that a session
+  can edit and have obeyed in the same run is an agent granting itself permission.
+- **Not every check is a session's to run.** One that needs the machine quiet, opens windows or runs for
+  a long time belongs to whoever runs the full set of gates, and the declaration says which.
+- **No side door.** A procedure whose own metadata pre-approves tools, honoured without review, is the
+  same widening in a smaller form. No shared skill carries one.
+
+### Without the tool
+
+Every part of this is a committed file. A repository with no doctrine tool writes its list of places by
+hand, keeps its ceilings by judgement, and its declaration is read by whatever reads it. A tool adds
+two things: the list kept true, and the facts checked.

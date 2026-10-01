@@ -47,12 +47,18 @@ export interface TierInput {
   mirror?: { source: string; root: string };
   /** Each declared room and its first heading (D117 §2.2). */
   rooms?: readonly { path: string; heading: string | null }[];
+  /** Each declared document with a path, in the roles' order, and its role's job (D122 §2.7). */
+  documents?: readonly { role: string; path: string; job: string }[];
 }
 
 const RULE_HEAD = '| Rule | Applies when | Enforces |\n|---|---|---|';
 const KNOWLEDGE_HEAD = '| Knowledge | Applies when | Enforces |\n|---|---|---|';
 const SKILL_HEAD = '| Skill | Use when |\n|---|---|';
 const ROOM_HEAD = '| Room | About |\n|---|---|';
+const WHERE_HEAD = '| Role | Where | Its job |\n|---|---|---|';
+
+/** The heading of the roster's last table, which `check` compares on its own (D122 §2.8). */
+export const WHERE_HEADING = '## Where things are';
 
 /** A document's name — the filename, which is what every rule's frontmatter `name` must match. */
 function nameOf(file: CanonFile): string {
@@ -174,6 +180,18 @@ export function renderRoster(input: TierInput): string {
     lines.push('', '## Rooms', '', "Read a folder's room before changing anything in it.", '', ROOM_HEAD);
     for (const room of input.rooms) {
       lines.push(`| [${room.path}](${room.path}/AGENTS.md) | ${room.heading ?? '⚠ no heading'} |`);
+    }
+  }
+
+  // 🔴 Where the records are (D122 §2.7), as data rather than prose: the one part of the standard every
+  // task needs, and the search each session would otherwise make. From the manifest alone, so `check`
+  // rebuilds it offline and fails when it differs. Only when a path is declared, so a region whose
+  // repository declares nothing is byte for byte what it was. A path is a code span with its pipes
+  // escaped, which is what keeps a table a table.
+  if (input.documents?.length) {
+    lines.push('', WHERE_HEADING, '', 'Declared in `daoris.json`; look here before searching.', '', WHERE_HEAD);
+    for (const document of input.documents) {
+      lines.push(`| ${document.role} | \`${document.path.replace(/\|/g, '\\|')}\` | ${document.job} |`);
     }
   }
 

@@ -230,6 +230,18 @@ export interface DriftReport {
   unlisted: { path: string; move: string }[];
   /** The repository's own skills under the mirror root, read by that harness alone. */
   readAlone: string[];
+  /** The region's *Where things are* table differs from the manifest's documents (D122 §2.8): a fact. */
+  documentsStale: boolean;
+  /** Declared documents that are neither a file nor a folder: a fact. */
+  documentsMissing: { role: string; path: string }[];
+  /** Declared documents that are a link, or a link held as text: a fact, and never read through. */
+  documentLinks: DocumentLinkProblem[];
+  /** Declared documents over their ceiling in words: reported, never failed on (D54). */
+  documentsOver: { label: string; words: number; ceiling: number }[];
+  /** A ceiling declared on a folder, which no count can measure: reported. */
+  ceilingsUnmeasured: { role: string; path: string; ceiling: number }[];
+  /** The canon's most-named records with no path declared, when the repository declares any: reported. */
+  recordsUndeclared: string[];
   ok: boolean;
 }
 
@@ -293,8 +305,23 @@ export interface Manifest {
    * when none are declared.
    */
   rooms: string[];
+  /**
+   * The development documents this repository keeps, each role bound to a path or a ceiling (D122
+   * §2.7), in the roles' own order. Empty when none are declared, which changes nothing.
+   */
+  documents: DeclaredDocument[];
   /** Resolved at read time so an unknown name fails at the edge, naming what exists. */
   harnessDescriptor: Harness;
+}
+
+/** One role the manifest's `documents` declares (D122 §2.7). */
+export interface DeclaredDocument {
+  /** One of the roles `documents.ts` knows. */
+  role: string;
+  /** Repository-relative, as a declared path is spelled; null for `brief` and `room`, which take a ceiling alone. */
+  path: string | null;
+  /** The ceiling in words, reported against and never failed on (D54); null when none is declared. */
+  words: number | null;
 }
 
 /** One row of `daoris.lock`: what was written, from where, and what it hashed to. */
@@ -428,6 +455,18 @@ export interface SyncPlan {
   mirrors: MirrorPlan;
   rooms: RoomPlan;
   links: LinkProblem[];
+  /**
+   * The declared documents (D122 §2.7), which `sync` names and never writes: a link refuses, since the
+   * table would send every session through it; an absent one is said and left to `check`.
+   */
+  documents: { links: DocumentLinkProblem[]; missing: { role: string; path: string }[] };
+}
+
+/** A declared document that is a link, a link held as text, or below a file where a folder must be. */
+export interface DocumentLinkProblem extends LinkProblem {
+  role: string;
+  /** The declared path; `path` is the part of it that is the problem, the same or a folder above. */
+  declared: string;
 }
 
 /** One canon changelog section: which version, and what it said. */
@@ -480,6 +519,8 @@ export interface AnalysisReport {
   offers: CoreSwitch[];
   /** Core rows the manifest already confirms off — out of every projection above. */
   switchedOff: CoreSwitch[];
+  /** The records this repository seems to keep, by role, from conventional names (D122 §2.7). Never declared here. */
+  documents: { role: string; path: string }[];
 }
 
 /**
