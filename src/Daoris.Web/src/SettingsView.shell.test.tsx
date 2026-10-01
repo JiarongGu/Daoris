@@ -22,6 +22,7 @@ vi.mock('@shenora/react', () => ({
 }));
 
 import { SettingsView } from './SettingsView';
+import { DOCK, frameLayout, LIST_BOUNDS, type ListChoice } from './work/layout';
 import { DRIVER_STATE, respond, show, WIRING } from './test/shellHarness';
 
 describe('the domain list, in a shell', () => {
@@ -52,13 +53,52 @@ describe('the domain list, in a shell', () => {
     // Daoris's browser (CHR5, CHR7) and the machine log (LOG1c) are a machine's domains, last in the list.
     expect(within(domains).getAllByRole('button').slice(-2).map((button) => button.textContent)).toEqual(['Browser', 'Machine log']);
     expect(await screen.findByLabelText('Failures before a quest parks')).toBeTruthy();
-    // A card alone in its domain does not say the domain's name again: the list already has.
-    expect(screen.getAllByText('Driver')).toHaveLength(1);
+    // The main area's header names the domain (FRAME1g), and a card alone in it does not say it again.
+    const main = screen.getByRole('main');
+    expect(within(main).getByRole('heading', { level: 1, name: 'Driver' })).toBeTruthy();
+    expect(within(main).getAllByText('Driver')).toHaveLength(1);
     // Another domain's cards are not on the page at all.
     expect(screen.queryByRole('button', { name: 'Wire a workspace' })).toBeNull();
     expect(screen.queryByText('Theme')).toBeNull();
 
     await userEvent.click(within(domains).getByRole('button', { name: 'Plugins' }));
     expect(onSection).toHaveBeenCalledWith('plugins');
+  });
+
+  /** A shell says nothing of what it is not offered: every domain is its own. */
+  it('carries no browser\'s note beneath its domains', async () => {
+    invoke.mockImplementation(async (module: string) => (
+      module === 'DAORIS.DRIVER' ? DRIVER_STATE : WIRING));
+    show(<SettingsView notify={() => {}} section="driver" />);
+
+    const domains = await screen.findByRole('navigation', { name: 'Settings domains' });
+    await waitFor(() => expect(within(domains).getAllByRole('button')).toHaveLength(10));
+    expect(screen.queryByText(/on the desktop, where the machine is/)).toBeNull();
+  });
+});
+
+/**
+ * FRAME1g, by D118 §3a's room rule and §8's reason for it: Settings' list is a strip only where the domain
+ * would fall below its 400 px floor beside it, with the side bar as it stands. A fixed 1024 px threshold,
+ * Sessions' under FRAME6, would have stripped its 176 px list where it fits.
+ */
+describe("Settings' list in a shell's frame", () => {
+  const settings = (closed = false): ListChoice => ({ bounds: LIST_BOUNDS.settings, width: null, closed, over: false });
+  const at = (viewport: number, dockClosed: boolean) =>
+    frameLayout(viewport, viewport - 48, { list: settings(), dockShare: null, dockClosed, dockFull: false }).list!;
+
+  it('stays open beside a 1024 px window\'s side bar, where Sessions\' 280 px rail is a strip', () => {
+    expect(at(1024, false)).toMatchObject({ mode: 'open', width: 176 });
+    const sessions = frameLayout(1024, 976, {
+      list: { bounds: LIST_BOUNDS.sessions, width: null, closed: false, over: false }, dockShare: null, dockClosed: false, dockFull: false,
+    }).list!;
+    expect(sessions.mode).toBe('strip');
+  });
+
+  it('at 680 px stays beside the domain with the side bar closed, and gives way to a strip with it open', () => {
+    expect(at(680, true)).toMatchObject({ mode: 'open', width: 176 });
+    expect(at(680, false)).toMatchObject({ mode: 'strip', width: 56, auto: true });
+    // The side bar counts at its floor whenever it is open, full below 768 px included (FRAME1b).
+    expect(680 - 48 - 176 - DOCK.floor).toBeLessThan(400);
   });
 });

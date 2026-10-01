@@ -30,7 +30,7 @@ import { MapView } from './MapView';
 import { SearchView } from './SearchView';
 import { QuestsView } from './QuestsView';
 import { ProjectsView } from './ProjectsView';
-import { type SettingsAnchor, type SettingsSection, SettingsView } from './SettingsView';
+import { type SettingsAnchor, type SettingsSection, useSettingsLayout } from './SettingsView';
 import { Reader } from './Reader';
 import { ShellSignals } from './ShellSignals';
 import {
@@ -90,7 +90,7 @@ const NAV = VIEWS.filter(({ view }) => view !== 'settings');
  * The views drawn with a list pane (D118 §2), each naming it in `layout.list.<view>` and
  * `layout.menu.list.<view>`. Sessions' first (FRAME1b); each view joins as its row moves it onto the frame.
  */
-const LISTED: ReadonlySet<ListView> = new Set<ListView>(['sessions']);
+const LISTED: ReadonlySet<ListView> = new Set<ListView>(['sessions', 'settings']);
 const isListed = (view: View): view is View & ListView => (LISTED as ReadonlySet<string>).has(view);
 
 /** A palette command that says it ran, into the machine log (LOG1b): by its id, never what was typed. */
@@ -485,13 +485,28 @@ export function App() {
     ...(attached ? { rule: () => openSettings('permissions') } : {}),
   };
 
+  // Settings on the frame (FRAME1g): its domains are its list pane and the domain chosen its main area.
+  const settings = useSettingsLayout({
+    notify,
+    section: settingsSection,
+    onSection: chooseSettings,
+    anchor: settingsAnchor,
+    onAnchored: () => setSettingsAnchor(null),
+    onGo: go,
+    // Ask Daoris is the shell's (HELP1): a browser's guide offers no hand-off.
+    onAskSetup: attached ? askSetup : undefined,
+    // Who is driving Daoris's browser (BRW8), for its domain, each a door into Sessions.
+    browserDrivers: driving,
+    onAttend: attached ? openInWork : undefined,
+  });
+
   /**
    * Every view but Sessions, as it hands itself to the frame (D118 §5): its list pane where it has one, and
    * its main area, in a shell's frame beside the side bar and the panel, and in a browser's without them.
    * Each view joins the list pane as its row moves it onto the frame (FRAME1d–g); until then its page is its
    * main area.
    */
-  const renderView = (): ViewLayout => ({
+  const renderView = (): ViewLayout => (view === 'settings' ? settings : {
     main: (
       // No cap: content follows the window (UX5 U59, the owner), as the session's centre does since U16. It
       // was 72rem, and a maximized window left every view a third empty. Prose keeps its own measure
@@ -544,21 +559,6 @@ export function App() {
             notify={notify}
             semantic={status.data?.semantic ?? false}
             onConverge={() => open('convergence')}
-          />
-        )}
-        {view === 'settings' && (
-          <SettingsView
-            notify={notify}
-            section={settingsSection}
-            onSection={chooseSettings}
-            anchor={settingsAnchor}
-            onAnchored={() => setSettingsAnchor(null)}
-            onGo={go}
-            // Ask Daoris is the shell's (HELP1): a browser's guide offers no hand-off.
-            onAskSetup={attached ? askSetup : undefined}
-            // Who is driving Daoris's browser (BRW8), for its domain, each a door into Sessions.
-            browserDrivers={driving}
-            onAttend={attached ? openInWork : undefined}
           />
         )}
       </ViewMain>
