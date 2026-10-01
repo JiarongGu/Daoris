@@ -2097,6 +2097,11 @@ to know something it structurally does not.
 **Named and out of scope**: spend caps, billing, and anything reading a provider's console. All three
 need either a credential or an API Daoris has no business holding.
 
+*Amended by D121 (TOOLS5, 2026-10-01): an agent's session, probe and action are handed the tools' environment before
+its binary is resolved, so a bare name is found on the tools' `PATH`. The resolution rule's home gains the tools, each
+held to one way rather than layered. A package pin's `npm` is the npm the tools resolve, and `agent install` keeps the
+system's.*
+
 ## D58 — An unattended driver stops after three failures on one quest, and the count is derived (2026-09-22)
 
 **Decision.** A quest that has failed **three** times on this machine is **parked**: the driver stops
@@ -2447,6 +2452,10 @@ on the one loop that costs money; the hold names the plugin and the person disab
 PLUG2 (core doctrine stays non-optional and is the owner's to reopen), D46 §3 (sitting says why —
 now for a plugin's hold too), D49 §2 (a plugin's word is a console line under `plugin:<id>`,
 machine-local). ARCH1's three declarative seams stand; this is the fourth, and the first that speaks.
+
+*Amended by D121 (TOOLS5, 2026-10-01): a hook's first word is never handed to the system bare. A name a tool answers
+for is the file the tools resolve, and the hook is not started where that tool's way cannot run. Any other name is
+found on the child's `PATH` by the agents' resolver and shim rule. The hook process is handed the tools' environment.*
 
 ## D65 — A regular task is an ask; the intake is a session; a workflow is a chain of quests (2026-09-23)
 
@@ -4222,6 +4231,10 @@ terminal's words never reach the machine log (D94).
 - **A native terminal package**: the pseudo-console is a few Win32 calls the driver library can make.
 - **Typing into a session's console**: the composer is that door.
 
+*Amended by D121 (TOOLS5, 2026-10-01): the shells come from the tools. PowerShell 7 is the file the tools resolve,
+and is not offered where its way cannot run. Git Bash is the bash beside the git the tools resolve, else beside the
+system's git. Every shell starts with the tools' environment.*
+
 ## D97 — A first start opens on a setup guide built from the facts Ask Daoris's starters read (2026-09-30)
 
 **Decision (SETUP1).** *Get started* is the first domain in Settings: the steps a machine needs, in
@@ -4434,6 +4447,9 @@ this is enough for `az.cmd`'s own `%*` was reasoned from how cmd parses, not mea
 plugin after the landing, by the person's press (`daoris-driver trees hand`, the review's *hand it to*, or
 an Ask Daoris card), told this frame for the branch as it stands. A hand-off the plugin does not complete
 changes nothing.*
+
+*Amended by D121 (TOOLS5, 2026-10-01): a landing plugin runs with the tools' environment, so its own `git`, `gh` and
+`az` are the ones the tools resolve.*
 
 ## D101 — A plugin is made with the driver's kit: a folder that tests itself, and a trial as the driver would run it (2026-09-30)
 
@@ -5504,6 +5520,10 @@ twin are held in the fast half. That a failed fetch leaves `FETCH_HEAD` as it wa
 `origin/<line>` with its time, were run by hand in scratch repositories (git 2.53, Windows), and a `TreeSyncTests` case
 in the `Process` half asserts both, written and not run here (MOD8). No fetch reached a real SSH remote. `HANDOFF` and
 `LAND_SESSION_TREE` still wait the bridge's default, since the work frame's tests hold those calls' exact shape.*
+
+*Amended by D121 (TOOLS5, 2026-10-01): the fetch's git is the git the tools resolve, started by its whole path. A git
+the person chose that cannot run is the fetch's answer, in the resolution's words. What was not fetched does not yet
+name Settings → Tools, which waits for TOOLS7's screen.*
 
 ## D112 — Bringing up to date looks at the repositories that hold Daoris's branches; every other is listed apart, and included by the person (2026-10-01)
 
@@ -6818,6 +6838,62 @@ and the person's stop cancels. Nothing starts a managed tool yet: that is TOOLS5
   runtime's documented behaviour, exercised first by TOOLS9's loopback server and TOOLS11's real downloads.
 - **Rejected:** keeping the bytes of whatever a location answers, which would let a captive portal's page replace a
   good list; retrying an unpacking refusal at the next mirror, which would fetch the same bytes again.
+
+**As built (TOOLS5, 2026-10-01): one answer for every child.** The driver's `Tools.Children.cs` and the CLI's
+`tools.ts` build a child's environment and resolve a command's first word, twins held by `ToolsChildrenTests` and
+`tools-children.test.ts`. Daoris's own git (`WorkingTree.GitStart`, which `GitAsync` and `GitBytesAsync` now share), a
+hook's first word, a pin's `npm` and the tree guard's node are the files the tools resolve, by their whole paths. Every
+session, chat, intake, helper, probe, agent action, hook, landing plugin, plugin trial and terminal shell is handed the
+tools' environment. What the design left open, settled here:
+- **Which home.** A start with no home of its own reads `$DAORIS_HOME`, D63's one seam, at that start. These are git, a
+  session's shell (`Spawning`), a probe, an action and the terminal. A hook, a plugin's trial and the tree guard read the
+  home they are handed, which is the one the hook is told as its own `DAORIS_HOME`. With no home nothing changes, and
+  git is the system's.
+- **The system's git now starts by its whole path**, found by `CommandPresence` with PATHEXT, where it was a bare name
+  that only `.exe` could answer. A git `PATH` does not find keeps the bare name, so the start fails in the system's words,
+  as before.
+- **A way that refuses puts no folder on a child's `PATH`**, and Daoris's own start of that tool refuses in the
+  resolution's words:
+  - git's answer is the refusal;
+  - a hook is not started, and is logged and skipped;
+  - a pin's `npm` is not run;
+  - the tree guard refuses the session's start rather than write a guard that would start `PATH`'s node.
+
+  A child's own lookup then meets the `PATH` it inherited, which Daoris does not rewrite.
+- **A managed version's folders** are its record's `paths` when they are folders inside the package (`.` is the
+  package), else the folder its `exe` is in. A name a tool answers for other than its own (`npm`, `npx`) is found beside
+  the tool's file by PATHEXT, and never on `PATH` when the tool is managed or a file.
+- **Byte for byte.** With every tool the system's, nothing is set at all: the driver adds no variable, and the CLI hands
+  back the environment it was given. On Windows the CLI writes `PATH` under the spelling the environment holds (`Path`),
+  never both, and `onPath` now reads `PATH` and `PATHEXT` in any case.
+- **A hook's first word that is no tool's** is found on the child's `PATH` by `CommandPresence`, through the agents'
+  shim rule. A `.cmd` there is held to its argument rule rather than started bare and not found.
+- **The terminal.** PowerShell 7 is the file the tools resolve, and is not offered where its way cannot run. Git Bash is
+  the bash beside the git the tools resolve, else beside the system's git found on the inherited `PATH`. The shell's
+  environment block takes the tools' variables before the launch's own.
+- **`agent install`** finds a first word a tool answers for on the system's own `PATH` (this process's, never the
+  tools'), and refuses naming `agent pin` where there is none. Any other installer word is left as named.
+- **The CLI starts every child in one place**, `startChild` in `toolchain.ts`, and finds a bare name on the child's
+  `PATH`, as the driver's shim rule does. The dogfood test holds that its one `spawnSync` is handed `handTools`.
+- **Held by source scans.** `EveryChildIsHandedTheToolsTests` (the driver) and `EveryModuleChildIsHandedTheToolsTests`
+  (the modules, the application and the launcher) hold every `new ProcessStartInfo` to a `Tools.Hand(` before its start,
+  or a comment above it that says `Not the tools' environment (TOOLS5):` and why. The exempt starts are the host and the
+  application, which are Daoris's own, and Edge, which is the system's. The terminal is held by name. Each scan was seen
+  failing on a removed call, a commented-out call and a removed exemption.
+- **Amended where they land**: D57 (an agent is found on the tools' `PATH`), D64 and D100 (a hook's first word and a
+  landing plugin's tools), D96 (the shells) and D109 (the fetch's git).
+- **Not built.** `GIT_CONFIG_GLOBAL` is TOOLS6's: it joins `ChildEnvironment` and `childEnvironment` with the file it
+  names. What was not fetched does not yet name Settings → Tools, which is TOOLS7's screen.
+- **Not covered by a gate run here.** `ToolsChildProcessTests`, in the `Process` half, starts a stub git named as a
+  file and wants its answer three times: from Daoris's own git, from a hook's own shell, and from a session's own
+  shell. It was written and not run (MOD8). Not measured:
+  - whether an agent passes the tools' `PATH` on to the servers it starts;
+  - off Windows, where no shim resolves a session's bare first word, .NET finds it on this process's `PATH` and not the
+    child's, though the child is still handed the tools' environment. An install is published for Windows only.
+- **Rejected:** falling back to `PATH`'s copy when a managed `npm` is not beside its node, which is the silent
+  substitution D57's pin exists to prevent; and handing a hook's first word to the system bare, which finds only an
+  `.exe`.
+
 ## D120 — Plugins leave the repository: a workshop in the home makes them, Daoris.Plugins keeps Daoris's own, and NuGet is where they are found (2026-10-01)
 
 **Decision (PLUGREPO2, PLUGDIST1).** The owner made an empty folder, Daoris.Plugins, beside this repository, for
