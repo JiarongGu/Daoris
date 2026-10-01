@@ -960,7 +960,7 @@ public sealed partial class Driver(
         }
 
         var file = SpawnSettings.Write(
-            home, sessionId, composed,
+            home, sessionId, composed, PermissionRules.HardDeny(rules),
             PermissionRules.GuardsTree(rules) ? TreeGuard.For(home, tree, across?.Writes.Select(target => target.Path)) : null);
         if (file is null) return (null, null);
 

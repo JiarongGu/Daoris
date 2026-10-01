@@ -592,13 +592,23 @@ file:
   found that a command cannot be judged by reading it, and a hook that fails open on a form it cannot
   parse is the gap again. It is written if the canary shows the classifier letting a variant through.
 
+**Built (UNBLOCK4).** The entry above, with `"$defaults"` first whatever a caller hands
+(`SpawnSettings.Write`, which requires every spawn to say what it tells the classifier), and only while
+`no-push` is on. `no-push` also gained two deny rules, `Bash(git -* push)` and `Bash(git -* push *)`: the
+maker's `*` before a subcommand, in a deny, takes every push with options before it (`-C`, `-c`,
+`--git-dir`, `--no-pager`), on both doors and in every mode, without waiting on the classifier. A quoted
+subcommand, an alias, a path to git or a shell running it still meet no rule. The price is a `git -C
+<dir> commit` whose message has *push* as a word before another, which is refused. A model of the
+maker's matching, held to the maker's own rows, checks the composed rules in both twins' tests, and
+the driver's reads them from the spawn file.
+
 ### 3.8 What still asks
 
 The carve-outs of `autonomous-development`, and what holds each on each harness once the rows land:
 
 | Still asks (is refused) | Claude Code, pipe | Claude Code, protocol (auto) | codex (`agent`) | dsh |
 |---|---|---|---|---|
-| A push, a publish, a release | `no-push` deny; nothing else allowed | `no-push` deny, and the `hard_deny` entry for other forms | no network in `agent` | 🔴 **nothing**: a push is sandbox-legal and dsh has no notion of outward (DSH1 probe 6); held for UNBLOCK7 |
+| A push, a publish, a release | `no-push` deny, options before `push` included; nothing else allowed | `no-push` deny, and the `hard_deny` entry for other forms | no network in `agent` | 🔴 **nothing**: a push is sandbox-legal and dsh has no notion of outward (DSH1 probe 6); held for UNBLOCK7 |
 | A history rewrite, a discard | not allowed by any rule | the classifier's built-in soft blocks (*"git reset --hard … git clean -fd"*, *"git commit --amend"*) | its own review | inside its sandbox, not held |
 | A write into another repository | the tree guard, and D107's across denies | the same | its workspace sandbox | its workspace sandbox |
 | A destructive delete | not allowed | the classifier's blocks on files that existed before the session | its sandbox and review | inside its sandbox, not held |
@@ -639,6 +649,9 @@ this lands, the repository's declaration will wait for your yes*.
 - **After**: the same count, per repository, from the day its declaration is accepted.
 - **The target is not zero.** A session refused a push is working as designed. What should reach
   zero is a refusal of **declared** work, and what should fall is asks per session overall.
+- **As built (UNBLOCK5, 2026-10-01)**: the line and the report, with a fifth field, `by`, from the pipe
+  door's `decision_reason_type`, null on the protocol door. The machine-log design's §4 and §6 say what
+  each reads and what is not counted; D122's note says why.
 
 ## 4. The canon text, outlined for DOC2
 

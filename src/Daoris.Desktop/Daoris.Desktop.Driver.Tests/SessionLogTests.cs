@@ -218,6 +218,97 @@ public sealed class SessionLogTests : IDisposable
         Assert.Equal(JsonValueKind.Null, ended.GetProperty("turnMs").ValueKind);
     }
 
+    /// <summary>
+    /// UNBLOCK5 (D122 §3.10): a call refused on the protocol door is one ask, as the record says it. The
+    /// refusal arrives as an update to the call (HELP4's <c>refused</c>), carrying no kind, so the kind is the
+    /// one the call was announced with. The same call refused again is still one ask, a call that merely
+    /// failed is none, and neither the call's title nor its input reaches the log.
+    /// </summary>
+    [Fact]
+    public async Task A_refused_call_is_one_ask_with_its_kind_and_never_its_words()
+    {
+        using var w = Watch();
+        var (id, _) = await w.Client.OpenChatAsync("engine", "claude-code-acp");
+        var s = id!;
+
+        Said(w.Events, s, new SessionEvent { Kind = SessionEventKind.User, Origin = "person", Text = "ship it" }, 1);
+        Said(w.Events, s, new SessionEvent
+        {
+            Kind = SessionEventKind.Tool, Id = "c9", Title = "git push origin release", ToolKind = "execute",
+            Status = "pending", Input = "{\"command\":\"git push origin release\"}",
+        }, 2);
+        Said(w.Events, s, new SessionEvent { Kind = SessionEventKind.Note, Id = "c9", Text = "permission refused: `git push origin release`" }, 2.1);
+        Said(w.Events, s, new SessionEvent { Kind = SessionEventKind.Tool, Id = "c9", Status = "refused" }, 2.2);
+        Said(w.Events, s, new SessionEvent { Kind = SessionEventKind.Tool, Id = "c9", Status = "refused", Output = "denied" }, 2.3);
+        Said(w.Events, s, new SessionEvent { Kind = SessionEventKind.Tool, Id = "c10", Title = "cargo build", ToolKind = "execute", Status = "pending" }, 3);
+        Said(w.Events, s, new SessionEvent { Kind = SessionEventKind.Tool, Id = "c10", Status = "failed" }, 4);
+
+        var refused = Data(Assert.Single(Named("permission.refused")));
+        Assert.Equal(s, refused.GetProperty("session").GetString());
+        Assert.Equal("claude-code-acp", refused.GetProperty("adapter").GetString());
+        Assert.Equal("execute", refused.GetProperty("kind").GetString());
+        // The protocol door's wire names a call's kind and title, never its tool, nor what decided it.
+        Assert.Equal(JsonValueKind.Null, refused.GetProperty("tool").ValueKind);
+        Assert.Equal(JsonValueKind.Null, refused.GetProperty("by").ValueKind);
+
+        var raw = Raw();
+        foreach (var words in new[] { "git push", "origin release", "cargo build", "ship it", "denied" })
+        {
+            Assert.DoesNotContain(words, raw);
+        }
+    }
+
+    /// <summary>
+    /// The native door's refusal names its tool and what decided it, in the wire's own words (UNBLOCK5), and a
+    /// refused call the record never announced is still an ask, of a kind nobody said.
+    /// </summary>
+    [Fact]
+    public async Task The_native_door_s_refusal_names_its_tool_and_what_decided_it()
+    {
+        using var w = Watch();
+        var (id, _) = await w.Client.OpenSessionAsync("q1", "claude-code");
+        var s = id!;
+
+        Said(w.Events, s, new SessionEvent { Kind = SessionEventKind.Tool, Id = "toolu_7", Status = "refused", ToolKind = "execute", ToolName = "Bash", RefusedBy = "rule" }, 1);
+        Said(w.Events, s, new SessionEvent { Kind = SessionEventKind.Tool, Id = "toolu_8", Status = "refused", ToolName = "mcp__daoris-knowledge__quest_publish", RefusedBy = "classifier" }, 2);
+
+        var lines = Named("permission.refused").Select(Data).ToList();
+        Assert.Equal(2, lines.Count);
+        Assert.Equal(("claude-code", "Bash", "execute", "rule"), (
+            lines[0].GetProperty("adapter").GetString(), lines[0].GetProperty("tool").GetString(),
+            lines[0].GetProperty("kind").GetString(), lines[0].GetProperty("by").GetString()));
+        Assert.Equal("mcp__daoris-knowledge__quest_publish", lines[1].GetProperty("tool").GetString());
+        Assert.Equal(JsonValueKind.Null, lines[1].GetProperty("kind").ValueKind);
+        Assert.Equal("classifier", lines[1].GetProperty("by").GetString());
+    }
+
+    /// <summary>
+    /// 🔴 The line never carries words (D94 §5): a tool's name or a decider that is not an identifier is
+    /// written as null, whatever a wire put there. A session whose open this process never saw has no adapter.
+    /// </summary>
+    [Fact]
+    public void A_name_that_is_not_an_identifier_is_written_as_null()
+    {
+        using var w = Watch();
+
+        Said(w.Events, "orphan2", new SessionEvent
+        {
+            Kind = SessionEventKind.Tool, Id = "t1", Status = "refused",
+            ToolName = "Bash(git push --force)", RefusedBy = "the person said no", ToolKind = "run a command",
+        }, 1);
+
+        var refused = Data(Assert.Single(Named("permission.refused")));
+        Assert.Equal("orphan2", refused.GetProperty("session").GetString());
+        foreach (var field in new[] { "adapter", "tool", "kind", "by" })
+        {
+            Assert.Equal(JsonValueKind.Null, refused.GetProperty(field).ValueKind);
+        }
+
+        var raw = Raw();
+        Assert.DoesNotContain("git push", raw);
+        Assert.DoesNotContain("said no", raw);
+    }
+
     /// <summary>A parked session the person answered ends `completed`, through the answer door.</summary>
     [Fact]
     public async Task An_answered_session_ends_in_the_log()

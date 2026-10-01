@@ -267,6 +267,121 @@ public sealed class ClaudeStreamJsonTests
         Assert.DoesNotContain('\n', framed);
     }
 
+    // 🔴 UNBLOCK5: WRITTEN FROM THE MAKER'S REFERENCE, NOT PRINTED BY A BINARY. The Agent SDK's TypeScript
+    // reference, read 2026-10-01, types a denial as `SDKPermissionDeniedMessage` { type: "system", subtype:
+    // "permission_denied", tool_name, tool_use_id, agent_id?, decision_reason_type?, decision_reason?, message,
+    // uuid, session_id }, emitted by a `-p` run with no permission host since 2.1.223 and best-effort, and the
+    // result's `permission_denials` as `SDKPermissionDenial` { tool_name, tool_use_id, tool_input }, "the
+    // authoritative record". No turn on this machine has shown either frame yet (D122 §3.10); when one does,
+    // these lines are replaced by the ones it printed.
+    private const string PushCall = """{"type":"assistant","message":{"id":"msg_7","content":[{"type":"tool_use","id":"toolu_7","name":"Bash","input":{"command":"git push origin main","description":"Push the branch"}}]},"session_id":"c1","parent_tool_use_id":null}""";
+    private const string FetchCall = """{"type":"assistant","message":{"id":"msg_8","content":[{"type":"tool_use","id":"toolu_8","name":"WebFetch","input":{"url":"https://example.com/notes"}}]},"session_id":"c1","parent_tool_use_id":null}""";
+    private const string PushDenied = """{"type":"system","subtype":"permission_denied","tool_name":"Bash","tool_use_id":"toolu_7","decision_reason_type":"rule","decision_reason":"Permission to use Bash with command git push origin main has been denied.","message":"Permission to use Bash with command git push origin main has been denied.","uuid":"00000000-0000-4000-8000-000000000007","session_id":"c1"}""";
+    private const string PushResult = """{"type":"user","message":{"role":"user","content":[{"type":"tool_result","tool_use_id":"toolu_7","content":"Permission to use Bash with command git push origin main has been denied.","is_error":true}]},"session_id":"c1","parent_tool_use_id":null}""";
+    private const string FetchResult = """{"type":"user","message":{"role":"user","content":[{"type":"tool_result","tool_use_id":"toolu_8","content":"Claude requested permissions to use WebFetch, but you haven't granted it yet.","is_error":true}]},"session_id":"c1","parent_tool_use_id":null}""";
+    private const string DeniedTurn = """{"type":"result","subtype":"success","is_error":false,"result":"I could not push.","num_turns":3,"stop_reason":"end_turn","permission_denials":[{"tool_name":"Bash","tool_use_id":"toolu_7","tool_input":{"command":"git push origin main"}},{"tool_name":"WebFetch","tool_use_id":"toolu_8","tool_input":{"url":"https://example.com/notes"}}],"session_id":"c1"}""";
+
+    /// <summary>
+    /// UNBLOCK5, the mapper's table: the harness's denial is the call's refusal in the record, named by its
+    /// tool and what decided it, and the failed result that follows reads <c>refused</c> as the protocol
+    /// door's does (HELP4). The console keeps the wire's own word beside the refusal's line.
+    /// </summary>
+    [Fact]
+    public void A_denial_the_harness_reports_is_the_calls_refusal_and_its_failed_result_says_refused()
+    {
+        var (lines, events, _) = Map(PushCall, PushDenied, PushResult);
+
+        Assert.Equal(3, events.Count);
+        var refusal = events[1];
+        Assert.Equal((SessionEventKind.Tool, "toolu_7", "refused"), (refusal.Kind, refusal.Id, refusal.Status));
+        Assert.Equal(("execute", "Bash", "rule"), (refusal.ToolKind, refusal.ToolName, refusal.RefusedBy));
+        // The refusal is a status, never a new title: the card keeps the name its call gave it.
+        Assert.Null(refusal.Title);
+        Assert.Equal(("toolu_7", "refused"), (events[2].Id, events[2].Status));
+
+        Assert.Equal(["→ Push the branch", "  permission refused: Push the branch (rule)", "  ✗ Push the branch failed"], lines);
+    }
+
+    /// <summary>
+    /// The result's list is the authoritative record, and the message is best-effort: a denial the message
+    /// missed is added from the list, before the turn ends, and one already said is never said twice.
+    /// </summary>
+    [Fact]
+    public void The_results_list_adds_a_denial_the_message_missed_and_never_repeats_one()
+    {
+        var (lines, events, _) = Map(PushCall, FetchCall, PushDenied, PushResult, FetchResult, DeniedTurn);
+
+        var refused = events.Where(e => e is { Kind: SessionEventKind.Tool, Status: "refused", ToolName: not null }).ToList();
+        Assert.Equal(["toolu_7", "toolu_8"], refused.Select(e => e.Id));
+        Assert.Equal(("fetch", "WebFetch", (string?)null), (refused[1].ToolKind, refused[1].ToolName, refused[1].RefusedBy));
+        // Said before the turn's end, so the refusal is part of the turn it happened in.
+        Assert.True(events.IndexOf(refused[1]) < events.FindIndex(e => e.Kind == SessionEventKind.Turn));
+        // A result that failed before the list named it is a failure until then; the list turns it.
+        Assert.Equal("failed", events.Single(e => e.Id == "toolu_8" && e.Content is not null).Status);
+        Assert.Single(lines, line => line == "  permission refused: Fetch https://example.com/notes");
+    }
+
+    /// <summary>
+    /// A denial of a call the session's record does not hold (a subagent's, whose calls run beside the session,
+    /// CONSOLE3c) is said on the console and is no card in the conversation. A frame of another shape than the
+    /// reference's (no call id) is an absence, never a throw; a decider that is not a string is unsaid.
+    /// </summary>
+    [Fact]
+    public void A_denial_of_a_call_the_record_does_not_hold_is_said_on_the_console_only()
+    {
+        const string subagents = """{"type":"system","subtype":"permission_denied","tool_name":"Bash","tool_use_id":"toolu_sub","agent_id":"agent_1","decision_reason_type":"asyncAgent","message":"denied","uuid":"u1","session_id":"c1"}""";
+        const string shapeless = """{"type":"system","subtype":"permission_denied","tool_name":"Bash","message":"denied","uuid":"u2","session_id":"c1"}""";
+        const string oddDecider = """{"type":"system","subtype":"permission_denied","tool_name":"Bash","tool_use_id":"toolu_7","decision_reason_type":7,"message":"denied","uuid":"u3","session_id":"c1"}""";
+
+        var (lines, events, _) = Map(subagents, shapeless);
+        Assert.Empty(events);
+        Assert.Equal(["  permission refused: Bash (asyncAgent)"], lines);
+
+        var (_, odd, _) = Map(PushCall, oddDecider);
+        var refusal = Assert.Single(odd, e => e.Status == "refused");
+        Assert.Null(refusal.RefusedBy);
+    }
+
+    /// <summary>
+    /// The pipe door's capture, end to end (UNBLOCK5): the harness's denial reaches the machine log as one ask,
+    /// named by its tool, its kind and what decided it, and the command and its words never do.
+    /// </summary>
+    [Fact]
+    public async Task The_capture_turns_a_denial_into_one_ask_in_the_machine_log()
+    {
+        var home = Path.Combine(Path.GetTempPath(), "daoris-stream-" + Guid.NewGuid().ToString("N")[..8]);
+        Directory.CreateDirectory(home);
+        try
+        {
+            var events = new SessionEvents(Path.Combine(home, "sessions"));
+            using var log = new MachineLog(home, "desktop");
+            using var client = new ServiceClient("http://ledger.test", null, new HttpClient());
+            using var watch = new SessionLog(log, client, events);
+            var stdout = new StringReader(string.Join('\n', Init, PushCall, PushDenied, PushResult, DeniedTurn));
+
+            await Daoris.Driver.Driver.CaptureStructuredAsync(
+                stdout, new StringReader(""), Path.Combine(home, "s1.log"), "s1", output: null, events,
+                new ClaudeStreamJson(), prompt: "push it", CancellationToken.None);
+
+            var written = string.Join('\n', Directory.GetFiles(Path.Combine(home, MachineLog.Folder)).Select(StubFile.Text));
+            var asks = written.Split('\n', StringSplitOptions.RemoveEmptyEntries)
+                .Select(line => System.Text.Json.JsonDocument.Parse(line).RootElement)
+                .Where(line => line.GetProperty("event").GetString() == "permission.refused")
+                .Select(line => line.GetProperty("data"))
+                .ToList();
+            var ask = Assert.Single(asks);
+            Assert.Equal(("s1", "Bash", "execute", "rule"), (
+                ask.GetProperty("session").GetString(), ask.GetProperty("tool").GetString(),
+                ask.GetProperty("kind").GetString(), ask.GetProperty("by").GetString()));
+            Assert.DoesNotContain("git push", written);
+            Assert.DoesNotContain("Push the branch", written);
+        }
+        finally
+        {
+            Directory.Delete(home, recursive: true);
+        }
+    }
+
     /// <summary>What is not a frame is shown as itself, and a type this build does not know is kept raw.</summary>
     [Fact]
     public void A_line_that_is_not_a_frame_is_shown_and_an_unknown_type_is_kept_raw()

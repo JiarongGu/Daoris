@@ -1,3 +1,5 @@
+using System.Text.RegularExpressions;
+
 namespace Daoris.Driver;
 
 /// <summary>
@@ -14,18 +16,36 @@ namespace Daoris.Driver;
 /// <c>session.started</c> {session, kind, adapter, repository} as a record opens;
 /// <c>session.opened</c> {session, adapter, openMs}, the open to the session's first prompt in its record;
 /// <c>turn.answered</c> {session, firstAnswerMs}, a prompt to the first thing back (a message, a thought
-/// or a tool call); <c>turn.ended</c> {session, stopReason, turnMs}, a prompt to its turn's end; and
-/// <c>session.ended</c> {session, state, seconds} as the record reaches a closed state.</para>
+/// or a tool call); <c>turn.ended</c> {session, stopReason, turnMs}, a prompt to its turn's end;
+/// <c>session.ended</c> {session, state, seconds} as the record reaches a closed state; and
+/// <c>permission.refused</c> {session, adapter, tool, kind, by} for each call the record says was refused
+/// (UNBLOCK5, D122 §3.10).</para>
+///
+/// <para><b>An ask is a refused call, once.</b> Nothing Daoris starts has a person at the prompt, so every
+/// permission a harness would have asked for is refused (D52), and the record marks the call
+/// <c>refused</c>: the protocol door when the agent reports a call it refused as failed (HELP4), the native
+/// door from the harness's own <c>permission_denied</c> report. A call is counted the first time, however
+/// many updates repeat it. <c>kind</c> is ACP's tool kind, from the refusal or else from the call's first
+/// event; <c>tool</c> and <c>by</c> are the wire's own identifiers where it gave them (only the native door
+/// does), and null where it did not.</para>
 ///
 /// <para><b>Never anyone's words</b>: an event's text, a tool's input, a note the driver wrote on a move
-/// are read for their kind and their stamp, and never written. What cannot be timed (an open this
-/// process never saw, a turn's end with no prompt before it) is written as null, never as zero.</para>
+/// are read for their kind and their stamp, and never written. A name that is not an identifier is written
+/// as null, so a wire that put a command or a sentence where a name goes cannot pass it through. What
+/// cannot be timed (an open this process never saw, a turn's end with no prompt before it) is written as
+/// null, never as zero.</para>
 /// </remarks>
 public sealed class SessionLog : IDisposable
 {
     /// <summary>The ledger's closed states, in their public spelling: a record in one has ended.</summary>
     public static readonly IReadOnlySet<string> Closed =
         new HashSet<string>(["completed", "declined", "stood-down", "failed", "stopped"], StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// What a name in a line may be (D94 §4): an identifier such as <c>Bash</c>,
+    /// <c>mcp__server__tool</c>, <c>execute</c> or <c>asyncAgent</c>, never a phrase.
+    /// </summary>
+    private static readonly Regex Identifier = new("^[A-Za-z][A-Za-z0-9_.:-]{0,119}$", RegexOptions.CultureInvariant);
 
     private readonly MachineLog _log;
     private readonly ServiceClient _service;
@@ -76,6 +96,12 @@ public sealed class SessionLog : IDisposable
 
         /// <summary>Whether the turn in flight has had its first answer.</summary>
         public bool Answered { get; set; }
+
+        /// <summary>Each call's kind as it was announced: a refusal that arrives as a bare update names none.</summary>
+        public Dictionary<string, string> Kinds { get; } = new(StringComparer.Ordinal);
+
+        /// <summary>The calls already counted as refused, so a repeated update is not a second ask.</summary>
+        public HashSet<string> Refused { get; } = new(StringComparer.Ordinal);
     }
 
     private void OnOpened(SessionOpened opened)
@@ -145,6 +171,7 @@ public sealed class SessionLog : IDisposable
                         lines.Add(("turn.answered", [("session", session), ("firstAnswerMs", Ms(at - asked))]));
                     }
 
+                    if (e.Kind == SessionEventKind.Tool && Refusal(session, watched, e) is { } refusal) lines.Add(refusal);
                     break;
 
                 case SessionEventKind.Turn:
@@ -159,6 +186,28 @@ public sealed class SessionLog : IDisposable
         // Written outside the gate: the log has its own, and a slow disk should not hold the next event.
         foreach (var (name, data) in lines) _log.Write("info", name, data);
     }
+
+    /// <summary>
+    /// A tool event read for an ask (UNBLOCK5): its kind remembered, and the line for a call refused for the
+    /// first time. Called under the gate.
+    /// </summary>
+    private static (string Event, (string Key, object? Value)[] Data)? Refusal(string session, Watched watched, SessionEvent e)
+    {
+        if (e.Id is { } call && e.ToolKind is { Length: > 0 } announced) watched.Kinds.TryAdd(call, announced);
+        if (e.Status != "refused") return null;
+        // A refusal with no id cannot be told from the next one, so each is its own ask.
+        if (e.Id is { } id && !watched.Refused.Add(id)) return null;
+
+        var kind = e.ToolKind ?? (e.Id is { } known && watched.Kinds.TryGetValue(known, out var first) ? first : null);
+        return ("permission.refused",
+        [
+            ("session", session), ("adapter", watched.Adapter), ("tool", Name(e.ToolName)), ("kind", Name(kind)),
+            ("by", Name(e.RefusedBy)),
+        ]);
+    }
+
+    /// <summary>An identifier as written, or null for anything that is not one (D94 §5).</summary>
+    private static string? Name(string? value) => value is not null && Identifier.IsMatch(value) ? value : null;
 
     /// <summary>Whole milliseconds, to the nearest: a stamp's arithmetic can land a tick short of one.</summary>
     private static long Ms(TimeSpan span) => (long)Math.Round(Math.Max(0, span.TotalMilliseconds));
