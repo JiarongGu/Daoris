@@ -73,34 +73,86 @@ public sealed class PluginSourceTests : IDisposable
         Assert.Equal(((PluginSource?)null, (string?)null), PluginSource.Read(Installed("acme.gate")));
     }
 
-    /// <summary>The record's shape: the CLI's <c>the record reads a folder or an offer…</c>, row for row.</summary>
+    /// <summary>A SHA-512 in base64, as a package's record keeps it: what a row's <c>SHA</c> stands for.</summary>
+    private static readonly string Sha = Convert.ToBase64String(System.Security.Cryptography.SHA512.HashData("a package"u8));
+
+    /// <summary>
+    /// The record's shape (D103; a package since PLUGDIST1a, D120 §5.7): the CLI's <c>the record reads as the driver
+    /// reads it</c>, which parses these rows and holds its own to them, cell for cell and in this order. A row's
+    /// <c>WHOLE</c> is a whole path and its <c>SHA</c> a SHA-512 in base64; each side spells its own. What it reads as
+    /// is said in one line: <c>folder &lt;path&gt;</c>, <c>offer &lt;id&gt;</c>, or <c>package &lt;id&gt; &lt;version&gt;
+    /// &lt;sha512&gt; &lt;source&gt;</c>.
+    /// </summary>
     [Theory]
-    [InlineData(null, null, null, null)]
-    [InlineData("""{ "offer": "github-pull-request" }""", null, "github-pull-request", null)]
-    [InlineData("{ not json", null, null, "does not read")]
-    [InlineData("[]", null, null, "it is not a JSON object")]
-    [InlineData("{}", null, null, "it names neither a folder nor an offer")]
-    [InlineData("""{ "folder": "relative/path" }""", null, null, "its folder is not a whole path")]
-    [InlineData("""{ "offer": "Not An Id" }""", null, null, "its offer is not a plugin id")]
-    [InlineData("""{ "folder": "WHOLE", "offer": "x" }""", null, null, "it names both a folder and an offer")]
-    public void The_record_reads_as_the_cli_reads_it(string? text, string? folder, string? offer, string? problem)
+    [InlineData("no record", null, null, null)]
+    [InlineData("a folder", """{ "folder": "WHOLE" }""", "folder WHOLE", null)]
+    [InlineData("an offer", """{ "offer": "github-pull-request" }""", "offer github-pull-request", null)]
+    [InlineData("a package from a folder", """{ "package": "Acme.Gate", "version": "1.0.0", "sha512": "SHA", "source": "WHOLE" }""", "package Acme.Gate 1.0.0 SHA WHOLE", null)]
+    [InlineData("a package from an address", """{ "package": "Daoris.Plugins.GitHubPullRequest", "version": "1.2.0-preview.1", "sha512": "SHA", "source": "https://api.nuget.org/v3/index.json" }""", "package Daoris.Plugins.GitHubPullRequest 1.2.0-preview.1 SHA https://api.nuget.org/v3/index.json", null)]
+    [InlineData("a package from this machine over http", """{ "package": "Acme.Gate", "version": "1.0.0.1", "sha512": "SHA", "source": "http://127.0.0.1:5555/v3/index.json" }""", "package Acme.Gate 1.0.0.1 SHA http://127.0.0.1:5555/v3/index.json", null)]
+    [InlineData("a key it has no field for", """{ "folder": "WHOLE", "note": "mine" }""", "folder WHOLE", null)]
+    [InlineData("not JSON", "{ not json", null, "it is not JSON")]
+    [InlineData("a list", "[]", null, "it is not a JSON object")]
+    [InlineData("nothing named", "{}", null, "it names no folder, offer or package")]
+    [InlineData("a folder that is not whole", """{ "folder": "relative/path" }""", null, "its folder is not a whole path")]
+    [InlineData("an offer that is not an id", """{ "offer": "Not An Id" }""", null, "its offer is not a plugin id")]
+    [InlineData("a folder and an offer", """{ "folder": "WHOLE", "offer": "x" }""", null, "it names both a folder and an offer")]
+    [InlineData("a package and a folder", """{ "package": "Acme.Gate", "version": "1.0.0", "sha512": "SHA", "source": "WHOLE", "folder": "WHOLE" }""", null, "it names both a package and a folder")]
+    [InlineData("a package and an offer", """{ "package": "Acme.Gate", "version": "1.0.0", "sha512": "SHA", "source": "WHOLE", "offer": "x" }""", null, "it names both a package and an offer")]
+    [InlineData("a package that is not an id", """{ "package": "Acme Gate", "version": "1.0.0", "sha512": "SHA", "source": "WHOLE" }""", null, "its package `Acme Gate` is not a package id")]
+    [InlineData("a package with no version", """{ "package": "Acme.Gate", "sha512": "SHA", "source": "WHOLE" }""", null, "a package needs its `version`")]
+    [InlineData("a version that is not one", """{ "package": "Acme.Gate", "version": "latest", "sha512": "SHA", "source": "WHOLE" }""", null, "its version `latest` is not a package version")]
+    [InlineData("a package with no hash", """{ "package": "Acme.Gate", "version": "1.0.0", "source": "WHOLE" }""", null, "a package needs its `sha512`")]
+    [InlineData("a hash that is not a SHA-512", """{ "package": "Acme.Gate", "version": "1.0.0", "sha512": "c2hhMjU2", "source": "WHOLE" }""", null, "its sha512 is not a SHA-512 hash in base64")]
+    [InlineData("a package with no source", """{ "package": "Acme.Gate", "version": "1.0.0", "sha512": "SHA" }""", null, "a package needs its `source`")]
+    [InlineData("a source that is neither", """{ "package": "Acme.Gate", "version": "1.0.0", "sha512": "SHA", "source": "relative/feed" }""", null, "its source `relative/feed` is neither a whole path nor an address")]
+    [InlineData("a source over http elsewhere", """{ "package": "Acme.Gate", "version": "1.0.0", "sha512": "SHA", "source": "http://feed.example/v3/index.json" }""", null, "its source `http://feed.example/v3/index.json` is neither a whole path nor an address")]
+    public void The_record_reads_as_the_cli_reads_it(string name, string? text, string? reads, string? problem)
     {
         var install = Path.Combine(_root, "install");
         Directory.CreateDirectory(install);
         var whole = Path.Combine(_root, "somewhere");
-        if (text is not null) File.WriteAllText(Path.Combine(install, PluginSource.FileName), text.Replace("WHOLE", JsonEncodedText.Encode(whole).ToString()));
+        if (text is not null)
+        {
+            File.WriteAllText(Path.Combine(install, PluginSource.FileName),
+                text.Replace("WHOLE", JsonEncodedText.Encode(whole).ToString()).Replace("SHA", Sha));
+        }
 
         var (source, said) = PluginSource.Read(install);
 
-        Assert.Equal(folder, source?.Folder);
-        Assert.Equal(offer, source?.Offer);
-        if (problem is null) Assert.Null(said);
+        Assert.True(reads?.Replace("WHOLE", whole).Replace("SHA", Sha) == Reads(source), $"{name}: {Reads(source)}");
+        if (problem is null) Assert.True(said is null, $"{name}: {said}");
         else
         {
             Assert.Null(source);
             Assert.Contains("does not read", said);
-            Assert.Contains(problem, said);
+            Assert.True(said!.Contains(problem, StringComparison.Ordinal), $"{name}: {said}");
         }
+    }
+
+    /// <summary>What a record reads as, in the one line both sides' tables spell.</summary>
+    private static string? Reads(PluginSource? source) => source switch
+    {
+        null => null,
+        { Package: { } package } => $"package {package.Package} {package.Version} {package.Sha512} {package.Source}",
+        { Offer: { } offer } => $"offer {offer}",
+        _ => $"folder {source.Folder}",
+    };
+
+    /// <summary>A package's record is written as it reads, so an update and a list see what the install saw.</summary>
+    [Fact]
+    public void A_package_record_reads_back_as_written()
+    {
+        var install = Path.Combine(_root, "install");
+        Directory.CreateDirectory(install);
+        var origin = new PluginPackageOrigin("Acme.Gate", "1.0.0", Sha, Path.Combine(_root, "feed"));
+
+        PluginSource.Write(install, PluginSource.FromPackage(origin));
+
+        Assert.Equal((PluginSource.FromPackage(origin), (string?)null), PluginSource.Read(install));
+        Assert.Equal($"{origin.Source}, package `Acme.Gate` 1.0.0", PluginSource.FromPackage(origin).Said);
+        Assert.Equal(["package", "version", "sha512", "source"],
+            JsonDocument.Parse(File.ReadAllText(Path.Combine(install, PluginSource.FileName))).RootElement.EnumerateObject().Select(field => field.Name));
     }
 
     [Fact]
@@ -167,7 +219,8 @@ public sealed class PluginSourceTests : IDisposable
 
     /// <summary>
     /// Update's refusals, the CLI's <c>update refuses a source that is gone…</c> row for row, in the same
-    /// words; each leaves the installed version exactly as it was.
+    /// words, which that test parses from here and holds to its own; each leaves the installed version exactly
+    /// as it was. A plugin from a package (PLUGDIST1a) is installed whole: a newer package takes its place.
     /// </summary>
     [Theory]
     [InlineData("not installed", "acme.nobody", "no plugin `acme.nobody` on this machine")]
@@ -180,6 +233,7 @@ public sealed class PluginSourceTests : IDisposable
     [InlineData("refused by this build", "acme.gate", "`dsh`, which this build already carries")]
     [InlineData("offer no longer offered", "acme.gate", "`acme.gate` is not offered by this install any more")]
     [InlineData("source inside the home", "acme.gate", "inside Daoris's home")]
+    [InlineData("a package", "acme.gate", "A newer package takes its place: `daoris plugin remove acme.gate`, then `daoris-driver plugins install <file.nupkg>`")]
     [InlineData("not an id", "../acme.gate", "is not a plugin id")]
     public void An_update_refuses_what_the_cli_refuses(string name, string id, string says)
     {
@@ -199,6 +253,9 @@ public sealed class PluginSourceTests : IDisposable
             case "source inside the home":
                 var inside = Folder(Path.Combine(Home, "elsewhere", "gate"), GateV1);
                 File.WriteAllText(record, JsonSerializer.Serialize(new { folder = inside }));
+                break;
+            case "a package":
+                File.WriteAllText(record, JsonSerializer.Serialize(new { package = "Acme.Gate", version = "1.0.0", sha512 = Sha, source = source }));
                 break;
         }
 

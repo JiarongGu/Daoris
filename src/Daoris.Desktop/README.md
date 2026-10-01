@@ -134,6 +134,14 @@ a plugin as the driver would and checks every answer with the driver's own reade
 `DAORIS.DRIVER`'s `PLUGINS` answer carries `kit.points`, `PLUGIN_NEW` {id, points, folder} writes the
 folder, and `PLUGIN_TRY` {id} or {folder} answers the trial's steps, summary and stderr lines.
 
+**A plugin package** (PLUGDIST1a, D120) is read by the driver library's `PluginPackage`, with no NuGet
+client and no network. `daoris-driver plugins install <file.nupkg>` judges the package before anything is
+extracted: the type `DaorisPlugin` alone at a plugin API this build speaks, no dependencies,
+`plugin/plugin.json`, and every `plugin/` entry inside the plugin's folder. It then extracts `plugin/`
+alone into a stage under the home, reads it as the catalogue reads a plugin, and adds it under its id,
+never over an installed one, with `{ package, version, sha512, source }` recorded in
+`.daoris-source.json`. A package source over HTTP is PLUGDIST1c's.
+
 ## The dev loop — `tools/desktop.mjs` (2026-09-21)
 
 Everything else here has a loop that can see it. The shell had none: Playwright cannot reach it (the

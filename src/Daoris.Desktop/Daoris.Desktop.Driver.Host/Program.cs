@@ -69,6 +69,12 @@ using Daoris.Driver;
 //                 one readable line each, or as written with --json. A line that cannot be read is
 //                 skipped and counted. Settings → Logs is the screen's door to the same reading.
 //
+//   plugins install <file.nupkg>
+//                 a plugin package (PLUGDIST1a, D120): read before anything is extracted (the type
+//                 `DaorisPlugin` at a plugin API this build speaks, no dependencies, `plugin/plugin.json`),
+//                 its `plugin/` folder alone extracted and read as the catalogue reads one, and added under
+//                 its id, never over an installed one, with the package recorded. Nothing reaches a network.
+//
 //   plugins new <id> --point <point>… [--in <folder>]
 //   plugins try <folder|id> [--point <point>] [--frame <file.json>]
 //                 the plugin kit (PLUG8, D101): `new` writes a plugin's folder — a manifest, a wire script
@@ -147,6 +153,13 @@ try
     if (args is ["sync", .. var syncArgs])
     {
         return await Daoris.Driver.Host.SyncConsole.RunAsync(syncArgs);
+    }
+
+    // A plugin package from a file (PLUGDIST1a, D120 §5.7): read, checked and installed with no network. Asked
+    // for before the kit's verbs below, which answer every other `plugins` word.
+    if (args is ["plugins", "install", .. var installArgs])
+    {
+        return PluginPackageCommand.Install(installArgs, Console.Out, DaorisHome.Resolve());
     }
 
     // The machine log from a terminal (LOG1c, D50): Settings → Logs is the other door to the same reading.
