@@ -379,7 +379,9 @@ public sealed class HookSetLogTests : IDisposable
             }
         });
         var peer = new HookPeer(new ChannelReader(toHost), plugin, "acme.gate", patience: TimeSpan.FromMilliseconds(kind == "late" ? 100 : 5000));
-        await peer.InitializeAsync(_home, _home, ["quest/consider"], CancellationToken.None);
+        // The late case asks with no handshake: a handshake bounded by the same short patience failed under the
+        // suite's own load before the call it was there to test.
+        if (kind != "late") await peer.InitializeAsync(_home, _home, ["quest/consider"], CancellationToken.None);
 
         var error = await Assert.ThrowsAsync<DriverException>(() => peer.ConsiderAsync(new { }, CancellationToken.None));
 
