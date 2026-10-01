@@ -4,7 +4,8 @@
 > file and folder layout of dsh's own repository (`github.com/deepseek-ai/deepseek-harness`, public;
 > D53 adopted dsh as a protocol), apply it to this repository and to every repository Daoris manages,
 > and give Daoris a way to set one up. This is the contract for the LAYOUT rows, and its decision is
-> **D117**. Status: **designed; the CLI's half (LAYOUT3: §2, §3, §5.1–§5.4) and the service's (LAYOUT4: §5.5) are built.** It extends
+> **D117**. Status: **designed; the CLI's half (LAYOUT3: §2, §3, §5.1–§5.4), the service's (LAYOUT4: §5.5) and the set-up quest
+with the layout read from a line (LAYOUT7: §6.1–§6.3 as D124 amends them; notes under D117 and D124) are built.** It extends
 > `docs/2026-09-22-instruction-file-design.md` (D59), which moved only the always-loaded tier into
 > `AGENTS.md` and left knowledge and skills under `.claude/`, and it enumerates D19's state space
 > again for a move. Read with **D3** (no links), **D5**, **D13**, **D14**, **D18**, **D23**, **D32**,
