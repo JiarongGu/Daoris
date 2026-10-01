@@ -207,6 +207,46 @@ function EmptyActs({ make }: { make: ListMake }) {
   );
 }
 
+/**
+ * A group of a list's rows under its name and count, as the session rail draws a repository's (`RepositoryGroup`) and
+ * the Plugins view a state's. Its rows are `<li>`s, each a row of its list (`data-list-row`).
+ */
+export function ListGroup({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <section className="border-t border-line first:border-t-0">
+      <h3 className="m-0 truncate px-2.5 pb-1 pt-2.5 text-small font-semibold text-ink">{title}</h3>
+      <ul className="m-0 list-none p-0">{children}</ul>
+    </section>
+  );
+}
+
+/**
+ * A row's door: the whole row chooses it, wearing the list's selection as the rail's rows do, and a closed record
+ * read as finished, dimmed (FRAME1d). `aria-current`, as the rail's: the row is a button, not a listbox option.
+ */
+export function ListRowDoor({ chosen, dimmed = false, onPress, children }: {
+  chosen: boolean;
+  dimmed?: boolean;
+  onPress: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      aria-current={chosen || undefined}
+      onClick={onPress}
+      className={cn(
+        'block w-full min-w-0 border-l-[3px] px-2.5 py-1.5 text-left transition-colors duration-(--speed)',
+        'hover:bg-accent-soft/50',
+        chosen ? 'border-l-accent bg-accent-soft' : 'border-l-transparent',
+        dimmed && 'opacity-75',
+      )}
+    >
+      {children}
+    </button>
+  );
+}
+
 /** One of the ⋯'s items: an act, or a toggle where it says whether it is on (a filter: *Include closed*). */
 export type MoreItem = { id: string; label: string; checked?: boolean };
 

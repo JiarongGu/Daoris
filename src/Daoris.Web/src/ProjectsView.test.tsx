@@ -272,7 +272,7 @@ describe('the shell-attached registry management', () => {
   });
 
   // The CONSOLE's tests moved to `work/WorkFrame.test.tsx` with the console itself (D55): one home
-  // for the stream, and the quest drawer keeps the record summary plus a door into it.
+  // for the stream, and the quest's page keeps the record summary plus a door into it.
 
   /**
    * Provenance is served, not implied (D48 §6). A person looking at a repository's knowledge must be

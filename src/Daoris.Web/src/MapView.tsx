@@ -28,7 +28,7 @@ const SHARED = 0.75;
 export function MapView({ notify, onOpenConvergence, onOpenQuest }: {
   notify: Notify;
   onOpenConvergence?: () => void;
-  /** A quest named in a detail opens in its drawer, on Quests (UX5 U46). */
+  /** A quest named in a detail opens on its page, on Quests (UX5 U46; FRAME1d). */
   onOpenQuest?: (id: string) => void;
 }) {
   const { t } = useTranslation();

@@ -21,7 +21,7 @@ const MARK: Record<ChainStep['kind'], string> = {
  *
  * @remarks
  * A molecule: the chain arrives built (`buildChain`), so every shape is reachable in a story. The
- * same strip renders in a quest's drawer and beside an attended session. Each surface decides what
+ * same strip renders on a quest's page and beside an attended session. Each surface decides what
  * pressing a quest or a session does, so the strip adds no act of its own.
  *
  * **Every state is said in words** (D41): a quest's status and a session's state are pills, the
@@ -32,7 +32,7 @@ export function ChainStrip({ chain, level = 2, attended, onQuest, onSession }: {
   chain: ChainStep[];
   /** The session being read, where the strip sits beside one: marked, and no door to itself (SESS1 S7). */
   attended?: string;
-  /** The heading level where it sits: its own section in a drawer, under a session's head in Work. */
+  /** The heading level where it sits: its own section on a quest's page, under a session's head in Work. */
   level?: 2 | 3;
   onQuest?: (quest: Quest) => void;
   onSession?: (session: Session) => void;

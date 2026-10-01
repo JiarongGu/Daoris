@@ -140,7 +140,7 @@ export function sentence(error: unknown): string {
  * a keyed remote, where the profile name deliberately never travels, machine-local like the
  * transcript. Neither is an error, so neither gets a placeholder that looks like one.
  *
- * Shared by the quest drawer and the chat drawer for the same reason the console is: a conversation
+ * Shared by the quest's page and the chat drawer for the same reason the console is: a conversation
  * is a session, and rendering it twice is how the two quietly stop agreeing.
  */
 export function sessionTool(

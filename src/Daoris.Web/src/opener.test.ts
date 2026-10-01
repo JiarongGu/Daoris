@@ -15,10 +15,9 @@ describe('the opener', () => {
     expect(opening('sessions', 's1a2b3c4')).toEqual({ view: 'sessions', chosen: { view: 'sessions', item: 's1a2b3c4' } });
   });
 
-  it('chooses the quest a door names, and opens its record', () => {
-    expect(opening('quests', 'abc123')).toEqual({
-      view: 'quests', chosen: { view: 'quests', item: 'abc123' }, quest: 'abc123',
-    });
+  /** FRAME1d: Quests' main area shows the item its list chose, so the choice is the whole of what a door does. */
+  it('chooses the quest a door names, and nothing more: no drawer is asked for', () => {
+    expect(opening('quests', 'abc123')).toEqual({ view: 'quests', chosen: { view: 'quests', item: 'abc123' } });
   });
 
   it('names an ask as an ask, since Quests\' list holds asks and quests', () => {
@@ -26,7 +25,7 @@ describe('the opener', () => {
     expect(questsItem('ask:7c1e9a04b2d5')).toEqual({ ask: '7c1e9a04b2d5' });
     expect(questsItem('abc123')).toEqual({ quest: 'abc123' });
     expect(opening('quests', askItem('7c1e9a04b2d5'))).toEqual({
-      view: 'quests', chosen: { view: 'quests', item: 'ask:7c1e9a04b2d5' }, ask: '7c1e9a04b2d5',
+      view: 'quests', chosen: { view: 'quests', item: 'ask:7c1e9a04b2d5' },
     });
   });
 
