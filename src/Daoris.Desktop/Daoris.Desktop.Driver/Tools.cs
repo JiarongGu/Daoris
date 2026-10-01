@@ -69,9 +69,9 @@ public sealed record ToolResolution(string Tool, ToolWay? Way, string? Version, 
 /// <para>Then the resolution: the way set decides which file starts. A managed version nobody downloaded, or
 /// a named file that is gone, refuses and <b>never</b> falls back to <c>PATH</c> (D57's pin rule, read for a
 /// tool). It reads and writes files and answers "which program"; handing that answer to every start is
-/// TOOLS5's.</para>
+/// <c>Tools.Children.cs</c>'s (TOOLS5).</para>
 /// </remarks>
-public static class Tools
+public static partial class Tools
 {
     /// <summary>The file under the home. The CLI's <c>TOOLS_FILE</c>.</summary>
     public const string FileName = "tools.json";

@@ -37,10 +37,14 @@ public interface ITerminalFactory
     ITerminal Start(TerminalLaunch launch, Action<string> output, Action<int> exited);
 }
 
-/// <summary>The machine's terminals: its shells found on PATH, each started under a Windows pseudo-console.</summary>
+/// <summary>The machine's terminals: its shells found on the tools' PATH, each started under a Windows pseudo-console.</summary>
 public sealed class PseudoConsoleTerminals : ITerminalFactory
 {
-    public IReadOnlyList<TerminalShell> Shells() => TerminalShells.Available();
+    /// <summary>The shells as Tools answers them (TOOLS5, D121 §2.6), read from the home's file now; with no home, PATH's.</summary>
+    public IReadOnlyList<TerminalShell> Shells() =>
+        DaorisHome.Resolve() is { } home
+            ? TerminalShells.For(Tools.Read(home), home, Environment.GetEnvironmentVariable(Tools.PathVariable))
+            : TerminalShells.Available();
 
     public ITerminal Start(TerminalLaunch launch, Action<string> output, Action<int> exited) =>
         PseudoConsole.Start(launch, output, exited);
@@ -73,10 +77,31 @@ public static class TerminalShells
     public static IReadOnlyList<TerminalShell> Available(string? path = null)
     {
         if (!OperatingSystem.IsWindows()) return [];
+        var git = CommandPresence.Resolve("git", path, startable: true);
+        return Offer(CommandPresence.Resolve("pwsh", path, startable: true), path, GitBashBeside(git));
+    }
 
+    /// <summary>
+    /// The shells as Tools answers them (TOOLS5, D121 §2.6), with <paramref name="inherited"/> the PATH this process
+    /// holds: PowerShell 7 is the file Tools resolves, and none where its way cannot run, never PATH's instead; Windows
+    /// PowerShell and Command Prompt are the system's, found on the tools' PATH; Git Bash is the bash beside the git
+    /// Tools resolves, else the one beside the system's git — a minimal git carries none (§3.2) — else none.
+    /// </summary>
+    public static IReadOnlyList<TerminalShell> For(ToolsRead read, string home, string? inherited)
+    {
+        if (!OperatingSystem.IsWindows()) return [];
+        var path = Tools.ChildPath(read, home, inherited) ?? inherited;
+        var pwsh = Tools.Resolve(read, home, "pwsh", inherited);
+        var bash = GitBashBeside(Tools.Resolve(read, home, "git", inherited).File)
+            ?? GitBashBeside(CommandPresence.Resolve("git", inherited, startable: true));
+        return Offer(pwsh.Refused ? null : pwsh.File, path, bash);
+    }
+
+    private static IReadOnlyList<TerminalShell> Offer(string? pwsh, string? path, string? bash)
+    {
         var found = new List<TerminalShell>();
         // The banner is the one line a new terminal would otherwise open with, every time.
-        if (CommandPresence.Resolve("pwsh", path, startable: true) is { } pwsh) found.Add(new(Pwsh, pwsh, ["-NoLogo"]));
+        if (pwsh is not null) found.Add(new(Pwsh, pwsh, ["-NoLogo"]));
         if (CommandPresence.Resolve("powershell", path, startable: true) is { } powershell)
         {
             found.Add(new(WindowsPowerShell, powershell, ["-NoLogo"]));
@@ -84,7 +109,7 @@ public static class TerminalShells
 
         if (CommandPresence.Resolve("cmd", path, startable: true) is { } cmd) found.Add(new(Cmd, cmd, []));
         // A login shell, as Git Bash's own shortcut starts it, so the person's profile is read.
-        if (GitBashBeside(CommandPresence.Resolve("git", path, startable: true)) is { } bash) found.Add(new(GitBash, bash, ["--login", "-i"]));
+        if (bash is not null) found.Add(new(GitBash, bash, ["--login", "-i"]));
         return found;
     }
 

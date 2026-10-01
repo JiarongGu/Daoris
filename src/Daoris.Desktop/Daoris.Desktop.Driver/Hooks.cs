@@ -449,14 +449,34 @@ public sealed class HookProcess : IHookChannel
     /// folders and the home in the environment. Stated once, so the plugin kit's try (PLUG8) starts a
     /// plugin exactly as the driver does.
     /// </summary>
+    /// <remarks>
+    /// <para>🔴 <b>Its first word is resolved, never handed to the system bare</b> (TOOLS5, D121 §2.4): a name a tool
+    /// answers for (<c>node</c>, <c>npm</c>, <c>git</c>, <c>gh</c>, <c>az</c>…) is the file Tools resolves, and any
+    /// other is found on the child's <c>PATH</c> as an agent's is — both through the shim rule the agents' doors use,
+    /// since a bare name started with no shell finds only an <c>.exe</c>. Its environment is the tools', so a landing
+    /// plugin's own <c>git push</c> is the git the driver's fetch ran.</para>
+    /// </remarks>
+    /// <exception cref="DriverException">No hooks, or the tool its first word names cannot run as the person chose.</exception>
     public static ProcessStartInfo StartInfo(PluginEntry plugin, string home)
     {
         var hooks = plugin.Manifest.Hooks
             ?? throw new DriverException($"plugin `{plugin.Manifest.Id}` declares no hooks.");
 
+        var tools = Tools.Read(home);
+        var first = hooks.Command[0];
+        if (Tools.ResolveCommand(tools, home, first) is { } tool)
+        {
+            if (tool.Refused)
+            {
+                throw new DriverException($"plugin `{plugin.Manifest.Id}`'s hook process was not started — `{first}`: {tool.Problem}");
+            }
+
+            first = tool.File ?? first;
+        }
+
         var info = new ProcessStartInfo
         {
-            FileName = hooks.Command[0],
+            FileName = first,
             WorkingDirectory = plugin.Folder,
             UseShellExecute = false,
             RedirectStandardInput = true,
@@ -475,6 +495,11 @@ public sealed class HookProcess : IHookChannel
         info.Environment["DAORIS_PLUGIN_FOLDER"] = plugin.Folder;
         info.Environment["DAORIS_PLUGIN_DATA"] = plugin.Data;
         info.Environment[DaorisHome.Variable] = home;
+        Tools.Hand(info, tools, home);
+        // What Windows can start, by the agents' resolver and on the child's own PATH: a `.cmd` (an `az`, an `npm`)
+        // is held to the shim rule about its arguments rather than started bare and not found (USE1f).
+        info.FileName = HarnessActions.WindowsShim(
+            info.FileName, info.ArgumentList, info.Environment.TryGetValue(Tools.PathVariable, out var path) ? path : null);
         return info;
     }
 

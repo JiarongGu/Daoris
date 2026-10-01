@@ -291,14 +291,28 @@ public sealed class PseudoConsole : ITerminal
         line.Append('"');
     }
 
-    /// <summary>This process's environment with <paramref name="added"/> over it, as the block CreateProcess reads.</summary>
-    /// <remarks>Sorted by name without regard to case, as the system keeps its own block.</remarks>
-    private static string EnvironmentBlock(IReadOnlyDictionary<string, string> added)
+    /// <summary>
+    /// This process's environment, then the tools' (TOOLS5, D121 §2.6), then <paramref name="added"/> over it, as the
+    /// block CreateProcess reads: the person's own <c>git fetch</c> in a terminal runs the git Daoris's does.
+    /// </summary>
+    /// <remarks>
+    /// Sorted by name without regard to case, as the system keeps its own block. The tools are read from the home the
+    /// launch names, else this process's; with none, nothing is added.
+    /// </remarks>
+    internal static string EnvironmentBlock(IReadOnlyDictionary<string, string> added)
     {
         var variables = new SortedDictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         foreach (DictionaryEntry entry in Environment.GetEnvironmentVariables())
         {
             if (entry.Key is string name && entry.Value is string value) variables[name] = value;
+        }
+
+        var home = added.FirstOrDefault(pair => string.Equals(pair.Key, DaorisHome.Variable, StringComparison.OrdinalIgnoreCase)).Value
+            ?? DaorisHome.Resolve();
+        if (home is not null)
+        {
+            var inherited = variables.TryGetValue(Tools.PathVariable, out var path) ? path : null;
+            foreach (var (name, value) in Tools.ChildEnvironment(Tools.Read(home), home, inherited)) variables[name] = value;
         }
 
         foreach (var (name, value) in added) variables[name] = value;
