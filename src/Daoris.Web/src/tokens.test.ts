@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { TYPE_STEPS } from './lib/cn';
 
 /**
  * **The type scale is a set of named steps, and a raw size is not one of them** (D41 §3 as amended
@@ -16,12 +17,37 @@ import { describe, expect, it } from 'vitest';
  */
 const RAW_SIZE = /\btext-\[[0-9.]+(?:rem|px|em)\]/g;
 
-/** The steps `tokens.css` declares. A class outside this set is either a typo or a new step. */
-export const STEPS = ['meta', 'small', 'body', 'title', 'view', 'wordmark', 'value'] as const;
-
 export function rawSizes(files: [path: string, source: string][]): string[] {
   return files.flatMap(([path, source]) =>
     (source.match(RAW_SIZE) ?? []).map((hit) => `${path} hardcodes ${hit}`));
+}
+
+/** The type steps `tokens.css` declares: each `--text-<step>`, its line height aside. */
+export function declaredSteps(css: string): string[] {
+  return [...css.matchAll(/^\s*--text-([a-z]+)\s*:/gm)].map((match) => match[1]!);
+}
+
+/** The colours it declares (`--color-<name>`), which share the `text-` prefix with the steps. */
+export function declaredColours(css: string): string[] {
+  return [...css.matchAll(/^\s*--color-([a-z][a-z-]*)\s*:/gm)].map((match) => match[1]!);
+}
+
+/** Tailwind's `text-` utilities that are no size and no colour: alignment, wrapping and overflow (UX5 U41). */
+const LAYOUTS = ['left', 'center', 'right', 'justify', 'start', 'end', 'wrap', 'nowrap', 'balance', 'pretty', 'ellipsis', 'clip'];
+
+/**
+ * A `text-` class, read whole: `text-h3` is `h3`. A scan that read letters alone up to a word's end took
+ * `text-h3` for nothing at all, so the monitor's title wore a step no token defines and was drawn at the
+ * body's size, with every check green (audit MO11, FRAME1h).
+ */
+const TEXT_CLASS = /(?<![\w-])text-([a-z][a-z0-9]*(?:-[a-z0-9]+)*)/g;
+
+/** Every `text-` class that names no step, colour or layout `tokens.css` and Tailwind declare. */
+export function undeclaredSteps(files: [path: string, source: string][], css: string): string[] {
+  const known = new Set([...declaredSteps(css), ...declaredColours(css), ...LAYOUTS]);
+  return files.flatMap(([path, source]) => [...source.matchAll(TEXT_CLASS)]
+    .filter((match) => !known.has(match[1]!))
+    .map((match) => `${path} wears text-${match[1]}, which tokens.css does not declare`));
 }
 
 /**
@@ -100,16 +126,25 @@ describe('the type scale', () => {
     expect(rawSizes(components)).toEqual([]);
   });
 
-  it('every step the components use is one tokens.css declares', () => {
-    const used = new Set(
-      components.flatMap(([, source]) => [...source.matchAll(/\btext-([a-z]+)\b/g)].map((m) => m[1])),
-    );
-    // Colour utilities share the `text-` prefix, and so do alignment and wrapping (`text-pretty`,
-    // UX5 U41); the scale is what is left after those.
-    const colours = ['ink', 'accent', 'st', 'warn', 'center', 'left', 'right', 'transparent'];
-    const wrapping = ['pretty', 'balance', 'wrap', 'nowrap'];
-    const sizes = [...used].filter((name) => !colours.includes(name) && !wrapping.includes(name));
-    expect(sizes.sort()).toEqual([...STEPS].sort());
+  it('declares the seven steps the class merge knows, and reads its colours', () => {
+    expect(declaredSteps(tokensCss).sort()).toEqual([...TYPE_STEPS].sort());
+    expect(declaredColours(tokensCss)).toEqual(expect.arrayContaining(['ink', 'ink-faint', 'accent-ink', 'st-declined']));
+  });
+
+  it('catches a class that names no step — the check itself, in the shape the monitor\'s title took', () => {
+    const wears = (source: string) => undeclaredSteps([['./work/MonitorWindow.tsx', source]], tokensCss);
+    expect(wears('<h1 className="m-0 text-h3">')).toEqual(['./work/MonitorWindow.tsx wears text-h3, which tokens.css does not declare']);
+    // Tailwind's own scale renders and is not the platform's (D56).
+    expect(wears('className="text-sm"')).toHaveLength(1);
+    expect(wears('className="hover:text-xl"')).toHaveLength(1);
+    // And what must keep passing: a step, a colour with and without its opacity, a layout.
+    expect(wears('className="text-view text-ink-soft hover:text-st-declined text-ink/70 text-pretty text-left"')).toEqual([]);
+    // A raw size is the other check's, and a word that merely contains the prefix is no class.
+    expect(wears('className="text-[0.85rem] context-text-h3"')).toEqual([]);
+  });
+
+  it('holds: every text- class names a step, a colour or a layout tokens.css or Tailwind declares', () => {
+    expect(undeclaredSteps([...components, ...modules], tokensCss)).toEqual([]);
   });
 });
 

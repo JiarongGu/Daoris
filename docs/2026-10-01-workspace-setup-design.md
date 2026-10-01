@@ -4,7 +4,8 @@
 > person a question its own repository's notes and code could answer. The owner's diagnosis is that the
 > workspace lacks knowledge: *"the repo should be registered and apply the doctrine and also initialize the
 > knowledge"*. This is the contract for the WSSETUP rows, and its decision is **D124**. Status: **designed;
-> WSSETUP8, WSSETUP9 and WSSETUP11 built** (§5, §6.1, §7.3; D124's notes say what each build settled), the rest not.
+> WSSETUP2, WSSETUP4, WSSETUP8, WSSETUP9, WSSETUP11, LAYOUT7 as amended and LAYOUT7a built** (§1.2, §1.4, §5, §6.1,
+> §7.3, §2; D124's notes say what each build settled), the rest not.
 > It builds on the set-up quest of `docs/2026-10-01-agent-layout-design.md` §6 (D117: LAYOUT7, LAYOUT8, LAYOUT10),
 > the standard of `docs/2026-10-01-development-documents-design.md` (D122) and the tools' environment of
 > `docs/2026-10-01-tools-design.md` (D121, TOOLS5), and it amends D117 §6 where §11 says. Read with **D13**,
@@ -122,6 +123,12 @@ npm itself would put on a `PATH`, so a committed file says the same thing before
 - **Nothing outside the install.** No global npm install, nothing under the user profile (D63), and the
   account's `PATH` untouched. A republish replaces `app/` whole, the CLI with it.
 
+*As built (WSSETUP2): the package lands in `app/cli/node_modules/daoris/`, as npm lays a package out under a prefix,
+and the launchers run `../cli/node_modules/daoris/bin/daoris.mjs`. Unpacked straight into `app/cli/`, the CLI reads
+`<install>/canon`, since it reads the canon it ships only from under `node_modules` (`resolveCanonRoot`). The shells'
+lookup was measured on a laid-out pack: Command Prompt and PowerShell run `daoris.cmd`, Git Bash the script. D124's
+note has the rest.*
+
 ### 1.3 Found on every child's `PATH`: TOOLS5's one environment
 
 - **TOOLS5's builder puts `app/bin/` first**, before the tools' folders, on every child it builds: a driven
@@ -150,6 +157,11 @@ npm itself would put on a `PATH`, so a committed file says the same thing before
   it, so two installs from different commits both answer `0.0.1`, and the guard cannot tell them apart. On one
   machine a republish moves forward with main, so a later `sync` moves a repository forward too. Between two
   machines on different builds it is open, and the first release closes it. It is recorded in §13.
+
+*As built (WSSETUP4): `sync` refuses in every mode, a dry run and `--force` included, and `upstream` one file or
+`--all`. The sentence above was not so of either reader: `check` never reads the canon (D8), so it cannot know, and
+`status` offered the older canon as an update and said to run `daoris sync`. It now prints a `newer lock` line and
+the command at the lock's version. D124's note has the rest.*
 
 ### 1.5 What else it answers
 

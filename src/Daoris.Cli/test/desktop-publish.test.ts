@@ -1,18 +1,23 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
 import { existsSync, mkdtempSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { dirname, join } from 'node:path';
+import { delimiter, dirname, join, posix } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { gzipSync } from 'node:zlib';
 // Untyped workspace tooling, suppressed at the one site — see desktop-tool.test.ts for why.
 import {
-  KEPT_LOCALES, LAUNCHER, MARKER, MARKER_HEADER, OFFERED_PLUGINS, OWN, PLUGIN_OFFERS, RESOURCES, RESOURCES_SOURCE, RETIRED_IN_APP,
-  RETIRED_LAUNCHERS, SHELL_EXE, SHELL_FILES, SHELL_HOME, installedNote, isInstall, layOffers, layResources, recordedShellFiles,
-  refusal, retiredPaths,
+  CLI_BIN, CLI_ENTRY, CLI_HOME, CLI_LAUNCHERS, CLI_PACKAGE, KEPT_LOCALES, LAUNCHER, MARKER, MARKER_HEADER, OFFERED_PLUGINS, OWN,
+  PLUGIN_OFFERS, RESOURCES, RESOURCES_SOURCE, RETIRED_IN_APP, RETIRED_LAUNCHERS, SHELL_EXE, SHELL_FILES, SHELL_HOME, cliLaunchers,
+  installedNote, isInstall, layCli, layOffers, layResources, recordedShellFiles, refusal, retiredPaths,
   // @ts-expect-error — untyped workspace tooling; see above
 } from '../../../tools/desktop-publish.mjs';
+import { resolveCanonRoot } from '../src/canon.ts';
 import { OFFERS_DIR, readManifest } from '../src/plugins.ts';
 import { BUILT_IN, BUILT_IN_LAYOUT, parseResources } from '../src/resources.ts';
+import { makeFixture } from './_fixture.ts';
+import { TAR_END, tarEntry } from './_tar.ts';
 
 /**
  * The publish guard (`tools/desktop-publish.mjs`): what it refuses to write into, and the one door
@@ -78,6 +83,26 @@ test('the install note is the marker, and says how to pin Daoris from its runnin
   assert.match(section, new RegExp(`\`${[...SHELL_HOME, SHELL_EXE].join('/').replace(/\./g, '\\.')}\``));
   assert.match(section, /unpin/);
 
+  assert.doesNotMatch(note, /[A-Za-z]:[\\/]|\/home\/|\/Users\//, 'a machine path in the note');
+});
+
+/**
+ * WSSETUP2 (D124 §1.2): the note says the install carries its doctrine tool, where, how each shell runs it,
+ * on which Node, and that nothing changed the account's PATH (D124 §10 refused that), so whoever opens
+ * the folder is not left wondering why a terminal of theirs still runs another `daoris`.
+ */
+test('the install note says where the doctrine tool is, how each shell runs it, and that your PATH is untouched', () => {
+  const note: string = installedNote();
+  assert.ok(note.includes('## The doctrine tool'), 'the note has no section for the doctrine tool');
+  const section = note.slice(note.indexOf('## The doctrine tool')).split('\n## ')[0] ?? '';
+  assert.ok(section.includes(`\`${CLI_BIN.join('/')}/\``), 'names app/bin/');
+  assert.ok(section.includes(`\`${CLI_HOME.join('/')}/\``), 'names app/cli/');
+  for (const launcher of CLI_LAUNCHERS) assert.ok(section.includes(`\`${launcher}\``), `names ${launcher}`);
+  assert.match(section, /Git Bash/);
+  assert.match(section, /Command Prompt/);
+  assert.match(section, /PowerShell/);
+  assert.match(section, /Node\.js 22 or later/);
+  assert.match(section, /Nothing puts `app\/bin\/` on your account's PATH/);
   assert.doesNotMatch(note, /[A-Za-z]:[\\/]|\/home\/|\/Users\//, 'a machine path in the note');
 });
 
@@ -326,4 +351,205 @@ libcef.dll
 locales
 `);
   assert.deepEqual(recordedShellFiles(at), [LAUNCHER, 'libcef.dll', 'locales']);
+});
+
+// ---------------------------------------------------------------------------------------------
+// WSSETUP2 (D124 §1.2): the install carries its doctrine tool. The publish packs `src/Daoris.Cli` as the
+// release does, unpacks the tarball under `app/cli/` with the tar reader the CLI carries, and writes a
+// launcher for each shell into `app/bin/`. The pack itself is a real `npm pack`, which only the deployment
+// rehearsal runs; what is held here is where the package lands, what the launchers say, and what the
+// layout refuses, over a tarball made in the test.
+
+const workspaceCli = join(workspace, 'src', 'Daoris.Cli');
+
+/** A package as `npm pack` writes one: every entry under `package/`, gzipped. */
+function packed(at: string, name: string, files: Record<string, string>): string {
+  const tarball = join(at, `${name}.tgz`);
+  const entries = Object.entries(files).map(([path, body]) => tarEntry(path, body));
+  writeFileSync(tarball, gzipSync(Buffer.concat([...entries, TAR_END])));
+  return tarball;
+}
+
+/** A bin entry that says what it was handed, and exits with the code `--exit` names. */
+const ECHO_BIN = [
+  'const args = process.argv.slice(2);',
+  'console.log(JSON.stringify(args));',
+  "const at = args.indexOf('--exit');",
+  'process.exit(at === -1 ? 0 : Number(args[at + 1]));',
+  '',
+].join('\n');
+
+/** The release's package, in miniature: its manifest, its bin entry, its built dispatcher and its canon. */
+function releasePackage(version = '0.4.2', overrides: Record<string, string | null> = {}): Record<string, string> {
+  const files: Record<string, string | null> = {
+    'package/package.json': JSON.stringify({ name: 'daoris', version, bin: { daoris: 'bin/daoris.mjs' } }),
+    'package/bin/daoris.mjs': ECHO_BIN,
+    'package/dist/cli.js': 'export async function runCli() { return 0; }\n',
+    'package/canon/canon.json': JSON.stringify({ version }),
+    'package/canon/core/rules/sensitive-info.md': '---\nname: sensitive-info\napplies_when: w\nenforces: e\n---\n\nBody.\n',
+    ...overrides,
+  };
+  return Object.fromEntries(Object.entries(files).filter((pair): pair is [string, string] => pair[1] !== null));
+}
+
+test('the doctrine tool lands where the CLI reads the canon it ships, as npm lays a package out under a prefix', () => {
+  assert.deepEqual([...CLI_HOME], ['app', 'cli']);
+  assert.deepEqual([...CLI_PACKAGE], ['app', 'cli', 'node_modules', 'daoris']);
+  assert.deepEqual([...CLI_PACKAGE.slice(0, CLI_HOME.length)], [...CLI_HOME]);
+  assert.deepEqual([...CLI_BIN], ['app', 'bin']);
+  assert.equal(CLI_HOME[0], SHELL_HOME[0], 'beside the application, in app/');
+  assert.equal(CLI_BIN[0], SHELL_HOME[0], 'beside the application, in app/');
+
+  // 🔴 The folder `node_modules` is what makes the unpacked package read its own canon: anywhere else
+  // `resolveCanonRoot` takes it for a development checkout and reads `../../canon`, which in an install
+  // is `<install>/canon`, a folder nothing publishes.
+  const install = join(workspace, '_fixtures', 'an-install');
+  const held = process.env.DAORIS_CANON;
+  delete process.env.DAORIS_CANON;
+  try {
+    assert.equal(resolveCanonRoot(join(install, ...CLI_PACKAGE)), join(install, ...CLI_PACKAGE, 'canon'));
+    assert.notEqual(resolveCanonRoot(join(install, ...CLI_HOME)), join(install, ...CLI_HOME, 'canon'),
+      'unpacked straight into app/cli the package would read another tree');
+  } finally {
+    if (held !== undefined) process.env.DAORIS_CANON = held;
+  }
+
+  // The package is the one the release publishes, entered where its own manifest's `bin` says.
+  const manifest = JSON.parse(readFileSync(join(workspaceCli, 'package.json'), 'utf8'));
+  assert.equal(manifest.name, CLI_PACKAGE.at(-1));
+  assert.equal(manifest.bin?.daoris, CLI_ENTRY.join('/'));
+  assert.ok(manifest.files.includes(CLI_ENTRY[0]), 'the bin entry ships');
+});
+
+test('a launcher for each shell runs the package’s bin entry on the node PATH finds, and names no machine path', () => {
+  const launchers: Record<string, string> = cliLaunchers();
+  assert.deepEqual(Object.keys(launchers).sort(), [...CLI_LAUNCHERS].sort());
+  assert.deepEqual([...CLI_LAUNCHERS].sort(), ['daoris', 'daoris.cmd']);
+  const entry = [...CLI_PACKAGE, ...CLI_ENTRY].join('/');
+
+  // Git Bash: a shell script, LF, finding its own folder from how it was called.
+  const sh = launchers['daoris'] ?? '';
+  assert.ok(sh.startsWith('#!/bin/sh\n'), 'Git Bash runs a file by its shebang');
+  assert.ok(!sh.includes('\r'), 'a carriage return ends the shebang line in the wrong place');
+  const shPath = /exec node "\$basedir\/([^"]+)" "\$@"/.exec(sh)?.[1] ?? '';
+  assert.equal(posix.normalize(posix.join(CLI_BIN.join('/'), shPath)), entry, `the script runs ${shPath}`);
+
+  // Command Prompt, and PowerShell by PATHEXT: a batch file, CRLF as cmd.exe reads one, every argument passed on.
+  const cmd = launchers['daoris.cmd'] ?? '';
+  assert.ok(cmd.split('\r\n').slice(0, -1).every((line) => !line.includes('\n')), 'every line ends CRLF');
+  assert.ok(cmd.endsWith('\r\n'));
+  const cmdPath = /node "%~dp0([^"]+)" %\*/.exec(cmd)?.[1] ?? '';
+  assert.equal(posix.normalize(posix.join(CLI_BIN.join('/'), cmdPath.replace(/\\/g, '/'))), entry, `the batch file runs ${cmdPath}`);
+
+  for (const [name, text] of Object.entries(launchers)) {
+    // cmd.exe reads a batch file in the console's code page, so a non-ASCII byte prints as something else.
+    assert.ok(/^[\x00-\x7F]*$/.test(text), `${name} is ASCII`);
+    assert.doesNotMatch(text, /[A-Za-z]:[\\/]|\/home\/|\/Users\//, `a machine path in ${name}`);
+    // Bare `node`: the one the child's PATH finds, which is the one Tools resolves (D124 §1.3).
+    assert.match(text, /no node on PATH/, `${name} says so when there is no node`);
+  }
+});
+
+test('laying the doctrine tool out unpacks the package under app/cli, writes both launchers, and nothing into the home', async () => {
+  const fx = makeFixture('publish-cli-lay');
+  const tarball = packed(fx.root, 'daoris-0.4.2', releasePackage());
+  const install = join(fx.root, 'install');
+  mkdirSync(join(install, 'data'), { recursive: true });
+
+  const laid = await layCli(tarball, install);
+
+  assert.deepEqual(laid, { version: '0.4.2' });
+  const pkg = join(install, ...CLI_PACKAGE);
+  assert.equal(readFileSync(join(pkg, ...CLI_ENTRY), 'utf8'), ECHO_BIN);
+  assert.ok(existsSync(join(pkg, 'dist', 'cli.js')));
+  assert.equal(JSON.parse(readFileSync(join(pkg, 'canon', 'canon.json'), 'utf8')).version, '0.4.2');
+  assert.deepEqual(readdirSync(join(install, ...CLI_HOME)), [CLI_PACKAGE[2]], 'app/cli holds node_modules and nothing else');
+  assert.deepEqual(readdirSync(join(install, ...CLI_PACKAGE.slice(0, -1))), [CLI_PACKAGE.at(-1)], 'the package, as daoris');
+
+  const launchers: Record<string, string> = cliLaunchers();
+  assert.deepEqual(readdirSync(join(install, ...CLI_BIN)).sort(), [...CLI_LAUNCHERS].sort());
+  for (const name of CLI_LAUNCHERS) {
+    assert.equal(readFileSync(join(install, ...CLI_BIN, name), 'utf8'), launchers[name], name);
+  }
+  assert.deepEqual(readdirSync(join(install, SHELL_HOME[0])).sort(), [CLI_BIN.at(-1), CLI_HOME.at(-1)].sort(), 'nothing left staged beside them');
+  assert.deepEqual(readdirSync(join(install, 'data')), [], 'nothing under the home');
+  fx.cleanup();
+});
+
+test('a republish replaces the doctrine tool whole: a stale file in either folder goes', async () => {
+  const fx = makeFixture('publish-cli-replace');
+  const install = join(fx.root, 'install');
+  mkdirSync(join(install, ...CLI_PACKAGE), { recursive: true });
+  writeFileSync(join(install, ...CLI_PACKAGE, 'stale.js'), '// from the publish before\n');
+  mkdirSync(join(install, ...CLI_BIN), { recursive: true });
+  writeFileSync(join(install, ...CLI_BIN, 'daoris.ps1'), '# a launcher the publish before wrote\n');
+
+  await layCli(packed(fx.root, 'daoris-0.4.3', releasePackage('0.4.3')), install);
+
+  assert.equal(existsSync(join(install, ...CLI_PACKAGE, 'stale.js')), false);
+  assert.deepEqual(readdirSync(join(install, ...CLI_BIN)).sort(), [...CLI_LAUNCHERS].sort());
+  assert.equal(JSON.parse(readFileSync(join(install, ...CLI_PACKAGE, 'package.json'), 'utf8')).version, '0.4.3');
+  fx.cleanup();
+});
+
+/**
+ * Refused before anything is replaced, naming what is wrong: a package that is not the release's `daoris`
+ * would put a tool on every session's path that is not the one the release publishes (D124 §1.2).
+ */
+test('a package that is not the release’s daoris stops the publish, naming why, and the last one stands', async () => {
+  const fx = makeFixture('publish-cli-refuse');
+  const install = join(fx.root, 'install');
+  await layCli(packed(fx.root, 'daoris-0.4.2', releasePackage()), install);
+
+  const cases: Array<[string, Record<string, string>, RegExp]> = [
+    ['no canon', releasePackage('0.5.0', { 'package/canon/canon.json': null }), /canon\/canon\.json/],
+    ['a canon at another version', releasePackage('0.5.0', { 'package/canon/canon.json': '{"version":"0.4.9"}' }), /0\.4\.9.*0\.5\.0|0\.5\.0.*0\.4\.9/],
+    ['no built dispatcher', releasePackage('0.5.0', { 'package/dist/cli.js': null }), /dist\/cli\.js/],
+    ['no bin entry', releasePackage('0.5.0', { 'package/bin/daoris.mjs': null }), /bin\/daoris\.mjs/],
+    ['the source tree', releasePackage('0.5.0', { 'package/src/cli.ts': 'export {};\n' }), /source/],
+    ['another package', releasePackage('0.5.0', { 'package/package.json': JSON.stringify({ name: 'not-daoris', version: '0.5.0' }) }), /not-daoris/],
+    ['not packed by npm', { ...releasePackage('0.5.0'), 'elsewhere/x.txt': 'x\n' }, /package\//],
+  ];
+  for (const [name, files, says] of cases) {
+    const tarball = packed(fx.root, name.replace(/\W+/g, '-'), files);
+    await assert.rejects(layCli(tarball, install), (error: Error) => says.test(error.message), name);
+    assert.equal(JSON.parse(readFileSync(join(install, ...CLI_PACKAGE, 'package.json'), 'utf8')).version, '0.4.2',
+      `${name}: the last publish’s tool stands`);
+    assert.deepEqual(readdirSync(join(install, ...CLI_BIN)).sort(), [...CLI_LAUNCHERS].sort(), `${name}: its launchers stand`);
+    assert.deepEqual(readdirSync(join(install, SHELL_HOME[0])).sort(), [CLI_BIN.at(-1), CLI_HOME.at(-1)].sort(),
+      `${name}: nothing left staged`);
+  }
+  fx.cleanup();
+});
+
+/** The PATH a child gets, with `folder` first, under whichever spelling of the name this environment uses. */
+function pathFirst(folder: string): NodeJS.ProcessEnv {
+  const env = { ...process.env };
+  const key = Object.keys(env).find((name) => name.toUpperCase() === 'PATH') ?? 'PATH';
+  env[key] = `${folder}${delimiter}${env[key] ?? ''}`;
+  return env;
+}
+
+/**
+ * The launcher this platform's shell finds by the bare name, run for real: from another folder, an
+ * argument with a space in it handed on whole, and the tool's exit code handed back, which is the
+ * contract a gate reads (0 clean, 1 policy, 2 tool error). Command Prompt on Windows, `sh` elsewhere;
+ * Git Bash and PowerShell are the deployment rehearsal's to measure, on the published install.
+ */
+test('the launcher this platform’s shell finds runs the package from any folder, passing arguments and the exit code through', async () => {
+  const fx = makeFixture('publish-cli-run');
+  const install = join(fx.root, 'install');
+  await layCli(packed(fx.root, 'daoris-0.4.2', releasePackage()), install);
+  const elsewhere = join(fx.root, 'a-repository');
+  mkdirSync(elsewhere, { recursive: true });
+  const env = pathFirst(join(install, ...CLI_BIN));
+
+  const ran = process.platform === 'win32'
+    ? spawnSync(process.env.ComSpec ?? 'cmd.exe', ['/d /s /c "daoris "two words" --exit 3"'],
+      { cwd: elsewhere, env, encoding: 'utf8', windowsVerbatimArguments: true })
+    : spawnSync('sh', ['-c', 'daoris "two words" --exit 3'], { cwd: elsewhere, env, encoding: 'utf8' });
+
+  assert.equal(ran.stdout.trim(), JSON.stringify(['two words', '--exit', '3']), ran.stderr);
+  assert.equal(ran.status, 3, 'the exit code is the tool’s');
+  fx.cleanup();
 });

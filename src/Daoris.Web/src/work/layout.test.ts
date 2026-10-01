@@ -23,6 +23,19 @@ describe('the bounds', () => {
     }
     expect(LIST_BOUNDS.settings).toEqual({ min: 176, max: 320, initial: 176 });
   });
+
+  it("are the session list's for the monitor window's rail, which is that list live (FRAME1h)", () => {
+    expect(LIST_BOUNDS.monitor).toEqual(LIST_BOUNDS.sessions);
+  });
+
+  it('give the monitor its rail where the tiles keep their floor, and its strip where they would not', () => {
+    // No side bar beside the monitor's tiles: the rail gives way to its strip only for the tiles' floor.
+    const monitor: ListChoice = { bounds: LIST_BOUNDS.monitor, width: null, closed: false, over: false };
+    expect(listLayout(900, 0, monitor).mode).toBe('open');
+    expect(listLayout(1400, 0, monitor).mode).toBe('open');
+    expect(listLayout(680, 0, monitor).mode).toBe('open');
+    expect(listLayout(679, 0, monitor)).toEqual({ mode: 'strip', width: LIST_STRIP, beside: LIST_STRIP, auto: true });
+  });
 });
 
 describe('the list', () => {

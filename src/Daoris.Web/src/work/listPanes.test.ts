@@ -22,6 +22,9 @@ describe('where each list keeps what it remembers', () => {
     expect(listKey('quests', 'filters')).toBe('daoris.list.quests.filters');
     expect(listKey('settings', 'width')).toBe('daoris.list.settings.width');
     expect(listKey('sessions', 'filters')).toBe('daoris.list.sessions.filters');
+    // The monitor window's rail is its own list (FRAME1h): closing it closes no main window's rail.
+    expect(listKey('monitor', 'closed')).toBe('daoris.list.monitor.closed');
+    expect(listKey('monitor', 'width')).toBe('daoris.list.monitor.width');
     // One home per part per view: no two parts of any list share a key.
     const every = (Object.keys(LIST_BOUNDS) as ListView[])
       .flatMap((view) => (['closed', 'width', 'chosen', 'filters'] as const).map((part) => listKey(view, part)));

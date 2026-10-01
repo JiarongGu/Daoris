@@ -21,9 +21,9 @@ lists.
 
 ## State
 
-**Counts, and this is their one home:** seventeen commands, **932 CLI tests, 901 service and 49 HTTP host, 2334 driver,
-504 desktop modules, 80 devkit, 2429 web unit, 24 Playwright**, 108/108 release rehearsal, **312/312
-family rehearsal** (it names its own phases when you run it), **70/70 deployment rehearsal** (D60),
+**Counts, and this is their one home:** seventeen commands, **947 CLI tests, 901 service and 49 HTTP host, 2434 driver,
+504 desktop modules, 80 devkit, 2445 web unit, 24 Playwright**, 113/113 release rehearsal, **329/329
+family rehearsal** (it names its own phases when you run it), **84/84 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 6 knowledge
 documents, 6 skills, 7 packs. The always-loaded core is **24,064 of 26,000 bytes** — a span in
 `AGENTS.md` since D59 — and **advisory rather than enforced** (D54: a fact gates, a judgement
@@ -113,9 +113,9 @@ rather than designed.
 
 ## Backlog
 
-**Sixty-eight rows are open** (most of them the builds of the designs below) (triaged 2026-09-30, when the owner asked to go faster; 2026-10-01 after the night's merges, the look, and the owner's round):
-- **Merging next:** integrate-k (LAYOUT7, WSSETUP2 with WSSETUP4, FRAME1h). **Building:** WSSETUP3 then WSSETUP5 (on
-  LAYOUT7), LAYOUT7a.
+**Sixty-three rows are open** (most of them the builds of the designs below) (triaged 2026-09-30, when the owner asked to go faster; 2026-10-01 after the night's merges, the look, and the owner's round):
+- **Building:** WSSETUP3 (committed on its branch) then WSSETUP5 (being finished). **Next in the driver lane:**
+  WSSETUP6 (the workspace plan); then LAYOUT8 and WSSETUP7 (the screen and Ask Daoris).
 - **Designed, to build in order:** DEV2–DEV11 (D115); FRAME1b–i (D118) after NAME1b; PLUGUI1 after FRAME1c;
   LAYOUT3–LAYOUT10 (D117) after LAYOUT2's evidence.
 - **Waiting on the owner (five):** BUDGET1 (their call), TRUST2 and AGT2c (a grant, two
@@ -167,8 +167,6 @@ install in both themes and both languages.
   live, Data folder, Source, *Install from a folder…*.
 - [ ] **PLUGUI1g — a plugin's checks** (after f): the last trial kept, its own tests run in a copy under the home.
 - [ ] **PLUGUI1h — Ask Daoris reaches the Plugins view** (after c and FRAME1i).
-- [ ] **FRAME1h — the secondary windows**: the monitor's rail on `ListPane`, a detached console on
-  `OutputPanel`, the monitor's title on a real token (`tokens.test.ts` fails on `text-h3` first).
 - [ ] **FRAME1i — Ask Daoris knows each view's list and item**: `where.ts`, `go` naming an item, the room.
   Order: b, c, then d–g (d, e, f one at a time; g beside one), then h and i. PLUGUI1 starts after FRAME1c.
 
@@ -199,18 +197,10 @@ first, then WSSETUP11 early (a week of *before*); WSSETUP4, WSSETUP8, WSSETUP10 
 TOOLS5 and WSSETUP2. The driver lane runs WSSETUP9 → WSSETUP11 → LAYOUT7 → WSSETUP5 → WSSETUP6; WSSETUP7 after LAYOUT8,
 FRAME1e and WSSETUP6. Then the owner's two runs.
 
-- [ ] **WSSETUP4 — an older tool never rewrites a newer lock** (§1.4; cli, tools): `sync` and `upstream` refuse (exit
-  1) a lock whose canon version is newer, naming both versions.
-- [ ] **WSSETUP2 — the install carries its doctrine tool** (§1.2; tools): the packed CLI in `app/cli/`, two launchers
-  in `app/bin/`; the deployment rehearsal runs `daoris --version` and `check` from Command Prompt and Git Bash.
 - [ ] **WSSETUP3 — `daoris` on every child's PATH** (§1.3; driver, modules, cli; after TOOLS5 and WSSETUP2): `app/bin/`
   first in the tools' environment; the press's facts gain `node` and `daoris` with their versions.
   Also (WSSETUP2's hand-back): `src/Daoris.Desktop/README.md`'s *Installing it* and gate paragraphs name the doctrine
   tool (`app/cli/node_modules/daoris/`, `app/bin/`) and the deployment rehearsal's phase 8.
-- [ ] **LAYOUT7, amended by D124** (§2): the refusals of §2.1, the body of §2.2–§2.7 with the tool check and the
-  knowledge step, `daoris` in place of `npx`, §2.4's exact verbs; the playbook gains *Initialise the knowledge*.
-- [ ] **LAYOUT7a — the family rehearsal sets a repository up** (LAYOUT7's hand-back; tools): `setup game --plan`, then
-  a press, a stub session running `daoris` in its tree and landing, the set-up recognised and counted.
 - [ ] **TEST3 — the set-up kit's tests join a gate** (LAYOUT7a's hand-back): `tools/setup-kit.test.mjs` (12) runs outside
   `verify`; move it beside the other tools' tests in `src/Daoris.Cli/test/`, so a gate runs it.
 - [ ] **STUB1 — the protocol stub ends on a libuv assertion on Windows** (LAYOUT7a's hand-back): with Node 24 the stub

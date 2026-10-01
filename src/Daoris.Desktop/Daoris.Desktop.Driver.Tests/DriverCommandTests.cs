@@ -118,6 +118,25 @@ public sealed class DriverCommandTests
         Assert.Contains("PluginPackageCommand.Install(installArgs, Console.Out, DaorisHome.Resolve())", program);
     }
 
+    /// <summary>
+    /// LAYOUT7 (D117 §6.1): the set-up press's terminal door is named in the usage, routed by the host to its console,
+    /// and spoken in the library's words, which <c>SetupPressTests</c> holds.
+    /// </summary>
+    [Fact]
+    public void The_usage_names_the_set_up_press_and_the_host_routes_it_to_the_librarys_words()
+    {
+        Assert.Contains("\n  setup <repository> [--plan]\n", DriverCommand.Usage.ReplaceLineEndings("\n"));
+        Assert.Equal("usage: daoris-driver setup <repository> [--plan]", SetupCommand.Usage);
+
+        var program = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host", "Program.cs"));
+        Assert.Contains("if (args is [\"setup\", .. var setupArgs])", program);
+        Assert.Contains("SetupConsole.RunAsync(setupArgs)", program);
+
+        var console = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host", "SetupConsole.cs"));
+        Assert.Contains("SetupCommand.Problem(args)", console);
+        Assert.Contains("new SetupWorld(service, home), config, SetupWorld.DoorOf(config, home)", console);
+    }
+
     private static string SourceRoot()
     {
         var folder = new DirectoryInfo(AppContext.BaseDirectory);

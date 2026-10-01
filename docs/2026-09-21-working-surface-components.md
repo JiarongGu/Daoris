@@ -184,7 +184,7 @@ Everything the design (§3–§5) needs, with the states its story must carry. N
 | `needsAPerson(sessions, quests, registry, asks)` | what is waiting, parked first (SURF5); asks waiting on a person since INT4d | one derivation for the band and the Work switch's count — two answers to "how many need me" disagree the first time either is edited |
 | `sessionTimeline(session, quest?)` | the observed events, oldest first (SURF4c) | the record carries no event log, so what a timeline may honestly say is a derivation — and one place to change when the record grows one |
 | `readEvidence(evidence)` | the driver's sentence, and the commits inside it (SURF4c) | reads the bundle's **shape**, never its words: no English literal is matched, so a reworded header is harmless rather than a silently empty list |
-| `listPanes.ts` | each view's list memory: its closing, its width, its chosen item, its filters, keeping Sessions' and Settings' keys (FRAME1c, D118 §3f) | per view, beside `closings.ts`, which keeps what the frame remembers for every view |
+| `listPanes.ts` | each view's list memory: its closing, its width, its chosen item, its filters, keeping Sessions' and Settings' keys (FRAME1c, D118 §3f); and the monitor window's rail's, apart from the main window's (FRAME1h) | per view, beside `closings.ts`, which keeps what the frame remembers for every view, and a detached session's console for every detached window (`useDetachedPanel`, FRAME1h) |
 | `opener.ts` | the opener's plan: a view, the item its list chooses, and the form a door opens (FRAME1c, D118 §3i); since FRAME1d a record is only the chosen item, which the view's main area shows; since FRAME1e the code map a door opens the Map on, which is no chosen item | one opener for every door, planned as a value so each door's effect is an assertion |
 | `plugins/catalog.ts` | a plugin's state on today's answers, the list's groups in the person's reading order, and what the chosen item names (`offer:<id>` for an offer) (PLUGUI1b, D119 §3.1) | the list, the strip and the page read one answer |
 | `quests/records.ts` | Quests' filters as kept (`{ to, closed }`), its groups by state, the freshest attempt per quest, the record a page shows (the list's copy or the door's last answer), and the question a quest waits on (FRAME1d, D118 §2, §3f) | the list, the page and the memory read one answer |
@@ -230,7 +230,7 @@ Everything the design (§3–§5) needs, with the states its story must carry. N
 | `PluginPage`, `PluginMainNotice` | `src/plugins/`: a plugin's page on today's answers, its header's four acts and *Remove…* asking once; and the main area with no page (PLUGUI1b, D119 §3.2) | running · off · refused · landing · agents only · no source · an update's plan · a refused plan · a trial passed · failed · *Remove…* asking · nothing chosen · gone · loading |
 | `OfferPage` | `src/plugins/`: one of Daoris's own plugins not installed, with *Install* (PLUGUI1b, D119 §3.2) | with needs · handing a server · with a problem |
 | `ViewMain` | a view's main area: the scroll box that is the container named `main`, which its page's splits follow, its page header's slot, and its four states (FRAME1c, D118); with `PageHead` and `PageSection`, every page's header and sections, moved here from the plugin's page (FRAME1d), a header's id line absent where a name is its id (FRAME1e) | chosen · nothing chosen · loading · gone · narrowed · a view's own page · Sessions' gutters |
-| `ViewFrame` | a browser's frame: the view's list and its main area, never the side bar or the panel; and `ViewListPane`, the one path by which a frame draws a view's `ListSpec` (FRAME1c, D118 §4) | held by `ViewFrame.test.tsx` |
+| `ViewFrame` | a browser's frame: the view's list and its main area, never the side bar or the panel; and `ViewListPane`, the one path by which a frame draws a view's `ListSpec` (FRAME1c, D118 §4); the monitor window's rail and tiles too (FRAME1h) | held by `ViewFrame.test.tsx` and `MonitorWindow.test.tsx` |
 
 ### Organisms — `src/work/`
 
@@ -267,7 +267,7 @@ last-view memory.~~ Work is the **second frame**, not a sixth nav item
 |---|---|---|
 | `ModeSwitch` | *Manage* ⇄ *Work*, peers | either mode · Work absent (a browser) |
 | `StatusBar` | ambient truth: driver, session count, workspace, remote | running · stopped · no shell · a remote wired |
-| `OutputPanel` | the stream, **growable, shrinkable, hideable** — `MonoWell` inside a region, not a well inside a card | collapsed · default · grown · no session attended |
+| `OutputPanel` | the stream, **growable, shrinkable, hideable** — `MonoWell` inside a region, not a well inside a card; a detached session's console too, with no views menu where it holds one view and has nowhere to move it (FRAME1h) | collapsed · default · grown · no session attended · in its own window |
 | `StartSession` | repository, harness, account, own tree — moved out of Projects (SURF4d) | every choice · one harness and no accounts · nothing to talk in |
 | `WorkFrame` | rail + attended + panel + status bar; since FRAME1c it takes each view's `ViewLayout`, its list and its main area, and Sessions' rail is one such list | the assembled frame |
 

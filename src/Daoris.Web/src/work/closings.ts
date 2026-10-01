@@ -48,3 +48,41 @@ export function useFrameClosings(): FrameClosings {
     setDock: (closed) => { setDockState(closed); store(DOCK_CLOSED, closed ? '1' : '0'); },
   };
 }
+
+/** Where a detached session's window keeps its console's height and closing (FRAME1h). */
+export const DETACHED_PANEL = { height: 'daoris.detached.panelHeight', closed: 'daoris.detached.panelClosed' } as const;
+
+/** The height a console starts at where nobody dragged one: the main window's panel's. */
+const PANEL_START = 200;
+
+export type DetachedPanel = {
+  height: number;
+  closed: boolean;
+  setHeight: (height: number) => void;
+  setClosed: (closed: boolean) => void;
+};
+
+/**
+ * A detached session's console (D118 §4, FRAME1h): the main window's output panel, grown, shrunk and hidden
+ * there as here, and kept for every detached window.
+ *
+ * @remarks
+ * **Apart from the main window's panel.** The windows share one page's storage, and a console hidden to
+ * read a long conversation on a second screen has not asked for the main window's console to go too. **One
+ * memory for every detached window**, not one per session: what a person makes of a window of this kind is
+ * how they read one, and a session opened for the first time would otherwise forget it.
+ */
+export function useDetachedPanel(): DetachedPanel {
+  const [height, setHeightState] = useState(() => {
+    const kept = Number(stored(DETACHED_PANEL.height));
+    return Number.isFinite(kept) && kept > 0 ? kept : PANEL_START;
+  });
+  const [closed, setClosedState] = useState(() => stored(DETACHED_PANEL.closed) === '1');
+
+  return {
+    height,
+    closed,
+    setHeight: (next) => { setHeightState(next); store(DETACHED_PANEL.height, String(next)); },
+    setClosed: (next) => { setClosedState(next); store(DETACHED_PANEL.closed, next ? '1' : null); },
+  };
+}

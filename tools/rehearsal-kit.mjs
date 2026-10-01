@@ -87,14 +87,16 @@ export function capture(command, cwd, { env = {}, timeout = 0, input } = {}) {
  * no account, no credential anywhere in it.
  *
  * Given a quest (`DAORIS_QUEST_ID`), a prompt is that quest's work; given none, it is a conversation,
- * each prompt answered with what was heard, open until its input closes.
+ * each prompt answered with what was heard, open until its input closes. A quest titled as a set-up
+ * (LAYOUT7a) is done as its body says: the doctrine tool run by its bare name from the PATH the driver
+ * handed the session, each verb said on stderr with whether the body asks for it, then a commit.
  *
  * Here rather than inside the family rehearsal since DEPLOY5, whose deployment gate opens a
  * conversation on it in the installed shell: one copy, for the reason this module exists at all.
  */
 export const ACP_STUB_AGENT = `
 import { execSync } from 'node:child_process';
-import { readFileSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { createInterface } from 'node:readline';
 import { fileURLToPath } from 'node:url';
 
@@ -122,7 +124,91 @@ const respond = async (action, reason) => {
   return { ok: response.ok, text: await response.text() };
 };
 
+// A SET-UP (LAYOUT7a, D124 §2): the quest asks this repository's own session to take up the doctrine and
+// initialise its knowledge, and the stub does it as the body says. The doctrine tool is run by its bare name,
+// so it is found on the PATH the driver handed the session or not at all. Each verb goes on the wire as a tool
+// call and on stderr, which the transcript keeps, with whether the body asks for it. A verb that fails, or a
+// tool that answers another version than the body says, is the decline the body names.
+const SET_UP = 'Set up this repository for every agent (';
+const tick = String.fromCharCode(96);
+
+async function setUp(sessionId) {
+  const body = process.env.DAORIS_QUEST_BODY ?? '';
+  const taken = await respond('take', null);
+  if (!taken.ok) { say('take refused:', taken.text); return 'end_turn'; }
+  update(sessionId, { sessionUpdate: 'agent_message_chunk', content: { type: 'text', text: 'setting up for quest ' + id } });
+
+  let calls = 0;
+  const daoris = (words) => {
+    const command = 'daoris ' + words;
+    const toolCallId = 'setup-' + (++calls);
+    update(sessionId, { sessionUpdate: 'tool_call', toolCallId, title: command, kind: 'execute', status: 'in_progress' });
+    let printed;
+    try {
+      printed = execSync(command, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] });
+    } catch (error) {
+      update(sessionId, { sessionUpdate: 'tool_call_update', toolCallId, status: 'failed' });
+      const said = (String(error.stdout ?? '') + String(error.stderr ?? '')).trim().split('\\n')[0];
+      throw new Error(tick + command + tick + ' failed: ' + (said || 'it printed nothing'));
+    }
+    update(sessionId, { sessionUpdate: 'tool_call_update', toolCallId, status: 'completed' });
+    say('setup ran ' + tick + command + tick + (body.includes(tick + command + tick)
+      ? ', which the quest asks for' : ', which the quest does NOT ask for'));
+    return printed;
+  };
+
+  try {
+    const version = daoris('--version').trim();
+    const promise = 'Run ' + tick + 'daoris --version' + tick + '. It prints ' + tick;
+    const at = body.indexOf(promise);
+    const promised = at < 0 ? null : body.slice(at + promise.length, body.indexOf(tick, at + promise.length));
+    say('setup: daoris --version printed ' + version + ', and the quest said it prints ' + (promised ?? '(nothing)'));
+    if (version !== promised) throw new Error('it printed ' + version + ', and the quest said ' + (promised ?? 'nothing'));
+    daoris('init --harness agents');
+    daoris('sync --dry-run');
+    daoris('sync');
+
+    // Initialising the knowledge, as a stub can: the domain in the manifest and one document of its own.
+    const repository = process.env.DAORIS_REPOSITORY ?? 'this repository';
+    const manifest = JSON.parse(readFileSync('daoris.json', 'utf8'));
+    manifest.domain = {
+      summary: repository + ', as its README says it is.',
+      owns: ['what its README says it serves'],
+      accepts: ['a request about what it serves, with the evidence'],
+    };
+    writeFileSync('daoris.json', JSON.stringify(manifest, null, 2) + '\\n');
+    mkdirSync('.agents/knowledge', { recursive: true });
+    writeFileSync('.agents/knowledge/what-this-repository-owns.md', [
+      '---',
+      'name: what-this-repository-owns',
+      'applies_when: a session in another repository asks what this one owns, and where',
+      'enforces: each fact with the place in the code that holds it, and what the code did not confirm said',
+      '---',
+      '',
+      '# What this repository owns',
+      '',
+      'What its README says it serves. Not confirmed in the code: the set-up found none to read.',
+      '',
+    ].join('\\n'));
+    daoris('sync');
+    daoris('check');
+
+    const git = 'git -c user.name="Setup Session" -c user.email="setup@example.invalid"';
+    execSync(git + ' add -A', { stdio: 'ignore' });
+    execSync(git + ' commit -q -m "setup: take up the doctrine and initialise the knowledge (quest ' + id + ')"', { stdio: 'ignore' });
+  } catch (error) {
+    say('setup declines: the doctrine command could not run here:', error.message);
+    await respond('decline', 'The doctrine command could not run here: ' + error.message);
+    return 'end_turn';
+  }
+
+  const done = await respond('done', 'Set up on the agents layout: the domain declared, one knowledge document written, check clean.');
+  say('done:', done.ok);
+  return 'end_turn';
+}
+
 async function work(sessionId) {
+  if ((process.env.DAORIS_QUEST_TITLE ?? '').startsWith(SET_UP)) return setUp(sessionId);
   update(sessionId, { sessionUpdate: 'agent_message_chunk', content: { type: 'text', text: 'taking quest ' + id } });
 
   const taken = await respond('take', null);

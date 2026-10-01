@@ -323,6 +323,26 @@ check('withdrawing the confirmation brings the core row back', withdrawn.code ==
   withdrawn.out);
 check('`check` is clean after the withdrawal', withV2('check').code === 0);
 
+// (f) An older tool never rewrites a newer lock (WSSETUP4, D124 §1.4). The upgrades above moved the lock to
+//     canon 0.0.6, and the installed package still carries its own canon at `version`: the packed bin, run
+//     without the newer canon, is exactly `npx daoris@<older> sync` in a repository a newer tool synced.
+const lockedAt = JSON.parse(read('daoris.lock')).canonVersion;
+const regionBefore = read('AGENTS.md');
+const lockBefore = read('daoris.lock');
+const older = daoris('sync');
+check(`the packed tool (canon ${version}) refuses to sync a lock canon ${lockedAt} wrote, exit 1`, older.code === 1, older.out);
+check('...naming both versions and the command at the lock\'s',
+  older.out.includes(lockedAt) && older.out.includes(version) && older.out.includes(`npx daoris@${lockedAt} sync`), older.out);
+check('...and rewriting nothing: the region and the lock are byte for byte as the newer tool left them',
+  read('AGENTS.md') === regionBefore && read('daoris.lock') === lockBefore);
+const olderUpstream = daoris('upstream --all');
+check('`upstream` refuses it too, exit 1, naming the command at the lock\'s version',
+  olderUpstream.code === 1 && olderUpstream.out.includes(`npx daoris@${lockedAt} upstream --all`), olderUpstream.out);
+const olderStatus = daoris('status');
+check('`status` says the lock is newer and names that command, rather than sending the person to `sync`',
+  olderStatus.code === 0 && /sync and upstream refuse/.test(olderStatus.out) && olderStatus.out.includes(`npx daoris@${lockedAt}`)
+    && !/run 'daoris sync'/.test(olderStatus.out), olderStatus.out);
+
 // --------------------------------------------------------- 6. move the layout
 
 // LAYOUT3 (D117 §5.6): the upgrade an adopter on the older layout makes by flipping its own manifest,
@@ -550,7 +570,7 @@ if (totals.failures) {
   process.exitCode = 1;
 } else {
   console.log('  The packaged tool installs into a clean repo and drives the full lifecycle:');
-  console.log('  adopt, collide, sync, drift, promote, upgrade, rename, switch off, move the layout, declare the');
-  console.log('  documents, and check.\n');
+  console.log('  adopt, collide, sync, drift, promote, upgrade, rename, switch off, refuse a newer lock, move the');
+  console.log('  layout, declare the documents, and check.\n');
   rmSync(scratch, { recursive: true, force: true });
 }

@@ -5991,6 +5991,27 @@ test was run against the scanner before this change and after it. The CLI still 
 the service no longer holds that default back (LAYOUT3's choice 1). Not run in the branch: the family rehearsal's
 *each document indexed once* (§5.6), the parent's at merge.*
 
+*Built by LAYOUT7 (2026-10-01), as D124 §2 amends §6.1–§6.3: the layout read from a repository's line, the set-up
+quest's composer and `daoris-driver setup <repository> [--plan]`. `LayoutReader` (`LayoutFacts.cs`) reads the line's
+commit by `git ls-tree -r -z`, the manifest, the lock and the two instruction files by `cat-file`, and the checkout's
+`core.symlinks`, never a working file: the layout by the lock, then the manifest, then `.claude`; a link from its mode,
+then a file held as text by the CLI's content cases, with what sits beside read from the line's tree; the rules,
+skills and knowledge under both roots; the lock's mirrors; every folder with an `AGENTS.md` of its own outside the
+doctrine's folders; the declared rooms lacking one. `SetupBrief` composes the title from `SetupQuests`' words, which
+gained a named constant each and `Title(stem, day)`, and the body from the facts in the canon's words: what is asked
+and whose it is, what was read at the named commit, the steps, the bounds, the close. The playbook gained the layout's
+steps (`init --harness agents`, the `git mv`, the `LINK` lines), *Initialise the knowledge* as its step 6, and a
+hand-over that, for a driven set-up, is the committed branch the workspace's rule lands. Three choices the design left
+open, each held by a test: (1) the press asks no doctrine command, so *already on the agents layout and clean* is read
+from the line (`LayoutFacts.Clean`: the lock and the manifest both on `agents`, the region in `AGENTS.md`, no link or
+link held as text where the tool writes, nothing left in `.claude/knowledge/`, every declared room with its
+instructions) and what else `check` holds stays that repository's own gate; (2) an adopter whose line is not clean
+on the agents layout is asked to move, the move's title, which finishes a move half made; (3) §6.5's per-agent table
+and its CLI twin are not built here: the quest's facts need neither, and they are LAYOUT8's screen's. Not run in the
+branch: `SetupLineProcessTests` (a mode-120000 `CLAUDE.md` under `core.symlinks=false`, read from the line while the
+checkout is on another branch with edits in flight), the parent's at merge; the family rehearsal's set-up phase
+(`setup game --plan`, a stub session running the CLI and landing) is the tools lane's and not written.*
+
 ## D118 — Every view has the same frame: its own list pane and main area, beside the frame's side bar and panel (2026-10-01)
 
 **Decision (FRAME1a).** The owner, 2026-10-01: *"why only session has more layout option we do need to make
@@ -6249,6 +6270,37 @@ proof.
   nothing at 0.75. No look at the window was taken: Search and Convergence at 1280 and 680 px with an entry and a
   finding chosen, a search typed at 1280 px for SR11, both themes and both languages, are the parent's to see. The
   finding list's toggles are over the button budget (21 characters for 20); the budgets are a report (D116 §3).
+
+**Built: FRAME1h (2026-10-01), and what it settled that the design left open.**
+- **The monitor's rail is a list of its own, `monitor`**, in `LIST_BOUNDS` with Sessions' bounds, since it is the
+  session list live. Its closing and its width are kept as `daoris.list.monitor.*`, so closing it closes no rail in
+  the main window. `ViewFrame`, the browser's frame, draws it, since nothing stands beside the tiles: the rail gives
+  way to its strip only for the tiles' 400 px floor, open from a 680 px window. Its strip holds each running
+  session's mark, as Sessions' does. Its names and doors are the session list's. It has no `＋` and no ⋯, since the
+  window makes nothing (D56's one owner).
+- **A press on a session scrolls to its tile**, from the rail or its strip, and lets a rail laid over the tiles go,
+  as a choice in any list does. No item is chosen or kept: the tiles are the running sessions.
+- **A tile is never wider than the tiles' area** (`minmax(min(26rem, 100%), 1fr)`). Beside the rail at the floor, a
+  26 rem tile ran past it.
+- **A detached window's console is `OutputPanel`**, kept as one memory for every detached window
+  (`daoris.detached.panelHeight` and `.panelClosed`, `useDetachedPanel` in `closings.ts`). It is kept apart from the
+  main window's panel, since the windows share one page's storage. It starts at the main window's 200 px. Picking a
+  stream opens a hidden console, as the main window's does.
+- **`OutputPanel` draws no views menu where it holds one view and has nowhere to move it.** In a detached window the
+  ⋯ listed the console alone. It is absent, never a door that does nothing (§3a). The main window always passes its
+  move, so it keeps the menu.
+- **Each window answers the key of the one region it has**: Ctrl+B on the monitor, Ctrl+J in a detached window,
+  wherever focus is, as the main window's keys are. Neither window answers F6, since each has its native frame and
+  one region that moves.
+- **The monitor's title is `text-view`**, the one heading step a view has, as every page's header. `tokens.test.ts`
+  now reads a `text-` class whole, and fails on one for which `tokens.css` declares no step, colour or layout. It
+  was seen red first, on `text-h3` alone. It also holds the steps `cn.ts` hands the class merge equal to the ones
+  `tokens.css` declares.
+- **What the gates do not cover.** jsdom lays nothing out. In the tests, the rail's mode at 600 and 1400 px is the
+  room rule's answer for the window less 48 px, where the real window measures its frame and has no activity bar. A
+  short window does not cap the console's height, as it does not cap the main window's. No look at the windows was
+  taken. `shot --window monitor` at 900 and 1400 px, and `shot --window session:<id>` with a long console and
+  narrow, in both themes, are the parent's to see.
 
 ## D116 — A name is a UI element, designed in each language; the glossary is the authority, and a check holds it (2026-10-01)
 
@@ -7388,6 +7440,63 @@ what each line measures and what each section reads. What the build settled that
 **Not covered**: the driver's open passing the mark is reached only by a real tick (the `Process` half); its
 decision and the client and log beneath it are held in the fast half, and LAYOUT7's family rehearsal runs the first
 set-up. No week of *before* exists until an install carrying this runs.
+
+**As built (LAYOUT7, 2026-10-01): the set-up quest, as §2 says.** `daoris-driver setup <repository> [--plan]` plans
+from the registry, the driver's choices, the repository's line (D117's note says how it is read), the tools a child
+finds, the open quests and the index, then publishes one ask to that repository through the ask door with `--to`, as
+the person's, so no intake runs. The body carries §2.2's facts, §2.3's steps with the tool's check first and the
+knowledge step after the sync, §2.6's bounds and §2.7's close, `daoris` and never `npx`. What the build settled:
+
+- **Every refusal that applies is said at once**, in §2.1's order, so a person fixes them in one pass; only *not on this
+  machine's registry* and *no checkout here* stop the reading, since nothing after them can be read. Each names its
+  door. *Not driven here* for the pipe door names `daoris driver adapter <agent>`, the door that changes it, and applies
+  to a repository the registry calls unadopted, as the planner judges it (D70); an adopter rides either door.
+- **The tools are found as a child would find them**: `node` by Tools' resolution on the child's `PATH` (TOOLS5), asked
+  `--version` and refused under 22; `daoris` on that same `PATH`, refused unless it prints a version. The probe is
+  LAYOUT7's, since the refusals need it; WSSETUP3 still owes the install's `app/bin/` first on that `PATH`, so until it
+  and WSSETUP2 land a press finds `daoris` only where the person put one, and refuses saying so.
+- **The rule goes in before the ask, and comes out if the ask is refused.** The session a look starts right after the
+  publish is handed it, since it cannot ask for it (D52); a press the service refuses takes back the rules it added and
+  keeps any the person already had. `Bash(…)` only, §2.4's nine verbs (`SetupPress.Verbs`), each one the body asks for.
+- **The ask's words are the title, a blank line and the body**, so the quest the service makes is titled by the first
+  line, which `SetupQuests.IsSetup` knows. The ask's id comes from its whole words: a second press on the same day with
+  nothing it read changed is the same ask, and the service says so; one after the line or the index moved would be a
+  new ask, and the *set-up already open* refusal stops it while the first is open or taken.
+- **What it says of itself is read from the checkout** (D77's `SelfDescription`), and the body says so; the index's
+  entries come from `/api/entries`, counted by file; the neighbours are the registry's rows in the same workspace.
+- **Ask Daoris owes it a door**: `HelpCoverageTests` holds the verb as owed to LAYOUT8's `setup` kind, and the room
+  names it meanwhile.
+
+**Not covered**: the Process-half case and the family rehearsal's set-up phase (D117's note); whether a real session
+follows the body, which only WSSETUP12's pilot shows; `PowerShell(…)` rules, held for D122 §3.5's canary.
+
+**As built (LAYOUT7a, 2026-10-01): the family rehearsal sets a repository up.** Its phase 17c registers a scratch
+repository that has a README and nothing for agents, without adopting it, and drives the press over it through the
+real host and driver. The doctrine tool its session finds is the workspace's CLI behind a launcher
+(`tools/setup-kit.mjs`), first on the `PATH` the phase starts the driver with: the install's `app/bin/` is the
+deployment rehearsal's to test (WSSETUP2). The phase's machine log is in a home of its own. The checks:
+
+- **The plan.** It says both refusals at once, each with its door. Then it prints the line's commit, the layout, the
+  agent, the landing and the tool's version, then the set-up's title and a body that promises that version, names
+  the neighbours and asks for the knowledge, then the nine verbs. It publishes nothing.
+- **The press.** It publishes one quest as the person's ask and adds the nine rules. A second press is refused while
+  the first is open.
+- **The session.** The protocol stub's set-up branch (`ACP_STUB_AGENT`) runs in its own tree. It runs each verb by its
+  bare name, and the quest asks for each one. It commits, and it closes the quest done. The checkout is not touched.
+- **The record.** `session.started` says `setup`, and a later ordinary session there does not. The usage report counts
+  one set-up of two sessions, with its six calls.
+- **The landing.** The work merges into the line, and a plan made after it reads the line as already set up.
+
+`tools/setup-kit.test.mjs` holds the launcher, the reading of the command's output, and the stub's set-up branch
+against a stand-in quest door.
+
+**Found**: the protocol stub can end on a libuv assertion (`0xC0000409`) in `process.exit` after a `fetch` on Windows
+with Node 24, on its ordinary quest path too. The driver concludes from the quest, so the record still ends
+`completed`, with the exit noted.
+
+**Not run in the branch**: the family rehearsal itself, which the parent runs at the merge. `verify` does not run
+`setup-kit.test.mjs`.
+
 ## D123 — A long entry is embedded whole, in pieces the deployment's window bounds; its best piece speaks for it, and a refresh says how many were split (2026-10-01)
 
 **Decision (SEM3, found upgrading Lyntai to 3.5.3, LYN1).** The semantic tier embedded an entry's title twice and
@@ -7544,3 +7653,48 @@ the path the disk spells. The choices §5 left open, each held by a test in `Rep
   machine that makes none it returns early, and the held-as-text rows hold the rule. Two spellings side by side
   cannot exist on this machine's disk, so that rule is untested. The family rehearsal's unadopted repository (17b)
   now has its README indexed. No check there reads its knowledge, and the rehearsal was not run on this branch.
+**As built (WSSETUP2, 2026-10-01): the install carries its doctrine tool.** `tools/desktop-publish.mjs` runs `npm
+pack` in `src/Daoris.Cli`, asserts the pack's staging gone as the release rehearsal does, and `layCli` unpacks the
+tarball with the CLI's own tar reader (`tarball.ts`) and writes the two launchers. Both folders are staged beside
+and swapped in whole. What the design left open, settled here:
+- 🔴 **The package lands in `app/cli/node_modules/daoris/`, not in `app/cli/` itself.** The CLI reads the canon it
+  ships only when its own folder sits under `node_modules` (`resolveCanonRoot`). Unpacked straight into `app/cli/`, it
+  takes itself for a development checkout and reads `<install>/canon`: a folder nothing publishes, or a neighbour's
+  under `--beside`. Laid out as npm lays a package out under a prefix, the package finds its canon by the rule that
+  already holds everywhere it is installed, so the CLI needs no second case. The launchers run
+  `../cli/node_modules/daoris/bin/daoris.mjs`. `desktop-publish.test.ts` holds the layout to `resolveCanonRoot`.
+- **The launchers run bare `node`**, the one the caller's `PATH` finds, and say so with exit 2 when there is none.
+  `daoris.cmd` is CRLF and both are ASCII, since cmd.exe reads a batch file in the console's code page. The script
+  turns its folder into a Windows path with `cygpath` where one exists, as npm's shim does.
+- **What the layout refuses**, before anything is replaced and naming why: a tarball whose root is not npm's
+  `package/`, a package not named `daoris`, one without its bin entry, `dist/cli.js` or `canon/canon.json`, a canon at
+  another version than the package, and `src/`, which only the source tree carries. The publish also refuses an
+  application build that carries a `cli` or `bin` folder, which the tool's folders would replace.
+- **Measured on the development machine, against the real pack laid out by `layCli` in a scratch folder (not a
+  publish):** Command Prompt runs `daoris.cmd` (`where` lists the extensionless script first, and cmd.exe runs the
+  batch file); PowerShell's `Get-Command daoris` answers `daoris.cmd` by `PATHEXT`; Git Bash's `command -v daoris`
+  answers the script. All three print `0.0.1` and hand back exit 2 for an unknown verb, and `init`, `sync` and `check`
+  ran clean in a scratch repository. The deployment rehearsal's phase 8 holds the same against a published install.
+- **Not run by this row:** the deployment rehearsal (phase 1 reads the layout back, phase 2 the republish, phase 8
+  runs the tool from each shell); that is the parent's at merge. Nothing puts `app/bin/` on any `PATH` yet: that is
+  WSSETUP3. The desktop README's install paragraph does not mention the tool yet, since this row could not touch the
+  desktop tree.
+
+**As built (WSSETUP4, 2026-10-01): an older tool never rewrites a newer lock.** `lockversion.ts` holds the rule:
+`newerLock` compares the lock's canon version with the canon the tool carries by number (`compareVersions`, so
+`0.10.0` follows `0.9.0`), and `refuseNewerLock` throws exit 1 naming both and the command at the lock's version,
+`npx daoris@<locked> <the command as given>`. What the design left open, settled here:
+- **`sync` refuses before anything is planned, in every mode.** A dry run answers with the same refusal, since it is
+  how a person asks whether `sync` would refuse; `--force` does not pass it, since it discards local edits, which is a
+  different question from discarding a newer canon's text. The state space D19 enumerates assumes the canon is not
+  older than the lock.
+- **`upstream` refuses it too, one file or `--all`**, reading the version from `canon.json` alone. A canon with no
+  version to read is left to the refusals that already name it.
+- **`status` says it instead of offering an update.** It said *canon 0.0.1 available (lock has 0.0.6) — run 'daoris
+  sync'*, sending the person to the command that now refuses. It prints a `newer lock` line naming both versions and
+  `npx daoris@<locked>`, and `--json` carries `newerLock` (`locked`, `carried`, `run`) with `update` null.
+- **`check` says nothing of it**: it reads the lock and the disk and never the canon (D8), so it cannot know.
+- **Held by** `newer-lock.test.ts` (each case failing first: the older tool synced, returned 0 and rewrote) and the
+  release rehearsal's phase 5 (f): the packed tool, which carries canon `0.0.1`, run on the consumer the phases above
+  moved to `0.0.6`. That phase was not run by this row; its checks were run by hand against a fresh pack of this
+  source. During `0.0.x` two builds both answer `0.0.1` and the guard cannot tell them apart, as D124 says.
