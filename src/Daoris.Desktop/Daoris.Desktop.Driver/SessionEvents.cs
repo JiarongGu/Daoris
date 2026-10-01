@@ -465,6 +465,34 @@ public sealed class SessionEvents(string directory)
         return new SessionSearch(hits, cut);
     }
 
+    /// <summary>
+    /// The agent's last message, whole (PARK1): what a session that parks to ask the person said to them,
+    /// joined from its chunks as the page joins them. Null when the person spoke after it (that turn said
+    /// nothing), and for no record, an unreadable one, or an id that is not one.
+    /// </summary>
+    /// <remarks>
+    /// The transcript is console lines, where an indented line is a tool's output; a question's own
+    /// indented list read as that, and the card kept only what came after it.
+    /// </remarks>
+    public string? LastSaid(string sessionId)
+    {
+        if (!IsId(sessionId)) return null;
+        try
+        {
+            string? said = null;
+            foreach (var (_, kind, text) in Passages(PathOf(sessionId)))
+            {
+                said = kind == SessionEventKind.Message ? text : null;
+            }
+
+            return said?.Trim() is { Length: > 0 } words ? words : null;
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            return null;
+        }
+    }
+
     /// <summary>Each call once, by the title its updates last gave it, at the sequence where it began.</summary>
     private static IEnumerable<(long Seq, string Kind, string Text)> Calls(string path)
     {
