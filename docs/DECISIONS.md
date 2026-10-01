@@ -6413,6 +6413,7 @@ reports, the canon scan for `allowed-tools`, and a seventh release-rehearsal pha
   patterns were checked against the source bin in a scratch consumer. The service's reader of `documents`
   is DOC5's. The twins table gains its row when that reader lands, matched against
   `documents-manifest.test.ts`.
+
 **Built 2026-10-01 (UNBLOCK4): the carve-outs held harder, and `git mv`.** Point 7 and the `commit` half of point 4,
 as design §3.6 and §3.7 say, with one addition.
 - **`commit` gains `Bash(git mv:*)`**, in both defaults tables (`Permissions.cs`, `permissions.ts`), held together by
