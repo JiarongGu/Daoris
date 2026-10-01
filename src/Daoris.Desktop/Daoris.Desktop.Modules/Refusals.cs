@@ -182,6 +182,42 @@ public static class Refusals
     public const string LogFolderNotOpened = "LOG_FOLDER_NOT_OPENED";
 
     /// <summary>
+    /// A managed version asked for where it is not downloaded (TOOLS7, D121 §4.1): a delete of one, or what a switch of
+    /// git to it would change, which is asked of that git and so needs it here.
+    /// </summary>
+    public const string ToolNotDownloaded = "TOOL_NOT_DOWNLOADED";
+
+    /// <summary>A tool named as a file that is not a whole path, or holds no file (TOOLS7): it is never written.</summary>
+    public const string ToolFileMissing = "TOOL_FILE_MISSING";
+
+    /// <summary>
+    /// A tool named as a file that did not start, or started and answered no version (TOOLS7, §4.1: a named file starts
+    /// with a version). The system's own reason goes with it, and nothing is written.
+    /// </summary>
+    public const string ToolFileNoVersion = "TOOL_FILE_NO_VERSION";
+
+    /// <summary>A download or a use of a version no list names for this machine, or one that is no exact version (TOOLS7).</summary>
+    public const string ToolVersionUnknown = "TOOL_VERSION_UNKNOWN";
+
+    /// <summary>
+    /// A version refused before it is fetched (TOOLS7): two lists disagree on it. The check that refused it travels with
+    /// it, and so does the driver's sentence, which names both lists and both values.
+    /// </summary>
+    public const string ToolDownloadRefused = "TOOL_DOWNLOAD_REFUSED";
+
+    /// <summary>A resource location that is no address Daoris reads from: https://, or http:// to this machine (TOOLS7, rule 5).</summary>
+    public const string ToolLocationRefused = "TOOL_LOCATION_REFUSED";
+
+    /// <summary>A delete of the version a tool runs (TOOLS7, §3.6): another way or version is chosen first.</summary>
+    public const string ToolInUse = "TOOL_IN_USE";
+
+    /// <summary>A delete the system refused, since something still holds a file in that version's folder; its reason goes with it.</summary>
+    public const string ToolHeld = "TOOL_HELD";
+
+    /// <summary>A download, or a use that downloads, started while that tool already has one running (TOOLS7, §3.6).</summary>
+    public const string ToolBusy = "TOOL_BUSY";
+
+    /// <summary>
     /// Every code a module here can raise — what the catalogue test enumerates. Read off the
     /// declarations above (REFUSE1): a list kept by hand let a code left out of it escape the check.
     /// </summary>

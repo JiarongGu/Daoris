@@ -3,5 +3,9 @@
   "sidebar.refresh": "Refresh the index",
   "sidebar.refreshing": "Refreshing…",
   "sidebar.refreshed": "Indexed {{entries}} entries from {{repositories}} repositories.",
+  "sidebar.embedded_zero": "Embedded {{entries}} entries as {{pieces}} vectors of at most {{window}} characters; none was longer, so none was split.",
+  "sidebar.embedded": "Embedded {{entries}} entries as {{pieces}} vectors of at most {{window}} characters; {{split}} longer than that was split.",
+  "sidebar.embedded_other": "Embedded {{entries}} entries as {{pieces}} vectors of at most {{window}} characters; {{split}} longer than that were split.",
+  "sidebar.join": "{{first}} {{second}}",
   "sidebar.absent": "Not found where the registry says: {{names}} — registered here, and nothing of it is in this refresh."
 }

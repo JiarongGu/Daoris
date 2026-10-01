@@ -29,11 +29,18 @@ namespace Daoris.Knowledge;
 /// found once, and each declared room's <c>AGENTS.md</c> read as the repository's own knowledge
 /// (<see cref="RepositoryLayout"/>). A link, or a link held as text, is skipped and never followed
 /// (<see cref="RepositoryLinks"/>): what it points at is not this repository's document.
+///
+/// Until a repository adopts, its root <c>README.md</c> is read too, split at its headings as a log is,
+/// as local knowledge labelled by its path (WSSETUP8; D124 §5). It assigns no role. Once a lock exists
+/// the repository has declared its documents, and the README is its front page again.
 /// </remarks>
 public sealed class RepositoryScanner
 {
     /// <summary>A room's instructions, the file every agent reads in that folder (D117 §2.2).</summary>
     private const string RoomInstructions = "AGENTS.md";
+
+    /// <summary>An unadopted repository's front page, read at its root in any case (WSSETUP8; D124 §5).</summary>
+    private const string ReadmeFile = "README.md";
 
     private static readonly string[] DecisionFiles =
     [
@@ -136,7 +143,51 @@ public sealed class RepositoryScanner
                 : ScanLog(repositoryRoot, name, found, kind));
         }
 
+        // The README, as the repository's own word until it adopts (WSSETUP8; D124 §5): what its authors
+        // wrote for a newcomer, and a session searching the index is one. Last, so a declaration that
+        // names the file reads it by its role, and this never reads it a second time.
+        if (!layout.Locked && Readme(repositoryRoot) is { } readme && !indexed.Contains(readme))
+        {
+            Add(ScanReadme(repositoryRoot, name, readme));
+        }
+
         return entries;
+    }
+
+    /// <summary>
+    /// The root's <c>README.md</c> in any case, spelled as the disk spells it so a session can open it;
+    /// null when there is none. Only that file: not <c>docs/README.md</c>, which may be a site's front page
+    /// (DOC5), and no other format, since only markdown has headings the splitter reads.
+    /// </summary>
+    /// <remarks>Two spellings side by side, which only a case-sensitive disk holds, read as the first in ordinal order.</remarks>
+    private static string? Readme(string root) =>
+        Directory.EnumerateFiles(root)
+            .Select(Path.GetFileName)
+            .Where(file => string.Equals(file, ReadmeFile, StringComparison.OrdinalIgnoreCase))
+            .Order(StringComparer.Ordinal)
+            .FirstOrDefault();
+
+    /// <summary>
+    /// A README split at its headings, as a log is: the part before the first heading titled
+    /// <c>README</c>, each section after by its heading. Knowledge, the repository's own, labelled by its
+    /// path and claiming no role: one hit among others, where a router guessed would be followed as a map
+    /// (D124 §5, on DOC5's objection).
+    /// </summary>
+    private static IEnumerable<KnowledgeEntry> ScanReadme(string root, string repository, string relative)
+    {
+        // Through the one boundary: a README that is a link, or a link held as text, is some other
+        // folder's word (D117 §5.5).
+        if (ReadDocument(root, relative) is not { } text) yield break;
+
+        // The part a log drops is the part a newcomer reads first. Unanchored, so a reader following it
+        // lands at the top of the file, and its id is never a section's.
+        var preamble = MarkdownSections.Preamble(text);
+        if (preamble.Length > 0)
+        {
+            yield return new KnowledgeEntry(
+                repository, EntryKind.Knowledge, Provenance.Local, Path.GetFileNameWithoutExtension(ReadmeFile), preamble, relative);
+        }
+        foreach (var entry in Sections(repository, EntryKind.Knowledge, relative, text)) yield return entry;
     }
 
     /// <summary>
@@ -334,6 +385,13 @@ public sealed class RepositoryScanner
         // held as text, is some other folder's (LAYOUT4).
         if (ReadDocument(root, relativePath) is not { } text) yield break;
 
+        // A log is always the repository's own: canonical files are rules, knowledge and skills.
+        foreach (var entry in Sections(repository, kind, relativePath, text)) yield return entry;
+    }
+
+    /// <summary>One local entry per section of a file split at its headings, each anchored by its heading.</summary>
+    private static IEnumerable<KnowledgeEntry> Sections(string repository, EntryKind kind, string relativePath, string text)
+    {
         // 🔴 An anchor is unique within its file (REV3). Two sections under one heading — date-only fix
         // headings do it — shared an id, and the store's primary key threw on the second, failing the
         // whole refresh. The first keeps the id it always had; each repeat is told apart by its count.
@@ -343,7 +401,6 @@ public sealed class RepositoryScanner
             if (section.Body.Length == 0) continue;
             var seen = used.GetValueOrDefault(section.Heading) + 1;
             used[section.Heading] = seen;
-            // A log is always the repository's own: canonical files are rules, knowledge and skills.
             yield return new KnowledgeEntry(
                 repository,
                 kind,

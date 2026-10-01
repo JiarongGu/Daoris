@@ -326,6 +326,152 @@ public sealed class SessionLogTests : IDisposable
         Assert.DoesNotContain("second option", Raw());
     }
 
+    /// <summary>
+    /// WSSETUP11 (D124 §7.3): a session that stopped to ask the person (D83) is the owner's complaint, counted.
+    /// One line per park, naming the door, the repository and the workspace the record ran in, and never what
+    /// the session asked. A park is no ending: the record ends when the person answers.
+    /// </summary>
+    [Fact]
+    public async Task A_session_that_parks_is_one_line_naming_its_kind_repository_and_workspace_and_never_its_words()
+    {
+        using var w = Watch();
+        var (id, _) = await w.Client.OpenSessionAsync("q1", "claude-code-acp");
+        await w.Client.AdvanceAsync(id!, "working");
+        await w.Client.AdvanceAsync(id!, "awaiting-person", note: "It stopped to ask you: which report is the daily one?");
+
+        var parked = Data(Assert.Single(Named("session.parked")));
+        Assert.Equal(id, parked.GetProperty("session").GetString());
+        Assert.Equal("driven", parked.GetProperty("kind").GetString());
+        Assert.Equal("engine", parked.GetProperty("repository").GetString());
+        Assert.Equal("work", parked.GetProperty("workspace").GetString());
+        Assert.Empty(Named("session.ended"));
+        Assert.DoesNotContain("daily one", Raw());
+
+        await w.Client.AnswerSessionAsync(id!, "the one the plant reads");
+
+        Assert.Equal("completed", Data(Assert.Single(Named("session.ended"))).GetProperty("state").GetString());
+        Assert.Single(Named("session.parked"));
+        Assert.DoesNotContain("plant reads", Raw());
+    }
+
+    /// <summary>
+    /// A park is the state the attention watch calls one (<see cref="SessionStates.IsParked"/>), and no other:
+    /// <c>AttentionTests</c> holds the same rows, so what the log counts is what the person was told about.
+    /// </summary>
+    [Theory]
+    [InlineData("awaiting-person", true)]
+    [InlineData("working", false)]
+    [InlineData("starting", false)]
+    [InlineData("completed", false)]
+    [InlineData("failed", false)]
+    public async Task A_park_line_is_written_for_the_state_the_attention_watch_calls_a_park(string state, bool parked)
+    {
+        using var w = Watch();
+        var (id, _) = await w.Client.OpenSessionAsync("q1", "claude-code");
+
+        await w.Client.AdvanceAsync(id!, state);
+
+        Assert.Equal(parked ? 1 : 0, Named("session.parked").Count);
+    }
+
+    /// <summary>
+    /// An intake parks too, asking the person about its ask (D65), and says it was an intake. A park whose open
+    /// this process never saw names its session and nothing it cannot know: absent is null, never a guess.
+    /// </summary>
+    [Fact]
+    public async Task An_intake_that_parks_says_so_and_a_park_whose_open_was_not_seen_names_only_its_session()
+    {
+        using var w = Watch();
+        var (id, _) = await w.Client.OpenIntakeAsync("a1", "claude-code", "room");
+
+        await w.Client.AdvanceAsync(id!, "awaiting-person");
+        await w.Client.AdvanceAsync("orphan3", "awaiting-person");
+
+        var lines = Named("session.parked").Select(Data).ToList();
+        Assert.Equal(2, lines.Count);
+        Assert.Equal(
+            ("intake", "daoris:intake", "work"),
+            (lines[0].GetProperty("kind").GetString(), lines[0].GetProperty("repository").GetString(), lines[0].GetProperty("workspace").GetString()));
+        Assert.Equal("orphan3", lines[1].GetProperty("session").GetString());
+        foreach (var field in new[] { "kind", "repository", "workspace" })
+        {
+            Assert.Equal(JsonValueKind.Null, lines[1].GetProperty(field).ValueKind);
+        }
+    }
+
+    /// <summary>
+    /// A session's start names the workspace its record runs in, so parks per week can be held against the
+    /// sessions started there, and a set-up's session says it is one (WSSETUP11), so the report can find each
+    /// set-up's cost. Every other session's start carries no such field.
+    /// </summary>
+    [Fact]
+    public async Task A_sessions_start_names_its_workspace_and_a_set_ups_says_it_is_one()
+    {
+        using var w = Watch();
+
+        await w.Client.OpenSessionAsync("q1", "claude-code");
+        await w.Client.OpenSessionAsync("q2", "claude-code", setup: true);
+
+        var started = Named("session.started").Select(Data).ToList();
+        Assert.Equal(2, started.Count);
+        Assert.All(started, line => Assert.Equal("work", line.GetProperty("workspace").GetString()));
+        Assert.False(started[0].TryGetProperty("setup", out _));
+        Assert.True(started[1].GetProperty("setup").GetBoolean());
+    }
+
+    /// <summary>
+    /// WSSETUP11 (D124 §7.3): what a set-up costs is measured per turn, as METER1 splits it: the tokens read
+    /// anew, from the cache and written, a turn's tool calls, and the context at its high-water against the
+    /// window. Each count is the wire's, null where it said none, and a call's later updates are the same call.
+    /// </summary>
+    [Fact]
+    public async Task A_turns_end_says_what_it_consumed_how_many_tools_it_called_and_how_full_its_context_got()
+    {
+        using var w = Watch();
+        var (id, _) = await w.Client.OpenSessionAsync("q1", "claude-code-acp");
+        var s = id!;
+
+        Said(w.Events, s, new SessionEvent { Kind = SessionEventKind.User, Origin = "target", Text = "the composed target" }, 1);
+        Said(w.Events, s, new SessionEvent { Kind = SessionEventKind.Usage, Used = 10_000, Size = 1_000_000 }, 2);
+        Said(w.Events, s, new SessionEvent { Kind = SessionEventKind.Tool, Id = "t1", ToolKind = "read", Status = "pending", Title = "Read secret.txt" }, 3);
+        Said(w.Events, s, new SessionEvent { Kind = SessionEventKind.Tool, Id = "t1", Status = "completed", Output = "the file's words" }, 4);
+        Said(w.Events, s, new SessionEvent { Kind = SessionEventKind.Usage, Used = 48_000, Size = 1_000_000 }, 5);
+        Said(w.Events, s, new SessionEvent { Kind = SessionEventKind.Tool, Id = "t2", ToolKind = "execute", Status = "pending" }, 6);
+        Said(w.Events, s, new SessionEvent { Kind = SessionEventKind.Tool, ToolKind = "other" }, 7);
+        Said(w.Events, s, new SessionEvent { Kind = SessionEventKind.Usage, Used = 30_000, Size = 1_000_000 }, 8);
+        Said(w.Events, s, new SessionEvent
+        {
+            Kind = SessionEventKind.Turn, StopReason = "end_turn",
+            Tokens = new TurnTokens(Input: 12, Output: 80, CacheRead: 51_100, CacheWrite: 16_700),
+        }, 9);
+        Said(w.Events, s, new SessionEvent { Kind = SessionEventKind.User, Origin = "person", Text = "and then?" }, 10);
+        Said(w.Events, s, new SessionEvent { Kind = SessionEventKind.Message, Text = "done" }, 11);
+        Said(w.Events, s, new SessionEvent
+        {
+            Kind = SessionEventKind.Turn, StopReason = "end_turn", Tokens = new TurnTokens(Input: 5, Output: 7, CacheRead: null, CacheWrite: null),
+        }, 12);
+
+        var ended = Named("turn.ended").Select(Data).ToList();
+        Assert.Equal(2, ended.Count);
+        long? Count(JsonElement line, string field) =>
+            line.GetProperty(field).ValueKind == JsonValueKind.Null ? null : line.GetProperty(field).GetInt64();
+
+        // Two calls with ids, one of them updated, and one with none, which cannot be told from the next.
+        Assert.Equal(
+            [12L, 51_100L, 16_700L, 80L, 3L, 48_000L, 1_000_000L],
+            new[] { "input", "cacheRead", "cacheWrite", "output", "calls", "used", "size" }.Select(field => Count(ended[0], field)));
+        // A turn that called nothing called none; a count the wire did not give, and a context it did not report, are null.
+        Assert.Equal(
+            [5L, null, null, 7L, 0L, null, null],
+            new[] { "input", "cacheRead", "cacheWrite", "output", "calls", "used", "size" }.Select(field => Count(ended[1], field)));
+
+        var raw = Raw();
+        foreach (var words in new[] { "secret.txt", "the file's words", "and then?", "composed target" })
+        {
+            Assert.DoesNotContain(words, raw);
+        }
+    }
+
     /// <summary>What the ledger refused did not happen, so nothing is written about it.</summary>
     [Fact]
     public async Task A_refused_open_or_move_writes_nothing()
@@ -374,8 +520,8 @@ public sealed class SessionLogTests : IDisposable
     }
 
     /// <summary>
-    /// The ledger's doors, standing in: an open answers a record, a move answers the state it moved to,
-    /// and a refusal answers 409 with the ledger's sentence.
+    /// The ledger's doors, standing in: an open answers a record in the workspace `work`, a move answers the
+    /// state it moved to, and a refusal answers 409 with the ledger's sentence.
     /// </summary>
     private sealed class StandInLedger : HttpMessageHandler
     {
@@ -411,7 +557,7 @@ public sealed class SessionLogTests : IDisposable
                 ? Answer(HttpStatusCode.NotFound, new { error = "no such door" })
                 : Answer(HttpStatusCode.OK, new
                 {
-                    session = new { id, repository, adapter = Field("adapter"), state = "queued" },
+                    session = new { id, repository, adapter = Field("adapter"), state = "queued", workspace = "work" },
                     message = "queued",
                 });
         }

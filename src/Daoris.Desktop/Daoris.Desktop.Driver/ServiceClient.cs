@@ -144,9 +144,13 @@ public sealed class ServiceClient : IDisposable
         RemoteSyncPayloads.Claim(await GetAsync($"/api/quests/{Uri.EscapeDataString(id)}/claim", ct).ConfigureAwait(false));
 
     /// <summary>Ask the ledger to queue a session. A refusal is an answer, not an exception.</summary>
+    /// <param name="setup">
+    /// That the quest is a set-up (<see cref="SetupQuests"/>), for the watchers alone (WSSETUP11): the
+    /// ledger is not told, and the machine log marks the session's start.
+    /// </param>
     public async Task<(string? SessionId, string Message)> OpenSessionAsync(
         string questId, string adapter, string? harnessVersion = null, string? profile = null,
-        string? tree = null, string? baseCommit = null, CancellationToken ct = default)
+        string? tree = null, string? baseCommit = null, CancellationToken ct = default, bool setup = false)
     {
         var body = WriteJson(writer =>
         {
@@ -166,7 +170,7 @@ public sealed class ServiceClient : IDisposable
             writer.WriteEndObject();
         });
 
-        return await OpenRecordAsync("/api/sessions", body, SessionOpened.Driven, adapter, repository: null, ct).ConfigureAwait(false);
+        return await OpenRecordAsync("/api/sessions", body, SessionOpened.Driven, adapter, repository: null, ct, setup).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -724,8 +728,9 @@ public sealed class ServiceClient : IDisposable
     /// <param name="kind">Which door this is, for the watchers (<see cref="SessionOpened"/>).</param>
     /// <param name="adapter">The adapter asked for — the record's own, when the answer carries one, wins.</param>
     /// <param name="repository">The repository asked for, where the door names one — the record's own wins.</param>
+    /// <param name="setup">That a driven session's quest is a set-up, for the watchers (WSSETUP11).</param>
     private async Task<(string? SessionId, string Message)> OpenRecordAsync(
-        string path, string body, string kind, string adapter, string? repository, CancellationToken ct)
+        string path, string body, string kind, string adapter, string? repository, CancellationToken ct, bool setup = false)
     {
         var (ok, status, payload, root) = await PostJsonAsync(path, body, ct).ConfigureAwait(false);
         if (root is not { } answer)
@@ -739,8 +744,13 @@ public sealed class ServiceClient : IDisposable
         if (id is not null)
         {
             // What the ledger recorded rather than what was asked: a driven session names its quest, and
-            // the record answers with the quest's receiver; a blank adapter takes the ledger's default.
-            Raise(Opened, new SessionOpened(id, kind, Text(session, "adapter") ?? adapter, Text(session, "repository") ?? repository));
+            // the record answers with the quest's receiver; a blank adapter takes the ledger's default. The
+            // workspace is the record's too, the circle its repository is wired into on this machine (D48).
+            Raise(Opened, new SessionOpened(id, kind, Text(session, "adapter") ?? adapter, Text(session, "repository") ?? repository)
+            {
+                Workspace = Text(session, "workspace"),
+                Setup = setup,
+            });
         }
 
         return (id, Text(answer, "message") ?? "");
@@ -773,6 +783,12 @@ public sealed class ServiceClient : IDisposable
 /// <param name="Repository">The repository the record runs in, as the ledger recorded it; a name, never a path.</param>
 public sealed record SessionOpened(string Session, string Kind, string Adapter, string? Repository)
 {
+    /// <summary>The workspace the record runs in, as the ledger recorded it (WSSETUP11); null where it said none.</summary>
+    public string? Workspace { get; init; }
+
+    /// <summary>That a driven session serves a set-up quest (<see cref="SetupQuests"/>, WSSETUP11).</summary>
+    public bool Setup { get; init; }
+
     public const string Driven = "driven";
     public const string Chat = "chat";
     public const string Intake = "intake";

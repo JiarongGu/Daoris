@@ -55,10 +55,11 @@ nested. A reader skips a line it cannot parse and a field it does not know.
 | `app.started` / `app.stopped` | every | version, installed, uptime on stop | a period of use, and a version to blame |
 | `error` | every | where, type, message, stack | an unhandled exception, which left no trace |
 | `log` | every | category, message, exception | the framework's own warnings and errors |
-| `session.started` | desktop | session, kind, adapter, repository | what the person runs, on what |
+| `session.started` | desktop | session, kind, adapter, repository, workspace; setup, only for a set-up's session | what the person runs, on what, and where (WSSETUP11) |
 | `session.opened` | desktop | session, adapter, openMs | spawn to ready: what a person waits through |
 | `turn.answered` | desktop | session, firstAnswerMs | send to the first word back |
-| `turn.ended` | desktop | session, stopReason, turnMs | how long a turn takes, and how it ends |
+| `turn.ended` | desktop | session, stopReason, turnMs, input, cacheRead, cacheWrite, output, calls, used, size | how long a turn takes, how it ends, and what it consumed: its tokens as METER1 splits them, its tool calls, and its context against the window (WSSETUP11) |
+| `session.parked` | desktop, driver | session, kind, repository, workspace | a session that stopped to ask the person (D83): the owner's complaint, counted per week by workspace (WSSETUP11, D124 §7.3) |
 | `session.ended` | desktop | session, state, seconds | how it finished |
 | `refused` | desktop | code, request | a refusal the person met, by its catalogue code (REFUSE1) |
 | `permission.refused` | desktop | session, adapter, tool, kind, by | a permission a session's harness would have asked a person for, refused because nobody is at the prompt (UNBLOCK5, D122 §3.10): asks per session, before and after a repository declares its safe work |
@@ -70,6 +71,7 @@ nested. A reader skips a line it cannot parse and a field it does not know.
 | `request.failed` | host | method, route, status, ms | a request that failed, or took over two seconds |
 | `tool.download.started` / `.verified` / `.refused` / `.stopped` | the process that runs the download (D121 §3.6, TOOLS4) | tool, version, check when refused | a managed version fetched, and the check that refused it |
 | `tool.location.fetched` / `.failed` | the process that looks (D121 §3.7, TOOLS4) | position in the list, versions or check | a resource location looked at, by its place and never by the address the person typed |
+| `tool.used` | desktop (D121 §3.6, TOOLS7) | tool, way, version when managed | a tool's way set from Settings → Tools, never the path of a file the person named |
 | `plugin.started` | desktop, driver | plugin, points, ms, by | a plugin's process up: what it listens on, how long its handshake took, and whose it is (D119) |
 | `plugin.stopped` | desktop, driver | plugin, why, by | why a plugin's process went: off, removed, updated, changed, or its owner ended |
 | `plugin.called` | desktop, driver | plugin, point, answer, ms | each answer at a point, by its word, and how long it took |
@@ -143,6 +145,30 @@ through by mistake.
   best-effort, the result's list authoritative) and labelled so in `ClaudeStreamJsonTests` until a turn
   shows them. What an auto-mode classifier block looks like on the protocol wire is the canary's
   (D122 §3.10).
+
+**As built (WSSETUP11): parks, set-ups and what a turn consumed** (D124 §7.3), measured against the code and its
+tests (`SessionLogTests`, `AttentionTests`, `SetupQuestsTests`):
+
+- **`session.parked`, where the park is made.** `SessionLog` writes it when the service client moves a record into
+  the state `SessionStates.IsParked` names. Only the driver moves a record there (a driven session's conclusion,
+  D83, and an intake's), always through that client, so the line is written in the shell and the headless host
+  alike, in every mode. The attention watch says the same park from the active list a look later; it is not the
+  writer, since its first look is a baseline that would drop a park made just before a restart, and the headless
+  `--once` and `--until-idle` run none. Both read the one predicate, and their tests hold the same rows. `kind`,
+  `repository` and `workspace` are what the session's open said; each is null for a session whose open this process
+  never saw. A park is no ending: the record ends, and `session.ended` is written, when the person answers.
+- **`session.started`'s `workspace`** is the record's, the circle its repository is wired into on this machine
+  (D48). **`setup` is true** only for a driven session whose quest is a set-up (`SetupQuests`: a title the set-up
+  press composes, D117 §6.2 and D124 §2.1–§2.2, with or without its day), and absent on every other line. The
+  driver passes it with the open, and the ledger is not told.
+- **`turn.ended`'s counts.** `input`, `cacheRead`, `cacheWrite` and `output` are the turn's tokens as its wire
+  reported them for the whole turn (CONV5), each null where it said none. `calls` is the tool calls first seen since
+  the last turn ended: a call's later updates are the same call, and a call with no id is one each. `used` and
+  `size` are the context at its high-water within the turn and the window, from the turn's usage reports, null where
+  it had none.
+- **Not covered by a fast test**: the driver's open passing `setup` is reached only by a real tick (the `Process`
+  half). Its decision, `SetupQuests.IsSetup`, and the client and log beneath it are held in the fast half; the
+  first real set-up is LAYOUT7's, whose family rehearsal runs one.
 
 **As built (PLUGUI1d): the `plugin.*` events** (D119 §4.2), measured against the code and its tests
 (`HookSetLogTests`, `PluginHealthTests`):
@@ -251,6 +277,20 @@ the transcript beside it.
   the state are read, so the rule and the reason cannot be printed. It says how many wait for the person
   now, whenever made, and those made in the period by the week they were made in (Monday, UTC) and the
   state each stands in.
+
+**As built (WSSETUP11)**, measured against the code and its tests (`usage-report.test.ts`):
+
+- **Set-ups**: every session whose `session.started` says `setup` as the boolean true, in the order they started,
+  with how it stands (its end's state; `awaiting-person` when it parked and has not ended; else `not ended`), how
+  many times it parked, the seconds its end says, and its turns summed: tool calls, the tokens read anew (new input
+  and what was written to the cache, METER1's split), read from the cache and written out, and the context at its
+  largest against the window. A total line sums what was measured and gives the largest context. A count is a number
+  at or above zero; anything else is unsaid, and what no line said is null, never zero. No price is claimed. A
+  set-up that ran in several sessions (a cut-off carried on, a park answered) is one row per session.
+- **Parks**: every `session.parked` in the period, by kind (`(unsaid)` where the line has none), and by the week it
+  happened in (Monday, UTC) and its workspace (`(unnamed)` where the line has none), beside the sessions started
+  that week in that workspace by a door that can park (driven and intake; a conversation never parks). A week with
+  sessions and no park is shown, since a week of *before* is the point.
 
 ## 7. Build order
 

@@ -55,6 +55,126 @@ public sealed class AskAndWaitPromptTests
         Assert.Contains("rather than declining", prompt);
     }
 
+    /// <summary>The three driven instructions: claiming, resuming after an answer, and carrying on after a cut-off.</summary>
+    private static IEnumerable<(string Which, string Prompt)> EveryInstruction(SessionTarget target) =>
+    [
+        ("claiming", TargetPrompt.Compose(target)),
+        ("resuming", TargetPrompt.Compose(target with { Answered = Question() })),
+        ("carrying on", TargetPrompt.Compose(target with { CutOff = "timed out after 30 minutes and was killed." })),
+    ];
+
+    /// <summary>The prompt with every run of whitespace one space, so a sentence is found however it wraps.</summary>
+    private static string Flat(string prompt) => System.Text.RegularExpressions.Regex.Replace(prompt, @"\s+", " ");
+
+    /// <summary>
+    /// WSSETUP9 (D124 §6.1): a driven session in a report repository stopped to ask the person which report
+    /// a ticket meant, a choice its own notes and code could settle, because its instruction offered "a
+    /// choice between options that is theirs" as a reason to stop. Every driven instruction now sends it to
+    /// the sources first, names them, and has it decide what they settle.
+    /// </summary>
+    [Fact]
+    public void Every_instruction_says_to_look_before_asking_and_names_where()
+    {
+        foreach (var (which, prompt) in EveryInstruction(Target()))
+        {
+            var flat = Flat(prompt);
+            Assert.True(flat.Contains("Look before you ask.", StringComparison.Ordinal), which);
+            Assert.True(flat.Contains("The quest, its links and its files;", StringComparison.Ordinal), which);
+            Assert.True(flat.Contains(
+                "this repository's own documents, code and history (its log, and the commits that last changed what you are changing);",
+                StringComparison.Ordinal), which);
+            Assert.True(flat.Contains("the workspace's knowledge, through your connector's `knowledge_search`.", StringComparison.Ordinal), which);
+            Assert.True(flat.Contains(
+                "A question one of these settles is not a question: decide it, and keep what settled it for your closing note.",
+                StringComparison.Ordinal), which);
+        }
+    }
+
+    /// <summary>
+    /// A reading the evidence leans to is taken and said, not asked: it is committed on the session's branch,
+    /// named in its close, and reviewed with the diff, so the person corrects it in review rather than being
+    /// stopped by it (D124 §6.1).
+    /// </summary>
+    [Fact]
+    public void A_reading_the_evidence_leans_to_is_taken_and_said_in_the_close()
+    {
+        foreach (var (which, prompt) in EveryInstruction(Target()))
+        {
+            Assert.True(Flat(prompt).Contains(
+                "Where the evidence leans one way without settling it, take that reading, carry on, and say in your closing note "
+                + "which reading you took and on what evidence, so the person can correct it in review rather than be stopped by it.",
+                StringComparison.Ordinal), which);
+        }
+    }
+
+    /// <summary>
+    /// What reaches the person narrows to what no source holds (D124 §6.1): a sign-in, a go-ahead outside the
+    /// repository or on a production system, a preference nothing records. A choice between options is no
+    /// longer a reason by itself, and the stop says what was looked at.
+    /// </summary>
+    [Fact]
+    public void Only_what_no_source_holds_stops_the_session_and_a_choice_between_options_is_gone()
+    {
+        foreach (var (which, prompt) in EveryInstruction(Target()))
+        {
+            var flat = Flat(prompt);
+            Assert.True(flat.Contains(
+                "Stop only for what no source holds and only the person can give — a sign-in, a go-ahead for an act outside "
+                + "this repository or on a production system, a preference nothing records.",
+                StringComparison.Ordinal), which);
+            Assert.True(flat.Contains("say exactly what and why, and what you looked at, in your last message", StringComparison.Ordinal), which);
+            Assert.False(flat.Contains("choice between options", StringComparison.Ordinal), which);
+        }
+    }
+
+    /// <summary>
+    /// The look comes first, then asking another repository, then stopping for the person: the order a session
+    /// should reach for them in.
+    /// </summary>
+    [Fact]
+    public void The_look_comes_before_asking_another_repository_and_that_before_stopping_for_the_person()
+    {
+        foreach (var (which, prompt) in EveryInstruction(Target()))
+        {
+            var look = prompt.IndexOf("Look before you ask.", StringComparison.Ordinal);
+            var neighbour = prompt.IndexOf("do not read into it and do not guess: ask it.", StringComparison.Ordinal);
+            var person = prompt.IndexOf("Stop only for what no source holds", StringComparison.Ordinal);
+            Assert.True(look >= 0 && look < neighbour && neighbour < person, which);
+        }
+    }
+
+    /// <summary>
+    /// The other checkouts are a source only where the session may read them (D107), and are pointed to where
+    /// this instruction lists them: above, read only; below, in the boundary, where each is also a declared
+    /// target; or both. Where reading across is off, no checkout is named, as before.
+    /// </summary>
+    [Fact]
+    public void The_other_checkouts_are_a_source_only_where_the_session_may_read_across()
+    {
+        var app = new AcrossCheckout("app", "C:/work/app");
+        var engine = new AcrossCheckout("engine", "C:/work/engine");
+
+        foreach (var (which, prompt) in EveryInstruction(Target()))
+        {
+            Assert.False(Flat(prompt).Contains("other checkouts", StringComparison.Ordinal), which);
+        }
+
+        foreach (var (target, where) in new[]
+        {
+            (Target() with { ReadsAcross = [app] }, "above"),
+            (Target() with { ReadsAcross = [engine], WritesAcross = [engine] }, "below"),
+            (Target() with { ReadsAcross = [app, engine], WritesAcross = [engine] }, "above and below"),
+        })
+        {
+            foreach (var (which, prompt) in EveryInstruction(target))
+            {
+                Assert.True(Flat(prompt).Contains(
+                    $"through your connector's `knowledge_search`; and the other checkouts listed {where}. A question",
+                    StringComparison.Ordinal), $"{which}, {where}");
+            }
+        }
+    }
+
     /// <summary>
     /// 🔴 The claiming instruction says "if the quest is already taken, stand down" — which a resumed
     /// session's quest always is. Handed that, it would finish having done nothing, every time.

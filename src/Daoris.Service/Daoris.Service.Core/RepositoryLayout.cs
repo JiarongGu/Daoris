@@ -54,12 +54,19 @@ public sealed partial class RepositoryLayout
     internal sealed record Descriptor(string DefaultTarget, string? Formerly, string? MirrorRoot);
 
     private RepositoryLayout(
-        IReadOnlyList<string> roots, IReadOnlyList<string> rooms, IReadOnlyList<RepositoryDocuments.Declared> documents)
+        bool locked, IReadOnlyList<string> roots, IReadOnlyList<string> rooms, IReadOnlyList<RepositoryDocuments.Declared> documents)
     {
+        Locked = locked;
         Roots = roots;
         Rooms = rooms;
         Documents = documents;
     }
+
+    /// <summary>
+    /// Whether a lock says where daoris wrote. False for a repository with no lock, or one read as none,
+    /// which is read at both roots and, until it adopts, by its README (WSSETUP8; D124 §5).
+    /// </summary>
+    public bool Locked { get; }
 
     /// <summary>
     /// The roots the on-demand tiers are read at, repository-relative with forward slashes, each once,
@@ -105,6 +112,7 @@ public sealed partial class RepositoryLayout
         }
 
         return new RepositoryLayout(
+            daorisLock.Target is not null,
             roots.Distinct(StringComparer.Ordinal).ToList(),
             ReadableRooms(manifest.Rooms, target, layout),
             RepositoryDocuments.Read(manifest.Documents, target, layout.MirrorRoot));

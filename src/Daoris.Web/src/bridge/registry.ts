@@ -19,6 +19,11 @@ export type FolderInspection = {
   packs: string[];
   join: boolean;
   shareKnowledge: boolean;
+  /**
+   * What its manifest says it uses (D91), as the file has it. The registry replaces a row's `uses` with
+   * the declaration's, so a registration made from this answer states them (MANAGE1).
+   */
+  uses: string[];
 };
 
 /**

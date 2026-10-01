@@ -290,4 +290,24 @@ public sealed class MainForm : OptimizedForm
 
         return dialog.ShowDialog(this) == DialogResult.OK ? dialog.SelectedPath : null;
     }
+
+    /// <summary>
+    /// The system's file picker, for a tool named as a file (TOOLS7, D121 §4.1 *Browse…*): the program the person
+    /// chose, or null when they cancelled. Marshalled and owned as <see cref="PickFolder"/> is, for the same reasons.
+    /// </summary>
+    /// <param name="title">The dialog's title, in the page's language.</param>
+    public string? PickFile(string? title)
+    {
+        if (InvokeRequired) return (string?)Invoke(() => PickFile(title));
+
+        using var dialog = new OpenFileDialog
+        {
+            Title = string.IsNullOrWhiteSpace(title) ? "Choose a program" : title,
+            Filter = "Programs (*.exe;*.cmd;*.bat)|*.exe;*.cmd;*.bat|All files (*.*)|*.*",
+            CheckFileExists = true,
+            Multiselect = false,
+        };
+
+        return dialog.ShowDialog(this) == DialogResult.OK ? dialog.FileName : null;
+    }
 }

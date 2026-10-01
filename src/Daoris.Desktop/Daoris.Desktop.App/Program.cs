@@ -122,6 +122,8 @@ internal static class Program
             // What the person runs, and how long it takes, into the same log (LOG1b).
             log));
         builder.Services.AddSingleton<MainForm>();
+        // A tool named as a file (TOOLS7): the system's file picker, owned by the window, as the folder picker is.
+        builder.Services.AddSingleton<PickFile>(sp => title => sp.GetRequiredService<MainForm>().PickFile(title));
         // The session-control surface's host half: the page's driver controls land here (D46 §6).
         builder.Services.AddIpcModule<DriverModule>();
         // The one thing a page cannot do: name a directory on this machine (D48 §7). Everything else

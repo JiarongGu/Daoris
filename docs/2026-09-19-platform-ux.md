@@ -122,10 +122,10 @@ controls are in the frame design's §3.
   warn rail when its note is a warning (a quest sitting a week).
 - **Drawer** (right, 32rem, overlay surface, scrim, ESC/scrim/× to close) is the single detail-and-form
   surface: reading a knowledge entry, composing a quest, a quest's detail with its actions. One pattern
-  instead of three; the list stays a list. A `wide` drawer (52rem) is for what holds a line of source
-  (U43). *Changed by D118*: the drawer keeps forms. A record moves to the main area of the view whose
-  list holds it, because since DOCK1a a drawer lies over the side bar and the panel: a quest and an ask
-  since FRAME1d, and a knowledge entry with FRAME1f.
+  instead of three; the list stays a list. *Changed by D118*: the drawer keeps forms. A record moves to
+  the main area of the view whose list holds it, because since DOCK1a a drawer lies over the side bar
+  and the panel: a quest and an ask since FRAME1d, and a knowledge entry since FRAME1f, which retired the
+  reader and with it the `wide` drawer (52rem) a line of source needed (U43): the main area holds one.
 - 🔴 **An overlay sits between the strip and the status bar**, every one of them: a scrim, a drawer, a
   panel. It starts below the strip, because the strip holds the caption buttons the window paints and
   a page backdrop cannot dim what the page does not draw (a full-bleed scrim greyed the title bar and
@@ -311,14 +311,24 @@ controls are in the frame design's §3.
   outlives the door is offered with the door said beside it: on a machine whose adapter rides the
   direct door, a quest there sits, and the page says so under the control. The steps' paragraph claims
   only what is proven. *Manage* edits the declaration in the face it is read in (U37).
-- **Convergence / Search** — pages with the page header that open entries in the drawer. An excerpt is
-  the entry's prose, without its frontmatter or its Markdown's markers (U39), and a hit's highlight
-  adds no space beside its word (U61). Each empty answer is an empty state in its tier's own words
-  with the action that changes it: Search's leads to Convergence, and Convergence's lowers the
-  similarity until its floor, where it says it is the floor (U41, U42). **The reader shows the entry
-  as it is written**, unrendered, in a drawer wide enough for a line of the source (U43). A note keeps
-  a measure: 🔴 `max-w-prose` on a flex item caps its `basis-full`, so the measure goes on a child of
-  the full-width item, or the note stops breaking to its own line.
+- **Convergence / Search** (on the frame since FRAME1f, D118 §2) — each a list pane and a main area.
+  **Search's list is the box, *each repository's own only* and the hits**: ↓ goes from the box into the
+  hits, Escape clears it, and a hit is its title, its repository and kind, and its excerpt. **Convergence's
+  list is the similarity, its tier's note, then the findings**: a row is its entries' titles, its kind of
+  likeness and how alike, and the repositories that reached it, a likeness in different words in the
+  accent. *Local only* and the similarity are remembered, the similarity once it holds still, and so is
+  the item chosen; what was typed is not. Each list's head stays in reach as its rows scroll. An excerpt
+  is the entry's prose, without its frontmatter or its Markdown's markers (U39), and a hit's highlight
+  adds no space beside its word (U61). A first answer is skeleton rows with its words on the count's
+  line; a newer one holds the last rows at reduced opacity (audit SR11, the look to confirm). Each empty
+  answer is an empty state in its tier's own words with the action that changes it: Search's leads to
+  Convergence, and Convergence's lowers the similarity until its floor, where it says it is the floor
+  (U41, U42). **An entry is read as it is written**, unrendered (U43), in Search's main area under its
+  title, kind, provenance and place; **a finding** is read in Convergence's, the service's sentence first
+  and then each of its entries whole, one entry's trouble said in its own place. Neither page adds an
+  act: doctrine changes where its repository keeps it (D31). A note keeps a measure: 🔴 `max-w-prose` on
+  a flex item caps its `basis-full`, so the measure goes on a child of the full-width item, or the note
+  stops breaking to its own line.
 - **Map** (MAP2; MAP4a past twelve repositories: columns by who asks whom, which pan and zoom, a
   search, and a sizing menu behind the percentage; MAP4b: what the asks became in long dashes, a
   chain's hops dotted, and a *Connections* menu that switches each kind) — the circle's repositories on a ring, the quests between them as directed arrows
@@ -395,8 +405,8 @@ controls are in the frame design's §3.
   the ⋯ holds *Try a folder…*.
 - **Settings** (D66, as amended by **D75**) — one page with its **domains in a list at its left**,
   one shown at a time and reachable by name: *Setup*, *Appearance*, *AI features*, *Workspace*,
-  *Driver*, *Agents*, *Permissions*, *Plugins*, *Browser*, *Machine log* (配置, 外观, AI 功能, 工作区,
-  驱动, 智能体, 权限, 插件, 浏览器, 本机日志; named so by NAME1b, D116). Every way in opens the domain its
+  *Driver*, *Agents*, *Tools*, *Permissions*, *Plugins*, *Browser*, *Machine log* (配置, 外观, AI 功能, 工作区,
+  驱动, 智能体, 工具, 权限, 插件, 浏览器, 本机日志; named so by NAME1b, D116, and *Tools* by TOOLS7, D121). Every way in opens the domain its
   fact is set in, at the part it names, and a browser is offered only the first four, its list saying
   beneath them that a machine's own settings are on the desktop. **Since FRAME1g (D118) the list is the
   frame's list pane**, 176–320 px and 176 to start, closed to its strip, a strip by room and laid over
@@ -417,6 +427,12 @@ controls are in the frame design's §3.
     the intake's agent, off as a value (`""` on the wire, since the bridge leaves a null out), offering
     only the ways in this machine has installed while always showing what is in effect, with the
     account an intake in each circle runs as.
+  - **Tools** (TOOLS7, D121 §4.1), on the desktop only: a card per program Daoris runs beside its agents, what it needs
+    it for, how it is run as one choice (*System · Managed · Custom*), the file it runs and the version it answers.
+    **Nothing applies on choosing**: a segment shows a way's controls and a press applies it, so a switch of git is said
+    before it applies, the keys the two gits read a checkout differently by, beside *Switch Git* and *Never mind*. A
+    download is followed on its card (its console and *Stop download*), *Delete* asks once, and *Resource locations*
+    lists the person's, then the list built in, which cannot be removed.
   - On the desktop only, the machine's domains: *Driver* (the home's path, the notification switch,
     the strikes dial); *Workspace* (the workspaces, the wiring with *Wire a workspace* behind a press,
     and *What a start runs on*: one row per workspace and job, each part with the setting that chose

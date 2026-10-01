@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { keepPreviousData, useMutation, useQueries, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api, type AskAction, HELP_REPOSITORY } from './api';
 import { useScope } from './scope';
 import { workspaceOf, workspacesOf } from './workspaces';
@@ -244,28 +244,48 @@ export const useHelpSessions = () =>
     queryFn: ({ signal }) => api.sessions(HELP_REPOSITORY, true, null, signal),
   });
 
-/** One document, read on demand — the Reader's fetch, cached like every other read. */
-export const useEntry = (id: string | null) =>
+/**
+ * How a view asks a knowledge read (FRAME1f): only while it is in front, since the application holds Search and
+ * Convergence on every view; and, where a new question replaces the last, holding the last answer while the new one
+ * is on its way, so the list is never blanked between two answers (platform language §4, *Loading*).
+ */
+export type KnowledgeAsk = { enabled?: boolean; holding?: boolean };
+
+/** One document, read on demand — an entry's page, cached like every other read. */
+export const useEntry = (id: string | null, enabled = true) =>
   useQuery({
     queryKey: keys.entry(id ?? ''),
     queryFn: ({ signal }) => api.entry(id ?? '', signal),
-    enabled: id !== null,
+    enabled: enabled && id !== null,
   });
 
-export const useConvergence = (minimumSimilarity: number) => {
+/** Several documents, each read on demand and cached as one entry: a finding's entries, read whole (FRAME1f). */
+export const useEntries = (ids: readonly string[], enabled = true) =>
+  useQueries({
+    queries: ids.map((id) => ({
+      queryKey: keys.entry(id),
+      queryFn: ({ signal }: { signal: AbortSignal }) => api.entry(id, signal),
+      enabled,
+    })),
+  });
+
+export const useConvergence = (minimumSimilarity: number, { enabled = true, holding = false }: KnowledgeAsk = {}) => {
   const { workspace } = useScope();
   return useQuery({
     queryKey: keys.convergence(minimumSimilarity, workspace),
     queryFn: ({ signal }) => api.convergence(minimumSimilarity, workspace, signal),
+    enabled,
+    placeholderData: holding ? keepPreviousData : undefined,
   });
 };
 
-export const useSearch = (q: string, localOnly: boolean) => {
+export const useSearch = (q: string, localOnly: boolean, { enabled = true, holding = false }: KnowledgeAsk = {}) => {
   const { workspace } = useScope();
   return useQuery({
     queryKey: keys.search(q, localOnly, workspace),
     queryFn: ({ signal }) => api.search(q, localOnly, workspace, signal),
-    enabled: q.length >= 2,
+    enabled: enabled && q.length >= 2,
+    placeholderData: holding ? keepPreviousData : undefined,
   });
 };
 

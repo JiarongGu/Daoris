@@ -221,4 +221,25 @@ public sealed class AttentionTests
 
         Assert.Null(new AttentionEvent(AttentionKind.Parked, "s1", "engine", Note: "   ").Detail);
     }
+
+    /// <summary>
+    /// WSSETUP11: the machine log counts a park where the ledger is moved into it (<c>SessionLog</c>), and this
+    /// watch says one when it sees it from the active list. Both read <see cref="SessionStates.IsParked"/>, and
+    /// <c>SessionLogTests</c> holds the same rows, so what the log counts is what the person was told about.
+    /// </summary>
+    [Theory]
+    [InlineData("awaiting-person", true)]
+    [InlineData("working", false)]
+    [InlineData("starting", false)]
+    [InlineData("completed", false)]
+    [InlineData("failed", false)]
+    public void A_park_is_the_state_the_machine_log_counts_as_one(string state, bool parked)
+    {
+        var watch = new AttentionWatch();
+        watch.Observe(Tick([Session("s1", "queued")]));
+
+        var events = watch.Observe(Tick([Session("s1", state)]));
+
+        Assert.Equal(parked, events.Any(e => e.Kind == AttentionKind.Parked));
+    }
 }

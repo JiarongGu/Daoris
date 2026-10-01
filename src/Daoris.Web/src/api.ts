@@ -247,10 +247,18 @@ export const HELP_REPOSITORY = 'daoris:help';
  * `absent` names registered repositories whose checkout is no longer where the registry says it is
  * (D48 §3). Named rather than skipped: a repository that quietly stops contributing looks exactly like
  * one with nothing to say, and the count still looks healthy.
+ *
+ * `embedded` is what the semantic half made of the entries (D123): how many it embedded, the vectors
+ * they became, how many were longer than the window and split into pieces, and the window, which is the
+ * deployment's. Absent when that half did not run, which is never a zero.
  */
 export type RefreshReport = {
   entries: number; repositories: number; withheld: number; semanticError?: string; absent?: string[];
+  embedded?: Embedded;
 };
+
+/** One pass of the semantic half (D123), as the refresh answer carries it. */
+export type Embedded = { entries: number; pieces: number; split: number; window: number };
 
 /** What a retire actually did — and its sentence, which is mostly about what it did NOT do. */
 export type Retired = { repository: string; retired: boolean; message: string };
@@ -295,10 +303,15 @@ async function get<T>(path: string, signal?: AbortSignal): Promise<T> {
     // The service reports its own errors as { error }; anything else means the host itself failed,
     // and the status line is the only thing that will say anything useful.
     const body = await response.json().catch(() => null);
-    throw new Error(body?.error ?? `${response.status} ${response.statusText}`);
+    // The status rides along, so a reader can tell "the service has none by that name" (an entry gone since it
+    // was found, FRAME1f) from a service that failed; the sentence is still the service's own.
+    throw Object.assign(new Error(body?.error ?? `${response.status} ${response.statusText}`), { status: response.status });
   }
   return response.json() as Promise<T>;
 }
+
+/** Whether a read failed because the service holds nothing by that name: an answer, where any other failure is not. */
+export const notFound = (error: unknown): boolean => (error as { status?: unknown } | null)?.status === 404;
 
 async function post<T>(path: string, body: unknown, method: 'POST' | 'DELETE' = 'POST'): Promise<T> {
   const response = await reach(path, {
@@ -372,7 +385,8 @@ export const api = {
   registerRepository: (body: {
     // Whether the shell found a manifest there (D70): registered is addressable, adopted is disciplined.
     repository: string; root?: string; workspace?: string; adopted?: boolean;
-    domain?: { summary?: string; owns: string[]; accepts: string[] };
+    // `uses` (D91) replaces the row's, and absent is none: a door that read the file states it (MANAGE1).
+    domain?: { summary?: string; owns: string[]; accepts: string[]; uses?: string[] };
     packs?: string[]; join?: boolean; shareKnowledge?: boolean;
   }) => post<{ repository: string; workspace: string }>('/api/registry', body),
   wireRepository: (repository: string, workspace: string) =>
