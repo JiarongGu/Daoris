@@ -23,6 +23,18 @@ const questList = (page: Page) => page.getByRole('complementary', { name: 'Quest
  */
 const record = (page: Page) => page.getByRole('main');
 
+/** Repositories' list pane (FRAME1e): the adopted, then the registered not adopted, each row named by its repository. */
+const repositoryList = (page: Page) => page.getByRole('complementary', { name: 'Repositories' });
+
+/** A repository's row in that list, by its name exactly: `engine` is not `newcomer`'s substring, but say so anyway. */
+const repositoryRow = (page: Page, name: string) => repositoryList(page).getByRole('listitem', { name, exact: true });
+
+/** A repository chosen from its row, and its page in the main area, found by its title (D118 §3d). */
+async function chooseRepository(page: Page, name: string) {
+  await repositoryRow(page, name).getByRole('button').first().click();
+  await expect(record(page).getByRole('heading', { level: 1, name, exact: true })).toBeVisible();
+}
+
 /** Quests' ＋, one control with two kinds, Ask first, then New quest (D118 §2). */
 async function make(page: Page, kind: 'Ask' | 'New quest') {
   await questList(page).getByRole('button', { name: 'New ask or quest' }).click();
@@ -43,11 +55,29 @@ test('the overview shows the example family', async ({ page }) => {
   await expect(page.getByText('game').first()).toBeVisible();
 });
 
-test('repositories lists both members with their declarations', async ({ page }) => {
+/**
+ * Repositories on the frame (FRAME1e, D118 §2): both members in the list, each opening its page with its declaration,
+ * the chosen one remembered across a reload, and the page's door to its code map, one level into the Map (MAP3a).
+ */
+test('repositories lists both members, and each opens its page with its declaration', async ({ page }) => {
   await page.goto('/');
   await nav(page, 'Repositories').click();
-  await expect(page.getByText('the engine runtime — simulation, rendering, assets')).toBeVisible();
-  await expect(page.getByText('a playtest finding, with the reproduction')).toBeVisible();
+  await expect(repositoryList(page).getByRole('heading', { name: 'Adopted (2)' })).toBeVisible();
+
+  await chooseRepository(page, 'engine');
+  await expect(record(page).getByText('the engine runtime — simulation, rendering, assets')).toBeVisible();
+  await chooseRepository(page, 'game');
+  await expect(record(page).getByText('a playtest finding, with the reproduction')).toBeVisible();
+
+  // The list remembers the repository chosen (D118 §3f): after a reload, which lands on Overview (D40), its page is
+  // the one the view reopens on.
+  await page.reload();
+  await nav(page, 'Repositories').click();
+  await expect(record(page).getByRole('heading', { level: 1, name: 'game', exact: true })).toBeVisible();
+
+  await chooseRepository(page, 'engine');
+  await record(page).getByRole('button', { name: 'Open code map' }).click();
+  await expect(page.getByRole('heading', { name: 'engine: code map' })).toBeVisible();
 });
 
 /**
@@ -415,7 +445,8 @@ test('a project created mid-run joins, and the platform shows it (D44)', async (
 
   await page.goto('/');
   await nav(page, 'Repositories').click();
-  await expect(page.getByText('Born during the test run.')).toBeVisible();
+  // Its summary is its row's one line (FRAME1e).
+  await expect(repositoryRow(page, 'newcomer').getByText('Born during the test run.')).toBeVisible();
 
   await nav(page, 'Quests').click();
   await make(page, 'New quest');
@@ -457,8 +488,8 @@ test('the console scopes by workspace once the family holds two (WSP5)', async (
   await expect(scope).toHaveText('studio');
   await expect(page.getByText('of 1 in the family')).toBeVisible();
   await nav(page, 'Repositories').click();
-  await expect(page.getByText('Born during the test run.')).toBeVisible();
-  await expect(page.getByText('the engine runtime — simulation, rendering, assets')).toHaveCount(0);
+  await expect(repositoryRow(page, 'newcomer').getByText('Born during the test run.')).toBeVisible();
+  await expect(repositoryRow(page, 'engine')).toHaveCount(0);
 
   // Remembered per browser, like the language: a reload keeps the circle.
   await page.reload();
@@ -467,7 +498,7 @@ test('the console scopes by workspace once the family holds two (WSP5)', async (
   await page.getByRole('combobox', { name: 'workspace' }).click();
   await page.getByRole('option', { name: /Every workspace/ }).click();
   await nav(page, 'Repositories').click();
-  await expect(page.getByText('the engine runtime — simulation, rendering, assets')).toBeVisible();
+  await expect(repositoryRow(page, 'engine')).toBeVisible();
 
   const back = await request.post('/api/registry/newcomer/workspace', { data: { workspace: 'default' } });
   expect(back.ok(), await back.text()).toBe(true);
@@ -589,11 +620,16 @@ test('a browser learns nothing about this machine’s harnesses (D49 §4)', asyn
   await expect(page.getByText('default').first()).toBeVisible();
   await expect(page.getByText(/remotes\.json|harnesses\.json|driver\.json/)).toHaveCount(0);
 
+  // A repository's page, where its facts render (FRAME1e): the absence is asserted where a path would be.
   await nav(page, 'Repositories').click();
-  await expect(page.getByText('the engine runtime — simulation, rendering, assets')).toBeVisible();
+  await chooseRepository(page, 'engine');
+  await expect(record(page).getByText('the engine runtime — simulation, rendering, assets')).toBeVisible();
   // Nothing that would name a configuration home: a registration's root is a machine path, and a
   // browser on the host's own machine is still not told another's (D47 §4).
   await expect(page.getByText(/[\\/]harnesses[\\/]/)).toHaveCount(0);
+  // Nor anything a browser cannot do: adding and importing touch machine paths (D48 §7), and so does Manage.
+  await expect(repositoryList(page).getByRole('button', { name: 'Add repository' })).toHaveCount(0);
+  await expect(record(page).getByRole('button', { name: 'Manage' })).toHaveCount(0);
 });
 
 /**
@@ -743,8 +779,9 @@ test('the chrome stays beside the content on a narrow window, never above it', a
 
 /**
  * A view's columns follow its main area, never the window (D118 §3b, FRAME1c): the side bar and a list
- * narrow the main area while the window stays as wide, so Overview's two cards, the repositories' cards and
- * the map's detail beside its canvas are laid out by the main area's own width. A browser has no side bar
+ * narrow the main area while the window stays as wide, so Overview's two cards and the map's detail beside its
+ * canvas are laid out by the main area's own width. The repositories' cards went with FRAME1e, whose list holds
+ * them and whose page is one column. A browser has no side bar
  * (§4), so the main area is narrowed here by hand at a window that stays 1280 px wide: a viewport breakpoint
  * would keep two columns, and only a container query stacks them. vitest has no layout to see this with.
  */
@@ -771,14 +808,6 @@ test("a browser's main area lays its columns out by its own width, beside no sid
   expect(await beside('Outstanding — oldest first')).toBe(true);
   await narrowed('600px');
   await expect.poll(() => beside('Outstanding — oldest first')).toBe(false);
-  await narrowed(null);
-
-  // Repositories: the two adopted members side by side, and one above the other.
-  await nav(page, 'Repositories').click();
-  await expect(page.getByText('the engine runtime — simulation, rendering, assets')).toBeVisible();
-  await expect.poll(() => beside('the engine runtime')).toBe(true);
-  await narrowed('600px');
-  await expect.poll(() => beside('the engine runtime')).toBe(false);
   await narrowed(null);
 
   // The map: its detail beside the canvas, and under it.
