@@ -111,7 +111,8 @@ where the registry says it is gets **named** by the next refresh rather than sil
 
 **`--force` is the only way to lose work here**, so it names every file it overwrites or discards.
 Daoris otherwise refuses in all three destructive cases — a file you edited, a file you wrote before
-adopting, and a file being retired upstream that you had improved.
+adopting, and a file being retired upstream that you had improved. An older daoris's `sync` and `upstream`
+refuse a repository a newer one synced, `--force` or not, naming `npx daoris@<that version>`.
 
 `analyze` answers the question a repository has *before* it adopts: what already exists here, what
 would collide, what already says the same thing under another name, and what the always-loaded budget

@@ -7206,6 +7206,130 @@ the folder, so it reaches into nothing.
 - **The workshop, the reader, *Find* and the pack** exist only as rows. `verify` checks this document's links
   and the log's shape, and none of its words.
 
+## D123 — A long entry is embedded whole, in pieces the deployment's window bounds; its best piece speaks for it, and a refresh says how many were split (2026-10-01)
+
+**Decision (SEM3, found upgrading Lyntai to 3.5.3, LYN1).** The semantic tier embedded an entry's title twice and
+the first 2,000 characters of its body, and dropped the rest without saying so. An embedder then cuts whatever
+passes its own context the same way: Ollama's embed endpoint does it silently. So a search by meaning could not
+find what a long entry says past its opening, however close the meaning. Lyntai 3.3 offers `MaxInputChars` and
+`Segmentation` on its providers. Daoris segments instead, in Core, one vector per piece.
+
+### 1. Measured first
+
+- **The fixture** (`LongEntryTests`): a knowledge document whose only statement of a fact sits past character
+  2,000, and a short decision that mentions the meaning once among six build words. The vectors are the
+  deterministic stand-in's, and the query shares no word with either entry, so the order is the semantic half's
+  alone. **Before**: the document's one vector held build words only (cosine 0), and the decision (0.164) took the
+  one place. The test failed as the reading predicted. **After**: the piece that holds the fact scores 0.316, and
+  the document is first.
+- **The corpus**, scanned by the service's own scanner (a scratch probe, not committed). This repository holds
+  636 entries and 1.61 million characters of body. 293 entries (46%) were longer than 2,000 characters, and
+  562,000 characters (35%) never reached a vector. The longest is a decision of 17,518 characters. The medians by
+  kind: a decision 3,378, a knowledge document 6,839, a task outcome 1,890, a fix 1,466. Each example repository
+  holds 21 entries, all canon; 15 were longer, 44% of their text never reached a vector, and the longest is the
+  canon's `development-documents` at 8,662.
+- **Against a typical window**: a small embedder takes 512 tokens, about 2,000 characters of English and fewer of
+  code or 中文. A large one takes 8,192 tokens, about 30,000. The longest entry fits the large one and is nine
+  times the small one.
+
+### 2. What an entry becomes
+
+- **Every part of its body is embedded, in pieces no longer than the window** (`EntryPieces`). A piece ends at the
+  last blank line in the latter half of the window, else a line break, a sentence end, a space, or the window
+  itself, never inside a surrogate pair. The next piece starts at a line or sentence inside the last 15% of the
+  one before, so a sentence a cut falls through is whole in one of them. Each piece is led by the title: twice, as
+  the entry always was, or once where two would take more than half the window. An entry within the window is
+  one piece, the same text as before.
+- **The window is the deployment's** (D24): `DAORIS_EMBED_WINDOW`, the most characters one embedded text carries,
+  the title included. Unset, it is 2,000, the number the code already cut at, now a statement rather than a
+  silence. Below 200, or not a whole number, both hosts refuse to start, as for `DAORIS_MODE`. Characters only
+  approximate tokens, so a deployment leaves margin for code and for 中文.
+- **Each piece is its own vector, and its payload is the entry's id.** A search ranks pieces and **names an entry
+  once**, at its best piece's score. It reads further while pieces crowd out the places it was asked for, so a
+  long entry does not cost the answer its other entries. A hit found in a later piece shows that piece's passage
+  (the vector's id carries where the piece starts), so a reader can see why it matched.
+- **A refresh embeds everything first, then replaces the collection whole.** An embedder that fails part-way
+  leaves the previous vectors as they were, and an edited entry's old pieces and a deleted entry's vectors leave
+  with them: an entry is several ids now, so writing into the collection would let a stale piece be found for
+  words its entry no longer has.
+- **A refresh says what it embedded**: entries, the vectors they became, how many were split, at what window. The
+  agent's door (`knowledge_refresh`) says it in a sentence, and the HTTP door's refresh answer carries it as
+  `embedded`.
+- **Convergence** seeds from an entry's first piece, as before, compares it with every piece, and names each
+  neighbour once.
+- **The lexical tier is unchanged.** It always read the whole body.
+- **The cost, measured**: at 2,000, this repository's 636 entries become 1,267 vectors, 322 entries split, at most
+  14 pieces for one entry, and 1.70 times the characters the old cut sent. Of that, 1.49 is the text it dropped,
+  and the rest is the title on each piece and the overlap. At 8,000 it is 663 vectors. It is paid once per process
+  (SEM1), which raises what SEM2's trigger would measure.
+
+### 3. Rejected
+
+- **Capping**: embed the first window and say in the record what was cut. Honest, and still blind. The fact past
+  the cut stays unfindable by meaning, and the measure says that is a third of this repository's text.
+- **The provider's segmentation** (Lyntai 3.3's `MaxInputChars` with `Segmentation`). It splits an input and
+  returns its pieces' unit vectors averaged by length, one vector per input. That names an entry once by
+  construction, and dilutes a fact in one piece by all the others. On the fixture the pooled vector scores 0.111,
+  below the decision's 0.164, so the document would still be missed, and the dilution grows with the length it
+  is meant to fix. It is also invisible to Daoris, since the answer carries one vector and no plan, so the record
+  could not say an entry was split. It exists only on the HTTP and Ollama providers, when a deployment sets it,
+  and Daoris's own cut sat in front of it.
+- **The provider's bound as a guard**: `MaxInputChars` set to the window, so Ollama is sent `truncate: false`
+  and a piece that still overflows the model fails the call instead of being cut. It is the right shape for a
+  window set too wide, and it is not taken yet. It turns one overflowing piece into a semantic tier that does not
+  answer, and choosing its default needs a machine that runs an embedder, which none here does (SEM2's trigger).
+- **A cap on pieces per entry** (Lyntai's `MaxPiecesPerInput`): a cut by another name, with gaps in what is
+  covered. The cost is measured instead (§2).
+- **Storing a piece's text in the vector store**: the payload stays the entry's id, so the text lives in the store
+  alone and the two cannot disagree. A piece's passage is read back from the entry by where it starts.
+
+### What the gates do not cover
+
+The splitter, the window's parsing, the search, the refresh's report, the replacement, the excerpt, convergence
+and the agent's sentence are held in the service suite (`EntryPiecesTests`, `LongEntryTests`, `McpToolsTests`), all
+over the stand-in embedder and no network. A mutation of each of the dedupe, the read further, the replacement and
+convergence's dedupe was seen failing them. The HTTP host's refusal of a bad window is held by `StartupTests`; the
+MCP host's identical refusal is not run by any test. The HTTP door's `embedded` field is not run with a model,
+because no HTTP host test has one. **No real embedder has embedded a piece**: whether 2,000 characters fits a
+given model's context, and what segmenting does to recall on the real corpus, need a machine that runs one. The
+page shows `semanticError` from a refresh and not yet `embedded`, which is the web lane's to add.
+**As built (PLUGDIST1a, 2026-10-01): the package and its reader, offline, with the record in both twins.** The
+driver's `PluginPackage` reads a `.nupkg` and installs its plugin through `PluginInstall`, and `daoris-driver plugins
+install <file.nupkg>` is the terminal's door. The CLI reads and lists the record a package leaves. Nothing reaches a
+network: a package source is PLUGDIST1c's. What the design left open, settled here:
+- **The type is `DaorisPlugin` alone**, compared without case, as NuGet compares type names. A package that also
+  declares another type is refused, since §5.1 says *no other type*. The type's version is a `System.Version` whose
+  major number is the plugin API. No version, a major of 0, or a major this build does not speak is refused before
+  anything is extracted, the last naming both numbers.
+- **The plugin's own `apiVersion` must equal the type's**, as its version must equal the package's. Otherwise the
+  check a source makes before downloading would trust a type that says something else.
+- **Any `dependency` element refuses the package**, in a group or not.
+- **A part's name is read as NuGet reads it**: unescaped, with `\` a separator, and only then is the `plugin/` guard
+  applied, so an escaped `..%2F` is refused as `../` is. A name twice, compared without case, refuses the package
+  too, since Windows would write the second over the first, and so does a name holding a control character, which
+  an escape can spell (`%00`) and no path holds. The guard judges every `plugin/` entry before anything
+  is written, and each target is checked again against the stage's whole path as it is written.
+- **The file is opened once, shared for reading only**, so the bytes hashed are the bytes extracted.
+- **The stage is `<home>/plugins/.unpacking-<guid>/`**, a dot-folder the catalogue skips, gone whether the install
+  succeeds or not. `PluginInstall` gains an internal `Add` for that stage, the one folder inside the home an add
+  copies from; `Placement` still refuses every other.
+- **A package file's source is the folder that held it**, a whole path. The record so names a folder source, §5.3's
+  offline kind, which PLUGDIST1c can update from as from an index.
+- **The record's rules**: a NuGet package id (ASCII, at most 100 characters); a version of one to four numbers, with
+  an optional prerelease label and metadata; a SHA-512 as standard base64; and a source that is a whole path or an
+  address by TOOLS3's rule (https://, or http:// to this machine). A record naming a package beside a folder or an
+  offer does not read, and `{}` now names all three kinds.
+- **The record's table is held by a gate**, as TOOLS2's is: `plugin-sources.test.ts` parses `PluginSourceTests`'
+  record and update theories and holds its own to them, and was seen failing on a one-sided change.
+- **A plugin from a file lands on**, as a folder's does at `daoris plugin add`: the person named the file. §5.7 step
+  6's *another publisher's lands off* needs the owner account a search result carries, so it joins PLUGDIST1c.
+- **Update refuses a plugin from a package, on both sides, in the same words**: a newer package takes its place by
+  `daoris plugin remove <id>`, then `plugins install`, and what it kept stays. §5.8's *`daoris-driver plugins update
+  <id>` does it* is PLUGDIST1c's to say, once that verb exists. The CLI's list names a package's source and offers no
+  update, and `daoris plugin install` answers as a moved verb does.
+- **Not built here**: a package source over HTTP, `find`, `show`, `install <Id>`, an update from a source, the off row
+  for another publisher, and `plugin.installed` in the machine log (§5.10), all PLUGDIST1c's. The modules' `PLUGINS`
+  answer still names a package record's kind `folder`, with no folder: PLUGDIST1d's to say.
 ## D124 — A workspace is set up one repository at a time by its own sessions: the install carries the doctrine tool, a set-up writes the knowledge a neighbour needs, registration follows the line, and a session looks before it asks (2026-10-01)
 
 **Decision (WSSETUP1).** A driven session in the owner's work workspace stopped to ask the person a question its
@@ -7352,127 +7476,49 @@ knowledge step after the sync, §2.6's bounds and §2.7's close, `daoris` and ne
 
 **Not covered**: the Process-half case and the family rehearsal's set-up phase (D117's note); whether a real session
 follows the body, which only WSSETUP12's pilot shows; `PowerShell(…)` rules, held for D122 §3.5's canary.
-## D123 — A long entry is embedded whole, in pieces the deployment's window bounds; its best piece speaks for it, and a refresh says how many were split (2026-10-01)
 
-**Decision (SEM3, found upgrading Lyntai to 3.5.3, LYN1).** The semantic tier embedded an entry's title twice and
-the first 2,000 characters of its body, and dropped the rest without saying so. An embedder then cuts whatever
-passes its own context the same way: Ollama's embed endpoint does it silently. So a search by meaning could not
-find what a long entry says past its opening, however close the meaning. Lyntai 3.3 offers `MaxInputChars` and
-`Segmentation` on its providers. Daoris segments instead, in Core, one vector per piece.
+**As built (WSSETUP2, 2026-10-01): the install carries its doctrine tool.** `tools/desktop-publish.mjs` runs `npm
+pack` in `src/Daoris.Cli`, asserts the pack's staging gone as the release rehearsal does, and `layCli` unpacks the
+tarball with the CLI's own tar reader (`tarball.ts`) and writes the two launchers. Both folders are staged beside
+and swapped in whole. What the design left open, settled here:
+- 🔴 **The package lands in `app/cli/node_modules/daoris/`, not in `app/cli/` itself.** The CLI reads the canon it
+  ships only when its own folder sits under `node_modules` (`resolveCanonRoot`). Unpacked straight into `app/cli/`, it
+  takes itself for a development checkout and reads `<install>/canon`: a folder nothing publishes, or a neighbour's
+  under `--beside`. Laid out as npm lays a package out under a prefix, the package finds its canon by the rule that
+  already holds everywhere it is installed, so the CLI needs no second case. The launchers run
+  `../cli/node_modules/daoris/bin/daoris.mjs`. `desktop-publish.test.ts` holds the layout to `resolveCanonRoot`.
+- **The launchers run bare `node`**, the one the caller's `PATH` finds, and say so with exit 2 when there is none.
+  `daoris.cmd` is CRLF and both are ASCII, since cmd.exe reads a batch file in the console's code page. The script
+  turns its folder into a Windows path with `cygpath` where one exists, as npm's shim does.
+- **What the layout refuses**, before anything is replaced and naming why: a tarball whose root is not npm's
+  `package/`, a package not named `daoris`, one without its bin entry, `dist/cli.js` or `canon/canon.json`, a canon at
+  another version than the package, and `src/`, which only the source tree carries. The publish also refuses an
+  application build that carries a `cli` or `bin` folder, which the tool's folders would replace.
+- **Measured on the development machine, against the real pack laid out by `layCli` in a scratch folder (not a
+  publish):** Command Prompt runs `daoris.cmd` (`where` lists the extensionless script first, and cmd.exe runs the
+  batch file); PowerShell's `Get-Command daoris` answers `daoris.cmd` by `PATHEXT`; Git Bash's `command -v daoris`
+  answers the script. All three print `0.0.1` and hand back exit 2 for an unknown verb, and `init`, `sync` and `check`
+  ran clean in a scratch repository. The deployment rehearsal's phase 8 holds the same against a published install.
+- **Not run by this row:** the deployment rehearsal (phase 1 reads the layout back, phase 2 the republish, phase 8
+  runs the tool from each shell); that is the parent's at merge. Nothing puts `app/bin/` on any `PATH` yet: that is
+  WSSETUP3. The desktop README's install paragraph does not mention the tool yet, since this row could not touch the
+  desktop tree.
 
-### 1. Measured first
-
-- **The fixture** (`LongEntryTests`): a knowledge document whose only statement of a fact sits past character
-  2,000, and a short decision that mentions the meaning once among six build words. The vectors are the
-  deterministic stand-in's, and the query shares no word with either entry, so the order is the semantic half's
-  alone. **Before**: the document's one vector held build words only (cosine 0), and the decision (0.164) took the
-  one place. The test failed as the reading predicted. **After**: the piece that holds the fact scores 0.316, and
-  the document is first.
-- **The corpus**, scanned by the service's own scanner (a scratch probe, not committed). This repository holds
-  636 entries and 1.61 million characters of body. 293 entries (46%) were longer than 2,000 characters, and
-  562,000 characters (35%) never reached a vector. The longest is a decision of 17,518 characters. The medians by
-  kind: a decision 3,378, a knowledge document 6,839, a task outcome 1,890, a fix 1,466. Each example repository
-  holds 21 entries, all canon; 15 were longer, 44% of their text never reached a vector, and the longest is the
-  canon's `development-documents` at 8,662.
-- **Against a typical window**: a small embedder takes 512 tokens, about 2,000 characters of English and fewer of
-  code or 中文. A large one takes 8,192 tokens, about 30,000. The longest entry fits the large one and is nine
-  times the small one.
-
-### 2. What an entry becomes
-
-- **Every part of its body is embedded, in pieces no longer than the window** (`EntryPieces`). A piece ends at the
-  last blank line in the latter half of the window, else a line break, a sentence end, a space, or the window
-  itself, never inside a surrogate pair. The next piece starts at a line or sentence inside the last 15% of the
-  one before, so a sentence a cut falls through is whole in one of them. Each piece is led by the title: twice, as
-  the entry always was, or once where two would take more than half the window. An entry within the window is
-  one piece, the same text as before.
-- **The window is the deployment's** (D24): `DAORIS_EMBED_WINDOW`, the most characters one embedded text carries,
-  the title included. Unset, it is 2,000, the number the code already cut at, now a statement rather than a
-  silence. Below 200, or not a whole number, both hosts refuse to start, as for `DAORIS_MODE`. Characters only
-  approximate tokens, so a deployment leaves margin for code and for 中文.
-- **Each piece is its own vector, and its payload is the entry's id.** A search ranks pieces and **names an entry
-  once**, at its best piece's score. It reads further while pieces crowd out the places it was asked for, so a
-  long entry does not cost the answer its other entries. A hit found in a later piece shows that piece's passage
-  (the vector's id carries where the piece starts), so a reader can see why it matched.
-- **A refresh embeds everything first, then replaces the collection whole.** An embedder that fails part-way
-  leaves the previous vectors as they were, and an edited entry's old pieces and a deleted entry's vectors leave
-  with them: an entry is several ids now, so writing into the collection would let a stale piece be found for
-  words its entry no longer has.
-- **A refresh says what it embedded**: entries, the vectors they became, how many were split, at what window. The
-  agent's door (`knowledge_refresh`) says it in a sentence, and the HTTP door's refresh answer carries it as
-  `embedded`.
-- **Convergence** seeds from an entry's first piece, as before, compares it with every piece, and names each
-  neighbour once.
-- **The lexical tier is unchanged.** It always read the whole body.
-- **The cost, measured**: at 2,000, this repository's 636 entries become 1,267 vectors, 322 entries split, at most
-  14 pieces for one entry, and 1.70 times the characters the old cut sent. Of that, 1.49 is the text it dropped,
-  and the rest is the title on each piece and the overlap. At 8,000 it is 663 vectors. It is paid once per process
-  (SEM1), which raises what SEM2's trigger would measure.
-
-### 3. Rejected
-
-- **Capping**: embed the first window and say in the record what was cut. Honest, and still blind. The fact past
-  the cut stays unfindable by meaning, and the measure says that is a third of this repository's text.
-- **The provider's segmentation** (Lyntai 3.3's `MaxInputChars` with `Segmentation`). It splits an input and
-  returns its pieces' unit vectors averaged by length, one vector per input. That names an entry once by
-  construction, and dilutes a fact in one piece by all the others. On the fixture the pooled vector scores 0.111,
-  below the decision's 0.164, so the document would still be missed, and the dilution grows with the length it
-  is meant to fix. It is also invisible to Daoris, since the answer carries one vector and no plan, so the record
-  could not say an entry was split. It exists only on the HTTP and Ollama providers, when a deployment sets it,
-  and Daoris's own cut sat in front of it.
-- **The provider's bound as a guard**: `MaxInputChars` set to the window, so Ollama is sent `truncate: false`
-  and a piece that still overflows the model fails the call instead of being cut. It is the right shape for a
-  window set too wide, and it is not taken yet. It turns one overflowing piece into a semantic tier that does not
-  answer, and choosing its default needs a machine that runs an embedder, which none here does (SEM2's trigger).
-- **A cap on pieces per entry** (Lyntai's `MaxPiecesPerInput`): a cut by another name, with gaps in what is
-  covered. The cost is measured instead (§2).
-- **Storing a piece's text in the vector store**: the payload stays the entry's id, so the text lives in the store
-  alone and the two cannot disagree. A piece's passage is read back from the entry by where it starts.
-
-### What the gates do not cover
-
-The splitter, the window's parsing, the search, the refresh's report, the replacement, the excerpt, convergence
-and the agent's sentence are held in the service suite (`EntryPiecesTests`, `LongEntryTests`, `McpToolsTests`), all
-over the stand-in embedder and no network. A mutation of each of the dedupe, the read further, the replacement and
-convergence's dedupe was seen failing them. The HTTP host's refusal of a bad window is held by `StartupTests`; the
-MCP host's identical refusal is not run by any test. The HTTP door's `embedded` field is not run with a model,
-because no HTTP host test has one. **No real embedder has embedded a piece**: whether 2,000 characters fits a
-given model's context, and what segmenting does to recall on the real corpus, need a machine that runs one. The
-page shows `semanticError` from a refresh and not yet `embedded`, which is the web lane's to add.
-**As built (PLUGDIST1a, 2026-10-01): the package and its reader, offline, with the record in both twins.** The
-driver's `PluginPackage` reads a `.nupkg` and installs its plugin through `PluginInstall`, and `daoris-driver plugins
-install <file.nupkg>` is the terminal's door. The CLI reads and lists the record a package leaves. Nothing reaches a
-network: a package source is PLUGDIST1c's. What the design left open, settled here:
-- **The type is `DaorisPlugin` alone**, compared without case, as NuGet compares type names. A package that also
-  declares another type is refused, since §5.1 says *no other type*. The type's version is a `System.Version` whose
-  major number is the plugin API. No version, a major of 0, or a major this build does not speak is refused before
-  anything is extracted, the last naming both numbers.
-- **The plugin's own `apiVersion` must equal the type's**, as its version must equal the package's. Otherwise the
-  check a source makes before downloading would trust a type that says something else.
-- **Any `dependency` element refuses the package**, in a group or not.
-- **A part's name is read as NuGet reads it**: unescaped, with `\` a separator, and only then is the `plugin/` guard
-  applied, so an escaped `..%2F` is refused as `../` is. A name twice, compared without case, refuses the package
-  too, since Windows would write the second over the first, and so does a name holding a control character, which
-  an escape can spell (`%00`) and no path holds. The guard judges every `plugin/` entry before anything
-  is written, and each target is checked again against the stage's whole path as it is written.
-- **The file is opened once, shared for reading only**, so the bytes hashed are the bytes extracted.
-- **The stage is `<home>/plugins/.unpacking-<guid>/`**, a dot-folder the catalogue skips, gone whether the install
-  succeeds or not. `PluginInstall` gains an internal `Add` for that stage, the one folder inside the home an add
-  copies from; `Placement` still refuses every other.
-- **A package file's source is the folder that held it**, a whole path. The record so names a folder source, §5.3's
-  offline kind, which PLUGDIST1c can update from as from an index.
-- **The record's rules**: a NuGet package id (ASCII, at most 100 characters); a version of one to four numbers, with
-  an optional prerelease label and metadata; a SHA-512 as standard base64; and a source that is a whole path or an
-  address by TOOLS3's rule (https://, or http:// to this machine). A record naming a package beside a folder or an
-  offer does not read, and `{}` now names all three kinds.
-- **The record's table is held by a gate**, as TOOLS2's is: `plugin-sources.test.ts` parses `PluginSourceTests`'
-  record and update theories and holds its own to them, and was seen failing on a one-sided change.
-- **A plugin from a file lands on**, as a folder's does at `daoris plugin add`: the person named the file. §5.7 step
-  6's *another publisher's lands off* needs the owner account a search result carries, so it joins PLUGDIST1c.
-- **Update refuses a plugin from a package, on both sides, in the same words**: a newer package takes its place by
-  `daoris plugin remove <id>`, then `plugins install`, and what it kept stays. §5.8's *`daoris-driver plugins update
-  <id>` does it* is PLUGDIST1c's to say, once that verb exists. The CLI's list names a package's source and offers no
-  update, and `daoris plugin install` answers as a moved verb does.
-- **Not built here**: a package source over HTTP, `find`, `show`, `install <Id>`, an update from a source, the off row
-  for another publisher, and `plugin.installed` in the machine log (§5.10), all PLUGDIST1c's. The modules' `PLUGINS`
-  answer still names a package record's kind `folder`, with no folder: PLUGDIST1d's to say.
+**As built (WSSETUP4, 2026-10-01): an older tool never rewrites a newer lock.** `lockversion.ts` holds the rule:
+`newerLock` compares the lock's canon version with the canon the tool carries by number (`compareVersions`, so
+`0.10.0` follows `0.9.0`), and `refuseNewerLock` throws exit 1 naming both and the command at the lock's version,
+`npx daoris@<locked> <the command as given>`. What the design left open, settled here:
+- **`sync` refuses before anything is planned, in every mode.** A dry run answers with the same refusal, since it is
+  how a person asks whether `sync` would refuse; `--force` does not pass it, since it discards local edits, which is a
+  different question from discarding a newer canon's text. The state space D19 enumerates assumes the canon is not
+  older than the lock.
+- **`upstream` refuses it too, one file or `--all`**, reading the version from `canon.json` alone. A canon with no
+  version to read is left to the refusals that already name it.
+- **`status` says it instead of offering an update.** It said *canon 0.0.1 available (lock has 0.0.6) — run 'daoris
+  sync'*, sending the person to the command that now refuses. It prints a `newer lock` line naming both versions and
+  `npx daoris@<locked>`, and `--json` carries `newerLock` (`locked`, `carried`, `run`) with `update` null.
+- **`check` says nothing of it**: it reads the lock and the disk and never the canon (D8), so it cannot know.
+- **Held by** `newer-lock.test.ts` (each case failing first: the older tool synced, returned 0 and rewrote) and the
+  release rehearsal's phase 5 (f): the packed tool, which carries canon `0.0.1`, run on the consumer the phases above
+  moved to `0.0.6`. That phase was not run by this row; its checks were run by hand against a fresh pack of this
+  source. During `0.0.x` two builds both answer `0.0.1` and the guard cannot tell them apart, as D124 says.

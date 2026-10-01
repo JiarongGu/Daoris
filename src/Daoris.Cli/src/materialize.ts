@@ -9,6 +9,7 @@ import { parseFrontmatter, renderCanonFile, stripFrontmatter, stripHeader } from
 import { significantTokens, containment } from './twins.ts';
 import { isSwitchedOff, readCanon, resolveCanonRoot, resolveSelection } from './canon.ts';
 import { lockIndex, readLock, readManifest, writeLock } from './config.ts';
+import { refuseNewerLock } from './lockversion.ts';
 import { readTier, rosterExtras } from './indexgen.ts';
 import { renderTier, spanBody, tierRuleBody } from './tierrender.ts';
 import { ensureImport, findRegion, writeRegion } from './region.ts';
@@ -759,7 +760,11 @@ function groupBy<T>(items: T[], key: (item: T) => string): Map<string, T[]> {
 export function commandSync({ root, argv, write, packageRoot }: CommandArgs): ExitCode {
   const manifest = readManifest(root);
   const canon = readCanon(resolveCanonRoot(packageRoot));
-  const plan = planSync({ root, manifest, canon, lock: readLock(root) });
+  const lock = readLock(root);
+  // Before anything is planned, for every mode (WSSETUP4, D124 §1.4): the state space D19 enumerates assumes
+  // the canon is not older than the lock, and a dry run is how a person asks whether this would refuse.
+  refuseNewerLock(lock, canon.version, ['sync', ...argv]);
+  const plan = planSync({ root, manifest, canon, lock });
 
   // A rename is reported in place of the delete and the add it is made of,
   // because "these two are the same rule" is the part a reader cannot recover.

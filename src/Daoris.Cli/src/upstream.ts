@@ -6,6 +6,7 @@ import { readText, sha256, writeTextAtomic } from './fsx.ts';
 import { frontmatterEnd, stripHeader } from './document.ts';
 import { resolveCanonRoot } from './canon.ts';
 import { lockIndex, readLock, readManifest } from './config.ts';
+import { canonVersionAt, refuseNewerLock } from './lockversion.ts';
 import { spanBody } from './tierrender.ts';
 import { declared, lockLayout } from './layout.ts';
 import { DaorisError } from './errors.ts';
@@ -169,12 +170,17 @@ export function upstreamAll(
 
 export function commandUpstream({ root, argv, write, packageRoot }: CommandArgs): ExitCode {
   const canonRoot = resolveCanonRoot(packageRoot);
+  const lock = readLock(root);
+  // A lock a newer canon wrote holds text this canon never had (WSSETUP4, D124 §1.4). A canon with no version
+  // to read is left to the refusals below, which name it.
+  const carried = canonVersionAt(canonRoot);
+  if (carried !== null) refuseNewerLock(lock, carried, ['upstream', ...argv]);
 
   if (argv.includes('--all')) {
     const promoted = upstreamAll({
       root,
       manifest: readManifest(root),
-      lock: readLock(root),
+      lock,
       canonRoot,
     });
     if (!promoted.length) {
@@ -193,7 +199,7 @@ export function commandUpstream({ root, argv, write, packageRoot }: CommandArgs)
   const result = upstreamFile({
     root,
     manifest: readManifest(root),
-    lock: readLock(root),
+    lock,
     canonRoot,
     file,
   });
