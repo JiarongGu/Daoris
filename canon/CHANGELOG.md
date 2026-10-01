@@ -12,6 +12,25 @@ network.
 
 ## Unreleased
 
+- **`development-documents`** (new core knowledge) and **`set-up-documents`** (new core skill) — a
+  standard for the documents a repository keeps so a code-generating session can work without stopping
+  to ask or search. Every document has a **role** (brief, room, knowledge, skill, router, decisions,
+  backlog, archive, fixes, changelog, glossary, gates) with one job and one way it is read: **always**
+  (the brief, beside the doctrine in the root instruction file), **on demand** (rooms, knowledge,
+  skills, the router), or **by lookup** (the records). A fact goes in the brief only if nearly every
+  task needs it and the code cannot tell a reader. A document read whole has a ceiling, reported and
+  never failed: bytes for the root file as a whole, because at least one widely used agent cuts that
+  file at 32,768 bytes and the tail it loses is the doctrine; words for attention. The brief names
+  where each record is. What a session may run without asking is a declaration a tool reads and a
+  person accepts once, never a sentence, because an instruction file shapes what an agent tries and
+  not what its harness allows. The skill carries the procedure and templates for the brief, a room, a
+  knowledge document, the router, a decision, a backlog row and an archive entry. Knowledge and a skill
+  rather than a rule: the part every task needs is where the records are, which the brief carries.
+  Drawn from the agents' makers' own guidance, which converges on the same file, the same content test
+  and the same split between what is read whole and what is looked up.
+  **Adopting repositories:** nothing changes on its own. The always-loaded cost is two index rows. Run
+  the skill when you set the repository up for agents, or when a session could not find where
+  something is written. When you copy a template, leave its provenance line behind.
 - **`localized-ui`** (new pack) — for a repository whose interface ships in more than one language.
   One on-demand document, `translation-parity`: every catalogue holds the same keys **both ways**,
   keys are structural rather than the default language's text, and the three kinds of text that reach

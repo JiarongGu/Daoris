@@ -5,8 +5,9 @@
 > pattern for code generation and use it as standard for all repo setup so its good for sessions, and
 > the goal is to unblock the repo as far as possible so less ask human permission during
 > development)"*. This is the study and the contract for both, and its decision is **D122**. Status:
-> **designed; nothing is built.** It builds on D117's layout (`docs/2026-10-01-agent-layout-design.md`)
-> and LAYOUT2's measurements (`docs/2026-10-01-entry-point-evidence.md`, in the integration merging
+> **designed; the standard is canon (DOC2), the CLI binds roles to paths (DOC3), the carve-outs are held
+> harder (UNBLOCK4) and asks are counted (UNBLOCK5), notes under D122; the rest is not built.** It builds on
+> D117's layout (`docs/2026-10-01-agent-layout-design.md`) and LAYOUT2's measurements (`docs/2026-10-01-entry-point-evidence.md`, in the integration merging
 > next), and on the permission scopes (D72–D74, `docs/2026-09-24-permission-scopes-design.md`). Read
 > with **D7** as amended by **D59**, **D23**, **D26**, **D28**, **D48** §2a, **D54**, **D70**, **D81**,
 > **D94**, **D106**, **D115** and **D117**.

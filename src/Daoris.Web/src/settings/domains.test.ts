@@ -3,6 +3,7 @@ import frame from '../SettingsView.tsx?raw';
 import registry from './domains.ts?raw';
 import { SETTINGS_SECTIONS } from '../SettingsView';
 import { en, zh } from '../locales';
+import { LIST_BOUNDS } from '../work/layout';
 import { SETTINGS_DOMAINS } from './domains';
 
 /**
@@ -43,11 +44,22 @@ describe('the Settings registry', () => {
     expect(SETTINGS_SECTIONS).toEqual(SETTINGS_DOMAINS.map((domain) => domain.id));
   });
 
-  it('is the frame\'s only way to a domain: it imports nothing else of Settings\', and declares only itself', () => {
+  /**
+   * FRAME1g: the frame is Settings as the window's frame takes it — its list pane, which `DomainList` draws,
+   * and its main area, which shows whichever domain the list chose — and Settings drawn alone. It names no
+   * domain itself.
+   */
+  it('is the frame\'s only way to a domain: it imports only the list and its rows from Settings\', and declares only the frame', () => {
     const reached = new Set([...frame.matchAll(/from\s+'\.\/settings\/([\w./-]+)'/g)].map((match) => match[1]));
-    expect([...reached]).toEqual(['domains']);
+    expect([...reached].sort()).toEqual(['DomainList', 'domains']);
     const declared = [...frame.matchAll(/^(?:export\s+)?function\s+(\w+)/gm)].map((match) => match[1]);
-    expect(declared).toEqual(['SettingsView']);
+    expect(declared.sort()).toEqual(['SettingsMain', 'SettingsView', 'useSettingsLayout']);
+    for (const { id } of SETTINGS_DOMAINS) expect(frame, id).not.toMatch(new RegExp(`\\b${id[0]!.toUpperCase()}${id.slice(1)}Domain\\b`));
+  });
+
+  it('is a list pane with Settings\' own bounds (D118 §3a): 176 to 320 px, from 176', () => {
+    expect(LIST_BOUNDS.settings).toEqual({ min: 176, max: 320, initial: 176 });
+    expect(frame).toMatch(/view:\s*'settings'/);
   });
 
   it('imports each domain it registers from the file named for it', () => {

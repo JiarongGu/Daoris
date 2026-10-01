@@ -104,6 +104,32 @@ describe('the rules card', () => {
     await waitFor(() => expect(screen.getByRole('button', { name: 'Permissions' })).toHaveAttribute('aria-current', 'page'));
     expect(screen.queryByText('The rules file')).toBeNull();
     expect(screen.queryByText('Across repositories')).toBeNull();
+    // Both questions are answered, so neither card is loading: no skeleton left standing in for one.
+    await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'RULES', {}));
+    await waitFor(() => expect(screen.getByRole('main').querySelector('[aria-busy="true"]')).toBeNull());
+  });
+
+  /**
+   * FRAME1g (D118 §3h; audit ST11): the domain drew nothing until its first answers, so a first open was a
+   * blank page under its name. Each card holds its place with skeleton rows until its own answer is in.
+   */
+  it('holds each card\'s place with skeleton rows on its first load, never nothing', async () => {
+    const answers: Partial<Record<'RULES' | 'ACROSS', (value: unknown) => void>> = {};
+    invoke.mockImplementation((_module: string, type: string) => (type === 'RULES' || type === 'ACROSS'
+      ? new Promise((resolve) => { answers[type] = resolve; })
+      : Promise.resolve(WIRING)));
+    show(<SettingsView notify={() => {}} section="permissions" />);
+
+    // The machine's domains are offered once the shell answers, and the main area is drawn anew for this one.
+    await screen.findByRole('heading', { level: 1, name: 'Permissions' });
+    const main = screen.getByRole('main');
+    await waitFor(() => expect(main.querySelectorAll('[aria-busy="true"]')).toHaveLength(2));
+
+    answers.RULES?.(RULES);
+    expect(await screen.findByText('C:/somewhere/data/permissions.json')).toBeTruthy();
+    expect(main.querySelectorAll('[aria-busy="true"]')).toHaveLength(1);
+    answers.ACROSS?.({ repositories: [] });
+    await waitFor(() => expect(main.querySelector('[aria-busy="true"]')).toBeNull());
   });
 });
 

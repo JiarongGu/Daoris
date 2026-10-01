@@ -442,9 +442,105 @@ check(`a real link at ${realLink.path} is refused too`, linked.code === 1
   && new RegExp(`${realLink.path.replace(/\./g, '\\.')} is a link`).test(linked.out), linked.out);
 check('`check` is clean once the link is gone', withV2('check').code === 0);
 
-// ----------------------------------------------------------------- 7. report
+// ----------------------------------------------------- 7. declare the documents
 
-section('7. Result');
+// DOC3 (D122 §2.7–§2.8): the consumer binds its records to paths in its own manifest, and the packed bin
+// renders the table, holds it to the facts, reports the judgements, and refuses what it cannot honour.
+// Every case is a unit test already; this proves the ARTEFACT carries them. Declared, broken, repaired.
+section('7. Declaring the development documents (D122)');
+
+mkdirSync(join(consumer, 'docs'), { recursive: true });
+writeFileSync(join(consumer, 'docs/DECISIONS.md'), '# Decisions\n\n## D1 — the first\n\nWhy, and what it rejected.\n');
+writeFileSync(join(consumer, 'TASKS.md'), '# Tasks\n\n- [ ] One open row.\n');
+writeFileSync(join(consumer, 'CHANGELOG.md'), '# Changelog\n\n- One change.\n');
+
+const candidates = withV2('analyze --json');
+// A report that does not parse fails this check rather than the run: every later phase still reports.
+const named = (() => {
+  try {
+    return JSON.parse(candidates.out).documents ?? [];
+  } catch {
+    return [];
+  }
+})();
+check('`analyze` names the records the consumer seems to keep, by role, and declares none', candidates.code === 0
+  && ['decisions docs/DECISIONS.md', 'backlog TASKS.md', 'changelog CHANGELOG.md']
+    .every((pair) => named.some((row) => `${row.role} ${row.path}` === pair))
+  && JSON.parse(read('daoris.json')).documents === undefined, candidates.out);
+
+writeManifest((m) => {
+  m.documents = {
+    decisions: 'docs/DECISIONS.md',
+    backlog: { path: 'TASKS.md', words: 40 },
+    changelog: 'CHANGELOG.md',
+    brief: { words: 1500 },
+  };
+});
+const undeclaredTable = withV2('check');
+check('`check` fails on a declaration the region does not list yet, naming the table', undeclaredTable.code === 1
+  && /Where things are table differs/.test(undeclaredTable.out), undeclaredTable.out);
+
+const declaredSync = withV2('sync');
+check('`sync` renders Where things are into the region', declaredSync.code === 0
+  && /## Where things are/.test(read('AGENTS.md')), declaredSync.out);
+check('...one row per declared path, in the roles\' order, with each role\'s job',
+  /\| decisions \| `docs\/DECISIONS\.md` \| numbered decisions[^\n]*\n\| backlog \| `TASKS\.md` \|[^\n]*\n\| changelog \| `CHANGELOG\.md` \|/
+    .test(read('AGENTS.md')));
+check('...and no row for the brief, which is the file the region sits in', !/\| brief \|/.test(read('AGENTS.md')));
+const declaredCheck = withV2('check');
+check('`check` is clean with the documents declared', declaredCheck.code === 0, declaredCheck.out);
+
+// Broken: a record goes, and comes back.
+const decisionsText = read('docs/DECISIONS.md');
+rmSync(join(consumer, 'docs/DECISIONS.md'));
+const absent = withV2('check');
+check('`check` fails on a declared document that is absent, naming it and its role', absent.code === 1
+  && /docs\/DECISIONS\.md \(decisions\) is declared in daoris\.json, and absent/.test(absent.out), absent.out);
+writeFileSync(join(consumer, 'docs/DECISIONS.md'), decisionsText);
+check('`check` is clean once it is back', withV2('check').code === 0);
+
+// Broken: the backlog checked out as a link held as text, which nothing reads through.
+const tasksText = read('TASKS.md');
+mkdirSync(join(consumer, 'notes'), { recursive: true });
+writeFileSync(join(consumer, 'notes/TASKS.md'), tasksText);
+writeFileSync(join(consumer, 'TASKS.md'), 'notes/TASKS.md');
+const heldTasks = withV2('check');
+check('`check` fails on a declared document held as text', heldTasks.code === 1
+  && /LINK\s+TASKS\.md \(backlog\) — looks like a link checked out as text/.test(heldTasks.out), heldTasks.out);
+const heldSync = withV2('sync --force');
+check('`sync` refuses it, even with --force, naming the role', heldSync.code === 1
+  && /TASKS\.md, declared as backlog, looks like a link checked out as text/.test(heldSync.out), heldSync.out);
+writeFileSync(join(consumer, 'TASKS.md'), tasksText);
+rmSync(join(consumer, 'notes'), { recursive: true, force: true });
+check('`check` is clean once the backlog is a file again', withV2('check').code === 0);
+
+// Judged, never failed (D54): the backlog over its ceiling.
+writeFileSync(join(consumer, 'TASKS.md'), `${tasksText}\n${'- [ ] another row\n'.repeat(12)}`);
+const overCeiling = withV2('check');
+check('`check` reports a document over its ceiling in words, and exits 0', overCeiling.code === 0
+  && /words\s+TASKS\.md \(backlog\) is \d+ words of 40/.test(overCeiling.out), overCeiling.out);
+writeFileSync(join(consumer, 'TASKS.md'), tasksText);
+
+// Refused at the edge: a role the tool does not know, named with the ones it does.
+writeManifest((m) => { m.documents = { ...m.documents, roadmap: 'ROADMAP.md' }; });
+const unknownRole = withV2('check');
+check('an unknown role is refused as a tool error, naming the roles', unknownRole.code === 2
+  && /'roadmap', which is not a role daoris knows — the roles are brief, room, router/.test(unknownRole.out), unknownRole.out);
+writeManifest((m) => { delete m.documents.roadmap; });
+
+// Withdrawn: the table goes with the declaration.
+writeManifest((m) => { delete m.documents; });
+const withdrawnTable = withV2('check');
+check('`check` fails on a table the manifest no longer declares', withdrawnTable.code === 1
+  && /Where things are table differs/.test(withdrawnTable.out), withdrawnTable.out);
+const unDeclared = withV2('sync');
+check('`sync` takes the table out of the region', unDeclared.code === 0 && !/## Where things are/.test(read('AGENTS.md')),
+  unDeclared.out);
+check('`check` is clean with nothing declared', withV2('check').code === 0);
+
+// ----------------------------------------------------------------- 8. report
+
+section('8. Result');
 console.log(`\n  ${totals.checks - totals.failures}/${totals.checks} checks passed`);
 if (totals.failures) {
   console.log(`  ${totals.failures} FAILED — do not tag a release until these pass.`);
@@ -454,6 +550,7 @@ if (totals.failures) {
   process.exitCode = 1;
 } else {
   console.log('  The packaged tool installs into a clean repo and drives the full lifecycle:');
-  console.log('  adopt, collide, sync, drift, promote, upgrade, rename, switch off, move the layout, and check.\n');
+  console.log('  adopt, collide, sync, drift, promote, upgrade, rename, switch off, move the layout, declare the');
+  console.log('  documents, and check.\n');
   rmSync(scratch, { recursive: true, force: true });
 }

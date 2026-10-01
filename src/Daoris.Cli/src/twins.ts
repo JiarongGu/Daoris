@@ -1,4 +1,4 @@
-import type { CommandArgs, Lock, Manifest, Twin } from './types.ts';
+import type { CommandArgs, Harness, Lock, Manifest, Twin } from './types.ts';
 import type { ExitCode } from './errors.ts';
 import { join } from 'node:path';
 import { listMarkdown, readText } from './fsx.ts';
@@ -28,6 +28,16 @@ export function significantTokens(text: string): Set<string> {
   const { body: withoutFrontmatter } = parseFrontmatter(body);
   const words = (withoutFrontmatter || body).toLowerCase().match(/[a-z][a-z-]{3,}/g) ?? [];
   return new Set(words.filter((word) => !STOPWORDS.has(word)));
+}
+
+/**
+ * Whether a file under a tier's folder is one of its documents: every markdown file of a tier whose unit
+ * is a file, and only the entry file of a tier whose unit is a folder (a skill's `SKILL.md`). Shared by
+ * `doctor` and `analyze`, the two readers that compare documents by their words.
+ */
+export function isEntry(harness: Harness, tier: string, file: string): boolean {
+  const entryFile = harness.tiers[tier]?.entryFile;
+  return entryFile === undefined || file.endsWith(`/${entryFile}`);
 }
 
 /**
@@ -73,7 +83,7 @@ export function findTwins(
 ): Twin[] {
   const locked = lockIndex(lock);
   // Where the files are is the lock's answer (D117 §5.1).
-  const { target: base } = lockLayout(root, lock, manifest);
+  const { target: base, harness } = lockLayout(root, lock, manifest);
   // 🔴 A mirror is a copy of its source, so it would score as a perfect twin of it (D117 §5.2). Skipped
   // by what the lock records, wherever the mirror root happens to sit relative to the one scanned.
   const mirrors = new Set((lock?.mirrors ?? []).map((entry) => entry.path));
@@ -84,6 +94,9 @@ export function findTwins(
   for (const tier of TIERS) {
     for (const file of listMarkdown(join(root, base, tier))) {
       if (file === INDEX_FILE || mirrors.has(`${base}/${tier}/${file}`)) continue;
+      // A skill is its entry file (DOC3): a template beside it is supporting material, and comparing it
+      // as a document reported a repository's own skill as a twin of a canonical skill's template.
+      if (!isEntry(harness, tier, file)) continue;
       const target = `${tier}/${file}`;
       const tokens = significantTokens(readText(join(root, base, tier, file)));
       (locked.has(target) ? canonical : local).push({ tier, target, tokens });

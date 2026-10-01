@@ -6116,6 +6116,27 @@ proof.
   typechecked, and **not run** in the branch: the parent runs it. No look at the window was taken: the list beside
   the page at 1280 px with Ask Daoris open, the list laid over at 680 px, both themes and both languages, are the
   parent's to see. The names' budgets are estimates (D116 §4); the new keys added no finding.
+**Built: FRAME1g (2026-10-01), and what it settled that the design left open.**
+- **Settings hands the frame what it builds** (`useSettingsLayout`): `DomainList` as its list pane and the
+  domain chosen as its main area. `SettingsView` draws Settings alone, in a browser's frame of its own, which
+  every domain's suite renders, as a surface drawn alone holds its own running action. It has no `＋` and no
+  strip items (§4).
+- **The main area's header names the domain**, so the domain is named where the list is a strip. The page's
+  own header went with the page: the list's header says *Settings*. The shell's page sentence is dropped, and
+  a browser's became a note beneath its four domains, saying where the absence is (D47 §4).
+- **A domain chosen opens at its top.** The main area is drawn anew for each domain, where one scroll box
+  kept the scroll the last domain was left at. A part a door names is brought into view as before.
+- **Its doors are the frame's four**, named *the settings list* and *Settings list* (设置列表), in the shape of
+  the glossary's *session list*. The domain is still kept under `daoris.settings`.
+- **The opener is FRAME1c's**: `open('settings', domain, { anchor })`. No `domain#part` string was added,
+  since the opener already carries a part beside the item.
+- **A machine domain's first load is skeleton rows in its cards' place**: while it has no answer and one is on
+  its way. A failed question ends in its toast rather than loading forever, and an older shell's answer still
+  draws no card. Permissions holds both its cards' places.
+- **What the gates do not cover.** jsdom lays nothing out: the list's mode at 600, 680, 900 and 1024 px is held
+  by the frame's room rule and by the mode each test reads, not by a measured width. The platform spec's tier
+  door was edited to the domain's heading and not run. The look on the window settles the rest: Settings at
+  1280 and 680 px, English and 中文, both themes, and the first open of Agents, Permissions and Plugins.
 
 ## D116 — A name is a UI element, designed in each language; the glossary is the authority, and a check holds it (2026-10-01)
 
@@ -6464,6 +6485,77 @@ repository were read from its files: the canon's rules and skills, `Acp.cs`, `Ad
 2026-10-01 and cited in design §9, or LAYOUT2's reading of their shipped code; none was measured on a turn. The
 account of what AR-2201's sessions read is the parent's, recorded in no tracked document. `verify` checks this
 entry's shape and the design's links and budget, and none of their words.
+
+**Built 2026-10-01 (DOC2): the standard is canon** (points 1 and 2, design §2.1–§2.6 and §4).
+- Core knowledge `development-documents` and core skill `set-up-documents`, the skill with seven templates in
+  `templates/`: `brief.md`, `room.md`, `knowledge.md`, `router.md`, `decision.md`, `backlog-row.md` and
+  `archive-entry.md`. §4 named five. `archive-entry.md` joins them because §2.5 states that shape, and
+  `knowledge.md` because the skill moves a brief's deep dives into the knowledge tier, whose frontmatter is its
+  index row. The fix log's shape stays the `fix-log` skill's, and a skill's stays the harness's, so neither is
+  written twice. The skill carries no `allowed-tools`.
+- Measured, not estimated: this repository's region went from 22,672 to 23,306 bytes of 26,000, 634 bytes for the
+  two index rows (§2.6 estimated about 450). Each example's region grew by the same two rows, to 21,758 (engine)
+  and 21,975 (game) of 30,000. This repository and both examples were re-synced in the same commit.
+- Canon-authoring holds. No file names a product, a harness, a build command or one repository's path. The byte
+  limit is *one widely used agent's*, 32,768 bytes when written, and the file names are left to the index (§2.6).
+  The records' list is described as the brief's *Where things are*, written by hand or generated where a tool
+  does it, which is true before DOC3 and after.
+- The adoption playbook (local) gained steps 6 to 8: write the brief, declare the documents and the rooms,
+  declare the safe work. Its later steps renumber to 9 to 11, and the hand-over names each new item. It says
+  plainly that the CLI ignores a `documents` field until DOC3 lands, and that nothing reads `safe` until
+  UNBLOCK2; those rows update the playbook when they land.
+- Found building it: `dogfood.test.ts`'s *every shipped canon skill carries the frontmatter the harness needs*
+  takes every file under a skill's folder for its entry file, so the first canonical skill with supporting files
+  fails it, though `canon.ts` ships a skill's whole folder by design and `canon.test.ts` holds that. The test is
+  the CLI lane's, and DOC2 names it rather than changing it.
+- What the gates do not cover: the knowledge document's statements about agents are the design's sources (§9),
+  not measured here. *No shared skill carries one*, of a skill pre-approving its tools, is true of the canon
+  today by search; DOC3's test is what will hold it. Whether the templates produce a good brief is judgement,
+  which only a real set-up shows (§7, point 5).
+
+**Built 2026-10-01 (DOC3): roles bound to paths in the CLI** (point 3, design §2.7–§2.8). `documents` in the
+manifest, `init` and `analyze` naming candidates, `sync`'s *Where things are* table, `check`'s facts and
+reports, the canon scan for `allowed-tools`, and a seventh release-rehearsal phase. Each case was a failing
+`node --test` case first. The choices the design left open, each held by a test:
+- **Ten declarable roles.** `knowledge` and `skill` are roles and are refused here, since the index already
+  lists them from the target. `brief` and `room` take `{ "words": n }` and refuse a path. A field nobody reads,
+  and a ceiling that is not a whole number above zero, are refused, so a typo never silently drops a ceiling.
+- **Where each refusal lands.** A shape problem, an unknown role, a path that escapes, is the root, or sits
+  inside the target or the mirror root, and a role declared twice are refused where the manifest is read
+  (exit 2), as an escaping room is. So `check` fails on them without touching the path. A role declared twice
+  is found in the text, because `JSON.parse` keeps the last of two keys silently. A link, or a link held as
+  text, is a fact about the disk: `check` fails on it (exit 1) and never reads through it, and `sync` refuses
+  it even with `--force`, since the table would send every session through it. An absent document fails
+  `check`, and `sync` names it and proceeds: blocking every canon update on one record would hold the
+  doctrine to it.
+- **A declared path may be a folder**: a folder of decision records is the decisions role (§2.1). A ceiling on
+  a folder is reported as measuring nothing.
+- **The table** is the roster's last section, after *Rooms*: `| Role | Where | Its job |`, one row per role
+  with a path, in the roles' order, each path a code span with its pipes escaped. A code span is the brief
+  template's shape, at half a link's bytes. `check` compares it apart from the tiers' tables, so a stale one
+  is named as itself and never as the roster. It comes from the manifest alone, and the lock records
+  nothing, so D19's table gains no cell. Measured, not estimated: seven rows cost 639 bytes of the region,
+  with each job cut to what finding a record needs (§2.6 estimated about 400; the canon's whole sentences
+  cost 729).
+- **The brief's words** are the root file's text outside the region. A brief still in `CLAUDE.md` is not
+  measured until it moves (LAYOUT5). Words are whitespace-separated tokens, `tools/doc-budgets.mjs`'s count,
+  duplicated deliberately until DOC4 makes that tool read the manifest. *No backlog or decisions declared*
+  is reported only when the repository declares something.
+- **The root file's bytes** stay LAYOUT3's one `size` line. The brief's words are a separate line.
+- **Candidates** are conventional names, matched without regard to case, files before folders, and never the
+  project's own readme. `analyze --json` carries them as `documents`. `status` carries the declaration and
+  the three facts.
+- **Two defects DOC2 found.** The dogfood test now holds each skill folder to a `SKILL.md`, with the name and
+  description checks on entry files only, and a flat `skills/foo.md` still fails. `doctor`, and `analyze`'s
+  search before adoption, compare a skill's entry file only, so `dispatch-subagent` no longer reads as 61%
+  like `set-up-documents/templates/backlog-row.md`.
+- **The `allowed-tools` scan** reads frontmatter only, in any spelling of the field and either YAML shape,
+  over every file of a skill's folder: a skill's template copied into a repository would carry the field.
+  It was seen failing on a fixture and on a field planted in a real canon skill.
+- What the gates do not cover: the release rehearsal's phase was written and not run in the branch, and its
+  patterns were checked against the source bin in a scratch consumer. The service's reader of `documents`
+  is DOC5's. The twins table gains its row when that reader lands, matched against
+  `documents-manifest.test.ts`.
 
 **Built 2026-10-01 (UNBLOCK4): the carve-outs held harder, and `git mv`.** Point 7 and the `commit` half of point 4,
 as design §3.6 and §3.7 say, with one addition.

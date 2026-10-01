@@ -7,6 +7,7 @@ import { failure, type Notify, useErrorNotify } from '../ui';
 import { workspacesOf } from '../workspaces';
 import { AcrossList } from './Across';
 import { AgentRules } from './AgentRules';
+import { DomainLoading } from './DomainLoading';
 import { proposalChange } from './proposals';
 
 /**
@@ -36,6 +37,8 @@ function AcrossSettings({ notify }: { notify: Notify }) {
   const setWrite = useSetWriteAcross();
   useErrorNotify(answer.error, notify);
 
+  // Its place held until the first answer (FRAME1g): a first open drew a blank page under the domain's name.
+  if (!answer.data && answer.isFetching) return <DomainLoading rows={3} />;
   // An older shell has never heard of the question: the card is absent rather than the page blank.
   const repositories = Array.isArray(answer.data?.repositories) ? answer.data.repositories : null;
   if (!repositories) return null;
@@ -77,6 +80,8 @@ function RulesSettings({ notify }: { notify: Notify }) {
   const registry = useRegistry('machine');
   useErrorNotify(answer.error, notify);
 
+  // Its place held until the first answer, as the card above holds its own.
+  if (!answer.data && answer.isFetching) return <DomainLoading />;
   // An older shell has never heard of the question: the card is absent rather than the page blank.
   const rules = answer.data && Array.isArray(answer.data.defaults) && Array.isArray(answer.data.scopes) ? answer.data : null;
   if (!rules) return null;

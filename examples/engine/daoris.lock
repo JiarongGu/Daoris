@@ -19,6 +19,13 @@
     },
     {
       "pack": "core",
+      "source": "core/knowledge/development-documents.md",
+      "target": "knowledge/development-documents.md",
+      "canonVersion": "0.0.1",
+      "sha256": "c05c8a13d58d513ca8cc957223872f1ca943a72b2152e9eddf9e8714e3d2f720"
+    },
+    {
+      "pack": "core",
       "source": "core/knowledge/leak-repair.md",
       "target": "knowledge/leak-repair.md",
       "canonVersion": "0.0.1",
@@ -136,6 +143,62 @@
       "target": "skills/post-feature/SKILL.md",
       "canonVersion": "0.0.1",
       "sha256": "01448f36ee483076aacd064d063e8b45174726cf39ae3d3d8f087375c4c764b5"
+    },
+    {
+      "pack": "core",
+      "source": "core/skills/set-up-documents/SKILL.md",
+      "target": "skills/set-up-documents/SKILL.md",
+      "canonVersion": "0.0.1",
+      "sha256": "ae542ae4de77442a1b91caed096f25bbb9660c085e6f6a9ae40eb45776d1de98"
+    },
+    {
+      "pack": "core",
+      "source": "core/skills/set-up-documents/templates/archive-entry.md",
+      "target": "skills/set-up-documents/templates/archive-entry.md",
+      "canonVersion": "0.0.1",
+      "sha256": "a86f74ddb509597506126c1974c5a925be8fb3ad5b0738e1e8f637e088450b9b"
+    },
+    {
+      "pack": "core",
+      "source": "core/skills/set-up-documents/templates/backlog-row.md",
+      "target": "skills/set-up-documents/templates/backlog-row.md",
+      "canonVersion": "0.0.1",
+      "sha256": "97293e9462e4f4a678a1865f7a25f9289d01ccd979b0197d3ab1cde4c91718ea"
+    },
+    {
+      "pack": "core",
+      "source": "core/skills/set-up-documents/templates/brief.md",
+      "target": "skills/set-up-documents/templates/brief.md",
+      "canonVersion": "0.0.1",
+      "sha256": "3baa34012e0166a850c5e460822ae2569f852653463a6b36a55104ec33e444cd"
+    },
+    {
+      "pack": "core",
+      "source": "core/skills/set-up-documents/templates/decision.md",
+      "target": "skills/set-up-documents/templates/decision.md",
+      "canonVersion": "0.0.1",
+      "sha256": "618fbd12b72653025199257210d958f94a83ec070fb5845480964d7e0f299a38"
+    },
+    {
+      "pack": "core",
+      "source": "core/skills/set-up-documents/templates/knowledge.md",
+      "target": "skills/set-up-documents/templates/knowledge.md",
+      "canonVersion": "0.0.1",
+      "sha256": "430af3aa5b5ce3597741c766fce2cb2bd47c21a31523c4327b829897314cd573"
+    },
+    {
+      "pack": "core",
+      "source": "core/skills/set-up-documents/templates/room.md",
+      "target": "skills/set-up-documents/templates/room.md",
+      "canonVersion": "0.0.1",
+      "sha256": "6492904238afeeec1f504bdff1df944892629e6b4829f80d126960296d236308"
+    },
+    {
+      "pack": "core",
+      "source": "core/skills/set-up-documents/templates/router.md",
+      "target": "skills/set-up-documents/templates/router.md",
+      "canonVersion": "0.0.1",
+      "sha256": "573dd259c4ec6345c5759674ffd652f8495189e4d10e6c85a81a400b1a4191f0"
     }
   ]
 }

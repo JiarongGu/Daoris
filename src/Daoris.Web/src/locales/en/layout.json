@@ -2,12 +2,14 @@
   "layout.list.sessions": "the session list",
   "layout.list.plugins": "the plugin list",
   "layout.list.quests": "the quest list",
+  "layout.list.settings": "the settings list",
   "layout.panel": "the panel",
   "layout.right": "the right side bar",
   "layout.toggle": "show or hide {{region}} ({{keys}})",
   "layout.menu.list.sessions": "Session list",
   "layout.menu.list.plugins": "Plugin list",
   "layout.menu.list.quests": "Quest list",
+  "layout.menu.list.settings": "Settings list",
   "layout.menu.panel": "Panel",
   "layout.menu.right": "Right side bar"
 }
