@@ -14,6 +14,27 @@ test.describe.configure({ mode: 'serial' });
 const nav = (page: Page, name: string) =>
   page.getByRole('navigation').getByRole('button', { name });
 
+/** Quests' list pane, which a browser keeps beside the main area (FRAME1d, D118 §4). */
+const questList = (page: Page) => page.getByRole('complementary', { name: 'Quests' });
+
+/**
+ * The main area, where a quest's record and an ask's open since FRAME1d (D118 §3d): a record is the main area, and
+ * only a form is a drawer. A locator, so it follows the page as the main area changes what it holds.
+ */
+const record = (page: Page) => page.getByRole('main');
+
+/** Quests' ＋, one control with two kinds, Ask first, then New quest (D118 §2). */
+async function make(page: Page, kind: 'Ask' | 'New quest') {
+  await questList(page).getByRole('button', { name: 'New ask or quest' }).click();
+  await page.getByRole('menuitem', { name: kind, exact: true }).click();
+}
+
+/** Quests' ⋯ holds its filters: *Include closed* is a toggle there (D118 §2). */
+async function includeClosed(page: Page) {
+  await questList(page).getByRole('button', { name: 'Filter the list' }).click();
+  await page.getByRole('menuitemcheckbox', { name: 'Include closed' }).click();
+}
+
 test('the overview shows the example family', async ({ page }) => {
   await page.goto('/');
   await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible();
@@ -31,9 +52,9 @@ test('repositories lists both members with their declarations', async ({ page })
 
 /**
  * **A quest carries a link and files, and the files stay on this machine** (D65 §2). Composed through
- * the real drawer, kept by the real host under its home, opened through the host's own route — and
- * an attached PAGE comes back as a sandboxed download: served from the platform's origin, anything
- * else would be a script with every route this host answers.
+ * the real composer's drawer, kept by the real host under its home, opened through the host's own route
+ * on the quest's page — and an attached PAGE comes back as a sandboxed download: served from the
+ * platform's origin, anything else would be a script with every route this host answers.
  */
 test('a quest carries a link and files: kept here, opened here, never run as the platform', async ({ page, request }) => {
   const title = 'Read the media field names from config';
@@ -43,7 +64,7 @@ test('a quest carries a link and files: kept here, opened here, never run as the
 
   await page.goto('/');
   await nav(page, 'Quests').click();
-  await page.getByRole('button', { name: 'New quest' }).click();
+  await make(page, 'New quest');
   await page.getByLabel('From', { exact: true }).click();
   await page.getByRole('option', { name: 'game' }).click();
   await page.getByLabel('To', { exact: true }).click();
@@ -60,26 +81,27 @@ test('a quest carries a link and files: kept here, opened here, never run as the
   // are the service's and the backticks are gone (`Inline`).
   await expect(page.getByText(/Published quest #[0-9a-f]{12} to engine/).first()).toBeVisible();
 
-  // The card counts what it carries; the drawer holds the things themselves.
-  await expect(page.getByLabel('1 link · 2 files').first()).toBeVisible();
-  await page.getByText(title).first().click();
-  const dialog = page.getByRole('dialog');
-  await expect(dialog.getByRole('link', { name: /tickets\.example\/T-7/ }))
+  // The list's row counts what it carries; the quest's page, in the main area, holds the things themselves.
+  await expect(questList(page).getByLabel('1 link · 2 files')).toBeVisible();
+  await questList(page).getByText(title).click();
+  const quest = record(page);
+  await expect(quest.getByRole('heading', { level: 1, name: title })).toBeVisible();
+  await expect(quest.getByRole('link', { name: /tickets\.example\/T-7/ }))
     .toHaveAttribute('href', 'https://tickets.example/T-7');
 
   // The picture is the real bytes, through the host's route — decoded, so it is the file and not an
   // error page wearing an image tag.
-  const picture = dialog.getByRole('img', { name: 'before.png' });
+  const picture = quest.getByRole('img', { name: 'before.png' });
   await expect(picture).toBeVisible();
   await expect.poll(() => picture.evaluate((image: HTMLImageElement) => image.naturalWidth)).toBe(1);
 
   // 🔴 Where it lies is never shown: the host answers this machine a path, and the page must not
   // print it.
-  await expect(dialog).not.toContainText('_fixtures');
-  await expect(dialog).not.toContainText('attachments');
+  await expect(quest).not.toContainText('_fixtures');
+  await expect(quest).not.toContainText('attachments');
 
   // 🔴 An attached page is a sandboxed download, never a document on the platform's origin.
-  const href = await dialog.getByRole('link', { name: /page\.html/ }).getAttribute('href');
+  const href = await quest.getByRole('link', { name: /page\.html/ }).getAttribute('href');
   const served = await request.get(href!);
   expect(served.status()).toBe(200);
   expect(served.headers()['content-security-policy']).toContain('sandbox');
@@ -87,14 +109,14 @@ test('a quest carries a link and files: kept here, opened here, never run as the
   expect(served.headers()['content-disposition']).toContain('attachment');
 
   // Leave the family as it was found: the suite is serial, and the next test expects nothing open.
-  await dialog.getByRole('button', { name: 'Mark done', exact: true }).click();
+  await quest.getByRole('button', { name: 'Mark done', exact: true }).click();
   await expect(page.getByText(/is now Done/).first()).toBeVisible();
 });
 
 /**
  * **A chain moves on when its quest closes done** (D65 §4) — over the real host, whose close publishes
- * the next step in the same transaction. The drawer shows what is coming before it comes, the close's
- * toast names the step it published, and the step says which quest it follows.
+ * the next step in the same transaction. The quest's page shows what is coming before it comes, the
+ * close's toast names the step it published, and the step says which quest it follows.
  */
 test('a chain moves on when its quest closes done', async ({ page, request }) => {
   const published = await request.post('/api/quests', {
@@ -107,28 +129,29 @@ test('a chain moves on when its quest closes done', async ({ page, request }) =>
 
   await page.goto('/');
   await nav(page, 'Quests').click();
-  await page.getByText('Develop the streaming cap').first().click();
-  const dialog = page.getByRole('dialog');
-  await expect(dialog.getByText(/Verify \{parent\} in a playtest/)).toBeVisible();
-  await dialog.getByRole('button', { name: 'Mark done', exact: true }).click();
+  await questList(page).getByText('Develop the streaming cap').click();
+  const quest = record(page);
+  await expect(quest.getByText(/Verify \{parent\} in a playtest/)).toBeVisible();
+  await quest.getByRole('button', { name: 'Mark done', exact: true }).click();
   await expect(page.getByText(/Then: published #[0-9a-f]{12} to engine/).first()).toBeVisible();
 
-  // The step is an ordinary open quest, named with the id of the one it follows.
-  const step = page.getByText(`Verify #${parent} in a playtest`).first();
+  // The step is an ordinary open quest in the list, named with the id of the one it follows.
+  const step = questList(page).getByText(`Verify #${parent} in a playtest`);
   await expect(step).toBeVisible();
-  await expect(page.getByText(`follows #${parent}`).first()).toBeVisible();
+  await expect(questList(page).getByText(`follows #${parent}`)).toBeVisible();
 
-  // MAP1: the step's drawer carries the chain — the quest it follows, done, and a door back to it;
+  // MAP1: the step's page carries the chain — the quest it follows, done, and a door back to it;
   // and from there, a door forward again. Real records, the real host's parent link.
   await step.click();
-  const chain = () => page.getByRole('dialog').getByRole('region', { name: 'How this work ran' });
+  const chain = () => record(page).getByRole('region', { name: 'How this work ran' });
   await expect(chain().getByText('this quest')).toBeVisible();
   await chain().getByRole('button', { name: 'Develop the streaming cap' }).click();
-  await expect(page.getByRole('dialog').getByRole('heading', { name: 'Develop the streaming cap' })).toBeVisible();
+  await expect(record(page).getByRole('heading', { level: 1, name: 'Develop the streaming cap' })).toBeVisible();
   await chain().getByRole('button', { name: `Verify #${parent} in a playtest` }).click();
+  await expect(record(page).getByRole('heading', { level: 1, name: `Verify #${parent} in a playtest` })).toBeVisible();
 
   // Leave the family as it was found: the suite is serial, and a later test expects nothing open.
-  await page.getByRole('dialog').getByRole('button', { name: 'Mark done', exact: true }).click();
+  await record(page).getByRole('button', { name: 'Mark done', exact: true }).click();
   await expect(page.getByText(/is now Done/).first()).toBeVisible();
 });
 
@@ -175,7 +198,8 @@ test('a repository opens its own code map, and one without says where it would g
 test('a quest travels: composed, published, taken, finished', async ({ page }) => {
   await page.goto('/');
   await nav(page, 'Quests').click();
-  await page.getByRole('button', { name: 'New quest' }).click();
+  // The composer is a form, so a drawer still (D118 §3d), opened from the list's ＋.
+  await make(page, 'New quest');
 
   await page.getByLabel('From', { exact: true }).click();
   await page.getByRole('option', { name: 'game' }).click();
@@ -191,25 +215,36 @@ test('a quest travels: composed, published, taken, finished', async ({ page }) =
   // renders each toast twice — the visible element and its aria-live announcer.)
   await expect(page.getByText(/Published quest #[0-9a-f]{12} to engine/).first()).toBeVisible();
 
-  // It sits in Open; its card is a door to the detail drawer, where the acting happens.
-  await page.getByText('Expose a streaming budget on the chunk API').first().click();
-  await page.getByRole('button', { name: 'Take', exact: true }).click();
+  // It sits in Open, and the quest just published opens on its page in the main area, where the acting
+  // happens; its row in the list is a door to the same page (D118 §3d). No drawer is left over it.
+  const title = 'Expose a streaming budget on the chunk API';
+  await expect(record(page).getByRole('heading', { level: 1, name: title })).toBeVisible();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
+  await questList(page).getByText(title).click();
+  await record(page).getByRole('button', { name: 'Take', exact: true }).click();
   await expect(page.getByText(/is now Taken/).first()).toBeVisible();
 
-  await page.getByText('Expose a streaming budget on the chunk API').first().click();
-  await page.getByRole('button', { name: 'Mark done', exact: true }).click();
+  // The page stays on the quest as it now stands: taken, so *Mark done* is its next step.
+  await expect(record(page).getByRole('button', { name: 'Take', exact: true })).toHaveCount(0);
+  await record(page).getByRole('button', { name: 'Mark done', exact: true }).click();
   await expect(page.getByText(/is now Done/).first()).toBeVisible();
 
-  // Closed work leaves the default list and returns on request.
-  await expect(page.getByText('No open quests anywhere')).toBeVisible();
-  await page.getByText('Include closed').click();
-  await expect(page.getByText('Expose a streaming budget on the chunk API')).toBeVisible();
+  // Closed work leaves the default list and returns on request, from the list's ⋯; its page stays, done.
+  await expect(questList(page).getByText('No open quests anywhere')).toBeVisible();
+  await expect(record(page).getByRole('heading', { level: 1, name: title })).toBeVisible();
+  await includeClosed(page);
+  await expect(questList(page).getByText(title)).toBeVisible();
+
+  // The filter is the list's own, remembered for the next visit (D118 §3f).
+  await page.reload();
+  await nav(page, 'Quests').click();
+  await expect(questList(page).getByText(title)).toBeVisible();
 });
 
 test('a refusal reaches the person verbatim', async ({ page }) => {
   await page.goto('/');
   await nav(page, 'Quests').click();
-  await page.getByRole('button', { name: 'New quest' }).click();
+  await make(page, 'New quest');
 
   // Self-addressed: the one refusal the form cannot prevent, because the judgement is the service's.
   await page.getByLabel('From', { exact: true }).click();
@@ -238,8 +273,7 @@ test('an ask is proposed by declarations, published by a person, and closed with
   await page.getByRole('button', { name: 'Commands (Ctrl+K)' }).click();
   await page.getByRole('dialog').getByRole('option', { name: /Ask the workspace/ }).click();
 
-  // Every drawer is addressed by its title: one closes as the next opens, and "the dialog" is ambiguous
-  // for that moment.
+  // The composer is a form, so a drawer still (D118 §3d), addressed by its title.
   const composer = page.getByRole('dialog', { name: 'Ask the workspace' });
   await expect(composer).toBeVisible();
   // One workspace held, so it is the workspace — said, and not asked.
@@ -255,21 +289,25 @@ test('an ask is proposed by declarations, published by a person, and closed with
   // The service's sentence, verbatim: which tier answered, what it proposed, and that nothing went out.
   await expect(page.getByText(/Asked as #[0-9a-f]{6} in default — by declarations only; no intake agent ran — proposed, best first: engine/).first()).toBeVisible();
 
-  // The record opens on the answer: the tier in words, the proposal as a verb, the file by name only.
-  // (The quest it becomes takes the same words for its title, so each drawer is told apart by what it holds.)
-  const record = page.getByRole('dialog', { name: sentence });
-  await expect(record.getByRole('region', { name: 'Where it belongs' })).toBeVisible();
-  await expect(record.getByText('by declarations only; no intake agent ran')).toBeVisible();
-  await expect(record.getByText('trace.log')).toBeVisible();
-  await expect(record).not.toContainText('_fixtures');
+  // The ask's page opens on the answer, in Quests' main area: the tier in words, the proposal as a verb,
+  // the file by name only. (The quest it becomes takes the same words for its title, so each page is told
+  // apart by what it holds.)
+  const ask = record(page);
+  await expect(ask.getByRole('heading', { level: 1, name: sentence })).toBeVisible();
+  await expect(ask.getByRole('region', { name: 'Where it belongs' })).toBeVisible();
+  await expect(ask.getByText('by declarations only; no intake agent ran')).toBeVisible();
+  await expect(ask.getByText('trace.log')).toBeVisible();
+  await expect(ask).not.toContainText('_fixtures');
+  // It is in the list too, at the head, above the quests (D118 §2).
+  await expect(questList(page).getByText(/^Asks \(/)).toBeVisible();
 
-  await record.getByRole('button', { name: 'publish to engine' }).click();
+  await ask.getByRole('button', { name: 'publish to engine' }).click();
   await expect(page.getByText(/Published quest #[0-9a-f]{12} to engine/).first()).toBeVisible();
 
-  // The quest it became is a door into the quest's own drawer — once the page holds it — asked BY the
+  // The quest it became is a door into the quest's own page — once the page holds it — asked BY the
   // ask, carrying its link and its file.
-  await record.getByRole('region', { name: 'Became' }).getByRole('button', { name: new RegExp(sentence) }).click();
-  const quest = page.getByRole('dialog', { name: sentence });
+  await ask.getByRole('region', { name: 'Became' }).getByRole('button', { name: new RegExp(sentence) }).click();
+  const quest = record(page);
   await expect(quest.getByRole('region', { name: 'Where it belongs' })).toHaveCount(0);
   await expect(quest.getByText(/^ask #[0-9a-f]{6}$/).first()).toBeVisible();
   await expect(quest.getByRole('link', { name: /tickets\.example\/T-8/ })).toBeVisible();
@@ -279,12 +317,12 @@ test('an ask is proposed by declarations, published by a person, and closed with
   // as a closed ask and a closed quest do. Nobody has to close it, and the family is left as found.
   await quest.getByRole('button', { name: 'Mark done', exact: true }).click();
   await expect(page.getByText(/is now Done/).first()).toBeVisible();
-  await expect(page.getByText(/^Asks \(/)).toHaveCount(0);
+  await expect(questList(page).getByText(/^Asks \(/)).toHaveCount(0);
 
-  // With closed ones included it comes back, wearing its done pill.
-  await page.getByText('Include closed').click();
-  await expect(page.getByText(/^Asks \(/)).toBeVisible();
-  await expect(page.getByText('done', { exact: true }).first()).toBeVisible();
+  // With closed ones included, from the list's ⋯, it comes back, wearing its done pill.
+  await includeClosed(page);
+  await expect(questList(page).getByText(/^Asks \(/)).toBeVisible();
+  await expect(questList(page).getByText('done', { exact: true }).first()).toBeVisible();
 });
 
 /**
@@ -308,7 +346,9 @@ test('an ask waiting on a person is in What needs you, and its record names its 
   await expect(proposed).toContainText('proposed, not yet published');
   await expect(proposed).toContainText('workspace default');
   await proposed.click();
-  await expect(page.getByRole('dialog', { name: sentence }).getByRole('region', { name: 'Where it belongs' })).toBeVisible();
+  // Its page, in Quests' main area (FRAME1d), with the ask chosen in the list beside it.
+  await expect(record(page).getByRole('heading', { level: 1, name: sentence })).toBeVisible();
+  await expect(record(page).getByRole('region', { name: 'Where it belongs' })).toBeVisible();
 
   // Its intake opens, works, and parks asking the person.
   const room = join(repoRoot, '_fixtures', 'web-e2e', 'intake', 'default');
@@ -331,7 +371,8 @@ test('an ask waiting on a person is in What needs you, and its record names its 
   await expect(page.getByRole('region', { name: 'What needs you' }).getByText('parked at a checkpoint')).toHaveCount(0);
 
   await asking.click();
-  const intake = page.getByRole('dialog', { name: sentence }).getByRole('region', { name: 'Intake session' });
+  await expect(record(page).getByRole('heading', { level: 1, name: sentence })).toBeVisible();
+  const intake = record(page).getByRole('region', { name: 'Intake session' });
   await expect(intake.getByText('waiting on you')).toBeVisible();
   await expect(intake.getByText('stub', { exact: true })).toBeVisible();
   await expect(intake.getByRole('button')).toHaveCount(0);
@@ -377,7 +418,7 @@ test('a project created mid-run joins, and the platform shows it (D44)', async (
   await expect(page.getByText('Born during the test run.')).toBeVisible();
 
   await nav(page, 'Quests').click();
-  await page.getByRole('button', { name: 'New quest' }).click();
+  await make(page, 'New quest');
   await page.getByLabel('From', { exact: true }).click();
   await page.getByRole('option', { name: 'game' }).click();
   await page.getByLabel('To', { exact: true }).click();
@@ -432,7 +473,7 @@ test('the console scopes by workspace once the family holds two (WSP5)', async (
   expect(back.ok(), await back.text()).toBe(true);
 });
 
-test("a driven session's record reaches the drawer (D46)", async ({ page, request }) => {
+test("a driven session's record reaches the quest's page (D46)", async ({ page, request }) => {
   // The driver is not running here — the RECORD is service state, so seeding it through the same
   // doors the driver uses is exactly what the platform will see in real use: the session surface is
   // read-only in a browser, and the controls live where a driver is attached.
@@ -454,20 +495,23 @@ test("a driven session's record reaches the drawer (D46)", async ({ page, reques
   await page.goto('/');
   await nav(page, 'Quests').click();
 
-  // The card wears the live session's state beside the quest's own status…
-  const card = page.getByText('Drive the streaming budget work').first();
-  await expect(card).toBeVisible();
-  await card.click();
+  // The row wears the live session's state beside the quest's own status…
+  const row = questList(page).getByRole('button', { name: /Drive the streaming budget work/ });
+  await expect(row).toBeVisible();
+  await expect(row.getByText('working', { exact: true })).toBeVisible();
+  await row.click();
 
-  // …and the drawer carries the record: state, id · adapter, and the driver's note, verbatim.
-  const dialog = page.getByRole('dialog');
-  await expect(dialog.getByText('working')).toBeVisible();
-  await expect(dialog.getByText(new RegExp(`${session.id} · stub`))).toBeVisible();
-  await expect(dialog.getByText('the process is alive')).toBeVisible();
+  // …and the quest's page carries the record: state, id · adapter, and the driver's note, verbatim.
+  const shown = record(page);
+  await expect(shown.getByRole('heading', { level: 1, name: 'Drive the streaming budget work' })).toBeVisible();
+  const ran = shown.getByRole('region', { name: 'Session', exact: true });
+  await expect(ran.getByText('working', { exact: true })).toBeVisible();
+  await expect(ran.getByText(new RegExp(`${session.id} · stub`))).toBeVisible();
+  await expect(ran.getByText('the process is alive')).toBeVisible();
 
   // Read-only is the arc's central claim: the record renders, the control does not — stop reaches a
   // PROCESS, and a browser has none to reach (D46 §6).
-  await expect(dialog.getByRole('button', { name: 'Stop session' })).toHaveCount(0);
+  await expect(shown.getByRole('button', { name: 'Stop session' })).toHaveCount(0);
 });
 
 /**
@@ -475,7 +519,7 @@ test("a driven session's record reaches the drawer (D46)", async ({ page, reques
  *
  * The inner loop holds the formatter with a mocked record; this holds the whole chain over the real
  * artefact — the request contract, the ledger, the two store columns, the response shape, and the
- * drawer's line — because every one of those is a place a nullable field quietly stops arriving and
+ * page's line — because every one of those is a place a nullable field quietly stops arriving and
  * no test that mocks the host would notice.
  */
 test('a session record names the tool version and the account it ran as (D49 §4)', async ({ page, request }) => {
@@ -506,10 +550,12 @@ test('a session record names the tool version and the account it ran as (D49 §4
 
   await page.goto('/');
   await nav(page, 'Quests').click();
-  await page.getByText('Prove the record names its tool').first().click();
+  await questList(page).getByText('Prove the record names its tool').click();
 
-  const dialog = page.getByRole('dialog');
-  await expect(dialog.getByText(new RegExp(`${session.id} · stub · stub-harness 9\\.9\\.9 · as work`))).toBeVisible();
+  // The quest's page, in the main area (FRAME1d), carries the session's line.
+  const shown = record(page);
+  await expect(shown.getByRole('heading', { level: 1, name: 'Prove the record names its tool' })).toBeVisible();
+  await expect(shown.getByText(new RegExp(`${session.id} · stub · stub-harness 9\\.9\\.9 · as work`))).toBeVisible();
 });
 
 /**
