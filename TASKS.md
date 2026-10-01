@@ -211,6 +211,11 @@ FRAME1e and WSSETUP6. Then the owner's two runs.
   knowledge step, `daoris` in place of `npx`, §2.4's exact verbs; the playbook gains *Initialise the knowledge*.
 - [ ] **LAYOUT7a — the family rehearsal sets a repository up** (LAYOUT7's hand-back; tools): `setup game --plan`, then
   a press, a stub session running `daoris` in its tree and landing, the set-up recognised and counted.
+- [ ] **TEST3 — the set-up kit's tests join a gate** (LAYOUT7a's hand-back): `tools/setup-kit.test.mjs` (12) runs outside
+  `verify`; move it beside the other tools' tests in `src/Daoris.Cli/test/`, so a gate runs it.
+- [ ] **STUB1 — the protocol stub ends on a libuv assertion on Windows** (LAYOUT7a's hand-back): with Node 24 the stub
+  can exit `0xC0000409` in `process.exit` after a `fetch`, in phases 17, 17b and 17c; the driver judges by the quest,
+  so records still end right. Let the stub close its handles and return rather than call `process.exit`.
 - [ ] **TEST2 — `tools.test.ts` reads the shell's spelling of PATH** (LAYOUT7's hand-back): three cases found the system
   git and gh when `verify` ran from PowerShell, where the variable is `Path`; they pass from Git Bash. Make the
   cases set the environment they assume whatever the parent shell spells.
