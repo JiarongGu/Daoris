@@ -140,18 +140,32 @@ daoris <command> [options]
                        PowerShell, GitHub CLI, Azure CLI — each the system's, managed,
                        or a file you name ($DAORIS_HOME/tools.json); no file is the
                        system's, as before:
-                         list                      how each is run, and the file it is
+                         list                      how each is run, the file, and the
+                                                   versions downloaded
                          path <tool>               the file Daoris runs for it, or why none
                          use <tool> system         the one on PATH, as before
+                         use <tool> managed [<version>]
+                                                   a version kept in the home: downloaded
+                                                   if absent, and verified; no version is
+                                                   the newest the lists named at the last look
                          use <tool> file <path>    an executable you name
+                         download <tool> [<version>]
+                                                   fetch and verify it; nothing switches
+                         update <tool>             managed: the newest the lists named
+                         delete <tool> <version>   a downloaded version nothing uses
+                         locations [add|remove <address>]
+                                                   the lists versions come from: yours in
+                                                   order, then the one built in
+                         look                      fetch every location; say what is newer
 
   connect, retire and import are the MANAGEMENT commands: opt-in, they talk to a
   service, and no gate ever runs them. remote, agent, driver, plugin, browser and
   tool are management too — they edit files under the Daoris home ($DAORIS_HOME,
   the installed application's own data folder; nothing lives under your profile),
   and agent spawns each agent's own tooling. Of them only agent pin and agent
-  update open a connection themselves: a maker's release channel, for Claude
-  Code and Codex.
+  update open a connection themselves, to a maker's release channel for Claude
+  Code and Codex, and tool download, use … managed, update and look, to a tool's
+  maker and a resource location.
   Every doctrine command is offline.
 
 Options:
