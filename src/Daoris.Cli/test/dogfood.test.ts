@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { existsSync, readdirSync } from 'node:fs';
 import { COMMANDS } from '../src/cli.ts';
 import { readCanon } from '../src/canon.ts';
-import { parseFrontmatter, SKILL_FIELDS } from '../src/document.ts';
+import { frontmatterEnd, parseFrontmatter, SKILL_FIELDS } from '../src/document.ts';
 import { listFiles, readText } from '../src/fsx.ts';
 import { readManifest, readLock } from '../src/config.ts';
 import { inspect, commandCheck } from '../src/drift.ts';
@@ -38,27 +38,117 @@ test('every shipped canon file has complete frontmatter', () => {
 });
 
 /**
- * A skill's frontmatter is the harness's, not ours: `description` is the trigger
- * it matches on, so a skill with none never fires — it installs, costs bytes and
- * silently does nothing. The name has to match the DIRECTORY, because every
- * skill's file is called SKILL.md.
+ * What the harness needs of a canon's skills, as problems (DOC3).
+ *
+ * A skill is a FOLDER whose entry file is `SKILL.md`; everything else in the folder is supporting
+ * material (a template, a script) that `canon.ts` ships with it on purpose. So the unit held here is
+ * the folder: it must hold a `SKILL.md`, and only that entry file carries the frontmatter the harness
+ * reads. `description` is the trigger it matches on, so a skill with none installs, costs bytes and
+ * silently never fires; `name` must match the folder, since every entry file is called `SKILL.md`. A
+ * file directly under `skills/` is not inside any folder, so no harness can ever invoke it.
+ *
+ * Holding every file under `/skills/` to be a `SKILL.md` failed the first skill with templates beside
+ * it, which is the shape the canon ships by design.
  */
+function skillProblems(sources: readonly string[], read: (source: string) => string): string[] {
+  const problems: string[] = [];
+  const folders = new Map<string, string[]>();
+  for (const source of sources) {
+    const tier = source.indexOf('/skills/') + '/skills/'.length;
+    const slash = source.indexOf('/', tier);
+    if (slash === -1) {
+      problems.push(`${source}: a skill is a folder holding SKILL.md, and this file sits in no folder`);
+      continue;
+    }
+    const folder = source.slice(0, slash);
+    folders.set(folder, [...(folders.get(folder) ?? []), source]);
+  }
+  for (const [folder, files] of folders) {
+    const entry = `${folder}/SKILL.md`;
+    if (!files.includes(entry)) {
+      problems.push(`${folder}: a skill's folder must hold SKILL.md`);
+      continue;
+    }
+    const { meta } = parseFrontmatter(read(entry), SKILL_FIELDS);
+    if (!meta) problems.push(`${entry} is missing 'name' or 'description'`);
+    else if (meta.name !== folder.split('/').at(-1)) {
+      problems.push(`${entry}: frontmatter name '${meta.name}' must match the skill's directory`);
+    }
+  }
+  return problems;
+}
+
+test('a skill is held as a folder: its entry file, never its supporting files, and never a flat file', () => {
+  const entry = (name: string) => `---\nname: ${name}\ndescription: Use when ${name} is wanted.\n---\n\nSteps.\n`;
+  const files: Record<string, string> = {
+    'core/skills/writer/SKILL.md': entry('writer'),
+    'core/skills/writer/templates/row.md': '# A row\n\n<no frontmatter: a template, not a skill>\n',
+    'core/skills/writer/run.sh': '#!/bin/sh\n',
+  };
+  const read = (source: string) => files[source] ?? '';
+
+  assert.deepEqual(skillProblems(Object.keys(files), read), [], 'templates and scripts beside SKILL.md are supporting files');
+
+  // The loud cases stay loud: a flat file, a folder with no entry file, and an entry file the harness cannot match.
+  assert.match(skillProblems(['core/skills/flat.md'], () => entry('flat')).join('\n'), /flat\.md: a skill is a folder/);
+  assert.match(skillProblems(['core/skills/empty/notes.md'], read).join('\n'), /core\/skills\/empty: a skill's folder must hold SKILL\.md/);
+  assert.match(skillProblems(['core/skills/named/SKILL.md'], () => entry('other')).join('\n'), /must match the skill's directory/);
+  assert.match(skillProblems(['core/skills/mute/SKILL.md'], () => '# no frontmatter\n').join('\n'), /missing 'name' or 'description'/);
+});
+
 test('every shipped canon skill carries the frontmatter the harness needs', () => {
   const canon = readCanon(join(repoRoot, 'canon'));
   const skills = [...canon.packs.values()].flatMap((pack) => pack.files).filter((f) => isSkill(f.source));
-  assert.ok(skills.length >= 2, `expected at least 2 canon skills, found ${skills.length}`);
+  const entries = skills.filter((file) => file.source.endsWith('/SKILL.md'));
+  assert.ok(entries.length >= 2, `expected at least 2 canon skills, found ${entries.length}`);
+  assert.ok(skills.length > entries.length, 'no canon skill carries a supporting file, so the folder rule proved nothing here');
 
-  for (const file of skills) {
-    assert.ok(file.source.endsWith('/SKILL.md'), `${file.source}: a skill's file must be SKILL.md`);
-    const text = readText(join(repoRoot, 'canon', file.source));
-    const { meta } = parseFrontmatter(text, SKILL_FIELDS);
-    assert.ok(meta, `${file.source} is missing 'name' or 'description'`);
-    assert.equal(
-      meta!.name,
-      file.source.split('/').at(-2),
-      `${file.source}: frontmatter name must match the skill's directory`,
-    );
-  }
+  assert.deepEqual(skillProblems(skills.map((file) => file.source), (source) => readText(join(repoRoot, 'canon', source))), []);
+});
+
+/**
+ * The skill files whose frontmatter pre-approves tools (D122, finding 3; DOC3).
+ *
+ * A project skill's `allowed-tools` is honoured for the turn that invokes it, and the harness's maker
+ * documents that workspace trust never gates it, an untrusted folder in a pipe included. A canonical
+ * skill carrying one would arrive by `sync` and widen every session in every adopter, unreviewed: the
+ * side door the declaration of safe work exists to close. Read from the frontmatter only, in any of the
+ * field's spellings and either of YAML's shapes (a line, or a list under the key); a sentence in the body
+ * that names the field is prose. Every file of a skill's folder, not only its entry file: a template of
+ * a skill copied into a repository would carry the field into that repository's own.
+ */
+function preApprovals(sources: readonly string[], read: (source: string) => string): string[] {
+  return sources.filter((source) => {
+    const text = read(source);
+    const end = frontmatterEnd(text);
+    return end !== -1 && /^allowed[-_]?tools\s*:/im.test(text.slice(0, end));
+  });
+}
+
+test('the allowed-tools scan finds the field in frontmatter, and not in prose', () => {
+  const files: Record<string, string> = {
+    'core/skills/wide/SKILL.md': '---\nname: wide\ndescription: d\nallowed-tools: Bash(npm test)\n---\n\nSteps.\n',
+    'core/skills/listed/SKILL.md': '---\nname: listed\ndescription: d\nallowed-tools:\n  - Read\n  - Bash(git push:*)\n---\n\nSteps.\n',
+    'core/skills/camel/SKILL.md': '---\nname: camel\ndescription: d\nallowedTools: Read\n---\n\nSteps.\n',
+    'core/skills/wide/templates/skill.md': '---\nname: t\ndescription: d\nallowed-tools: Read\n---\n',
+    'core/skills/plain/SKILL.md': '---\nname: plain\ndescription: d\n---\n\nThis skill sets no allowed-tools: field on purpose.\n',
+    'core/skills/plain/templates/row.md': '# A row\n\nallowed-tools: never in a body\n',
+  };
+  const found = preApprovals(Object.keys(files), (source) => files[source]!);
+  assert.deepEqual(found.sort(), [
+    'core/skills/camel/SKILL.md', 'core/skills/listed/SKILL.md', 'core/skills/wide/SKILL.md', 'core/skills/wide/templates/skill.md',
+  ]);
+});
+
+test('no canonical skill carries allowed-tools', () => {
+  const canon = readCanon(join(repoRoot, 'canon'));
+  const skills = [...canon.packs.values()].flatMap((pack) => pack.files)
+    .filter((file) => isSkill(file.source) && file.source.endsWith('.md'));
+  assert.ok(skills.length >= 2, `the scan found ${skills.length} skill files, so it proved nothing`);
+
+  const found = preApprovals(skills.map((file) => file.source), (source) => readText(join(repoRoot, 'canon', source)));
+  assert.deepEqual(found, [], 'a canonical skill pre-approves tools: it would widen every session in every adopter, '
+    + 'unreviewed and untrusted. What a session may run is the gates file\'s declaration, which a person accepts (D122)');
 });
 
 test('every pack declares a description and ships at least one file', () => {
