@@ -25,7 +25,9 @@
  * argument, so the install carries one Chromium. The names the shell's publish put in `app/` are
  * listed in `app/shell-files.txt`, so the next publish removes exactly those and nothing else. Daoris's
  * own example plugins sit beside them in `app/plugin-offers/`, offered and never installed (D103), and so
- * does the list of where each tool's versions download from, `app/resources.json` (D121).
+ * does the list of where each tool's versions download from, `app/resources.json` (D121). And Daoris's
+ * doctrine tool (WSSETUP2, D124 §1.2): the CLI packed as the release packs it, unpacked under `app/cli/`,
+ * with a launcher for each shell in `app/bin/`.
  *
  * **What a deployed shell finds.** Nothing is wired into it: with no `DAORIS_*` overrides it makes
  * the install's `data/` the Daoris home (D63) — the machine's registry, quests, drivable set and profiles
@@ -35,8 +37,10 @@
  */
 import { execSync } from 'node:child_process';
 import { copyFileSync, cpSync, existsSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, writeFileSync } from 'node:fs';
-import { dirname, isAbsolute, join, resolve } from 'node:path';
+import { dirname, isAbsolute, join, posix, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+// The tar reader the CLI carries (AGT2b): what unpacks the doctrine tool's package (D124 §1.2).
+import { extractTarGz } from '../src/Daoris.Cli/src/tarball.ts';
 import { copyTree, isMain } from './fsx.mjs';
 import { running } from './processes.mjs';
 
@@ -207,6 +211,157 @@ export function layResources(source, install) {
 }
 
 /**
+ * Where the install carries its doctrine tool (WSSETUP2, D124 §1.2), as path segments: the CLI package the
+ * release publishes, unpacked the way npm lays a package out under a prefix, `<prefix>/node_modules/daoris`.
+ *
+ * 🔴 The `node_modules` folder is load-bearing. The CLI reads the canon it ships only when its own folder sits
+ * under one (`resolveCanonRoot`, `src/Daoris.Cli/src/canon.ts`); anywhere else it takes itself for a development
+ * checkout and reads `../../canon`, which in an install is `<install>/canon`: a folder nothing publishes, or a
+ * neighbour's under `--beside`. Laid out as npm would, the package finds its canon by the same rule wherever
+ * it is installed, and that rule needs no second case. `desktop-publish.test.ts` holds the two together.
+ */
+export const CLI_HOME = Object.freeze(['app', 'cli']);
+export const CLI_PACKAGE = Object.freeze([...CLI_HOME, 'node_modules', 'daoris']);
+
+/** The package's entry inside it, as its `package.json`'s `bin` names it. */
+export const CLI_ENTRY = Object.freeze(['bin', 'daoris.mjs']);
+
+/**
+ * The launchers' folder, beside the application, and the launchers in it (D124 §1.2): `daoris`, a shell
+ * script, for Git Bash, and `daoris.cmd` for Command Prompt, which PowerShell finds too by `PATHEXT`. The
+ * shapes npm writes for a global `bin`, less its `daoris.ps1`, which a machine's execution policy may refuse.
+ * Nothing here puts the folder on any `PATH`: the account's stays the person's (D124 §10).
+ */
+export const CLI_BIN = Object.freeze(['app', 'bin']);
+export const CLI_LAUNCHERS = Object.freeze(['daoris', 'daoris.cmd']);
+
+/**
+ * The text of each launcher, by name. Each runs the package's bin entry, found from the launcher's own
+ * folder, on the bare `node` the caller's `PATH` finds: in a child Daoris starts, the one Tools resolves
+ * (D124 §1.3). No machine path, so the files are the same in every install.
+ *
+ * The batch file is CRLF and both are ASCII: cmd.exe reads a batch file a line at a time in the console's
+ * code page, which is how npm's own shims are written. The shell script turns its folder into a Windows
+ * path with `cygpath` where one exists, as npm's does, so Git Bash hands `node.exe` a path it can open.
+ */
+export function cliLaunchers() {
+  const entry = posix.relative(CLI_BIN.join('/'), [...CLI_PACKAGE, ...CLI_ENTRY].join('/'));
+  const noNode = 'daoris: no node on PATH; the doctrine tool runs on Node.js 22 or later.';
+  const sh = [
+    '#!/bin/sh',
+    '# Daoris\'s doctrine tool, the package this install carries (WSSETUP2, D124), run on the node PATH finds.',
+    '# Written by the publish, and replaced by the next one.',
+    'basedir=$(dirname "$(echo "$0" | sed -e \'s,\\\\,/,g\')")',
+    'if command -v cygpath >/dev/null 2>&1; then basedir=$(cygpath -w "$basedir"); fi',
+    'if ! command -v node >/dev/null 2>&1; then',
+    `  echo '${noNode}' >&2`,
+    '  exit 2',
+    'fi',
+    `exec node "$basedir/${entry}" "$@"`,
+    '',
+  ].join('\n');
+  const cmd = [
+    '@echo off',
+    'rem Daoris\'s doctrine tool, the package this install carries (WSSETUP2, D124), run on the node PATH finds.',
+    'rem Written by the publish, and replaced by the next one.',
+    `where node >nul 2>nul || (echo ${noNode} 1>&2 & exit /b 2)`,
+    `node "%~dp0${entry.replace(/\//g, '\\')}" %*`,
+    '',
+  ].join('\r\n');
+  return { [CLI_LAUNCHERS[0]]: sh, [CLI_LAUNCHERS[1]]: cmd };
+}
+
+/**
+ * What is wrong with an unpacked package as the doctrine tool an install carries, or null when it is the
+ * release's `daoris`: named `daoris`, its bin entry, its built dispatcher (without `dist/` the entry falls
+ * back to sources a package does not ship), its canon at the package's own version (`release-prep` holds the
+ * two together in the workspace, and this holds them on the artefact), and no TypeScript sources, which only
+ * the source tree has: the release's `files` leave them out.
+ */
+function cliProblem(unpacked) {
+  const manifestPath = join(unpacked, 'package.json');
+  if (!existsSync(manifestPath)) return 'holds no package/package.json';
+  let manifest;
+  try {
+    manifest = JSON.parse(readFileSync(manifestPath, 'utf8'));
+  } catch (error) {
+    return `holds a package/package.json that is not JSON (${error.message})`;
+  }
+  if (manifest?.name !== CLI_PACKAGE.at(-1)) return `is the package \`${manifest?.name}\`, not \`${CLI_PACKAGE.at(-1)}\``;
+  for (const file of [CLI_ENTRY.join('/'), 'dist/cli.js', 'canon/canon.json']) {
+    if (!existsSync(join(unpacked, ...file.split('/')))) return `carries no package/${file}`;
+  }
+  if (existsSync(join(unpacked, 'src'))) {
+    return 'carries package/src/, the TypeScript sources: it is the source tree, not the package the release publishes';
+  }
+  let canon;
+  try {
+    canon = JSON.parse(readFileSync(join(unpacked, 'canon', 'canon.json'), 'utf8'));
+  } catch (error) {
+    return `holds a package/canon/canon.json that is not JSON (${error.message})`;
+  }
+  if (canon?.version !== manifest.version) {
+    return `carries canon ${canon?.version} in package ${manifest.version}; a release's package and its canon are one version`;
+  }
+  return null;
+}
+
+/**
+ * Lay the doctrine tool out in an install (WSSETUP2, D124 §1.2): the tarball `npm pack` made of
+ * `src/Daoris.Cli`, unpacked by the CLI's own tar reader into `<install>/app/cli/node_modules/daoris/`, and
+ * the launchers written into `<install>/app/bin/`. Both folders are staged beside and swapped in whole, so a
+ * file an earlier publish wrote does not survive a republish, and a refused package leaves the last one
+ * standing. Nothing is written under the home.
+ *
+ * @returns the package's version, which is the canon's.
+ * @throws naming the tarball and what is wrong, when it is not the release's `daoris` as npm packs it (every
+ *   entry under `package/`), before anything is replaced.
+ */
+export async function layCli(tarball, install) {
+  const app = join(install, SHELL_HOME[0]);
+  mkdirSync(app, { recursive: true });
+  const stagedCli = join(app, `.${CLI_HOME.at(-1)}-staging`);
+  const stagedBin = join(app, `.${CLI_BIN.at(-1)}-staging`);
+  const unstage = () => {
+    rmSync(stagedCli, { recursive: true, force: true });
+    rmSync(stagedBin, { recursive: true, force: true });
+  };
+  unstage();
+
+  let version;
+  try {
+    // `npm pack` puts every entry under `package/`, so the archive unpacks into the folder that holds the
+    // package and is then renamed to the package's name, as npm's own install does.
+    const modules = join(stagedCli, ...CLI_PACKAGE.slice(CLI_HOME.length, -1));
+    await extractTarGz(tarball, modules);
+    const held = readdirSync(modules);
+    if (held.length !== 1 || held[0] !== 'package') {
+      throw new Error(`holds ${held.join(', ')} at its root, where npm's pack puts one folder, package/`);
+    }
+    const unpacked = join(modules, 'package');
+    const problem = cliProblem(unpacked);
+    if (problem) throw new Error(problem);
+    version = JSON.parse(readFileSync(join(unpacked, 'package.json'), 'utf8')).version;
+    renameSync(unpacked, join(modules, CLI_PACKAGE.at(-1)));
+
+    mkdirSync(stagedBin, { recursive: true });
+    for (const [name, text] of Object.entries(cliLaunchers())) {
+      writeFileSync(join(stagedBin, name), text, { mode: 0o755 });
+    }
+  } catch (error) {
+    unstage();
+    throw new Error(`desktop-publish: the doctrine tool's package ${tarball} ${error.message}`);
+  }
+
+  for (const [staged, segments] of [[stagedCli, CLI_HOME], [stagedBin, CLI_BIN]]) {
+    const target = join(install, ...segments);
+    rmSync(target, { recursive: true, force: true });
+    renameSync(staged, target);
+  }
+  return { version };
+}
+
+/**
  * Every name a publish writes at the root of an install — and the shell's own `data/`, which it
  * creates on first start. Nothing else in that folder is ever this script's to touch.
  */
@@ -239,7 +394,7 @@ Published from a Daoris workspace by \`tools/desktop-publish.mjs\`.
 | | |
 |---|---|
 | \`${LAUNCHER}\` | **the application** — the only thing to run. A small launcher that starts \`${[...SHELL_HOME, SHELL_EXE].join('/')}\`. |
-| \`${SHELL_HOME[0]}/\` | the application itself, on the Chromium it carries (its files are listed in \`${SHELL_FILES.join('/')}\`), which is also Daoris's own browser; the HTTP host in \`${HOST_HOME.slice(1).join('/')}/\` when published with \`--service\`; and Daoris's own example plugins in \`${PLUGIN_OFFERS.slice(1).join('/')}/\` (${OFFERED_PLUGINS.join(', ')}), offered in Settings → Plugins and by \`daoris plugin list\`, none installed until you install one; and \`${RESOURCES.slice(1).join('/')}\`, the list of where each version of the tools Daoris runs downloads from, read and never rewritten. Nothing to open. |
+| \`${SHELL_HOME[0]}/\` | the application itself, on the Chromium it carries (its files are listed in \`${SHELL_FILES.join('/')}\`), which is also Daoris's own browser; the HTTP host in \`${HOST_HOME.slice(1).join('/')}/\` when published with \`--service\`; and Daoris's own example plugins in \`${PLUGIN_OFFERS.slice(1).join('/')}/\` (${OFFERED_PLUGINS.join(', ')}), offered in Settings → Plugins and by \`daoris plugin list\`, none installed until you install one; and \`${RESOURCES.slice(1).join('/')}\`, the list of where each version of the tools Daoris runs downloads from, read and never rewritten; and the doctrine tool, in \`${CLI_HOME.slice(1).join('/')}/\` and \`${CLI_BIN.slice(1).join('/')}/\` (below). Nothing to open. |
 | \`${HOME}/\` | **the Daoris home**: the registry, the quests, the drivable set, the harness profiles, the installed service binaries — and the window's engine profile (\`chromium/\`) and its geometry. |
 
 Anything else in this folder is not the application's — repositories it drives, typically — and a
@@ -259,6 +414,16 @@ Deleting this folder removes the application and its machine — nothing else on
 
 Starting it starts the driver loop, so **a drivable repository with an open quest gets a real agent
 session.** \`daoris driver list\` shows what this machine will drive.
+
+## The doctrine tool
+
+\`${CLI_BIN.join('/')}/\` holds \`${CLI_LAUNCHERS[0]}\`, for Git Bash, and \`${CLI_LAUNCHERS[1]}\`, for Command Prompt and
+PowerShell. Each runs the \`daoris\` package this install carries in \`${CLI_HOME.join('/')}/\`, packed from the same
+build as the application, as the release packs the one it publishes to npm (\`daoris --version\` says
+which), on the \`node\` your PATH finds: it needs Node.js 22 or later.
+Nothing puts \`${CLI_BIN.join('/')}/\` on your account's PATH, so a terminal of yours still runs whatever \`daoris\`
+you installed; run this one by its path, from the repository it should look at. A re-publish replaces both
+folders whole.
 
 ## Pinning it to the taskbar
 
@@ -324,7 +489,7 @@ export function refusal(to, { beside = false } = {}) {
 
 // ---------------------------------------------------------------------------------------------
 
-function main() {
+async function main() {
   const repoRoot = dirname(dirname(fileURLToPath(import.meta.url)));
   const argv = process.argv.slice(2);
   const flag = (name) => argv.includes(name);
@@ -396,6 +561,38 @@ function main() {
   // everything it starts sits under `app/`.
   const stages = join(repoRoot, 'src', 'Daoris.Desktop', 'Daoris.Desktop.App', 'bin', 'publish-stage');
   rmSync(stages, { recursive: true, force: true });
+
+  // The doctrine tool (WSSETUP2, D124 §1.2): `src/Daoris.Cli` packed as the release packs it, `npm pack` in
+  // its own folder, whose `prepack` builds `dist/` and stages the canon, the licence and the readme. The
+  // tarball is the artefact the release rehearsal installs and the release workflow publishes, never the
+  // source tree. Packed before anything is published, so a package that will not pack stops the publish
+  // while the install is still as it was.
+  console.log('desktop-publish: packing the doctrine tool…');
+  const cliStage = join(stages, 'cli');
+  mkdirSync(cliStage, { recursive: true });
+  // `postpack` removes what the pack staged, and this removes it again whatever happened, as the release
+  // rehearsal does: a `dist/` outliving a pack shadows the sources for every later bin-driven run (FIX-LOG
+  // 2026-09-20).
+  const unstagePackage = () => execSync(`node "${join(repoRoot, 'tools', 'stage-package.mjs')}" --clean`, { stdio: 'ignore' });
+  let cliTarball;
+  try {
+    // The tarball's name is the last line npm prints; the build `prepack` runs prints above it.
+    const packed = execSync(`npm pack --pack-destination "${cliStage}"`, {
+      cwd: join(repoRoot, 'src', 'Daoris.Cli'), encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'],
+    }).trim().split('\n').pop().trim();
+    cliTarball = join(cliStage, packed);
+  } catch (error) {
+    unstagePackage();
+    console.error(`${error.stdout ?? ''}${error.stderr ?? ''}`);
+    console.error('desktop-publish: `npm pack` of src/Daoris.Cli failed, so the install would carry no doctrine tool.');
+    process.exit(1);
+  }
+  unstagePackage();
+  if (!existsSync(cliTarball)) {
+    console.error(`desktop-publish: \`npm pack\` named ${cliTarball}, and there is no such file.`);
+    process.exit(1);
+  }
+
   console.log('desktop-publish: publishing the launcher…');
   const launcherStage = join(stages, 'launcher');
   run(`dotnet publish "${LAUNCHER_PROJECT}" -c Release -r win-x64 --self-contained false `
@@ -433,13 +630,32 @@ function main() {
   // and this one no longer does, by name (D93): the single-file shell's launcher at the root, which
   // the launcher replaces, and the browser's own folder with its second engine (CHR8).
   const app = join(to, ...SHELL_HOME);
+  const staged = readdirSync(shellStage);
+  // The doctrine tool's two folders are laid out whole below, so an application file of either name would
+  // be replaced by them, and lost without a word.
+  const clash = staged.filter((name) => name === CLI_HOME.at(-1) || name === CLI_BIN.at(-1));
+  if (clash.length > 0) {
+    console.error(`desktop-publish: the application's publish carries ${clash.join(' and ')}, where the install `
+      + 'keeps the doctrine tool (WSSETUP2).');
+    process.exit(1);
+  }
   for (const name of recordedShellFiles(to)) rmSync(join(app, name), { recursive: true, force: true });
   for (const path of retiredPaths(to)) rmSync(path, { recursive: true, force: true });
   mkdirSync(app, { recursive: true });
-  const staged = readdirSync(shellStage);
   for (const name of staged) cpSync(join(shellStage, name), join(app, name), { recursive: true });
   writeFileSync(join(to, ...SHELL_FILES), `${staged.sort().join('\n')}\n`);
   cpSync(join(launcherStage, LAUNCHER), join(to, LAUNCHER));
+
+  // The doctrine tool, beside the application (WSSETUP2, D124 §1.2): the package under `app/cli/`, as npm
+  // lays one out, and a launcher for each shell in `app/bin/`. Nothing goes on any PATH from here.
+  try {
+    const tool = await layCli(cliTarball, to);
+    console.log(`desktop-publish: the doctrine tool is daoris ${tool.version} in ${CLI_HOME.join('/')}/, `
+      + `run by ${CLI_LAUNCHERS.map((name) => `${CLI_BIN.join('/')}/${name}`).join(' or ')}.`);
+  } catch (error) {
+    console.error(error.message);
+    process.exit(1);
+  }
   rmSync(stages, { recursive: true, force: true });
 
   // Daoris's own example plugins, as offers beside the application (PLUG9 d, D103): Settings → Plugins
@@ -487,4 +703,4 @@ function main() {
 
 // Guarded, because the guard above is imported by a unit test — and `node --test` importing this
 // file must not publish anything. `desktop.mjs` and `deployment-rehearsal.mjs` guard the same way.
-if (isMain(import.meta.url)) main();
+if (isMain(import.meta.url)) await main();
