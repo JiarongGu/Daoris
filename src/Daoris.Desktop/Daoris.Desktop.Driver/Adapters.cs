@@ -6,7 +6,11 @@ using System.Text.Json;
 namespace Daoris.Driver;
 
 /// <summary>A driver error a person can act on. Exit code 2 territory: tool error, not policy.</summary>
-public sealed class DriverException(string message) : Exception(message);
+/// <remarks>
+/// Not sealed since TOOLS4: <see cref="ToolRefusal"/> is one that also names the check that failed, and travels every
+/// road a driver error already does.
+/// </remarks>
+public class DriverException(string message) : Exception(message);
 
 /// <param name="QuestId">The quest the session exists to serve.</param>
 /// <param name="Title">One line: what is wanted.</param>
