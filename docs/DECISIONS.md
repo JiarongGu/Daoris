@@ -7299,3 +7299,30 @@ finds it by its bare name, whether codex's sandbox runs a program outside the wo
 whether a real set-up's knowledge is true. During `0.0.x` every build answers `0.0.1`, so the version guard cannot
 tell two builds apart until the first release. `verify` checks the log's shape and the design's links, and none of
 these words.
+
+**As built (WSSETUP2, 2026-10-01): the install carries its doctrine tool.** `tools/desktop-publish.mjs` runs `npm
+pack` in `src/Daoris.Cli`, asserts the pack's staging gone as the release rehearsal does, and `layCli` unpacks the
+tarball with the CLI's own tar reader (`tarball.ts`) and writes the two launchers. Both folders are staged beside
+and swapped in whole. What the design left open, settled here:
+- 🔴 **The package lands in `app/cli/node_modules/daoris/`, not in `app/cli/` itself.** The CLI reads the canon it
+  ships only when its own folder sits under `node_modules` (`resolveCanonRoot`). Unpacked straight into `app/cli/`, it
+  takes itself for a development checkout and reads `<install>/canon`: a folder nothing publishes, or a neighbour's
+  under `--beside`. Laid out as npm lays a package out under a prefix, the package finds its canon by the rule that
+  already holds everywhere it is installed, so the CLI needs no second case. The launchers run
+  `../cli/node_modules/daoris/bin/daoris.mjs`. `desktop-publish.test.ts` holds the layout to `resolveCanonRoot`.
+- **The launchers run bare `node`**, the one the caller's `PATH` finds, and say so with exit 2 when there is none.
+  `daoris.cmd` is CRLF and both are ASCII, since cmd.exe reads a batch file in the console's code page. The script
+  turns its folder into a Windows path with `cygpath` where one exists, as npm's shim does.
+- **What the layout refuses**, before anything is replaced and naming why: a tarball whose root is not npm's
+  `package/`, a package not named `daoris`, one without its bin entry, `dist/cli.js` or `canon/canon.json`, a canon at
+  another version than the package, and `src/`, which only the source tree carries. The publish also refuses an
+  application build that carries a `cli` or `bin` folder, which the tool's folders would replace.
+- **Measured on the development machine, against the real pack laid out by `layCli` in a scratch folder (not a
+  publish):** Command Prompt runs `daoris.cmd` (`where` lists the extensionless script first, and cmd.exe runs the
+  batch file); PowerShell's `Get-Command daoris` answers `daoris.cmd` by `PATHEXT`; Git Bash's `command -v daoris`
+  answers the script. All three print `0.0.1` and hand back exit 2 for an unknown verb, and `init`, `sync` and `check`
+  ran clean in a scratch repository. The deployment rehearsal's phase 8 holds the same against a published install.
+- **Not run by this row:** the deployment rehearsal (phase 1 reads the layout back, phase 2 the republish, phase 8
+  runs the tool from each shell); that is the parent's at merge. Nothing puts `app/bin/` on any `PATH` yet: that is
+  WSSETUP3. The desktop README's install paragraph does not mention the tool yet, since this row could not touch the
+  desktop tree.

@@ -53,11 +53,11 @@
  *    why the host is pinned to production beside it. That pin rests on the framework's documented
  *    order and is not measured here; phase 3's host, started directly, is production regardless.
  */
-import { spawn } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import {
   existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync,
 } from 'node:fs';
-import { dirname, join, resolve, sep } from 'node:path';
+import { dirname, join, resolve, sep, win32 } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { setTimeout as sleep } from 'node:timers/promises';
 import { copyTree, isMain } from './fsx.mjs';
@@ -66,8 +66,8 @@ import {
 } from './rehearsal-kit.mjs';
 // The install's layout, from the script that makes it (REV3 CLEAN1) — never a second spelling of it.
 import {
-  HOME, HOST_EXE, HOST_HOME, KEPT_LOCALES, LAUNCHER, OFFERED_PLUGINS, OWN, PLUGIN_OFFERS, RESOURCES, RETIRED_BROWSER_EXE,
-  RETIRED_IN_APP, RETIRED_LAUNCHERS, SHELL_EXE, SHELL_FILES, SHELL_HOME,
+  CLI_BIN, CLI_ENTRY, CLI_HOME, CLI_LAUNCHERS, CLI_PACKAGE, HOME, HOST_EXE, HOST_HOME, KEPT_LOCALES, LAUNCHER, OFFERED_PLUGINS, OWN,
+  PLUGIN_OFFERS, RESOURCES, RETIRED_BROWSER_EXE, RETIRED_IN_APP, RETIRED_LAUNCHERS, SHELL_EXE, SHELL_FILES, SHELL_HOME,
 } from './desktop-publish.mjs';
 
 // ---------------------------------------------------------------------------------------------
@@ -120,6 +120,64 @@ export function offerProblems(install, homes) {
     }
   }
   return problems;
+}
+
+/**
+ * What is wrong with the install's doctrine tool (WSSETUP2, D124 §1.2), as sentences: a launcher not in
+ * `app/bin/`; the package without its bin entry, its built dispatcher, its manifest or its canon; its
+ * TypeScript sources, which only the source tree carries and the packed artefact never does; and a package or
+ * canon at a version other than `version`. Empty when the install carries the release's package, laid out.
+ */
+export function cliProblems(install, version) {
+  const problems = [];
+  for (const name of CLI_LAUNCHERS) {
+    if (!existsSync(join(install, ...CLI_BIN, name))) problems.push(`${CLI_BIN.join('/')}/${name} is not there`);
+  }
+  const pkg = join(install, ...CLI_PACKAGE);
+  const where = CLI_PACKAGE.join('/');
+  for (const file of [CLI_ENTRY.join('/'), 'dist/cli.js', 'package.json', 'canon/canon.json']) {
+    if (!existsSync(join(pkg, ...file.split('/')))) problems.push(`${where}/${file} is not there`);
+  }
+  if (existsSync(join(pkg, 'src'))) problems.push(`${where}/src/ is there: the source tree, not the packed artefact`);
+  for (const file of ['package.json', 'canon/canon.json']) {
+    const path = join(pkg, ...file.split('/'));
+    if (!existsSync(path)) continue;
+    let said = null;
+    try {
+      said = JSON.parse(readFileSync(path, 'utf8')).version ?? null;
+    } catch {
+      said = '(not JSON)';
+    }
+    if (said !== version) problems.push(`${where}/${file} says ${said}, not ${version}`);
+  }
+  return problems;
+}
+
+/**
+ * Whether the first file a shell's lookup lists (`where`, `Get-Command`, `command -v` through `cygpath -w`)
+ * sits in `folder` itself: the one that shell runs by the bare name. Compared case-blind with either
+ * separator, as Windows answers a path, and by the whole folder, never a prefix of it.
+ */
+export function firstUnder(listing, folder) {
+  const first = String(listing ?? '').split(/\r?\n/).map((line) => line.trim()).find(Boolean);
+  if (!first) return false;
+  const plain = (path) => win32.normalize(path).replace(/\\+$/, '').toLowerCase();
+  return plain(win32.dirname(first)) === plain(folder);
+}
+
+/**
+ * Git Bash: the `bash.exe` beside `git`, up to three folders up (`cmd\`, `bin\`, `mingw64\bin\`), or null.
+ * Never whatever `bash` PATH finds first, which on Windows is usually WSL's launcher, a different shell in a
+ * different filesystem. The rule the terminal's shell list keeps (`TerminalShells`, D96), so the gate
+ * measures the shell a terminal and a session open.
+ */
+export function gitBashBeside(git, exists = existsSync) {
+  let folder = git ? dirname(git) : null;
+  for (let level = 0; level < 3 && folder; level += 1, folder = dirname(folder)) {
+    const bash = join(folder, 'bin', 'bash.exe');
+    if (exists(bash)) return bash;
+  }
+  return null;
 }
 
 /** The bytes a line occupies in a transcript — computed, so nothing restates the string. */
@@ -471,6 +529,9 @@ async function main() {
   openTranscript(repoRoot, 'deployment', { beforeExit: () => stopEverything() });
   const { totals, check, section } = makeChecker();
 
+  /** The canon's version, which the install's doctrine tool answers (WSSETUP2): read, never spelled. */
+  const canonVersion = JSON.parse(readFileSync(join(repoRoot, 'canon', 'canon.json'), 'utf8')).version;
+
   // -------------------------------------------------------------- 1. publish the artefact
 
   section('1. Publish the artefact');
@@ -540,9 +601,12 @@ async function main() {
   const recorded = existsSync(join(install, ...SHELL_FILES))
     ? readFileSync(join(install, ...SHELL_FILES), 'utf8').split('\n').filter(Boolean).sort()
     : [];
-  // Beside the application's own files: the host, the record itself, the offers (PLUG9 d), and the list
-  // built in (TOOLS3), which the publish lays out after the application's files.
-  const besideIt = [HOST_HOME.at(-1), SHELL_FILES.at(-1), PLUGIN_OFFERS.at(-1), RESOURCES.at(-1)];
+  // Beside the application's own files: the host, the record itself, the offers (PLUG9 d), the list built
+  // in (TOOLS3) and the doctrine tool's two folders (WSSETUP2), which the publish lays out after the
+  // application's files.
+  const besideIt = [
+    HOST_HOME.at(-1), SHELL_FILES.at(-1), PLUGIN_OFFERS.at(-1), RESOURCES.at(-1), CLI_HOME.at(-1), CLI_BIN.at(-1),
+  ];
   check(`…and ${SHELL_FILES.join('/')} names every file the application put there, and nothing else`,
     recorded.includes(SHELL_EXE)
       && recorded.join() === inApp.filter((name) => !besideIt.includes(name)).sort().join(),
@@ -556,6 +620,13 @@ async function main() {
     `offered: ${laidOut.join(', ') || '(nothing)'}; ${offerProblems(install, []).join('; ')}`);
   check('…and the publish installed none of them', !existsSync(join(install, HOME, 'plugins')),
     `${join(install, HOME, 'plugins')} exists`);
+
+  // The doctrine tool (WSSETUP2, D124 §1.2): the package the release publishes, laid out as npm lays one out
+  // under app/cli/, at the canon's version, with a launcher for each shell in app/bin/; the packed artefact,
+  // never the source tree. Phase 8 runs it.
+  const toolProblems = cliProblems(install, canonVersion);
+  check(`the install carries the doctrine tool: daoris ${canonVersion} in ${CLI_PACKAGE.join('/')}/, `
+    + `with ${CLI_LAUNCHERS.join(' and ')} in ${CLI_BIN.join('/')}/`, toolProblems.length === 0, toolProblems.join('; '));
 
   // -------------------------------------------------------------- 2. the publish guard
 
@@ -622,6 +693,13 @@ async function main() {
     writeFileSync(join(install, ...SHELL_FILES),
       `${readFileSync(join(install, ...SHELL_FILES), 'utf8')}stale-engine.dll\n`);
   }
+  // …and a file in each of the doctrine tool's folders that its last layout had and this one does not
+  // (WSSETUP2): both folders are replaced whole.
+  const staleTool = [join(install, ...CLI_PACKAGE, 'stale-from-before.js'), join(install, ...CLI_BIN, 'daoris.ps1')];
+  for (const path of staleTool) {
+    mkdirSync(dirname(path), { recursive: true });
+    writeFileSync(path, '// from the publish before\n');
+  }
   const neighbour = join(install, 'a-neighbours-notes.txt');
   writeFileSync(neighbour, 'not the application’s\n');
 
@@ -637,6 +715,9 @@ async function main() {
     [retired, staleEngine].filter(existsSync).join(', '));
   check(`…nor the browser's own folder and its second engine (${[...SHELL_HOME, RETIRED_IN_APP[0]].join('/')}/)`,
     !existsSync(retiredBrowser), retiredBrowser);
+  check(`…nor a file the doctrine tool's last layout had, in ${CLI_HOME.join('/')}/ or ${CLI_BIN.join('/')}/`,
+    staleTool.every((path) => !existsSync(path)) && cliProblems(install, canonVersion).length === 0,
+    [...staleTool.filter(existsSync), ...cliProblems(install, canonVersion)].join('; '));
   check('…and a file it never wrote is still there', existsSync(neighbour));
   rmSync(neighbour, { force: true });
 
@@ -1151,9 +1232,84 @@ if (!done.ok) throw new Error(done.text);
   await sleep(1200);   // the port and the store's handle outlive the kill by a beat on Windows
   check('…and that host stops when it is told to', !hostProcesses().some((host) => host.pid === reader.pid));
 
-  // -------------------------------------------------------------- 8. report
+  // -------------------------------------------------------------- 8. the doctrine tool, by its bare name
 
-  section('8. Result');
+  section('8. The doctrine tool the install carries, by its bare name from each shell (WSSETUP2)');
+
+  // D124 §1.2: the install's `app/bin/` first on the PATH, as WSSETUP3 is to put it for every child Daoris
+  // starts, and `daoris` asked for by its bare name from each shell a session's harness runs. Its own canon,
+  // never an override: `DAORIS_CANON` is taken out, so the canon it reads is the one its package carries.
+  // A repository of its own, adopted by it: init, sync and check, offline, as a set-up's session would.
+  const toolBin = join(install, ...CLI_BIN);
+  const pathKey = Object.keys(process.env).find((name) => name.toUpperCase() === 'PATH') ?? 'PATH';
+  const toolEnvironment = {
+    ...process.env, ...HERMETIC, DAORIS_CANON: undefined, [pathKey]: `${toolBin};${process.env[pathKey] ?? ''}`,
+  };
+  const doctrine = join(scratch, 'doctrine');
+  mkdirSync(doctrine, { recursive: true });
+  writeFileSync(join(doctrine, 'README.md'), '# doctrine\n\nA repository the install’s own daoris adopts.\n');
+  /** A program run with its arguments as given, in `cwd`, under the tool's environment: exit code and output. */
+  const shellRun = (file, args, cwd = doctrine, verbatim = false) => {
+    const ran = spawnSync(file, args, {
+      cwd, env: toolEnvironment, encoding: 'utf8', timeout: 120_000, windowsVerbatimArguments: verbatim,
+    });
+    return { code: ran.status ?? -1, out: `${ran.stdout ?? ''}${ran.stderr ?? ''}${ran.error ? `\n${ran.error.message}` : ''}` };
+  };
+  // Command Prompt, by the line a person types: cmd.exe finds `daoris.cmd` by PATHEXT.
+  const prompt = (line) => shellRun(process.env.ComSpec ?? 'cmd.exe', [`/d /s /c "${line}"`], doctrine, true);
+
+  const whereDaoris = prompt('where daoris');
+  check(`Command Prompt finds \`daoris\` in the install’s ${CLI_BIN.join('/')}/ first`,
+    whereDaoris.code === 0 && firstUnder(whereDaoris.out, toolBin), whereDaoris.out);
+  const promptVersion = prompt('daoris --version');
+  check(`…and \`daoris --version\` prints the canon’s version, ${canonVersion}`,
+    promptVersion.code === 0 && promptVersion.out.trim() === canonVersion, promptVersion.out);
+  const adopted = prompt('daoris init');
+  const doctrineManifest = join(doctrine, 'daoris.json');
+  const pinned = existsSync(doctrineManifest) ? JSON.parse(readFileSync(doctrineManifest, 'utf8')).source : null;
+  check(`…\`daoris init\` writes a manifest pinned at it, daoris@${canonVersion}`,
+    adopted.code === 0 && pinned === `daoris@${canonVersion}`, `${adopted.out}\nsource: ${pinned}`);
+  const toolSync = prompt('daoris sync');
+  const doctrineLock = join(doctrine, 'daoris.lock');
+  const locked = existsSync(doctrineLock) ? JSON.parse(readFileSync(doctrineLock, 'utf8')).canonVersion : null;
+  check('…`daoris sync` materializes the canon its package carries',
+    toolSync.code === 0 && locked === canonVersion && existsSync(join(doctrine, 'AGENTS.md')), `${toolSync.out}\nlock: ${locked}`);
+  const toolCheck = prompt('daoris check');
+  check('…and `daoris check` runs clean', toolCheck.code === 0, toolCheck.out);
+  const unknownVerb = prompt('daoris no-such-verb');
+  check('…and a tool error comes back through the launcher as exit 2', unknownVerb.code === 2, unknownVerb.out);
+
+  // PowerShell has no launcher of its own: it finds the batch file by PATHEXT (D124 §1.2), which this measures.
+  const fromPowerShell = shellRun('powershell.exe',
+    ['-NoProfile', '-NonInteractive', '-Command', '(Get-Command daoris).Source; daoris --version; exit $LASTEXITCODE']);
+  const powerShellLines = fromPowerShell.out.trim().split(/\r?\n/);
+  check(`PowerShell finds the batch file in ${CLI_BIN.join('/')}/, and it prints ${canonVersion}`,
+    fromPowerShell.code === 0 && firstUnder(fromPowerShell.out, toolBin) && powerShellLines.at(-1)?.trim() === canonVersion,
+    fromPowerShell.out);
+  const powerShellCheck = shellRun('powershell.exe', ['-NoProfile', '-NonInteractive', '-Command', 'daoris check; exit $LASTEXITCODE']);
+  check('…and `daoris check` runs clean from it, its exit code handed back', powerShellCheck.code === 0, powerShellCheck.out);
+
+  // Git Bash, where the runner has one: the bash beside git, never whatever `bash` PATH finds (WSL's).
+  const git = prompt('where git').out.split(/\r?\n/).map((line) => line.trim()).find((line) => /git\.exe$/i.test(line)) ?? null;
+  const bash = gitBashBeside(git);
+  if (!bash) {
+    console.log('        no Git Bash beside git on this runner: its checks are skipped, not passed');
+  } else {
+    const bashFound = shellRun(bash, ['-c', 'cygpath -w "$(command -v daoris)"']);
+    check(`Git Bash finds the shell script \`daoris\` in ${CLI_BIN.join('/')}/ first`,
+      bashFound.code === 0 && firstUnder(bashFound.out, toolBin), bashFound.out);
+    const bashVersion = shellRun(bash, ['-c', 'daoris --version']);
+    check(`…and \`daoris --version\` prints ${canonVersion}`,
+      bashVersion.code === 0 && bashVersion.out.trim() === canonVersion, bashVersion.out);
+    const bashCheck = shellRun(bash, ['-c', 'daoris check']);
+    check('…and `daoris check` runs clean from it', bashCheck.code === 0, bashCheck.out);
+    const bashUnknown = shellRun(bash, ['-c', 'daoris no-such-verb']);
+    check('…and a tool error comes back through the script as exit 2', bashUnknown.code === 2, bashUnknown.out);
+  }
+
+  // -------------------------------------------------------------- 9. report
+
+  section('9. Result');
   stopEverything();
   await sleep(500);
 
@@ -1178,7 +1334,9 @@ if (!done.ok) throw new Error(done.text);
   console.log('  ending, and kept it beside itself. A conversation opened over the bridge, on the');
   console.log('  protocol stub, was working when the shell was closed, not killed: the host it owned,');
   console.log('  the plugin’s process and the conversation’s harness went with it, and the record');
-  console.log('  carries the close’s own note, not the sweep’s.');
+  console.log('  carries the close’s own note, not the sweep’s. And the install’s own doctrine tool, the');
+  console.log('  package the release publishes, answered by its bare name from Command Prompt, PowerShell');
+  console.log('  and Git Bash where the runner has one, and adopted a repository of its own clean.');
   rmSync(scratch, { recursive: true, force: true });
 }
 

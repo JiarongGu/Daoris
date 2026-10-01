@@ -9,13 +9,15 @@ import vm from 'node:vm';
 import { readText } from '../src/fsx.ts';
 import { makeFixture } from './_fixture.ts';
 import {
-  CLOSED_NOTE, SWEPT_NOTE, bridgeCall, concludedByTheClose, hookLines, insideWorkspace, invokeInPage,
-  isMarkedProcess, launchers, markedProcess, offerProblems, strays, transcriptHolds, utf8Of,
+  CLOSED_NOTE, SWEPT_NOTE, bridgeCall, cliProblems, concludedByTheClose, firstUnder, gitBashBeside, hookLines, insideWorkspace,
+  invokeInPage, isMarkedProcess, launchers, markedProcess, offerProblems, strays, transcriptHolds, utf8Of,
   // @ts-expect-error — untyped workspace tooling; the same seam desktop-tool.test.ts documents
 } from '../../../tools/deployment-rehearsal.mjs';
 // The install's layout, from the script that makes it: the gate reads the same constants.
-// @ts-expect-error — untyped workspace tooling; the same seam desktop-tool.test.ts documents
-import { HOST_EXE, HOST_HOME, OFFERED_PLUGINS, PLUGIN_OFFERS } from '../../../tools/desktop-publish.mjs';
+import {
+  CLI_BIN, CLI_ENTRY, CLI_LAUNCHERS, CLI_PACKAGE, HOST_EXE, HOST_HOME, OFFERED_PLUGINS, PLUGIN_OFFERS,
+  // @ts-expect-error — untyped workspace tooling; the same seam desktop-tool.test.ts documents
+} from '../../../tools/desktop-publish.mjs';
 // The protocol stub both rehearsals run (DEPLOY5): one copy, where the family rehearsal's used to be.
 // @ts-expect-error — untyped workspace tooling; the same seam desktop-tool.test.ts documents
 import { ACP_STUB_AGENT } from '../../../tools/rehearsal-kit.mjs';
@@ -105,6 +107,82 @@ test('symbols and package doc files are strays, and the marker and the bundle ar
     strays(['Daoris.exe', 'Daoris.App.pdb', 'WebView2Loader.xml', 'INSTALLED.md']),
     ['Daoris.App.pdb', 'WebView2Loader.xml']);
   assert.deepEqual(strays(['Daoris.exe', 'INSTALLED.md']), []);
+});
+
+/**
+ * WSSETUP2 (D124 §1.2): the gate reads the install's doctrine tool back off the published folder, and each
+ * thing the publish claims is a sentence when it is not so: a launcher missing, the package without its
+ * entry, its dispatcher or its canon, the source tree where the packed artefact belongs, or a version that
+ * is not the canon's.
+ */
+test('the doctrine tool check names what an install lacks, and passes on a sound one', () => {
+  const fx = makeFixture('deploy-cli');
+  const pkg = `install/${CLI_PACKAGE.join('/')}`;
+  const sound = () => {
+    for (const name of CLI_LAUNCHERS) fx.write(`install/${CLI_BIN.join('/')}/${name}`, 'launcher\n');
+    fx.write(`${pkg}/${CLI_ENTRY.join('/')}`, '// entry\n');
+    fx.write(`${pkg}/dist/cli.js`, '// built\n');
+    fx.write(`${pkg}/package.json`, '{"name":"daoris","version":"0.4.2"}');
+    fx.write(`${pkg}/canon/canon.json`, '{"version":"0.4.2"}');
+  };
+  const install = join(fx.root, 'install');
+  sound();
+  assert.deepEqual(cliProblems(install, '0.4.2'), []);
+
+  assert.deepEqual(cliProblems(install, '0.4.3'), [
+    `${CLI_PACKAGE.join('/')}/package.json says 0.4.2, not 0.4.3`,
+    `${CLI_PACKAGE.join('/')}/canon/canon.json says 0.4.2, not 0.4.3`,
+  ]);
+
+  fx.write(`${pkg}/src/cli.ts`, 'export {};\n');
+  assert.match(cliProblems(install, '0.4.2').join('\n'), /src\/ is there: the source tree/);
+
+  const bare = join(fx.root, 'bare');
+  const problems: string[] = cliProblems(bare, '0.4.2');
+  for (const name of CLI_LAUNCHERS) assert.ok(problems.includes(`${CLI_BIN.join('/')}/${name} is not there`), name);
+  assert.ok(problems.includes(`${CLI_PACKAGE.join('/')}/dist/cli.js is not there`));
+  assert.ok(problems.includes(`${CLI_PACKAGE.join('/')}/canon/canon.json is not there`));
+  fx.cleanup();
+});
+
+/**
+ * Which `daoris` a shell found is the first line its lookup prints (`where`, `Get-Command`, `command -v` through
+ * `cygpath -w`), and it is the install's only when that file sits in the install's `app/bin/` itself:
+ * compared case-blind and either separator, as Windows answers a path, and never as a prefix, so a folder
+ * beside it whose name starts the same is not it.
+ */
+test('the daoris a shell found is the install’s only when the first one it lists is in app/bin itself', () => {
+  const bin = join('C:', 'work', 'install', ...CLI_BIN);
+  assert.equal(firstUnder(`${join(bin, 'daoris')}\r\n${join(bin, 'daoris.cmd')}\r\n`, bin), true);
+  assert.equal(firstUnder(`${join(bin, 'daoris.cmd').toUpperCase()}\n`, bin), true);
+  assert.equal(firstUnder(`${join(bin, 'daoris').replace(/\\/g, '/')}\n`, bin), true);
+  // Another daoris listed first is the one the shell runs, whatever comes after it.
+  assert.equal(firstUnder(`${join('C:', 'npm', 'daoris.cmd')}\n${join(bin, 'daoris.cmd')}\n`, bin), false);
+  assert.equal(firstUnder(`${join(`${bin}-old`, 'daoris.cmd')}\n`, bin), false);
+  assert.equal(firstUnder(`${join(bin, 'nested', 'daoris.cmd')}\n`, bin), false);
+  assert.equal(firstUnder('', bin), false);
+  assert.equal(firstUnder('INFO: Could not find files for the given pattern(s).\n', bin), false);
+});
+
+/**
+ * Git Bash is the `bash.exe` beside git, never whatever `bash` PATH finds first, which on Windows is usually
+ * WSL's: the rule the terminal's shell list keeps (`TerminalShells`, D96), read here so the gate measures the
+ * shell a terminal and a session would open. Three folders up from git covers `cmd\`, `bin\` and `mingw64\bin\`.
+ */
+test('Git Bash is the bash beside git, up to three folders up, and none without git', () => {
+  const root = join('C:', 'Program Files', 'Git');
+  const bash = join(root, 'bin', 'bash.exe');
+  const has = (path: string) => path === bash;
+  assert.equal(gitBashBeside(join(root, 'cmd', 'git.exe'), has), bash);
+  assert.equal(gitBashBeside(join(root, 'mingw64', 'bin', 'git.exe'), has), bash);
+  assert.equal(gitBashBeside(join(root, 'bin', 'git.exe'), has), bash);
+  assert.equal(gitBashBeside(join(root, 'a', 'b', 'c', 'git.exe'), has), null, 'further up is another program’s folder');
+  assert.equal(gitBashBeside(null, has), null);
+  assert.equal(gitBashBeside(join('C:', 'Windows', 'System32', 'git.exe'), () => false), null);
+
+  const terminals = readText(join(repoRoot, 'src', 'Daoris.Desktop', 'Daoris.Desktop.Driver', 'Terminals.cs'));
+  assert.match(terminals, /level < 3/, 'the terminal’s rule walks three folders up, as this does');
+  assert.match(terminals, /Path\.Combine\(folder, "bin", "bash\.exe"\)/, 'and looks for bin\\bash.exe, as this does');
 });
 
 /**
