@@ -10,10 +10,16 @@ Adopting is not `sync`. `sync` is the mechanical part; the work is deciding what
 the repository already had.
 
 **The flow is agent-executed, end to end** (`autonomous-development`): the owner's part is the two
-checkpoints — saying "adopt Daoris here" at the start, and reviewing the uncommitted diff at the end.
+checkpoints — saying "adopt Daoris here" at the start, and reviewing the outcome at the end (step 12).
 Every step between, including the judgement calls below, is the adopting repository's own agent working
 from `analyze --json` and this playbook. What makes that safe is that nothing destructive can happen
 without `--force`, and `--force` is only ever the answer to a question the tool asked.
+
+**A repository Daoris drives is set up by a quest** (D117 §6, D124 §2): `daoris-driver setup <repository>`
+publishes one to that repository, and its own session carries it on its branch. That session cannot read
+this file, which is Daoris's own, so the quest's body is this playbook in the canon's words
+(`SetupBrief` in the driver). The two are twins: a test holds that the body names each step below, so a
+step added here fails until the body says it too.
 
 ## Why
 
@@ -25,15 +31,28 @@ budget overage. All three are normal. Expect them.
 
 ### 1. `init`, then read what it prints
 
-`daoris init` lists the available packs *and* every document the repository already owns. That second
-list is the adoption plan — each entry is something that will either collide, become a renamed twin, or
-stay local. A third list, the records the repository seems to keep by role (a changelog, a decisions
-file or folder, a fix log, a backlog), is what step 7 declares; `init` writes none of them.
+`daoris init --harness agents` writes the manifest on the layout every agent reads (D117: knowledge and
+skills under `.agents/`, a copy of each skill under `.claude/skills/` for the agent that reads only there)
+and lists the available packs *and* every document the repository already owns. That second list is the
+adoption plan — each entry is something that will either collide, become a renamed twin, or stay local.
+A document of the repository's own under `.claude/knowledge/` or `.claude/skills/` is named with the
+`git mv` that moves it to `.agents/`: move it, since `sync` refuses while one is left there (the index
+would stop listing it, and nothing would say so). Search the repository too for anything that reads
+`.claude/skills/` or `.claude/knowledge/` by path (a CI step, a hook, a script) and name each in the
+hand-over. A third list, the records the repository seems to keep by role (a changelog, a decisions file
+or folder, a fix log, a backlog), is what step 8 declares; `init` writes none of them.
+
+An adopter already on `claude-code` moves by its manifest: `"harness": "agents"` and `"target": ".agents"`,
+then the same `git mv` and the steps below.
 
 ### 2. `sync --dry-run` and read the collisions
 
-A `COLLIDES` line means the repository wrote that file itself, before it ever heard of Daoris. Nothing is
-overwritten. For each one, open both versions and separate:
+Read every `COLLIDES`, `DRIFTED`, `LEFT BEHIND` and `LINK` line. A `LINK` line is a `CLAUDE.md` or a
+`.claude/skills` that is a link, or a link checked out as text (`core.symlinks=false`): `sync` never
+writes through one. A real file holding `@AGENTS.md` works on every checkout; the choice is the
+repository's, and the hand-over says what was chosen. A `COLLIDES` line means the repository wrote that
+file itself, before it ever heard of Daoris. Nothing is overwritten. For each one, open both versions and
+separate:
 
 - **The principle** — almost always already in the canonical version, often better generalized.
 - **The mechanism** — the commands, paths, guards, and version policy specific to this repository. This
@@ -41,7 +60,7 @@ overwritten. For each one, open both versions and separate:
 
 ### 3. Preserve the mechanism in a local companion
 
-Write the repository-specific mechanics into one local document — `.claude/knowledge/repo-mechanics.md`
+Write the repository-specific mechanics into one local document — `.agents/knowledge/repo-mechanics.md`
 works well — that says plainly: the canonical rules state the intent, this file states how it is
 enforced *here*. It is local, so Daoris never touches it, and the index lists it marked `(local)`. A
 mechanic every task needs goes in the repository's own part of `AGENTS.md`, outside Daoris's region.
@@ -85,19 +104,47 @@ the hard-won specifics that were never going to be canonical.
 `--force` here means "yes, take the canonical version" — a deliberate answer to a question that was
 asked, not a way to skip it.
 
-### 6. Write the brief
+### 6. Initialise the knowledge
+
+In the canon's words (D124 §2.5), which the set-up quest says too:
+
+Write what a session in another repository would need from this one and could not find: what it owns and
+where, what it promises and the shape of its data, and how the figures others rely on are computed, each
+fact with the place in the code that holds it. Say which facts the code did not confirm.
+
+- **The domain**, in `daoris.json`: `summary`, one line for someone who has never opened the repository;
+  `owns`, the areas where a change belongs here rather than anywhere else; `accepts`, the kinds of work
+  worth asking of it; `uses`, the workspace's repositories its code depends on, by the names the
+  workspace knows them by, where the code shows it (a client, a package reference, an address).
+- **Knowledge documents** of the repository's own, in `.agents/knowledge/`, from the knowledge template
+  beside `set-up-documents`, one per area a neighbour would ask about: what it owns and where; its
+  contracts and data (what it exposes, what it takes from whom, their shapes, which are promised and
+  which incidental); and the computations others depend on (each figure, status or rule another
+  repository or a person reads from it, how it is derived, from which inputs, and where in the code). In
+  each, where every fact lives, a path and a symbol. Each `applies_when` names the question a neighbour
+  would be asking, since that is the line the index and the search show.
+- **Not** a tour of the folders, anything a reader sees at a glance, the build commands, or the
+  repository's history.
+- **Truth before coverage.** A fact confirmed in the code is stated with its place; one that could not be
+  is written as not confirmed, with where it would be settled; one only a neighbour knows names that
+  neighbour. A set-up publishes no request of its own: the next set-ups write those answers anyway.
+- **Its own documents first.** What the repository already keeps is read before anything is written; a
+  document that already answers is named in the hand-over and not rewritten, and a new one says where the
+  older one is.
+
+### 7. Write the brief
 
 The sync just installed the core skill `set-up-documents` and the knowledge behind it,
-`development-documents` (D122). Follow the skill from here to step 8; its templates are beside it.
+`development-documents` (D122). Follow the skill from here to step 9; its templates are beside it.
 
 Write the repository's own part of `AGENTS.md`, above the region, from `templates/brief.md`. Move into
 it what every agent needs from an existing `CLAUDE.md`: codex reads only `AGENTS.md`, and only up to
 32,768 bytes (LAYOUT2), so a rule left in `CLAUDE.md` never reaches it. Leave `CLAUDE.md` holding the
 import and what only Claude Code needs. A line goes in the brief only if nearly every task needs it and
 nothing in the code would tell a reader; the rest goes to the tier that holds it. Moving is not
-trimming: every line that leaves the brief has a new home, and the hand-over names it (step 11).
+trimming: every line that leaves the brief has a new home, and the hand-over names it (step 12).
 
-### 7. Declare the documents and the rooms
+### 8. Declare the documents and the rooms
 
 - **Rooms**: a folder whose conventions, traps or checks differ gets its own `AGENTS.md`, from
   `templates/room.md`, and is listed in `daoris.json`'s `rooms` (D117 §2.2). `sync` writes its pointer
@@ -112,7 +159,7 @@ trimming: every line that leaves the brief has a new home, and the hand-over nam
   declared, and fails on neither. An unknown role, a path outside the repository or inside the
   doctrine's folders, and a role declared twice are refused before anything runs.
 
-### 8. Declare the safe work
+### 9. Declare the safe work
 
 What the repository's sessions may run without asking: the gates that are a session's to run (not a
 rehearsal, not one that needs the machine quiet), the build and test commands, the install from the
@@ -122,7 +169,7 @@ what an agent tries, not what its harness allows. The brief's *Build, test, veri
 Nothing is widened by writing it. The driver reads it from the repository's line, not a session's tree,
 once UNBLOCK2 lands, and a person accepts it once (UNBLOCK3); say so in the hand-over.
 
-### 9. Expect the budget to be over, and do not paper over it
+### 10. Expect the budget to be over, and do not paper over it
 
 The always-loaded core is measured for the first time at this moment, and it is usually larger than
 anyone thought. It is **reported, never enforced** — a fact gates and a judgement reports — so nothing
@@ -135,19 +182,24 @@ stops; the number is there to be answered rather than silenced. Two honest respo
 Both are legitimate. What is not legitimate is trimming someone's doctrine as a side effect of adopting a
 tool — that is editorial work and deserves its own review.
 
-### 10. Verify the repository, not just the doctrine
+### 11. Verify the repository, not just the doctrine
 
 Run the adopting repository's own build and tests. Adoption changes what every future session in that
 repository reads, so "the tool exits 0" is not the same as "the repository is fine".
 
-### 11. Leave it uncommitted for review — this is the human checkpoint
+### 12. Hand it over for review — this is the human checkpoint
 
-Adoption rewrites always-loaded context. The owner should see the diff before it becomes history — and
-under the automation-first model this is where their attention is spent, so hand them the whole outcome
-at once: the diff, the gate results (`check`, the repository's own tests), which collisions were resolved
-and how, which twins were retired and where each preserved line went, what the brief took in and where
-each line it let go now lives, the documents and rooms declared, the safe work declared and that it waits
-for their yes, and what the budget reads now, with the root file's bytes and every ceiling `check`
-reports over beside it.
+Adoption rewrites always-loaded context. The owner should see the diff before it becomes history. Run by
+hand, leave it uncommitted for them. A driven set-up commits on its own branch as each step lands, and the
+branch is what is reviewed: the workspace's landing rule lands it, as a branch for the owner's review or
+merged into the line, where the landed history is the review (D117 §6.3); the session never pushes,
+merges or opens a pull request. Under the automation-first model this is where the owner's attention is
+spent, so hand them the whole outcome at once: the diff, the gate results (`check`, the repository's own
+tests), the tool's version, which collisions were resolved and how, which twins were retired and where
+each preserved line went, the domain in its words and each knowledge document with the question it
+answers and each fact not confirmed, what the brief took in and where each line it let go now lives, the
+documents and rooms declared, the safe work declared and that it waits for their yes, what was chosen
+about links, what was found that needs a request elsewhere, and what the budget reads now, with the root
+file's bytes and every ceiling `check` reports over beside it.
 A judgement call worth surfacing — a twin that might not be one, a budget that had to rise — is stated
 here as a decision with its reasoning, not asked mid-flow.
