@@ -6496,6 +6496,43 @@ settled here:
   version, since asking the version starts the program, and that is `toolchain.ts`'s job. The write-side checks of
   rules 4 and 5 (`gitKeyProblem`, `locationProblem`) wait for TOOLS6's and TOOLS3's verbs.
 - **Rejected:** reading a file that does not read as empty, for the reason in the first point.
+
+**As built (TOOLS3, 2026-10-01): the resource lists and their merge, twins, with the list built in.** The CLI's
+`resources.ts` and the driver's `ToolResources.cs` read schema 1 and merge every list for one platform; the
+driver's `resources.json` is the list built in, laid out at `app/resources.json` by `tools/desktop-publish.mjs`.
+Nothing reads the lists at run time yet: the verbs that fetch and use them are TOOLS4's. What the design left open,
+settled here:
+- **Only the list's shape refuses it whole**: text that is not JSON, not an object, a `schema` other than the number
+  1, or a `tools` that is no object. Below that, each thing that does not read is skipped and said, one note each,
+  and never guessed at: an undeclared tool, a version that is not exact, a platform off the table, a file missing a
+  field.
+- **Every address in a list holds the download's rule**: a file's `url`, a tool's `source` and its licence's `url`
+  are `https://`, or `http://` to this machine. A licence needs an `id`.
+- **`sha256` is read in either case and kept in lower case**, since PowerShell publishes its sums in capitals.
+  `paths`, when named, is a list of at least one folder inside the archive, and `.` is its root.
+- **Both readers walk every object in ordinal order.** JSON's own order is not one both runtimes keep: Node puts
+  keys that look like whole numbers first, so a version `2` would reorder.
+- **The merge is for one platform.** A refusal names the first field that differs (sha256, size, archive, exe, then
+  paths), the first list that named the download and the one that disagreed. Later lists are not compared with a
+  refused version, and a refused version is never the newest.
+- **A location's copy** is `<home>/tools/locations/<sha256 of its address as written>.json`, the bytes as fetched.
+  A location never fetched is a list that names nothing and says so.
+- **What vouches for a list**: *built in*; *this machine* for any loopback host, `https` included; otherwise the host
+  with any port it names, in punycode.
+- **The platform is the process's architecture** on both sides (Node's `process.arch`, .NET's
+  `ProcessArchitecture`). An x64 build on arm64 Windows reads `win-x64`.
+- **Where the list built in is.** Every build that references the driver carries it beside itself
+  (`CopyToOutputDirectory`). The driver reads it beside the application first, then beside the home, and the CLI
+  reads it beside the home. In an install the publish is its one writer: it copies the tracked file byte for byte, and
+  refuses one that is not schema 1. The project marks it `CopyToPublishDirectory="Never"`, and no publish ran in this
+  row to watch that hold.
+- **The first entries** are one version of each tool for `win-x64`, the platform an install is published for. Each
+  was read from its maker's published sum and recorded in `docs/2026-10-01-tools-resources-evidence.md`, where every
+  whole file was also streamed once and matched. A test refuses a list line whose hash, size, address and executable
+  that document does not carry. On the way, MinGit was found to carry an ssh of its own and no bash, and az's
+  executable is a batch file, `bin/az.cmd`.
+- **Not built, and corrected.** The note above said the write-side check of rule 5 waits for *TOOLS3's verbs*. The
+  design's §7 puts `locations add|remove` with TOOLS4's, so no verb and no writer of `locations` is built here.
 ## D120 — Plugins leave the repository: a workshop in the home makes them, Daoris.Plugins keeps Daoris's own, and NuGet is where they are found (2026-10-01)
 
 **Decision (PLUGREPO2, PLUGDIST1).** The owner made an empty folder, Daoris.Plugins, beside this repository, for
