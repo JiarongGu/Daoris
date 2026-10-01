@@ -380,7 +380,8 @@ export const api = {
   registerRepository: (body: {
     // Whether the shell found a manifest there (D70): registered is addressable, adopted is disciplined.
     repository: string; root?: string; workspace?: string; adopted?: boolean;
-    domain?: { summary?: string; owns: string[]; accepts: string[] };
+    // `uses` (D91) replaces the row's, and absent is none: a door that read the file states it (MANAGE1).
+    domain?: { summary?: string; owns: string[]; accepts: string[]; uses?: string[] };
     packs?: string[]; join?: boolean; shareKnowledge?: boolean;
   }) => post<{ repository: string; workspace: string }>('/api/registry', body),
   wireRepository: (repository: string, workspace: string) =>

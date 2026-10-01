@@ -5,6 +5,26 @@ a diff shows what changed and never why the old behaviour was wrong. Newest firs
 service indexes this file per entry, so a sibling can ask "has anyone hit this" without opening the
 repository.
 
+## Saving a repository's declaration erased what it uses from the registry (2026-10-01)
+
+**Symptom.** Found by DEV4 (MANAGE1): Repositories → Manage → *Write daoris.json* left the file's `domain.uses`
+as it was, and the registry row lost its `uses` until the repository's next `connect`. The page's *Add repository*
+registered an adopted folder without its `uses` the same way.
+
+**Root cause.** The page registers from the shell's answer about the folder (`RegistryModule.Inspect`), and that
+answer carried every part of the declaration but `uses`, so the register body's `domain` had none. The HTTP door
+reads an absent `uses` as none (D91: absent is the same as empty), and the store replaces a row's `uses` with the
+declaration's (`uses = $uses`). Nothing was wrong on disk: the module's merge had kept `uses` in the file since D91.
+
+**Fix.** The answer states `uses` as the manifest has it, `[]` for none, and both of the page's registering doors pass
+it in `domain.uses`. Not DEV4's preserve rule for lanes: that rule works because every door that reads the
+repository's file sends lanes always, `[]` for none. `connect` and the driver's sync send `uses` only when there is
+one, so a store that preserved an absent `uses` could never clear a dependency a repository dropped.
+
+**Verify.** `RegistryModuleTests`: the write's answer and the pick's carry `uses`, an empty list where the manifest
+has none or the folder never adopted. `ProjectsView.test.tsx`: the save and the add post `domain.uses`. Each failed
+first, on the missing field alone. **Not run on the window.**
+
 ## Right after a start, no repository had a line until something else asked (2026-10-01)
 
 **Symptom.** Found looking at the install (LOOK2a): Settings → Workspace's Line and landing cards said no repository
