@@ -24,7 +24,8 @@ type Binding = 'path' | 'ceiling';
 
 /**
  * The roles the manifest may declare, in the order everything lists them, each with its job in the
- * CLI's fixed words, which are the canon's (`development-documents`, its roles table).
+ * CLI's fixed words: the canon's (`development-documents`, its roles table), cut to what a reader looking
+ * for a record needs, since every row is paid for in the always-loaded region of every declaring adopter.
  *
  * @remarks
  * A closed set, refused by name when unknown, as an unknown harness is (D23). `brief` and `room` take a
@@ -36,13 +37,13 @@ export const ROLES: readonly { role: string; binding: Binding; job: string }[] =
   { role: 'brief', binding: 'ceiling', job: 'what this is, the constraint every change serves, and where everything else is' },
   { role: 'room', binding: 'ceiling', job: "one folder's conventions, traps and checks" },
   { role: 'router', binding: 'path', job: 'every document, its kind and its standing' },
-  { role: 'decisions', binding: 'path', job: 'numbered decisions, each with why and what it rejected' },
-  { role: 'backlog', binding: 'path', job: 'open work only, each row naming its contract and its proof' },
-  { role: 'archive', binding: 'path', job: 'finished work, each with its date and outcome' },
-  { role: 'fixes', binding: 'path', job: 'root cause, fix and verification per non-trivial defect' },
+  { role: 'decisions', binding: 'path', job: 'numbered decisions, with why and what each rejected' },
+  { role: 'backlog', binding: 'path', job: 'open work only' },
+  { role: 'archive', binding: 'path', job: 'finished work, with its date and outcome' },
+  { role: 'fixes', binding: 'path', job: 'root cause, fix and verification per defect' },
   { role: 'changelog', binding: 'path', job: 'what a user of a release sees changed' },
   { role: 'glossary', binding: 'path', job: "the names people and code use for this repository's things" },
-  { role: 'gates', binding: 'path', job: 'the checks, their exact commands, and the work a session may do without asking' },
+  { role: 'gates', binding: 'path', job: 'the checks, their commands, and what may run unasked' },
 ];
 
 /** The roles the index lists from the descriptor's tiers, so nothing is declared for them. */
