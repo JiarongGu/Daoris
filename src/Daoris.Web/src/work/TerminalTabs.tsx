@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import * as Menu from '@radix-ui/react-dropdown-menu';
-import { Icon, Tip } from '../ui';
+import { Icon, Menu, Tip } from '../ui';
 import { cn } from '../lib/cn';
 
 /** One terminal as its tab shows it. */
@@ -16,11 +15,6 @@ export type TerminalTab = {
 
 /** A shell "+" can open, named as the person knows it. */
 export type TerminalShellItem = { shell: string; name: string; default: boolean };
-
-const ITEM = cn(
-  'flex cursor-pointer items-center gap-2 rounded-[4px] px-2 py-1.5 text-small text-ink-soft outline-none',
-  'data-[highlighted]:bg-raised data-[highlighted]:text-ink',
-);
 
 /**
  * The terminal view's own tabs (CONSOLE4c, D96): each terminal by its shell and where it started, the
@@ -106,26 +100,19 @@ export function TerminalTabs({ tabs, selected, onSelect, onClose, shells, onNew 
       <div className="ml-auto flex shrink-0 items-center">
         {choosing
           ? (
-            <Menu.Root modal={false} open={menu} onOpenChange={setMenu}>
+            <Menu.Root open={menu} onOpenChange={setMenu}>
               <Tip content={t('work.terminal.new')}>
                 <Menu.Trigger asChild>{plus}</Menu.Trigger>
               </Tip>
-              <Menu.Portal>
-                <Menu.Content
-                  align="end"
-                  sideOffset={4}
-                  collisionPadding={8}
-                  className="z-30 min-w-48 rounded-control border border-line bg-overlay p-1 shadow-lg"
-                >
-                  {shells.map((shell) => (
-                    <Menu.Item key={shell.shell} onSelect={() => onNew(shell.shell)} className={ITEM}>
-                      <Icon name="terminal" size={13} className="shrink-0 opacity-70" />
-                      <span className="truncate">{shell.name}</span>
-                      {shell.default && <span className="ml-auto pl-3 text-meta text-ink-faint">{t('work.terminal.default')}</span>}
-                    </Menu.Item>
-                  ))}
-                </Menu.Content>
-              </Menu.Portal>
+              <Menu.Content align="end" className="min-w-48">
+                {shells.map((shell) => (
+                  <Menu.Item key={shell.shell} onSelect={() => onNew(shell.shell)}>
+                    <Icon name="terminal" size={13} className="shrink-0 opacity-70" />
+                    <span className="truncate">{shell.name}</span>
+                    {shell.default && <span className="ml-auto pl-3 text-meta text-ink-faint">{t('work.terminal.default')}</span>}
+                  </Menu.Item>
+                ))}
+              </Menu.Content>
             </Menu.Root>
           )
           : <Tip content={t('work.terminal.new')}>{plus}</Tip>}
