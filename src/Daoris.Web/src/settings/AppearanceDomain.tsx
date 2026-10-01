@@ -12,7 +12,8 @@ export function AppearanceDomain() {
   const language = i18n.language.startsWith('zh') ? 'zh' : 'en';
 
   return (
-    // No title of its own: the domain list names it, and a card alone in its domain would say it twice.
+    // No title of its own: the main area's header names the domain (FRAME1g), and a card alone in it would
+    // say it twice.
     <Card>
       <SettingRow
         label={t('settings.theme.label')}

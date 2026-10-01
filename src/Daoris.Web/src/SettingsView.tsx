@@ -1,15 +1,18 @@
-import { type ComponentType, useEffect, useRef } from 'react';
+import { type ComponentType, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { cn } from './lib/cn';
 import { WithHarnessRuns } from './harnessRuns';
 import { useDriver } from './shell';
-import { type Notify, PageHeader } from './ui';
+import type { Notify } from './ui';
 import type { StarterDoor } from './help/starters';
 import type { SetupStepId } from './help/setup';
 import type { BrowserDriver } from './work/browserDrivers';
+import { useListPanes } from './work/listPanes';
+import { ViewFrame, type ViewLayout } from './work/ViewFrame';
+import { ViewMain } from './work/ViewMain';
 // The frame reaches a domain only through the list (MOD4): each domain is `settings/<Name>Domain.tsx`,
-// and the list in `settings/domains.ts` is the one place one is added.
+// and the list in `settings/domains.ts` is the one place one is added. `DomainList` draws the list's rows.
 import { SETTINGS_DOMAINS, type SettingsDomainProps, type SettingsSection } from './settings/domains';
+import { DomainList } from './settings/DomainList';
 
 export type { SettingsSection } from './settings/domains';
 
@@ -35,22 +38,8 @@ export type SettingsAnchor =
 /** Settings' domains in the order its list shows them — what Ask Daoris's places are held to (HELP6). */
 export const SETTINGS_SECTIONS: readonly SettingsSection[] = SETTINGS_DOMAINS.map(({ id }) => id);
 
-/**
- * Settings (D66, as amended by D75): one page, its domains in a list at its left, one shown at a time,
- * as an IDE's settings are.
- *
- * @remarks
- * 🔴 **It was one long page**, and every way in (three menu items, the status bar's driver, remote and
- * tier, a waiting proposal's row) opened it at its top. A domain is now reachable by name, and the
- * one chosen is the caller's to hold, so a menu can open *Permissions* rather than the page.
- *
- * Every domain is cards the page already held. The two doors are unchanged (D50): each row is still
- * the file a terminal edits.
- */
-export function SettingsView({
-  notify, section = 'appearance', onSection, anchor = null, onAnchored, onGo = () => {}, onAskSetup,
-  browserDrivers = [], onAttend,
-}: {
+/** What Settings is handed, wherever it is drawn. */
+export type SettingsProps = {
   notify: Notify;
   section?: SettingsSection;
   onSection?: (section: SettingsSection) => void;
@@ -69,8 +58,77 @@ export function SettingsView({
   anchor?: SettingsAnchor | null;
   /** Told once the part is in view, so a later visit opens at the domain's top again. */
   onAnchored?: () => void;
-}) {
+};
+
+/**
+ * **Settings on the frame** (D118 §2, §5; FRAME1g): its domains are its list pane and the domain chosen is
+ * its main area, handed to the window's frame as every view with a list hands its own.
+ *
+ * @remarks
+ * 🔴 **It was a page drawing its own list** (audit ST1–ST3, ST10): an 11 rem column inside the main area,
+ * which never closed and never resized, and below a 768 px viewport stacked above the domain, ten rows over
+ * it on a shell — the arrangement D56 rejected for the activity bar. Its list is now the frame's list pane:
+ * 176–320 px and 176 to start, closed to its strip by the person, a strip by itself where the domain would
+ * fall below its floor, and laid over the domain from that strip. Settings makes nothing, so it has no `＋`.
+ *
+ * Every way in names its domain (D75), through the application's one opener (D118 §3i), so the domain
+ * chosen is the caller's to hold, kept as it always was under `daoris.settings` (`listPanes.ts`).
+ */
+export function useSettingsLayout({ notify, section = 'appearance', onSection, onGo = () => {}, onAskSetup, browserDrivers = [], onAttend, anchor = null, onAnchored }: SettingsProps): ViewLayout {
   const { t } = useTranslation();
+  // The same "is a shell here" answer every control uses — one detection path, not two that drift.
+  const attached = useDriver().data !== undefined;
+  const offered = SETTINGS_DOMAINS.filter((domain) => attached || !domain.machine);
+  // A domain this window cannot show opens on Appearance: a machine's domain in a browser, or one a
+  // shell remembered.
+  const shown = offered.some((domain) => domain.id === section) ? section : 'appearance';
+  const named = SETTINGS_DOMAINS.find((domain) => domain.id === shown)!;
+
+  return {
+    list: {
+      view: 'settings',
+      name: t('settings.title'),
+      labels: { open: t('settings.list.open'), close: t('settings.list.close'), resize: t('settings.list.resize') },
+      chosen: shown,
+      body: (
+        <DomainList
+          label={t('settings.domains')}
+          domains={offered.map(({ id, label }) => ({ id, label: t(label) }))}
+          chosen={shown}
+          onChoose={(id) => onSection?.(id as SettingsSection)}
+          // Absent, never disabled (D47 §4), and said where the absence is.
+          note={attached ? undefined : t('settings.list.browser')}
+        />
+      ),
+    },
+    main: (
+      // Keyed by the domain, so choosing another draws its cards anew, their state with them, and opens it
+      // at its top rather than at the scroll the last domain was left at.
+      <SettingsMain
+        key={shown}
+        title={t(named.label)}
+        Domain={named.component}
+        domain={{
+          notify, attached, onGo, onAsk: onAskSetup, drivers: browserDrivers, onAttend,
+        }}
+        anchor={anchor}
+        onAnchored={onAnchored}
+      />
+    ),
+  };
+}
+
+/**
+ * The domain chosen, as the main area (D118 §3b): its header names it, and its cards follow. The part a
+ * door named is brought into view once it is drawn (UX5 U72).
+ */
+function SettingsMain({ title, Domain, domain, anchor, onAnchored }: {
+  title: string;
+  Domain: ComponentType<SettingsDomainProps>;
+  domain: SettingsDomainProps;
+  anchor: SettingsAnchor | null;
+  onAnchored?: () => void;
+}) {
   // Watched for until it exists: a part is drawn by the card holding it when that card's query
   // answers, which re-renders the card and not this page, so a check after this page's renders
   // missed it.
@@ -90,61 +148,36 @@ export function SettingsView({
     watch.observe(document.body, { childList: true, subtree: true });
     return () => watch.disconnect();
   }, [anchor]);
-  // The same "is a shell here" answer every control uses — one detection path, not two that drift.
-  const attached = useDriver().data !== undefined;
-  const offered = SETTINGS_DOMAINS.filter((domain) => attached || !domain.machine);
-  // A domain this window cannot show opens on Appearance: a machine's domain in a browser, or one a
-  // shell remembered.
-  const shown = offered.some((domain) => domain.id === section) ? section : 'appearance';
-  // Keyed by the domain, so choosing another unmounts this one's cards and their state, as it always did.
-  const Domain: ComponentType<SettingsDomainProps> = SETTINGS_DOMAINS.find((domain) => domain.id === shown)!.component;
 
   return (
-    // The application holds a tool's running action above every view (SIGNIN1); rendered alone, this
-    // page holds its own, so it still works where nothing above does.
-    <WithHarnessRuns notify={notify}>
-    <section>
-      <PageHeader
-        title={t('settings.title')}
-        description={t(attached ? 'settings.description' : 'settings.descriptionBrowser')}
-      />
-      <div className="grid items-start gap-x-6 gap-y-3 md:grid-cols-[11rem_minmax(0,1fr)]">
-        {/* It stays put while a long domain scrolls, as an IDE's settings list does. */}
-        <nav aria-label={t('settings.domains')} className="md:sticky md:top-0">
-          <ul className="m-0 list-none p-0">
-            {offered.map(({ id, label }) => (
-              <li key={id}>
-                <button
-                  type="button"
-                  aria-current={id === shown ? 'page' : undefined}
-                  onClick={() => onSection?.(id)}
-                  className={cn(
-                    'w-full rounded-control border-l-2 px-3 py-1.5 text-left text-body transition-colors duration-(--speed)',
-                    id === shown
-                      ? 'border-l-accent bg-accent-soft font-medium text-ink'
-                      : 'border-l-transparent text-ink-soft hover:bg-accent-soft/50',
-                  )}
-                >
-                  {t(label)}
-                </button>
-              </li>
-            ))}
-          </ul>
-        </nav>
+    // The application holds a tool's running action above every view (SIGNIN1); drawn alone, Settings
+    // holds its own, so it still works where nothing above does.
+    <WithHarnessRuns notify={domain.notify}>
+      <ViewMain
+        // The domain's name, which the list says too: it is what tells the person where they are when the
+        // list is a strip, and why a card alone in its domain still carries no title of its own.
+        header={(
+          <header className="mb-5">
+            <h1 className="text-view font-[650] tracking-[-0.01em]">{title}</h1>
+          </header>
+        )}
+      >
         {/* A card stacked under another keeps its own top margin; the first in a domain does not. */}
         <div className="min-w-0 [&>*:first-child]:mt-0">
-          <Domain
-            key={shown}
-            notify={notify}
-            attached={attached}
-            onGo={onGo}
-            onAsk={onAskSetup}
-            drivers={browserDrivers}
-            onAttend={onAttend}
-          />
+          <Domain {...domain} />
         </div>
-      </div>
-    </section>
+      </ViewMain>
     </WithHarnessRuns>
   );
+}
+
+/**
+ * **Settings drawn alone**: its list pane and its main area in a browser's frame of its own, with its own
+ * list memory — what its suites and each domain's render, as a surface drawn alone holds its own running
+ * action (`WithHarnessRuns`). The application hands `useSettingsLayout` to its frame instead.
+ */
+export function SettingsView(props: SettingsProps) {
+  const lists = useListPanes();
+  const [over, setOver] = useState(false);
+  return <ViewFrame layout={useSettingsLayout(props)} lists={lists} over={over} onOver={setOver} />;
 }

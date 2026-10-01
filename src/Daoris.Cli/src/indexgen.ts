@@ -1,4 +1,4 @@
-import type { CommandArgs, Harness, LockLike } from './types.ts';
+import type { CommandArgs, DeclaredDocument, Harness, LockLike } from './types.ts';
 import type { ExitCode } from './errors.ts';
 import type { TierDocument, TierInput } from './tierrender.ts';
 import { join } from 'node:path';
@@ -8,6 +8,7 @@ import { lockIndex, readManifest } from './config.ts';
 import { renderRoster } from './tierrender.ts';
 import { DEFAULT_HARNESS, HARNESSES } from './harness.ts';
 import { roomRows } from './rooms.ts';
+import { declaredPaths, jobOf } from './documents.ts';
 
 /**
  * The on-demand tiers, as they actually are on disk.
@@ -52,8 +53,11 @@ export function readTier(
  * region never re-synced.
  */
 export function rosterFromDisk(
-  { root, target, lock, harness = HARNESSES[DEFAULT_HARNESS]!, rooms = [] }:
-  { root: string; target: string; lock: LockLike | null; harness?: Harness; rooms?: readonly string[] },
+  { root, target, lock, harness = HARNESSES[DEFAULT_HARNESS]!, rooms = [], documents = [] }:
+  {
+    root: string; target: string; lock: LockLike | null; harness?: Harness; rooms?: readonly string[];
+    documents?: readonly DeclaredDocument[];
+  },
 ): string {
   const knowledge = harness.tiers.knowledge;
   const skills = harness.tiers.skills;
@@ -68,23 +72,26 @@ export function rosterFromDisk(
       : [],
     version: '',
     target,
-    ...rosterExtras(root, harness, target, rooms),
+    ...rosterExtras(root, harness, target, rooms, documents),
   });
 }
 
 /**
- * The two things the roster says about the layout (D117 §5.3): where the skills live and what mirrors
- * them, and each declared room with its heading. One function for `sync`'s render and `check`'s rebuild,
- * so the two cannot disagree about a region neither changed.
+ * What the roster says beyond the tiers: where the skills live and what mirrors them, and each declared
+ * room with its heading (D117 §5.3); and where each declared record is (D122 §2.7). One function for
+ * `sync`'s render and `check`'s rebuild, so the two cannot disagree about a region neither changed.
  */
 export function rosterExtras(
   root: string, harness: Harness, target: string, rooms: readonly string[],
-): Pick<TierInput, 'mirror' | 'rooms'> {
+  documents: readonly DeclaredDocument[] = [],
+): Pick<TierInput, 'mirror' | 'rooms' | 'documents'> {
   const mirror = harness.mirror;
   const dir = mirror ? harness.tiers[mirror.tier]?.dir : undefined;
+  const rows = declaredPaths(documents).map((row) => ({ ...row, job: jobOf(row.role) }));
   return {
     ...(mirror && dir ? { mirror: { source: `${target}/${dir}`, root: mirror.root } } : {}),
     ...(rooms.length ? { rooms: roomRows(root, rooms, harness) } : {}),
+    ...(rows.length ? { documents: rows } : {}),
   };
 }
 

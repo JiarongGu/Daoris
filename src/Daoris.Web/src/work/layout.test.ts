@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
-  CENTRE_FLOOR, DOCK, type FramePrefs, frameLayout, LIST_BOUNDS, LIST_STRIP, type ListChoice, listToggled,
+  CENTRE_FLOOR, DOCK, type FramePrefs, frameLayout, LIST_BOUNDS, LIST_STRIP, type ListChoice, listLayout, listToggled,
 } from './layout';
 
 // The frame's geometry (FRAME6, then D118 §3a): the reference console's field-tested numbers, as one pure
@@ -112,6 +112,30 @@ describe('the list', () => {
     expect(at(1600, {}, { over: true }).list!.mode).toBe('open');
     // Never wider than what lies beside the strip.
     expect(at(300, {}, { over: true }).list!.width).toBe(300 - 48 - LIST_STRIP);
+  });
+});
+
+/**
+ * D118 §4, amending DOCK1a: a browser keeps the view's list and its main area, and never the side bar, so
+ * nothing stands beside the list but the main area.
+ */
+describe("a browser's list", () => {
+  it('counts no side bar for its room', () => {
+    // 748 px: a frame of 700 holds the list's 280 and the floor's 400, and would not beside the side bar's 32.
+    expect(listLayout(700, 0, SESSIONS)).toEqual({ mode: 'open', width: 280, beside: 280, auto: false });
+    expect(listLayout(700, DOCK.strip, SESSIONS).mode).toBe('strip');
+    // At 680 px there is no room even so: the list is its strip, and opens over the main area.
+    expect(listLayout(680 - 48, 0, SESSIONS).mode).toBe('strip');
+    expect(listLayout(280 + CENTRE_FLOOR - 1, 0, SESSIONS).mode).toBe('strip');
+    expect(listLayout(280 + CENTRE_FLOOR - 1, 0, { ...SESSIONS, over: true }).mode).toBe('over');
+  });
+
+  it('is the list the frame lays out, at every width, where the side bar is counted', () => {
+    for (const width of WIDTHS) {
+      for (const dockClosed of [false, true]) {
+        expect(listLayout(width - 48, dockClosed ? DOCK.strip : DOCK.floor, SESSIONS)).toEqual(at(width, { dockClosed }).list);
+      }
+    }
   });
 });
 

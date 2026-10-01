@@ -1,6 +1,7 @@
 using Shenora;
 using Shenora.Core.Events;
 using Shenora.Core.Ipc;
+using Shenora.Core.Shell;
 using Shenora.Windows;
 
 namespace Daoris.Desktop;

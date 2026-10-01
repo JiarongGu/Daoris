@@ -85,6 +85,26 @@ describe('the command registry', () => {
   });
 
   /**
+   * PLUGUI1b (D119 §3, §3.7): Plugins is a view of the activity bar, after Search, and shell-only — a plugin is
+   * this machine's (D64; D47 §4) — so the palette offers it where a shell is, and a browser is offered none.
+   */
+  it('offers Plugins where a shell is, and never in a browser', () => {
+    const go = vi.fn();
+    const shell = commands(world({ go }));
+    const row = shell.find((command) => command.id === 'go.plugins');
+    expect(row).toMatchObject({ icon: 'plug', title: 'go.plugins' });
+    row!.run();
+    expect(go).toHaveBeenCalledWith('plugins');
+
+    expect(ids(commands(world({ attached: false })))).not.toContain('go.plugins');
+    expect(ids(commands(world({ current: 'plugins' })))).not.toContain('go.plugins');
+    // After Search, as the activity bar holds it, with Settings at the bar's foot.
+    expect(ids(shell).filter((id) => id.startsWith('go.'))).toEqual([
+      'go.sessions', 'go.quests', 'go.projects', 'go.map', 'go.convergence', 'go.search', 'go.plugins', 'go.settings',
+    ]);
+  });
+
+  /**
    * One navigation, one list (D66): there is no mode to switch, and the palette never offers the view
    * already in front of the person — an entry that does nothing is noise in this list.
    */

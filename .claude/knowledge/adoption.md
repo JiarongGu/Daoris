@@ -27,7 +27,8 @@ budget overage. All three are normal. Expect them.
 
 `daoris init` lists the available packs *and* every document the repository already owns. That second
 list is the adoption plan — each entry is something that will either collide, become a renamed twin, or
-stay local.
+stay local. A third list, the records the repository seems to keep by role (a changelog, a decisions
+file or folder, a fix log, a backlog), is what step 7 declares; `init` writes none of them.
 
 ### 2. `sync --dry-run` and read the collisions
 
@@ -84,7 +85,44 @@ the hard-won specifics that were never going to be canonical.
 `--force` here means "yes, take the canonical version" — a deliberate answer to a question that was
 asked, not a way to skip it.
 
-### 6. Expect the budget to be over, and do not paper over it
+### 6. Write the brief
+
+The sync just installed the core skill `set-up-documents` and the knowledge behind it,
+`development-documents` (D122). Follow the skill from here to step 8; its templates are beside it.
+
+Write the repository's own part of `AGENTS.md`, above the region, from `templates/brief.md`. Move into
+it what every agent needs from an existing `CLAUDE.md`: codex reads only `AGENTS.md`, and only up to
+32,768 bytes (LAYOUT2), so a rule left in `CLAUDE.md` never reaches it. Leave `CLAUDE.md` holding the
+import and what only Claude Code needs. A line goes in the brief only if nearly every task needs it and
+nothing in the code would tell a reader; the rest goes to the tier that holds it. Moving is not
+trimming: every line that leaves the brief has a new home, and the hand-over names it (step 11).
+
+### 7. Declare the documents and the rooms
+
+- **Rooms**: a folder whose conventions, traps or checks differ gets its own `AGENTS.md`, from
+  `templates/room.md`, and is listed in `daoris.json`'s `rooms` (D117 §2.2). `sync` writes its pointer
+  and lists it in the region, and `check` fails on a declared room with no `AGENTS.md`.
+- **Records**: each record the repository keeps, by role (router, decisions, backlog, archive, fixes,
+  changelog, glossary, gates), with its path, in `daoris.json`'s `documents` (D122 §2.7). A path is a
+  file or a folder (a folder of decision records is the decisions); `{ "path": ..., "words": ... }`
+  adds a ceiling, and `brief` and `room` take `{ "words": ... }` alone. `sync` renders them as the
+  region's *Where things are* table, so the brief's own section says only that the region lists them,
+  and the list is kept once. `check` fails on a declared path that is absent or a link, and on a table
+  the manifest no longer matches; it reports a document over its ceiling and no backlog or decisions
+  declared, and fails on neither. An unknown role, a path outside the repository or inside the
+  doctrine's folders, and a role declared twice are refused before anything runs.
+
+### 8. Declare the safe work
+
+What the repository's sessions may run without asking: the gates that are a session's to run (not a
+rehearsal, not one that needs the machine quiet), the build and test commands, the install from the
+lockfile. Exact commands, one per entry, and none of `autonomous-development`'s carve-outs. It goes in
+`daoris.gates.json` as `safe`, beside `gates` (D122 §3.1), never in the brief's prose: a sentence shapes
+what an agent tries, not what its harness allows. The brief's *Build, test, verify* says where it is.
+Nothing is widened by writing it. The driver reads it from the repository's line, not a session's tree,
+once UNBLOCK2 lands, and a person accepts it once (UNBLOCK3); say so in the hand-over.
+
+### 9. Expect the budget to be over, and do not paper over it
 
 The always-loaded core is measured for the first time at this moment, and it is usually larger than
 anyone thought. It is **reported, never enforced** — a fact gates and a judgement reports — so nothing
@@ -97,16 +135,19 @@ stops; the number is there to be answered rather than silenced. Two honest respo
 Both are legitimate. What is not legitimate is trimming someone's doctrine as a side effect of adopting a
 tool — that is editorial work and deserves its own review.
 
-### 7. Verify the repository, not just the doctrine
+### 10. Verify the repository, not just the doctrine
 
 Run the adopting repository's own build and tests. Adoption changes what every future session in that
 repository reads, so "the tool exits 0" is not the same as "the repository is fine".
 
-### 8. Leave it uncommitted for review — this is the human checkpoint
+### 11. Leave it uncommitted for review — this is the human checkpoint
 
 Adoption rewrites always-loaded context. The owner should see the diff before it becomes history — and
 under the automation-first model this is where their attention is spent, so hand them the whole outcome
 at once: the diff, the gate results (`check`, the repository's own tests), which collisions were resolved
-and how, which twins were retired and where each preserved line went, and what the budget reads now.
+and how, which twins were retired and where each preserved line went, what the brief took in and where
+each line it let go now lives, the documents and rooms declared, the safe work declared and that it waits
+for their yes, and what the budget reads now, with the root file's bytes and every ceiling `check`
+reports over beside it.
 A judgement call worth surfacing — a twin that might not be one, a budget that had to rise — is stated
 here as a decision with its reasoning, not asked mid-flow.

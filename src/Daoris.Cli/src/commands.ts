@@ -11,6 +11,7 @@ import { inspect } from './drift.ts';
 import { HARNESSES, DEFAULT_HARNESS, resolveHarness } from './harness.ts';
 import { formerDocuments, lockLayout } from './layout.ts';
 import { describeLink, linkProblems } from './links.ts';
+import { candidateDocuments, sayCandidates } from './documents.ts';
 import { flagValue } from './args.ts';
 import { readRemotes, redactKey } from './remotemap.ts';
 import { DaorisError } from './errors.ts';
@@ -116,6 +117,8 @@ export function commandInit(
     write('');
     for (const problem of links) write(`  ${describeLink(problem)}`);
   }
+  // Named and never written (D122 §2.7): declaring is the repository's act, done by its own session.
+  sayCandidates(candidateDocuments(root), write);
   write('');
   write('  then: daoris sync');
   return 0;
@@ -237,6 +240,11 @@ export function commandStatus(
       roomsWithoutInstructions: inspection?.roomsWithoutInstructions ?? [],
       roomPointersMissing: inspection?.roomPointersMissing ?? [],
       links: inspection?.links ?? [],
+      // The declared documents and their facts (D122 §2.7–§2.8).
+      documents: manifest.documents,
+      documentsMissing: inspection?.documentsMissing ?? [],
+      documentLinks: inspection?.documentLinks ?? [],
+      documentsStale: inspection?.documentsStale ?? false,
       switchedOff,
       offers,
       selectionProblem,
@@ -292,6 +300,9 @@ export function commandStatus(
     const roomFacts = [...inspection.roomsWithoutInstructions, ...inspection.roomPointersMissing];
     if (roomFacts.length) write(`  room          ${roomFacts.join(', ')} — 'daoris check' says which`);
     for (const problem of inspection.links) write(`  link          ${problem.path} — 'daoris check' says what it is`);
+    for (const doc of inspection.documentsMissing) write(`  document      ${doc.path} (${doc.role}) — 'daoris check' says which`);
+    for (const link of inspection.documentLinks) write(`  link          ${link.declared} (${link.role}) — 'daoris check' says what it is`);
+    if (inspection.documentsStale) write("  where         the region's Where things are table is out of date — run 'daoris sync'");
   }
 
   if (selectionProblem) write(`  selection     ${selectionProblem}`);

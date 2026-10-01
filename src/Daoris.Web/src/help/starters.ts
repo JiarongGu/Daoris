@@ -5,9 +5,12 @@ import type { Machine } from './machine';
 /**
  * Where the screen that fixes a starter, or does a setup step, is: a view, and in Settings its domain
  * and the card in it — or on Projects, the Workspace menu's drawer that adds a repository or imports a
- * folder (SETUP1a).
+ * folder (SETUP1a). Since FRAME1c it may name the item it opens in its view — a session, a quest, a
+ * repository, a plugin — which the application's one opener chooses there (D118 §3i).
  */
-export type StarterDoor = { view: View; section?: SettingsSection; anchor?: SettingsAnchor; drawer?: 'add' | 'import' };
+export type StarterDoor = {
+  view: View; item?: string; section?: SettingsSection; anchor?: SettingsAnchor; drawer?: 'add' | 'import';
+};
 
 /**
  * One thing this machine lacks (HELP1d, D89): the sentence's key and its values, the screen that fixes

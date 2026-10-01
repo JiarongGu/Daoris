@@ -28,11 +28,15 @@ export type FolderInspection = {
  * Not a query: it opens a modal, so it happens when the person asks and never on a refetch. The
  * registering that follows is an ordinary call to the loopback host — routing it through IPC too
  * would be a second door onto the same judgement.
+ *
+ * It waits for as long as the dialog is open (SHEN2): under the bridge's default 30 seconds a person who
+ * took longer was told the call timed out while the dialog stayed up, and their pick then answered nobody.
+ * An unbounded wait needs the kit's 0.19, where `Infinity` means no timer rather than one that fires at once.
  */
 export const usePickFolder = () =>
   useMutation({
     mutationFn: () =>
-      getBridge().invoke<FolderInspection | null>('DAORIS.REGISTRY', 'PICK_FOLDER', {}),
+      getBridge().invoke<FolderInspection | null>('DAORIS.REGISTRY', 'PICK_FOLDER', { timeoutMs: Infinity }),
   });
 
 /**

@@ -318,6 +318,7 @@ test('a lock entry cannot reach outside the target directory', () => {
     mirrors: { writes: [], retire: [], drop: [], edited: [], collisions: [], editedGone: [] },
     rooms: { pointers: [], unpoint: [], drop: [], missing: [], records: [] },
     links: [],
+    documents: { links: [], missing: [] },
   };
   const error = captureError(() =>
     applySync({

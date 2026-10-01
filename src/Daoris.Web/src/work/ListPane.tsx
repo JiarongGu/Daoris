@@ -120,14 +120,7 @@ export function ListPane({
       {loading
         ? <div className="px-2.5 py-2"><SkeletonRows rows={5} /></div>
         : empty
-          ? (
-            <EmptyState
-              icon="inbox"
-              headline={empty.headline}
-              body={empty.body}
-              action={make && <Button onClick={() => make.onMake(make.kinds?.[0]?.id)}>{make.label}</Button>}
-            />
-          )
+          ? <EmptyState icon="inbox" headline={empty.headline} body={empty.body} action={make && <EmptyActs make={make} />} />
           : children}
     </div>
   );
@@ -195,6 +188,63 @@ export function ListPane({
         </div>
       )}
     </aside>
+  );
+}
+
+/**
+ * An empty list's acts: the `＋`'s, or where it makes two kinds, each by its own name with its primary first (PLUGUI1b,
+ * D119 §3.1), since a menu behind one button is a door too many on a list with nothing in it.
+ */
+function EmptyActs({ make }: { make: ListMake }) {
+  if (!make.kinds || make.kinds.length < 2) {
+    return <Button onClick={() => make.onMake(make.kinds?.[0]?.id)}>{make.label}</Button>;
+  }
+  return (
+    <div className="flex flex-wrap justify-center gap-2">
+      {make.kinds.slice(0, 2).map((kind) => <Button key={kind.id} onClick={() => make.onMake(kind.id)}>{kind.label}</Button>)}
+    </div>
+  );
+}
+
+/**
+ * The list's own **⋯** (D118 §3a): its filters and its menu, in its header before its close. An arrow is a direction,
+ * never a menu, so a region's own menu is "⋯", as VS Code's *Views and More Actions* is (platform language §4).
+ */
+export function ListMore({ label, items, onChoose }: {
+  /** Its name and its tip. */
+  label: string;
+  items: { id: string; label: string }[];
+  onChoose: (id: string) => void;
+}) {
+  return (
+    <Menu.Root modal={false}>
+      <Tip content={label}>
+        <Menu.Trigger asChild>
+          <Button variant="ghost" aria-label={label} className="h-6 w-6 justify-center px-0">
+            <Icon name="more" size={15} />
+          </Button>
+        </Menu.Trigger>
+      </Tip>
+      <Menu.Portal>
+        <Menu.Content
+          side="bottom"
+          align="end"
+          sideOffset={4}
+          collisionPadding={8}
+          className="z-30 min-w-44 rounded-control border border-line bg-overlay p-1 text-small shadow-lg"
+        >
+          {items.map((item) => (
+            <Menu.Item
+              key={item.id}
+              onSelect={() => onChoose(item.id)}
+              className="flex cursor-default items-center gap-2 rounded-control px-2 py-1.5 text-ink outline-none data-[highlighted]:bg-accent-soft"
+            >
+              {item.label}
+            </Menu.Item>
+          ))}
+        </Menu.Content>
+      </Menu.Portal>
+    </Menu.Root>
   );
 }
 
