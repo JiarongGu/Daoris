@@ -9298,3 +9298,28 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **TOOLS7 — Settings → Tools** (§4.1, §4.4)
 
 **Outcome** (built by a subagent, merged in integrate-j with `tools/merge-branch.mjs`, every gate; a note under D121): Settings → Tools, built as a machine domain after Agents on `DriverModule.Tools.cs` and the page's `bridge/tools.ts`. Each tool's card says why Daoris needs it, how it is run (System, Managed or Custom), the file it runs and the version it answers. Managed offers the downloaded versions, then those the lists name for this machine, with *Download*, *Use this version* and *Delete* (which asks once). Custom checks that a named file answers a version before writing it, with *Browse…* on the system's picker. Nothing applies on choosing; a press applies it. A switch of git first names the checkout keys the two gits read differently (`TOOLS_GIT`) and switches on the second press. A download is followed: its console and stop are on the card, and its end comes from `TOOLS_ENDED`. The resource locations card lists the person's locations and then the built-in list, with *Look for updates* (a new `hostBounds` twin row), *Add location…* and *Remove*. Nine refusal codes in both catalogues, the glossary's three terms (tool 工具, managed 托管, resource location 资源位置), `tool.used` in the machine log, and the controls answered in `HelpCoverageTests` (System and managed use and removing a location owed to TOOLS8, the rest exempt). Modules fast half 362 → 384, web 2176 → 2219 before merging main. `DriverModuleToolProgramsTests` (Process half) was written in the branch and run at the merge. The SSH command and `TOOL_GIT_TOO_OLD` wait for TOOLS6.
+
+
+## SELECT1 — a long select scrolls inside the window (2026-10-01)
+
+> - [ ] **SELECT1 — a long select runs off the window** (owner, 2026-10-01: *"select option currenly does not have
+> scroll it just overflow the screen"*). Every select is the one atom `SelectField` (`ui.tsx`), whose list had no
+> height cap: capped at the room the popper measures, with the scroll arrows Radix hides the scrollbar for. **Merged
+> 2026-10-01 (integrate-h)**; open until it is looked at on the republished window with a long list, at 680 px.
+
+**Outcome** (built by the parent and a subagent, merged in integrate-h with `tools/merge-branch.mjs`, every gate; looked at on the window): Every select is the one atom `SelectField`, whose list had no height cap: it is now capped at the room the popper measures on its side (`--radix-select-content-available-height`, 8 px collision padding) and scrolls inside it, with Radix's scroll arrows since the viewport hides its scrollbar. Looked at on the republished install, 2026-10-01, in the owner's dark theme and 中文: the new quest's receiver list holds the workspace's 29 repositories and ends at the window's bottom edge (y 232 → 1005 of 1013) with the ⌄ arrow, where before it ran off the screen. A ui test holds the cap on the content.
+
+
+## MENU1 — one menu atom (2026-10-01)
+
+> - [ ] **MENU1 — one menu atom** (found with SELECT1): eight files style Radix's dropdown menu each on its own
+> (AppMenu, ViewsMenu, ListPane's ＋ and ⋯, SessionRow, SyncStatus, TerminalTabs, BrowserDoor, the map's
+> LinesMenu and LayeredMap), and none caps its height, so a long menu runs off the window as the select did. One
+> menu molecule beside `SelectField` (content capped at the popper's available height and scrolling, item,
+> checkbox item, separator, label), every menu moved onto it. The two dialogs built outside the atoms (QuickAsk,
+> CommandPalette) move onto a dialog atom or are named as the test's exceptions. The test: no file but `ui.tsx`
+> imports a Radix primitive (the app root's tooltip provider excepted), as `presentational.test.ts` holds what a
+> molecule imports. **Merged 2026-10-01 (integrate-h)**; open until a long menu is looked at on the republished
+> window at 680 px, both themes.
+
+**Outcome** (built by the parent and a subagent, merged in integrate-h with `tools/merge-branch.mjs`, every gate; looked at on the window): One menu atom. `Menu` in `ui.tsx` is every dropdown, as `SelectField` is every select: never modal; its content in a portal capped at `--radix-dropdown-menu-content-available-height` with `collisionPadding`, scrolling inside with the theme's bar; one row density, the tick's column, a label and a rule; the two row highlights already on screen kept as the content's `highlight`. All nine dropdowns across eight files moved onto it, and the command palette and Quick Ask onto `QuickPanel`. `primitives.test.ts` holds that no file but the atoms imports a Radix primitive, watched failing on all eleven files first; a 60-item menu test and a `LongMenu` story prove the cap. Looked at on the republished install, 2026-10-01 (dark, 中文): the Workspace menu reads as before (the ticked workspace, its counts, the rules and icons) and its live content carries the cap; no menu on the install is long enough to fill the window, so the long case stands on the test and the story. Web vitest 2286 → 2294.

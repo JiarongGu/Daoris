@@ -156,22 +156,11 @@ install in both themes and both languages.
   high-water and cache reads per turn, from the usage record and the turn events, over a week), then offer a
   per-agent ceiling, a smaller window or the harness's own compaction setting, on both doors. The owner's call,
   since it trades cost for what a session remembers.
-- [ ] **SELECT1 — a long select runs off the window** (owner, 2026-10-01: *"select option currenly does not have
-  scroll it just overflow the screen"*). Every select is the one atom `SelectField` (`ui.tsx`), whose list had no
-  height cap: capped at the room the popper measures, with the scroll arrows Radix hides the scrollbar for. **Merged
-  2026-10-01 (integrate-h)**; open until it is looked at on the republished window with a long list, at 680 px.
-- [ ] **MENU1 — one menu atom** (found with SELECT1): eight files style Radix's dropdown menu each on its own
-  (AppMenu, ViewsMenu, ListPane's ＋ and ⋯, SessionRow, SyncStatus, TerminalTabs, BrowserDoor, the map's
-  LinesMenu and LayeredMap), and none caps its height, so a long menu runs off the window as the select did. One
-  menu molecule beside `SelectField` (content capped at the popper's available height and scrolling, item,
-  checkbox item, separator, label), every menu moved onto it. The two dialogs built outside the atoms (QuickAsk,
-  CommandPalette) move onto a dialog atom or are named as the test's exceptions. The test: no file but `ui.tsx`
-  imports a Radix primitive (the app root's tooltip provider excepted), as `presentational.test.ts` holds what a
-  molecule imports. **Merged 2026-10-01 (integrate-h)**; open until a long menu is looked at on the republished
-  window at 680 px, both themes.
 - [ ] **NAME2 — the names after NAME1b, on the window**: the glossary gains *lane* / 泳道 (DEV4 named it; NAME1
   had no term); the 107 budget judgements `names:check` reports are looked at on the window at 888 px, both
   languages, and each is renamed or accepted.
+  Seen on the republished install (2026-10-01, 中文): the plugin page's on/off act reads 关闭, which says *close* as
+  much as *turn off* (停用 is unambiguous); the plugin's description is cut to one line with an ellipsis.
 - [ ] **PLUGUI1c — Settings keeps only what is a setting** (after b): the domain retires, its anchors repoint,
   the folder row joins Settings → Driver; crosses five lanes on purpose.
 - [ ] **PLUGUI1f — the page whole** (after c and e): health on the window, Points, Agents, Servers, Activity
