@@ -114,8 +114,8 @@ rather than designed.
 ## Backlog
 
 **Sixty-three rows are open** (most of them the builds of the designs below) (triaged 2026-09-30, when the owner asked to go faster; 2026-10-01 after the night's merges, the look, and the owner's round):
-- **Building:** WSSETUP3 (committed on its branch) then WSSETUP5 (being finished). **Next in the driver lane:**
-  WSSETUP6 (the workspace plan); then LAYOUT8 and WSSETUP7 (the screen and Ask Daoris).
+- **Building:** WSSETUP5 (resumed after the account's limit; WSSETUP3 committed on its branch), TEST2 with TEST3
+  and STUB1, TOOL4's design (D125). **Next in the driver lane:** WSSETUP6; then LAYOUT8 and WSSETUP7.
 - **Designed, to build in order:** DEV2–DEV11 (D115); FRAME1b–i (D118) after NAME1b; PLUGUI1 after FRAME1c;
   LAYOUT3–LAYOUT10 (D117) after LAYOUT2's evidence.
 - **Waiting on the owner (five):** BUDGET1 (their call), TRUST2 and AGT2c (a grant, two
@@ -351,7 +351,9 @@ repository's own allow-list does not (`docs/2026-09-24-deploy1-acp-trust-evidenc
 the archive: **usage is measured before it is managed**, and breadth is **more native adapters plus
 the ACP door, not a registry**.
 
-- [ ] **TOOL4 — rotation.** ⛔ **Held by D57 §b until TOOL3 has run long enough to answer three
+- [ ] **TOOL4 — rotation** (owner, 2026-10-01: *"this is also good to test for account switch"*): **being designed as
+  D125**, since the install now holds three observed exhaustions (27 and 29 Sep, the ACP adapter's spend-limit
+  refusal naming its reset time) and the owner's own weekly-limit switch on 1 Oct. Was: ⛔ **Held by D57 §b until TOOL3 has run long enough to answer three
   questions**: what a harness's exhaustion actually looks like in its output, how long a cool-off
   should be, and whether a rotated session stays reproducible. Exhaustion is **observed, never read**
   — Daoris cannot ask a provider what is left without a credential, and D49 §4 stands. Do not start
