@@ -1,4 +1,5 @@
 import i18n from '../i18n';
+import type { View } from '../commands';
 import type { SettingsAnchor, SettingsSection } from '../SettingsView';
 import type { MenuItem } from './AppMenu';
 
@@ -12,6 +13,8 @@ export type MenuAction =
    * (UX5 U72: *Usage* opened its domain at the top, a screen above the usage).
    */
   | { kind: 'settings'; section: SettingsSection; anchor?: SettingsAnchor }
+  /** A view of the activity bar: Plugins, since PLUGUI1b (D119 §5). */
+  | { kind: 'view'; view: View }
   | { kind: 'scope'; workspace: string | null }
   | { kind: 'add' }
   | { kind: 'import' }
@@ -51,7 +54,8 @@ export function appMenus({ attached, workspaces, scope, waiting }: {
     { id: 'settings:appearance', label: t('menu.settings'), icon: 'settings' },
     ...machine([
       { id: 'settings:driver', label: t('menu.driver'), icon: 'frameWork' },
-      { id: 'settings:plugins', label: t('menu.plugins'), icon: 'plug' },
+      // The Plugins view (D119 §5), where it opened Settings → Plugins: its glossary door names `nav.plugins`.
+      { id: 'view:plugins', label: t('menu.plugins'), icon: 'plug' },
     ]),
     { id: 'refresh', label: t('menu.refresh'), icon: 'refresh', separated: true },
     { id: 'language', label: t('menu.language'), icon: 'languages' },
@@ -100,6 +104,7 @@ export function appMenus({ attached, workspaces, scope, waiting }: {
 /** What an item's id names — the one reading of the ids `appMenus` writes. */
 export function menuAction(id: string): MenuAction {
   if (id.startsWith('settings:')) return { kind: 'settings', section: id.slice('settings:'.length) as SettingsSection };
+  if (id.startsWith('view:')) return { kind: 'view', view: id.slice('view:'.length) as View };
   if (id.startsWith('scope:')) {
     const name = id.slice('scope:'.length);
     return { kind: 'scope', workspace: name === '*' ? null : name };

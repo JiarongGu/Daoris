@@ -61,6 +61,8 @@
   "work.sitting.NoRoot": "本机不知道受托方的根目录——请在那个仓库中运行 `daoris connect`。",
   "work.frame.attending": "正在查看：{{title}}",
   "work.frame.open": "在「会话」中打开",
+  "work.frame.none": "尚未选中会话。在「会话」中选一个，它的时间线和审阅会跟到这里。",
+  "work.frame.goSessions": "打开会话",
   "work.monitor.title": "监视窗口",
   "work.monitor.subtitle": "正在运行的一切，实时。只读——操作仍留在主窗口。",
   "work.monitor.detach": "在单独的窗口中打开",

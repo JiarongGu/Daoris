@@ -11,12 +11,14 @@ import { opensAtStart, setupProgress, setupSteps } from './help/setup';
 import { useMachine } from './help/useMachine';
 import { useSetupAtStart } from './setupGuide';
 import { useFrameClosings } from './work/closings';
-import { type ListMode, listToggled } from './work/layout';
+import { type ListMode, type ListView, listToggled } from './work/layout';
+import { useListPanes } from './work/listPanes';
 import { usePlacements, viewsIn } from './work/placements';
 import { LAYOUT_KEYS, type LayoutRegion, LayoutToggles } from './work/LayoutToggles';
 import { frameShortcut } from './shortcuts';
 import { focusRegion } from './work/regions';
 import type { StarterDoor } from './help/starters';
+import { askItem, doorOpening, type Opening, type OpenPart, opening as plannedOpening } from './opener';
 import { WorkspaceSwitcher } from './WorkspaceSwitcher';
 import {
   Button, Drawer, failure, Icon, LanguageSwitcher, Prose, SESSION_ACTIVE, Tip, Toasts,
@@ -44,6 +46,8 @@ import { TrustAsk } from './work/TrustAsk';
 import { SyncStatus } from './work/SyncStatus';
 import { MONITOR_WINDOW, sessionWindowName } from './work/window';
 import { WorkFrame } from './work/WorkFrame';
+import { ViewFrame, type ViewLayout } from './work/ViewFrame';
+import { ViewMain } from './work/ViewMain';
 import type { AttentionDoors } from './work/AttentionBand';
 import { needsAPerson, waitingInSessions } from './work/attention';
 import { ActivityBar, AppStrip, type DriverPresence, StatusBar } from './work/frame';
@@ -55,6 +59,7 @@ import { AppMenu, AppMenuBar } from './work/AppMenu';
 import { store, stored } from './lib/stored';
 import { figure } from './format';
 import { HarnessRuns } from './harnessRuns';
+import { usePluginsView } from './plugins/PluginsView';
 
 /** The views are `commands.ts`'s one list (D66); the activity bar and the palette read the same. */
 type Tab = View;
@@ -67,19 +72,11 @@ type Tab = View;
  */
 const VIEW = 'daoris.view';
 
-/**
- * And which session they were attending (D56). Sessions survived a restart and the selection did
- * not, so relaunching into it landed on *Nothing attended* while a session sat parked — the one
- * arrangement SURF5a's whole attention half exists to prevent. An id that no longer names a record
- * is cleared by the view's own effect, so a stale one costs nothing.
- */
-const ATTENDING = 'daoris.attending';
-
-/**
- * And which domain of Settings they last had open (D75), so the gear returns to it. A domain this
- * window cannot show is Settings' own business: it opens on Appearance instead.
- */
-const SETTINGS_SECTION = 'daoris.settings';
+// What each view's list has chosen is its list's memory since FRAME1c (`work/listPanes.ts`, D118 §3f),
+// in the keys that predate it: the session attended (D56), since relaunching into Sessions landed on
+// *Nothing attended* while a session sat parked, and Settings' domain (D75), so the gear returns to it.
+// An id that no longer names a record is cleared by the view's own effect, and a domain this window
+// cannot show opens on Appearance, so a stale one costs nothing.
 
 function rememberedView(): Tab {
   // Landing on Overview is the safe half of the choice.
@@ -92,9 +89,11 @@ const NAV = VIEWS.filter(({ view }) => view !== 'settings');
 
 /**
  * The views drawn with a list pane (D118 §2), each naming it in `layout.list.<view>` and
- * `layout.menu.list.<view>`. Sessions' first (FRAME1b); each view joins as its row moves it onto the frame.
+ * `layout.menu.list.<view>`. Sessions' first (FRAME1b), then Plugins, built on the frame (PLUGUI1b); each view
+ * joins as its row moves it onto the frame.
  */
-const LISTED: ReadonlySet<View> = new Set<View>(['sessions']);
+const LISTED: ReadonlySet<ListView> = new Set<ListView>(['sessions', 'plugins']);
+const isListed = (view: View): view is View & ListView => (LISTED as ReadonlySet<string>).has(view);
 
 /** A palette command that says it ran, into the machine log (LOG1b): by its id, never what was typed. */
 const counted = (command: Command): Command => ({
@@ -113,9 +112,10 @@ const counted = (command: Command): Command => ({
 export function App() {
   const { t, i18n } = useTranslation();
   const [tab, setTab] = useState<Tab>(rememberedView);
-  const [attending, setAttendingState] = useState<string | null>(() => stored(ATTENDING));
-  const [settingsSection, setSettingsSection] = useState<SettingsSection>(
-    () => (stored(SETTINGS_SECTION) as SettingsSection | null) ?? 'appearance');
+  // What each view's list remembers (D118 §3f): its closing, its width, its chosen item, its filters.
+  const lists = useListPanes();
+  const attending = lists.pane('sessions').chosen;
+  const settingsSection = (lists.pane('settings').chosen as SettingsSection | null) ?? 'appearance';
   // The part of a Settings domain a menu item named, brought into view once it is drawn (UX5 U72).
   const [settingsAnchor, setSettingsAnchor] = useState<SettingsAnchor | null>(null);
   const [readingId, setReadingId] = useState<string | null>(null);
@@ -215,8 +215,9 @@ export function App() {
   const linkOpener = useLinkOpener(notify);
 
   // Sessions does not exist in a browser (D55): no stream, no tree path, nothing honest to show. A
-  // remembered `sessions` where no shell answers falls back rather than rendering an empty view.
-  const view: Tab = tab === 'sessions' && !attached ? 'overview' : tab;
+  // remembered `sessions` where no shell answers falls back rather than rendering an empty view, and so does
+  // any shell-only view a door asked for: Plugins too, which are this machine's (D119 §3.7).
+  const view: Tab = !attached && VIEWS.some((entry) => entry.view === tab && entry.shellOnly) ? 'overview' : tab;
   onSessions.current = view === 'sessions';
 
   // What is used, and what never is (LOG1b): each view the person lands on, into the machine log — once
@@ -226,22 +227,33 @@ export function App() {
     if (!settling) logEvent('view.opened', { view });
   }, [view, settling]);
 
+  // The Plugins view (PLUGUI1b, D119): held on every view, so what its pages hold — a trial's report, an update's
+  // plan — stays while Daoris is open; it asks the driver for nothing until it is in front.
+  const plugins = usePluginsView({
+    active: view === 'plugins',
+    chosen: lists.pane('plugins').chosen,
+    onChoose: (item) => lists.choose('plugins', item),
+    notify,
+    onAsk: attached ? askSetup : undefined,
+  });
+
   // Whether the view in front has a list pane (D118 §3a), whose four doors — the strip's toggle, the View
-  // menu's item, Ctrl+B and a press on its place — are absent where it has none, never disabled.
-  const listed = attached && LISTED.has(view);
+  // menu's item, Ctrl+B and a press on its place — are absent where it has none, never disabled. A browser
+  // keeps a view's list too (D118 §4); Sessions, the one view that needs a shell, is never in front there.
+  const listed = isListed(view);
 
   // A region toggled (DOCK1c): the side bar and the panel are the frame's on every view since DOCK1a, and
-  // the list is the view's own, so where the view has none its key does nothing. True when it did. In a
-  // browser there is no frame, only the view (D47 §4: the regions hold this machine's sessions).
+  // the list is the view's own, so where the view has none its key does nothing. True when it did. A
+  // browser has the view's list and never the side bar or the panel (D47 §4: they hold this machine's sessions).
   const toggleRegion = (region: LayoutRegion): boolean => {
-    if (!attached) return false;
+    if (!attached && region !== 'list') return false;
     if (region === 'right') closings.setDock(!closings.dock);
     else if (region === 'panel') closings.setPanel(!closings.panel);
-    else if (listed && listMode) {
+    else if (isListed(view) && listMode) {
       // By what the room made of it: an open list closes, one laid over goes, and a strip opens — over
-      // the main area where the window drew it (D118 §3a).
+      // the main area where the window drew it (D118 §3a). The closing is this view's own (§3f).
       const next = listToggled({ mode: listMode });
-      closings.setList(next.closed);
+      lists.setClosed(view, next.closed);
       closings.setListOver(next.over);
     }
     else return false;
@@ -333,27 +345,32 @@ export function App() {
     onError: failure(notify),
   });
 
-  const setView = (next: Tab) => {
-    setTab(next);
-    store(VIEW, next === 'sessions' ? 'sessions' : null);
-  };
-
   /**
-   * Settings, open at one domain (D75). Every way in names the domain its fact is set in: the tier
-   * opens Daoris's own AI, the remote opens Workspace, the driver opens Driver. Before this each one
-   * opened the whole page at its top.
+   * **The application's one opener** (D118 §3i): every door into a view calls it, naming the item it opens,
+   * and the view's list has that item chosen (§3f). `opener.ts` plans it as a value; this applies it.
+   * Settings opens at the domain a door names, at the part it names (D75, UX5 U72): the tier opens Daoris's
+   * own AI, the remote Workspace, the driver Driver, where each once opened the whole page at its top.
    */
+  const apply = (plan: Opening) => {
+    if (plan.chosen) lists.choose(plan.chosen.view, plan.chosen.item);
+    if (plan.quest) setQuestFocus(plan.quest);
+    if (plan.ask) setAskFocus(plan.ask);
+    if (plan.anchor !== undefined) setSettingsAnchor(plan.anchor);
+    if (plan.drawer === 'add') setAddRequested(true);
+    if (plan.drawer === 'import') setImportRequested(true);
+    // A list laid over the main area is never kept: another view lets it go (§3f).
+    if (plan.view !== view) closings.setListOver(false);
+    setTab(plan.view);
+    store(VIEW, plan.view === 'sessions' ? 'sessions' : null);
+  };
+  const open = (target: View, item?: string | null, part?: OpenPart) => apply(plannedOpening(target, item, part));
+
+  /** A domain chosen in Settings' own list opens at its top: an anchor its part never answered is dropped. */
   const chooseSettings = (section: SettingsSection) => {
-    setSettingsSection(section);
-    store(SETTINGS_SECTION, section);
-    // A domain chosen from the list opens at its top: an anchor its part never answered is dropped.
+    lists.choose('settings', section);
     setSettingsAnchor(null);
   };
-  const openSettings = (section: SettingsSection, anchor?: SettingsAnchor) => {
-    chooseSettings(section);
-    setSettingsAnchor(anchor ?? null);
-    setView('settings');
-  };
+  const openSettings = (section: SettingsSection, anchor?: SettingsAnchor) => open('settings', section, { anchor });
 
   // The setup guide (SETUP1b, D97), from the reading Ask Daoris's starters share: the status bar's count
   // until the required steps are done, and Get started opened once at start on a machine missing any of
@@ -383,11 +400,12 @@ export function App() {
     const action = menuAction(item);
     switch (action.kind) {
       case 'settings': openSettings(action.section, action.anchor); return;
+      case 'view': open(action.view); return;
       case 'scope': scope.setWorkspace(action.workspace); return;
-      case 'add': setAddRequested(true); setView('projects'); return;
+      case 'add': open('projects', null, { drawer: 'add' }); return;
       // `daoris import <folder> --workspace <name>`'s screen door (D77): the drawer chooses the folder
       // and names the workspace, and the service's sentence says what it registered.
-      case 'import': setImportRequested(true); setView('projects'); return;
+      case 'import': open('projects', null, { drawer: 'import' }); return;
       case 'refresh': onRefresh(); return;
       case 'language': void i18n.changeLanguage(i18n.language.startsWith('zh') ? 'en' : 'zh'); return;
       case 'about': setAbout(true); return;
@@ -434,34 +452,22 @@ export function App() {
 
   // The attended session is remembered alongside the view (D56), so a relaunch into Sessions reopens
   // what the person was watching rather than an empty column.
-  const setAttending = useCallback((next: string | null) => {
-    setAttendingState(next);
-    store(ATTENDING, next);
-  }, []);
+  const { choose } = lists;
+  const setAttending = useCallback((next: string | null) => choose('sessions', next), [choose]);
 
   // A door from a record into the session itself. The selection lives here rather than inside the
   // view precisely so a door can name which session it is opening (D55: one selection, every
   // region) — the view change alone would land the person on whatever they last attended.
-  const openInWork = (session: string) => {
-    setAttending(session);
-    setView('sessions');
-  };
-
+  const openInWork = (session: string) => open('sessions', session);
+  // A quest's record and an ask's, where quests are read: an ask is named as one, since Quests' list holds both.
+  const openQuest = (id: string) => open('quests', id);
   // A row in Overview's band is a door into whatever is waiting, wherever that exists. A parked
   // session opens in Sessions, which only a shell has. An ask opens its record, where it is answered
   // (INT4d), and a quest nobody can take opens its own drawer. Both of those a browser has too.
-  const openAsk = (id: string) => { setAskFocus(id); setView('quests'); };
-  // Where a starter's or a setup step's door leads (HELP1d, SETUP1a): a domain of Settings at the part it
-  // names, a view, or one of the Workspace menu's drawers, opened on Projects as the menu opens them.
-  const go = (door: StarterDoor) => {
-    if (door.view === 'settings' && door.section) {
-      openSettings(door.section, door.anchor);
-      return;
-    }
-    if (door.drawer === 'add') setAddRequested(true);
-    if (door.drawer === 'import') setImportRequested(true);
-    setView(door.view);
-  };
+  const openAsk = (id: string) => open('quests', askItem(id));
+  // Where a starter's, a setup step's or Ask Daoris's door leads (HELP1d, SETUP1a, HELP6): a view and the item
+  // it names, a domain of Settings at the part it names, or one of the Workspace menu's drawers on Projects.
+  const go = (door: StarterDoor) => apply(doorOpening(door));
   // What Ask Daoris is handed wherever it stands: what is on the screen (HELP1b) — the view, the scope,
   // the settings domain on Settings, and the attended session on Sessions — and its two ways out.
   const askProps = {
@@ -485,7 +491,7 @@ export function App() {
     ...(attached ? { parked: (item) => openInWork(item.id) } : {}),
     proposal: (item) => openAsk(item.id),
     intake: (item) => openAsk(item.id),
-    unanswerable: (item) => { setQuestFocus(item.id); setView('quests'); },
+    unanswerable: (item) => openQuest(item.id),
     // A folder waiting on the person's trust (D73) opens the question itself. Only a shell has one.
     ...(attached ? { trust: (item) => item.trust && setTrusting(item.trust) } : {}),
     // An agent's proposal to widen the rules (PERM2) opens the rules it would change, where it is
@@ -493,20 +499,22 @@ export function App() {
     ...(attached ? { rule: () => openSettings('permissions') } : {}),
   };
 
-  /** Every view but Sessions, as the frame's centre in a shell and the whole window in a browser (DOCK1a). */
-  const renderView = () => (
-    // `relative`: the containing block for what is positioned inside the column. Without it an
-    // `sr-only` label far down a long page took the viewport as its block and stretched the
-    // document, which grew a second scrollbar beside this one (seen on the window, PERM1).
-    <main data-region="main" className="relative min-h-0 min-w-0 flex-1 overflow-y-auto px-6 pb-12 pt-5 max-md:px-3 max-md:pb-8 max-md:pt-4">
-      {/* No cap: content follows the window (UX5 U59, the owner), as the session's centre does
-          since U16. It was 72rem, and a maximized window left every view a third empty.
-          Prose keeps its own measure (`Prose`), and a form its own size. */}
-      <div>
+  /**
+   * Every view but Sessions, as it hands itself to the frame (D118 §5): its list pane where it has one, and
+   * its main area, in a shell's frame beside the side bar and the panel, and in a browser's without them.
+   * Each view joins the list pane as its row moves it onto the frame (FRAME1d–g); until then its page is its
+   * main area. Plugins was built on the frame (PLUGUI1b), and hands its list and its page whole.
+   */
+  const renderView = (): ViewLayout => (view === 'plugins' ? plugins : {
+    main: (
+      // No cap: content follows the window (UX5 U59, the owner), as the session's centre does since U16. It
+      // was 72rem, and a maximized window left every view a third empty. Prose keeps its own measure
+      // (`Prose`), and a form its own size. The main area is the container a view's split follows (§3b).
+      <ViewMain>
         {view === 'overview' && (
           <OverviewView
-            onNavigate={setView}
-            onOpenQuest={(id) => { setQuestFocus(id); setView('quests'); }}
+            onNavigate={(target) => open(target)}
+            onOpenQuest={openQuest}
             doors={attentionDoors}
             notify={notify}
           />
@@ -537,8 +545,8 @@ export function App() {
         {view === 'map' && (
           <MapView
             notify={notify}
-            onOpenConvergence={() => setView('convergence')}
-            onOpenQuest={(id) => { setQuestFocus(id); setView('quests'); }}
+            onOpenConvergence={() => open('convergence')}
+            onOpenQuest={openQuest}
           />
         )}
         {view === 'convergence' && (
@@ -549,7 +557,7 @@ export function App() {
             onOpen={setReadingId}
             notify={notify}
             semantic={status.data?.semantic ?? false}
-            onConverge={() => setView('convergence')}
+            onConverge={() => open('convergence')}
           />
         )}
         {view === 'settings' && (
@@ -567,9 +575,9 @@ export function App() {
             onAttend={attached ? openInWork : undefined}
           />
         )}
-      </div>
-    </main>
-  );
+      </ViewMain>
+    ),
+  });
 
   return (
     // A tool's running action — a sign-in above all — outlives the view it started on (SIGNIN1).
@@ -664,6 +672,14 @@ export function App() {
               onToggle={toggleRegion}
             />
           </div>
+        ) : listed ? (
+          // A browser's strip holds the list's toggle alone (D118 §4): it has no side bar and no panel.
+          <LayoutToggles
+            regions={['list']}
+            list={t(`layout.list.${view}`)}
+            closed={{ list: !listShown, panel: true, right: true }}
+            onToggle={toggleRegion}
+          />
         ) : undefined}
       />
 
@@ -693,7 +709,7 @@ export function App() {
           // Settings is everywhere now (D66) — a browser has appearance to set, if nothing of a machine.
           end={[{ tab: 'settings', label: t('nav.settings'), icon: 'settings' }]}
           active={view}
-          onSelect={setView}
+          onSelect={(target) => open(target)}
           // The list's fourth door (D118 §3a): the place you are on, pressed again, toggles its list.
           onToggleCurrent={listed ? () => { toggleRegion('list'); } : undefined}
           footer={(
@@ -716,8 +732,9 @@ export function App() {
 
         {/* 🔴 ONE frame on every view (DOCK1a): the right side bar and the panel stay whatever the
             centre shows, as VS Code's workbench does. One element in one place, so what is open, selected and sized survives a change
-            of view. Sessions' centre is its own; every other view is handed in. A browser has no frame:
-            its regions hold this machine's sessions (D47 §4), so it shows the view alone. */}
+            of view. Sessions' list and main area are its own; every other view hands in its layout. A browser
+            keeps the view's list and main area and never the side bar or the panel, which hold this machine's
+            sessions (D47 §4; D118 §4). */}
         {attached
           ? (
             <WorkFrame
@@ -730,25 +747,34 @@ export function App() {
               // this goes to the composer rather than growing a second one here.
               onSendBack={(repository) => {
                 setOpening({ from: repository });
-                setView('quests');
+                open('quests');
               }}
               // A parked intake's answer is on its ask (INT4g): the same door the band's ask rows use.
               onAnswerAsk={openAsk}
               // A quest on the chain, or one the session asked (SESS1), opens where quests are read.
-              onOpenQuest={(id) => { setQuestFocus(id); setView('quests'); }}
+              onOpenQuest={openQuest}
               // Ask Daoris as a view of the frame's regions: one right region, never a second column.
               ask={<AskDaoris {...askProps} framed={false} opening={helpOpening} onOpened={() => setHelpOpening(null)} />}
               askFocus={helpFocus}
               // The person's own shell (CONSOLE4b): a frame is only drawn where a shell is attached.
               terminal
               closings={closings}
+              lists={lists}
               onListMode={setListMode}
               placements={placements}
-              content={view === 'sessions' ? undefined : renderView()}
-              onOpenSessions={() => setView('sessions')}
+              layout={view === 'sessions' ? undefined : renderView()}
+              onOpenSessions={() => open('sessions')}
             />
           )
-          : renderView()}
+          : (
+            <ViewFrame
+              layout={renderView()}
+              lists={lists}
+              over={closings.listOver}
+              onOver={closings.setListOver}
+              onListMode={setListMode}
+            />
+          )}
       </div>
 
       {/* Ambient truth, true on every view without being looked at (D55). Which circle and whether
@@ -790,7 +816,7 @@ export function App() {
               // The pass is the shell's (D50): a browser reads where the circle stands and is not
               // offered a button that could not run it.
               onSyncNow={attached ? () => onSyncNow(circle) : undefined}
-              onOpenQuest={(id) => { setQuestFocus(id); setView('quests'); }}
+              onOpenQuest={openQuest}
               // Named for the part (NAME1b, UX5 U72), so it opens at Wiring, as *Wire to a remote…* does.
               onRemotes={attached ? () => openSettings('workspace', 'wiring') : undefined}
             />
@@ -806,8 +832,8 @@ export function App() {
            the target itself rather than making every caller remember to. */
         onDriver={() => openSettings('driver')}
         onRemote={() => openSettings('workspace')}
-        onSessions={attached ? () => setView('sessions') : undefined}
-        onIndex={() => setView('projects')}
+        onSessions={attached ? () => open('sessions') : undefined}
+        onIndex={() => open('projects')}
         // Settings holds Daoris's own AI (AGT6) in a browser too, so the tier leads there everywhere.
         onTier={() => openSettings('ai')}
         // Where the setup is done (SETUP1b): absent in a browser, and once the required steps are.
@@ -857,12 +883,12 @@ export function App() {
           group: (id) => t(`palette.group.${id}`),
           attached,
           current: view,
-          go: setView,
+          go: (target) => open(target),
           refresh: onRefresh,
           toggleLanguage: () => void i18n.changeLanguage(
             i18n.language.startsWith('zh') ? 'en' : 'zh'),
-          startSession: () => { setView('sessions'); setWorkIntent('start'); },
-          review: () => { setView('sessions'); setWorkIntent('review'); },
+          startSession: () => { open('sessions'); setWorkIntent('start'); },
+          review: () => { open('sessions'); setWorkIntent('review'); },
           // The second screen (SURF8). Opening a window is the shell's act, so both of these are
           // absent in a browser by the same omission every other shell-only command uses.
           monitor: () => openWindow.mutate(MONITOR_WINDOW),
@@ -871,7 +897,7 @@ export function App() {
             ? () => openWindow.mutate(sessionWindowName(attending))
             : undefined,
           // Asking lives at the head of Quests (INT4c); the palette goes there and opens the composer.
-          ask: () => { setView('quests'); setAsking(true); },
+          ask: () => { open('quests'); setAsking(true); },
           help: openHelp,
           quickAsk: () => askQuickly(),
           setup: () => openSettings('start'),

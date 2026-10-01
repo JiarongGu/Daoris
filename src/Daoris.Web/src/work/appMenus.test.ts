@@ -13,9 +13,11 @@ describe('the menus by domain', () => {
     const menus = appMenus({ attached: true, workspaces: TWO, scope: null, waiting: 1 });
 
     // *Set up Daoris* leads (SETUP1a, D97): the steps a machine needs, in order.
+    // *Plugins* opens the Plugins view (PLUGUI1b, D119 §5), where it opened Settings → Plugins.
     expect(ids(menus.daoris)).toEqual([
-      'settings:start', 'settings:appearance', 'settings:driver', 'settings:plugins', 'refresh', 'language', 'about',
+      'settings:start', 'settings:appearance', 'settings:driver', 'view:plugins', 'refresh', 'language', 'about',
     ]);
+    expect(menus.daoris.find((item) => item.id === 'view:plugins')).toMatchObject({ label: 'Plugins', icon: 'plug' });
     expect(menus.daoris[0]).toMatchObject({ label: 'Setup' });
     expect(ids(menus.agents)).toEqual([
       'settings:agents', 'settings:permissions', 'proposals', 'usage', 'settings:ai',
@@ -65,5 +67,7 @@ describe('the menus by domain', () => {
     expect(menuAction('scope:aurora')).toEqual({ kind: 'scope', workspace: 'aurora' });
     expect(menuAction('import')).toEqual({ kind: 'import' });
     expect(menuAction('settings:start')).toEqual({ kind: 'settings', section: 'start' });
+    // A view the menu opens: Plugins, a view of its own since PLUGUI1b (D119 §5).
+    expect(menuAction('view:plugins')).toEqual({ kind: 'view', view: 'plugins' });
   });
 });

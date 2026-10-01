@@ -137,7 +137,9 @@ export function ProjectsView({
         />
       )}
 
-      <div className="grid items-start gap-3.5 lg:grid-cols-2">
+      {/* By the main area's own width, never the viewport's (D118 §3b, audit PR10): at 1280 px with the side
+          bar open, two cards made each about 300 px. */}
+      <div className="grid items-start gap-3.5 @4xl/main:grid-cols-2">
         {adopted.map((project) => {
           const counts = indexed(project.repository);
           return (

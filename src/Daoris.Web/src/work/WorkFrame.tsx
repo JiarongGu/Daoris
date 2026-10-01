@@ -1,4 +1,4 @@
-import { type ReactNode, type RefObject, useCallback, useEffect, useRef, useState } from 'react';
+import { type ReactNode, useCallback, useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { SessionConsole } from '../SessionConsole';
 import { sentence } from '../format';
@@ -13,7 +13,7 @@ import {
 import { FilePreview } from './FilePreview';
 import { type FileOpen, FileOpener, fileName } from './preview';
 import { TerminalView } from './TerminalView';
-import { Drawer, failure, type Notify, SESSION_ACTIVE, useErrorNotify } from '../ui';
+import { Button, Drawer, failure, type Notify, SESSION_ACTIVE, useErrorNotify } from '../ui';
 import { AttendedSession, noteIsInTheHead } from './AttendedSession';
 import { SessionConversation } from './SessionConversation';
 import type { Usage } from './conversation';
@@ -29,19 +29,20 @@ import { SessionRail } from './SessionRail';
 import { StartSession, type StartChoice } from './StartSession';
 import { OutputPanel, PANEL_MIN, StreamTabs } from './frame';
 import { panelTabs } from './streams';
-import { DOCK, dockRange, frameLayout, LIST_BOUNDS, type ListMode, listToggled } from './layout';
-import { ListPane } from './ListPane';
+import { DOCK, dockRange, frameLayout, type ListMode } from './layout';
 import { type FrameClosings, useFrameClosings } from './closings';
+import { type ListPanes, useListPanes } from './listPanes';
+import { listChoice, type ListSpec, useFrameWidth, useListMode, type ViewLayout, ViewListPane } from './ViewFrame';
+import { ViewMain } from './ViewMain';
 import { type Place, type Placements, usePlacements, type ViewId, viewsIn } from './placements';
 import { relationsOf } from './relations';
 import { store, stored } from '../lib/stored';
 import { cn } from '../lib/cn';
 
 // Per-viewer conveniences, like the language and the workspace scope (D42): a remembered layout is
-// a preference, never machine wiring and never a tracked file.
+// a preference, never machine wiring and never a tracked file. A view's list keeps its own since FRAME1c
+// (`listPanes.ts`, D118 §3f).
 const PANEL_HEIGHT = 'daoris.panelHeight';
-// The frame's columns (FRAME6): the widths the person dragged, and what they closed.
-const RAIL_WIDTH = 'daoris.railWidth';
 // The dock's dragged width, as a SHARE of the window (LAYOUT1). `daoris.dockWidth` held pixels, and a
 // dock kept in pixels stayed the same while the window grew; one held there is read once, as its share
 // of the window it is read in, and then forgotten.
@@ -72,34 +73,6 @@ function rememberedWidth(key: string): number | null {
   return Number.isFinite(held) && held > 0 ? held : null;
 }
 
-/**
- * How wide the window is and how wide this frame is (FRAME6): the window decides the one threshold
- * left, a full dock under 768 px, and the frame decides the room, which is what makes the list a strip
- * (D118). Where nothing measures the frame (a unit test's DOM), it is the window less the 48px activity
- * bar beside it.
- */
-function useFrameWidth(frame: RefObject<HTMLDivElement | null>) {
-  const [viewport, setViewport] = useState(() => window.innerWidth);
-  const [measured, setMeasured] = useState(0);
-
-  useEffect(() => {
-    const onResize = () => setViewport(window.innerWidth);
-    window.addEventListener('resize', onResize);
-    const element = frame.current;
-    if (element) setMeasured(element.getBoundingClientRect().width);
-    const observer = element && typeof ResizeObserver !== 'undefined'
-      ? new ResizeObserver(([entry]) => { if (entry) setMeasured(entry.contentRect.width); })
-      : null;
-    if (element) observer?.observe(element);
-    return () => {
-      window.removeEventListener('resize', onResize);
-      observer?.disconnect();
-    };
-  }, [frame]);
-
-  return { viewport, frame: measured > 0 ? measured : Math.max(0, viewport - 48) };
-}
-
 /** Whether a door reports context, from the roster's word on it — undefined until the roster says. */
 const door = (structured?: boolean): 'structured' | 'text' | undefined =>
   structured === true ? 'structured' : structured === false ? 'text' : undefined;
@@ -124,11 +97,20 @@ const door = (structured?: boolean): 'structured' | 'text' | undefined =>
  * conversation scroll together, and the conversation follows its tail. The right dock holds the
  * timeline and the review (components plan §3a); the console is the panel below, the
  * conversation's raw view.
+ *
+ * **Every view hands it a `ViewLayout`** (D118 §5): its list pane where it has one, and its main area. It
+ * draws the list for every view that hands one, and Sessions' rail is one such list, built here because
+ * the attended session is this frame's to hold.
  */
 export function WorkFrame({
   selected, onSelect, notify, onSendBack, onAnswerAsk, onOpenQuest, intent, onIntentTaken, ask, askFocus = 0, closings, placements,
-  content, onOpenSessions, terminal = false, onListMode,
+  lists, layout: viewLayout, onOpenSessions, terminal = false, onListMode,
 }: {
+  /**
+   * What each view's list remembers (D118 §3f), held by the application so the list's doors reach it from
+   * every view; this frame's own where it is rendered alone.
+   */
+  lists?: ListPanes;
   /**
    * What the view's list is now — open, a strip, laid over, or none (D118 §3a) — for the application,
    * whose doors toggle it and say whether it is shown. The room decides it, and only this frame measures.
@@ -142,11 +124,12 @@ export function WorkFrame({
   /** Go to Sessions, where the attended session is read whole — the door its line offers off Sessions. */
   onOpenSessions?: () => void;
   /**
-   * Another view's content in the frame's centre (DOCK1a): Overview, Quests and the rest keep the right side
-   * bar and the panel, with every view that stands in them, as VS Code's workbench is one frame whatever
-   * its editor shows. No rail then: the session list is Sessions' own. Absent, the centre is Sessions'.
+   * Another view in the frame (DOCK1a, D118 §5): its list pane where it has one, and its main area. Overview,
+   * Quests and the rest keep the right side bar and the panel, with every view that stands in them, as VS
+   * Code's workbench is one frame whatever its editor shows. Absent, the view is Sessions: the rail and the
+   * attended session.
    */
-  content?: ReactNode;
+  layout?: ViewLayout;
   /**
    * Open a quest's record in Quests (SESS1): a stop on the chain, or a quest the session asked. The
    * record is the application's to open, as an ask's is.
@@ -197,7 +180,7 @@ export function WorkFrame({
   const [startRefusal, setStartRefusal] = useState<string | null>(null);
   const [starting, setStarting] = useState(false);
   // The centre scrolls the head and the conversation together; the conversation follows its tail.
-  const centre = useRef<HTMLDivElement>(null);
+  const centre = useRef<HTMLElement>(null);
   // Which dock surface each session has up (FRAME6: tabs per session). Not remembered across launches:
   // unlike the attended session, this one is answered by what the person is doing in the next ten seconds.
   const [docked, setDocked] = useState<Record<string, DockTab>>({});
@@ -206,8 +189,9 @@ export function WorkFrame({
   // The frame's columns (FRAME6): what the person chose, and what the window leaves room for.
   const root = useRef<HTMLDivElement>(null);
   const width = useFrameWidth(root);
-  const [railWidth, setRailWidth] = useState(() => rememberedWidth(RAIL_WIDTH));
   const [dockShare, setDockShare] = useState(rememberedShare);
+  const ownLists = useListPanes();
+  const listed = lists ?? ownLists;
   // What the person closed (DOCK1c): the application's where it holds them, so the strip's toggles and
   // the View menu reach them from every view; this frame's own where it is rendered alone.
   const own = useFrameClosings();
@@ -218,32 +202,20 @@ export function WorkFrame({
   const collapsed = closed.panel;
   const dockClosed = closed.dock;
   const [dockFull, setDockFull] = useState(false);
-  // Another view in the centre (DOCK1a): the frame without Sessions' rail.
-  const elsewhere = content !== undefined;
+  // Another view in the frame (DOCK1a): its own list or none, and its main area. Absent, it is Sessions.
+  const elsewhere = viewLayout !== undefined;
+  const listView = elsewhere ? viewLayout.list?.view ?? null : 'sessions';
   const layout = frameLayout(width.viewport, width.frame, {
-    list: elsewhere ? null : { bounds: LIST_BOUNDS.sessions, width: railWidth, closed: closed.list, over: closed.listOver },
+    list: listView ? listChoice(listView, listed, closed.listOver) : null,
     dockShare, dockClosed, dockFull,
   });
   const list = layout.list;
 
-  // What the list is now, told to the application, whose doors toggle it and say whether it is shown.
-  const listMode = list?.mode ?? null;
-  useEffect(() => { onListMode?.(listMode); }, [listMode, onListMode]);
-  // A list laid over the main area is never kept: room returning, or another view, lets it go (D118 §3f).
+  // What the list is now, told to the application, whose doors toggle it and say whether it is shown; and
+  // a list laid over the main area let go once the room makes it anything else (D118 §3f).
   const { listOver, setListOver } = closed;
-  useEffect(() => { if (listOver && listMode !== 'over') setListOver(false); }, [listOver, listMode, setListOver]);
+  useListMode(list?.mode ?? null, onListMode, listOver, setListOver);
 
-  const resizeRail = (next: number | null) => {
-    setRailWidth(next);
-    store(RAIL_WIDTH, next === null ? null : String(next));
-  };
-  /** The strip's open: beside where there is room, over the main area where the window drew the strip. */
-  const toggleList = () => {
-    if (!list) return;
-    const next = listToggled(list);
-    closed.setList(next.closed);
-    closed.setListOver(next.over);
-  };
   /** A choice in a list laid over closes it (D118 §3a). */
   const chosen = () => { if (listOver) setListOver(false); };
   /** A drag lands as the dock's share of the window it was dragged in; null is the default again. */
@@ -721,7 +693,16 @@ export function WorkFrame({
           />
         </div>,
       )
-      : <p className="m-0 p-3 text-small text-ink-faint">{t('work.attended.none.body')}</p>;
+      : elsewhere
+        // Off Sessions there is no session list beside it to point at (audit SE11): it says nothing is
+        // attended, and offers the view where one is chosen.
+        ? (
+          <div className="grid justify-items-start gap-2 p-3">
+            <p className="m-0 text-small text-ink-faint">{t('work.frame.none')}</p>
+            {onOpenSessions && <Button onClick={onOpenSessions}>{t('work.frame.goSessions')}</Button>}
+          </div>
+        )
+        : <p className="m-0 p-3 text-small text-ink-faint">{t('work.attended.none.body')}</p>;
   };
   // The file previewed for the attended session (PREVIEW1): the host's answer, or its sentence, and the
   // review's patch for that path where the review already holds one.
@@ -744,46 +725,46 @@ export function WorkFrame({
   const roster = Array.isArray(harnesses.data?.harnesses) ? harnesses.data.harnesses : [];
   const spawning = roster.find((row) => row.harness === (harnesses.data?.adapter ?? ''));
 
+  // Sessions' list (D118 §3a): the rail, handed to the list pane as every view with a list hands its own.
+  // NEW is one control (D56): it was a permanent 287×200 form above the list, 27% of the rail, for
+  // something a person does occasionally, and every reference in the study puts new behind a single affordance.
+  const sessionsList = (): ListSpec => ({
+    view: 'sessions',
+    name: t('work.rail.label'),
+    labels: { open: t('work.rail.open'), close: t('work.rail.close'), resize: t('work.rail.resize') },
+    make: { label: t('work.start.title'), onMake: () => setStarting(true) },
+    loading: sessions.isPending,
+    chosen: selected,
+    // Each running session's initial and mark, in the open rail's order (FRAME6).
+    strip: <SessionRail selected={selected} onSelect={(id) => { chosen(); attend(id); }} notify={notify} compact taking={taking} />,
+    body: (
+      <SessionRail
+        selected={selected}
+        onSelect={(id) => { chosen(); attend(id); }}
+        notify={notify}
+        taking={taking}
+        lastTurns={lastTurns}
+        // A row's menu reviews that session: attended, with the dock open on its work.
+        onReview={(id) => {
+          chosen();
+          attend(id);
+          setDocked((was) => ({ ...was, [id]: 'review' }));
+          closeDock(false);
+        }}
+      />
+    ),
+  });
+  const spec = elsewhere ? viewLayout.list : sessionsList();
+
   return (
     // Positioned, so a dock filling the frame (FRAME6) lies over exactly this and nothing more.
     // 🔴 `min-w-0` (USE1): a flex item is otherwise no narrower than its content, and every view but
     // Sessions is drawn in here, so a long title that should truncate widened the frame past the
     // window (seen on the install's Quests view; a browser draws the view outside the frame).
-    <div ref={root} className="relative flex min-h-0 min-w-0 flex-1">
-      {list && (
-        // Sessions' list (D118 §3a): the rail on the list pane every view with a list shares. NEW is one
-        // control (D56): it was a permanent 287×200 form above the list, 27% of the rail, for something a
-        // person does occasionally, and every reference in the study puts new behind a single affordance.
-        <ListPane
-          name={t('work.rail.label')}
-          labels={{ open: t('work.rail.open'), close: t('work.rail.close'), resize: t('work.rail.resize') }}
-          layout={list}
-          bounds={LIST_BOUNDS.sessions}
-          make={{ label: t('work.start.title'), onMake: () => { chosen(); setStarting(true); } }}
-          loading={sessions.isPending}
-          // Each running session's initial and mark, in the open rail's order (FRAME6).
-          strip={<SessionRail selected={selected} onSelect={(id) => { chosen(); attend(id); }} notify={notify} compact taking={taking} />}
-          onOpen={toggleList}
-          onClose={() => closed.setList(true)}
-          onDismiss={() => setListOver(false)}
-          onResize={resizeRail}
-        >
-          <SessionRail
-            selected={selected}
-            onSelect={(id) => { chosen(); attend(id); }}
-            notify={notify}
-            taking={taking}
-            lastTurns={lastTurns}
-            // A row's menu reviews that session: attended, with the dock open on its work.
-            onReview={(id) => {
-              chosen();
-              attend(id);
-              setDocked((was) => ({ ...was, [id]: 'review' }));
-              closeDock(false);
-            }}
-          />
-        </ListPane>
-      )}
+    // `isolate` (D118 §3d, audit F10): its layers stay its own — a full side bar's `z-20`, a list laid
+    // over — so every overlay drawn at the page's root, a drawer among them, lies above all of it.
+    <div ref={root} className="relative isolate flex min-h-0 min-w-0 flex-1">
+      {spec && list && <ViewListPane spec={spec} layout={list} lists={listed} onOver={setListOver} />}
 
       {/* D41's single detail-and-form surface (§4), rather than a popover built for one form. */}
       {starting && (
@@ -812,8 +793,19 @@ export function WorkFrame({
       )}
 
       <div className="flex min-w-0 flex-1 flex-col">
-        {elsewhere ? content : (<>
-        <div ref={centre} data-region="main" className="flex min-h-0 flex-1 flex-col overflow-y-auto px-4 py-3">
+        {elsewhere ? viewLayout.main : (<>
+        <ViewMain
+          ref={centre}
+          gutters="session"
+          // A remembered session is found in the list, so while the list first loads it is on its way, never
+          // *Nothing attended* (audit SE11).
+          state={attended ? 'chosen' : selected && sessions.isPending ? 'loading' : 'none'}
+          none={{
+            headline: t('work.attended.none.headline'),
+            body: t('work.attended.none.body'),
+            action: <Button onClick={() => setStarting(true)}>{t('work.start.title')}</Button>,
+          }}
+        >
           <AttendedSession
             session={attended}
             quest={quest}
@@ -856,7 +848,7 @@ export function WorkFrame({
               </FileOpener.Provider>
             </div>
           )}
-        </div>
+        </ViewMain>
 
         {talking && attended && (
           <Composer

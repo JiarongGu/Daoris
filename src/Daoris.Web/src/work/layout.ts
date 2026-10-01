@@ -104,8 +104,11 @@ const clamp = (value: number, min: number, max: number) => Math.min(max, Math.ma
  * list where it fits. So the list is a strip when, at its width, the main area would fall below its floor
  * beside the side bar as it stands. It gives way before the side bar does, because its strip keeps its
  * doors.
+ *
+ * A browser's frame asks it with no side bar at all (D118 §4): its view keeps its list and its main area,
+ * and never the side bar.
  */
-function listLayout(frame: number, sideBar: number, choice: ListChoice): ListLayout {
+export function listLayout(frame: number, sideBar: number, choice: ListChoice): ListLayout {
   const strip = { width: LIST_STRIP, beside: LIST_STRIP };
   if (choice.closed) return { mode: 'strip', ...strip, auto: false };
 

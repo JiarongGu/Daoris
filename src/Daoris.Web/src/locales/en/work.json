@@ -61,6 +61,8 @@
   "work.sitting.NoRoot": "{{why}}",
   "work.frame.attending": "Attending {{title}}",
   "work.frame.open": "Open in Sessions",
+  "work.frame.none": "No session is attended. Choose one in Sessions, and its timeline and its review follow it here.",
+  "work.frame.goSessions": "Open Sessions",
   "work.monitor.title": "Monitor window",
   "work.monitor.subtitle": "Everything running, live. Read-only — the moves stay in the main window.",
   "work.monitor.detach": "Open in its own window",

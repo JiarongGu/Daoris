@@ -95,7 +95,10 @@ export function OverviewView({ onNavigate, onOpenQuest, doors, notify }: {
         />
       </div>
 
-      <div className="grid items-start gap-3.5 lg:grid-cols-2">
+      {/* Two cards side by side by the main area's own width, never the viewport's (D118 §3b): the side bar
+          and a list narrow the main area while the window stays as wide (audit OV3). 56rem is where a
+          1024 px window's main area split before. */}
+      <div className="grid items-start gap-3.5 @4xl/main:grid-cols-2">
         <Card>
           <CardHeader
             title={t('overview.outstanding.title')}
