@@ -6352,6 +6352,50 @@ entry's shape and the design's links and budget, and none of their words.
   not measured here. *No shared skill carries one*, of a skill pre-approving its tools, is true of the canon
   today by search; DOC3's test is what will hold it. Whether the templates produce a good brief is judgement,
   which only a real set-up shows (§7, point 5).
+
+**Built 2026-10-01 (DOC3): roles bound to paths in the CLI** (point 3, design §2.7–§2.8). `documents` in the
+manifest, `init` and `analyze` naming candidates, `sync`'s *Where things are* table, `check`'s facts and
+reports, the canon scan for `allowed-tools`, and a seventh release-rehearsal phase. Each case was a failing
+`node --test` case first. The choices the design left open, each held by a test:
+- **Ten declarable roles.** `knowledge` and `skill` are roles and are refused here, since the index already
+  lists them from the target. `brief` and `room` take `{ "words": n }` and refuse a path. A field nobody reads,
+  and a ceiling that is not a whole number above zero, are refused, so a typo never silently drops a ceiling.
+- **Where each refusal lands.** A shape problem, an unknown role, a path that escapes, is the root, or sits
+  inside the target or the mirror root, and a role declared twice are refused where the manifest is read
+  (exit 2), as an escaping room is. So `check` fails on them without touching the path. A role declared twice
+  is found in the text, because `JSON.parse` keeps the last of two keys silently. A link, or a link held as
+  text, is a fact about the disk: `check` fails on it (exit 1) and never reads through it, and `sync` refuses
+  it even with `--force`, since the table would send every session through it. An absent document fails
+  `check`, and `sync` names it and proceeds: blocking every canon update on one record would hold the
+  doctrine to it.
+- **A declared path may be a folder**: a folder of decision records is the decisions role (§2.1). A ceiling on
+  a folder is reported as measuring nothing.
+- **The table** is the roster's last section, after *Rooms*: `| Role | Where | Its job |`, one row per role
+  with a path, in the roles' order, each path a code span with its pipes escaped. A code span is the brief
+  template's shape, at half a link's bytes. `check` compares it apart from the tiers' tables, so a stale one
+  is named as itself and never as the roster. It comes from the manifest alone, and the lock records
+  nothing, so D19's table gains no cell. Measured, not estimated: seven rows cost 639 bytes of the region,
+  with each job cut to what finding a record needs (§2.6 estimated about 400; the canon's whole sentences
+  cost 729).
+- **The brief's words** are the root file's text outside the region. A brief still in `CLAUDE.md` is not
+  measured until it moves (LAYOUT5). Words are whitespace-separated tokens, `tools/doc-budgets.mjs`'s count,
+  duplicated deliberately until DOC4 makes that tool read the manifest. *No backlog or decisions declared*
+  is reported only when the repository declares something.
+- **The root file's bytes** stay LAYOUT3's one `size` line. The brief's words are a separate line.
+- **Candidates** are conventional names, matched without regard to case, files before folders, and never the
+  project's own readme. `analyze --json` carries them as `documents`. `status` carries the declaration and
+  the three facts.
+- **Two defects DOC2 found.** The dogfood test now holds each skill folder to a `SKILL.md`, with the name and
+  description checks on entry files only, and a flat `skills/foo.md` still fails. `doctor`, and `analyze`'s
+  search before adoption, compare a skill's entry file only, so `dispatch-subagent` no longer reads as 61%
+  like `set-up-documents/templates/backlog-row.md`.
+- **The `allowed-tools` scan** reads frontmatter only, in any spelling of the field and either YAML shape,
+  over every file of a skill's folder: a skill's template copied into a repository would carry the field.
+  It was seen failing on a fixture and on a field planted in a real canon skill.
+- What the gates do not cover: the release rehearsal's phase was written and not run in the branch, and its
+  patterns were checked against the source bin in a scratch consumer. The service's reader of `documents`
+  is DOC5's. The twins table gains its row when that reader lands, matched against
+  `documents-manifest.test.ts`.
 ## D121 — Every tool Daoris runs is the system's, managed, or a file the person names; a list built in says where each version downloads, and more locations extend it without a release (2026-10-01)
 
 **Decision (TOOLS1).** The owner: *"all tools that daoris using like git, [terminal] should all have a self managed

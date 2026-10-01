@@ -27,7 +27,8 @@ budget overage. All three are normal. Expect them.
 
 `daoris init` lists the available packs *and* every document the repository already owns. That second
 list is the adoption plan — each entry is something that will either collide, become a renamed twin, or
-stay local.
+stay local. A third list, the records the repository seems to keep by role (a changelog, a decisions
+file or folder, a fix log, a backlog), is what step 7 declares; `init` writes none of them.
 
 ### 2. `sync --dry-run` and read the collisions
 
@@ -102,10 +103,14 @@ trimming: every line that leaves the brief has a new home, and the hand-over nam
   `templates/room.md`, and is listed in `daoris.json`'s `rooms` (D117 §2.2). `sync` writes its pointer
   and lists it in the region, and `check` fails on a declared room with no `AGENTS.md`.
 - **Records**: each record the repository keeps, by role (router, decisions, backlog, archive, fixes,
-  changelog, glossary), with its path. D122 §2.7 declares them in `daoris.json`'s `documents`, which
-  `sync` renders as the region's *Where things are* table; the CLI reads that field once DOC3 lands and
-  ignores it before, so until then the brief's own *Where things are* section is the declaration,
-  written by hand.
+  changelog, glossary, gates), with its path, in `daoris.json`'s `documents` (D122 §2.7). A path is a
+  file or a folder (a folder of decision records is the decisions); `{ "path": ..., "words": ... }`
+  adds a ceiling, and `brief` and `room` take `{ "words": ... }` alone. `sync` renders them as the
+  region's *Where things are* table, so the brief's own section says only that the region lists them,
+  and the list is kept once. `check` fails on a declared path that is absent or a link, and on a table
+  the manifest no longer matches; it reports a document over its ceiling and no backlog or decisions
+  declared, and fails on neither. An unknown role, a path outside the repository or inside the
+  doctrine's folders, and a role declared twice are refused before anything runs.
 
 ### 8. Declare the safe work
 
@@ -142,6 +147,7 @@ under the automation-first model this is where their attention is spent, so hand
 at once: the diff, the gate results (`check`, the repository's own tests), which collisions were resolved
 and how, which twins were retired and where each preserved line went, what the brief took in and where
 each line it let go now lives, the documents and rooms declared, the safe work declared and that it waits
-for their yes, and what the budget reads now, with the root file's bytes beside it.
+for their yes, and what the budget reads now, with the root file's bytes and every ceiling `check`
+reports over beside it.
 A judgement call worth surfacing — a twin that might not be one, a budget that had to rise — is stated
 here as a decision with its reasoning, not asked mid-flow.
