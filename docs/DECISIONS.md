@@ -6533,6 +6533,55 @@ settled here:
   executable is a batch file, `bin/az.cmd`.
 - **Not built, and corrected.** The note above said the write-side check of rule 5 waits for *TOOLS3's verbs*. The
   design's §7 puts `locations add|remove` with TOOLS4's, so no verb and no writer of `locations` is built here.
+
+**As built (TOOLS4, 2026-10-01): download, verify, unpack, lay out, twins, with the terminal's verbs and the driver's
+followed action.** The CLI's `toolinstall.ts` and `zipfile.ts` (beside `tarball.ts`) and the driver's `ToolInstall.cs`
+plan a version, download it, verify it, unpack it and lay it out; `daoris tool download|use … managed|update|delete|
+locations|look` is the terminal's door, and the driver's `ToolActions` starts the same work as an action the page follows
+and the person's stop cancels. Nothing starts a managed tool yet: that is TOOLS5. What the design left open, settled here:
+- **Every refusal names its check**, a code both twins spell: `archive`, `address`, `unreachable`, `size`, `hash`,
+  `absolute`, `outside`, `stream`, `link`, `entry`, `encrypted`, `method`, `checksum`, `truncated`, `damaged` and `exe`;
+  a plan's are `unknown`, `version`, `conflict`, `machine`, `file` and `platform`; a delete's `missing`, `in-use` and
+  `held`; an action's `busy`. One table of archives built in the test holds both readers, and the CLI's tests parse the
+  driver's theories for it, the plan, the download, the delete, the look, the record's keys and the bounds.
+- **The driver reads the archives by hand and inflates with .NET.** Measured on .NET 10 before a line was written:
+  `ZipArchive` reads a stored entry whose CRC-32 is wrong and names no entry's method, `TarReader` reads a header that
+  fails its checksum and an archive with no end, and `GZipStream` reads a gzip cut before its trailer as whole. So both
+  sides walk the records, and the driver holds a gzip's trailer, the CRC-32 and size of everything it holds, itself.
+  Zip64's records are read on both, since an archive of more than 65,535 entries needs them.
+- **Where the twins still differ, and no list carries the input:** a deflate stream cut short inside an entry's stated
+  size is `damaged` to Node's inflater and `checksum` to the driver's, whose inflater ends early; both refuse. A gzip of
+  more than one member reads whole in Node and fails the driver's trailer check.
+- **Mirrors.** Each address is tried in read order, the person's first; one whose bytes fail the size or hash is passed
+  over, since the bytes are the check whichever host served them. When every address fails, the last one's check names
+  the refusal, and the sentence lists each. An unpacking refusal is not retried: the bytes that verified are the same
+  from any address.
+- **Every hop is held to the address rule**, redirects followed one at a time by Daoris and never by the HTTP client, ten
+  at most. In the CLI the rule is an option of `service.ts`'s one fetcher, which the `tool` row hands in; with no option
+  it fetches as `agent pin` always has.
+- **The record** is `tool`, `version`, `platform`, `sha256`, `size`, `archive`, `url` (the list's address that served
+  it), `lists`, `exe`, `paths` and `at`, in that order. The archive itself is not kept, and an empty tool folder a
+  refusal leaves is removed, so a refusal leaves nothing under `tools/<tool>/`.
+- **`use … managed` writes only after the download verified**, and the writer itself (`useManaged`, `UseManaged`)
+  refuses a version that is not downloaded. The managed refusal now names the download: *`daoris tool use git managed
+  2.51.0` downloads it*.
+- **A look keeps a copy only of a list that reads.** A list this build cannot read, or a host's error page, keeps the
+  last copy and says its age, from the copy's write time. Each location is bounded at 30 seconds. Removing a location
+  leaves its copy, read again only if the address is added again, with its age said.
+- **Exit codes:** a refusal by a check or a plan is 1, a malformed call 2.
+- **The verb moved from `tools.ts` to `toolinstall.ts`**: it merges the lists, and `resources.ts` imports `tools.ts`, so
+  `tools.ts` importing it back would be a cycle that fails at load. `DriverException` is no longer sealed, so
+  `ToolRefusal` travels every road a driver error does.
+- **The machine log** gets `tool.download.started`, `.verified`, `.refused` (with its check) and `.stopped`, and
+  `tool.location.fetched` and `.failed`, by a location's place in the list, from the driver library. The CLI is no
+  machine log source (D94) and writes none.
+- **Not built:** the routes and the screen (TOOLS7), Ask Daoris's kind (TOOLS8), starting a managed tool (TOOLS5) and
+  `tool git ssh` (TOOLS6). `tool list` names each tool's downloaded versions, not their sizes.
+- **Not covered by a gate:** a real host. The redirect rule is proven against stand-ins on both sides: Node's `fetch`
+  answering a redirect itself under `redirect: 'manual'`, and .NET's handler with `AllowAutoRedirect` off, are each
+  runtime's documented behaviour, exercised first by TOOLS9's loopback server and TOOLS11's real downloads.
+- **Rejected:** keeping the bytes of whatever a location answers, which would let a captive portal's page replace a
+  good list; retrying an unpacking refusal at the next mirror, which would fetch the same bytes again.
 ## D120 — Plugins leave the repository: a workshop in the home makes them, Daoris.Plugins keeps Daoris's own, and NuGet is where they are found (2026-10-01)
 
 **Decision (PLUGREPO2, PLUGDIST1).** The owner made an empty folder, Daoris.Plugins, beside this repository, for

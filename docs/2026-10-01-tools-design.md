@@ -4,8 +4,11 @@
 and its resolution (§2.1–§2.3), twins in `tools.ts` and `Tools.cs`, and `daoris tool list|path|use <tool>
 system|file <path>`. Nothing starts a tool through them yet (TOOLS5). TOOLS3 is built: `resources.json` schema 1, the
 platform table and the merge (§3.1–§3.5), twins in `resources.ts` and `ToolResources.cs`, and the list built in at
-`app/resources.json`, whose first entries `2026-10-01-tools-resources-evidence.md` records. Nothing reads the lists
-at run time yet (TOOLS4). D121's notes say what each row settled that this document left open. The owner, 2026-10-01:
+`app/resources.json`, whose first entries `2026-10-01-tools-resources-evidence.md` records. TOOLS4 is built: a
+version planned, downloaded, verified, unpacked and laid out (§3.6, §3.7), twins in `toolinstall.ts` with `zipfile.ts`
+and `ToolInstall.cs`, `daoris tool download|use … managed|update|delete|locations|look`, and the driver's download as a
+followed action. Nothing starts a managed tool yet (TOOLS5). D121's notes say what each row settled that this document
+left open. The owner, 2026-10-01:
 
 > *"all tools that daoris using like git, [terminal] should all have a self managed option (and can be setup
 > in settings) which can be download from locations … I perfer provide default download location and built
