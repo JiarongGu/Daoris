@@ -420,6 +420,26 @@ public sealed class SessionLogTests : IDisposable
     }
 
     /// <summary>
+    /// WSSETUP5 (D124 §3.4): each registration followed from a line is one line, its repository and a word from the
+    /// outcomes' list, never the sentence its row says; and none once the watch has let go.
+    /// </summary>
+    [Fact]
+    public void A_registration_followed_is_one_line_with_its_repository_and_outcome_and_never_its_words()
+    {
+        using var w = Watch();
+
+        w.Client.Followed(new RegistrationFollowed("game", RegistryOutcome.NotSetUp, "words a person reads", "main", "abc1234"));
+        w.Watch.Dispose();
+        w.Client.Followed(new RegistrationFollowed("engine", RegistryOutcome.Registered, "more words", Sent: true));
+
+        var line = Assert.Single(Named("registry.followed"));
+        Assert.Equal("info", line.GetProperty("level").GetString());
+        Assert.Equal("""{"repository":"game","outcome":"not-set-up"}""", Data(line).GetRawText());
+        Assert.DoesNotContain("words a person reads", Raw(), StringComparison.Ordinal);
+        Assert.DoesNotContain("main", Data(line).GetRawText(), StringComparison.Ordinal);
+    }
+
+    /// <summary>
     /// WSSETUP11 (D124 §7.3): what a set-up costs is measured per turn, as METER1 splits it: the tokens read
     /// anew, from the cache and written, a turn's tool calls, and the context at its high-water against the
     /// window. Each count is the wire's, null where it said none, and a call's later updates are the same call.

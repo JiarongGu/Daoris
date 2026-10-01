@@ -5,6 +5,11 @@
 // The network itself lives in `service.ts`, which is the one module the offline-discipline tests name.
 // D8's guarantee is about the DOCTRINE operations — `check`, `sync`, `index`, `upstream` — all of
 // which are pure local hashing against the lock and stay that way.
+//
+// 🔴 A TWIN of the driver's `LineRegistration.cs` (WSSETUP5, D124 §3.3): the driver composes this same body from
+// a repository's LINE and registers it with no `connect` run. What is sent (`registration()`), and what is refused
+// before anything is sent (`readManifest`, `isDeclared`, `readLanes`), are held by `connect-twin.test.ts` here and
+// `LineRegistrationTests` there, row for row. A change to either is a change to both.
 
 import { existsSync, readFileSync, statSync } from 'node:fs';
 import { isAbsolute, resolve } from 'node:path';

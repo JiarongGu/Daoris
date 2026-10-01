@@ -137,6 +137,26 @@ public sealed class DriverCommandTests
         Assert.Contains("new SetupWorld(service, home), config, SetupWorld.DoorOf(config, home)", console);
     }
 
+    /// <summary>
+    /// WSSETUP5 (D124 §3.1, §4.5): following each line when the person asks is a door the usage names, routed by the host to
+    /// its console with this host's log, and spoken in the library's words, which <c>RegisterCommandTests</c> holds.
+    /// </summary>
+    [Fact]
+    public void The_usage_names_registering_from_the_line_and_the_host_routes_it_to_the_librarys_words()
+    {
+        Assert.Contains("\n  register [--repository <name>]\n", DriverCommand.Usage.ReplaceLineEndings("\n"));
+        Assert.Equal("usage: daoris-driver register [--repository <name>]", RegisterCommand.Usage);
+
+        var program = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host", "Program.cs"));
+        Assert.Contains("if (args is [\"register\", .. var registerArgs])", program);
+        Assert.Contains("RegisterConsole.RunAsync(registerArgs, log)", program);
+
+        var console = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host", "RegisterConsole.cs"));
+        Assert.Contains("RegisterCommand.Problem(args)", console);
+        Assert.Contains("SessionLog.WriteFollowed(log, followed)", console);
+        Assert.Contains("new RegistrationWorld(service, home, config)", console);
+    }
+
     private static string SourceRoot()
     {
         var folder = new DirectoryInfo(AppContext.BaseDirectory);

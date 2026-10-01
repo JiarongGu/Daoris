@@ -6,7 +6,8 @@
 > knowledge"*. This is the contract for the WSSETUP rows, and its decision is **D124**. Status: **designed;
 > WSSETUP9, WSSETUP11 and LAYOUT7 as amended built** (§6.1, §7.3, §2), **and WSSETUP2 and WSSETUP4** (the
 > install's doctrine tool, §1.2, and the version guard, §1.4), **and WSSETUP3** (`daoris` on every child's `PATH`,
-> §1.3); D124's notes say what each build settled, and the rest is not built. It
+> §1.3), **and WSSETUP5** (registration follows the line, §3); D124's notes say what each build settled, and the rest
+> is not built. It
 > builds on the set-up quest of `docs/2026-10-01-agent-layout-design.md` §6 (D117: LAYOUT7, LAYOUT8, LAYOUT10),
 > the standard of `docs/2026-10-01-development-documents-design.md` (D122) and the tools' environment of
 > `docs/2026-10-01-tools-design.md` (D121, TOOLS5), and it amends D117 §6 where §11 says. Read with **D13**,
@@ -370,6 +371,14 @@ on another branch shows its older documents until it moves.
 
 Each outcome writes `registry.followed {repository, outcome}` to the machine log (D94): a name and a word from a
 fixed list, never a path or a summary.
+
+*As built (WSSETUP5): "after Daoris moves a line" is a record under the home, `lines-moved.json`, written where the
+line moves (`SessionTrees`' merge and its fast-forward), whichever door pressed it; the next look follows each moved
+line before it reads the registry, and a terminal's `trees land` or `trees sync` follows at once. "Once at start" is a
+watch's (the shell's loop and `daoris-driver drive`), beside its first looks. A registration is sent only where the row
+holds something else, and "the declaration left as the row held it" sends the row's own declaration back, since the
+registry door replaces it whole. Each outcome's sentence is kept for the row in `registry-followed.json`. D124's note
+has the rest.*
 
 ### 3.5 Why the driver, and not the session or `connect`
 

@@ -6012,6 +6012,9 @@ branch: `SetupLineProcessTests` (a mode-120000 `CLAUDE.md` under `core.symlinks=
 checkout is on another branch with edits in flight), the parent's at merge; the family rehearsal's set-up phase
 (`setup game --plan`, a stub session running the CLI and landing) is the tools lane's and not written.*
 
+*Amended by D124 (WSSETUP5, 2026-10-01), §6.5: the driver registers a repository from what its line declares, after Daoris
+moves the line, once as a watch starts, and when the person asks (`daoris-driver register`). D124's note has the rest.*
+
 ## D118 — Every view has the same frame: its own list pane and main area, beside the frame's side bar and panel (2026-10-01)
 
 **Decision (FRAME1a).** The owner, 2026-10-01: *"why only session has more layout option we do need to make
@@ -7549,3 +7552,40 @@ What the design left open, settled here:
   `Process` half, lays stub launchers in an install's `app/bin/` and wants a stub driven session's own shell to answer
   `daoris --version` with them. It was written and not run (MOD8). Whether each real harness's shell finds `daoris` by
   its bare name stays §9's fourth item, for the pilot.
+
+**As built (WSSETUP5, 2026-10-01): registration follows the line.** `LineRegistration.Compose` (the driver) composes what
+`connect` would send from `daoris.json` and `daoris.lanes.json`, a twin of `connect.ts`'s `registration()` and the reads
+before it, held by `LineRegistrationTests` and `connect-twin.test.ts`, one table cell for cell. `RegistrationFollow` reads
+the two files on each repository's line as git objects (`LineDeclarationReader`, as `LayoutReader` reads the layout), for
+the row's own root, and sends through the registry door. What the design left open, settled here:
+- **"After Daoris moves a line" is a record, not a call.** `SessionTrees` writes `<home>/lines-moved.json` where a line
+  moves, its merge and its fast-forward, so a press from the screen, a terminal or Ask Daoris is followed without each
+  door knowing the service. The next look follows each moved line before it reads the registry, so a set-up that just
+  landed is planned by what it declares; `trees land` and `trees sync` at a terminal follow at once. A move made while no
+  loop runs is followed when one does.
+- **"Once at start" is a watch's**: the shell's loop and `daoris-driver drive`, beside its first looks on the pool, since
+  a workspace's lines are seconds of git and no start should wait on them. It is said in the next look's report and
+  tried again until the service answers. `--once` and `--until-idle` follow only the lines Daoris moved.
+- **Sent only where the row holds something else**, read as the service stores it: adopted, the words (a blank summary
+  is none), `uses` by its rule, the packs, the join and the knowledge as the service narrows them, and the lanes' words.
+  `ServiceClient.RegistrationsAsync` reads the whole row for it.
+- **"The declaration left as the row held it" sends the row's own declaration back**, since the registry door replaces
+  the declaration whole; the packs, the remote flags and the lanes are the line's. A row that already records adoption
+  and holds the same is sent nothing again.
+- **Where each refusal is said.** `<home>/registry-followed.json` keeps each repository's outcome, its sentence, the line
+  and the commit, for the row WSSETUP7 draws; `registry.followed {repository, outcome}` is the machine log's line, written
+  by `SessionLog` from the client's `RegistryFollowed` event. A look or a terminal says what was sent and what must be
+  fixed; a standing state (unchanged, not set up, no line, no checkout here) is kept and logged, and not said at every
+  start. *Not set up* names a set-up's landed branch still standing (the landings record, by its quest's title).
+- **Shapes the service would refuse are refused first**, naming the field (a domain that is not an object, a summary
+  that is not text, a list that is not of text); the layout's fields are neither sent nor judged. A root that is a linked
+  worktree is refused by `LinkedWorktree.MainOf`, `linkedWorktreeMain`'s twin, and a root not on disk asks git nothing.
+- **The refresh is asked once per pass**, when anything was sent, and a refusal of it is said.
+- **The doors.** `daoris-driver register [--repository <name>]` (exit 1 only for a repository named and refused), and the
+  modules' `REGISTRY_REFRESH` {repository} in `DriverModule.Registry.cs`, the row's *Refresh*, whose button and bridge are
+  WSSETUP7's. Ask Daoris's `register` door is owed to WSSETUP7 (`HelpCoverageTests`), and the room names the terminal's.
+- **Not covered by a gate run here.** `RegistrationLineProcessTests`, in the `Process` half, lands a manifest and a lanes
+  file by a real `merge` landing, moves the checkout to another branch with other words in flight, and wants the line's
+  declaration registered for the checkout's root with one refresh. It was written and not run (MOD8). The family
+  rehearsal's check (a set-up under `merge` reads adopted and declared with no `connect`) is the tools lane's and not
+  written. Whether a real *Bring up to date* after a real merge registers what a set-up declared is §9's sixth item.

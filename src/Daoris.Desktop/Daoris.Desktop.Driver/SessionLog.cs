@@ -82,7 +82,26 @@ public sealed class SessionLog : IDisposable
         _clock = clock ?? (() => DateTimeOffset.UtcNow);
         service.Opened += OnOpened;
         service.Moved += OnMoved;
+        service.RegistryFollowed += OnFollowed;
         events.Evented += OnEvented;
+    }
+
+    /// <summary>
+    /// One registration followed from a line (WSSETUP5, D124 §3.4): <c>registry.followed</c>, its repository's name and a
+    /// word from <see cref="RegistryOutcome"/>, never the sentence, a path or a summary. A terminal's verb that follows
+    /// with no loop writes the same line through here.
+    /// </summary>
+    public static void WriteFollowed(MachineLog log, RegistrationFollowed what) =>
+        log.Info("registry.followed", ("repository", what.Repository), ("outcome", what.Outcome));
+
+    private void OnFollowed(RegistrationFollowed what)
+    {
+        lock (_gate)
+        {
+            if (_disposed) return;
+        }
+
+        WriteFollowed(_log, what);
     }
 
     public void Dispose()
@@ -96,6 +115,7 @@ public sealed class SessionLog : IDisposable
 
         _service.Opened -= OnOpened;
         _service.Moved -= OnMoved;
+        _service.RegistryFollowed -= OnFollowed;
         _events.Evented -= OnEvented;
     }
 
