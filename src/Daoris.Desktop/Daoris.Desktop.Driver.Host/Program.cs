@@ -77,6 +77,11 @@ using Daoris.Driver;
 //                 speaks the handshake, one frame at each point and the shutdown, and checks every answer
 //                 by the driver's own reader: 0 when all are ones it reads, 1 when the plugin failed a check.
 //                 Settings → Plugins is the other door.
+//   plugins show <id> [--json]
+//   plugins activity <id> [--since <30m|2h|3d>] [--json]
+//                 a plugin's page and what it did (PLUGUI1d, D119 §4.4): what it declares as written, a
+//                 server's environment by name only, its health from the machine log's last word, said with
+//                 when; and its activity from the machine log over the last 7 days, or the span --since names.
 //
 // While watching, a line marked `!` is what would have been a toast on a machine with a screen
 // (SURF5b): a session parked, or one ended without the person asking. `daoris driver notify off`
@@ -155,11 +160,11 @@ try
         return Daoris.Driver.Host.LogsConsole.Run(logsArgs);
     }
 
-    // The plugin kit from a terminal (PLUG8, D50): Settings → Plugins is the other door. It needs no
-    // service, and a home only to try an installed plugin by its id.
+    // Plugins from a terminal (PLUG8, PLUGUI1d, D50): the kit's new and try, and a plugin's page and activity,
+    // the Plugins view's twins. None needs a service; try a home only to try an installed plugin by its id.
     if (args is ["plugins", .. var pluginsArgs])
     {
-        return await PluginKitCommand.RunAsync(pluginsArgs, Console.Out, DaorisHome.Resolve(), log: log);
+        return await PluginsCommand.RunAsync(pluginsArgs, Console.Out, DaorisHome.Resolve(), log);
     }
 
     // 🔴 The loop only by its verb (DRV8a, D104): a bare invocation, or a word nobody answers, is the
