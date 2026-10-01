@@ -11,6 +11,7 @@ import { inspect } from './drift.ts';
 import { HARNESSES, DEFAULT_HARNESS, resolveHarness } from './harness.ts';
 import { formerDocuments, lockLayout } from './layout.ts';
 import { describeLink, linkProblems } from './links.ts';
+import { candidateDocuments, sayCandidates } from './documents.ts';
 import { flagValue } from './args.ts';
 import { readRemotes, redactKey } from './remotemap.ts';
 import { DaorisError } from './errors.ts';
@@ -116,6 +117,8 @@ export function commandInit(
     write('');
     for (const problem of links) write(`  ${describeLink(problem)}`);
   }
+  // Named and never written (D122 §2.7): declaring is the repository's act, done by its own session.
+  sayCandidates(candidateDocuments(root), write);
   write('');
   write('  then: daoris sync');
   return 0;

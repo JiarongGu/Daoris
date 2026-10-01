@@ -335,6 +335,19 @@ function caseless(root: string, rel: string): string | null {
   return found;
 }
 
+/**
+ * The candidates, as `init` and `analyze` print them. Named and never written: declaring is the
+ * repository's act, done by its own session in a set-up, and a guess written into the manifest would
+ * read as a declaration nobody made.
+ */
+export function sayCandidates(candidates: readonly { role: string; path: string }[], write: (line: string) => void): void {
+  if (!candidates.length) return;
+  write('');
+  write('  records this repo seems to keep — declare the ones it does in daoris.json\'s "documents" (D122),');
+  write('  and sync lists them in the region:');
+  for (const { role, path } of candidates) write(`    ${role.padEnd(12)}${path}`);
+}
+
 /** The records this repository seems to keep, by role. Reads names only, and writes nothing. */
 export function candidateDocuments(root: string): { role: string; path: string }[] {
   const found: { role: string; path: string }[] = [];

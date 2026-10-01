@@ -11,6 +11,7 @@ import { tierRuleBody } from './tierrender.ts';
 import { readCanon, resolveCanonRoot, resolveSelection } from './canon.ts';
 import { DEFAULT_CORE_BUDGET_BYTES, lockIndex, readLock, readManifest } from './config.ts';
 import { isEntry, significantTokens, containment } from './twins.ts';
+import { candidateDocuments, sayCandidates } from './documents.ts';
 import {
   DEFAULT_HARNESS, HARNESSES, harnessVerdict, tierNames, verifyHarnessContract,
 } from './harness.ts';
@@ -254,6 +255,9 @@ export function analyze(
     budget: { ...projectBudget(root, target, canon, selection.files, existing, collisions), limit: budgetLimit },
     offers: selection.offers,
     switchedOff: selection.switchedOff,
+    // The records this repository seems to keep, by role (D122 §2.7): named for the session that
+    // declares them, never declared here.
+    documents: candidateDocuments(root),
   };
 }
 
@@ -378,6 +382,8 @@ export function commandAnalyze({ root, argv, write, packageRoot }: CommandArgs):
       write(`      looks like ${twin.canonical} (${Math.round(twin.score * 100)}% shared vocabulary)`);
     }
   }
+
+  sayCandidates(report.documents, write);
 
   write('');
   const { current, projected, limit } = report.budget;

@@ -495,6 +495,8 @@ export interface AnalysisReport {
   offers: CoreSwitch[];
   /** Core rows the manifest already confirms off — out of every projection above. */
   switchedOff: CoreSwitch[];
+  /** The records this repository seems to keep, by role, from conventional names (D122 §2.7). Never declared here. */
+  documents: { role: string; path: string }[];
 }
 
 /**
