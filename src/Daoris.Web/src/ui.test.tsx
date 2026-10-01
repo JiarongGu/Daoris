@@ -6,8 +6,8 @@ import type { SessionState } from './api';
 import './i18n';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import {
-  Button, CountBadge, Dot, Drawer, EmptyState, Inline, MetaLine, MonoWell, PathText, Pill, Segmented, SESSION_ACTIVE,
-  SESSION_DOT, SESSION_TONE, SettingRow, shownState, StripMark, Tile, Tip, WaitingCard,
+  Button, CountBadge, Dot, Drawer, EmptyState, Inline, MetaLine, MonoWell, PathText, Pill, Segmented, SelectField,
+  SESSION_ACTIVE, SESSION_DOT, SESSION_TONE, SettingRow, shownState, StripMark, Tile, Tip, WaitingCard,
 } from './ui';
 import { CommandPalette } from './work/CommandPalette';
 
@@ -61,6 +61,23 @@ describe('the primitives', () => {
  * the glyph, for the reader who asks, rather than as the paragraph that used to sit above every
  * control on the Machine view.
  */
+describe('a select', () => {
+  // SELECT1: a list longer than the window ran off its edge, with nothing to scroll it by. The list is capped at
+  // the room the popper measures on the side it opened, and it scrolls inside that.
+  it('caps its open list at the room the window has, and scrolls inside it', async () => {
+    const user = userEvent.setup();
+    const options = Array.from({ length: 60 }, (_, i) => ({ value: `repo-${i}`, label: `repository ${i}` }));
+    render(<SelectField value="" onChange={() => {}} options={options} ariaLabel="To" />);
+
+    await user.click(screen.getByRole('combobox', { name: 'To' }));
+
+    const list = await screen.findByRole('listbox');
+    const content = list.closest('[data-radix-select-content], [role="listbox"]') as HTMLElement;
+    expect(content.className).toContain('max-h-[var(--radix-select-content-available-height)]');
+    expect(screen.getAllByRole('option')).toHaveLength(60);
+  });
+});
+
 describe('a setting row', () => {
   it('leads with the label, keeps the hint to a line, and holds the why off the page', () => {
     render(
