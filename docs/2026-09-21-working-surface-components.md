@@ -182,6 +182,8 @@ Everything the design (§3–§5) needs, with the states its story must carry. N
 | `needsAPerson(sessions, quests, registry, asks)` | what is waiting, parked first (SURF5); asks waiting on a person since INT4d | one derivation for the band and the Work switch's count — two answers to "how many need me" disagree the first time either is edited |
 | `sessionTimeline(session, quest?)` | the observed events, oldest first (SURF4c) | the record carries no event log, so what a timeline may honestly say is a derivation — and one place to change when the record grows one |
 | `readEvidence(evidence)` | the driver's sentence, and the commits inside it (SURF4c) | reads the bundle's **shape**, never its words: no English literal is matched, so a reworded header is harmless rather than a silently empty list |
+| `listPanes.ts` | each view's list memory: its closing, its width, its chosen item, its filters, keeping Sessions' and Settings' keys (FRAME1c, D118 §3f) | per view, beside `closings.ts`, which keeps what the frame remembers for every view |
+| `opener.ts` | the opener's plan: a view, the item its list chooses, and the record or form a door opens (FRAME1c, D118 §3i) | one opener for every door, planned as a value so each door's effect is an assertion |
 
 `ago`, `sittingDays` and `sessionTool` already exist and are reused.
 
@@ -209,6 +211,8 @@ Everything the design (§3–§5) needs, with the states its story must carry. N
 | `SessionStripRow` | one running session in the rail's 56px strip (FRAME6), a `StripMark` since FRAME1b | working · attended · awaiting person · a 中文 repository |
 | `Splitter` | the edge a column is resized by, keyboard-operable (FRAME6) | held by `chrome.test.tsx` |
 | `ListPane` | a view's list pane: its header, the list and its keys, its edge, its strip, and the list laid over the main area (FRAME1b, D118) | open · closed · strip by the window · laid over · at its least and its most · a `＋` of two kinds · 中文 · empty · loading |
+| `ViewMain` | a view's main area: the scroll box that is the container named `main`, which its page's splits follow, its page header's slot, and its four states (FRAME1c, D118) | chosen · nothing chosen · loading · gone · narrowed · a view's own page · Sessions' gutters |
+| `ViewFrame` | a browser's frame: the view's list and its main area, never the side bar or the panel; and `ViewListPane`, the one path by which a frame draws a view's `ListSpec` (FRAME1c, D118 §4) | held by `ViewFrame.test.tsx` |
 
 ### Organisms — `src/work/`
 
@@ -243,7 +247,7 @@ last-view memory.~~ Work is the **second frame**, not a sixth nav item
 | `StatusBar` | ambient truth: driver, session count, workspace, remote | running · stopped · no shell · a remote wired |
 | `OutputPanel` | the stream, **growable, shrinkable, hideable** — `MonoWell` inside a region, not a well inside a card | collapsed · default · grown · no session attended |
 | `StartSession` | repository, harness, account, own tree — moved out of Projects (SURF4d) | every choice · one harness and no accounts · nothing to talk in |
-| `WorkFrame` | rail + attended + panel + status bar | the assembled frame |
+| `WorkFrame` | rail + attended + panel + status bar; since FRAME1c it takes each view's `ViewLayout`, its list and its main area, and Sessions' rail is one such list | the assembled frame |
 
 The remembered mode replaces the remembered view, and is a per-browser preference like the language
 and the workspace scope — never machine wiring, never a tracked file.
