@@ -7156,3 +7156,29 @@ Held by `AskAndWaitPromptTests` (five new cases, each seen failing first) and by
 words were searched in the desktop suites' `Process` half, `tools/*rehearsal*.mjs` and the web's `e2e/`, and none
 names them. **Not covered**: whether a real session now settles what it would have asked, which only the pilot's
 canary shows (WSSETUP12).
+
+**As built (WSSETUP11, 2026-10-01): set-ups and parks, counted.** The machine log gains `session.parked {session,
+kind, repository, workspace}`, `session.started` gains `workspace` and, for a set-up's session only, `setup: true`,
+and `turn.ended` gains the turn's tokens (`input`, `cacheRead`, `cacheWrite`, `output`), its tool `calls` and its
+context (`used`, `size`). `tools/usage-report.mjs` gains a *Set-ups* section, each set-up session's cost, and a
+*Parks* section, per week by workspace beside the sessions started there. The machine-log design's §4 and §6 say
+what each line measures and what each section reads. What the build settled that §7.3 left open:
+
+- **The park is written where it is made, not from the attention watch.** `SessionLog` writes it as the service
+  client moves a record into the state `SessionStates.IsParked` names, which only the driver does. The shell's
+  watch lives in the modules, its first look is a baseline that drops a park made just before a restart, and the
+  headless `--once` and `--until-idle` run none, so writing from it would undercount and need a modules change. Both
+  read the one predicate, and `SessionLogTests` and `AttentionTests` hold the same rows.
+- **The line names its workspace and its kind**, beside §7.3's session and repository: parks per week by workspace
+  needs the first, and an intake's park (the person asked about an ask) is told from a driven session's by the
+  second.
+- **A set-up is known by its quest's title.** A quest carries no kind, and the press publishes an ordinary ask, so
+  `SetupQuests` holds the three titles the press composes (D117 §6.2, §2.1–§2.2 here), and LAYOUT7's composer takes
+  its words from there. The driver passes the mark with the open; the ledger is not told.
+- **A set-up's cost is read from the log alone**, not the usage record: its context comes from each turn's usage
+  reports at their high-water, the same reports the usage record keeps, so the report reads no file but the log and
+  `usage.json` gains no reader.
+
+**Not covered**: the driver's open passing the mark is reached only by a real tick (the `Process` half); its
+decision and the client and log beneath it are held in the fast half, and LAYOUT7's family rehearsal runs the first
+set-up. No week of *before* exists until an install carrying this runs.

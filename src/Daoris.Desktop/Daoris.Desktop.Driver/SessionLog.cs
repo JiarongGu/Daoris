@@ -13,13 +13,31 @@ namespace Daoris.Driver;
 /// <see cref="SessionEvents"/>, stamped as it is written. This class only listens to both.</para>
 ///
 /// <para><b>The lines</b> (<c>docs/2026-09-30-machine-log-design.md</c> §4):
-/// <c>session.started</c> {session, kind, adapter, repository} as a record opens;
+/// <c>session.started</c> {session, kind, adapter, repository, workspace, and <c>setup</c> true for a set-up's
+/// session} as a record opens;
 /// <c>session.opened</c> {session, adapter, openMs}, the open to the session's first prompt in its record;
 /// <c>turn.answered</c> {session, firstAnswerMs}, a prompt to the first thing back (a message, a thought
-/// or a tool call); <c>turn.ended</c> {session, stopReason, turnMs}, a prompt to its turn's end;
+/// or a tool call); <c>turn.ended</c> {session, stopReason, turnMs, input, cacheRead, cacheWrite, output,
+/// calls, used, size}, a prompt to its turn's end with what the turn consumed;
+/// <c>session.parked</c> {session, kind, repository, workspace} as the record is moved to wait on the person;
 /// <c>session.ended</c> {session, state, seconds} as the record reaches a closed state; and
 /// <c>permission.refused</c> {session, adapter, tool, kind, by} for each call the record says was refused
 /// (UNBLOCK5, D122 §3.10).</para>
+///
+/// <para><b>A park is counted where it is made</b> (WSSETUP11, D124 §7.3): a session that stopped to ask the
+/// person (D83) is what setting a workspace up is meant to make rarer, so parks per week are its measure. Only
+/// the driver moves a record into the state <see cref="SessionStates.IsParked"/> names, a driven session's
+/// or an intake's, and always through this client, so the line is written at the move, in the shell and the
+/// headless host alike, in every mode. The attention watch says the same park from the active list a look
+/// later; it is not the writer, because its first look is a baseline (a park made just before a restart is
+/// never said) and the headless <c>--once</c> and <c>--until-idle</c> run none. Both read the one predicate,
+/// and their tests hold the same rows.</para>
+///
+/// <para><b>What a turn consumed</b> (WSSETUP11): its tokens as the wire reported them for the whole turn,
+/// METER1's split (new input, read from the cache, written to it, output), each null where the wire said
+/// none; the tool calls first seen in it, a call's later updates being the same call; and the context at its
+/// high-water within the turn against the window, from the turn's usage reports, null where it had none. A
+/// set-up's cost is the sum of its turns, which the usage report reads back.</para>
 ///
 /// <para><b>An ask is a refused call, once.</b> Nothing Daoris starts has a person at the prompt, so every
 /// permission a harness would have asked for is refused (D52), and the record marks the call
@@ -88,6 +106,24 @@ public sealed class SessionLog : IDisposable
 
         public string? Adapter { get; init; }
 
+        /// <summary>Which door opened it, and where its record runs: what a park names.</summary>
+        public string? Kind { get; init; }
+
+        public string? Repository { get; init; }
+
+        public string? Workspace { get; init; }
+
+        /// <summary>Every call seen, so an update to one is not a second call.</summary>
+        public HashSet<string> Calls { get; } = new(StringComparer.Ordinal);
+
+        /// <summary>The calls first seen since the last turn ended.</summary>
+        public long TurnCalls { get; set; }
+
+        /// <summary>The turn's context at its high-water, and the window it was held against, or null for none reported.</summary>
+        public long? TurnUsed { get; set; }
+
+        public long? TurnSize { get; set; }
+
         /// <summary>Whether its first prompt has been seen — the open's wait ends there, once.</summary>
         public bool Asked { get; set; }
 
@@ -109,15 +145,31 @@ public sealed class SessionLog : IDisposable
         lock (_gate)
         {
             if (_disposed) return;
-            _watched[opened.Session] = new Watched { Opened = _clock(), Adapter = opened.Adapter };
+            _watched[opened.Session] = new Watched
+            {
+                Opened = _clock(), Adapter = opened.Adapter, Kind = opened.Kind,
+                Repository = opened.Repository, Workspace = opened.Workspace,
+            };
         }
 
-        _log.Info("session.started",
-            ("session", opened.Session), ("kind", opened.Kind), ("adapter", opened.Adapter), ("repository", opened.Repository));
+        List<(string Key, object? Value)> data =
+        [
+            ("session", opened.Session), ("kind", opened.Kind), ("adapter", opened.Adapter), ("repository", opened.Repository),
+            ("workspace", opened.Workspace),
+        ];
+        // Said only of a set-up's session (WSSETUP11), so every other start reads as it always has.
+        if (opened.Setup) data.Add(("setup", true));
+        _log.Write("info", "session.started", data);
     }
 
     private void OnMoved(SessionMoved moved)
     {
+        if (SessionStates.IsParked(moved.State))
+        {
+            Parked(moved.Session);
+            return;
+        }
+
         if (!Closed.Contains(moved.State)) return;
 
         Watched? known;
@@ -129,6 +181,24 @@ public sealed class SessionLog : IDisposable
 
         long? seconds = known?.Opened is { } opened ? (long)Math.Max(0, (_clock() - opened).TotalSeconds) : null;
         _log.Info("session.ended", ("session", moved.Session), ("state", moved.State), ("seconds", seconds));
+    }
+
+    /// <summary>
+    /// A record moved to wait on the person (WSSETUP11): the session, and the door, repository and workspace
+    /// its open said, or null each where this process never saw it open. It stays watched: a park is no
+    /// ending, and the record ends when the person answers.
+    /// </summary>
+    private void Parked(string session)
+    {
+        Watched? known;
+        lock (_gate)
+        {
+            if (_disposed) return;
+            _watched.TryGetValue(session, out known);
+        }
+
+        _log.Info("session.parked",
+            ("session", session), ("kind", known?.Kind), ("repository", known?.Repository), ("workspace", known?.Workspace));
     }
 
     private void OnEvented(string session, SessionEvent e)
@@ -171,14 +241,40 @@ public sealed class SessionLog : IDisposable
                         lines.Add(("turn.answered", [("session", session), ("firstAnswerMs", Ms(at - asked))]));
                     }
 
-                    if (e.Kind == SessionEventKind.Tool && Refusal(session, watched, e) is { } refusal) lines.Add(refusal);
+                    if (e.Kind == SessionEventKind.Tool)
+                    {
+                        // A call with no id cannot be told from the next one, so each is its own call.
+                        if (e.Id is not { } call || watched.Calls.Add(call)) watched.TurnCalls++;
+                        if (Refusal(session, watched, e) is { } refusal) lines.Add(refusal);
+                    }
+
+                    break;
+
+                case SessionEventKind.Usage:
+                    // The turn's high-water, as the usage record keeps a session's (D57 §4): a larger reading
+                    // replaces a smaller one, so a turn that compacted still reads as having held the most.
+                    if (e.Used is { } used && (watched.TurnUsed is not { } held || used > held))
+                    {
+                        watched.TurnUsed = used;
+                        watched.TurnSize = e.Size;
+                    }
+
                     break;
 
                 case SessionEventKind.Turn:
                     long? turnMs = watched.TurnFrom is { } began ? Ms(at - began) : null;
-                    lines.Add(("turn.ended", [("session", session), ("stopReason", e.StopReason), ("turnMs", turnMs)]));
+                    lines.Add(("turn.ended",
+                    [
+                        ("session", session), ("stopReason", e.StopReason), ("turnMs", turnMs),
+                        ("input", e.Tokens?.Input), ("cacheRead", e.Tokens?.CacheRead), ("cacheWrite", e.Tokens?.CacheWrite),
+                        ("output", e.Tokens?.Output), ("calls", watched.TurnCalls), ("used", watched.TurnUsed),
+                        ("size", watched.TurnSize),
+                    ]));
                     watched.TurnFrom = null;
                     watched.Answered = false;
+                    watched.TurnCalls = 0;
+                    watched.TurnUsed = null;
+                    watched.TurnSize = null;
                     break;
             }
         }

@@ -14,8 +14,10 @@
  * many, by kind and adapter, the median and slowest open and first answer, how long turns took and how
  * they ended), the asks (UNBLOCK5: the permissions each session's harness would have asked a person for,
  * refused because nobody was at the prompt, per session by adapter and repository), the rule proposals
- * (UNBLOCK5: what waits for the person, and those made in the period by week and state), what was
- * refused (by code, most first), what failed (exceptions, the page's errors, error-level log lines,
+ * (UNBLOCK5: what waits for the person, and those made in the period by week and state), the set-ups
+ * (WSSETUP11: each set-up session's minutes, tool calls, tokens and context), the parks (WSSETUP11: the
+ * sessions that stopped to ask the person, per week by workspace, beside the sessions started there), what
+ * was refused (by code, most first), what failed (exceptions, the page's errors, error-level log lines,
  * failed or slow requests, grouped) and the lifecycle (starts, stops, uptime, versions). `--json` is the
  * same as data.
  *
@@ -390,6 +392,121 @@ function proposalsOf(proposals, { from, to }) {
   };
 }
 
+/** A count as a line carries it: a number at or above zero, or null for anything else. Absent is never zero. */
+const countOf = (value) => (typeof value === 'number' && Number.isFinite(value) && value >= 0 ? value : null);
+
+/** The sum of what was measured, or null when nothing was. */
+const sumOf = (values) => {
+  const known = values.filter((value) => value !== null);
+  return known.length === 0 ? null : known.reduce((sum, value) => sum + value, 0);
+};
+
+/** The counts a turn's end carries (WSSETUP11): its tokens as METER1 splits them, its calls, and its context. */
+const TURN_COUNTS = ['input', 'cacheRead', 'cacheWrite', 'output', 'calls'];
+
+/**
+ * Each set-up's cost (WSSETUP11, D124 §7.3): every session whose start says `setup` true, in the order they
+ * started, with how it stands (its end's state, `awaiting-person` when it parked and has not ended, or
+ * `not ended`), how many times it parked, its seconds as its end says them, and its turns summed: the tool
+ * calls, the tokens read anew, read from the cache, written to it and written out, and the context at its
+ * largest against the window. What no line said is null, never zero; no price is claimed.
+ */
+function setupsOf(lines) {
+  const sessions = new Map();
+  for (const line of lines) {
+    if (line.event !== 'session.started' || line.data.setup !== true) continue;
+    const session = named(line.data.session);
+    if (!session) continue;
+    sessions.set(session, {
+      session, repository: named(line.data.repository) ?? '(unnamed)', workspace: named(line.data.workspace) ?? '(unnamed)',
+      ended: null, parked: 0, seconds: null, turns: [],
+    });
+  }
+
+  for (const line of lines) {
+    const entry = sessions.get(named(line.data.session));
+    if (!entry) continue;
+    if (line.event === 'turn.ended') entry.turns.push(line.data);
+    else if (line.event === 'session.parked') entry.parked++;
+    else if (line.event === 'session.ended') {
+      entry.ended = named(line.data.state) ?? 'ended';
+      entry.seconds = countOf(line.data.seconds);
+    }
+  }
+
+  const costs = [...sessions.values()].map((entry) => {
+    const summed = Object.fromEntries(TURN_COUNTS.map((field) => [field, sumOf(entry.turns.map((turn) => countOf(turn[field])))]));
+    const widest = entry.turns
+      .filter((turn) => countOf(turn.used) !== null)
+      .reduce((most, turn) => (!most || turn.used > most.used ? turn : most), null);
+    return {
+      session: entry.session, repository: entry.repository, workspace: entry.workspace,
+      state: entry.ended ?? (entry.parked > 0 ? 'awaiting-person' : 'not ended'),
+      parked: entry.parked, seconds: entry.seconds, calls: summed.calls,
+      input: summed.input, cacheRead: summed.cacheRead, cacheWrite: summed.cacheWrite, output: summed.output,
+      used: widest ? widest.used : null, size: widest ? countOf(widest.size) : null,
+    };
+  });
+
+  const widest = costs.filter((cost) => cost.used !== null).reduce((most, cost) => (!most || cost.used > most.used ? cost : most), null);
+  return {
+    started: costs.length,
+    byState: counted(costs.map((cost) => cost.state)),
+    sessions: costs,
+    total: {
+      sessions: costs.length,
+      seconds: sumOf(costs.map((cost) => cost.seconds)),
+      ...Object.fromEntries(TURN_COUNTS.map((field) => [field, sumOf(costs.map((cost) => cost[field]))])),
+      used: widest ? widest.used : null,
+      size: widest ? widest.size : null,
+    },
+  };
+}
+
+/** The doors whose sessions can park (D83, D65): a driven session and an intake. A conversation never does. */
+const PARKING_KINDS = ['driven', 'intake'];
+
+/**
+ * Parks per week by workspace (WSSETUP11, D124 §7.3): the sessions that stopped to ask the person, which
+ * setting a workspace up is meant to make rarer, beside the sessions started that week in that workspace by
+ * a door that can park, so a week before a workspace is set up can be held against the weeks after. Weeks
+ * begin on Monday, in UTC; a workspace a line does not say is `(unnamed)`, and a kind it does not say
+ * `(unsaid)`.
+ */
+function parksOf(lines) {
+  const weeks = new Map();
+  const tally = (line, key) => {
+    const week = weekOf(line.time);
+    const workspaces = weeks.get(week) ?? new Map();
+    const name = named(line.data.workspace) ?? '(unnamed)';
+    const entry = workspaces.get(name) ?? { name, parked: 0, started: 0 };
+    entry[key]++;
+    workspaces.set(name, entry);
+    weeks.set(week, workspaces);
+  };
+
+  const parks = lines.filter((line) => line.event === 'session.parked');
+  for (const line of parks) tally(line, 'parked');
+  for (const line of lines) {
+    if (line.event === 'session.started' && PARKING_KINDS.includes(line.data.kind)) tally(line, 'started');
+  }
+
+  return {
+    parked: parks.length,
+    byKind: counted(parks.map((line) => named(line.data.kind) ?? '(unsaid)')),
+    byWeek: [...weeks].sort(([a], [b]) => a.localeCompare(b)).map(([week, workspaces]) => {
+      const byWorkspace = [...workspaces.values()]
+        .sort((a, b) => b.parked - a.parked || b.started - a.started || a.name.localeCompare(b.name));
+      return {
+        week,
+        parked: byWorkspace.reduce((sum, entry) => sum + entry.parked, 0),
+        started: byWorkspace.reduce((sum, entry) => sum + entry.started, 0),
+        byWorkspace,
+      };
+    }),
+  };
+}
+
 /** The period's lines, summarised. Counts and times only: no line's words are carried. */
 export function summarise(lines, { from, to, skipped = 0, proposals = [] }) {
   const of = (event) => lines.filter((line) => line.event === event);
@@ -458,6 +575,8 @@ export function summarise(lines, { from, to, skipped = 0, proposals = [] }) {
     },
     asks: asksOf(lines),
     proposals: proposalsOf(proposals, { from, to }),
+    setups: setupsOf(lines),
+    parks: parksOf(lines),
     refused: [...refused.values()]
       .sort((a, b) => b.count - a.count)
       .map((entry) => ({ ...entry, requests: counted(entry.requests) })),
@@ -477,6 +596,31 @@ function uptime(seconds) {
   if (seconds < 60) return `${seconds}s`;
   if (seconds < 3600) return `${Math.floor(seconds / 60)}m ${seconds % 60}s`;
   return `${Math.floor(seconds / 3600)}h ${Math.floor((seconds % 3600) / 60)}m`;
+}
+
+/** A token count as a person reads it: 87 · 16.7K · 1M · 2.4B. */
+function compact(count) {
+  const [scale, unit] = count >= 1e9 ? [1e9, 'B'] : count >= 1e6 ? [1e6, 'M'] : count >= 1e3 ? [1e3, 'K'] : [1, ''];
+  return `${(count / scale).toFixed(scale === 1 ? 0 : 1).replace(/\.0$/, '')}${unit}`;
+}
+
+/**
+ * A set-up's cost as a line reads it (WSSETUP11): its minutes, calls, tokens and context, each only where
+ * measured, or `not measured` when none was. Anew is the input read fresh, what was written to the cache
+ * included; the rest was read from the cache (METER1's split).
+ */
+function costOf(cost, { largest = false } = {}) {
+  const parts = [];
+  if (cost.seconds !== null) parts.push(duration(cost.seconds * 1000));
+  if (cost.calls !== null) parts.push(plural(cost.calls, 'call', 'calls'));
+  const anew = sumOf([cost.input, cost.cacheWrite]);
+  if (anew !== null) parts.push(`${compact(anew)} anew`);
+  if (cost.cacheRead !== null) parts.push(`${compact(cost.cacheRead)} from cache`);
+  if (cost.output !== null) parts.push(`${compact(cost.output)} out`);
+  if (cost.used !== null) {
+    parts.push(`${largest ? 'largest context' : 'context'} ${compact(cost.used)}${cost.size !== null ? ` of ${compact(cost.size)}` : ''}`);
+  }
+  return parts.length > 0 ? parts : ['not measured'];
 }
 
 const plural = (count, one, other) => `${count} ${count === 1 ? one : other}`;
@@ -572,6 +716,33 @@ export function render(report, folder) {
     out.push(`  ${'waiting now'.padEnd(15)}${proposals.waiting}`);
     for (const week of proposals.byWeek) {
       out.push(`  ${`week of ${week.week}`.padEnd(20)}${week.made} made — ${listed(week.byState)}`);
+    }
+  }
+
+  const { setups, parks } = report;
+  out.push('', 'Set-ups');
+  if (setups.started === 0) {
+    out.push('  none');
+  } else {
+    out.push(`  ${'started'.padEnd(15)}${setups.started} — ${listed(setups.byState)}`);
+    const sessionWidth = Math.max(14, ...setups.sessions.map((cost) => cost.session.length));
+    for (const cost of setups.sessions) {
+      const how = [cost.state, ...(cost.parked > 0 ? [`parked ${cost.parked}`] : []), ...costOf(cost)];
+      out.push(`  ${cost.session.padEnd(sessionWidth)} ${`${cost.repository} (${cost.workspace})`.padEnd(24)} ${how.join(' · ')}`);
+    }
+    out.push(`  ${'total'.padEnd(15)}${[plural(setups.total.sessions, 'session', 'sessions'), ...costOf(setups.total, { largest: true })].join(' · ')}`);
+  }
+
+  out.push('', 'Parks');
+  if (parks.parked + parks.byWeek.length === 0) {
+    out.push('  none');
+  } else {
+    if (parks.byKind.length > 0) out.push(`  ${'kinds'.padEnd(15)}${listed(parks.byKind)}`);
+    for (const week of parks.byWeek) {
+      out.push(`  ${`week of ${week.week}`.padEnd(20)}${week.parked} parked · ${week.started} started`);
+      for (const workspace of week.byWorkspace) {
+        out.push(`    ${workspace.name.padEnd(16)} ${workspace.parked} parked · ${workspace.started} started`);
+      }
     }
   }
 

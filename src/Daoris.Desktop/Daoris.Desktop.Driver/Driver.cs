@@ -656,7 +656,9 @@ public sealed partial class Driver(
             // registered root otherwise. Stated rather than left to the service to infer, because
             // this side is the one that knows where it is about to run a process.
             .OpenSessionAsync(
-                quest.Id, config.Adapter, selection.Version, selection.Profile, workTree, before, ct)
+                quest.Id, config.Adapter, selection.Version, selection.Profile, workTree, before, ct,
+                // Whether this is a set-up, for the machine log alone, so a set-up's cost can be read back (WSSETUP11).
+                setup: SetupQuests.IsSetup(quest.Title))
             .ConfigureAwait(false);
         if (sessionId is null)
         {
