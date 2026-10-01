@@ -90,4 +90,36 @@ public class MarkdownSectionsTests
         Assert.Contains("### Inner", sections[0].Body);
         Assert.Contains("Detail.", sections[0].Body);
     }
+
+    /// <summary>
+    /// The text a log drops is a README's most useful part: what the repository is (WSSETUP8; D124 §5).
+    /// Everything before the first heading at the level, its own title line included, trimmed.
+    /// </summary>
+    [Fact]
+    public void The_preamble_is_the_text_before_the_first_heading()
+    {
+        const string doc = """
+            # Report engine
+
+            Computes the monthly figures.
+
+            ## Figures
+
+            How each is computed.
+            """;
+
+        Assert.Equal("# Report engine\n\nComputes the monthly figures.", MarkdownSections.Preamble(doc));
+    }
+
+    [Theory]
+    [InlineData("a document that opens with a heading", "## First\n\nBody.\n", "")]
+    [InlineData("a document with no heading at the level", "# Title\n\nAll of it.\n\n### Deeper\n\nStill.", "# Title\n\nAll of it.\n\n### Deeper\n\nStill.")]
+    [InlineData("a heading inside a fence does not end it", "Intro.\n```\n## Example\n```\nMore.\n\n## Real\n\nBody.", "Intro.\n```\n## Example\n```\nMore.")]
+    [InlineData("CRLF line endings", "Intro.\r\n\r\n## Real\r\n\r\nBody.", "Intro.")]
+    [InlineData("nothing at all", "", "")]
+    public void What_the_preamble_is(string name, string doc, string expected)
+    {
+        Assert.NotEmpty(name);
+        Assert.Equal(expected, MarkdownSections.Preamble(doc));
+    }
 }
