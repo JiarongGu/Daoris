@@ -26,7 +26,7 @@
       "case": "sentence",
       "keys": [
         "menu.agents", "menu.app", "menu.view", "menu.workspace", "nav.convergence", "nav.map", "nav.overview",
-        "nav.projects", "nav.quests", "nav.search", "nav.sessions", "nav.settings", "settings.domain.*"
+        "nav.plugins", "nav.projects", "nav.quests", "nav.search", "nav.sessions", "nav.settings", "settings.domain.*"
       ]
     },
     "title": {
@@ -36,7 +36,8 @@
       "case": "sentence",
       "keys": [
         "asks.compose.title", "code.title", "convergence.title", "help.quick.title", "map.title",
-        "overview.title", "projects.manage.addTitle", "projects.manage.importTitle", "projects.manage.title",
+        "overview.title", "plugin.kit.title", "plugin.kit.tryFolder", "projects.manage.addTitle",
+        "projects.manage.importTitle", "projects.manage.title",
         "projects.title", "quests.compose.title", "quests.title", "search.title", "settings.title",
         "trust.title", "work.identity.*", "work.intake.title", "work.monitor.title", "work.start.title"
       ]
@@ -63,8 +64,8 @@
         "harness.doors", "harness.title", "help.proposal.title", "help.proposal.titleDelete",
         "help.proposal.titleGo", "help.proposal.titleHand", "help.proposal.titlePlugin",
         "help.proposal.titleSync", "map.asks", "map.when.title", "overview.outstanding.title",
-        "overview.repositories.title", "palette.group.*", "palette.title", "plugin.kit.title",
-        "plugin.kit.tryFolder", "plugin.offers.title", "plugin.update.title", "projects.manage.declaration",
+        "overview.repositories.title", "palette.group.*", "palette.title", "plugin.group.*",
+        "plugin.offers.title", "plugin.section.*", "plugin.tests.trial", "plugin.update.title", "projects.manage.declaration",
         "projects.manage.wiring", "projects.outside.title", "quests.compose.stepLegend",
         "quests.detail.conflicts", "quests.detail.files", "quests.detail.links", "quests.groups.*",
         "quests.session.title", "settings.across.title", "settings.browser.extensions.title",
@@ -94,7 +95,7 @@
         "code.detail.usedBy", "console.label", "convergence.threshold", "harness.body",
         "harness.settings.effort", "harness.settings.model", "overview.tiles.adopted.label",
         "overview.tiles.knowledge.label", "overview.tiles.open.label", "overview.tiles.progress.label",
-        "plugin.folder", "plugin.kit.folder", "plugin.kit.id", "plugin.kit.points", "plugin.kit.said",
+        "plugin.field.*", "plugin.folder", "plugin.kit.folder", "plugin.kit.id", "plugin.kit.points", "plugin.kit.said",
         "plugin.source.folder", "plugin.update.what.*", "projects.accepts", "projects.driver.*", "projects.fed",
         "projects.line", "projects.manage.summary", "projects.owns", "projects.packs", "projects.unlandedLabel",
         "projects.workspace", "quests.addressedTo", "quests.compose.bodyLabel", "quests.compose.from",
@@ -159,7 +160,8 @@
         "help.proposal.look", "help.quick.close", "help.quick.expand", "help.setup", "map.detail.openCode",
         "map.detail.openConvergence", "overview.outstanding.answer", "overview.outstanding.ask",
         "overview.repositories.button", "palette.open", "plugin.disable", "plugin.enable", "plugin.forget",
-        "plugin.kit.choose", "plugin.kit.new", "plugin.kit.try", "plugin.offers.install", "plugin.removeMeanIt",
+        "plugin.kit.choose", "plugin.kit.new", "plugin.kit.try", "plugin.list.add", "plugin.list.close",
+        "plugin.list.more", "plugin.list.open", "plugin.offers.install", "plugin.removeMeanIt",
         "plugin.update.apply", "plugin.update.ask", "plugin.update.cancel", "projects.manage.add", "projects.manage.choose",
         "projects.manage.importRun", "projects.manage.open", "projects.manage.register",
         "projects.manage.retire", "projects.manage.retireConfirm", "projects.manage.rewire",
@@ -203,7 +205,7 @@
         "harness.login.out", "harness.login.unknown", "harness.machineDefault", "harness.own",
         "harness.pin.fromPath", "harness.pin.fromPathAbsent", "harness.pin.missing", "harness.pin.pinned",
         "harness.profile.sessionsUse", "harness.profile.workspaceUses", "harness.spawns", "harness.wire.*",
-        "kind.*", "map.parked", "map.when.short.*", "map.working", "palette.scope", "plugin.kit.failed",
+        "kind.*", "map.parked", "map.when.short.*", "map.working", "palette.scope", "plugin.health.*", "plugin.kit.failed",
         "plugin.kit.ok", "plugin.off", "plugin.offers.notInstalled", "plugin.running", "projects.adoptedDot",
         "projects.manage.adopted", "projects.manage.git", "projects.manage.noGit", "projects.manage.notAdopted",
         "provenance.*", "quests.card.sat", "quests.card.waits", "scope.none", "sessionState.*",
@@ -238,7 +240,7 @@
         "layout.menu.*", "map.fit", "map.kind.*", "map.lines", "map.when.all", "map.when.month",
         "map.when.open", "map.when.week", "map.zoomIn", "map.zoomOut", "menu.about", "menu.agents.*",
         "menu.driver", "menu.language", "menu.plugins", "menu.refresh", "menu.settings", "menu.setup",
-        "menu.workspace.*", "work.menu.*", "work.monitor.detach", "work.rail.menu.copy",
+        "menu.workspace.*", "plugin.list.ask", "plugin.list.make", "plugin.list.tryFolder", "work.menu.*", "work.monitor.detach", "work.rail.menu.copy",
         "work.rail.menu.review", "work.sync.now", "work.sync.remotes", "work.sync.syncing", "work.views.reset",
         "work.views.toPanel", "work.views.toRight"
       ]
@@ -258,7 +260,7 @@
       "keys": [
         "asks.compose.nowhere.headline", "code.none.headline", "convergence.empty", "map.empty.headline",
         "map.empty.headlineAll", "overview.outstanding.emptyHeadline", "overview.repositories.emptyHeadline",
-        "projects.empty.headline", "projects.empty.headlineIn", "quests.compose.nobody.headline",
+        "plugin.empty.headline", "plugin.gone.headline", "plugin.none.headline", "projects.empty.headline", "projects.empty.headlineIn", "quests.compose.nobody.headline",
         "quests.empty.headlineAll", "quests.empty.headlineFor", "search.emptyHeadline", "search.noneHeadline",
         "work.attended.none.headline", "work.attention.emptyHeadline", "work.detached.gone.headline",
         "work.monitor.empty.headline", "work.rail.empty.headline", "work.review.empty.headline",
@@ -307,7 +309,7 @@
     { "door": "menu.setup", "opens": "settings.domain.start" },
     { "door": "menu.settings", "opens": "nav.settings" },
     { "door": "menu.driver", "opens": "settings.domain.driver" },
-    { "door": "menu.plugins", "opens": "settings.domain.plugins" },
+    { "door": "menu.plugins", "opens": "nav.plugins" },
     { "door": "work.sync.remotes", "opens": "settings.wiring.title" },
     { "door": "command.go.overview", "opens": "nav.overview" },
     { "door": "command.go.sessions", "opens": "nav.sessions" },
@@ -317,6 +319,8 @@
     { "door": "command.go.map", "opens": "nav.map" },
     { "door": "command.go.search", "opens": "nav.search" },
     { "door": "command.go.settings", "opens": "nav.settings" },
+    { "door": "command.go.plugins", "opens": "nav.plugins" },
+    { "door": "plugin.list.ask", "opens": "help.title" },
     { "door": "command.do.setup", "opens": "settings.domain.start" },
     { "door": "command.work.review", "opens": "work.review.tab" },
     { "door": "command.work.monitor", "opens": "work.monitor.title" },
@@ -432,6 +436,11 @@
     { "term": "plugin", "en": "plugin", "zh": "插件", "means": "A folder that declares agents and servers and may speak at points; never code loaded into Daoris.", "match": "\\bplugins?\\b", "avoid": { "en": [], "zh": [] } },
     { "term": "point", "en": "point", "zh": "挂点", "means": "Where a plugin speaks: before a start, after a session ends, once a landing has made its branch.", "match": "\\bpoints?\\b", "avoid": { "en": [], "zh": [] } },
     { "term": "server", "en": "server", "zh": "服务器", "means": "A program a plugin hands every session to talk to, over MCP.", "match": "\\bservers?\\b", "avoid": { "en": [], "zh": [] } },
+    { "term": "try", "en": "try", "zh": "试运行", "means": "Start a plugin as the driver would, send it a sample at each point, and read every answer with the driver's reader.", "why": "测试 is a plugins repository's own tests, which a trial is not. *Try again* is a retry (重试), not a trial, so it is not this term.", "match": "\\btry\\b(?! again\\b)", "avoid": { "en": [], "zh": ["测试"] } },
+    { "term": "test", "en": "test", "zh": "测试", "means": "A plugin's own tests, which `node --test` runs in its folder; a trial is not one.", "why": "A term so a sentence that names a plugin's tests and its trial together says 测试 for the tests without reading as a trial called 测试.", "match": "\\btests?\\b", "avoid": { "en": [], "zh": [] } },
+    { "term": "Daoris's own plugins", "en": "Daoris's own plugins", "zh": "Daoris 自带的插件", "means": "The plugins the install carries, installed only by a press; `offer` is its code word, never a label.", "why": "The install carries them, so 自带; the avoid list is empty, since `--offer` is a flag people type.", "match": "\\bDaoris's own plugins\\b", "avoid": { "en": [], "zh": [] } },
+    { "term": "held back", "en": "held back", "zh": "拦下", "means": "A plugin's answer at quest/consider that keeps a quest from starting, until it answers otherwise.", "why": "A plugin's decision is not the person's hold of a repository (暂停), so it takes a word of its own in each language.", "match": "\\bheld back\\b", "avoid": { "en": [], "zh": ["暂停"] } },
+    { "term": "data folder", "en": "data folder", "zh": "数据文件夹", "means": "What a plugin keeps: an update never touches it, and a removal leaves it.", "match": "\\bdata folders?\\b", "avoid": { "en": [], "zh": [] } },
     { "term": "driver", "en": "driver", "zh": "驱动", "means": "The part of Daoris that starts and watches sessions on this machine.", "why": "驱动器 is a disk drive.", "match": "\\bdrivers?\\b", "avoid": { "en": [], "zh": ["驱动器", "驱动程序"] } },
     { "term": "loop", "en": "driver loop", "zh": "驱动循环", "zhForms": ["一轮"], "means": "The driver's rounds of looking at what to start, every few seconds while Daoris runs; one round is its look (一轮).", "match": "\\bloop\\b|\\bdriver's (next )?look\\b", "avoid": { "en": [], "zh": ["周期"] } },
     { "term": "tick", "use": "loop", "means": "The code's word for one round of the driver loop; the window says the driver's next look, 一轮.", "avoid": { "en": ["tick", "ticks"], "zh": ["周期"] } },
