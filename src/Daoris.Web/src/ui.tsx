@@ -1,5 +1,9 @@
-import { type ButtonHTMLAttributes, Fragment, type ReactNode, useCallback, useEffect, useRef, useState } from 'react';
+import {
+  type ButtonHTMLAttributes, type ComponentProps, createContext, Fragment, type ReactNode, useCallback, useContext, useEffect,
+  useRef, useState,
+} from 'react';
 import * as Dialog from '@radix-ui/react-dialog';
+import * as DropdownMenu from '@radix-ui/react-dropdown-menu';
 import { sentence } from './format';
 import * as Toast from '@radix-ui/react-toast';
 import * as RadixSelect from '@radix-ui/react-select';
@@ -683,6 +687,87 @@ export function Drawer({ title, meta, onClose, footer, wide = false, children }:
   );
 }
 
+/* ---------------------------------------------------------------- the palette's box */
+
+/**
+ * A box at the palette's place (SURF9, DOCK1d): the command palette, and Quick Ask, which is Ask Daoris's conversation
+ * in the same place. Near the top, not centred, since what it holds grows downward and a centred box jumps as it does;
+ * modal on Radix Dialog, as the drawer is, with the title bar and the status bar left live around it (`tokens.test.ts`'s
+ * scrim bounds), and Escape or a press outside closing it.
+ *
+ * @remarks
+ * Two boxes wrote this out on their own beside the drawer, so the atoms did not own the dialog primitive (MENU1). The
+ * size is by what it holds: a list grows to its rows up to 60% of the window (the palette), a conversation keeps one
+ * height it fills (`fill`), and a conversation is wider (`wide`).
+ */
+export function QuickPanel({ open, onClose, title, header, wide = false, fill = false, initialFocus, children }: {
+  open: boolean;
+  onClose: () => void;
+  /** Its accessible name, and its header's title where it has a header. */
+  title: string;
+  /**
+   * Its header: the glyph before the title, the acts after it, and its close. Absent, the title is for a reader alone
+   * and the box is what it holds, as the palette is its field and its list.
+   */
+  header?: { icon: IconName; actions?: ReactNode; closeLabel: string };
+  /** A conversation's width rather than a list's. */
+  wide?: boolean;
+  /** One height its content fills, a conversation's, rather than its rows' up to a cap. */
+  fill?: boolean;
+  /**
+   * Where the focus lands on opening, a selector inside the box (Quick Ask's message box); absent, its first control,
+   * or one that asks for it with `autoFocus`.
+   */
+  initialFocus?: string;
+  children: ReactNode;
+}) {
+  return (
+    <Dialog.Root open={open} onOpenChange={(next) => { if (!next) onClose(); }}>
+      <Dialog.Portal>
+        {/* Between the frame's bars, as the drawer's scrim is (see `Drawer` and `tokens.test.ts`). It is also what
+            VS Code does: its title bar stays live while quick-open is up. */}
+        <Dialog.Overlay className="fixed bottom-6 left-12 right-0 top-9 z-20 bg-scrim" />
+        <Dialog.Content
+          aria-describedby={undefined}
+          // Radix writes the role and traps focus but not this attribute (see `Drawer`).
+          aria-modal="true"
+          onOpenAutoFocus={(event) => {
+            const at = initialFocus ? (event.currentTarget as HTMLElement | null)?.querySelector<HTMLElement>(initialFocus) : null;
+            if (at) {
+              event.preventDefault();
+              at.focus();
+            }
+          }}
+          className={cn(
+            'fixed left-1/2 top-[12vh] z-20 flex -translate-x-1/2 flex-col overflow-hidden rounded-overlay border border-line bg-overlay',
+            'shadow-[0_12px_48px_rgb(15_12_8/0.22)] focus:outline-none motion-safe:animate-[drawer-in_var(--speed)_ease-out]',
+            fill ? 'h-[min(34rem,72vh)]' : 'max-h-[60vh]',
+            wide ? 'w-[min(42rem,92vw)]' : 'w-[min(34rem,92vw)]',
+          )}
+        >
+          {header
+            ? (
+              <header className="flex shrink-0 items-center gap-2 border-b border-line px-3.5 py-2">
+                <Icon name={header.icon} size={15} className="text-ink-soft" />
+                <Dialog.Title className="m-0 text-body font-semibold text-ink">{title}</Dialog.Title>
+                <span className="ml-auto flex items-center gap-0.5">
+                  {header.actions}
+                  <Dialog.Close asChild>
+                    <Button variant="ghost" aria-label={header.closeLabel} className="h-7 w-7 justify-center px-0">
+                      <Icon name="x" size={14} />
+                    </Button>
+                  </Dialog.Close>
+                </span>
+              </header>
+            )
+            : <Dialog.Title className="sr-only">{title}</Dialog.Title>}
+          {children}
+        </Dialog.Content>
+      </Dialog.Portal>
+    </Dialog.Root>
+  );
+}
+
 /* ---------------------------------------------------------------- form controls */
 
 export function SelectField({ value, onChange, options, placeholder, ariaLabel, required, disabled, bar }: {
@@ -819,6 +904,150 @@ export function Segmented<T extends string>({ label, value, options, onChange }:
     </div>
   );
 }
+
+/* ---------------------------------------------------------------- menus */
+
+/**
+ * What a menu's rows light with under the pointer and the keys (MENU1). Two looks were already in the window when the
+ * menus became one atom, and the atom kept both rather than change what a person sees: the title bar's menus and most
+ * others light a row with the raised surface and lift its ink from soft, as a menu bar's do; a list's ⋯ and `＋` and a
+ * session row's menu, which open from among a list's rows, light it with the accent's soft field, as those rows do.
+ */
+type MenuHighlight = 'raised' | 'accent';
+
+const MenuHighlightContext = createContext<MenuHighlight>('raised');
+
+/** A row's shape: one density for every menu, the highlight by the menu's look, a disabled row a fact rather than an act. */
+const MENU_ROW = 'flex items-center gap-2 rounded-control px-2 py-1.5 text-small outline-none data-[disabled]:cursor-default data-[disabled]:text-ink-faint';
+const MENU_LOOK: Record<MenuHighlight, string> = {
+  raised: 'cursor-pointer text-ink-soft data-[highlighted]:bg-raised data-[highlighted]:text-ink',
+  accent: 'cursor-default text-ink data-[highlighted]:bg-accent-soft',
+};
+
+/** A row's classes, by its menu's look: what a ticked row adds is the full ink, which an accent row already wears. */
+function useMenuRow(className: string | undefined, ...extra: (string | false | undefined)[]): string {
+  return cn(MENU_ROW, MENU_LOOK[useContext(MenuHighlightContext)], ...extra, className);
+}
+
+/**
+ * The tick's column, always the same width, so the labels line up whether or not anything is ticked: a list that shifts
+ * by 16px when the tick moves reads as two lists.
+ */
+function MenuTickColumn({ children }: { children?: ReactNode }) {
+  return <span className="flex w-3.5 shrink-0 justify-center">{children}</span>;
+}
+
+/**
+ * 🔴 `modal={false}`, for every menu. A modal menu makes the rest of the page inert (Radix puts `pointer-events: none`
+ * on the body while it is open), and a menu in the title bar has no business doing that: VS Code's do not, and the
+ * window must stay draggable beneath it. It also locks the scroll, which shifts the layout by the scrollbar's width on
+ * every open. Found by two tests that could not click anything after an earlier test left a menu open (AppMenu's rule,
+ * which every menu had written out on its own).
+ */
+function MenuRoot(props: ComponentProps<typeof DropdownMenu.Root>) {
+  return <DropdownMenu.Root modal={false} {...props} />;
+}
+
+/**
+ * A menu's content, in its portal: the overlay surface, the control's radius and the menus' shadow, 4px off its
+ * trigger and 8px off the window's edges. Its width is the caller's (`className`), since a menu bar's and a status
+ * item's menus are sized to what they hold.
+ *
+ * @remarks
+ * **Capped at the room the popper measured on its side, and scrolled inside it** (MENU1, as SELECT1 for the select):
+ * a long menu (a receiver filter, a long workspace list) ran off the window with nothing to scroll it by. The bar is
+ * the theme's (`tokens.css`), and the keys still reach every row, since focusing one scrolls it into view.
+ */
+function MenuContent({ highlight = 'raised', className, children, ...props }: ComponentProps<typeof DropdownMenu.Content> & {
+  /** What its rows light with: the raised surface by default, the accent's field for a list's own menus. */
+  highlight?: MenuHighlight;
+}) {
+  return (
+    <DropdownMenu.Portal>
+      <DropdownMenu.Content
+        sideOffset={4}
+        collisionPadding={8}
+        {...props}
+        className={cn(
+          'z-30 max-h-[var(--radix-dropdown-menu-content-available-height)] overflow-y-auto overflow-x-hidden',
+          'rounded-control border border-line bg-overlay p-1 text-small shadow-lg',
+          className,
+        )}
+      >
+        <MenuHighlightContext.Provider value={highlight}>{children}</MenuHighlightContext.Provider>
+      </DropdownMenu.Content>
+    </DropdownMenu.Portal>
+  );
+}
+
+/**
+ * An act. `tick` says the tick column: absent, the row has none; false, it is reserved and empty; true, the row is the
+ * current one, ticked and in the full ink, as the size a map is at or the workspace a window is scoped to. It stays a
+ * `menuitem`: choosing it acts, where a checkbox item toggles.
+ */
+function MenuRow({ tick, className, children, ...props }: ComponentProps<typeof DropdownMenu.Item> & { tick?: boolean }) {
+  const row = useMenuRow(className, tick && 'text-ink');
+  return (
+    <DropdownMenu.Item {...props} className={row}>
+      {tick !== undefined && <MenuTickColumn>{tick && <Icon name="check" size={12} />}</MenuTickColumn>}
+      {children}
+    </DropdownMenu.Item>
+  );
+}
+
+/** A toggle, ticked while it is on (a filter's *Include closed*, a kind of line drawn). */
+function MenuCheckboxRow({ className, children, ...props }: ComponentProps<typeof DropdownMenu.CheckboxItem>) {
+  const row = useMenuRow(className, 'data-[state=checked]:text-ink');
+  return (
+    <DropdownMenu.CheckboxItem {...props} className={row}>
+      <MenuTickColumn><DropdownMenu.ItemIndicator><Icon name="check" size={12} /></DropdownMenu.ItemIndicator></MenuTickColumn>
+      {children}
+    </DropdownMenu.CheckboxItem>
+  );
+}
+
+/** One value among several, in a `Menu.RadioGroup` named for what it chooses, the chosen one ticked. */
+function MenuRadioRow({ className, children, ...props }: ComponentProps<typeof DropdownMenu.RadioItem>) {
+  const row = useMenuRow(className, 'data-[state=checked]:text-ink');
+  return (
+    <DropdownMenu.RadioItem {...props} className={row}>
+      <MenuTickColumn><DropdownMenu.ItemIndicator><Icon name="check" size={12} /></DropdownMenu.ItemIndicator></MenuTickColumn>
+      {children}
+    </DropdownMenu.RadioItem>
+  );
+}
+
+/** A group's name, small and faint; its padding above is the caller's where it opens the menu or follows a rule. */
+function MenuLabel({ className, ...props }: ComponentProps<typeof DropdownMenu.Label>) {
+  return <DropdownMenu.Label {...props} className={cn('px-2 pb-1 pt-1 text-meta text-ink-faint', className)} />;
+}
+
+/** The rule between a menu's groups. */
+function MenuSeparator({ className, ...props }: ComponentProps<typeof DropdownMenu.Separator>) {
+  return <DropdownMenu.Separator {...props} className={cn('my-1 h-px bg-line', className)} />;
+}
+
+/**
+ * **The menu** (MENU1): every dropdown in the window, on Radix's dropdown menu, as `SelectField` is every select. Its
+ * parts are Radix's names, so a menu reads as one did before it had an atom, and every pixel is here: the surface,
+ * the cap, the row's density and look, the tick's column, a label and a rule.
+ *
+ * @remarks
+ * Eight files had each styled the primitive on their own, and none capped its height, so a long menu ran off the
+ * window. `primitives.test.ts` now holds that no file but the atoms imports a primitive. No sub-menu is here, since no
+ * menu has one; one is added here the day a menu needs it.
+ */
+export const Menu = {
+  Root: MenuRoot,
+  Trigger: DropdownMenu.Trigger,
+  Content: MenuContent,
+  Item: MenuRow,
+  CheckboxItem: MenuCheckboxRow,
+  RadioGroup: DropdownMenu.RadioGroup,
+  RadioItem: MenuRadioRow,
+  Label: MenuLabel,
+  Separator: MenuSeparator,
+};
 
 /**
  * A count on an icon — a CIRCLE for one digit, a pill beyond.

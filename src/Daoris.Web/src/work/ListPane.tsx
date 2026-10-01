@@ -1,6 +1,5 @@
 import { type KeyboardEvent, type ReactNode, useEffect, useRef } from 'react';
-import * as Menu from '@radix-ui/react-dropdown-menu';
-import { Button, EmptyState, Icon, SkeletonRows, Tip } from '../ui';
+import { Button, EmptyState, Icon, Menu, SkeletonRows, Tip } from '../ui';
 import { cn } from '../lib/cn';
 import { Splitter } from './frame';
 import { LIST_STRIP, type ListBounds, type ListLayout } from './layout';
@@ -258,17 +257,6 @@ export type MoreChoice = {
   onChoose: (value: string) => void;
 };
 
-const MORE_ITEM = 'flex cursor-default items-center gap-2 rounded-control px-2 py-1.5 text-ink outline-none data-[highlighted]:bg-accent-soft';
-
-/** The tick's column, always reserved where anything may be ticked, so the labels line up as `AppMenu`'s do. */
-function Tick() {
-  return (
-    <span className="flex w-3.5 shrink-0 justify-center">
-      <Menu.ItemIndicator><Icon name="check" size={12} /></Menu.ItemIndicator>
-    </span>
-  );
-}
-
 /**
  * The list's own **⋯** (D118 §3a): its filters and its menu, in its header before its close. An arrow is a direction,
  * never a menu, so a region's own menu is "⋯", as VS Code's *Views and More Actions* is (platform language §4).
@@ -287,9 +275,10 @@ export function ListMore({ label, items = [], choice, onChoose }: {
   /** Told the item's id: an act chosen, or a toggle pressed. */
   onChoose?: (id: string) => void;
 }) {
+  // The tick's column is reserved on every row where anything may be ticked, so the labels line up.
   const ticks = choice !== undefined || items.some((item) => item.checked !== undefined);
   return (
-    <Menu.Root modal={false}>
+    <Menu.Root>
       <Tip content={label}>
         <Menu.Trigger asChild>
           <Button variant="ghost" aria-label={label} className="h-6 w-6 justify-center px-0">
@@ -297,43 +286,32 @@ export function ListMore({ label, items = [], choice, onChoose }: {
           </Button>
         </Menu.Trigger>
       </Tip>
-      <Menu.Portal>
-        <Menu.Content
-          side="bottom"
-          align="end"
-          sideOffset={4}
-          collisionPadding={8}
-          className="z-30 min-w-44 rounded-control border border-line bg-overlay p-1 text-small shadow-lg"
-        >
-          {choice && (
-            <>
-              <Menu.Label className="px-2 pb-1 pt-1.5 text-meta text-ink-faint">{choice.label}</Menu.Label>
-              <Menu.RadioGroup aria-label={choice.label} value={choice.value} onValueChange={choice.onChoose}>
-                {choice.options.map((option) => (
-                  <Menu.RadioItem key={option.value} value={option.value} className={MORE_ITEM}>
-                    <Tick />
-                    <span className="truncate">{option.label}</span>
-                  </Menu.RadioItem>
-                ))}
-              </Menu.RadioGroup>
-              {items.length > 0 && <Menu.Separator className="my-1 h-px bg-line" />}
-            </>
-          )}
-          {items.map((item) => (item.checked === undefined
-            ? (
-              <Menu.Item key={item.id} onSelect={() => onChoose?.(item.id)} className={MORE_ITEM}>
-                {ticks && <span className="w-3.5 shrink-0" />}
-                {item.label}
-              </Menu.Item>
-            )
-            : (
-              <Menu.CheckboxItem key={item.id} checked={item.checked} onCheckedChange={() => onChoose?.(item.id)} className={MORE_ITEM}>
-                <Tick />
-                {item.label}
-              </Menu.CheckboxItem>
-            )))}
-        </Menu.Content>
-      </Menu.Portal>
+      <Menu.Content side="bottom" align="end" highlight="accent" className="min-w-44">
+        {choice && (
+          <>
+            <Menu.Label className="pt-1.5">{choice.label}</Menu.Label>
+            <Menu.RadioGroup aria-label={choice.label} value={choice.value} onValueChange={choice.onChoose}>
+              {choice.options.map((option) => (
+                <Menu.RadioItem key={option.value} value={option.value}>
+                  <span className="truncate">{option.label}</span>
+                </Menu.RadioItem>
+              ))}
+            </Menu.RadioGroup>
+            {items.length > 0 && <Menu.Separator />}
+          </>
+        )}
+        {items.map((item) => (item.checked === undefined
+          ? (
+            <Menu.Item key={item.id} tick={ticks ? false : undefined} onSelect={() => onChoose?.(item.id)}>
+              {item.label}
+            </Menu.Item>
+          )
+          : (
+            <Menu.CheckboxItem key={item.id} checked={item.checked} onCheckedChange={() => onChoose?.(item.id)}>
+              {item.label}
+            </Menu.CheckboxItem>
+          )))}
+      </Menu.Content>
     </Menu.Root>
   );
 }
@@ -349,31 +327,17 @@ function MakeButton({ make, side = 'bottom', className }: { make: ListMake; side
     );
   }
   return (
-    <Menu.Root modal={false}>
+    <Menu.Root>
       <Tip content={make.label} side={side}>
         <Menu.Trigger asChild>
           <Button variant="ghost" aria-label={make.label} className={className}>{icon}</Button>
         </Menu.Trigger>
       </Tip>
-      <Menu.Portal>
-        <Menu.Content
-          side={side}
-          align="start"
-          sideOffset={4}
-          collisionPadding={8}
-          className="z-30 min-w-44 rounded-control border border-line bg-overlay p-1 text-small shadow-lg"
-        >
-          {make.kinds.map((kind) => (
-            <Menu.Item
-              key={kind.id}
-              onSelect={() => make.onMake(kind.id)}
-              className="flex cursor-default items-center gap-2 rounded-control px-2 py-1.5 text-ink outline-none data-[highlighted]:bg-accent-soft"
-            >
-              {kind.label}
-            </Menu.Item>
-          ))}
-        </Menu.Content>
-      </Menu.Portal>
+      <Menu.Content side={side} align="start" highlight="accent" className="min-w-44">
+        {make.kinds.map((kind) => (
+          <Menu.Item key={kind.id} onSelect={() => make.onMake(kind.id)}>{kind.label}</Menu.Item>
+        ))}
+      </Menu.Content>
     </Menu.Root>
   );
 }

@@ -1,6 +1,5 @@
 import type { ReactNode } from 'react';
-import * as Menu from '@radix-ui/react-dropdown-menu';
-import { Icon, type IconName } from '../ui';
+import { Icon, type IconName, Menu } from '../ui';
 import { cn } from '../lib/cn';
 
 /** One destination inside a frame — a view in Manage, a surface in Work. */
@@ -48,13 +47,9 @@ export function AppMenu({
   /** Its own name, for the callback — the menu does not know which frame it is otherwise. */
   trigger: string;
 }) {
-  // 🔴 `modal={false}`. A modal menu makes the rest of the page inert — Radix puts
-  // `pointer-events: none` on the body while it is open — and a menu in the TITLE BAR has no
-  // business doing that: VS Code's do not, and the window still has to be draggable underneath it.
-  // It also locks scroll, which shifts the layout by the scrollbar's width on every open. Found by
-  // two tests that could not click anything after an earlier test left a menu open.
+  // Never modal, as no menu is: the window stays draggable under a menu in the title bar (`Menu.Root`).
   return (
-    <Menu.Root modal={false}>
+    <Menu.Root>
       <Menu.Trigger
         className={cn(
           // 🔴 No chevron, and tight. Measured against a real VS Code window: its menu bar is plain
@@ -70,45 +65,26 @@ export function AppMenu({
         {label}
       </Menu.Trigger>
 
-      <Menu.Portal>
-        <Menu.Content
-          align="start"
-          sideOffset={4}
-          className="z-30 min-w-56 rounded-control border border-line bg-overlay p-1 shadow-lg"
-        >
-          {items.map((item) => (
-            <div key={item.id}>
-              {item.separated && <Menu.Separator className="my-1 h-px bg-line" />}
-              <Menu.Item
-                disabled={item.disabled}
-                onSelect={() => onChoose(trigger, item.id)}
-                className={cn(
-                  'flex cursor-pointer items-center gap-2 rounded-[4px] px-2 py-1.5 text-small outline-none',
-                  'data-[highlighted]:bg-raised data-[highlighted]:text-ink',
-                  'data-[disabled]:cursor-default data-[disabled]:text-ink-faint',
-                  item.checked ? 'text-ink' : 'text-ink-soft',
-                )}
-              >
-                {/* The check column is always reserved, so labels line up whether or not anything
-                    is checked — a list that shifts by 16px when the check moves reads as two lists. */}
-                <span className="flex w-3.5 shrink-0 justify-center">
-                  {item.checked && <Icon name="check" size={12} aria-hidden />}
+      <Menu.Content align="start" className="min-w-56">
+        {items.map((item) => (
+          <div key={item.id}>
+            {item.separated && <Menu.Separator />}
+            {/* The tick column is always reserved, so the labels line up whether or not anything is ticked. */}
+            <Menu.Item tick={Boolean(item.checked)} disabled={item.disabled} onSelect={() => onChoose(trigger, item.id)}>
+              {item.icon && <Icon name={item.icon} size={13} className="shrink-0 opacity-70" />}
+              <span className="truncate">{item.label}</span>
+              {item.badge !== undefined && item.badge > 0 && (
+                <span className="ml-auto shrink-0 font-mono text-meta tabular-nums text-ink-faint">
+                  {item.badge}
                 </span>
-                {item.icon && <Icon name={item.icon} size={13} className="shrink-0 opacity-70" aria-hidden />}
-                <span className="truncate">{item.label}</span>
-                {item.badge !== undefined && item.badge > 0 && (
-                  <span className="ml-auto shrink-0 font-mono text-meta tabular-nums text-ink-faint">
-                    {item.badge}
-                  </span>
-                )}
-                {item.shortcut && (
-                  <kbd className="ml-auto shrink-0 pl-4 font-mono text-meta text-ink-faint">{item.shortcut}</kbd>
-                )}
-              </Menu.Item>
-            </div>
-          ))}
-        </Menu.Content>
-      </Menu.Portal>
+              )}
+              {item.shortcut && (
+                <kbd className="ml-auto shrink-0 pl-4 font-mono text-meta text-ink-faint">{item.shortcut}</kbd>
+              )}
+            </Menu.Item>
+          </div>
+        ))}
+      </Menu.Content>
     </Menu.Root>
   );
 }

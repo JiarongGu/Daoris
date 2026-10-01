@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import {
-  Button, CheckField, Chip, Dot, Drawer, EmptyState, MetaLine, MonoWell, PathText, Pill, SettingRow,
+  Button, CheckField, Chip, Dot, Drawer, EmptyState, Menu, MetaLine, MonoWell, PathText, Pill, SettingRow,
   SkeletonRows, Tile, Toasts,
 } from './ui';
 
@@ -194,5 +194,30 @@ export const DrawerDetail: StoryObj = {
         Evidence: the seam appears whenever more than three chunks hydrate in one frame.
       </p>
     </Drawer>
+  ),
+};
+
+/**
+ * A menu longer than the window (MENU1): a receiver filter over sixty repositories, open. Its content is capped at
+ * the room on its side and scrolls inside it, with the theme's bar, where it ran off the window. The filter's shape is
+ * the list's ⋯: a group named for what it chooses, the chosen one ticked, a rule, and a toggle.
+ */
+export const LongMenu: StoryObj = {
+  render: () => (
+    <Menu.Root defaultOpen>
+      <Menu.Trigger asChild><Button>Filter the list</Button></Menu.Trigger>
+      <Menu.Content side="bottom" align="start" highlight="accent" className="min-w-44">
+        <Menu.Label className="pt-1.5">Receiver</Menu.Label>
+        <Menu.RadioGroup aria-label="Receiver" value="repository-7">
+          {Array.from({ length: 60 }, (_, i) => (
+            <Menu.RadioItem key={i} value={`repository-${i}`}>
+              <span className="truncate">{i % 9 === 4 ? `仓库 ${i}` : `repository-${i}`}</span>
+            </Menu.RadioItem>
+          ))}
+        </Menu.RadioGroup>
+        <Menu.Separator />
+        <Menu.CheckboxItem checked={false}>Include closed</Menu.CheckboxItem>
+      </Menu.Content>
+    </Menu.Root>
   ),
 };

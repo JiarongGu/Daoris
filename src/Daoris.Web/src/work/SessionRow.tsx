@@ -1,8 +1,7 @@
 import { useTranslation } from 'react-i18next';
-import * as Menu from '@radix-ui/react-dropdown-menu';
 import type { Quest, Session } from '../api';
 import { ago, elapsed } from '../format';
-import { Dot, Icon, type IconName, SESSION_ACTIVE, SESSION_DOT, shownState, StripMark } from '../ui';
+import { Dot, Icon, type IconName, Menu, SESSION_ACTIVE, SESSION_DOT, shownState, StripMark } from '../ui';
 import { cn } from '../lib/cn';
 import { isIntake, ownTree, sessionOrigin, sessionTitle } from './identity';
 import { movedAt } from './rail';
@@ -175,7 +174,7 @@ export function SessionRow({
 
       {/* Beside the row, never inside it: a button inside a button is not a thing a page may hold. */}
       {actions.length > 0 && (
-        <Menu.Root modal={false}>
+        <Menu.Root>
           <Menu.Trigger asChild>
             <button
               type="button"
@@ -189,26 +188,14 @@ export function SessionRow({
               <Icon name="more" size={13} />
             </button>
           </Menu.Trigger>
-          <Menu.Portal>
-            <Menu.Content
-              side="bottom"
-              align="end"
-              sideOffset={4}
-              collisionPadding={8}
-              className="z-30 min-w-44 rounded-control border border-line bg-overlay p-1 text-small shadow-lg"
-            >
-              {actions.map(({ label, icon, act }) => (
-                <Menu.Item
-                  key={label}
-                  onSelect={() => act(session.id)}
-                  className="flex cursor-default items-center gap-2 rounded-control px-2 py-1.5 text-ink outline-none data-[highlighted]:bg-accent-soft"
-                >
-                  <Icon name={icon} size={12} className="shrink-0 text-ink-faint" />
-                  {label}
-                </Menu.Item>
-              ))}
-            </Menu.Content>
-          </Menu.Portal>
+          <Menu.Content side="bottom" align="end" highlight="accent" className="min-w-44">
+            {actions.map(({ label, icon, act }) => (
+              <Menu.Item key={label} onSelect={() => act(session.id)}>
+                <Icon name={icon} size={12} className="shrink-0 text-ink-faint" />
+                {label}
+              </Menu.Item>
+            ))}
+          </Menu.Content>
         </Menu.Root>
       )}
     </li>
