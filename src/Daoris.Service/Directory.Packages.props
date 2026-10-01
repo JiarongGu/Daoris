@@ -7,7 +7,8 @@
     migration (2026-09-19, the day 3.2.0 shipped) was the ONE coordinated move LYN1 held for: the
     embedder seam became a provider capability (IEmbedder → IVectorProvider, its D129/D153),
     HttpEmbedder became HttpModelProvider declaring vector-out (its D132/D135), and the package
-    renamed Providers.Default → Providers.Basic (its D144).
+    renamed Providers.Default → Providers.Basic (its D144). 3.5.3 (2026-10-01, LYN1 again) needed no
+    code change here; its 3.3 raised the sibling's own SQLite pins, which the pair below follows.
   -->
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
@@ -17,16 +18,17 @@
     <!-- The cognition sibling, consumed as a LIBRARY and at a RELEASED version (D22): IVectorProvider
          and IVectorStore are the seams semantic search needs, and rebuilding either would be the
          second worse copy D1 was written to prevent. Its serving surfaces are deliberately NOT used. -->
-    <PackageVersion Include="Lyntai.Core" Version="3.2.0" />
+    <PackageVersion Include="Lyntai.Core" Version="3.5.3" />
     <!-- HttpModelProvider / OllamaProvider: the HTTP vector backends, wired only in the hosts so the
          domain stays on the abstractions. -->
-    <PackageVersion Include="Lyntai.Providers.Basic" Version="3.2.0" />
+    <PackageVersion Include="Lyntai.Providers.Basic" Version="3.5.3" />
   </ItemGroup>
 
   <ItemGroup>
-    <!-- Versions match the cognition sibling's, so the two agree when they end up in one process. -->
-    <PackageVersion Include="Microsoft.Data.Sqlite" Version="10.0.10" />
-    <PackageVersion Include="SQLitePCLRaw.bundle_e_sqlite3" Version="3.0.3" />
+    <!-- Versions match the cognition sibling's (its 3.5.3 pins), so the two agree when they end up in
+         one process. -->
+    <PackageVersion Include="Microsoft.Data.Sqlite" Version="10.0.12" />
+    <PackageVersion Include="SQLitePCLRaw.bundle_e_sqlite3" Version="3.0.5" />
     <!-- The DI + stdio hosting extensions. NOT ModelContextProtocol.AspNetCore: the protocol works
          over plain streams, so a framework reference on Microsoft.AspNetCore.App would be bought for
          nothing. The cognition sibling reached the same conclusion for its own MCP host. -->
@@ -37,7 +39,7 @@
   <ItemGroup>
     <!-- The HTTP host in-process (HTTP1): the host's real Program over an in-memory server, which
          binds no port. The servicing band matches the framework packages above. -->
-    <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.10" />
+    <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="10.0.12" />
     <PackageVersion Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
     <PackageVersion Include="xunit" Version="2.9.2" />
     <PackageVersion Include="xunit.runner.visualstudio" Version="2.8.2" />
