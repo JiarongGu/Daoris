@@ -7186,7 +7186,9 @@ convergence's dedupe was seen failing them. The HTTP host's refusal of a bad win
 MCP host's identical refusal is not run by any test. The HTTP door's `embedded` field is not run with a model,
 because no HTTP host test has one. **No real embedder has embedded a piece**: whether 2,000 characters fits a
 given model's context, and what segmenting does to recall on the real corpus, need a machine that runs one. The
-page shows `semanticError` from a refresh and not yet `embedded`, which is the web lane's to add.
+page shows `semanticError` from a refresh, and since SEM3b `embedded` too, in the refresh's notice beside the count;
+Settings → AI names `DAORIS_EMBED_WINDOW` beside the model and the address. A refresh with no `embedded` says nothing
+of embedding.
 **As built (PLUGDIST1a, 2026-10-01): the package and its reader, offline, with the record in both twins.** The
 driver's `PluginPackage` reads a `.nupkg` and installs its plugin through `PluginInstall`, and `daoris-driver plugins
 install <file.nupkg>` is the terminal's door. The CLI reads and lists the record a package leaves. Nothing reaches a

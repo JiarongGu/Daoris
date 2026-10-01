@@ -80,6 +80,44 @@ describe('a refresh, said whole', () => {
 
     expect(await screen.findByText(/Indexed 3 entries/)).toBeTruthy();
     expect(await screen.findByText(/Not found where the registry says: studio/)).toBeTruthy();
+    // Absent is never zero (SEM3b): a refresh the semantic half did not run in says nothing of embedding.
+    expect(screen.queryByText(/Embedded|vectors/)).toBeNull();
+  });
+
+  /**
+   * SEM3b (D123): the service embeds every part of a long entry, in pieces the deployment's window
+   * bounds, and its refresh answer says what that made. The notice says it beside the count, the
+   * figures grouped as the reader's language groups them.
+   */
+  it('a refresh the semantic half ran in says what it embedded, at what window, and how many it split', async () => {
+    fetchMock.mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) =>
+      (String(input) === '/api/refresh' && init?.method === 'POST'
+        ? Response.json({
+          entries: 636, repositories: 3, withheld: 0,
+          embedded: { entries: 636, pieces: 1267, split: 322, window: 2000 },
+        })
+        : respond(String(input))));
+    shell();
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Refresh the index' }));
+
+    expect(await screen.findByText(
+      'Indexed 636 entries from 3 repositories. Embedded 636 entries as 1,267 vectors of at most 2,000 '
+      + 'characters; 322 longer than that were split.')).toBeTruthy();
+  });
+
+  it('a refresh that split nothing says none was, rather than a zero', async () => {
+    fetchMock.mockImplementation(async (input: RequestInfo | URL, init?: RequestInit) =>
+      (String(input) === '/api/refresh' && init?.method === 'POST'
+        ? Response.json({
+          entries: 2, repositories: 1, withheld: 0, embedded: { entries: 2, pieces: 2, split: 0, window: 8000 },
+        })
+        : respond(String(input))));
+    shell();
+
+    fireEvent.click(await screen.findByRole('button', { name: 'Refresh the index' }));
+
+    expect(await screen.findByText(/at most 8,000 characters; none was longer, so none was split\.$/)).toBeTruthy();
   });
 });
 

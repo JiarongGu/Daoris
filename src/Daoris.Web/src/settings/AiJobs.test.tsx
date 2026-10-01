@@ -47,6 +47,8 @@ describe('AI features', () => {
     // Each variable is code, as every other row's terminal door is (UX5 U55: they were body text).
     expect(screen.getByText('DAORIS_EMBED_MODEL').tagName).toBe('CODE');
     expect(screen.getByText('DAORIS_EMBED_URL').tagName).toBe('CODE');
+    // SEM3b (D123): the window a long entry is embedded in pieces by is the deployment's too.
+    expect(screen.getByText('DAORIS_EMBED_WINDOW').tagName).toBe('CODE');
     expect(screen.getByText(/restart/)).toBeInTheDocument();
   });
 
