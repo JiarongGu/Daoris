@@ -19,6 +19,7 @@ import {
 import { mirrorSources, planMirrors } from './mirror.ts';
 import { planRooms } from './rooms.ts';
 import { describeLink, linkProblems, shortLink } from './links.ts';
+import { declaredPaths, describeDocumentLink, documentLinks, present, shortDocumentLink } from './documents.ts';
 import { DaorisError } from './errors.ts';
 
 /** Which directory name a tier answers to, for matching a canon target against it. */
@@ -311,11 +312,23 @@ export function planSync(
     ],
   });
 
+  // The declared documents (D122 §2.7). Nothing here is written to them: the table names them, so one
+  // that is a link refuses (every session the region sends there would read through it), and one that
+  // is absent is said and not refused — it is `check`'s fact, and blocking every canon update on it
+  // would hold the doctrine hostage to a record.
+  const declaredDocuments = manifest.documents ?? [];
+  const documentLinksFound = documentLinks(root, declaredDocuments);
+  const documents = {
+    links: documentLinksFound,
+    missing: declaredPaths(declaredDocuments)
+      .filter((doc) => !documentLinksFound.some((link) => link.declared === doc.path) && present(root, doc.path) === null),
+  };
+
   return {
     writes, deletes, leavesRegion, drifted, collisions, renames, editedRetirements,
     switchedOff: selection.switchedOff, offers: selection.offers, editedSwitchedOff,
     layout: { from: { harness: was.harness.id, target: from }, to: { harness: harness.id, target: to } },
-    moves, moveCollisions, ...behind, mirrors, rooms, links,
+    moves, moveCollisions, ...behind, mirrors, rooms, links, documents,
   };
 }
 
@@ -442,8 +455,8 @@ function containedPath(root: string, target: string, rel: string): string {
 
 /**
  * The refusals `--force` never overrides. Each is a choice only the repository can make: what to put
- * where a link stands, where its own documents go, and what its rooms say. `--force` discards an EDIT;
- * none of these is one.
+ * where a link stands, where its own documents go, what its rooms say, and which file a declared record
+ * really is. `--force` discards an EDIT; none of these is one.
  */
 function refuseWhatForceCannot(plan: SyncPlan): void {
   if (plan.links.length) {
@@ -468,6 +481,13 @@ function refuseWhatForceCannot(plan: SyncPlan): void {
       `${plan.rooms.missing.length} declared room(s) with no instructions of their own: ${plan.rooms.missing.join(', ')}\n`
       + "  a room's text is this repository's own and daoris never writes it — write it, or take the room\n"
       + "  out of daoris.json's rooms, then 'daoris sync'",
+      1);
+  }
+  if (plan.documents.links.length) {
+    throw new DaorisError(
+      `${plan.documents.links.length} declared document(s) the region would send every session through a link to:\n`
+      + `${plan.documents.links.map((link) => `  ${describeDocumentLink(link)}`).join('\n')}\n`
+      + "  then 'daoris sync'",
       1);
   }
 }
@@ -698,8 +718,9 @@ function writeSpans(
       // The rows this repository switched off (D71): the session loading the region learns what is
       // not there, and which pack said so, rather than meeting a doctrine with a silent hole in it.
       off,
-      // The mirror sentence and the rooms (D117 §5.3), rendered by the function `check` rebuilds them with.
-      ...rosterExtras(root, harness, manifest.target, manifest.rooms ?? []),
+      // The mirror sentence, the rooms (D117 §5.3) and where the records are (D122 §2.7), rendered by the
+      // function `check` rebuilds them with.
+      ...rosterExtras(root, harness, manifest.target, manifest.rooms ?? [], manifest.documents ?? []),
     };
 
     // 🔴 The RAW bytes: `writeRegion` keeps everything outside the region byte for byte and takes the
@@ -775,6 +796,10 @@ export function commandSync({ root, argv, write, packageRoot }: CommandArgs): Ex
     for (const path of plan.keptRules) {
       write(`  kept      ${path} — read by Claude Code alone; its text could go in AGENTS.md, above the region`);
     }
+    // Said, never refused (D122 §2.8): an absent record is `check`'s fact, and the table still names it.
+    for (const doc of plan.documents.missing) {
+      write(`  document  ${doc.path} (${doc.role}) is declared in daoris.json, and absent — 'daoris check' fails until it is there`);
+    }
     if (!dry) return;
     for (const mirror of plan.mirrors.writes) {
       if (mirror.state !== 'unchanged') write(`  mirror    ${mirror.path}`);
@@ -795,6 +820,7 @@ export function commandSync({ root, argv, write, packageRoot }: CommandArgs): Ex
     sayTheLayout(true);
     sayWhatIsOff();
     for (const problem of plan.links) write(`  LINK      ${problem.path} — ${shortLink(problem)}`);
+    for (const link of plan.documents.links) write(`  LINK      ${link.declared} (${link.role}) — ${shortDocumentLink(link)}`);
     for (const doc of plan.leftBehind) write(`  LEFT BEHIND ${doc.path} — ${doc.move}`);
     for (const pair of plan.bothRoots) write(`  TWO COPIES ${pair.old} and ${pair.neu}`);
     for (const path of plan.rooms.missing) write(`  NO ROOM   ${path} — declared in daoris.json, and absent`);
@@ -841,7 +867,7 @@ export function commandSync({ root, argv, write, packageRoot }: CommandArgs): Ex
 /** Whether applying this plan would refuse without `--force` — the dry run's exit code. */
 function refuses(plan: SyncPlan): boolean {
   return [
-    plan.links, plan.leftBehind, plan.bothRoots, plan.rooms.missing, plan.drifted, plan.collisions,
+    plan.links, plan.documents.links, plan.leftBehind, plan.bothRoots, plan.rooms.missing, plan.drifted, plan.collisions,
     plan.moveCollisions, plan.editedRetirements, plan.editedSwitchedOff,
     plan.mirrors.edited, plan.mirrors.collisions, plan.mirrors.editedGone,
   ].some((list) => list.length > 0);

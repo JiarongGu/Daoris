@@ -12,7 +12,7 @@
 // The service's `RepositoryScanner` reads the same field for the declared decisions, fixes and archive
 // (DOC5): the manifest-reading table in `documents-manifest.test.ts` is the one its reader matches.
 
-import type { DeclaredDocument, Harness, LinkProblem } from './types.ts';
+import type { DeclaredDocument, DocumentLinkProblem, Harness } from './types.ts';
 import { readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { declared, escapes, within } from './layout.ts';
@@ -245,12 +245,7 @@ export const jobOf = (role: string): string => ROLES.find((row) => row.role === 
 /** Whitespace-separated tokens: `tools/doc-budgets.mjs`'s count, duplicated deliberately (twins). */
 export const wordCount = (text: string): number => text.split(/\s+/).filter(Boolean).length;
 
-/** A declared document that is a link, a link held as text, or below a file where a folder must be. */
-export interface DocumentLink extends LinkProblem {
-  role: string;
-  /** The declared path; `path` is the part of it that is the problem, the same or a folder above. */
-  declared: string;
-}
+type DocumentLink = DocumentLinkProblem;
 
 /**
  * The declared paths that are not a plain file or folder (D117 §5.4's link table, for a path Daoris

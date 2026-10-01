@@ -240,6 +240,11 @@ export function commandStatus(
       roomsWithoutInstructions: inspection?.roomsWithoutInstructions ?? [],
       roomPointersMissing: inspection?.roomPointersMissing ?? [],
       links: inspection?.links ?? [],
+      // The declared documents and their facts (D122 §2.7–§2.8).
+      documents: manifest.documents,
+      documentsMissing: inspection?.documentsMissing ?? [],
+      documentLinks: inspection?.documentLinks ?? [],
+      documentsStale: inspection?.documentsStale ?? false,
       switchedOff,
       offers,
       selectionProblem,
@@ -295,6 +300,9 @@ export function commandStatus(
     const roomFacts = [...inspection.roomsWithoutInstructions, ...inspection.roomPointersMissing];
     if (roomFacts.length) write(`  room          ${roomFacts.join(', ')} — 'daoris check' says which`);
     for (const problem of inspection.links) write(`  link          ${problem.path} — 'daoris check' says what it is`);
+    for (const doc of inspection.documentsMissing) write(`  document      ${doc.path} (${doc.role}) — 'daoris check' says which`);
+    for (const link of inspection.documentLinks) write(`  link          ${link.declared} (${link.role}) — 'daoris check' says what it is`);
+    if (inspection.documentsStale) write("  where         the region's Where things are table is out of date — run 'daoris sync'");
   }
 
   if (selectionProblem) write(`  selection     ${selectionProblem}`);

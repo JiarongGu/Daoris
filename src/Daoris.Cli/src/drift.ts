@@ -5,8 +5,9 @@ import { join } from 'node:path';
 import { digestBytes, listMarkdown, readText, sha256 } from './fsx.ts';
 import { readLock, readManifest } from './config.ts';
 import { rosterFromDisk } from './indexgen.ts';
-import { findRegion, hasImport } from './region.ts';
-import { spanBody } from './tierrender.ts';
+import { findRegion, hasImport, removeRegion } from './region.ts';
+import { spanBody, WHERE_HEADING } from './tierrender.ts';
+import { declaredPaths, documentLinks, present, RECORD_ROLES, shortDocumentLink, wordCount } from './documents.ts';
 import { HARNESSES, DEFAULT_HARNESS, alwaysLoadedTiers } from './harness.ts';
 import { folderTiers, INSTRUCTION_LIMIT, isFile, lockLayout, unlistedDocuments } from './layout.ts';
 import { canonicalOnDisk, mirrorDigest, mirrorSources } from './mirror.ts';
@@ -25,6 +26,15 @@ function onDemandHalf(text: string): string {
   if (start === -1) return '';
   const end = text.indexOf('\n<!-- daoris: ', start);
   return (end === -1 ? text.slice(start) : text.slice(start, end)).trim();
+}
+
+/**
+ * The on-demand half split at the *Where things are* table, its last section (D122 §2.8): the tiers'
+ * tables are rebuilt from disk, the records' table from the manifest, and a stale one says which.
+ */
+function splitWhere(half: string): { tiers: string; where: string } {
+  const at = half.indexOf(`\n${WHERE_HEADING}\n`);
+  return at === -1 ? { tiers: half, where: '' } : { tiers: half.slice(0, at).trim(), where: half.slice(at).trim() };
 }
 
 /**
@@ -191,14 +201,62 @@ export function inspect(
   // checked: they come from frontmatter the span strips, so nothing offline can rebuild them, and a
   // canon change is `status`'s report. What this catches is the case that actually happens — a local
   // document added and the region never re-synced.
-  const indexStale = alwaysLoadedTiers(harness).some((name) => {
+  // The roster's two kinds of table, compared apart (D122 §2.8): the tiers' rows rebuilt from disk, and
+  // the records' table from the manifest, so a stale one is named as itself.
+  const documents = manifest.documents ?? [];
+  let indexStale = false;
+  let documentsStale = false;
+  for (const name of alwaysLoadedTiers(harness)) {
     const tier = harness.tiers[name]!;
-    if (!tier.region) return false;
+    if (!tier.region) continue;
     const body = regionBody(tier.region.file, tier.region.name);
-    if (body === null) return true;
-    return onDemandHalf(body)
-      !== onDemandHalf(rosterFromDisk({ root, target, lock, harness, rooms: manifest.rooms ?? [] }));
-  });
+    if (body === null) {
+      indexStale = true;
+      continue;
+    }
+    const held = splitWhere(onDemandHalf(body));
+    const wanted = splitWhere(onDemandHalf(rosterFromDisk({ root, target, lock, harness, rooms: manifest.rooms ?? [], documents })));
+    if (held.tiers !== wanted.tiers) indexStale = true;
+    if (held.where !== wanted.where) documentsStale = true;
+  }
+
+  // The declared documents (D122 §2.8). Facts: one absent, or a link, or a link held as text, which is
+  // never read through. Judgements, reported: a document over its ceiling in words, and the canon's
+  // most-named records declared nowhere. A repository that declares nothing hears none of it.
+  const documentLinksFound = documentLinks(root, documents);
+  const linked = new Set(documentLinksFound.map((link) => link.declared));
+  const documentsMissing = declaredPaths(documents).filter((doc) => !linked.has(doc.path) && present(root, doc.path) === null);
+  const documentsOver: { label: string; words: number; ceiling: number }[] = [];
+  const ceilingsUnmeasured: { role: string; path: string; ceiling: number }[] = [];
+  const measure = (label: string, text: string, ceiling: number) => {
+    const words = wordCount(text);
+    if (words > ceiling) documentsOver.push({ label, words, ceiling });
+  };
+  for (const doc of documents) {
+    if (doc.words === null) continue;
+    if (doc.role === 'brief') {
+      // The repository's own part of the root instruction file: everything outside Daoris's region.
+      const region = Object.values(harness.tiers).find((tier) => tier.region)?.region;
+      const text = region ? fileText(region.file) : null;
+      if (region && text !== null && !links.some((problem) => problem.path === region.file)) {
+        measure(`the brief (${region.file}, outside the region)`, removeRegion(text, region.name) ?? '', doc.words);
+      }
+    } else if (doc.role === 'room') {
+      for (const room of manifest.rooms ?? []) {
+        const path = `${room}/${instructions}`;
+        if (isFile(join(root, path)) && !links.some((problem) => problem.path === path)) {
+          measure(`${path} (room)`, readText(join(root, path)), doc.words);
+        }
+      }
+    } else if (doc.path !== null && !linked.has(doc.path)) {
+      const kind = present(root, doc.path);
+      if (kind === 'file') measure(`${doc.path} (${doc.role})`, readText(join(root, doc.path)), doc.words);
+      else if (kind === 'folder') ceilingsUnmeasured.push({ role: doc.role, path: doc.path, ceiling: doc.words });
+    }
+  }
+  const recordsUndeclared = documents.length
+    ? RECORD_ROLES.filter((role) => !documents.some((doc) => doc.role === role && doc.path !== null))
+    : [];
 
   // The budget REPORTS; it does not fail (D54, the owner's call). Everything else here is a FACT the
   // tool established — a file drifted, one is missing, a pack was never synced, the index is behind.
@@ -208,11 +266,14 @@ export function inspect(
   // signal nobody can see is not a signal.
   const ok = !drifted.length && !missing.length && !stalePacks.length && !indexStale && !staleSwitches.length
     && !staleLayout && !mirrorsDrifted.length && !mirrorsMissing.length && !mirrorsBehind.length
-    && !roomsWithoutInstructions.length && !roomPointersMissing.length && !links.length;
+    && !roomsWithoutInstructions.length && !roomPointersMissing.length && !links.length
+    && !documentsStale && !documentsMissing.length && !documentLinksFound.length;
   return {
     drifted, missing, stalePacks, coreBytes, overBudget, indexStale, switchedOff, staleSwitches,
     staleLayout, mirrorsDrifted, mirrorsMissing, mirrorsBehind, roomsWithoutInstructions, roomPointersMissing,
-    links, agentsBytes, unlisted, readAlone, ok,
+    links, agentsBytes, unlisted, readAlone,
+    documentsStale, documentsMissing, documentLinks: documentLinksFound, documentsOver, ceilingsUnmeasured, recordsUndeclared,
+    ok,
   };
 }
 
@@ -255,6 +316,23 @@ export function commandCheck({ root, write }: Pick<CommandArgs, 'root' | 'write'
   if (report.agentsBytes > INSTRUCTION_LIMIT) {
     write(`  size      AGENTS.md is ${report.agentsBytes} bytes; codex reads ${INSTRUCTION_LIMIT} of a repository's `
       + 'instruction files and cuts the rest, which is the region\'s last rules — advisory, not a gate');
+  }
+  // The declared documents (D122 §2.8): the facts first, each failing, then the judgements, never failing.
+  for (const doc of report.documentsMissing) write(`  document  ${doc.path} (${doc.role}) is declared in daoris.json, and absent`);
+  for (const link of report.documentLinks) write(`  LINK      ${link.declared} (${link.role}) — ${shortDocumentLink(link)}`);
+  if (report.documentsStale) {
+    write("  where     the region's Where things are table differs from daoris.json's documents — run 'daoris sync'");
+  }
+  for (const over of report.documentsOver) {
+    write(`  words     ${over.label} is ${over.words} words of ${over.ceiling} — over by ${over.words - over.ceiling}; `
+      + 'relocate, condense, then raise — advisory, not a gate');
+  }
+  for (const doc of report.ceilingsUnmeasured) {
+    write(`  ceiling   ${doc.path} (${doc.role}) is a folder; its ceiling of ${doc.ceiling} words measures nothing — advisory`);
+  }
+  if (report.recordsUndeclared.length) {
+    write(`  records   ${report.recordsUndeclared.map((role) => `no ${role}`).join(' and ')} declared in daoris.json's `
+      + "documents — the canon's records have nowhere to point here (advisory)");
   }
   for (const doc of report.unlisted) write(`  unlisted  ${doc.path} — no index lists it; ${doc.move}`);
   for (const path of report.readAlone) {
