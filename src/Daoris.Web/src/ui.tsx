@@ -715,10 +715,15 @@ export function SelectField({ value, onChange, options, placeholder, ariaLabel, 
         <ChevronDown size={bar ? 12 : 14} aria-hidden className="text-ink-faint" />
       </RadixSelect.Trigger>
       <RadixSelect.Portal>
+        {/* SELECT1: a long list is capped at the room the popper measured on its side, and scrolls inside it.
+            The viewport hides its own scrollbar, so the arrows at each end are what says there is more. */}
         <RadixSelect.Content
-          position="popper" sideOffset={4}
-          className="z-30 min-w-[var(--radix-select-trigger-width)] overflow-hidden rounded-card border border-line bg-overlay shadow-[0_6px_24px_rgb(15_12_8/0.12)]"
+          position="popper" sideOffset={4} collisionPadding={8}
+          className="z-30 max-h-[var(--radix-select-content-available-height)] min-w-[var(--radix-select-trigger-width)] overflow-hidden rounded-card border border-line bg-overlay shadow-[0_6px_24px_rgb(15_12_8/0.12)]"
         >
+          <RadixSelect.ScrollUpButton className="flex h-5 shrink-0 cursor-default items-center justify-center text-ink-soft">
+            <ChevronUp size={14} aria-hidden />
+          </RadixSelect.ScrollUpButton>
           <RadixSelect.Viewport className="p-1">
             {options.map((option) => (
               <RadixSelect.Item
@@ -731,6 +736,9 @@ export function SelectField({ value, onChange, options, placeholder, ariaLabel, 
               </RadixSelect.Item>
             ))}
           </RadixSelect.Viewport>
+          <RadixSelect.ScrollDownButton className="flex h-5 shrink-0 cursor-default items-center justify-center text-ink-soft">
+            <ChevronDown size={14} aria-hidden />
+          </RadixSelect.ScrollDownButton>
         </RadixSelect.Content>
       </RadixSelect.Portal>
     </RadixSelect.Root>
