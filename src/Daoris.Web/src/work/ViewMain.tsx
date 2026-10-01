@@ -1,6 +1,42 @@
 import type { ReactNode, Ref } from 'react';
-import { EmptyState, type IconName, SkeletonRows } from '../ui';
+import { EmptyState, type IconName, SectionTitle, SkeletonRows } from '../ui';
 import { cn } from '../lib/cn';
+
+/**
+ * A page's header in the main area (D118 §3b, D119 §3.2): its title, with what is beside it (a version, its pills); its
+ * id in the mono face; its one line, cut to one line and whole in its tip; and its acts. A title and a line are content.
+ *
+ * @remarks
+ * Shared by every view's page since FRAME1d: PLUGUI1b drew it for a plugin, and a quest's and an ask's wear it.
+ */
+export function PageHead({ title, version, pills, id, line, acts }: {
+  title: string; version?: string; pills?: ReactNode; id: string; line?: string; acts?: ReactNode;
+}) {
+  return (
+    <header className="mb-4 flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
+      <div className="min-w-0 flex-1 basis-64">
+        <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+          <h1 className="m-0 min-w-0 text-view font-[650] tracking-[-0.01em] wrap-anywhere">{title}</h1>
+          {version && <span className="font-mono text-small text-ink-faint">{version}</span>}
+          {pills}
+        </div>
+        <p className="m-0 mt-0.5 font-mono text-meta text-ink-faint">{id}</p>
+        {line && <p title={line} className="m-0 mt-1 truncate text-body text-ink-soft">{line}</p>}
+      </div>
+      {acts && <div className="flex flex-wrap items-center gap-2">{acts}</div>}
+    </header>
+  );
+}
+
+/** A section of a page: its name as a heading, and the region it names (D119 §3.2). */
+export function PageSection({ title, children }: { title: string; children: ReactNode }) {
+  return (
+    <section aria-label={title} className="mt-6 first:mt-0">
+      <SectionTitle>{title}</SectionTitle>
+      {children}
+    </section>
+  );
+}
 
 /**
  * - `chosen`: the item the list chose, or the view's page where the view has no list.

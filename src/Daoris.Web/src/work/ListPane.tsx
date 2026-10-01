@@ -137,9 +137,10 @@ export function ListPane({
     />
   );
 
+  // Named by the list's name, open or a strip (FRAME1d): a landmark a reader, and a test, finds by its name.
   if (layout.mode === 'open') {
     return (
-      <aside ref={aside} data-region="list" data-list-mode="open" className="relative flex shrink-0 flex-col border-r border-line" style={{ width: layout.beside }}>
+      <aside ref={aside} aria-label={name} data-region="list" data-list-mode="open" className="relative flex shrink-0 flex-col border-r border-line" style={{ width: layout.beside }}>
         {header}
         {body}
         {edge}
@@ -148,7 +149,7 @@ export function ListPane({
   }
 
   return (
-    <aside ref={aside} data-region="list" data-list-mode={layout.mode} className="relative flex shrink-0 flex-col border-r border-line" style={{ width: LIST_STRIP }}>
+    <aside ref={aside} aria-label={name} data-region="list" data-list-mode={layout.mode} className="relative flex shrink-0 flex-col border-r border-line" style={{ width: LIST_STRIP }}>
       {/* The strip's controls, stacked, since 56px holds one across. */}
       <header className="flex shrink-0 flex-col items-center gap-0.5 border-b border-line py-1">
         <Tip content={labels.open} side="right">
@@ -206,16 +207,47 @@ function EmptyActs({ make }: { make: ListMake }) {
   );
 }
 
+/** One of the ⋯'s items: an act, or a toggle where it says whether it is on (a filter: *Include closed*). */
+export type MoreItem = { id: string; label: string; checked?: boolean };
+
+/** One value among several, a filter's (*Receiver*): named above its options, the chosen one ticked. */
+export type MoreChoice = {
+  label: string;
+  value: string;
+  options: { value: string; label: string }[];
+  onChoose: (value: string) => void;
+};
+
+const MORE_ITEM = 'flex cursor-default items-center gap-2 rounded-control px-2 py-1.5 text-ink outline-none data-[highlighted]:bg-accent-soft';
+
+/** The tick's column, always reserved where anything may be ticked, so the labels line up as `AppMenu`'s do. */
+function Tick() {
+  return (
+    <span className="flex w-3.5 shrink-0 justify-center">
+      <Menu.ItemIndicator><Icon name="check" size={12} /></Menu.ItemIndicator>
+    </span>
+  );
+}
+
 /**
  * The list's own **⋯** (D118 §3a): its filters and its menu, in its header before its close. An arrow is a direction,
  * never a menu, so a region's own menu is "⋯", as VS Code's *Views and More Actions* is (platform language §4).
+ *
+ * @remarks
+ * **A filter is a ticked item** (FRAME1d): one value among several is a group named for what it filters, its chosen
+ * value ticked, and a toggle is ticked while it is on. The view keeps the values (`listPanes.ts`); the menu only says
+ * them and tells it what was chosen.
  */
-export function ListMore({ label, items, onChoose }: {
+export function ListMore({ label, items = [], choice, onChoose }: {
   /** Its name and its tip. */
   label: string;
-  items: { id: string; label: string }[];
-  onChoose: (id: string) => void;
+  items?: MoreItem[];
+  /** One value among several, above the items. */
+  choice?: MoreChoice;
+  /** Told the item's id: an act chosen, or a toggle pressed. */
+  onChoose?: (id: string) => void;
 }) {
+  const ticks = choice !== undefined || items.some((item) => item.checked !== undefined);
   return (
     <Menu.Root modal={false}>
       <Tip content={label}>
@@ -233,15 +265,33 @@ export function ListMore({ label, items, onChoose }: {
           collisionPadding={8}
           className="z-30 min-w-44 rounded-control border border-line bg-overlay p-1 text-small shadow-lg"
         >
-          {items.map((item) => (
-            <Menu.Item
-              key={item.id}
-              onSelect={() => onChoose(item.id)}
-              className="flex cursor-default items-center gap-2 rounded-control px-2 py-1.5 text-ink outline-none data-[highlighted]:bg-accent-soft"
-            >
-              {item.label}
-            </Menu.Item>
-          ))}
+          {choice && (
+            <>
+              <Menu.Label className="px-2 pb-1 pt-1.5 text-meta text-ink-faint">{choice.label}</Menu.Label>
+              <Menu.RadioGroup aria-label={choice.label} value={choice.value} onValueChange={choice.onChoose}>
+                {choice.options.map((option) => (
+                  <Menu.RadioItem key={option.value} value={option.value} className={MORE_ITEM}>
+                    <Tick />
+                    <span className="truncate">{option.label}</span>
+                  </Menu.RadioItem>
+                ))}
+              </Menu.RadioGroup>
+              {items.length > 0 && <Menu.Separator className="my-1 h-px bg-line" />}
+            </>
+          )}
+          {items.map((item) => (item.checked === undefined
+            ? (
+              <Menu.Item key={item.id} onSelect={() => onChoose?.(item.id)} className={MORE_ITEM}>
+                {ticks && <span className="w-3.5 shrink-0" />}
+                {item.label}
+              </Menu.Item>
+            )
+            : (
+              <Menu.CheckboxItem key={item.id} checked={item.checked} onCheckedChange={() => onChoose?.(item.id)} className={MORE_ITEM}>
+                <Tick />
+                {item.label}
+              </Menu.CheckboxItem>
+            )))}
         </Menu.Content>
       </Menu.Portal>
     </Menu.Root>
