@@ -6,6 +6,7 @@ import {
 import {
   Button, Card, failure, Inline, type Notify, PathText, Pill, Prose, SettingRow, Tip, useErrorNotify,
 } from '../ui';
+import { DomainLoading } from './DomainLoading';
 import { PluginKitCard, TrialReport, type KitPoint, type PluginTrialResult } from './PluginKit';
 import { PluginOffersCard } from './PluginOffers';
 import { PluginSourceLine, PluginUpdatePlan, updatable, type PluginUpdatePlanShown } from './PluginUpdate';
@@ -41,6 +42,8 @@ export function PluginsDomain({ notify }: { notify: Notify }) {
   // Defensive about the shape, for SES1's reason: a shell older than this surface answers something
   // else entirely to a question it has never heard, and the page must not go blank for it.
   const plugins = Array.isArray(catalog.data?.plugins) ? catalog.data.plugins : null;
+  // Its place held until the first answer (FRAME1g): a first open drew a blank page under the domain's name.
+  if (!catalog.data && catalog.isFetching) return <DomainLoading />;
   if (!catalog.data || !plugins) return null;
 
   const run = (id: string, action: 'enable' | 'disable' | 'remove') => act.mutate({ id, action }, {

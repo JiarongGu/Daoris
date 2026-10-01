@@ -89,6 +89,27 @@ describe('the plugins card', () => {
   });
 
   /**
+   * FRAME1g (D118 §3h; audit PL11): the domain drew nothing until the catalogue's first answer, so a first
+   * open was a blank page under its name. It holds the catalogue's place with skeleton rows until it answers.
+   */
+  it('holds the catalogue\'s place with skeleton rows on its first load, never nothing', async () => {
+    let answer: (catalogue: typeof PLUGINS) => void = () => {};
+    invoke.mockImplementation((_module: string, type: string) => (type === 'PLUGINS'
+      ? new Promise((resolve) => { answer = resolve; })
+      : Promise.resolve(WIRING)));
+    show(<SettingsView notify={() => {}} section="plugins" />);
+
+    // The machine's domains are offered once the shell answers, and the main area is drawn anew for this one.
+    await screen.findByRole('heading', { level: 1, name: 'Plugins' });
+    const main = screen.getByRole('main');
+    await waitFor(() => expect(main.querySelector('[aria-busy="true"]')).not.toBeNull());
+
+    answer(PLUGINS);
+    expect(await screen.findByText('Acme gate')).toBeTruthy();
+    expect(main.querySelector('[aria-busy="true"]')).toBeNull();
+  });
+
+  /**
    * PLUG9 (c): each row says where the plugin came from; one with a record is updated by two presses, the
    * first asking what would change and the second making it; one with none says so and offers no Update.
    */

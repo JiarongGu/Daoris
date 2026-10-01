@@ -13,6 +13,7 @@ import {
 } from '../ui';
 import { workspacesOf } from '../workspaces';
 import { AccountSettingsForm, AccountSettingsSummary } from './AccountSettings';
+import { DomainLoading } from './DomainLoading';
 import { namer } from './namer';
 
 /** What a DOOR does, and so what streams under it. */
@@ -103,6 +104,8 @@ export function AgentsDomain({ notify }: { notify: Notify }) {
   const harnesses = Array.isArray(answered?.harnesses) ? answered.harnesses : null;
   // Same defensiveness, and the same reason: an older shell has never heard of this question.
   const accounts = Array.isArray(usage.data?.accounts) ? usage.data.accounts : [];
+  // Its place held until the first answer (FRAME1g): a first open drew a blank page under the domain's name.
+  if (!answered && roster.isFetching) return <DomainLoading />;
   if (!answered || !harnesses) return null;
   const nameOf = namer(t, harnesses);
 
