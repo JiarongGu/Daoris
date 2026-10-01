@@ -6710,3 +6710,40 @@ the folder, so it reaches into nothing.
 - **No custom type with a listed package was queried.** The first publish is that proof.
 - **The workshop, the reader, *Find* and the pack** exist only as rows. `verify` checks this document's links
   and the log's shape, and none of its words.
+
+**As built (PLUGDIST1a, 2026-10-01): the package and its reader, offline, with the record in both twins.** The
+driver's `PluginPackage` reads a `.nupkg` and installs its plugin through `PluginInstall`, and `daoris-driver plugins
+install <file.nupkg>` is the terminal's door. The CLI reads and lists the record a package leaves. Nothing reaches a
+network: a package source is PLUGDIST1c's. What the design left open, settled here:
+- **The type is `DaorisPlugin` alone**, compared without case, as NuGet compares type names. A package that also
+  declares another type is refused, since §5.1 says *no other type*. The type's version is a `System.Version` whose
+  major number is the plugin API. No version, a major of 0, or a major this build does not speak is refused before
+  anything is extracted, the last naming both numbers.
+- **The plugin's own `apiVersion` must equal the type's**, as its version must equal the package's. Otherwise the
+  check a source makes before downloading would trust a type that says something else.
+- **Any `dependency` element refuses the package**, in a group or not.
+- **A part's name is read as NuGet reads it**: unescaped, with `\` a separator, and only then is the `plugin/` guard
+  applied, so an escaped `..%2F` is refused as `../` is. A name twice, compared without case, refuses the package
+  too, since Windows would write the second over the first. The guard judges every `plugin/` entry before anything
+  is written, and each target is checked again against the stage's whole path as it is written.
+- **The file is opened once, shared for reading only**, so the bytes hashed are the bytes extracted.
+- **The stage is `<home>/plugins/.unpacking-<guid>/`**, a dot-folder the catalogue skips, gone whether the install
+  succeeds or not. `PluginInstall` gains an internal `Add` for that stage, the one folder inside the home an add
+  copies from; `Placement` still refuses every other.
+- **A package file's source is the folder that held it**, a whole path. The record so names a folder source, §5.3's
+  offline kind, which PLUGDIST1c can update from as from an index.
+- **The record's rules**: a NuGet package id (ASCII, at most 100 characters); a version of one to four numbers, with
+  an optional prerelease label and metadata; a SHA-512 as standard base64; and a source that is a whole path or an
+  address by TOOLS3's rule (https://, or http:// to this machine). A record naming a package beside a folder or an
+  offer does not read, and `{}` now names all three kinds.
+- **The record's table is held by a gate**, as TOOLS2's is: `plugin-sources.test.ts` parses `PluginSourceTests`'
+  record and update theories and holds its own to them, and was seen failing on a one-sided change.
+- **A plugin from a file lands on**, as a folder's does at `daoris plugin add`: the person named the file. §5.7 step
+  6's *another publisher's lands off* needs the owner account a search result carries, so it joins PLUGDIST1c.
+- **Update refuses a plugin from a package, on both sides, in the same words**: a newer package takes its place by
+  `daoris plugin remove <id>`, then `plugins install`, and what it kept stays. §5.8's *`daoris-driver plugins update
+  <id>` does it* is PLUGDIST1c's to say, once that verb exists. The CLI's list names a package's source and offers no
+  update, and `daoris plugin install` answers as a moved verb does.
+- **Not built here**: a package source over HTTP, `find`, `show`, `install <Id>`, an update from a source, the off row
+  for another publisher, and `plugin.installed` in the machine log (§5.10), all PLUGDIST1c's. The modules' `PLUGINS`
+  answer still names a package record's kind `folder`, with no folder: PLUGDIST1d's to say.
