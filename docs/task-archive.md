@@ -9001,3 +9001,27 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > Daoris.Plugins stays the owner's call.
 
 **Outcome** (designed by a subagent, merged with `tools/merge-branch.mjs`, every gate; **D120**): **NuGet** is the package source (D120): a custom `DaorisPlugin` package type (its version the wire's `apiVersion`), search by `packageType`, downloads from the flat container over HTTP with no client, the catalog's SHA-512 checked (and seen to match a served package), and other publishers' plugins installed switched off. The facts were checked against the maker's pages and live queries (`packageType=McpServer` 274 hits, case-insensitive; a custom type accepted on push). npm was rejected even though its keyword filter proved exact (the row's premise that it filtered less precisely did not hold): a keyword carries no version or meaning, and npm's install machinery would silently not apply; its stronger integrity and namespaces are answered by a pinned hash, the owner account and a held signature row. The offers move to pinned packages after the owner's first publish. *Find plugins* was designed on D119's view with both doors and Ask Daoris's doors. The build is PLUGDIST1a–h, filed.
+
+
+## PLUG10 — two defects in today's Plugins domain (2026-10-01)
+
+> - [ ] **PLUG10 — two defects in today's Plugins domain** (found by PLUGUI1a's reading, P8 and P9): *Remove*
+> removes on its first press, and the *running* pill wears done's green. Fix them now in Settings → Plugins;
+> PLUGUI1b carries the same rules into the view.
+
+**Outcome** (built by a subagent, merged with `tools/merge-branch.mjs`, every gate): Two defects in Settings → Plugins from PLUGUI1a's reading. P9: the *running* pill wore done's green, an outcome's hue; it now wears a neutral tone, as the design's §2 table gives it (a hook process between calls is like a chat between turns, which the platform draws as a quiet mark; the subagent built the in-progress hue from its brief, and the parent set it to the design's neutral at merge). P8: *Remove* removed a plugin's folder on its first press; *Remove…* now asks once, in the house pattern: a sentence under the row names the data folder that stays, beside *Remove plugin* (danger) and *Never mind*, and only the second press reaches `PLUGIN_ACTION`. The row became a molecule, `PluginRow`, whose stories show running, off, refused and the ask. Names follow the glossary in both catalogues (移除…, 确认移除插件), and `names:check --strict` is clean. Web vitest 1905 → 1911.
+
+
+## UNBLOCK4 — the carve-outs held harder (2026-10-01)
+
+> - [ ] **UNBLOCK4 — the carve-outs held harder** (§3.6, §3.7): 🔴 a push written as `git -C . push` passes `no-push`
+> in auto mode today; an `autoMode.hard_deny` entry after `"$defaults"`; `git mv` in both defaults tables.
+
+**Outcome** (built by a subagent, merged with `tools/merge-branch.mjs`, every gate; notes under D122 and D81): The push carve-out now also blocks a push written with options before `push`: `no-push` gained `Bash(git -* push)` and `Bash(git -* push *)` in both defaults tables (`Permissions.cs`, `permissions.ts`), applying on both doors in every mode; the red showed `git -C . push`, the `-c` forms, `--git-dir` and `--no-pager` getting through before. While `no-push` is on, the spawn file tells auto mode's classifier, as `autoMode.hard_deny` after `"$defaults"` (always first, exactly once; every spawn must pass the list), that a push in any form, a publish and a release are the person's; with `no-push` off there is no `autoMode` key. `commit` gained `Bash(git mv:*)` in both twins. A model of the harness's Bash matching, checked against its documented examples (`BashRuleTests`), holds the same push forms in both twins. The cost: a `git -C <dir> commit` whose message has "push" as a word before another word is refused. A quoted subcommand, an alias, a path to git, a shell running git, and PowerShell forms are left to the classifier. Unproven until the owner's canary (a local bare remote in scratch): that the harness matches the rules as documented, and that the classifier reads `autoMode` from the file on the protocol door.
+
+
+## UNBLOCK5 — asks, counted (2026-10-01)
+
+> - [ ] **UNBLOCK5 — asks, counted** (§3.10): `permission.refused` from both doors; asks per session in the usage report.
+
+**Outcome** (built by a subagent, merged with `tools/merge-branch.mjs`, every gate; notes under D94 and D122): Asks are counted from here on, before any declaration lands. `SessionLog` writes `permission.refused {session, adapter, tool, kind, by}` once per call the conversation record marks `refused`: on the protocol door a call whose permission request the driver refused (D52, HELP4); on the pipe door the mapper now reads the harness's `permission_denied` frame and the result's `permission_denials`, marks the call refused once, and reads its failed result as `refused` too, so both doors say it alike. `tool` and `by` (`decision_reason_type`) are the pipe door's identifiers and null on the protocol door, and any value that is not an identifier is written as null, so no command reaches the line. `tools/usage-report.mjs` gives asks per session (mean, median, 90th percentile, share with none) overall, by adapter and by repository, and the rule proposals waiting now and made per week by state. The pipe door's frames are written from the Agent SDK's TypeScript reference and labelled so until a real turn shows them; subagent refusals are not counted.

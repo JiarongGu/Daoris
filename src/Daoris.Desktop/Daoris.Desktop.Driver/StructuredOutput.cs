@@ -60,6 +60,13 @@ public interface IStreamsReader
 ///
 /// <para><b>Leaves the model's name and the cost</b> on the wire (D24, TOOL3): both are there, and
 /// neither is Daoris's to record.</para>
+///
+/// <para><b>A denial is the call's refusal</b> (UNBLOCK5, D122 §3.10). Nobody answers a prompt on this
+/// door, so what the harness would have asked it denies, and reports as a <c>system</c>
+/// <c>permission_denied</c> frame and again in the result's <c>permission_denials</c>. Each is read as an
+/// update marking the call <c>refused</c>, once, with the tool's name and what decided it; the call's
+/// failed result then reads <c>refused</c> too, as the protocol door's does (HELP4). 🔴 Both shapes are
+/// the maker's reference, not yet a frame this machine printed: the tests say so beside them.</para>
 /// </remarks>
 public sealed class ClaudeStreamJson : IStreamMapper
 {
@@ -68,6 +75,12 @@ public sealed class ClaudeStreamJson : IStreamMapper
 
     /// <summary>Each tool call's title by its id, so its result is said by name rather than by id.</summary>
     private readonly Dictionary<string, string> _titles = new(StringComparer.Ordinal);
+
+    /// <summary>Each tool call's own name by its id: a denial in the result's list is named by it too.</summary>
+    private readonly Dictionary<string, string> _names = new(StringComparer.Ordinal);
+
+    /// <summary>The calls the harness denied, by id: each is marked once, and its failed result reads refused.</summary>
+    private readonly HashSet<string> _refused = new(StringComparer.Ordinal);
     private long? _context;
     private AcpUsage? _usage;
 
@@ -100,6 +113,7 @@ public sealed class ClaudeStreamJson : IStreamMapper
             "user" => User(frame),
             "result" => Result(frame),
             "control_response" => Control(frame),
+            "system" when Str(frame, "subtype") == "permission_denied" => Denied(frame),
             // Known and deliberately not the conversation: the session's setup, its status, its limits.
             "system" or "rate_limit_event" => StreamMapped.Nothing,
             var kind => new([], [new SessionEvent
@@ -161,7 +175,12 @@ public sealed class ClaudeStreamJson : IStreamMapper
                     var call = ToolCall(block);
                     // On one line, however long the command — a heredoc printed raw reads as the agent's words.
                     var named = AcpSession.OneLine(call.Title ?? "a tool");
-                    if (call.Id is { } callId) _titles[callId] = named;
+                    if (call.Id is { } callId)
+                    {
+                        _titles[callId] = named;
+                        if (Str(block, "name") is { } tool) _names[callId] = tool;
+                    }
+
                     lines.Add($"→ {named}");
                     events.Add(call);
                     if (Plan(block) is { } plan) events.Add(plan);
@@ -195,7 +214,9 @@ public sealed class ClaudeStreamJson : IStreamMapper
             if (Str(block, "type") != "tool_result") continue;
             var failed = block.TryGetProperty("is_error", out var error) && error.ValueKind == JsonValueKind.True;
             var id = Str(block, "tool_use_id");
-            var status = failed ? "failed" : "completed";
+            // A call the harness denied fails on the wire; the record says what happened to it (HELP4's twin),
+            // and the console, the raw view, keeps the wire's word.
+            var status = !failed ? "completed" : id is not null && _refused.Contains(id) ? "refused" : "failed";
             // Said by the call's name, never its id — an id says nothing to a person reading along.
             var name = id is not null && _titles.TryGetValue(id, out var known) ? known : "a tool";
             lines.Add(failed ? $"  ✗ {name} failed" : $"  ✓ {name}");
@@ -220,6 +241,16 @@ public sealed class ClaudeStreamJson : IStreamMapper
         var stopped = Str(frame, "terminal_reason") is "aborted_streaming" or "aborted_tools";
         var lines = new List<string>();
         var events = new List<SessionEvent>();
+
+        // The turn's denials, which the reference calls the authoritative record where the message before
+        // was best-effort: any not said yet is said now, inside the turn it happened in.
+        if (frame.TryGetProperty("permission_denials", out var denials) && denials.ValueKind == JsonValueKind.Array)
+        {
+            foreach (var denial in denials.EnumerateArray().Where(denial => denial.ValueKind == JsonValueKind.Object))
+            {
+                Refuse(denial, by: null, lines, events);
+            }
+        }
 
         // Context used against the window the harness names — a number it volunteered, carried as given.
         if (_context is { } used && Window(frame) is { } size)
@@ -248,6 +279,44 @@ public sealed class ClaudeStreamJson : IStreamMapper
         });
 
         return new(lines, events);
+    }
+
+    /// <summary>A <c>permission_denied</c> frame, as the maker's reference types it (UNBLOCK5).</summary>
+    private StreamMapped Denied(JsonElement frame)
+    {
+        var lines = new List<string>();
+        var events = new List<SessionEvent>();
+        Refuse(frame, Str(frame, "decision_reason_type"), lines, events);
+        return new(lines, events);
+    }
+
+    /// <summary>
+    /// One denial, from either shape (<c>tool_name</c> and <c>tool_use_id</c> are in both): a console line,
+    /// and the call's refusal in the record, each the first time the call is denied.
+    /// </summary>
+    /// <remarks>
+    /// A call the session's record does not hold, a subagent's whose calls run beside the session
+    /// (CONSOLE3c), is said on the console and is no card in the conversation. A denial naming no call is
+    /// another shape than the reference's, and an absence.
+    /// </remarks>
+    private void Refuse(JsonElement denial, string? by, List<string> lines, List<SessionEvent> events)
+    {
+        if (Str(denial, "tool_use_id") is not { } id || !_refused.Add(id)) return;
+
+        var tool = Str(denial, "tool_name") ?? _names.GetValueOrDefault(id);
+        var known = _titles.TryGetValue(id, out var title);
+        lines.Add($"  permission refused: {(known ? title : AcpSession.OneLine(tool ?? "a tool"))}{(by is null ? "" : $" ({by})")}");
+        if (!known) return;
+
+        events.Add(new SessionEvent
+        {
+            Kind = SessionEventKind.Tool,
+            Id = id,
+            Status = "refused",
+            ToolKind = tool is null ? null : KindOf(tool),
+            ToolName = tool,
+            RefusedBy = by,
+        });
     }
 
     /// <summary>
