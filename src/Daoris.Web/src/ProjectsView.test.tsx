@@ -146,7 +146,7 @@ describe('the shell-attached registry management', () => {
     await userEvent.click(await screen.findByRole('button', { name: 'Add repository' }));
     await userEvent.click(await screen.findByRole('button', { name: 'Choose a folder…' }));
 
-    expect(invoke).toHaveBeenCalledWith('DAORIS.REGISTRY', 'PICK_FOLDER', {});
+    expect(invoke).toHaveBeenCalledWith('DAORIS.REGISTRY', 'PICK_FOLDER', { timeoutMs: Infinity });
     expect(await screen.findByText('D:/repos/borealis')).toBeInTheDocument();
 
     // UX5 U38: the move leads and *never mind* follows, as in every other drawer; this one was reversed.
