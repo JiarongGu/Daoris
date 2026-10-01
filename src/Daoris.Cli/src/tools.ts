@@ -20,15 +20,14 @@
 //
 // It stays PURE: it reads and writes files and answers "which program". It spawns nothing — a tool's
 // version is asked in `toolchain.ts`, the one module that may spawn — and it opens no connection, so no
-// doctrine command could reach either through it (the dogfood tests hold both).
+// doctrine command could reach either through it (the dogfood tests hold both). The verb, `daoris tool`, is
+// `toolinstall.ts`'s since TOOLS4: it downloads through a fetcher, and merges the lists `resources.ts` reads,
+// which imports this module.
 
 import { existsSync, statSync } from 'node:fs';
-import { join, resolve } from 'node:path';
-import { operands } from './args.ts';
-import { DaorisError, type ExitCode } from './errors.ts';
+import { join } from 'node:path';
+import { DaorisError } from './errors.ts';
 import { onPath, readJsonObject, writeJsonAtomic } from './fsx.ts';
-import { HOME_SENTENCE, daorisHome } from './home.ts';
-import type { CommandArgs } from './types.ts';
 
 type Env = Record<string, string | undefined>;
 
@@ -314,10 +313,20 @@ export function isInsidePath(path: string): boolean {
   return path.split('/').every((part) => part !== '' && part !== '.' && part !== '..');
 }
 
-/** A downloaded version's executable, or why there is none (§3.6's layout). */
+/**
+ * A downloaded version's executable, or why there is none (§3.6's layout): its record, naming a file that is there.
+ * Finding it is the proof the download verified.
+ */
+export function managedExecutable(home: string, id: string, version: string): { file: string | null; problem: string | null } {
+  const tool = declaredTool(id);
+  if (!tool) throw new DaorisError(undeclared(id));
+  return managedFile(home, tool, version);
+}
+
 function managedFile(home: string, tool: ToolDeclaration, version: string): { file: string | null; problem: string | null } {
   const folder = join(home, TOOLS_FOLDER, tool.id, version);
-  const back = `— ${NEVER}. \`daoris tool use ${tool.id} system\` runs the one on PATH`;
+  const back = `— ${NEVER}. \`daoris tool use ${tool.id} managed ${version}\` downloads it, and \`daoris tool use ${tool.id} system\` `
+    + 'runs the one on PATH';
   const record = join(folder, TOOL_RECORD);
   if (!isFile(record)) {
     return { file: null, problem: `${tool.name} is managed at ${version}, and that version is not downloaded (${folder}) ${back}` };
@@ -394,19 +403,23 @@ function undeclared(id: string): string {
     + 'A tool is added in the code, never by a file.';
 }
 
-/**
- * Set one tool's way (rule 6): the other ways' fields go, and every key the writer has no field for stays,
- * on the entry and on the file. Refused over a file it could not read, and over a `tools` that is no object.
- */
-function setWay(home: string, id: string, way: 'system' | 'file', file: string | null): void {
-  if (!declaredTool(id)) throw new DaorisError(undeclared(id));
+/** The file as an object to write over, or the refusal that leaves it as it is. */
+function writable(home: string): { path: string; root: Record<string, unknown> } {
   const path = toolsFile(home);
   const { value, problem } = readJsonObject(path);
   if (problem !== null) {
     throw new DaorisError(`${problem}. Fix it, or delete it to start from nothing — nothing was written.`);
   }
+  return { path, root: value ?? {} };
+}
 
-  const root = value ?? {};
+/**
+ * Set one tool's way (rule 6): the other ways' fields go, and every key the writer has no field for stays,
+ * on the entry and on the file. Refused over a file it could not read, and over a `tools` that is no object.
+ */
+function setWay(home: string, id: string, way: ToolWay, field: { version?: string; file?: string } = {}): void {
+  if (!declaredTool(id)) throw new DaorisError(undeclared(id));
+  const { path, root } = writable(home);
   if (present(root, 'tools') && !isObject(root.tools)) {
     throw new DaorisError(`${path}'s \`tools\` is not an object, so nothing was written — fix it, or delete the file to start from nothing.`);
   }
@@ -416,13 +429,14 @@ function setWay(home: string, id: string, way: 'system' | 'file', file: string |
   delete entry.version;
   delete entry.file;
   entry.use = way;
-  if (file !== null) entry.file = file;
+  if (field.version !== undefined) entry.version = field.version;
+  if (field.file !== undefined) entry.file = field.file;
   writeJsonAtomic(path, { ...root, tools: { ...tools, [id]: entry } });
 }
 
 /** The system's: the one PATH finds, as before. */
 export function useSystem(home: string, id: string): void {
-  setWay(home, id, 'system', null);
+  setWay(home, id, 'system');
 }
 
 /** A file the person names, by its whole path; one that is not there is refused. */
@@ -430,98 +444,67 @@ export function useFile(home: string, id: string, file: string): void {
   if (!declaredTool(id)) throw new DaorisError(undeclared(id));
   if (!isWholePath(file)) throw new DaorisError(`\`${file}\` is not a whole path — name the executable by its whole path.`);
   if (!isFile(file)) throw new DaorisError(`no file at ${file} — a tool is a file that is there.`);
-  setWay(home, id, 'file', file);
-}
-
-/** The home, or the refusal every management verb gives without one (D63). */
-function requireHome(env: Env): string {
-  const home = daorisHome(env);
-  if (!home) throw new DaorisError(`${HOME_SENTENCE} (wanted: ${TOOLS_FILE})`);
-  return home;
-}
-
-/** How one tool reads on a row of `list`. */
-function row(tool: ToolDeclaration, resolution: ToolResolution): string {
-  const lead = `  ${tool.id.padEnd(5)} ${tool.name.padEnd(10)} `;
-  const how = resolution.way === 'managed' ? `managed ${resolution.version}` : resolution.way ? WAY_WORDS[resolution.way] : null;
-  if (how === null) return `${lead}refused — ${resolution.problem}`;
-  if (resolution.file !== null) return `${lead}${how}: ${resolution.file}`;
-  return `${lead}${how}: ${resolution.refused ? 'refused' : 'not found'} — ${resolution.problem}`;
+  setWay(home, id, 'file', { file });
 }
 
 /**
- * `daoris tool list|path|use` — the terminal's door onto `tools.json` (D50). Management class: it edits one
- * file under the home, spawns nothing and opens no connection. `managed` arrives with the download (TOOLS4).
+ * Managed at one exact version (TOOLS4), written only once that version is downloaded: a pin nobody installed
+ * refuses every start (D57), so it is never written ahead of its download. `toolinstall.ts` downloads, then writes.
  */
-export function commandTool({ root, argv, write }: CommandArgs, env: Env = process.env): ExitCode {
-  const [verb = 'list', id, way, named] = operands(argv, new Set());
-  const ids = TOOLS.map((tool) => tool.id).join(', ');
-
-  switch (verb) {
-    case 'list': {
-      const home = requireHome(env);
-      const read = readTools(home);
-      write(read.exists ? `daoris: ${read.path}` : `daoris: ${read.path} — no file, so every tool is the system's, from PATH.`);
-      let refused = false;
-      for (const tool of TOOLS) {
-        const resolution = resolveFrom(read, home, tool.id, env);
-        refused ||= resolution.refused;
-        write(row(tool, resolution));
-      }
-      for (const note of read.notes) write(`  ${note}`);
-      write('');
-      write('  `daoris tool use <tool> system` or `daoris tool use <tool> file <path>` sets one; nothing switches on its own.');
-      return refused ? 1 : 0;
-    }
-
-    case 'path': {
-      if (!id) throw new DaorisError(`\`tool path\` needs a tool — one of: ${ids}`);
-      if (!declaredTool(id)) throw new DaorisError(undeclared(id));
-      const resolution = resolveTool(requireHome(env), id, env);
-      if (resolution.file === null) {
-        write(`daoris: ${resolution.problem}`);
-        return 1;
-      }
-      // Alone on its line, for a script to take.
-      write(resolution.file);
-      return 0;
-    }
-
-    case 'use': {
-      if (!id) throw new DaorisError(`\`tool use\` needs a tool — one of: ${ids}`);
-      const tool = declaredTool(id);
-      if (!tool) throw new DaorisError(undeclared(id));
-      const home = requireHome(env);
-      const written = toolsFile(home);
-
-      if (way === 'system') {
-        useSystem(home, id);
-        const resolution = resolveTool(home, id, env);
-        write(`daoris: ${tool.name} is set to the system's, from PATH — written to ${written}.`);
-        write(resolution.file !== null
-          ? `  \`daoris tool path ${id}\` answers ${resolution.file}.`
-          : `  \`daoris tool path ${id}\` answers: ${resolution.problem}.`);
-        return 0;
-      }
-
-      if (way === 'file') {
-        if (!named) throw new DaorisError(`\`tool use ${id} file\` needs a path — the executable to run`);
-        const file = isWholePath(named) ? named : resolve(root, named);
-        useFile(home, id, file);
-        write(`daoris: ${tool.name} is set to the file ${file} — written to ${written}.`);
-        write(`  \`daoris tool path ${id}\` answers ${file}; \`daoris tool use ${id} system\` puts it back on PATH.`);
-        return 0;
-      }
-
-      if (way === 'managed') {
-        throw new DaorisError(`\`tool use ${id} managed\` is not offered yet: a managed version is downloaded from a list `
-          + 'of versions, and this build has none. `system` and `file <path>` are the ways it sets');
-      }
-
-      throw new DaorisError(`\`tool use ${id}\` takes \`system\` or \`file <path>\``);
-    }
-
-    default:
-      throw new DaorisError(`unknown tool verb '${verb}' — one of: list, path, use`);
+export function useManaged(home: string, id: string, version: string): void {
+  const tool = declaredTool(id);
+  if (!tool) throw new DaorisError(undeclared(id));
+  if (!isExactVersion(version)) {
+    throw new DaorisError(`\`${version}\` is not an exact version — one to four numbers, like 2.51.0 — so nothing was written.`);
   }
+  if (managedFile(home, tool, version).file === null) {
+    throw new DaorisError(`${tool.name} ${version} is not downloaded (${join(home, TOOLS_FOLDER, id, version)}), so nothing was `
+      + `written: a managed version nobody downloaded would refuse every start. \`daoris tool use ${id} managed ${version}\` `
+      + 'downloads it, then uses it');
+  }
+  setWay(home, id, 'managed', { version });
+}
+
+/** The locations as written, or the refusal that leaves the file as it is (rule 5's write side). */
+function writableLocations(home: string): { path: string; root: Record<string, unknown>; locations: unknown[] } {
+  const { path, root } = writable(home);
+  if (present(root, 'locations') && !Array.isArray(root.locations)) {
+    throw new DaorisError(`${path}'s \`locations\` is not a list, so nothing was written — fix it, or delete the key to start from nothing.`);
+  }
+  return { path, root, locations: Array.isArray(root.locations) ? [...root.locations as unknown[]] : [] };
+}
+
+/**
+ * Add a resource location at the end, after the person's others and before the list built in (§3.3). @returns
+ * false when it is already listed, and nothing is written. Refused when the address is no resource location.
+ */
+export function addLocation(home: string, address: string): boolean {
+  const problem = locationProblem(address);
+  if (problem !== null) throw new DaorisError(`${problem} — nothing was written.`);
+  const { path, root, locations } = writableLocations(home);
+  if (locations.includes(address)) return false;
+  writeJsonAtomic(path, { ...root, locations: [...locations, address] });
+  return true;
+}
+
+/**
+ * Remove a resource location (§3.3): its versions are no longer offered, and a version already downloaded stays.
+ * Every other entry stays as written, one that is not an address included. @returns false when it was not listed.
+ */
+export function removeLocation(home: string, address: string): boolean {
+  if (!existsSync(toolsFile(home))) return false;
+  const { path, root, locations } = writableLocations(home);
+  if (!locations.includes(address)) return false;
+  writeJsonAtomic(path, { ...root, locations: locations.filter((each) => each !== address) });
+  return true;
+}
+
+/** How a way reads in a sentence, for the verb (`toolinstall.ts`). */
+export function wayWords(way: ToolWay): string {
+  return WAY_WORDS[way];
+}
+
+/** The refusal for a tool this build does not declare, for the verb. */
+export function undeclaredTool(id: string): string {
+  return undeclared(id);
 }

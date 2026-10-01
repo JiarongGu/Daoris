@@ -49,9 +49,9 @@ export function csharpRow(line: string, words: Record<string, Cell> = {}): Cell[
   return cells;
 }
 
-/** The rows of one theory in a C# test class's source, in its order. */
+/** The rows of one theory in a C# test class's source, in its order; the theory may be `void` or `async Task` (TOOLS4). */
 export function driverRows(source: string, method: string, words: Record<string, Cell> = {}, owner = 'the driver’s tests'): Cell[][] {
-  const end = source.indexOf(`public void ${method}(`);
+  const end = Math.max(source.indexOf(`public void ${method}(`), source.indexOf(`public async Task ${method}(`));
   assert.ok(end > 0, `${owner} have no ${method}`);
   const start = source.lastIndexOf('[Theory]', end);
   return source.slice(start, end).split('\n').filter((line) => line.trim().startsWith('[InlineData(')).map((line) => csharpRow(line, words));

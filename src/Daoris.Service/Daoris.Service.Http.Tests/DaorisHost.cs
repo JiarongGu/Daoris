@@ -75,7 +75,10 @@ public class DaorisHost : IDisposable
     private readonly ScopedEnvironment _environment;
     private readonly Factory _factory;
 
-    public DaorisHost(ServiceMode mode, IReadOnlyDictionary<string, string?>? settings = null, Action<string>? seed = null)
+    /// <param name="environment">Variables to set over the host's own, for a test of what the host reads at start.</param>
+    public DaorisHost(
+        ServiceMode mode, IReadOnlyDictionary<string, string?>? settings = null, Action<string>? seed = null,
+        IReadOnlyDictionary<string, string?>? environment = null)
     {
         Scratch = Path.Combine(Path.GetTempPath(), "daoris-http1-" + Guid.NewGuid().ToString("N")[..8]);
         Home = Path.Combine(Scratch, "home");
@@ -89,7 +92,7 @@ public class DaorisHost : IDisposable
         File.WriteAllText(Path.Combine(WebRoot, "index.html"), $"<!doctype html><title>{PageMarker}</title>");
         seed?.Invoke(Repositories);
 
-        _environment = new ScopedEnvironment(new Dictionary<string, string?>
+        var variables = new Dictionary<string, string?>
         {
             [Access.ModeVariable] = mode == ServiceMode.Shared ? "shared" : null,
             [Access.WorkspaceVariable] = null,
@@ -99,6 +102,7 @@ public class DaorisHost : IDisposable
             // No model: every answer here is the lexical tier's, as a model-less deployment's is (D24).
             [ServiceOptions.ModelVariable] = null,
             [ServiceOptions.UrlVariable] = null,
+            [ServiceOptions.WindowVariable] = null,
             [RemoteConfig.UrlVariable] = null,
             [RemoteConfig.KeyVariable] = null,
             [RemoteConfig.WorkspaceVariable] = null,
@@ -110,7 +114,9 @@ public class DaorisHost : IDisposable
             ["ASPNETCORE_URLS"] = null,
             // An in-process host would watch the test runner's own input (LOG2a).
             [Daoris.Knowledge.Http.InputEndStop.Variable] = null,
-        });
+        };
+        foreach (var (name, value) in environment ?? new Dictionary<string, string?>()) variables[name] = value;
+        _environment = new ScopedEnvironment(variables);
 
         _factory = new Factory(WebRoot, settings ?? new Dictionary<string, string?>());
         try

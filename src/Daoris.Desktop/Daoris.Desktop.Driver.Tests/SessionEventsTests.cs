@@ -28,6 +28,60 @@ public sealed class SessionEventsTests : IDisposable
         new() { Kind = SessionEventKind.User, Origin = origin, Text = text };
 
     /// <summary>
+    /// PARK1: what a session that parks to ask the person last said, whole — joined from the chunks it was
+    /// streamed in, indented lists and all. Its record holds the message as it was written; the transcript
+    /// read it as console lines and stopped at the first indented one, so a question's list was lost.
+    /// </summary>
+    [Fact]
+    public void The_last_thing_said_is_the_agents_last_message_whole()
+    {
+        var events = new SessionEvents(_directory);
+        events.Append("park1", Asked("You are report-ui's agent…", origin: "target"));
+        events.Append("park1", Message("Looking at it."));
+        events.Append("park1", new SessionEvent { Kind = SessionEventKind.Tool, Id = "t1", Title = "Read a file" });
+        events.Append("park1", Message("**Decision needed:** which report?\n- **The Angular one:**"));
+        events.Append("park1", new SessionEvent { Kind = SessionEventKind.Usage, Used = 10, Size = 100 });
+        events.Append("park1", Message("\n  - **Stops:** it keeps them.\n\nThe quest is still taken while I wait."));
+
+        Assert.Equal(
+            "**Decision needed:** which report?\n- **The Angular one:**\n  - **Stops:** it keeps them.\n\nThe quest is still taken while I wait.",
+            events.LastSaid("park1"));
+    }
+
+    /// <summary>
+    /// PARK1: a parked session's card quotes its record's last message, and reads the transcript only
+    /// where the record has none — a harness that keeps no structure, or a record that could not be kept.
+    /// </summary>
+    [Fact]
+    public void A_park_quotes_the_record_and_falls_back_to_the_transcript()
+    {
+        var events = new SessionEvents(_directory);
+        events.Append("park2", Message("Which report?\n  - **Stops:** kept.\n\nI wait for your answer."));
+        Directory.CreateDirectory(_directory);
+        var transcript = Path.Combine(_directory, "park2.log");
+        File.WriteAllText(transcript, "→ Read a file\nWhich report?\n  - **Stops:** kept.\n\nI wait for your answer.\n");
+        var bare = Path.Combine(_directory, "bare1.log");
+        File.WriteAllText(bare, "→ Read a file\nShall I go on?\n");
+
+        Assert.Equal("Which report?\n  - **Stops:** kept.\n\nI wait for your answer.", Daoris.Driver.Driver.ParkedWords(events, "park2", transcript));
+        Assert.Equal("Shall I go on?", Daoris.Driver.Driver.ParkedWords(events, "bare1", bare));
+    }
+
+    /// <summary>PARK1: a turn that said nothing after the person's words has no last words, never an older turn's.</summary>
+    [Fact]
+    public void Nothing_said_after_the_persons_words_is_no_last_words()
+    {
+        var events = new SessionEvents(_directory);
+        events.Append("quiet1", Message("An earlier answer."));
+        events.Append("quiet1", Asked("and now?"));
+        events.Append("quiet1", new SessionEvent { Kind = SessionEventKind.Tool, Id = "t1", Title = "Read a file" });
+
+        Assert.Null(events.LastSaid("quiet1"));
+        Assert.Null(events.LastSaid("none1"));
+        Assert.Null(events.LastSaid("../escape"));
+    }
+
+    /// <summary>
     /// RAIL1: a conversation's identity is the first thing the person said in it (working-surface design
     /// §3), read from this machine's record — it never rides the session record, which travels (D47 §4).
     /// A driven session's composed target is not the person speaking, and a session with no record here

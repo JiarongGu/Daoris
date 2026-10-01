@@ -1,11 +1,15 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
+import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, rmSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import {
   MANIFEST, OFFERS_DIR, SOURCE_FILE, applyUpdate, commandPlugin, dataFolder, offersFolder, planUpdate, pluginsRoot,
   readNeeds, readOffers, readPluginSource,
 } from '../src/plugins.ts';
+import type { PluginSource } from '../src/plugins.ts';
+import { driverRows } from './_csharp.ts';
 import { captureError, makeFixture } from './_fixture.ts';
 
 /**
@@ -13,9 +17,13 @@ import { captureError, makeFixture } from './_fixture.ts';
  * `PluginOffers.cs` (`PluginSourceTests.cs`, `PluginOfferTests.cs` hold the same tables):
  *
  * - **Where an installed plugin came from** is `.daoris-source.json` in its install folder, written into
- *   the staged copy before the swap: the folder it was added from, or the offer it was installed from.
+ *   the staged copy before the swap: the folder it was added from, the offer it was installed from, or
+ *   since PLUGDIST1a (D120 §5.7) the package it was installed from. 🔴 The record's table and update's
+ *   refusals are the driver's: `PluginSourceTests.cs`'s theories are parsed below and held to these, cell
+ *   for cell and in order, so a row changed on one side alone fails `npm run verify`.
  * - **Update** re-reads that source with the catalogue's own reader, refuses in the same words, says
- *   what changes, and swaps the install folder whole, `.data/` untouched.
+ *   what changes, and swaps the install folder whole, `.data/` untouched. A plugin from a package is
+ *   installed whole by the driver, which alone reads a package: update refuses it, saying how.
  * - **The offers** are Daoris's own example plugins in the install's `app/plugin-offers/`, beside the
  *   home: listed, and installed by `add --offer`, never before.
  *
@@ -93,26 +101,95 @@ test('a plugin copied in by hand, or added before Daoris kept a source, has none
   fx.cleanup();
 });
 
-/** The record's shape, the twin's table (`PluginSourceTests.The_record_reads_as_the_cli_reads_it`). */
-test('the record reads a folder or an offer, and anything else is a named problem', () => {
-  const { fx } = machine('plugsrc-shapes');
-  const at = (text: string | null) => {
-    const install = join(fx.root, 'install', String(Math.random()).slice(2));
-    mkdirSync(install, { recursive: true });
-    if (text !== null) writeFileSync(join(install, SOURCE_FILE), text);
-    return readPluginSource(install);
-  };
-  const whole = join(fx.root, 'somewhere');
+/** A SHA-512 in base64, as a package's record keeps it: what a row's `SHA` stands for. The driver's `Sha`. */
+const SHA = createHash('sha512').update('a package').digest('base64');
 
-  assert.deepEqual(at(null), { source: null, problem: null });
-  assert.deepEqual(at(JSON.stringify({ folder: whole })), { source: { folder: whole }, problem: null });
-  assert.deepEqual(at(JSON.stringify({ offer: 'github-pull-request' })), { source: { offer: 'github-pull-request' }, problem: null });
-  for (const bad of ['{ not json', '[]', '{}', JSON.stringify({ folder: 'relative/path' }),
-    JSON.stringify({ offer: 'Not An Id' }), JSON.stringify({ folder: whole, offer: 'x' })]) {
-    const read = at(bad);
-    assert.equal(read.source, null, bad);
-    assert.match(read.problem ?? '', /does not read/, bad);
+/**
+ * The record's shape (D103; a package since PLUGDIST1a): [case, the file's text or null for none, what it reads as
+ * or null, a fragment of its problem or null]. A row's `WHOLE` is a whole path and its `SHA` a SHA-512 in base64;
+ * each side spells its own. What it reads as is one line: `folder <path>`, `offer <id>`, or
+ * `package <id> <version> <sha512> <source>`. The twin is `PluginSourceTests.The_record_reads_as_the_cli_reads_it`.
+ */
+const RECORD_ROWS: [string, string | null, string | null, string | null][] = [
+  ['no record', null, null, null],
+  ['a folder', '{ "folder": "WHOLE" }', 'folder WHOLE', null],
+  ['an offer', '{ "offer": "github-pull-request" }', 'offer github-pull-request', null],
+  ['a package from a folder', '{ "package": "Acme.Gate", "version": "1.0.0", "sha512": "SHA", "source": "WHOLE" }', 'package Acme.Gate 1.0.0 SHA WHOLE', null],
+  ['a package from an address', '{ "package": "Daoris.Plugins.GitHubPullRequest", "version": "1.2.0-preview.1", "sha512": "SHA", "source": "https://api.nuget.org/v3/index.json" }', 'package Daoris.Plugins.GitHubPullRequest 1.2.0-preview.1 SHA https://api.nuget.org/v3/index.json', null],
+  ['a package from this machine over http', '{ "package": "Acme.Gate", "version": "1.0.0.1", "sha512": "SHA", "source": "http://127.0.0.1:5555/v3/index.json" }', 'package Acme.Gate 1.0.0.1 SHA http://127.0.0.1:5555/v3/index.json', null],
+  ['a key it has no field for', '{ "folder": "WHOLE", "note": "mine" }', 'folder WHOLE', null],
+  ['not JSON', '{ not json', null, 'it is not JSON'],
+  ['a list', '[]', null, 'it is not a JSON object'],
+  ['nothing named', '{}', null, 'it names no folder, offer or package'],
+  ['a folder that is not whole', '{ "folder": "relative/path" }', null, 'its folder is not a whole path'],
+  ['an offer that is not an id', '{ "offer": "Not An Id" }', null, 'its offer is not a plugin id'],
+  ['a folder and an offer', '{ "folder": "WHOLE", "offer": "x" }', null, 'it names both a folder and an offer'],
+  ['a package and a folder', '{ "package": "Acme.Gate", "version": "1.0.0", "sha512": "SHA", "source": "WHOLE", "folder": "WHOLE" }', null, 'it names both a package and a folder'],
+  ['a package and an offer', '{ "package": "Acme.Gate", "version": "1.0.0", "sha512": "SHA", "source": "WHOLE", "offer": "x" }', null, 'it names both a package and an offer'],
+  ['a package that is not an id', '{ "package": "Acme Gate", "version": "1.0.0", "sha512": "SHA", "source": "WHOLE" }', null, 'its package `Acme Gate` is not a package id'],
+  ['a package with no version', '{ "package": "Acme.Gate", "sha512": "SHA", "source": "WHOLE" }', null, 'a package needs its `version`'],
+  ['a version that is not one', '{ "package": "Acme.Gate", "version": "latest", "sha512": "SHA", "source": "WHOLE" }', null, 'its version `latest` is not a package version'],
+  ['a package with no hash', '{ "package": "Acme.Gate", "version": "1.0.0", "source": "WHOLE" }', null, 'a package needs its `sha512`'],
+  ['a hash that is not a SHA-512', '{ "package": "Acme.Gate", "version": "1.0.0", "sha512": "c2hhMjU2", "source": "WHOLE" }', null, 'its sha512 is not a SHA-512 hash in base64'],
+  ['a package with no source', '{ "package": "Acme.Gate", "version": "1.0.0", "sha512": "SHA" }', null, 'a package needs its `source`'],
+  ['a source that is neither', '{ "package": "Acme.Gate", "version": "1.0.0", "sha512": "SHA", "source": "relative/feed" }', null, 'its source `relative/feed` is neither a whole path nor an address'],
+  ['a source over http elsewhere', '{ "package": "Acme.Gate", "version": "1.0.0", "sha512": "SHA", "source": "http://feed.example/v3/index.json" }', null, 'its source `http://feed.example/v3/index.json` is neither a whole path nor an address'],
+];
+
+/** What a record reads as, in the one line both sides' tables spell. */
+function reads(source: PluginSource | null): string | null {
+  if (source === null) return null;
+  if ('package' in source) return `package ${source.package} ${source.version} ${source.sha512} ${source.source}`;
+  if ('offer' in source) return `offer ${source.offer}`;
+  return `folder ${source.folder}`;
+}
+
+test('the record reads as the driver reads it: a folder, an offer or a package, and anything else a named problem', () => {
+  const { fx } = machine('plugsrc-shapes');
+  const whole = join(fx.root, 'somewhere');
+  for (const [name, text, expected, problem] of RECORD_ROWS) {
+    const install = join(fx.root, 'install', String(RECORD_ROWS.findIndex((row) => row[0] === name)));
+    mkdirSync(install, { recursive: true });
+    if (text !== null) {
+      writeFileSync(join(install, SOURCE_FILE), text.replaceAll('WHOLE', JSON.stringify(whole).slice(1, -1)).replaceAll('SHA', SHA));
+    }
+
+    const read = readPluginSource(install);
+
+    assert.equal(reads(read.source), expected?.replaceAll('WHOLE', whole).replaceAll('SHA', SHA) ?? null, name);
+    if (problem === null) assert.equal(read.problem, null, `${name}: ${read.problem}`);
+    else {
+      assert.equal(read.source, null, name);
+      assert.match(read.problem ?? '', /does not read/, name);
+      assert.ok(read.problem?.includes(problem), `${name}: ${read.problem}`);
+    }
   }
+  fx.cleanup();
+});
+
+test('a package record is listed by where it came from, never offered an update it would refuse', () => {
+  const { fx, home } = machine('plugsrc-package-list');
+  const installed = folder(join(pluginsRoot(home), 'acme.gate'), GATE_V1);
+  const feed = join(fx.root, 'feed');
+  writeFileSync(join(installed, SOURCE_FILE), JSON.stringify({ package: 'Acme.Gate', version: '1.0.0', sha512: SHA, source: feed }));
+
+  const { code, out } = run(['list'], home);
+
+  assert.equal(code, 0, out);
+  assert.ok(out.includes(`from ${feed}, package \`Acme.Gate\` 1.0.0`), out);
+  assert.doesNotMatch(out, /daoris plugin update acme\.gate/);
+  fx.cleanup();
+});
+
+/** A package is read by the driver alone (D120 §4): the CLI's word for it says where, in a moved verb's shape. */
+test('plugin install says a package is installed by the driver, and installs nothing', () => {
+  const { fx, home } = machine('plugsrc-install');
+
+  const error = refused(['install', join(fx.root, 'Acme.Gate.1.0.0.nupkg')], home);
+
+  assert.match(error.message, /`daoris-driver plugins install <file\.nupkg>`/);
+  assert.match(error.message, /`daoris plugin add <folder>`/);
+  assert.equal(existsSync(pluginsRoot(home)), false);
   fx.cleanup();
 });
 
@@ -172,43 +249,61 @@ test('update swaps the install folder whole, keeping .data and the record', () =
 });
 
 /**
- * Update's refusals, in the same words as the driver's (`PluginSourceTests.Update_refuses…`, the same
- * rows in the same order). Each leaves the installed version exactly as it was.
+ * Update's refusals, in the same words as the driver's: [case, the id asked for, how the machine is arranged, a
+ * fragment of the refusal]. The twin is `PluginSourceTests.An_update_refuses_what_the_cli_refuses`, the same rows in
+ * the same order. Each leaves the installed version exactly as it was.
  */
-test('update refuses a source that is gone, unsound, another plugin, or one this build refuses', () => {
-  const cases: [string, (m: ReturnType<typeof machine>, source: string) => void, RegExp][] = [
-    ['not installed', (m) => { m.fx.write('data/plugins/.keep', ''); }, /no plugin `acme\.nobody` on this machine/],
-    ['no source recorded', (m) => { folder(join(pluginsRoot(m.home), 'acme.bare'), GATE_V1.replace('acme.gate', 'acme.bare')); }, /`acme\.bare` has no record of where it came from/],
-    ['record unreadable', (m) => { writeFileSync(join(pluginsRoot(m.home), 'acme.gate', SOURCE_FILE), '{ not json'); }, /record of where it came from does not read/],
-    ['folder gone', (_m, source) => { renameAway(source); }, /is not there any more/],
-    ['no manifest', (_m, source) => { rmManifest(source); }, /no `plugin\.json` in/],
-    ['unsound manifest', (_m, source) => { writeFileSync(join(source, MANIFEST), '{ "id": "acme.gate", "apiVersion": 99 }'); }, /needs plugin API 99/],
-    ['another plugin', (_m, source) => { writeFileSync(join(source, MANIFEST), '{ "id": "acme.other" }'); }, /now holds plugin `acme\.other`, not `acme\.gate`/],
-    ['refused by this build', (_m, source) => { writeFileSync(join(source, MANIFEST), '{ "id": "acme.gate", "harnesses": [ { "name": "dsh", "command": ["x"] } ] }'); }, /`dsh`, which this build already carries/],
-    ['offer no longer offered', (m) => { writeFileSync(join(pluginsRoot(m.home), 'acme.gate', SOURCE_FILE), JSON.stringify({ offer: 'acme.gate' })); }, /`acme\.gate` is not offered by this install any more/],
-    ['source inside the home', (m) => {
-      const inside = folder(join(m.home, 'elsewhere', 'gate'), GATE_V1);
-      writeFileSync(join(pluginsRoot(m.home), 'acme.gate', SOURCE_FILE), JSON.stringify({ folder: inside }));
-    }, /inside Daoris's home/],
-  ];
+const UPDATE_REFUSALS: [string, string, (m: ReturnType<typeof machine>, source: string) => void, string][] = [
+  ['not installed', 'acme.nobody', (m) => { m.fx.write('data/plugins/.keep', ''); }, 'no plugin `acme.nobody` on this machine'],
+  ['no source recorded', 'acme.bare', (m) => { folder(join(pluginsRoot(m.home), 'acme.bare'), GATE_V1.replace('acme.gate', 'acme.bare')); }, '`acme.bare` has no record of where it came from'],
+  ['record unreadable', 'acme.gate', (m) => { writeFileSync(join(pluginsRoot(m.home), 'acme.gate', SOURCE_FILE), '{ not json'); }, 'record of where it came from does not read'],
+  ['folder gone', 'acme.gate', (_m, source) => { renameAway(source); }, 'is not there any more'],
+  ['no manifest', 'acme.gate', (_m, source) => { rmManifest(source); }, 'no `plugin.json` in'],
+  ['unsound manifest', 'acme.gate', (_m, source) => { writeFileSync(join(source, MANIFEST), '{ "id": "acme.gate", "apiVersion": 99 }'); }, 'needs plugin API 99'],
+  ['another plugin', 'acme.gate', (_m, source) => { writeFileSync(join(source, MANIFEST), '{ "id": "acme.other" }'); }, 'now holds plugin `acme.other`, not `acme.gate`'],
+  ['refused by this build', 'acme.gate', (_m, source) => { writeFileSync(join(source, MANIFEST), '{ "id": "acme.gate", "harnesses": [ { "name": "dsh", "command": ["x"] } ] }'); }, '`dsh`, which this build already carries'],
+  ['offer no longer offered', 'acme.gate', (m) => { writeFileSync(join(pluginsRoot(m.home), 'acme.gate', SOURCE_FILE), JSON.stringify({ offer: 'acme.gate' })); }, '`acme.gate` is not offered by this install any more'],
+  ['source inside the home', 'acme.gate', (m) => {
+    const inside = folder(join(m.home, 'elsewhere', 'gate'), GATE_V1);
+    writeFileSync(join(pluginsRoot(m.home), 'acme.gate', SOURCE_FILE), JSON.stringify({ folder: inside }));
+  }, 'inside Daoris\'s home'],
+  ['a package', 'acme.gate', (m, source) => {
+    writeFileSync(join(pluginsRoot(m.home), 'acme.gate', SOURCE_FILE), JSON.stringify({ package: 'Acme.Gate', version: '1.0.0', sha512: SHA, source }));
+  }, 'A newer package takes its place: `daoris plugin remove acme.gate`, then `daoris-driver plugins install <file.nupkg>`'],
+  ['not an id', '../acme.gate', () => {}, 'is not a plugin id'],
+];
 
-  for (const [name, arrange, says] of cases) {
-    const m = machine(`plugsrc-refuse-${cases.findIndex((row) => row[0] === name)}`);
+test('update refuses a source that is gone, unsound, another plugin, a package, or one this build refuses', () => {
+  for (const [name, id, arrange, says] of UPDATE_REFUSALS) {
+    const m = machine(`plugsrc-refuse-${UPDATE_REFUSALS.findIndex((row) => row[0] === name)}`);
     const source = folder(join(m.fx.root, 'checkout', 'gate'), GATE_V1, { 'gate.mjs': '// v1' });
     run(['add', source], m.home);
     arrange(m, source);
-    const id = name === 'not installed' ? 'acme.nobody' : name === 'no source recorded' ? 'acme.bare' : 'acme.gate';
 
     const { refusal } = planUpdate(m.home, id);
-    assert.match(refusal ?? '', says, name);
+    assert.ok(refusal?.includes(says), `${name}: ${refusal}`);
     const error = refused(['update', id, '--yes'], m.home);
-    assert.match(error.message, says, name);
-    assert.throws(() => applyUpdate(m.home, id), (thrown: Error) => says.test(thrown.message), name);
+    assert.ok(error.message.includes(says), `${name}: ${error.message}`);
+    assert.throws(() => applyUpdate(m.home, id), (thrown: Error) => thrown.message.includes(says), name);
     if (name !== 'not installed' && name !== 'no source recorded') {
       assert.equal(readFileSync(join(pluginsRoot(m.home), 'acme.gate', 'gate.mjs'), 'utf8'), '// v1', name);
     }
     m.fx.cleanup();
   }
+});
+
+// ——— The twin, held: the driver's tables are these tables, row for row and in this order.
+
+const DRIVER_TABLES = join(
+  dirname(fileURLToPath(import.meta.url)), '..', '..', 'Daoris.Desktop', 'Daoris.Desktop.Driver.Tests', 'PluginSourceTests.cs');
+
+test('the driver\'s record and update tables are these tables, row for row and in this order', () => {
+  const source = readFileSync(DRIVER_TABLES, 'utf8').replace(/\r\n/g, '\n');
+
+  assert.deepEqual(driverRows(source, 'The_record_reads_as_the_cli_reads_it', {}, 'PluginSourceTests'), RECORD_ROWS);
+  assert.deepEqual(
+    driverRows(source, 'An_update_refuses_what_the_cli_refuses', {}, 'PluginSourceTests'),
+    UPDATE_REFUSALS.map(([name, id, , says]) => [name, id, says]));
 });
 
 test('update names a plugin by its id, refused before it becomes a path', () => {

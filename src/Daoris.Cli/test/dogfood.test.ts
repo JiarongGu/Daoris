@@ -602,17 +602,19 @@ test('the file-local management verbs reach no network module either', () => {
 /**
  * `tools.ts` answers "which program" and edits one file (TOOLS2, D121 §4.2): it stays pure. A tool's
  * version is asked where spawning lives, and a download reaches the network through the fetcher the
- * dispatcher hands in (TOOLS4) — so the module that holds the file's rules reaches neither on its own.
+ * dispatcher hands in (TOOLS4) — so the module that holds the file's rules reaches neither on its own, and
+ * neither does anything that reads the lists, unpacks an archive or lays a version out.
  */
 test('the tools file reaches neither the toolchain nor the service client', () => {
-  // TOOLS3: the resource lists are read and merged beside it, as pure; a location is fetched by TOOLS4's verbs,
-  // through the dispatcher's fetcher.
-  for (const entry of ['tools.ts', 'cli/tool.ts', 'resources.ts']) {
+  // TOOLS3: the resource lists are read and merged beside it, as pure. TOOLS4: the download, the archive readers and
+  // the verb are pure too; only the dispatcher's row, below, hands them a fetcher.
+  for (const entry of ['tools.ts', 'resources.ts', 'toolinstall.ts', 'zipfile.ts']) {
     const seen = reachableFrom(entry);
     assert.equal(seen.has(SPAWNS), false, `${entry} reaches the harness toolchain through: ${[...seen].sort().join(', ')}`);
     assert.equal(seen.has(SERVICE_CLIENT), false, `${entry} reaches the service client through: ${[...seen].sort().join(', ')}`);
-    assert.ok(seen.has('tools.ts') && seen.size > 1, `the walk from ${entry} found nothing, so it proved nothing`);
+    assert.ok(seen.size > 1, `the walk from ${entry} found nothing, so it proved nothing`);
   }
+  assert.ok(reachableFrom('toolinstall.ts').has('zipfile.ts'), 'the walk from the download no longer reaches the zip reader');
 });
 
 /**
@@ -634,6 +636,23 @@ test('agent pin reaches a release channel only through the fetcher the dispatche
   const row = readText(join(cliRoot, 'src', 'cli', 'agent.ts'));
   assert.match(row, /import \{ releaseFetcher \} from '\.\.\/service\.ts';/);
   assert.match(row, /run: \(args\) => commandHarness\(args, releaseFetcher\(\)\)/);
+});
+
+/**
+ * The same shape for `daoris tool` (TOOLS4, D121 §4.2): `download`, `use … managed`, `update` and `look` reach a
+ * tool's maker and a resource location through `service.ts`, handed in by the dispatcher's row with the address rule
+ * every hop is held to. Everything that judges what arrived — the lists, the hash, the archive, the layout — imports
+ * no network module (the test above this one), so the one place the two meet is the `tool` row, `cli/tool.ts`.
+ */
+test('tool download reaches a host only through the fetcher the dispatcher hands in, every hop held to the address rule', () => {
+  const row = readText(join(cliRoot, 'src', 'cli', 'tool.ts'));
+  assert.match(row, /import \{ releaseFetcher \} from '\.\.\/service\.ts';/);
+  assert.match(row, /import \{ isAddress \} from '\.\.\/tools\.ts';/);
+  assert.match(row, /run: \(args\) => commandTool\(args, releaseFetcher\(\{ hop: isAddress, redirects: REDIRECTS, bound: LOOK_BOUND_MS \}\)\)/);
+
+  // The only rows that reach the service client are the ones that say so: a new row reaching it is a decision.
+  const reaching = COMMANDS.map((command) => `cli/${command.name}.ts`).filter((entry) => reachableFrom(entry).has(SERVICE_CLIENT));
+  assert.deepEqual(reaching.sort(), ['cli/agent.ts', 'cli/connect.ts', 'cli/import.ts', 'cli/retire.ts', 'cli/tool.ts']);
 });
 
 /**

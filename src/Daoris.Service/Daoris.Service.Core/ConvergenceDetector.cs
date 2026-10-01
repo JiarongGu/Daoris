@@ -68,8 +68,10 @@ public sealed record ConvergenceOptions(
 /// <b>canonical entries are excluded</b>: they are identical everywhere by construction, so they would
 /// match themselves across every adopter and mean nothing.</para>
 /// </remarks>
+/// <param name="window">The embedder's window (D123): a seed is an entry's first piece, as the search embeds it.</param>
 public sealed class ConvergenceDetector(
-    IKnowledgeStore store, IVectorProvider? embedder = null, IVectorStore? vectors = null)
+    IKnowledgeStore store, IVectorProvider? embedder = null, IVectorStore? vectors = null,
+    int window = EntryPieces.DefaultWindow)
 {
     /// <summary>Whether the semantic pass is available. False still finds copies and restatements.</summary>
     public bool SemanticAvailable => embedder is not null && vectors is not null;
@@ -210,17 +212,21 @@ public sealed class ConvergenceDetector(
             ct.ThrowIfCancellationRequested();
             if (claimed.Contains(seed.Id)) continue;
 
+            // An entry is its pieces (SEM3, D123), so the nearest vectors include the seed's own and several
+            // of one long neighbour's: four places for each of the twelve entries this compared before.
             var matches = await vectors!
-                .SearchAsync(SemanticKnowledgeSearch.Collection, seedVectors[seed.Id], 12, ct)
+                .SearchAsync(SemanticKnowledgeSearch.Collection, seedVectors[seed.Id], 48, ct)
                 .ConfigureAwait(false);
 
             var group = new List<KnowledgeEntry> { seed };
+            var members = new HashSet<string>(StringComparer.Ordinal) { seed.Id };
             var best = 0.0;
             foreach (var match in matches)
             {
                 if (match.Score < options.MinimumSimilarity) continue;
                 if (!byId.TryGetValue(match.Payload, out var other)) continue;
-                if (other.Id == seed.Id || claimed.Contains(other.Id)) continue;
+                // Named once, at its best piece: the matches are ranked best first.
+                if (claimed.Contains(other.Id) || !members.Add(other.Id)) continue;
                 if (string.Equals(other.Repository, seed.Repository, StringComparison.Ordinal)) continue;
 
                 group.Add(other);
@@ -260,7 +266,9 @@ public sealed class ConvergenceDetector(
 
         foreach (var entry in entries)
         {
-            var text = SemanticKnowledgeSearch.Embeddable(entry);
+            // The entry's opening, as before: its first piece, which leads with its title and states what
+            // it is about. Its later pieces are still compared, as the neighbours a seed finds.
+            var text = EntryPieces.Of(entry, window)[0].Text;
             if (_memo.TryGetValue(text, out var known)) byId[entry.Id] = known;
             else pending.Add((entry, text));
         }

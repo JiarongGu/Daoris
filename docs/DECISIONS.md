@@ -6688,6 +6688,21 @@ reports, the canon scan for `allowed-tools`, and a seventh release-rehearsal pha
   is DOC5's. The twins table gains its row when that reader lands, matched against
   `documents-manifest.test.ts`.
 
+**Built 2026-10-01 (DOC4): this repository declares its documents.** `daoris.json` names eight roles (router,
+decisions, backlog, archive, fixes, changelog, the naming glossary, the gates), and `sync` writes the *Where things
+are* table into the region. Two things the design's row did not foresee:
+- **The table costs about 1 KB of the always-loaded core** (23,306 → 24,064 of 26,000 bytes). Kept whole: the
+  table is the standard's point, and each row answers a search a session would otherwise make.
+- **`doc-budgets.json` does not retire; it shrinks.** Of its five documents only the backlog has a role. The
+  standing orders are `CLAUDE.md`, and the `brief` role measures the root instruction file outside the region,
+  which here is `AGENTS.md` with nothing outside it, until LAYOUT6 moves the brief there. The consuming story,
+  the forward sequence and the contract have no role, and inventing one for each would grow the closed set
+  for one repository. So the tool reads a declared ceiling from the manifest, keeps the rest in its own file,
+  and fails on a document given a number in both, so a ceiling is still written once. The backlog's ceiling
+  is now also `check`'s, which reports it with the role.
+- Found building it: a scripted rewrite of the tool dropped every backslash, so `\s+` counted the letter *s*
+  and every document read as within budget, exit 0. `words` is now exported and pinned by a test.
+
 **Built 2026-10-01 (UNBLOCK4): the carve-outs held harder, and `git mv`.** Point 7 and the `commit` half of point 4,
 as design §3.6 and §3.7 say, with one addition.
 - **`commit` gains `Bash(git mv:*)`**, in both defaults tables (`Permissions.cs`, `permissions.ts`), held together by
@@ -6723,6 +6738,43 @@ TypeScript reference (`SDKPermissionDeniedMessage`, `SDKPermissionDenial`) and l
 shown them yet. A subagent's refusal is not counted on either door, since its calls run beside the session
 (CONSOLE3c). The usage report gives asks per session by adapter and repository, and the rule proposals by week and
 state. `session.read` and `session.skill` stay DOC7's. The machine-log design's §4 and §6 say what was built.*
+
+**Built 2026-10-01 (DOC5): the service reads declared records** (design §5's first twin, §6's DOC5 row).
+`RepositoryDocuments` reads `documents` with the service's own code, and `RepositoryLayout.Documents` carries it
+beside the rooms, checked against the same target and mirror root. The choices the row left open, each held by a
+test in `RepositoryDocumentsTests`:
+- **The declared path is the first candidate.** The scanner's rule that the first present candidate is the log
+  stands, and a declared decisions, fixes or archive goes in front. A log at a name no candidate knows is found;
+  one a candidate also names is found once; a candidate beside a declared log is not read as a second log. A
+  declared path the disk does not hold falls through to the candidates. A declared log that is a link is not read,
+  and no candidate is read in its place, as for a candidate that is a link (LAYOUT4).
+- **A declared folder is one record per file**, every markdown file in it or below, read whole, since an ADR's
+  headings are its own parts. A folder reached through a link is never entered. The service's candidates stay files.
+- **The router is a document**: one knowledge entry, local, read whole, titled by its file name as the knowledge
+  tier's are. Declared, never guessed: the service gives the router no candidates.
+- **One file is one place in the index.** A file the tiers, a room or the router already read is not read again as
+  a log, and a file declared for two roles is read once, by the first reader. Read twice, its entries would share
+  ids, and the store's primary key fails the whole refresh on the second (REV3).
+- **A declaration the CLI refuses is read as none, role by role.** The CLI is a gate: one role it cannot honour
+  refuses the whole manifest (exit 2), so `check` fails and `sync` refuses, and the repository hears it from its own
+  tool. The scanner is an indexer with nobody to tell: a refusal there would drop the repository from search, or
+  fail the refresh for every repository after it. So a role the CLI refuses is undeclared and the roles beside it
+  are read, as a refused room is (LAYOUT4). `documents` that is not a map or is held twice, and a manifest that is
+  not JSON, are read as none. The scanner then reads its candidates as before, never a path the CLI refuses, and
+  never a guess at which of two declarations was meant.
+- **Rejected**: refusing the whole declaration for one bad role, which drops a good role's path for an unrelated
+  typo and departs from how the same reader treats rooms; reading the last of two declarations of one role, the
+  silent choice the CLI refuses to make; and candidates for the router, since a `docs/README.md` in a repository
+  that declared nothing may be a site's front page.
+- **Found building it**: the CLI checks a declared path as spelled, so a `..` inside one passes. `docs/..` is
+  accepted and names the root, and `x/../.claude/knowledge/g.md` is accepted and lands in the target. The reader
+  checks the spelling and where the path lands, and reads where it lands, so it is never looser than the CLI. The
+  CLI's check is the CLI lane's, and this note names it rather than changing it.
+- What the gates do not cover: the twin table's rows were copied from `documents-manifest.test.ts` and are compared
+  by hand, as every twin's are. The service-only rows about the CLI (`1e3`, `2500.0`, the `..` paths) were checked
+  once against `checkDocuments` from the source and are held by no CLI test. A real link was made and read on this
+  machine; on one that makes none, the link test returns early. No repository in the family declares documents on
+  this branch (DOC4, DOC6), so no refresh of a real corpus has read a declaration.
 ## D121 — Every tool Daoris runs is the system's, managed, or a file the person names; a list built in says where each version downloads, and more locations extend it without a release (2026-10-01)
 
 **Decision (TOOLS1).** The owner: *"all tools that daoris using like git, [terminal] should all have a self managed
@@ -6931,6 +6983,55 @@ settled here:
   executable is a batch file, `bin/az.cmd`.
 - **Not built, and corrected.** The note above said the write-side check of rule 5 waits for *TOOLS3's verbs*. The
   design's §7 puts `locations add|remove` with TOOLS4's, so no verb and no writer of `locations` is built here.
+
+**As built (TOOLS4, 2026-10-01): download, verify, unpack, lay out, twins, with the terminal's verbs and the driver's
+followed action.** The CLI's `toolinstall.ts` and `zipfile.ts` (beside `tarball.ts`) and the driver's `ToolInstall.cs`
+plan a version, download it, verify it, unpack it and lay it out; `daoris tool download|use … managed|update|delete|
+locations|look` is the terminal's door, and the driver's `ToolActions` starts the same work as an action the page follows
+and the person's stop cancels. Nothing starts a managed tool yet: that is TOOLS5. What the design left open, settled here:
+- **Every refusal names its check**, a code both twins spell: `archive`, `address`, `unreachable`, `size`, `hash`,
+  `absolute`, `outside`, `stream`, `link`, `entry`, `encrypted`, `method`, `checksum`, `truncated`, `damaged` and `exe`;
+  a plan's are `unknown`, `version`, `conflict`, `machine`, `file` and `platform`; a delete's `missing`, `in-use` and
+  `held`; an action's `busy`. One table of archives built in the test holds both readers, and the CLI's tests parse the
+  driver's theories for it, the plan, the download, the delete, the look, the record's keys and the bounds.
+- **The driver reads the archives by hand and inflates with .NET.** Measured on .NET 10 before a line was written:
+  `ZipArchive` reads a stored entry whose CRC-32 is wrong and names no entry's method, `TarReader` reads a header that
+  fails its checksum and an archive with no end, and `GZipStream` reads a gzip cut before its trailer as whole. So both
+  sides walk the records, and the driver holds a gzip's trailer, the CRC-32 and size of everything it holds, itself.
+  Zip64's records are read on both, since an archive of more than 65,535 entries needs them.
+- **Where the twins still differ, and no list carries the input:** a deflate stream cut short inside an entry's stated
+  size is `damaged` to Node's inflater and `checksum` to the driver's, whose inflater ends early; both refuse. A gzip of
+  more than one member reads whole in Node and fails the driver's trailer check.
+- **Mirrors.** Each address is tried in read order, the person's first; one whose bytes fail the size or hash is passed
+  over, since the bytes are the check whichever host served them. When every address fails, the last one's check names
+  the refusal, and the sentence lists each. An unpacking refusal is not retried: the bytes that verified are the same
+  from any address.
+- **Every hop is held to the address rule**, redirects followed one at a time by Daoris and never by the HTTP client, ten
+  at most. In the CLI the rule is an option of `service.ts`'s one fetcher, which the `tool` row hands in; with no option
+  it fetches as `agent pin` always has.
+- **The record** is `tool`, `version`, `platform`, `sha256`, `size`, `archive`, `url` (the list's address that served
+  it), `lists`, `exe`, `paths` and `at`, in that order. The archive itself is not kept, and an empty tool folder a
+  refusal leaves is removed, so a refusal leaves nothing under `tools/<tool>/`.
+- **`use … managed` writes only after the download verified**, and the writer itself (`useManaged`, `UseManaged`)
+  refuses a version that is not downloaded. The managed refusal now names the download: *`daoris tool use git managed
+  2.51.0` downloads it*.
+- **A look keeps a copy only of a list that reads.** A list this build cannot read, or a host's error page, keeps the
+  last copy and says its age, from the copy's write time. Each location is bounded at 30 seconds. Removing a location
+  leaves its copy, read again only if the address is added again, with its age said.
+- **Exit codes:** a refusal by a check or a plan is 1, a malformed call 2.
+- **The verb moved from `tools.ts` to `toolinstall.ts`**: it merges the lists, and `resources.ts` imports `tools.ts`, so
+  `tools.ts` importing it back would be a cycle that fails at load. `DriverException` is no longer sealed, so
+  `ToolRefusal` travels every road a driver error does.
+- **The machine log** gets `tool.download.started`, `.verified`, `.refused` (with its check) and `.stopped`, and
+  `tool.location.fetched` and `.failed`, by a location's place in the list, from the driver library. The CLI is no
+  machine log source (D94) and writes none.
+- **Not built:** the routes and the screen (TOOLS7), Ask Daoris's kind (TOOLS8), starting a managed tool (TOOLS5) and
+  `tool git ssh` (TOOLS6). `tool list` names each tool's downloaded versions, not their sizes.
+- **Not covered by a gate:** a real host. The redirect rule is proven against stand-ins on both sides: Node's `fetch`
+  answering a redirect itself under `redirect: 'manual'`, and .NET's handler with `AllowAutoRedirect` off, are each
+  runtime's documented behaviour, exercised first by TOOLS9's loopback server and TOOLS11's real downloads.
+- **Rejected:** keeping the bytes of whatever a location answers, which would let a captive portal's page replace a
+  good list; retrying an unpacking refusal at the next mirror, which would fetch the same bytes again.
 ## D120 — Plugins leave the repository: a workshop in the home makes them, Daoris.Plugins keeps Daoris's own, and NuGet is where they are found (2026-10-01)
 
 **Decision (PLUGREPO2, PLUGDIST1).** The owner made an empty folder, Daoris.Plugins, beside this repository, for
@@ -7036,3 +7137,128 @@ the folder, so it reaches into nothing.
 - **No custom type with a listed package was queried.** The first publish is that proof.
 - **The workshop, the reader, *Find* and the pack** exist only as rows. `verify` checks this document's links
   and the log's shape, and none of its words.
+
+## D123 — A long entry is embedded whole, in pieces the deployment's window bounds; its best piece speaks for it, and a refresh says how many were split (2026-10-01)
+
+**Decision (SEM3, found upgrading Lyntai to 3.5.3, LYN1).** The semantic tier embedded an entry's title twice and
+the first 2,000 characters of its body, and dropped the rest without saying so. An embedder then cuts whatever
+passes its own context the same way: Ollama's embed endpoint does it silently. So a search by meaning could not
+find what a long entry says past its opening, however close the meaning. Lyntai 3.3 offers `MaxInputChars` and
+`Segmentation` on its providers. Daoris segments instead, in Core, one vector per piece.
+
+### 1. Measured first
+
+- **The fixture** (`LongEntryTests`): a knowledge document whose only statement of a fact sits past character
+  2,000, and a short decision that mentions the meaning once among six build words. The vectors are the
+  deterministic stand-in's, and the query shares no word with either entry, so the order is the semantic half's
+  alone. **Before**: the document's one vector held build words only (cosine 0), and the decision (0.164) took the
+  one place. The test failed as the reading predicted. **After**: the piece that holds the fact scores 0.316, and
+  the document is first.
+- **The corpus**, scanned by the service's own scanner (a scratch probe, not committed). This repository holds
+  636 entries and 1.61 million characters of body. 293 entries (46%) were longer than 2,000 characters, and
+  562,000 characters (35%) never reached a vector. The longest is a decision of 17,518 characters. The medians by
+  kind: a decision 3,378, a knowledge document 6,839, a task outcome 1,890, a fix 1,466. Each example repository
+  holds 21 entries, all canon; 15 were longer, 44% of their text never reached a vector, and the longest is the
+  canon's `development-documents` at 8,662.
+- **Against a typical window**: a small embedder takes 512 tokens, about 2,000 characters of English and fewer of
+  code or 中文. A large one takes 8,192 tokens, about 30,000. The longest entry fits the large one and is nine
+  times the small one.
+
+### 2. What an entry becomes
+
+- **Every part of its body is embedded, in pieces no longer than the window** (`EntryPieces`). A piece ends at the
+  last blank line in the latter half of the window, else a line break, a sentence end, a space, or the window
+  itself, never inside a surrogate pair. The next piece starts at a line or sentence inside the last 15% of the
+  one before, so a sentence a cut falls through is whole in one of them. Each piece is led by the title: twice, as
+  the entry always was, or once where two would take more than half the window. An entry within the window is
+  one piece, the same text as before.
+- **The window is the deployment's** (D24): `DAORIS_EMBED_WINDOW`, the most characters one embedded text carries,
+  the title included. Unset, it is 2,000, the number the code already cut at, now a statement rather than a
+  silence. Below 200, or not a whole number, both hosts refuse to start, as for `DAORIS_MODE`. Characters only
+  approximate tokens, so a deployment leaves margin for code and for 中文.
+- **Each piece is its own vector, and its payload is the entry's id.** A search ranks pieces and **names an entry
+  once**, at its best piece's score. It reads further while pieces crowd out the places it was asked for, so a
+  long entry does not cost the answer its other entries. A hit found in a later piece shows that piece's passage
+  (the vector's id carries where the piece starts), so a reader can see why it matched.
+- **A refresh embeds everything first, then replaces the collection whole.** An embedder that fails part-way
+  leaves the previous vectors as they were, and an edited entry's old pieces and a deleted entry's vectors leave
+  with them: an entry is several ids now, so writing into the collection would let a stale piece be found for
+  words its entry no longer has.
+- **A refresh says what it embedded**: entries, the vectors they became, how many were split, at what window. The
+  agent's door (`knowledge_refresh`) says it in a sentence, and the HTTP door's refresh answer carries it as
+  `embedded`.
+- **Convergence** seeds from an entry's first piece, as before, compares it with every piece, and names each
+  neighbour once.
+- **The lexical tier is unchanged.** It always read the whole body.
+- **The cost, measured**: at 2,000, this repository's 636 entries become 1,267 vectors, 322 entries split, at most
+  14 pieces for one entry, and 1.70 times the characters the old cut sent. Of that, 1.49 is the text it dropped,
+  and the rest is the title on each piece and the overlap. At 8,000 it is 663 vectors. It is paid once per process
+  (SEM1), which raises what SEM2's trigger would measure.
+
+### 3. Rejected
+
+- **Capping**: embed the first window and say in the record what was cut. Honest, and still blind. The fact past
+  the cut stays unfindable by meaning, and the measure says that is a third of this repository's text.
+- **The provider's segmentation** (Lyntai 3.3's `MaxInputChars` with `Segmentation`). It splits an input and
+  returns its pieces' unit vectors averaged by length, one vector per input. That names an entry once by
+  construction, and dilutes a fact in one piece by all the others. On the fixture the pooled vector scores 0.111,
+  below the decision's 0.164, so the document would still be missed, and the dilution grows with the length it
+  is meant to fix. It is also invisible to Daoris, since the answer carries one vector and no plan, so the record
+  could not say an entry was split. It exists only on the HTTP and Ollama providers, when a deployment sets it,
+  and Daoris's own cut sat in front of it.
+- **The provider's bound as a guard**: `MaxInputChars` set to the window, so Ollama is sent `truncate: false`
+  and a piece that still overflows the model fails the call instead of being cut. It is the right shape for a
+  window set too wide, and it is not taken yet. It turns one overflowing piece into a semantic tier that does not
+  answer, and choosing its default needs a machine that runs an embedder, which none here does (SEM2's trigger).
+- **A cap on pieces per entry** (Lyntai's `MaxPiecesPerInput`): a cut by another name, with gaps in what is
+  covered. The cost is measured instead (§2).
+- **Storing a piece's text in the vector store**: the payload stays the entry's id, so the text lives in the store
+  alone and the two cannot disagree. A piece's passage is read back from the entry by where it starts.
+
+### What the gates do not cover
+
+The splitter, the window's parsing, the search, the refresh's report, the replacement, the excerpt, convergence
+and the agent's sentence are held in the service suite (`EntryPiecesTests`, `LongEntryTests`, `McpToolsTests`), all
+over the stand-in embedder and no network. A mutation of each of the dedupe, the read further, the replacement and
+convergence's dedupe was seen failing them. The HTTP host's refusal of a bad window is held by `StartupTests`; the
+MCP host's identical refusal is not run by any test. The HTTP door's `embedded` field is not run with a model,
+because no HTTP host test has one. **No real embedder has embedded a piece**: whether 2,000 characters fits a
+given model's context, and what segmenting does to recall on the real corpus, need a machine that runs one. The
+page shows `semanticError` from a refresh and not yet `embedded`, which is the web lane's to add.
+**As built (PLUGDIST1a, 2026-10-01): the package and its reader, offline, with the record in both twins.** The
+driver's `PluginPackage` reads a `.nupkg` and installs its plugin through `PluginInstall`, and `daoris-driver plugins
+install <file.nupkg>` is the terminal's door. The CLI reads and lists the record a package leaves. Nothing reaches a
+network: a package source is PLUGDIST1c's. What the design left open, settled here:
+- **The type is `DaorisPlugin` alone**, compared without case, as NuGet compares type names. A package that also
+  declares another type is refused, since §5.1 says *no other type*. The type's version is a `System.Version` whose
+  major number is the plugin API. No version, a major of 0, or a major this build does not speak is refused before
+  anything is extracted, the last naming both numbers.
+- **The plugin's own `apiVersion` must equal the type's**, as its version must equal the package's. Otherwise the
+  check a source makes before downloading would trust a type that says something else.
+- **Any `dependency` element refuses the package**, in a group or not.
+- **A part's name is read as NuGet reads it**: unescaped, with `\` a separator, and only then is the `plugin/` guard
+  applied, so an escaped `..%2F` is refused as `../` is. A name twice, compared without case, refuses the package
+  too, since Windows would write the second over the first, and so does a name holding a control character, which
+  an escape can spell (`%00`) and no path holds. The guard judges every `plugin/` entry before anything
+  is written, and each target is checked again against the stage's whole path as it is written.
+- **The file is opened once, shared for reading only**, so the bytes hashed are the bytes extracted.
+- **The stage is `<home>/plugins/.unpacking-<guid>/`**, a dot-folder the catalogue skips, gone whether the install
+  succeeds or not. `PluginInstall` gains an internal `Add` for that stage, the one folder inside the home an add
+  copies from; `Placement` still refuses every other.
+- **A package file's source is the folder that held it**, a whole path. The record so names a folder source, §5.3's
+  offline kind, which PLUGDIST1c can update from as from an index.
+- **The record's rules**: a NuGet package id (ASCII, at most 100 characters); a version of one to four numbers, with
+  an optional prerelease label and metadata; a SHA-512 as standard base64; and a source that is a whole path or an
+  address by TOOLS3's rule (https://, or http:// to this machine). A record naming a package beside a folder or an
+  offer does not read, and `{}` now names all three kinds.
+- **The record's table is held by a gate**, as TOOLS2's is: `plugin-sources.test.ts` parses `PluginSourceTests`'
+  record and update theories and holds its own to them, and was seen failing on a one-sided change.
+- **A plugin from a file lands on**, as a folder's does at `daoris plugin add`: the person named the file. §5.7 step
+  6's *another publisher's lands off* needs the owner account a search result carries, so it joins PLUGDIST1c.
+- **Update refuses a plugin from a package, on both sides, in the same words**: a newer package takes its place by
+  `daoris plugin remove <id>`, then `plugins install`, and what it kept stays. §5.8's *`daoris-driver plugins update
+  <id>` does it* is PLUGDIST1c's to say, once that verb exists. The CLI's list names a package's source and offers no
+  update, and `daoris plugin install` answers as a moved verb does.
+- **Not built here**: a package source over HTTP, `find`, `show`, `install <Id>`, an update from a source, the off row
+  for another publisher, and `plugin.installed` in the machine log (§5.10), all PLUGDIST1c's. The modules' `PLUGINS`
+  answer still names a package record's kind `folder`, with no folder: PLUGDIST1d's to say.

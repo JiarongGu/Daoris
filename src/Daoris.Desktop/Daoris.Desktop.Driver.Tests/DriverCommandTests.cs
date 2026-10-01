@@ -103,6 +103,21 @@ public sealed class DriverCommandTests
         Assert.Equal(2, program.Split("SyncWords.NotFetched(").Length - 1);
     }
 
+    /// <summary>
+    /// PLUGDIST1a: a plugin package is installed from a terminal, a door the usage names, and the host asks for it
+    /// before the `plugins` words the kit answers, which would otherwise take it.
+    /// </summary>
+    [Fact]
+    public void The_usage_names_installing_a_plugin_package_and_the_host_routes_it_first()
+    {
+        Assert.Contains("\n  plugins install <file.nupkg>\n", DriverCommand.Usage.ReplaceLineEndings("\n"));
+        var program = File.ReadAllText(Path.Combine(SourceRoot(), "Daoris.Desktop.Driver.Host", "Program.cs"));
+        var install = program.IndexOf("if (args is [\"plugins\", \"install\", .. var installArgs])", StringComparison.Ordinal);
+        var plugins = program.IndexOf("if (args is [\"plugins\", .. var pluginsArgs])", StringComparison.Ordinal);
+        Assert.True(install > 0 && plugins > install, $"install at {install}, the other plugins words at {plugins}");
+        Assert.Contains("PluginPackageCommand.Install(installArgs, Console.Out, DaorisHome.Resolve())", program);
+    }
+
     private static string SourceRoot()
     {
         var folder = new DirectoryInfo(AppContext.BaseDirectory);

@@ -13,6 +13,8 @@ using Daoris.Knowledge.Http;
 //   DAORIS_KNOWLEDGE_DB    where the index is kept         (default: $DAORIS_HOME/knowledge.db)
 //   DAORIS_EMBED_MODEL     naming one turns semantic on    (absent: lexical only, and it says so)
 //   DAORIS_EMBED_URL       the endpoint                    (default: http://localhost:11434)
+//   DAORIS_EMBED_WINDOW    the most characters one embedded text carries, title included; a longer
+//                          entry is embedded in pieces (D123)   (default: 2000; under 200, exit 2)
 //   DAORIS_WEB_ORIGIN      the dev UI's origin for CORS    (absent: same-origin only)
 //   DAORIS_WORKSPACE       which circle a SHARED host serves    (default: `default`; D48 §5)
 //                          Refused on a local host, which holds every workspace this machine wired.
@@ -76,7 +78,12 @@ if (database is null)
     return 2;
 }
 
-var options = ServiceOptions.FromEnvironment(DefaultRepositoryRoot(), database);
+var (options, optionsError) = ServiceOptions.FromEnvironment(DefaultRepositoryRoot(), database);
+if (optionsError is not null)
+{
+    Console.Error.WriteLine(optionsError);
+    return 2;
+}
 
 // Key administration is a console verb on the serving binary — same store, no second tool, and it
 // exits without binding. Console minting is the whole story until person-auth exists (D47 §7).
@@ -993,7 +1000,10 @@ app.MapPost("/api/refresh", async (ComposedService s, CancellationToken ct) =>
 
     var report = await s.Service.RefreshAsync(ct);
     return Results.Ok(new RefreshResponse(
-        report.Entries, report.Repositories, report.Withheld, report.SemanticError, report.Absent));
+        report.Entries, report.Repositories, report.Withheld, report.SemanticError, report.Absent,
+        report.Embedded is { } embedded
+            ? new EmbeddedResponse(embedded.Entries, embedded.Pieces, embedded.Split, embedded.Window)
+            : null));
 });
 
 // ——— The feed and sync doors (D47 §§4–6, D68). Which doors exist depends on the deployment's role: a

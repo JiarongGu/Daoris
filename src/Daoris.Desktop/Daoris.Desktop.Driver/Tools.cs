@@ -305,7 +305,7 @@ public static class Tools
 
     /// <summary>The system's: the one <c>PATH</c> finds, as before (rule 6).</summary>
     /// <exception cref="DriverException">An undeclared tool, or a file this build cannot read; nothing is written.</exception>
-    public static void UseSystem(string home, string tool) => SetWay(home, tool, "system", null);
+    public static void UseSystem(string home, string tool) => SetWay(home, tool, "system", null, null);
 
     /// <summary>A file the person names, by its whole path (rule 6); one that is not there is refused.</summary>
     /// <exception cref="DriverException">An undeclared tool, a path that is not whole or holds no file, or a file
@@ -315,7 +315,102 @@ public static class Tools
         if (Find(tool) is null) throw new DriverException(Undeclared(tool));
         if (!IsWholePath(file)) throw new DriverException($"`{file}` is not a whole path — name the executable by its whole path.");
         if (!File.Exists(file)) throw new DriverException($"no file at {file} — a tool is a file that is there.");
-        SetWay(home, tool, "file", file);
+        SetWay(home, tool, "file", null, file);
+    }
+
+    /// <summary>
+    /// Managed at one exact version (TOOLS4), written only once that version is downloaded: a pin nobody installed
+    /// refuses every start (D57), so it is never written ahead of its download. <see cref="ToolInstall"/> downloads,
+    /// then writes. The CLI's <c>useManaged</c>.
+    /// </summary>
+    /// <exception cref="DriverException">An undeclared tool, a version that is not exact or not downloaded, or a file
+    /// this build cannot read; nothing is written.</exception>
+    public static void UseManaged(string home, string tool, string version)
+    {
+        var declared = Find(tool) ?? throw new DriverException(Undeclared(tool));
+        if (!IsExactVersion(version))
+        {
+            throw new DriverException($"`{version}` is not an exact version — one to four numbers, like 2.51.0 — so nothing was written.");
+        }
+        if (ManagedFile(home, declared, version).File is null)
+        {
+            throw new DriverException(
+                $"{declared.Name} {version} is not downloaded ({Path.Combine(home, Folder, tool, version)}), so nothing was written: a "
+                + $"managed version nobody downloaded would refuse every start. `daoris tool use {tool} managed {version}` downloads it, "
+                + "then uses it");
+        }
+
+        SetWay(home, tool, "managed", version, null);
+    }
+
+    /// <summary>
+    /// A downloaded version's executable, or why there is none (§3.6's layout): its record, naming a file that is
+    /// there. Finding it is the proof the download verified. The CLI's <c>managedExecutable</c>.
+    /// </summary>
+    /// <exception cref="DriverException">A tool this build does not declare.</exception>
+    public static (string? File, string? Problem) ManagedExecutable(string home, string tool, string version) =>
+        ManagedFile(home, Find(tool) ?? throw new DriverException(Undeclared(tool)), version);
+
+    /// <summary>
+    /// Add a resource location at the end, after the person's others and before the list built in (§3.3). The CLI's
+    /// <c>addLocation</c>.
+    /// </summary>
+    /// <returns>False when it is already listed, and nothing is written.</returns>
+    /// <exception cref="DriverException">An address that is no resource location, or a file whose <c>locations</c>
+    /// this build cannot read; nothing is written.</exception>
+    public static bool AddLocation(string home, string address)
+    {
+        if (LocationProblem(address) is { } problem) throw new DriverException($"{problem} — nothing was written.");
+        var (path, root, locations) = WritableLocations(home);
+        if (locations.Any(each => Text(each) == address)) return false;
+        locations.Add(address);
+        Directory.CreateDirectory(home);
+        AtomicFile.WriteText(path, root.ToJsonString(Written) + "\n");
+        return true;
+    }
+
+    /// <summary>
+    /// Remove a resource location (§3.3): its versions are no longer offered, and a version already downloaded stays.
+    /// Every other entry stays as written, one that is not an address included. The CLI's <c>removeLocation</c>.
+    /// </summary>
+    /// <returns>False when it was not listed, and nothing is written.</returns>
+    public static bool RemoveLocation(string home, string address)
+    {
+        if (!File.Exists(Path.Combine(home, FileName))) return false;
+        var (path, root, locations) = WritableLocations(home);
+        var removed = false;
+        for (var at = locations.Count - 1; at >= 0; at--)
+        {
+            if (Text(locations[at]) != address) continue;
+            locations.RemoveAt(at);
+            removed = true;
+        }
+
+        if (!removed) return false;
+        AtomicFile.WriteText(path, root.ToJsonString(Written) + "\n");
+        return true;
+    }
+
+    /// <summary>The file and its <c>locations</c> to write over, or the refusal that leaves it as it is.</summary>
+    private static (string Path, JsonObject Root, JsonArray Locations) WritableLocations(string home)
+    {
+        var path = Path.Combine(home, FileName);
+        var (root, problem) = Load(path);
+        if (problem is not null) throw new DriverException($"{problem}. Fix it, or delete it to start from nothing — nothing was written.");
+
+        root ??= new JsonObject();
+        if (root["locations"] is { } held && held is not JsonArray)
+        {
+            throw new DriverException($"{path}'s `locations` is not a list, so nothing was written — fix it, or delete the key to start from nothing.");
+        }
+
+        if (root["locations"] is not JsonArray locations)
+        {
+            locations = [];
+            root["locations"] = locations;
+        }
+
+        return (path, root, locations);
     }
 
     /// <summary>
@@ -323,7 +418,7 @@ public static class Tools
     /// on the entry and on the file. Refused over a file it could not read, and over a <c>tools</c> that is no
     /// object.
     /// </summary>
-    private static void SetWay(string home, string id, string way, string? file)
+    private static void SetWay(string home, string id, string way, string? version, string? file)
     {
         if (Find(id) is null) throw new DriverException(Undeclared(id));
         var path = Path.Combine(home, FileName);
@@ -352,6 +447,7 @@ public static class Tools
         entry.Remove("version");
         entry.Remove("file");
         entry["use"] = way;
+        if (version is not null) entry["version"] = version;
         if (file is not null) entry["file"] = file;
 
         Directory.CreateDirectory(home);
@@ -362,7 +458,8 @@ public static class Tools
     private static (string? File, string? Problem) ManagedFile(string home, ToolDeclaration tool, string version)
     {
         var folder = Path.Combine(home, Folder, tool.Id, version);
-        var back = $"— {Never}. `daoris tool use {tool.Id} system` runs the one on PATH";
+        var back = $"— {Never}. `daoris tool use {tool.Id} managed {version}` downloads it, and `daoris tool use {tool.Id} system` "
+            + "runs the one on PATH";
         var record = Path.Combine(folder, Record);
         if (!File.Exists(record))
         {
