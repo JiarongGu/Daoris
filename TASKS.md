@@ -21,11 +21,11 @@ lists.
 
 ## State
 
-**Counts, and this is their one home:** seventeen commands, **888 CLI tests, 778 service and 47 HTTP host, 2001 driver,
-466 desktop modules, 80 devkit, 2176 web unit, 22 Playwright**, 108/108 release rehearsal, **312/312
+**Counts, and this is their one home:** seventeen commands, **888 CLI tests, 778 service and 47 HTTP host, 2076 driver,
+476 desktop modules, 80 devkit, 2176 web unit, 22 Playwright**, 108/108 release rehearsal, **312/312
 family rehearsal** (it names its own phases when you run it), **70/70 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 6 knowledge
-documents, 6 skills, 7 packs. The always-loaded core is **22,672 of 26,000 bytes** — a span in
+documents, 6 skills, 7 packs. The always-loaded core is **23,306 of 26,000 bytes** — a span in
 `AGENTS.md` since D59 — and **advisory rather than enforced** (D54: a fact gates, a judgement
 reports).
 
@@ -38,46 +38,27 @@ mechanics drafted at `docs/adoption/shenora-repo-mechanics.md`, budget 40,000, `
 
 ## Handover — where a fresh session picks up
 
-🔴 **Where 2026-09-30 left it.** The owner's direction: *Daoris is the master development tool, doctrine
+🔴 **Where 2026-10-01 left it.** The owner's direction: *Daoris is the master development tool, doctrine
 and knowledge sharing*; their ticket work runs through the local Daoris, and Ask Daoris should reach
-everything. **The day's rows landed** (all in the archive): HELP4–HELP5 (Ask Daoris honest and faster),
-LOG1 whole (the machine log, D94, read back at two doors and summarised by `tools/usage-report.mjs`),
-SHEN1 (Shenora 0.18), USE1a–f (what the window showed, one defect for the overflow and the side bar),
-QUEST1 (delete, D95), CONSOLE4 (a terminal, D96), SETUP1 (the setup guide, D97), AGT6 (model and
-effort, D98), CHR8 (one Chromium, D99), BRW7–8 (the browser's door, link routing, who drives), HELP6
-(Ask Daoris proposes every new door, tried with a real helper), WORK1, DEPLOY5 and HTTP1 — most built
-by subagents in their own worktrees and merged, rehearsed and looked at on main. Then HELP7, LOG2
-(the host writes its stop), WSR4 (D100: a landing plugin pushes and opens the pull request, two inert
-examples), HELP8 (Ask Daoris proposes one), a narrow Settings row that stacks, PLUG8–9 (Daoris makes
-and installs plugins, D101, D103), WSR5 (landed branches cleaned and handed to a plugin, D102), DRV8
-(one driver loop per home, cut-off takes carried on, D104), the owner's calls (D105, READ1 D107), the
-**parallel-development arc whole** (MOD1–MOD9: union-merged records D106, every god file split into
-registries, a `Process` test category, `tools/merge-branch.mjs` and the `dispatch-subagent` skill), and
-TASKBAR1 (D108). **The same night:** HELP9 (D110: Ask Daoris reaches every door, held by a coverage
-test that caught WSR6's new control on its first merge), PREVIEW1 (D111: a file's preview in the side
-bar), WSR6 (D109: one press brings a repository up to date after its pull request merges) and LEFT1,
-each merged with every gate; then HELP10 (Ask Daoris's owed doors, under D110). **The look at the
-republished install** (2026-10-01) found WSR7, REVIEW2 and TABS1 on the owner's real workspace. **In
-flight:** LEFT3 (D114); WSR7 (D112), REVIEW2 (D113), LEFT2 and TABS1 are in. **Next:** republish, run the
-owner's merged pull request through *Bring up to date* on the window, then the owner's round (NAME1, FRAME1,
-PLUGUI1, DEV1, LOOK1); the rest below is theirs or parked. Dispatch through the `dispatch-subagent` skill and merge with `tools/merge-branch.mjs`. The
-kit's own relay (Shenora.Chromium 0.18.0) leaves a pump unobserved as Daoris's did: a request for the
-kit's owner, not Daoris's to change (LOG2b).
-- **The owner's ticket AR-2201**: its first follow-up merged by the owner's pull request (squash). The
-  second ("vs Last 7 Days Avg" as the average day, the total ÷7) and third (the seven days before the
-  selection, a rolling window; shifts are not set up, by the owner's word) landed onto one branch holding
-  both over the merged line. **The owner merged that pull request too (2026-10-01)**, and the post-merge
-  step ran through Daoris's own door on the window: *Bring up to date* found the line already current,
-  proved the landed branch's work on it, and deleted the branch; the review now says where the work
-  landed. The repository keeps only its line. What is left is the owner's: the production config update
-  (the summary's subtitle now reads slightly off). Everything deleted earlier was backed up first, and the
-  private notes say where.
+everything. **The owner's round of 2026-10-01 is being built in parallel** from the designs below (D115–D122):
+one frame for every view, plugins with a view and a workshop of their own, Daoris.Plugins as the default plugin
+repository published to NuGet, self-managed tools, the development-documents standard and fewer asks. Each row
+is built by a subagent through the `dispatch-subagent` skill, gathered into an integration branch, and merged
+with `tools/merge-branch.mjs`; the archive has every landed row. Daoris.Plugins' work is asked of it through
+the platform and taken by its own sessions (PLUGREPO2c, PLUGREPO2d). The kit's own relay leaves a pump
+unobserved as Daoris's did: a request for the kit's owner, not Daoris's to change (LOG2b).
+- **The owner's ticket AR-2203** was asked through the window (2026-10-01, the lumachain workspace), and its intake
+  session is proposing the quests; follow it there.
+- **The owner's ticket AR-2201 is done on Daoris's side**: both follow-ups merged by the owner's pull
+  requests, and the post-merge step ran through *Bring up to date* on the window, which proved the landed
+  work on the line and deleted the branch. What is left is the owner's production config update. Everything
+  deleted earlier was backed up first, and the private notes say where.
 - **The install** runs main at TASKBAR1 (`34f8602`, republished 2026-09-30 night: the splits, READ1, MOD8, TASKBAR1; the taskbar is the owner's to look at); republishing is the session's own call, never while a session
   on it runs. Start it the normal way, not through the dev tool, unless the instruments are needed
   (USE1g, confirmed: a start from Git Bash hands sessions a `PATH` their shell cannot read).
 - **Load makes flakes**: FLAKE1's real-tick classes fail under parallel builds and pass alone. Run the
   rehearsals when nothing else builds.
-- **Open and the owner's:** BUDGET1, PLUGREPO1, TRUST2, AGT2c, FG5, BRW3; on a trigger: TOOL4, TOOL5,
+- **Open and the owner's:** BUDGET1, TRUST2, AGT2c, FG5, BRW3, UNBLOCK4c, LAYOUT2, PLUGDIST1f; on a trigger: TOOL4, TOOL5,
   PLUG7, SEM2, CANON9, REH1. **A new direction from the owner outranks all of them.**
 
 **Start by reading the contract the item cites** — every backlog row names one, and
@@ -132,8 +113,9 @@ rather than designed.
 
 ## Backlog
 
-**Sixty-one rows are open** (most of them the builds of the designs below) (triaged 2026-09-30, when the owner asked to go faster; 2026-10-01 after the night's merges, the look, and the owner's round):
-- **Merging next:** PLUGUI1d and PLUGUI1e. **Building:** FRAME1d, TOOLS4, PLUGDIST1a.
+**Sixty-seven rows are open** (most of them the builds of the designs below) (triaged 2026-09-30, when the owner asked to go faster; 2026-10-01 after the night's merges, the look, and the owner's round):
+- **Merging next:** integrate-h (TOOLS4, FRAME1e with FRAME1d, PLUGDIST1a, SEM3 with DOC5, DOC4, SELECT1, DOC3a), then
+  PARK1 with METER1 (branch `park1`). **Building:** TOOLS5 (on TOOLS4), MENU1 (on FRAME1e and SELECT1).
 - **Designed, to build in order:** DEV2–DEV11 (D115); FRAME1b–i (D118) after NAME1b; PLUGUI1 after FRAME1c;
   LAYOUT3–LAYOUT10 (D117) after LAYOUT2's evidence.
 - **Waiting on the owner (five):** BUDGET1 (their call), TRUST2 and AGT2c (a grant, two
@@ -168,6 +150,36 @@ then FRAME1's audit and model, then PLUGUI1 on that frame. DEV1 is a design docu
 them. Each starts with its contract document, is built in parts by subagents, and is looked at on the
 install in both themes and both languages.
 
+- [ ] **PARK1 — a parked session's card lost its question** (AR-2203, 2026-10-01): the session asked which report
+  is the "individual Daily OEE report" in a long message with indented lists, and its card read "to ask you:" and
+  the closing line, since the question was scraped from the console transcript, where an indented line is a
+  tool's output. The card now quotes the record's last message whole (`SessionEvents.LastSaid`), the transcript
+  only as a fallback. Built on branch `park1`; seen failing against the old reading.
+- [ ] **METER1 — a turn's meter summed cache reads into "in"** (owner, 2026-10-01: *"输入 69.1M … there must be an
+  issue"*): AR-2203's 48-minute turn read 663K anew and re-read 68.5M from its cache; the line said 69.1M in. The
+  line now says them apart (`16.7K in · 51.1K cached · 80 out`, 输入 / 缓存 / 输出), the hover sentence with it.
+  Built on branch `park1`.
+- [ ] **COST1 — what a long driven turn costs** (found with METER1): that turn ran about a thousand tool calls,
+  and its context grew from 48K to 679K tokens on a 1M window, every call re-reading it from the cache. Nothing in
+  Daoris sets an agent's window or when its harness compacts. Measure first (each driven session's context
+  high-water and cache reads per turn, from the usage record and the turn events, over a week), then offer a
+  per-agent ceiling, a smaller window or the harness's own compaction setting, on both doors. The owner's call,
+  since it trades cost for what a session remembers.
+- [ ] **SELECT1 — a long select runs off the window** (owner, 2026-10-01: *"select option currenly does not have
+  scroll it just overflow the screen"*). Every select is the one atom `SelectField` (`ui.tsx`), whose list had no
+  height cap: capped at the room the popper measures, with the scroll arrows Radix hides the scrollbar for. Built
+  on branch `select1`; looked at on the window with a long list, at 680 px, before it is archived.
+- [ ] **MENU1 — one menu atom** (found with SELECT1): eight files style Radix's dropdown menu each on its own
+  (AppMenu, ViewsMenu, ListPane's ＋ and ⋯, SessionRow, SyncStatus, TerminalTabs, BrowserDoor, the map's
+  LinesMenu and LayeredMap), and none caps its height, so a long menu runs off the window as the select did. One
+  menu molecule beside `SelectField` (content capped at the popper's available height and scrolling, item,
+  checkbox item, separator, label), every menu moved onto it. The two dialogs built outside the atoms (QuickAsk,
+  CommandPalette) move onto a dialog atom or are named as the test's exceptions. The test: no file but `ui.tsx`
+  imports a Radix primitive (the app root's tooltip provider excepted), as `presentational.test.ts` holds what a
+  molecule imports. Web shell, after FRAME1e; looked at with a long menu at 680 px, both themes.
+- [ ] **SEM3b — the window says what a refresh embedded** (SEM3's hand-back): the refresh notice shows the HTTP
+  answer's `embedded` (entries, vectors, splits, window), and Settings → AI's search hint names
+  `DAORIS_EMBED_WINDOW` beside the model and the address, in both languages. Web shell and web settings.
 - [ ] **MANAGE1 — saving a declaration erases `uses`** (found by DEV4). Repositories → Manage → Save
   declaration re-registers with a `domain` that carries no `uses`, which erases the repository's `uses` from
   the registry until its next `connect`. Lanes avoid it by DEV4's preserve rule; `uses` needs the same, with a
@@ -177,10 +189,6 @@ install in both themes and both languages.
   languages, and each is renamed or accepted.
 - [ ] **PLUGUI1c — Settings keeps only what is a setting** (after b): the domain retires, its anchors repoint,
   the folder row joins Settings → Driver; crosses five lanes on purpose.
-- [ ] **PLUGUI1d — the machine log's plugin events, health, and `plugins show|activity`** (beside b): seven
-  `plugin.*` events without words, `PluginHealth`, the two verbs.
-- [ ] **PLUGUI1e — the host answers the page** (after d): `PLUGINS` extended; `PLUGIN`, `PLUGIN_ACTIVITY`,
-  `PLUGIN_READ`, `PLUGIN_ADD`, `PLUGIN_OPEN_FOLDER`.
 - [ ] **PLUGUI1f — the page whole** (after c and e): health on the window, Points, Agents, Servers, Activity
   live, Data folder, Source, *Install from a folder…*.
 - [ ] **PLUGUI1g — a plugin's checks** (after f): the last trial kept, its own tests run in a copy under the home.
@@ -195,9 +203,6 @@ install in both themes and both languages.
   `OutputPanel`, the monitor's title on a real token (`tokens.test.ts` fails on `text-h3` first).
 - [ ] **FRAME1i — Ask Daoris knows each view's list and item**: `where.ts`, `go` naming an item, the room.
   Order: b, c, then d–g (d, e, f one at a time; g beside one), then h and i. PLUGUI1 starts after FRAME1c.
-
-### The kits (owner, 2026-10-01: *"shenora 0.19 and lyntai 3.5.3 both ready"*)
-
 
 ### Doctrine, plugins and tools (owner, 2026-10-01)
 
@@ -228,6 +233,10 @@ Every task in Daoris.Plugins is an ask to it, taken by its own session (the owne
 - [ ] **PLUGDIST1a — the package and its reader, offline** (§5.1, §5.7); **PLUGDIST1b — the pack and release
   workflow** (an ask to Daoris.Plugins); **PLUGDIST1c — a package source over HTTP** (§5.3–§5.8);
   **PLUGDIST1d — the host answers**; **PLUGDIST1e — Find plugins** (§6, after PLUGUI1f).
+- [ ] **PLUGDIST1a's leftovers** (its hand-back, 2026-10-01): the modules' plugin page calls a package record
+  `folder` with no folder (PLUGDIST1d says `package`); `install` is routed in the host's `Program.cs` ahead of the
+  `plugins` catch-all and moves into `PluginsCommand` once PLUGUI1d is on main; extraction has no size bound, so
+  PLUGDIST1c bounds it before a package arrives over HTTP.
 - [ ] **PLUGDIST1f — the first publish** (the owner's: the nuget.org account, trusted publishing, the prefix), then
   **PLUGDIST1g — the offers from packages**. ⏸ **PLUGDIST1h — the repository signature checked** (held).
 - [ ] **INIT1 — `init` writes line endings it can keep** (found setting up Daoris.Plugins): a `.gitattributes`
@@ -317,14 +326,6 @@ LAYOUT2 first: until it measures, the layout's entry points are the design's rea
 - [ ] **LAYOUT10 — the first real set-ups** (the owner's run, after the first publish): one unadopted
   repository, and one with instruction files of its own.
 
-### Plugins Daoris makes (owner, 2026-09-30)
-
-> *"do we need a Daoris.Plugins repo? … I think Daoris should have ability to create plugin by itself,
-> say for example via "ask Daoris""*
-
-PLUG8 and PLUG9 built the reading recorded here (in the archive): making a plugin is work done in a
-repository with tests, and installing one is the person's press.
-
 ### What REV3 left (2026-09-25)
 
 REV3 is in the archive, and `docs/2026-09-25-rev3-review.md` is its ledger. These rows are what it
@@ -395,6 +396,11 @@ was checked. Every AGT and MAP item is archived but this one.
 `docs/2026-09-27-in-app-browser-design.md` is the contract. It was measured first: Playwright MCP
 attached over CDP drives a WebView2.
 
+- [ ] **BRW11 — a page's file reaches the room** (found on AR-2203, 2026-10-01): the intake session read a ticket
+  whose mock-up is an attachment, and could not save it into its room; it fell back to a viewport capture,
+  cropped. The engine's downloads are its own (CHR3 §3.2), so an agent driving the browser over MCP has no way to
+  bring a signed-in page's file to the quest. Design first: where a download lands for a session, and how the
+  quest's attachments take it.
 - [ ] **BRW3 — the owner's machine** (with FG5). The plugin, the one sign-in in the in-app browser,
   `mcp__browser` allowed, and the first ask whose ticket the intake reads through it.
   **2026-09-27: set up to the owner's step.** The install is republished at `b287580`. The

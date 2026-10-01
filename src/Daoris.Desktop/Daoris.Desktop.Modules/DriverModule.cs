@@ -27,15 +27,21 @@ public sealed partial class DriverModule : ModuleBase
 {
     private readonly IEventBus _events;
     private readonly DriverLoop _loop;
+    private readonly OpenFolder? _openFolder;
 
     /// <remarks>
     /// The bus is held as well as handed to the base: this module both ANSWERS requests and, since
     /// D49 §3, raises one of its own — a conversation ending is news the page wants without asking.
     /// </remarks>
-    public DriverModule(IEventBus events, DriverLoop loop) : base(events: events)
+    /// <param name="openFolder">
+    /// The file manager, for a plugin's Open folder (PLUGUI1e): the application hands in the window kit's launcher,
+    /// as it does to the log's module. Null where the host carries none: then nothing opens, and the answer says so.
+    /// </param>
+    public DriverModule(IEventBus events, DriverLoop loop, OpenFolder? openFolder = null) : base(events: events)
     {
         _events = events;
         _loop = loop;
+        _openFolder = openFolder;
     }
 
     public override string ModuleName => "DAORIS.DRIVER";

@@ -4129,6 +4129,14 @@ so the line carries no command. The usage report gains asks per session by adapt
 proposals under `proposals/` by the week they were made and their state, counted from the files and printing none of
 their words. The machine-log design's §4 and §6 say, as built, what each reads.*
 
+*Amended by PLUGUI1d (2026-10-01, D119 §4.2): the catalogue gains seven `plugin.*` events, `started`, `stopped`,
+`called`, `failed`, `served`, `tried` and `tested`, written by one writer in the driver library (`PluginLog`) from the
+hook set, a landing, a hand-off, the driver's handing of servers and the terminal's trial. Each is names, counts, flags
+and times: an answer is its word (`allow`, `hold`, `pushed`…), never its reason, message or pull request, and nothing a
+plugin wrote to stderr reaches a line, since no writer takes words as a parameter. `stopped` and `failed` carry `by`
+as `started` does, so a reader can tell the loop's process from a landing's one frame. `tested` has its shape and no
+writer until PLUGUI1g. The machine-log design's §4 says, as built, what each line measures.*
+
 ## D95 — A quest nobody has started on can be deleted, and the delete travels as an operation (2026-09-30)
 
 **Decision (QUEST1).** The owner: *"we do need way to clear or delete quest"*. Clearing is what the
@@ -6367,6 +6375,54 @@ names its own proof, and the design's §9 says what only the window and a real p
   lays nothing out. No look at the window was taken in this branch, so every width, the strip at 680 px and the laid-over
   list are the parent's to see. The names' budgets are estimates (D116 §4). The disclosure spec's two new lines were
   edited and not run: the parent runs `test:web`.
+*As built (PLUGUI1d, 2026-10-01): the host's half of §2 and §4. The machine log's `plugin.*` events are written by
+`PluginLog` (D94's note says what each holds). `PluginHealth` is the loop's record, the shell's `DriverLoop.Health`,
+handed with the shell's log to its hook set and to every landing and hand-off the routes build. Its state is decided by
+one set of rules for the record and for the log's reading (`FromLog`), held by one table (`PluginHealthTests`). Four
+readings the design left open are settled there:*
+- *A plugin that speaks at a loop point and has no process up, with no failure as its last word, is `ready`: before the
+  loop's first look, after the loop ended, or after Daoris stopped. The terminal's line says no process of it is up.*
+- *Switching a plugin off, removing it or updating it starts its record afresh; a change to its manifest, or its process
+  started again, does not.*
+- *The record is its process's own, so the log's reading starts it afresh where the process that ran the plugin's loop
+  starts or stops (`app.started`, `app.stopped`) and where another process's loop starts it.*
+- *A landing's or a hand-off's failure is the plugin's word, and makes it `failing` until its next good answer, at any
+  point.*
+
+*`PluginPage.Read` and `PluginActivity.Read` are the readers the page's routes are to call, and
+`daoris-driver plugins show <id> [--json]` and `plugins activity <id> [--since] [--json]` print them. A page answers a
+server's environment by name only. Activity's agent sessions are `session.started` lines whose adapter is a declared
+agent, and its pushes are the landing record's, dated by when the branch landed, since the record keeps no push time.
+Not yet built: a conversation's `plugin.served` and the screen's `plugin.tried`, which wait for the shell to hand its log
+to the chat runner and `PLUGIN_TRY`. What only a real plugin proves is unchanged: no failing plugin's process has met the
+record.*
+
+*As built (PLUGUI1e, 2026-10-01): the host's answers of §4.1, on `DAORIS.DRIVER` in `DriverModule.Plugins.cs`. `PLUGINS`
+gains per plugin `servers`, `hook`, `listening`, `health` and `update`; `PLUGIN` and `PLUGIN_ACTIVITY` call the two readers
+with the loop's own record; `PLUGIN_READ`, `PLUGIN_ADD` and `PLUGIN_OPEN_FOLDER` are new, with `PLUGIN_FOLDER_NOT_OPENED`
+and `PLUGIN_NOTHING_KEPT` in `Refusals` and both catalogues. `PLUGIN_TRY` writes the screen's `plugin.tried`, and the
+shell's conversations write `plugin.served` through one seam of the chat runner. Readings the design left open:*
+- *The list's `hook` and `servers` are what the catalogue takes, as its `harnesses` and `points` are, so a refused plugin
+  answers none; the hook's command is as its manifest writes it, `${plugin}` and all, as the page's is.*
+- *`update` is `waits`, `current`, or null: null with no record, and null where the update would be refused (a source
+  gone, or one that does not read), whose sentence the page's Source gives.*
+- *`PLUGIN_ACTIVITY`'s `since` is one of the log's spans (`1d`, `7d`, `30d` for the page's three periods), 7 days when
+  absent; a span the log cannot read is the log's own `LOG_FILTER_UNKNOWN`.*
+- *A folder is judged in Ask Daoris's judge's order: named whole, then `Placement`, then there, then read, then an id
+  already installed, which `PLUGIN_READ` answers before the press and `PLUGIN_ADD` refuses, naming Update… and
+  `daoris plugin add <folder>`. Both refusals are the driver's sentences, verbatim, since the drawer shows them in place.*
+- *`PLUGIN_OPEN_FOLDER` makes the plugins folder before opening it, as the log's module makes its own; a host with no
+  launcher answers `opened: false`; an unknown `which`, or a plugin's folder asked for with no id, is the driver's
+  sentence.*
+- *`PLUGIN` and `PLUGIN_ACTIVITY` read off the caller's thread: a data folder is counted for up to two seconds, and a
+  month of the log may be read.*
+- *The route tests start no process, so they are a class of the modules' fast half (`DriverModulePluginPageTests`) beside
+  `DriverModulePluginsTests`, which tries plugins in real processes.*
+
+*Not built here: `PLUGIN_TEST` and the checks `PLUGIN` is to answer (PLUGUI1g), and the bridge's calls onto these routes
+(PLUGUI1f); until then the route test holds each route by the tests that ask it. `daoris-driver chat` writes no
+`plugin.served`, as it writes no session lines. A conversation's line is held at the seam, not in a real conversation, and
+`PLUGIN_OPEN_FOLDER` has met no file manager: the window is where both are seen.*
 ## D122 — The development documents are a standard the canon ships, and a repository declares its safe work once for the person's yes (2026-10-01)
 
 **Decision (DOC1 and UNBLOCK1, the owner's: *"research a good development doc pattern for code generation and use it as

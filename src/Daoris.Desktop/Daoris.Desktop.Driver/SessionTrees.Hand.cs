@@ -45,7 +45,8 @@ public sealed partial class SessionTrees
             return new(false, plan.Problem ?? $"`{entry.Branch}` cannot be handed on.", entry.Branch);
         }
 
-        var said = await _plugins.LandAsync(plan.Plugin, frame, ct).ConfigureAwait(false);
+        // The landing's own frame, said in the machine log as a hand-off (PLUGUI1d).
+        var said = await _plugins.HandAsync(plan.Plugin, frame, ct).ConfigureAwait(false);
         var handed = said is { Pushed: true, Failed: false };
         var message = handed
             ? $"handed `{entry.Branch}` to plugin `{said.Plugin}`. {Said(said, entry.Branch)}"

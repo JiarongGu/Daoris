@@ -91,6 +91,13 @@ public sealed class LandedBranches(string home)
     public LandedBranch? Landing(string session) =>
         Everything().LastOrDefault(entry => string.Equals(entry.Session, session, StringComparison.OrdinalIgnoreCase));
 
+    /// <summary>
+    /// Every branch <paramref name="plugin"/> answered that it pushed, standing or a trace, in the order they landed:
+    /// what a plugin's Activity lists as its pushes (PLUGUI1d, D119 §3.2).
+    /// </summary>
+    public IReadOnlyList<LandedBranch> PushedBy(string plugin) =>
+        [.. Everything().Where(entry => entry.Pushed && string.Equals(entry.Plugin, plugin, StringComparison.OrdinalIgnoreCase))];
+
     /// <summary>Every entry, standing and traces, in the order they landed.</summary>
     private IReadOnlyList<LandedBranch> Everything()
     {

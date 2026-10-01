@@ -155,6 +155,12 @@ public sealed class DriverLoop(
     /// <summary>The plugins that speak (D64): their processes live with this loop and stop with it.</summary>
     private HookSet? _hooks;
 
+    /// <summary>
+    /// The loop's own record of each plugin's health (PLUGUI1d, D119 §2): fed by its hook set and by every landing and
+    /// hand-off a route runs in this process, and read for the Plugins view, which a terminal reads from the log instead.
+    /// </summary>
+    public PluginHealth Health { get; } = new();
+
     /// <summary>Which plugins have a hook process up right now, by id — what the Plugins card shows as running.</summary>
     public IReadOnlyList<string> RunningPlugins => _hooks?.Running ?? [];
 
@@ -290,7 +296,10 @@ public sealed class DriverLoop(
         // what guarantees the client is still there. Stopped after the client, a chat open at close was
         // recorded nowhere and read `working` forever (2026-09-25).
         // …and the same usage record, so a conversation's end and a driven session's are one writer (USAGE1).
-        using var chat = new ChatRunner(service, Harnesses.Adapters, homeDirectory, Processes, Output, Harnesses, Events, Usage, browser);
+        // …and the same log, where each plugin server a conversation is handed or withheld is a line (PLUGUI1e).
+        using var chat = new ChatRunner(
+            service, Harnesses.Adapters, homeDirectory, Processes, Output, Harnesses, Events, Usage, browser,
+            plugins: new PluginLog(log, Health));
         // Where a conversation's turns stand, as it moves (CONV4a): whether one is in flight, and what is
         // waiting, which is in no record until it is sent. Each change is the whole state, so a missed one
         // costs nothing.
@@ -327,7 +336,9 @@ public sealed class DriverLoop(
 
         // A plugin's word goes to the console under `plugin:<id>` (D49 §2, D64 §4) — the same buffer
         // a session's lines and a harness action's lines land in, readable only over this bridge.
-        _hooks = new HookSet(homeDirectory, Output);
+        // What the set does with each plugin goes to the machine log without its words, and into the loop's
+        // record of its health (PLUGUI1d).
+        _hooks = new HookSet(homeDirectory, Output, log: log, health: Health);
 
         // What is worth interrupting the person for (SURF5b). The judgement is the library's, so the
         // headless host reaches the same answer; the shell's half is only what an event BECOMES.
