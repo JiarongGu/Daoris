@@ -299,6 +299,7 @@ Configuration is by environment, and every variable is optional — the defaults
 | `DAORIS_KNOWLEDGE_DB` | Where the index lives. Default: `$DAORIS_HOME/knowledge.db` |
 | `DAORIS_EMBED_MODEL` | Names an embedding model to **enable semantic search**. Unset = lexical only |
 | `DAORIS_EMBED_URL` | Embedding endpoint. Default: `http://localhost:11434` (Ollama) |
+| `DAORIS_EMBED_WINDOW` | The most characters one embedded text carries, the title included: the deployment's statement of its embedder's window (D123). A longer entry is embedded in pieces this long, each its own vector. Default: `2000`. Below `200`, or not a whole number, and a host refuses to start. Characters only approximate tokens, so leave margin for code and for 中文 |
 | `DAORIS_MODE` | HTTP host only: `local` (default) or `shared` — the team deployment (D47) |
 | `DAORIS_WORKSPACE` | HTTP host only: which circle a **shared** deployment serves (default: `default`). Refused on a local host, which holds every circle the machine wired |
 | `DAORIS_REMOTE_URL` / `DAORIS_REMOTE_KEY` | one workspace's remote, overriding the home's `remotes.json` **whole**; `DAORIS_REMOTE_WORKSPACE` names which circle the pair serves |
@@ -353,8 +354,14 @@ without touching the ones that are not.
 
 Choices worth knowing about:
 
+- **A long entry is embedded whole, in pieces** (D123). Each piece is at most `DAORIS_EMBED_WINDOW`
+  characters, led by the entry's title, cut at a paragraph where one falls in the window's latter half,
+  and reaching back a little into the piece before. Each is its own vector; a search names an entry
+  once, at its best piece, and a refresh says how many entries were split. Before, the tier embedded
+  the first 2,000 characters and dropped the rest without a word: a third of this repository's text.
 - **A hit carries an excerpt, and the excerpt is the entry's prose.** It is a window of the body
-  around the first matching term (or its opening, for a semantic hit that shares none), taken after
+  around the first matching term (or, for a semantic hit that shares none, the opening of the piece
+  that matched), taken after
   the frontmatter and with a heading's hashes, `**`, `__` and backticks dropped, so it reads as a
   sentence and never as the file's machinery. A lone `_` or `*` stays, since it may be part of an
   identifier. The frontmatter is still searched; only the window skips it.
