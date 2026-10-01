@@ -3,19 +3,19 @@ import { useTranslation } from 'react-i18next';
 import {
   usePickFolder, usePluginAction, usePluginInstall, usePluginNew, usePlugins, usePluginTry, usePluginUpdate,
 } from '../shell';
-import {
-  Button, Card, failure, Inline, type Notify, PathText, Pill, Prose, SettingRow, Tip, useErrorNotify,
-} from '../ui';
+import { Card, failure, Inline, type Notify, PathText, Prose, SettingRow, useErrorNotify } from '../ui';
 import { PluginKitCard, TrialReport, type KitPoint, type PluginTrialResult } from './PluginKit';
 import { PluginOffersCard } from './PluginOffers';
-import { PluginSourceLine, PluginUpdatePlan, updatable, type PluginUpdatePlanShown } from './PluginUpdate';
+import { PluginRow } from './PluginRow';
+import { PluginUpdatePlan, type PluginUpdatePlanShown } from './PluginUpdate';
 
 /**
  * This machine's plugins (D64): one row per folder under the home's `plugins/` — what it declares,
  * what it speaks on, whether it is running, and why it contributes nothing when it does not.
  *
  * **Two doors, one folder** (D50): the switch is a row in `plugins.json` that `daoris plugin
- * enable|disable` edits too, and Remove takes the install folder while naming what the plugin kept.
+ * enable|disable` edits too, and Remove, asked once (PLUG10), takes the install folder while naming what
+ * the plugin kept.
  * **No plugin code runs in this page** — a plugin's word reaches the console under `plugin:<id>`.
  *
  * A plugin that speaks can be tried where it stands (PLUG8): the shell starts it as the driver would and
@@ -51,14 +51,6 @@ export function PluginsDomain({ notify }: { notify: Notify }) {
       { id, data: result.data ?? '' })),
     onError: failure(notify),
   });
-
-  const what = (plugin: (typeof plugins)[number]) => {
-    const parts = [
-      plugin.harnesses.length > 0 ? t('plugin.declares', { harnesses: plugin.harnesses.join(', ') }) : null,
-      plugin.points.length > 0 ? t('plugin.speaks', { points: plugin.points.join(', ') }) : null,
-    ].filter(Boolean);
-    return parts.length > 0 ? parts.join('; ') : t('plugin.quiet');
-  };
 
   const tryInstalled = (id: string) => trying.mutate({ id }, {
     onSuccess: (trial) => setTrials((was) => ({ ...was, [id]: trial })),
@@ -103,73 +95,18 @@ export function PluginsDomain({ notify }: { notify: Notify }) {
       {plugins.length === 0 ? (
         <Prose className="mt-3 text-small"><Inline text={t('plugin.none')} /></Prose>
       ) : plugins.map((plugin) => (
-        <SettingRow
+        <PluginRow
           key={plugin.id}
-          label={(
-            <span className="flex flex-wrap items-center gap-2">
-              <span>{plugin.name}</span>
-              {plugin.version && <span className="font-mono text-small text-ink-faint">{plugin.version}</span>}
-              {plugin.running && <Pill tone="done">{t('plugin.running')}</Pill>}
-              {!plugin.enabled && <Pill tone="neutral">{t('plugin.off')}</Pill>}
-            </span>
-          )}
-          hint={(
-            <span className="flex flex-col gap-0.5">
-              {/* A refused plugin declares nothing BECAUSE it was refused — saying "declares nothing"
-                  above the sentence that says why would be the same fact twice, the second time
-                  wrong. Its sentence stands alone beneath. */}
-              {!plugin.problem && <span>{what(plugin)}{plugin.description ? ` — ${plugin.description}` : ''}</span>}
-              <span className="truncate font-mono text-meta">{plugin.folder}</span>
-              {/* Where it came from (PLUG9 c): an older shell sends nothing, and nothing is said. */}
-              <PluginSourceLine source={plugin.source} />
-            </span>
-          )}
-          control={(
-            <>
-              {/* A plugin that speaks can be tried; one that only declares runs nothing to try. */}
-              {kit && !plugin.problem && plugin.points.length > 0 && (
-                <Button
-                  variant="ghost"
-                  disabled={trying.isPending}
-                  aria-label={t('plugin.kit.tryNamed', { id: plugin.id })}
-                  onClick={() => tryInstalled(plugin.id)}
-                >
-                  {t('plugin.kit.try')}
-                </Button>
-              )}
-              {/* Only where there is a source to read: one with no record has nothing to update from. */}
-              {updatable(plugin.source) && (
-                <Button
-                  variant="ghost"
-                  disabled={updating.isPending}
-                  aria-label={t('plugin.update.askNamed', { id: plugin.id })}
-                  onClick={() => askUpdate(plugin.id)}
-                >
-                  {t('plugin.update.ask')}
-                </Button>
-              )}
-              <Button
-                variant="ghost"
-                disabled={act.isPending}
-                onClick={() => run(plugin.id, plugin.enabled ? 'disable' : 'enable')}
-              >
-                {t(plugin.enabled ? 'plugin.disable' : 'plugin.enable')}
-              </Button>
-              <Tip content={t('plugin.forgetTip')}>
-                <Button variant="ghost" disabled={act.isPending} onClick={() => run(plugin.id, 'remove')}>
-                  {t('plugin.forget')}
-                </Button>
-              </Tip>
-            </>
-          )}
+          plugin={plugin}
+          canTry={kit !== null}
+          trying={trying.isPending}
+          updating={updating.isPending}
+          acting={act.isPending}
+          onTry={tryInstalled}
+          onAskUpdate={askUpdate}
+          onSwitch={run}
+          onRemove={(id) => run(id, 'remove')}
         >
-          {/* The driver's own sentence, verbatim — a version this build does not speak, a
-              conflict naming both sides, a manifest that would not parse. Content, not chrome. */}
-          {plugin.problem && (
-            <p className="max-w-prose border-l-[3px] border-warn bg-page/60 px-3.5 py-2 text-body text-ink-soft">
-              <Inline text={plugin.problem} />
-            </p>
-          )}
           {trials[plugin.id] && <TrialReport trial={trials[plugin.id]!} />}
           {plans[plugin.id] && (
             <PluginUpdatePlan
@@ -179,7 +116,7 @@ export function PluginsDomain({ notify }: { notify: Notify }) {
               onCancel={() => putAway(plugin.id)}
             />
           )}
-        </SettingRow>
+        </PluginRow>
       ))}
     </Card>
     <PluginOffersCard offers={offers} busy={installing.isPending} onInstall={install} />

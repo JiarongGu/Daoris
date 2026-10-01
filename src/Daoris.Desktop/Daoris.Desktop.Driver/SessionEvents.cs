@@ -121,6 +121,21 @@ public sealed record SessionEvent
 
     public string? Status { get; init; }
 
+    /// <summary>
+    /// For a refused call (<see cref="Status"/> <c>refused</c>): the tool's own name, where the wire named one
+    /// (UNBLOCK5). The native door's refusal carries it (<c>tool_name</c>, such as <c>Bash</c>). The protocol
+    /// door's wire names a call's kind and title and never its tool, so its refusals carry none.
+    /// </summary>
+    public string? ToolName { get; init; }
+
+    /// <summary>
+    /// For a refused call: what decided it, in the wire's own word where it gave one (UNBLOCK5). The native
+    /// door's refusal carries <c>decision_reason_type</c> (<c>rule</c>, <c>mode</c>, <c>classifier</c>,
+    /// <c>asyncAgent</c>), never the reason's sentence. Null where the wire said nothing, as the protocol
+    /// door's permission request does not.
+    /// </summary>
+    public string? RefusedBy { get; init; }
+
     /// <summary>The files a tool call touched, as the wire named them.</summary>
     public IReadOnlyList<string>? Locations { get; init; }
 

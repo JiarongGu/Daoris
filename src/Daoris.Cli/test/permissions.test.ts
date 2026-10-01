@@ -49,14 +49,81 @@ function at(home: string): string {
   return join(home, PERMISSIONS_FILE);
 }
 
+/** What the `commit` default allows (PERM4), a rename among it (UNBLOCK4, D122 §3.6). */
+const COMMIT = ['Bash(cd:*)', 'Bash(git add:*)', 'Bash(git commit:*)', 'Bash(git mv:*)'];
+
+/** A push as written, and with options before its subcommand, which a `git push` rule does not stop (D122 §3.7). */
+const NO_PUSH = ['Bash(git push)', 'Bash(git push:*)', 'Bash(git -* push)', 'Bash(git -* push *)'];
+
+/**
+ * Whether a Bash rule matches a command, as the harness's maker documents it (Claude Code, permissions,
+ * "Wildcard patterns"): `*` is any text, spaces included; a trailing `:*` is a trailing ` *`; a trailing
+ * ` *` that is the rule's only wildcard also matches the bare command. A MODEL for the tables below, held
+ * to the maker's own rows — the driver's `BashRule` is its twin — and never the harness: the canary is.
+ */
+function matches(rule: string, command: string): boolean {
+  const shape = /^Bash\((.*)\)$/s.exec(rule);
+  if (!shape) return false;
+  let pattern = shape[1]!;
+  if (pattern.endsWith(':*')) pattern = `${pattern.slice(0, -2)} *`;
+  const escape = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const expression = pattern.split('*').length === 2 && pattern.endsWith(' *')
+    ? `${escape(pattern.slice(0, -2))}( .*)?`
+    : pattern.split('*').map(escape).join('.*');
+  return new RegExp(`^${expression}$`, 's').test(command);
+}
+
 // ——— The defaults.
+
+test('the Bash rule model keeps the rows the harness maker documents', () => {
+  const hits: [string, string][] = [
+    ['Bash(npm run build)', 'npm run build'], ['Bash(npm run *)', 'npm run'], ['Bash(npm run *)', 'npm run test --watch'],
+    ['Bash(git log * main)', 'git log -5 main'], ['Bash(git * main)', 'git -c core.fsmonitor=<script> diff main'],
+    ['Bash(* --version)', 'node --version'], ['Bash(ls *)', 'ls'], ['Bash(ls*)', 'lsof'], ['Bash(* --help *)', 'npm --help x'],
+    ['Bash(ls:*)', 'ls -la'], ['Bash(git push *)', 'git push origin main'],
+  ];
+  const misses: [string, string][] = [
+    ['Bash(npm run build)', 'npm run build --watch'], ['Bash(npm run *)', 'npm install'], ['Bash(git log * main)', 'git log main'],
+    ['Bash(git * main)', 'git log'], ['Bash(* --version)', 'node -v'], ['Bash(ls *)', 'lsof'], ['Bash(* --help *)', 'npm --help'],
+    ['Bash(git push *)', 'git -C . push origin main'], ['Bash(git push *)', 'git -c push.default=current push origin main'],
+    ['Bash(git push *)', "git 'push' origin main"],
+  ];
+  for (const [rule, command] of hits) assert.equal(matches(rule, command), true, `${rule} should match \`${command}\``);
+  for (const [rule, command] of misses) assert.equal(matches(rule, command), false, `${rule} should miss \`${command}\``);
+});
+
+// 🔴 UNBLOCK4: `git push …` alone let `git -C . push` through, and auto mode allows a push to the working
+// repository by default. The same forms as the driver's table, in the same order.
+test('a push in each form meets a deny rule the defaults compose, and a session\'s allowed work meets none', () => {
+  const fx = makeFixture('permissions-push-forms');
+  try {
+    const { deny } = composeRules(readPermissions(at(fx.root)), 'default', 'engine');
+    for (const push of [
+      'git push', 'git push origin main', 'git push --force origin main', 'git push -u origin feature/budget',
+      'git -C . push', 'git -C . push origin main', 'git -C /work/engine push --force',
+      'git -c push.default=current push', 'git -c push.default=current push origin main',
+      'git --git-dir=.git push origin main', 'git --no-pager push',
+    ]) {
+      assert.ok(deny.some((rule) => matches(rule, push)), `\`${push}\` meets none of: ${deny.join(', ')}`);
+    }
+    for (const work of [
+      'git add -A', 'git commit -m "Hold the push carve-out harder"', 'git mv docs/old.md docs/new.md', 'git status',
+      'git log --oneline -5', 'git -C /work/game status', 'git -C /work/game branch --list',
+      'git -C /work/game commit -m "Expose a streaming budget"',
+    ]) {
+      assert.equal(deny.some((rule) => matches(rule, work)), false, `\`${work}\` is refused`);
+    }
+  } finally {
+    fx.cleanup();
+  }
+});
 
 test('nothing written hands the defaults alone: the connector and a commit allowed, a push denied', () => {
   const fx = makeFixture('permissions-defaults');
   try {
     const rules = composeRules(readPermissions(at(fx.root)), 'default', 'engine');
-    assert.deepEqual(rules.allow, [...CONNECTOR, 'Bash(cd:*)', 'Bash(git add:*)', 'Bash(git commit:*)']);
-    assert.deepEqual(rules.deny, ['Bash(git push)', 'Bash(git push:*)']);
+    assert.deepEqual(rules.allow, [...CONNECTOR, ...COMMIT]);
+    assert.deepEqual(rules.deny, NO_PUSH);
     assert.deepEqual(rules.ask, []);
     // Rebuilding the index is the machine's job, never a session's.
     assert.equal(rules.allow.includes('mcp__daoris-knowledge__knowledge_refresh'), false);
@@ -98,13 +165,12 @@ test("a default's reason names no decision number", () => {
 test('a session may commit by default, and the person can switch that off', () => {
   const fx = makeFixture('permissions-commit');
   try {
-    const commit = ['Bash(cd:*)', 'Bash(git add:*)', 'Bash(git commit:*)'];
     const on = composeRules(readPermissions(at(fx.root)), 'default', 'engine');
-    for (const rule of commit) assert.ok(on.allow.includes(rule), rule);
+    for (const rule of COMMIT) assert.ok(on.allow.includes(rule), rule);
     assert.ok(on.deny.includes('Bash(git push:*)'));
 
     const off = composeRules(switchDefault(readPermissions(at(fx.root)), 'commit', false), 'default', 'engine');
-    for (const rule of commit) assert.equal(off.allow.includes(rule), false, rule);
+    for (const rule of COMMIT) assert.equal(off.allow.includes(rule), false, rule);
   } finally {
     fx.cleanup();
   }

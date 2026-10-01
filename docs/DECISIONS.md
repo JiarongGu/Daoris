@@ -3633,6 +3633,14 @@ should act without asking, with the harness's own judgement in place of a list.
 - **Growing the handed allow-list command by command.** That is what FG5 was doing, one proposal
   per refusal, and it never catches up with a real repository's tooling.
 
+**Amended 2026-10-01 (UNBLOCK4, D122 §3.7): "no push by default" held in the classifier as well.** The rules
+handed at spawn did not keep what this decision said they kept. `no-push` denied `git push …` as written, the
+harness matches a rule against the command as written, and auto mode's classifier allows a push to the working
+repository by default. So `git -C . push` passed both (DOC1's finding, from the maker's documentation). The spawn
+file now tells the classifier, as a hard denial after its own `"$defaults"`, that a push in any form, a publish and
+a release are the person's, and `no-push` denies a push with options before its subcommand on both doors. D122's
+note has the whole account. What this door's classifier does with it is the owner's canary to show.
+
 ## D82 — A chain's next step in the same repository starts on the branch the step before landed on (2026-09-27)
 
 **Decision.** When a quest is a chain's next step (D65 §4) and its parent's last session on this
@@ -4111,6 +4119,15 @@ page writes no line for it. No event of its own was added for a look: it is a st
 still written, by its press or its Not now, and a look that found nothing to do settled the card and is written as
 any Apply is. And `tools/usage-report.mjs` summarises LEFT2's `preview.opened` under what was used most: how many
 previews, in how many sessions, and of what kind by extension, never the path.*
+
+*Amended by UNBLOCK5 (2026-10-01, D122 §3.10): the catalogue gains `permission.refused` {session, adapter, tool,
+kind, by}, one line per call a session's record marks `refused`, the first time: on the protocol door a call whose
+permission request the driver refused (D52), on the native door a call the harness reported denied
+(`permission_denied`, and the result's `permission_denials`). `tool` and `by` are the wire's identifiers where it
+gives them (only the native door does) and null otherwise, and a value that is not an identifier is written as null,
+so the line carries no command. The usage report gains asks per session by adapter and repository, and the rule
+proposals under `proposals/` by the week they were made and their state, counted from the files and printing none of
+their words. The machine-log design's §4 and §6 say, as built, what each reads.*
 
 ## D95 — A quest nobody has started on can be deleted, and the delete travels as an operation (2026-09-30)
 
@@ -6325,6 +6342,42 @@ repository were read from its files: the canon's rules and skills, `Acp.cs`, `Ad
 2026-10-01 and cited in design §9, or LAYOUT2's reading of their shipped code; none was measured on a turn. The
 account of what AR-2201's sessions read is the parent's, recorded in no tracked document. `verify` checks this
 entry's shape and the design's links and budget, and none of their words.
+
+**Built 2026-10-01 (UNBLOCK4): the carve-outs held harder, and `git mv`.** Point 7 and the `commit` half of point 4,
+as design §3.6 and §3.7 say, with one addition.
+- **`commit` gains `Bash(git mv:*)`**, in both defaults tables (`Permissions.cs`, `permissions.ts`), held together by
+  the test that reads the CLI's source. This amends D72's `commit` default.
+- **The spawn file carries `autoMode.hard_deny`** while `no-push` is on: `"$defaults"`, then the sentence the design
+  wrote. `SpawnSettings.Write` puts `"$defaults"` first whatever it is handed, and takes the list as a required
+  argument, so no spawn on either door forgets to say. `no-push` switched off hands no `autoMode` key at all. The
+  sentence rides the `no-push` default in the driver's table (`HardDeny`), and has no twin in the CLI's, which
+  writes no spawn file. This amends D72's composed file.
+- **The addition: `no-push` denies a push with options before it**, as `Bash(git -* push)` and `Bash(git -* push
+  *)`. The maker's rule syntax puts a `*` anywhere, and only an allow with one before the subcommand draws its
+  warning. So the forms the maker names as passing a `git push` rule (`git -C . push`, `git -c <key>=<value> push`)
+  and their cousins (`--git-dir`, `--no-pager`) are refused structurally, on the pipe door too, before any
+  classifier. What no rule can name, a quoted subcommand, an alias, a path to git or a shell running it, is left to
+  the classifier's entry, and on the pipe door nothing allows it.
+- **Rejected**: listing each option (`git -C * push`, `git -c * push`, …), which misses the next one; `Bash(git *
+  push *)`, which also refuses any commit whose message says *push* as a word before another; and leaving the pipe
+  door to the rule that nothing else allows a push, which holds only until a person or a trusted repository allows
+  `git` broadly. **The price, stated**: `git -C <dir> commit -m "…"` with *push* as a word before another is refused,
+  and a session rewords or commits from inside the tree.
+- **Proven, and not.** Keylessly: the composed file on both doors (the fast half's `PermissionRulesTests`, and the
+  real-tick `PermissionSpawnTests` for the pipe and protocol doors), and which form meets a deny, by a model of the
+  maker's matching that `BashRuleTests` holds to the maker's own rows, with the same forms in `permissions.test.ts`.
+  Unproven until the owner's canary: that the harness matches the option-first rules as its documentation says, and
+  that the classifier reads `autoMode` from this file on the protocol door and refuses `git -C . push`.
+
+*UNBLOCK5 built point 8's `permission.refused` (2026-10-01), so asks are counted from here on, before any
+declaration lands. The line has a fifth field beside the design's four, `by`, what decided the refusal, because the
+pipe door's documented frame carries it (`decision_reason_type`: `rule`, `mode`, `classifier`, `asyncAgent`) and it
+separates a refusal working as designed (a deny rule) from one declared work should remove; the protocol door's is
+null, as its `tool` is, since its wire names neither. The pipe door's frames are written from the Agent SDK's
+TypeScript reference (`SDKPermissionDeniedMessage`, `SDKPermissionDenial`) and labelled so in the tests: no turn has
+shown them yet. A subagent's refusal is not counted on either door, since its calls run beside the session
+(CONSOLE3c). The usage report gives asks per session by adapter and repository, and the rule proposals by week and
+state. `session.read` and `session.skill` stay DOC7's. The machine-log design's §4 and §6 say what was built.*
 ## D121 — Every tool Daoris runs is the system's, managed, or a file the person names; a list built in says where each version downloads, and more locations extend it without a release (2026-10-01)
 
 **Decision (TOOLS1).** The owner: *"all tools that daoris using like git, [terminal] should all have a self managed
