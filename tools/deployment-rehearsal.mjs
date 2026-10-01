@@ -66,8 +66,8 @@ import {
 } from './rehearsal-kit.mjs';
 // The install's layout, from the script that makes it (REV3 CLEAN1) — never a second spelling of it.
 import {
-  HOME, HOST_EXE, HOST_HOME, KEPT_LOCALES, LAUNCHER, OFFERED_PLUGINS, OWN, PLUGIN_OFFERS, RETIRED_BROWSER_EXE, RETIRED_IN_APP,
-  RETIRED_LAUNCHERS, SHELL_EXE, SHELL_FILES, SHELL_HOME,
+  HOME, HOST_EXE, HOST_HOME, KEPT_LOCALES, LAUNCHER, OFFERED_PLUGINS, OWN, PLUGIN_OFFERS, RESOURCES, RETIRED_BROWSER_EXE,
+  RETIRED_IN_APP, RETIRED_LAUNCHERS, SHELL_EXE, SHELL_FILES, SHELL_HOME,
 } from './desktop-publish.mjs';
 
 // ---------------------------------------------------------------------------------------------
@@ -540,8 +540,9 @@ async function main() {
   const recorded = existsSync(join(install, ...SHELL_FILES))
     ? readFileSync(join(install, ...SHELL_FILES), 'utf8').split('\n').filter(Boolean).sort()
     : [];
-  // Beside the application's own files: the host, the record itself, and the offers (PLUG9 d).
-  const besideIt = [HOST_HOME.at(-1), SHELL_FILES.at(-1), PLUGIN_OFFERS.at(-1)];
+  // Beside the application's own files: the host, the record itself, the offers (PLUG9 d), and the list
+  // built in (TOOLS3), which the publish lays out after the application's files.
+  const besideIt = [HOST_HOME.at(-1), SHELL_FILES.at(-1), PLUGIN_OFFERS.at(-1), RESOURCES.at(-1)];
   check(`…and ${SHELL_FILES.join('/')} names every file the application put there, and nothing else`,
     recorded.includes(SHELL_EXE)
       && recorded.join() === inApp.filter((name) => !besideIt.includes(name)).sort().join(),

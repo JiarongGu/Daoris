@@ -21,8 +21,8 @@ lists.
 
 ## State
 
-**Counts, and this is their one home:** sixteen commands, **784 CLI tests, 778 service and 47 HTTP host, 1786 driver,
-466 desktop modules, 80 devkit, 1911 web unit, 21 Playwright**, 92/92 release rehearsal, **312/312
+**Counts, and this is their one home:** seventeen commands, **835 CLI tests, 778 service and 47 HTTP host, 2001 driver,
+466 desktop modules, 80 devkit, 1988 web unit, 21 Playwright**, 92/92 release rehearsal, **312/312
 family rehearsal** (it names its own phases when you run it), **70/70 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 5 knowledge
 documents, 5 skills, 7 packs. The always-loaded core is **22,672 of 26,000 bytes** — a span in
@@ -132,8 +132,8 @@ rather than designed.
 
 ## Backlog
 
-**Seventy-one rows are open** (most of them the builds of the designs below) (triaged 2026-09-30, when the owner asked to go faster; 2026-10-01 after the night's merges, the look, and the owner's round):
-- **Merging next:** TOOLS2, TOOLS3 and FRAME1b. **Building:** FRAME1c, DOC3 (with DOC2), SHEN2 and LYN1; Daoris.Plugins' own session on PLUGREPO2d.
+**Sixty-eight rows are open** (most of them the builds of the designs below) (triaged 2026-09-30, when the owner asked to go faster; 2026-10-01 after the night's merges, the look, and the owner's round):
+- **Merging next:** FRAME1c, PLUGUI1b, FRAME1g, DOC2 and DOC3, SHEN2 and LYN1. **Building:** FRAME1d, PLUGUI1d, TOOLS4; Daoris.Plugins' own session on PLUGREPO2d.
 - **Designed, to build in order:** DEV2–DEV11 (D115); FRAME1b–i (D118) after NAME1b; PLUGUI1 after FRAME1c;
   LAYOUT3–LAYOUT10 (D117) after LAYOUT2's evidence.
 - **Waiting on the owner (five):** BUDGET1 (their call), TRUST2 and AGT2c (a grant, two
@@ -188,8 +188,6 @@ install in both themes and both languages.
   live, Data folder, Source, *Install from a folder…*.
 - [ ] **PLUGUI1g — a plugin's checks** (after f): the last trial kept, its own tests run in a copy under the home.
 - [ ] **PLUGUI1h — Ask Daoris reaches the Plugins view** (after c and FRAME1i).
-- [ ] **FRAME1b — the list pane, Sessions' first** (D118, model §6): `ListPane`, `StripMark`, `listKeys`,
-  per-view bounds, strip by room, the laid-over mode; Sessions' rail moves onto it. Look: 1280, 900, 680 px.
 - [ ] **FRAME1c — the main area and the view contract**: `ViewMain`, per-view memory, `open(view, item?)`,
   container queries in Overview, Projects and Map, loading states, drawers above a full side bar.
 - [ ] **FRAME1d — Quests on the frame**: asks and quests in the list, a record in the main area, composers
@@ -279,9 +277,6 @@ The contract is `docs/2026-10-01-tools-design.md`; §7 carries each row's full t
 TOOLS3 → TOOLS4, then TOOLS5 ∥ TOOLS6, then TOOLS7 ∥ TOOLS8, then TOOLS9; TOOLS10 before any session runs a
 managed git; TOOLS11 last.
 
-- [ ] **TOOLS2 — `tools.json` and its resolution, twins** (§2.1–§2.3, §5): the three ways; `daoris tool list|path|use`.
-- [ ] **TOOLS3 — the resource list and its merge, twins** (§3.1–§3.5): `resources.json` built in; the first entries
-  read from the makers' own pages and sums into an evidence document.
 - [ ] **TOOLS4 — download, verify, unpack, lay out** (§3.6, §3.7): staging, hashes, `daoris tool download|update|…`.
 - [ ] **TOOLS5 — one answer for every child** (§2.4, §2.6, §2.7): git, hooks, npm, the tree guard's node, the terminal.
 - [ ] **TOOLS6 — what Daoris's git carries** (§2.5): the allow-list from `core.sshCommand`, `GIT_CONFIG_GLOBAL` with
