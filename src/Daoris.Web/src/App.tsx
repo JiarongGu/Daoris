@@ -18,6 +18,7 @@ import { LAYOUT_KEYS, type LayoutRegion, LayoutToggles } from './work/LayoutTogg
 import { frameShortcut } from './shortcuts';
 import { focusRegion } from './work/regions';
 import type { StarterDoor } from './help/starters';
+import { askItem, doorOpening, type Opening, type OpenPart, opening as plannedOpening } from './opener';
 import { WorkspaceSwitcher } from './WorkspaceSwitcher';
 import {
   Button, Drawer, failure, Icon, LanguageSwitcher, Prose, SESSION_ACTIVE, Tip, Toasts,
@@ -331,26 +332,32 @@ export function App() {
     onError: failure(notify),
   });
 
-  const setView = (next: Tab) => {
-    setTab(next);
-    store(VIEW, next === 'sessions' ? 'sessions' : null);
-  };
-
   /**
-   * Settings, open at one domain (D75). Every way in names the domain its fact is set in: the tier
-   * opens Daoris's own AI, the remote opens Workspace, the driver opens Driver. Before this each one
-   * opened the whole page at its top.
+   * **The application's one opener** (D118 §3i): every door into a view calls it, naming the item it opens,
+   * and the view's list has that item chosen (§3f). `opener.ts` plans it as a value; this applies it.
+   * Settings opens at the domain a door names, at the part it names (D75, UX5 U72): the tier opens Daoris's
+   * own AI, the remote Workspace, the driver Driver, where each once opened the whole page at its top.
    */
+  const apply = (plan: Opening) => {
+    if (plan.chosen) lists.choose(plan.chosen.view, plan.chosen.item);
+    if (plan.quest) setQuestFocus(plan.quest);
+    if (plan.ask) setAskFocus(plan.ask);
+    if (plan.anchor !== undefined) setSettingsAnchor(plan.anchor);
+    if (plan.drawer === 'add') setAddRequested(true);
+    if (plan.drawer === 'import') setImportRequested(true);
+    // A list laid over the main area is never kept: another view lets it go (§3f).
+    if (plan.view !== view) closings.setListOver(false);
+    setTab(plan.view);
+    store(VIEW, plan.view === 'sessions' ? 'sessions' : null);
+  };
+  const open = (target: View, item?: string | null, part?: OpenPart) => apply(plannedOpening(target, item, part));
+
+  /** A domain chosen in Settings' own list opens at its top: an anchor its part never answered is dropped. */
   const chooseSettings = (section: SettingsSection) => {
     lists.choose('settings', section);
-    // A domain chosen from the list opens at its top: an anchor its part never answered is dropped.
     setSettingsAnchor(null);
   };
-  const openSettings = (section: SettingsSection, anchor?: SettingsAnchor) => {
-    chooseSettings(section);
-    setSettingsAnchor(anchor ?? null);
-    setView('settings');
-  };
+  const openSettings = (section: SettingsSection, anchor?: SettingsAnchor) => open('settings', section, { anchor });
 
   // The setup guide (SETUP1b, D97), from the reading Ask Daoris's starters share: the status bar's count
   // until the required steps are done, and Get started opened once at start on a machine missing any of
@@ -381,10 +388,10 @@ export function App() {
     switch (action.kind) {
       case 'settings': openSettings(action.section, action.anchor); return;
       case 'scope': scope.setWorkspace(action.workspace); return;
-      case 'add': setAddRequested(true); setView('projects'); return;
+      case 'add': open('projects', null, { drawer: 'add' }); return;
       // `daoris import <folder> --workspace <name>`'s screen door (D77): the drawer chooses the folder
       // and names the workspace, and the service's sentence says what it registered.
-      case 'import': setImportRequested(true); setView('projects'); return;
+      case 'import': open('projects', null, { drawer: 'import' }); return;
       case 'refresh': onRefresh(); return;
       case 'language': void i18n.changeLanguage(i18n.language.startsWith('zh') ? 'en' : 'zh'); return;
       case 'about': setAbout(true); return;
@@ -437,26 +444,16 @@ export function App() {
   // A door from a record into the session itself. The selection lives here rather than inside the
   // view precisely so a door can name which session it is opening (D55: one selection, every
   // region) — the view change alone would land the person on whatever they last attended.
-  const openInWork = (session: string) => {
-    setAttending(session);
-    setView('sessions');
-  };
-
+  const openInWork = (session: string) => open('sessions', session);
+  // A quest's record and an ask's, where quests are read: an ask is named as one, since Quests' list holds both.
+  const openQuest = (id: string) => open('quests', id);
   // A row in Overview's band is a door into whatever is waiting, wherever that exists. A parked
   // session opens in Sessions, which only a shell has. An ask opens its record, where it is answered
   // (INT4d), and a quest nobody can take opens its own drawer. Both of those a browser has too.
-  const openAsk = (id: string) => { setAskFocus(id); setView('quests'); };
-  // Where a starter's or a setup step's door leads (HELP1d, SETUP1a): a domain of Settings at the part it
-  // names, a view, or one of the Workspace menu's drawers, opened on Projects as the menu opens them.
-  const go = (door: StarterDoor) => {
-    if (door.view === 'settings' && door.section) {
-      openSettings(door.section, door.anchor);
-      return;
-    }
-    if (door.drawer === 'add') setAddRequested(true);
-    if (door.drawer === 'import') setImportRequested(true);
-    setView(door.view);
-  };
+  const openAsk = (id: string) => open('quests', askItem(id));
+  // Where a starter's, a setup step's or Ask Daoris's door leads (HELP1d, SETUP1a, HELP6): a view and the item
+  // it names, a domain of Settings at the part it names, or one of the Workspace menu's drawers on Projects.
+  const go = (door: StarterDoor) => apply(doorOpening(door));
   // What Ask Daoris is handed wherever it stands: what is on the screen (HELP1b) — the view, the scope,
   // the settings domain on Settings, and the attended session on Sessions — and its two ways out.
   const askProps = {
@@ -480,7 +477,7 @@ export function App() {
     ...(attached ? { parked: (item) => openInWork(item.id) } : {}),
     proposal: (item) => openAsk(item.id),
     intake: (item) => openAsk(item.id),
-    unanswerable: (item) => { setQuestFocus(item.id); setView('quests'); },
+    unanswerable: (item) => openQuest(item.id),
     // A folder waiting on the person's trust (D73) opens the question itself. Only a shell has one.
     ...(attached ? { trust: (item) => item.trust && setTrusting(item.trust) } : {}),
     // An agent's proposal to widen the rules (PERM2) opens the rules it would change, where it is
@@ -502,8 +499,8 @@ export function App() {
       <ViewMain>
         {view === 'overview' && (
           <OverviewView
-            onNavigate={setView}
-            onOpenQuest={(id) => { setQuestFocus(id); setView('quests'); }}
+            onNavigate={(target) => open(target)}
+            onOpenQuest={openQuest}
             doors={attentionDoors}
             notify={notify}
           />
@@ -534,8 +531,8 @@ export function App() {
         {view === 'map' && (
           <MapView
             notify={notify}
-            onOpenConvergence={() => setView('convergence')}
-            onOpenQuest={(id) => { setQuestFocus(id); setView('quests'); }}
+            onOpenConvergence={() => open('convergence')}
+            onOpenQuest={openQuest}
           />
         )}
         {view === 'convergence' && (
@@ -546,7 +543,7 @@ export function App() {
             onOpen={setReadingId}
             notify={notify}
             semantic={status.data?.semantic ?? false}
-            onConverge={() => setView('convergence')}
+            onConverge={() => open('convergence')}
           />
         )}
         {view === 'settings' && (
@@ -698,7 +695,7 @@ export function App() {
           // Settings is everywhere now (D66) — a browser has appearance to set, if nothing of a machine.
           end={[{ tab: 'settings', label: t('nav.settings'), icon: 'settings' }]}
           active={view}
-          onSelect={setView}
+          onSelect={(target) => open(target)}
           // The list's fourth door (D118 §3a): the place you are on, pressed again, toggles its list.
           onToggleCurrent={listed ? () => { toggleRegion('list'); } : undefined}
           footer={(
@@ -736,12 +733,12 @@ export function App() {
               // this goes to the composer rather than growing a second one here.
               onSendBack={(repository) => {
                 setOpening({ from: repository });
-                setView('quests');
+                open('quests');
               }}
               // A parked intake's answer is on its ask (INT4g): the same door the band's ask rows use.
               onAnswerAsk={openAsk}
               // A quest on the chain, or one the session asked (SESS1), opens where quests are read.
-              onOpenQuest={(id) => { setQuestFocus(id); setView('quests'); }}
+              onOpenQuest={openQuest}
               // Ask Daoris as a view of the frame's regions: one right region, never a second column.
               ask={<AskDaoris {...askProps} framed={false} opening={helpOpening} onOpened={() => setHelpOpening(null)} />}
               askFocus={helpFocus}
@@ -752,7 +749,7 @@ export function App() {
               onListMode={setListMode}
               placements={placements}
               layout={view === 'sessions' ? undefined : renderView()}
-              onOpenSessions={() => setView('sessions')}
+              onOpenSessions={() => open('sessions')}
             />
           )
           : (
@@ -805,7 +802,7 @@ export function App() {
               // The pass is the shell's (D50): a browser reads where the circle stands and is not
               // offered a button that could not run it.
               onSyncNow={attached ? () => onSyncNow(circle) : undefined}
-              onOpenQuest={(id) => { setQuestFocus(id); setView('quests'); }}
+              onOpenQuest={openQuest}
               // Named for the part (NAME1b, UX5 U72), so it opens at Wiring, as *Wire to a remote…* does.
               onRemotes={attached ? () => openSettings('workspace', 'wiring') : undefined}
             />
@@ -821,8 +818,8 @@ export function App() {
            the target itself rather than making every caller remember to. */
         onDriver={() => openSettings('driver')}
         onRemote={() => openSettings('workspace')}
-        onSessions={attached ? () => setView('sessions') : undefined}
-        onIndex={() => setView('projects')}
+        onSessions={attached ? () => open('sessions') : undefined}
+        onIndex={() => open('projects')}
         // Settings holds Daoris's own AI (AGT6) in a browser too, so the tier leads there everywhere.
         onTier={() => openSettings('ai')}
         // Where the setup is done (SETUP1b): absent in a browser, and once the required steps are.
@@ -872,12 +869,12 @@ export function App() {
           group: (id) => t(`palette.group.${id}`),
           attached,
           current: view,
-          go: setView,
+          go: (target) => open(target),
           refresh: onRefresh,
           toggleLanguage: () => void i18n.changeLanguage(
             i18n.language.startsWith('zh') ? 'en' : 'zh'),
-          startSession: () => { setView('sessions'); setWorkIntent('start'); },
-          review: () => { setView('sessions'); setWorkIntent('review'); },
+          startSession: () => { open('sessions'); setWorkIntent('start'); },
+          review: () => { open('sessions'); setWorkIntent('review'); },
           // The second screen (SURF8). Opening a window is the shell's act, so both of these are
           // absent in a browser by the same omission every other shell-only command uses.
           monitor: () => openWindow.mutate(MONITOR_WINDOW),
@@ -886,7 +883,7 @@ export function App() {
             ? () => openWindow.mutate(sessionWindowName(attending))
             : undefined,
           // Asking lives at the head of Quests (INT4c); the palette goes there and opens the composer.
-          ask: () => { setView('quests'); setAsking(true); },
+          ask: () => { open('quests'); setAsking(true); },
           help: openHelp,
           quickAsk: () => askQuickly(),
           setup: () => openSettings('start'),

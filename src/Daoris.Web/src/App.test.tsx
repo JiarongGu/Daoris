@@ -410,6 +410,76 @@ describe('the views, in a browser', () => {
 });
 
 /**
+ * D118 §3i: every door into a view names the item it opens, through the application's one opener, and the
+ * view's list remembers it as its chosen item (§3f) — a quest's, an ask's, a domain's. Until Quests has its
+ * list and main area (FRAME1d) the record still opens in its drawer, as each door asks.
+ */
+describe('every door names its item', () => {
+  const QUEST = {
+    id: '5e7a11', from: 'game', to: 'engine', title: 'Read the media field names from config',
+    body: 'the names are hard-coded.', status: 'Open', filed: '2026-09-01T00:00:00Z', updated: '2026-09-01T00:00:00Z',
+  };
+  beforeEach(() => {
+    fetchMock = vi.fn(async (input: RequestInfo | URL) => respond(String(input)));
+    vi.stubGlobal('fetch', fetchMock);
+  });
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    QUESTS = [];
+    ASKS = [];
+    SYNC = { workspace: 'default', wired: false, ahead: 0, behind: [], conflicts: [] };
+    window.localStorage.clear();
+  });
+
+  it("Overview's outstanding row opens its quest, and Quests' list has it chosen", async () => {
+    QUESTS = [QUEST];
+    shell();
+    await userEvent.click(await screen.findByRole('button', { name: /Read the media field names from config/ }));
+
+    expect(await screen.findByRole('dialog', { name: 'Read the media field names from config' })).toBeInTheDocument();
+    expect(window.localStorage.getItem('daoris.list.quests.chosen')).toBe('5e7a11');
+  });
+
+  it("What needs you's ask row opens the ask, chosen as an ask", async () => {
+    ASKS = [{
+      id: '7c1e9a04b2d5', workspace: 'default', sentence: 'Cap the hydration per frame.', state: 'Proposed',
+      tier: 'declarations', asked: '2026-09-21T08:00:00Z', updated: '2026-09-21T08:00:00Z',
+      links: [], attachments: [], quests: [], proposal: [{ repository: 'engine', score: 3, matched: ['frame'] }],
+    }];
+    shell();
+    await userEvent.click(await screen.findByRole('button', { name: /Cap the hydration per frame\./ }));
+
+    expect(await screen.findByRole('dialog', { name: 'Cap the hydration per frame.' })).toBeInTheDocument();
+    expect(window.localStorage.getItem('daoris.list.quests.chosen')).toBe('ask:7c1e9a04b2d5');
+  });
+
+  it("the status bar's conflict opens its quest, chosen", async () => {
+    SYNC = {
+      workspace: 'aurora', wired: true, ahead: 0, behind: [], conflicts: ['5e7a11'],
+      synced: '2026-09-24T10:00:00Z', tried: '2026-09-24T10:00:00Z', problem: null,
+    };
+    QUESTS = [{ ...QUEST, workspace: 'aurora' }];
+    shell('aurora');
+    const user = userEvent.setup();
+    (await screen.findByRole('button', { name: 'sync' })).focus();
+    await user.keyboard('{Enter}');
+    await user.keyboard('{Enter}');
+
+    expect(await screen.findByRole('dialog', { name: 'Read the media field names from config' })).toBeInTheDocument();
+    expect(window.localStorage.getItem('daoris.list.quests.chosen')).toBe('5e7a11');
+  });
+
+  it("the status bar's tier opens Settings at Daoris's own AI, chosen in its list", async () => {
+    shell();
+    await userEvent.click(await screen.findByRole('button', { name: 'recall' }));
+
+    const domains = await screen.findByRole('navigation', { name: 'Settings domains' });
+    expect(within(domains).getByRole('button', { name: 'AI features' })).toHaveAttribute('aria-current', 'page');
+    expect(window.localStorage.getItem('daoris.settings')).toBe('ai');
+  });
+});
+
+/**
  * *What needs you* (design §4). It is service data, so a browser sees it — knowing is the half
  * that travels — but the doors into Work are not offered where Work does not exist.
  */
