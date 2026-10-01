@@ -501,7 +501,8 @@ public static class SpawnSettings
                     ["hooks"] = new JsonArray(new JsonObject
                     {
                         ["type"] = "command",
-                        ["command"] = "node",
+                        // The node Tools resolves, by its whole path (TOOLS5): the guard runs on the person's choice.
+                        ["command"] = guard.Node,
                         // The declared write targets follow the tree, one argument each (D107).
                         ["args"] = new JsonArray([guard.Script, guard.Tree, .. guard.Also.Select(also => (JsonNode)also)]),
                         ["timeout"] = 30,

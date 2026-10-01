@@ -159,7 +159,18 @@ public static partial class PluginKit
         Directory.CreateDirectory(root);
         Directory.CreateDirectory(entry.Data);
 
-        var info = HookProcess.StartInfo(entry, home);
+        ProcessStartInfo info;
+        try
+        {
+            info = HookProcess.StartInfo(entry, home);
+        }
+        catch (DriverException error)
+        {
+            // A first word whose tool cannot run as the person chose (TOOLS5): the driver would refuse it the same way.
+            steps.Add(new("start", false, $"{error.Message} So the driver would not start it either."));
+            return Trial();
+        }
+
         if (options.Frame is null)
         {
             info.Environment["GIT_DIR"] = Path.Combine(root, ".git");

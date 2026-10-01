@@ -25,7 +25,7 @@
 // which imports this module.
 
 import { existsSync, statSync } from 'node:fs';
-import { join } from 'node:path';
+import { delimiter, dirname, join } from 'node:path';
 import { DaorisError } from './errors.ts';
 import { onPath, readJsonObject, writeJsonAtomic } from './fsx.ts';
 
@@ -502,6 +502,158 @@ export function removeLocation(home: string, address: string): boolean {
 /** How a way reads in a sentence, for the verb (`toolinstall.ts`). */
 export function wayWords(way: ToolWay): string {
   return WAY_WORDS[way];
+}
+
+// ——— One answer for Daoris and every child (TOOLS5, D121 §2.4) ———————————————————————————————————————
+//
+// 🔴 A TWIN of the driver's `Tools.Children.cs` (`Folders`, `ChildPath`, `ChildEnvironment`, `Hand`,
+// `ResolveCommand`), held by `tools-children.test.ts` and `ToolsChildrenTests`, row for row:
+//   - a child's PATH is the folders of each tool that is managed or a named file, in the declared order, then the
+//     PATH it inherited; a managed version's are its record's `paths` inside the package (`.` is the package), or
+//     the folder its `exe` is in; a named file's is its folder; a way that refuses puts nothing first;
+//   - with every tool the system's the environment is the inherited one exactly: nothing is set;
+//   - a command's first word a tool answers for is that tool's: its own name is the resolved file, another it
+//     answers for (`npm`, `npx`) is found beside it and never on PATH when the tool is managed or a file.
+// Still pure: `toolchain.ts`, the one module that spawns, hands every child its environment through here.
+// `GIT_CONFIG_GLOBAL` is TOOLS6's, and joins `childEnvironment` with the file it names.
+
+/** The variable a child's PATH is. */
+export const PATH_VARIABLE = 'PATH';
+
+/**
+ * The key an environment holds a variable under: on Windows whichever spelling it has (`Path`, `PATH`), since
+ * Windows reads names in any case and a copy of `process.env` keeps the system's own spelling.
+ */
+export function variableKey(env: Env, name: string): string {
+  if (process.platform !== 'win32') return name;
+  return Object.keys(env).find((key) => key.toUpperCase() === name.toUpperCase()) ?? name;
+}
+
+/**
+ * The folders one tool puts first on a child's PATH: a managed version's, or a named file's; none for the system's,
+ * and none for a way that refuses.
+ */
+export function toolFolders(read: ToolsRead, home: string, id: string): string[] {
+  const tool = declaredTool(id);
+  if (!tool) throw new DaorisError(undeclared(id));
+  const entry = read.entries[id]!;
+  if (entry.problem !== null) return [];
+
+  if (entry.way === 'file') return isFile(entry.file!) ? [dirname(entry.file!)] : [];
+  if (entry.way !== 'managed') return [];
+  if (managedFile(home, tool, entry.version!).file === null) return [];
+
+  const version = join(home, TOOLS_FOLDER, id, entry.version!);
+  const pkg = join(version, TOOL_PACKAGE);
+  return recordPaths(join(version, TOOL_RECORD)).map((path) => (path === '.' ? pkg : join(pkg, ...path.split('/'))));
+}
+
+/** A downloaded version's folders for PATH, from its record: its `paths` when they name folders inside, else its `exe`'s folder. */
+function recordPaths(record: string): string[] {
+  const { value } = readJsonObject(record);
+  const named = value?.paths;
+  if (Array.isArray(named) && named.length > 0
+    && named.every((path) => typeof path === 'string' && (path === '.' || isInsidePath(path)))) {
+    return named as string[];
+  }
+  const exe = typeof value?.exe === 'string' ? value.exe : '';
+  const at = exe.lastIndexOf('/');
+  return [at < 0 ? '.' : exe.slice(0, at)];
+}
+
+/**
+ * The PATH a child of Daoris starts with: every managed or named tool's folders, in the declared order, then
+ * `inherited`. Null when no tool puts a folder there, so the child's is the inherited one exactly. An empty
+ * inherited PATH adds no empty folder.
+ */
+export function childPath(read: ToolsRead, home: string, inherited: string | null | undefined): string | null {
+  const folders = TOOLS.flatMap((tool) => toolFolders(read, home, tool.id));
+  if (folders.length === 0) return null;
+  if (inherited) folders.push(inherited);
+  return folders.join(delimiter);
+}
+
+/** What a child's environment takes over the one it inherited: PATH when a tool puts a folder first, else nothing. */
+export function childEnvironment(read: ToolsRead, home: string, inheritedPath: string | null | undefined): Record<string, string> {
+  const path = childPath(read, home, inheritedPath);
+  return path === null ? {} : { [PATH_VARIABLE]: path };
+}
+
+/**
+ * A copy of `env` with the tools' environment over it, read now from `home`'s file. No home changes nothing. On
+ * Windows a variable keeps the spelling `env` holds it under, so a child is never handed both `Path` and `PATH`.
+ */
+export function handTools(env: Env, home: string | null): Env {
+  if (home === null) return env;
+  const variables = Object.entries(childEnvironment(readTools(home), home, env[variableKey(env, PATH_VARIABLE)]));
+  if (variables.length === 0) return env;
+  const handed = { ...env };
+  for (const [name, value] of variables) handed[variableKey(env, name)] = value;
+  return handed;
+}
+
+/**
+ * Which file starts for a command's first word, or null when no tool answers for it and the caller's own resolver
+ * decides. The tool's own name is `resolveFrom`'s answer; another name it answers for is found beside the tool's
+ * file, by PATHEXT, and a managed or named tool never lends PATH's.
+ */
+export function resolveCommand(read: ToolsRead, home: string, name: string, env: Env = process.env): ToolResolution | null {
+  const tool = TOOLS.find((each) => each.answers.includes(name));
+  if (!tool) return null;
+
+  const resolution = resolveFrom(read, home, tool.id, env);
+  if (name === tool.answers[0] || resolution.refused) return resolution;
+
+  if (resolution.way === 'system') {
+    const found = onPath(name, { env, startable: true });
+    return found
+      ? { ...resolution, file: found, problem: null }
+      : {
+        ...resolution, file: null,
+        problem: `\`${name}\` is not on this machine's PATH. ${tool.name} is run as the system's, managed, or from a `
+          + `file you name: \`daoris tool use ${tool.id} file <path>\` names one`,
+      };
+  }
+
+  const beside = onPath(name, {
+    env: { PATH: toolFolders(read, home, tool.id).join(delimiter), PATHEXT: env[variableKey(env, 'PATHEXT')] }, startable: true,
+  });
+  return beside
+    ? { ...resolution, file: beside }
+    : {
+      ...resolution, file: null, refused: true,
+      problem: `\`${name}\` is not beside ${tool.name}'s own file (${resolution.file}) — ${NEVER}. `
+        + `\`daoris tool use ${tool.id} system\` runs the one on PATH`,
+    };
+}
+
+/**
+ * A command whose first word a tool answers for, with that word the file the tools resolve: `npm` in a pin is the
+ * managed node's npm when node is managed. A whole path, or a name no tool answers for, is left as named; the
+ * system's tool PATH does not find keeps its bare name, so the start says so as before. The driver's
+ * `HarnessActions.ThroughTools`.
+ */
+export function commandThroughTools(home: string, command: string[], env: Env = process.env): string[] {
+  const tool = command.length > 0 ? resolveCommand(readTools(home), home, command[0]!, env) : null;
+  if (!tool) return command;
+  if (tool.refused) throw new DaorisError(`${tool.problem} — so \`${command[0]}\` was not run.`);
+  return tool.file ? [tool.file, ...command.slice(1)] : command;
+}
+
+/**
+ * A command whose first word a tool answers for, found on the system's PATH whatever the tools run it as (§2.7):
+ * `agent install` is the machine's npm's job. Any other first word is left as named. The driver's
+ * `HarnessActions.OnTheSystem`.
+ */
+export function commandOnTheSystem(command: string[], env: Env = process.env): string[] {
+  const name = command[0];
+  if (name === undefined || !TOOLS.some((tool) => tool.answers.includes(name))) return command;
+  const file = onPath(name, { env, startable: true });
+  if (!file) {
+    throw new DaorisError(`\`${name}\` is not on this machine's PATH, and installing an agent is the machine's own ${name}'s job, `
+      + 'whatever Daoris runs it as. `daoris agent pin <agent> <version>` installs one where Daoris keeps it instead.');
+  }
+  return [file, ...command.slice(1)];
 }
 
 /** The refusal for a tool this build does not declare, for the verb. */

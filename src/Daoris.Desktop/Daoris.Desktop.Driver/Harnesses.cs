@@ -984,6 +984,8 @@ public static class HarnessProbe
         };
         foreach (var part in resolved.Skip(1)) info.ArgumentList.Add(part);
         foreach (var argument in arguments) info.ArgumentList.Add(argument);
+        // A probe is a child like a session (TOOLS5): asked on the PATH a session would be started on.
+        Tools.Hand(info);
         // A pinned binary is asked the way a session runs it (AGT2), so asking is not when it moves.
         Apply(info, toolchain, profileHome, binary: managed ? resolved[0] : null, account: account);
 
@@ -1587,11 +1589,16 @@ public sealed class HarnessRun
 public static class HarnessActions
 {
     /// <summary>Install a harness with its own installer — a whole command, since it may not exist yet.</summary>
+    /// <remarks>
+    /// 🔴 <b>On the system's npm</b> (TOOLS5, D121 §2.7), whatever Tools runs node as: an install is the agent's own
+    /// installer, into the machine, and that is the machine's npm's job. A managed npm's global folder may be its node
+    /// version's, which the next version would lose. With no npm on the machine it refuses, naming <c>agent pin</c>.
+    /// </remarks>
     public static Task<int> InstallAsync(
         HarnessToolchain toolchain, Action<string> write, CancellationToken ct = default,
         Action<HarnessRun>? started = null) =>
         toolchain.Install is { Count: > 0 } install
-            ? RunAsync(install, toolchain, profileHome: null, write, ct, started)
+            ? RunAsync(OnTheSystem(install, Environment.GetEnvironmentVariable(Tools.PathVariable)), toolchain, profileHome: null, write, ct, started)
             : throw new DriverException(
                 "that agent declares no installer, so Daoris has no sanctioned way to install it. "
                 + "Install it with its own tooling; Daoris will find it on the next probe.");
@@ -1611,8 +1618,9 @@ public static class HarnessActions
             ? PinFromChannelAsync(toolchain, channel, home, harness, version, write, ct, started, transport)
             : toolchain.Package is { Length: > 0 } package
             ? RunAsync(
-                [.. npm ?? Npm, "install", "--prefix", HarnessSettings.ManagedHome(home, harness, version),
-                 $"{package}@{version}"],
+                // The npm Tools resolves (TOOLS5, §2.7): its prefix is named, so the node it installs for is Tools' node.
+                ThroughTools(home, [.. npm ?? Npm, "install", "--prefix", HarnessSettings.ManagedHome(home, harness, version),
+                 $"{package}@{version}"]),
                 toolchain, profileHome: null, write, ct, started)
             : throw new DriverException(
                 "that agent declares no package, so Daoris has no sanctioned way to fetch a version "
@@ -1653,6 +1661,35 @@ public static class HarnessActions
     }
 
     private static readonly string[] Npm = ["npm"];
+
+    /// <summary>
+    /// A command whose first word a tool answers for, with that word the file Tools resolves (TOOLS5, D121 §2.4):
+    /// <c>npm</c> in a pin is the managed node's npm when node is managed. A whole path, or a name no tool answers
+    /// for, is left as named; the system's tool PATH does not find keeps its bare name, so the start says so as before.
+    /// </summary>
+    /// <exception cref="DriverException">The tool's way cannot run: it never falls back to <c>PATH</c>.</exception>
+    internal static IReadOnlyList<string> ThroughTools(string home, IReadOnlyList<string> command)
+    {
+        if (command.Count == 0 || Tools.ResolveCommand(Tools.Read(home), home, command[0]) is not { } tool) return command;
+        if (tool.Refused) throw new DriverException($"{tool.Problem} — so `{command[0]}` was not run.");
+        return tool.File is { } file ? [file, .. command.Skip(1)] : command;
+    }
+
+    /// <summary>
+    /// A command whose first word a tool answers for, found on the system's <paramref name="path"/> whatever Tools runs
+    /// that tool as (TOOLS5, §2.7): <c>agent install</c> is the machine's npm's job. Any other first word is left as
+    /// named.
+    /// </summary>
+    /// <exception cref="DriverException">The system has no such program: the install is refused, naming <c>agent pin</c>.</exception>
+    internal static IReadOnlyList<string> OnTheSystem(IReadOnlyList<string> command, string? path)
+    {
+        if (command.Count == 0 || !Tools.Declared.Any(tool => tool.Answers.Contains(command[0], StringComparer.Ordinal))) return command;
+        var file = CommandPresence.Resolve(command[0], path, startable: true)
+            ?? throw new DriverException(
+                $"`{command[0]}` is not on this machine's PATH, and installing an agent is the machine's own {command[0]}'s job, "
+                + "whatever Daoris runs it as. `daoris agent pin <agent> <version>` installs one where Daoris keeps it instead.");
+        return [file, .. command.Skip(1)];
+    }
 
     /// <summary>
     /// Which Update a door has (USE1a): <c>"pin"</c> when it is pinned and declares a package or a
@@ -1732,7 +1769,17 @@ public static class HarnessActions
         else
         {
             write($"{harness} is pinned at {pinned}. Asking npm which release of {toolchain.Package} is newest.");
-            newest = await NewestOnNpmAsync(toolchain, npm ?? Npm, pinned, write, ct, started).ConfigureAwait(false);
+            IReadOnlyList<string> asking;
+            try
+            {
+                asking = ThroughTools(home, npm ?? Npm);
+            }
+            catch (DriverException error)
+            {
+                throw new DriverException($"{error.Message} The pin stays at {pinned}.");
+            }
+
+            newest = await NewestOnNpmAsync(toolchain, asking, pinned, write, ct, started).ConfigureAwait(false);
         }
 
         if (newest == pinned && HarnessSettings.ManagedBinary(home, harness, pinned, toolchain.Binary) is not null)
@@ -1878,6 +1925,8 @@ public static class HarnessActions
             StandardErrorEncoding = Encoding.UTF8,
         };
         foreach (var part in command.Skip(1)) info.ArgumentList.Add(part);
+        // An agent action is a child like a session (TOOLS5): the tools' PATH, before the file is resolved on it.
+        Tools.Hand(info);
         // Resolves the file Windows can start too (WindowsShim, USE1f): one line for every spawn.
         HarnessProbe.Apply(info, toolchain, profileHome);
 

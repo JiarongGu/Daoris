@@ -76,7 +76,9 @@ into the machine log (D94).
      answers where it did open, so a tab never names a place it is not.
    - **The shells**: `pwsh`, else `powershell`, then `cmd` and Git Bash, each found by the plugin
      door's resolver (`CommandPresence`); Git Bash is the `bash.exe` beside `git`, never the first
-     `bash` on PATH, which on Windows is usually WSL's launcher.
+     `bash` on PATH, which on Windows is usually WSL's launcher. *Amended by D121 (TOOLS5): found on
+     the tools' `PATH`. `pwsh` is the file the tools resolve, Git Bash is beside the git they resolve,
+     else beside the system's git, and every shell starts with the tools' environment.*
    - **Refusals**: a shell nobody offers, one this machine lacks, none at all, and one the system would
      not start, each a code in `Refusals` with the system's own reason carried for the last. A
      keystroke or a resize for a terminal that has gone is answered quietly: a toast per key would be

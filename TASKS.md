@@ -21,8 +21,8 @@ lists.
 
 ## State
 
-**Counts, and this is their one home:** seventeen commands, **918 CLI tests, 865 service and 49 HTTP host, 2251 driver,
-476 desktop modules, 80 devkit, 2294 web unit, 22 Playwright**, 108/108 release rehearsal, **312/312
+**Counts, and this is their one home:** seventeen commands, **928 CLI tests, 865 service and 49 HTTP host, 2302 driver,
+477 desktop modules, 80 devkit, 2294 web unit, 22 Playwright**, 108/108 release rehearsal, **312/312
 family rehearsal** (it names its own phases when you run it), **70/70 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 6 knowledge
 documents, 6 skills, 7 packs. The always-loaded core is **24,064 of 26,000 bytes** — a span in
@@ -113,9 +113,9 @@ rather than designed.
 
 ## Backlog
 
-**Seventy-five rows are open** (most of them the builds of the designs below) (triaged 2026-09-30, when the owner asked to go faster; 2026-10-01 after the night's merges, the look, and the owner's round):
-- **Merging next:** TOOLS5, WSSETUP1 (the design) and WSSETUP10 (branch `wssetup10`). **Building:** TOOLS7 (on TOOLS5),
-  FRAME1f (on MENU1), WSSETUP9 with WSSETUP11.
+**Seventy-two rows are open** (most of them the builds of the designs below) (triaged 2026-09-30, when the owner asked to go faster; 2026-10-01 after the night's merges, the look, and the owner's round):
+- **Merging:** integrate-j (FRAME1f, WSSETUP9 with WSSETUP11, TOOLS7, WSSETUP8, SEM3b with MANAGE1). **Building:**
+  LAYOUT7 as amended by D124, WSSETUP2 with WSSETUP4, FRAME1h.
 - **Designed, to build in order:** DEV2–DEV11 (D115); FRAME1b–i (D118) after NAME1b; PLUGUI1 after FRAME1c;
   LAYOUT3–LAYOUT10 (D117) after LAYOUT2's evidence.
 - **Waiting on the owner (five):** BUDGET1 (their call), TRUST2 and AGT2c (a grant, two
@@ -219,11 +219,8 @@ first, then WSSETUP11 early (a week of *before*); WSSETUP4, WSSETUP8, WSSETUP10 
 TOOLS5 and WSSETUP2. The driver lane runs WSSETUP9 → WSSETUP11 → LAYOUT7 → WSSETUP5 → WSSETUP6; WSSETUP7 after LAYOUT8,
 FRAME1e and WSSETUP6. Then the owner's two runs.
 
-- [ ] **WSSETUP1 — the design** (D124): built on its branch; merging next with TOOLS5.
 - [ ] **WSSETUP9 — a session looks before it asks** (§6.1, §6.2; driver): `TargetPrompt.Asking` rewritten for the
   claiming, resuming and carrying-on instructions; the clause naming other checkouts only with reading across.
-- [ ] **WSSETUP10 — the canon says it** (§6.3; doctrine): one bullet in `autonomous-development`, an entry under
-  `## Unreleased`, this repository and `examples/` re-synced in the same commit.
 - [ ] **WSSETUP11 — set-ups and parks, counted** (§7.3; driver, tools): `session.parked` from the attention watch; the
   usage report gains a set-up section and parks per week by workspace. Run early.
 - [ ] **WSSETUP4 — an older tool never rewrites a newer lock** (§1.4; cli, tools): `sync` and `upstream` refuse (exit
@@ -296,9 +293,9 @@ The contract is `docs/2026-10-01-tools-design.md`; §7 carries each row's full t
 TOOLS3 → TOOLS4, then TOOLS5 ∥ TOOLS6, then TOOLS7 ∥ TOOLS8, then TOOLS9; TOOLS10 before any session runs a
 managed git; TOOLS11 last.
 
-- [ ] **TOOLS5 — one answer for every child** (§2.4, §2.6, §2.7): git, hooks, npm, the tree guard's node, the terminal.
 - [ ] **TOOLS6 — what Daoris's git carries** (§2.5): the allow-list from `core.sshCommand`, `GIT_CONFIG_GLOBAL` with
-  includes, the version floors.
+  includes, the version floors; and `SessionTrees.Sync.cs`'s sentence "the git Daoris runs (the one on the
+  path)" points at Settings → Tools, as the page's copy already does (TOOLS7's hand-back).
 - [ ] **TOOLS7 — Settings → Tools** (§4.1, §4.4) and **TOOLS8 — Ask Daoris's `tool` kind** (§4.3).
 - [ ] **TOOLS9 — the rehearsals** (§6): a loopback list server, stub tools, a tampered file refused.
 - [ ] **TOOLS10 — the probe before a managed git meets an agent** (the owner allows one start of each agent).

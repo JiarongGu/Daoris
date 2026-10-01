@@ -490,6 +490,24 @@ test('only the toolchain may spawn a process', () => {
   }
 });
 
+/**
+ * One answer for Daoris and every child (TOOLS5, D121 §2.4): the toolchain starts every child in ONE place,
+ * `startChild`, and that place hands the child the tools' environment through `tools.ts` — the driver's
+ * `EveryChildIsHandedTheToolsTests` holds the same of its own starts. A second `spawnSync` would be a child that
+ * runs whatever PATH it inherited.
+ */
+test('every child the toolchain starts is started in one place, with the tools’ environment', () => {
+  const source = readText(join(cliRoot, 'src', SPAWNS));
+  const calls = [...source.matchAll(/\bspawnSync\(/g)];
+  assert.equal(calls.length, 1, `${SPAWNS} calls spawnSync ${calls.length} times — every child starts through startChild`);
+
+  const start = source.indexOf('function startChild(');
+  assert.ok(start >= 0 && start < calls[0]!.index!, 'the one spawnSync is inside startChild');
+  const body = source.slice(start, calls[0]!.index!).replace(/\/\/[^\n]*/g, '');
+  assert.match(body, /\bhandTools\(/, 'startChild hands the child the tools’ environment');
+  assert.match(source, /import \{[^}]*\bhandTools\b[^}]*\} from '\.\/tools\.ts';/);
+});
+
 test('only the service client may touch the network', () => {
   for (const dir of ['src', 'bin']) {
     for (const file of listFiles(join(cliRoot, dir), (n) => n.endsWith('.ts') || n.endsWith('.mjs'))) {
