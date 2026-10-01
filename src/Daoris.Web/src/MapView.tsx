@@ -80,7 +80,8 @@ export function MapView({ notify, onOpenConvergence, onOpenQuest }: {
           />
         )}
         {answer?.file && !answer.problem && (
-          <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_20rem]">
+          // Beside the code map by the main area's own width, as the workspace map's detail is (D118 §3b).
+          <div className="grid items-start gap-4 @4xl/main:grid-cols-[minmax(0,1fr)_20rem]">
             <Card>
               <CodeMapCanvas
                 repository={code}
@@ -152,7 +153,10 @@ export function MapView({ notify, onOpenConvergence, onOpenQuest }: {
   return (
     <section>
       {header}
-      <div className="grid items-start gap-4 lg:grid-cols-[minmax(0,1fr)_20rem]">
+      {/* The detail beside the canvas by the main area's own width, never the viewport's (D118 §3b, audit
+          MA3), and under it in a narrow one, where the drawing shrinks only as a last resort (U44). It stays
+          in the main area: a view's own detail never goes to the side bar (§3c, §4). */}
+      <div className="grid items-start gap-4 @4xl/main:grid-cols-[minmax(0,1fr)_20rem]">
         <Card>
           {/* A ring holds a handful; a bigger circle is laid out in layers, which pan and zoom (MAP4). */}
           {topology.nodes.length > RING_MAX

@@ -689,6 +689,55 @@ test('the chrome stays beside the content on a narrow window, never above it', a
   expect(main.height).toBeGreaterThan(400);
 });
 
+/**
+ * A view's columns follow its main area, never the window (D118 §3b, FRAME1c): the side bar and a list
+ * narrow the main area while the window stays as wide, so Overview's two cards, the repositories' cards and
+ * the map's detail beside its canvas are laid out by the main area's own width. A browser has no side bar
+ * (§4), so the main area is narrowed here by hand at a window that stays 1280 px wide: a viewport breakpoint
+ * would keep two columns, and only a container query stacks them. vitest has no layout to see this with.
+ */
+test("a browser's main area lays its columns out by its own width, beside no side bar and no panel (D118)", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.goto('/');
+  await expect(page.getByRole('heading', { name: 'Overview' })).toBeVisible();
+  // The main area and the view's list are a browser's; the side bar and the panel never are.
+  await expect(page.getByRole('complementary', { name: 'right side bar' })).toHaveCount(0);
+  await expect(page.getByRole('region', { name: 'the panel' })).toHaveCount(0);
+
+  const main = page.locator('main');
+  /** The two columns of the split that holds `text`, and whether the second sits beside the first. */
+  const beside = async (text: string) => {
+    const columns = page.locator('main section > div.grid', { hasText: text }).locator(':scope > *');
+    const first = await columns.nth(0).boundingBox();
+    const second = await columns.nth(1).boundingBox();
+    if (!first || !second) throw new Error(`the split holding "${text}" must have two columns laid out`);
+    return Math.abs(first.y - second.y) < 4 && second.x >= first.x + first.width - 1;
+  };
+  const narrowed = (width: string | null) => main.evaluate((element, to) => { element.style.maxWidth = to ?? ''; }, width);
+
+  // Overview: Outstanding beside the repositories by index size, and above them in a narrow main area.
+  expect(await beside('Outstanding — oldest first')).toBe(true);
+  await narrowed('600px');
+  await expect.poll(() => beside('Outstanding — oldest first')).toBe(false);
+  await narrowed(null);
+
+  // Repositories: the two adopted members side by side, and one above the other.
+  await nav(page, 'Repositories').click();
+  await expect(page.getByText('the engine runtime — simulation, rendering, assets')).toBeVisible();
+  await expect.poll(() => beside('the engine runtime')).toBe(true);
+  await narrowed('600px');
+  await expect.poll(() => beside('the engine runtime')).toBe(false);
+  await narrowed(null);
+
+  // The map: its detail beside the canvas, and under it.
+  await nav(page, 'Map').click();
+  await expect(page.getByRole('group', { name: 'the workspace map' })).toBeVisible();
+  await expect.poll(() => beside('the number in a repository')).toBe(true);
+  await narrowed('600px');
+  await expect.poll(() => beside('the number in a repository')).toBe(false);
+  await narrowed(null);
+});
+
 test('the console speaks 中文', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('button', { name: '中文' }).click();
