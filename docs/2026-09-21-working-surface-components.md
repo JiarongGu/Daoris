@@ -165,6 +165,8 @@ Everything the design (§3–§5) needs, with the states its story must carry. N
 | `MonoWell` | verbatim monospace region with a "what fell out" footer | empty, short, scrolled-to-bottom, 500 lines with 12k dropped |
 | `MetaLine` | the label · value pairs of a session head | one pair, six pairs, a missing value, a long path |
 | `StripMark` | one item on a list closed to its strip: an initial and its mark, named in words (FRAME1b, D118) | working · chosen · waiting · idle · unmarked · off · a 中文 name |
+| `Menu` | every dropdown menu, as `SelectField` is every select: its content capped at the room on its side and scrolled inside, one row density with the bars' raised highlight or the lists' accent one, the tick's column, a label and a rule (MENU1). `primitives.test.ts` holds that no file but the atoms imports a Radix primitive | a menu of sixty rows (`LongMenu`) · ticked, reserved, no tick column · a checkbox and a radio item |
+| `QuickPanel` | a box at the palette's place, between the frame's bars: the command palette and Quick Ask (MENU1) | held by `ui.test.tsx` and the two boxes' own tests |
 
 `Pill`, `Button`, `Chip`, `Card`, `EmptyState`, `SkeletonRows`, `Tip` are reused unchanged.
 
