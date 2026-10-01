@@ -11,23 +11,56 @@ namespace Daoris.Knowledge;
 /// provider itself is BUILT BY THE HOST and passed in; Core stays on <c>IVectorProvider</c> (D22, D24).
 /// </param>
 /// <param name="EmbedUrl">The endpoint, for a deployment that has one.</param>
+/// <param name="EmbedWindow">
+/// The most characters one embedded text carries, its title included (SEM3, D123) — the deployment's
+/// statement of its embedder's window, since only the deployment knows which model answers. A longer
+/// entry is embedded in pieces this long, so no part of it is cut.
+/// </param>
 public sealed record ServiceOptions(
     string RepositoryRoot,
     string DatabasePath,
     string? EmbedModel = null,
-    string? EmbedUrl = null)
+    string? EmbedUrl = null,
+    int EmbedWindow = EntryPieces.DefaultWindow)
 {
     public const string RootVariable = "DAORIS_KNOWLEDGE_ROOT";
     public const string DatabaseVariable = "DAORIS_KNOWLEDGE_DB";
     public const string ModelVariable = "DAORIS_EMBED_MODEL";
     public const string UrlVariable = "DAORIS_EMBED_URL";
+    public const string WindowVariable = "DAORIS_EMBED_WINDOW";
 
-    /// <summary>Read from the environment, with the defaults every host shares.</summary>
-    public static ServiceOptions FromEnvironment(string defaultRoot, string defaultDatabase) =>
-        new(Environment.GetEnvironmentVariable(RootVariable) ?? defaultRoot,
-            Environment.GetEnvironmentVariable(DatabaseVariable) ?? defaultDatabase,
-            Environment.GetEnvironmentVariable(ModelVariable),
-            Environment.GetEnvironmentVariable(UrlVariable) ?? "http://localhost:11434");
+    /// <summary>
+    /// Read from the environment, with the defaults every host shares — or why a host must not start: a
+    /// setting that cannot mean what it says is refused, never quietly replaced by a default.
+    /// </summary>
+    public static (ServiceOptions Options, string? Error) FromEnvironment(string defaultRoot, string defaultDatabase)
+    {
+        var (window, error) = ParseEmbedWindow(Environment.GetEnvironmentVariable(WindowVariable));
+        return (new(Environment.GetEnvironmentVariable(RootVariable) ?? defaultRoot,
+                Environment.GetEnvironmentVariable(DatabaseVariable) ?? defaultDatabase,
+                Environment.GetEnvironmentVariable(ModelVariable),
+                Environment.GetEnvironmentVariable(UrlVariable) ?? "http://localhost:11434",
+                window),
+            error);
+    }
+
+    /// <summary>
+    /// The embedder's window (D123). Absence is <see cref="EntryPieces.DefaultWindow"/>, silently; anything
+    /// else is a whole number of characters at least <see cref="EntryPieces.MinimumWindow"/>, or it errors.
+    /// </summary>
+    public static (int Window, string? Error) ParseEmbedWindow(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value)) return (EntryPieces.DefaultWindow, null);
+
+        var stated = value.Trim();
+        return int.TryParse(stated, System.Globalization.NumberStyles.None, System.Globalization.CultureInfo.InvariantCulture, out var window)
+            && window >= EntryPieces.MinimumWindow
+                ? (window, null)
+                : (EntryPieces.DefaultWindow,
+                    $"{WindowVariable} '{stated}' is not a window: it is the most characters one embedded text "
+                    + $"carries, a whole number of at least {EntryPieces.MinimumWindow}. Unset, it is "
+                    + $"{EntryPieces.DefaultWindow}.");
+    }
 }
 
 /// <param name="Service">The composed service. Convergence is reached through it, not beside it.</param>
@@ -195,7 +228,7 @@ public static class ServiceFactory
 
         var service = new KnowledgeService(
             store, search, source, disclosure ?? DisclosurePolicy.LocalOnly, embedder, vectors,
-            registry, registrations, readsRegisteredRoots: readsLocalCheckouts);
+            registry, registrations, readsRegisteredRoots: readsLocalCheckouts, embedWindow: options.EmbedWindow);
 
         // The bootstrap (D48 §3): a store that has never been managed imports its configured root ONCE
         // and says so. Without it, a machine that has been running on DAORIS_KNOWLEDGE_ROOT would come

@@ -92,8 +92,12 @@ public sealed record QuestActionResponse(QuestResponse Quest, string Message);
 // What a delete did (D95): the record it removed, and the service's sentence, verbatim — which says
 // whether the delete travels, and whether the remote has taken it yet.
 public sealed record DeletedResponse(string Id, string Message);
+// `Embedded` is what the semantic half made of the entries (D123): how many, the vectors they became, how
+// many were longer than the window and split. Absent when it did not run, and `semanticError` says why.
 public sealed record RefreshResponse(
-    int Entries, int Repositories, int Withheld, string? SemanticError, IReadOnlyList<string> Absent);
+    int Entries, int Repositories, int Withheld, string? SemanticError, IReadOnlyList<string> Absent,
+    EmbeddedResponse? Embedded = null);
+public sealed record EmbeddedResponse(int Entries, int Pieces, int Split, int Window);
 // `Uses` is what the repository says it depends on (D91); absent is nothing declared.
 public sealed record DomainRequest(
     string? Summary, IReadOnlyList<string>? Owns, IReadOnlyList<string>? Accepts, IReadOnlyList<string>? Uses = null);

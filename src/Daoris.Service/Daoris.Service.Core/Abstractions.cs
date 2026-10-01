@@ -107,10 +107,24 @@ public interface IDisclosurePolicy
 /// ghost failure from the other direction. A registration that never named a path is not an absence:
 /// a teammate's mirrored row has no checkout here by construction.
 /// </param>
+/// <param name="Embedded">
+/// What the semantic half made of the entries (SEM3, D123), or null when it did not run: none is
+/// configured, or it failed and <paramref name="SemanticError"/> says why.
+/// </param>
 public sealed record IndexReport(
     string Source, int Repositories, int Entries, int Withheld, string? SemanticError = null,
-    IReadOnlyList<string>? Absent = null)
+    IReadOnlyList<string>? Absent = null, EmbeddingReport? Embedded = null)
 {
     /// <summary>The absences, never null — a caller reporting "none" should not have to branch.</summary>
     public IReadOnlyList<string> Absent { get; init; } = Absent ?? [];
 }
+
+/// <summary>
+/// What one pass of the semantic half embedded (SEM3, D123): said, because a long entry split into
+/// several vectors is something a reader of the index should be able to see rather than assume.
+/// </summary>
+/// <param name="Entries">How many entries were embedded.</param>
+/// <param name="Pieces">How many vectors they became.</param>
+/// <param name="Split">How many entries were longer than the window, and became more than one.</param>
+/// <param name="Window">The most characters one embedded text carried, the title included.</param>
+public sealed record EmbeddingReport(int Entries, int Pieces, int Split, int Window);

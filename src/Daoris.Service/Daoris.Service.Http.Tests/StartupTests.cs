@@ -57,6 +57,30 @@ public sealed class StartupTests
         Assert.Equal(200, (await host.GetAsync("/api/status", key: key)).Status);
     }
 
+    /// <summary>
+    /// The embedder's window is the deployment's statement (D123): one that cannot mean what it says does not
+    /// start the host, rather than being quietly replaced by the default.
+    /// </summary>
+    [Fact]
+    public void A_window_that_is_not_one_refuses_to_start()
+    {
+        var (failed, said) = Capturing(() => new DaorisHost(
+            ServiceMode.Local, environment: new Dictionary<string, string?> { [ServiceOptions.WindowVariable] = "2k" }).Dispose());
+
+        Assert.NotNull(failed);
+        Assert.Contains("DAORIS_EMBED_WINDOW '2k' is not a window", said);
+        Assert.Contains($"at least {EntryPieces.MinimumWindow}", said);
+    }
+
+    [Fact]
+    public async Task A_stated_window_starts_the_host()
+    {
+        using var host = new DaorisHost(
+            ServiceMode.Local, environment: new Dictionary<string, string?> { [ServiceOptions.WindowVariable] = "1500" });
+
+        Assert.Equal(200, (await host.GetAsync("/api/status")).Status);
+    }
+
     /// <summary>And a local host on the loopback starts, which is what makes the refusals above a judgement.</summary>
     [Fact]
     public async Task A_local_host_on_the_loopback_starts()

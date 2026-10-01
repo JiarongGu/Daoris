@@ -139,7 +139,10 @@ public sealed class KnowledgeService(
     // Whether the source reads the registered roots and nothing else fills the index — a local host,
     // fed by nobody (D47 §4). Then the registry decides what is a ghost, even when a refresh can read
     // nothing (POLISH5). A fed host's empty source says nothing about what it holds.
-    bool readsRegisteredRoots = false)
+    bool readsRegisteredRoots = false,
+    // The embedder's window (SEM3, D123): the most characters one embedded text carries. The deployment
+    // states it, because only the deployment knows which model answers; a longer entry becomes pieces.
+    int embedWindow = EntryPieces.DefaultWindow)
 {
     private readonly KnowledgeIndex _index = new(store, disclosure);
 
@@ -152,7 +155,7 @@ public sealed class KnowledgeService(
     /// use is a person moving a threshold and looking again, which made that the common path rather than
     /// the rare one.
     /// </remarks>
-    private readonly ConvergenceDetector _convergence = new(store, embedder, vectors);
+    private readonly ConvergenceDetector _convergence = new(store, embedder, vectors, embedWindow);
     private readonly SemaphoreSlim _refreshLock = new(1, 1);
 
     /// <summary>One feed judged and written at a time (SYNC5a): the check and the write are one step.</summary>
@@ -772,12 +775,13 @@ public sealed class KnowledgeService(
             // optional half: the store is usable the moment the refresh returns, and semantic recall
             // arrives when it arrives.
             string? semanticError = null;
+            EmbeddingReport? embedded = null;
             if (embedder is not null && vectors is not null)
             {
                 try
                 {
                     var entries = await store.AllAsync(ct).ConfigureAwait(false);
-                    await SemanticKnowledgeSearch.IndexAsync(entries, embedder, vectors, ct: ct)
+                    embedded = await SemanticKnowledgeSearch.IndexAsync(entries, embedder, vectors, embedWindow, ct: ct)
                         .ConfigureAwait(false);
                 }
                 catch (OperationCanceledException)
@@ -795,7 +799,7 @@ public sealed class KnowledgeService(
             }
 
             _everRefreshed = true;
-            return report with { SemanticError = semanticError };
+            return report with { SemanticError = semanticError, Embedded = embedded };
         }
         finally
         {
@@ -931,7 +935,7 @@ public sealed class KnowledgeService(
                 try
                 {
                     var entries = await store.AllAsync(ct).ConfigureAwait(false);
-                    await SemanticKnowledgeSearch.IndexAsync(entries, embedder, vectors, ct: ct).ConfigureAwait(false);
+                    await SemanticKnowledgeSearch.IndexAsync(entries, embedder, vectors, embedWindow, ct: ct).ConfigureAwait(false);
                 }
                 catch (OperationCanceledException)
                 {
