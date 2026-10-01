@@ -528,6 +528,20 @@ guess is how the repository is laid out for its other contributors.
 
 ## 6. Setting up a repository Daoris manages
 
+> **Amended by D124** (`docs/2026-10-01-workspace-setup-design.md`, WSSETUP1), to be built with LAYOUT7:
+> - **§6.1**: *not registered here* is said by what the press finds, each refusal with its door (that design's
+>   §2.1). A repository that is addressable, not adopted and declaring nothing is the set-up's own case, never a
+>   refusal. *Set up every repository in this workspace* is a plan of single quests, paced (its §4).
+> - **§6.2**: the steps check the doctrine tool's version first, run `daoris` from the session's `PATH` in place of
+>   `npx daoris@<version>`, and gain *Initialise the knowledge*: the domain and the knowledge documents a
+>   neighbour's session would need (its §2.3–§2.7). The set-up writes only in its tree, and publishes no quest.
+> - **§6.3**: the press's rule is exact `daoris` verbs, never `upstream` (its §2.4).
+> - **§6.5**: the driver registers a repository from its line, after Daoris moves the line, at start and on the
+>   person's press (its §3).
+> - **§6.6 and §9**: the install carries its packed CLI and every child finds it on its `PATH` (its §1). The
+>   rejection of *the install carrying the CLI onto a session's path* is reversed, and LAYOUT10 no longer waits on
+>   the first publish.
+
 Daoris never writes into a repository it manages (D32, `repository-owns-its-work`). A set-up is a
 quest to that repository, carried out by its own session, which is the adopter's own agent the
 adoption playbook asks for, on its branch, and landed by the workspace's rule (D87).
