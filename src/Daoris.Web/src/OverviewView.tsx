@@ -22,7 +22,7 @@ import { AttentionBand, type AttentionDoors } from './work/AttentionBand';
 export function OverviewView({ onNavigate, onOpenQuest, doors, notify }: {
   onNavigate: (tab: 'quests' | 'projects') => void;
   /**
-   * Where an outstanding row goes: that quest's drawer (§5). The row went to Quests and opened
+   * Where an outstanding row goes: that quest's page on Quests (§5; FRAME1d). The row went to Quests and opened
    * nothing, so the person pressed a quest and had to find it again (UX5 U26).
    */
   onOpenQuest: (id: string) => void;

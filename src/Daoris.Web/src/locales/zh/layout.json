@@ -1,12 +1,16 @@
 {
   "layout.list.sessions": "会话列表",
   "layout.list.plugins": "插件列表",
+  "layout.list.quests": "委托列表",
+  "layout.list.projects": "仓库列表",
   "layout.list.settings": "设置列表",
   "layout.panel": "面板",
   "layout.right": "右侧栏",
   "layout.toggle": "显示或隐藏{{region}}（{{keys}}）",
   "layout.menu.list.sessions": "会话列表",
   "layout.menu.list.plugins": "插件列表",
+  "layout.menu.list.quests": "委托列表",
+  "layout.menu.list.projects": "仓库列表",
   "layout.menu.list.settings": "设置列表",
   "layout.menu.panel": "面板",
   "layout.menu.right": "右侧栏"

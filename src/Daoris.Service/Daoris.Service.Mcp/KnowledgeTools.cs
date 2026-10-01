@@ -553,7 +553,19 @@ public sealed partial class KnowledgeTools(
                 ? "Lexical and semantic recall are both active."
                 : "Lexical recall only — set DAORIS_EMBED_MODEL to enable semantic search, which is "
                   + "what finds two repositories that reached the same conclusion in different words.";
-        return $"Indexed {report.Entries} entries from {report.Repositories} repositories{withheld}.{absent}\n{recall}";
+        // Said, never assumed (SEM3, D123): an entry longer than the window is several vectors, and the
+        // window is the deployment's statement of what its embedder takes.
+        var embedded = report.Embedded is { } made
+            ? $"\nEmbedded {made.Entries} entries as {made.Pieces} vectors of at most {made.Window} characters "
+              + $"({ServiceOptions.WindowVariable}): "
+              + (made.Split switch
+              {
+                  0 => "none was longer, so none was split.",
+                  1 => "1 longer than that was split, each part a vector of its own.",
+                  var split => $"{split} longer than that were split, each part a vector of its own.",
+              })
+            : "";
+        return $"Indexed {report.Entries} entries from {report.Repositories} repositories{withheld}.{absent}\n{recall}{embedded}";
     }
 
 }

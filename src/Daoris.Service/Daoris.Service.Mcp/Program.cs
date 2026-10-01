@@ -73,7 +73,12 @@ if (database is null)
     return 2;
 }
 
-var serviceOptions = ServiceOptions.FromEnvironment(DefaultRepositoryRoot(), database);
+var (serviceOptions, optionsError) = ServiceOptions.FromEnvironment(DefaultRepositoryRoot(), database);
+if (optionsError is not null)
+{
+    Console.Error.WriteLine(optionsError);
+    return 2;
+}
 
 // The provider is built HOST-SIDE, not in Core: the domain holds `IVectorProvider` and nothing that
 // implements one, which is what keeps a model out of it (D22, D24). Everything downstream of that

@@ -1,79 +1,49 @@
 import { type ReactNode, useState } from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 import * as Tooltip from '@radix-ui/react-tooltip';
-import type { Ask, Session } from '../api';
 import { NO_CARRY } from '../compose/carry';
-import { AskCard } from './AskCard';
+import { AskRow } from './AskRow';
 import { AskComposer, type AskDraft } from './AskComposer';
-import { AskRecord } from './AskRecord';
 import {
-  BY_INTAKE, CLOSED, DONE, INTAKE_ASKED, INTAKE_PARKED, INTAKE_SESSION, LONG_CJK, NAMED, PROPOSED, PUBLISHED, REFUSED,
-  UNKNOWN_TIER, UNMATCHED,
+  BY_INTAKE, CLOSED, DONE, INTAKE_ASKED, LONG_CJK, NAMED, PROPOSED, PUBLISHED, REFUSED, UNKNOWN_TIER, UNMATCHED,
 } from './fixtures';
 
-// An ask (D65 §1a), made at a workspace and read back as a record (INT4c): its card in the Quests
-// view, the drawer that is its record, and the composer that makes one. Every state a real machine
-// reaches, and a sentence long enough and CJK enough to try the layout.
+// An ask (D65 §1a), made at a workspace and read back as a record (INT4c): its row in Quests' list and the composer
+// that makes one, a drawer since it is a form (FRAME1d, D118 §3d). Its page is `AskPage.stories.tsx`. Every state a
+// real machine reaches, and a sentence long enough and CJK enough to try the layout.
 
 const meta: Meta = { title: 'Asks' };
 export default meta;
 
 const noop = () => {};
 const RECEIVERS = ['engine', 'game', 'lantern'];
-const TITLES = { '9a8b7c6d5e4f': 'The chunk streamer stalls on a cold cache — cap its hydration per frame.' };
 
 const Provided = ({ children }: { children: ReactNode }) => <Tooltip.Provider>{children}</Tooltip.Provider>;
 
-export const Cards: StoryObj = {
+/** Rows at the list's width (D118 §3a: 280 px to start). */
+const Rows = ({ children }: { children: ReactNode }) => (
+  <ul className="m-0 w-[280px] list-none border border-line bg-page p-0">{children}</ul>
+);
+
+export const RowsInEveryState: StoryObj = {
   render: () => (
-    <div className="grid max-w-3xl gap-0">
-      {[PROPOSED, UNMATCHED, PUBLISHED, NAMED, BY_INTAKE, REFUSED, DONE, CLOSED, UNKNOWN_TIER, LONG_CJK].map((ask) => (
-        <AskCard key={ask.id} ask={ask} onOpen={noop} />
+    <Rows>
+      {[PROPOSED, UNMATCHED, PUBLISHED, NAMED, BY_INTAKE, REFUSED, DONE, CLOSED, UNKNOWN_TIER, LONG_CJK].map((ask, index) => (
+        <AskRow key={ask.id} ask={ask} chosen={index === 0} onOpen={noop} />
       ))}
-    </div>
+    </Rows>
   ),
 };
 
 /** What an ask waits for, as the band says it (POLISH4): an intake reading it, then one asking you. */
-export const CardsWithTheirIntake: StoryObj = {
+export const RowsWithTheirIntake: StoryObj = {
   render: () => (
-    <div className="grid max-w-3xl gap-0">
-      <AskCard ask={INTAKE_ASKED} intake="working" onOpen={noop} />
-      <AskCard ask={INTAKE_ASKED} intake="awaiting-person" onOpen={noop} />
-    </div>
+    <Rows>
+      <AskRow ask={INTAKE_ASKED} intake="working" onOpen={noop} />
+      <AskRow ask={INTAKE_ASKED} intake="awaiting-person" onOpen={noop} />
+    </Rows>
   ),
 };
-
-const record = (ask: Ask, intake: Session | null = null, attend = false) => () => (
-  <Provided>
-    <AskRecord
-      ask={ask} receivers={RECEIVERS} questTitles={TITLES} intake={intake} onAttend={attend ? noop : undefined}
-      onPublish={noop} onClose={noop} onDelete={noop} onOpenQuest={noop} onDismiss={noop}
-    />
-  </Provided>
-);
-
-export const RecordProposed: StoryObj = { render: record(PROPOSED) };
-export const RecordUnmatched: StoryObj = { render: record(UNMATCHED) };
-export const RecordPublished: StoryObj = { render: record(PUBLISHED) };
-export const RecordNamed: StoryObj = { render: record(NAMED) };
-export const RecordRefusedReceiver: StoryObj = { render: record(REFUSED) };
-export const RecordDone: StoryObj = { render: record(DONE) };
-/** Nothing stands on its quests, so the service says it may go (D95): *delete…* beside *close*. */
-export const RecordDeletable: StoryObj = { render: record({ ...PUBLISHED, deletable: true }) };
-export const RecordClosed: StoryObj = { render: record(CLOSED) };
-export const RecordUnknownTier: StoryObj = { render: record(UNKNOWN_TIER) };
-export const RecordLongCjk: StoryObj = { render: record(LONG_CJK) };
-
-// Who answered (INT4d): the intake session that served the ask, a door into Sessions on the desktop.
-/** Its intake read it and published it — on the desktop, the session is a door. */
-export const RecordByIntake: StoryObj = { render: record(BY_INTAKE, INTAKE_SESSION, true) };
-/** The same record in a browser: the session is named, and is not a door. */
-export const RecordByIntakeInABrowser: StoryObj = { render: record(BY_INTAKE, INTAKE_SESSION) };
-/** Its intake could not settle whose it is and parked asking — the proposal is still the person's. */
-export const RecordIntakeAsked: StoryObj = { render: record(INTAKE_ASKED, INTAKE_PARKED, true) };
-/** An intake the page has not loaded: named by its id, and no door that would open nothing. */
-export const RecordIntakeUnloaded: StoryObj = { render: record(BY_INTAKE, null, true) };
 
 function Composing({ fixed, circles, start }: { fixed: string | null; circles: string[]; start?: Partial<AskDraft> }) {
   const [draft, setDraft] = useState<AskDraft>({ circle: '', sentence: '', to: '', ...NO_CARRY, ...start });

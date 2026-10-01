@@ -1,21 +1,13 @@
-import type { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Button, Inline, PathText, Pill, Prose, SectionTitle } from '../ui';
+import { Button, Inline, PathText, Pill, Prose } from '../ui';
 import { type KitPoint, type PluginTrialResult, TrialReport } from '../settings/PluginKit';
 import { PluginSourceLine, PluginUpdatePlan, type PluginUpdatePlanShown, updatable } from '../settings/PluginUpdate';
-import { ViewMain } from '../work/ViewMain';
+import { PageHead, PageSection, ViewMain } from '../work/ViewMain';
 import { type PluginShown, pluginState, speaks } from './catalog';
 import { STATE_WORD } from './PluginList';
 
-/** A section of a plugin's page: its name as a heading, and the region it names (D119 §3.2). */
-export function PageSection({ title, children }: { title: string; children: ReactNode }) {
-  return (
-    <section aria-label={title} className="mt-6 first:mt-0">
-      <SectionTitle>{title}</SectionTitle>
-      {children}
-    </section>
-  );
-}
+// The main area's page header and its sections are every page's since FRAME1d (`work/ViewMain`).
+export { PageHead, PageSection };
 
 /** A warn-railed sentence a plugin's page leads with: the driver's own, verbatim, since it is content (D119 §3.2). */
 export function Lead({ text }: { text: string }) {
@@ -23,29 +15,6 @@ export function Lead({ text }: { text: string }) {
     <p className="m-0 mb-4 max-w-prose border-l-[3px] border-warn bg-page/60 px-3.5 py-2 text-body text-ink-soft">
       <Inline text={text} />
     </p>
-  );
-}
-
-/**
- * A page's header (D118 §3b, D119 §3.2): its title, with its version and its pills beside it; its id in the mono face;
- * its one line, cut to one line and whole in its tip; and its acts. A plugin's name and description are content.
- */
-export function PageHead({ title, version, pills, id, line, acts }: {
-  title: string; version?: string; pills?: ReactNode; id: string; line?: string; acts?: ReactNode;
-}) {
-  return (
-    <header className="mb-4 flex flex-wrap items-start justify-between gap-x-4 gap-y-2">
-      <div className="min-w-0 flex-1 basis-64">
-        <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
-          <h1 className="m-0 min-w-0 text-view font-[650] tracking-[-0.01em] wrap-anywhere">{title}</h1>
-          {version && <span className="font-mono text-small text-ink-faint">{version}</span>}
-          {pills}
-        </div>
-        <p className="m-0 mt-0.5 font-mono text-meta text-ink-faint">{id}</p>
-        {line && <p title={line} className="m-0 mt-1 truncate text-body text-ink-soft">{line}</p>}
-      </div>
-      {acts && <div className="flex flex-wrap items-center gap-2">{acts}</div>}
-    </header>
   );
 }
 

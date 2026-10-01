@@ -132,6 +132,26 @@ export const WithItsMenu: Story = {
   args: { more: <ListMore label="More actions" items={[{ id: 'try', label: 'Try a folder…' }]} onChoose={() => {}} /> },
 };
 
+/** The list's filters in its ⋯ (FRAME1d): one value among several, then a toggle, each ticked as it stands. */
+export const WithItsFilters: Story = {
+  args: {
+    name: 'Quests',
+    labels: { open: 'Show the quest list', close: 'Hide the quest list', resize: 'quest list width' },
+    strip: undefined,
+    more: (
+      <ListMore
+        label="Filter the list"
+        choice={{
+          label: 'Receiver', value: 'engine', onChoose: () => {},
+          options: [{ value: '*', label: 'Everyone' }, { value: 'engine', label: 'engine' }, { value: 'game', label: 'game' }],
+        }}
+        items={[{ id: 'closed', label: 'Include closed', checked: true }]}
+        onChoose={() => {}}
+      />
+    ),
+  },
+};
+
 /** Its first load: skeleton rows, never the empty state. */
 export const Loading: Story = { args: { loading: true } };
 

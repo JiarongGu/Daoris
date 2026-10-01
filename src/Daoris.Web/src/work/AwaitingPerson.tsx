@@ -24,7 +24,7 @@ export type Resolution = 'completed' | 'declined' | 'stopped';
  * record ends with the words, and the quest is carried on in the same tree, handed them. Then the
  * composer hint would send the person nowhere, and it is not shown.
  *
- * **Declining asks for its reason in place**, the same two-step the quest drawer uses and for the
+ * **Declining asks for its reason in place**, the same two-step a quest's page uses and for the
  * same reason: the note is the only part whoever reads the record later can act on, and a decline
  * that slipped out on one click would routinely carry nothing.
  *

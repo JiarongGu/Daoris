@@ -57,5 +57,7 @@
   "asks.tier.intake": "an intake session read it and published it",
   "asks.tierShort.intake": "by intake",
   "asks.record.intake": "Intake session",
-  "asks.record.tierIntakeUnpublished": "by declarations; an intake read it and has not published"
+  "asks.record.tierIntakeUnpublished": "by declarations; an intake read it and has not published",
+  "asks.gone.headline": "This ask is no longer here",
+  "asks.gone.body": "It was deleted, or it belongs to a workspace this window is not showing. Choose another in the list."
 }

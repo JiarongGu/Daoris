@@ -6,7 +6,7 @@ import type { Topology } from './topology';
 
 /**
  * A list of quests, each with its state in words as well as in hue (D41), and each a door to its
- * drawer, where acting on it lives (design §1). They were text, so a person read a quest here and had
+ * page on Quests, where acting on it lives (design §1; FRAME1d). They were text, so a person read a quest here and had
  * to find it again on Quests (UX5 U46, U26's rule). Status leads, as on every quest row (§4).
  */
 function QuestList({ quests, onOpenQuest }: { quests: Quest[]; onOpenQuest?: (id: string) => void }) {
@@ -56,7 +56,7 @@ export function MapDetail({ topology, selected, onOpenConvergence, onOpenCode, o
   topology: Topology;
   selected: MapSelection | null;
   onOpenConvergence?: () => void;
-  /** Open a quest named here in its drawer (U46). */
+  /** Open a quest named here on its page (U46; FRAME1d). */
   onOpenQuest?: (id: string) => void;
   /** Open this repository's own code map (MAP3a) — the same map, one level in. */
   onOpenCode?: (repository: string) => void;
