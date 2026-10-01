@@ -7299,3 +7299,34 @@ finds it by its bare name, whether codex's sandbox runs a program outside the wo
 whether a real set-up's knowledge is true. During `0.0.x` every build answers `0.0.1`, so the version guard cannot
 tell two builds apart until the first release. `verify` checks the log's shape and the design's links, and none of
 these words.
+
+**Built 2026-10-01 (WSSETUP8): the README as an unadopted repository's word** (point 6, design §5). The scanner
+reads the root's `README.md` for a repository its layout reads with no lock (`RepositoryLayout.Locked`), after
+every other reader. It splits at level-two headings with `MarkdownSections.Split`, and the part before the first
+comes from `MarkdownSections.Preamble`, the text the splitter drops for a log. Each entry is local knowledge with
+the path the disk spells. The choices §5 left open, each held by a test in `RepositoryReadmeTests`:
+- **"No lock" is the scanner's own test**: no lock, or one it reads as none (not JSON, no entries, a target that
+  leaves the repository), the same test that reads both roots. A manifest with no lock is mid-adoption and has
+  declared nothing yet, so its README is still read. Once a lock is read, the next scan reads no README. The
+  refresh replaces a repository's entries whole, so that scan's refresh drops them.
+- **The part before the first heading keeps its title line.** For a README, `# Name` and the paragraph under it
+  say what the repository is. It is titled *README* and has no anchor, so it points at the top of the file and its
+  id is never a section's. A README whose sections are all level one is one entry, as a log's split would leave
+  it. An empty section is skipped, and a heading used twice gets a count in its anchor (REV3).
+- **Any case, one file.** The root's file named `README.md` in any case, labelled as the disk spells it, so a
+  session can open it on a case-sensitive disk. Two spellings side by side, which only such a disk holds, read the
+  first in ordinal order.
+- **Read last, so a declaration wins.** A README that a manifest with no lock declares as its router or a log is
+  read by that role's reader and not again. Read twice, the router's entry and the part before the first heading
+  would share the id `<repository>:README.md`, and the store's primary key would fail the refresh (REV3).
+- **Rejected**: splitting at every heading level, which cuts a section's subsections into entries too small to
+  answer anything; titling the first part by its `#` heading, since §5 names it *README* and the heading stays in
+  its body; reading `README.markdown`, `README.rst`, `README.txt` or `README` with no extension, or a README
+  below the root.
+- **Not a twin** (design §12): the driver's `SelfDescription` reads the same file for the intake, a title and a
+  paragraph, and neither is held to the other.
+- What the gates do not cover: no refresh of a real workspace has read a README on this branch, so whether its
+  sections help a neighbour's search is WSSETUP12's canary. The real-link test made a link on this machine. On a
+  machine that makes none it returns early, and the held-as-text rows hold the rule. Two spellings side by side
+  cannot exist on this machine's disk, so that rule is untested. The family rehearsal's unadopted repository (17b)
+  now has its README indexed. No check there reads its knowledge, and the rehearsal was not run on this branch.

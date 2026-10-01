@@ -32,6 +32,12 @@ router is indexed as one document. A declaration adds a path and is never requir
 refuses is read as none, so the scanner reads its candidates as it did before (`RepositoryDocuments`, a
 twin of the CLI's `documents.ts`).
 
+Since **D124** (WSSETUP8), until a repository adopts, the scanner reads its root `README.md`, in any case,
+as the repository's own word. Each section split at level-two headings is one local knowledge entry carrying
+the file's path, and the part before the first heading is titled *README*. It claims no role, and is never
+read through a link, from `docs/README.md` or in another format. A file a declaration already names is read
+by that role. Once the repository has a lock, the README is not read, and the next refresh drops its entries.
+
 ## The registry — who is out there, and what they own
 
 Each repository declares a `domain` in its manifest: a one-line summary, the areas it **owns**, the
