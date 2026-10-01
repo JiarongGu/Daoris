@@ -38,7 +38,8 @@ public static partial class ToolQuestions
             RedirectStandardOutput = true,
             RedirectStandardError = true,
             RedirectStandardInput = true,
-            // Read as the tools write, not in the console's code page (PLUG8).
+            // Read as the tools write, not in the console's code page (PLUG8); nothing is typed, and the end is UTF-8 too.
+            StandardInputEncoding = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false),
             StandardOutputEncoding = Encoding.UTF8,
             StandardErrorEncoding = Encoding.UTF8,
             UseShellExecute = false,
