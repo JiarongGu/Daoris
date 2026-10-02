@@ -1184,7 +1184,10 @@ public sealed class CodexAcpAdapter : ISessionAdapter
         Package: "@agentclientprotocol/codex-acp",
         // No login of its own: it runs `codex` and reads the home `codex` logged into.
         AccountOf: "codex",
-        ProfileMustExist: true);
+        ProfileMustExist: true,
+        // What Codex says when an account's limit refuses a turn (TOOL4k), read in its source: declared here, since
+        // no `codex` adapter exists to own it, and reaching this door only as the error's data (ACPDATA1).
+        Limits: CodexLimits.Words);
 
     private IReadOnlyList<string> Resolve(IReadOnlyList<string>? command) =>
         command is { Count: > 0 } ? command : Toolchain!.Binary;
@@ -1391,7 +1394,8 @@ public sealed class ClaudeCodeAdapter : ISessionAdapter
         // authenticate. API Error: 401 API key is invalid." and exited 1.
         Refused: "API Error: 401",
         // What it says when an account's limit refuses a turn (TOOL4a, D125 §0.2): five recorded
-        // sentences, each naming its reset. Its ACP door reads these as its owner's (AGT7).
+        // sentences and one the maker documents (TOOL4k), each naming its reset. Its ACP door reads
+        // these as its owner's (AGT7).
         Limits: ClaudeLimits.Words);
 
     /// <summary>

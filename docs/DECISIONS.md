@@ -8312,6 +8312,34 @@ takes the refusal's sentence alone. Reading it, or Codex's `codexErrorInfo`, whi
 beats a sentence*, and waits for a refusal recorded on the door. No real refusal with a `data` was seen; the shapes
 are the evidence's, read from the adapters' code.
 
+**Built 2026-10-02 (TOOL4k): a weekday reset, and Codex's clock** (points 1 and 2; amends design §1.3 and §2.1;
+evidence §2, §4), held by `AccountLimitsTests`. What building it settled:
+- **A weekday and a time** (*resets Mon 12:00am*, the maker's errors page) is the first moment after the refusal on
+  that weekday at that time, with no grace, as a time of day is since the fix above. It stands where the date was
+  dropped, so one just past is next week's; one whose time is still ahead today is today's, since a guess too short
+  costs one refused start and one too long a week. Claude Code's entry records the page's sentence as documented,
+  never seen, with no zone, so the machine's stands in.
+- **A date may carry an ordinal and a year** (*Oct 3rd, 2026 4:05 PM*). A year names one date: more than 8 days ahead,
+  or past beyond the grace, it is not believed, said so. A year not next to this one is not read. A dated reset keeps
+  its grace.
+- **The reset may be the rest of the marker's own clause** (§1.3 said a later clause): Codex writes its refusal as
+  sentences, with no ` · `. A marker that ends its clause, as Claude Code's does, leaves no rest, so its sentences read
+  as before.
+- **Codex's entry is `codex-acp`'s** (`CodexLimits`), since no `codex` adapter exists to own it; a cool-off is still
+  the `codex` account's (`AccountOf`). Its marker is *You've hit your usage limit[ for <model>].* at a clause's start
+  or after a door's `: `, since a marker that does not end its clause cannot otherwise tell a refusal from a
+  quotation. Its reset is *try again at <when>*, in the machine's zone, said as assumed; *Try again later.* is the
+  default. `hit` is `usage`, never the model's name, since the log writes it.
+- **Its four sentences were read in Codex's source** (codex 0.159.3, as the evidence cites it), the plan's next step
+  and the model's name elided as `…`: the evidence records the template, and no sentence seen on a door. The
+  both-ways check holds them as it holds Claude Code's.
+
+**What the gates do not cover.** No Codex refusal and no weekday reset was seen on a door. Still unrecorded: Codex's
+four workspace sentences (*Your workspace is out of credits…*, *You hit your spend cap…*, elided in the evidence, naming
+no reset), its plans' next steps, and whether the app server's message is that text; Claude Code's *Opus limit*,
+*Sonnet limit*, *team's shared budget* and *usage limit* on usage-based billing, of which the marker reads all but the
+budget, unrecorded; and whether a real weekday reset prints a zone.
+
 ## D126 — A session is managed where it is: listed by what it needs, every act on its row and its page, what ended cleared, and a stop that holds (2026-10-02)
 
 **Decision (SESSUX1).** The owner, 2026-10-02: *"there is no way to easily managed sessions in daoris right now and
