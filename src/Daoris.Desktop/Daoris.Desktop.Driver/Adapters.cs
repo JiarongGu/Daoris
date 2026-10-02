@@ -867,7 +867,9 @@ public sealed class StubAdapter : ISessionAdapter
         // gate a refused account with no account behind it.
         Refused: "API Error: 401",
         // And its words for an account's limit (TOOL4a, D125 §1.3 rule 4), mirrored for the same reason.
-        Limits: ClaudeLimits.Words);
+        Limits: ClaudeLimits.Words,
+        // And its weekly reset fixed per account (TOOL6b), mirrored so a rehearsal can gate a week carried on.
+        WeekFixed: true);
 
     private static IReadOnlyList<string> Command(IReadOnlyList<string>? command) =>
         command is { Count: > 0 }
@@ -1392,7 +1394,10 @@ public sealed class ClaudeCodeAdapter : ISessionAdapter
         Refused: "API Error: 401",
         // What it says when an account's limit refuses a turn (TOOL4a, D125 §0.2): five recorded
         // sentences, each naming its reset. Its ACP door reads these as its owner's (AGT7).
-        Limits: ClaudeLimits.Words);
+        Limits: ClaudeLimits.Words,
+        // Its maker fixes an account's weekly reset at one time each week (TOOL6b, D130 §0.3 C1: "The weekly limit resets
+        // at a fixed time each week that is assigned to your account"), so a weekly reset a limit told is carried on.
+        WeekFixed: true);
 
     /// <summary>
     /// What a pinned <c>claude</c> runs with so it stays the version pinned (AGT2). 🔴 Measured on a

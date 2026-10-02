@@ -261,7 +261,11 @@ public sealed partial class Driver(
         // is planned, and started, in this same look. Nothing is read unless a plan works and is not paused.
         await WorkSetupPlansAsync(events, ct).ConfigureAwait(false);
 
+        // The goal's walk counts Daoris's sessions from this look's records (TOOL6b, D130 §4.2), and every start chosen
+        // while they were read: marked first, so a conversation chosen meanwhile is not lost.
+        var mark = _harnesses.Mark();
         var snapshot = await service.SnapshotAsync(ct).ConfigureAwait(false);
+        _harnesses.Look(snapshot.Started, mark);
         var plan = Planner.Plan(snapshot, config, Door());
         var progressed = false;
 
@@ -650,8 +654,9 @@ public sealed partial class Driver(
         HarnessSelection selection;
         try
         {
+            // A carry-on and a resume take the walk as any start does (D130 §16.2): no context stays with an account.
             selection = await _harnesses
-                .SelectAsync(config.Adapter, config, start.Workspace, chosen: null, ct)
+                .SelectAsync(config.Adapter, config, start.Workspace, chosen: null, StartKind.Driven, ct)
                 .ConfigureAwait(false);
         }
         catch (DriverException error)

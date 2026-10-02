@@ -15,7 +15,8 @@ namespace Daoris.Desktop.Driver.Tests;
 /// <para>A scope's settings are said in one word each, today's defaults left out, then <c>?name</c> for each value or
 /// setting this build does not know (<see cref="Said"/>). A change is JSON, where <c>"keep": null</c> keeps none, a field
 /// absent is left as it was, and <c>null</c> clears the scope's settings. Nothing here counts accounts (§2 rule 6).</para>
-/// <para>The driver only stores and reads these here; nothing chooses an account by them until TOOL6b.</para>
+/// <para>These tables hold the file; how a start uses what it reads is <c>AccountRotationWalkTests</c>' and
+/// <c>AccountRotationGoalTests</c>' (TOOL6b).</para>
 /// <para>🔴 <b>Keep each row on one line, its cells literals</b>: the CLI's test reads them.</para>
 /// </remarks>
 public sealed class RotationUseTwinTests : IDisposable
