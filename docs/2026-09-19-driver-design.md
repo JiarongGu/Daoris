@@ -127,6 +127,13 @@ turn so what is held goes now, and `SESSION_QUEUE` says whether the session is l
 the page shows a box. The refusal still guards everything written into the stream and a finish, and
 an intake and a pipe-door session keep it whole.
 
+*Amended by D136 (STEER1, 2026-10-03).* Where the agent's `initialize` says it takes a prompt during a turn
+(`agentCapabilities._meta.claudeCode.promptQueueing`, `claude-agent-acp`), `SESSION_INPUT`'s words are sent at once as
+a prompt in the same session and reach it at its next step; `AcpSession.RunAsync` ends only when nothing is held and no
+word is on its way, and `CANCEL_TURN` stops nothing there. Every other agent keeps the turn's end. The record keeps the
+words the moment they are said, with `reaches`, and again where the session took them, under one id
+(`docs/2026-10-03-steer-evidence.md`).
+
 **Session records live in the service, beside the quests.** A `sessions` table in the same store
 (`~/.daoris/knowledge.db`), for the same reason quests do: every client benefits — the platform renders
 them, the record survives a driver restart, and part 3 later syncs records where it could never sync

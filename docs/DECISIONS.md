@@ -3992,6 +3992,11 @@ its tree, which a carry-on session would have to rebuild.
 - **A conversation's stop semantics**, which hand queued words back (CONV4a): here the person stops
   the turn so their words go, so nothing is withdrawn.
 
+*Amended by D136 (STEER1, 2026-10-03).* Where the agent says it takes a prompt during a turn (`claude-agent-acp`), the
+words are a prompt sent the moment they are said, and reach it at its next step; this decision's turn's end is the door
+everywhere else. The words are recorded the moment they are said, with when they reach the session, and again where it
+took them, not only when they are handed over. *Send now* stops nothing on the next-step door, where nothing is held.
+
 ## D91 — What depends on what is declared by the repository that depends, as `domain.uses` (2026-09-30)
 
 **Decision (MAP4e, amending D34).** A repository's `domain` in its `daoris.json` may carry `uses`: the
@@ -9798,3 +9803,68 @@ real agent was handed the requirements or asked to answer them, so whether a har
 each met is not measured, and nothing compares a met answer with the work, since a fact gates and a judgement reports
 (D54); the family rehearsal publishes no requirements, so no rehearsal drives an answered done through the real host;
 the page shows neither the answers nor the yes, so there is no look.
+
+## D136 — A word to a working session reaches it at its next step where its door takes one during a turn, and at its turn's end where it does not; the conversation shows it at once, saying which (2026-10-03)
+
+**Decision (STEER1, amending D90).** The owner, 2026-10-03: *"I did send back the message but it never shows to
+daoris"*. A driven session's turn is its whole run, and D90 held the person's words for the turn's end: the agent heard
+nothing for up to an hour, and the record kept the words only when they were handed over, so the conversation showed
+nothing meanwhile. What each door does with words sent during a turn was read from the shipped adapters and the CLI, and
+one session measured it (`docs/2026-10-03-steer-evidence.md`).
+
+1. **At its next step, where the agent says it takes a prompt during a turn.** On the protocol door, an agent whose
+   `initialize` answers `agentCapabilities._meta.claudeCode.promptQueueing: true` (`claude-agent-acp`) is sent the
+   person's words the moment they are said, as a `session/prompt` in the same session. Claude Code folds them into the
+   running turn after the tool calls in flight finish, before its next model call; nothing is cancelled (evidence §1,
+   measured). The wire answers the earlier prompt `end_turn` at that moment and the words' prompt at the real end, so
+   the driver's run ends only when nothing is held and no word is on its way. Words said while the session opens go
+   right after its first prompt, never before it.
+2. **At its turn's end everywhere else, and said so.** An agent that does not declare it — `codex-acp`, whose second
+   prompt would reset its running turn (evidence §5), dsh, the stub — keeps D90's door: the words are held and prompted
+   when the turn ends. Only the agent's own `true` counts; silence is never read as yes (ACP3's rule for the posture).
+3. **The conversation shows the words at once.** The record keeps them the moment they are said, as the person's, with
+   `reaches` (`next-step` or `turn-end`) and an id, and the page shows them in the turn they were said in as waiting:
+   *it reads this at its next step*, or *when its turn ends*. Where the session took them, the record keeps them again
+   under the same id, as that turn's ask: when the prompt before them is answered, or as they are sent when no turn
+   runs. The page then shows them there and no longer as waiting. A search finds them once, where they were taken.
+4. **Send now is kept.** On the turn-end door it is D90's: stop the turn so what is held goes next. On the next-step door
+   nothing is held, so it has nothing to send; and the driver never stops a turn while a word is on its way, because
+   `claude-agent-acp` answers such a word `cancelled` while Claude Code still runs it, its answer reaching nobody
+   (evidence §3). *Not even waiting for the step in flight* belongs to the steering extension, a follow-up.
+5. **What the other doors do, named.** The native door's driven session runs `claude -p <target>` with no stdin, so it
+   still hears nothing mid-turn and the page offers it no box; on `--input-format stream-json` it would fold words as the
+   adapter does (evidence §4), one turn to measure before it is built. `codex-acp`'s door to the running turn is its
+   `_session/steering` (Codex's `turn/steer`), held until a turn shows whether it interrupts the step in flight.
+6. **Words that never reached it are said.** Held words when the session ends are counted as D90 counts them; words
+   sent during the turn that it never took are counted on a note of their own, and an agent that refuses one costs that
+   word, in its words, never the run.
+
+**Why.** The person told a working session something and the screen showed nothing, which reads as Daoris dropping the
+words; and the agent read them an hour late, after doing the work the words were meant to change. Claude Code already
+does what the person expects (its terminal takes a message typed while it works at the next step), and its protocol
+adapter offers the same through an ordinary prompt and says so, so the words can reach it that soon with no loss. The
+record is the conversation's one home (D76), so showing the words the moment they are said is a record event, not a
+page-side echo that a restart would lose.
+
+**Rejected.**
+- **`_session/steering` as the default.** It aborts the generation or the tool in flight (evidence §2): a build or a
+  test run would be cut for a sentence that could wait one step, and the measured steer left the call it cut open on the
+  wire with no update. It is the right door for *send now* without ending the turn, as a follow-up.
+- **A second prompt to every protocol agent.** `codex-acp` resets its running turn on one, and an agent that says
+  nothing is not guessed at.
+- **Recording the words only where they are taken** (D90 as built): the owner's complaint, on the turn-end door for up
+  to an hour.
+- **Recording them once, at once.** The page reads a person's words as the start of a turn, so words recorded mid-turn
+  would make the rest of the running turn read as the answer to them.
+- ***Send now* as `session/cancel` while a word is on its way.** The word may still run, with its answer dropped.
+
+Proof: `AcpSteerTests` (the measured shape: the words sent at once, the first prompt handed off, the run open until the
+words' answer, the record in the wire's order; a word said while opening going right after the task; a silent agent
+holding for the turn's end; the marker read only as the agent's own `true`; words on their way when it died said;
+a refused word costing only itself), `DrivenInboxTests` (told at once with the reach, the early word told when the door
+is known; on the next-step door each word sent at once and the inbox closing only after every answer; *send now* stopping
+nothing there; close handing back nothing sent) and `SessionEventsTests` (kept waiting, then taken, found once). The
+hand-off, the inbox's sending and the run's waiting were each seen failing with their line removed.
+`DrivenSessionInputTests`' process test now asserts the words kept twice; it is the parent's to run. Not covered: no
+driven session on the install has heard a word mid-turn yet (only the evidence's session, outside Daoris); a fold that
+waits for a long tool is read, not seen.
