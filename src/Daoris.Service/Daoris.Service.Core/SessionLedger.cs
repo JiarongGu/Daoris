@@ -367,12 +367,17 @@ public sealed class SessionLedger(
         // And the person's answer to one that parked to ask them (STANDDOWN2): its record ended
         // `completed` with their words kept, and the quest it held is carried on the same way.
         // And a stop that was not the person's (D104): the sweep found nothing running it, or the driver
-        // shut down under it. The person's own stop is their decision, and is never carried on.
-        var carriesOn = quest is { Status: QuestStatus.Taken } && question is null
-            && await sessions.LastOwnForQuestAsync(quest.Id, ct).ConfigureAwait(false)
-                is { State: SessionState.Failed }
+        // shut down under it.
+        // And the person's own stop, of a take a session here made (SESSUX1b2): the driver holds the quest
+        // until Try again releases it (D126 §3.3), so an open reaching here is the release. A stop before
+        // the take leaves none here, and the quest taken since is somebody else's, as after a stand-down.
+        var last = quest is { Status: QuestStatus.Taken } && question is null
+            ? await sessions.LastOwnForQuestAsync(quest.Id, ct).ConfigureAwait(false)
+            : null;
+        var carriesOn = last is { State: SessionState.Failed }
                 or { State: SessionState.Completed, Answer: not null }
-                or { State: SessionState.Stopped, Interrupted: true };
+                or { State: SessionState.Stopped, Interrupted: true }
+            || (last is { State: SessionState.Stopped } && await sessions.TookHereAsync(quest.Id, ct).ConfigureAwait(false));
 
         if (quest.Status != QuestStatus.Open && !resumes && !carriesOn)
         {

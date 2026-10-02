@@ -149,8 +149,9 @@ public sealed record Session(
     /// <summary>
     /// A <see cref="SessionState.Stopped"/> record that was not the person's stop (D104): the orphan
     /// sweep found nothing running it, or the driver shut down under it. A take ended so is carried on
-    /// like a failed one (D80); a person's stop never is. False for everything else, and for every record
-    /// from before the field, which is the old reading.
+    /// like a failed one (D80); a person's stop is carried on only once they release it, and only of a take
+    /// a session here made (SESSUX1b2). False for everything else, and for every record from before the
+    /// field, which is the old reading.
     /// </summary>
     public bool Interrupted { get; init; }
 
@@ -563,6 +564,19 @@ public sealed class SessionStore
         command.Parameters.AddWithValue("$quest", quest);
         await using var reader = await command.ExecuteReaderAsync(ct).ConfigureAwait(false);
         return await reader.ReadAsync(ct).ConfigureAwait(false) ? Read(reader) : null;
+    }
+
+    /// <summary>
+    /// Whether a session of THIS machine's took <paramref name="quest"/> through its own connector
+    /// (STANDDOWN2): the take is held here, so a person's stop of its session leaves it this machine's to
+    /// carry on once released (SESSUX1b2). A teammate's record never says so: its take is its machine's.
+    /// </summary>
+    public async Task<bool> TookHereAsync(string quest, CancellationToken ct = default)
+    {
+        await using var command = _connection.CreateCommand();
+        command.CommandText = "SELECT 1 FROM sessions WHERE quest = $quest AND origin IS NULL AND took = 1 LIMIT 1";
+        command.Parameters.AddWithValue("$quest", quest);
+        return await command.ExecuteScalarAsync(ct).ConfigureAwait(false) is not null;
     }
 
     /// <summary>
