@@ -59,8 +59,10 @@ public sealed partial class Driver
         // Proposed and never served: what the declarations left to a person and no intake has had.
         // One per circle, because the room runs one intake at a time — the OLDEST in each, which the
         // service's newest-first order puts last.
+        // A paused ask's intake does not start (PAUSE1b, D132 §2.1): nothing of a paused ask starts, and the next ask in its
+        // circle is due in its place. Said by the ask's page, never a line each look.
         var due = asks
-            .Where(ask => ask.State == "Proposed" && ask.Intake is null)
+            .Where(ask => ask.State == "Proposed" && ask.Intake is null && config.PausedAsk(ask.Id) is null)
             .GroupBy(ask => ask.Workspace, StringComparer.OrdinalIgnoreCase)
             .Select(circle => circle.Last())
             .ToList();

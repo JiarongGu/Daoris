@@ -8,7 +8,10 @@ namespace Daoris.Driver;
 /// may drive, what is held, how wide the loop runs, and which adapter spawns.
 /// </summary>
 /// <param name="Drivable">Repositories the person opted in. Empty means the driver drives nothing.</param>
-/// <param name="Holds">Repositories the person paused — drivable, but not now.</param>
+/// <param name="Holds">
+/// Repositories the person holds: drivable, and nothing new starts there until they resume it, while what runs goes on
+/// (D46 §3). A hold, never a pause: a pause is an ask's or a quest's, and stops what runs (D132, design §8.2).
+/// </param>
 /// <param name="Cap">Concurrent sessions across all repositories.</param>
 /// <param name="Adapter">Which adapter spawns sessions. The supported harness by default (D23).</param>
 /// <param name="TimeoutMinutes">How long a session may run before the driver concludes it failed.</param>
@@ -109,8 +112,9 @@ public sealed record DriverConfig(
 
     /// <summary>
     /// The asks the person paused on this machine (PAUSE1a, D132 point 5, design §2.5), each with when and the stops its pause
-    /// made. Absent is none, written only when set. Nothing here acts on a pause: the planner's <c>Paused</c> verdict is
-    /// PAUSE1b's. The CLI's <c>driverconfig.ts</c> reads it the same way (<c>PausedWorkTests</c>, held row for row by its
+    /// made. Absent is none, written only when set. The look holds each paused work's quests (<see cref="PausedWork"/>,
+    /// <see cref="StartVerdict.Paused"/>), and <see cref="WorkPausing"/> alone writes it (PAUSE1b). The CLI's
+    /// <c>driverconfig.ts</c> reads it the same way (<c>PausedWorkTests</c>, held row for row by its
     /// <c>driverconfig.test.ts</c>), and keeps it as written.
     /// </summary>
     public IReadOnlyDictionary<string, WorkPause> PausedAsks { get; init; } =
