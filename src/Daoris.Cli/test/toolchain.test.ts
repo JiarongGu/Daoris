@@ -747,6 +747,11 @@ test('every declared harness is pinned by name, binary, seam, and what a person 
   const trusting = Object.entries(TOOLCHAINS).filter(([, toolchain]) => toolchain.trustFile).map(([name]) => name);
   assert.deepEqual(trusting, ['claude-code', 'claude-code-acp']);
   assert.equal(TOOLCHAINS['claude-code']!.trustFile, '.claude.json');
+
+  // Whose sessions say how much of each window is used (TOOL6c) — the driver's `Windows` is its twin, declared by Claude Code
+  // alone (and the stub mirroring it, which the CLI does not know): its door reads its owner's, and Codex's door says none.
+  const saying = Object.entries(TOOLCHAINS).filter(([, toolchain]) => toolchain.windows).map(([name]) => name);
+  assert.deepEqual(saying, ['claude-code']);
 });
 
 /**

@@ -9103,6 +9103,51 @@ measured: whether a day is the right horizon, or whether spreading meets fewer l
 say neither §16.4's sentence nor the learned weekly resets yet (TOOL4g). The modules build against the change; their
 suites, the web's and the rehearsals were not run.
 
+**Built 2026-10-02 (TOOL6c): what the agents say, read** (the goal's points 3–5 and point 7's rule; design §4.4, §4.5, §5.2,
+§5.3, §6, §16.3 steps 2, 4 and 5, and §16.4, as `docs/2026-10-02-limit-signals-evidence.md` corrects them), held by
+`AccountReadingsTests` (the table and the frame), `AccountWindowsTests` and `WindowsTwinTests` (the file, twinned with the
+CLI's `windows.test.ts`), `AccountRotationWalkTests` and `AccountRotationGoalTests` (near and pace, per step and through
+`SelectAsync`), the doors' `ClaudeStreamJsonTests` and `AcpTests`, and, in the `Process` half, `AccountReadingTickTests`.
+What building it settled:
+- **One reader, a table per agent, both doors.** `AccountReadings.Read` reads Claude Code's `rate_limit_info`, which the
+  native door's `rate_limit_event` carries and its protocol door forwards unchanged as `usage_update._meta["_claude/rateLimit"]`
+  (evidence §1, §3), by the agent's `HarnessToolchain.Windows`. `ClaudeWindows.Words` names `five_hour` the `session` window
+  and `seven_day` the `weekly` one; `allowed`, `allowed_warning` and `rejected` clear, near and refused; the scale, a
+  fraction; and `isUsingOverage`, drawing on usage credits. Each stands on the evidence's recorded frame, and the two
+  unmeasured words on the SDK's declaration, said so. A door reads its owner's table (AGT7); Codex's door forwards none of
+  Codex's limits (§4), so it has none. A window the table does not name, or with no reset, says nothing.
+- **Kept as the door carries it, per window, by every session on an account**: driven starts, intakes, conversations and
+  Ask Daoris, on either door. `windows.json` keeps each window's newest reading (its use, its reset, the standing and
+  credits on the window the frame named, when, and which session) and drops it at its reset. The weekly window's reading is
+  the account's week for step 4 too, carried a week on as a limit's is; its use is not. A week a limit told says no use. The
+  tool's own sign-in keeps nothing.
+- **Near, as the evidence corrects §6**: the agent's warning word or its word that a limit was reached, drawing on usage
+  credits, or any window's use at or over the scope's *near*. §6 had the word win over the number, on C11's reading that
+  Claude Code's word comes without one; the evidence found a number on every frame and the word `allowed` at 88% with two
+  hours left (§1.3), so either passes. A near account goes last (step 2) under `goal` and under `order`, unless *switch
+  before the limit* is off: a pass, never a wait.
+- **Pace** (step 5): the share of the week gone, the seven days before its reset, less the share of its weekly limit said
+  used; furthest behind first. An account that said nothing about its week ranks as on pace, between behind and ahead. Below
+  fewest running and a week lapsing, above least recently started; nothing under `order`.
+- **What it says.** Under the goal every start's first line ends with what each account of its list said, `What each
+  account said: …`, each with its age and numbers or `nothing yet`, and says *No account has said what it has left yet.*
+  only while none has; under `order` a rotated start adds it where one has. Near names the account passed and what it said;
+  pace the account behind, or the one ahead. `account.rotated` gains `why` `near` and `pace`, `said` true where any account
+  of the list had said, and `fromSaid` and `toSaid`: Daoris's word for what each of its two accounts said (`refused`,
+  `near`, `clear`, or null), never a number.
+- **The CLI reads the file through its twin**, `windows.ts`: `agent list` says each account's last reading and its age
+  beneath it, and `profile use` the same against the scope's *near*, dropping the sentence once one has said. The
+  toolchain's `windows`, twin of `Windows`, says whose sessions speak; any other agent's switch still says its sessions do
+  not. This amends §14's *not a twin*: the file is read by both.
+
+**What the gates do not cover.** `AccountReadingTickTests`, and the two `AccountRotationTickTests` rows updated for the
+log's new fields, are the `Process` half, written by this branch and not run by it. No frame was recorded on Daoris's own
+door, and no `allowed_warning`, `rejected` or overage frame anywhere (evidence §7): those rows rest on the declaration.
+`account.near` (§13) is not written: near by number is a scope's own threshold, so *once per account and window* needs a
+scope the reading does not carry; each start's line and `account.rotated`'s `why` log every pass. Not measured: whether
+near comes early enough (§11 item 3), or whether pace leaves less at a weekly reset (§16.7). The screen says none of it
+yet (TOOL4g). The modules build against the change; their suites, the web's and the rehearsals were not run.
+
 ## D133 — The person's words are the ask's record: kept verbatim, handed whole to every session on the ask, quoted by a quest's requirements, and answered at done (2026-10-02)
 
 **Decision (DRIFT1, the owner's, of an ask whose build went another way: *"what I asked is to use v3 bridge +

@@ -286,6 +286,13 @@ public sealed class AcpSession(
         get { lock (_measured) return _usage; }
     }
 
+    /// <summary>
+    /// Told what a <c>usage_update</c> says about the account's windows (TOOL6c, D130 §5.2): its
+    /// <c>_meta["_claude/rateLimit"]</c>, which Claude Code's adapter fills with the frame's <c>rate_limit_info</c> unchanged
+    /// (limit-signals evidence §3), for the agent's table to read. Raised on the reader's thread; a listener's failure is its own.
+    /// </summary>
+    public event Action<JsonElement>? LimitsSaid;
+
     /// <summary>The config options as the agent last said them (AGT6b), and the lock that guards them.</summary>
     private readonly object _optionsGate = new();
     private IReadOnlyList<AcpConfigOption> _options = [];
@@ -948,7 +955,8 @@ public sealed class AcpSession(
     }
 
     /// <summary>
-    /// Keep the largest context reading this session reported (TOOL3/D57 §4).
+    /// Keep the largest context reading this session reported (TOOL3/D57 §4), and tell <see cref="LimitsSaid"/> what the
+    /// same update says about the account's windows (TOOL6c).
     /// </summary>
     /// <remarks>
     /// <para>🔴 <b>The high-water mark, not the last reading.</b> Context drops when a session
@@ -961,12 +969,23 @@ public sealed class AcpSession(
     /// </remarks>
     private void Measure(JsonElement update)
     {
-        if (Kind(update) != "usage_update"
-            || Number(update, "used") is not { } used
-            || Number(update, "size") is not { } size)
+        if (Kind(update) != "usage_update") return;
+
+        // The account's windows ride beside the context, whether or not the context reads (TOOL6c): an object, or nothing.
+        if (update.TryGetProperty("_meta", out var meta) && meta.ValueKind == JsonValueKind.Object
+            && meta.TryGetProperty("_claude/rateLimit", out var limits) && limits.ValueKind == JsonValueKind.Object)
         {
-            return;
+            try
+            {
+                LimitsSaid?.Invoke(limits.Clone());
+            }
+            catch (Exception error) when (error is not OperationCanceledException)
+            {
+                onLine($"[what the session said about its account's windows could not be kept: {error.Message}]");
+            }
         }
+
+        if (Number(update, "used") is not { } used || Number(update, "size") is not { } size) return;
 
         lock (_measured)
         {

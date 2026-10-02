@@ -7,6 +7,7 @@ import { commandHarness, profileHome, readHarnessSettings, writeHarnessSettings 
 import { USE_DEFAULTS, USE_MODES, resolveScope, scopeProblem, withRotation, withUse } from '../src/rotation.ts';
 import type { RotationUse, UseChange } from '../src/rotation.ts';
 import { COOLING_FILE } from '../src/cooling.ts';
+import { WINDOWS_FILE } from '../src/windows.ts';
 import { driverRows as csharpRows } from './_csharp.ts';
 import { captureError, makeFixture } from './_fixture.ts';
 
@@ -226,7 +227,7 @@ test('`profile use` sets how the machine\'s list is used, and with `--workspace`
   assert.match(machine.out, /on this machine, `claude-code`'s list is account-1, then account-2, then account-3\./);
   assert.match(machine.out, /use accounts\s+one by one, in order — one limit stops every session on that account/);
   assert.match(machine.out, /kept for conversations\s+account-3/);
-  assert.match(machine.out, /switch before the limit\s+on, at 90% — Claude Code's sessions here do not say how near their limits are/);
+  assert.match(machine.out, /switch before the limit\s+on, at 90% — a start passes an account Claude Code says is near its limit, or that has used 90% of a window/);
   assert.match(machine.out, /Written to /);
   assert.equal(scoped.code, 0);
   assert.match(scoped.out, /in `work`, `claude-code`'s list is account-2, then account-1\./);
@@ -274,12 +275,42 @@ test('`profile use` says the step the next start would follow (TOOL6b), with one
   const order = run(['profile', 'use', 'claude-code', 'order', '--workspace', 'work'], at(fx)).out;
   const one = run(['profile', 'use', 'claude-code', '--workspace', 'solo'], at(fx)).out;
 
-  assert.match(goal, /next start\s+the ready account running the fewest of Daoris's sessions; then one whose week resets within a day; then the one Daoris started on least recently; then this list's order, from `account-1`\n/);
+  assert.match(goal, /next start\s+the ready account its agent did not say is near; then the one running the fewest of Daoris's sessions; then one whose week resets within a day; then the one furthest behind its week's pace; then the one Daoris started on least recently; then this list's order, from `account-1`\n/);
   assert.match(goal, /\n {2}no account has said what it has left yet: Daoris spreads starts across them by its own sessions, and learns each account's weekly reset from the limits it meets\n/);
   assert.match(kept, /then this list's order, from `account-1`; driven work passes `account-3`, kept for conversations\n/);
-  assert.match(order, /next start\s+the first ready account of this list, from `account-1`, its default\n/);
+  assert.match(order, /next start\s+the first ready account of this list, from `account-1`, its default; one its agent said is near goes last\n/);
   assert.doesNotMatch(order, /no account has said what it has left yet/);
   assert.match(one, /next start\s+`account-2`, the one account this list holds\n/);
+  fx.cleanup();
+});
+
+test('`profile use` shows each account\'s last reading and its age, and says no account has said only while none has (TOOL6c)', () => {
+  const fx = makeFixture('rotation-use-said');
+  accounts(fx, 'claude-code', 'account-1', 'account-2');
+  accounts(fx, 'codex', 'account-1', 'account-2');
+  run(['profile', 'order', 'claude-code', 'account-1', 'account-2'], at(fx));
+  run(['profile', 'order', 'codex', 'account-1', 'account-2'], at(fx));
+  run(['profile', 'use', 'claude-code', '--near', '85'], at(fx));
+  const stamp = (offset: number) => new Date(Date.now() + offset).toISOString().replace(/\.\d+Z$/, 'Z');
+  writeFileSync(join(fx.root, WINDOWS_FILE), JSON.stringify({
+    'claude-code': {
+      'account-1': {
+        session: { reset: stamp(2 * 3_600_000), used: 0.88, standing: 'clear', seen: stamp(-20 * 60_000), session: 's1' },
+        weekly: { reset: stamp(100 * 3_600_000), used: 0.14, seen: stamp(-20 * 60_000), session: 's1' },
+      },
+    },
+  }), 'utf8');
+
+  const printed = run(['profile', 'use', 'claude-code'], at(fx)).out;
+  const codex = run(['profile', 'use', 'codex'], at(fx)).out;
+
+  assert.match(printed, /account-1\s+said \d+ min ago: 88% of its session limit used, resetting [^;]+; 14% of its weekly limit used, resetting [^;]+; near at 85%\n/);
+  assert.match(printed, /account-2\s+nothing said about what it has left/);
+  assert.doesNotMatch(printed, /no account has said what it has left yet/);
+  // An agent whose sessions do not say it passes nothing, says so, and walks without near and pace.
+  assert.match(codex, /switch before the limit\s+on, at 90% — Codex's sessions here do not say how near their limits are/);
+  assert.match(codex, /next start\s+the ready account running the fewest of Daoris's sessions; then one whose week resets within a day; then the one Daoris started on least recently;/);
+  assert.match(codex, /no account has said what it has left yet/);
   fx.cleanup();
 });
 
@@ -487,9 +518,9 @@ test('`agent list` says how each list is used beneath it, the machine\'s and eac
     workspaceRotationUse: { work: { 'claude-code': { keep: 'account-2', near: 80, weekly: 'pace', early: 'no' } } },
   });
 
-  assert.match(plain, /rotation\s+account-1, then account-2\n\s+use accounts: make the most of them\n\s+kept for conversations: none\n\s+switch before the limit: on, at 90% — Claude Code's sessions here do not say how near their limits are\n/);
+  assert.match(plain, /rotation\s+account-1, then account-2\n\s+use accounts: make the most of them\n\s+kept for conversations: none\n\s+switch before the limit: on, at 90% — a start passes an account Claude Code says is near its limit, or that has used 90% of a window\n/);
   assert.match(set, /rotation\s+account-1, then account-2, then account-3\n\s+use accounts: one by one, in order — one limit stops every session on that account\n\s+kept for conversations: account-3\n\s+switch before the limit: off \(near: 85%\)\n\s+its default, `account-9`, is not in this list: name it in the list, or make one of the list the default\n/);
-  assert.match(set, /rotation in work account-2\n\s+use accounts: make the most of them\n\s+kept for conversations: account-2\n\s+switch before the limit: on, at 80% — Claude Code's sessions here do not say how near their limits are\n\s+`account-2` is kept for conversations, and this list holds no other account for driven work\n\s+`early` holds a value this build does not know, so it reads as today's default; it is kept as written\n\s+`weekly` is a setting this build does not know: nothing here reads it, and it is kept as written\n/);
+  assert.match(set, /rotation in work account-2\n\s+use accounts: make the most of them\n\s+kept for conversations: account-2\n\s+switch before the limit: on, at 80% — a start passes an account Claude Code says is near its limit, or that has used 80% of a window\n\s+`account-2` is kept for conversations, and this list holds no other account for driven work\n\s+`early` holds a value this build does not know, so it reads as today's default; it is kept as written\n\s+`weekly` is a setting this build does not know: nothing here reads it, and it is kept as written\n/);
   fx.cleanup();
 });
 
