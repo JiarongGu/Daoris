@@ -9656,3 +9656,30 @@ records, transcripts, event logs and trees; no session was re-run with the words
 would have changed the second session's reading is not measured. What the person meant by the first answer is read
 from the question and the answer together, and the owner's later sentence agrees. `verify` checks this entry's place
 and the evidence's links, and none of their words.
+
+**DRIFT1a, built 2026-10-02: the person's words are kept on the ask.** The ask record gains `Words`: its own sentence
+first, derived from the record and given to no session, then each answer to a parked session and each message added to
+a running one, verbatim, with when, the session and the quest it works. They are appended in one statement
+(`AskStore.RecordWordAsync`, for REV3's reason). `SessionLedger.KeepOnAskAsync` derives the ask from the session: an
+intake's own, or its quest's sender `ask #id`, a chain step's included. The answer door
+(`POST /api/sessions/{id}/answer`) keeps the answer beside `AnswerAsync`, not inside it. A message added to a running
+session never reached the service: it goes from the page to the modules, the driver's inbox and the protocol door. So
+it has a door of its own, `POST /api/sessions/{id}/added` (local mode), which nothing calls yet. Both ask routes answer
+`words`. Choices §1 left open:
+- **Not back-filled, and said so.** An ask from before this build keeps its row and reads its sentence as its first
+  word. Its `wordsKeptFrom` is the moment its store first opened on this build, so it never reads as though the person
+  said nothing more. An ask made since carries none: its words are whole from the first.
+- **A blank answer keeps nothing**, since it is no sentence; the session is still handed STANDDOWN2's *carry on.*
+- **Trimmed at the ends only**, as the ask's sentence is.
+- **A session on no ask** (a quest one repository asked of another, a conversation on no quest) is answered
+  `kept: false` with the reason, a 200: its own record holds what it was told, and no ask gets words not given on it.
+- **A word of a kind this build does not know is passed over** on read, never a failed read of the ask.
+- **Served as the sentence is**: the ask routes are a local host's alone.
+
+Proof: `AskWordsTests` (an answer, added messages newest last, a chain step, an intake, no ask, the refusals, a later
+publish and close keeping the words, a store from before, an unknown kind), seen failing on a stub that kept nothing;
+`LocalHostTests` (both read back from both ask routes; the added door's `kept: false`, 404 and 400), the answer door's
+keep seen failing with its line removed. Left to their rows: calling `/added` when a driven session's inbox holds the
+person's message or an intake is told one (the modules' `SESSION_INPUT`), and handing the words to sessions (DRIFT1b).
+Not covered: until `/added` has a caller, a message typed into a running session is still only in that session's
+record; a message's files are not kept, only its words; nothing is drawn, so there is no look.

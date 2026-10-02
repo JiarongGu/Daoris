@@ -69,6 +69,61 @@ public sealed record Ask(
     /// straight from the store, which judges nothing.
     /// </summary>
     public bool Deletable { get; init; }
+
+    /// <summary>
+    /// What the person said on it after asking it (DRIFT1a), oldest first: each answer to a session that
+    /// parked to ask them and each message added to one while it ran. Appended where it is kept and never
+    /// rewritten, so nothing the agents wrote stands in for it (D133 §1).
+    /// </summary>
+    public IReadOnlyList<AskWord> Later { get; init; } = [];
+
+    /// <summary>
+    /// Every word the person gave on it (DRIFT1a, D133 §1): its own sentence first, as it was asked and to
+    /// no session, then <see cref="Later"/>. Derived from the sentence rather than stored beside it, so an
+    /// ask from before the words were kept still opens with what it asked.
+    /// </summary>
+    public IReadOnlyList<AskWord> Words => [new(AskWordKind.Asked, Sentence, Asked), .. Later];
+
+    /// <summary>
+    /// From when its later words are kept, for an ask made before they were (DRIFT1a): the moment this
+    /// machine's store first opened on a build that keeps them. Its answers and messages before then were
+    /// never kept and are not back-filled, so <see cref="Words"/> is not all it was told. Null for every ask
+    /// made since, whose words are kept from its first.
+    /// </summary>
+    /// <remarks>
+    /// Kept from then by the doors that report a word: the answer door at once, and a message added to a
+    /// running session once its driver reports it (`POST /api/sessions/{id}/added`).
+    /// </remarks>
+    public DateTimeOffset? WordsKeptFrom { get; init; }
+}
+
+/// <summary>How the person gave a word on an ask (DRIFT1a, D133 §1).</summary>
+public enum AskWordKind
+{
+    /// <summary>The ask's own sentence — only ever its first word, derived from the record.</summary>
+    Asked,
+
+    /// <summary>An answer to a session that parked to ask them.</summary>
+    Answered,
+
+    /// <summary>A message added to a session while it ran.</summary>
+    Added,
+}
+
+/// <summary>One thing the person said on an ask, verbatim (DRIFT1a, D133 §1).</summary>
+/// <param name="Kind">How they gave it.</param>
+/// <param name="Text">Their words, as given, trimmed at the ends only.</param>
+/// <param name="At">When they gave it.</param>
+/// <param name="Session">The session they gave it to; null for the ask's own sentence.</param>
+/// <param name="Quest">The quest that session worked; null for the ask's sentence and for an intake, which works none yet.</param>
+public sealed record AskWord(AskWordKind Kind, string Text, DateTimeOffset At, string? Session = null, string? Quest = null)
+{
+    /// <summary>The kind's spelling, in the store and on the wire.</summary>
+    public static string Spell(AskWordKind kind) => kind.ToString().ToLowerInvariant();
+
+    /// <summary>The reverse of <see cref="Spell"/>: null for a kind this build does not know.</summary>
+    internal static AskWordKind? Parse(string? spelled) =>
+        Enum.GetValues<AskWordKind>().Where(kind => Spell(kind) == spelled).Select(kind => (AskWordKind?)kind).FirstOrDefault();
 }
 
 /// <summary>Asks, held by the service beside the quests they become — machine-local, like the intake.</summary>
@@ -105,6 +160,21 @@ public sealed class AskStore
         // INT4b: which intake session served it. An ask made before the intake existed keeps every
         // word it had — it is the record of what a person asked, and nothing re-derives it.
         await SchemaColumns.EnsureAsync(connection, "asks", "intake", "intake TEXT NULL", ct).ConfigureAwait(false);
+
+        // DRIFT1a (D133 §1): the person's words after the ask, appended where they are kept. A store from
+        // before keeps every row it had, and their earlier answers and messages were never kept, so the
+        // moment keeping began is written on each of them, once, rather than read as nothing more said.
+        await SchemaColumns.EnsureAsync(connection, "asks", "words", "words TEXT NOT NULL DEFAULT '[]'", ct)
+            .ConfigureAwait(false);
+        if (!await SchemaColumns.HasAsync(connection, "asks", "words_kept_from", ct).ConfigureAwait(false))
+        {
+            await SchemaColumns.EnsureAsync(connection, "asks", "words_kept_from", "words_kept_from TEXT NULL", ct)
+                .ConfigureAwait(false);
+            await using var mark = connection.CreateCommand();
+            mark.CommandText = "UPDATE asks SET words_kept_from = $now WHERE words_kept_from IS NULL";
+            mark.Parameters.AddWithValue("$now", DateTimeOffset.UtcNow.ToString("O"));
+            await mark.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
+        }
 
         return store;
     }
@@ -222,6 +292,33 @@ public sealed class AskStore
         await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false);
     }
 
+    /// <summary>
+    /// Keep a word the person gave on the ask (DRIFT1a): appended where the list is kept, in one statement,
+    /// for the reason a published quest is (REV3) — the answer door and a driver's report arrive from two
+    /// processes, and a whole-record save would drop the other's word.
+    /// </summary>
+    /// <returns>False when no ask has that id, and nothing was kept.</returns>
+    public async Task<bool> RecordWordAsync(string id, AskWord word, DateTimeOffset now, CancellationToken ct = default)
+    {
+        await using var command = _connection.CreateCommand();
+        command.CommandText = """
+            UPDATE asks SET words = json_insert(words, '$[#]', json($word)), updated = $updated WHERE id = $id
+            """;
+        command.Parameters.AddWithValue("$id", id.TrimStart('#'));
+        command.Parameters.AddWithValue("$word", JsonFields.Written(writer =>
+        {
+            writer.WriteStartObject();
+            writer.WriteString("kind", AskWord.Spell(word.Kind));
+            writer.WriteString("text", word.Text);
+            writer.WriteString("at", word.At.ToString("O"));
+            if (word.Session is { } session) writer.WriteString("session", session);
+            if (word.Quest is { } quest) writer.WriteString("quest", quest);
+            writer.WriteEndObject();
+        }));
+        command.Parameters.AddWithValue("$updated", now.ToString("O"));
+        return await command.ExecuteNonQueryAsync(ct).ConfigureAwait(false) > 0;
+    }
+
     public async Task<Ask?> FindAsync(string id, CancellationToken ct = default)
     {
         await using var command = _connection.CreateCommand();
@@ -267,7 +364,35 @@ public sealed class AskStore
                 e.GetProperty("matched").EnumerateArray().Select(w => w.GetString() ?? "").ToList())),
             Quests = Items(Text("quests"), e => e.GetString() ?? ""),
             Intake = Maybe("intake"),
+            Later = LaterWords(Text("words")),
+            WordsKeptFrom = Maybe("words_kept_from") is { } from ? DateTimeOffset.Parse(from) : null,
         };
+    }
+
+    /// <summary>
+    /// The words kept after the ask, oldest first. A word whose kind this build does not know — a newer
+    /// build's — or that lacks its words or its moment is passed over, never a failed read of the ask.
+    /// </summary>
+    private static IReadOnlyList<AskWord> LaterWords(string json)
+    {
+        using var document = JsonDocument.Parse(json);
+        var words = new List<AskWord>();
+        foreach (var element in document.RootElement.EnumerateArray())
+        {
+            // Only a session's words are kept here: the ask's own sentence is its record's.
+            if (AskWord.Parse(JsonFields.Text(element, "kind")) is not { } kind || kind == AskWordKind.Asked) continue;
+            if (JsonFields.Text(element, "text") is not { } text) continue;
+            if (!DateTimeOffset.TryParse(
+                    JsonFields.Text(element, "at"), System.Globalization.CultureInfo.InvariantCulture,
+                    System.Globalization.DateTimeStyles.None, out var at))
+            {
+                continue;
+            }
+
+            words.Add(new AskWord(kind, text, at, JsonFields.Text(element, "session"), JsonFields.Text(element, "quest")));
+        }
+
+        return words;
     }
 
     // Hand-rolled for the same reason every store's lists are: nothing here may stop working under AOT.
@@ -389,6 +514,19 @@ public sealed class AskDesk(KnowledgeService service, AskStore asks, QuestExchan
 
     /// <summary>The sender every quest an ask becomes is published by.</summary>
     public static string SenderOf(string askId) => $"ask #{askId}";
+
+    /// <summary>
+    /// The ask a quest was asked by, read from its sender (DRIFT1a) — the reverse of <see cref="SenderOf"/>;
+    /// null for a quest a repository asked. A chain step names the ask too, since it is published on the
+    /// ask's behalf (D65 §4).
+    /// </summary>
+    public static string? AskOf(string? sender)
+    {
+        var prefix = SenderOf("");
+        return sender is not null && sender.Length > prefix.Length && sender.StartsWith(prefix, StringComparison.Ordinal)
+            ? sender[prefix.Length..]
+            : null;
+    }
 
     /// <summary>
     /// A circle's asks, or every circle's, newest first, each as it STANDS (USE1c) — a done one only
