@@ -82,12 +82,22 @@ public sealed record DeclarationMatchResponse(string Repository, int Score, IRea
 // the session that served it (D65 §1b), once one opened — the record a reader follows to its question.
 // `State` is the desk's reading of it, `Done` included (USE1c); `Deletable` whether the desk would delete
 // it with every quest asked by it (D95).
+// `Words` (DRIFT1a, D133 §1) is every word the person gave on it, oldest first: its sentence, then each
+// answer and each message added to a session, with when, the session and its quest. `WordsKeptFrom` is
+// said only of an ask made before the words were kept: from when they are, since nothing is back-filled.
 public sealed record AskResponse(
     string Id, string Workspace, string Sentence, string State, string Tier, DateTimeOffset Asked,
     DateTimeOffset Updated, string? Asker, string? Note, IReadOnlyList<string> Links,
     IReadOnlyList<QuestAttachmentResponse> Attachments, IReadOnlyList<DeclarationMatchResponse> Proposal,
-    IReadOnlyList<string> Quests, string? Intake = null, bool Deletable = false);
+    IReadOnlyList<string> Quests, string? Intake = null, bool Deletable = false,
+    IReadOnlyList<AskWordResponse>? Words = null, DateTimeOffset? WordsKeptFrom = null);
+// One word (DRIFT1a): `kind` is `asked`, `answered` or `added`; the ask's own sentence names no session.
+public sealed record AskWordResponse(string Kind, string Text, DateTimeOffset At, string? Session, string? Quest);
 public sealed record AskActionResponse(AskResponse Ask, string Message, QuestResponse? Quest);
+// DRIFT1a: what the person added to a running session, as its driver reports it.
+public sealed record AddedRequest(string? Text);
+// `Kept` false is no error: the session is on no ask, and the message says so. `Ask` is the ask it was kept on.
+public sealed record AddedResponse(bool Kept, string Message, AskResponse? Ask);
 public sealed record QuestActionResponse(QuestResponse Quest, string Message);
 // What a delete did (D95): the record it removed, and the service's sentence, verbatim — which says
 // whether the delete travels, and whether the remote has taken it yet.
@@ -255,6 +265,8 @@ public sealed record FeedRefusalResponse(string Error, bool Information);
 [JsonSerializable(typeof(AskActionResponse))]
 [JsonSerializable(typeof(AskResponse))]
 [JsonSerializable(typeof(IEnumerable<AskResponse>))]
+[JsonSerializable(typeof(AddedRequest))]
+[JsonSerializable(typeof(AddedResponse))]
 [JsonSerializable(typeof(QuestActionResponse))]
 [JsonSerializable(typeof(DeletedResponse))]
 [JsonSerializable(typeof(RefreshResponse))]
