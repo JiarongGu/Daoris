@@ -5,9 +5,10 @@
 > enough to answer three questions: what a harness's exhaustion actually looks like in its output, how long a cool-off
 > should be, and whether a rotated session stays reproducible"*, with exhaustion *observed, never read*. The install
 > now holds five observations (§0.2), and they answer all three. This is the contract for the TOOL4 rows, and its
-> decision is **D125**. Status: **designed; TOOL4a built** (notes under D125). It replaces the toolchain design's
-> §2 part 4 and §6 (`docs/2026-09-22-toolchain-design.md`, noted at its head). Read with **D49 §4**, **D57**,
-> **D58**, **D66 §3**, **D67 §1**, **D73**, **D76**, **D80**, **D94**, **D104**, **D110** and **D116**.
+> decision is **D125**. Status: **designed; TOOL4a and TOOL4c built** (notes under D125). It replaces the
+> toolchain design's §2 part 4 and §6 (`docs/2026-09-22-toolchain-design.md`, noted at its head). Read with
+> **D49 §4**, **D57**, **D58**, **D66 §3**, **D67 §1**, **D73**, **D76**, **D80**, **D94**, **D104**, **D110** and
+> **D116**.
 
 Accounts are named here as Daoris names their directories (`account-1`, `account-2`: D66 §3). Nobody's account, the
 owner's time zone and the machine's paths are not named: a zone in a quoted sentence is written `<zone>`.

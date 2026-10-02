@@ -7814,3 +7814,18 @@ pure. What building it settled, each held by `AccountLimitsTests`:
 
 **What the gates do not cover.** How Claude Code prints the zone: the five sentences were given with it elided, so
 whether a real one is an IANA name, and so read as named, was not seen. The default as a setting is TOOL4e's.
+
+**Built 2026-10-02 (TOOL4c): the record says a limit** (point 3, design §5.2). `Session.Limit`, as D104's
+`Interrupted` was added: the ledger takes `limit` only on a move to `failed` and refuses it on any other, naming
+`failed`; the store keeps it once said, in a column `SchemaColumns` adds, so a record from before reads false. What
+building it settled:
+- **The column is `limited`**, since `LIMIT` is SQL's own word. The record, the HTTP door and the wire say `limit`.
+- **It travels, where `Interrupted` does not.** It names no account, so `ToSession` answers it to every caller, the
+  feed carries it up and a page down, and a mirrored record keeps it on its first copy and each later one. The wire
+  says `limit` only where it is true, so a feed or a page from a build before the field reads false on both sides.
+- **The ledger still opens the carry-on** of a taken quest whose last session here failed on a limit (D80). The
+  wait for the reset, and passing a limit record in the strikes, are the driver's at spawn (TOOL4d), and the
+  client sending `limit` with them.
+
+**What the gates do not cover.** Nothing sends `limit` yet: the driver's client is TOOL4d's. The page shows nothing
+new (TOOL4g), and no rehearsal was run by this change.
