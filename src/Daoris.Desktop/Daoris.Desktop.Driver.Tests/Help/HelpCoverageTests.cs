@@ -102,6 +102,11 @@ public sealed partial class HelpCoverageTests
         ("strikes", new Door("setting", "strikes")),
         ("retry", new Door("setting", "retry")),
         ("timeout", new Door("setting", "timeout")),
+        // TOOL4e: the default cool-off's terminal door (D125 §6), owed to Ask Daoris until TOOL4g builds its door.
+        ("cooloff", new Owed(
+            "the cool-off a limit naming no time takes is a setting that undoes itself, so Ask Daoris should propose it; that "
+            + "is the `setting` kind's `cooloff` door, which TOOL4g builds with Settings → Driver's control (D125 §6), and "
+            + "until then `daoris driver cooloff` is the terminal's door.")),
         ("cap", new Door("setting", "cap")),
         ("adapter", new Door("setting", "adapter")),
     ];
