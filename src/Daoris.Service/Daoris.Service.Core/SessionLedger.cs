@@ -368,6 +368,24 @@ public sealed class SessionLedger(
     }
 
     /// <summary>
+    /// The note an answer leaves (ANSWER1b): what the session asked, then what it was told, since the conversation that
+    /// goes on and a session that carries the quest on are both read from this record, and an answer without its
+    /// question is half a conversation. A second answer replaces the first one's line, so the note says what the record holds.
+    /// </summary>
+    private static string AnsweredNote(Session parked, string said)
+    {
+        var asked = parked.Note ?? "It stopped to ask the person; its question is in its transcript.";
+        if (parked.Answer is { } earlier && asked.EndsWith(AnsweredLine(earlier), StringComparison.Ordinal))
+        {
+            asked = asked[..^AnsweredLine(earlier).Length];
+        }
+
+        return asked + AnsweredLine(said);
+    }
+
+    private static string AnsweredLine(string said) => $"\n\nAnswered: {said}";
+
+    /// <summary>
     /// Keep what the person said to a session on the ask its work is for (DRIFT1a, D133 §1): verbatim, with
     /// when, the session it was said to and the quest that session works. Beside <see cref="AnswerAsync"/>,
     /// never inside it: the answer door calls both, and what an answer does to a parked session is not this
@@ -428,24 +446,6 @@ public sealed class SessionLedger(
             + (session.Quest is { } on ? $" on quest `#{on}`." : "."),
             askId, word);
     }
-
-    /// <summary>
-    /// The note an answer leaves (ANSWER1b): what the session asked, then what it was told, since the conversation that
-    /// goes on and a session that carries the quest on are both read from this record, and an answer without its
-    /// question is half a conversation. A second answer replaces the first one's line, so the note says what the record holds.
-    /// </summary>
-    private static string AnsweredNote(Session parked, string said)
-    {
-        var asked = parked.Note ?? "It stopped to ask the person; its question is in its transcript.";
-        if (parked.Answer is { } earlier && asked.EndsWith(AnsweredLine(earlier), StringComparison.Ordinal))
-        {
-            asked = asked[..^AnsweredLine(earlier).Length];
-        }
-
-        return asked + AnsweredLine(said);
-    }
-
-    private static string AnsweredLine(string said) => $"\n\nAnswered: {said}";
 
     /// <summary>
     /// Queue a session for an open quest. Refuses an unknown or non-open quest, and a repository that

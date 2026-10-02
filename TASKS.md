@@ -21,8 +21,8 @@ lists.
 
 ## State
 
-**Counts, and this is their one home:** seventeen commands, **1073 CLI tests, 916 service and 50 HTTP host, 3352 driver,
-529 desktop modules, 80 devkit, 2630 web unit, 24 Playwright**, 114/114 release rehearsal, **341/341
+**Counts, and this is their one home:** seventeen commands, **1078 CLI tests, 931 service and 53 HTTP host, 3386 driver,
+529 desktop modules, 80 devkit, 2630 web unit, 24 Playwright**, 114/114 release rehearsal, **349/349
 family rehearsal** (it names its own phases when you run it), **84/84 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 6 knowledge
 documents, 6 skills, 7 packs. The always-loaded core is **20,067 of 26,000 bytes** — a span in
@@ -204,19 +204,14 @@ owner on 1 October.
 - [ ] **SESSUX1g — `daoris-driver sessions`** (§7.1; driver, modules; after a, b, f): the listing by group; stop, finish
   and decline through the requests the running loop honours; archive, unarchive, delete.
 - [ ] **SESSUX1h — Ask Daoris reaches sessions** (§7.3; driver, service, web-shell; after d–g and FRAME1i).
-- [ ] **ANSWER1b — the service keeps an answered park** (service, tools; in flight). `SessionLedger.AnswerAsync` ends the
-  parked record, so the driver can never reopen it; keep it `awaiting-person` with its answer instead, so the resume
-  ANSWER1a built can happen. Contract: D131 point 6, design §5. Proof: `SessionLedgerTests`; the family rehearsal's
-  STANDDOWN2 answer phase, its stub taught to resume.
 - [ ] **ANSWER1c — the page shows an answered park as carrying on** (driver `SessionGroups`, web-shell; after ANSWER1b and
   SESSUX1i). Listed under Working until the next look, the card showing the answer and *goes on*. Contract: design §5.
   Proof: `SessionGroupsTests`; the card's story; both catalogues.
+- [ ] **ANSWER1e — the map and Ask Daoris read an answered park** (web-shell; found by ANSWER1c). The map's *parked* mark
+  (`map/topology.ts`) and Ask Daoris's waiting count (`help/machine.ts`) still count an answered park for up to one look.
+  Contract: answer-continues design §5. Proof: `topology.test.ts` and the help machine test read `answeredPark`.
 - [ ] **ANSWER1d — the canary on the install** (the parent's, after b). One park answered on the install shows one row,
   the conversation going on, and `session.answered` with `resumed` true. Contract: design §6. Proof: the run.
-- [ ] **DRIFT1a — the owner's words are the ask's record** (service). Every sentence the owner gives on an ask (the ask,
-  each answer, each message typed into a running session) is kept on the ask verbatim, with when and to which session and
-  quest; today they live only in session records. Contract: D133 §1. Proof: service tests reading an answer and a typed
-  message back from the ask, failing first.
 - [ ] **DRIFT1a2 — a typed message reaches its ask** (modules; after DRIFT1a). `SESSION_INPUT` posts
   `/api/sessions/{id}/added` when a driven session's inbox takes the person's words and when an intake is told them.
   Contract: D133 §1, its DRIFT1a note. Proof: a modules test that a held message posts once with its session's id.
@@ -232,9 +227,6 @@ owner on 1 October.
 - [ ] **DRIFT1e — a follow-up checks against the ask, and a correction goes back to the work** (design first). A closing note
   is the build's account, not the requirement; a correction reopens the parent quest instead of being built under
   *Verify*. Contract: D133 §5. Proof: the design, then its rows.
-- [ ] **PAUSE1a — the work, and the pause's file** (driver; cli). `AskWork.Read` answers what an ask's work is (its
-  quests, chain steps, questions it asked, sessions, trees, branches); `pausedAsks` and `pausedQuests` in `driver.json`,
-  both twins. Contract: D132 §1, §2.5. Proof: `AskWorkTests`; the twin tables, both sides.
 - [ ] **PAUSE1b — pause and resume** (driver, modules; after a and SESSUX1g). The `Paused` verdict first, `WORK_PAUSE` and
   `WORK_RESUME`, the terminal and the log: one press stops an ask's work and keeps its place. Contract: D132 §2, §4.3, §6.1,
   §7.2–§7.3. Proof: planner, route and group tests; a Process tick paused and resumed in its tree.
@@ -471,6 +463,13 @@ the ACP door, not a registry**.
   the account rows (order, *Rotate*, cooling, *Try now*), the shared-sign-in line, *waits for an account* with no Retry,
   the cool-off setting, the doors; both languages (D116); the look on the window. The modules' *Remove* must call
   `HarnessSettings.WithoutAccount`, as the terminal now does (TOOL4e).
+- [ ] **TOOL4l — Ask Daoris's account doors, the service's half** (service, driver; found by TOOL4g). `agent_propose`
+  writes `use` (with `use`, `keep`, `early`, `near`), `order` and `ready`, and the setting writer lists `cooloff`, so the
+  cards the screen's controls owe can be offered. Contract: D125 §6, D130 §9, §16.6. Proof: the proposal-kind tests with
+  the doors listed; `HelpCoverageTests`' owed rows become doors.
+- [ ] **TOOL4m — the rest of TOOL4g's screen** (web-shell; found by TOOL4g). *What needs you*'s row for a start waiting for
+  an account with *Let … run …* (D130 §3.3), the conversation picker's split (§3.2), and a session head's *your own
+  sign-in*. Contract: D130 §3.2–§3.3. Proof: vitest, stories, the look.
 - [ ] **TOOL4h — the rehearsal and the report** (tools; §8, §2.2; after TOOL4j): two stub accounts; the usage report's
   limits section per account and window, *Daoris's sessions only*; *in parallel* over N stub accounts (D130 §5.4).
 - [ ] **TOOL4i — a real rotation on the install** (the owner's run). *One by one* seen 2026-10-02: a spend limit on the
@@ -654,6 +653,8 @@ TDD, looked at on the window, and the ones that touch a real session use one (au
   failed in the modules' Process half and passed alone, under four branches' load.
   **And merging TOOL6b, SESSUX1i and WSSETUP14a** (2026-10-02): `HelpChatTests.Only_Ask_Daoris_loads_its_tools_up_front_and_only_where_the_harness_says_how`
   failed in the driver's Process half and passed alone, with three branches building beside it.
+  **And merging ANSWER1b, PAUSE1a and DRIFT1a** (2026-10-03): `ProcessJobTests.A_child_that_outlives_its_parent_ends_when_the_session_is_untracked`
+  failed in the driver's Process half and passed alone, with four branches building beside it.
 - [ ] **TEST1 — a Node process aborts with `0xC0000409`: seen three times now, once outside Playwright.** The
   second sighting was its trigger. Both runs died with `worker process exited unexpectedly
   (code=3221226505)`, Windows `__fastfail`: no output, no stack, no WER entry.

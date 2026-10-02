@@ -17,6 +17,7 @@ import { requireHomeFile } from './home.ts';
 import { DaorisError } from './errors.ts';
 import { flagValue, operands } from './args.ts';
 import { readJsonObject, writeJsonAtomic } from './fsx.ts';
+import { isoMoment } from './cooling.ts';
 import { readPlugins, type PluginCatalog } from './plugins.ts';
 import { TOOLCHAINS } from './toolchain.ts';
 import type { CommandArgs } from './types.ts';
@@ -48,6 +49,14 @@ export interface DriverChoices {
    * holds the quest again. The driver's `DriverConfig.Released` is the twin, read by the same table.
    */
   released: Record<string, string>;
+  /**
+   * The asks paused on this machine (PAUSE1a, D132 point 5, design §2.5), each with when and the stops its pause made, read
+   * for `list` by the driver's table (`DriverConfig.PausedAsks`). 🔴 Never written from here: pausing and resuming are
+   * `daoris-driver`'s, so the file's own value stays in `rest` and goes back exactly as it was written.
+   */
+  pausedAsks: Record<string, WorkPause>;
+  /** The quests paused on this machine on their own: read, and kept as written, as `pausedAsks` is. */
+  pausedQuests: Record<string, WorkPause>;
   /** The harness an ask's intake session runs on (INT4b, D65 §1b) — null, and no intake runs. */
   intakeAdapter: string | null;
   /** The agent Ask Daoris runs on (HELP1, D89) — null, and it offers only its starters. */
@@ -79,6 +88,15 @@ export interface DriverChoices {
   rest: Record<string, unknown>;
 }
 
+/**
+ * One pause of an ask's work or a quest's (PAUSE1a, design §2.5): when the person made it, or null where the file does not
+ * say in a form ISO 8601 writes, and each quest it stopped against the session it stopped. The driver's `WorkPause`.
+ */
+export interface WorkPause {
+  at: Date | null;
+  stopped: Record<string, string>;
+}
+
 /** The driver's own default for `timeoutMinutes` (`DriverConfig.Empty`) — the twin says 30 too. */
 export const DEFAULT_TIMEOUT_MINUTES = 30;
 
@@ -91,7 +109,7 @@ export const DEFAULT_COOLOFF_MINUTES = 60;
 /** Drives nothing, holds nothing — the safe shape silence takes, matching the driver's own default. */
 const EMPTY: DriverChoices = {
   drivable: [], holds: [], trees: [], cap: 2, adapter: 'claude-code', notify: true,
-  strikes: 3, forgiven: {}, released: {}, intakeAdapter: null, helperAdapter: null, timeoutMinutes: null, cooloff: null, lines: {}, workspaceLines: {},
+  strikes: 3, forgiven: {}, released: {}, pausedAsks: {}, pausedQuests: {}, intakeAdapter: null, helperAdapter: null, timeoutMinutes: null, cooloff: null, lines: {}, workspaceLines: {},
   landings: {}, workspaceLandings: {}, readAcross: {}, workspaceReadAcross: {}, writeAcross: {}, rest: {},
 };
 
@@ -231,8 +249,8 @@ export function readDriverChoices(path = driverConfigPath()): DriverChoices {
   }
   if (parsed === null) {
     return {
-      ...EMPTY, forgiven: {}, released: {}, lines: {}, workspaceLines: {}, landings: {}, workspaceLandings: {},
-      readAcross: {}, workspaceReadAcross: {}, writeAcross: {}, rest: {},
+      ...EMPTY, forgiven: {}, released: {}, pausedAsks: {}, pausedQuests: {}, lines: {}, workspaceLines: {}, landings: {},
+      workspaceLandings: {}, readAcross: {}, workspaceReadAcross: {}, writeAcross: {}, rest: {},
     };
   }
 
@@ -253,6 +271,9 @@ export function readDriverChoices(path = driverConfigPath()): DriverChoices {
     forgiven: marks(forgiven),
     // Each quest against a session, as the driver reads it (SESSUX1b): a release the driver would not read is not listed.
     released: releases(released),
+    // Read as the driver reads them (PAUSE1a), and left in `rest` as written: this editor never writes a pause.
+    pausedAsks: pauses(parsed['pausedAsks']),
+    pausedQuests: pauses(parsed['pausedQuests']),
     // 🔴 Absent means ON, the same reading the driver makes (SURF5b): every machine that already
     // has this file predates the field, and taking silence for "off" would ship the feature
     // switched off on exactly the machines that have been driving longest.
@@ -786,6 +807,16 @@ export function commandDriver({ argv, write }: CommandArgs): ExitCode {
       write(`  released   #${quest}  (your stop of session ${session})`);
     }
 
+    // PAUSE1a (D132 §2.5): each pause this machine keeps, when it was made and the stops it made. Its words say paused,
+    // never held (design §8.1): a hold stops nothing that runs, and a pause does.
+    for (const [scope, pauses] of [['ask', choices.pausedAsks], ['quest', choices.pausedQuests]] as const) {
+      for (const [id, pause] of Object.entries(pauses)) {
+        const when = pause.at === null ? 'when is not recorded' : `since ${pause.at.toISOString().replace(/\.\d{3}Z$/, 'Z')}`;
+        const stops = Object.keys(pause.stopped).sort().map((quest) => `#${quest}'s session ${pause.stopped[quest]}`);
+        write(`  paused     ${scope} #${id}  (${when}${stops.length > 0 ? `; its pause stopped ${stops.join(', ')}` : ''})`);
+      }
+    }
+
     write(choices.timeoutMinutes === null
       ? `  timeout    ${DEFAULT_TIMEOUT_MINUTES} minutes a session may run  (the default — \`daoris driver timeout <minutes>\` changes it)`
       : `  timeout    ${choices.timeoutMinutes} minutes a session may run`);
@@ -910,9 +941,44 @@ export function releasedFor(choices: DriverChoices, quest: string): string | nul
   return key === undefined ? null : choices.released[key]!;
 }
 
+/** This ask's pause on this machine (PAUSE1a), or null: the id as a person writes it, matched without case, as the driver's `PausedAsk` matches it. */
+export function pausedAsk(choices: DriverChoices, ask: string): WorkPause | null {
+  return pauseOf(choices.pausedAsks, ask);
+}
+
+/** This quest's own pause on this machine (PAUSE1a), or null, as the driver's `PausedQuest` reads it. */
+export function pausedQuest(choices: DriverChoices, quest: string): WorkPause | null {
+  return pauseOf(choices.pausedQuests, quest);
+}
+
+function pauseOf(pauses: Record<string, WorkPause>, id: string): WorkPause | null {
+  const named = id.trim().replace(/^#+/, '').trim().toLowerCase();
+  const key = Object.keys(pauses).find((name) => name.toLowerCase() === named);
+  return key === undefined ? null : pauses[key]!;
+}
+
 /**
- * The releases, as the driver reads them (SESSUX1b): each quest against a session's id, read without the spaces around it.
- * A blank session, one that is not text, a map that is not one, and a quest written again in another case are not read.
+ * The pauses, as the driver reads them (PAUSE1a): each id an object, read where first written in any case. Its `at` is read
+ * only as ISO 8601 writes a moment, and a time that does not read leaves the pause standing with its time unknown: the pause
+ * is the person's, and the time only says when. Its `stopped` is read as `released` is. A map that is not one is none.
+ */
+function pauses(value: unknown): Record<string, WorkPause> {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
+  const held: Record<string, WorkPause> = {};
+  for (const [id, entry] of Object.entries(value as Record<string, unknown>)) {
+    if (!entry || typeof entry !== 'object' || Array.isArray(entry) || id.length === 0) continue;
+    if (Object.keys(held).some((name) => name.toLowerCase() === id.toLowerCase())) continue;
+    const { at, stopped } = entry as Record<string, unknown>;
+    held[id] = { at: isoMoment(at), stopped: releases(stopped) };
+  }
+
+  return held;
+}
+
+/**
+ * The releases, as the driver reads them (SESSUX1b), and a pause's stops (PAUSE1a): each quest against a session's id, read
+ * without the spaces around it. A blank session, one that is not text, a map that is not one, and a quest written again in
+ * another case are not read.
  */
 function releases(value: unknown): Record<string, string> {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return {};

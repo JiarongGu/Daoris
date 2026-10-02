@@ -4,7 +4,8 @@ import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
-  DEFAULT_COOLOFF_MINUTES, commandDriver, driverConfigPath, isBranchName, landingProblem, readDriverChoices, releasedFor,
+  DEFAULT_COOLOFF_MINUTES, commandDriver, driverConfigPath, isBranchName, landingProblem, pausedAsk, pausedQuest,
+  readDriverChoices, releasedFor,
 } from '../src/driverconfig.ts';
 import { driverRows as csharpRows } from './_csharp.ts';
 import { makeFixture, captureError } from './_fixture.ts';
@@ -746,6 +747,105 @@ test('a release is written only once set, and a verb that knows nothing of it pr
   run(['strikes', '5'], at(fx));
 
   assert.deepEqual(JSON.parse(readFileSync(at(fx), 'utf8')).released, { q1: 's1' });
+  fx.cleanup();
+});
+
+/**
+ * `pausedAsks` and `pausedQuests` (PAUSE1a, D132 point 5, design §2.5): each pause by its ask or quest, with when it was made
+ * and the stops it made. 🔴 A TWIN with the driver's `DriverConfig.PausedAsks` and `PausedQuests`: `PausedWorkTests.cs` holds
+ * this table row for row, and the test below holds it to this one, cell for cell. A row's `at` is the moment read, in UTC to
+ * the second; its `stopped` each `quest=session`, sorted and joined by commas.
+ */
+const PAUSE_ROWS: [name: string, file: string, scope: string, id: string, paused: boolean, at: string | null, stopped: string][] = [
+  ['absent is no pause', '{}', 'ask', 'a1', false, null, ''],
+  ['an ask paused, with when and the stops its pause made', '{"pausedAsks":{"a1":{"at":"2026-10-02T14:02:11Z","stopped":{"q7":"s-1"}}}}', 'ask', 'a1', true, '2026-10-02T14:02:11Z', 'q7=s-1'],
+  ['a quest paused that stopped nothing', '{"pausedQuests":{"q9":{"at":"2026-10-02T14:05:40Z","stopped":{}}}}', 'quest', 'q9', true, '2026-10-02T14:05:40Z', ''],
+  ['an ask\'s pause is not a quest\'s', '{"pausedAsks":{"a1":{"at":"2026-10-02T14:02:11Z","stopped":{}}}}', 'quest', 'a1', false, null, ''],
+  ['another ask\'s pause is not this one\'s', '{"pausedAsks":{"a2":{"at":"2026-10-02T14:02:11Z","stopped":{}}}}', 'ask', 'a1', false, null, ''],
+  ['an id is matched in any case', '{"pausedAsks":{"A1":{"at":"2026-10-02T14:02:11Z","stopped":{}}}}', 'ask', 'a1', true, '2026-10-02T14:02:11Z', ''],
+  ['an id written twice in any case is read where first written', '{"pausedQuests":{"q9":{"at":"2026-10-02T14:05:40Z"},"Q9":{"at":"2026-10-03T00:00:00Z"}}}', 'quest', 'q9', true, '2026-10-02T14:05:40Z', ''],
+  ['a time at an offset is read as its moment', '{"pausedAsks":{"a1":{"at":"2026-10-02T16:02:11+02:00"}}}', 'ask', 'a1', true, '2026-10-02T14:02:11Z', ''],
+  ['a time with a fraction is read to the second', '{"pausedAsks":{"a1":{"at":"2026-10-02T14:02:11.5Z"}}}', 'ask', 'a1', true, '2026-10-02T14:02:11Z', ''],
+  ['a time that is not ISO 8601 is unknown, and the pause still holds', '{"pausedAsks":{"a1":{"at":"Oct 2"}}}', 'ask', 'a1', true, null, ''],
+  ['a date that does not exist is unknown, and the pause still holds', '{"pausedAsks":{"a1":{"at":"2026-02-30T00:00:00Z"}}}', 'ask', 'a1', true, null, ''],
+  ['a pause with no time or stops is still a pause', '{"pausedAsks":{"a1":{}}}', 'ask', 'a1', true, null, ''],
+  ['a stopped session is read without the spaces around it, and a blank one or one that is not text is not read', '{"pausedAsks":{"a1":{"stopped":{"q1":" s-1 ","q2":"  ","q3":7}}}}', 'ask', 'a1', true, null, 'q1=s-1'],
+  ['a quest stopped twice in any case is read where first written', '{"pausedAsks":{"a1":{"stopped":{"q1":"s-1","Q1":"s-2","q2":"s-3"}}}}', 'ask', 'a1', true, null, 'q1=s-1,q2=s-3'],
+  ['stops that are not a map are none', '{"pausedAsks":{"a1":{"stopped":["q1"]}}}', 'ask', 'a1', true, null, ''],
+  ['an entry that is not an object is no pause', '{"pausedAsks":{"a1":true}}', 'ask', 'a1', false, null, ''],
+  ['a list is not a map', '{"pausedAsks":["a1"]}', 'ask', 'a1', false, null, ''],
+  ['null is absent', '{"pausedQuests":null}', 'quest', 'q9', false, null, ''],
+];
+
+/** A moment in UTC to the second, as both tables spell it. */
+function second(at: Date | null): string | null {
+  return at === null ? null : at.toISOString().replace(/\.\d{3}Z$/, 'Z');
+}
+
+/** A pause's stops as both tables spell them: each `quest=session`, sorted, joined by commas. */
+function spelled(stopped: Record<string, string>): string {
+  return Object.keys(stopped).sort().map((quest) => `${quest}=${stopped[quest]}`).join(',');
+}
+
+test('a pause reads as the driver reads it (the twin\'s table)', () => {
+  const fx = makeFixture('driver-paused-read');
+  for (const [name, file, scope, id, paused, moment, stopped] of PAUSE_ROWS) {
+    writeFileSync(at(fx), file, 'utf8');
+    const choices = readDriverChoices(at(fx));
+    const pause = scope === 'ask' ? pausedAsk(choices, id) : pausedQuest(choices, id);
+    const read = pause === null ? [false, null, ''] : [true, second(pause.at), spelled(pause.stopped)];
+    assert.deepEqual(read, [paused, moment, stopped], name);
+  }
+  fx.cleanup();
+});
+
+test('the driver’s pause table is this table, row for row and in this order', () => {
+  const source = readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'Daoris.Desktop',
+    'Daoris.Desktop.Driver.Tests', 'PausedWorkTests.cs'), 'utf8').replace(/\r\n/g, '\n');
+
+  assert.deepEqual(csharpRows(source, 'Pauses_read_as_the_cli_reads_them', {}, 'PausedWorkTests'), PAUSE_ROWS);
+});
+
+/**
+ * 🔴 This editor never edits a pause (design §2.5): pausing and resuming are `daoris-driver`'s, which reads the work and
+ * reaches the running loop. So every verb keeps the pauses exactly as written, an entry it would not read included, and a
+ * file that holds none is given none.
+ */
+test('a verb that knows nothing of pauses keeps them as written, and a file without them gets none', () => {
+  const fx = makeFixture('driver-paused-preserve');
+  run(['drive', 'engine'], at(fx));
+  const fresh = JSON.parse(readFileSync(at(fx), 'utf8'));
+  assert.equal('pausedAsks' in fresh || 'pausedQuests' in fresh, false);
+
+  const pausedAsks = {
+    a1: { at: '2026-10-02T14:02:11Z', stopped: { q7: 's-1a2b3c4d' }, door: 'screen' },
+    a2: true,
+  };
+  const pausedQuests = { q9: { at: 'Oct 2', stopped: {} } };
+  writeFileSync(at(fx), JSON.stringify({ ...fresh, pausedAsks, pausedQuests }), 'utf8');
+
+  run(['hold', 'engine'], at(fx));
+  run(['retry', 'q1', '--session', 's1'], at(fx));
+  run(['strikes', '5'], at(fx));
+
+  const kept = JSON.parse(readFileSync(at(fx), 'utf8'));
+  assert.deepEqual(kept.pausedAsks, pausedAsks);
+  assert.deepEqual(kept.pausedQuests, pausedQuests);
+  fx.cleanup();
+});
+
+test('list shows each pause, when it was made and the stops it made', () => {
+  const fx = makeFixture('driver-paused-list');
+  writeFileSync(at(fx), JSON.stringify({
+    pausedAsks: { a1b2c3: { at: '2026-10-02T14:02:11Z', stopped: { q7f3e1: 's-1a2b3c4d', q2: 's-2' } } },
+    pausedQuests: { q9d0aa: { stopped: {} } },
+  }), 'utf8');
+
+  const out = run(['list'], at(fx)).out;
+  assert.match(out, /paused\s+ask #a1b2c3\s+\(since 2026-10-02T14:02:11Z; its pause stopped #q2's session s-2, #q7f3e1's session s-1a2b3c4d\)/);
+  assert.match(out, /paused\s+quest #q9d0aa\s+\(when is not recorded\)/);
+  // A pause's words say paused, never held (design §8.1).
+  assert.doesNotMatch(out.split('\n').filter((line) => line.includes('paused')).join('\n'), /held/);
   fx.cleanup();
 });
 
