@@ -1,8 +1,12 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
-import { commandDriver, driverConfigPath, isBranchName, landingProblem, readDriverChoices } from '../src/driverconfig.ts';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+import {
+  DEFAULT_COOLOFF_MINUTES, commandDriver, driverConfigPath, isBranchName, landingProblem, readDriverChoices,
+} from '../src/driverconfig.ts';
+import { driverRows as csharpRows } from './_csharp.ts';
 import { makeFixture, captureError } from './_fixture.ts';
 
 /**
@@ -438,7 +442,7 @@ test('an unknown verb names the ones that exist', () => {
 
   assert.match(error.message, /unknown driver verb 'frobnicate'/);
   assert.match(
-    error.message, /list, drive, undrive, hold, resume, trees, line, landing, across, notify, strikes, retry, timeout, cap, adapter, intake, helper/);
+    error.message, /list, drive, undrive, hold, resume, trees, line, landing, across, notify, strikes, retry, timeout, cooloff, cap, adapter, intake, helper/);
   fx.cleanup();
 });
 
@@ -608,6 +612,60 @@ test('the session timeout is set from a terminal, listed, and left alone until i
     assert.match(captureError(() => run(['timeout', bad], at(fx))).message, /whole number of minutes/);
   }
 
+  fx.cleanup();
+});
+
+/**
+ * `cooloff` (TOOL4e, D125 §2.2): how long an account cools when its agent's limit names no time this reads. 🔴 A TWIN with
+ * the driver's `DriverConfig.CoolOff`: `CoolOffTests.cs` holds this table row for row, and the test below holds it to
+ * this one, cell for cell. Absent is an hour; a whole number of at least 1 is the setting; anything else is not read.
+ */
+const COOLOFF_ROWS: [name: string, file: string, minutes: number][] = [
+  ['absent is the default, an hour', '{}', 60],
+  ['a whole number of minutes is the setting', '{"cooloff":90}', 90],
+  ['one minute is the least there is', '{"cooloff":1}', 1],
+  ['zero is a spin, and is not read', '{"cooloff":0}', 60],
+  ['less than nothing is not read', '{"cooloff":-5}', 60],
+  ['a part of a minute is not read', '{"cooloff":1.5}', 60],
+  ['text is not a number', '{"cooloff":"90"}', 60],
+  ['null is absent', '{"cooloff":null}', 60],
+];
+
+test('the cool-off reads as the driver reads it (the twin\'s table)', () => {
+  const fx = makeFixture('driver-cooloff-read');
+  for (const [name, file, minutes] of COOLOFF_ROWS) {
+    writeFileSync(at(fx), file, 'utf8');
+    assert.equal(readDriverChoices(at(fx)).cooloff ?? DEFAULT_COOLOFF_MINUTES, minutes, name);
+  }
+  fx.cleanup();
+});
+
+test('the driver’s cool-off table is this table, row for row and in this order', () => {
+  const source = readFileSync(join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'Daoris.Desktop',
+    'Daoris.Desktop.Driver.Tests', 'CoolOffTests.cs'), 'utf8').replace(/\r\n/g, '\n');
+
+  assert.deepEqual(csharpRows(source, 'Cooloff_reads_as_the_cli_reads_it', {}, 'CoolOffTests'), COOLOFF_ROWS);
+});
+
+test('the cool-off is set from a terminal, listed, and left alone until it is', () => {
+  const fx = makeFixture('driver-cooloff');
+  writeFileSync(at(fx), `${JSON.stringify({ drivable: ['engine'], cap: 1 }, null, 2)}\n`, 'utf8');
+
+  assert.match(run(['list'], at(fx)).out, /cooloff\s+60 minutes.*the default/);
+  run(['hold', 'engine'], at(fx));
+  assert.equal(JSON.parse(readFileSync(at(fx), 'utf8')).cooloff, undefined);
+
+  const set = run(['cooloff', '90'], at(fx));
+  assert.equal(JSON.parse(readFileSync(at(fx), 'utf8')).cooloff, 90);
+  assert.match(set.out, /an account whose agent names no time for its limit cools for 90 minutes/);
+  assert.match(run(['list'], at(fx)).out, /cooloff\s+90 minutes/);
+  run(['resume', 'engine'], at(fx));
+  assert.equal(JSON.parse(readFileSync(at(fx), 'utf8')).cooloff, 90, 'another verb keeps it');
+
+  for (const bad of ['0', '-5', '1.5', 'soon']) {
+    assert.match(captureError(() => run(['cooloff', bad], at(fx))).message, /whole number of minutes, at least 1/);
+  }
+  assert.match(captureError(() => run(['cooloff'], at(fx))).message, /needs a name|whole number of minutes/);
   fx.cleanup();
 });
 

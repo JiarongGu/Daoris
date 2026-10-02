@@ -424,7 +424,7 @@ public sealed class ChatRunner(
             chat = new ProtocolChat(
                 place.Posture ?? resolved.AcpPosture, meta, workTree, Servers(sessionId, pluginServers), Changed,
                 stopped: () => processes.WasStopRequested(sessionId),
-                limited: failure => Limited(sessionId, resolved, selection.Profile, failure));
+                limited: failure => Limited(sessionId, resolved, selection.Profile, failure, config.CoolOff));
             _turned[sessionId] = chat;
         }
         else if (mapper is not null)
@@ -638,12 +638,13 @@ public sealed class ChatRunner(
     /// recognises it, the account the conversation runs as cools, the log says so, and the sentence for its record comes
     /// back. Null is a refusal as today. The conversation goes on: the process is still there, and so is the person.
     /// </summary>
-    internal string? Limited(string sessionId, ISessionAdapter adapter, string? profile, string failure)
+    /// <param name="coolOff">The machine's <c>cooloff</c> (TOOL4e), for a limit that names no time; the default when null.</param>
+    internal string? Limited(string sessionId, ISessionAdapter adapter, string? profile, string failure, TimeSpan? coolOff = null)
     {
         (CoolingEntry Entry, LimitSeen Seen)? limited;
         try
         {
-            limited = _harnesses.Limited(adapter.Name, profile, failure, sessionId);
+            limited = _harnesses.Limited(adapter.Name, profile, failure, sessionId, coolOff);
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {

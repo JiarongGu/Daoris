@@ -194,6 +194,141 @@ public sealed partial class DriverModule
         }
     }
 
+    /// <summary>
+    /// Where each session is listed by state (SESSUX1a, D126 §2.4): its group, the word its row shows, and what its second
+    /// line says, in the order a list shows them, read by the driver library's one reader, which the terminal's
+    /// <c>sessions</c> prints too. With <c>ids</c>, those sessions' alone.
+    /// </summary>
+    /// <remarks>
+    /// <para><b>From the records, the quests, the planner's verdicts, the trees and the marks</b>: the loop's last look where
+    /// it has looked, a plan over a fresh snapshot where it has not; git asked only of an ended session's own tree that
+    /// could be to review. Never from what a session printed.</para>
+    ///
+    /// <para><b>Nothing machine-local comes back</b>: ids, groups, words and counts. A tree's path stays here.</para>
+    /// </remarks>
+    [DriverRoute("SESSION_GROUPS")]
+    private async Task<object?> SessionGroupsAsync(IpcRequest request, CancellationToken cancellationToken)
+    {
+        var (_, grouped) = await GroupsAsync(Ids(request), cancellationToken).ConfigureAwait(false);
+        return new { Sessions = grouped.Select(Grouped).ToArray() };
+    }
+
+    /// <summary>
+    /// Archive these sessions on this machine, or bring them back (SESSUX1a, D126 §5.2): the marks as they now stand.
+    /// </summary>
+    /// <remarks>
+    /// <para><b>Each is judged by where the reader places it now</b>: a live one, one waiting on you and one with work to
+    /// review are refused, so archive never hides what needs the person, and an id no record has is refused too. Asked of
+    /// one session, a refusal is the answer, in the catalogue's words; asked of several, as <i>Archive what ended</i>'s
+    /// second press asks, what may go is archived and the rest are kept, each with its code, since a list is a fact about
+    /// a moment.</para>
+    ///
+    /// <para><b>Unarchive needs no service</b>: it takes marks away, and one that was not archived is said, never refused
+    /// (D48 §6).</para>
+    /// </remarks>
+    [DriverRoute("SESSION_ARCHIVE")]
+    private async Task<object?> SessionArchiveAsync(IpcRequest request, CancellationToken cancellationToken)
+    {
+        var archive = PayloadHelper.GetRequiredValue<bool>(request.Payload, "archived");
+        var ids = Ids(request) ?? [];
+        var marks = new SessionArchive(_loop.Home);
+
+        if (!archive)
+        {
+            var back = marks.Unarchive(ids);
+            return new { Archived = back.Marks.Select(Mark).ToArray(), back.NotArchived };
+        }
+
+        var (look, grouped) = await GroupsAsync(ids, cancellationToken).ConfigureAwait(false);
+        var answer = marks.Archive(ids, grouped, [.. look.Records.Select(record => record.Id)], DateTimeOffset.UtcNow);
+        var kept = answer.Outcomes.Where(outcome => outcome.Verdict != ArchiveVerdict.Archived).ToList();
+        if (ids.Count == 1 && kept.Count == 1) throw Kept(kept[0]);
+
+        return new
+        {
+            Archived = answer.Marks.Select(Mark).ToArray(),
+            Kept = kept.Select(outcome => new { outcome.Session, Code = CodeOf(outcome.Verdict), outcome.Group }).ToArray(),
+        };
+    }
+
+    /// <summary>One look at the sessions, gathered for the reader: what both routes judge by.</summary>
+    private async Task<(SessionLook Look, IReadOnlyList<SessionGrouping> Grouped)> GroupsAsync(
+        IReadOnlyCollection<string>? only, CancellationToken cancellationToken)
+    {
+        var service = _loop.Service ?? throw NotReady();
+        var config = DriverConfig.Load(_loop.ConfigPath);
+        var records = await SessionRecords.ReadAsync(
+            service.BaseUrl, Environment.GetEnvironmentVariable(ServiceClient.KeyVariable), ct: cancellationToken).ConfigureAwait(false);
+        var quests = await service.EveryQuestAsync(cancellationToken).ConfigureAwait(false);
+        var considered = await SessionGroups.VerdictsAsync(service, config, Door(config), _loop.Look.Latest, cancellationToken)
+            .ConfigureAwait(false);
+        var trees = new SessionTrees(_loop.Home);
+        var look = await SessionGroups.JudgeAsync(
+                SessionLook.From(records, quests, considered, config.ForgivenAt) with { Archived = new SessionArchive(_loop.Home).Marks() },
+                trees.Holds, trees.WorkAsync, only, cancellationToken)
+            .ConfigureAwait(false);
+        return (look, SessionGroups.Read(look, only));
+    }
+
+    /// <summary>The configured adapter's wire, as the loop plans by it (D70); the pipe, the stricter door, when it names none this build has.</summary>
+    private SessionWire Door(DriverConfig config)
+    {
+        try
+        {
+            return _loop.Harnesses.Adapters.Resolve(config.Adapter).Wire;
+        }
+        catch (DriverException)
+        {
+            return SessionWire.Pipe;
+        }
+    }
+
+    /// <summary>The session ids the page sent, or null where it sent none.</summary>
+    private static IReadOnlyCollection<string>? Ids(IpcRequest request) =>
+        request.Payload is { } payload && payload.TryGetProperty("ids", out var named) && named.ValueKind == JsonValueKind.Array
+            ? [.. named.EnumerateArray().Where(id => id.ValueKind == JsonValueKind.String).Select(id => id.GetString()!).Distinct(StringComparer.Ordinal)]
+            : null;
+
+    private static object Grouped(SessionGrouping row) => new
+    {
+        row.Session,
+        row.Group,
+        row.Shown,
+        row.Archived,
+        row.Teammate,
+        row.Strikes,
+        row.Awaits,
+        row.AwaitsOf,
+        Work = row.Work is { } work ? new { work.Commits, work.Uncommitted } : null,
+    };
+
+    private static object Mark(ArchiveMark mark) => new { mark.Session, mark.At };
+
+    private static string CodeOf(ArchiveVerdict verdict) => verdict switch
+    {
+        ArchiveVerdict.Live => Refusals.SessionLive,
+        ArchiveVerdict.NeedsYou => Refusals.SessionNeedsYou,
+        _ => Refusals.SessionUnknown,
+    };
+
+    /// <summary>
+    /// The refusal for one session archive kept. A group travels as the catalogue's <c>context</c> too, so the page's
+    /// sentence names which: waiting on you, or to review.
+    /// </summary>
+    private static Exception Kept(ArchiveOutcome outcome) => outcome.Verdict switch
+    {
+        ArchiveVerdict.Live => Refusals.Because(
+            Refusals.SessionLive, $"{outcome.Session} is still running, so it was not archived. Stop it first.",
+            ("session", outcome.Session)),
+        ArchiveVerdict.NeedsYou => Refusals.Because(
+            Refusals.SessionNeedsYou,
+            $"{outcome.Session} {(outcome.Group == SessionGroup.Review ? "has work to review" : "is waiting on you")}, so it was not "
+            + "archived: archive never hides what needs you.",
+            ("session", outcome.Session), ("group", outcome.Group ?? SessionGroup.You), ("context", outcome.Group ?? SessionGroup.You)),
+        _ => Refusals.Because(
+            Refusals.SessionUnknown, $"No session here is {outcome.Session}.", ("session", outcome.Session)),
+    };
+
     // What sessions said, searched (RAIL1): the person's words and the agent's, from this machine's
     // own record, bounded and saying so.
     [DriverRoute("SESSION_SEARCH")]

@@ -128,6 +128,88 @@ export const useSessionWhere = (sessions: readonly Session[] | undefined): Recor
   return Object.fromEntries(rows.map((row) => [row.session, { treeGone: row.treeGone === true, landed: row.landed ?? null }]));
 };
 
+/**
+ * The groups the session list shows by state (SESSUX1a, D126 §2.1), in the order the person acts on them, and Archived:
+ * the host's spelling, which `daoris-driver sessions --group` shares.
+ */
+export type SessionGroupName = 'you' | 'review' | 'working' | 'later' | 'ended' | 'archived';
+
+/**
+ * Where one session is listed and what its row's second line says (D126 §2.2, §2.4), as `SESSION_GROUPS` answers it.
+ *
+ * @remarks
+ * **One reader, in the driver.** It needs the planner's verdicts and a git judgement per tree, which only the driver has,
+ * and the terminal prints the same answer, so the page reads it rather than deriving a group of its own. `shown` is the
+ * record's state or a derived word, `parked` or `awaiting-reply`; the page keeps its own *idle* for a live chat between
+ * turns (UX5 U17). `work` is what an ended session's own tree holds, a count null where git could not say. `archived`
+ * says the mark stands: a session that needs the person stays in its group whatever the mark says.
+ */
+export type SessionGrouping = {
+  session: string;
+  group: SessionGroupName;
+  shown: string;
+  archived: boolean;
+  teammate: boolean;
+  strikes?: number | null;
+  awaits?: string | null;
+  awaitsOf?: string | null;
+  work?: { commits: number | null; uncommitted: number | null } | null;
+};
+
+/**
+ * The session list's groups, under the sessions' key, so whatever asks the listing again (a stop, a landing, a tick)
+ * asks this too, as `useSessionWhere` is kept.
+ */
+const groupsKey = (ids?: readonly string[]) => ['sessions', 'groups', ...(ids ? [...new Set(ids)].sort() : ['*'])] as const;
+
+/**
+ * Each session's group by state, its word and its line's facts (SESSUX1a), in the order a list shows them; asked for
+ * some, those sessions' alone. Shell-only: Sessions is (D47 §4), and no browser has a driver to ask.
+ */
+export const useSessionGroups = (ids?: readonly string[]) => {
+  const { isAvailable } = useShenora();
+  return useQuery({
+    queryKey: groupsKey(ids),
+    queryFn: async () => {
+      const answer = await call<{ sessions?: SessionGrouping[] }>('SESSION_GROUPS', ids ? { ids: [...new Set(ids)] } : undefined);
+      return Array.isArray(answer?.sessions) ? answer.sessions : [];
+    },
+    enabled: isAvailable,
+    refetchOnWindowFocus: false,
+  });
+};
+
+/**
+ * What an archive answered (D126 §5.2): the marks as they now stand; for several sessions at once, the ones it kept and
+ * why (a code of the `errors` catalogue); for an unarchive, the ones that were not archived, which is information.
+ */
+export type ArchiveAnswer = {
+  archived: { session: string; at: string }[];
+  kept?: { session: string; code: string; group?: SessionGroupName | null }[];
+  notArchived?: string[];
+};
+
+/**
+ * Archive sessions on this machine, or bring them back (SESSUX1a, D126 §5.2): a mark under the home, never the record,
+ * which travels.
+ *
+ * @remarks
+ * Each session is judged by where the host places it as it is asked: a live one, one waiting on you and one with work to
+ * review are refused, since archive never hides what needs the person. Asked of one session, the refusal is the answer;
+ * asked of several, as *Archive what ended*'s second press asks, the rest are archived and each kept one comes back with
+ * its code.
+ */
+export const useArchiveSessions = () => {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (move: { ids: readonly string[]; archived: boolean }) =>
+      call<ArchiveAnswer>('SESSION_ARCHIVE', { ids: [...new Set(move.ids)], archived: move.archived }),
+    onSuccess: () => {
+      void client.invalidateQueries({ queryKey: keys.allSessions });
+    },
+  });
+};
+
 /** Where a search found its words: the session, the event it began at, whose words, and a window of them. */
 export type SessionHit = { session: string; seq: number; kind: string; snippet: string };
 
