@@ -23,8 +23,8 @@ namespace Daoris.Driver;
 /// <para>Written as chosen: a choice equal to today's default is still written, so a later default never overturns a
 /// person's choice; absence alone means <see cref="RotationUse.Default"/>, the one place today's defaults live.</para>
 /// <para><see cref="HarnessRoster.SelectAsync"/> reads them through <see cref="ResolveScope"/> (TOOL6b): <c>use</c> and
-/// <c>keep</c> choose a start's account (<see cref="AccountRotation"/>). <c>early</c> and <c>near</c> are read and
-/// choose nothing yet: they pass an account its agent said is near, and no door carries that word until TOOL6c.</para>
+/// <c>keep</c> choose a start's account (<see cref="AccountRotation"/>), and <c>early</c> and <c>near</c> pass an account its
+/// agent said is near (TOOL6c), where its door carries that word into <c>windows.json</c>.</para>
 /// </remarks>
 public sealed partial record HarnessSettings
 {

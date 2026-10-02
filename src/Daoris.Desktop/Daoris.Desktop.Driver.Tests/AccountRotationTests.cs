@@ -487,7 +487,7 @@ public sealed class AccountRotationTests : IDisposable
         Assert.Equal(RotationWords.Opened("account-2", RotatedSelection().Rotated!), first.Text);
         var line = Assert.Single(lines);
         Assert.Equal(
-            new object?[] { "c7", "claude-code-acp", "account-1", "account-2", null, "cooling", null, false },
+            new object?[] { "c7", "claude-code-acp", "account-1", "account-2", null, "cooling", null, false, null, null },
             line.Data.Select(field => field.Value));
     }
 
@@ -540,7 +540,8 @@ public sealed class AccountRotationTests : IDisposable
     }
 
     // ——— The log (§5.4; D130 §13 as §16 amends it): `account.rotated`, by profile name and nothing else of an account, with
-    // the step that moved the start, the scope whose list it was, and whether any account had said what it has left.
+    // the step that moved the start, the scope whose list it was, whether any account had said what it has left, and what
+    // the two accounts said, by Daoris's word alone (TOOL6c).
 
     [Fact]
     public void Account_rotated_carries_the_session_the_adapter_both_accounts_the_cut_off_session_and_the_step()
@@ -548,12 +549,26 @@ public sealed class AccountRotationTests : IDisposable
         var line = AccountLine.Rotated("s2", "claude-code-acp", "account-1", "account-2", carries: "s1", WalkStep.Cooling, scope: "work");
 
         Assert.Equal("account.rotated", line.Event);
-        Assert.Equal(["session", "adapter", "from", "to", "carries", "why", "scope", "said"], line.Data.Select(field => field.Key));
+        Assert.Equal(["session", "adapter", "from", "to", "carries", "why", "scope", "said", "fromSaid", "toSaid"], line.Data.Select(field => field.Key));
         Assert.Equal(
-            new object?[] { "s2", "claude-code-acp", "account-1", "account-2", "s1", "cooling", "work", false },
+            new object?[] { "s2", "claude-code-acp", "account-1", "account-2", "s1", "cooling", "work", false, null, null },
             line.Data.Select(field => field.Value));
         Assert.Null(AccountLine.Rotated("s2", "claude-code-acp", "account-1", "account-2", carries: null, WalkStep.Fewest, null).Data.Single(f => f.Key == "carries").Value);
         Assert.Null(AccountLine.Rotated("s2", "claude-code-acp", "sk-ant not a name", "account-2", null, WalkStep.Fewest, null).Data.Single(f => f.Key == "from").Value);
+    }
+
+    [Theory]
+    [InlineData("near", "clear", "near", "clear")]
+    [InlineData("refused", null, "refused", null)]
+    // Only Daoris's three words: never a number or the agent's own.
+    [InlineData("88%", "allowed_warning", null, null)]
+    public void Account_rotated_says_what_each_account_said_by_Daoris_s_word_alone(string? from, string? to, string? fromSaid, string? toSaid)
+    {
+        var line = AccountLine.Rotated("s2", "claude-code", "account-1", "account-2", null, WalkStep.Near, null, said: true, fromSaid: from, toSaid: to);
+
+        Assert.Equal(
+            new object?[] { "near", true, fromSaid, toSaid },
+            line.Data.Where(f => f.Key is "why" or "said" or "fromSaid" or "toSaid").Select(f => f.Value));
     }
 
     [Fact]
@@ -570,7 +585,7 @@ public sealed class AccountRotationTests : IDisposable
             .Select(text => JsonDocument.Parse(text).RootElement.Clone())
             .Single(entry => entry.GetProperty("event").GetString() == "account.rotated");
         Assert.Equal(
-            """{"session":"s2","adapter":"claude-code-acp","from":"account-1","to":"account-2","carries":"s1","why":"leastRecent","scope":null,"said":false}""",
+            """{"session":"s2","adapter":"claude-code-acp","from":"account-1","to":"account-2","carries":"s1","why":"leastRecent","scope":null,"said":false,"fromSaid":null,"toSaid":null}""",
             line.GetProperty("data").GetRawText());
     }
 }

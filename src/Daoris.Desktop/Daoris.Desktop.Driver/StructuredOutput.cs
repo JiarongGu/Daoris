@@ -6,6 +6,12 @@ namespace Daoris.Driver;
 public sealed record StreamMapped(IReadOnlyList<string> Lines, IReadOnlyList<SessionEvent> Events)
 {
     public static readonly StreamMapped Nothing = new([], []);
+
+    /// <summary>
+    /// What the line said about the account's windows, apart from the agent's words (TOOL6c, D130 §5.2): the frame's object,
+    /// for the agent's table to read. Null for every other line. Neither the console nor the record shows it.
+    /// </summary>
+    public JsonElement? Limits { get; init; }
 }
 
 /// <summary>
@@ -127,8 +133,13 @@ public sealed class ClaudeStreamJson : IStreamMapper
             "control_response" => Control(frame),
             "system" when Str(frame, "subtype") == "permission_denied" => Denied(frame),
             "system" when Str(frame, "subtype") == "init" => Init(frame),
-            // Known and deliberately not the conversation: the session's setup, its status, its limits.
-            "system" or "rate_limit_event" => StreamMapped.Nothing,
+            // The account's windows (TOOL6c, limit-signals evidence §1): handed on for the agent's table, and still not the
+            // conversation, so neither a line nor an event.
+            "rate_limit_event" => frame.TryGetProperty("rate_limit_info", out var info) && info.ValueKind == JsonValueKind.Object
+                ? StreamMapped.Nothing with { Limits = info.Clone() }
+                : StreamMapped.Nothing,
+            // Known and deliberately not the conversation: the session's setup and its status.
+            "system" => StreamMapped.Nothing,
             var kind => new([], [new SessionEvent
             {
                 Kind = SessionEventKind.Raw, Title = kind ?? "frame", Raw = SessionEvents.Cut(line, SessionEvents.RawLimit),
