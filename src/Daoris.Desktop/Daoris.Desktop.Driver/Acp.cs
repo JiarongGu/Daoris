@@ -142,6 +142,48 @@ public sealed record AcpOutcome(
     string StopReason, string SessionId, int Updates, AcpUsage? Usage = null);
 
 /// <summary>
+/// The agent's refusal of a call: a JSON-RPC error, said as a sentence, with what its <c>data</c> carried kept beside
+/// it (ACPDATA1, D125 §1.2).
+/// </summary>
+/// <remarks>
+/// 🔴 <b>An adapter may put the words that matter in <c>data</c>, not in the message.</b> <c>codex-acp</c> answers a usage
+/// limit with the message <c>Internal error</c> and nothing after it, and the limit's sentence in <c>data.message</c>; Claude
+/// Code's adapter puts its sentence in the message and the SDK's category in <c>data.errorKind</c>
+/// (docs/2026-10-02-limit-signals-evidence.md §3, §4). So the sentence the data carries is said after the message, where
+/// the conclusion and the limit reader read the door's failure, and the kind is kept for a reader that reads a field.
+/// </remarks>
+/// <param name="message">The refusal as a sentence: the error's message, then the data's, where it adds one.</param>
+/// <param name="said">The data's <c>message</c>, or null where it carried none.</param>
+/// <param name="errorKind">The data's <c>errorKind</c>, or null where it carried none.</param>
+public sealed class AcpRefusal(string message, string? said = null, string? errorKind = null) : DriverException(message)
+{
+    /// <summary>What the error's <c>data.message</c> said, or null where it said nothing.</summary>
+    public string? Said => said;
+
+    /// <summary>The error's <c>data.errorKind</c>, or null where it carried none.</summary>
+    public string? ErrorKind => errorKind;
+
+    /// <summary>
+    /// The refusal a JSON-RPC <c>error</c> member says, read without trusting its shape (REV3): a message that is not
+    /// text is the error as written, and a <c>data</c> that is not an object, or fields in it that are not text, add
+    /// nothing. The data's message is said after the error's only where it adds words the error's did not already say.
+    /// </summary>
+    internal static AcpRefusal Of(JsonElement error)
+    {
+        var message = Text(error, "message") ?? error.GetRawText();
+        var data = error.ValueKind == JsonValueKind.Object && error.TryGetProperty("data", out var d) ? d : default;
+        var said = Text(data, "message") is { } words && !string.IsNullOrWhiteSpace(words) ? words.Trim() : null;
+        var sentence = said is null || message.Contains(said, StringComparison.Ordinal) ? message : $"{message}: {said}";
+        return new AcpRefusal($"the ACP agent refused the call: {sentence}", said, Text(data, "errorKind"));
+    }
+
+    private static string? Text(JsonElement element, string name) =>
+        element.ValueKind == JsonValueKind.Object && element.TryGetProperty(name, out var value) && value.ValueKind == JsonValueKind.String
+            ? value.GetString()
+            : null;
+}
+
+/// <summary>
 /// One session held over the Agent Client Protocol (D53): JSON-RPC 2.0 in newline-delimited frames,
 /// over a spawned process's stdio.
 /// </summary>
@@ -741,12 +783,9 @@ public sealed class AcpSession(
 
         if (frame.TryGetProperty("error", out var error))
         {
-            // Read without trusting the shape (REV3): a throw here left the call it answers waiting.
-            var message = error.ValueKind == JsonValueKind.Object && error.TryGetProperty("message", out var m)
-                          && m.ValueKind == JsonValueKind.String
-                ? m.GetString()
-                : error.GetRawText();
-            waiting.TrySetException(new DriverException($"the ACP agent refused the call: {message}"));
+            // Read without trusting the shape (REV3): a throw here left the call it answers waiting. Its `data` is
+            // kept beside its message (ACPDATA1): an adapter may say the words that matter there.
+            waiting.TrySetException(AcpRefusal.Of(error));
             return;
         }
 

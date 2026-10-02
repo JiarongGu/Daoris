@@ -11,9 +11,10 @@
 > how a wait over an order holds on the first reset; TOOL4j's, that the protocol stub is a door onto the stub's
 > accounts; and a fix of §2.1, that a time of day gets no grace). **D130** (`docs/2026-10-02-account-use-design.md`,
 > TOOL6) amends §3.1, §3.3, §3.4, §5.1, §6 and §9: a start reads one scope, a workspace's list is the whole set of
-> accounts that may run it, for any number of accounts, and a list may start on the account with the most left or the
-> soonest reset, run its sessions in parallel, keep an account for conversations, and switch before a limit, each on the
-> agent's own word. It replaces the
+> accounts that may run it, for any number of accounts, and by default a list is used toward the most work from all
+> its accounts (D130's *rules around the goal*: spread, a lapsing week first, pace, least recently started), with this
+> design's walk kept as the override `use: order`, an account kept for conversations as an option, and switching
+> before a limit on the agent's own word. It replaces the
 > toolchain design's §2 part 4 and §6 (`docs/2026-09-22-toolchain-design.md`, noted at its head). Read with
 > **D49 §4**, **D57**, **D58**, **D66 §3**, **D67 §1**, **D73**, **D76**, **D80**, **D94**, **D104**, **D110** and
 > **D116**.
@@ -293,10 +294,10 @@ The account the resolution names (pick, workspace, machine, none) runs if it is 
 - **A new conversation rotates like a start**, since it holds no context yet, and its first line says which account it
   opened on and why (*opened on account-2: account-1 is cooling until 07:52*).
 
-*Amended by D130 (account-use design §4.1, §6): the walk is one pipeline. It skips the account kept for conversations
-on a driven start, orders by the scope's start on (list order, as here, most left first or soonest reset first) and
-sessions at once (one by one, as here, or in parallel), keeps a quest on its account outside list order one by one,
-and, with switching before the limit on, moves an account its agent said is near its limit to the end.*
+*Amended by D130 (account-use design §16.3, §16.6): this section's walk is the override `use: order`. The default,
+`use: goal`, skips the account kept for conversations on a driven start, puts an account its agent said is near its
+limit last, and orders the rest by fewest of Daoris's sessions running, a week lapsing within a day, pace where the
+agent said, least recently started, then the list. A quest's next session goes where that walk sends it.*
 
 ### 3.4 What never rotates
 

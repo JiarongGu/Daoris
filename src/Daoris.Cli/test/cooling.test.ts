@@ -303,7 +303,7 @@ test('`agent list` says when starts run on the person\'s own sign-in, and how to
   });
   const settings: HarnessSettings = {
     defaults: {}, workspaces: { work: { 'claude-code': 'account-1' } }, versions: {}, workspaceVersions: {},
-    rotation: {}, workspaceRotation: {}, rest: {},
+    rotation: {}, workspaceRotation: {}, rotationUse: {}, workspaceRotationUse: {}, rest: {},
   };
   const said = (agent: string, at: HarnessReport) =>
     accountLines(agent, TOOLCHAINS[agent]!, at, settings, fx.root, new Date(), 'UTC').join('\n');

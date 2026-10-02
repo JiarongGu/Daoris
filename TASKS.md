@@ -21,7 +21,7 @@ lists.
 
 ## State
 
-**Counts, and this is their one home:** seventeen commands, **1032 CLI tests, 916 service and 50 HTTP host, 2965 driver,
+**Counts, and this is their one home:** seventeen commands, **1051 CLI tests, 916 service and 50 HTTP host, 3076 driver,
 527 desktop modules, 80 devkit, 2617 web unit, 24 Playwright**, 113/113 release rehearsal, **341/341
 family rehearsal** (it names its own phases when you run it), **84/84 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 6 knowledge
@@ -184,7 +184,7 @@ install in both themes and both languages.
 
 ### Sessions that are easy to manage (owner, 2026-10-02) — D126
 
-> *"so there is no way to easily maanged sessions in daoris rn and it's not really smooth for ui/ux lets also set this
+> *"so there is no way to easily managed sessions in daoris rn and it's not really smooth for ui/ux lets also set this
 > improve task too"*
 
 Read from the code the same day: a session row's ⋯ offers only *Review* and *Copy session ID*; a quest parked on its
@@ -204,6 +204,19 @@ owner on 1 October.
 - [ ] **SESSUX1g — `daoris-driver sessions`** (§7.1; driver, modules; after a, b, f): the listing by group; stop, finish
   and decline through the requests the running loop honours; archive, unarchive, delete.
 - [ ] **SESSUX1h — Ask Daoris reaches sessions** (§7.3; driver, service, web-shell; after d–g and FRAME1i).
+- [ ] **ANSWER1 — an answer continues the session** (owner, 2026-10-02: *"whenever I input anything say the session was
+  waiting for my input and after I input it starts a new session? isn't this should be continue"*). An answer to a parked
+  driven session resumes the agent's own conversation on the same account and tree, shown as the same session going on;
+  a fresh carry-on only when resuming cannot work, said why. Contract: D131 (in flight). Proof: driver tests; a Process
+  tick on the stub; the look on the install.
+- [ ] **DRIFT1 — why an ask's decision drifted** (owner, 2026-10-02: AR-2203 asked for the v3 bridge and the common report,
+  and the work did neither; *"we need to investigate why the decision drifted"*). Trace the ask through its intake, quests,
+  sessions and commits to where the requirement was lost, and what Daoris should hold so it is not. Contract: D133 (in
+  flight). Proof: the evidence, de-identified; raw notes untracked.
+- [ ] **PAUSE1 — pause and clean up an ask** (owner, 2026-10-02: *"so there is a pause and cleanup feature needed"*). Pause
+  holds every quest of an ask and stops its sessions; clean up declines them with a reason, discards their trees and
+  unpushed branches, and archives their sessions, listing first and refusing pushed or landed work. Contract: D132 (in
+  flight). Proof: the design, then its rows.
 - [ ] **SESSUX1i — What needs you holds a parked quest, and a park is said once** (§4.6, §4.7; web-shell, driver, modules;
   after c).
 - [ ] **SESSUX1j — a quest's short title** (§6; service, driver, web-shell; any time).
@@ -229,8 +242,8 @@ is what it reads and what it is led to read.
 
 ### A workspace that knows itself (owner, 2026-10-01) — D124
 
-> *"since all is known knowldge it should be able to figure out itself"* … *"its more like leaking of knowledge for
-> workspace, so the repo should be registered and apply the doctorine and also initalize the knowledge"*
+> *"since all is known knowledge it should be able to figure out itself"* … *"its more like leaking of knowledge for
+> workspace, so the repo should be registered and apply the doctrine and also initialize the knowledge"*
 
 Measured the same day: the owner's work workspace holds 29 drivable repositories, none adopted, none registered
 (`connect` refuses one with no `domain`), 23 with no indexed knowledge at all; the intake router said none declares
@@ -423,21 +436,6 @@ the ACP door, not a registry**.
   none); a limit is never a strike; the next start runs on the next ready account of the person's order; rotation needs
   accounts of Daoris's own (§3.7). The driver lane runs TOOL4a → TOOL4d → TOOL4e → TOOL4f. **TOOL4d alone ends the
   waste seen on 1 October**: a carry-on started twice into the same refusal and parked its quest in seconds.
-- [ ] **TOOL4b — what the native door says** (docs, evidence; §1.2; as D130 amends it): `rate_limit_event` and a limit's
-  failed `result`, on an ordinary turn and at a warning, whether the protocol door forwards them, and Codex's `rate_limits`;
-  read keylessly, labelled unmeasured, then the first real frame recorded. TOOL6c builds only on it. Contract: D130 §0.3,
-  §5.1–§5.2.
-- [ ] **TOOL6 — how switching works, and three accounts used well** (owner, 2026-10-02: *"we should be able to set option
-  how switch works and how to optimize the account use since there are 3 accounts"*; then: all three may run the work
-  workspace, by the allowance each has left, one by one, in parallel or by other logic, configurable; any number of
-  accounts, three is only today's; the goal: *"to optimize the limit and usage of multiple accounts"*, the rules and
-  defaults designed around it, D130's amendment in flight). Modes, which
-  accounts may run which workspace, switching before a limit, and sessions spread across accounts. Contract: D130.
-  Proof: the design (landing).
-- [ ] **TOOL6a — the settings and their terminal doors** (cli; driver; in flight). `use` (`goal`, the default, or
-  `order`), `keep`, `early` (on unless `false`) and `near` per scope in `harnesses.json`, both twins, `daoris agent
-  profile use`, and the refusals on `order` and `default`, so the choices have a file and a terminal before anything
-  reads them. Contract: D130 §2, §3.1, §9, §14, §16.6. Proof: twin tables both sides, none by a list's length.
 - [ ] **TOOL6b — the walk toward the goal** (driver; after TOOL6a). Every listed account used: fewest of Daoris's
   sessions first, a weekly reset within a day first, then pace, then least recently started; *order* keeps D125's walk;
   `windows.json` keeps the weekly resets limits tell; the wait names accounts outside the list. Contract: D130 §16.3,
@@ -447,12 +445,6 @@ the ACP door, not a registry**.
   protocol door's `usage_update._meta["_claude/rateLimit"]`, kept in `windows.json`, so pace and *switch before the
   limit* act on what is left. Contract: D130 §4.4, §4.5, §5.2, §16.3, as the evidence corrects them. Proof: fast-half
   tables over the recorded frames; a Process tick replaying one.
-- [ ] **ACPDATA1 — the protocol door keeps a refusal's `data`** (driver; found by TOOL4b). `AcpSession` keeps only the
-  JSON-RPC error's message, so a Codex limit arrives as `Internal error` and Claude Code's `errorKind` is lost. Contract:
-  D125 §1.2, limit-signals evidence §3–§4. Proof: `AcpSession` tests written to fail first.
-- [ ] **TOOL4k — a weekday reset, and Codex's clock** (driver; found by TOOL4b). The maker documents `resets Mon 12:00am`,
-  which TOOL4a's grammar does not read; Codex prints `4:05 PM` and `Oct 3rd, 2026 4:05 PM` with no zone. Contract: D125
-  §2.1, evidence §2, §4. Proof: `AccountLimitsTests` rows for each recorded form, failing first.
 - [ ] **TOOL6d — a conversation continues on another account** (driver, modules, web-shell; after TOOL6b). A refused turn
   offers *Continue on* another account, handed the last plan and last words. Contract: D130 §8, §9. Proof: driver, route
   and vitest tests; the look in both languages.
