@@ -8873,3 +8873,8 @@ accounts, the owner answered: *"we are not coordinate, we are doing the same wor
 account just to optimize the usage"*. One person runs their own work, in one workspace, on accounts they each hold,
 one after another, to use what they pay for. That reading is the owner's and stands. Point 12 stays as written: the
 screen names each account's own plan and terms, and Daoris claims nothing about them.
+
+**What *in parallel* means (the owner, 2026-10-02):** *"paralle mostly means if we running multi repo or multi
+sessions"*. It is the sessions running at once, across repositories or within one, that spread over the accounts,
+each start going to the account running the fewest. A quest's carry-on still stays on its last account while
+that is ready, as point 6 says. TOOL6b builds it so; TOOL6a's words for the setting say so.
