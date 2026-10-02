@@ -9147,6 +9147,7 @@ door, and no `allowed_warning`, `rejected` or overage frame anywhere (evidence �
 scope the reading does not carry; each start's line and `account.rotated`'s `why` log every pass. Not measured: whether
 near comes early enough (§11 item 3), or whether pace leaves less at a weekly reset (§16.7). The screen says none of it
 yet (TOOL4g). The modules build against the change; their suites, the web's and the rehearsals were not run.
+
 ## D133 — The person's words are the ask's record: kept verbatim, handed whole to every session on the ask, quoted by a quest's requirements, and answered at done (2026-10-02)
 
 **Decision (DRIFT1, the owner's, of an ask whose build went another way: *"what I asked is to use v3 bridge +
