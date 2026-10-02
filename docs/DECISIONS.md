@@ -8303,3 +8303,11 @@ by syncing scratch copies against drafted canon text, which the build may reword
 sessions here open, and when, is not measured (DOC7). Whether a line or three is enough for a later reader is
 judgement, read from the first entries after the cut-over. `verify` checks this entry's shape and the design's links
 and budget, and none of their words.
+
+**As built (SESSOPT1a, 2026-10-02): the doctrine, in the canon.** §2.2's text landed in `task-lifecycle` as drafted.
+`development-documents` took §2.3 with one change of placement: the entries' shapes are a paragraph after the two
+ceiling bullets, saying they apply whether a record is read whole or by lookup, so the *two units* the section
+opens with stay two. `set-up-documents` took §2.4. This amends D122 §2.5 (an outcome is a line or three). The
+region grew exactly 458 bytes in each repository: 24,522 of 26,000 here, 22,216 and 22,433 of 30,000 in the
+examples, re-synced in the same commit. Not covered: the family rehearsal (the parent's), and whether the words
+read well to an adopter.
