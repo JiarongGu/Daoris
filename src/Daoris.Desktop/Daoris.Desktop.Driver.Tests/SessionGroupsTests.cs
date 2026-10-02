@@ -18,7 +18,7 @@ public sealed class SessionGroupsTests
 {
     private static readonly DateTimeOffset T0 = new(2026, 10, 2, 9, 0, 0, TimeSpan.Zero);
 
-    private const string Tree = "C:/home/trees/aurora/engine/s-1a2b3c4d";
+    private const string Tree = "X:/daoris/trees/aurora/engine/s-1a2b3c4d";
 
     private static JsonObject Record(
         string id, string state, string? quest = null, string? tree = null, int at = 0, string repository = "engine",
@@ -280,9 +280,9 @@ public sealed class SessionGroupsTests
     [Fact]
     public void Only_a_tree_that_could_be_to_review_is_judged()
     {
-        const string carried = "C:/home/trees/aurora/engine/s-carried";
-        const string busy = "C:/home/trees/aurora/engine/s-busy";
-        const string parked = "C:/home/trees/aurora/engine/s-parked";
+        const string carried = "X:/daoris/trees/aurora/engine/s-carried";
+        const string busy = "X:/daoris/trees/aurora/engine/s-busy";
+        const string parked = "X:/daoris/trees/aurora/engine/s-parked";
         const string elsewhere = "C:/checkouts/engine";
         var carriedQuest = Quest("q2", "Taken");
         var parkedQuest = Quest("q3", "Taken");
@@ -295,13 +295,13 @@ public sealed class SessionGroupsTests
             Record("live", "working", tree: busy, at: 5),
             Record("park", "failed", "q3", parked),
             Record("root", "completed", tree: elsewhere),
-            Record("laptop/s9", "completed", tree: "C:/home/trees/aurora/engine/s-theirs"),
+            Record("laptop/s9", "completed", tree: "X:/daoris/trees/aurora/engine/s-theirs"),
             Record("bare", "completed"),
         ],
         [Done, carriedQuest, parkedQuest],
         [Verdict(carriedQuest, StartVerdict.Start), Verdict(parkedQuest, StartVerdict.Exhausted)]);
 
-        var judged = SessionGroups.TreesToJudge(look, tree => tree.StartsWith("C:/home/trees/", StringComparison.OrdinalIgnoreCase));
+        var judged = SessionGroups.TreesToJudge(look, tree => tree.StartsWith("X:/daoris/trees/", StringComparison.OrdinalIgnoreCase));
 
         Assert.Equal([SessionGroups.Normal(Tree)], judged.Select(SessionGroups.Normal), StringComparer.OrdinalIgnoreCase);
         // Asked for one session, only its tree.
@@ -312,7 +312,7 @@ public sealed class SessionGroupsTests
     [Fact]
     public async Task The_trees_are_judged_once_each_and_read_by_the_tree()
     {
-        const string other = "C:/home/trees/aurora/game/s-9f8e7d6c";
+        const string other = "X:/daoris/trees/aurora/game/s-9f8e7d6c";
         var look = Look(
         [
             Record("s1", "completed", "q1", Tree.Replace('/', '\\')),
