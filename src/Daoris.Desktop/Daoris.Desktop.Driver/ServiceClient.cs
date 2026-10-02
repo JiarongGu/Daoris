@@ -819,6 +819,9 @@ public sealed class ServiceClient : IDisposable
                 // Which account it ran on and whether a limit cut it off (TOOL4f): what a carry-on is compared with and told.
                 Profile = Text(session, "profile"),
                 Limit = Limit(session),
+                // What an answered park is compared with, and where its evidence counts from (ANSWER1a, D131).
+                Adapter = Text(session, "adapter"),
+                BaseCommit = Text(session, "baseCommit"),
             }, at);
         }
 

@@ -715,6 +715,19 @@ public interface ISessionAdapter
     /// null where the harness has none, and a turn there cannot be stopped short of ending the session.
     /// </summary>
     string? FrameInterrupt() => null;
+
+    /// <summary>
+    /// Whether this adapter's door can resume a harness conversation an answer continues (ANSWER1a, D131 §1). The protocol
+    /// door's agent says on its own wire whether it resumes, so it is asked there; a native door resumes only where its
+    /// adapter knows the harness's own resume (<see cref="PrepareResume"/>).
+    /// </summary>
+    bool Resumes => Wire == SessionWire.Acp;
+
+    /// <summary>
+    /// The native door's resume (ANSWER1a, D131 §1): the harness run on the conversation it kept, with
+    /// <paramref name="prompt"/> as its next turn, under the same posture a start has. Null where this adapter knows none.
+    /// </summary>
+    ProcessStartInfo? PrepareResume(SessionTarget target, IReadOnlyList<string>? command, string conversation, string prompt) => null;
 }
 
 /// <summary>What every adapter shares: the process shell, and the target riding in the environment.</summary>
