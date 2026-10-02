@@ -131,6 +131,28 @@ public sealed class SessionEventsTests : IDisposable
         Assert.Empty(events.Search("x").Hits);
     }
 
+    /// <summary>
+    /// STEER1 (D136): what a person told a driven session is kept twice — the moment it was said, with when it reaches the
+    /// session, and again where the session took it, paired by one id — and a search finds it once, where it was taken.
+    /// </summary>
+    [Fact]
+    public void Words_told_to_a_working_session_are_kept_waiting_then_taken_and_found_once()
+    {
+        var events = new SessionEvents(_directory);
+        var words = new ChatMessage("the budget is in level.json", []) { Id = "said-1" };
+        events.Append("drive1", Asked("You are the engine repository's agent…", origin: "target"));
+        events.Append("drive1", Daoris.Driver.Driver.Words(words) with { Reaches = "next-step" });
+        events.Append("drive1", new SessionEvent { Kind = SessionEventKind.Turn, StopReason = "end_turn" });
+        var taken = events.Append("drive1", Daoris.Driver.Driver.Words(words));
+
+        var lines = File.ReadAllLines(Path.Combine(_directory, "drive1.events.jsonl"));
+        Assert.Contains(lines, line => line.Contains("\"origin\":\"person\"") && line.Contains("\"id\":\"said-1\"") && line.Contains("\"reaches\":\"next-step\""));
+        Assert.Contains(lines, line => line.Contains("\"origin\":\"person\"") && line.Contains("\"id\":\"said-1\"") && !line.Contains("reaches"));
+
+        var hit = Assert.Single(events.Search("level.json").Hits);
+        Assert.Equal(taken.Seq, hit.Seq);
+    }
+
     /// <summary>The answer is bounded and says so: a few hits per session, the snippet a window, not the whole text.</summary>
     [Fact]
     public void Search_is_bounded_and_says_when_it_left_hits_out()
