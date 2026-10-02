@@ -245,6 +245,46 @@ public sealed class LocalHostTests(LocalHost host) : IClassFixture<LocalHost>
     }
 
     /// <summary>
+    /// ANSWER1b (D131 §5): the answer door replies with the session as it now stands, still `awaiting-person`, its words
+    /// kept and said on its note, which is how the driver tells a watcher nothing moved; a second answer replaces the
+    /// first. The words are answered to this machine only, like a transcript, and a record that is not parked is a 409.
+    /// </summary>
+    [Fact]
+    public async Task An_answer_replies_with_the_session_still_parked_and_its_words_kept()
+    {
+        var quest = await PublishAsync("A quest whose session parked to ask which port");
+        var opened = await host.PostAsync("/api/sessions", new { quest, adapter = "stub" });
+        var id = opened.Json.GetProperty("session").GetProperty("id").GetString()!;
+        foreach (var state in new[] { "starting", "working" })
+        {
+            Assert.Equal(200, (await host.PostAsync($"/api/sessions/{id}/state", new { state })).Status);
+        }
+
+        Assert.Equal(200, (await host.PostAsync($"/api/quests/{quest}/respond", new { action = "take" })).Status);
+        var early = await host.PostAsync($"/api/sessions/{id}/answer", new { answer = "8080." });
+        Assert.Equal(409, early.Status);
+        Assert.Contains("not waiting on you", early.Error);
+        Assert.Equal(200, (await host.PostAsync($"/api/sessions/{id}/state", new { state = "awaiting-person", note = "which port?" })).Status);
+
+        await host.PostAsync($"/api/sessions/{id}/answer", new { answer = "8080." });
+        var answered = await host.PostAsync($"/api/sessions/{id}/answer", new { answer = "9090." });
+
+        Assert.Equal(200, answered.Status);
+        var session = answered.Json.GetProperty("session");
+        Assert.Equal(("awaiting-person", "9090.", "which port?\n\nAnswered: 9090."),
+            (session.GetProperty("state").GetString(), session.GetProperty("answer").GetString(), session.GetProperty("note").GetString()));
+        Assert.Equal($"Answered session `{id}`: it carries on with `#{quest}` at the driver's next look.",
+            answered.Json.GetProperty("message").GetString());
+        var offMachine = (await host.GetAsync("/api/sessions?includeClosed=true", DaorisHost.OffMachine)).Json.EnumerateArray()
+            .Single(row => row.GetProperty("id").GetString() == id);
+        Assert.Equal("awaiting-person", offMachine.GetProperty("state").GetString());
+        Assert.False(offMachine.TryGetProperty("answer", out _));
+
+        // The record holds its tree until the driver goes on with it; stopped, nothing of it holds a later test.
+        Assert.Equal(200, (await host.PostAsync($"/api/sessions/{id}/state", new { state = "stopped" })).Status);
+    }
+
+    /// <summary>
     /// TOOL4c (D125 §5.2): the driver says a failure was an account's limit through the state door, and the
     /// record answers it back to every caller, off this machine too: the flag names no account, so it
     /// travels where the account's name does not. Asked of any other move, it is refused, 409.
