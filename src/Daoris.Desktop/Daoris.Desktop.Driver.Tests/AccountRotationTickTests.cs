@@ -140,7 +140,7 @@ public sealed class AccountRotationTickTests : IDisposable
         {
             var rotated = Assert.Single(lines, line => line.Event == "account.rotated");
             Assert.Equal(
-                new object?[] { "s2", "stub", "account-1", "account-2", "s1", "cooling", null, false },
+                new object?[] { "s2", "stub", "account-1", "account-2", "s1", "cooling", null, false, null, null },
                 rotated.Data.Select(field => field.Value));
         }
 
@@ -238,7 +238,7 @@ public sealed class AccountRotationTickTests : IDisposable
         {
             var rotated = Assert.Single(lines, line => line.Event == "account.rotated");
             Assert.Equal(
-                new object?[] { "s2", "acp-stub", "account-1", "account-2", "s1", "cooling", null, false },
+                new object?[] { "s2", "acp-stub", "account-1", "account-2", "s1", "cooling", null, false, null, null },
                 rotated.Data.Select(field => field.Value));
         }
 

@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Text.Json;
 
 namespace Daoris.Driver;
 
@@ -900,6 +901,7 @@ public sealed partial class Driver(
                 preamble: browserNotice,
                 handedServers: servers,
                 drivesBrowser: drivesBrowser,
+                said: Said(adapter, selection, sessionId),
                 conclude: async (exitCode, used, turnFailed) =>
                 {
                     if (used is not null)
@@ -1160,6 +1162,22 @@ public sealed partial class Driver(
         return (conclusion with { Note = $"{conclusion.Note} {CoolingWords.Note(entry, _harnesses.Zone)}" }, true);
     }
 
+    /// <summary>
+    /// What a session's door says about the windows of the account it runs as (TOOL6c, D130 §5.2), kept by the roster as the
+    /// door carries it, for the next start's walk. A reading not kept costs a start's ranking, never the session.
+    /// </summary>
+    internal Action<JsonElement> Said(ISessionAdapter adapter, HarnessSelection selection, string sessionId) => info =>
+    {
+        try
+        {
+            _harnesses.Said(adapter.Name, selection.Profile, info, sessionId);
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            // Nothing kept is nothing said: the walk reads the account as unknown, as it did before the door spoke.
+        }
+    };
+
     /// <summary>The turns a session's record says ended — what a refused turn is counted after (D125 §3.6). Unreadable is none.</summary>
     internal static long TurnsEnded(SessionEvents events, string sessionId)
     {
@@ -1214,12 +1232,15 @@ public sealed partial class Driver(
     /// The exit code (null when the timeout killed it) and the usage the door reported (null when it
     /// reported none), to the caller's conclusion — which reads the stop flags and moves the record.
     /// </param>
+    /// <param name="said">
+    /// Told what the session's door says about its account's windows (TOOL6c), on either door, as it says it.
+    /// </param>
     private async Task<T> HoldAsync<T>(
         ISessionAdapter adapter, ProcessStartInfo info, SessionTarget target, string sessionId, string transcript,
         string cwd, string? harnessNotice, (string? File, object? Meta) rules, string? handed, string? refusesInput,
         Func<int?, AcpUsage?, string?, Task<T>> conclude, CancellationToken ct,
         IReadOnlyDictionary<string, string>? scope = null, string? preamble = null,
-        IReadOnlyList<AcpMcpServer>? handedServers = null, bool drivesBrowser = false)
+        IReadOnlyList<AcpMcpServer>? handedServers = null, bool drivesBrowser = false, Action<JsonElement>? said = null)
     {
         using var process = Process.Start(info)
             ?? throw new DriverException($"the {adapter.Name} adapter's process did not start");
@@ -1241,9 +1262,9 @@ public sealed partial class Driver(
         var acp = adapter.Wire == SessionWire.Acp
             // The posture rides with it, because it is the ADAPTER's (ACP3): three harnesses name the
             // same D37 boundary three different ways, and one of them does not name it on the wire.
-            ? CaptureAcpAsync(process, transcript, sessionId, cwd, prompt, adapter.AcpPosture, harnessNotice, ct, scope, rules.Meta, handedServers ?? _servers, target.PersonSaid, inbox)
+            ? CaptureAcpAsync(process, transcript, sessionId, cwd, prompt, adapter.AcpPosture, harnessNotice, ct, scope, rules.Meta, handedServers ?? _servers, target.PersonSaid, inbox, said)
             : null;
-        var structured = acp is null ? Structured(adapter, process, transcript, sessionId, prompt, ct, preamble, target.PersonSaid) : null;
+        var structured = acp is null ? Structured(adapter, process, transcript, sessionId, prompt, ct, preamble, target.PersonSaid, said) : null;
         Task capture = acp ?? structured ?? CaptureAsync(process, transcript, sessionId, ct, preamble);
 
         await service.AdvanceAsync(sessionId, "working", transcript: transcript, ct: ct).ConfigureAwait(false);
@@ -1302,11 +1323,11 @@ public sealed partial class Driver(
     /// </summary>
     private Task<AcpUsage?>? Structured(
         ISessionAdapter adapter, Process process, string transcript, string sessionId, string prompt,
-        CancellationToken ct, string? preamble = null, string? personSaid = null) =>
+        CancellationToken ct, string? preamble = null, string? personSaid = null, Action<JsonElement>? said = null) =>
         adapter.StructuredOutput() is { } mapper
             ? CaptureStructuredAsync(
                 process.StandardOutput, process.StandardError, transcript, sessionId, output, _events, mapper,
-                prompt, ct, preamble, personSaid: personSaid)
+                prompt, ct, preamble, personSaid: personSaid, said: said)
             : null;
 
     /// <summary>
@@ -1352,7 +1373,8 @@ public sealed partial class Driver(
         Process process, string transcript, string sessionId, string cwd, string prompt,
         string? posture, string? harnessNotice, CancellationToken ct,
         IReadOnlyDictionary<string, string>? scope = null, object? meta = null,
-        IReadOnlyList<AcpMcpServer>? servers = null, string? personSaid = null, DrivenInbox? inbox = null)
+        IReadOnlyList<AcpMcpServer>? servers = null, string? personSaid = null, DrivenInbox? inbox = null,
+        Action<JsonElement>? said = null)
     {
         await using var file = new StreamWriter(transcript, append: false);
 
@@ -1410,6 +1432,8 @@ public sealed partial class Driver(
             var session = new AcpSession(
                 process.StandardOutput, process.StandardInput, Line, closeTimeout: null, posture, meta, Event,
                 streams: output is null ? null : new SessionStreams(output, sessionId));
+            // What it says about its account's windows, kept as it says it (TOOL6c).
+            if (said is not null) session.LimitsSaid += said;
             using var stops = output is null ? null : _processes.OpenTaskStops(sessionId, session.StopTaskAsync);
             var outcome = await session
                 .RunAsync(
@@ -1632,10 +1656,11 @@ public sealed partial class Driver(
     /// After the record, never before: its next message must land behind the ending it waited for.
     /// </param>
     /// <returns>The context high-water mark the harness reported, or null when it reported none.</returns>
+    /// <param name="said">Told what a line says about the account's windows (TOOL6c), apart from the agent's words.</param>
     internal static async Task<AcpUsage?> CaptureStructuredAsync(
         TextReader stdout, TextReader stderr, string transcript, string sessionId, SessionOutput? output,
         SessionEvents? events, IStreamMapper mapper, string? prompt, CancellationToken ct, string? preamble = null,
-        Action<SessionEvent>? observed = null, string? personSaid = null)
+        Action<SessionEvent>? observed = null, string? personSaid = null, Action<JsonElement>? said = null)
     {
         await using var file = new StreamWriter(transcript, append: false);
 
@@ -1666,6 +1691,19 @@ public sealed partial class Driver(
             {
                 Event(e);
                 observed?.Invoke(e);
+            }
+
+            if (mapped.Limits is { } limits && said is not null)
+            {
+                try
+                {
+                    said(limits);
+                }
+                catch (Exception error) when (error is not OperationCanceledException)
+                {
+                    // What a session says of its account's windows enriches the walk; losing it costs a line, never the session.
+                    Line($"[what the session said about its account's windows could not be kept: {error.Message}]");
+                }
             }
         }
 

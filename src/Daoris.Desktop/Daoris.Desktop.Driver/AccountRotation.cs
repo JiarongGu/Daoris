@@ -28,14 +28,31 @@ public enum StartKind
     Conversation,
 }
 
-/// <summary>The step of the walk that chose a start's account (TOOL6b, D130 §13 as §16 amends it): the log's <c>why</c>.</summary>
-public enum WalkStep { Cooling, Refused, SignedOut, Kept, Fewest, Lapsing, LeastRecent, List }
+/// <summary>
+/// The step of the walk that chose a start's account (TOOL6b, D130 §13 as §16 amends it): the log's <c>why</c>. <c>Near</c>
+/// and <c>Pace</c> read the agent's own word about its windows (TOOL6c).
+/// </summary>
+public enum WalkStep { Cooling, Refused, SignedOut, Kept, Near, Fewest, Lapsing, Pace, LeastRecent, List }
 
-/// <summary>What Daoris knows of one account without its agent's word (TOOL6b, D130 §16.4).</summary>
-public sealed record AccountFacts(int Running = 0, DateTimeOffset? LastStarted = null, long? Chosen = null, DateTimeOffset? WeekResets = null);
+/// <summary>
+/// What Daoris knows of one account (TOOL6b, D130 §16.4), and what its agent last said about its windows, where it said
+/// anything (TOOL6c, §5.2): null is unknown, never spent and never fresh.
+/// </summary>
+public sealed record AccountFacts(
+    int Running = 0, DateTimeOffset? LastStarted = null, long? Chosen = null, DateTimeOffset? WeekResets = null, AccountSaid? Said = null);
 
 /// <summary>The step that chose a start's account, and the one that chose it among the rest where the first passed one.</summary>
-public sealed record WalkChoice(WalkStep Step, WalkStep? Rest = null);
+public sealed record WalkChoice(WalkStep Step, WalkStep? Rest = null)
+{
+    /// <summary>
+    /// The account <see cref="Step"/> weighed the one the start ran on against, where it is near or pace (TOOL6c): near names
+    /// the account passed, pace the one it was ahead of, so the start's first line can say what that account said.
+    /// </summary>
+    public string? Over { get; init; }
+
+    /// <summary>The account <see cref="Rest"/> weighed it against, where that is near or pace.</summary>
+    public string? RestOver { get; init; }
+}
 
 /// <summary>One account a start may use, as the walk found it (TOOL4f, D125 §3.3).</summary>
 /// <param name="Account">The profile's name, or null for the tool's own configuration home.</param>
@@ -66,6 +83,15 @@ public sealed record RotatedStart(string From, CoolingEntry? Cooling, string Why
 
     /// <summary>The workspace whose list it was, or null for this machine's: the log's <c>scope</c>.</summary>
     public string? Scope { get; init; }
+
+    /// <summary>
+    /// What the account it was moved off last said, as the log names it (TOOL6c): <c>refused</c>, <c>near</c> or
+    /// <c>clear</c>, or null where it said nothing (<see cref="AccountReadings.Standing"/>).
+    /// </summary>
+    public string? FromSaid { get; init; }
+
+    /// <summary>What the account it ran on last said, as <see cref="FromSaid"/> names it.</summary>
+    public string? ToSaid { get; init; }
 }
 
 /// <summary>
@@ -86,10 +112,11 @@ public sealed record AccountChoice(WalkStep Step, string Clause);
 /// scope that names one account, and the tool's own sign-in are that one account, and the roster asks nothing here.</para>
 ///
 /// <para><b>The goal</b> (<c>use: goal</c>, the default): every listed account is used toward the most work, the fewest
-/// stalls and no allowance left at a reset, with what Daoris knows without the agent's word (§16.4). <b>Nothing counts
-/// accounts</b>: every rule reads the list it is handed, and while every account is ready none runs more than ⌈K ÷ N⌉ of a
-/// cap of K (§7). Under <c>use: order</c> the first ready account of the list carries every start, as D125 built it, and
-/// rotation never moves work off a ready account.</para>
+/// stalls and no allowance left at a reset, with what Daoris knows of its own (§16.4) and what each account's agent last said
+/// about its windows (TOOL6c, §5.2): near and pace. <b>Nothing counts accounts</b>: every rule reads the list it is handed,
+/// and while every account is ready none runs more than ⌈K ÷ N⌉ of a cap of K (§7). Under <c>use: order</c> the first ready
+/// account of the list carries every start, as D125 built it, and rotation moves work off a ready account only where its
+/// agent said it is near and <i>switch before the limit</i> is on (§16.6).</para>
 /// </remarks>
 public static class AccountRotation
 {
@@ -111,10 +138,11 @@ public static class AccountRotation
     /// conversation takes it last, or first where it is also the scope's default, and under <c>order</c> leaves it in its
     /// place.</para>
     /// <para>Under <c>goal</c> each step after keep is stable, so the order handed on stands where a step has no reason to
-    /// change it: fewest of Daoris's sessions running, a week resetting within <see cref="LastDay"/> (sooner first), least
-    /// recently started (never first, a start this look chose last), then the sequence. Steps 2 and 5, near and pace,
-    /// read the agent's own word, which no door carries yet (§16.4): TOOL6c slots them in. Under <c>order</c> the sequence
-    /// is the walk, as D125 built it.</para>
+    /// change it: an account its agent said is near goes last (with <i>switch before the limit</i> on), then fewest of
+    /// Daoris's sessions running, a week resetting within <see cref="LastDay"/> (sooner first), furthest behind its week's
+    /// pace (one that said nothing between behind and ahead), least recently started (never first, a start this look chose
+    /// last), then the sequence. Under <c>order</c> the sequence is the walk, as D125 built it, with a near account last
+    /// unless the switch is off (§16.6), and a conversation's kept account in its place.</para>
     /// </remarks>
     /// <param name="present">The agent's accounts on this machine.</param>
     public static IReadOnlyList<string> Order(
@@ -127,20 +155,19 @@ public static class AccountRotation
         var keep = Keep(scope, sequence);
         var goal = scope.Use.Use == "goal";
         string? first = null, last = null;
-        if (keep is not null)
+        if (keep is not null && (goal || kind == StartKind.Driven))
         {
             sequence.RemoveAll(name => Same(name, keep));
             if (kind == StartKind.Conversation)
             {
-                if (!goal) return Sequence(scope, present);
                 if (scope.Default is { } own && Same(own, keep)) first = keep;
                 else last = keep;
             }
         }
 
         var position = sequence.Select((name, index) => (name, index)).ToDictionary(pair => pair.name, pair => pair.index, StringComparer.OrdinalIgnoreCase);
-        IEnumerable<string> walked = goal
-            ? sequence.OrderBy(name => name, Comparer<string>.Create((a, b) => Rank(a, b, facts, now) is var (_, order) && order != 0 ? order : position[a].CompareTo(position[b])))
+        IEnumerable<string> walked = goal || scope.Use.Early
+            ? sequence.OrderBy(name => name, Comparer<string>.Create((a, b) => Rank(a, b, facts, now, scope.Use) is var (_, order) && order != 0 ? order : position[a].CompareTo(position[b])))
             : sequence;
 
         return [.. (first is null ? [] : new[] { first }), .. walked, .. (last is null ? [] : new[] { last })];
@@ -171,32 +198,33 @@ public static class AccountRotation
         if (begins is null || Same(ran, begins))
         {
             if (conversationKeeps && Same(ran, keep!)) return new(WalkStep.Kept);
-            return new(goal && Next(ran, null) is { } after ? Ahead(ran, after, facts, now) : WalkStep.List);
+            return goal && Next(ran, null) is { } after ? Ahead(ran, after) : new(WalkStep.List);
         }
 
         var passed = tried.FirstOrDefault(state => Same(state.Account!, begins));
         var step = passed is null || (conversationKeeps && Same(begins, keep!))
-            ? WalkStep.Kept
+            ? new WalkChoice(WalkStep.Kept)
             : passed.Readiness switch
             {
-                AccountReadiness.Cooling => WalkStep.Cooling,
-                AccountReadiness.Refused => WalkStep.Refused,
-                AccountReadiness.SignedOut => WalkStep.SignedOut,
-                _ => Ahead(ran, begins, facts, now),
+                AccountReadiness.Cooling => new WalkChoice(WalkStep.Cooling),
+                AccountReadiness.Refused => new WalkChoice(WalkStep.Refused),
+                AccountReadiness.SignedOut => new WalkChoice(WalkStep.SignedOut),
+                _ => Ahead(ran, begins),
             };
-        if (!goal || step is not (WalkStep.Kept or WalkStep.Cooling or WalkStep.Refused or WalkStep.SignedOut)) return new(step);
+        if (!goal || step.Step is not (WalkStep.Kept or WalkStep.Cooling or WalkStep.Refused or WalkStep.SignedOut)) return step;
 
-        var rest = Next(ran, begins) is { } runnerUp ? Ahead(ran, runnerUp, facts, now) : WalkStep.List;
-        return new(step, rest == WalkStep.List ? null : rest);
+        var rest = Next(ran, begins) is { } runnerUp ? Ahead(ran, runnerUp) : new WalkChoice(WalkStep.List);
+        return rest.Step == WalkStep.List ? step : step with { Rest = rest.Step, RestOver = rest.Over };
 
         // The next ready account after the one it ran on, but the one it was moved off.
         string? Next(string after, string? but) =>
             tried.Skip(at + 1).FirstOrDefault(state => state.IsReady && (but is null || !Same(state.Account!, but)))?.Account;
-    }
 
-    /// <summary>The step of the goal that puts <paramref name="a"/> ahead of <paramref name="b"/>; the list's order where none does.</summary>
-    private static WalkStep Ahead(string a, string b, IReadOnlyDictionary<string, AccountFacts> facts, DateTimeOffset now) =>
-        Rank(a, b, facts, now) is { Order: < 0 } ranked ? ranked.Step : WalkStep.List;
+        // The step that puts it ahead of another, naming that account where the step is about what its agent said.
+        WalkChoice Ahead(string a, string b) => Rank(a, b, facts, now, scope.Use) is { Order: < 0 } ranked
+            ? new WalkChoice(ranked.Step) { Over = ranked.Step is WalkStep.Near or WalkStep.Pace ? b : null }
+            : new WalkChoice(WalkStep.List);
+    }
 
     /// <summary>The scope's list begun where it begins, wrapping: that account always, every other only where the machine has it.</summary>
     private static List<string> Sequence(RotationScope scope, IReadOnlyCollection<string> present)
@@ -222,17 +250,30 @@ public static class AccountRotation
         scope.Use.Keep is { } keep && among.Any(name => Same(name, keep)) && among.Any(name => !Same(name, keep)) ? keep : null;
 
     /// <summary>
-    /// The first step of the goal at which <paramref name="a"/> and <paramref name="b"/> differ, and which goes first there
-    /// (negative: <paramref name="a"/>); <see cref="WalkStep.List"/> and zero where none does.
+    /// The first step at which <paramref name="a"/> and <paramref name="b"/> differ, and which goes first there (negative:
+    /// <paramref name="a"/>); <see cref="WalkStep.List"/> and zero where none does. Under <c>order</c> only near is a step.
     /// </summary>
-    private static (WalkStep Step, int Order) Rank(string a, string b, IReadOnlyDictionary<string, AccountFacts> facts, DateTimeOffset now)
+    private static (WalkStep Step, int Order) Rank(
+        string a, string b, IReadOnlyDictionary<string, AccountFacts> facts, DateTimeOffset now, RotationUse use)
     {
         var (x, y) = (facts.GetValueOrDefault(a) ?? new AccountFacts(), facts.GetValueOrDefault(b) ?? new AccountFacts());
+
+        if (use.Early)
+        {
+            var (nearX, nearY) = (AccountReadings.Near(x.Said, use.Near), AccountReadings.Near(y.Said, use.Near));
+            if (nearX != nearY) return (WalkStep.Near, nearX ? 1 : -1);
+        }
+
+        if (use.Use != "goal") return (WalkStep.List, 0);
 
         if (x.Running != y.Running) return (WalkStep.Fewest, x.Running.CompareTo(y.Running));
 
         var (lapsesX, lapsesY) = (Lapses(x, now), Lapses(y, now));
         if (lapsesX != lapsesY) return (WalkStep.Lapsing, lapsesX.CompareTo(lapsesY));
+
+        // An account that said nothing about its week is neither behind nor ahead (§16.3 step 5): it ranks as on pace.
+        var (behindX, behindY) = (AccountReadings.Behind(x.Said, now) ?? 0, AccountReadings.Behind(y.Said, now) ?? 0);
+        if (behindX != behindY) return (WalkStep.Pace, behindY.CompareTo(behindX));
 
         var (startedX, startedY) = (Started(x), Started(y));
         if (startedX != startedY) return (WalkStep.LeastRecent, startedX.CompareTo(startedY));
@@ -268,9 +309,10 @@ public static class RotatedOpening
     public sealed record Carried(string Session, long? Turn, long? Used);
 
     /// <summary>
-    /// Say it: under the goal, every start whose list offered a choice names the step that chose its account and that no
-    /// account has said what it has left; under <c>order</c>, a start that rotated says why, as D125 built it; otherwise
-    /// nothing. The record's failure costs its line, never the start.
+    /// Say it: under the goal, every start whose list offered a choice names the step that chose its account, then what each
+    /// account of its list said about its windows, or that none has said what it has left (TOOL6c); under <c>order</c>, a
+    /// start that rotated says why, as D125 built it, and what each account said where one has; otherwise nothing. The
+    /// record's failure costs its line, never the start.
     /// </summary>
     internal static void Say(
         ServiceClient service, SessionEvents events, string sessionId, string adapter, HarnessSelection selection, Carried? carried)
@@ -281,10 +323,10 @@ public static class RotatedOpening
         {
             ({ } choice, _) => (carried is { } cut
                 ? RotationWords.CarriedOn(cut.Session, to, choice.Clause, cut.Turn, cut.Used)
-                : RotationWords.Opened(to, choice.Clause)) + " " + RotationWords.Unsaid,
-            (null, { } rotated) => carried is { } cut
+                : RotationWords.Opened(to, choice.Clause)) + " " + (selection.SaidLine ?? RotationWords.Unsaid),
+            (null, { } rotated) => (carried is { } cut
                 ? RotationWords.CarriedOn(cut.Session, to, rotated, cut.Turn, cut.Used)
-                : RotationWords.Opened(to, rotated),
+                : RotationWords.Opened(to, rotated)) + (selection.SaidLine is { } said ? " " + said : ""),
             _ => null,
         };
         if (line is null) return;
@@ -294,7 +336,9 @@ public static class RotatedOpening
         events.Keep(sessionId, new SessionEvent { Kind = SessionEventKind.Note, Text = line }, say: null);
         if (selection.Rotated is { } moved)
         {
-            service.AccountSaid(AccountLine.Rotated(sessionId, adapter, moved.From, to, carried?.Session, moved.Step, moved.Scope));
+            service.AccountSaid(AccountLine.Rotated(
+                sessionId, adapter, moved.From, to, carried?.Session, moved.Step, moved.Scope, said: selection.SaidLine is not null,
+                fromSaid: moved.FromSaid, toSaid: moved.ToSaid));
         }
     }
 
@@ -388,40 +432,127 @@ public static class RotationWords
     }
 
     /// <summary>
-    /// What every start the goal chose says after its step (§16.4): no door of Daoris's carries the agent's word about its
-    /// windows yet, so near and pace wait for it (TOOL6c reads it, and then says this only while it holds).
+    /// What every start the goal chose says after its step while no account of its list has said what it has left (§16.4):
+    /// near and pace then wait for an agent's word (TOOL6c reads it where a door carries it, and <see cref="Said"/> says it).
     /// </summary>
     public const string Unsaid = "No account has said what it has left yet.";
 
     /// <summary>
+    /// What each account of a start's list last said about its windows, as one sentence for the start's first line (TOOL6c,
+    /// D130 §16.4): in the list's order, each with its age and what it said; null where none has said anything, so the
+    /// start says <see cref="Unsaid"/> instead. An account that said nothing is said so: unknown, never empty or full.
+    /// </summary>
+    /// <param name="accounts">The accounts the start's walk could use, in the list's order.</param>
+    public static string? Said(IReadOnlyList<string> accounts, IReadOnlyDictionary<string, AccountFacts> facts, RotationUse use, DateTimeOffset now)
+    {
+        if (!accounts.Any(account => facts.GetValueOrDefault(account)?.Said is not null)) return null;
+        return $"What each account said: {string.Join("; ", accounts.Select(account => Account(account, facts.GetValueOrDefault(account)?.Said, use, now)))}.";
+    }
+
+    /// <summary>One account in <see cref="Said"/>: its name, how long ago, and what it said, in Daoris's words.</summary>
+    private static string Account(string name, AccountSaid? said, RotationUse use, DateTimeOffset now)
+    {
+        if (said is null) return $"`{name}` nothing yet";
+
+        var parts = new List<string>();
+        if (said.Windows.FirstOrDefault(each => each.Standing == AccountReadings.RefusedWord) is { } reached)
+        {
+            parts.Add($"its {reached.Window} limit reached, by its own word");
+        }
+        else if (said.Windows.FirstOrDefault(each => each.Standing == AccountReadings.NearWord) is { } warned)
+        {
+            parts.Add($"near its {warned.Window} limit, by its own word");
+        }
+
+        if (said.Windows.Any(each => each.Credits)) parts.Add("drawing on usage credits");
+        var used = Ordered(said).Where(each => each.Used is not null).Select(each => $"{Percent(each.Used!.Value)} of its {each.Window} limit").ToList();
+        if (used.Count > 0) parts.Add($"{string.Join(" and ", used)} used");
+        if (AccountReadings.NearWindow(said, use.Near) is { By: NearBy.Number }) parts.Add($"near at {use.Near}%");
+        // A reading with no number, no warning and no credits is its agent's clear word alone.
+        if (parts.Count == 0) parts.Add("clear, by its own word");
+        return $"`{name}` {Age(said.Seen, now)}, {string.Join(", ", parts)}";
+    }
+
+    /// <summary>The session window, then the week, then any other, as a person reads them.</summary>
+    private static IEnumerable<WindowSaid> Ordered(AccountSaid said) =>
+        said.Windows.OrderBy(each => each.Window.ToLowerInvariant() switch { "session" => 0, AccountWindows.Weekly => 1, _ => 2 })
+            .ThenBy(each => each.Window, StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>A share as a whole percent: <i>88%</i>.</summary>
+    internal static string Percent(double share) =>
+        $"{Math.Round(share * 100, MidpointRounding.AwayFromZero).ToString(CultureInfo.InvariantCulture)}%";
+
+    /// <summary>How long ago something was said: <i>just now</i>, <i>20 min ago</i>, <i>3 h ago</i>, <i>2 d ago</i>.</summary>
+    internal static string Age(DateTimeOffset seen, DateTimeOffset now)
+    {
+        var minutes = (long)Math.Floor((now - seen).TotalMinutes);
+        return minutes < 1 ? "just now"
+            : minutes < 60 ? $"{minutes} min ago"
+            : minutes < 1440 ? $"{minutes / 60} h ago"
+            : $"{minutes / 1440} d ago";
+    }
+
+    /// <summary>
     /// Which step chose the account a start ran on, as a clause (§16.4): the step that moved it off where its scope begins
-    /// or ranked it first, and, where the first account was passed for itself, the step that chose among the rest.
+    /// or ranked it first, and, where the first account was passed for itself, the step that chose among the rest. Near and
+    /// pace say what the account they weighed it against said (TOOL6c).
     /// </summary>
     /// <param name="workspace">The workspace whose list it was, or null for this machine's.</param>
     /// <param name="passed">The state the start found the scope's first account in, where it was walked past.</param>
     public static string Clause(
         WalkChoice choice, string agent, string ran, RotationScope scope, string? workspace, AccountState? passed,
-        AccountFacts facts, StartKind kind, TimeZoneInfo zone)
+        IReadOnlyDictionary<string, AccountFacts> facts, StartKind kind, DateTimeOffset now, TimeZoneInfo zone)
     {
-        var lead = Step(choice.Step, agent, ran, scope, workspace, passed, facts, kind, zone);
-        return choice.Rest is { } rest ? $"{lead}; of the rest, {Step(rest, agent, ran, scope, workspace, passed, facts, kind, zone)}" : lead;
+        var lead = Step(choice.Step, choice.Over, agent, ran, scope, workspace, passed, facts, kind, now, zone);
+        return choice.Rest is { } rest
+            ? $"{lead}; of the rest, {Step(rest, choice.RestOver, agent, ran, scope, workspace, passed, facts, kind, now, zone)}"
+            : lead;
     }
 
     private static string Step(
-        WalkStep step, string agent, string ran, RotationScope scope, string? workspace, AccountState? passed, AccountFacts facts,
-        StartKind kind, TimeZoneInfo zone) => step switch
+        WalkStep step, string? over, string agent, string ran, RotationScope scope, string? workspace, AccountState? passed,
+        IReadOnlyDictionary<string, AccountFacts> facts, StartKind kind, DateTimeOffset now, TimeZoneInfo zone)
     {
-        WalkStep.Cooling or WalkStep.Refused or WalkStep.SignedOut => Why(agent, passed!, zone),
-        WalkStep.Kept when string.Equals(ran, scope.Begins, StringComparison.OrdinalIgnoreCase) => "it is kept for conversations",
-        WalkStep.Kept when kind == StartKind.Conversation => $"`{scope.Begins}` is kept for conversations, which take it last",
-        WalkStep.Kept => $"`{scope.Begins}` is kept for conversations",
-        WalkStep.Fewest => "it runs the fewest of Daoris's sessions",
-        WalkStep.Lapsing => $"its week resets first, at {CoolingWords.When(facts.WeekResets!.Value, zone)}",
-        WalkStep.LeastRecent => facts is { Chosen: null, LastStarted: null } ? "Daoris has not started on it yet" : "Daoris started on it least recently",
-        _ => scope.Default is { } own && string.Equals(own, ran, StringComparison.OrdinalIgnoreCase)
-            ? $"it is {Whose(workspace)} default"
-            : $"it comes first in {Whose(workspace)} list",
+        var own = facts.GetValueOrDefault(ran) ?? new AccountFacts();
+        return step switch
+        {
+            WalkStep.Cooling or WalkStep.Refused or WalkStep.SignedOut => Why(agent, passed!, zone),
+            WalkStep.Kept when string.Equals(ran, scope.Begins, StringComparison.OrdinalIgnoreCase) => "it is kept for conversations",
+            WalkStep.Kept when kind == StartKind.Conversation => $"`{scope.Begins}` is kept for conversations, which take it last",
+            WalkStep.Kept => $"`{scope.Begins}` is kept for conversations",
+            WalkStep.Near => Near(over!, facts.GetValueOrDefault(over!)?.Said, scope.Use),
+            WalkStep.Fewest => "it runs the fewest of Daoris's sessions",
+            WalkStep.Lapsing => $"its week resets first, at {CoolingWords.When(own.WeekResets!.Value, zone)}",
+            WalkStep.Pace => Pace(own.Said, over!, facts.GetValueOrDefault(over!)?.Said, now),
+            WalkStep.LeastRecent => own is { Chosen: null, LastStarted: null } ? "Daoris has not started on it yet" : "Daoris started on it least recently",
+            _ => scope.Default is { } named && string.Equals(named, ran, StringComparison.OrdinalIgnoreCase)
+                ? $"it is {Whose(workspace)} default"
+                : $"it comes first in {Whose(workspace)} list",
+        };
+    }
+
+    /// <summary>Why an account went last (§6): its agent's word, its credits, or a window's use at or over <i>near</i>.</summary>
+    private static string Near(string account, AccountSaid? said, RotationUse use) => AccountReadings.NearWindow(said, use.Near) switch
+    {
+        { By: NearBy.Refused } reached => $"`{account}` said its {reached.Window.Window} limit is reached",
+        { By: NearBy.Word } warned => $"`{account}` said it is near its {warned.Window.Window} limit",
+        { By: NearBy.Credits } => $"`{account}` said it is drawing on usage credits",
+        { } full => $"`{account}` has used {Percent(full.Window.Used!.Value)} of its {full.Window.Window} limit, at or over the {use.Near}% that counts as near",
+        null => $"`{account}` is near its limit",
     };
+
+    /// <summary>
+    /// Why the account it ran on ranked ahead by its week's pace (§16.3 step 5): it is behind, where it said so; otherwise
+    /// the account it was weighed against is ahead.
+    /// </summary>
+    private static string Pace(AccountSaid? own, string over, AccountSaid? other, DateTimeOffset now) =>
+        AccountReadings.Behind(own, now) is > 0
+            ? $"it is furthest behind its week's pace, {Week(own!, now)}"
+            : $"`{over}` is ahead of its week's pace, {Week(other!, now)}";
+
+    /// <summary>A week's pace in words: <i>14% of its weekly limit used with 43% of its week gone</i>.</summary>
+    private static string Week(AccountSaid said, DateTimeOffset now) =>
+        $"{Percent(said.Of(AccountWindows.Weekly)!.Used!.Value)} of its weekly limit used with {Percent(AccountReadings.Gone(said, now)!.Value)} of its week gone";
 
     /// <summary>A scope's possessive: a workspace by name, or this machine.</summary>
     private static string Whose(string? workspace) => workspace is { } name ? $"`{name}`'s" : "this machine's";

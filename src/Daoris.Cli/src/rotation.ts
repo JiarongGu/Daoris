@@ -45,8 +45,8 @@
 //   8. Refused at a door (§3.1, §4.6): a scope's default and its kept account are of its list, and a kept account leaves
 //      driven work another — the first problem said. Nothing counts accounts: no list is refused for its length.
 //
-// The driver's walk reads them (TOOL6b): `use` and `keep` choose a start's account; `early` and `near` choose nothing until a
-// door carries the agent's word about its windows (TOOL6c).
+// The driver's walk reads them (TOOL6b, TOOL6c): `use` and `keep` choose a start's account; `early` and `near` pass an
+// account its agent said is near, where the agent's door carries that word (`windows.json`, the toolchain's `windows`).
 
 import type { HarnessSettings } from './toolchain.ts';
 

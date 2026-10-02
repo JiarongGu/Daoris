@@ -155,7 +155,11 @@ public sealed record HarnessToolchain(
     // reset a limit told is then carried a week at a time, where otherwise it is dropped at its reset. Declared only where
     // the maker's own page says so; not in `Limits`, whose entries grow only with a recorded sentence. A door onto another
     // agent reads its owner's (AGT7).
-    bool WeekFixed = false)
+    bool WeekFixed = false,
+    // How this tool says an account's windows (TOOL6c, D130 §5.2): its entry in the readings table, read by
+    // `AccountReadings.Read` from the frame its door carries apart from its words. Declared only where a frame was recorded;
+    // a door onto another agent reads its owner's (AGT7). Null says nothing, so near and pace stand aside (§5.3).
+    WindowWords? Windows = null)
 {
     /// <summary>The command this harness actually runs as: the machine's configured one, or the declared one.</summary>
     public IReadOnlyList<string> Command(IReadOnlyList<string>? configured) =>
@@ -1446,6 +1450,12 @@ public sealed record HarnessSelection(
     /// start's record says first. Null under <c>use: order</c>, for a pick, and where the scope offered one account.
     /// </summary>
     public AccountChoice? Choice { get; init; }
+
+    /// <summary>
+    /// What each account of the scope's list last said about its windows, as the start's first line says it (TOOL6c, D130
+    /// §16.4); null where none has said anything, and for a pick or a scope with no list. Machine-local: it names accounts.
+    /// </summary>
+    public string? SaidLine { get; init; }
 }
 
 /// <summary>Which rung of the resolution answered (D49 §4, TOOL2): the order a start asks in.</summary>
@@ -1568,6 +1578,38 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
                && adapters.Names.Contains(owner, StringComparer.OrdinalIgnoreCase)
             ? adapters.Resolve(owner).Toolchain?.Limits
             : null;
+    }
+
+    /// <summary>
+    /// How this adapter says an account's windows (TOOL6c, D130 §5.2): its own entry, else its owner's, since a door's readings
+    /// are its owner's as its accounts are (AGT7). Null says nothing.
+    /// </summary>
+    public WindowWords? WindowsOf(string adapter)
+    {
+        var resolved = adapters.Resolve(adapter);
+        if (resolved.Toolchain?.Windows is { } own) return own;
+        return CoolingAgent(resolved) is { } owner
+               && !string.Equals(owner, resolved.Name, StringComparison.OrdinalIgnoreCase)
+               && adapters.Names.Contains(owner, StringComparer.OrdinalIgnoreCase)
+            ? adapters.Resolve(owner).Toolchain?.Windows
+            : null;
+    }
+
+    /// <summary>
+    /// What a session's door said about the windows of the account it runs as (TOOL6c, D130 §5.2): read by the adapter's
+    /// table and kept in <c>windows.json</c>, the newest reading of each window replacing the older, as the door carries it.
+    /// Only a named account's, since the tool's own sign-in is never in a list (D125 §3.7). Null where nothing was kept.
+    /// </summary>
+    /// <param name="info">The frame's object, apart from the agent's words: never the transcript (D125 §1.4).</param>
+    public IReadOnlyList<WindowReading>? Said(string adapter, string? profile, JsonElement info, string? session)
+    {
+        var resolved = adapters.Resolve(adapter);
+        if (profile is null || CoolingAgent(resolved) is not { } agent || WindowsOf(resolved.Name) is not { } words) return null;
+
+        var readings = AccountReadings.Read(info, words);
+        if (readings.Count == 0) return null;
+        AccountWindows.Said(Home, agent, profile, readings, Clock(), session);
+        return readings;
     }
 
     /// <summary>The account's cool-off now, or null when it is ready, a start on this adapter as <paramref name="profile"/> would read it.</summary>
@@ -2013,20 +2055,26 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
         var selection = new HarnessSelection(null, runs, home, report?.Version, managed, claude, key);
         if (picked is not null || scope.List.Count == 0 || scope.Begins is not { } begins) return selection;
 
-        // Said by whoever opens the record (TOOL4f, §3.6; TOOL6b, §16.4): its first line and `account.rotated`.
+        // Said by whoever opens the record (TOOL4f, §3.6; TOOL6b, §16.4): its first line and `account.rotated`, with what each
+        // account of the list last said about its windows (TOOL6c).
         var choice = AccountRotation.Chose(scope, kind, states, at, facts, now);
         var passed = states.FirstOrDefault(state => string.Equals(state.Account, begins, StringComparison.OrdinalIgnoreCase));
-        var ran = facts.GetValueOrDefault(runs) ?? new AccountFacts();
-        string Said(WalkChoice said) => RotationWords.Clause(said, owner, runs, scope, scope.From == ChoiceFrom.Workspace ? circle : null, passed, ran, kind, Zone);
+        string Said(WalkChoice said) =>
+            RotationWords.Clause(said, owner, runs, scope, scope.From == ChoiceFrom.Workspace ? circle : null, passed, facts, kind, now, Zone);
+        string? Standing(string account) => AccountReadings.Standing(facts.GetValueOrDefault(account)?.Said, scope.Use.Near);
+        var walked = scope.List.Where(account => order.Contains(account, StringComparer.OrdinalIgnoreCase)).ToList();
         return selection with
         {
             Choice = scope.Use.Use == "goal" && order.Count > 1 ? new AccountChoice(choice.Step, Said(choice)) : null,
+            SaidLine = RotationWords.Said(walked, facts, scope.Use, now),
             Rotated = string.Equals(runs, begins, StringComparison.OrdinalIgnoreCase)
                 ? null
                 : new RotatedStart(begins, passed?.Cooling, Said(choice with { Rest = null }))
                 {
                     Step = choice.Step,
                     Scope = scope.From == ChoiceFrom.Workspace ? circle : null,
+                    FromSaid = Standing(begins),
+                    ToSaid = Standing(runs),
                 },
         };
     }
@@ -2141,7 +2189,10 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
         lock (_load) _chosen.Add((++_numbered, owner, account));
     }
 
-    /// <summary>What the walk knows of each account of a list, without its agent's word (§16.4).</summary>
+    /// <summary>
+    /// What the walk knows of each account of a list (§16.4), and what its agent last said about its windows where a door
+    /// carried it (TOOL6c, §5.2).
+    /// </summary>
     private Dictionary<string, AccountFacts> Facts(string owner, IReadOnlyList<string> list, DateTimeOffset now)
     {
         var fixedWeek = WeekFixed(owner);
@@ -2163,11 +2214,15 @@ public sealed class HarnessRoster(AdapterSet adapters, string? settingsPath = nu
         {
             try
             {
-                facts[account] = facts[account] with { WeekResets = AccountWindows.WeekOf(Home, owner, account, now, fixedWeek) };
+                facts[account] = facts[account] with
+                {
+                    WeekResets = AccountWindows.WeekOf(Home, owner, account, now, fixedWeek),
+                    Said = AccountWindows.SaidOf(Home, owner, account, now),
+                };
             }
             catch (Exception error) when (error is IOException or UnauthorizedAccessException)
             {
-                // A week not read ranks nothing, as one never told does.
+                // A week not read ranks nothing, and a reading not read is nothing said, as one never told is.
             }
         }
 

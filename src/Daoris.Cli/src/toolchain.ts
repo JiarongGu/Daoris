@@ -102,6 +102,7 @@ import {
 } from './rotation.ts';
 import type { Orders, Scope, ScopeProblem, UseChange, UseMode, Uses } from './rotation.ts';
 import { coolingLine, coolingOf, endCooling, machineZone, readCooling } from './cooling.ts';
+import { saidLine, saidOf } from './windows.ts';
 import type { Channel, Fetcher } from './channels.ts';
 import type { CommandArgs } from './types.ts';
 import type { ExitCode } from './errors.ts';
@@ -222,6 +223,13 @@ export interface Toolchain {
    * driver's `KeyVariable` is the twin.
    */
   keyVariable?: string;
+  /**
+   * That this tool's sessions say how much of each window an account has used (TOOL6c, D130 §5.2): the driver reads its
+   * frame by its readings table and keeps what it said in `windows.json`, so *switch before the limit* and pace act on it.
+   * Declared only where a frame was recorded (limit-signals evidence §1); a door's are its owner's (twin rule 7). The
+   * driver's `Windows` is the twin.
+   */
+  windows?: boolean;
 }
 
 /**
@@ -264,6 +272,8 @@ export const TOOLCHAINS: Record<string, Toolchain> = {
     // Its user-tier settings, `model` and `effortLevel` among them (AGT6): read from its ACP adapter's
     // own settings reader and its SDK's settings schema, never guessed.
     settingsFile: AGENT_SETTINGS_FILE,
+    // Each window's use and reset on every `rate_limit_event`, which its ACP door forwards (TOOL6c, limit-signals evidence §1, §3).
+    windows: true,
   },
   // The supported harness over the PROTOCOL door (ACP2/D53). A separate toolchain entry from
   // `claude-code` on purpose: the ACP adapter and `claude` are different packages at different
@@ -887,18 +897,23 @@ export function signInNew(
  *
  * @remarks
  * 🔴 It states each setting as chosen, and claims nothing about the walk that reads it: *make the most of them* is §16.3's
- * walk, the driver's, whose steps `profile use` names (`nextStartLines`). *Switch before the limit* passes no account while no
- * session says how near it is (§6): no agent's door carries that word yet, which is a fact today and is said.
+ * walk, the driver's, whose steps `profile use` names (`nextStartLines`). *Switch before the limit* passes an account its
+ * agent said is near only where the agent's sessions say how much of each window is used (`windows`, TOOL6c); for any other
+ * agent it passes none, and that is said.
+ *
+ * @param says Whether the agent's sessions say how much of each window is used (the toolchain's `windows`).
  */
-export function useLines(scope: Scope, product: string): { rows: [label: string, value: string][]; notes: string[] } {
+export function useLines(scope: Scope, product: string, says = false): { rows: [label: string, value: string][]; notes: string[] } {
   const { use } = scope;
   const mode = USE_WORDS[use.use];
   const rows: [string, string][] = [
     ['use accounts', `${mode.name}${mode.cost ? ` — ${mode.cost}` : ''}`],
     ['kept for conversations', use.keep ?? 'none'],
-    ['switch before the limit', use.early
-      ? `on, at ${use.near}% — ${product}'s sessions here do not say how near their limits are`
-      : `off (near: ${use.near}%)`],
+    ['switch before the limit', !use.early
+      ? `off (near: ${use.near}%)`
+      : says
+        ? `on, at ${use.near}% — a start passes an account ${product} says is near its limit, or that has used ${use.near}% of a window`
+        : `on, at ${use.near}% — ${product}'s sessions here do not say how near their limits are`],
   ];
 
   const notes: string[] = [];
@@ -917,17 +932,19 @@ export function useLines(scope: Scope, product: string): { rows: [label: string,
 }
 
 /**
- * The step the next start of a scope would follow (TOOL6b; D130 §16.3, §16.4, §16.6), in the terminal's words: the goal's
- * steps as the driver's walk takes them, or the list's order under `order`, and the kept account driven work passes.
- * With the goal it says, too, that no account has said what it has left, which is true of every agent until a door carries
- * that word (TOOL6c).
+ * The step the next start of a scope would follow (TOOL6b, TOOL6c; D130 §16.3, §16.4, §16.6), in the terminal's words: the
+ * goal's steps as the driver's walk takes them, or the list's order under `order`, and the kept account driven work passes.
+ * Where the agent's sessions say how much of each window is used, a near account goes last (with *switch before the
+ * limit* on) and pace orders the goal's walk; with the goal and no account of the list having said anything, it says so.
  *
  * @remarks
  * Prose about the driver's walk (`AccountRotation.Order`), not a twin of a file: this command is offline and reads no
- * session record, so it names the steps rather than the account they would choose. Steps 2 and 5, near and pace, need
- * the agent's word and are left out until a door carries it.
+ * session record, so it names the steps rather than the account they would choose.
+ *
+ * @param says Whether the agent's sessions say how much of each window is used (the toolchain's `windows`).
+ * @param anySaid Whether any account of the list has said what it has left (`windows.json`).
  */
-export function nextStartLines(scope: Scope): { row: string; note: string | null } {
+export function nextStartLines(scope: Scope, says = false, anySaid = false): { row: string; note: string | null } {
   if (scope.list.length === 1) return { row: `\`${scope.list[0]}\`, the one account this list holds`, note: null };
 
   const from = `from \`${scope.begins}\`${scope.default !== null && scope.default === scope.begins ? ', its default' : ''}`;
@@ -935,14 +952,21 @@ export function nextStartLines(scope: Scope): { row: string; note: string | null
   const passes = keep !== null && scopeProblem({ default: null, list: scope.list, keep }) === null
     ? `; driven work passes \`${keep}\`, kept for conversations`
     : '';
-  return scope.use.use === 'goal'
-    ? {
-      row: 'the ready account running the fewest of Daoris\'s sessions; then one whose week resets within a day; then the one '
-        + `Daoris started on least recently; then this list's order, ${from}${passes}`,
-      note: 'no account has said what it has left yet: Daoris spreads starts across them by its own sessions, and learns '
+  const near = says && scope.use.early;
+  if (scope.use.use !== 'goal') {
+    return { row: `the first ready account of this list, ${from}${passes}${near ? '; one its agent said is near goes last' : ''}`, note: null };
+  }
+
+  return {
+    row: `${near ? 'the ready account its agent did not say is near; then the one' : 'the ready account'} running the fewest of `
+      + 'Daoris\'s sessions; then one whose week resets within a day; '
+      + `${says ? 'then the one furthest behind its week\'s pace; ' : ''}then the one Daoris started on least recently; then this `
+      + `list's order, ${from}${passes}`,
+    note: anySaid
+      ? null
+      : 'no account has said what it has left yet: Daoris spreads starts across them by its own sessions, and learns '
         + 'each account\'s weekly reset from the limits it meets',
-    }
-    : { row: `the first ready account of this list, ${from}${passes}`, note: null };
+  };
 }
 
 /**
@@ -980,6 +1004,9 @@ export function accountLines(
 
     const cooled = coolingOf(home, owner, profile.name, now);
     if (cooled) lines.push(`${indent}${''.padEnd(16)} ${coolingLine(cooled, now, zone)}`);
+    // What its agent last said about its windows, and how long ago (TOOL6c, D130 §3.2): a reading, never a judgement.
+    const said = saidOf(home, owner, profile.name, now);
+    if (said) lines.push(`${indent}${''.padEnd(16)} ${saidLine(said, now, zone)}`);
   }
 
   const ownCooling = coolingOf(home, owner, null, now);
@@ -988,7 +1015,7 @@ export function accountLines(
   // Each list, and how it is used beneath it (TOOL6a, D130 §3.2): the machine's, then each workspace's own.
   const product = TOOLCHAINS[owner]?.product ?? owner;
   const beneath = (scope: Scope) => {
-    const { rows, notes } = useLines(scope, product);
+    const { rows, notes } = useLines(scope, product, TOOLCHAINS[owner]?.windows === true);
     for (const [label, value] of rows) lines.push(`${indent}${''.padEnd(16)} ${label}: ${value}`);
     for (const note of notes) lines.push(`${indent}${''.padEnd(16)} ${note}`);
   };
@@ -1793,19 +1820,28 @@ export function commandHarness(
           + `${scope.list.join(', then ')}.`
         : `daoris: ${where(workspace)}, \`${name}\`'s list is ${scope.list.join(', then ')}.`);
 
-      const { rows, notes } = useLines(scope, TOOLCHAINS[name]?.product ?? name);
+      const says = TOOLCHAINS[name]?.windows === true;
+      const now = new Date();
+      const zone = machineZone();
+      const said = new Map(scope.list.map((account) => [account, saidOf(home, name, account, now)] as const));
+
+      const { rows, notes } = useLines(scope, TOOLCHAINS[name]?.product ?? name, says);
       for (const [label, value] of rows) write(`  ${label.padEnd(24)} ${value}`);
       for (const note of notes) write(`  ${note}`);
-      const next = nextStartLines(scope);
+      const next = nextStartLines(scope, says, [...said.values()].some((windows) => windows !== null));
       write(`  ${'next start'.padEnd(24)} ${next.row}`);
       if (next.note) write(`  ${next.note}`);
 
-      const now = new Date();
-      const zone = machineZone();
+      // Each account's cool-off, else its last reading and its age (TOOL6c), else that it has said nothing: unknown.
       write('  what each account last said:');
       for (const account of scope.list) {
         const cooled = coolingOf(home, name, account, now);
-        write(`    ${account.padEnd(14)} ${cooled ? coolingLine(cooled, now, zone) : 'nothing said about what it has left'}`);
+        const reading = said.get(account);
+        write(`    ${account.padEnd(14)} ${cooled
+          ? coolingLine(cooled, now, zone)
+          : reading
+            ? saidLine(reading, now, zone, scope.use.early ? scope.use.near : null)
+            : 'nothing said about what it has left'}`);
       }
       return 0;
     }
