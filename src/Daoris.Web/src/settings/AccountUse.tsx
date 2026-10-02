@@ -141,14 +141,18 @@ export function ScopeEditor({ agent, product, scope, accounts, workspace, busy, 
   const listed = scope.list.length > 0;
   const nearOf = (name: string) => scope.near.find((each) => each.account === name);
   const coolingOf = (name: string) => agent.accounts.find((account) => account.name === name)?.cooling;
+  // Each hint is the terminal's twin for this scope, so a workspace's names its `--workspace`.
+  const hinted = { agent: agent.agent, scoped: workspace ? ` --workspace ${workspace}` : '' };
 
   return (
     <div className="flex min-w-0 flex-col gap-1">
       <SettingRow
-        label={t('harness.use.member')}
-        hint={t('harness.use.orderHint', { agent: agent.agent })}
+        label={t('harness.use.list')}
+        hint={t('harness.use.orderHint', hinted)}
         why={t('harness.use.listWhy')}
       >
+        {/* The switch's name, once, above its column (D130 §9: *Use*), where each row's box is named for its account. */}
+        <p className="m-0 mt-1 text-meta text-ink-faint">{t('harness.use.member')}</p>
         <ol aria-label={t('harness.use.listLabel', { scope: scopeName })} className="m-0 mt-1 list-none p-0">
           {rows.map((row, index) => {
             const blocked = row.used ? cannotLeave(scope, row.name) : null;
@@ -227,7 +231,7 @@ export function ScopeEditor({ agent, product, scope, accounts, workspace, busy, 
         <>
           <SettingRow
             label={t('harness.use.mode.label')}
-            hint={t('harness.use.mode.hint', { agent: agent.agent })}
+            hint={t('harness.use.mode.hint', hinted)}
             why={t('harness.use.mode.why')}
             control={(
               <Segmented
@@ -249,7 +253,7 @@ export function ScopeEditor({ agent, product, scope, accounts, workspace, busy, 
 
           <SettingRow
             label={t('harness.use.keep.label')}
-            hint={t('harness.use.keep.hint', { agent: agent.agent })}
+            hint={t('harness.use.keep.hint', hinted)}
             why={t('harness.use.keep.why')}
             control={scope.list.length > 1 ? (
               <SelectField
@@ -270,7 +274,7 @@ export function ScopeEditor({ agent, product, scope, accounts, workspace, busy, 
 
           <SettingRow
             label={t('harness.use.early.label')}
-            hint={t('harness.use.early.hint', { agent: agent.agent })}
+            hint={t('harness.use.early.hint', hinted)}
             why={t('harness.use.early.why')}
             control={(
               <CheckField
@@ -290,7 +294,7 @@ export function ScopeEditor({ agent, product, scope, accounts, workspace, busy, 
           {scope.use.early && (
             <SettingRow
               label={t('harness.use.near.label')}
-              hint={t('harness.use.near.hint', { agent: agent.agent })}
+              hint={t('harness.use.near.hint', hinted)}
               control={<NearField near={scope.use.near} busy={busy} label={`${t('harness.use.near.label')} · ${scopeName}`} onNear={(near) => acts.onUse(where, { near })} />}
             />
           )}
@@ -362,7 +366,7 @@ export function WorkspaceScope({ agent, product, workspace, scope, machine, acco
     <div className="mt-2 border-t border-line pt-2">
       <SettingRow
         label={t('harness.use.workspace', { workspace })}
-        hint={t('harness.use.scope.hint', { agent: agent.agent, workspace })}
+        hint={own ? undefined : t('harness.use.scope.hint', { agent: agent.agent, workspace })}
         control={(
           <Segmented
             label={`${t('harness.use.scope.label')} · ${workspace}`}
