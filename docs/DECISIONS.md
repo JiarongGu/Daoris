@@ -8939,3 +8939,64 @@ TOOL6b builds it so; TOOL6a's words for the setting say so.
 accounts"*. Every setting above serves it: work keeps moving when one account is spent, and no account sits idle while
 another is cut off. It is judged by TOOL4h's report (the limits each account met, the sessions each ran, the starts a
 setting moved) and TOOL4i's run, never by a number Daoris made up.
+
+## D131 — An answer continues the session: its record reopens and its harness conversation resumes where the account, the adapter and the tree are the same; otherwise today's carry-on, saying why (2026-10-02)
+
+**Decision (ANSWER1).** The owner, 2026-10-02: *"whenever I input anything say the session was waiting for my input
+and after I input it starts a new session? isn't this should be continue"*. Seen on the install the same day: a driven
+session on `claude-code-acp` 0.84.0 parked to ask, the person answered, and the driver started a new session in the
+same tree, the agent's own conversation gone and a second row on the screen. Read from the code at `32cbf03`, the
+answer ends the parked record `completed` (D83) and the planner opens a new one (D80's carry-on); nothing resumes an
+agent's own conversation, though the adapter offers `session/resume` and `session/load` and the ledger already allows
+`awaiting-person` → `working`. The contract is `docs/2026-10-02-answer-continues-design.md`.
+
+1. **Resume when it can work.** An answered park is continued by its own record: `awaiting-person` → `working`, the
+   harness's own conversation resumed in the same tree, and the answer its next prompt, verbatim. The protocol door
+   sends `session/resume` where the agent advertises it (no replay, since the record already holds the conversation),
+   else `session/load` with its replay not kept again; the native door runs `claude -p <answer> --resume <id>`. The
+   conversation's id is kept the moment the wire says it, beside the transcript, never read from the agent's home.
+2. **It needs** the record still parked with its answer, the same adapter, the same account (the conversation lives
+   in that account's configuration home, and a record names one account), the same tree standing, a kept id, and a
+   door that can resume. A changed harness version is said on the resumed run's first line, never refused.
+3. **Otherwise, today's carry-on, said why.** The park ends `completed` with its answer and the reason, and a new
+   record carries the quest on in the same tree with the answer, the last plan and the last words. The reason is one
+   line on its note, by a code: `account`, `adapter`, `unkept`, `tree`, `unable`, `offered`, `gone`, `refused` or
+   `ended` (design §2). A note never names an account nor quotes the agent's refusal. The machine log writes
+   `session.answered` {session, adapter, resumed, why} once per answer taken up.
+4. **One Daoris record for one harness conversation.** A resume reopens the record that parked; a fallback is a new
+   record because it is a new conversation.
+5. **The other entries stay new sessions**: *Try again* after a person's stop, a carry-on after a time-out, a crash,
+   a refused turn or an interrupted take, and D79's resume, which is the same shape and held. Each one's record is
+   finished, and a finished record does not move.
+6. **The service and the page follow** (design §5): ANSWER1b keeps an answered record parked, and clears `answer` on a
+   move into `awaiting-person`; ANSWER1c shows an answered park as carrying on. Until ANSWER1b, the driver carries every
+   answer on as today, saying `ended`.
+
+**Why.** The person answered a question, and a conversation that asked it is the one that should hear the answer: a
+new session rebuilds from a handed summary what the first one knew, and the screen shows the person a second session
+for one piece of work. D46 held resume as an adapter capability until a real run asked for it, and D90 already keeps
+a working session's context for what the person adds; a park the person answers is the same need after the turn has
+ended. The record is the authority (D46 §4), so one record standing for one conversation is what makes the page, the
+log, the review and a teammate's view show one session without each learning a fold.
+
+**Rejected.**
+- **A linked record that the page folds into one thread.** It leaves the ledger alone, but every reader of records
+  would have to learn the fold, one conversation would have two homes, the log would count two sessions, and a
+  teammate would see two rows unless the link travelled as a new field.
+- **Reopening a finished record.** A finished record does not move, has travelled, and is what the strikes count.
+- **Resuming the conversation in a new record** for a fallback, a stop or a cut-off. That is the linked shape: one
+  conversation over two records.
+- **`session/load` first.** It replays the whole history, which the record already holds; `session/resume` sends none.
+- **Checking for the conversation in the agent's home before resuming.** A read inside an account's directory (D66 §3);
+  the agent's own refusal is the answer, and the fallback takes it.
+- **Refusing a resume across a harness version.** The native `claude` updates itself, so nearly every answer would
+  fall back; the run says its version instead.
+
+**This amends:** D83 (an answer no longer ends the record, once ANSWER1b lands, and a continued park is not a new
+session), D80 and STANDDOWN2's carry-on (now the fallback, said why), D46's held resume (built for an answered park),
+and D94 §4 (`session.answered`). D51, D58, D79, D90, D104, D125 and D130 stand.
+
+**What the gates do not cover.** This entry's statements about today were read from the code at `32cbf03` and from
+the adapter's and SDK's published packages at their pinned versions; no real agent was resumed. The native door's
+`--resume` and its `init` line are the maker's published shapes, not a run on this machine. `verify` checks this
+entry's shape and the design's links, and none of their words.
