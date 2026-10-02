@@ -21,8 +21,8 @@ lists.
 
 ## State
 
-**Counts, and this is their one home:** seventeen commands, **1078 CLI tests, 993 service and 60 HTTP host, 3520 driver,
-578 desktop modules, 80 devkit, 2711 web unit, 24 Playwright**, 114/114 release rehearsal, **349/349
+**Counts, and this is their one home:** seventeen commands, **1086 CLI tests, 1008 service and 61 HTTP host, 3560 driver,
+589 desktop modules, 80 devkit, 2711 web unit, 24 Playwright**, 114/114 release rehearsal, **349/349
 family rehearsal** (it names its own phases when you run it), **84/84 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 6 knowledge
 documents, 6 skills, 7 packs. The always-loaded core is **20,067 of 26,000 bytes** — a span in
@@ -193,6 +193,9 @@ KNOWUSE1 found the sessions do read their knowledge: of 46 items put to the owne
 - [ ] **KNOWUSE1b — a standing answer kept per repository** (driver, modules, both doors). *Dev writes allowed, test
   locally against dev, prod only on a yes*: kept on this machine, never written into the repository, handed to every
   session there. Contract: D135. Proof: a claim, a resume, a carry-on and a follow-up are each handed it.
+- [ ] **KNOWUSE1a2 — a park shows its go-aheads, and answering one goes on with it** (web, driver, modules; after
+  KNOWUSE1a). The session page of a park that asked go-aheads shows them with *Approve* and *Refuse*, and answering
+  there also answers the park: one press, not two. Contract: D135 §2, its KNOWUSE1a note. Proof: vitest; a driver test.
 - [ ] **KNOWUSE1c — a closing note says what needs you apart from readings, each citing its source** (driver). Ticket line,
   doc line or code path beside every item; the look names the repository's own indexes. Contract: D135. Proof:
   `AskAndWaitPromptTests`; a canary turn.
@@ -251,6 +254,17 @@ owner on 1 October.
   meanwhile. Deliver at the harness's next step where its door allows (measure what the protocol adapter does with a
   prompt during a turn), and show the held words in the conversation as *held, reaches it at …*. Contract: a short
   design (SESS3 amended). Proof: the measurement; driver and page tests; the look.
+- [ ] **MSG1 — session messages, one model for every door** (owner, 2026-10-03: *"we do need a way to set message between
+  runs so it does the resume so that close the gap for codex and it does look like in the same session, and this should
+  be properly designed native/daoris managed session messages"*). A person's words to a session reach it at the next
+  step where the door allows (STEER1), else at its turn's end by resuming the harness's own conversation (ANSWER1's
+  resume), and after it ended by reopening the record, so every door reads as one session. Contract: D137 (in flight).
+  Proof: the design, the doors measured, then its rows.
+- [ ] **STEER2 — *Send now* on the next-step door, and a box that knows its door** (driver, modules, web; after STEER1).
+  *Send now* has nothing to act on where words already reach the next step; send the draft through `_session/steering`
+  and let the queue say when words arrive. Contract: D136 §4. Proof: driver, modules and page tests; one steer measured.
+- [ ] **STEER3 — the other doors** (driver; after STEER1). A native driven session on `--input-format stream-json`, and
+  `codex-acp`'s `turn/steer`, each measured for one turn before it is built. Contract: D136 §5. Proof: the measurement.
 - [ ] **ANSWER1 on the install — the plan** (owner, 2026-10-03: *"you need to fix the ANSWER1 bug too"*). The fix is on
   main (ANSWER1a–c, 2026-10-02/03): an answer keeps its session and resumes the agent's own conversation. The install
   still runs the build before it, because a session has been running at every chance to republish. In order:
@@ -277,11 +291,6 @@ owner on 1 October.
 - [ ] **DRIFT1e — a follow-up checks against the ask, and a correction goes back to the work** (design first). A closing note
   is the build's account, not the requirement; a correction reopens the parent quest instead of being built under
   *Verify*. Contract: D133 §5. Proof: the design, then its rows.
-- [ ] **PAUSE1b — pause and resume** (driver, modules; after a and SESSUX1g). The `Paused` verdict first, `WORK_PAUSE` and
-  `WORK_RESUME`, the terminal and the log: one press stops an ask's work and keeps its place. Contract: D132 §2, §4.3, §6.1,
-  §7.2–§7.3. Proof: planner, route and group tests; a Process tick paused and resumed in its tree.
-- [ ] **PAUSE1c — a decline that applies only while open** (service; any time). `whileOpen`, so an abandon's decline never
-  lands on a take that reached the remote first. Contract: D132 §5.2. Proof: `QuestLogTests`; the sync suite over the wire.
 - [ ] **PAUSE1d — abandon** (driver, modules; after b and c). One listed press that declines the quests with the person's
   reason and discards only what nothing else holds, keeping and naming the rest; `abandoned.json`; its declines send
   `whileOpen` (PAUSE1c), and D132 §5.2 and §13's older-remote sentence takes PAUSE1c's reading. Contract: D132 §3, §4,
@@ -361,11 +370,12 @@ FRAME1e and WSSETUP6. Then the owner's two runs.
 - [ ] **KNOW2c — a prompt hook for chat sessions** (after KNOW2b and a probe). The composed Claude Code settings carry a
   `UserPromptSubmit` hook adding the same headlines, failing open. Contract: review §4.6 item 4. Proof: the probe on
   both doors; the composed settings' tests.
-- [ ] **DOC8 — the decisions record stops tearing under union merges** (found 2026-10-03, four integrations running).
-  Branches append notes under an older decision and move decisions to keep order, so the union merge leaves a decision
-  twice and another's notes under it; the parent rebuilt D130–D133 by script three times. Weigh one file per decision (a
-  record read by lookup has no ceiling) against a merge driver for the file. Contract: a short design, then D-number.
-  Proof: four branches noting four decisions merge with nothing twice and nothing moved.
+- [ ] **DOC8a — the decisions record, one file per decision** (the parent's; no branch in flight on the record). The record
+  becomes `docs/decisions/D<n>.md`, `docs/DECISIONS.md` a fixed page, and the attributes, the manifest, the dogfood rule
+  and the lines naming the record move with it; D119's glued note gets its blank line after the proof. Contract: D134
+  §3.1–§3.5, §4. Proof: the concatenation check in the commit body; `verify`; the service suite and family rehearsal.
+- [ ] **DOC8c — a folder's record titled by its heading** (service; after DOC8a). The scanner titles a record in a declared
+  folder by its first heading, so search shows *D130 — …*. Contract: D134 §3.5. Proof: `RepositoryScannerTests`.
 - [ ] **GATE1 — the docs gate is blind at the merge** (found 2026-10-02): the devkit's `docs` gate reads committed dates, so
   a merge that changes the CLI's source without the root README passes the merge tool and fails `verify` once committed
   (TOOL4e did). Proof: the merge tool runs the gate as of the commit it would make, seen failing first.

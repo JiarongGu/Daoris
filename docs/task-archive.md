@@ -9867,3 +9867,31 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > Contract: D135 (in flight). Proof: the evidence, de-identified; raw notes untracked.
 
 **Outcome** 46 questions classed: sessions do read their knowledge; most asks come from prod go-aheads asked again and again, readings put as questions, and drift. D135: go-aheads held once, standing answers, cited sources, and a model review measured before it is shown. Detail: `docs/2026-10-03-knowledge-use-evidence.md`, D135.
+
+
+## PAUSE1b — pause and resume (2026-10-03)
+
+> - [ ] **PAUSE1b — pause and resume** (driver, modules; after a and SESSUX1g). The `Paused` verdict first, `WORK_PAUSE` and
+> `WORK_RESUME`, the terminal and the log: one press stops an ask's work and keeps its place. Contract: D132 §2, §4.3, §6.1,
+> §7.2–§7.3. Proof: planner, route and group tests; a Process tick paused and resumed in its tree.
+
+**Outcome** An ask's or a quest's work is paused and resumed on this machine from the terminal and the routes: the pause stops what runs as the person's own stop and keeps each quest's place, take, tree and strikes; the planner's `Paused` verdict comes first. Detail: D132's PAUSE1b note, `97f1eb01`.
+
+
+## PAUSE1c — a decline that applies only while open (2026-10-03)
+
+> - [ ] **PAUSE1c — a decline that applies only while open** (service; any time). `whileOpen`, so an abandon's decline never
+> lands on a take that reached the remote first. Contract: D132 §5.2. Proof: `QuestLogTests`; the sync suite over the wire.
+
+**Outcome** A decline carries `whileOpen` through the store, log, wire, replay and respond door, so an abandon's decline that lands after another machine's take is a conflict and the take stands. Detail: D132's PAUSE1c note, `92a0a111`.
+
+
+## DOC8 — the decisions record stops tearing, designed, and its check (2026-10-03 → D134)
+
+> - [ ] **DOC8 — the decisions record stops tearing under union merges** (found 2026-10-03, four integrations running).
+> Branches append notes under an older decision and move decisions to keep order, so the union merge leaves a decision
+> twice and another's notes under it; the parent rebuilt D130–D133 by script three times. Weigh one file per decision (a
+> record read by lookup has no ceiling) against a merge driver for the file. Contract: a short design, then D-number.
+> Proof: four branches noting four decisions merge with nothing twice and nothing moved.
+
+**Outcome** Designed as D134 (union tore 33 of 134 merges of the record: one file per decision), and its check built (DOC8b): `doc-duplicates` checks a folder of decisions for D134 §3.4's facts. Detail: D134 and its DOC8b note, `docs/2026-10-03-decisions-record-design.md`.
