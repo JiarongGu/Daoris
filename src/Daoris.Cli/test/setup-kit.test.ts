@@ -12,7 +12,8 @@ import { makeFixture } from './_fixture.ts';
 /**
  * The family rehearsal's set-up phase, held where it can be without a host or a driver (LAYOUT7a): the reading
  * of what `daoris-driver setup` prints, the launcher a child finds `daoris` by, and the protocol stub's set-up
- * branch, run for real in a scratch repository against a stand-in for the service's quest door.
+ * branch, run for real in a scratch repository against a stand-in for the service's quest door. Every turn over
+ * the stub also holds how it ends, with exit 0 once its input closes (STUB1).
  *
  * Workspace tooling (`tools/setup-kit.mjs`, `tools/rehearsal-kit.mjs`), tested from here for the reason
  * `desktop-tool.test.ts` states: this suite is what `npm run verify` and the release workflow already run (TEST3).
@@ -243,34 +244,33 @@ type Frame = { id?: number; method?: string; params?: { update: Update }; result
 
 /**
  * One driven turn over the protocol, as the driver holds one: the handshake, a session on the tree, the prompt,
- * and end of input once it is answered. Resolves with the prompt's answer, every update's text and title, and stderr.
+ * a permission the stub asks for refused (the driver refuses one by construction, D52), and end of input once
+ * the prompt is answered. Resolves with the prompt's answer, every update, stderr, and the code the stub exited with.
  */
-async function driveSetUp({ cwd, env }: { cwd: string; env: Env }): Promise<{ answer: Frame; updates: Update[]; stderr: string }> {
+async function driveTurn({ cwd, env }: { cwd: string; env: Env }): Promise<{ answer: Frame; updates: Update[]; stderr: string; code: number | null }> {
   const agent = join(cwd, '..', 'acp-agent.mjs');
   writeFileSync(agent, ACP_STUB_AGENT);
   const child = spawn(process.execPath, [agent], { cwd, env, stdio: ['pipe', 'pipe', 'pipe'] });
   let stderr = '';
   child.stderr.on('data', (chunk) => { stderr += chunk; });
+  const send = (frame: object) => child.stdin.write(`${JSON.stringify(frame)}\n`);
   const updates: Update[] = [];
   const answered = new Promise<Frame>((resolve) => {
     createInterface({ input: child.stdout }).on('line', (line) => {
       const frame = JSON.parse(line) as Frame;
       if (frame.method === 'session/update' && frame.params) updates.push(frame.params.update);
-      else if (frame.id === 3) resolve(frame);
+      else if (frame.method === 'session/request_permission') {
+        send({ jsonrpc: '2.0', id: frame.id, result: { outcome: { outcome: 'selected', optionId: 'deny' } } });
+      } else if (frame.id === 3) resolve(frame);
     });
   });
   const exited = new Promise<number | null>((resolve) => child.on('exit', (code) => resolve(code)));
-  const send = (frame: object) => child.stdin.write(`${JSON.stringify(frame)}\n`);
   send({ jsonrpc: '2.0', id: 1, method: 'initialize', params: { protocolVersion: 1 } });
   send({ jsonrpc: '2.0', id: 2, method: 'session/new', params: { cwd, mcpServers: [] } });
   send({ jsonrpc: '2.0', id: 3, method: 'session/prompt', params: { sessionId: 'acp-session-1', prompt: [{ type: 'text', text: 'the target' }] } });
   const answer = await answered;
   child.stdin.end();
-  // The exit code is not what is held: after a `fetch`, Node on Windows can end this stub on a libuv assertion
-  // (0xC0000409) in `process.exit`, the ordinary quest path as much as this one, and the driver concludes a
-  // session from its quest over its exit ("the quest reached done (exit …)", `Observation.Conclude`).
-  await exited;
-  return { answer, updates, stderr };
+  return { answer, updates, stderr, code: await exited };
 }
 
 /** A body that asks for what the set-up runs, in the words `SetupBrief` uses for each, and says what the tool prints. */
@@ -299,10 +299,11 @@ test('a set-up quest is done as its body says: the doctrine tool by its bare nam
   const born = git(tree, 'rev-parse', 'HEAD').trim();
   const door = await questDoor();
   try {
-    const { answer, updates, stderr } = await driveSetUp({ cwd: tree, env: setUpEnvironment(door, bin, askingBody(version)) });
+    const { answer, updates, stderr, code } = await driveTurn({ cwd: tree, env: setUpEnvironment(door, bin, askingBody(version)) });
 
     assert.equal(answer.result?.stopReason, 'end_turn', JSON.stringify(answer));
     assert.deepEqual(door.moves.map((move) => move.action), ['take', 'done'], stderr);
+    assert.equal(code, 0, `end of input is the ending, after the quest's fetches too (STUB1)\n${stderr}`);
 
     // Each verb ran by its bare name and the body asks for it; each went on the wire as a call, and completed.
     const ran = [...stderr.matchAll(/setup ran `(daoris [^`]+)`, which the quest asks for/g)].map((match) => match[1]);
@@ -339,13 +340,39 @@ test('a tool that answers another version than the body says is the decline the 
   const born = git(tree, 'rev-parse', 'HEAD').trim();
   const door = await questDoor();
   try {
-    const { answer, stderr } = await driveSetUp({ cwd: tree, env: setUpEnvironment(door, bin, askingBody('9.9.9')) });
+    const { answer, stderr, code } = await driveTurn({ cwd: tree, env: setUpEnvironment(door, bin, askingBody('9.9.9')) });
 
     assert.equal(answer.result?.stopReason, 'end_turn');
     assert.deepEqual(door.moves.map((move) => move.action), ['take', 'decline'], stderr);
+    assert.equal(code, 0, `end of input is the ending, after the quest's fetches too (STUB1)\n${stderr}`);
     assert.match(door.moves[1]?.reason ?? '', /^The doctrine command could not run here: it printed \S+, and the quest said 9\.9\.9$/);
     assert.equal(git(tree, 'rev-parse', 'HEAD').trim(), born);
     assert.ok(!existsSync(join(tree, 'daoris.json')), 'nothing ran after the version');
+  } finally {
+    await door.close();
+    fx.cleanup();
+  }
+});
+
+/** How many turns the ending is held over: it failed some turns and not others, so one proves little (STUB1). */
+const ENDINGS = 6;
+
+test('the stub\'s ordinary quest turn ends with exit 0 once its input closes, after its fetches, every time (STUB1)', async () => {
+  const fx = makeFixture('setup-kit-stub-ending');
+  const door = await questDoor();
+  try {
+    for (let turn = 1; turn <= ENDINGS; turn++) {
+      const tree = unadoptedRepository(join(fx.root, `atlas-${turn}`));
+      const { answer, stderr, code } = await driveTurn({
+        cwd: tree,
+        env: { ...process.env, DAORIS_SERVICE_URL: door.url, DAORIS_QUEST_ID: `quest-${turn}`, DAORIS_QUEST_TITLE: 'Answer the map tiles' },
+      });
+      assert.equal(answer.result?.stopReason, 'end_turn', `turn ${turn}: ${JSON.stringify(answer)}`);
+      assert.match(git(tree, 'log', '-1', '--format=%s'), new RegExp(`^acp: answer quest quest-${turn}`), `turn ${turn}`);
+      assert.equal(code, 0, `turn ${turn} exited ${code}${code === 0xC0000409 ? ' (0xC0000409)' : ''}\n${stderr}`);
+    }
+    assert.deepEqual(door.moves.map((move) => `${move.quest} ${move.action}`),
+      Array.from({ length: ENDINGS }, (_, at) => [`quest-${at + 1} take`, `quest-${at + 1} done`]).flat());
   } finally {
     await door.close();
     fx.cleanup();
