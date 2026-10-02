@@ -41,9 +41,14 @@ import { RunningIntake } from './RunningIntake';
  * can be passed unconditionally.
  */
 export function SessionHead({
-  session, quest, opening, taking, lastTurn, resolving = false, stopping = false, onResolve, onAnswerAsk, onStop,
-  onAnswerSession, branch, onReview,
+  session, quest, opening, taking, lastTurn, resolving = false, onResolve, onAnswerAsk,
+  onAnswerSession, branch, onReview, headed = false,
 }: {
+  /**
+   * A page header above carries its state and its id (SESSUX1d, D126 §3.2): the head opens on the quest's whole title
+   * and says neither again. Absent, a window with no header (a detached session), the head keeps both beside the title.
+   */
+  headed?: boolean;
   /** When its last turn ended here, as the driver says (RAIL2): *moved* reads the later of it and the record. */
   lastTurn?: string | null;
   /** Open its review (the side bar's, or the panel's where it was moved) — what work left unlanded asks for. */
@@ -61,20 +66,16 @@ export function SessionHead({
   /** What the person first said in it, where this machine holds its record — a conversation's name (RAIL1). */
   opening?: string | null;
   resolving?: boolean;
-  /** A running intake's stop is in flight. */
-  stopping?: boolean;
-  /** How a parked session is cleared. Absent where nothing can act — a browser, or a story. */
+  /**
+   * How a parked session is finished or declined. Absent where nothing can act — a browser, or a story. Its stop is the
+   * page header's, its one owner (D126 §3.3).
+   */
   onResolve?: (state: Resolution, note: string | null) => void;
   /**
    * Open the ask an intake serves (INT4g) — a parked one's answer is there, not on the session.
    * Absent where nothing can open it.
    */
   onAnswerAsk?: (ask: string) => void;
-  /**
-   * Cut a RUNNING intake off (INT4h). It has no composer to carry the stop, because it takes no
-   * messages. Absent where nothing can reach the process's machine.
-   */
-  onStop?: () => void;
   /**
    * Answer a driven session that parked to ask the person (STANDDOWN2): its quest is carried on in the
    * same tree, handed the words. Absent where nothing can reach this machine's host.
@@ -90,17 +91,9 @@ export function SessionHead({
   return (
     <header className="grid gap-2.5">
       {/* `running` counts a park as alive; a parked intake is AwaitingIntake's, below. */}
-      {running && !parked && intake && (
-        <RunningIntake ask={session.ask!} pending={stopping} onOpen={onAnswerAsk} onStop={onStop} />
-      )}
+      {running && !parked && intake && <RunningIntake ask={session.ask!} onOpen={onAnswerAsk} />}
       {parked && intake && (onResolve || onAnswerAsk) && (
-        <AwaitingIntake
-          ask={session.ask!}
-          note={session.note}
-          pending={resolving}
-          onAnswer={onAnswerAsk}
-          onStop={onResolve ? () => onResolve('stopped', null) : undefined}
-        />
+        <AwaitingIntake ask={session.ask!} note={session.note} onAnswer={onAnswerAsk} />
       )}
       {parked && !intake && (onResolve || onAnswerSession) && (
         // Keyed: a half-written decline reason belongs to the session it was written for, and it
@@ -129,10 +122,12 @@ export function SessionHead({
         <h2 className="m-0 line-clamp-2 text-title font-[650] leading-[1.35]" title={sessionTitle(session, quest, opening)}>
           {sessionTitle(session, quest, opening)}
         </h2>
-        <span className="flex shrink-0 items-baseline gap-2">
-          <Pill tone={SESSION_TONE[shown]}>{t(`sessionState.${shown}`)}</Pill>
-          <span className="font-mono text-meta text-ink-faint">{session.id}</span>
-        </span>
+        {!headed && (
+          <span className="flex shrink-0 items-baseline gap-2">
+            <Pill tone={SESSION_TONE[shown]}>{t(`sessionState.${shown}`)}</Pill>
+            <span className="font-mono text-meta text-ink-faint">{session.id}</span>
+          </span>
+        )}
       </div>
 
       {/* How it stands, in the record's own words (SESS2 H5, H6): why a failed session failed, how a

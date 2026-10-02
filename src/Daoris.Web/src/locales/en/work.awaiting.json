@@ -4,7 +4,6 @@
   "work.awaiting.decline": "Decline…",
   "work.awaiting.declineConfirm": "Decline with this reason",
   "work.awaiting.declinePlaceholder": "the reason — the part whoever reads this record can act on",
-  "work.awaiting.stop": "Stop session",
   "work.awaiting.resolved": "session {{id}} is now {{state}}.",
   "work.awaiting.answer": "Answering it in the box below lets it carry on — that is a message, not one of these.",
   "work.awaiting.carryOn": "Answer and carry on…",

@@ -6,10 +6,10 @@ import { RunningIntake } from './RunningIntake';
 
 // A RUNNING intake (INT4h): one turn, framed as one prompt, so it takes no messages — the pipe door
 // gives it no stdin, and on the protocol door its stdin is the driver's own frames. What a person
-// can do while it runs is stop it, or look at the ask it serves.
+// can do here while it runs is look at the ask it serves; its stop is the page header's (SESSUX1d, D126 §3.3).
 
 const show = (props: Partial<Parameters<typeof RunningIntake>[0]> = {}) =>
-  render(<RunningIntake ask="0fda18" onOpen={() => {}} onStop={() => {}} {...props} />);
+  render(<RunningIntake ask="0fda18" onOpen={() => {}} {...props} />);
 
 describe('a running intake', () => {
   it('names the ask it is reading', () => {
@@ -32,29 +32,20 @@ describe('a running intake', () => {
     expect(onOpen).toHaveBeenCalledWith('0fda18');
   });
 
-  it('can be stopped, and says the ask then stays a proposal', async () => {
-    const onStop = vi.fn();
-    show({ onStop });
+  /** SESSUX1d (D126 §3.3): the stop and its sentence moved to the page header, the stop's one owner. */
+  it('offers no stop of its own: the page header’s stop asks with the sentence it said', () => {
+    show();
 
-    expect(screen.getByText(/the ask stays a proposal/)).toBeInTheDocument();
-    await userEvent.click(screen.getByRole('button', { name: 'Stop session' }));
-    expect(onStop).toHaveBeenCalledTimes(1);
-  });
-
-  it('holds the stop while it is in flight, and never the door', () => {
-    show({ pending: true });
-
-    expect(screen.getByRole('button', { name: 'Stop session' })).toBeDisabled();
-    expect(screen.getByRole('button', { name: 'Open ask #0fda18' })).toBeEnabled();
+    expect(screen.queryByRole('button', { name: /^Stop/ })).toBeNull();
+    expect(screen.queryByText(/the ask stays a proposal/)).toBeNull();
   });
 
   /** Where nothing can act (a story, a record mirrored from another machine), it still says why. */
-  it('offers no door and no stop where nothing can act, and still says it takes no messages', () => {
+  it('offers no door where nothing can act, and still says it takes no messages', () => {
     render(<RunningIntake ask="0fda18" />);
 
     expect(screen.queryByRole('button')).toBeNull();
     expect(screen.getByText(/takes no messages/)).toBeInTheDocument();
-    expect(screen.queryByText(/the ask stays a proposal/)).toBeNull();
   });
 
   it('speaks the active catalog', async () => {

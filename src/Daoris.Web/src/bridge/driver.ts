@@ -19,6 +19,8 @@ export type DriverState = {
    * Absent on a shell older than it, which is read as up, as this answer alone said before.
    */
   ready?: boolean;
+  /** What *Try again* did, on the answer to `RETRY_QUEST` alone (SESSUX1b); absent on every other answer. */
+  retried?: Retried | null;
   drivable: string[];
   holds: string[];
   /** Repositories whose sessions open their own worktree instead of the registered root (D51). */
@@ -187,8 +189,25 @@ export const useSetNotify = () => useDriverChange<{ notify: boolean }>('SET_NOTI
  */
 export const useSetStrikes = () => useDriverChange<{ strikes: number }>('SET_STRIKES');
 
-/** Let a parked quest run again, counting from where it stands — `daoris driver retry <quest>`. */
+/**
+ * *Try again* (RETRY1; SESSUX1b, D126 §3.4): let a parked quest run again, counting from where it stands, or release one
+ * the person's stop holds — whichever the driver's verdict says applies, refused where neither does. `daoris driver
+ * retry <quest>` and its `--session` are the terminal's two halves.
+ */
 export const useRetryQuest = () => useDriverChange<{ quest: string }>('RETRY_QUEST');
+
+/** What *Try again* did (D126 §3.4): RETRY1's mark on a parked quest, or the release of the stop that held it. */
+export type Retried = { quest: string; did: 'marked' | 'released'; session?: string | null };
+
+/**
+ * The notice for a *Try again*, from the driver's answer, as a catalogue key and its values: a release names the stop it
+ * released, a mark how many more failures park the quest again. One sentence for each outcome, whichever page pressed it:
+ * the quest's or the session's (D126 §3.4: one act, one word, one route).
+ */
+export const retryNotice = (quest: string, state: DriverState): [string, Record<string, unknown>] =>
+  state.retried?.did === 'released'
+    ? ['quests.detail.released', { id: quest, session: state.retried.session ?? '' }]
+    : ['quests.detail.retried', { id: quest, count: state.strikes }];
 
 /** Name the agent Ask Daoris runs on, or null for none — `daoris driver helper <agent>|off` (D50, D89). */
 export const useSetHelper = () => useDriverChange<{ adapter: string | null }>('SET_HELPER');

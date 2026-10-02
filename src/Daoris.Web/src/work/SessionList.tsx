@@ -2,6 +2,7 @@ import { type ReactNode, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import type { Quest, Session } from '../api';
 import { Button, EmptyState } from '../ui';
+import type { SessionActId } from './acts';
 import {
   cutEnded, ENDED_SHOWN, type SessionArrangement, type SessionGrouping, sessionsByRepository, sessionsByState, stripSessions,
 } from './groups';
@@ -37,14 +38,12 @@ export type RepositoryFacts = {
   hasCheckout?: boolean;
 };
 
-/** The row's menu, the rail's (RAIL1, D126 §3.1): each told the session it was pressed for. */
+/** A row's choice and its menu, the rail's (RAIL1; SESSUX1d, D126 §3.1): each told the session it was pressed for. */
 type RowActs = {
   onSelect?: (id: string) => void;
-  onDetach?: (id: string) => void;
-  onReview?: (id: string) => void;
-  onArchive?: (id: string) => void;
-  onUnarchive?: (id: string) => void;
-  onCopy?: (id: string) => void;
+  /** The acts the one rule offers each session (`offeredActs`), in their order; absent, the rows have no menu. */
+  actsFor?: (session: Session) => readonly SessionActId[];
+  onAct?: (act: SessionActId, id: string) => void;
 };
 
 /**
@@ -66,7 +65,7 @@ type RowActs = {
  *   archived row under no Archived heading (by repository) says it is archived on its line.
  */
 export function SessionList({
-  arrangement, rows, groupings, selected = null, archived = false, live = false, repositoryFacts, ...acts
+  arrangement, rows, groupings, selected = null, archived = false, live = false, repositoryFacts, onSelect, actsFor, onAct,
 }: RowActs & {
   arrangement: SessionArrangement;
   /** Every session the list holds, in the records' order. */
@@ -108,7 +107,9 @@ export function SessionList({
         place={byState ? placeOf(facts) : null}
         archived={Boolean(grouping?.archived) && !underArchived}
         selected={session.id === selected}
-        {...acts}
+        onSelect={onSelect}
+        acts={actsFor?.(session)}
+        onAct={onAct}
       />
     );
   };

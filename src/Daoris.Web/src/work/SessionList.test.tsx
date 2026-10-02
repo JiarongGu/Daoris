@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event';
 import * as Tooltip from '@radix-ui/react-tooltip';
 import i18n from '../i18n';
 import type { Session } from '../api';
+import { offeredActs } from './acts';
 import type { SessionGrouping } from './groups';
 import { ArchiveEndedAsk, type SessionRowFacts, SessionList, SessionStrip } from './SessionList';
 
@@ -173,9 +174,13 @@ describe("Sessions' list, archived", () => {
   });
 
   /** Under the Archived heading the heading says it; a row's line need not say it again. */
+  /** Each row's acts as the one rule offers them for where the reader placed it (SESSUX1d, D126 §3.1), as the rail hands them. */
+  const actsBy = (groupings: SessionGrouping[]) => (row: Session) =>
+    offeredActs({ session: row, grouping: groupings.find((each) => each.session === row.id) }, 'row');
+
   it('lists the archived under Archived, their lines quiet about it, each offering Unarchive', async () => {
-    const unarchive = vi.fn();
-    list({ archived: true, groupings: marked, onUnarchive: unarchive, onArchive: () => {} });
+    const act = vi.fn();
+    list({ archived: true, groupings: marked, actsFor: actsBy(marked), onAct: act });
 
     const [row] = groupRows('Archived (1)');
     expect(within(row!).queryByText(/· archived ·/)).toBeNull();
@@ -183,23 +188,25 @@ describe("Sessions' list, archived", () => {
     within(row!).getByRole('button', { name: /^more for / }).focus();
     await user.keyboard('{Enter}');
     await user.click(screen.getByRole('menuitem', { name: 'Unarchive' }));
-    expect(unarchive).toHaveBeenCalledWith('d0ne0000');
+    expect(act).toHaveBeenCalledWith('unarchive', 'd0ne0000');
   });
 
   it('offers Archive on what ended, and on nothing that waits on you', async () => {
-    const archive = vi.fn();
-    list({ onArchive: archive, onCopy: () => {} });
+    const act = vi.fn();
+    list({ actsFor: actsBy(GROUPINGS), onAct: act });
     const user = userEvent.setup();
 
     within(groupRows('Waiting on you (2)')[1]!).getByRole('button', { name: /^more for / }).focus();
     await user.keyboard('{Enter}');
     expect(screen.queryByRole('menuitem', { name: 'Archive' })).toBeNull();
+    // A parked quest's last session offers Try again where its row is.
+    expect(screen.getByRole('menuitem', { name: 'Try again' })).toBeInTheDocument();
     await user.keyboard('{Escape}');
 
     within(groupRows('Ended (2)')[0]!).getByRole('button', { name: /^more for / }).focus();
     await user.keyboard('{Enter}');
     await user.click(screen.getByRole('menuitem', { name: 'Archive' }));
-    expect(archive).toHaveBeenCalledWith('d0ne0001');
+    expect(act).toHaveBeenCalledWith('archive', 'd0ne0001');
   });
 
   /** By repository an archived row sits among the ended with no heading of its own, so its line says it. */

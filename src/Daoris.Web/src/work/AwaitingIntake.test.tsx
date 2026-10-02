@@ -11,7 +11,7 @@ import { AwaitingIntake } from './AwaitingIntake';
 const QUESTION = 'published nothing: two repositories could own the loading screen, so it asks you rather than guess.';
 
 const show = (props: Partial<Parameters<typeof AwaitingIntake>[0]> = {}) =>
-  render(<AwaitingIntake ask="0fda18" note={QUESTION} onAnswer={() => {}} onStop={() => {}} {...props} />);
+  render(<AwaitingIntake ask="0fda18" note={QUESTION} onAnswer={() => {}} {...props} />);
 
 describe('a parked intake', () => {
   it('shows the intake\'s own words, verbatim', () => {
@@ -42,24 +42,16 @@ describe('a parked intake', () => {
     expect(screen.queryByText(/Answering it in the box below/)).toBeNull();
   });
 
-  it('can still be stopped, and says the ask then stays a proposal', async () => {
-    const onStop = vi.fn();
-    show({ onStop });
+  /** SESSUX1d (D126 §3.3): the stop and its sentence moved to the page header, the stop's one owner. */
+  it('offers no stop of its own: the page header’s stop asks with the sentence it said', () => {
+    show();
 
-    expect(screen.getByText(/the ask stays a proposal/)).toBeInTheDocument();
-    await userEvent.click(screen.getByRole('button', { name: 'Stop session' }));
-    expect(onStop).toHaveBeenCalledTimes(1);
+    expect(screen.queryByRole('button', { name: /^Stop/ })).toBeNull();
+    expect(screen.queryByText(/the ask stays a proposal/)).toBeNull();
   });
 
-  it('holds the stop while a move is in flight, and never the door', () => {
-    show({ pending: true });
-
-    expect(screen.getByRole('button', { name: 'Stop session' })).toBeDisabled();
-    expect(screen.getByRole('button', { name: 'Answer ask #0fda18' })).toBeEnabled();
-  });
-
-  /** Where nothing can open the ask or stop the session, it still says where the answer lives. */
-  it('offers no door and no stop where nothing can act, and still says where the answer is', () => {
+  /** Where nothing can open the ask, it still says where the answer lives. */
+  it('offers no door where nothing can act, and still says where the answer is', () => {
     render(<AwaitingIntake ask="0fda18" note={QUESTION} />);
 
     expect(screen.queryByRole('button')).toBeNull();

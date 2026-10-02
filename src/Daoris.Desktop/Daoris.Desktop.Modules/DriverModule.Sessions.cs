@@ -331,6 +331,88 @@ public sealed partial class DriverModule
             Refusals.SessionUnknown, $"No session here is {outcome.Session}.", ("session", outcome.Session)),
     };
 
+    /// <summary>
+    /// *Open folder* (SESSUX1d, D126 §3.5): the folder a session worked in, its own tree or its repository's checkout,
+    /// opened in the system's file manager through the window kit's launcher, as the log's folder and a plugin's open.
+    /// </summary>
+    /// <remarks>
+    /// <para><b>The module names the folder, never the page</b>: it is read from the session's record, and only a tree this
+    /// home opened or the checkout the registry names for its repository is opened. A record naming any other folder, a
+    /// teammate's record and a tree a tidy took are one refusal, <c>SESSION_FOLDER_GONE</c>, since each is a folder this
+    /// machine does not hold for that session. The page offers the press only where it knows the folder is here, so the
+    /// refusal answers a race.</para>
+    ///
+    /// <para><b>Nothing machine-local comes back</b>: whether it opened, and nothing else.</para>
+    /// </remarks>
+    [DriverRoute("SESSION_OPEN_FOLDER")]
+    private async Task<object?> SessionOpenFolderAsync(IpcRequest request, CancellationToken cancellationToken)
+    {
+        var id = PayloadHelper.GetRequiredValue<string>(request.Payload, "id");
+        var service = _loop.Service ?? throw NotReady();
+        var records = SessionRecords.Parse(await SessionRecords.ReadAsync(
+            service.BaseUrl, Environment.GetEnvironmentVariable(ServiceClient.KeyVariable), ct: cancellationToken).ConfigureAwait(false));
+        var record = records.FirstOrDefault(row => string.Equals(row.Id, id, StringComparison.Ordinal))
+            ?? throw Refusals.Because(
+                Refusals.SessionUnknown, $"No session here is {id}, so there is no folder to open.",
+                ("session", id), ("context", "folder"));
+
+        var folder = await FolderOfAsync(service, record, cancellationToken).ConfigureAwait(false)
+            ?? throw Refusals.Because(
+                Refusals.SessionFolderGone,
+                $"The folder {id} worked in is not on this machine: the clean-up took its tree, or it ran somewhere else.",
+                ("session", id));
+
+        if (_openFolder is null) return new { Opened = false };
+        try
+        {
+            _openFolder(folder);
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException
+            or System.ComponentModel.Win32Exception or InvalidOperationException)
+        {
+            throw Refusals.Because(
+                Refusals.SessionFolderNotOpened,
+                $"the folder would not open: {error.Message}",
+                ("session", id), ("problem", error.Message));
+        }
+
+        return new { Opened = true };
+    }
+
+    /// <summary>
+    /// The folder a session worked in, where this machine holds it: its own tree under this home's trees, else its
+    /// repository's registered checkout when the record names that or no folder at all. Null for anything else.
+    /// </summary>
+    private async Task<string?> FolderOfAsync(ServiceClient service, SessionRecord record, CancellationToken cancellationToken)
+    {
+        // A teammate's record ran on their machine (SYNC4): a path it names is theirs, whatever this disk holds there.
+        if (record.Teammate) return null;
+
+        var trees = new SessionTrees(_loop.Home);
+        if (record.Tree is { } tree && HeldTree(trees, tree)) return Directory.Exists(tree) ? tree : null;
+
+        var root = (await service.RegistryAsync(cancellationToken).ConfigureAwait(false))
+            .FirstOrDefault(row => string.Equals(row.Repository, record.Repository, StringComparison.Ordinal))?.Root;
+        if (root is null || (record.Tree is { } named && !SamePlace(named, root))) return null;
+        return Directory.Exists(root) ? root : null;
+    }
+
+    /// <summary>Two paths as one place: separators and a trailing one ignored, and case where the system ignores it.</summary>
+    private static bool SamePlace(string left, string right)
+    {
+        try
+        {
+            return string.Equals(
+                Path.TrimEndingDirectorySeparator(Path.GetFullPath(left)).Replace('\\', '/'),
+                Path.TrimEndingDirectorySeparator(Path.GetFullPath(right)).Replace('\\', '/'),
+                OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal);
+        }
+        catch (Exception error) when (error is ArgumentException or NotSupportedException or PathTooLongException)
+        {
+            return false;
+        }
+    }
+
     // What sessions said, searched (RAIL1): the person's words and the agent's, from this machine's
     // own record, bounded and saying so.
     [DriverRoute("SESSION_SEARCH")]

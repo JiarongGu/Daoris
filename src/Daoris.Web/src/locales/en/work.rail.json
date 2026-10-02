@@ -1,7 +1,6 @@
 {
   "work.rail.label": "Sessions",
   "work.rail.menu.label": "more for {{title}}",
-  "work.rail.menu.review": "Review",
   "work.rail.menu.copy": "Copy session ID",
   "work.rail.menu.copied": "Copied {{id}}.",
   "work.rail.search.label": "search sessions",
@@ -27,7 +26,9 @@
   "work.rail.parkedAfter": "after {{count}} failed session",
   "work.rail.parkedAfter_other": "after {{count}} failed sessions",
   "work.rail.parkedAfterSome": "after its failed sessions",
-  "work.rail.parkedTip": "Its quest parked after too many failed sessions here, and waits for you: its page says why, and Try again there starts it again.",
+  "work.rail.parkedTip": "Its quest parked after too many failed sessions here, and waits for you: its page says why, and Try again, in this row’s ⋯ or on that page, starts it again.",
+  "work.rail.heldHere": "held here until you try again",
+  "work.rail.heldTip": "You stopped this session, so its quest waits on this machine: nothing starts it here until you choose Try again, in this row’s ⋯ or on the quest’s page.",
   "work.rail.awaitsOf": "waits on #{{quest}}, asked of {{repository}}",
   "work.rail.awaits": "waits on #{{quest}}",
   "work.rail.awaitsTip": "Its quest asked another repository a question, and carries on by itself when the answer comes.",

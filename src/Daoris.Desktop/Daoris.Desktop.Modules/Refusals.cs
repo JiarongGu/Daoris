@@ -88,6 +88,17 @@ public static class Refusals
     public const string QuestNotHeld = "QUEST_NOT_HELD";
 
     /// <summary>
+    /// *Open folder* or *Open a terminal here* asked of a session whose folder this machine no longer holds (SESSUX1d, D126
+    /// §3.5): a tidy or the clean-up took its tree, or it names no tree this home opened and no checkout here, or it is a
+    /// teammate's record. The page offers neither where it knows the folder is gone, so this answers a race. Its
+    /// <c>session</c> names it.
+    /// </summary>
+    public const string SessionFolderGone = "SESSION_FOLDER_GONE";
+
+    /// <summary>The system would not open a session's folder in the file manager; its own reason goes with it (SESSUX1d).</summary>
+    public const string SessionFolderNotOpened = "SESSION_FOLDER_NOT_OPENED";
+
+    /// <summary>
     /// A review asked for where this machine cannot answer it (SURF6): the record names no tree or no
     /// base commit, or the tree is gone. It is INFORMATION rather than a fault — a session whose
     /// record travelled here from another machine has nothing to diff here and never will, and so

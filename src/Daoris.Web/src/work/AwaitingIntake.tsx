@@ -17,24 +17,20 @@ import { Button, WaitingCard } from '../ui';
  * intake that published nothing, which reads later as a publish. *Decline* has nothing to decline.
  * And there is no box to answer in: an intake is one turn, and a parked one has no process left.
  *
- * **Stop stays, saying what it means.** Ending the intake without answering is a real choice (the
- * person will settle the ask later, or wants the question off the rail), and the ask then waits as a
- * proposal. The surface says so, because a stop that looked like an answer is the defect this fixes.
+ * **Its stop is the page header's** (SESSUX1d, D126 §3.3). Ending the intake without answering is still a real choice
+ * (the person will settle the ask later, or wants the question off the list), and the header's stop asks with the
+ * sentence this card said beside it: the ask then waits as a proposal.
  *
- * A molecule: it is handed the ask and the question and reports two moves. Where nothing can act
- * (a story, a mirrored record) it is handed neither, and still says where the answer lives.
+ * A molecule: it is handed the ask and the question and reports its door. Where nothing can act
+ * (a story, a mirrored record) it is handed none, and still says where the answer lives.
  */
-export function AwaitingIntake({ ask, note, pending = false, onAnswer, onStop }: {
+export function AwaitingIntake({ ask, note, onAnswer }: {
   /** The ask this intake serves — the id the record's door opens. */
   ask: string;
   /** The intake's own parked note, rendered word for word. */
   note?: string | null;
-  /** A stop is in flight. The door is never held: opening a record changes nothing. */
-  pending?: boolean;
   /** Open the ask's record, where it is answered. Absent where nothing can open it. */
   onAnswer?: (ask: string) => void;
-  /** End the intake without answering. Absent where nothing can reach the process's machine. */
-  onStop?: () => void;
 }) {
   const { t } = useTranslation();
 
@@ -47,22 +43,13 @@ export function AwaitingIntake({ ask, note, pending = false, onAnswer, onStop }:
 
       <p className="m-0 mt-2 text-small text-ink-faint">{t('work.intake.hint')}</p>
 
-      {(onAnswer || onStop) && (
+      {onAnswer && (
         <div className="mt-2.5 flex flex-wrap gap-2">
-          {onAnswer && (
-            <Button variant="primary" onClick={() => onAnswer(ask)}>
-              {t('work.intake.answer', { ask })}
-            </Button>
-          )}
-          {onStop && (
-            <Button variant="danger" disabled={pending} onClick={onStop}>
-              {t('work.awaiting.stop')}
-            </Button>
-          )}
+          <Button variant="primary" onClick={() => onAnswer(ask)}>
+            {t('work.intake.answer', { ask })}
+          </Button>
         </div>
       )}
-
-      {onStop && <p className="m-0 mt-2 text-small text-ink-faint">{t('work.intake.stopMeans')}</p>}
     </WaitingCard>
   );
 }

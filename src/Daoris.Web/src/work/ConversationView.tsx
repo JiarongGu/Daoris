@@ -84,7 +84,13 @@ export function ConversationView({
     // own: the agent's words are content, shown at the width they are given (UX5 U16: a 768px
     // cap was half a maximized window).
     <section aria-label={t('work.conversation.label')} className="grid w-full grid-cols-[minmax(0,1fr)] gap-3">
-      {toolbar && <div className="sticky -top-3 z-10 -mx-1 border-b border-line bg-page px-1 pb-1.5 pt-3">{toolbar}</div>}
+      {/* Pinned beneath the session's page header where one is pinned above it (SESSUX1d, D126 §3.2): the header says its
+          height on the main area as `--session-head`, and a window with none (a detached session) pins at the top. */}
+      {toolbar && (
+        <div className="sticky top-[calc(var(--session-head,0px)-0.75rem)] z-[9] -mx-1 border-b border-line bg-page px-1 pb-1.5 pt-3">
+          {toolbar}
+        </div>
+      )}
       {/* Where the page began past the ask, the gap is inside its turn, after the ask (SESS1 S1). */}
       {earlier && onLoadEarlier && !turns[0]?.gap && <Earlier onLoadEarlier={onLoadEarlier} />}
       {turns.map((turn, index) => (

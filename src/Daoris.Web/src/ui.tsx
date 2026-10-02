@@ -13,7 +13,7 @@ import {
   Archive, ArchiveRestore, ArrowDown, ArrowDownToLine, ArrowLeftRight, ArrowUp, Brain, Check, ChevronDown, ChevronRight, ChevronUp, CircleHelp, Cloud,
   CloudOff, Compass, Copy, Ellipsis, FileDiff, FilePen, FileText, FolderOpen, Gauge, GitMerge, Globe, Inbox, Info, KeyRound, Languages,
   LayoutDashboard, LayoutGrid, Layers, Link, ListTodo, LogIn, Maximize2, Minimize2, Monitor, Network,
-  PanelBottom, PanelLeft, PanelLeftClose, PanelLeftOpen, PanelRight, PanelRightClose, Paperclip, Plug, Plus,
+  PanelBottom, PanelLeft, PanelLeftClose, PanelLeftOpen, PanelRight, PanelRightClose, Paperclip, Plug, Plus, Reply,
   RotateCw, Search, Settings, Shield, Square, SquareArrowOutUpRight, SquareTerminal, Terminal, Trash2, TriangleAlert,
   Wrench, X,
 } from 'lucide-react';
@@ -122,6 +122,8 @@ const ICONS = {
   // An ended session taken out of the list and brought back (SESSUX1e): the box, not the bin, since it is kept whole.
   archive: Archive,
   unarchive: ArchiveRestore,
+  // A session waiting on the person, answered from its row's menu (SESSUX1d): the reply every mail client draws.
+  answer: Reply,
 } as const;
 
 export type IconName = keyof typeof ICONS;

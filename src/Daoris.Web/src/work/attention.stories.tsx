@@ -133,12 +133,12 @@ const QUESTION = 'published nothing: the declarations did not settle ask `#0fda1
 
 /**
  * A parked INTAKE (INT4g): its answer is on the ask, so the door leads there. No finish, no
- * decline, no box to answer in, and a stop that says the ask stays a proposal.
+ * decline, no box to answer in; its stop is the page header's, which says the ask stays a proposal (SESSUX1d).
  */
 export const IntakeAsking: StoryObj = {
   render: () => (
     <div className="max-w-3xl">
-      <AwaitingIntake ask="0fda18" note={QUESTION} onAnswer={() => {}} onStop={() => {}} />
+      <AwaitingIntake ask="0fda18" note={QUESTION} onAnswer={() => {}} />
     </div>
   ),
 };
@@ -154,12 +154,12 @@ export const IntakeAskingReadOnly: StoryObj = {
 
 /**
  * A RUNNING intake (INT4h): one turn, so no message box — the line says why, and where an answer
- * goes if it asks. The door opens the ask to look at; the stop is the composer's, moved here.
+ * goes if it asks. The door opens the ask to look at; its stop is the page header's (SESSUX1d).
  */
 export const IntakeRunning: StoryObj = {
   render: () => (
     <div className="max-w-3xl">
-      <RunningIntake ask="0fda18" onOpen={() => {}} onStop={() => {}} />
+      <RunningIntake ask="0fda18" onOpen={() => {}} />
     </div>
   ),
 };

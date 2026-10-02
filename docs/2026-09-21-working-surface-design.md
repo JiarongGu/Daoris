@@ -167,6 +167,13 @@ the derived title is free and true, and a rename is a store column plus a surfac
 > **And by SESSUX1e (2026-10-02).** A row's menu also offers *Archive* on an ended row and *Unarchive* on an archived
 > one, so it no longer holds only what has no other home. The list's ⋯ shows archived sessions as *Archived* and
 > offers *Archive what ended…*, which lists before it archives (the design's §5.2, §5.3).
+>
+> **And by SESSUX1d (2026-10-02).** RAIL1's rule that a row's menu holds only what has no other home is amended: a
+> row's menu holds the session's acts where its row is, and the attended session gains a **page header**, pinned above
+> its record, with the same acts (*Stop…*, *Try again*, *Review*, *Open folder*, *Open a terminal here*, its window,
+> *Archive*, *Unarchive*, its id; *Answer…* on the row). Both doors call one owner, `work/sessionActs.ts`, so D56's one
+> owner holds: the module is the owner, and each door calls it. **A session's stop has one owner, the header**, which
+> asks once; the composer below keeps *finish* and *stop turn*. The design's §3 is the contract.
 
 **The attended session has three parts and a composer.**
 
@@ -246,7 +253,9 @@ not the mechanism.
   allows from that state (`completed`, `declined`, `stopped`, each with a note). **No new states**: a
   surface that invented one would be a second lifecycle to keep in step with the first.
   *Amended 2026-09-24 (INT4g):* a parked **intake** is the exception to the three. Its answer is on
-  its ask, so it offers a door to the ask's record and a stop (intake design §1h).
+  its ask, so it offers a door to the ask's record and a stop (intake design §1h). *Amended 2026-10-02 (D126,
+  SESSUX1d):* the stop is the session's page header's, its one owner, for a parked session and an intake alike; the
+  card keeps *finish* and *decline* (and *answer and carry on* where no process is left), the intake's its door.
 - **The sidebar carries two counts**: sessions live, and how many need a person. The second one is the
   only badge that wears a status hue, because it is the only one that is a status. *Amended
   2026-09-26 (UX5 U20, the owner's choice → D76):* **a badge counts what its place holds.** The count
