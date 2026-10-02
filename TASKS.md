@@ -193,6 +193,9 @@ KNOWUSE1 found the sessions do read their knowledge: of 46 items put to the owne
 - [ ] **KNOWUSE1b — a standing answer kept per repository** (driver, modules, both doors). *Dev writes allowed, test
   locally against dev, prod only on a yes*: kept on this machine, never written into the repository, handed to every
   session there. Contract: D135. Proof: a claim, a resume, a carry-on and a follow-up are each handed it.
+- [ ] **KNOWUSE1a2 — a park shows its go-aheads, and answering one goes on with it** (web, driver, modules; after
+  KNOWUSE1a). The session page of a park that asked go-aheads shows them with *Approve* and *Refuse*, and answering
+  there also answers the park: one press, not two. Contract: D135 §2, its KNOWUSE1a note. Proof: vitest; a driver test.
 - [ ] **KNOWUSE1c — a closing note says what needs you apart from readings, each citing its source** (driver). Ticket line,
   doc line or code path beside every item; the look names the repository's own indexes. Contract: D135. Proof:
   `AskAndWaitPromptTests`; a canary turn.
@@ -251,6 +254,17 @@ owner on 1 October.
   meanwhile. Deliver at the harness's next step where its door allows (measure what the protocol adapter does with a
   prompt during a turn), and show the held words in the conversation as *held, reaches it at …*. Contract: a short
   design (SESS3 amended). Proof: the measurement; driver and page tests; the look.
+- [ ] **MSG1 — session messages, one model for every door** (owner, 2026-10-03: *"we do need a way to set message between
+  runs so it does the resume so that close the gap for codex and it does look like in the same session, and this should
+  be properly designed native/daoris managed session messages"*). A person's words to a session reach it at the next
+  step where the door allows (STEER1), else at its turn's end by resuming the harness's own conversation (ANSWER1's
+  resume), and after it ended by reopening the record, so every door reads as one session. Contract: D137 (in flight).
+  Proof: the design, the doors measured, then its rows.
+- [ ] **STEER2 — *Send now* on the next-step door, and a box that knows its door** (driver, modules, web; after STEER1).
+  *Send now* has nothing to act on where words already reach the next step; send the draft through `_session/steering`
+  and let the queue say when words arrive. Contract: D136 §4. Proof: driver, modules and page tests; one steer measured.
+- [ ] **STEER3 — the other doors** (driver; after STEER1). A native driven session on `--input-format stream-json`, and
+  `codex-acp`'s `turn/steer`, each measured for one turn before it is built. Contract: D136 §5. Proof: the measurement.
 - [ ] **ANSWER1 on the install — the plan** (owner, 2026-10-03: *"you need to fix the ANSWER1 bug too"*). The fix is on
   main (ANSWER1a–c, 2026-10-02/03): an answer keeps its session and resumes the agent's own conversation. The install
   still runs the build before it, because a session has been running at every chance to republish. In order:
