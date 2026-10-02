@@ -3,8 +3,8 @@ import type { Ask, Quest, Registration, Session } from '../api';
 import { firstLine } from '../asks/AskRow';
 import type { RuleProposal } from '../settings/AgentRules';
 import { proposalAuthor, proposalChange } from '../settings/proposals';
-import type { TrustHold } from '../signals';
-import { sessionTitle } from './identity';
+import type { Consideration, TrustHold } from '../signals';
+import { sessionOrigin, sessionTitle } from './identity';
 import type { Attention } from './AttentionRow';
 
 /** The intake states in which an ask is the harness's to answer, not yet the person's (D65 §1b). */
@@ -19,9 +19,18 @@ const INTAKE_BUSY: ReadonlySet<Session['state']> = new Set(['queued', 'starting'
  * are on Quests and in Overview's band, so the press the badge invited showed a sixth of what it
  * counted. Overview carries the whole now. A parked intake counts here, because it is in the rail,
  * even though the band lets its ask stand for it.
+ *
+ * **It counts the list's first group, *Waiting on you*** (SESSUX1c, D126 §2.5): this machine's sessions parked to ask,
+ * and each quest parked on its failed sessions, whose last session here the list shows *parked*. A teammate's parked
+ * session waits on them and is listed under Working (SESSUX1a). The parked quests are the planner's verdicts the tick
+ * hands the page (`useConsidered`), as Overview's band reads them, so both counts read the same two facts; the list's
+ * reader would walk git in every tree to review on every view, for a number it does not need trees for.
  */
-export function waitingInSessions(sessions: readonly Session[]): number {
-  return sessions.filter((session) => session.state === 'awaiting-person').length;
+export function waitingInSessions(
+  sessions: readonly Session[], considered: readonly Pick<Consideration, 'verdict'>[] = [],
+): number {
+  const asking = sessions.filter((session) => session.state === 'awaiting-person' && !sessionOrigin(session)).length;
+  return asking + considered.filter((consideration) => consideration.verdict === 'Exhausted').length;
 }
 
 /**

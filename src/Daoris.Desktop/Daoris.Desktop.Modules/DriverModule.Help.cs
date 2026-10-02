@@ -52,7 +52,9 @@ public sealed partial class DriverModule
             // What the last tick parked by its strikes (HELP10), so a retry names a quest the drawer offers Retry on.
             _loop.Parked.Latest,
             // Daoris's browser as its files hold it (HELP10), so a favorite removed is one kept.
-            BrowserModule.HelpFacts(BrowserModule.Home));
+            BrowserModule.HelpFacts(BrowserModule.Home),
+            // And what its last look held by the person's stop (SESSUX1b), so a retry names a stop Try again releases.
+            HeldQuest.From(_loop.Look.Latest));
 
         var start = await chat.StartHelpAsync(
             helper, config, machine,
@@ -356,6 +358,8 @@ public sealed partial class DriverModule
             Offers = PluginOffers.Load(OffersFolder, _loop.Home, AdapterSet.Built().Names),
             // A retry names a quest the last tick parked by its strikes (HELP10), the verdict the drawer shows Retry by.
             Parked = _loop.Parked.Latest,
+            // Or one its last look held by the person's stop (SESSUX1b), released from the session that look named.
+            Held = HeldQuest.From(_loop.Look.Latest),
         };
 
         if (proposals.Any(proposal => proposal.Kind is "agent" or "account"))

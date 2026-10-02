@@ -114,14 +114,43 @@ public sealed partial class DriverModule
         };
     }
 
+    /// <summary>
+    /// *Try again* (RETRY1, as SESSUX1b extends it, D126 §3.4): one act that does whichever applies to the quest, read from
+    /// the planner's verdict, and says which. A quest parked on its failed sessions is marked at the strike limit; one the
+    /// person's stop holds is released from the session the verdict names. Anything else is refused, and nothing written.
+    /// </summary>
+    /// <remarks>
+    /// The verdict is the loop's last look where it has looked, and a fresh plan where it has not (another loop holds the
+    /// home, DRV8a), as Sessions' groups read it, so the press and the list cannot disagree. The answer is still the state,
+    /// which the page's toast reads the strikes from, with <c>retried</c> saying what was done.
+    /// </remarks>
     [DriverRoute("RETRY_QUEST")]
-    private object? RetryQuest(IpcRequest request)
+    private async Task<object?> RetryQuestAsync(IpcRequest request, CancellationToken cancellationToken)
     {
-        var quest = PayloadHelper.GetRequiredValue<string>(request.Payload, "quest");
-        // Marked at the limit rather than erased, so the records still read true and the next
-        // `strikes` failures park it again.
-        Change(config => config.WithForgiven(quest, config.Strikes));
-        return State();
+        var quest = PayloadHelper.GetRequiredValue<string>(request.Payload, "quest").Trim().TrimStart('#');
+        var config = DriverConfig.Load(_loop.ConfigPath);
+        var considered = _loop.Look.Latest
+            ?? await SessionGroups.VerdictsAsync(_loop.Service ?? throw NotReady(), config, Door(config), lastLook: null, cancellationToken)
+                .ConfigureAwait(false);
+        var verdict = considered.FirstOrDefault(c => string.Equals(c.Quest.Id, quest, StringComparison.OrdinalIgnoreCase));
+
+        switch (verdict)
+        {
+            case { Verdict: StartVerdict.Exhausted }:
+                // Marked at the limit rather than erased, so the records still read true and the next
+                // `strikes` failures park it again.
+                Change(config => config.WithForgiven(quest, config.Strikes));
+                return State(new { Quest = quest, Did = "marked", Session = (string?)null });
+            case { Verdict: StartVerdict.Stopped, HeldBy: { } stop }:
+                // Released from that stop, and no mark: a stop is not a strike (D58). A later stop holds it again.
+                Change(config => config.WithReleased(quest, stop.Session));
+                return State(new { Quest = quest, Did = "released", Session = (string?)stop.Session });
+            default:
+                throw Refusals.Because(
+                    Refusals.QuestNotHeld,
+                    $"#{quest} is neither parked nor held by your stop on this machine, so there is nothing to try again.",
+                    ("id", quest));
+        }
     }
 
     // "Look now": a person who just published a quest should not watch a poll countdown.
@@ -148,11 +177,14 @@ public sealed partial class DriverModule
         return new { Workspace = workspace, report.Problem, report.Notes };
     }
 
-    private object State()
+    /// <param name="retried">What *Try again* did (SESSUX1b): the quest, <c>marked</c> or <c>released</c>, and the stop's
+    /// session for a release. Null for every other answer, which the bridge leaves out.</param>
+    private object State(object? retried = null)
     {
         var config = DriverConfig.Load(_loop.ConfigPath);
         return new
         {
+            Retried = retried,
             // Whether the loop's service is up (LOOK2a): until it is, every route that reads it refuses *still coming up*,
             // so the status bar says starting rather than ready, which this file alone would claim.
             Ready = _loop.Service is not null,
@@ -173,6 +205,8 @@ public sealed partial class DriverModule
             config.Notify,
             config.Strikes,
             config.Forgiven,
+            // The stops the person released (SESSUX1b), the quest against the session, as the terminal lists them.
+            config.Released,
             // 🔴 Reported so the page can show it, and modelled on the record so no toggle deletes it.
             // Off is "" on the wire, never null: the bridge leaves a null out, and the page tells a
             // shell older than the intake by this field's absence (AGT6, seen on the window).

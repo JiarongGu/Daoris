@@ -4,6 +4,22 @@ namespace Daoris.Driver;
 public sealed record ParkedQuest(string Quest, string Repository);
 
 /// <summary>
+/// A quest the loop's last look held by the person's stop (SESSUX1b, D126 §3.3): its id, the repository it is addressed
+/// to, and the session they stopped, which a release names.
+/// </summary>
+public sealed record HeldQuest(string Quest, string Repository, string Session)
+{
+    /// <summary>
+    /// The quests these considerations hold by the person's stop, in their order; none for none. Read from the loop's last
+    /// look (<see cref="LastLook"/>), which is replaced whole each look, so a quest released, done or gone is not offered.
+    /// </summary>
+    public static IReadOnlyList<HeldQuest> From(IEnumerable<Consideration>? considered) =>
+        [.. (considered ?? [])
+            .Where(consideration => consideration is { Verdict: StartVerdict.Stopped, HeldBy: not null })
+            .Select(consideration => new HeldQuest(consideration.Quest.Id, consideration.Quest.To, consideration.HeldBy!.Session))];
+}
+
+/// <summary>
 /// The quests the loop's last tick parked by their failed sessions (DRV6, <see cref="StartVerdict.Exhausted"/>): the
 /// verdict the quest drawer shows its Retry by, and what Ask Daoris's <c>retry</c> is judged against (HELP10, D110).
 /// </summary>

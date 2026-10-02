@@ -29,7 +29,7 @@ D75), where its own rules live; this is what a view may assume of it.
   Agents · View*, D75), the command center naming the scope, and the window's controls. **The
   activity bar** (48px) is the one navigation, a place per icon, and a badge counts what its place
   holds: Overview the whole of *What needs you*, Sessions its own sessions waiting on the person
-  (UX5 U20). **The status bar** states the machine's standing facts: the driver, the active sessions,
+  (UX5 U20), its list's *Waiting on you*: a parked quest counts there too (D126 §2.5). **The status bar** states the machine's standing facts: the driver, the active sessions,
   the workspace, the remote, the index and the recall tier (D24, stated on every screen). Global state
   lives in exactly one place; views never restate it.
 - **The content column is the window's whole width** (UX5 U59, the owner: under a 72rem cap a
@@ -87,6 +87,9 @@ D75), where its own rules live; this is what a view may assume of it.
   *What needs you*'s card and rows, the map's ring and word. It had three hues, one of them declined's
   red, and a session waiting on its person read as one that had failed. **Red is only ever an
   outcome**: declined, failed, a failed tool call.
+- **Open's hue is the person's alone** (D126 §2.3, SESSUX1c): among sessions, *waiting on you* and *parked* (a parked
+  quest's last session) wear it, and nothing else does. `queued` wore it too and left the word to tell the two apart;
+  it is neutral, keeping its idle mark. *Awaiting reply* is neutral: nothing runs, and nothing waits on the person.
 - **A liveness mark never borrows an outcome's hue, and a live mark means a turn is running.**
   *Ended* is neutral, since it covers completed, failed, declined and stopped at once, and the pill
   beside it names the outcome (POLISH2: it wore done's green beside a failure). A live chat between
@@ -353,10 +356,13 @@ controls are in the frame design's §3.
   a view. **The side bar and the panel are on every view** (DOCK1a): one frame, as VS Code's
   workbench is, with the view in its centre; the rail is Sessions' alone, and off Sessions the session
   views say which session they speak for.
-  - **The rail** groups by repository, what needs the person first; a group states its repository's
-    facts (*drives here*, *held*, *busy* in words), and the ended sit beneath. It searches by name at
-    once and by what was said when typing settles. A row's menu holds what has no other home: its own
-    window, its review, its id.
+  - **The rail** groups **by state** (D126, SESSUX1c): *Waiting on you*, *To review*, *Working*, *Resumes later*
+    and *Ended*, each heading counted, each session where the driver's one reader places it; a row's line names its
+    repository, and *Ended* shows twelve and then *Show N more*. Its ⋯ offers **by repository** instead, remembered:
+    a group per repository stating its facts (*drives here*, *held*, *busy* in words), what needs the person first
+    (*parked* with it), and the ended beneath. Closed, its strip holds what waits on the person, then what runs.
+    It searches by name at once and by what was said when typing settles. A row's menu holds what has no other
+    home: its own window, its review, its id.
   - **The centre is the record, then the conversation**, one scroll, following the centre's width
     (U16): the head read once, then the agent's words, which the region follows until the person
     scrolls up and is then offered *Back to bottom*. **A long run reads from what it was asked**

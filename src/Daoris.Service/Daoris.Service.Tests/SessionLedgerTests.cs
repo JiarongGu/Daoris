@@ -50,6 +50,19 @@ public sealed class SessionLedgerTests : IAsyncLifetime
     private Task<Quest> Publish(string to = "Owner", string title = "Do the thing") =>
         _quests.PublishAsync("Asker", to, title, "Here is why.", Now);
 
+    /// <summary>A session opened on the quest and brought to working, as the driver brings one.</summary>
+    private async Task<Session> Working(Quest quest, DateTimeOffset at)
+    {
+        var opened = await _ledger.OpenAsync(quest.Id, "stub", at);
+        Assert.Equal(SessionOpenRefusal.None, opened.Refusal);
+        foreach (var state in new[] { "starting", "working" })
+        {
+            Assert.Equal(SessionAdvanceRefusal.None, (await _ledger.AdvanceAsync(opened.Session!.Id, state, null, null, null, at)).Refusal);
+        }
+
+        return opened.Session!;
+    }
+
     [Fact]
     public async Task Opening_a_session_for_an_open_quest_queues_it()
     {
@@ -145,28 +158,109 @@ public sealed class SessionLedgerTests : IAsyncLifetime
     /// <summary>
     /// D104, found running the owner's ticket: the orphan sweep and a shutdown both ended the record
     /// `stopped`, and a take ended so sat taken with nothing to move it. A stop that says it was
-    /// interrupted — not the person's — is carried on like a failure; the person's own stop never is.
+    /// interrupted — not the person's — is carried on like a failure.
     /// </summary>
-    [Theory]
-    [InlineData(true, SessionOpenRefusal.None)]
-    [InlineData(false, SessionOpenRefusal.QuestNotOpen)]
-    public async Task A_taken_quest_whose_last_session_here_was_interrupted_may_be_carried_on_and_a_persons_stop_is_not(
-        bool interrupted, SessionOpenRefusal expected)
+    [Fact]
+    public async Task A_taken_quest_whose_last_session_here_was_interrupted_may_be_carried_on()
     {
         var quest = await Publish();
-        var first = (await _ledger.OpenAsync(quest.Id, "stub", Now)).Session!;
-        await _ledger.AdvanceAsync(first.Id, "starting", null, null, null, Now);
-        await _ledger.AdvanceAsync(first.Id, "working", null, null, null, Now);
+        var first = await Working(quest, Now);
         await _quests.MoveAsync(quest.Id, QuestStatus.Taken, null, Now.AddMinutes(1));
         var stopped = await _ledger.AdvanceAsync(
-            first.Id, "stopped", interrupted ? "the driver was stopped while this ran." : "the person stopped it.",
-            null, null, Now.AddMinutes(5), interrupted: interrupted);
+            first.Id, "stopped", "the driver was stopped while this ran.", null, null, Now.AddMinutes(5), interrupted: true);
         Assert.Equal(SessionAdvanceRefusal.None, stopped.Refusal);
-        Assert.Equal(interrupted, stopped.Session!.Interrupted);
+        Assert.True(stopped.Session!.Interrupted);
 
         var carried = await _ledger.OpenAsync(quest.Id, "stub", Now.AddMinutes(6));
 
-        Assert.Equal(expected, carried.Refusal);
+        Assert.Equal(SessionOpenRefusal.None, carried.Refusal);
+    }
+
+    /// <summary>
+    /// SESSUX1b2 (D126 §3.3): the person's stop holds its quest in the driver until Try again releases it,
+    /// and a released take is carried on in the stop's tree, so the ledger opens it. The take is this
+    /// machine's when a session here took it: the one stopped, or the one before it whose take the stopped
+    /// one was carrying on, since a carry-on takes nothing itself.
+    /// </summary>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task A_take_this_machine_holds_is_carried_on_after_the_persons_stop(bool stoppedACarryOn)
+    {
+        var quest = await Publish();
+        var took = await Working(quest, Now);
+        await _quests.MoveAsync(quest.Id, QuestStatus.Taken, null, Now.AddMinutes(1));
+        Assert.True(await _ledger.MarkTookAsync(took.Id, quest.Id));
+        var stopping = took;
+        if (stoppedACarryOn)
+        {
+            await _ledger.AdvanceAsync(took.Id, "failed", "timed out after 30 minutes and was killed.", null, null, Now.AddMinutes(30));
+            stopping = await Working(quest, Now.AddMinutes(31));
+        }
+
+        var stopped = await _ledger.AdvanceAsync(stopping.Id, "stopped", "the person stopped it.", null, null, Now.AddMinutes(40));
+        Assert.False(stopped.Session!.Interrupted);
+
+        var carried = await _ledger.OpenAsync(quest.Id, "stub", Now.AddMinutes(41));
+
+        Assert.Equal(SessionOpenRefusal.None, carried.Refusal);
+    }
+
+    /// <summary>
+    /// 🔴 A person's stop before its session took the quest leaves no take here. Taken afterwards, it is
+    /// somebody else's: another machine's driver (whose record arrives here, its take never), or a person
+    /// working outside the driver (no record at all). Nothing opens on it, as before SESSUX1b2.
+    /// </summary>
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task A_quest_taken_elsewhere_after_the_persons_stop_is_refused(bool anotherMachinesRecord)
+    {
+        var quest = await Publish();
+        var stoppedEarly = await Working(quest, Now);
+        await _ledger.AdvanceAsync(stoppedEarly.Id, "stopped", "the person stopped it.", null, null, Now.AddMinutes(1));
+        if (anotherMachinesRecord)
+        {
+            await _sessions.MirrorAsync(new Session(
+                "alice-laptop/ab12cd34", quest.Id, "Owner", "claude-code", SessionState.Working, null, null, null,
+                Now.AddMinutes(2), Now.AddMinutes(3)));
+        }
+
+        await _quests.MoveAsync(quest.Id, QuestStatus.Taken, null, Now.AddMinutes(3));
+
+        var refused = await _ledger.OpenAsync(quest.Id, "stub", Now.AddMinutes(4));
+
+        Assert.Equal(SessionOpenRefusal.QuestNotOpen, refused.Refusal);
+        Assert.Contains("Taken", refused.Message);
+    }
+
+    /// <summary>
+    /// SESSUX1b2 loosens the person's stop alone. A take this machine holds still yields to a stand-down,
+    /// which says somebody else has it, and a declined quest is over, whoever stopped what before.
+    /// </summary>
+    [Theory]
+    [InlineData("stood-down")]
+    [InlineData("declined")]
+    public async Task A_stand_down_or_a_decline_after_the_persons_stop_is_still_refused(string ending)
+    {
+        var quest = await Publish();
+        var took = await Working(quest, Now);
+        await _quests.MoveAsync(quest.Id, QuestStatus.Taken, null, Now.AddMinutes(1));
+        await _ledger.MarkTookAsync(took.Id, quest.Id);
+        await _ledger.AdvanceAsync(took.Id, "stopped", "the person stopped it.", null, null, Now.AddMinutes(5));
+        var released = await Working(quest, Now.AddMinutes(6));
+
+        if (ending == "stood-down")
+        {
+            await _ledger.AdvanceAsync(released.Id, "stood-down", "someone else has it.", null, null, Now.AddMinutes(7));
+        }
+        else
+        {
+            await _quests.MoveAsync(quest.Id, QuestStatus.Declined, "Not this repository's to do.", Now.AddMinutes(7));
+            await _ledger.AdvanceAsync(released.Id, "declined", "declined it.", null, null, Now.AddMinutes(7));
+        }
+
+        Assert.Equal(SessionOpenRefusal.QuestNotOpen, (await _ledger.OpenAsync(quest.Id, "stub", Now.AddMinutes(8))).Refusal);
     }
 
     /// <summary>

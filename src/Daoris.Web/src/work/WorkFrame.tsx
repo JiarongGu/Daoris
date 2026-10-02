@@ -26,6 +26,8 @@ import { useDraft } from './drafts';
 import { type DockTab, RightDock } from './RightDock';
 import { SessionTimeline } from './SessionTimeline';
 import { SessionRail } from './SessionRail';
+import { keptSessionFilters, sessionFilters } from './groups';
+import { ListMore } from './ListPane';
 import { StartSession, type StartChoice } from './StartSession';
 import { OutputPanel, PANEL_MIN, StreamTabs } from './frame';
 import { panelTabs } from './streams';
@@ -728,15 +730,44 @@ export function WorkFrame({
   // Sessions' list (D118 §3a): the rail, handed to the list pane as every view with a list hands its own.
   // NEW is one control (D56): it was a permanent 287×200 form above the list, 27% of the rail, for
   // something a person does occasionally, and every reference in the study puts new behind a single affordance.
+  // The list's own choices (D126 §4.1): by state, the default, or by repository; and whether archived is shown.
+  const sessionsFilters = sessionFilters(listed.pane('sessions').filters);
   const sessionsList = (): ListSpec => ({
     view: 'sessions',
     name: t('work.rail.label'),
     labels: { open: t('work.rail.open'), close: t('work.rail.close'), resize: t('work.rail.resize') },
     make: { label: t('work.start.title'), onMake: () => setStarting(true) },
+    // The list's ⋯, which it never had (SESSUX1c): how it is grouped, a choice of two, remembered (D118 §3f).
+    more: (
+      <ListMore
+        label={t('work.list.more')}
+        choice={{
+          label: t('work.list.groupBy'),
+          value: sessionsFilters.group,
+          options: [
+            { value: 'state', label: t('work.list.byState') },
+            { value: 'repository', label: t('work.list.byRepository') },
+          ],
+          onChoose: (value) => listed.setFilters('sessions', keptSessionFilters({
+            ...sessionsFilters, group: value === 'repository' ? 'repository' : 'state',
+          })),
+        }}
+      />
+    ),
     loading: sessions.isPending,
     chosen: selected,
-    // Each running session's initial and mark, in the open rail's order (FRAME6).
-    strip: <SessionRail selected={selected} onSelect={(id) => { chosen(); attend(id); }} notify={notify} compact taking={taking} />,
+    // What waits on the person, then what runs, in the open list's order (FRAME6; D126 §2.5).
+    strip: (
+      <SessionRail
+        selected={selected}
+        onSelect={(id) => { chosen(); attend(id); }}
+        notify={notify}
+        compact
+        taking={taking}
+        arrangement={sessionsFilters.group}
+        archived={sessionsFilters.archived}
+      />
+    ),
     body: (
       <SessionRail
         selected={selected}
@@ -744,6 +775,8 @@ export function WorkFrame({
         notify={notify}
         taking={taking}
         lastTurns={lastTurns}
+        arrangement={sessionsFilters.group}
+        archived={sessionsFilters.archived}
         // A row's menu reviews that session: attended, with the dock open on its work.
         onReview={(id) => {
           chosen();

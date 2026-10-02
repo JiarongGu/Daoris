@@ -4,8 +4,8 @@ namespace Daoris.Driver;
 
 /// <summary>
 /// This machine, now (HELP1a): the agents quests, asks and the helper run on, what waits on the person, the
-/// quests its strikes parked (HELP10), the plugins installed here (PLUG9) and the branches landings made
-/// (WSR5b) — each by name and state, so a proposal names one this machine holds.
+/// quests its strikes parked (HELP10) and the person's stop holds (SESSUX1b), the plugins installed here (PLUG9) and the
+/// branches landings made (WSR5b) — each by name and state, so a proposal names one this machine holds.
 /// </summary>
 internal sealed class HelpRoomMachineNow : IHelpRoomSection
 {
@@ -32,6 +32,7 @@ internal sealed class HelpRoomMachineNow : IHelpRoomSection
             })],
         Landed = [.. sources.Landed.Select(entry => new HelpLanded(entry.Repository, entry.Branch, entry.Session, entry.Pushed, entry.PullRequest))],
         Parked = sources.Parked,
+        Held = sources.Held,
         Browser = sources.Browser is { } files ? new HelpBrowser(files.Browser, files.Links, files.Extensions, files.Favorites) : null,
     };
 
@@ -48,10 +49,16 @@ internal sealed class HelpRoomMachineNow : IHelpRoomSection
         if (machine.Helper is { Length: > 0 } helper) text.Append($"- Ask Daoris: you, on `{helper}`.\n");
         text.Append($"- {Count(machine.Waiting, "session waits", "sessions wait")} on the person; "
             + $"{Count(machine.Asks, "ask waits", "asks wait")} for an answer.\n");
-        // HELP10: by id and repository, so a retry names one the quest's drawer would offer Retry on.
+        // HELP10: by id and repository, so a retry names one the quest's page would offer Try again on.
         text.Append("- Quests parked by their failed sessions, at the driver's last look: "
             + (machine.Parked.Count > 0
                 ? string.Join(", ", machine.Parked.Select(parked => $"`#{parked.Quest}` (to `{parked.Repository}`)"))
+                : "none")
+            + ".\n");
+        // SESSUX1b: and with the session stopped, so a retry names a stop Try again would release.
+        text.Append("- Quests held by the person's stop, at the driver's last look: "
+            + (machine.Held.Count > 0
+                ? string.Join(", ", machine.Held.Select(held => $"`#{held.Quest}` (to `{held.Repository}`, session `{held.Session}` stopped)"))
                 : "none")
             + ".\n");
         // HELP10: as its two files hold it, so a browser proposal names a favorite kept; only where the desktop read them.
@@ -140,6 +147,9 @@ public sealed partial record HelpMachine
 
     /// <summary>The quests the loop's last tick parked by their failed sessions, as the room was written (HELP10).</summary>
     public IReadOnlyList<ParkedQuest> Parked { get; init; } = [];
+
+    /// <summary>The quests the loop's last look held by the person's stop, as the room was written (SESSUX1b).</summary>
+    public IReadOnlyList<HeldQuest> Held { get; init; } = [];
 
     /// <summary>Daoris's browser as its files hold it (HELP10), or null where the desktop read none.</summary>
     public HelpBrowser? Browser { get; init; }

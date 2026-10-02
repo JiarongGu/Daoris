@@ -9369,14 +9369,14 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 
 > - [ ] **TOOL4 — rotation**: held by D57 §b until exhaustion had been observed; the owner asked again on 1 and 2 October.
 
-**Outcome** (designed by a subagent, resumed across the account's limit, merged with `tools/merge-branch.mjs`, every gate): Designed with the evidence D57 §b held it for: five limits observed on the install, three on the protocol door in driven sessions and two in the maker's CLI outside Daoris, all one sentence shape and all naming their reset. `docs/2026-10-01-account-rotation-design.md`: a limit is read from the door's failure, never the transcript, by a table per agent that grows only with recorded sentences; its account cools until the stated reset, in its zone, or 60 minutes; a limit is not a strike (D58 amended), so a quest waits or rotates instead of parking, as the 1 October carry-ons did in seconds; rotation runs at a start, by the person's order, between accounts of Daoris's own, since the tool's own sign-in is shared with the person and moved with their sign-in; when every account cools, starts wait, said once. D125 lifts D57 §b's hold; the toolchain design notes the replacement of its §2 part 4 and §6. Built as TOOL4a–TOOL4i. Docs only; verify green.
+**Outcome** Account rotation designed on five observed limits: a limit cools its account and is not a strike, and rotation runs at a start by the person's order; D57 §b's hold is lifted. Detail: `docs/2026-10-01-account-rotation-design.md`, D125; built as TOOL4a–i.
 
 
 ## SESSUX1 — the session-management design (2026-10-02 → D126)
 
 > - [ ] **SESSUX1 — the design** (D126): every act a person takes on a session, each where the session is; the states at a glance; the build rows.
 
-**Outcome** (designed by a subagent, merged with `tools/merge-branch.mjs`, every gate): The session-management audit and design, as `docs/2026-10-02-session-management-design.md` and D126. The audit read every state and act from the code: a running driven session could be stopped only from its quest's page; a quest parked on its failed sessions was started again only there, and nothing in Sessions or What needs you said so (where the owner's work stood on 1 October); a person's stop left its quest with no way back, or let it be planned again; nothing that ended could be cleared. The design lists sessions by state with Waiting on you first and puts every act on the session's row and a pinned page header; a person's stop holds its quest until Try again; what ended is archived, and only a conversation that served no quest can be deleted; quests get a short title; each new act has its terminal twin and Ask Daoris door, in both languages. The build is SESSUX1a–l. Docs only; verify green.
+**Outcome** Session management audited from the code and designed: sessions listed by state, every act on the session's row, a person's stop held until Try again, what ended archived. Detail: `docs/2026-10-02-session-management-design.md`, D126; built as SESSUX1a–l.
 
 
 ## WSSETUP3 — daoris on every child's PATH (2026-10-02)
@@ -9386,7 +9386,7 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > Also (WSSETUP2's hand-back): `src/Daoris.Desktop/README.md`'s *Installing it* and gate paragraphs name the doctrine
 > tool (`app/cli/node_modules/daoris/`, `app/bin/`) and the deployment rehearsal's phase 8.
 
-**Outcome** (built by a subagent, resumed twice across the account's limits, merged with `tools/merge-branch.mjs`, every gate; notes under D124): TOOLS5's environment twins (`Tools.ChildPath`/`InstallBin` in the driver, `childPath`/`installBin` in the CLI) put an install's `app/bin/` first, found beside the home and only when it is a folder, ahead of the tools' folders. Every child Daoris starts (driven sessions on either door, conversations, intakes, hooks, landing plugins, terminal shells) therefore finds the install's `daoris` by its bare name; a home with no install beside it is unchanged byte for byte. A new install table is held cell for cell by `ToolsChildrenTests` and `tools-children.test.ts`, each new row seen failing with the folder removed on each side; `desktop-publish.test.ts` holds `INSTALL_BIN` to `CLI_BIN` and the driver's spelling. The press's `node`/`daoris` facts were already LAYOUT7's (`SetupTools`) and now find the install's tool. The desktop README names the doctrine tool and the deployment rehearsal's phase 8. Notes under D124, with a pointer under D121 and in the tools design. The Process-half case (a stub driven session answering `daoris --version` from the install's launchers) was written in the branch and run at the merge.
+**Outcome** Every child Daoris starts finds the install's `daoris` by its bare name, with `app/bin/` first on its PATH in both twins; a home with no install beside it is unchanged. Detail: the WSSETUP3 notes under D124.
 
 
 ## WSSETUP5 — registration follows the line (2026-10-02)
@@ -9394,7 +9394,7 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > - [ ] **WSSETUP5 — registration follows the line** (§3; driver, modules, cli; after LAYOUT7): three moments, read as git
 > objects, a twin of `connect`'s `registration()`, `registry.followed`, `daoris-driver register`, the row's *Refresh*.
 
-**Outcome** (built by a subagent, resumed twice across the account's limits, merged with `tools/merge-branch.mjs`, every gate; notes under D124): The driver registers a repository from `daoris.json` and `daoris.lanes.json` read on its line as git objects, for the checkout's root and never a tree. `LineRegistration.Compose` twins `connect.ts`'s `registration()` and the checks before it, with one table in `LineRegistrationTests` and `connect-twin.test.ts`; a registration is sent only when the row holds something else, and a manifest that declares nothing records adoption and sends the row's own declaration back, because the registry door replaces the declaration whole. Following runs after Daoris moves a line (`lines-moved.json`, written by the merge and the fast-forward, then followed by the next look or at once by `trees land`/`trees sync`), once as a watch starts, and on `daoris-driver register` or the modules' `REGISTRY_REFRESH`. Every refusal is kept for the row in `registry-followed.json`, said where it needs fixing, and logged as `registry.followed`; the index is refreshed once per pass. Ask Daoris's `register` door and the row's button are owed to WSSETUP7. `RegistrationLineProcessTests` (a real merge landing registered while the checkout is on another branch) was written in the branch and run at the merge. Driver fast half 1853 → 1960 and CLI 947 → 953, with main merged.
+**Outcome** The driver registers a repository from the manifests on its line, read as git objects, after Daoris moves a line, as a watch starts and on `daoris-driver register`, with refusals kept per row; the button and Ask Daoris door are WSSETUP7's. Detail: the WSSETUP5 notes under D124.
 
 
 ## WSSETUP6 — the workspace plan (2026-10-02)
@@ -9512,3 +9512,62 @@ and the extensions setting are in Settings → Browser and `daoris browser`
 > the refusals' catalogues): `SessionGroups.Read`, `SessionArchive`, `SESSION_GROUPS`, `SESSION_ARCHIVE`.
 
 **Outcome** One reader (`SessionGroups.Read`) decides each session's group, `SessionArchive` keeps the machine-local marks, and `SESSION_GROUPS`/`SESSION_ARCHIVE` answer the page. Detail: D126's SESSUX1a note, commits `9755355`, `2a2808f`.
+
+
+## WSSETUP14 — what the set-up pilot taught, the design (2026-10-02 → D128)
+
+> - [ ] **WSSETUP14 — what the pilot taught** (design, D128).
+
+**Outcome** Designed: knowledge declared in place, only skills move (the mirror keeps their paths), checks run before and after and never close done red, and the knowledge and skill tables move to a generated `INDEX.md`. Detail: `docs/2026-10-02-setup-pilot-lessons-design.md`, D128.
+
+
+## SESSUX1b — a person's stop holds its quest (2026-10-02)
+
+> - [ ] **SESSUX1b — a person's stop holds its quest; Try again releases it** (§3.3, §3.4; driver, cli, modules): the
+> `Stopped` verdict, `released` in `driver.json` (twins), `retry` doing whichever applies; the room's retry row's place
+> (it still says "the quest's drawer", which FRAME1d made a page); and SESSUX1a's reader must exempt `Stopped` in
+> `SessionGroups.Facts.ReviewableTree`, or a stopped session's work drops out of To review (a row in `SessionGroupsTests`).
+
+**Outcome** A person's stop holds its quest with a sentence until Try again releases it (`RETRY_QUEST`, Ask Daoris's `retry`, `daoris driver retry --session`); the service's ledger accepting the carry-on is SESSUX1b2. Detail: the SESSUX1b note under D126, commits `2be2a70`, `a3bb799`, `71c86e8`.
+
+
+## SESSUX1b2 — the ledger carries on a released stop (2026-10-02)
+
+> - [ ] **SESSUX1b2 — the ledger carries on a released stop** (service; SESSUX1b's hand-back): `SessionLedger.OpenAsync`
+> refuses a carry-on after a person's stop, so a released taken quest is refused "Quest is Taken" every look; and the
+> help box's `retry` wording names a held quest too.
+
+**Outcome** The ledger carries on a released stop of this machine's own take, a stop before the take stays refused, and `retry` names a held quest. Detail: D126's SESSUX1b2 note, commits `3390b1f`, `c1432d6`.
+
+
+## SESSUX1c — the list by state (2026-10-02)
+
+> - [ ] **SESSUX1c — the list by state** (§2.1–§2.5, §4.1–§4.4; web-shell; after a): five groups, the words and marks,
+> `queued` neutral, Group by in the list's ⋯, Show N more, the strip and Sessions' badge.
+
+**Outcome** Sessions' list is grouped by state (Waiting on you, To review, Working, Resumes later, Ended) from the driver's one reader, with Group by repository in the list's ⋯, *Show N more* for Ended, and the badge counting a parked quest. Detail: the SESSUX1c note under D126, commit `bdf622d`.
+
+
+## SESSOPT1a — the doctrine, in the canon (2026-10-02)
+
+> - [ ] **SESSOPT1a — the doctrine, in the canon.** `task-lifecycle`, `development-documents` and the archive-entry template
+> say a session pays for what it reads, so rows and entries point to their detail. Contract: D127 §2. Proof: `verify`
+> (the region within 100 bytes of +458); the family rehearsal; `examples/` re-synced in the same commit.
+
+**Outcome** The canon says a session pays for what it reads: rows and archive outcomes take a short shape and point to their detail; re-synced here and in both examples, region +458 bytes. Detail: D127's SESSOPT1a note, `890e3bf`.
+
+
+## SESSOPT1b — the shape report (2026-10-02)
+
+> - [ ] **SESSOPT1b — the shape report.** `tools/doc-shapes.mjs` reports backlog rows, router rows and new archive outcomes
+> over 60 words, from the declared roles, and exits 0. Contract: §3. Proof: `doc-shapes.test.ts`, failing first.
+
+**Outcome** `tools/doc-shapes.mjs` reports backlog rows, router rows and new archive outcomes over 60 words, in `verify`, failing only on a configuration it cannot read. Detail: D127's SESSOPT1b note, `6f0843a`.
+
+
+## SESSOPT1c — the hand-back is a line (2026-10-02)
+
+> - [ ] **SESSOPT1c — the hand-back is a line** (after a). The dispatch skill's hand-back carries a one-line outcome and where
+> its detail lives. Contract: §4.1. Proof: the next merge's archive entry is 60 words or fewer.
+
+**Outcome** The dispatch skill's hand-back carries a one-line outcome and where its detail lives; doc-shapes' archive cut-over is 2026-10-02. Detail: D127 §4.1, commit `65de273`.

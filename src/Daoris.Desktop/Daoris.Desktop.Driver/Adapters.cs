@@ -86,6 +86,12 @@ public sealed record SessionTarget(
     public string? PersonSaid { get; init; }
 
     /// <summary>
+    /// Whether the session before was stopped by the person, who has since released the quest from that stop with *Try
+    /// again* (SESSUX1b): the carry-on is told so, rather than that the session before was cut off.
+    /// </summary>
+    public bool Released { get; init; }
+
+    /// <summary>
     /// The branch this session's tree grew from when it is a chain's next step in its parent's
     /// repository (CHAIN2) — the parent's unmerged work is in the tree. Null for the canonical line.
     /// </summary>
@@ -236,12 +242,16 @@ public static class TargetPrompt
 
     /// <summary>
     /// Why the session before did not finish: cut off (D80), or stopped to ask the person, who has
-    /// answered (STANDDOWN2) — in their words, which are the reason this session exists.
+    /// answered (STANDDOWN2) — in their words, which are the reason this session exists — or stopped by the
+    /// person, who has since released the quest (SESSUX1b).
     /// </summary>
     private static string Before(SessionTarget target, string record) => target.PersonSaid is { } said
         ? $"An earlier session on this quest stopped to ask the person, and they answered:\n\n> "
           + said.ReplaceLineEndings("\n> ") + $"\n\nIts record reads: {record}"
-        : $"An earlier session on this quest was cut off before it closed it: {record}";
+        : target.Released
+            ? "An earlier session on this quest was stopped by the person before it closed it, and they have since released "
+              + $"the quest for you to carry on. Its record reads: {record}"
+            : $"An earlier session on this quest was cut off before it closed it: {record}";
 
     /// <summary>The tree's uncommitted changes as the driver read them, or that there were none.</summary>
     private static string InFlight(SessionTarget target) => target.InFlight.Count == 0

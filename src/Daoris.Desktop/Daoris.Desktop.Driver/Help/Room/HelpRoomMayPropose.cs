@@ -16,10 +16,11 @@ internal sealed class HelpRoomMayPropose : IHelpRoomSection
         // helper proposes what the route takes rather than learning it from a refusal.
         text.Append("## What you may propose\n\n");
         // HELP9: every `daoris driver` verb; across (D107) said form by form, and a write-to as the say-so the canon
-        // asks for, which its card says too. HELP10: `retry` too, of a quest the driver parked, named from the list.
+        // asks for, which its card says too. HELP10: `retry` too, of a quest the driver parked, named from the list;
+        // SESSUX1b: or one the person's stop holds, released from that stop.
         text.Append("- `setting_propose`: every door below that `daoris driver` spells.\n");
-        text.Append("  `retry` takes a quest parked by its failed sessions, from this machine's list below, as the target,\n");
-        text.Append("  as its drawer's *try it again* does; a quest not on that list is refused.\n");
+        text.Append("  `retry` takes a quest parked by its failed sessions, or held by the person's stop, from this machine's lists below,\n");
+        text.Append("  as the target, as its page's *Try again* does; a quest on neither list is refused.\n");
         text.Append("  `across` takes `read on|off|--clear` for a repository or a whole workspace,\n");
         text.Append("  or `write-to <other> [--clear]` for a repository, to let its sessions write into the other's checkout, one way.\n");
         text.Append("  Applying a write-to is the person's standing say-so for writing across, and its card says so.\n");

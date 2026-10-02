@@ -60,7 +60,11 @@ internal sealed class HelpRoomDoors : IHelpRoomSection
         // HELP9: every `daoris driver` verb that changes something is a row, the two a terminal alone set among them.
         ("choose the agent driven sessions start on", "(no screen yet)", "`daoris driver adapter <agent>`"),
         ("park a quest after failed sessions", "Settings → Driver", "`daoris driver strikes <n>`"),
-        ("start a quest its failed sessions parked again", "Quests → the quest's drawer → Try again", "`daoris driver retry <quest>`"),
+        // SESSUX1b: FRAME1d made the quest's drawer a page. A stop's release names its session, since the terminal cannot
+        // see which hold a quest is under (D50); the page's Try again on a stopped quest is the web shell's to add.
+        ("start a quest its failed sessions parked again", "Quests → the quest's page → Try again", "`daoris driver retry <quest>`"),
+        ("start a quest your stop holds again: carry a taken one on in its tree, or plan an open one", "Quests → the quest's page, "
+            + "whose *Sitting* names the session", "`daoris driver retry <quest> --session <id>`"),
         ("bound how long one session runs", "(no screen yet)", "`daoris driver timeout <minutes>`"),
         // TOOL4e: the terminal's door onto the default cool-off; Settings → Driver's control and Ask Daoris's are TOOL4g's.
         ("set how long an account cools when its agent hits a limit and names no time", "(no screen yet)",

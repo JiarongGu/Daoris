@@ -40,8 +40,8 @@ present it as the tree.
 ## What you may propose
 
 - `setting_propose`: every door below that `daoris driver` spells.
-  `retry` takes a quest parked by its failed sessions, from this machine's list below, as the target,
-  as its drawer's *try it again* does; a quest not on that list is refused.
+  `retry` takes a quest parked by its failed sessions, or held by the person's stop, from this machine's lists below,
+  as the target, as its page's *Try again* does; a quest on neither list is refused.
   `across` takes `read on|off|--clear` for a repository or a whole workspace,
   or `write-to <other> [--clear]` for a repository, to let its sessions write into the other's checkout, one way.
   Applying a write-to is the person's standing say-so for writing across, and its card says so.
@@ -130,7 +130,8 @@ plugin, see whether one of these does the job: propose installing it with `plugi
 | choose the agent Ask Daoris runs on | Settings → AI features | `daoris driver helper <agent>|off` |
 | choose the agent driven sessions start on | (no screen yet) | `daoris driver adapter <agent>` |
 | park a quest after failed sessions | Settings → Driver | `daoris driver strikes <n>` |
-| start a quest its failed sessions parked again | Quests → the quest's drawer → Try again | `daoris driver retry <quest>` |
+| start a quest its failed sessions parked again | Quests → the quest's page → Try again | `daoris driver retry <quest>` |
+| start a quest your stop holds again: carry a taken one on in its tree, or plan an open one | Quests → the quest's page, whose *Sitting* names the session | `daoris driver retry <quest> --session <id>` |
 | bound how long one session runs | (no screen yet) | `daoris driver timeout <minutes>` |
 | set how long an account cools when its agent hits a limit and names no time | (no screen yet) | `daoris driver cooloff <minutes>` |
 | bound how many sessions run at once | (no screen yet) | `daoris driver cap <n>` |
@@ -205,6 +206,7 @@ message when it changed; for anything else on the screen, ask them rather than g
 - Ask Daoris: you, on `claude-code-acp`.
 - 1 session waits on the person; 2 asks wait for an answer.
 - Quests parked by their failed sessions, at the driver's last look: `#q5e6f7a8` (to `engine`), `#q6b7c8d9` (to `tools`).
+- Quests held by the person's stop, at the driver's last look: `#q7c8d9e0` (to `console-ui`, session `s8b9c0d1` stopped).
 - Daoris's browser: your Edge; links on the page open in Daoris's browser; other software's extensions refused; favorites https://site.example/board, https://docs.example/.
 - Plugins: `example.lands` (on, speaks on `work/land`, added from a folder), `example.off` (off, installed from this install's offer), `example.broken` (on, contributes nothing: `apiVersion` must be an integer., no record of where it came from), `example.quiet` (on, added from a folder).
 - Landed branches: `feature/q2-second` in `engine` (session `s2a3b4c5`, not pushed), `feature/q3-third` in `game` (session `s3`, pushed, pull request https://example.test/pr/3), `feature/q4-fourth` in `game` (session `s4`, pushed).

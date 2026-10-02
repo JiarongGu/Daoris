@@ -32,8 +32,8 @@ import { useProjectsView } from './ProjectsView';
 import { type SettingsAnchor, type SettingsSection, useSettingsLayout } from './SettingsView';
 import { ShellSignals } from './ShellSignals';
 import {
-  logEvent, useDriver, useLinkOpener, useOpenBrowser, useOpenWindow, useRemotes, useRules, useSyncNow, useTrustFolder,
-  useUntrusted,
+  logEvent, useConsidered, useDriver, useLinkOpener, useOpenBrowser, useOpenWindow, useRemotes, useRules, useSyncNow,
+  useTrustFolder, useUntrusted,
 } from './shell';
 import { LinkOpener } from './links';
 import { BrowserDoor } from './work/BrowserDoor';
@@ -199,6 +199,9 @@ export function App() {
   // The folders the driver is holding for the agent's trust (D73), from the tick, and the one being
   // asked about. The band's row opens the question; only the person's press grants it.
   const untrusted = useUntrusted();
+  // The planner's verdicts as of the last tick: Sessions' badge counts the quests parked on their failed sessions
+  // (SESSUX1c, D126 §2.5). Empty in a browser, where no tick arrives.
+  const considered = useConsidered();
   const grantTrust = useTrustFolder();
   const [trusting, setTrusting] = useState<TrustHold | null>(null);
   // Opening a window is the shell's act, not the page's (SURF8). In a browser it simply rejects,
@@ -320,7 +323,7 @@ export function App() {
   // disagree the first time either was edited. Sessions' badge is its own sessions only (U20).
   const waiting = needsAPerson(
     running.data ?? [], outstanding.data ?? [], registry.data ?? [], asks.data ?? [], untrusted.data ?? []).length;
-  const sessionsWaiting = waitingInSessions(running.data ?? []);
+  const sessionsWaiting = waitingInSessions(running.data ?? [], considered.data ?? []);
   // Where this circle stands with its remote (SYNC6b), from this machine's own host — so a browser on
   // the machine reads it too, and it says for itself whether the circle is wired. Before it answers,
   // the shell's map says; a browser with neither is not asked.

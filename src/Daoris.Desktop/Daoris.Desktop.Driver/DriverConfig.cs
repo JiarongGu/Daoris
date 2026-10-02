@@ -75,6 +75,38 @@ public sealed record DriverConfig(
     public DriverConfig WithStrikes(int strikes) => this with { Strikes = Math.Max(0, strikes) };
 
     /// <summary>
+    /// The quests the person released from their stop (SESSUX1b, D126 §3.4), each against the session they stopped: a
+    /// person's stop holds its quest on this machine until its session is named here. A later stop holds it again, since
+    /// its session differs. Absent is none, written only when set. The CLI's <c>driverconfig.ts</c> reads it the same way
+    /// (<c>ReleasedTests</c>, held row for row by its <c>driverconfig.test.ts</c>).
+    /// </summary>
+    public IReadOnlyDictionary<string, string> Released { get; init; } =
+        new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>The session whose stop of this quest the person released, or null when they released none.</summary>
+    public string? ReleasedFor(string questId) => Released.TryGetValue(questId, out var session) ? session : null;
+
+    /// <summary>Whether the person released this stop: the quest in any case, the session as its record spells it.</summary>
+    public bool Releases(string questId, string session) => string.Equals(ReleasedFor(questId), session, StringComparison.Ordinal);
+
+    /// <summary>Release this quest from the person's stop of this session: one release per quest, the later replacing the earlier.</summary>
+    /// <exception cref="DriverException">A blank quest or session: a release names the stop it releases.</exception>
+    public DriverConfig WithReleased(string questId, string session)
+    {
+        if (string.IsNullOrWhiteSpace(questId) || string.IsNullOrWhiteSpace(session))
+        {
+            throw new DriverException("a release names the quest and the session whose stop it releases.");
+        }
+
+        var quest = questId.Trim().TrimStart('#');
+        var next = new Dictionary<string, string>(Released, StringComparer.OrdinalIgnoreCase);
+        // The quest's spelling first written, when it has one in another case: one entry, never two.
+        var key = next.Keys.FirstOrDefault(k => string.Equals(k, quest, StringComparison.OrdinalIgnoreCase)) ?? quest;
+        next[key] = session.Trim();
+        return this with { Released = next };
+    }
+
+    /// <summary>
     /// The harness an ask's INTAKE session runs on (D65 §1b) — or null, and no intake runs.
     /// </summary>
     /// <remarks>
@@ -306,6 +338,8 @@ public sealed record DriverConfig(
             }
 
             writer.WriteEndObject();
+            // Written only when set (SESSUX1b), as the CLI writes it: absent is no release.
+            WriteMap(writer, "released", Released);
             // Written only when set (WSR2): absent is the checkout's guess, and a file that never chose
             // a line should not start carrying an empty one.
             WriteMap(writer, "lines", Lines);
@@ -531,6 +565,7 @@ public sealed record DriverConfig(
             // Absent, or less than a minute, or not a whole number, is the default hour (TOOL4e): never a spin.
             CoolOffMinutes = root.TryGetProperty("cooloff", out var coolOff) && coolOff.ValueKind == JsonValueKind.Number
                 && coolOff.TryGetInt32(out var minutes) && minutes >= 1 ? minutes : null,
+            Released = ReleasedMap(root),
             Lines = BranchMap(root, "lines"),
             WorkspaceLines = BranchMap(root, "workspaceLines"),
             Landings = RuleMap(root, "landings"),
@@ -539,6 +574,27 @@ public sealed record DriverConfig(
             WorkspaceReadAcross = FlagMap(root, "workspaceReadAcross"),
             WriteAcross = TargetMap(root, "writeAcross"),
         };
+    }
+
+    /// <summary>
+    /// The releases (SESSUX1b): each quest against a session's id, read without the spaces around it. A blank session, one
+    /// that is not text, a map that is not one, and a quest written again in another case are not read.
+    /// </summary>
+    private static IReadOnlyDictionary<string, string> ReleasedMap(JsonElement root)
+    {
+        var released = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+        if (!root.TryGetProperty("released", out var element) || element.ValueKind != JsonValueKind.Object) return released;
+
+        foreach (var property in element.EnumerateObject())
+        {
+            if (property.Value.ValueKind == JsonValueKind.String && property.Value.GetString()?.Trim() is { Length: > 0 } session
+                && property.Name.Length > 0 && !released.ContainsKey(property.Name))
+            {
+                released[property.Name] = session;
+            }
+        }
+
+        return released;
     }
 
     private static IReadOnlyDictionary<string, int> ForgivenMap(JsonElement root)

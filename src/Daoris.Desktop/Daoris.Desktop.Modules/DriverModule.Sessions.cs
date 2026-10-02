@@ -300,6 +300,8 @@ public sealed partial class DriverModule
         row.Awaits,
         row.AwaitsOf,
         Work = row.Work is { } work ? new { work.Commits, work.Uncommitted } : null,
+        // SESSUX1b (D126 §2.2): its stop holds its quest here, which its line says.
+        row.HoldsQuest,
     };
 
     private static object Mark(ArchiveMark mark) => new { mark.Session, mark.At };

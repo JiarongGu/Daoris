@@ -668,18 +668,164 @@ public sealed class PlannerTests
         Assert.Equal(StartVerdict.Exhausted, Assert.Single(Planner.Plan(snapshot, Config() with { Strikes = 3 })).Verdict);
     }
 
-    /// <summary>🔴 The person's stop is their decision: a take they stopped is never carried on.</summary>
-    [Fact]
-    public void A_taken_quest_the_person_stopped_is_not_carried_on()
-    {
-        Assert.Empty(Planner.Plan(
-            Ran([Quest(status: "Taken")], ("q1", new PriorSession("s1", "D:/trees/s1", "stopped", "the person stopped it."))), Config()));
-    }
-
     [Fact]
     public void A_taken_quest_whose_last_session_here_ended_well_is_not_carried_on()
     {
         Assert.Empty(Planner.Plan(
             Ran([Quest(status: "Taken")], ("q1", new PriorSession("s1", null, "completed", "reached done."))), Config()));
+    }
+
+    // ── a person's stop holds its quest, and Try again releases it (SESSUX1b, D126 §3.3, §3.4) ───────
+    //
+    // Read from the code (M3): a take the person stopped was never looked at again, so it sat with no sentence and no
+    // way back, and an open quest whose session they stopped before its take was planned again at the next look. A
+    // stop that undoes itself, or leaves its quest in silence, is not one a person can manage with.
+
+    private static readonly PriorSession PersonStop = new("s1", "D:/trees/s1", "stopped", "the person stopped it.");
+
+    /// <summary>🔴 The person's stop is their decision: a take they stopped is held, saying so and how to release it, never carried on unasked.</summary>
+    [Fact]
+    public void A_taken_quest_the_person_stopped_is_held_saying_why()
+    {
+        var only = Assert.Single(Planner.Plan(Ran([Quest(status: "Taken")], ("q1", PersonStop)), Config()));
+
+        Assert.Equal(StartVerdict.Stopped, only.Verdict);
+        Assert.Equal("you stopped session `s1`; Try again carries it on — `daoris driver retry q1 --session s1`.", only.Reason);
+        Assert.Equal(PersonStop, only.HeldBy);
+        Assert.Null(only.Resumes);
+    }
+
+    /// <summary>🔴 An open quest whose session the person stopped before its take is held too, never planned again at the next look.</summary>
+    [Fact]
+    public void An_open_quest_the_person_stopped_before_its_take_is_held_rather_than_planned_again()
+    {
+        var stop = PersonStop with { Tree = null };
+
+        var only = Assert.Single(Planner.Plan(Ran([Quest()], ("q1", stop)), Config()));
+
+        Assert.Equal(StartVerdict.Stopped, only.Verdict);
+        Assert.Equal("you stopped session `s1`; Try again starts it again — `daoris driver retry q1 --session s1`.", only.Reason);
+        Assert.Equal(stop, only.HeldBy);
+    }
+
+    /// <summary>
+    /// The person's stop is the reason the quest sits, whatever else would hold it: a hold, an opt-out or the strikes would each
+    /// say something true, and none of them is what moves it. The stop leaves its tree for review (SessionGroups), which a
+    /// verdict naming the quest's take would hide.
+    /// </summary>
+    [Fact]
+    public void A_stop_is_the_reason_a_quest_sits_before_any_other()
+    {
+        var snapshot = Ran([Quest(status: "Taken")], ("q1", PersonStop)) with { Strikes = new Dictionary<string, int> { ["q1"] = 9 } };
+
+        Assert.Equal(StartVerdict.Stopped, Assert.Single(Planner.Plan(snapshot, Config(holds: ["Game"]))).Verdict);
+        Assert.Equal(StartVerdict.Stopped, Assert.Single(Planner.Plan(snapshot, Config(drivable: []))).Verdict);
+        Assert.Equal(StartVerdict.Stopped, Assert.Single(Planner.Plan(snapshot, Config() with { Strikes = 3 })).Verdict);
+    }
+
+    /// <summary>A stop the sweep or a shutdown made is not the person's (D104): an open quest so stopped is planned as before.</summary>
+    [Fact]
+    public void An_interrupted_stop_of_an_open_quest_is_planned_as_before_and_never_held()
+    {
+        var only = Assert.Single(Planner.Plan(
+            Ran([Quest()], ("q1", new PriorSession("s1", null, "stopped", Orphans.Note, Interrupted: true))), Config()));
+
+        Assert.Equal(StartVerdict.Start, only.Verdict);
+        Assert.Null(only.HeldBy);
+    }
+
+    /// <summary>Released, a taken quest is carried on in the tree its stopped session worked in, as a cut-off is (D80).</summary>
+    [Fact]
+    public void A_released_stop_of_a_taken_quest_is_carried_on_in_its_tree()
+    {
+        var only = Assert.Single(Planner.Plan(Ran([Quest(status: "Taken")], ("q1", PersonStop)), Config().WithReleased("q1", "s1")));
+
+        Assert.Equal(StartVerdict.Start, only.Verdict);
+        Assert.Equal(PersonStop, only.Resumes);
+        Assert.Null(only.HeldBy);
+        Assert.Equal("carrying on in `Game` — you stopped session `s1`, and released it.", only.Reason);
+    }
+
+    /// <summary>Released, an open quest is planned as a first start: its stopped session never took it, so there is no tree to go back into.</summary>
+    [Fact]
+    public void A_released_stop_of_an_open_quest_is_planned_as_a_first_start()
+    {
+        var only = Assert.Single(Planner.Plan(Ran([Quest()], ("q1", PersonStop with { Tree = null })), Config().WithReleased("q1", "s1")));
+
+        Assert.Equal(StartVerdict.Start, only.Verdict);
+        Assert.Null(only.Resumes);
+        Assert.Equal("starting in `Game`.", only.Reason);
+    }
+
+    /// <summary>A release names the stop it released, so a later stop holds the quest again: its session differs.</summary>
+    [Fact]
+    public void A_second_stop_holds_the_quest_again_since_its_session_differs()
+    {
+        var again = PersonStop with { Session = "s2" };
+
+        var only = Assert.Single(Planner.Plan(Ran([Quest(status: "Taken")], ("q1", again)), Config().WithReleased("q1", "s1")));
+
+        Assert.Equal(StartVerdict.Stopped, only.Verdict);
+        Assert.Contains("session `s2`", only.Reason);
+    }
+
+    /// <summary>A stop of a quest that waits on a question is held too; released, the quest waits for its answer as before (D79).</summary>
+    [Fact]
+    public void A_stopped_quest_that_waits_on_a_question_is_held_and_once_released_waits_for_its_answer()
+    {
+        var snapshot = Ran([WaitingOn("q2"), Quest("q2", to: "Backend")], ("q1", PersonStop));
+
+        Assert.Equal(StartVerdict.Stopped, Assert.Single(Planner.Plan(snapshot, Config()), c => c.Quest.Id == "q1").Verdict);
+        Assert.Equal(
+            StartVerdict.Waiting,
+            Assert.Single(Planner.Plan(snapshot, Config().WithReleased("q1", "s1")), c => c.Quest.Id == "q1").Verdict);
+    }
+
+    /// <summary>
+    /// RETRY1's mark still starts a parked quest, and a stop after it holds the quest rather than parking it: a stop is not
+    /// a strike (D58). Released with its strikes unforgiven, the park is what the quest meets next.
+    /// </summary>
+    [Fact]
+    public void Forgiven_strikes_still_work_and_a_stop_after_them_holds_rather_than_parks()
+    {
+        var parked = Ran([Quest(status: "Taken")], ("q1", new PriorSession("s3", "D:/trees/s1", "failed", "timed out.")))
+            with { Strikes = new Dictionary<string, int> { ["q1"] = 3 } };
+        var forgiven = (Config() with { Strikes = 3 }).WithForgiven("q1", 3);
+        Assert.Equal(StartVerdict.Exhausted, Assert.Single(Planner.Plan(parked, Config() with { Strikes = 3 })).Verdict);
+        Assert.Equal(StartVerdict.Start, Assert.Single(Planner.Plan(parked, forgiven)).Verdict);
+
+        var stopped = parked with { LastRun = new Dictionary<string, PriorSession> { ["q1"] = PersonStop with { Session = "s4" } } };
+        Assert.Equal(StartVerdict.Stopped, Assert.Single(Planner.Plan(stopped, forgiven)).Verdict);
+        Assert.Equal(StartVerdict.Start, Assert.Single(Planner.Plan(stopped, forgiven.WithReleased("q1", "s4"))).Verdict);
+        Assert.Equal(
+            StartVerdict.Exhausted,
+            Assert.Single(Planner.Plan(stopped, (Config() with { Strikes = 3 }).WithReleased("q1", "s4"))).Verdict);
+    }
+
+    /// <summary>
+    /// D125 §5.2 stands beside the hold: read from the records as the snapshot reads them, a failure an account's limit made
+    /// is no strike and neither is the person's stop, so with one real failure under a limit of two the stop holds the
+    /// quest, and released it is carried on, never parked.
+    /// </summary>
+    [Fact]
+    public void A_limit_is_still_not_a_strike_and_neither_is_the_stop_that_holds()
+    {
+        const string records = """
+            [{ "id": "s1", "quest": "q1", "repository": "Game", "state": "failed", "created": "2026-10-02T09:00:00Z" },
+             { "id": "s2", "quest": "q1", "repository": "Game", "state": "failed", "limit": true, "created": "2026-10-02T09:10:00Z" },
+             { "id": "s3", "quest": "q1", "repository": "Game", "state": "stopped", "note": "the person stopped it.",
+               "tree": "D:/trees/s1", "created": "2026-10-02T09:20:00Z" }]
+            """;
+        var snapshot = new Snapshot([Quest(status: "Taken")], [Repo()], [], ServiceClient.ReadStrikes(records))
+        {
+            LastRun = ServiceClient.ReadLastRun(records),
+        };
+        var config = Config() with { Strikes = 2 };
+
+        Assert.Equal(1, snapshot.Strikes["q1"]);
+        Assert.Equal(StartVerdict.Stopped, Assert.Single(Planner.Plan(snapshot, config)).Verdict);
+        var released = Assert.Single(Planner.Plan(snapshot, config.WithReleased("q1", "s3")));
+        Assert.Equal(StartVerdict.Start, released.Verdict);
+        Assert.Equal("s3", released.Resumes!.Session);
     }
 }

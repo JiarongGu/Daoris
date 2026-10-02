@@ -200,28 +200,43 @@ internal sealed class HelpSettingProposals : IHelpProposalKind
 
     /// <summary>
     /// <c>retry</c> (HELP10, D110), as <c>daoris driver retry</c> reads it: a quest by id, <c>#</c> or not, which the
-    /// loop's last tick parked by its strikes — the verdict the quest drawer shows its Retry by — said in the terminal's
-    /// words, and marked forgiven at the strike limit as <c>RETRY_QUEST</c> marks it.
+    /// loop's last look parked by its strikes, marked forgiven at the strike limit as <c>RETRY_QUEST</c> marks it; or one
+    /// the person's stop holds (SESSUX1b, D126 §3.4), released from the session the look named, as <c>RETRY_QUEST</c>
+    /// releases it. Either is said in the terminal's words.
     /// </summary>
     /// <remarks>
-    /// The route takes any id; this does not, since a helper can invent one, and forgiving a quest that is not parked
-    /// lets it run past its strikes (D110). The limit is the one standing when the person applies, as the route reads it.
+    /// The quest must be on one of the look's two lists, since a helper can invent an id, and forgiving a quest that is not
+    /// parked lets it run past its strikes (D110). The limit is the one standing when the person applies, as the route
+    /// reads it.
     /// </remarks>
     private static HelpPlan Retry(string? target, DriverConfig config, HelpMachineFacts facts)
     {
         var quest = target?.TrimStart('#') ?? "";
         if (quest.Length == 0)
         {
-            return new HelpPlan("`retry` names the quest its failed sessions parked, by id — `daoris driver retry <quest>`.", "", "", null);
+            return new HelpPlan(
+                "`retry` names the quest its failed sessions parked or your stop holds, by id — `daoris driver retry <quest>`.",
+                "", "", null);
+        }
+
+        if (facts.Held.FirstOrDefault(held => string.Equals(held.Quest, quest, StringComparison.OrdinalIgnoreCase)) is { } stopped)
+        {
+            return new HelpPlan(null,
+                $"Quest `#{quest}` is released from your stop of session `{stopped.Session}`: the driver takes it up again at its "
+                + "next look, and a later stop holds it again.",
+                $"daoris driver retry {quest} --session {stopped.Session}",
+                // RETRY_QUEST's own edit for a stop: released from that session, and no mark, since a stop is not a strike.
+                c => c.WithReleased(quest, stopped.Session));
         }
 
         var terminal = $"daoris driver retry {quest}";
         if (!facts.Parked.Any(parked => string.Equals(parked.Quest, quest, StringComparison.OrdinalIgnoreCase)))
         {
-            var parked = facts.Parked.Count > 0 ? Names(facts.Parked.Select(each => $"#{each.Quest}")) : "none";
+            static string Listed(IEnumerable<string> ids) => ids.Any() ? Names(ids.Select(id => $"#{id}")) : "none";
             return new HelpPlan(
-                $"`#{quest}` is not parked — only a quest its failed sessions parked starts again, as its drawer's *try it again* "
-                + $"does; at the driver's last look it parked {parked}.",
+                $"`#{quest}` is neither parked nor held by your stop on this machine — only such a quest starts again, as its "
+                + $"page's *Try again* does; at the driver's last look it parked {Listed(facts.Parked.Select(each => each.Quest))} "
+                + $"and held {Listed(facts.Held.Select(each => each.Quest))}.",
                 "", terminal, null);
         }
 
@@ -329,4 +344,10 @@ public sealed partial record HelpMachineFacts
     /// the quest drawer shows its Retry by. Empty before any tick, and while another loop holds the home (D104).
     /// </summary>
     public IReadOnlyList<ParkedQuest> Parked { get; init; } = [];
+
+    /// <summary>
+    /// The quests the loop's last look held by the person's stop (SESSUX1b), each with the session they stopped: a retry of
+    /// one releases that stop. Empty before any look, and while another loop holds the home (D104).
+    /// </summary>
+    public IReadOnlyList<HeldQuest> Held { get; init; } = [];
 }

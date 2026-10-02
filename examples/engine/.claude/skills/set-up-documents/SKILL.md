@@ -46,7 +46,9 @@ the way it is. Read that first. The templates are in `templates/`, beside this f
 4. **Place the records.** Give each record the repository keeps a line in the brief's *Where things
    are*, or declare it where a tool generates that section. Check its shape against its template (see
    the table below). New entries take the shape; old entries stand as they were written, because
-   rewriting history into a new form loses what the old form said.
+   rewriting history into a new form loses what the old form said. A backlog row that holds more than
+   its shape is open work, so its excess moves to the record that holds it (a log of sightings to the
+   fix log, a history to the decisions, a design's text back to the design), and the row points there.
 
 5. **Declare the safe work** in the declaration beside the gates: the checks a session may run (not the
    ones that need the machine quiet or run for a long time), the build and test commands, the install

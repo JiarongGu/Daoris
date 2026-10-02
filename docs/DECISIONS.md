@@ -8310,3 +8310,201 @@ Held by `SessionGroupsTests` (a table of 44 cases over §1's states, the order, 
 run. **Not built here**: `deletable` (SESSUX1f), *account cooling* (SESSUX1k) and the stop's hold (SESSUX1b, which adds
 its verdict to the reader's table: a quest held by a stop leaves its tree to review). **Not measured**: how long
 `SESSION_GROUPS` takes over a workspace of 29 repositories with their trees (§12).
+
+**As built (SESSUX1b, 2026-10-02): a person's stop holds its quest, and Try again releases it.** The planner's
+`StartVerdict.Stopped` holds a quest, open or taken, whose last session here the person stopped (`stopped`, not
+interrupted: `PriorSession.PersonStopped`), saying *you stopped session `s`; Try again carries it on* (or *starts it
+again*) with the terminal's door, and naming the stop on `Consideration.HeldBy`. `released` in `driver.json` holds each
+release, the quest against the session (twins: `DriverConfig.Released`, `driverconfig.ts`, one table, `twins.md`'s row).
+Released, a taken quest is carried on in the stop's tree, its instruction saying the person stopped it and released it
+(`SessionTarget.Released`), and an open one is planned as a first start. `RETRY_QUEST` reads the planner's verdict (the
+loop's last look, else a fresh plan, as Sessions' groups read it) and marks a parked quest, releases a held one, or
+refuses with `QUEST_NOT_HELD` (both catalogues). Its answer is still the state, with `retried` saying which. Ask
+Daoris's `retry` is judged against the facts' `Held` beside `Parked`, and the room lists the held quests. The room's
+retry row names the quest's page, and a row of its own gives a stop's release. `SessionGroups` exempts `Stopped` in
+`ReviewableTree`, and each row carries `HoldsQuest`, which `SESSION_GROUPS` answers. What the build settled that §3.3
+and §3.4 left open:
+
+- **A stop is the reason its quest sits, before every other.** A hold, an opt-out or the strikes would each say
+  something true, and none of them is what moves the quest. A verdict naming the take would also hide the stop's tree
+  from review.
+- **The terminal names the session.** `daoris driver` talks to nothing (D50), so it cannot see whether a quest is parked
+  or held, or which session holds it. §3.4's *do whichever applies, and refuse when neither does* holds for
+  `RETRY_QUEST` and Ask Daoris, which read the verdict. At a terminal, `retry <quest>` marks, as RETRY1 did, and
+  `retry <quest> --session <id>` releases. The stop's sentence spells the second. The two flags together are refused.
+- **A release moves no mark**, since a stop is not a strike (D58). Strikes forgiven before a stop still count from
+  their mark once it is released.
+- **A stopped quest that waits on a question is held too**; released, it waits or resumes as D79 says.
+
+This amends **RETRY1's reading**: the route took any id and marked it; it now does what the verdict says applies, and
+refuses the rest, as Ask Daoris's `retry` already did. **D58 stands.**
+
+**Not built here.** 🔴 **The service's ledger refuses a released take's carry-on.** `SessionLedger.OpenAsync` carries a
+taken quest on only after `failed`, an answered park or an interrupted stop. A person's stop is *never carried on*
+there. Against a real host the planner plans the carry-on and each look's open is refused (*Quest is Taken*), until the
+ledger takes a person's stop as a carry-on, which the driver now releases. That is the service lane's, for the parent
+to schedule. An open quest's release works end to end. The page's *Try again* on a `Stopped` verdict, and its toast
+for a release, are the web shell's: `QuestPage.tsx` offers it for `Exhausted` only, and until it changes the page shows
+the stop's sentence under *Sitting*, which names the terminal's door. The service's `setting_propose` words still say
+*the quest its failed sessions parked* (`HelpProposalBox.Setting.cs`), and its box takes a held quest's id unchanged.
+
+Held by `PlannerTests`, `ReleasedTests` and `driverconfig.test.ts`, `SessionGroupsTests`' new rows, `ParkedQuestsTests`,
+`AskAndWaitPromptTests`, `HelpSettingProposalsTests`, `HelpRoomMachineNowTests`, `HelpRoomDoorsTests`, the room's golden
+files and `DriverModuleRetryTests`. Each was seen failing first, bar `ReleasedTests`' rows on the driver's side, written
+with the reader they test: the CLI's copy of that table, which parses them cell for cell, was seen failing first.
+`StopHoldTickTests` (the `Process` half, a real stub harness) is written and was not run here. It covers a take
+stopped, held across two looks with nothing spawned, then carried on in its tree once released, and an open quest stopped
+before its take, held, then started. Its stand-in opens any session, so its taken case proves the driver's half only.
+`DriverModuleDriverTests`' retry case now records a parked look first, and was not run here either.
+
+**As built (SESSUX1b2, 2026-10-02): the ledger carries on a released stop.** `SessionLedger.OpenAsync` opens a session
+on a taken quest whose last session here ended `stopped` by the person, as it does after a cut-off, when a session of
+this machine's took the quest (`SessionStore.TookHereAsync`, STANDDOWN2's `took`). The driver holds such a quest until
+*Try again* releases it, so an open that reaches the ledger is the release. The ledger reads no `driver.json`, which is
+the driver's and machine-local. What the build settled:
+
+- **The take must be this machine's.** A person's stop before its session took the quest leaves no take here. Taken
+  since, the quest is somebody else's: another machine's driver, whose record arrives without its `took`, or a person
+  working outside the driver, who leaves no record. Carried on as a cut-off is, the release would start a second session
+  on that work. So the stopped record, or an earlier one of this machine's on the quest, must have taken it. An earlier
+  one counts because a carry-on takes nothing itself.
+- **Nothing else moved.** A stand-down and a declined quest still refuse, with this machine's take on record. A cut-off,
+  an interrupted stop and an answered park carry on as before, with no `took` asked. The strikes are the driver's, and
+  the ledger counts none (D58, D125 §3).
+- **The door's answer keeps its shape.** `POST /api/sessions` maps the same refusals. No HTTP test was added: the HTTP
+  door cannot mark a take (only a session's connector does, over MCP), and a test reaching into the store proves no more
+  than the ledger's.
+- **Ask Daoris's `retry`** names the quest its failed sessions parked *or the person's stop holds*, in the box's
+  refusal, its target and `setting_propose`'s description.
+
+**Not covered.** A take its connector did not mark (a build before STANDDOWN2, or a take through the HTTP door) is still
+refused after a person's stop, as before. A cut-off's carry-on asks no `took` (D80), so a start that failed before its
+take, on a quest taken elsewhere since, is still opened; that is D80's as it stands, and this build left it. A take
+this machine made offline and lost (D68 §5), stopped by the person before the driver stood it down, would be carried on
+once released.
+
+Held by `SessionLedgerTests`: a released stop of the session that took, and of a carry-on whose earlier session took,
+seen failing first; a stop before the take with the quest then taken by another machine or by nobody here, refused,
+which passed before and was seen failing under the rule without `took`; a stand-down and a decline after a released
+carry-on, refused. And `HelpSettingProposalTests`' retry rows and the tool's words, seen failing first.
+**As built (SESSUX1c, 2026-10-02): the list by state.** `SessionRail` asks `useSessionGroups` and hands `SessionList`
+and `SessionStrip` (molecules, `work/SessionList.tsx`) the records and the reader's answer; `work/groups.ts` draws
+the groups in the reader's order, the list by repository, *Ended*'s twelve and the strip, and took over `partition`.
+`SESSION_TONE` and `SESSION_DOT` gain *parked* (open's hue, the waiting mark) and *awaiting reply* (neutral), and
+`queued` is neutral. Sessions' ⋯ is `ListMore` with *Group by*, kept in `daoris.list.sessions.filters` as
+`{ group, archived }`, the default kept as nothing. What the build settled that §2 and §4 left open:
+
+- **The badge reads the tick, not the reader.** Group 1 is counted as this machine's sessions parked to ask plus the
+  quests the planner's last look parked (`useConsidered`, verdict `Exhausted`), the facts Overview's band reads for
+  SESSUX1i. Asking `SESSION_GROUPS` from the activity bar would walk git in every tree to review on every view, every
+  tick, for a count that needs no tree. A teammate's parked session is not counted: the reader lists it under Working.
+- **A record the reader has not answered for is placed by its record alone**: one that started after the reader
+  looked, or every one while no answer has come. Live and parked to ask on this machine is Waiting on you, any other
+  live one Working, an ended one Ended, ahead of the reader's ended rows since it ended after the look. That is the
+  reader's first step and nothing more; parked, to review and resumes later are only ever the reader's.
+- **No reader, no grouping by state.** A browser asks no driver, so its list is the arrangement it always had, by
+  repository. The monitor's list is the present tense only and asks the reader nothing. A failed answer is not
+  toasted, as `SESSION_WHERE`'s and `SESSION_OPENINGS`' are not: the list keeps the records' placement, and a refusal
+  while the driver comes up is asked again when it says it is ready (LOOK2a).
+- **The page draws what its scope holds.** The reader answers for every record on the machine; a session outside the
+  chosen workspace is not drawn.
+- **The attended session is never cut out**: past *Ended*'s twelve it stays listed, and archived while archived is
+  hidden it is listed under Archived alone. *Show N more* is not remembered.
+- **A row's line.** Parked says how many sessions failed, or *after its failed sessions* where the count is null;
+  awaiting reply names the question, and who it was asked of where the service still lists it; to review says its
+  commits, its uncommitted changes only where the commits are a proven zero, and *work to review* where git could
+  not count, since a count git cannot give is kept as work.
+- **The Archived group is drawn when the filter says so**, last, from the reader's sixth group; the ⋯'s *Show
+  archived* and its empty state are SESSUX1e's. `work.rail.endedMore` is retired for `work.list.showMore`.
+
+Held by `groups.test.ts`, `SessionList.test.tsx`, `SessionRail.test.tsx` (by state over a stubbed `SESSION_GROUPS`,
+a browser's and the monitor's lists asking nothing), `SessionRow.test.tsx`, `ui.test.tsx` (open's hue),
+`attention.test.ts` and `sessionsBadge.test.tsx` (the badge), `WorkFrame.test.tsx` (the ⋯, remembered), and the
+stories. Each was seen failing first, `groups.test.ts` only as a module not yet written. **Not built here**: a stopped session's line *held here until you try again*,
+which needs SESSUX1b's verdict in the reader, and *account cooling* (SESSUX1k). **Not measured**: the groups'
+headings and the rows' lines at 888 and 680 px in both languages, which the window decides (§12).
+## D127 — A session pays for what it reads on every step after: rows and entries point to their detail, and a report holds their shape (2026-10-02)
+
+**Decision (SESSOPT1, the owner's, asked whether the task archive should be split: *"this is not about how we split
+its about how we optimize the session and this should also belong to doctrine too"*).** The contract is
+`docs/2026-10-02-session-economy-design.md`: what a session here reads and writes, measured (§1), the doctrine
+(§2), the report (§3), this repository's practice (§4) and the build (§6). It folds in DOC7.
+
+1. **The principle is doctrine.** A session pays for what it reads on every step after it reads it, so what is read
+   whole stays short by how each entry is written, and what is long is read by lookup. Each fact has one home, and
+   every other place names it in a line.
+2. **The canon says it in the two documents that already own the subject.** `task-lifecycle` gains one sentence of
+   why and the shapes in its bullets: a row is what and why in two sentences, its contract and its proof; an outcome
+   is a line or three, saying what changed and where its detail lives; what a decision, a design or a commit already
+   says is pointed to. `development-documents` gains the failure, the shapes of a backlog row, an archive entry, a
+   router row and a decision's amendment, *look up by identifier*, and the shapes' numbers beside the ceilings (60
+   words for a row, 60 for an outcome). `set-up-documents`' archive-entry template asks a line or three. No new
+   knowledge document.
+3. **A report holds the shapes, and never fails** (D54). `tools/doc-shapes.mjs`, in `verify`, reads the declared
+   backlog, archive and router, and prints rows, router rows and archive outcomes past the cut-over over 60 words. A
+   configuration it cannot read fails. It stays this repository's, not `check`'s.
+4. **This repository writes records that way.** The dispatch skill's hand-back carries the outcome in one line and
+   where its detail lives. `TASKS.md` is trimmed by moving each line to its home, never by deleting what nothing else
+   says: logs of sightings to open entries in the fix log, histories and held reasoning to their records, owner
+   quotations to the designs that already open with them, traps to the folder they are about. The router's
+   *Where it stands* becomes a line naming its decision.
+5. **The archive is neither split nor compacted.** Its 349 entries stand as written. From the cut-over, every new
+   entry takes the shape.
+6. **DOC7's line carries what economy needs**: `session.read {session, adapter, role, how, call}`, where `how` is
+   whole, part or search (null where the door does not say) and `call` the read's place among the session's calls.
+
+**Why.** Measured at `7e4cb1c` (design §1). Every session here starts with 48,554 bytes of `CLAUDE.md` and
+`AGENTS.md`. Picking work reads `TASKS.md` whole: 8,503 words over a 6,600 ceiling, trimmed twice and grown back
+both times. Its length is logs, histories and quotations, not rows of work: its rows copy almost nothing from the
+designs (a median of 3% of their six-word runs). The archive's 149 outcome paragraphs have a median of 214 words in
+September and 190 in October, and a median of 75% of the code spans in an outcome are in the decision it cites (80%
+since 2026-10-01): a second account of the note, in other words. The canon asked for that paragraph in its own
+template, while its always-loaded rule asked for a line. The one long driven turn on record re-read about 103 tokens
+from its cache for every token it read anew (COST1, METER1), which is the mechanism: a harness carries what was read
+into every request after.
+
+**Rejected** (design §8 has each with its reason):
+- **Splitting the archive.** A reader by lookup pays per entry, not per file, so a split changes no session's read
+  and breaks every link to it.
+- **Compacting the 349 entries.** Only part of their detail is provably elsewhere, no session reads the file whole,
+  and old entries stand as written (`set-up-documents`). What it would take, if chosen, is in §8.
+- **A new core knowledge document**: an index row in every adopter, and one subject split in two.
+- **Changing `task-lifecycle`'s frontmatter**: its body is in the region whole, so the row only repeats it.
+- **A shape that fails** (D54), **the report in `check` now** (it would guess at every adopter's record format;
+  reconsidered when a second repository keeps the template's shape), **raising the backlog's ceiling**, **trimming
+  without a shape**, **deleting what a long row holds**, and **changing `persist-working-state`**.
+
+**What it amends, when built.**
+- The canon's `task-lifecycle`, `development-documents` and `set-up-documents` (SESSOPT1a). The region grows 458
+  bytes in this repository and in each example, measured on the drafts: 24,064 → 24,522 of 26,000 here.
+- D122 §2.5: an archive entry's outcome is a line or three, not a paragraph. D122 §1.5 and §6: DOC7's line gains
+  `how` and `call`.
+- D115 §5: the steward's archive entry carries the outcome line, and FLAKE lines go to the fix log's FLAKE1 entry.
+- The dispatch skill's hand-back (MOD9).
+- D117 §4.2: LAYOUT6's brief is held to the brief's content test as it moves.
+- D106's *no moving counters in always-read files* reaches the backlog's row count.
+
+**What the checks do not cover.** This change is documents only, and nothing is built. The measures are scratch
+scripts' over the tree at `7e4cb1c`, untracked, and the design says what each counted. Repetition is measured by
+proxies, six-word runs for words and code spans for facts, which read no meaning. The region's bytes were measured
+by syncing scratch copies against drafted canon text, which the build may reword. No token was counted, and what
+sessions here open, and when, is not measured (DOC7). Whether a line or three is enough for a later reader is
+judgement, read from the first entries after the cut-over. `verify` checks this entry's shape and the design's links
+and budget, and none of their words.
+
+**As built (SESSOPT1a, 2026-10-02): the doctrine, in the canon.** §2.2's text landed in `task-lifecycle` as drafted.
+`development-documents` took §2.3 with one change of placement: the entries' shapes are a paragraph after the two
+ceiling bullets, saying they apply whether a record is read whole or by lookup, so the *two units* the section
+opens with stay two. `set-up-documents` took §2.4. This amends D122 §2.5 (an outcome is a line or three). The
+region grew exactly 458 bytes in each repository: 24,522 of 26,000 here, 22,216 and 22,433 of 30,000 in the
+examples, re-synced in the same commit. Not covered: the family rehearsal (the parent's), and whether the words
+read well to an adopter.
+
+**As built (SESSOPT1b, 2026-10-02): the shape report.** `tools/doc-shapes.mjs` runs in `verify` after
+`doc-budgets`, with its numbers in `tools/doc-shapes.json`. `archiveCutOver` is `null` until the steward writes
+it (§3.5). An entry is counted as written, the list marker and a table's pipes included, as `doc-budgets` counts
+a document. Over the tree at `7e4cb1c` it reports §3.1's 17 rows and 12 router rows. A backlog row runs on across a
+blank line when the next line is indented, since a reader sees that paragraph as the row's, so FLAKE1 measures
+831 words, not §1.4's 769. An archive heading with no date is counted as undated and is not measured. Proof:
+`doc-shapes.test.ts`, ten cases, each seen failing against a stub first. Not covered: the adopter's own record
+formats, which stay out of `check` (§3.2).

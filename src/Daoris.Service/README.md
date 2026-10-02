@@ -15,8 +15,10 @@ scanner reads `DoctrineRegion` for a repository's rules and a gate holds that a 
 searchable. The ledger side grew with it: a session record keys on the **working tree** it was held in
 (D51), not on the repository that owns it, and carries the diff a review reads (SURF6a). A `stopped`
 record says whether it was **interrupted** (D104): ended by the driver's orphan sweep or its shutdown,
-not by the person. The ledger carries an interrupted take on as it does a failed one (D80), and never a
-person's stop; the column arrives by `SchemaColumns`, so an older record reads as the person's. A
+not by the person. The ledger carries an interrupted take on as it does a failed one (D80); the column
+arrives by `SchemaColumns`, so an older record reads as the person's. A person's stop holds its quest in
+the driver until *Try again* releases it (SESSUX1b, D126), so the ledger carries it on too, but only a take
+a session of this machine's made (`took`): a stop before the take leaves the quest to whoever took it. A
 `failed` record says whether an account's **limit** refused its turn (TOOL4c, D125 §5.2), as the driver
 read it from the door's failure. It names no account, so it is answered to every caller and travels with
 the record both ways; an older record, or a feed from a build before it, reads false.

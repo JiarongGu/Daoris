@@ -53,7 +53,14 @@ public sealed record QuestView(string Id, string From, string To, string Title, 
 /// </param>
 public sealed record PriorSession(
     string Session, string? Tree, string State = "", string? Note = null, string? Repository = null,
-    string? Answer = null, bool Interrupted = false);
+    string? Answer = null, bool Interrupted = false)
+{
+    /// <summary>
+    /// Whether it ended because the person stopped it (D104): <c>stopped</c>, and not by the sweep or a shutdown. Such a stop
+    /// holds its quest until the person releases it (SESSUX1b, D126 §3.3).
+    /// </summary>
+    public bool PersonStopped => string.Equals(State, "stopped", StringComparison.OrdinalIgnoreCase) && !Interrupted;
+}
 
 /// <summary>One step of a chain, as the service answered it.</summary>
 public sealed record QuestStepView(string To, string Title, string Body);
@@ -208,6 +215,13 @@ public enum StartVerdict
     /// tree, once that quest is answered — nothing for the person to do.
     /// </summary>
     Waiting,
+
+    /// <summary>
+    /// Held by the person's stop (SESSUX1b, D126 §3.3): its last session here ended because the person stopped it, open or
+    /// taken, and nothing starts it on this machine until they release that stop with *Try again*
+    /// (<see cref="DriverConfig.Released"/>). A stop is not a strike (D58), and another machine may still take an open one.
+    /// </summary>
+    Stopped,
 }
 
 /// <param name="Quest">The quest considered.</param>
@@ -229,6 +243,12 @@ public sealed record Consideration(
     /// branch this step's tree grows from, so it sees the unmerged work it builds on or checks.
     /// </summary>
     public PriorSession? BuildsOn { get; init; }
+
+    /// <summary>
+    /// For a quest the person's stop holds (<see cref="StartVerdict.Stopped"/>): the session they stopped, which *Try
+    /// again* names to release it (SESSUX1b). Null for every other verdict.
+    /// </summary>
+    public PriorSession? HeldBy { get; init; }
 }
 
 public static class Considerations
@@ -300,6 +320,18 @@ public static class Planner
         // first" one implementation rather than two that drift.
         foreach (var quest in snapshot.Quests)
         {
+            // 🔴 A person's stop holds its quest, open or taken, until they release that stop (SESSUX1b, D126 §3.3). Before
+            // everything else, since it is the one reason the quest sits that the person must act on: a taken one was never
+            // looked at again and sat with no sentence, and an open one was planned again at the next look (M3).
+            if (quest.Status is "Open" or "Taken"
+                && snapshot.LastRun.TryGetValue(quest.Id, out var last)
+                && last.PersonStopped
+                && !config.Releases(quest.Id, last.Session))
+            {
+                considerations.Add(Stopped(quest, last));
+                continue;
+            }
+
             if (quest.Status == "Open")
             {
                 var considered = Consider(quest);
@@ -319,9 +351,10 @@ public static class Planner
             else if (quest is { Status: "Taken", Awaits: null or "" }
                      && snapshot.LastRun.TryGetValue(quest.Id, out var cutOff)
                      && (string.Equals(cutOff.State, "failed", StringComparison.OrdinalIgnoreCase)
-                         // A stop that was not the person's — the sweep's or a shutdown's (D104). The
-                         // person's own stop is their decision, and is never carried on.
+                         // A stop that was not the person's — the sweep's or a shutdown's (D104).
                          || cutOff is { State: "stopped", Interrupted: true }
+                         // The person's own stop, once they released it (SESSUX1b): a held one never reaches here.
+                         || cutOff.PersonStopped
                          // The person answered a session that parked to ask them (STANDDOWN2).
                          || cutOff is { State: "completed", Answer: not null }))
             {
@@ -330,6 +363,16 @@ public static class Planner
         }
 
         return considerations;
+
+        // Held by the person's stop (SESSUX1b, D126 §3.3): the sentence says whose stop, what Try again does, and the
+        // terminal's door, which names the session since `daoris driver` cannot see this verdict (D50).
+        static Consideration Stopped(QuestView quest, PriorSession stop) =>
+            new(quest, StartVerdict.Stopped,
+                $"you stopped session `{stop.Session}`; Try again {(quest.Status == "Taken" ? "carries it on" : "starts it again")} — "
+                + $"`daoris driver retry {quest.Id} --session {stop.Session}`.")
+            {
+                HeldBy = stop,
+            };
 
         // A cut-off (D80): this machine's session took the quest and failed before closing it — timed
         // out, refused, crashed, or ended by the sweep or a shutdown (D104) — so the take is still here
@@ -344,8 +387,10 @@ public static class Planner
                 {
                     Reason = cutOff.Answer is { } answer
                         ? $"carrying on in `{quest.To}` — you answered session `{cutOff.Session}`: {answer}"
-                        : $"carrying on in `{quest.To}` — session `{cutOff.Session}` was cut off: "
-                          + (cutOff.Note is { Length: > 0 } note ? note : "it ended before closing the quest."),
+                        : cutOff.PersonStopped
+                            ? $"carrying on in `{quest.To}` — you stopped session `{cutOff.Session}`, and released it."
+                            : $"carrying on in `{quest.To}` — session `{cutOff.Session}` was cut off: "
+                              + (cutOff.Note is { Length: > 0 } note ? note : "it ended before closing the quest."),
                     Resumes = cutOff,
                 }
                 : considered;

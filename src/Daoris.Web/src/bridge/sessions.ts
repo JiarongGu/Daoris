@@ -3,6 +3,7 @@ import { useShenora, useShenoraEvent } from '@shenora/react';
 import type { Session } from '../api';
 import { keys } from '../queries';
 import type { SessionEvent } from '../work/conversation';
+import type { SessionGroupName, SessionGrouping } from '../work/groups';
 import type { SessionWhere } from '../work/SessionRow';
 import { call } from './call';
 
@@ -129,32 +130,10 @@ export const useSessionWhere = (sessions: readonly Session[] | undefined): Recor
 };
 
 /**
- * The groups the session list shows by state (SESSUX1a, D126 §2.1), in the order the person acts on them, and Archived:
- * the host's spelling, which `daoris-driver sessions --group` shares.
+ * The groups and a session's place among them (SESSUX1a), as the session list reads them: their shapes live with the
+ * list's own helpers (`work/groups.ts`), since a molecule may read a shape and never a bridge domain.
  */
-export type SessionGroupName = 'you' | 'review' | 'working' | 'later' | 'ended' | 'archived';
-
-/**
- * Where one session is listed and what its row's second line says (D126 §2.2, §2.4), as `SESSION_GROUPS` answers it.
- *
- * @remarks
- * **One reader, in the driver.** It needs the planner's verdicts and a git judgement per tree, which only the driver has,
- * and the terminal prints the same answer, so the page reads it rather than deriving a group of its own. `shown` is the
- * record's state or a derived word, `parked` or `awaiting-reply`; the page keeps its own *idle* for a live chat between
- * turns (UX5 U17). `work` is what an ended session's own tree holds, a count null where git could not say. `archived`
- * says the mark stands: a session that needs the person stays in its group whatever the mark says.
- */
-export type SessionGrouping = {
-  session: string;
-  group: SessionGroupName;
-  shown: string;
-  archived: boolean;
-  teammate: boolean;
-  strikes?: number | null;
-  awaits?: string | null;
-  awaitsOf?: string | null;
-  work?: { commits: number | null; uncommitted: number | null } | null;
-};
+export type { SessionGroupName, SessionGrouping } from '../work/groups';
 
 /**
  * The session list's groups, under the sessions' key, so whatever asks the listing again (a stop, a landing, a tick)
@@ -164,9 +143,10 @@ const groupsKey = (ids?: readonly string[]) => ['sessions', 'groups', ...(ids ? 
 
 /**
  * Each session's group by state, its word and its line's facts (SESSUX1a), in the order a list shows them; asked for
- * some, those sessions' alone. Shell-only: Sessions is (D47 §4), and no browser has a driver to ask.
+ * some, those sessions' alone. Shell-only: Sessions is (D47 §4), and no browser has a driver to ask. A list that does
+ * not read the groups (the monitor's, SESSUX1c) asks nothing, since each answer may walk git in every tree to review.
  */
-export const useSessionGroups = (ids?: readonly string[]) => {
+export const useSessionGroups = (ids?: readonly string[], { enabled = true }: { enabled?: boolean } = {}) => {
   const { isAvailable } = useShenora();
   return useQuery({
     queryKey: groupsKey(ids),
@@ -174,7 +154,7 @@ export const useSessionGroups = (ids?: readonly string[]) => {
       const answer = await call<{ sessions?: SessionGrouping[] }>('SESSION_GROUPS', ids ? { ids: [...new Set(ids)] } : undefined);
       return Array.isArray(answer?.sessions) ? answer.sessions : [];
     },
-    enabled: isAvailable,
+    enabled: isAvailable && enabled,
     refetchOnWindowFocus: false,
   });
 };

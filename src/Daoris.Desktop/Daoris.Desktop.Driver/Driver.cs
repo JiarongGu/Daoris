@@ -811,6 +811,8 @@ public sealed partial class Driver(
                     : null,
                 // The person's answer, when the session before parked to ask them (STANDDOWN2).
                 PersonSaid = carryingOn ? start.Resumes!.Answer : null,
+                // The person's stop, which they released with Try again (SESSUX1b): told so, never that it was cut off.
+                Released = carryingOn && start.Resumes!.PersonStopped,
             };
             var (info, harnessNotice) = Prepare(adapter, target, selection);
 
@@ -826,7 +828,9 @@ public sealed partial class Driver(
                         : carryingOn
                             ? (start.Resumes!.Answer is not null
                                 ? $"carries `#{quest.Id}` on with your answer to session `{start.Resumes.Session}`"
-                                : $"carries `#{quest.Id}` on after session `{start.Resumes.Session}` was cut off")
+                                : start.Resumes.PersonStopped
+                                    ? $"carries `#{quest.Id}` on: you stopped session `{start.Resumes.Session}`, and released it"
+                                    : $"carries `#{quest.Id}` on after session `{start.Resumes.Session}` was cut off")
                               + (resumedIn is null ? "." : ", in the tree it worked in.")
                             : null),
                 ct: ct).ConfigureAwait(false);

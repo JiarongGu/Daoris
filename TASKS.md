@@ -21,11 +21,11 @@ lists.
 
 ## State
 
-**Counts, and this is their one home:** seventeen commands, **1018 CLI tests, 910 service and 50 HTTP host, 2861 driver,
-516 desktop modules, 80 devkit, 2462 web unit, 24 Playwright**, 113/113 release rehearsal, **341/341
+**Counts, and this is their one home:** seventeen commands, **1032 CLI tests, 916 service and 50 HTTP host, 2899 driver,
+523 desktop modules, 80 devkit, 2522 web unit, 24 Playwright**, 113/113 release rehearsal, **341/341
 family rehearsal** (it names its own phases when you run it), **84/84 deployment rehearsal** (D60),
 and 5 universal devkit gates over this repository (DEVKIT3). Canon: 8 core rules, 6 knowledge
-documents, 6 skills, 7 packs. The always-loaded core is **24,064 of 26,000 bytes** (24,522 once SESSOPT1a lands) — a span in
+documents, 6 skills, 7 packs. The always-loaded core is **24,522 of 26,000 bytes** — a span in
 `AGENTS.md` since D59 — and **advisory rather than enforced** (D54: a fact gates, a judgement
 reports).
 
@@ -197,18 +197,9 @@ Order: SESSUX1a ∥ SESSUX1j; the driver lane a → b → g; the web shell lane 
 FRAME1i; k after TOOL4c, TOOL4d and c; then the look (l). b alone ends the silent stop; i alone would have told the
 owner on 1 October.
 
-- [ ] **SESSUX1b — a person's stop holds its quest; Try again releases it** (§3.3, §3.4; driver, cli, modules): the
-  `Stopped` verdict, `released` in `driver.json` (twins), `retry` doing whichever applies; the room's retry row's place
-  (it still says "the quest's drawer", which FRAME1d made a page); and SESSUX1a's reader must exempt `Stopped` in
-  `SessionGroups.Facts.ReviewableTree`, or a stopped session's work drops out of To review (a row in `SessionGroupsTests`).
-- [ ] **SESSUX1b2 — the ledger carries on a released stop** (service; SESSUX1b's hand-back): `SessionLedger.OpenAsync`
-  refuses a carry-on after a person's stop, so a released taken quest is refused "Quest is Taken" every look; and the
-  help box's `retry` wording names a held quest too.
 - [ ] **CARRY1 — a cut-off's carry-on checks the take** (service; found by SESSUX1b2): D80 opens a carry-on after a
   cut-off without asking whose take the quest is, so a start that failed before its take carries on over someone else's.
   Contract: D80, D126's SESSUX1b2 note. Proof: a ledger row refused, seen failing first.
-- [ ] **SESSUX1c — the list by state** (§2.1–§2.5, §4.1–§4.4; web-shell; after a): five groups, the words and marks,
-  `queued` neutral, Group by in the list's ⋯, Show N more, the strip and Sessions' badge.
 - [ ] **SESSUX1d — the page header, and every act where its session is** (§3; web-shell, modules; after b, c): the pinned
   header, Stop… asking once, Try again, Open folder, a terminal here, the row's ⋯; the stop's other owners go.
   With SESSUX1b: the quest page's Try again for a `Stopped` verdict (today only `Exhausted`), its toast, and zh
@@ -236,13 +227,6 @@ repository's own `dispatch-subagent` skill asks each subagent for "an outcome pa
 backlog, which every session reads whole, is 7,600 words of its 6,600, its rows pasted long. What a session pays for
 is what it reads and what it is led to read.
 
-- [ ] **SESSOPT1a — the doctrine, in the canon.** `task-lifecycle`, `development-documents` and the archive-entry template
-  say a session pays for what it reads, so rows and entries point to their detail. Contract: D127 §2. Proof: `verify`
-  (the region within 100 bytes of +458); the family rehearsal; `examples/` re-synced in the same commit.
-- [ ] **SESSOPT1b — the shape report.** `tools/doc-shapes.mjs` reports backlog rows, router rows and new archive outcomes
-  over 60 words, from the declared roles, and exits 0. Contract: §3. Proof: `doc-shapes.test.ts`, failing first.
-- [ ] **SESSOPT1c — the hand-back is a line** (after a). The dispatch skill's hand-back carries a one-line outcome and where
-  its detail lives. Contract: §4.1. Proof: the next merge's archive entry is 60 words or fewer.
 - [ ] **SESSOPT1d — the backlog, trimmed by the rule** (the steward's, after b and c). Each over-long line moves to §4.3's
   home; FLAKE1, TEST1 and REH1 get open fix-log entries. Proof: `doc-budgets` ≤ 5,300 words; no row over 60.
 - [ ] **SESSOPT1e — the router's rows, by shape** (after b). Each *Where it stands* becomes a line naming its decision.
@@ -275,10 +259,27 @@ FRAME1e and WSSETUP6. Then the owner's two runs.
   `.claude/` paths, which the quest's bounds forbade it to fix; `AGENTS.md` grew to 61 KB because the index lists all
   169 knowledge documents in the always-loaded region (budget raised to 54,000; one agent reads only 32 KB); 166 old
   documents have no frontmatter. The second repository waits for WSSETUP14.
-- [ ] **WSSETUP14 — what the pilot taught** (design, D128): a set-up leaves the repository's own checks green (it may
-  update what reads the paths it moved, or it keeps the knowledge where it is and declares it); the always-loaded index
-  does not grow with the knowledge count (the knowledge tier indexed on demand); a document without frontmatter. Then
-  the report repository's branch is amended, not merged as it stands.
+- [ ] **KNOW2 — the knowledge design, reviewed** (owner, 2026-10-02: whether the index is the right design at all, and
+  whether Lyntai's file mode is better). Compares the index, an index file, knowledge as skills, rooms, search-first, path rules,
+  per-prompt recall and Lyntai's file storage from the makers' documentation. Contract: D129 (in flight). Proof: the review.
+- [ ] **KNOW3 — the discovery bench** (owner, 2026-10-02: "run subagent test for a good design"). Real headless sessions
+  over this repository's docs measure each design's hit rate, calls and tokens per hit. Contract: the bench results
+  document (in flight). Proof: `tools/knowledge-bench.mjs`, its tests, and the run.
+- [ ] **WSSETUP14a — the index leaves the region** (**paused for KNOW2 and KNOW3**; after SESSOPT1a). `sync` writes `<target>/INDEX.md` with the knowledge
+  and skill tables; the region keeps the rules, a pointer, the rooms and *Where things are*. Contract: D128 §2.2–§2.5, §2.7.
+  Proof: a 169-document fixture leaves the region's bytes unchanged; this repository and both examples re-synced.
+- [ ] **WSSETUP14b — a knowledge folder declared in place** (after 14a). `documents.knowledge` names a folder the index lists
+  and the service indexes, which `sync` never writes. Contract: §1.2, §1.3. Proof: the twin tables matched.
+- [ ] **WSSETUP14c — a document without frontmatter, by its heading** (after 14a). Contract: §3.1, §3.2. Proof: `node --test`.
+- [ ] **WSSETUP14d — the set-up keeps the checks green** (after 14b). Checks first and at the close; knowledge kept in place;
+  only a moved path rewritten; never `done` red. Contract: §1.1, §1.4–§1.6, §3.3. Proof: `SetupBriefTests`, the playbook twin.
+- [ ] **WSSETUP14e — the follow-up for a set-up's branch** (after 14d). *Finish setting up this repository*, with the exact
+  merge rule. Contract: §4.2. Proof: composer and press tests; the family rehearsal's set-up phase.
+- [ ] **WSSETUP14f — the pilot, finished** (the owner's run, after a republish). Checks green before and after, knowledge
+  declared, the root file under 32,768 bytes, the budget back to the default. Contract: §4. Then WSSETUP13.
+- [ ] **GATE1 — the docs gate is blind at the merge** (found 2026-10-02): the devkit's `docs` gate reads committed dates, so
+  a merge that changes the CLI's source without the root README passes the merge tool and fails `verify` once committed
+  (TOOL4e did). Proof: the merge tool runs the gate as of the commit it would make, seen failing first.
 - [ ] **WSSETUP13 — the rest** (the owner's run): the plan resumed with the pilot's numbers; parks per week before and
   after.
 

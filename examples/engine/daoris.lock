@@ -22,7 +22,7 @@
       "source": "core/knowledge/development-documents.md",
       "target": "knowledge/development-documents.md",
       "canonVersion": "0.0.1",
-      "sha256": "c05c8a13d58d513ca8cc957223872f1ca943a72b2152e9eddf9e8714e3d2f720"
+      "sha256": "cce226b675b4cae17cf1fbeb53c55585912dd89b1c74c9366dea2a4dc11906dd"
     },
     {
       "pack": "core",
@@ -106,7 +106,7 @@
       "source": "core/rules/task-lifecycle.md",
       "target": "rules/task-lifecycle.md",
       "canonVersion": "0.0.1",
-      "sha256": "a66d62d7b69016a9e3852c66ac7bc0682c209b9ef5d68519132dad04b055c8d2",
+      "sha256": "eeff04ec487cab7a579b63482eb2db27420eba0efedc9c61b3136ab02572154d",
       "in": "AGENTS.md"
     },
     {
@@ -149,14 +149,14 @@
       "source": "core/skills/set-up-documents/SKILL.md",
       "target": "skills/set-up-documents/SKILL.md",
       "canonVersion": "0.0.1",
-      "sha256": "ae542ae4de77442a1b91caed096f25bbb9660c085e6f6a9ae40eb45776d1de98"
+      "sha256": "fa95e22528dd58e6b785c0049d1cffc808e6e04d082f81d7a13998b6bf160782"
     },
     {
       "pack": "core",
       "source": "core/skills/set-up-documents/templates/archive-entry.md",
       "target": "skills/set-up-documents/templates/archive-entry.md",
       "canonVersion": "0.0.1",
-      "sha256": "a86f74ddb509597506126c1974c5a925be8fb3ad5b0738e1e8f637e088450b9b"
+      "sha256": "469ee22995ef071246de4009167345b15c9840f62453b8565f35d8a3c7352525"
     },
     {
       "pack": "core",
