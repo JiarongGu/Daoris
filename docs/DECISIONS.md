@@ -9740,3 +9740,57 @@ keep seen failing with its line removed. Left to their rows: calling `/added` wh
 person's message or an intake is told one (the modules' `SESSION_INPUT`), and handing the words to sessions (DRIFT1b).
 Not covered: until `/added` has a caller, a message typed into a running session is still only in that session's
 record; a message's files are not kept, only its words; nothing is drawn, so there is no look.
+
+**DRIFT1b, built 2026-10-02: every session on an ask is handed the person's words.** At each start of a quest an ask
+asked (its sender `ask #id`, a chain step's included), the driver reads the ask's `words` from `GET /api/asks/{id}`
+(`AskWords.ReadAsync`, through `Driver.WithAskWordsAsync`), and the instruction carries them beneath the quest, oldest
+first and newest last (`AskWordsText`): a first start, a D79 resume and a carry-on on any account alike. An intake is
+handed what was said on its ask after the ask itself, which its instruction already quotes. Choices §2 left open:
+- **Quoted verbatim, each saying how it was given** (asked; answered a session; added while one ran; a kind this build
+  does not know is said, never dropped), **when**, to the minute in UTC, **and on which quest**, this one or another by
+  its id. The heading says they are the person's own words and that a body, a plan or a note is someone else's reading
+  of them: a fact, not the measure DRIFT1e designs.
+- **Bounded, and said so.** The ask's sentence is kept whole, since the body already carries it. Each later word is cut
+  at 2,000 characters with a line saying how many more there were; of the rest, the newest that fit in 8,000 are kept,
+  since a correction is newer than what it corrects, and the older are one line between the sentence and the newest,
+  saying how many, between when, and that the ask's record keeps every one. The size: the native door hands the
+  instruction as one argument, and Windows caps a command line at 32,767 characters, shared with a carry-on's plan, its
+  last words and the body. The words the drift lost were a few hundred characters each.
+- **A carry-on's answer is quoted once.** Where the answer its last record holds is among the words shown, the
+  instruction points to it; otherwise (a quest no ask asked, an answer from before the words were kept, words unread) it
+  is quoted as STANDDOWN2 quoted it.
+- **Unread is said, never a hold.** A service that does not answer the words (unreachable, refusing, unparsable, an ask
+  it does not hold, or a host from before DRIFT1a, which answers no `words`) leaves today's instruction and one line saying
+  they could not be read; the driver closing is a cancellation, not an unread. An ask from before the words were kept
+  says from when they are (`wordsKeptFrom`).
+- **A quest no ask asked reads exactly as it did**, and nothing is read for it.
+- **ANSWER1's resume is not composed around** (D131 §1): its conversation was handed the words at its own start, and the
+  answer is its next prompt, verbatim. A word given since to another session on the ask reaches it at its next start.
+
+Proof: `AskWordsHandedTests`, seen failing on stubs before it was built: the drift's own chain (an answer, two cut-offs,
+then a carry-on on another account, the last run read through `ReadLastRun` and the words through `WithAskWordsAsync`
+from a stand-in ask) quotes the answer that one hop lost; every kind of start carries the words beneath its quest; the
+kinds, the bound, the unread line and today's instruction beside it; the reads' refusals; the sender's table, a twin of
+the service's `AskDesk.AskOf`; the intake. In the `Process` half, `AccountRotationTickTests`' first row now has its
+rotated carry-on handed an answer the stand-in's ask holds (written, not run). Not covered: no real agent was handed
+the words, so whether they keep a session's reading on the ask is not measured (the evidence's §8); the family
+rehearsal's sessions read them from the real service, and it checks none of them.
+
+**DRIFT1a2, built 2026-10-02: a typed message reaches its ask.** The modules' `SESSION_INPUT` posts the person's words
+to `POST /api/sessions/{id}/added`, by the session's own id, once the session has taken them: a driven session's inbox
+holding them (SESS3), or a conversation told them (`Chat.Say` true). The service judges which ask, if any (DRIFT1a),
+through `ServiceClient.AddedToSessionAsync`. Choices:
+- **Never awaited by the page's answer**, which stays whether the session took the message. `kept: false` (a session on
+  no ask), a refusal, a host without the door and one that does not answer change nothing the person is told, and the
+  words are still in the session's own record.
+- **Only once taken.** A message the session no longer takes (its inbox closed as it ends) reached nobody, so nothing is
+  kept for it.
+- **The words alone**: not its files, and not where the person is (HELP1b's preface), which is Daoris's framing.
+- **An intake still takes no messages** (INT4h): its line is refused before either door. So the `Chat.Say` path posts
+  for a conversation, which the service answers `kept: false` unless its record is on an ask.
+
+Proof: `DriverModuleAddedTests` (a held message posts once, with its session's id and its words; one its inbox no longer
+takes posts nothing; `kept: false`, a refusal, a failure and an unreachable service leave it sent), seen failing on a
+client that posted nothing; `SessionAddedTests` (the body, `kept` and its sentence, a refusal, a host without the door).
+Not covered: no test drives the `Chat.Say` path, since a conversation that takes a message needs a real process; nothing
+is drawn, so there is no look.

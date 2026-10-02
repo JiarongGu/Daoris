@@ -253,6 +253,31 @@ public sealed class ServiceClient : IDisposable
     }
 
     /// <summary>
+    /// Tell the service what the person added to a running session (DRIFT1a2, D133 §1), which keeps it on the ask that
+    /// session's work is for: the words verbatim, by the session's own id. Whether it was kept is an answer, never an
+    /// exception: <c>kept: false</c> is a session on no ask, with the service's sentence, and a refusal or a host without
+    /// the door (one older than DRIFT1a, or a shared one) is false with a sentence saying which.
+    /// </summary>
+    public async Task<(bool Kept, string Message)> AddedToSessionAsync(string id, string text, CancellationToken ct = default)
+    {
+        var body = WriteJson(writer =>
+        {
+            writer.WriteStartObject();
+            writer.WriteString("text", text);
+            writer.WriteEndObject();
+        });
+        var (ok, status, payload, root) = await PostJsonAsync($"/api/sessions/{Uri.EscapeDataString(id)}/added", body, ct)
+            .ConfigureAwait(false);
+        if (root is not { } answered)
+        {
+            return (false, $"the service at {_base} has no door for what the person adds ({status}) — is it older than this driver?");
+        }
+
+        if (!ok) return (false, Text(answered, "error") ?? payload);
+        return (Flag(answered, "kept"), Text(answered, "message") ?? "");
+    }
+
+    /// <summary>
     /// Where this machine's claim on a quest stands (D68 §4): none, held, unconfirmed or lost — how the
     /// driver learns that a session it is running took a quest another machine took first.
     /// </summary>
@@ -462,6 +487,34 @@ public sealed class ServiceClient : IDisposable
         ];
     }
 
+    /// <summary>One ask as the service writes it — the reader the routes use, for the tests that hold its fields.</summary>
+    internal static AskView ReadAskJson(string json)
+    {
+        using var document = JsonDocument.Parse(json);
+        return ReadAsk(document.RootElement);
+    }
+
+    /// <summary>
+    /// The person's words on an ask (DRIFT1a), oldest first, or null where the host answered none — a host from before
+    /// them, which is never read as the person having said nothing. A word without its kind, its words or a moment that
+    /// reads is passed over, as the service passes over a kind it does not know: never a failed read of the ask.
+    /// </summary>
+    private static IReadOnlyList<AskWordView>? ReadWords(JsonElement ask)
+    {
+        if (!ask.TryGetProperty("words", out var words) || words.ValueKind != JsonValueKind.Array) return null;
+        return
+        [
+            .. words.EnumerateArray()
+                .Select(word => (Kind: Text(word, "kind"), Said: Text(word, "text"), At: Moment(word, "at"), Word: word))
+                .Where(word => word.Kind is { Length: > 0 } && word.Said is not null && word.At is not null)
+                .Select(word => new AskWordView(word.Kind!, word.Said!, word.At!.Value, Text(word.Word, "session"), Text(word.Word, "quest"))),
+        ];
+    }
+
+    /// <summary>An ISO 8601 moment the service wrote, or null where it wrote none that reads.</summary>
+    private static DateTimeOffset? Moment(JsonElement element, string name) =>
+        DateTimeOffset.TryParse(Text(element, name), CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var at) ? at : null;
+
     private static AskView ReadAsk(JsonElement ask) =>
         new(
             Text(ask, "id") ?? "", Text(ask, "workspace") ?? "", Text(ask, "sentence") ?? "",
@@ -483,6 +536,9 @@ public sealed class ServiceClient : IDisposable
                 ? [.. proposal.EnumerateArray().Select(match => Text(match, "repository")).OfType<string>()]
                 : [],
             Deletable = Flag(ask, "deletable"),
+            // The person's words (DRIFT1a), which every session on the ask is handed (DRIFT1b).
+            Words = ReadWords(ask),
+            WordsKeptFrom = Moment(ask, "wordsKeptFrom"),
         };
 
     /// <summary>A field that is true, or false when it is anything else or absent.</summary>

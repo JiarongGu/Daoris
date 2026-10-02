@@ -86,6 +86,13 @@ public sealed record SessionTarget(
     public string? PersonSaid { get; init; }
 
     /// <summary>
+    /// The person's words on the ask this quest was asked by (DRIFT1b, D133 §2), read for this start: every one, newest
+    /// last, beneath the quest, on a first start, a resume and a carry-on alike, so what the person said outlives the hops
+    /// a quest makes across cut-offs and accounts. Null for a quest no ask asked, and the instruction reads as it did.
+    /// </summary>
+    public AskWords? Words { get; init; }
+
+    /// <summary>
     /// Whether the session before was stopped by the person, who has since released the quest from that stop with *Try
     /// again* (SESSUX1b): the carry-on is told so, rather than that the session before was cut off.
     /// </summary>
@@ -184,7 +191,7 @@ public static class TargetPrompt
         # {target.Title}
 
         {target.Body}
-        {Carried(target)}
+        {Carried(target)}{Words(target)}
         First take the quest (respond to `#{target.QuestId}` with `take`), then do the work inside this
         repository under its own doctrine and gates, then close it: `done` when it has landed, or
         `decline` with the reason — the reason is the part the asker can act on. If the quest is already
@@ -212,7 +219,7 @@ public static class TargetPrompt
         # {target.Title}
 
         {target.Body}
-        {Carried(target)}
+        {Carried(target)}{Words(target)}
         An earlier session on this quest needed something only `{answered.To}` could answer, asked it, and
         waited. What it did is in this tree — read its commits before you go on. The question was quest
         `#{answered.Id}`, "{answered.Title}", and {Answer(answered)}
@@ -243,7 +250,7 @@ public static class TargetPrompt
         # {target.Title}
 
         {target.Body}
-        {Carried(target)}
+        {Carried(target)}{Words(target)}
         {Before(target, cutOff)} What it did is in this tree — any commits it made are on this branch,
         and {InFlight(target)}{LastPlan(target)}{LastWords(target)}{AccountChanged(target)}
 
@@ -263,13 +270,27 @@ public static class TargetPrompt
     /// answered (STANDDOWN2) — in their words, which are the reason this session exists — or stopped by the
     /// person, who has since released the quest (SESSUX1b).
     /// </summary>
+    /// <remarks>
+    /// The ask's words are the source of what the person said (DRIFT1b, D133 §2): an answer quoted among them above is
+    /// pointed to rather than quoted twice. One that is not there, on a quest no ask asked, an answer given before the
+    /// words were kept, or words that could not be read, is quoted here as it always was.
+    /// </remarks>
     private static string Before(SessionTarget target, string record) => target.PersonSaid is { } said
-        ? $"An earlier session on this quest stopped to ask the person, and they answered:\n\n> "
-          + said.ReplaceLineEndings("\n> ") + $"\n\nIts record reads: {record}"
+        ? (AskWordsText.Quotes(target.Words, said)
+            ? "An earlier session on this quest stopped to ask the person, and they answered: their answer is quoted among "
+              + $"their words above.\n\nIts record reads: {record}"
+            : $"An earlier session on this quest stopped to ask the person, and they answered:\n\n> "
+              + said.ReplaceLineEndings("\n> ") + $"\n\nIts record reads: {record}")
         : target.Released
             ? "An earlier session on this quest was stopped by the person before it closed it, and they have since released "
               + $"the quest for you to carry on. Its record reads: {record}"
             : $"An earlier session on this quest was cut off before it closed it: {record}";
+
+    /// <summary>
+    /// The person's words on the ask the quest was asked by, beneath the quest (DRIFT1b, D133 §2), or that they could not be
+    /// read; nothing for a quest no ask asked.
+    /// </summary>
+    private static string Words(SessionTarget target) => AskWordsText.Beneath(target.Words, target.QuestId);
 
     /// <summary>The tree's uncommitted changes as the driver read them, or that there were none.</summary>
     private static string InFlight(SessionTarget target) => target.InFlight.Count == 0

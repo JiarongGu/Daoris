@@ -1,0 +1,103 @@
+using System.Net;
+using System.Text;
+using System.Text.Json;
+using Daoris.Driver;
+
+namespace Daoris.Desktop.Modules.Tests;
+
+/// <summary>
+/// DRIFT1a2 (D133 §1): a message the person types into a running session reaches its ask. Once the session takes it (a
+/// driven session's inbox holds it, or a conversation is told it), <c>SESSION_INPUT</c> posts its words to the service's
+/// <c>/api/sessions/{id}/added</c> with the session's own id, and the service keeps them on the ask that session's work is
+/// for. Whatever the service answers, the person's message has reached its session: <c>kept: false</c>, a refusal and a
+/// host that does not answer change nothing the page is told.
+/// </summary>
+public sealed class DriverModuleAddedTests : DriverModuleBridge
+{
+    [Fact]
+    public async Task A_message_a_driven_sessions_inbox_holds_is_posted_once_with_its_sessions_id()
+    {
+        var standIn = new StandIn(_ => (HttpStatusCode.OK, """{"kept":true,"message":"Kept on ask `#a1`."}"""));
+        var loop = Loop();
+        await loop.ComeUpAsync(new ServiceClient("http://stand-in", null, new HttpClient(standIn)));
+        var inbox = loop.Processes.OpenInbox("s1");
+
+        var sent = await AnswerAsync(new DriverModule(Bus, loop), "SESSION_INPUT", new { id = "s1", text = "use the shared report module" });
+
+        Assert.True(sent.GetProperty("sent").GetBoolean());
+        Assert.Equal("use the shared report module", inbox.TakeOrClose()?.Text);
+        await UntilAsync(() => standIn.Count > 0);
+        await Task.Delay(200);
+        var (path, body) = Assert.Single(standIn.Heard);
+        Assert.Equal("/api/sessions/s1/added", path);
+        using var words = JsonDocument.Parse(body);
+        Assert.Equal("use the shared report module", words.RootElement.GetProperty("text").GetString());
+    }
+
+    [Fact]
+    public async Task A_message_the_session_no_longer_takes_posts_nothing()
+    {
+        var standIn = new StandIn(_ => (HttpStatusCode.OK, """{"kept":true,"message":"Kept."}"""));
+        var loop = Loop();
+        await loop.ComeUpAsync(new ServiceClient("http://stand-in", null, new HttpClient(standIn)));
+        // Its inbox closes as the session ends: what the person typed then reached nobody, so nothing is kept for it.
+        loop.Processes.OpenInbox("s1").TakeOrClose();
+
+        var sent = await AnswerAsync(new DriverModule(Bus, loop), "SESSION_INPUT", new { id = "s1", text = "too late" });
+
+        Assert.False(sent.GetProperty("sent").GetBoolean());
+        await Task.Delay(200);
+        Assert.Equal(0, standIn.Count);
+    }
+
+    [Theory]
+    [InlineData(HttpStatusCode.OK, """{"kept":false,"message":"Session `s1` works quest `#q1`, which `engine` asked rather than an ask."}""")]
+    [InlineData(HttpStatusCode.NotFound, """{"error":"No session `s1` of this machine's."}""")]
+    [InlineData(HttpStatusCode.InternalServerError, "")]
+    public async Task Whatever_the_service_answers_the_message_still_reached_its_session(HttpStatusCode status, string body)
+    {
+        var standIn = new StandIn(_ => (status, body));
+        var loop = Loop();
+        await loop.ComeUpAsync(new ServiceClient("http://stand-in", null, new HttpClient(standIn)));
+        var inbox = loop.Processes.OpenInbox("s1");
+
+        var sent = await AnswerAsync(new DriverModule(Bus, loop), "SESSION_INPUT", new { id = "s1", text = "the level file moved" });
+
+        Assert.True(sent.GetProperty("sent").GetBoolean());
+        await UntilAsync(() => standIn.Count > 0);
+        Assert.Equal("the level file moved", inbox.TakeOrClose()?.Text);
+    }
+
+    [Fact]
+    public async Task A_service_that_cannot_be_reached_leaves_the_message_with_its_session()
+    {
+        var standIn = new StandIn(_ => throw new HttpRequestException("refused"));
+        var loop = Loop();
+        await loop.ComeUpAsync(new ServiceClient("http://stand-in", null, new HttpClient(standIn)));
+        var inbox = loop.Processes.OpenInbox("s1");
+
+        var sent = await AnswerAsync(new DriverModule(Bus, loop), "SESSION_INPUT", new { id = "s1", text = "the level file moved" });
+
+        Assert.True(sent.GetProperty("sent").GetBoolean());
+        await UntilAsync(() => standIn.Count > 0);
+        Assert.Equal("the level file moved", inbox.TakeOrClose()?.Text);
+    }
+
+    /// <summary>A service standing in: each request recorded by its path and body, then answered.</summary>
+    private sealed class StandIn(Func<HttpRequestMessage, (HttpStatusCode Status, string Body)> answer) : HttpMessageHandler
+    {
+        private readonly List<(string Path, string Body)> _heard = [];
+
+        public int Count { get { lock (_heard) return _heard.Count; } }
+
+        public IReadOnlyList<(string Path, string Body)> Heard { get { lock (_heard) return [.. _heard]; } }
+
+        protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct)
+        {
+            var body = request.Content is null ? "" : await request.Content.ReadAsStringAsync(ct);
+            lock (_heard) _heard.Add((request.RequestUri!.AbsolutePath, body));
+            var (status, said) = answer(request);
+            return new HttpResponseMessage(status) { Content = new StringContent(said, Encoding.UTF8, "application/json") };
+        }
+    }
+}
