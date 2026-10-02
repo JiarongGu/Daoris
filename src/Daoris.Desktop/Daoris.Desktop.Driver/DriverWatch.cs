@@ -95,6 +95,13 @@ public sealed class DriverWatch(
         // The last choices that read, for the wait: a torn file keeps the pace it had.
         var config = DriverConfig.Empty;
 
+        // Once, as the loop starts (WSSETUP5, D124 §3.1): every repository with a checkout here registered from its line,
+        // since a line the person moved outside Daoris is read nowhere else. Beside the first looks rather than before
+        // them: a workspace's lines are read with git, seconds of it, and no start should wait on that. What it says
+        // joins the next look's report; a pass the service did not answer is tried again at the next look.
+        Task<IReadOnlyList<string>?>? following = null;
+        var followed = false;
+
         // What the sessions run on: the loop's own token, and cancelled by the loop itself when a failure
         // ends it, so no session outlives the loop that watches it (DEV3).
         using var sessions = CancellationTokenSource.CreateLinkedTokenSource(ct);
@@ -118,6 +125,8 @@ public sealed class DriverWatch(
                         swept = true;
                     }
 
+                    if (!followed) following ??= FollowEveryLineAsync(config, ct);
+
                     var report = await new Driver(
                             service, config, AdapterSet.Built(), home, processes, sync, output, _harnesses, usage, hooks, events, browser,
                             Running)
@@ -127,6 +136,17 @@ public sealed class DriverWatch(
                     {
                         report = report with { Events = [.. sweep, .. report.Events] };
                         sweep = [];
+                    }
+
+                    if (!followed && following is { IsCompleted: true } done)
+                    {
+                        var said = done.IsCompletedSuccessfully ? done.Result : null;
+                        following = null;
+                        if (said is not null)
+                        {
+                            followed = true;
+                            if (said.Count > 0) report = report with { Events = [.. report.Events, .. said] };
+                        }
                     }
 
                     await onReport(report, config).ConfigureAwait(false);
@@ -172,8 +192,34 @@ public sealed class DriverWatch(
         finally
         {
             await Running.SettledAsync().ConfigureAwait(false);
+            // The start's pass ends on the loop's own token; waited for, so nothing it writes outlives the loop.
+            if (following is not null) await following.ContinueWith(_ => { }, TaskScheduler.Default).ConfigureAwait(false);
         }
     }
+
+    /// <summary>
+    /// Every repository with a checkout here, followed from its line (WSSETUP5): what the pass says, for a look's report,
+    /// or null where the service did not answer, so the next look tries again. Started on the pool, so the look beside it
+    /// does not wait on its git.
+    /// </summary>
+    private Task<IReadOnlyList<string>?> FollowEveryLineAsync(DriverConfig config, CancellationToken ct) =>
+        Task.Run<IReadOnlyList<string>?>(async () =>
+        {
+            try
+            {
+                var report = await RegistrationFollow.FollowAsync(new RegistrationWorld(service, home, config), only: null, ct)
+                    .ConfigureAwait(false);
+                return
+                [
+                    .. report.Followed.Select(RegistrationFollow.EventLine).OfType<string>(),
+                    .. report.Refresh is { } refresh ? [$"registry  the index was not read again after registering: {refresh}"] : Array.Empty<string>(),
+                ];
+            }
+            catch (Exception error) when (error is DriverException or HttpRequestException or System.Text.Json.JsonException)
+            {
+                return null;
+            }
+        }, CancellationToken.None);
 
     /// <summary>The standing choices, or the driver's own sentence about why they could not be read.</summary>
     private static DriverConfig Load(string path)

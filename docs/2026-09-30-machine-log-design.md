@@ -61,6 +61,7 @@ nested. A reader skips a line it cannot parse and a field it does not know.
 | `turn.ended` | desktop | session, stopReason, turnMs, input, cacheRead, cacheWrite, output, calls, used, size | how long a turn takes, how it ends, and what it consumed: its tokens as METER1 splits them, its tool calls, and its context against the window (WSSETUP11) |
 | `session.parked` | desktop, driver | session, kind, repository, workspace | a session that stopped to ask the person (D83): the owner's complaint, counted per week by workspace (WSSETUP11, D124 §7.3) |
 | `session.ended` | desktop | session, state, seconds | how it finished |
+| `registry.followed` | desktop, driver | repository, outcome | a registration followed from a repository's line, by a word from a fixed list (`registered`, `unchanged`, `declares-nothing`, `not-set-up`, `no-line`, `unreadable`, `lanes-unreadable`, `worktree`, `no-checkout`, `not-on-registry`, `refused`), never the sentence its row says: whether set-ups reach the registry once they land (WSSETUP5, D124 §3.4) |
 | `refused` | desktop | code, request | a refusal the person met, by its catalogue code (REFUSE1) |
 | `permission.refused` | desktop | session, adapter, tool, kind, by | a permission a session's harness would have asked a person for, refused because nobody is at the prompt (UNBLOCK5, D122 §3.10): asks per session, before and after a repository declares its safe work |
 | `preview.opened` | desktop | session, path | a file read for its preview (D111), whether the side bar's reading room is used (LEFT2) |
@@ -169,6 +170,12 @@ tests (`SessionLogTests`, `AttentionTests`, `SetupQuestsTests`):
 - **Not covered by a fast test**: the driver's open passing `setup` is reached only by a real tick (the `Process`
   half). Its decision, `SetupQuests.IsSetup`, and the client and log beneath it are held in the fast half; the
   first real set-up is LAYOUT7's, whose family rehearsal runs one.
+
+**As built (WSSETUP5): `registry.followed`** (D124 §3.4), measured against the code and its tests (`SessionLogTests`,
+`RegistrationFollowTests`): every follow goes through the service client's registry door, which raises what it came
+to, and `SessionLog` writes it in the shell and the headless loop alike; `daoris-driver register` and a terminal's
+`trees land` or `trees sync` write it into the host's own log the same way. One line per repository per follow: its
+name and the outcome's word, never the sentence its row says, a path, or a commit.
 
 **As built (PLUGUI1d): the `plugin.*` events** (D119 §4.2), measured against the code and its tests
 (`HookSetLogTests`, `PluginHealthTests`):

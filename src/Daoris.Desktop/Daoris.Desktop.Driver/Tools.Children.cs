@@ -23,6 +23,9 @@ namespace Daoris.Driver;
 /// tool is managed or a file. Any other name is the caller's own resolver's.</item>
 /// <item><b>Read from the file at each start</b>, and never written onto this process's own environment: a variable
 /// rewritten while sessions start is the trap the modules' serialized tests already know (§2.4).</item>
+/// <item><b>An install's <c>app/bin/</c> beside the home comes first of all</b> (WSSETUP3, D124 §1.3): the doctrine
+/// tool's launchers, so every child finds <c>daoris</c> by its bare name. It is Daoris's own program, not a tool, so
+/// no file chooses for it. A home with no install beside it builds what it built before, byte for byte.</item>
 /// </list>
 /// <para><c>GIT_CONFIG_GLOBAL</c>, the other variable §2.4 names, is TOOLS6's: it joins
 /// <see cref="ChildEnvironment"/> with the git file it names.</para>
@@ -31,6 +34,25 @@ public static partial class Tools
 {
     /// <summary>The variable a child's <c>PATH</c> is. Windows reads it in any case, and a start's environment there is case-blind.</summary>
     public const string PathVariable = "PATH";
+
+    /// <summary>
+    /// Where an install carries the doctrine tool's launchers, from its root (D124 §1.2, WSSETUP2): beside the
+    /// application, in <c>app/</c>. Twins: the CLI's <c>INSTALL_BIN</c>, the publish's <c>CLI_BIN</c>, which lays them
+    /// out; <c>desktop-publish.test.ts</c> reads all three.
+    /// </summary>
+    public static readonly IReadOnlyList<string> InstallBinLayout = ["app", "bin"];
+
+    /// <summary>
+    /// The install's launchers' folder beside the home, where it is a folder: in an install the home is <c>data/</c>,
+    /// its sibling <c>app/bin/</c>. Null for a home with no install beside it, and for an <c>app/bin</c> that is not a
+    /// folder.
+    /// </summary>
+    public static string? InstallBin(string home)
+    {
+        var full = Path.TrimEndingDirectorySeparator(Path.GetFullPath(home));
+        var bin = Path.Combine([Path.GetDirectoryName(full) ?? full, .. InstallBinLayout]);
+        return Directory.Exists(bin) ? bin : null;
+    }
 
     /// <summary>
     /// The folders one tool puts first on a child's <c>PATH</c> (§2.4): a managed version's, or a named file's; none
@@ -55,21 +77,22 @@ public static partial class Tools
     }
 
     /// <summary>
-    /// The <c>PATH</c> a child of Daoris starts with (§2.4): every managed or named tool's folders, in the declared
-    /// order, then <paramref name="inherited"/>. Null when no tool puts a folder there, so the child's is the inherited
-    /// one exactly. An empty inherited <c>PATH</c> adds no empty folder.
+    /// The <c>PATH</c> a child of Daoris starts with (§2.4): the install's launchers beside the home where there is one
+    /// (<see cref="InstallBin"/>), then every managed or named tool's folders, in the declared order, then
+    /// <paramref name="inherited"/>. Null when nothing puts a folder there, so the child's is the inherited one exactly.
+    /// An empty inherited <c>PATH</c> adds no empty folder.
     /// </summary>
     public static string? ChildPath(ToolsRead read, string home, string? inherited)
     {
-        var folders = Declared.SelectMany(tool => Folders(read, home, tool.Id)).ToList();
+        List<string> folders = [.. InstallBin(home) is { } bin ? [bin] : Array.Empty<string>(), .. Declared.SelectMany(tool => Folders(read, home, tool.Id))];
         if (folders.Count == 0) return null;
         if (!string.IsNullOrEmpty(inherited)) folders.Add(inherited);
         return string.Join(Path.PathSeparator, folders);
     }
 
     /// <summary>
-    /// What a child's environment takes over the one it inherited (§2.4): <see cref="PathVariable"/> when a tool puts
-    /// a folder first, and nothing when every tool is the system's.
+    /// What a child's environment takes over the one it inherited (§2.4): <see cref="PathVariable"/> when the install or
+    /// a tool puts a folder first, and nothing when there is no install beside the home and every tool is the system's.
     /// </summary>
     public static IReadOnlyDictionary<string, string> ChildEnvironment(ToolsRead read, string home, string? inheritedPath)
     {

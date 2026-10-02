@@ -4,8 +4,8 @@
 > person a question its own repository's notes and code could answer. The owner's diagnosis is that the
 > workspace lacks knowledge: *"the repo should be registered and apply the doctrine and also initialize the
 > knowledge"*. This is the contract for the WSSETUP rows, and its decision is **D124**. Status: **designed;
-> WSSETUP2, WSSETUP4, WSSETUP8, WSSETUP9, WSSETUP11, LAYOUT7 as amended and LAYOUT7a built** (§1.2, §1.4, §5, §6.1,
-> §7.3, §2; D124's notes say what each build settled), the rest not.
+> WSSETUP2, WSSETUP3, WSSETUP4, WSSETUP5, WSSETUP8, WSSETUP9, WSSETUP11, LAYOUT7 as amended and LAYOUT7a built**
+> (§1.2, §1.3, §1.4, §3, §5, §6.1, §7.3, §2; D124's notes say what each build settled), the rest not.
 > It builds on the set-up quest of `docs/2026-10-01-agent-layout-design.md` §6 (D117: LAYOUT7, LAYOUT8, LAYOUT10),
 > the standard of `docs/2026-10-01-development-documents-design.md` (D122) and the tools' environment of
 > `docs/2026-10-01-tools-design.md` (D121, TOOLS5), and it amends D117 §6 where §11 says. Read with **D13**,
@@ -142,6 +142,11 @@ note has the rest.*
   its version, and refuses with none, or one older (§2.1).
 - **A person's own terminal outside Daoris is unchanged.** Inside Daoris's terminal panel (CONSOLE4), `daoris` is
   the install's, as it is for a session.
+
+*As built (WSSETUP3): "where it exists" is read as the home's sibling `app/bin/` being a folder: in an install the home
+is `data/`, so it is the install's own. Nothing else names it, so no file can point a child at another `daoris`. The
+press's facts were LAYOUT7's already (`SetupTools`: `node` and its version, `daoris` and what it answered), read on the
+same `PATH`, so they now find the install's. D124's note has the rest.*
 
 ### 1.4 The version pin, and two versions on one machine
 
@@ -364,6 +369,14 @@ on another branch shows its older documents until it moves.
 
 Each outcome writes `registry.followed {repository, outcome}` to the machine log (D94): a name and a word from a
 fixed list, never a path or a summary.
+
+*As built (WSSETUP5): "after Daoris moves a line" is a record under the home, `lines-moved.json`, written where the
+line moves (`SessionTrees`' merge and its fast-forward), whichever door pressed it; the next look follows each moved
+line before it reads the registry, and a terminal's `trees land` or `trees sync` follows at once. "Once at start" is a
+watch's (the shell's loop and `daoris-driver drive`), beside its first looks. A registration is sent only where the row
+holds something else, and "the declaration left as the row held it" sends the row's own declaration back, since the
+registry door replaces it whole. Each outcome's sentence is kept for the row in `registry-followed.json`. D124's note
+has the rest.*
 
 ### 3.5 Why the driver, and not the session or `connect`
 

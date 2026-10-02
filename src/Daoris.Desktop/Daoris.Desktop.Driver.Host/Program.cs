@@ -47,6 +47,12 @@ using Daoris.Driver;
 //                 exact verbs; --plan prints what was read, the rule, the landing, the agent and the quest's text,
 //                 and publishes nothing.
 //
+//   register [--repository <name>]
+//                 register each repository with a checkout here, or the one named, from what its LINE declares
+//                 (WSSETUP5, D124 §3): daoris.json and daoris.lanes.json read as git objects, sent as `connect` would
+//                 send them, and only where the row holds something else. Each says what it came to. A start, and a
+//                 line Daoris moves (a merge landing, `trees sync`'s fast-forward), follow on their own.
+//
 //   quest delete <id>
 //                 delete a quest made by mistake (D95): only one nobody has started on — open, with no
 //                 session record naming it — goes, and the service's refusal says what to do instead.
@@ -135,6 +141,13 @@ try
     if (args is ["setup", .. var setupArgs])
     {
         return await Daoris.Driver.Host.SetupConsole.RunAsync(setupArgs);
+    }
+
+    // Registration followed from each line when the person asks (WSSETUP5, D124 §3.1, D50): the repository row's
+    // *Refresh* is the other door. A start and a line Daoris moves follow on their own.
+    if (args is ["register", .. var registerArgs])
+    {
+        return await Daoris.Driver.Host.RegisterConsole.RunAsync(registerArgs, log);
     }
 
     // Deleting a quest made by mistake (D95, D50): the quest drawer's Delete is the other door.
