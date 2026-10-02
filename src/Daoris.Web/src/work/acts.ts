@@ -10,11 +10,11 @@ import type { SessionWhere } from './SessionRow';
 
 /** Every act a session's doors offer, by the name `sessionActs.ts` runs it by. Finish and Decline… stay its card's. */
 export type SessionActId =
-  | 'answer' | 'stop' | 'retry' | 'review' | 'openFolder' | 'terminal' | 'detach' | 'archive' | 'unarchive' | 'copy';
+  | 'answer' | 'stop' | 'retry' | 'review' | 'openFolder' | 'terminal' | 'detach' | 'archive' | 'unarchive' | 'delete' | 'copy';
 
 /** §3.1's order, the order a menu lists them in. */
 export const ACT_ORDER: readonly SessionActId[] = [
-  'answer', 'stop', 'retry', 'review', 'openFolder', 'terminal', 'detach', 'archive', 'unarchive', 'copy',
+  'answer', 'stop', 'retry', 'review', 'openFolder', 'terminal', 'detach', 'archive', 'unarchive', 'delete', 'copy',
 ];
 
 /**
@@ -31,6 +31,8 @@ export const ACT_LOOK: Record<SessionActId, { label: string; icon: IconName; dan
   detach: { label: 'work.monitor.detach', icon: 'external' },
   archive: { label: 'work.act.archive', icon: 'archive' },
   unarchive: { label: 'work.act.unarchive', icon: 'unarchive' },
+  // SESSUX1f: the bin, since nothing brings it back; an archive is the box.
+  delete: { label: 'work.act.delete', icon: 'remove', danger: true },
   copy: { label: 'work.rail.menu.copy', icon: 'copy' },
 };
 
@@ -68,6 +70,8 @@ export function folderOf({ session, root, where }: ActFacts): string | null {
  *   whose stop holds its quest. **Review** where there is work to read: its tree, its landing, or a place in To review.
  * - **Open folder** and **Open a terminal here** where its folder is on this machine (`folderOf`).
  * - **Archive** where the reader placed it in Ended, **Unarchive** wherever its mark stands, **Copy session ID** always.
+ * - **Delete…** where the reader says the delete would be taken (SESSUX1f, D126 §5.4): a conversation that served no
+ *   quest, its record one the ledger would delete, its tree and landing no longer here. D95's way: offered only there.
  * - **A teammate's record** (SYNC4) is offered only what reaches no process: the archive marks, which are this machine's
  *   (§5.2), and its id.
  */
@@ -91,6 +95,7 @@ export function offeredActs(facts: ActFacts, door: 'row' | 'header'): SessionAct
       offered.add('terminal');
     }
     offered.add('detach');
+    if (grouping?.deletable) offered.add('delete');
   }
   if (grouping?.group === 'ended' && !grouping.archived) offered.add('archive');
   if (grouping?.archived) offered.add('unarchive');

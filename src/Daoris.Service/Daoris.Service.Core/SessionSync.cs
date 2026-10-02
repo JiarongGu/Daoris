@@ -46,7 +46,12 @@ public static class SessionSync
                     // A limit names no account, so it goes up with the record (TOOL4c).
                     c.Session.Limit))
                 .ToList();
-            if (feed.Count > 0) await remote.PushSessionsAsync(feed, ct).ConfigureAwait(false);
+            if (feed.Count > 0)
+            {
+                await remote.PushSessionsAsync(feed, ct).ConfigureAwait(false);
+                // The team holds these now (SESSUX1f): a delete here would leave their copy, so it is refused.
+                await store.MarkPushedAsync(changed.Where(c => joined.Contains(c.Session.Repository)).Select(c => c.Session.Id), ct).ConfigureAwait(false);
+            }
 
             // Past everything examined, sent or not: a record of a repository that was not joined when
             // it was written stays home, as it was when it was made.

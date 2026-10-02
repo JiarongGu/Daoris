@@ -416,6 +416,25 @@ describe("a row's acts", () => {
     expect(act).toHaveBeenCalledWith('archive', 's1a2b3c4');
   });
 
+  /** SESSUX1f (D126 §5.4): a conversation's ⋯ offers *Delete…*, named once, and reports it for the frame to ask. */
+  it('offers Delete… through the act it reports', async () => {
+    const act = vi.fn();
+    render(
+      <SessionRow
+        session={session({ quest: null, kind: 'chat', state: 'completed' })}
+        grouping={placed({ group: 'ended', shown: 'completed', deletable: true })}
+        acts={['archive', 'delete', 'copy']} onAct={act}
+      />,
+    );
+
+    const user = userEvent.setup();
+    screen.getByRole('button', { name: /^more for / }).focus();
+    await user.keyboard('{Enter}');
+    expect(screen.getAllByRole('menuitem').map((item) => item.textContent)).toEqual(['Archive', 'Delete…', 'Copy session ID']);
+    await user.click(screen.getByRole('menuitem', { name: 'Delete…' }));
+    expect(act).toHaveBeenCalledWith('delete', 's1a2b3c4');
+  });
+
   /** SESSUX1b's hold, said where the row is (D126 §2.2): a stop that holds its quest says so, with how it moves again. */
   it('says a stop holds its quest here until you try again, and why in its tip', () => {
     render(<SessionRow session={session({ state: 'stopped' })} grouping={placed({ group: 'ended', shown: 'stopped', holdsQuest: true })} />);

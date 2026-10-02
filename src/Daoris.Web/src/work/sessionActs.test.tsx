@@ -127,4 +127,37 @@ describe('the acts on a session', () => {
     await waitFor(() => expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'STOP_SESSION', { payload: { id: 's1a2b3c4' } }));
     await waitFor(() => expect(notify).toHaveBeenCalledWith('session s1a2b3c4 is being stopped — the record will say the person ended it.'));
   });
+
+  /** SESSUX1f (D126 §5.4): Delete… is the frame's to ask (it asks once under the header), and its second press is the owner's. */
+  it('hands Delete… to the frame, and its second press deletes by the id, saying so, and forgets the draft', async () => {
+    const doors = { delete: vi.fn() };
+    const { result: withDoor } = acts(doors);
+    withDoor.current.run('delete', { session: session({ quest: null, kind: 'chat', state: 'completed' }) });
+    expect(doors.delete).toHaveBeenCalledWith('s1a2b3c4');
+    expect(acts().result.current.can('delete')).toBe(false);
+
+    window.localStorage.setItem('daoris.drafts', JSON.stringify([['c0ffee00', 'half a thought'], ['other000', 'kept']]));
+    invoke.mockImplementation(async () => ({ deleted: 'c0ffee00', removed: ['record', 'conversation'] }));
+    const { result, notify } = acts();
+    const done = vi.fn();
+
+    act(() => result.current.deleteNow(session({ id: 'c0ffee00', quest: null, kind: 'chat', state: 'completed' }), done));
+
+    await waitFor(() => expect(done).toHaveBeenCalledOnce());
+    expect(invoke).toHaveBeenCalledWith('DAORIS.DRIVER', 'SESSION_DELETE', { payload: { id: 'c0ffee00' } });
+    expect(notify).toHaveBeenCalledWith('Deleted c0ffee00: its record, and its words, transcript and files on this machine, are gone.');
+    expect(JSON.parse(window.localStorage.getItem('daoris.drafts') ?? '[]')).toEqual([['other000', 'kept']]);
+  });
+
+  it('says a delete the host refused in the catalogue’s words, and keeps the ask open', async () => {
+    invoke.mockImplementation(async () => { throw refusal('SESSION_SERVED_QUEST', { session: 's1a2b3c4', quest: 'abc123' }); });
+    const { result, notify } = acts();
+    const done = vi.fn();
+
+    act(() => result.current.deleteNow(session({ state: 'completed' }), done));
+
+    await waitFor(() => expect(notify).toHaveBeenCalledWith(
+      's1a2b3c4 worked on #abc123, and its record is that work’s, so it was not deleted. Archive it instead.', 'error'));
+    expect(done).not.toHaveBeenCalled();
+  });
 });

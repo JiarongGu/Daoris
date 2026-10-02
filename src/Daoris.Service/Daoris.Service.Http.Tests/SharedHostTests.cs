@@ -257,7 +257,10 @@ public sealed class SharedHostTests(SharedHost host) : IClassFixture<SharedHost>
         var routes = host.Routes();
         Assert.DoesNotContain(("DELETE", "/api/quests/{id}"), routes);
         Assert.DoesNotContain(("DELETE", "/api/asks/{id}"), routes);
-        foreach (var path in new[] { $"/api/quests/{id}", $"/api/asks/{id}" })
+        // SESSUX1f (D126 §5.4): nor a session's, nor its judgement; a delete is a person's on their own machine.
+        Assert.DoesNotContain(("DELETE", "/api/sessions/{id}"), routes);
+        Assert.DoesNotContain(("GET", "/api/sessions/{id}/deletable"), routes);
+        foreach (var path in new[] { $"/api/quests/{id}", $"/api/asks/{id}", "/api/sessions/ab12cd34" })
         {
             var refused = await host.DeleteAsync(path, key: key);
             Assert.True(refused.Status is 404 or 405, $"DELETE {path} answered {refused.Status}");

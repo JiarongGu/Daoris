@@ -381,6 +381,11 @@ public sealed class DriverLoop(
         Chat = chat;
         await ComeUpAsync(service).ConfigureAwait(false);
 
+        // Every loop on the home watches the requests a terminal's `sessions stop|finish|decline` writes (SESSUX1g, D126
+        // §7.1): one for a session this registry runs, a conversation or a driven session, is acted on as the screen's
+        // route would act. Before the home's lock, so a conversation is reached while a terminal's loop drives the home.
+        await using var requests = new SessionRequestWatch(homeDirectory, Processes, () => Service);
+
         // A plugin's word goes to the console under `plugin:<id>` (D49 §2, D64 §4) — the same buffer
         // a session's lines and a harness action's lines land in, readable only over this bridge.
         // What the set does with each plugin goes to the machine log without its words, and into the loop's

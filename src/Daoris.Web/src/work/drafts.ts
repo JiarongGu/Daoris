@@ -52,6 +52,15 @@ export function draftOf(all: Drafts, session: string): string {
   return all.find(([held]) => held === session)?.[1] ?? '';
 }
 
+/**
+ * Forget one session's draft (SESSUX1f, D126 §5.1): a deleted conversation's words are gone from this machine, and an
+ * unsent draft is the viewer's copy of some of them.
+ */
+export function forgetDraft(session: string): void {
+  const all = readDrafts();
+  if (all.some(([held]) => held === session)) keep(withDraft(all, session, ''));
+}
+
 function keep(all: Drafts): void {
   // Not keeping it across a reload is a lesser failure than not taking the keystroke.
   store(DRAFTS, JSON.stringify(all));

@@ -1,11 +1,12 @@
 import { useTranslation } from 'react-i18next';
 import type { Session } from '../api';
 import {
-  retryNotice, stopNotice, useArchiveSessions, useOpenSessionFolder, useOpenWindow, useResolveSession, useRetryQuest,
-  useStopSession,
+  retryNotice, stopNotice, useArchiveSessions, useDeleteSession, useOpenSessionFolder, useOpenWindow, useResolveSession,
+  useRetryQuest, useStopSession,
 } from '../shell';
 import { failure, type Notify } from '../ui';
 import { type ActFacts, folderOf, type SessionActId } from './acts';
+import { forgetDraft } from './drafts';
 import { sessionWindowName } from './window';
 
 /**
@@ -21,10 +22,12 @@ export type SessionDoors = {
   review?: (id: string) => void;
   /** Open the panel's terminal in this folder, and show the panel (*Open a terminal here*, §3.5). */
   terminal?: (folder: string) => void;
+  /** Attend it, then open its delete's ask under its page header (*Delete…*, SESSUX1f, §5.4). */
+  delete?: (id: string) => void;
 };
 
 /** The acts the frame carries out: a door that has no frame to hand them (the monitor) offers none of them. */
-const FRAME_ACTS = new Set<SessionActId>(['answer', 'stop', 'review', 'terminal']);
+const FRAME_ACTS = new Set<SessionActId>(['answer', 'stop', 'review', 'terminal', 'delete']);
 
 /**
  * **The one owner of each act on a session** (SESSUX1d, D126 §3.1): the row's ⋯ and the page header each call this,
@@ -43,6 +46,8 @@ const FRAME_ACTS = new Set<SessionActId>(['answer', 'stop', 'review', 'terminal'
  * - **The stop's second press** (§3.3): a session waiting on you through `RESOLVE_SESSION`'s `stopped`, as its card's stop
  *   was, since that route lets a parked process go before the record ends; every other through `STOP_SESSION`, whose
  *   three answers are said as `stopNotice` says them.
+ * - **The delete's second press** (SESSUX1f, §5.4) through `SESSION_DELETE`; *Delete…* itself is the frame's, which asks
+ *   once under the header.
  */
 export function useSessionActs({ notify, doors = {} }: { notify: Notify; doors?: SessionDoors }) {
   const { t } = useTranslation();
@@ -52,6 +57,7 @@ export function useSessionActs({ notify, doors = {} }: { notify: Notify; doors?:
   const openWindow = useOpenWindow();
   const stop = useStopSession();
   const resolve = useResolveSession();
+  const remove = useDeleteSession();
 
   /** Whether this door can carry an act out: the frame's acts only where the frame handed its door. */
   const can = (act: SessionActId) => !FRAME_ACTS.has(act) || Boolean(doors[act as keyof SessionDoors]);
@@ -70,6 +76,7 @@ export function useSessionActs({ notify, doors = {} }: { notify: Notify; doors?:
       case 'answer':
       case 'stop':
       case 'review':
+      case 'delete':
         doors[act]?.(session.id);
         return;
       case 'terminal': {
@@ -124,6 +131,20 @@ export function useSessionActs({ notify, doors = {} }: { notify: Notify; doors?:
   };
 
   /**
+   * *Delete…*'s second press (SESSUX1f, D126 §5.4), and `done` once the host deleted it: the record and what this machine
+   * kept of it go, and so does the draft this viewer kept for it (§5.1). A refusal is said in the catalogue's words, and
+   * the ask stays, since nothing went.
+   */
+  const deleteNow = (session: Session, done?: () => void) => remove.mutate(session.id, {
+    onSuccess: () => {
+      forgetDraft(session.id);
+      notify(t('work.delete.done', { id: session.id }));
+      done?.();
+    },
+    onError: failure(notify),
+  });
+
+  /**
    * *Archive what ended…*'s second press (§5.3): what its first listed, each judged again by the host as it goes. What
    * changed since the list is kept and counted, never refused as a whole.
    */
@@ -142,9 +163,12 @@ export function useSessionActs({ notify, doors = {} }: { notify: Notify; doors?:
     can,
     run,
     stopNow,
+    deleteNow,
     archiveListed,
     /** A stop on its way. */
     stopping: stop.isPending || resolve.isPending,
+    /** A delete on its way: its ask's presses wait for it. */
+    deleting: remove.isPending,
     /** An act on its way that the header's buttons wait for. */
     busy: retry.isPending || archive.isPending || folder.isPending,
     /** An archive on its way: *Archive what ended…*'s presses wait for it. */

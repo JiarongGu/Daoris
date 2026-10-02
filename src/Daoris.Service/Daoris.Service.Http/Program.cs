@@ -730,6 +730,32 @@ if (mode == ServiceMode.Local)
         };
     });
 
+    // Deleting a conversation that served no quest (SESSUX1f, D126 §5.4): the ledger judges the record's half and removes
+    // it, and the driver, which judged the machine's half first, removes what this machine kept of it after this yes. LOCAL
+    // mode only, as D95's deletes are: a person deletes on their own machine, and a session record does not travel as a
+    // deletion. A refusal is the ledger's sentence with its word and facts, so the driver reads the word, never the sentence.
+    app.MapDelete("/api/sessions/{id}", async (ComposedService s, string id, CancellationToken ct) =>
+    {
+        var outcome = await s.Ledger.DeleteAsync(id, ct);
+        return outcome.Refusal switch
+        {
+            SessionDeleteRefusal.None => Results.Ok(new DeletedResponse(id, outcome.Message)),
+            SessionDeleteRefusal.NotFound => Results.NotFound(ToDeletion(outcome)),
+            // Live, another machine's, a record something names: a conflict with the record as it stands, D95's shape.
+            _ => Results.Conflict(ToDeletion(outcome)),
+        };
+    });
+
+    // The same judgement, deleting nothing: what the driver asks before it judges the tree and the landing, so a refusal is
+    // said in the order a person meets it.
+    app.MapGet("/api/sessions/{id}/deletable", async (ComposedService s, string id, CancellationToken ct) =>
+    {
+        var outcome = await s.Ledger.JudgeDeleteAsync(id, ct);
+        return outcome.Refusal == SessionDeleteRefusal.NotFound
+            ? Results.NotFound(ToDeletion(outcome))
+            : Results.Ok(ToDeletion(outcome));
+    });
+
     // What the person added to a running session (DRIFT1a, D133 §1), as its driver reports it: the words
     // reach the session through the driver, which never passes them here otherwise, so this is where they
     // are kept on the ask its work is for. Local like the asks; a session on no ask is answered `kept:
@@ -756,8 +782,12 @@ if (mode == ServiceMode.Local)
 app.MapGet("/api/sessions", async (
     ComposedService s, HttpContext http, string? repository, bool? includeClosed, string? workspace,
     CancellationToken ct) =>
-    (await s.Sessions.ListAsync(repository, includeClosed ?? false, workspace, ct))
-        .Select(session => ToSession(session, MachineLocal(http))));
+{
+    var sessions = await s.Sessions.ListAsync(repository, includeClosed ?? false, workspace, ct);
+    // Which records the ledger would delete (SESSUX1f), D95's way; none at a shared deployment, which has no delete door.
+    var deletable = mode == ServiceMode.Local ? await s.Ledger.DeletableAsync(sessions, ct) : new HashSet<string>();
+    return sessions.Select(session => ToSession(session, MachineLocal(http)) with { Deletable = deletable.Contains(session.Id) });
+});
 
 app.MapPost("/api/sessions", async (
     ComposedService s, HttpContext http, OpenSessionRequest body, CancellationToken ct) =>
@@ -1431,6 +1461,23 @@ static SessionResponse ToSession(Session s, bool loopback) => new(
     Interrupted: s.Interrupted,
     // A limit names no account (TOOL4c), so it is answered to every caller, as the state beside it is.
     Limit: s.Limit);
+
+// A session delete's judgement as its doors answer it (SESSUX1f): the sentence as `error`, beside its word and the facts
+// the word names. The words are the wire's, kebab-case like a session's state.
+static SessionDeletionResponse ToDeletion(SessionDeleteOutcome outcome) => outcome.Refusal == SessionDeleteRefusal.None
+    ? new SessionDeletionResponse(Deletable: true)
+    : new SessionDeletionResponse(
+        Deletable: false, Error: outcome.Message,
+        Refusal: outcome.Refusal switch
+        {
+            SessionDeleteRefusal.NotFound => "not-found",
+            SessionDeleteRefusal.NotOurs => "not-ours",
+            SessionDeleteRefusal.Live => "live",
+            SessionDeleteRefusal.ServedQuest => "served-quest",
+            SessionDeleteRefusal.Named => "named",
+            _ => "on-remote",
+        },
+        outcome.Quest, outcome.Ask, outcome.Origin, outcome.Workspace);
 
 // A caller on this machine — which is what "the root never leaves the machine" means in practice. A
 // null remote address is the in-process test server, which is this process and therefore local.
