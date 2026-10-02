@@ -8169,6 +8169,7 @@ plugin's does; that is unchanged. TOOL4h's rehearsal phase is still to be writte
 account for two minutes. The agent drops the date once a reset is under a day away (the same account had said
 `resets Oct 3, 4pm` the day before), and a refusal says the reset has not come. So the grace now holds only for a dated
 reset, and a time of day is the first such moment after the refusal. `AccountLimitsTests` holds the install's sentence.
+
 *Amended by D130 (TOOL6, 2026-10-02): a start reads one scope, and a scope's list is the whole set of accounts its
 starts may run on, for any number of accounts, so a workspace that names a default and no list rotates nowhere, and
 one that lists accounts starts within them. A list may start on the account with the most left or the soonest reset,
