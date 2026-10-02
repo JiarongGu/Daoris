@@ -751,6 +751,51 @@ public sealed class SessionFeedTests : IAsyncLifetime
         Assert.Null(mirrored.Quest);
     }
 
+    /// <summary>
+    /// TOOL4c (D125 §5.2): a record that says an account's limit failed it mirrors saying so. The flag names
+    /// no account, so a teammate's deployment may hold it.
+    /// </summary>
+    [Fact]
+    public async Task A_limit_mirrors_with_its_record()
+    {
+        var outcome = await _feed.FeedAsync("alice-laptop", [Record(state: "failed") with { Limit = true }, Record(id: "ef56ab78", state: "failed")]);
+
+        Assert.Equal(SessionFeedRefusal.None, outcome.Refusal);
+        Assert.True((await _sessions.FindAsync("alice-laptop/ab12cd34"))!.Limit);
+        Assert.False((await _sessions.FindAsync("alice-laptop/ef56ab78"))!.Limit);
+    }
+
+    /// <summary>
+    /// The limit rides the wire both ways, a feed up and a page down, and is said only where it is true: a
+    /// record from a build before the field sends none, and reads false, the old reading.
+    /// </summary>
+    [Fact]
+    public void A_limit_travels_on_the_wire_and_a_record_from_before_it_reads_false()
+    {
+        var feed = SessionWire.Feed([Record(state: "failed") with { Limit = true }, Record(id: "ef56ab78", state: "failed")]);
+        Assert.Equal(new[] { true, false }, SessionWire.ReadFeed(feed)!.Select(r => r.Limit));
+        Assert.Single(System.Text.RegularExpressions.Regex.Matches(feed, "\"limit\""));
+
+        var olderFeed = SessionWire.ReadFeed("""
+            { "records": [ { "id": "ab12cd34", "repository": "Joined", "adapter": "stub", "state": "failed",
+                             "created": "2026-09-20T10:00:00Z", "updated": "2026-09-20T10:00:00Z" } ] }
+            """)!;
+        Assert.False(Assert.Single(olderFeed).Limit);
+
+        var page = SessionWire.ReadPage(SessionWire.Page(new SessionFetch(
+            [new Session("a@one/ab12cd34", "abc123", "Joined", "stub", SessionState.Failed, null, null, null, Now, Now)
+                { Origin = "a@one", Limit = true }],
+            Through: 7, More: false)))!;
+        Assert.True(Assert.Single(page.Records).Limit);
+
+        var olderPage = SessionWire.ReadPage("""
+            { "through": 3, "more": false,
+              "records": [ { "id": "a@one/ab12cd34", "origin": "a@one", "repository": "Joined", "adapter": "stub",
+                             "state": "failed", "created": "2026-09-20T10:00:00Z", "updated": "2026-09-20T10:00:00Z" } ] }
+            """)!;
+        Assert.False(Assert.Single(olderPage.Records).Limit);
+    }
+
     /// <summary>A refused feed changes nothing — the good record beside the bad one stays unmirrored.</summary>
     [Fact]
     public async Task A_malformed_record_refuses_the_whole_feed_before_anything_lands()

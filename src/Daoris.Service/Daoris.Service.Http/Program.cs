@@ -774,7 +774,7 @@ app.MapPost("/api/sessions/{id}/state", async (
 {
     var outcome = await s.Ledger.AdvanceAsync(
         id, body.State ?? "", body.Note, body.Evidence, body.Transcript, DateTimeOffset.UtcNow, ct,
-        interrupted: body.Interrupted == true);
+        interrupted: body.Interrupted == true, limit: body.Limit == true);
 
     return outcome.Refusal switch
     {
@@ -1360,7 +1360,9 @@ static SessionResponse ToSession(Session s, bool loopback) => new(
     Took: s.Took,
     // The person's own words, which may name anything on this machine: answered to it only, like a transcript.
     Answer: loopback ? s.Answer : null,
-    Interrupted: s.Interrupted);
+    Interrupted: s.Interrupted,
+    // A limit names no account (TOOL4c), so it is answered to every caller, as the state beside it is.
+    Limit: s.Limit);
 
 // A caller on this machine — which is what "the root never leaves the machine" means in practice. A
 // null remote address is the in-process test server, which is this process and therefore local.

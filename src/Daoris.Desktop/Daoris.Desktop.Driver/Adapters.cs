@@ -803,7 +803,9 @@ public sealed class StubAdapter : ISessionAdapter
             Account: @"logged-in as (\S+)"),
         // Claude Code's own words for a refused credential (AGT3b), mirrored so the rehearsal can
         // gate a refused account with no account behind it.
-        Refused: "API Error: 401");
+        Refused: "API Error: 401",
+        // And its words for an account's limit (TOOL4a, D125 §1.3 rule 4), mirrored for the same reason.
+        Limits: ClaudeLimits.Words);
 
     private static IReadOnlyList<string> Command(IReadOnlyList<string>? command) =>
         command is { Count: > 0 }
@@ -1307,7 +1309,10 @@ public sealed class ClaudeCodeAdapter : ISessionAdapter
         // What it prints when its provider refuses the credential (AGT3b) — measured on 2.1.280: a
         // `-p` run with an invalid key was silent for 189 s of retries, then printed "Failed to
         // authenticate. API Error: 401 API key is invalid." and exited 1.
-        Refused: "API Error: 401");
+        Refused: "API Error: 401",
+        // What it says when an account's limit refuses a turn (TOOL4a, D125 §0.2): five recorded
+        // sentences, each naming its reset. Its ACP door reads these as its owner's (AGT7).
+        Limits: ClaudeLimits.Words);
 
     /// <summary>
     /// What a pinned <c>claude</c> runs with so it stays the version pinned (AGT2). 🔴 Measured on a
